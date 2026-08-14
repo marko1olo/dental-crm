@@ -8,6 +8,7 @@ import { Bot, CreditCard, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { money } from "./AppHelpers";
 import { SberbankTerminalPaymentModal } from "./components/finance/SberbankTerminalPaymentModal";
+import { showToast } from "./components/GlobalToast";
 import { rubAmountForInput } from "./components/payments/cashDeskAmounts";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { DictationHints } from "./DictationHints";
@@ -1153,7 +1154,11 @@ export function PaymentCapture({
 					patientId={patientId}
 					amountInRubles={Number(normalizeRubAmountInput(amount) ?? 0)}
 					onClose={() => setIsSberbankModalOpen(false)}
-					onSuccess={() => onSubmit()}
+					onSuccess={() => {
+						setIsSberbankModalOpen(false);
+						onAmountChange("");
+						showToast("Оплата через терминал Сбербанка успешно зафиксирована", "success");
+					}}
 				/>
 			)}
 		</div>

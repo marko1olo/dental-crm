@@ -54,17 +54,9 @@ export async function register(app: FastifyInstance) {
 			});
 		}
 
-		// balanceRub is negative if there is a debt.
+		// balanceRub is negative if there is a debt on other plans/stages.
 		const debtRub = patient.balanceRub < 0 ? Math.abs(patient.balanceRub) : 0;
-
-		if (debtRub > 0) {
-			return {
-				isBlocked: true,
-				debtRub,
-				code1TotalRub: 0,
-				code2TotalRub: 0,
-			};
-		}
+		// Согласно ст. 219 НК РФ вычет предоставляется по фактически оплаченным расходам за налоговый период.
 
 		const taxSums = await db
 			.select({

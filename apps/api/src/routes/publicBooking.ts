@@ -795,7 +795,54 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			// ── Atomic Collision Check & Appointment Creation ──
 			try {
 				const result = await tenantTx.transaction(async (tx) => {
-					// 1. Pessimistic lock for doctor
+					// 1. Canonical Resource Lock Hierarchy: Chair -> Doctor -> Patient
+					// Discover and lock available chair first to prevent 40P01 deadlocks with CRM
+					const activeChairs = await tx
+						.select({ id: chairs.id })
+						.from(chairs)
+						.where(
+							and(
+								eq(chairs.organizationId, organizationId),
+								eq(chairs.isActive, true),
+							),
+						);
+
+					let selectedChairId: string | null = null;
+					if (activeChairs.length > 0) {
+						const activeChairIds = activeChairs.map((c) => c.id);
+						const occupiedChairApps = await tx
+							.select({ chairId: appointments.chairId })
+							.from(appointments)
+							.where(
+								and(
+									eq(appointments.organizationId, organizationId),
+									inArray(appointments.chairId, activeChairIds),
+									lt(appointments.startsAt, endDate),
+									gt(appointments.endsAt, startDate),
+									notInArray(appointments.status, [
+										...FREED_APPOINTMENT_STATUSES,
+									]),
+								),
+							);
+						const occupiedChairIds = new Set(
+							occupiedChairApps.map((a) => a.chairId),
+						);
+						const availableChair = activeChairs.find(
+							(c) => !occupiedChairIds.has(c.id),
+						);
+						if (!availableChair) {
+							return { conflict: true as const };
+						}
+						selectedChairId = availableChair.id;
+						await tx
+							.select({ id: chairs.id })
+							.from(chairs)
+							.where(eq(chairs.id, selectedChairId))
+							.limit(1)
+							.for("update");
+					}
+
+					// 2. Pessimistic lock for doctor
 					await tx
 						.select({ id: users.id })
 						.from(users)
@@ -803,7 +850,7 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 						.limit(1)
 						.for("update");
 
-					// 2. Identify and lock/create patient
+					// 3. Identify and lock/create patient
 					const phoneDigits = normalizePhoneDigits(patientPhone);
 					const [existingByPhone] = await tx
 						.select({ id: patients.id })
@@ -862,52 +909,6 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 							.select({ id: patients.id })
 							.from(patients)
 							.where(eq(patients.id, patientId))
-							.limit(1)
-							.for("update");
-					}
-
-					// 3. Find and lock available chair (if clinic has chairs)
-					const activeChairs = await tx
-						.select({ id: chairs.id })
-						.from(chairs)
-						.where(
-							and(
-								eq(chairs.organizationId, organizationId),
-								eq(chairs.isActive, true),
-							),
-						);
-
-					let selectedChairId: string | null = null;
-					if (activeChairs.length > 0) {
-						const activeChairIds = activeChairs.map((c) => c.id);
-						const occupiedChairApps = await tx
-							.select({ chairId: appointments.chairId })
-							.from(appointments)
-							.where(
-								and(
-									eq(appointments.organizationId, organizationId),
-									inArray(appointments.chairId, activeChairIds),
-									lt(appointments.startsAt, endDate),
-									gt(appointments.endsAt, startDate),
-									notInArray(appointments.status, [
-										...FREED_APPOINTMENT_STATUSES,
-									]),
-								),
-							);
-						const occupiedChairIds = new Set(
-							occupiedChairApps.map((a) => a.chairId),
-						);
-						const availableChair = activeChairs.find(
-							(c) => !occupiedChairIds.has(c.id),
-						);
-						if (!availableChair) {
-							return { conflict: true as const };
-						}
-						selectedChairId = availableChair.id;
-						await tx
-							.select({ id: chairs.id })
-							.from(chairs)
-							.where(eq(chairs.id, selectedChairId))
 							.limit(1)
 							.for("update");
 					}
