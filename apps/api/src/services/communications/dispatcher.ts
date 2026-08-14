@@ -921,7 +921,11 @@ async function processRow(
 	) {
 		const currentIdx = settings.channelFallback.indexOf(channel);
 		if (currentIdx >= 0 && currentIdx < settings.channelFallback.length - 1) {
-			for (let nextIdx = currentIdx + 1; nextIdx < settings.channelFallback.length; nextIdx++) {
+			for (
+				let nextIdx = currentIdx + 1;
+				nextIdx < settings.channelFallback.length;
+				nextIdx++
+			) {
 				const nextChannel = settings.channelFallback[nextIdx];
 				if (!nextChannel || !isMachineDeliverableChannel(nextChannel)) continue;
 

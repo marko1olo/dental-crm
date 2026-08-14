@@ -148,7 +148,9 @@ export function useImagingQueries(options?: { auth?: any }) {
 	const selectCtPlanningImplant = (_implant: any) => {};
 
 	async function loadImagingViewerSession(studyId: string) {
-		await fetch(`/api/imaging/studies/${studyId}/viewer-session`);
+		await fetch(`/api/imaging/studies/${studyId}/viewer-session`, {
+			headers: auth.denteClinicalReadHeaders(),
+		});
 	}
 	async function saveImagingViewerSession(
 		studyId: string,
@@ -156,7 +158,9 @@ export function useImagingQueries(options?: { auth?: any }) {
 	) {
 		await fetch(`/api/imaging/studies/${studyId}/viewer-session`, {
 			method: "PUT",
-			headers: { "Content-Type": "application/json" },
+			headers: auth.denteClinicalMutationHeaders({
+				"Content-Type": "application/json",
+			}),
 			body: JSON.stringify(payload),
 		});
 	}
@@ -167,7 +171,9 @@ export function useImagingQueries(options?: { auth?: any }) {
 		await fetch("/api/imaging/dicom/folder-series-preview", {
 			method: "POST",
 			signal: controller.signal,
-			headers: { "Content-Type": "application/json" },
+			headers: auth.denteClinicalReadHeaders({
+				"Content-Type": "application/json",
+			}),
 			body: JSON.stringify({ folderPath }),
 		});
 	}
