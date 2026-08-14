@@ -1,19 +1,13 @@
-# DENTE Clinical Dental CRM — LLM Search Index
+# DENTE Clinical CRM & AI Diagnostics
+> Next.js / Fastify / PostgreSQL / DICOM 3D odontogram and clinical workflows
 
-## Project Summary
-DENTE is a high-performance clinical management platform and diagnostic CRM for dental practices.
+- Project: marko1olo/dental-crm
+- Authors: Adolf Petushkov (@marko1olo) & Jirnyak (@Jirnyak)
+- Ecosystem: Open Source Engineering Syndicate
+- License: Open Source (MIT / People's License)
 
-## Core Capabilities
-- Multi-tenant practice management with PostgreSQL row-level isolation.
-- Interactive SVG Odontogram supporting FDI and Universal tooth numbering.
-- Multi-Planar Reconstruction (MPR) 3D DICOM tomography slice visualizer.
-- Kopeck-exact financial accounting and billing ledger.
-- Live Web Showcase: https://marko1olo.github.io/dental-crm/
+## Core Technical Specs
+Next.js / Fastify / PostgreSQL / DICOM 3D odontogram and clinical workflows
 
-## Tech Stack
-- Frontend: React 19, TypeScript, Vanilla CSS Tokens
-- Backend: Fastify, Drizzle ORM, Node.js
-- Database: PostgreSQL 18
-
-## Authors
-- Жирняк & Адольф Петушков
+## Full Documentation
+For complete mathematical models, API endpoints, algorithms, and architecture, see llms-full.txt or README.md.
