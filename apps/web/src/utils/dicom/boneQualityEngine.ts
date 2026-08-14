@@ -56,7 +56,7 @@ export function classifyMisch(avgHU: number): MischClass {
 
 /**
  * Extract HU zone profile from an array of HU samples along the implant axis.
- * Expects samples ordered from apex (tip) to neck.
+ * Expects samples ordered from coronal neck (crest) to apical tip.
  */
 export function extractHUZones(huSamples: number[]): HUZoneProfile {
 	if (huSamples.length === 0) {
@@ -95,7 +95,9 @@ export function generateDrillProtocol(
 	diameterMm: number,
 	lengthMm: number,
 ): DrillProtocol {
-	const avgHU = (zones.corticalHU + zones.cancellousHU + zones.apicalHU) / 3;
+	// Анатомически взвешенная плотность: 20% кортикальная пластинка, 60% губчатая кость, 20% апикальная зона
+	const avgHU =
+		zones.corticalHU * 0.2 + zones.cancellousHU * 0.6 + zones.apicalHU * 0.2;
 	const mischClass = classifyMisch(avgHU);
 	const warnings: string[] = [];
 	let underdrillingApplied = false;
