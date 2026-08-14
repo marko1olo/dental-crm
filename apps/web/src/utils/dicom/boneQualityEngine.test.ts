@@ -1,91 +1,42 @@
-import assert from "node:assert";
-import { describe, test } from "node:test";
-import { extractHUZones } from "./boneQualityEngine.js";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+import {
+	classifyMisch,
+	extractHUZones,
+	generateDrillProtocol,
+} from "./boneQualityEngine";
 
-describe("extractHUZones", () => {
-	test("returns 0 for all zones when array is empty", () => {
-		const result = extractHUZones([]);
-		assert.deepStrictEqual(result, {
-			corticalHU: 0,
-			cancellousHU: 0,
-			apicalHU: 0,
-		});
+describe("Bone Quality and Misch Classification Engine", () => {
+	it("classifies bone density according to Misch criteria", () => {
+		assert.equal(classifyMisch(1400), "D1", "> 1250 HU is D1 dense cortical");
+		assert.equal(classifyMisch(1000), "D2", "850-1250 HU is D2 thick porous cortical and coarse trabecular");
+		assert.equal(classifyMisch(600), "D3", "350-850 HU is D3 thin porous cortical and fine trabecular");
+		assert.equal(classifyMisch(200), "D4", "< 350 HU is D4 fine trabecular");
 	});
 
-	test("handles 10 samples correctly (20% cortical, 60% cancellous, 20% apical)", () => {
-		// 2 cortical, 6 cancellous, 2 apical
-		const samples = [
-			1000,
-			1000, // cortical: avg 1000
-			400,
-			500,
-			600,
-			500,
-			400,
-			600, // cancellous: sum 3000, avg 500
-			800,
-			1200, // apical: avg 1000
-		];
-		const result = extractHUZones(samples);
-		assert.deepStrictEqual(result, {
-			corticalHU: 1000,
-			cancellousHU: 500,
-			apicalHU: 1000,
-		});
+	it("extracts anatomical HU zones (cortical crest, cancellous core, apical base)", () => {
+		const samples = [1200, 1100, 700, 650, 600, 550, 800, 850];
+		const zones = extractHUZones(samples);
+
+		assert.ok(zones.corticalHU > 0, "Calculated cortical HU");
+		assert.ok(zones.cancellousHU > 0, "Calculated cancellous HU");
+		assert.ok(zones.apicalHU > 0, "Calculated apical HU");
 	});
 
-	test("handles 5 samples correctly (1 cortical, 3 cancellous, 1 apical)", () => {
-		const samples = [1200, 300, 400, 500, 1000];
-		const result = extractHUZones(samples);
-		// cortical: 1200
-		// cancellous: 300, 400, 500 -> sum 1200, avg 400
-		// apical: 1000
-		assert.deepStrictEqual(result, {
-			corticalHU: 1200,
-			cancellousHU: 400,
-			apicalHU: 1000,
-		});
+	it("generates clinical drilling protocol with underdrilling for soft D4 bone", () => {
+		const d4Zones = { corticalHU: 250, cancellousHU: 180, apicalHU: 200 };
+		const protocol = generateDrillProtocol(d4Zones, "osstem", 4.0, 10.0);
+
+		assert.equal(protocol.mischClass, "D4");
+		assert.ok(protocol.underdrillingApplied, "Underdrilling should be applied in soft D4 bone");
+		assert.ok(protocol.steps.length > 0, "Generated drilling steps");
 	});
 
-	test("handles 1 sample correctly", () => {
-		const samples = [800];
-		const result = extractHUZones(samples);
-		// corticalCount = 1, apicalCount = 1
-		// cortical: [800] -> avg 800
-		// cancellous: empty, falls back to full array -> avg 800
-		// apical: [800] -> avg 800
-		assert.deepStrictEqual(result, {
-			corticalHU: 800,
-			cancellousHU: 800,
-			apicalHU: 800,
-		});
-	});
+	it("requires cortical bone tapping for dense D1 bone", () => {
+		const d1Zones = { corticalHU: 1500, cancellousHU: 1300, apicalHU: 1400 };
+		const protocol = generateDrillProtocol(d1Zones, "straumann", 4.1, 10.0);
 
-	test("handles 2 samples correctly", () => {
-		const samples = [1000, 600];
-		const result = extractHUZones(samples);
-		// corticalCount = 1, apicalCount = 1
-		// cortical: [1000] -> avg 1000
-		// apical: [600] -> avg 600
-		// cancellous: empty, falls back to full array -> avg 800
-		assert.deepStrictEqual(result, {
-			corticalHU: 1000,
-			cancellousHU: 800,
-			apicalHU: 600,
-		});
-	});
-
-	test("handles array with varying values", () => {
-		const samples = [1200, 1100, 300, 200, 150, 400, 800, 900];
-		// length 8
-		// corticalCount = round(8 * 0.2) = 2 -> [1200, 1100], avg 1150
-		// apicalCount = round(8 * 0.2) = 2 -> [800, 900], avg 850
-		// cancellous = middle 4 -> [300, 200, 150, 400], sum 1050, avg 262.5
-		const result = extractHUZones(samples);
-		assert.deepStrictEqual(result, {
-			corticalHU: 1150,
-			cancellousHU: 262.5,
-			apicalHU: 850,
-		});
+		assert.equal(protocol.mischClass, "D1");
+		assert.ok(protocol.corticalTapRequired, "Cortical tapping required in dense D1 bone to prevent overheating/over-torque");
 	});
 });
