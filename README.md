@@ -92,6 +92,129 @@ graph TD
 
 ---
 
+
+---
+
+## 🩺 Practical Clinical Workflows & Doctor Cockpit Architecture
+
+DENTE is built specifically around the day-to-day operational reality of private dental clinics: fast appointment flow, zero-lag tooth chart updates, automated paperwork generation, and rock-solid billing integrity.
+
+```mermaid
+graph LR
+    subgraph Reception & Patient Check-In
+        A[Telegram Bot QR / Web App] -->|Check-in Token| B[Reception Shift Dashboard]
+        B -->|Assign Chair & Doctor| C[Patient Electronic Health Record]
+    end
+
+    subgraph Doctor Cockpit & Treatment
+        C --> D[Interactive FDI Odontogram]
+        C --> E[DICOM / CBCT 3D Slice Viewer]
+        D & E --> F[Voice Dictation & Clinical Protocol]
+        F --> G[Treatment Plan & Service Selection]
+    end
+
+    subgraph Billing & Regulatory Compliance
+        G --> H[Kopeck-Exact Invoice Settlement]
+        H --> I[Fiscal Receipt Generation]
+        H --> J[KND 1151156 Tax Deduction Certificate]
+        H --> K[Telegram Privacy-Preserving Recall Alert]
+    end
+```
+
+---
+
+### 🦷 1. Interactive FDI Odontogram & Surface State Engine
+
+Every tooth (permanent 11–48, deciduous 51–85) maintains an independent state machine across its 5 physical anatomical surfaces:
+
+```
+          MAXILLARY ARCH (Upper Jaw)
+   18 17 16 15 14 13 12 11 │ 21 22 23 24 25 26 27 28
+  ┌──┬──┬──┬──┬──┬──┬──┬──┼──┬──┬──┬──┬──┬──┬──┬──┐
+  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  [O] Occlusal
+  └──┴──┴──┴──┴──┴──┴──┴──┼──┴──┴──┴──┴──┴──┴──┴──┘  [M] Mesial
+   48 47 46 45 44 43 42 41 │ 31 32 33 34 35 36 37 38  [D] Distal
+          MANDIBULAR ARCH (Lower Jaw)                 [V] Vestibular / Buccal
+                                                      [L] Lingual / Palatal
+```
+
+#### Supported Clinical Tooth States:
+* `Caries (C)`: Superficial, medium, or deep enamel/dentin decay with surface-level tagging.
+* `Pulpitis (P)`: Active pulp inflammation requiring endodontic canal instrumentation and apex locator logging.
+* `Periodontitis (Pt)`: Periapical radiolucency with bone pocket depth tracking in millimeters.
+* `Crown (Cr)`: Zirconia, E.max, PFM, or temporary PMMA prosthetic crown restoration.
+* `Implant (Imp)`: Osseointegrated titanium fixture with brand, diameter, length, and torque metrics ($N\cdot\text{cm}$).
+* `Extracted / Absent (R)`: Missing tooth slot with bone preservation graft status.
+
+---
+
+### 🩻 2. DICOM / CBCT Multi-Planar Reconstruction (MPR) Presets
+
+The imaging subsystem parses multi-frame DICOM datasets (CBCT, RVG, OPG) directly in browser memory and maps raw 16-bit CT values to visual density windows:
+
+| Clinical Preset | Window Width ($WW$) | Window Level ($WL$) | Target Anatomy | Clinical Use Case |
+| :--- | :--- | :--- | :--- | :--- |
+| **Enamel & Dentin** | $4,000\text{ HU}$ | $+1,200\text{ HU}$ | Tooth hard tissues, root canals | Caries depth, root canal anatomy, fractures |
+| **Alveolar Bone** | $2,000\text{ HU}$ | $+500\text{ HU}$ | Cortical & cancellous bone | Implant bone density, sinus floor lift planning |
+| **Soft Tissue / Nerve** | $400\text{ HU}$ | $+40\text{ HU}$ | Gingiva, inferior alveolar nerve | Mandibular nerve canal tracing, cyst boundaries |
+| **Airway & Sinus** | $1,000\text{ HU}$ | $-400\text{ HU}$ | Maxillary sinus, nasal cavity | Maxillary sinusitis, sinus membrane thickening |
+
+---
+
+### 💰 3. Kopeck-Exact Billing & Tax Certificate Engine (KND 1151156)
+
+To eliminate rounding disputes with tax authorities (FNS RF) and payment gateways, all monetary operations use strict integer arithmetic:
+
+* **Base Unit**: $1\text{ Rouble} = 100\text{ Kopecks}$ (stored as `BIGINT` in PostgreSQL).
+* **Automated Social Tax Certificate (Справка об оплате медицинских услуг для налогового вычета)**:
+  - Form **КНД 1151156** for tax periods 2024+ with QR-verification.
+  - Legacy certificate drafts for 2021–2023 tax declarations.
+  - Automatic separation of standard treatment (Code `1`) and expensive high-tech treatment (Code `2` — implants, sinus lifting, bone grafting).
+
+```typescript
+// Production Billing Engine: Split Tax Certificate Totals
+export interface TaxCertificateSummary {
+    standardTreatmentKopecks: bigint; // Code 1 (Обычное лечение, лимит 150 000 руб.)
+    expensiveTreatmentKopecks: bigint; // Code 2 (Дорогостоящее лечение, без лимита)
+    totalKopecks: bigint;
+}
+
+export function compileTaxCertificate(invoices: ReadonlyArray<ClinicalInvoice>): TaxCertificateSummary {
+    let standard = 0n;
+    let expensive = 0n;
+    
+    for (const inv of invoices) {
+        if (!inv.isFiscalSettled) continue;
+        for (const item of inv.items) {
+            const lineTotal = (item.unitPriceKopecks * BigInt(item.quantity)) - item.discountKopecks;
+            if (item.treatmentCategoryCode === 2) {
+                expensive += lineTotal;
+            } else {
+                standard += lineTotal;
+            }
+        }
+    }
+    return {
+        standardTreatmentKopecks: standard,
+        expensiveTreatmentKopecks: expensive,
+        totalKopecks: standard + expensive
+    };
+}
+```
+
+---
+
+### 📱 4. Privacy-Preserving Telegram Bot & Recall Dispatcher
+
+The patient-facing Telegram bridge operates under strict zero-leakage medical privacy rules:
+
+* **Zero Health Data in Notifications**: Messages sent to Telegram chat notifications contain **no** diagnosis text, treatment names, tooth numbers, or fiscal amounts.
+* **One-Click Web App Login**: Secure, expiring tokenized buttons (`Открыть DENTE`, `Записаться на прием`, `Справка в налоговую`) open the patient's personal encrypted portal directly in Telegram WebApp.
+* **Automated Recall Triggers**:
+  - *6 Months*: Hygienic cleaning and preventive check-up reminder.
+  - *2 Weeks Post-Op*: Surgical check after implant placement / tooth extraction.
+  - *Annual*: Orthodontic / prosthetic warranty inspection.
+
 ## 📜 Original Human Developer Documentation
 
 The section below contains **100% of the true, un-truncated, original human developer documentation** created for this repository:
