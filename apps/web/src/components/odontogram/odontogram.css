@@ -1,31 +1,31 @@
 :root {
-	--odontogram-paper: #ffffff;
-	--odontogram-surface: #f8fafc;
-	--odontogram-surface-hover: #f1f5f9;
-	--odontogram-border: #cbd5e1;
-	--odontogram-border-subtle: #e2e8f0;
-	--odontogram-border-strong: #94a3b8;
-	--odontogram-ink: #0f172a;
-	--odontogram-ink-muted: #64748b;
-	--odontogram-ink-subtle: #475569;
-	--tooth-root-fill: #f1f5f9;
-	--tooth-root-stroke: #334155;
-	--tooth-crown-fill: #fdfdfd;
+	--odontogram-paper: var(--paper);
+	--odontogram-surface: var(--paper-soft);
+	--odontogram-surface-hover: var(--paper-strong);
+	--odontogram-border: var(--line);
+	--odontogram-border-subtle: var(--line);
+	--odontogram-border-strong: var(--line-strong);
+	--odontogram-ink: var(--ink);
+	--odontogram-ink-muted: var(--muted);
+	--odontogram-ink-subtle: var(--ink-muted, #475569);
+	--tooth-root-fill: var(--paper-soft);
+	--tooth-root-stroke: var(--line-strong);
+	--tooth-crown-fill: var(--paper);
 }
 
 :is([data-theme="dark"], [data-theme="night"], .dark) {
-	--odontogram-paper: rgba(9, 9, 11, 0.4);
-	--odontogram-surface: rgba(24, 24, 27, 0.3);
-	--odontogram-surface-hover: rgba(39, 39, 42, 0.4);
-	--odontogram-border: rgba(63, 63, 70, 0.3);
-	--odontogram-border-subtle: rgba(63, 63, 70, 0.2);
-	--odontogram-border-strong: rgba(63, 63, 70, 0.5);
+	--odontogram-paper: var(--paper);
+	--odontogram-surface: var(--paper-soft);
+	--odontogram-surface-hover: var(--paper-strong);
+	--odontogram-border: var(--line);
+	--odontogram-border-subtle: var(--line);
+	--odontogram-border-strong: var(--line-strong);
 	--odontogram-ink: var(--ink);
-	--odontogram-ink-muted: #a1a1aa;
-	--odontogram-ink-subtle: #d4d4d8;
-	--tooth-root-fill: #27272a;
-	--tooth-root-stroke: #52525b;
-	--tooth-crown-fill: #d4d4d8;
+	--odontogram-ink-muted: var(--muted);
+	--odontogram-ink-subtle: var(--muted);
+	--tooth-root-fill: var(--paper-soft);
+	--tooth-root-stroke: var(--line-strong);
+	--tooth-crown-fill: var(--paper-strong);
 }
 
 .odontogram-module {

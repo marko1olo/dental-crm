@@ -2,6 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { operatorReadableErrorDetail } from "../AppHelpers";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import {
+	generateSoapFromOdontogramFinding,
+	type MergeStrategy,
+	mergeSoapDiaryState,
+	type OdontogramFindingInput,
+} from "../lib/clinicalProtocols043";
+import {
 	actionFailureToast,
 	type PanelSubject,
 	panelStateText,
@@ -641,6 +647,46 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			.querySelectorAll<HTMLTextAreaElement>(".auto-resize-ta")
 			.forEach(autoResize);
 	}, []);
+
+	// ── Non-destructive Odontogram Findings & Template Application
+	const applyOdontogramFinding = useCallback(
+		(finding: OdontogramFindingInput, mode: MergeStrategy = "smart_append") => {
+			if (isLocked && !isRevising) {
+				showToast("Дневник подписан — изменения заблокированы.", "info");
+				return;
+			}
+			const soapProtocol = generateSoapFromOdontogramFinding(finding);
+			setDiary((prev) =>
+				mergeSoapDiaryState(prev, soapProtocol, { strategy: mode }),
+			);
+			if (soapProtocol.diagnosisIcd10) {
+				setIcdSearch((c) => (c.trim() ? c : soapProtocol.diagnosisIcd10));
+			}
+			showToast(
+				`Протокол для зуба ${finding.toothNumber} добавлен в дневник 043/у`,
+				"success",
+				4000,
+			);
+		},
+		[isLocked, isRevising],
+	);
+
+	const applySoapProtocol = useCallback(
+		(incoming: Partial<DiaryState>, mode: MergeStrategy = "smart_append") => {
+			if (isLocked && !isRevising) {
+				showToast("Дневник подписан — изменения заблокированы.", "info");
+				return;
+			}
+			setDiary((prev) =>
+				mergeSoapDiaryState(prev, incoming, { strategy: mode }),
+			);
+			if (incoming.diagnosisIcd10) {
+				const icd = incoming.diagnosisIcd10;
+				setIcdSearch((c) => (c.trim() ? c : icd));
+			}
+		},
+		[isLocked, isRevising],
+	);
 
 	// ── Click outside ICD dropdown
 	useEffect(() => {
@@ -1671,5 +1717,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		cancelRevise,
 		doRevise,
 		icdRef,
+		applyOdontogramFinding,
+		applySoapProtocol,
 	};
 }

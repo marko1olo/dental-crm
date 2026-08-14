@@ -355,13 +355,13 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 							)}
 						</div>
 					)}
-					<div className="flex space-x-2 pt-1">
+					<div className="flex space-x-2 pt-2">
 						<button
 							type="button"
 							onClick={handleApplyStatus}
 							disabled={isApplying}
 							title="Подтвердить действие"
-							className="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+							className="flex-1 min-h-[44px] px-4 py-2.5 rounded-xl bg-[var(--bad-fg)] hover:opacity-90 text-white text-xs font-bold transition-all disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center"
 						>
 							{isApplying ? "Применяем…" : "Подтвердить"}
 						</button>
@@ -369,7 +369,7 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 							type="button"
 							onClick={() => setConfirmModalOpen(false)}
 							title="Отмена действия"
-							className="px-2.5 py-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-slate-700 dark:text-slate-200 text-xs transition-colors"
+							className="flex-1 min-h-[44px] px-4 py-2.5 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold transition-colors inline-flex items-center justify-center"
 						>
 							Отмена
 						</button>

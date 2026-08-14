@@ -248,16 +248,16 @@ export function Omnibar() {
 								role="dialog"
 								aria-modal="true"
 								aria-label="Быстрый поиск и команды"
-								className="relative w-full max-w-2xl bg-white dark:bg-slate-900 shadow-2xl rounded-2xl overflow-hidden border border-neutral-200 dark:border-slate-800 flex flex-col text-slate-900 dark:text-slate-100"
+								className="relative w-full max-w-2xl bg-[var(--paper)] shadow-2xl rounded-2xl overflow-hidden border border-[var(--line)] flex flex-col text-[var(--ink)]"
 								style={{ maxHeight: "60vh" }}
 							>
 								{/* Header/Input */}
-								<div className="flex items-center px-4 border-b border-neutral-100 dark:border-slate-800">
-									<Search className="w-5 h-5 text-neutral-400 dark:text-slate-500 mr-3" />
+								<div className="flex items-center px-4 border-b border-[var(--line)]">
+									<Search className="w-5 h-5 text-[var(--muted)] mr-3" />
 									<input
 										ref={inputRef}
 										type="text"
-										className="flex-1 h-14 bg-transparent border-none outline-none text-lg text-neutral-800 dark:text-slate-100 placeholder-neutral-400 dark:placeholder-slate-500"
+										className="flex-1 h-14 bg-transparent border-none outline-none text-lg text-[var(--ink)] placeholder-[var(--muted)]"
 										placeholder="Поиск по разделам или действиям..."
 										value={query}
 										onChange={(e) => {
@@ -268,7 +268,8 @@ export function Omnibar() {
 									<button
 										type="button"
 										onClick={() => setOmnibarOpen(false)}
-										className="p-1.5 hover:bg-neutral-100 dark:hover:bg-slate-800 rounded-md transition-colors text-neutral-400 hover:text-neutral-600 dark:hover:text-slate-200"
+										className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-[var(--paper-soft)] rounded-lg transition-colors text-[var(--muted)] hover:text-[var(--ink)]"
+										aria-label="Закрыть омнибар"
 									>
 										<X className="w-5 h-5" />
 									</button>

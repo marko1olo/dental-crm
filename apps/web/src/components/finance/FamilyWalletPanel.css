@@ -83,12 +83,12 @@
 		ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
 		"Courier New", monospace;
 	font-weight: 900;
-	color: var(--good, #059669);
+	color: var(--ok-fg, #059669);
 	letter-spacing: -0.025em;
 }
 
 :is([data-theme="dark"], [data-theme="night"], .dark) .family-wallet-balance {
-	color: var(--good, #34d399);
+	color: var(--ok-fg, #34d399);
 }
 
 .family-wallet-balance-label {

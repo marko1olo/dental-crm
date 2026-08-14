@@ -84,30 +84,30 @@ export function NdflCalculatorModal({ onClose }: { onClose: () => void }) {
 	return (
 		<div className="modal-overlay fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
 			<div
-				className="modal-content w-full max-w-md p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 space-y-4"
+				className="modal-content w-full max-w-md p-6 rounded-2xl border border-[var(--line)] shadow-2xl bg-[var(--paper)] text-[var(--ink)] space-y-4"
 			>
-				<h2 className="text-lg font-bold flex items-center gap-2 m-0 text-slate-900 dark:text-slate-100">
-					<Calculator size={20} className="text-teal-600 dark:text-teal-400" />
+				<h2 className="text-lg font-bold flex items-center gap-2 m-0 text-[var(--ink)]">
+					<Calculator size={20} className="text-[var(--teal)]" />
 					Калькулятор НДФЛ
 				</h2>
 
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 my-3">
-					<label className="flex flex-col text-xs font-semibold text-slate-600 dark:text-slate-400">
+					<label className="flex flex-col text-xs font-semibold text-[var(--muted)]">
 						Начало периода
 						<input
 							type="date"
 							value={startDate}
 							onChange={(e) => setStartDate(e.target.value)}
-							className="mt-1 p-2 min-h-[44px] rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:border-teal-500"
+							className="mt-1 p-2 min-h-[44px] rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs focus:outline-none focus:border-[var(--teal)]"
 						/>
 					</label>
-					<label className="flex flex-col text-xs font-semibold text-slate-600 dark:text-slate-400">
+					<label className="flex flex-col text-xs font-semibold text-[var(--muted)]">
 						Конец периода
 						<input
 							type="date"
 							value={endDate}
 							onChange={(e) => setEndDate(e.target.value)}
-							className="mt-1 p-2 min-h-[44px] rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:border-teal-500"
+							className="mt-1 p-2 min-h-[44px] rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs focus:outline-none focus:border-[var(--teal)]"
 						/>
 					</label>
 				</div>

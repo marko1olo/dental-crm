@@ -14,6 +14,7 @@ import type React from "react";
 import { useCallback, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
+import { mergeSoapDiaryState } from "../lib/clinicalProtocols043";
 import { getIcdColor, ICD_GROUP_COLORS, ICD10_DICTIONARY } from "../lib/icd10";
 import { specialtyLabels } from "../workspaceUiLabels";
 import { PanelLoadFailure } from "./PanelLoadFailure";
@@ -661,15 +662,18 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 								isLocked={isLocked}
 								// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 								onSelectTemplate={(tmpl: any) => {
-									setDiary((prev) => ({
-										...prev,
-										anamnesis: tmpl.prefilledAnamnesis || prev.anamnesis,
-										statusLocalis:
-											tmpl.prefilledObjective || prev.statusLocalis,
-										treatmentDescription:
-											tmpl.prefilledTreatment || prev.treatmentDescription,
-										diagnosisIcd10: tmpl.defaultIcd10 || prev.diagnosisIcd10,
-									}));
+									setDiary((prev) =>
+										mergeSoapDiaryState(
+											prev,
+											{
+												anamnesis: tmpl.prefilledAnamnesis,
+												statusLocalis: tmpl.prefilledObjective,
+												treatmentDescription: tmpl.prefilledTreatment,
+												diagnosisIcd10: tmpl.defaultIcd10,
+											},
+											{ strategy: "smart_append" },
+										),
+									);
 									if (tmpl.defaultIcd10) {
 										setIcdSearch(tmpl.defaultIcd10);
 									}

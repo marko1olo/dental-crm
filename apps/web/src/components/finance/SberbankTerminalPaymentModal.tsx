@@ -234,16 +234,16 @@ export function SberbankTerminalPaymentModal({
 			}}
 		>
 			<div
-				className="w-full max-w-md p-6 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+				className="w-full max-w-md p-6 rounded-2xl shadow-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
 			>
 				<h2
 					id="sber-terminal-modal-title"
-					className="text-xl font-bold mb-4 mt-0 text-slate-900 dark:text-white"
+					className="text-xl font-bold mb-4 mt-0 text-[var(--ink)]"
 				>
 					Оплата через терминал Сбербанка
 				</h2>
-				<div className="text-base mb-5 text-slate-700 dark:text-slate-300">
-					Сумма к оплате: <strong className="text-slate-900 dark:text-white font-bold">{money(amountInRubles)}</strong>
+				<div className="text-base mb-5 text-[var(--muted)]">
+					Сумма к оплате: <strong className="text-[var(--ink)] font-bold">{money(amountInRubles)}</strong>
 				</div>
 
 				{status === "initiating" && (
@@ -269,6 +269,7 @@ export function SberbankTerminalPaymentModal({
 										alignItems: "center",
 										gap: "8px",
 										textDecoration: "none",
+										minHeight: "44px",
 									}}
 								>
 									<ExternalLink size={16} />
@@ -278,7 +279,7 @@ export function SberbankTerminalPaymentModal({
 						)}
 						<div
 							style={{
-								color: "var(--bad, #ef4444)",
+								color: "var(--bad-fg, #ef4444)",
 								fontSize: "13px",
 								marginTop: "6px",
 							}}
@@ -290,13 +291,13 @@ export function SberbankTerminalPaymentModal({
 				)}
 
 				{status === "success" && (
-					<div style={{ color: "var(--good, #10b981)", fontWeight: "bold" }}>
+					<div style={{ color: "var(--ok-fg, #10b981)", fontWeight: "bold" }}>
 						Оплата успешно проведена!
 					</div>
 				)}
 
 				{status === "error" && (
-					<div style={{ color: "var(--bad, #ef4444)", marginBottom: "16px" }}>
+					<div style={{ color: "var(--bad-fg, #ef4444)", marginBottom: "16px" }}>
 						Ошибка: {errorMsg}
 					</div>
 				)}
@@ -313,6 +314,7 @@ export function SberbankTerminalPaymentModal({
 						<button
 							type="button"
 							className="primary-button"
+							style={{ minHeight: "44px" }}
 							onClick={initiatePayment}
 							disabled={status !== "error"}
 						>
@@ -322,6 +324,7 @@ export function SberbankTerminalPaymentModal({
 					<button
 						type="button"
 						className="secondary-button"
+						style={{ minHeight: "44px" }}
 						onClick={handleClose}
 						disabled={status === "initiating" || status === "success"}
 					>

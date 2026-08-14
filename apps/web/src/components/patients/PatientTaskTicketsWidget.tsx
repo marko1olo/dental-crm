@@ -273,7 +273,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 				</button>
 			</div>
 
-			<div className="p-5 bg-white dark:bg-slate-900">
+			<div className="p-5 bg-[var(--paper)]">
 				{/*
 					Честное сообщение о выброшенном черновике: без него сброс формы стал бы
 					тихой потерей набранного текста — один обман экрана вместо другого.
@@ -288,7 +288,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 						<button
 							type="button"
 							onClick={() => setDraftDropped(false)}
-							className="shrink-0 rounded-lg border border-amber-400 bg-white px-3 py-1 font-semibold text-amber-900 cursor-pointer dark:border-amber-700 dark:bg-amber-900/40 dark:text-amber-100"
+							className="shrink-0 rounded-xl border border-amber-400 bg-[var(--paper)] min-h-[44px] px-4 py-2 font-semibold text-amber-900 cursor-pointer dark:border-amber-700 dark:bg-amber-900/40 dark:text-amber-100 inline-flex items-center justify-center"
 						>
 							Понятно
 						</button>
@@ -301,7 +301,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 							animate={{ opacity: 1, height: "auto", marginBottom: 20 }}
 							exit={{ opacity: 0, height: 0, marginBottom: 0 }}
 							onSubmit={handleAdd}
-							className="bg-slate-50 dark:bg-slate-800/80 p-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden"
+							className="bg-[var(--paper-soft)] p-4 rounded-xl border border-[var(--line)] overflow-hidden"
 						>
 							<div className="grid grid-cols-1 gap-3">
 								<div className="smart-field">
@@ -311,11 +311,11 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 										onChange={(e) => setNewTitle(e.target.value)}
 										placeholder=" "
 										required
-										className="w-full p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white outline-none"
+										className="w-full p-2.5 min-h-[44px] rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] outline-none"
 									/>
 									<label
 										htmlFor="ticket-title-input"
-										className="text-xs text-slate-500 dark:text-slate-400"
+										className="text-xs text-[var(--muted)]"
 									>
 										Название задачи
 									</label>

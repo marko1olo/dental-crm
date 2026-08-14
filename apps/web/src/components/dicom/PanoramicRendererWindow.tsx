@@ -188,7 +188,7 @@ export function PanoramicRendererWindow({
 					type="button"
 					onClick={onClose}
 					aria-label="Закрыть окно панорамы"
-					className="text-neutral-400 hover:text-white px-2 text-base font-bold transition-colors"
+					className="text-neutral-400 hover:text-white min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 rounded-lg text-lg font-bold transition-colors"
 				>
 					&times;
 				</button>

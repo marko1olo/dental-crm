@@ -383,7 +383,7 @@ export function PatientReclamationsWidget({
 	return (
 		<div
 			data-testid="patient-reclamations-widget"
-			className="panel-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl mt-4 p-0 overflow-hidden"
+			className="panel-card bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl mt-4 p-0 overflow-hidden"
 		>
 			<div className="panel-heading flex justify-between items-center p-4 bg-rose-50 dark:bg-rose-950/40 border-b border-rose-200 dark:border-rose-900 m-0">
 				<div className="flex items-center gap-2.5">
@@ -406,7 +406,7 @@ export function PatientReclamationsWidget({
 				<button
 					type="button"
 					onClick={() => setIsAdding(!isAdding)}
-					className={`border-0 rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-all ${
+					className={`border-0 rounded-xl px-4 py-2 min-h-[44px] text-xs font-semibold cursor-pointer inline-flex items-center justify-center gap-1.5 transition-all ${
 						isAdding
 							? "bg-rose-200 text-rose-900 dark:bg-rose-900 dark:text-rose-100"
 							: "bg-rose-600 text-white shadow-sm hover:bg-rose-700"
@@ -416,7 +416,7 @@ export function PatientReclamationsWidget({
 				</button>
 			</div>
 
-			<div className="p-5 bg-white dark:bg-slate-900">
+			<div className="p-5 bg-[var(--paper)]">
 				{draftDroppedNotice}
 				{/*
 					Форма открыта, а список не прочитан — это состояние тоже надо

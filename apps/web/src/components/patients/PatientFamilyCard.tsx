@@ -415,23 +415,23 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 	return (
 		<div
 			data-testid="patient-family-card"
-			className="panel mb-5 p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
+			className="panel mb-5 p-4 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]"
 		>
 			<h3 className="flex items-center gap-2 mb-4 p-0 border-none">
-				<Users size={16} className="text-sky-500" />
-				<span className="text-sm font-semibold text-slate-900 dark:text-white">
+				<Users size={16} className="text-[var(--teal)]" />
+				<span className="text-sm font-semibold text-[var(--ink)]">
 					{familyData ? familyData.name || "Семья пациента" : "Семейный счет"}
 				</span>
 			</h3>
 
 			{familyData ? (
 				<>
-					<div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/80 p-3 rounded-lg border border-slate-200 dark:border-slate-700 mb-4">
-						<span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+					<div className="flex justify-between items-center bg-[var(--paper-soft)] p-3 rounded-lg border border-[var(--line)] mb-4">
+						<span className="text-xs font-medium text-[var(--muted)]">
 							Баланс семьи:
 						</span>
 						{familyBalanceKnown ? (
-							<span className="text-base font-bold text-sky-600 dark:text-sky-400">
+							<span className="text-base font-bold text-[var(--teal)]">
 								{money(Number(familyBalanceNumber))}
 							</span>
 						) : (
@@ -445,41 +445,36 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 						)}
 					</div>
 					<div className="flex flex-col gap-2">
-						<span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+						<span className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">
 							Участники:
 						</span>
 						{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 						{(familyData?.members ?? []).map((m: any) => (
 							<div
 								key={m.id}
-								className="p-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg flex justify-between items-center"
+								className="p-2.5 bg-[var(--paper-soft)] border border-[var(--line)] rounded-lg flex justify-between items-center"
 							>
 								<span
-									className={`text-xs ${m.id === patientId ? "font-semibold text-slate-900 dark:text-white" : "font-medium text-slate-600 dark:text-slate-400"}`}
+									className={`text-xs ${m.id === patientId ? "font-semibold text-[var(--ink)]" : "font-medium text-[var(--muted)]"}`}
 								>
 									{m.fullName}
 								</span>
 								{m.id === familyData.headPatientId && (
-									<span className="text-[11px] bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 px-1.5 py-0.5 rounded font-semibold">
+									<span className="text-[11px] bg-[var(--teal)]/10 text-[var(--teal)] px-1.5 py-0.5 rounded font-semibold">
 										Глава
 									</span>
 								)}
 							</div>
 						))}
 					</div>
-					{/*
-					 * Отвязка текущего пациента. Без неё ошибочная привязка
-					 * неисправима из UI (updatePatientInDb запрещает «перепрыгнуть»
-					 * в другую семью без null-шага).
-					 */}
 					<button
 						type="button"
-						className="mt-4 w-full flex items-center justify-center gap-1.5 p-2 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-700 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-300 rounded-lg font-semibold cursor-pointer border border-slate-300 dark:border-slate-700 hover:border-rose-300 dark:hover:border-rose-800"
+						className="mt-4 w-full flex items-center justify-center gap-1.5 p-2.5 min-h-[44px] text-xs bg-[var(--paper-soft)] hover:bg-[var(--bad-bg)] text-[var(--ink)] hover:text-[var(--bad-fg)] rounded-xl font-semibold cursor-pointer border border-[var(--line)] hover:border-[var(--bad-border,rgba(239,68,68,0.3))] transition-colors"
 						onClick={handleUnlinkFamily}
 						disabled={loading}
 						data-testid="patient-family-unlink"
 					>
-						<Unlink size={14} />
+						<Unlink size={16} />
 						{loading ? "Отвязка..." : "Отвязать от семьи"}
 					</button>
 				</>
@@ -610,7 +605,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 						<div className="flex gap-2">
 							<button
 								type="button"
-								className="flex-1 flex items-center justify-center gap-1.5 p-2 text-xs bg-sky-600 hover:bg-sky-700 text-white rounded-lg font-semibold cursor-pointer border-0"
+								className="flex-1 flex items-center justify-center gap-2 p-2.5 min-h-[44px] text-xs bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-[var(--on-teal)] rounded-xl font-semibold cursor-pointer border-0 transition-colors"
 								onClick={() => {
 									const namePart =
 										typeof patientName === "string"
@@ -620,14 +615,14 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 									setIsCreating(true);
 								}}
 							>
-								<UserPlus size={14} /> Создать семью
+								<UserPlus size={16} /> <span>Создать семью</span>
 							</button>
 							<button
 								type="button"
-								className="flex-1 flex items-center justify-center gap-1.5 p-2 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-lg font-semibold cursor-pointer border border-slate-300 dark:border-slate-700"
+								className="flex-1 flex items-center justify-center gap-2 p-2.5 min-h-[44px] text-xs bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] rounded-xl font-semibold cursor-pointer border border-[var(--line)] transition-colors"
 								onClick={() => setIsLinking(true)}
 							>
-								<LinkIcon size={14} /> Привязать
+								<LinkIcon size={16} /> <span>Привязать</span>
 							</button>
 						</div>
 					)}

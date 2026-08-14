@@ -101,26 +101,212 @@ export const ClinicalStore = {
 };
 
 /**
- * Calculates the shortest distance between a point and a line segment
+ * Calculates the shortest 3D distance between two finite line segments:
+ * Segment 1: [p1, p2] (Implant cylinder axis)
+ * Segment 2: [q1, q2] (Nerve canal spline segment)
  */
-function distToSegmentSquared(p: Point3D, v: Point3D, w: Point3D): number {
-	const l2 = (v.x - w.x) ** 2 + (v.y - w.y) ** 2 + (v.z - w.z) ** 2;
-	if (l2 === 0) return (p.x - v.x) ** 2 + (p.y - v.y) ** 2 + (p.z - v.z) ** 2;
+export function distanceSegmentToSegment3D(
+	p1: Point3D,
+	p2: Point3D,
+	q1: Point3D,
+	q2: Point3D,
+): { distance: number; pointOnS1: Point3D; pointOnS2: Point3D } {
+	const ux = p2.x - p1.x;
+	const uy = p2.y - p1.y;
+	const uz = p2.z - p1.z;
 
-	let t =
-		((p.x - v.x) * (w.x - v.x) +
-			(p.y - v.y) * (w.y - v.y) +
-			(p.z - v.z) * (w.z - v.z)) /
-		l2;
-	t = Math.max(0, Math.min(1, t));
+	const vx = q2.x - q1.x;
+	const vy = q2.y - q1.y;
+	const vz = q2.z - q1.z;
 
-	const proj = {
-		x: v.x + t * (w.x - v.x),
-		y: v.y + t * (w.y - v.y),
-		z: v.z + t * (w.z - v.z),
+	const wx = p1.x - q1.x;
+	const wy = p1.y - q1.y;
+	const wz = p1.z - q1.z;
+
+	const a = ux * ux + uy * uy + uz * uz; // |u|^2
+	const b = ux * vx + uy * vy + uz * vz; // u . v
+	const c = vx * vx + vy * vy + vz * vz; // |v|^2
+	const d = ux * wx + uy * wy + uz * wz; // u . w0
+	const e = vx * wx + vy * wy + vz * wz; // v . w0
+
+	const EPSILON = 1e-7;
+
+	let sc = 0.0;
+	let tc = 0.0;
+
+	if (a < EPSILON && c < EPSILON) {
+		// Both are single points
+		sc = 0.0;
+		tc = 0.0;
+	} else if (a < EPSILON) {
+		// First segment is a point
+		sc = 0.0;
+		tc = Math.max(0.0, Math.min(1.0, e / c));
+	} else if (c < EPSILON) {
+		// Second segment is a point
+		tc = 0.0;
+		sc = Math.max(0.0, Math.min(1.0, -d / a));
+	} else {
+		const det = a * c - b * b;
+		let sN: number;
+		let sD = det;
+		let tN: number;
+		let tD = det;
+
+		if (det < EPSILON) {
+			// Parallel segments
+			sN = 0.0;
+			sD = 1.0;
+			tN = e;
+			tD = c;
+		} else {
+			// Skew segments
+			sN = b * e - c * d;
+			tN = a * e - b * d;
+
+			if (sN < 0.0) {
+				sN = 0.0;
+				tN = e;
+				tD = c;
+			} else if (sN > sD) {
+				sN = sD;
+				tN = e + b;
+				tD = c;
+			}
+		}
+
+		if (tN < 0.0) {
+			tN = 0.0;
+			if (-d < 0.0) {
+				sN = 0.0;
+			} else if (-d > a) {
+				sN = sD;
+			} else {
+				sN = -d;
+				sD = a;
+			}
+		} else if (tN > tD) {
+			tN = tD;
+			if (-d + b < 0.0) {
+				sN = 0.0;
+			} else if (-d + b > a) {
+				sN = sD;
+			} else {
+				sN = -d + b;
+				sD = a;
+			}
+		}
+
+		sc = Math.abs(sN) < EPSILON ? 0.0 : sN / (sD || 1.0);
+		tc = Math.abs(tN) < EPSILON ? 0.0 : tN / (tD || 1.0);
+	}
+
+	const pointOnS1: Point3D = {
+		x: p1.x + sc * ux,
+		y: p1.y + sc * uy,
+		z: p1.z + sc * uz,
 	};
 
-	return (p.x - proj.x) ** 2 + (p.y - proj.y) ** 2 + (p.z - proj.z) ** 2;
+	const pointOnS2: Point3D = {
+		x: q1.x + tc * vx,
+		y: q1.y + tc * vy,
+		z: q1.z + tc * vz,
+	};
+
+	const dx = pointOnS1.x - pointOnS2.x;
+	const dy = pointOnS1.y - pointOnS2.y;
+	const dz = pointOnS1.z - pointOnS2.z;
+	const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+	return { distance, pointOnS1, pointOnS2 };
+}
+
+export interface ImplantNerveClearanceResult {
+	minDistanceMm: number; // Axis-to-axis distance in mm
+	clearanceMm: number; // Surface-to-surface clearance in mm
+	status: "COLLISION" | "DANGER" | "CAUTION" | "SAFE";
+	closestImplantPoint: Point3D;
+	closestNervePoint: Point3D;
+	nerveId: string;
+}
+
+/**
+ * Calculates exact 3D clearance between an implant cylinder and all registered nerve canals.
+ */
+export function calculateImplantClearance(
+	implant: VirtualImplant,
+): ImplantNerveClearanceResult | null {
+	if (ClinicalStore.nerves.length === 0) return null;
+
+	const tip = implant.position;
+	const neck: Point3D = {
+		x: tip.x + implant.direction.x * implant.length,
+		y: tip.y + implant.direction.y * implant.length,
+		z: tip.z + implant.direction.z * implant.length,
+	};
+
+	const implantRadius = implant.diameter / 2;
+	let minAxisDistance = Infinity;
+	let bestClearance = Infinity;
+	let bestPointS1: Point3D = tip;
+	let bestPointS2: Point3D = tip;
+	let targetNerveId = "";
+
+	for (const nerve of ClinicalStore.nerves) {
+		const nerveRadius = (nerve.diameter || 2.0) / 2;
+		if (nerve.points.length === 0) continue;
+
+		if (nerve.points.length === 1) {
+			const pt = nerve.points[0];
+			if (!pt) continue;
+			const res = distanceSegmentToSegment3D(tip, neck, pt, pt);
+			const clearance = res.distance - implantRadius - nerveRadius;
+			if (clearance < bestClearance) {
+				bestClearance = clearance;
+				minAxisDistance = res.distance;
+				bestPointS1 = res.pointOnS1;
+				bestPointS2 = res.pointOnS2;
+				targetNerveId = nerve.id;
+			}
+			continue;
+		}
+
+		for (let i = 0; i < nerve.points.length - 1; i++) {
+			const q1 = nerve.points[i];
+			const q2 = nerve.points[i + 1];
+			if (!q1 || !q2) continue;
+			const res = distanceSegmentToSegment3D(tip, neck, q1, q2);
+			const clearance = res.distance - implantRadius - nerveRadius;
+
+			if (clearance < bestClearance) {
+				bestClearance = clearance;
+				minAxisDistance = res.distance;
+				bestPointS1 = res.pointOnS1;
+				bestPointS2 = res.pointOnS2;
+				targetNerveId = nerve.id;
+			}
+		}
+	}
+
+	if (!Number.isFinite(bestClearance)) return null;
+
+	let status: ImplantNerveClearanceResult["status"] = "SAFE";
+	if (bestClearance <= 0) {
+		status = "COLLISION";
+	} else if (bestClearance < 1.5) {
+		status = "DANGER";
+	} else if (bestClearance < 2.0) {
+		status = "CAUTION";
+	}
+
+	return {
+		minDistanceMm: minAxisDistance,
+		clearanceMm: bestClearance,
+		status,
+		closestImplantPoint: bestPointS1,
+		closestNervePoint: bestPointS2,
+		nerveId: targetNerveId,
+	};
 }
 
 /**
@@ -133,29 +319,7 @@ export function checkImplantCollision(
 	implant: VirtualImplant,
 	thresholdDistance: number = 2.0,
 ): boolean {
-	// Implant is a line segment from `position` to `position + direction * length`
-	const tip = implant.position;
-	const neck = {
-		x: tip.x + implant.direction.x * implant.length,
-		y: tip.y + implant.direction.y * implant.length,
-		z: tip.z + implant.direction.z * implant.length,
-	};
-
-	const implantRadius = implant.diameter / 2;
-
-	for (const nerve of ClinicalStore.nerves) {
-		const nerveRadius = nerve.diameter / 2;
-		const totalSafeDist = thresholdDistance + implantRadius + nerveRadius;
-		const totalSafeDistSq = totalSafeDist * totalSafeDist;
-
-		// Iterate over nerve points and check distance to the implant axis
-		for (const pt of nerve.points) {
-			const distSq = distToSegmentSquared(pt, tip, neck);
-			if (distSq < totalSafeDistSq) {
-				return true;
-			}
-		}
-	}
-
-	return false;
+	const res = calculateImplantClearance(implant);
+	if (!res) return false;
+	return res.clearanceMm < thresholdDistance;
 }

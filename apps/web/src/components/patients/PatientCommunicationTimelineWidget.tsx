@@ -224,17 +224,17 @@ export const PatientCommunicationTimelineWidget: React.FC<{
 	return (
 		<div
 			data-testid="patient-communication-timeline-widget"
-			className="p-4 rounded-xl border my-4 shadow-sm bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
+			className="p-4 rounded-xl border my-4 shadow-sm bg-[var(--paper)] border-[var(--line)] text-[var(--ink)]"
 		>
-			<div className="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
+			<div className="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b border-[var(--line)]">
 				<div className="flex items-center space-x-2">
-					<MessageSquare className="w-5 h-5 text-sky-500" aria-hidden="true" />
-					<h3 className="font-semibold text-sm">Звонки и сообщения</h3>
+					<MessageSquare className="w-5 h-5 text-[var(--teal)]" aria-hidden="true" />
+					<h3 className="font-semibold text-sm text-[var(--ink)]">Звонки и сообщения</h3>
 				</div>
 				{/* Счётчик показывается только вместе с периодом: «12 обращений» без
 				    срока — число, из которого нельзя сделать ни одного вывода. */}
 				{!loading && !error && total > 0 && periodStart && periodEnd ? (
-					<span className="text-xs text-slate-500 dark:text-slate-400">
+					<span className="text-xs text-[var(--muted)]">
 						{countLabel(total, "обращение", "обращения", "обращений")} с{" "}
 						{periodStart} по {periodEnd}
 					</span>

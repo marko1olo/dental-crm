@@ -514,12 +514,12 @@ export function WaitlistDrawer(props: Props) {
 										key={p}
 										type="button"
 										onClick={() => setPriorityLevel(p)}
-										className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all ${
+										className={`flex-1 min-h-[44px] py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${
 											priorityLevel === p
 												? p === "high"
-													? "bg-red-500/20 border-red-500 text-red-400"
+													? "bg-[var(--bad-bg)] border-[var(--bad-fg)] text-[var(--bad-fg)]"
 													: p === "medium"
-														? "bg-amber-500/20 border-amber-500 text-amber-400"
+														? "bg-[var(--warn-bg)] border-[var(--warn-fg)] text-[var(--warn-fg)]"
 														: "bg-[var(--paper-soft)] border-[var(--line-strong)] text-[var(--ink)]"
 												: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
 										}`}
@@ -637,7 +637,7 @@ export function WaitlistDrawer(props: Props) {
 												disabled={loadingId === item.id}
 												aria-busy={loadingId === item.id}
 												onClick={() => handleBook(item)}
-												className="flex-1 py-1.5 px-3 bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] text-[var(--teal-dark)] font-semibold rounded-lg text-xs transition-colors border border-[var(--teal-ring)] disabled:opacity-50 disabled:cursor-not-allowed"
+												className="flex-1 min-h-[44px] py-2 px-3 bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] text-[var(--teal-dark)] font-semibold rounded-xl text-xs transition-colors border border-[var(--teal-ring)] disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center"
 											>
 												Записать на прием
 											</button>
