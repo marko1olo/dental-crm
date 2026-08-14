@@ -566,7 +566,14 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 				</p>
 			))}
 
-			<div className="patients-main-grid mt-4">
+			<div
+				className="patients-main-grid mt-4"
+				style={{
+					display: "grid",
+					gridTemplateColumns: "minmax(260px, 320px) 1fr",
+					gap: "16px",
+				}}
+			>
 				{/* Left Column: Patient List */}
 				<div className="patient-list">
 					{(displayPatients ?? []).map((patient) => {

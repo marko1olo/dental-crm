@@ -88,7 +88,8 @@ export function ScheduleFilterStrip({
 						aria-label="Показать предыдущий день"
 						title="День назад"
 						style={{
-							minHeight: "36px",
+							height: "32px",
+							minHeight: "32px",
 							padding: "0 10px",
 							lineHeight: "1",
 							display: "inline-flex",
@@ -105,7 +106,8 @@ export function ScheduleFilterStrip({
 						value={scheduleDateFilter}
 						onChange={(event) => setScheduleDateFilter(event.target.value)}
 						style={{
-							minHeight: "36px",
+							height: "32px",
+							minHeight: "32px",
 							lineHeight: "1",
 							boxSizing: "border-box",
 							border: "1px solid var(--line)",
@@ -128,7 +130,8 @@ export function ScheduleFilterStrip({
 						aria-label="Показать следующий день"
 						title="День вперёд"
 						style={{
-							minHeight: "36px",
+							height: "32px",
+							minHeight: "32px",
 							padding: "0 10px",
 							lineHeight: "1",
 							display: "inline-flex",
