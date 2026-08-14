@@ -370,7 +370,15 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const effectiveSecret = secret || "dev-sberbank-secret";
+		const effectiveSecret =
+			secret || (namedDevelopmentModeActive() ? "dev-sberbank-secret" : "");
+		if (!effectiveSecret) {
+			return reply.status(503).send({
+				error: "WebhookSecretNotConfigured",
+				message:
+					"Приём уведомлений от банка временно недоступен: клиника не подключила защищённую интеграцию. Обратитесь к администратору клиники.",
+			});
+		}
 		const isValidSignature = verifySberbankChecksum(
 			payload,
 			effectiveSecret,

@@ -346,6 +346,23 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 		}));
 
 		const result = await db.transaction(async (tx) => {
+			// 1. Блокировка пациента (Level 3 в иерархии блокировок)
+			const [lockedPatient] = await tx
+				.select()
+				.from(patients)
+				.where(
+					and(
+						eq(patients.id, input.patientId),
+						eq(patients.organizationId, orgId),
+					),
+				)
+				.for("update")
+				.limit(1);
+
+			if (!lockedPatient) {
+				throw new Error("Пациент не найден в этой клинике.");
+			}
+
 			// 2. Блокировка и валидация счёта (если указан)
 			if (input.invoiceId) {
 				const [lockedInvoice] = await tx
@@ -366,7 +383,7 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 			}
 
 			const isReturn = input.operationType === "income_return";
-			const [payment] = await tx
+			let [payment] = await tx
 				.insert(payments)
 				.values({
 					organizationId: orgId,
@@ -417,9 +434,32 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 						? `Возврат прихода 54-ФЗ. Чек ${fiscalReceiptNumber}`
 						: `Фискализация 54-ФЗ. Чек ${fiscalReceiptNumber}`,
 				})
+				.onConflictDoNothing({
+					target: [payments.organizationId, payments.clientMutationId],
+				})
 				.returning();
 
+			// Если из-за параллельного клика запись уже создана — извлекаем существующую
 			if (!payment) {
+				const [existing] = await tx
+					.select()
+					.from(payments)
+					.where(
+						and(
+							eq(payments.organizationId, orgId),
+							eq(payments.clientMutationId, effectiveMutationId),
+						),
+					)
+					.limit(1);
+
+				if (existing) {
+					return {
+						payment: existing,
+						fiscalReceiptNumber: existing.fiscalReceiptNumber,
+						isExisting: true,
+					};
+				}
+
 				throw new Error(
 					"Не удалось зарегистрировать фискальный платёж в базе данных.",
 				);
