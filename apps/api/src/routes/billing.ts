@@ -52,10 +52,10 @@ import {
  */
 import { resolvePeriodBoundary } from "./reports.js";
 
-function documentCanReceivePayment(
-	documentKind: keyof typeof documentKindMetadata,
-): boolean {
-	const metadata = documentKindMetadata[documentKind];
+function documentCanReceivePayment(documentKind: string): boolean {
+	if (!(documentKind in documentKindMetadata)) return false;
+	const metadata =
+		documentKindMetadata[documentKind as keyof typeof documentKindMetadata];
 	return (
 		metadata.group === "payment" &&
 		documentKind !== "payment_refund_correction_request"
@@ -671,8 +671,7 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 					"Заявление на возврат или коррекцию не принимает новую оплату. Оформите документ коррекции без повторной записи оплаты.",
 				);
 			}
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			if (!documentCanReceivePayment(document.kind as any)) {
+			if (!documentCanReceivePayment(document.kind)) {
 				return sendBillingPaymentScopeError(
 					reply,
 					409,
