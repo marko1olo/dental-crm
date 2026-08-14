@@ -140,7 +140,14 @@ export function calculateCurveFrames(curve: Point3D[]): CurveFrame[] {
 
 		// Cross-section normal is perpendicular to the tangent curve and the Up vector.
 		// This gives us the line pointing inside/outside the dental arch.
-		const normal = normalize(cross(up, tangent));
+		let normVec = cross(up, tangent);
+		const normLen = Math.sqrt(
+			normVec.x * normVec.x + normVec.y * normVec.y + normVec.z * normVec.z,
+		);
+		if (normLen < 1e-4) {
+			normVec = cross({ x: 0, y: 1, z: 0 }, tangent);
+		}
+		const normal = normalize(normVec);
 
 		frames.push({ point: p, tangent, normal, up });
 	}

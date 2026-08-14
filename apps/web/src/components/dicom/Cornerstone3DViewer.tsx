@@ -1404,7 +1404,7 @@ export function Cornerstone3DViewer({
 					<section
 						ref={axialRef}
 						aria-label="Просмотр Аксиальный"
-						style={{ width: "100%", height: "100%" }}
+						style={{ width: "100%", height: "100%", touchAction: "none" }}
 						onContextMenu={(e) => e.preventDefault()}
 					/>
 				</div>
@@ -1430,7 +1430,7 @@ export function Cornerstone3DViewer({
 					<section
 						ref={sagittalRef}
 						aria-label="Просмотр Сагиттальный"
-						style={{ width: "100%", height: "100%" }}
+						style={{ width: "100%", height: "100%", touchAction: "none" }}
 						onContextMenu={(e) => e.preventDefault()}
 					/>
 				</div>
@@ -1456,7 +1456,7 @@ export function Cornerstone3DViewer({
 					<section
 						ref={coronalRef}
 						aria-label="Просмотр Корональный"
-						style={{ width: "100%", height: "100%" }}
+						style={{ width: "100%", height: "100%", touchAction: "none" }}
 						onContextMenu={(e) => e.preventDefault()}
 					/>
 				</div>

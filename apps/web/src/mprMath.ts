@@ -160,8 +160,20 @@ export function trilinearInterpolate(
 	x: number,
 	y: number,
 	z: number,
+	outOfBoundsValue: number = 0,
 ): number {
 	const [width, height, depth] = dimensions;
+
+	if (
+		x < 0 ||
+		x > width - 1 ||
+		y < 0 ||
+		y > height - 1 ||
+		z < 0 ||
+		z > depth - 1
+	) {
+		return outOfBoundsValue;
+	}
 
 	const x0 = Math.floor(x);
 	const x1 = Math.min(x0 + 1, width - 1);
@@ -177,14 +189,14 @@ export function trilinearInterpolate(
 	const sliceSize = width * height;
 
 	// 8 corners
-	const c000 = scalarData[x0 + y0 * width + z0 * sliceSize] ?? 0;
-	const c100 = scalarData[x1 + y0 * width + z0 * sliceSize] ?? 0;
-	const c010 = scalarData[x0 + y1 * width + z0 * sliceSize] ?? 0;
-	const c110 = scalarData[x1 + y1 * width + z0 * sliceSize] ?? 0;
-	const c001 = scalarData[x0 + y0 * width + z1 * sliceSize] ?? 0;
-	const c101 = scalarData[x1 + y0 * width + z1 * sliceSize] ?? 0;
-	const c011 = scalarData[x0 + y1 * width + z1 * sliceSize] ?? 0;
-	const c111 = scalarData[x1 + y1 * width + z1 * sliceSize] ?? 0;
+	const c000 = scalarData[x0 + y0 * width + z0 * sliceSize] ?? outOfBoundsValue;
+	const c100 = scalarData[x1 + y0 * width + z0 * sliceSize] ?? outOfBoundsValue;
+	const c010 = scalarData[x0 + y1 * width + z0 * sliceSize] ?? outOfBoundsValue;
+	const c110 = scalarData[x1 + y1 * width + z0 * sliceSize] ?? outOfBoundsValue;
+	const c001 = scalarData[x0 + y0 * width + z1 * sliceSize] ?? outOfBoundsValue;
+	const c101 = scalarData[x1 + y0 * width + z1 * sliceSize] ?? outOfBoundsValue;
+	const c011 = scalarData[x0 + y1 * width + z1 * sliceSize] ?? outOfBoundsValue;
+	const c111 = scalarData[x1 + y1 * width + z1 * sliceSize] ?? outOfBoundsValue;
 
 	// Interpolate along X
 	const c00 = c000 * (1 - xd) + c100 * xd;
