@@ -231,7 +231,10 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 		}
 		setIsLoadingLost(true);
 		fetch("/api/analytics/lost-patients-filters")
-			.then((res) => (res.ok ? res.json() : []))
+			.then((res) => {
+				if (!res.ok) throw new Error(`HTTP ${res.status}`);
+				return res.json();
+			})
 			.then((data: Array<{ id: string }>) => {
 				const ids = new Set((data || []).map((item) => item.id));
 				setLostPatientIds(ids);
@@ -650,9 +653,9 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												<span
 													className="patient-risk-label"
 													style={{
-														backgroundColor: "#fee2e2",
-														color: "#991b1b",
-														borderColor: "#fca5a5",
+														backgroundColor: "var(--bad-bg, rgba(239, 68, 68, 0.15))",
+														color: "var(--bad-fg, #ef4444)",
+														borderColor: "var(--bad-border, rgba(239, 68, 68, 0.3))",
 													}}
 												>
 													Черный список / Архив
@@ -679,9 +682,9 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											<span
 												className="patient-risk-label"
 												style={{
-													backgroundColor: "#fee2e2",
-													color: "#991b1b",
-													borderColor: "#fca5a5",
+													backgroundColor: "var(--bad-bg, rgba(239, 68, 68, 0.15))",
+													color: "var(--bad-fg, #ef4444)",
+													borderColor: "var(--bad-border, rgba(239, 68, 68, 0.3))",
 												}}
 											>
 												Черный список / Архив
@@ -850,7 +853,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								onChange={(event: TextFieldChangeEvent) =>
 									updatePatientCoreDraft("email", event.target.value)
 								}
-								placeholder="patient@example.ru"
+								placeholder="ivanov@example.ru"
 							/>
 						</label>
 						<div

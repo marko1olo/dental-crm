@@ -295,14 +295,14 @@ const ToothSVG = ({
 						<g
 							role="tab"
 							tabIndex={0}
-							aria-label={`Поверхность ${isTop ? "V" : "V"} зуба ${number}`}
+							aria-label={`Поверхность V зуба ${number}`}
 							style={{ cursor: "pointer" }}
 							onClick={(e) => {
 								e.stopPropagation();
 								onClick(
 									e as unknown as React.MouseEvent,
 									number,
-									isTop ? "V" : "V",
+									"V",
 								);
 							}}
 							onKeyDown={(e) => {
@@ -312,7 +312,7 @@ const ToothSVG = ({
 									onClick(
 										e as unknown as React.MouseEvent,
 										number,
-										isTop ? "V" : "V",
+										"V",
 									);
 								}
 							}}
@@ -517,7 +517,7 @@ const ToothSVG = ({
 };
 
 export const ToothChart: React.FC<ToothChartProps> = ({
-	teethData,
+	teethData = [],
 	pediatricMode,
 	selectedTeeth = [],
 	onToothClick,
@@ -630,7 +630,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 				>
 					<div className="teeth-row top-row">
 						{topTeeth.map((num) => {
-							const tData = teethData.find((t) => t.toothNumber === num);
+							const tData = (teethData ?? []).find((t) => t.toothNumber === num);
 							return (
 								<ToothSVG
 									key={num}
@@ -653,7 +653,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 
 					<div className="teeth-row bottom-row">
 						{bottomTeeth.map((num) => {
-							const tData = teethData.find((t) => t.toothNumber === num);
+							const tData = (teethData ?? []).find((t) => t.toothNumber === num);
 							return (
 								<ToothSVG
 									key={num}

@@ -91,7 +91,12 @@
 		min-height: 44px;
 	}
 
-	.appointment-edit-button {
+	.appointment-edit-button,
+	.appointment-repeat-button,
+	.appointment-buffer-button,
+	.history-close-btn,
+	.btn-sign,
+	.btn-save {
 		min-height: 44px;
 	}
 

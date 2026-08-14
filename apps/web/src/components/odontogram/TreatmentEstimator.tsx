@@ -156,7 +156,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 		status: number | null;
 	} | null>(null);
 	/** Счётчик кнопки «Повторить»: меняется — оба запроса идут заново. */
-	const [_reloadToken, setReloadToken] = useState(0);
+	const [reloadToken, setReloadToken] = useState(0);
 	/**
 	 * Что врач снял корзиной. Без этого списка автоподбор возвращал снятую
 	 * строку в смету при следующей же отметке любого зуба: подбор идёт от зубной
@@ -243,7 +243,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 		return () => {
 			active = false;
 		};
-	}, [insuranceContractId]);
+	}, [insuranceContractId, reloadToken]);
 
 	/*
 	 * Договор ДМС читается в четыре проверенных процента.
@@ -339,7 +339,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 		return () => {
 			active = false;
 		};
-	}, [patientId]);
+	}, [patientId, reloadToken]);
 
 	/*
 	 * Автоподбор услуг по зубной формуле.

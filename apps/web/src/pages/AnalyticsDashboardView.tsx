@@ -384,18 +384,18 @@ export function AnalyticsDashboardView() {
 													</defs>
 													<CartesianGrid
 														strokeDasharray="3 3"
-														stroke="#27272a"
+														stroke="var(--line, #e4e4e7)"
 														vertical={false}
 													/>
 													<XAxis
 														dataKey="cohort"
-														stroke="#a1a1aa"
+														stroke="var(--muted, #a1a1aa)"
 														fontSize={12}
 														tickLine={false}
 														axisLine={false}
 													/>
 													<YAxis
-														stroke="#a1a1aa"
+														stroke="var(--muted, #a1a1aa)"
 														fontSize={12}
 														tickLine={false}
 														axisLine={false}
@@ -487,12 +487,12 @@ export function AnalyticsDashboardView() {
 												>
 													<CartesianGrid
 														strokeDasharray="3 3"
-														stroke="#27272a"
+														stroke="var(--line, #e4e4e7)"
 														horizontal={false}
 													/>
 													<XAxis
 														type="number"
-														stroke="#a1a1aa"
+														stroke="var(--muted, #a1a1aa)"
 														fontSize={12}
 														tickLine={false}
 														axisLine={false}
@@ -500,7 +500,7 @@ export function AnalyticsDashboardView() {
 													<YAxis
 														dataKey="name"
 														type="category"
-														stroke="#a1a1aa"
+														stroke="var(--muted, #a1a1aa)"
 														fontSize={12}
 														tickLine={false}
 														axisLine={false}
@@ -572,7 +572,7 @@ export function AnalyticsDashboardView() {
 															fill: "#fff",
 															fontSize: 11,
 														}}
-														background={{ fill: "#27272a" }}
+														background={{ fill: "var(--paper-soft, #f4f4f5)" }}
 														dataKey="value"
 														cornerRadius={8}
 													/>
@@ -580,7 +580,7 @@ export function AnalyticsDashboardView() {
 														iconSize={10}
 														layout="vertical"
 														verticalAlign="middle"
-														wrapperStyle={{ right: 0, color: "#a1a1aa" }}
+														wrapperStyle={{ right: 0, color: "var(--muted, #a1a1aa)" }}
 													/>
 													<RechartsTooltip
 														contentStyle={{

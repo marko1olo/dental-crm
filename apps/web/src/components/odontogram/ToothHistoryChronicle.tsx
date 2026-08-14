@@ -54,7 +54,7 @@ export function ToothHistoryChronicle({
 	const [events, setEvents] = useState<ToothHistoryEvent[]>([]);
 	const [load, setLoad] = useState<HistoryLoadState>({ phase: "loading" });
 	/** Счётчик кнопки «Повторить»: меняется — запрос идёт заново. */
-	const [_reloadToken, setReloadToken] = useState(0);
+	const [reloadToken, setReloadToken] = useState(0);
 
 	useEffect(() => {
 		let active = true;
@@ -116,7 +116,7 @@ export function ToothHistoryChronicle({
 		return () => {
 			active = false;
 		};
-	}, [patientId, toothNumber]);
+	}, [patientId, toothNumber, reloadToken]);
 
 	return (
 		<div className="history-panel">

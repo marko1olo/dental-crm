@@ -7,19 +7,13 @@ import { showToast } from "../GlobalToast";
 export function UrgentScheduleRequestsWidget() {
 	const [requests, setRequests] = useState<UrgentScheduleRequest[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+	const [reloadToken, setReloadToken] = useState(0);
 
 	useEffect(() => {
-		/*
-		 * ОТВЕТ ПРОВЕРЯЕТСЯ ДО РАЗБОРА. Промис `fetch` отклоняется только на
-		 * сетевом отказе: 403 и 500 доходят сюда как обычный успех. Прежде тело
-		 * шло сразу в `res.json()` и оттуда в `setRequests`, поэтому при отказе в
-		 * состояние попадал объект `{ error: ... }` — а ниже по файлу стоит
-		 * `requests.map` (:66), и отрисовка падала на объекте. Врач видел белый
-		 * экран вместо списка срочных обращений.
-		 *
-		 * `Array.isArray` обязателен отдельно от `res.ok`: маршрут может ответить
-		 * 200 с телом другой формы, и тогда `.map` упадёт точно так же.
-		 */
+		let active = true;
+		setLoading(true);
+		setError(null);
 		fetch("/api/schedule/urgent-schedule-requests", {
 			credentials: "include",
 		})
@@ -30,6 +24,7 @@ export function UrgentScheduleRequestsWidget() {
 				return res.json();
 			})
 			.then((data: unknown) => {
+				if (!active) return;
 				if (!Array.isArray(data)) {
 					throw new Error("Ответ сервера не является списком обращений");
 				}
@@ -37,10 +32,16 @@ export function UrgentScheduleRequestsWidget() {
 				setLoading(false);
 			})
 			.catch((err) => {
+				if (!active) return;
 				logger.error("Failed to fetch urgent requests", err);
+				setError("Не удалось загрузить срочные обращения");
 				setLoading(false);
 			});
-	}, []);
+
+		return () => {
+			active = false;
+		};
+	}, [reloadToken]);
 
 	const handleResolve = async (id: string) => {
 		try {
@@ -53,6 +54,11 @@ export function UrgentScheduleRequestsWidget() {
 			);
 			if (res.ok) {
 				setRequests((prev) => prev.filter((r) => r.id !== id));
+			} else {
+				showToast(
+					actionFailureToast("Ошибка отметки обращения", res.status),
+					"error",
+				);
 			}
 		} catch (err) {
 			showToast(
@@ -70,6 +76,21 @@ export function UrgentScheduleRequestsWidget() {
 		return (
 			<div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-xs text-slate-500 dark:text-slate-400">
 				Загрузка срочных обращений...
+			</div>
+		);
+	}
+
+	if (error) {
+		return (
+			<div className="p-3 rounded-xl border border-rose-200 dark:border-rose-800 bg-rose-50/50 dark:bg-rose-950/30 text-xs text-rose-700 dark:text-rose-300 flex items-center justify-between gap-2">
+				<span>{error}</span>
+				<button
+					type="button"
+					onClick={() => setReloadToken((t) => t + 1)}
+					className="px-2.5 py-1 rounded bg-rose-100 dark:bg-rose-900 text-rose-800 dark:text-rose-200 font-medium text-xs hover:opacity-90"
+				>
+					Повторить
+				</button>
 			</div>
 		);
 	}

@@ -158,12 +158,12 @@ function _formatBrowserImagingScanElapsed(
 		typeof elapsedMs === "number" && Number.isFinite(elapsedMs)
 			? Math.max(0, Math.round(elapsedMs))
 			: 0;
-	if (safeMs < 1000) return `${safeMs} ms`;
+	if (safeMs < 1000) return `${safeMs} мс`;
 	const totalSeconds = Math.floor(safeMs / 1000);
 	const minutes = Math.floor(totalSeconds / 60);
 	const seconds = totalSeconds % 60;
-	if (minutes <= 0) return `${seconds} s`;
-	return `${minutes} m ${String(seconds).padStart(2, "0")} s`;
+	if (minutes <= 0) return `${seconds} с`;
+	return `${minutes} мин ${String(seconds).padStart(2, "0")} с`;
 }
 type BrowserContinuityCheck = { label: string; value: string; detail: string };
 type PersistenceBackupCheck = {
@@ -1633,7 +1633,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 		...settingsStore,
 		...derivations,
 		activeStaffUser,
-		adminSecretReady: false,
+		adminSecretReady,
 		adminSecretScopeWarning,
 		legalMissingFields,
 		legalReadinessPercent,

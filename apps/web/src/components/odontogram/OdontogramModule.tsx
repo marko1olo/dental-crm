@@ -126,8 +126,8 @@ const SurfaceSelector = ({
 					role="tab"
 					tabIndex={0}
 					points="0,0 100,0 70,30 30,30"
-					fill={selected.includes("B") ? "#3b82f6" : "#27272a"}
-					stroke="#3f3f46"
+					fill={selected.includes("B") ? "var(--teal, #0d9488)" : "var(--paper-soft, #f8fafc)"}
+					stroke={selected.includes("B") ? "var(--teal-dark, #0f766e)" : "var(--line-strong, #cbd5e1)"}
 					strokeWidth="2"
 					onClick={() => toggle("B")}
 					onKeyDown={(e) => {
@@ -136,12 +136,12 @@ const SurfaceSelector = ({
 							toggle("B");
 						}
 					}}
-					className="hover:fill-blue-400 transition-colors duration-200"
+					className="hover:opacity-90 transition-colors duration-200"
 				/>
 				<text
 					x="50"
 					y="18"
-					fill="white"
+					fill={selected.includes("B") ? "#ffffff" : "var(--ink, #0f172a)"}
 					fontSize="12"
 					fontWeight="bold"
 					textAnchor="middle"
@@ -155,8 +155,8 @@ const SurfaceSelector = ({
 					role="tab"
 					tabIndex={0}
 					points="30,70 70,70 100,100 0,100"
-					fill={selected.includes("L") ? "#3b82f6" : "#27272a"}
-					stroke="#3f3f46"
+					fill={selected.includes("L") ? "var(--teal, #0d9488)" : "var(--paper-soft, #f8fafc)"}
+					stroke={selected.includes("L") ? "var(--teal-dark, #0f766e)" : "var(--line-strong, #cbd5e1)"}
 					strokeWidth="2"
 					onClick={() => toggle("L")}
 					onKeyDown={(e) => {
@@ -165,12 +165,12 @@ const SurfaceSelector = ({
 							toggle("L");
 						}
 					}}
-					className="hover:fill-blue-400 transition-colors duration-200"
+					className="hover:opacity-90 transition-colors duration-200"
 				/>
 				<text
 					x="50"
 					y="90"
-					fill="white"
+					fill={selected.includes("L") ? "#ffffff" : "var(--ink, #0f172a)"}
 					fontSize="12"
 					fontWeight="bold"
 					textAnchor="middle"
@@ -184,8 +184,8 @@ const SurfaceSelector = ({
 					role="tab"
 					tabIndex={0}
 					points="0,0 30,30 30,70 0,100"
-					fill={selected.includes("M") ? "#3b82f6" : "#27272a"}
-					stroke="#3f3f46"
+					fill={selected.includes("M") ? "var(--teal, #0d9488)" : "var(--paper-soft, #f8fafc)"}
+					stroke={selected.includes("M") ? "var(--teal-dark, #0f766e)" : "var(--line-strong, #cbd5e1)"}
 					strokeWidth="2"
 					onClick={() => toggle("M")}
 					onKeyDown={(e) => {
@@ -194,12 +194,12 @@ const SurfaceSelector = ({
 							toggle("M");
 						}
 					}}
-					className="hover:fill-blue-400 transition-colors duration-200"
+					className="hover:opacity-90 transition-colors duration-200"
 				/>
 				<text
 					x="12"
 					y="54"
-					fill="white"
+					fill={selected.includes("M") ? "#ffffff" : "var(--ink, #0f172a)"}
 					fontSize="12"
 					fontWeight="bold"
 					textAnchor="middle"
@@ -213,8 +213,8 @@ const SurfaceSelector = ({
 					role="tab"
 					tabIndex={0}
 					points="100,0 70,30 70,70 100,100"
-					fill={selected.includes("D") ? "#3b82f6" : "#27272a"}
-					stroke="#3f3f46"
+					fill={selected.includes("D") ? "var(--teal, #0d9488)" : "var(--paper-soft, #f8fafc)"}
+					stroke={selected.includes("D") ? "var(--teal-dark, #0f766e)" : "var(--line-strong, #cbd5e1)"}
 					strokeWidth="2"
 					onClick={() => toggle("D")}
 					onKeyDown={(e) => {
@@ -223,12 +223,12 @@ const SurfaceSelector = ({
 							toggle("D");
 						}
 					}}
-					className="hover:fill-blue-400 transition-colors duration-200"
+					className="hover:opacity-90 transition-colors duration-200"
 				/>
 				<text
 					x="88"
 					y="54"
-					fill="white"
+					fill={selected.includes("D") ? "#ffffff" : "var(--ink, #0f172a)"}
 					fontSize="12"
 					fontWeight="bold"
 					textAnchor="middle"
@@ -242,8 +242,8 @@ const SurfaceSelector = ({
 					role="tab"
 					tabIndex={0}
 					points="30,30 70,30 70,70 30,70"
-					fill={selected.includes("O") ? "#3b82f6" : "#27272a"}
-					stroke="#3f3f46"
+					fill={selected.includes("O") ? "var(--teal, #0d9488)" : "var(--paper-soft, #f8fafc)"}
+					stroke={selected.includes("O") ? "var(--teal-dark, #0f766e)" : "var(--line-strong, #cbd5e1)"}
 					strokeWidth="2"
 					onClick={() => toggle("O")}
 					onKeyDown={(e) => {
@@ -252,12 +252,12 @@ const SurfaceSelector = ({
 							toggle("O");
 						}
 					}}
-					className="hover:fill-blue-400 transition-colors duration-200"
+					className="hover:opacity-90 transition-colors duration-200"
 				/>
 				<text
 					x="50"
 					y="54"
-					fill="white"
+					fill={selected.includes("O") ? "#ffffff" : "var(--ink, #0f172a)"}
 					fontSize="12"
 					fontWeight="bold"
 					textAnchor="middle"
@@ -310,7 +310,7 @@ export const OdontogramModule = ({
 		| { phase: "failed"; status: number | null }
 	>({ phase: "loading" });
 	/** Счётчик кнопки «Повторить»: меняется — формула читается заново. */
-	const [_teethReloadToken, setTeethReloadToken] = useState(0);
+	const [teethReloadToken, setTeethReloadToken] = useState(0);
 	/* Актуальная формула для снимка перед сохранением. Брать её внутри
 	   обновления состояния нельзя: обновление может быть вызвано повторно, и
 	   тогда снимок одного сохранения захватит правку другого. */
@@ -775,7 +775,7 @@ export const OdontogramModule = ({
 			window.removeEventListener("keyup", handleKeyUp);
 		};
 		// teethReloadToken — кнопка «Повторить» под сообщением об отказе.
-	}, [patientId, updateToothState]);
+	}, [patientId, updateToothState, teethReloadToken]);
 
 	const handleToothClick = (
 		toothNumber: number,

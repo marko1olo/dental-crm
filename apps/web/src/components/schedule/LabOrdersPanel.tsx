@@ -383,13 +383,13 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 	];
 
 	const statusColors = {
-		draft: "text-slate-400 border-slate-700/50 bg-slate-800/40",
-		sent: "text-blue-400 border-blue-500/30 bg-blue-500/10",
-		in_progress: "text-amber-400 border-amber-500/30 bg-amber-500/10",
-		shipped: "text-purple-400 border-purple-500/30 bg-purple-500/10",
-		received: "text-indigo-400 border-indigo-500/30 bg-indigo-500/10",
-		refitting: "text-rose-400 border-rose-500/30 bg-rose-500/10",
-		completed: "text-teal-400 border-teal-500/30 bg-teal-500/10",
+		draft: "text-slate-700 dark:text-slate-400 border-slate-300 dark:border-slate-700/50 bg-slate-100 dark:bg-slate-800/40",
+		sent: "text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10",
+		in_progress: "text-amber-800 dark:text-amber-400 border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10",
+		shipped: "text-purple-800 dark:text-purple-400 border-purple-300 dark:border-purple-500/30 bg-purple-50 dark:bg-purple-500/10",
+		received: "text-indigo-800 dark:text-indigo-400 border-indigo-300 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10",
+		refitting: "text-rose-800 dark:text-rose-400 border-rose-300 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10",
+		completed: "text-teal-800 dark:text-teal-400 border-teal-300 dark:border-teal-500/30 bg-teal-50 dark:bg-teal-500/10",
 	};
 
 	return (
@@ -566,10 +566,10 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 				{loadError ? (
 					<div
 						role="alert"
-						className="border border-rose-500/40 bg-rose-500/10 rounded-xl p-3 text-[13px] text-rose-200 space-y-2"
+						className="border border-rose-300 dark:border-rose-500/40 bg-rose-50 dark:bg-rose-500/10 rounded-xl p-3 text-[13px] text-rose-900 dark:text-rose-200 space-y-2"
 					>
 						<p className="font-semibold m-0">{loadError}</p>
-						<p className="m-0 text-rose-100/90">
+						<p className="m-0 text-rose-800 dark:text-rose-100/90">
 							Это не значит, что заказов нет: список просто не пришёл. Не
 							заказывайте работу повторно, пока список не откроется, — иначе
 							лаборатория сделает и выставит её дважды. Нажмите «Попробовать
@@ -580,7 +580,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							type="button"
 							onClick={() => void fetchOrders()}
 							disabled={isLoading}
-							className="py-1.5 px-3 bg-rose-500/20 hover:bg-rose-500/30 disabled:opacity-60 text-rose-100 border border-rose-500/40 rounded-lg font-semibold transition-colors"
+							className="min-h-[44px] py-1.5 px-3 bg-rose-200 dark:bg-rose-500/20 hover:bg-rose-300 dark:hover:bg-rose-500/30 disabled:opacity-60 text-rose-950 dark:text-rose-100 border border-rose-400 dark:border-rose-500/40 rounded-lg font-semibold transition-colors"
 						>
 							{isLoading ? "Загружаем…" : "Попробовать снова"}
 						</button>
@@ -608,11 +608,11 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 						{orders.map((order) => (
 							<div
 								key={order.id}
-								className="bg-slate-800/40 border border-slate-700/40 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+								className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm"
 							>
 								<div className="space-y-1">
 									<div className="flex items-center gap-2 flex-wrap">
-										<span className="font-semibold text-slate-200">
+										<span className="font-semibold text-slate-800 dark:text-slate-200">
 											Зуб {order.toothFdi || "весь рот"}
 										</span>
 										<span className="text-slate-400">·</span>
@@ -622,13 +622,13 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 											дописано целиком и согласовано по роду: материал не
 											указан, цвет не указан.
 										*/}
-										<span className="text-slate-300">
+										<span className="text-slate-700 dark:text-slate-300">
 											{order.material
 												? (materialLabels[order.material] ?? order.material)
 												: "материал не указан"}
 										</span>
 										<span className="text-slate-400">·</span>
-										<span className="text-slate-300">
+										<span className="text-slate-700 dark:text-slate-300">
 											Цвет: {order.colorVita || "не указан"}
 										</span>
 										<span

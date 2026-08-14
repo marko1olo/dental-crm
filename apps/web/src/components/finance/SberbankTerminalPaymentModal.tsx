@@ -1,5 +1,6 @@
 import { ExternalLink } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { money } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
@@ -209,10 +210,29 @@ export function SberbankTerminalPaymentModal({
 		onClose();
 	};
 
+	useEffect(() => {
+		if (!isOpen) return;
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				handleClose();
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isOpen, status]);
+
 	if (!isOpen) return null;
 
 	return (
-		<div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
+		<div
+			className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="sber-terminal-modal-title"
+			onClick={(e) => {
+				if (e.target === e.currentTarget) handleClose();
+			}}
+		>
 			<div
 				className="w-full max-w-md p-6 rounded-xl shadow-xl"
 				style={{
@@ -220,11 +240,14 @@ export function SberbankTerminalPaymentModal({
 					color: "var(--ink)",
 				}}
 			>
-				<h2 style={{ marginTop: 0, marginBottom: "16px", fontSize: "20px" }}>
+				<h2
+					id="sber-terminal-modal-title"
+					style={{ marginTop: 0, marginBottom: "16px", fontSize: "20px" }}
+				>
 					Оплата через терминал Сбербанка
 				</h2>
 				<div style={{ fontSize: "16px", marginBottom: "20px" }}>
-					Сумма к оплате: <strong>{amountInRubles} ₽</strong>
+					Сумма к оплате: <strong>{money(amountInRubles)}</strong>
 				</div>
 
 				{status === "initiating" && (
@@ -259,7 +282,7 @@ export function SberbankTerminalPaymentModal({
 						)}
 						<div
 							style={{
-								color: "var(--rust, #c53030)",
+								color: "var(--danger, #ef4444)",
 								fontSize: "13px",
 								marginTop: "6px",
 							}}

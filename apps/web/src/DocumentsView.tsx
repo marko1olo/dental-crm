@@ -7320,7 +7320,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 								{document.kind === "tax_deduction_certificate" &&
 								document.status === "issued" ? (
 									<button
-										className="doc-link font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300"
+										className="doc-link font-medium text-teal-700 dark:text-teal-400 hover:underline"
 										type="button"
 										onClick={() => void downloadTaxDocumentXml(document.id)}
 										aria-describedby={documentLifecycleGuidanceId}
@@ -7362,6 +7362,14 @@ export function DocumentsView(props: DocumentsViewProps) {
 						</article>
 					);
 				})}
+				{(typedActiveDocuments ?? []).length === 0 ? (
+					<EmptyState
+						title="Нет документов"
+						description="Для этого пациента еще не сформировано ни одного документа. Выберите шаблон выше и нажмите «Создать»."
+						icon={<FileText size={24} aria-hidden="true" />}
+						className="my-4 py-6"
+					/>
+				) : null}
 			</div>
 		</div>
 	);

@@ -21,20 +21,19 @@
 	color: var(--ink, #0f172a);
 }
 
-html.dark .analytics-header h2 {
-	background: linear-gradient(to right, #e4e4e7, #a1a1aa);
-	-webkit-background-clip: text;
-	-webkit-text-fill-color: transparent;
+[data-theme="dark"] .analytics-header h2,
+[data-theme="night"] .analytics-header h2 {
+	color: var(--ink);
 }
 
 .glass-widget {
-	background: var(--paper, rgba(9, 9, 11, 0.9));
+	background: var(--paper);
 	backdrop-filter: blur(12px);
 	-webkit-backdrop-filter: blur(12px);
-	border: 1px solid var(--glass-border, rgba(39, 39, 42, 0.5));
+	border: 1px solid var(--line);
 	border-radius: 16px;
 	padding: 24px;
-	box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.1);
+	box-shadow: var(--shadow-1);
 	transition: border-color 0.3s ease;
 }
 
@@ -72,18 +71,18 @@ html.dark .analytics-header h2 {
 .analytics-leaderboard-table td {
 	padding: 12px;
 	text-align: left;
-	border-bottom: 1px solid var(--glass-border, rgba(39, 39, 42, 0.5));
+	border-bottom: 1px solid var(--line);
 }
 
 .analytics-leaderboard-table th {
-	color: var(--muted, #a1a1aa);
+	color: var(--muted);
 	font-weight: 500;
 	font-size: 0.875rem;
 }
 
 .analytics-leaderboard-table td {
 	font-size: 0.95rem;
-	color: var(--ink, #e4e4e7);
+	color: var(--ink);
 }
 
 .analytics-leaderboard-table tr:last-child td {
@@ -91,7 +90,7 @@ html.dark .analytics-header h2 {
 }
 
 .margin-positive {
-	color: #10b981;
+	color: var(--good-fg, #10b981);
 }
 
 .analytics-empty-state {
