@@ -269,14 +269,12 @@ interface AppStore {
 	lastLocalSavedAt: any;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setLastLocalSavedAt: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isOnline: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setIsOnline: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	odontogramUseSurfaces: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setOdontogramUseSurfaces: (val: any) => void;
+	isOnline: boolean;
+	setIsOnline: (val: boolean | ((prev: boolean) => boolean)) => void;
+	odontogramUseSurfaces: boolean;
+	setOdontogramUseSurfaces: (
+		val: boolean | ((prev: boolean) => boolean),
+	) => void;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	speechGatewayStatus: any;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -297,14 +295,14 @@ interface AppStore {
 	speechRecordingRecovery: any;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setSpeechRecordingRecovery: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	pendingSpeechChunkCount: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setPendingSpeechChunkCount: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	speechStatusNote: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setSpeechStatusNote: (val: any) => void;
+	pendingSpeechChunkCount: number;
+	setPendingSpeechChunkCount: (
+		val: number | ((prev: number) => number),
+	) => void;
+	speechStatusNote: string | null;
+	setSpeechStatusNote: (
+		val: string | null | ((prev: string | null) => string | null),
+	) => void;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	browserContinuity: any;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -437,19 +435,23 @@ interface AppStore {
 	isTelegramChatLinksLoadingMore: any;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	setIsTelegramChatLinksLoadingMore: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	error: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setError: (val: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	uiPreferencesSyncError: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setUiPreferencesSyncError: (val: any) => void;
+	error: string | null;
+	setError: (
+		val: string | null | ((prev: string | null) => string | null),
+	) => void;
+	uiPreferencesSyncError: string | null;
+	setUiPreferencesSyncError: (
+		val: string | null | ((prev: string | null) => string | null),
+	) => void;
 }
 
 export const useAppStore = create<AppStore>((set) => ({
 	odontogramUseSurfaces: false,
-	setOdontogramUseSurfaces: (val) => set({ odontogramUseSurfaces: val }),
+	setOdontogramUseSurfaces: (val) =>
+		set((state) => ({
+			odontogramUseSurfaces:
+				typeof val === "function" ? val(state.odontogramUseSurfaces) : val,
+		})),
 	isOmnibarOpen: false,
 	setOmnibarOpen: (val) => set({ isOmnibarOpen: val }),
 	uiPreferencesHydrated: false,
@@ -663,7 +665,10 @@ export const useAppStore = create<AppStore>((set) => ({
 	setLastLocalSavedAt: (val) => set({ lastLocalSavedAt: val }),
 	isOnline: (() =>
 		typeof navigator === "undefined" ? true : navigator.onLine)(),
-	setIsOnline: (val) => set({ isOnline: val }),
+	setIsOnline: (val) =>
+		set((state) => ({
+			isOnline: typeof val === "function" ? val(state.isOnline) : val,
+		})),
 	speechGatewayStatus: null,
 	setSpeechGatewayStatus: (val) => set({ speechGatewayStatus: val }),
 	speechGatewayHealthReport: null,
@@ -677,9 +682,17 @@ export const useAppStore = create<AppStore>((set) => ({
 	speechRecordingRecovery: null,
 	setSpeechRecordingRecovery: (val) => set({ speechRecordingRecovery: val }),
 	pendingSpeechChunkCount: (() => [].length)(),
-	setPendingSpeechChunkCount: (val) => set({ pendingSpeechChunkCount: val }),
+	setPendingSpeechChunkCount: (val) =>
+		set((state) => ({
+			pendingSpeechChunkCount:
+				typeof val === "function" ? val(state.pendingSpeechChunkCount) : val,
+		})),
 	speechStatusNote: null,
-	setSpeechStatusNote: (val) => set({ speechStatusNote: val }),
+	setSpeechStatusNote: (val) =>
+		set((state) => ({
+			speechStatusNote:
+				typeof val === "function" ? val(state.speechStatusNote) : val,
+		})),
 	browserContinuity: null,
 	setBrowserContinuity: (val) => set({ browserContinuity: val }),
 	localBridgeReadiness: null,
@@ -758,7 +771,14 @@ export const useAppStore = create<AppStore>((set) => ({
 	setIsTelegramChatLinksLoadingMore: (val) =>
 		set({ isTelegramChatLinksLoadingMore: val }),
 	error: null,
-	setError: (val) => set({ error: val }),
+	setError: (val) =>
+		set((state) => ({
+			error: typeof val === "function" ? val(state.error) : val,
+		})),
 	uiPreferencesSyncError: null,
-	setUiPreferencesSyncError: (val) => set({ uiPreferencesSyncError: val }),
+	setUiPreferencesSyncError: (val) =>
+		set((state) => ({
+			uiPreferencesSyncError:
+				typeof val === "function" ? val(state.uiPreferencesSyncError) : val,
+		})),
 }));
