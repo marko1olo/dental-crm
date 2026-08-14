@@ -238,7 +238,21 @@
       panel.innerHTML = `<div class="mode-number">${mode.number}</div><h3>${mode.title}</h3><p>${mode.text}</p><div class="mode-signal">${mode.signals.map((signal) => `<span>${signal}</span>`).join("")}</div>`;
       buttons.forEach((button) => button.setAttribute("aria-selected", String(button.dataset.mode === key)));
     }
-    buttons.forEach((button) => button.addEventListener("click", () => showMode(button.dataset.mode)));
+    buttons.forEach((button, index) => {
+      button.addEventListener("click", () => showMode(button.dataset.mode));
+      button.addEventListener("keydown", (event) => {
+        const keyMap = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 };
+        let nextIndex = null;
+        if (event.key in keyMap) nextIndex = (index + keyMap[event.key] + buttons.length) % buttons.length;
+        if (event.key === "Home") nextIndex = 0;
+        if (event.key === "End") nextIndex = buttons.length - 1;
+        if (nextIndex === null) return;
+        event.preventDefault();
+        const nextButton = buttons[nextIndex];
+        nextButton.focus();
+        showMode(nextButton.dataset.mode);
+      });
+    });
     showMode("schedule");
   </script>
 </body>
