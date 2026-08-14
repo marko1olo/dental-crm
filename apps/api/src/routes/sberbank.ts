@@ -240,7 +240,10 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 						.limit(1);
 
 					if (!lockedTx) {
-						return reply.status(404).send({ error: "Transaction not found" });
+						return reply.status(404).send({
+							error: "TransactionNotFound",
+							message: "Транзакция оплаты Сбербанк не найдена.",
+						});
 					}
 
 					if (mappedStatus !== lockedTx.status) {
@@ -255,7 +258,8 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 							);
 
 						if (
-							lockedTx.status === "pending" &&
+							(lockedTx.status === "pending" ||
+								lockedTx.status === "approved") &&
 							mappedStatus === "success"
 						) {
 							const amountRub = Number(

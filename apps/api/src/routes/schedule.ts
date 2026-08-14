@@ -805,7 +805,10 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 		if (!created) {
 			return reply
 				.code(500)
-				.send({ error: "Failed to create schedule clipboard item" });
+				.send({
+					error: "InternalServerError",
+					message: "Не удалось сохранить элемент в буфер обмена расписания.",
+				});
 		}
 
 		return reply.code(201).send({
@@ -970,18 +973,22 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 
 			try {
 				const created = await db.transaction(async (tx) => {
-					const newAppt = await createAppointmentInDb(orgId, {
-						// biome-ignore lint/style/noNonNullAssertion: automated suppression
-						patientId: original.patientId!,
-						doctorUserId,
-						assistantUserId: original.assistantUserId ?? null,
-						chairId,
-						status: "planned",
-						startsAt,
-						endsAt,
-						reason: original.reason ?? undefined,
-						comment: original.comment ?? undefined,
-					});
+					const newAppt = await createAppointmentInDb(
+						orgId,
+						{
+							// biome-ignore lint/style/noNonNullAssertion: automated suppression
+							patientId: original.patientId!,
+							doctorUserId,
+							assistantUserId: original.assistantUserId ?? null,
+							chairId,
+							status: "planned",
+							startsAt,
+							endsAt,
+							reason: original.reason ?? undefined,
+							comment: original.comment ?? undefined,
+						},
+						tx,
+					);
 
 					await tx
 						.update(scheduleClipboardItems)
@@ -1004,19 +1011,18 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 						startsAt: created?.startsAt ?? null,
 					},
 				});
-				// БУЛО: parse() на кінці створення приёму через буфер обміну. Та ж ловушка.
 				const parsed = dashboardSchema.safeParse(dashboard);
 				if (!parsed.success) {
 					request.log.warn(
 						{ appointmentId: created?.id, orgId, errors: parsed.error.errors },
-						"[Schedule/Clipboard] Приём створено, але сводка не пройшла контракт",
+						"[Schedule/Clipboard] Приём создан, но сводка расписания не прошла валидацию контракта",
 					);
 					return reply.code(201).send({
 						success: true,
 						appointmentId: created?.id ?? null,
 						startsAt: created?.startsAt ?? null,
 						message:
-							"Запис створено з буфера обміну. Сводка не оновлена — перезавантажте сторінку.",
+							"Запись создана из буфера обмена. Сводка обновляется — перезагрузите страницу при необходимости.",
 					});
 				}
 				return reply.code(201).send(parsed.data);

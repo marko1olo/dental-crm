@@ -36,7 +36,14 @@ export async function register(app: FastifyInstance) {
 		}
 		const query = parsed.data;
 		const start = new Date(query.startDate);
-		const end = new Date(query.endDate);
+		let end = new Date(query.endDate);
+		if (
+			end.getUTCHours() === 0 &&
+			end.getUTCMinutes() === 0 &&
+			end.getUTCSeconds() === 0
+		) {
+			end = new Date(end.getTime() + 86_399_999);
+		}
 
 		const patient = await getPatientByIdFromDb(organizationId, query.patientId);
 
@@ -81,10 +88,11 @@ export async function register(app: FastifyInstance) {
 
 		for (const row of taxSums) {
 			const kopecks = toKopecks(row.totalAmountRub, "сумма платежа");
-			if (row.taxDeductionCode === "1") {
-				code1Kopecks += kopecks;
-			} else if (row.taxDeductionCode === "2") {
+			if (row.taxDeductionCode === "2") {
 				code2Kopecks += kopecks;
+			} else {
+				// Стандартное лечение (Код 1) по умолчанию при отсутствии явного кода
+				code1Kopecks += kopecks;
 			}
 		}
 

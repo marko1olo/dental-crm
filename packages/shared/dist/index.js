@@ -10575,7 +10575,8 @@ export const fiscalReceiptItemSchema = z.object({
     taxDeductionCode: taxDeductionCategorySchema.default("code_1_standard"),
     medicalServiceCodeMzk: z.string().trim().max(32).optional().nullable(),
 });
-export const createFiscalReceiptPayloadSchema = z.object({
+export const createFiscalReceiptPayloadSchema = z
+    .object({
     invoiceId: z.string().uuid().optional().nullable(),
     patientId: z.string().uuid(),
     operationType: ffd12OperationTypeSchema.default("income"),
@@ -10594,6 +10595,27 @@ export const createFiscalReceiptPayloadSchema = z.object({
         .default("Кассир-администратор"),
     cashierInn: z.string().trim().max(12).optional().nullable(),
     taxDeductionSummaryCode: taxDeductionCategorySchema.default("code_1_standard"),
+})
+    .superRefine((val, ctx) => {
+    const paymentsSum = val.cashKopecks +
+        val.electronicCardKopecks +
+        val.sbpKopecks +
+        val.prepaidKopecks;
+    if (paymentsSum > 0 && paymentsSum !== val.totalKopecks) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Сумма способов оплаты (${paymentsSum} коп.) не совпадает с общей суммой чека (${val.totalKopecks} коп.)`,
+            path: ["totalKopecks"],
+        });
+    }
+    const itemsSum = val.items.reduce((sum, item) => sum + item.amountKopecks, 0);
+    if (itemsSum !== val.totalKopecks) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Сумма позиций чека (${itemsSum} коп.) не совпадает с общей суммой чека (${val.totalKopecks} коп.)`,
+            path: ["items"],
+        });
+    }
 });
 export class SbpQrEngine {
     /**

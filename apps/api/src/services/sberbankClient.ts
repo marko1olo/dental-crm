@@ -55,7 +55,7 @@ export class SberbankClient {
 		const token = process.env.SBERBANK_TERMINAL_TOKEN?.trim();
 
 		if (!user && !token) {
-			throw new Error("Missing SBERBANK_TERMINAL_USER or SBERBANK_TERMINAL_TOKEN");
+			throw new Error("Не настроены параметры доступа к эквайрингу Сбербанка: задайте логин терминала или токен.");
 		}
 
 		this.userName = user ?? "";
@@ -94,7 +94,7 @@ export class SberbankClient {
 		});
 
 		if (!response.ok) {
-			throw new Error(`Sberbank API HTTP Error: ${response.status}`);
+			throw new Error(`Ошибка обращения к шлюзу Сбербанка: HTTP ${response.status}`);
 		}
 
 		const data = await response.json();
@@ -126,7 +126,7 @@ export class SberbankClient {
 		});
 
 		if (!response.ok) {
-			throw new Error(`Sberbank API HTTP Error: ${response.status}`);
+			throw new Error(`Ошибка запроса статуса заказа в Сбербанке: HTTP ${response.status}`);
 		}
 
 		const data = await response.json();

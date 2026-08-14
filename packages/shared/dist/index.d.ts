@@ -101621,7 +101621,7 @@ export declare const fiscalReceiptItemSchema: z.ZodObject<{
     medicalServiceCodeMzk?: string | null | undefined;
 }>;
 export type FiscalReceiptItem = z.infer<typeof fiscalReceiptItemSchema>;
-export declare const createFiscalReceiptPayloadSchema: z.ZodObject<{
+export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<{
     invoiceId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     patientId: z.ZodString;
     operationType: z.ZodDefault<z.ZodEnum<["income", "income_return", "expense", "expense_return"]>>;
@@ -101666,6 +101666,54 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodObject<{
     cashierInn: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     taxDeductionSummaryCode: z.ZodDefault<z.ZodEnum<["code_1_standard", "code_2_expensive_treatment"]>>;
 }, "strip", z.ZodTypeAny, {
+    patientId: string;
+    items: {
+        name: string;
+        quantity: number;
+        method: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment";
+        taxDeductionCode: "code_1_standard" | "code_2_expensive_treatment";
+        amountKopecks: number;
+        priceKopecks: number;
+        subject: "service" | "payment" | "job" | "commodity";
+        vatRate: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none";
+        medicalServiceCodeMzk?: string | null | undefined;
+    }[];
+    operationType: "income" | "income_return" | "expense" | "expense_return";
+    customerContact: string;
+    cashKopecks: number;
+    electronicCardKopecks: number;
+    sbpKopecks: number;
+    prepaidKopecks: number;
+    totalKopecks: number;
+    cashierFullName: string;
+    taxDeductionSummaryCode: "code_1_standard" | "code_2_expensive_treatment";
+    invoiceId?: string | null | undefined;
+    cashierInn?: string | null | undefined;
+}, {
+    patientId: string;
+    items: {
+        name: string;
+        amountKopecks: number;
+        priceKopecks: number;
+        quantity?: number | undefined;
+        method?: "full_prepayment" | "prepayment" | "advance" | "full_payment" | "partial_payment_and_credit" | "credit_handover" | "credit_payment" | undefined;
+        taxDeductionCode?: "code_1_standard" | "code_2_expensive_treatment" | undefined;
+        subject?: "service" | "payment" | "job" | "commodity" | undefined;
+        vatRate?: "vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none" | undefined;
+        medicalServiceCodeMzk?: string | null | undefined;
+    }[];
+    customerContact: string;
+    totalKopecks: number;
+    operationType?: "income" | "income_return" | "expense" | "expense_return" | undefined;
+    invoiceId?: string | null | undefined;
+    cashKopecks?: number | undefined;
+    electronicCardKopecks?: number | undefined;
+    sbpKopecks?: number | undefined;
+    prepaidKopecks?: number | undefined;
+    cashierFullName?: string | undefined;
+    cashierInn?: string | null | undefined;
+    taxDeductionSummaryCode?: "code_1_standard" | "code_2_expensive_treatment" | undefined;
+}>, {
     patientId: string;
     items: {
         name: string;

@@ -139,9 +139,6 @@ export async function readDicomIdentity(
 		const { bytesRead } = await handle.read(buffer, 0, length, 0);
 		const dataSet = dicomParser.parseDicom(
 			new Uint8Array(buffer.subarray(0, bytesRead)),
-			{
-				untilTag: TAG_SERIES_INSTANCE_UID,
-			},
 		);
 
 		const numFramesStr = dataSet.string(TAG_NUMBER_OF_FRAMES);
@@ -660,6 +657,28 @@ export async function registerDicomwebRoutes(app: FastifyInstance) {
 					error: "FrameNotFound",
 					message: `Запрошенный кадр ${frameNumber} превышает число кадров в объекте (${identity.numberOfFrames}).`,
 				});
+			}
+
+			const frameIndex = frameNumber - 1;
+			const rows = identity.rows ?? 512;
+			const columns = identity.columns ?? 512;
+			const bitsAllocated = identity.bitsAllocated ?? 16;
+			const bytesPerSample = Math.ceil(bitsAllocated / 8);
+			const samplesPerPixel = identity.samplesPerPixel ?? 1;
+			const frameSizeBytes =
+				rows * columns * bytesPerSample * samplesPerPixel;
+
+			if (identity.pixelDataOffset !== null && frameSizeBytes > 0) {
+				const frameStart =
+					identity.pixelDataOffset + frameIndex * frameSizeBytes;
+				const frameEnd = frameStart + frameSizeBytes - 1;
+
+				reply.code(200);
+				reply.header("Content-Type", "application/octet-stream");
+				reply.header("Content-Length", frameSizeBytes);
+				return reply.send(
+					createReadStream(filePath, { start: frameStart, end: frameEnd }),
+				);
 			}
 
 			return streamDicomFileResponse(

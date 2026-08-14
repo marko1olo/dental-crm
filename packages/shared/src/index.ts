@@ -13190,26 +13190,52 @@ export const fiscalReceiptItemSchema = z.object({
 });
 export type FiscalReceiptItem = z.infer<typeof fiscalReceiptItemSchema>;
 
-export const createFiscalReceiptPayloadSchema = z.object({
-	invoiceId: z.string().uuid().optional().nullable(),
-	patientId: z.string().uuid(),
-	operationType: ffd12OperationTypeSchema.default("income"),
-	customerContact: z.string().trim().min(5).max(100),
-	items: z.array(fiscalReceiptItemSchema).min(1),
-	cashKopecks: z.number().int().min(0).default(0),
-	electronicCardKopecks: z.number().int().min(0).default(0),
-	sbpKopecks: z.number().int().min(0).default(0),
-	prepaidKopecks: z.number().int().min(0).default(0),
-	totalKopecks: z.number().int().positive(),
-	cashierFullName: z
-		.string()
-		.trim()
-		.min(1)
-		.max(120)
-		.default("Кассир-администратор"),
-	cashierInn: z.string().trim().max(12).optional().nullable(),
-	taxDeductionSummaryCode: taxDeductionCategorySchema.default("code_1_standard"),
-});
+export const createFiscalReceiptPayloadSchema = z
+	.object({
+		invoiceId: z.string().uuid().optional().nullable(),
+		patientId: z.string().uuid(),
+		operationType: ffd12OperationTypeSchema.default("income"),
+		customerContact: z.string().trim().min(5).max(100),
+		items: z.array(fiscalReceiptItemSchema).min(1),
+		cashKopecks: z.number().int().min(0).default(0),
+		electronicCardKopecks: z.number().int().min(0).default(0),
+		sbpKopecks: z.number().int().min(0).default(0),
+		prepaidKopecks: z.number().int().min(0).default(0),
+		totalKopecks: z.number().int().positive(),
+		cashierFullName: z
+			.string()
+			.trim()
+			.min(1)
+			.max(120)
+			.default("Кассир-администратор"),
+		cashierInn: z.string().trim().max(12).optional().nullable(),
+		taxDeductionSummaryCode: taxDeductionCategorySchema.default("code_1_standard"),
+	})
+	.superRefine((val, ctx) => {
+		const paymentsSum =
+			val.cashKopecks +
+			val.electronicCardKopecks +
+			val.sbpKopecks +
+			val.prepaidKopecks;
+		if (paymentsSum > 0 && paymentsSum !== val.totalKopecks) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: `Сумма способов оплаты (${paymentsSum} коп.) не совпадает с общей суммой чека (${val.totalKopecks} коп.)`,
+				path: ["totalKopecks"],
+			});
+		}
+		const itemsSum = val.items.reduce(
+			(sum, item) => sum + item.amountKopecks,
+			0,
+		);
+		if (itemsSum !== val.totalKopecks) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: `Сумма позиций чека (${itemsSum} коп.) не совпадает с общей суммой чека (${val.totalKopecks} коп.)`,
+				path: ["items"],
+			});
+		}
+	});
 export type CreateFiscalReceiptPayloadInput = z.infer<
 	typeof createFiscalReceiptPayloadSchema
 >;

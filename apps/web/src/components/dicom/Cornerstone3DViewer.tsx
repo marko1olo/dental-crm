@@ -385,6 +385,9 @@ export function Cornerstone3DViewer({
 			});
 
 			// Advanced Dental Tools
+			cornerstoneTools.addTool(cornerstoneTools.LengthTool);
+			toolGroup.addTool(cornerstoneTools.LengthTool.toolName);
+
 			cornerstoneTools.addTool(cornerstoneTools.SplineROITool);
 			toolGroup.addTool(cornerstoneTools.SplineROITool.toolName);
 

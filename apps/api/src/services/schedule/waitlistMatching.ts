@@ -21,13 +21,14 @@
  * пользоваться подбором.
  */
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	appointments,
 	appointmentWaitlists,
 	patients,
 } from "../../db/schema.js";
+import { utcToLocalWallTime } from "../../routes/publicBooking.js";
 
 /** Насколько кандидат подходит под окно и почему. */
 export type WaitlistMatch = {
@@ -277,17 +278,17 @@ export async function findWaitlistMatches(
 				and(
 					eq(appointmentWaitlists.organizationId, slot.organizationId),
 					// Только те, кто ещё ждёт: отработанные записи предлагать нельзя.
-					eq(appointmentWaitlists.status, "waiting"),
+					inArray(appointmentWaitlists.status, ["waiting", "active"]),
 				),
 			),
 	);
 
 	const now = new Date();
-	const slotStartMinute =
-		slot.startsAt.getHours() * 60 + slot.startsAt.getMinutes();
+	const localSlot = utcToLocalWallTime(slot.startsAt, "Europe/Samara");
+	const slotStartMinute = localSlot.hours * 60 + localSlot.minutes;
 
 	/** День недели окна. 0 — воскресенье, как в Date.getDay(). */
-	const slotWeekday = slot.startsAt.getDay();
+	const slotWeekday = localSlot.weekday;
 
 	const matches: WaitlistMatch[] = rows.map((row) => {
 		const sameDoctor = Boolean(

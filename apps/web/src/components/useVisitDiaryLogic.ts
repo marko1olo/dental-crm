@@ -595,6 +595,41 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		}
 	}, [loadState.phase, visitId, visitNoteForm, activeVisit]);
 
+	// ── LocalStorage resilience for draft protection across browser reloads / crashes
+	const localDiaryStorageKey = `dente_diary_draft_${visitId}`;
+
+	useEffect(() => {
+		if (loadState.phase !== "empty" || !visitId) return;
+		try {
+			const cached = localStorage.getItem(localDiaryStorageKey);
+			if (cached) {
+				const parsed = JSON.parse(cached) as Partial<DiaryState>;
+				if (parsed && typeof parsed === "object") {
+					setDiary((prev) => ({ ...prev, ...parsed }));
+					if (parsed.diagnosisIcd10) {
+						setIcdSearch((c) => (c.trim() ? c : (parsed.diagnosisIcd10 ?? c)));
+					}
+				}
+			}
+		} catch {
+			// ignore JSON parse error on corrupted local state
+		}
+	}, [loadState.phase, visitId, localDiaryStorageKey]);
+
+	useEffect(() => {
+		if (!visitId || isLocked || loadState.phase === "loading") return;
+		const hasContent = Object.values(diary).some(
+			(v) => typeof v === "string" && v.trim().length > 0,
+		);
+		if (hasContent) {
+			try {
+				localStorage.setItem(localDiaryStorageKey, JSON.stringify(diary));
+			} catch {
+				// ignore localStorage quota errors
+			}
+		}
+	}, [diary, visitId, isLocked, loadState.phase, localDiaryStorageKey]);
+
 	// ── Resize textareas
 
 	useEffect(() => {
