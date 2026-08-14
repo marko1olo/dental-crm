@@ -215,6 +215,132 @@ The patient-facing Telegram bridge operates under strict zero-leakage medical pr
   - *2 Weeks Post-Op*: Surgical check after implant placement / tooth extraction.
   - *Annual*: Orthodontic / prosthetic warranty inspection.
 
+
+---
+
+## 💉 Comprehensive Clinical Protocols & Specialized Modules
+
+DENTE includes built-in digital workflows for all major dental specialties without requiring expensive third-party plugins.
+
+```mermaid
+graph TD
+    subgraph Specialized Clinical Modules
+        A[🦷 Endodontic Protocol] -->|Canal Working Length & Taper| E[Consolidated Clinical Record]
+        B[🔩 Implant Surgical Protocol] -->|Torque & ISQ Stability| E
+        C[📐 Orthodontic TRG Analysis] -->|SNA / SNB / ANB Cephalometrics| E
+        D[🧪 CAD/CAM Dental Lab Orders] -->|VITA Shades & STL Manifests| E
+    end
+
+    subgraph High-Performance Backend
+        E -->|Zod Validated DTO| F[Fastify 5 API Gateway]
+        F -->|Tenant Context Middleware| G[PostgreSQL 18 Composite B-Tree Indices]
+        G -->|Read-Committed Transaction| H[(Encrypted Storage / WAL Mode)]
+    end
+```
+
+---
+
+### 🔬 1. Endodontic Canal Instrumentation & Apex Locator Log
+
+For root canal treatments, DENTE tracks canal anatomy, apex locator verification, rotary file sequences, and obturation metrics for every individual canal:
+
+```
+                  MOLAR ROOT CANAL PROTOCOL (e.g. Tooth #16 / #26)
+   ┌───────────┬──────────────┬────────────┬─────────────┬─────────────────┐
+   │ Canal     │ Reference    │ Apex (mm)  │ Master File │ Obturation Cone │
+   ├───────────┼──────────────┼────────────┼─────────────┼─────────────────┤
+   │ MB1       │ Mesio-Buccal │ 21.5 mm    │ #25 / .06   │ Gutta-Percha    │
+   │ MB2 (Opt) │ Mesio-Palatal│ 20.0 mm    │ #20 / .04   │ Bioceramic Seal │
+   │ DB        │ Disto-Buccal │ 20.5 mm    │ #25 / .06   │ Continuous Wave │
+   │ Palatal   │ Palatal Cusp │ 23.0 mm    │ #35 / .04   │ Warm Vertical   │
+   └───────────┴──────────────┴────────────┴─────────────┴─────────────────┘
+```
+
+* **Apex Locator Integration**: Direct recording of electrical zero-apex verification with timestamped digital radiograph links.
+* **Irrigation Protocol Checklist**: Track active ultrasonic irrigation cycles (NaOCl 3.0%, EDTA 17%, Chlorhexidine 2%).
+* **Bioceramic Sealer Records**: Batch number and expiration date tracking for calcium silicate-based root canal sealers.
+
+---
+
+### 🔩 2. Dental Implantology & Guided Surgery Protocol
+
+Pre-op planning and intra-operative surgical parameters are logged in real-time for permanent patient passport documentation:
+
+| Parameter | Clinical Target / Measurement | Acceptable Range | Notes / Complication Safeguard |
+| :--- | :--- | :--- | :--- |
+| **Bone Density (Misch)** | Class D1 / D2 / D3 / D4 | Based on CBCT HU values | D4 requires under-drilling protocol |
+| **Drill Speed** | $800 - 1,200	ext{ RPM}$ | With sterile saline $4^\circ	ext{C}$ cooling | Prevents bone thermal necrosis ($> 47^\circ	ext{C}$) |
+| **Insertion Torque** | $35 - 50	ext{ N}\cdot	ext{cm}$ | Minimum $30	ext{ N}\cdot	ext{cm}$ for immediate load | Over-torque ($> 65	ext{ N}\cdot	ext{cm}$) causes cortical ischemia |
+| **ISQ Stability (Osstell)**| $	ext{ISQ} \ge 70$ | Primary: $65-80$ / Secondary: $> 75$ | Resonance frequency analysis for loading time |
+| **Sinus Lift Height** | Sub-antral bone graft ($	ext{mm}$) | $0 - 8	ext{ mm}$ crestal / $> 8	ext{ mm}$ lateral | Schneiderian membrane integrity validation |
+
+---
+
+### 📐 3. Orthodontic Cephalometric TRG Analysis (Lateral X-Ray)
+
+The orthodontic module computes key angular and linear skeletal measurements from digitized lateral cephalometric radiographs:
+
+```
+                   CEPHALOMETRIC CRANIOFACIAL LANDMARKS
+                           N (Nasion)
+                           / \
+                          /   \
+            S (Sella)    /     \
+               o────────o       \
+                \      /         \
+                 \    /           o A (Subspinale)
+                  \  /             \
+                   \/               o Maxillary Incisor Edge
+                   / \               /
+                  /   \             o B (Supramentale)
+                 /     \           /
+                /       \         /
+               /         o───────o Pog (Pogonion)
+       Go (Gonion)        Me (Menton)
+```
+
+| Angle / Measurement | Norm Value | Patient Value Interpretation |
+| :--- | :--- | :--- |
+| **SNA Angle** | $82^\circ \pm 2^\circ$ | Position of Maxilla relative to Cranial Base (Prognathism vs Retrognathism) |
+| **SNB Angle** | $80^\circ \pm 2^\circ$ | Position of Mandible relative to Cranial Base |
+| **ANB Angle** | $2^\circ \pm 2^\circ$ | Sagittal Jaw Relationship: Class I ($0-4^\circ$), Class II ($> 4^\circ$), Class III ($< 0^\circ$) |
+| **Wits Appraisal** | $0	ext{ mm}$ (F) / $-1	ext{ mm}$ (M) | Linear measurement along the functional occlusal plane |
+| **FMA Angle (Tweed)** | $25^\circ \pm 3^\circ$ | Vertical growth pattern: Hypodivergent (low angle) vs Hyperdivergent (open bite) |
+
+---
+
+### 🧪 4. Dental Laboratory CAD/CAM Work Order Pipeline
+
+Seamless digital handoff between clinic operatory and dental technicians:
+
+* **Shade Selection**: VITA Classical (A1–D4) + VITA 3D-Master (Bleach shades 0M1, 0M2, 0M3).
+* **Restoration Types**: E.max Press veneers, monolithic Zirconia (3Y/4Y/5Y gradient multi-layer), custom titanium abutments, cast metal clasp frameworks (Бюгельные протезы).
+* **Digital Impression Transfer**: Intraoral 3D scan attachments (`.STL`, `.PLY` color, `.OBJ`) with occlusion bite registration matrices.
+* **Lab Status Tracking**: `Ordered` $	o$ `CAD Design` $	o$ `Milling / Sintering` $	o$ `Try-In Fit` $	o$ `Final Glaze & Polish` $	o$ `Delivered to Clinic`.
+
+---
+
+### ⚡ 5. PostgreSQL 18 & Fastify High-Performance Database Layout
+
+To ensure sub-5ms API response times even in multi-clinic networks with 1,000,000+ patient records:
+
+```sql
+-- Production Multi-Tenant Composite Indices
+CREATE INDEX CONCURRENTLY idx_clinical_records_org_patient 
+ON clinical_records (organization_id, patient_id, created_at DESC);
+
+CREATE INDEX CONCURRENTLY idx_invoices_org_fiscal_status 
+ON invoices (organization_id, is_fiscal_settled, issue_date);
+
+CREATE INDEX CONCURRENTLY idx_appointments_chair_timeline 
+ON appointments (organization_id, chair_id, start_time, end_time);
+
+-- Tenant Isolation Row-Level Security Policy
+ALTER TABLE patients ENABLE ROW LEVEL SECURITY;
+CREATE POLICY tenant_isolation_policy ON patients
+FOR ALL USING (organization_id = CURRENT_SETTING('app.current_organization_id', true));
+```
+
 ## 📜 Original Human Developer Documentation
 
 The section below contains **100% of the true, un-truncated, original human developer documentation** created for this repository:
