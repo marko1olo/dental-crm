@@ -17,8 +17,10 @@ export type AppointmentCardProps = {
 	visibleScheduleSuggestions: ScheduleSuggestion[];
 	appointmentReadinessById: Map<string, AppointmentReadiness>;
 	appointmentLabels: Record<Appointment["status"], string>;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	appointmentDraft: Record<string, any>;
+	appointmentDraft: Record<
+		string,
+		string | number | boolean | null | undefined
+	>;
 	appointmentSaveState: string;
 	appointmentSaveError: string | null;
 	appointmentDirty: boolean;
@@ -49,10 +51,8 @@ export type AppointmentCardProps = {
 	closeAppointmentEditor: (appointmentId: string) => void;
 	updateAppointmentScheduleDraft: (
 		appointmentId: string,
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		key: any,
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		value: any,
+		key: string,
+		value: string | number | boolean | null | undefined,
 	) => void;
 	saveAppointmentSchedule: (appointmentId: string) => Promise<boolean>;
 	normalizedAppointmentStatus: (value: unknown) => Appointment["status"];
@@ -414,7 +414,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									{useManualSelects ||
 									(dashboard.patients ?? []).length > 20 ? (
 										<select
-											value={appointmentDraft.patientId || ""}
+											value={String(appointmentDraft.patientId ?? "")}
 											onChange={(e) =>
 												updateAppointmentScheduleDraft(
 													appointment.id,
@@ -475,7 +475,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									</span>
 									{useManualSelects ? (
 										<select
-											value={appointmentDraft.doctorUserId || ""}
+											value={String(appointmentDraft.doctorUserId ?? "")}
 											onChange={(e) =>
 												updateAppointmentScheduleDraft(
 													appointment.id,

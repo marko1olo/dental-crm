@@ -215,6 +215,14 @@ function appointmentRejectionResponse(
 			message: appointmentNotFoundMessage,
 		};
 	}
+	const specificMessage =
+		reason === "resource_overlap" &&
+		error instanceof Error &&
+		(error.message.includes("уже есть запись") ||
+			error.message.includes("уже занято"))
+			? error.message
+			: appointmentRejectionMessage(reason, operation);
+
 	return {
 		statusCode: 409,
 		code:
@@ -222,7 +230,7 @@ function appointmentRejectionResponse(
 				? "AppointmentCreateRejected"
 				: "AppointmentUpdateRejected",
 		reason,
-		message: appointmentRejectionMessage(reason, operation),
+		message: specificMessage,
 	};
 }
 
