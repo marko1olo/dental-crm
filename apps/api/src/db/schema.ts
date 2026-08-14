@@ -5283,6 +5283,47 @@ export const clinicWorkflows = pgTable(
 	(table) => [index("clinic_workflows_org_idx").on(table.organizationId)],
 );
 
+/**
+ * Пародонтологические карты (Perio Chart) — зондирование 6 точек, CAL, рецессия,
+ * кровоточивость (BOP), налёт (FMPS), фуркация, подвижность и PSR/CPITN.
+ */
+export const perioCharts = pgTable(
+	"perio_charts",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id, { onDelete: "cascade" }),
+		visitId: uuid("visit_id").references(() => visits.id, {
+			onDelete: "set null",
+		}),
+		doctorId: uuid("doctor_id").references(() => users.id, {
+			onDelete: "set null",
+		}),
+		chartDate: timestamp("chart_date", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		teethData: jsonb("teeth_data").notNull(),
+		summaryData: jsonb("summary_data").notNull(),
+		psrData: jsonb("psr_data"),
+		notes: text("notes"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("perio_charts_organization_id_idx").on(t.organizationId),
+		index("perio_charts_patient_id_idx").on(t.patientId),
+		index("perio_charts_chart_date_idx").on(t.patientId, t.chartDate),
+	],
+);
+
 import { relations } from "drizzle-orm";
 
 export const organizationsRelations = relations(organizations, ({ many }) => ({

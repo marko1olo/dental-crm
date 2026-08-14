@@ -82,7 +82,7 @@ describe("возврат пациентов", () => {
 	const originalEnv = process.env;
 
 	before(async () => {
-		process.env = { ...originalEnv, DENTE_DEV_ALLOW_HEADER_ORG: "1" };
+		process.env = { ...originalEnv, NODE_ENV: "test", DENTE_DEV_ALLOW_HEADER_ORG: "1", DENTE_CLINICAL_ALLOW_UNGUARDED_READS: "1" };
 		// Оба хука боевого server.ts: организация из запроса кладётся в
 		// request.tenantId, а каждый обработчик оборачивается в withTenantCtx. Без
 		// второго список возврата под FORCE RLS всегда пуст, и «зовут давних»

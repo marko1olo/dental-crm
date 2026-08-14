@@ -61,6 +61,7 @@ import { registerOdontogramRoutes } from "./routes/odontogram.js";
 import { registerPatientDuplicateRoutes } from "./routes/patientDuplicates.js";
 import { registerPatientRecallRoutes } from "./routes/patientRecall.js";
 import { registerPatientRoutes } from "./routes/patients.js";
+import { registerPerioRoutes } from "./routes/perio.js";
 import { portalRoutes } from "./routes/portal.js";
 import { registerPricelistRoutes } from "./routes/pricelist.js";
 import { registerPublicAppointmentActionRoutes } from "./routes/publicAppointmentActions.js";
@@ -608,6 +609,7 @@ export async function createDenteApiApp(
 	// сохраниться, а вкладка «История зуба» не имела источника данных.
 	await registerOdontogramRoutes(app);
 	await registerToothHistoryRoutes(app);
+	await registerPerioRoutes(app);
 	// Ни один из этих модулей раньше не регистрировался, поэтому семейный кошелёк,
 	// ДМС, зуботехническая лаборатория, лист ожидания, лиды, стерилизация,
 	// файлы, планирование по снимкам и каналы VK/WhatsApp/MAX отвечали 404.

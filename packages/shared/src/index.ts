@@ -11717,3 +11717,303 @@ export const updateMessageTemplateCatalogSchema =
 export type UpdateMessageTemplateCatalogInput = z.infer<
 	typeof updateMessageTemplateCatalogSchema
 >;
+
+/**
+ * ============================================================================
+ * ПАРОДОНТОЛОГИЧЕСКАЯ КАРТА (PERIODONTAL PROBING & RISK ASSESSMENT ENGINE)
+ * ============================================================================
+ * Клинический стандарт ВОЗ, AAP и EFP:
+ * 1. 6 точек зондирования на каждый зуб (дистально-вестибулярная, медиально-вестибулярная, центрально-вестибулярная и 3 оральных/язычных).
+ * 2. Глубина кармана (Probing Depth, PD mm).
+ * 3. Рецессия / уровень десневого края (Gingival Margin, GM mm).
+ * 4. Клинический уровень прикрепления (CAL = PD + GM mm).
+ * 5. Кровоточивость при зондировании (Bleeding on Probing, BOP).
+ * 6. Наличие поддесневого зубного камня и налёта (Plaque & Calculus).
+ * 7. Нагноение (Suppuration).
+ * 8. Подвижность по Миллеру (Mobility 0..3) и фуркация (Furcation 0..4).
+ * 9. Индексы FMBS (Full Mouth Bleeding Score), FMPS (Full Mouth Plaque Score) и оценка риска пародонтита (PRA).
+ * 10. PSR / CPITN скрининг по 6 секстантам.
+ */
+
+export const perioSiteMeasurementSchema = z.object({
+	/** Глубина зондирования кармана в миллиметрах (0..20 мм) */
+	probingDepthMm: z.number().int().min(0).max(20).default(0),
+	/** Положение десневого края (положительное = рецессия корня, отрицательное = гиперплазия/отёк) */
+	gingivalMarginMm: z.number().int().min(-15).max(15).default(0),
+	/** Кровоточивость при зондировании (BOP — признак активного воспаления) */
+	bleedingOnProbing: z.boolean().default(false),
+	/** Нагноение (Suppuration — гнойный экссудат) */
+	suppuration: z.boolean().default(false),
+	/** Зубной налёт на придесневой поверхности */
+	plaque: z.boolean().default(false),
+	/** Поддесневой зубной камень */
+	calculus: z.boolean().default(false),
+	/** Вычисленный клинический уровень прикрепления (CAL mm) */
+	calMm: z.number().int().optional(),
+});
+export type PerioSiteMeasurement = z.infer<typeof perioSiteMeasurementSchema>;
+
+export const perioToothRecordSchema = z.object({
+	/** Номер зуба по FDI (11..48) */
+	toothNumber: fdiToothNumberSchema,
+	/** Зуб отсутствует (адентия, удалён) */
+	isMissing: z.boolean().default(false),
+	/** Имплантат (периимплантатное зондирование) */
+	isImplant: z.boolean().default(false),
+	/** Подвижность по Миллеру (0 = физиологическая, 1 = I ст., 2 = II ст., 3 = III ст.) */
+	mobility: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]).default(0),
+	/** Вовлечение бифуркации/трифуркации (0..4) */
+	furcation: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3), z.literal(4)]).default(0),
+	/** 6 анатомических точек зондирования */
+	distoBuccal: perioSiteMeasurementSchema.default({}),
+	midBuccal: perioSiteMeasurementSchema.default({}),
+	mesioBuccal: perioSiteMeasurementSchema.default({}),
+	distoLingual: perioSiteMeasurementSchema.default({}),
+	midLingual: perioSiteMeasurementSchema.default({}),
+	mesioLingual: perioSiteMeasurementSchema.default({}),
+});
+export type PerioToothRecord = z.infer<typeof perioToothRecordSchema>;
+
+export const perioChartSummarySchema = z.object({
+	totalTeethExamined: z.number().int().nonnegative(),
+	totalSitesProbed: z.number().int().nonnegative(),
+	/** Full Mouth Bleeding Score (FMBS) в процентах (0..100%) */
+	fmbsPercent: z.number().min(0).max(100),
+	/** Full Mouth Plaque Score (FMPS) в процентах (0..100%) */
+	fmpsPercent: z.number().min(0).max(100),
+	/** Число глубоких карманов (PD >= 5 мм) */
+	deepPocketsCount: z.number().int().nonnegative(),
+	/** Число умеренных карманов (PD == 4 мм) */
+	moderatePocketsCount: z.number().int().nonnegative(),
+	/** Число участков с нагноением */
+	sitesWithSuppurationCount: z.number().int().nonnegative(),
+	/** Число участков с зубным камнем */
+	sitesWithCalculusCount: z.number().int().nonnegative(),
+	/** Число подвижных зубов (подвижность >= 1) */
+	teethWithMobilityCount: z.number().int().nonnegative(),
+	/** Число зубов с поражением фуркации (фуркация >= 1) */
+	teethWithFurcationCount: z.number().int().nonnegative(),
+	/** Максимальная глубина кармана (мм) */
+	maxPocketDepthMm: z.number().int().nonnegative(),
+	/** Средняя глубина кармана (мм) */
+	meanPocketDepthMm: z.number().nonnegative(),
+	/** Максимальная потеря прикрепления (CAL мм) */
+	maxCalMm: z.number().int().nonnegative(),
+	/** Средняя потеря прикрепления (CAL мм) */
+	meanCalMm: z.number().nonnegative(),
+	/** Категория пародонтального риска (PRA: low, moderate, high) */
+	riskCategory: z.enum(["low", "moderate", "high"]),
+});
+export type PerioChartSummary = z.infer<typeof perioChartSummarySchema>;
+
+export const perioChartDataSchema = z.object({
+	id: z.string().uuid().optional(),
+	organizationId: z.string().uuid(),
+	patientId: z.string().uuid(),
+	visitId: z.string().uuid().optional().nullable(),
+	doctorId: z.string().uuid().optional().nullable(),
+	chartDate: z.string(),
+	teeth: z.array(perioToothRecordSchema),
+	summary: perioChartSummarySchema.optional(),
+	notes: z.string().optional().nullable(),
+});
+export type PerioChartData = z.infer<typeof perioChartDataSchema>;
+
+/**
+ * Вычисляет клинический уровень прикрепления (Clinical Attachment Level):
+ * CAL = Probing Depth (PD) + Gingival Margin (GM).
+ */
+export function calculateClinicalAttachmentLevel(
+	probingDepthMm: number,
+	gingivalMarginMm: number,
+): number {
+	const pd = Number.isFinite(probingDepthMm) ? Math.max(0, Math.round(probingDepthMm)) : 0;
+	const gm = Number.isFinite(gingivalMarginMm) ? Math.round(gingivalMarginMm) : 0;
+	return Math.max(0, pd + gm);
+}
+
+const PERIO_SITE_KEYS = [
+	"distoBuccal",
+	"midBuccal",
+	"mesioBuccal",
+	"distoLingual",
+	"midLingual",
+	"mesioLingual",
+] as const;
+
+/**
+ * Чистая математическая функция расчёта пародонтальных индексов (FMBS, FMPS, CAL, PRA).
+ */
+export function calculatePerioIndices(teeth: PerioToothRecord[]): PerioChartSummary {
+	let examinedTeeth = 0;
+	let totalSites = 0;
+	let bopSites = 0;
+	let plaqueSites = 0;
+	let suppurationSites = 0;
+	let calculusSites = 0;
+	let deepPockets = 0;
+	let moderatePockets = 0;
+	let mobileTeeth = 0;
+	let furcationTeeth = 0;
+
+	let maxPd = 0;
+	let sumPd = 0;
+	let maxCal = 0;
+	let sumCal = 0;
+
+	for (const tooth of teeth) {
+		if (tooth.isMissing) continue;
+		examinedTeeth++;
+
+		if (tooth.mobility && tooth.mobility > 0) mobileTeeth++;
+		if (tooth.furcation && tooth.furcation > 0) furcationTeeth++;
+
+		for (const siteKey of PERIO_SITE_KEYS) {
+			const site = tooth[siteKey] ?? {
+				probingDepthMm: 0,
+				gingivalMarginMm: 0,
+				bleedingOnProbing: false,
+				suppuration: false,
+				plaque: false,
+				calculus: false,
+			};
+			totalSites++;
+
+			const pd = site.probingDepthMm ?? 0;
+			const gm = site.gingivalMarginMm ?? 0;
+			const cal = calculateClinicalAttachmentLevel(pd, gm);
+
+			if (pd > maxPd) maxPd = pd;
+			sumPd += pd;
+
+			if (cal > maxCal) maxCal = cal;
+			sumCal += cal;
+
+			if (pd >= 5) deepPockets++;
+			else if (pd >= 4) moderatePockets++;
+
+			if (site.bleedingOnProbing) bopSites++;
+			if (site.plaque) plaqueSites++;
+			if (site.suppuration) suppurationSites++;
+			if (site.calculus) calculusSites++;
+		}
+	}
+
+	const fmbsPercent = totalSites > 0 ? Math.round((bopSites / totalSites) * 1000) / 10 : 0;
+	const fmpsPercent = totalSites > 0 ? Math.round((plaqueSites / totalSites) * 1000) / 10 : 0;
+	const meanPocketDepthMm = totalSites > 0 ? Math.round((sumPd / totalSites) * 10) / 10 : 0;
+	const meanCalMm = totalSites > 0 ? Math.round((sumCal / totalSites) * 10) / 10 : 0;
+
+	// Оценка риска по Lang & Tonetti (Periodontal Risk Assessment)
+	let riskCategory: "low" | "moderate" | "high" = "low";
+	if (
+		fmbsPercent >= 30 ||
+		deepPockets >= 9 ||
+		mobileTeeth >= 3 ||
+		furcationTeeth >= 2 ||
+		suppurationSites >= 3
+	) {
+		riskCategory = "high";
+	} else if (
+		fmbsPercent >= 15 ||
+		deepPockets >= 4 ||
+		moderatePockets >= 10 ||
+		mobileTeeth >= 1 ||
+		furcationTeeth >= 1
+	) {
+		riskCategory = "moderate";
+	}
+
+	return {
+		totalTeethExamined: examinedTeeth,
+		totalSitesProbed: totalSites,
+		fmbsPercent,
+		fmpsPercent,
+		deepPocketsCount: deepPockets,
+		moderatePocketsCount: moderatePockets,
+		sitesWithSuppurationCount: suppurationSites,
+		sitesWithCalculusCount: calculusSites,
+		teethWithMobilityCount: mobileTeeth,
+		teethWithFurcationCount: furcationTeeth,
+		maxPocketDepthMm: maxPd,
+		meanPocketDepthMm,
+		maxCalMm: maxCal,
+		meanCalMm,
+		riskCategory,
+	};
+}
+
+/**
+ * Расчёт кодов PSR / CPITN по 6 секстантам:
+ * S1: 17..14, S2: 13..23, S3: 24..27, S4: 37..34, S5: 33..43, S6: 44..47.
+ */
+export const PSR_SEXTANTS = [
+	{ name: "S1", label: "Верхний правый дистальный (17-14)", teeth: [17, 16, 15, 14] },
+	{ name: "S2", label: "Верхний фронтальный (13-23)", teeth: [13, 12, 11, 21, 22, 23] },
+	{ name: "S3", label: "Верхний левый дистальный (24-27)", teeth: [24, 25, 26, 27] },
+	{ name: "S4", label: "Нижний левый дистальный (37-34)", teeth: [37, 36, 35, 34] },
+	{ name: "S5", label: "Нижний фронтальный (33-43)", teeth: [33, 32, 31, 41, 42, 43] },
+	{ name: "S6", label: "Нижний правый дистальный (44-47)", teeth: [44, 45, 46, 47] },
+] as const;
+
+export type PsrSextantResult = {
+	code: 0 | 1 | 2 | 3 | 4;
+	asterisk: boolean;
+	highestPocketDepthMm: number;
+	teethCount: number;
+};
+
+export function calculatePsrSextants(
+	teeth: PerioToothRecord[],
+): Record<string, PsrSextantResult> {
+	const results: Record<string, PsrSextantResult> = {};
+	const toothMap = new Map<number, PerioToothRecord>();
+	for (const t of teeth) {
+		toothMap.set(t.toothNumber, t);
+	}
+
+	for (const sextant of PSR_SEXTANTS) {
+		let maxCode: 0 | 1 | 2 | 3 | 4 = 0;
+		let hasAsterisk = false;
+		let maxPd = 0;
+		let validTeeth = 0;
+
+		for (const toothNum of sextant.teeth) {
+			const t = toothMap.get(toothNum);
+			if (!t || t.isMissing) continue;
+			validTeeth++;
+
+			if ((t.mobility && t.mobility >= 2) || (t.furcation && t.furcation >= 1)) {
+				hasAsterisk = true;
+			}
+
+			for (const siteKey of PERIO_SITE_KEYS) {
+				const site = t[siteKey];
+				if (!site) continue;
+
+				const pd = site.probingDepthMm ?? 0;
+				if (pd > maxPd) maxPd = pd;
+
+				if (pd >= 6) {
+					if (maxCode < 4) maxCode = 4;
+				} else if (pd >= 4) {
+					if (maxCode < 3) maxCode = 3;
+				} else if (site.calculus) {
+					if (maxCode < 2) maxCode = 2;
+				} else if (site.bleedingOnProbing) {
+					if (maxCode < 1) maxCode = 1;
+				}
+			}
+		}
+
+		results[sextant.name] = {
+			code: maxCode,
+			asterisk: hasAsterisk,
+			highestPocketDepthMm: maxPd,
+			teethCount: validTeeth,
+		};
+	}
+
+	return results;
+}
+
