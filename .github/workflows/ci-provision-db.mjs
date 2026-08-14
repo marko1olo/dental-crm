@@ -85,7 +85,7 @@ try {
 		// PostgreSQL не принимает $1 внутри DDL. Генерируем выражение на стороне
 		// сервера через format: %I цитирует идентификатор, а %L — пароль как SQL-литерал.
 		const createRoleStatement = await client.query(
-			"SELECT format('CREATE ROLE %I LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE PASSWORD %L', $1, $2) AS statement",
+			"SELECT format('CREATE ROLE %I LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE PASSWORD %L', $1::text, $2::text) AS statement",
 			[roleName, rolePassword],
 		);
 		const statement = createRoleStatement.rows[0]?.statement;
