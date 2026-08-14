@@ -77,6 +77,7 @@ import { registerSettingsRoutes } from "./routes/settings.js";
 import { registerSmartImportRoutes } from "./routes/smartImports.js";
 import { registerSpeechRoutes } from "./routes/speech.js";
 import { registerSterilizationRoutes } from "./routes/sterilization.js";
+import { registerSbpQrRoutes } from "./routes/sbpQr.js";
 import { registerSystemRoutes } from "./routes/system.js";
 import {
 	registerTelegramRoutes,
@@ -618,6 +619,7 @@ export async function createDenteApiApp(
 	await registerReferralRoutes(app);
 	await registerAnesthesiaRoutes(app);
 	await registerClinicalImplantRoutes(app);
+	await registerSbpQrRoutes(app);
 	// Ни один из этих модулей раньше не регистрировался, поэтому семейный кошелёк,
 	// ДМС, зуботехническая лаборатория, лист ожидания, лиды, стерилизация,
 	// файлы, планирование по снимкам и каналы VK/WhatsApp/MAX отвечали 404.

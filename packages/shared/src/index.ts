@@ -13248,6 +13248,209 @@ export class SanPiNSterilizationEngine {
 	}
 }
 
+// ─── Russian Fintech, Fast Payment System (СБП B2C QR) & 54-FZ Fiscal Cloud ───
+
+export const sbpQrTypeSchema = z.enum(["01", "02"]); // 01 = Static, 02 = Dynamic
+export type SbpQrType = z.infer<typeof sbpQrTypeSchema>;
+
+export const generateSbpDynamicQrSchema = z.object({
+	operationId: z.string().trim().min(1).max(64),
+	bankMemberId: z
+		.string()
+		.trim()
+		.min(1)
+		.max(32)
+		.default("100000000111"), // Sberbank NSPK ID
+	amountKopecks: z
+		.number()
+		.int()
+		.positive("Сумма должна быть положительной в копейках"),
+	currency: z.literal("RUB").default("RUB"),
+	description: z.string().trim().max(140).optional().nullable(),
+	ttlSeconds: z.number().int().min(60).max(86400).default(1800), // 30 min default
+});
+export type GenerateSbpDynamicQrInput = z.infer<
+	typeof generateSbpDynamicQrSchema
+>;
+
+export const ffd12OperationTypeSchema = z.enum([
+	"income", // 1 (Приход)
+	"income_return", // 2 (Возврат прихода)
+	"expense", // 3 (Расход)
+	"expense_return", // 4 (Возврат расхода)
+]);
+export type Ffd12OperationType = z.infer<typeof ffd12OperationTypeSchema>;
+
+export const ffd12PaymentSubjectSchema = z.enum([
+	"commodity", // 1 (Товар, напр. паста/щетка)
+	"service", // 4 (Медицинская услуга)
+	"job", // 3 (Работа)
+	"payment", // 10 (Платеж)
+]);
+export type Ffd12PaymentSubject = z.infer<typeof ffd12PaymentSubjectSchema>;
+
+export const ffd12PaymentMethodSchema = z.enum([
+	"full_prepayment", // 1 (Предоплата 100%)
+	"prepayment", // 2 (Частичная предоплата)
+	"advance", // 3 (Аванс)
+	"full_payment", // 4 (Полный расчет)
+	"partial_payment_and_credit", // 5 (Частичный расчет и кредит)
+	"credit_handover", // 6 (Передача в кредит)
+	"credit_payment", // 7 (Оплата кредита)
+]);
+export type Ffd12PaymentMethod = z.infer<typeof ffd12PaymentMethodSchema>;
+
+export const ffd12VatRateSchema = z.enum([
+	"vat_20", // 1
+	"vat_10", // 2
+	"vat_20_120", // 3
+	"vat_10_110", // 4
+	"vat_0", // 5
+	"vat_none", // 6 (Без НДС - ст. 149 п. 2 пп. 2 НК РФ для мед. услуг)
+]);
+export type Ffd12VatRate = z.infer<typeof ffd12VatRateSchema>;
+
+export const taxDeductionCategorySchema = z.enum([
+	"code_1_standard", // Код 1: обычное лечение (терапия, гигиена, брекеты)
+	"code_2_expensive_treatment", // Код 2: дорогостоящее лечение (хирургическая имплантация, костная пластика)
+]);
+export type TaxDeductionCategory = z.infer<typeof taxDeductionCategorySchema>;
+
+export const fiscalReceiptItemSchema = z.object({
+	name: z.string().trim().min(1).max(128),
+	priceKopecks: z.number().int().positive(),
+	quantity: z.number().positive().default(1),
+	amountKopecks: z.number().int().positive(),
+	subject: ffd12PaymentSubjectSchema.default("service"),
+	method: ffd12PaymentMethodSchema.default("full_payment"),
+	vatRate: ffd12VatRateSchema.default("vat_none"),
+	taxDeductionCode: taxDeductionCategorySchema.default("code_1_standard"),
+	medicalServiceCodeMzk: z.string().trim().max(32).optional().nullable(),
+});
+export type FiscalReceiptItem = z.infer<typeof fiscalReceiptItemSchema>;
+
+export const createFiscalReceiptPayloadSchema = z.object({
+	invoiceId: z.string().uuid().optional().nullable(),
+	patientId: z.string().uuid(),
+	operationType: ffd12OperationTypeSchema.default("income"),
+	customerContact: z.string().trim().min(5).max(100),
+	items: z.array(fiscalReceiptItemSchema).min(1),
+	cashKopecks: z.number().int().min(0).default(0),
+	electronicCardKopecks: z.number().int().min(0).default(0),
+	sbpKopecks: z.number().int().min(0).default(0),
+	prepaidKopecks: z.number().int().min(0).default(0),
+	totalKopecks: z.number().int().positive(),
+	cashierFullName: z
+		.string()
+		.trim()
+		.min(1)
+		.max(120)
+		.default("Кассир-администратор"),
+	cashierInn: z.string().trim().max(12).optional().nullable(),
+	taxDeductionSummaryCode: taxDeductionCategorySchema.default("code_1_standard"),
+});
+export type CreateFiscalReceiptPayloadInput = z.infer<
+	typeof createFiscalReceiptPayloadSchema
+>;
+
+export class SbpQrEngine {
+	/**
+	 * Вычисляет контрольную сумму CRC16-CCITT (ГОСТ Р 56042-2014, полином 0x1021, init 0xFFFF)
+	 */
+	static computeCrc16Ccitt(str: string): string {
+		let crc = 0xffff;
+		for (let i = 0; i < str.length; i++) {
+			crc ^= (str.charCodeAt(i) << 8) & 0xffff;
+			for (let j = 0; j < 8; j++) {
+				if ((crc & 0x8000) !== 0) {
+					crc = ((crc << 1) ^ 0x1021) & 0xffff;
+				} else {
+					crc = (crc << 1) & 0xffff;
+				}
+			}
+		}
+		return crc.toString(16).toUpperCase().padStart(4, "0");
+	}
+
+	/**
+	 * Формирует стандартную платежную ссылку НСПК СБП (B2C Dynamic QR)
+	 * Пример: https://qr.nspk.ru/AD100004ABC12345?type=02&bank=100000000111&sum=150000&cur=RUB&crc=A4F2
+	 */
+	static buildNspkDynamicPayload(params: {
+		operationId: string;
+		bankMemberId: string;
+		amountKopecks: number;
+		currency?: string;
+	}): {
+		payloadUrl: string;
+		cleanOperationId: string;
+		crc16: string;
+	} {
+		const cleanOperationId = params.operationId
+			.replace(/[^A-Za-z0-9]/g, "")
+			.toUpperCase();
+		const cur = params.currency || "RUB";
+		const baseQuery = `https://qr.nspk.ru/${cleanOperationId}?type=02&bank=${params.bankMemberId}&sum=${params.amountKopecks}&cur=${cur}`;
+		const crc16 = this.computeCrc16Ccitt(baseQuery);
+		const payloadUrl = `${baseQuery}&crc=${crc16}`;
+		return { payloadUrl, cleanOperationId, crc16 };
+	}
+
+	/**
+	 * Проверяет подлинность и контрольную сумму URL СБП
+	 */
+	static verifyNspkPayload(payloadUrl: string): {
+		isValid: boolean;
+		operationId: string | null;
+		amountKopecks: number | null;
+		bankMemberId: string | null;
+	} {
+		try {
+			const url = new URL(payloadUrl);
+			if (!url.hostname.includes("nspk.ru")) {
+				return {
+					isValid: false,
+					operationId: null,
+					amountKopecks: null,
+					bankMemberId: null,
+				};
+			}
+			const pathParts = url.pathname.split("/").filter(Boolean);
+			const operationId = pathParts[0] || null;
+			const bank = url.searchParams.get("bank");
+			const sumStr = url.searchParams.get("sum");
+			const crc = url.searchParams.get("crc");
+			if (!operationId || !bank || !sumStr || !crc) {
+				return {
+					isValid: false,
+					operationId,
+					amountKopecks: null,
+					bankMemberId: bank,
+				};
+			}
+			const sum = parseInt(sumStr, 10);
+			const cur = url.searchParams.get("cur") || "RUB";
+			const baseQuery = `https://qr.nspk.ru/${operationId}?type=02&bank=${bank}&sum=${sum}&cur=${cur}`;
+			const expectedCrc = this.computeCrc16Ccitt(baseQuery);
+			const isValid = expectedCrc.toUpperCase() === crc.toUpperCase();
+			return {
+				isValid,
+				operationId,
+				amountKopecks: sum,
+				bankMemberId: bank,
+			};
+		} catch {
+			return {
+				isValid: false,
+				operationId: null,
+				amountKopecks: null,
+				bankMemberId: null,
+			};
+		}
+	}
+}
+
+
 
 
 
