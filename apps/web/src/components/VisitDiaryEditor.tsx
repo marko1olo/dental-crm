@@ -1026,7 +1026,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 						data-testid="diary-tray-scan"
 						onClick={() => setShowScanner(true)}
 						className="vde-043__btn"
-						style={{ color: "var(--brand-600, #0284c7)" }}
+						style={{ color: "var(--teal, #0d9488)" }}
 						disabled={diaryUnread}
 					>
 						<Activity className="w-4 h-4" />

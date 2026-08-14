@@ -11,6 +11,7 @@ import {
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { matchesPatientSearch } from "../utils/patientSearchUtils";
+import "./CommandPalette.css";
 
 interface CommandPaletteProps {
 	patients: {
@@ -146,24 +147,18 @@ export function CommandPalette({
 	if (!isOpen) return null;
 
 	return (
-		<button
-			type="button"
-			className="cmd-palette-overlay"
+		<div
+			className="cmd-palette-backdrop"
+			role="dialog"
+			aria-modal="true"
+			aria-label="Палитра команд"
 			onClick={(e) => {
 				if (e.target === e.currentTarget) setIsOpen(false);
 			}}
-			onKeyDown={(e) => {
-				if (
-					e.target === e.currentTarget &&
-					(e.key === "Enter" || e.key === " ")
-				) {
-					setIsOpen(false);
-				}
-			}}
 		>
-			<div className="cmd-palette-modal">
-				<div className="cmd-palette-header">
-					<Search size={20} className="cmd-palette-icon" />
+			<div className="cmd-palette-container">
+				<div className="cmd-palette-input-container">
+					<Search size={20} className="cmd-palette-item-icon" style={{ margin: "0 12px 0 0" }} />
 					<input
 						ref={inputRef}
 						className="cmd-palette-input"
@@ -174,22 +169,23 @@ export function CommandPalette({
 					/>
 					<button
 						type="button"
-						className="cmd-palette-close"
+						className="cmd-palette-esc"
 						onClick={() => setIsOpen(false)}
 					>
-						<X size={20} />
+						ESC
 					</button>
 				</div>
-				<div className="cmd-palette-content">
+				<div className="cmd-palette-results">
 					{items.length === 0 ? (
 						<div className="cmd-palette-empty">Ничего не найдено</div>
 					) : (
-						<ul className="cmd-palette-list">
+						<ul className="cmd-palette-list" style={{ listStyle: "none", margin: 0, padding: 0 }}>
 							{(items ?? []).map((item, index) => (
 								<li key={item.id}>
 									<button
 										type="button"
-										className={`cmd-palette-item ${index === selectedIndex ? "selected" : ""}`}
+										className={`cmd-palette-item ${index === selectedIndex ? "cmd-palette-item-selected" : ""}`}
+										style={{ width: "100%", textAlign: "left", border: "none" }}
 										onMouseEnter={() => setSelectedIndex(index)}
 										onClick={() => {
 											item.action();
@@ -197,19 +193,19 @@ export function CommandPalette({
 										}}
 									>
 										<span className="cmd-palette-item-icon">{item.icon}</span>
-										<div className="cmd-palette-item-text">
-											<span className="cmd-palette-item-label">
+										<div className="cmd-palette-item-text" style={{ flex: 1 }}>
+											<div className="cmd-palette-item-label">
 												{item.label}
-											</span>
+											</div>
 											{item.subLabel && (
-												<span className="cmd-palette-item-sublabel">
+												<div className="cmd-palette-item-sublabel">
 													{item.subLabel}
-												</span>
+												</div>
 											)}
 										</div>
 										<ChevronRight
 											size={16}
-											className="cmd-palette-item-arrow"
+											style={{ opacity: index === selectedIndex ? 1 : 0.4 }}
 										/>
 									</button>
 								</li>
@@ -217,7 +213,12 @@ export function CommandPalette({
 						</ul>
 					)}
 				</div>
+				<div className="cmd-palette-footer">
+					<span><kbd className="cmd-palette-kbd">↑</kbd> <kbd className="cmd-palette-kbd">↓</kbd> навигация</span>
+					<span><kbd className="cmd-palette-kbd">↵</kbd> выбор</span>
+					<span><kbd className="cmd-palette-kbd">Esc</kbd> закрыть</span>
+				</div>
 			</div>
-		</button>
+		</div>
 	);
 }

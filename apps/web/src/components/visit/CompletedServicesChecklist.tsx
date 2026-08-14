@@ -282,13 +282,13 @@ export const CompletedServicesChecklist: React.FC = () => {
 								item?.id ??
 								`${item?.serviceId ?? "услуга"}-${item?.toothCode ?? "без-зуба"}-${index}`
 							}
-							className="flex items-center gap-2 cursor-pointer text-xs text-slate-800 dark:text-slate-200"
+							className="flex items-center gap-2.5 cursor-pointer text-xs text-slate-800 dark:text-slate-200 min-h-[36px] py-1 px-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
 						>
 							<input
 								type="checkbox"
 								checked={marked}
 								onChange={() => toggle(item)}
-								className="rounded border-slate-300 dark:border-slate-700"
+								className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-teal-600 focus:ring-teal-500"
 							/>
 							<span className="flex-1">
 								{serviceTitleOf(item)}

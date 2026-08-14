@@ -68,7 +68,7 @@ function DiagnocatReportWidget({ patientId }: { patientId: string }) {
 
 	if (loadError) {
 		return (
-			<div style={{ color: "var(--red-dark)", fontSize: 13 }}>
+			<div style={{ color: "var(--bad, #ef4444)", fontSize: 13 }}>
 				<AlertTriangle size={14} /> {loadError}
 			</div>
 		);
@@ -274,10 +274,10 @@ export function EmkControlBoard({ dashboard }: any) {
 							<div style={{ display: "flex", gap: "8px", marginLeft: "16px" }}>
 								<button
 									type="button"
-									className="secondary-button focus:outline-none focus:ring-2 focus:ring-red-600"
+									className="secondary-button focus:outline-none focus:ring-2 focus:ring-rose-500"
 									style={{
-										borderColor: "var(--red-soft)",
-										color: "var(--red-dark)",
+										borderColor: "var(--bad-line, #fecaca)",
+										color: "var(--bad, #ef4444)",
 									}}
 									onClick={() => updateStatus(visit.id, "needs_correction")}
 									disabled={submittingId === visit.id}

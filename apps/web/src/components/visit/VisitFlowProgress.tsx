@@ -23,15 +23,15 @@ export const VisitFlowProgress: React.FC<{
 	const getStatusColor = (status: string) => {
 		switch (status) {
 			case "success":
-				return "var(--color-green-500, #10b981)";
+				return "var(--good, #10b981)";
 			case "running":
-				return "var(--color-blue-500, #3b82f6)";
+				return "var(--teal, #0d9488)";
 			case "error":
-				return "var(--color-red-500, #ef4444)";
+				return "var(--bad, #ef4444)";
 			case "skipped":
-				return "var(--color-amber-500, #f59e0b)";
+				return "var(--warn, #f59e0b)";
 			default:
-				return "var(--color-slate-400, #94a3b8)";
+				return "var(--muted, #94a3b8)";
 		}
 	};
 

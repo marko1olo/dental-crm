@@ -342,19 +342,24 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 			</button>
 
 			{showPinDialog && (
-				<div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-					<div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative overflow-hidden">
-						<div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-rose-500 to-orange-500"></div>
+				<div
+					className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+					role="dialog"
+					aria-modal="true"
+					aria-labelledby="crypto-signer-modal-title"
+				>
+					<div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative overflow-hidden text-slate-900 dark:text-white">
+						<div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal-500 to-emerald-500"></div>
 
-						<h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-							<ShieldCheck className="w-6 h-6 text-rose-500" />
+						<h3 id="crypto-signer-modal-title" className="text-xl font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+							<ShieldCheck className="w-6 h-6 text-teal-600 dark:text-teal-400" />
 							Подписание дневника
 						</h3>
-						<p className="text-zinc-400 text-sm mb-6">
+						<p className="text-slate-600 dark:text-zinc-400 text-sm mb-6">
 							После подписания редактирование будет заблокировано.
 						</p>
 
-						<div className="flex gap-2 mb-6 p-1 bg-zinc-950 rounded-lg border border-zinc-800">
+						<div className="flex gap-2 mb-6 p-1 bg-slate-100 dark:bg-zinc-950 rounded-lg border border-slate-200 dark:border-zinc-800">
 							<button
 								type="button"
 								disabled={lockInProgress}
@@ -366,8 +371,8 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 								}}
 								className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors disabled:opacity-60 ${
 									signatureType === "pin"
-										? "bg-zinc-800 text-white shadow-sm"
-										: "text-zinc-500 hover:text-zinc-300"
+										? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm"
+										: "text-slate-600 dark:text-zinc-500 hover:text-slate-900 dark:hover:text-zinc-300"
 								}`}
 							>
 								Простая подпись (ПИН)
@@ -383,8 +388,8 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 								}}
 								className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors disabled:opacity-60 ${
 									signatureType === "crypto"
-										? "bg-zinc-800 text-white shadow-sm"
-										: "text-zinc-500 hover:text-zinc-300"
+										? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm"
+										: "text-slate-600 dark:text-zinc-500 hover:text-slate-900 dark:hover:text-zinc-300"
 								}`}
 							>
 								КриптоПро / Рутокен
@@ -395,7 +400,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 							<div className="mb-6">
 								<label
 									htmlFor="cryptopro-pincode"
-									className="block text-xs font-medium text-zinc-500 mb-2 uppercase tracking-wider"
+									className="block text-xs font-medium text-slate-700 dark:text-zinc-400 mb-2 uppercase tracking-wider"
 								>
 									Ваш ПИН-код сотрудника
 								</label>
@@ -406,7 +411,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 									autoComplete="off"
 									maxLength={4}
 									disabled={lockInProgress}
-									className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-center text-2xl tracking-[1em] focus:ring-2 focus:ring-rose-500 focus:outline-none disabled:opacity-60"
+									className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-300 dark:border-zinc-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white text-center text-2xl tracking-[1em] focus:ring-2 focus:ring-teal-500 focus:outline-none disabled:opacity-60"
 									value={pinCode}
 									onChange={(e) => {
 										setPinCode(e.target.value.replace(/\D/g, ""));
@@ -497,7 +502,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 									<div>
 										<label
 											htmlFor="cryptopro-token-pin"
-											className="block text-xs font-medium text-zinc-500 mb-2 uppercase tracking-wider"
+											className="block text-xs font-medium text-slate-700 dark:text-zinc-400 mb-2 uppercase tracking-wider"
 										>
 											ПИН-код носителя Рутокен
 										</label>
@@ -506,7 +511,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 											type="password"
 											autoComplete="off"
 											disabled={lockInProgress}
-											className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-rose-500 focus:outline-none disabled:opacity-60"
+											className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-300 dark:border-zinc-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:outline-none disabled:opacity-60"
 											value={pinCode}
 											onChange={(e) => {
 												setPinCode(e.target.value);
@@ -556,7 +561,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 										? "Идёт подписание. Дождитесь подтверждения сервера или сообщения об отказе — закрытое окно выглядело бы как подписанная запись."
 										: undefined
 								}
-								className="flex-1 px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium rounded-xl transition-colors disabled:opacity-60"
+								className="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-300 font-medium rounded-xl transition-colors disabled:opacity-60"
 							>
 								Отмена
 							</button>
@@ -577,7 +582,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 										? CRYPTO_SIGNING_UNAVAILABLE_TEXT
 										: undefined
 								}
-								className="flex-1 px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-medium rounded-xl transition-colors shadow-lg shadow-rose-500/20 disabled:opacity-60 flex items-center justify-center gap-2"
+								className="flex-1 px-4 py-2.5 bg-teal-600 hover:bg-teal-500 text-white font-medium rounded-xl transition-colors shadow-lg shadow-teal-500/20 disabled:opacity-60 flex items-center justify-center gap-2"
 							>
 								{lockInProgress ? (
 									"Подписываю…"

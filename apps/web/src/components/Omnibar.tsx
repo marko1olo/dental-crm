@@ -245,6 +245,9 @@ export function Omnibar() {
 								animate={{ opacity: 1, scale: 1, y: 0 }}
 								exit={{ opacity: 0, scale: 0.95, y: -10 }}
 								transition={{ duration: 0.15, ease: "easeOut" }}
+								role="dialog"
+								aria-modal="true"
+								aria-label="Быстрый поиск и команды"
 								className="relative w-full max-w-2xl bg-white dark:bg-slate-900 shadow-2xl rounded-2xl overflow-hidden border border-neutral-200 dark:border-slate-800 flex flex-col text-slate-900 dark:text-slate-100"
 								style={{ maxHeight: "60vh" }}
 							>

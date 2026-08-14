@@ -547,7 +547,7 @@ export function VisitEmkTab() {
 									width: "100%",
 								}}
 							>
-								<strong style={{ fontSize: "0.85rem", color: "#475569" }}>
+								<strong className="text-xs font-semibold text-slate-700 dark:text-slate-300">
 									{field.label}
 								</strong>
 								<SmartMicrophoneButton
@@ -597,7 +597,7 @@ export function VisitEmkTab() {
 								onChange={(event) =>
 									updateVisitNoteField?.(field.key, event.target.value)
 								}
-								className="min-h-[80px] rounded-lg p-2.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white resize-y w-full outline-none focus:border-sky-500"
+								className="min-h-[80px] rounded-lg p-2.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white resize-y w-full outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
 							/>
 						</div>
 					);
