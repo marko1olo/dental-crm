@@ -30,6 +30,7 @@ export type DayGroupingAppointment = {
 	doctorUserId: string | null;
 	chairId: string | null;
 	patientId: string | null;
+	assistantUserId?: string | null;
 };
 
 /**
@@ -65,6 +66,8 @@ export type ScheduleDayRow =
 			minutes: number;
 			sameDoctor: boolean;
 			sameChair: boolean;
+			sameAssistant: boolean;
+			samePatient: boolean;
 			withAppointmentId: string;
 	  };
 
@@ -218,12 +221,23 @@ export function groupAppointmentsByClinicDay(
 					const sameChair = Boolean(
 						appointment.chairId && appointment.chairId === earlier.chairId,
 					);
-					if (!sameDoctor && !sameChair) continue;
+					const sameAssistant = Boolean(
+						appointment.assistantUserId &&
+							appointment.assistantUserId === earlier.assistantUserId,
+					);
+					const samePatient = Boolean(
+						appointment.patientId &&
+							appointment.patientId === earlier.patientId,
+					);
+					if (!sameDoctor && !sameChair && !sameAssistant && !samePatient)
+						continue;
 					rows.push({
 						kind: "overlap",
 						minutes: Math.round(overlapMs / MINUTE_MS),
 						sameDoctor,
 						sameChair,
+						sameAssistant,
+						samePatient,
 						withAppointmentId: earlier.id,
 					});
 					overlapCount += 1;

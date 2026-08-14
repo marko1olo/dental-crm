@@ -1,7 +1,7 @@
 import type { Appointment, Dashboard } from "@dental/shared";
 import { Bot, Plus } from "lucide-react";
 import type { ChangeEvent } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { AppointmentScheduleDraft } from "../../AppConstants";
 import { appointmentScheduleMissingFields } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -13,6 +13,7 @@ import {
 	SmartParsePreview,
 } from "../../SmartParsePreview";
 import { logger } from "../../utils/logger";
+import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { showToast } from "../GlobalToast";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 
@@ -183,7 +184,34 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 		dashboard.clinicSettings?.staff,
 		{ chairs: dashboard.clinicSettings?.chairs, patients: dashboard.patients },
 	);
-	const newAppointmentReadyToCreate = newAppointmentMissingSteps.length === 0;
+
+	const collision = useMemo(() => {
+		return checkAppointmentResourceCollision(
+			newAppointmentDraft as AppointmentScheduleDraft,
+			dashboard.appointments,
+			{
+				staff: dashboard.clinicSettings?.staff,
+				chairs: dashboard.clinicSettings?.chairs,
+				patients: dashboard.patients,
+				formatTimeFn: (iso) =>
+					toDateTimeLocalValue(
+						iso,
+						dashboard.clinicSettings?.profile?.timezone,
+					).slice(11, 16),
+			},
+		);
+	}, [
+		newAppointmentDraft,
+		dashboard.appointments,
+		dashboard.clinicSettings?.staff,
+		dashboard.clinicSettings?.chairs,
+		dashboard.clinicSettings?.profile?.timezone,
+		dashboard.patients,
+		toDateTimeLocalValue,
+	]);
+
+	const newAppointmentReadyToCreate =
+		newAppointmentMissingSteps.length === 0 && !collision.hasCollision;
 
 	/**
 	 * Что сказать человеку, если запись не создалась. Сервер не всегда присылает
@@ -497,7 +525,16 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 						)}
 					</div>
 					<div className="flex gap-2 items-center">
-						{newAppointmentReadyToCreate ? (
+						{collision.hasCollision ? (
+							<span
+								id="new-appointment-create-collision"
+								className="save-state font-medium text-rose-600 dark:text-rose-400 text-xs flex items-center gap-1"
+								role="alert"
+								title={collision.message ?? "Конфликт времени"}
+							>
+								⛔ {collision.message}
+							</span>
+						) : newAppointmentReadyToCreate ? (
 							<span className="save-state save-state-idle font-medium text-emerald-600 dark:text-emerald-400 text-xs">
 								✓ Готово к созданию
 							</span>
@@ -539,9 +576,11 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 							}
 							aria-busy={newAppointmentSaveState === "saving" || undefined}
 							aria-describedby={
-								!newAppointmentReadyToCreate
-									? "new-appointment-create-missing-short"
-									: undefined
+								collision.hasCollision
+									? "new-appointment-create-collision"
+									: !newAppointmentReadyToCreate
+										? "new-appointment-create-missing-short"
+										: undefined
 							}
 							className="primary-button px-3.5 py-1.5 min-h-[32px] bg-sky-600 hover:bg-sky-700 text-white rounded-md flex items-center text-xs font-semibold disabled:opacity-50 cursor-pointer focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
 						>

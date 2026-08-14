@@ -5,6 +5,8 @@ import type {
 	ScheduleSuggestion,
 } from "@dental/shared";
 import type { ChangeEvent } from "react";
+import { useMemo } from "react";
+import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { WaitlistMatchesBlock } from "./WaitlistMatchesBlock";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
@@ -118,6 +120,44 @@ export function AppointmentCard(props: AppointmentCardProps) {
 		typeof patientName === "function"
 			? patientName(dashboard?.patients ?? [], appointment?.patientId ?? null)
 			: "";
+
+	const collision = useMemo(() => {
+		if (!appointmentEditing || !appointmentDraft) {
+			return {
+				hasCollision: false,
+				conflictType: null,
+				conflictingAppointment: null,
+				message: null,
+			};
+		}
+		return checkAppointmentResourceCollision(
+			appointmentDraft,
+			dashboard?.appointments,
+			{
+				excludeAppointmentId: appointment.id,
+				staff: dashboard?.clinicSettings?.staff,
+				chairs: dashboard?.clinicSettings?.chairs,
+				patients: dashboard?.patients,
+				formatTimeFn: (iso) =>
+					toDateTimeLocalValue(
+						iso,
+						dashboard?.clinicSettings?.profile?.timezone,
+					).slice(11, 16),
+			},
+		);
+	}, [
+		appointmentEditing,
+		appointmentDraft,
+		appointment.id,
+		dashboard?.appointments,
+		dashboard?.clinicSettings?.staff,
+		dashboard?.clinicSettings?.chairs,
+		dashboard?.clinicSettings?.profile?.timezone,
+		dashboard?.patients,
+		toDateTimeLocalValue,
+	]);
+
+	const canSave = appointmentReadyToSave && !collision.hasCollision;
 
 	return (
 		<div className="timeline-node" key={appointment.id}>
@@ -691,6 +731,17 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									{appointmentSaveError ? (
 										<span className="save-error">{appointmentSaveError}</span>
 									) : null}
+									{collision.hasCollision ? (
+										<div
+											className="schedule-create-missing schedule-save-missing"
+											id={`appointment-collision-${appointment?.id ?? ""}`}
+											role="alert"
+										>
+											<strong style={{ color: "var(--color-rose-600, #e11d48)" }}>
+												⛔ {collision.message}
+											</strong>
+										</div>
+									) : null}
 									{(appointmentMissingSteps ?? []).length ? (
 										<div
 											className="schedule-create-missing schedule-save-missing"
@@ -764,14 +815,16 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									type="button"
 									onClick={() => void saveAppointmentSchedule(appointment.id)}
 									disabled={
-										appointmentSaveState === "saving" || !appointmentReadyToSave
+										appointmentSaveState === "saving" || !canSave
 									}
 									aria-busy={appointmentSaveState === "saving" || undefined}
 									aria-describedby={
-										!appointmentReadyToSave &&
-										(appointmentMissingSteps ?? []).length
-											? appointmentSaveMissingId
-											: undefined
+										collision.hasCollision
+											? `appointment-collision-${appointment?.id ?? ""}`
+											: !appointmentReadyToSave &&
+													(appointmentMissingSteps ?? []).length
+												? appointmentSaveMissingId
+												: undefined
 									}
 								>
 									Сохранить запись

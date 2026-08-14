@@ -92,12 +92,21 @@ export function dateInputValuePlusDays(
 	return shiftCalendarDay(calendarDayInTimeZone(new Date(), timeZone), days);
 }
 
-export function formatTime(value: string) {
-	return new Intl.DateTimeFormat("ru-RU", {
-		hour: "2-digit",
-		minute: "2-digit",
-		timeZone: "Europe/Samara",
-	}).format(new Date(value));
+export function formatTime(value: string, timeZone = "Europe/Samara") {
+	const parsed = new Date(value);
+	if (Number.isNaN(parsed.getTime())) return "—";
+	try {
+		return new Intl.DateTimeFormat("ru-RU", {
+			hour: "2-digit",
+			minute: "2-digit",
+			timeZone,
+		}).format(parsed);
+	} catch {
+		return new Intl.DateTimeFormat("ru-RU", {
+			hour: "2-digit",
+			minute: "2-digit",
+		}).format(parsed);
+	}
 }
 
 /**
@@ -120,23 +129,44 @@ export function minutesLabel(value: number) {
 	return minutes ? `${hours} ч ${minutes} мин` : `${hours} ч`;
 }
 
-export function formatDateTime(value: string) {
-	return new Intl.DateTimeFormat("ru-RU", {
-		day: "2-digit",
-		month: "2-digit",
-		hour: "2-digit",
-		minute: "2-digit",
-		timeZone: "Europe/Samara",
-	}).format(new Date(value));
+export function formatDateTime(value: string, timeZone = "Europe/Samara") {
+	const parsed = new Date(value);
+	if (Number.isNaN(parsed.getTime())) return "—";
+	try {
+		return new Intl.DateTimeFormat("ru-RU", {
+			day: "2-digit",
+			month: "2-digit",
+			hour: "2-digit",
+			minute: "2-digit",
+			timeZone,
+		}).format(parsed);
+	} catch {
+		return new Intl.DateTimeFormat("ru-RU", {
+			day: "2-digit",
+			month: "2-digit",
+			hour: "2-digit",
+			minute: "2-digit",
+		}).format(parsed);
+	}
 }
 
-export function formatShortDate(value: string) {
-	return new Intl.DateTimeFormat("ru-RU", {
-		day: "2-digit",
-		month: "2-digit",
-		year: "2-digit",
-		timeZone: "Europe/Samara",
-	}).format(new Date(value));
+export function formatShortDate(value: string, timeZone = "Europe/Samara") {
+	const parsed = new Date(value);
+	if (Number.isNaN(parsed.getTime())) return "—";
+	try {
+		return new Intl.DateTimeFormat("ru-RU", {
+			day: "2-digit",
+			month: "2-digit",
+			year: "2-digit",
+			timeZone,
+		}).format(parsed);
+	} catch {
+		return new Intl.DateTimeFormat("ru-RU", {
+			day: "2-digit",
+			month: "2-digit",
+			year: "2-digit",
+		}).format(parsed);
+	}
 }
 
 export function validClockTime(value: string): boolean {

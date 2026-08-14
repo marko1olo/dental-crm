@@ -184,6 +184,7 @@ describe("groupAppointmentsByClinicDay", () => {
 					endsAt: "2026-07-28T05:45:00.000Z",
 					doctorUserId: "doc-2",
 					chairId: "chair-2",
+					patientId: "pat-2",
 				}),
 			],
 			{ toClinicLocal: samaraLocal, todayKey: "2026-07-28" },
@@ -200,6 +201,7 @@ describe("groupAppointmentsByClinicDay", () => {
 					startsAt: "2026-07-28T05:15:00.000Z",
 					endsAt: "2026-07-28T05:45:00.000Z",
 					doctorUserId: "doc-2",
+					patientId: "pat-2",
 				}),
 			],
 			{ toClinicLocal: samaraLocal, todayKey: "2026-07-28" },
@@ -207,6 +209,43 @@ describe("groupAppointmentsByClinicDay", () => {
 		const overlap = onlyRow(group(groups, 0), "overlap");
 		assert.equal(overlap.sameChair, true);
 		assert.equal(overlap.sameDoctor, false);
+	});
+
+	it("находит накладку по пациенту или ассистенту", () => {
+		const patientGroups = groupAppointmentsByClinicDay(
+			[
+				appointment({ id: "first", chairId: "chair-1", doctorUserId: "doc-1", patientId: "pat-same" }),
+				appointment({
+					id: "second",
+					startsAt: "2026-07-28T05:15:00.000Z",
+					endsAt: "2026-07-28T05:45:00.000Z",
+					doctorUserId: "doc-2",
+					chairId: "chair-2",
+					patientId: "pat-same",
+				}),
+			],
+			{ toClinicLocal: samaraLocal, todayKey: "2026-07-28" },
+		);
+		const patientOverlap = onlyRow(group(patientGroups, 0), "overlap");
+		assert.equal(patientOverlap.samePatient, true);
+
+		const assistantGroups = groupAppointmentsByClinicDay(
+			[
+				appointment({ id: "first", chairId: "chair-1", doctorUserId: "doc-1", patientId: "pat-1", assistantUserId: "ast-1" }),
+				appointment({
+					id: "second",
+					startsAt: "2026-07-28T05:15:00.000Z",
+					endsAt: "2026-07-28T05:45:00.000Z",
+					doctorUserId: "doc-2",
+					chairId: "chair-2",
+					patientId: "pat-2",
+					assistantUserId: "ast-1",
+				}),
+			],
+			{ toClinicLocal: samaraLocal, todayKey: "2026-07-28" },
+		);
+		const assistantOverlap = onlyRow(group(assistantGroups, 0), "overlap");
+		assert.equal(assistantOverlap.sameAssistant, true);
 	});
 
 	it("отменённый приём и неявка время не занимают: их место — свободное окно", () => {

@@ -2,6 +2,7 @@ import {
 	SbpQrEngine,
 	createFiscalReceiptPayloadSchema,
 	generateSbpDynamicQrSchema,
+	kopecksToNumericString,
 } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
@@ -62,7 +63,7 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 			operationId: cleanOperationId,
 			crc16,
 			amountKopecks: input.amountKopecks,
-			amountRub: Number((input.amountKopecks / 100).toFixed(2)),
+			amountRub: Number(kopecksToNumericString(input.amountKopecks)),
 			currency: input.currency,
 			qrSvg,
 			ttlSeconds: input.ttlSeconds,
@@ -180,20 +181,21 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 				}
 			}
 
+			const isReturn = input.operationType === "income_return";
 			const [payment] = await tx
 				.insert(payments)
 				.values({
 					organizationId: orgId,
 					patientId: input.patientId,
 					clientMutationId: effectiveMutationId,
-					amountRub: Number((input.totalKopecks / 100).toFixed(2)),
+					amountRub: Number(kopecksToNumericString(input.totalKopecks)),
 					method:
 						input.sbpKopecks > 0
 							? "online"
 							: input.electronicCardKopecks > 0
 								? "card"
 								: "cash",
-					status: "paid",
+					status: isReturn ? "refunded" : "paid",
 					paidAt: now,
 					fiscalReceiptNumber,
 					fiscalReceiptIssuedAt: now.toISOString(),
@@ -207,12 +209,11 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 						fpd: "FP-987654321",
 						cashierName: input.cashierFullName,
 						receiptUrl: `https://ofd.ru/check/${fiscalReceiptNumber}`,
-						operationType:
-							input.operationType === "income"
-								? "income"
-								: "income_return",
+						operationType: isReturn ? "income_return" : "income",
 					},
-					note: `Фискализация 54-ФЗ. Чек ${fiscalReceiptNumber}`,
+					note: isReturn
+						? `Возврат прихода 54-ФЗ. Чек ${fiscalReceiptNumber}`
+						: `Фискализация 54-ФЗ. Чек ${fiscalReceiptNumber}`,
 				})
 				.returning();
 
@@ -230,14 +231,16 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 							: input.electronicCardKopecks > 0
 								? "card"
 								: "cash",
-					amountRub: (input.totalKopecks / 100).toFixed(2),
+					amountRub: isReturn
+						? `-${kopecksToNumericString(input.totalKopecks)}`
+						: kopecksToNumericString(input.totalKopecks),
 					timestamp: now,
 				});
 
 				await tx
 					.update(patientInvoices)
 					.set({
-						status: "paid",
+						status: isReturn ? "refunded" : "paid",
 						paidAt: now,
 					})
 					.where(
@@ -257,7 +260,7 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 				dispatchChannel: isEmail ? "email" : "sms",
 				targetDestination: input.customerContact,
 				fiscalReceiptNumber,
-				receiptAmountRub: (input.totalKopecks / 100).toFixed(2),
+				receiptAmountRub: kopecksToNumericString(input.totalKopecks),
 				paperPrintSkipped: true,
 			});
 

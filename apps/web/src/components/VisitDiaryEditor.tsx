@@ -924,7 +924,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 									setDiary((p) => ({ ...p, diagnosisTooth: e.target.value }))
 								}
 								placeholder="16, 36..."
-								maxLength={8}
+								maxLength={32}
 							/>
 						</div>
 					</div>

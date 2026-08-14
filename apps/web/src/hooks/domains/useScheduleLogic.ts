@@ -895,6 +895,13 @@ export function useScheduleLogic({
 			setScheduleAdminSecretDemand("");
 			const payload = await response.json();
 			const nextDashboard = payload as Dashboard;
+			if (
+				nextDashboard &&
+				typeof nextDashboard === "object" &&
+				!Array.isArray(nextDashboard.appointments)
+			) {
+				nextDashboard.appointments = [];
+			}
 			const createdAppointment =
 				nextDashboard.appointments?.find(
 					(appointment) => !previousIds.has(appointment.id),

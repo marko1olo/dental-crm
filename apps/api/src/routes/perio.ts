@@ -81,6 +81,7 @@ export async function registerPerioRoutes(app: FastifyInstance) {
 					visitId: perioCharts.visitId,
 					doctorId: perioCharts.doctorId,
 					chartDate: perioCharts.chartDate,
+					teethData: perioCharts.teethData,
 					summaryData: perioCharts.summaryData,
 					psrData: perioCharts.psrData,
 					notes: perioCharts.notes,

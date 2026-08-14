@@ -652,6 +652,17 @@ export async function registerDicomwebRoutes(app: FastifyInstance) {
 				});
 			}
 
+			let fileSize = 0;
+			try {
+				const stat = await fs.stat(filePath);
+				fileSize = stat.size;
+			} catch {
+				return reply.code(404).send({
+					error: "DicomInstanceFileNotFound",
+					message: "Файл снимка не найден на сервере.",
+				});
+			}
+
 			if (frameNumber > identity.numberOfFrames) {
 				return reply.code(404).send({
 					error: "FrameNotFound",
@@ -671,14 +682,28 @@ export async function registerDicomwebRoutes(app: FastifyInstance) {
 			if (identity.pixelDataOffset !== null && frameSizeBytes > 0) {
 				const frameStart =
 					identity.pixelDataOffset + frameIndex * frameSizeBytes;
-				const frameEnd = frameStart + frameSizeBytes - 1;
 
-				reply.code(200);
-				reply.header("Content-Type", "application/octet-stream");
-				reply.header("Content-Length", frameSizeBytes);
-				return reply.send(
-					createReadStream(filePath, { start: frameStart, end: frameEnd }),
-				);
+				if (frameStart < fileSize) {
+					const frameEnd = Math.min(
+						frameStart + frameSizeBytes - 1,
+						fileSize - 1,
+					);
+					const actualLength = frameEnd - frameStart + 1;
+
+					reply.code(200);
+					reply.header("Content-Type", "application/octet-stream");
+					reply.header("Content-Length", actualLength);
+					return reply.send(
+						createReadStream(filePath, { start: frameStart, end: frameEnd }),
+					);
+				}
+
+				if (frameNumber > 1) {
+					return reply.code(422).send({
+						error: "FrameOutOfBounds",
+						message: "Смещение запрашиваемого кадра выходит за пределы файла DICOM.",
+					});
+				}
 			}
 
 			if (frameNumber === 1) {

@@ -85,8 +85,13 @@ export function PeriodontalChartModule({
 					const body = await res.json();
 					if (isMounted && Array.isArray(body.charts) && body.charts.length > 0) {
 						const latest = body.charts[0];
-						if (Array.isArray(latest.teethData?.teeth) && latest.teethData.teeth.length > 0) {
-							setTeeth(latest.teethData.teeth);
+						const loadedTeeth = Array.isArray(latest.teethData)
+							? latest.teethData
+							: Array.isArray(latest.teethData?.teeth)
+								? latest.teethData.teeth
+								: null;
+						if (loadedTeeth && loadedTeeth.length > 0) {
+							setTeeth(loadedTeeth);
 							if (latest.notes) setChartNotes(latest.notes);
 						}
 					}
@@ -115,21 +120,12 @@ export function PeriodontalChartModule({
 	const handleSaveChart = async () => {
 		try {
 			setSaving(true);
-			const psr = calculatePsrSextants(teeth);
-			const chartData = {
-				chartDate: new Date().toISOString(),
-				teeth,
-				summary,
-			};
-
 			const payload = {
-				patientId,
 				visitId: visitId || null,
 				doctorId: doctorId || null,
-				teethData: chartData,
-				summaryData: summary,
-				psrData: psr,
-				notes: chartNotes,
+				chartDate: new Date().toISOString(),
+				teeth,
+				notes: chartNotes || null,
 			};
 
 			const headers = {
@@ -145,8 +141,13 @@ export function PeriodontalChartModule({
 			});
 
 			if (res.ok) {
+				const riskLabels: Record<string, string> = {
+					low: "НИЗКИЙ",
+					moderate: "СРЕДНИЙ",
+					high: "ВЫСОКИЙ",
+				};
 				showToast(
-					`Пародонтологическая карта сохранена (FMBS: ${summary.fmbsPercent}%, FMPS: ${summary.fmpsPercent}%, Риск: ${summary.riskCategory.toUpperCase()})`,
+					`Пародонтологическая карта сохранена (FMBS: ${summary.fmbsPercent}%, FMPS: ${summary.fmpsPercent}%, Риск: ${riskLabels[summary.riskCategory] || summary.riskCategory})`,
 					"success",
 				);
 			} else {
@@ -162,8 +163,16 @@ export function PeriodontalChartModule({
 
 	const currentTooth = teeth.find((t) => t.toothNumber === activeToothNumber) || teeth[0];
 
-	const upperTeeth = teeth.filter((t) => t.toothNumber >= 11 && t.toothNumber <= 28);
-	const lowerTeeth = teeth.filter((t) => t.toothNumber >= 31 && t.toothNumber <= 48);
+	const upperTeeth = teeth.filter(
+		(t) =>
+			(t.toothNumber >= 11 && t.toothNumber <= 28) ||
+			(t.toothNumber >= 51 && t.toothNumber <= 65),
+	);
+	const lowerTeeth = teeth.filter(
+		(t) =>
+			(t.toothNumber >= 31 && t.toothNumber <= 48) ||
+			(t.toothNumber >= 71 && t.toothNumber <= 85),
+	);
 	const psr = calculatePsrSextants(teeth);
 
 	return (
@@ -318,7 +327,7 @@ export function PeriodontalChartModule({
 							: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
 					}`}
 				>
-					🦷 Верхняя челюсть (18–28)
+					🦷 Верхняя челюсть (18–28 / 55–65)
 				</button>
 				<button
 					type="button"
@@ -329,7 +338,7 @@ export function PeriodontalChartModule({
 							: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
 					}`}
 				>
-					🦷 Нижняя челюсть (48–38)
+					🦷 Нижняя челюсть (48–38 / 85–75)
 				</button>
 			</div>
 
@@ -404,7 +413,7 @@ export function PeriodontalChartModule({
 									}
 									className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
 								/>
-								Отсутствует (Missing)
+								Отсутствует (адентия / удалён)
 							</label>
 							<label className="inline-flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 cursor-pointer">
 								<input
@@ -418,7 +427,7 @@ export function PeriodontalChartModule({
 									}
 									className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
 								/>
-								Имплантат (Периимплантит)
+								Имплантат (периимплантатное зондирование)
 							</label>
 						</div>
 
@@ -450,7 +459,7 @@ export function PeriodontalChartModule({
 									onChange={(e) =>
 										updateToothField(currentTooth.toothNumber, (t) => ({
 											...t,
-											furcation: Number(e.target.value) as 0 | 1 | 2 | 3,
+											furcation: Number(e.target.value) as 0 | 1 | 2 | 3 | 4,
 										}))
 									}
 									className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-xs font-medium"
@@ -459,6 +468,7 @@ export function PeriodontalChartModule({
 									<option value={1}>I (до 3мм)</option>
 									<option value={2}>II (&gt;3мм)</option>
 									<option value={3}>III (Сквозная)</option>
+									<option value={4}>IV (Сквозная с рецессией)</option>
 								</select>
 							</div>
 						</div>
@@ -469,7 +479,7 @@ export function PeriodontalChartModule({
 						{/* Buccal / Vestibular Aspects */}
 						<div className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 space-y-2">
 							<div className="text-xs font-semibold text-teal-700 dark:text-teal-400">
-								Вестибулярно / Щечно (Buccal)
+								Вестибулярно / щёчно (Buccal)
 							</div>
 							<div className="grid grid-cols-3 gap-2">
 								{(["distoBuccal", "midBuccal", "mesioBuccal"] as const).map((siteKey) => {
@@ -577,6 +587,23 @@ export function PeriodontalChartModule({
 												</button>
 												<button
 													type="button"
+													title="Зубной камень (Calculus)"
+													onClick={() =>
+														updateToothField(currentTooth.toothNumber, (t) => ({
+															...t,
+															[siteKey]: { ...t[siteKey], calculus: !t[siteKey].calculus },
+														}))
+													}
+													className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+														site.calculus
+															? "bg-stone-600 text-white"
+															: "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
+													}`}
+												>
+													CALC
+												</button>
+												<button
+													type="button"
 													title="Гноетечение (Suppuration)"
 													onClick={() =>
 														updateToothField(currentTooth.toothNumber, (t) => ({
@@ -605,7 +632,7 @@ export function PeriodontalChartModule({
 						{/* Lingual / Palatal Aspects */}
 						<div className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 space-y-2">
 							<div className="text-xs font-semibold text-teal-700 dark:text-teal-400">
-								Орально / Язычно / Нёбно (Lingual / Palatal)
+								Орально / язычно / нёбно (Lingual / Palatal)
 							</div>
 							<div className="grid grid-cols-3 gap-2">
 								{(["distoLingual", "midLingual", "mesioLingual"] as const).map((siteKey) => {
@@ -710,6 +737,23 @@ export function PeriodontalChartModule({
 													}`}
 												>
 													PLQ
+												</button>
+												<button
+													type="button"
+													title="Зубной камень (Calculus)"
+													onClick={() =>
+														updateToothField(currentTooth.toothNumber, (t) => ({
+															...t,
+															[siteKey]: { ...t[siteKey], calculus: !t[siteKey].calculus },
+														}))
+													}
+													className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+														site.calculus
+															? "bg-stone-600 text-white"
+															: "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
+													}`}
+												>
+													CALC
 												</button>
 												<button
 													type="button"

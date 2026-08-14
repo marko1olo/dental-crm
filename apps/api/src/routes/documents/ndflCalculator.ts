@@ -87,6 +87,7 @@ export async function register(app: FastifyInstance) {
 		let code2Kopecks: Kopecks = 0;
 
 		for (const row of taxSums) {
+			if (!row.totalAmountRub) continue;
 			const kopecks = toKopecks(row.totalAmountRub, "сумма платежа");
 			if (row.taxDeductionCode === "2") {
 				code2Kopecks += kopecks;

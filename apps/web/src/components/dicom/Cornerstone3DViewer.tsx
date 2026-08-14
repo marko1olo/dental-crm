@@ -205,23 +205,37 @@ export function Cornerstone3DViewer({
 
 	useEffect(() => {
 		async function init() {
-			// 1. Initialize cornerstone core
-			await cornerstone.init();
-			// 2. Initialize cornerstone tools
-			await cornerstoneTools.init();
+			try {
+				// 1. Initialize cornerstone core
+				await cornerstone.init();
+				// 2. Initialize cornerstone tools
+				await cornerstoneTools.init();
 
-			// 3. Initialize DICOM image loader
-			cornerstoneDICOMImageLoader.init({
-				maxWebWorkers: navigator.hardwareConcurrency
-					? Math.min(navigator.hardwareConcurrency, 7)
-					: 1,
-			});
+				// 3. Initialize DICOM image loader
+				cornerstoneDICOMImageLoader.init({
+					maxWebWorkers: navigator.hardwareConcurrency
+						? Math.min(navigator.hardwareConcurrency, 7)
+						: 1,
+				});
 
-			setIsInitialized(true);
+				// Register tools globally once
+				cornerstoneTools.addTool(cornerstoneTools.CrosshairsTool);
+				cornerstoneTools.addTool(cornerstoneTools.WindowLevelTool);
+				cornerstoneTools.addTool(cornerstoneTools.ZoomTool);
+				cornerstoneTools.addTool(cornerstoneTools.LengthTool);
+				cornerstoneTools.addTool(cornerstoneTools.SplineROITool);
+				cornerstoneTools.addTool(cornerstoneTools.EllipticalROITool);
+				cornerstoneTools.addTool(cornerstoneTools.ProbeTool);
+
+				setIsInitialized(true);
+			} catch (err) {
+				logger.error("[Cornerstone3DViewer] Ошибка инициализации 3D-движка:", err);
+				setLoadError("Не удалось инициализировать 3D-движок DICOM. Проверьте поддержку WebGL в браузере.");
+			}
 		}
 
 		if (!isInitialized) {
-			init();
+			void init();
 		}
 
 		return () => {
@@ -260,6 +274,12 @@ export function Cornerstone3DViewer({
 			const vId = `dente-volume-${imageIds.length}-${imageIds[0] ?? "empty"}`;
 			setVolumeId(vId);
 			const renderingEngineId = "my-engine";
+
+			try {
+				cornerstone.cache.purgeCache();
+			} catch {
+				// Ignore
+			}
 
 			const renderingEngine = new cornerstone.RenderingEngine(
 				renderingEngineId,
@@ -346,7 +366,6 @@ export function Cornerstone3DViewer({
 					cornerstoneTools.ToolGroupManager.createToolGroup(toolGroupId)!;
 			}
 
-			cornerstoneTools.addTool(cornerstoneTools.CrosshairsTool);
 			toolGroup.addTool(cornerstoneTools.CrosshairsTool.toolName);
 
 			// We must configure crosshairs before setting active
@@ -373,7 +392,6 @@ export function Cornerstone3DViewer({
 			});
 
 			// Also add WindowLevel on right click
-			cornerstoneTools.addTool(cornerstoneTools.WindowLevelTool);
 			toolGroup.addTool(cornerstoneTools.WindowLevelTool.toolName);
 			toolGroup.setToolActive(cornerstoneTools.WindowLevelTool.toolName, {
 				bindings: [
@@ -382,7 +400,6 @@ export function Cornerstone3DViewer({
 			});
 
 			// Also add Zoom on Wheel
-			cornerstoneTools.addTool(cornerstoneTools.ZoomTool);
 			toolGroup.addTool(cornerstoneTools.ZoomTool.toolName);
 			toolGroup.setToolActive(cornerstoneTools.ZoomTool.toolName, {
 				bindings: [
@@ -391,16 +408,9 @@ export function Cornerstone3DViewer({
 			});
 
 			// Advanced Dental Tools
-			cornerstoneTools.addTool(cornerstoneTools.LengthTool);
 			toolGroup.addTool(cornerstoneTools.LengthTool.toolName);
-
-			cornerstoneTools.addTool(cornerstoneTools.SplineROITool);
 			toolGroup.addTool(cornerstoneTools.SplineROITool.toolName);
-
-			cornerstoneTools.addTool(cornerstoneTools.EllipticalROITool);
 			toolGroup.addTool(cornerstoneTools.EllipticalROITool.toolName);
-
-			cornerstoneTools.addTool(cornerstoneTools.ProbeTool);
 			toolGroup.addTool(cornerstoneTools.ProbeTool.toolName);
 
 			toolGroup.addViewport(viewportIds.axial, renderingEngineId);
@@ -436,6 +446,11 @@ export function Cornerstone3DViewer({
 			cancelled = true;
 			cornerstone.getRenderingEngine("my-engine")?.destroy();
 			cornerstoneTools.ToolGroupManager.destroyToolGroup("mpr-tool-group");
+			try {
+				cornerstone.cache.purgeCache();
+			} catch {
+				// Ignore
+			}
 		};
 	}, [isInitialized, imageIds]);
 
@@ -945,7 +960,7 @@ export function Cornerstone3DViewer({
 						}}
 						onClick={() => setTool(cornerstoneTools.CrosshairsTool.toolName)}
 					>
-						MPR (Oblique)
+						МПР (Срезы)
 					</button>
 					<button
 						type="button"
@@ -1014,7 +1029,7 @@ export function Cornerstone3DViewer({
 						}}
 						onClick={() => setTool(cornerstoneTools.ProbeTool.toolName)}
 					>
-						Probe (HU)
+						Плотность (HU)
 					</button>
 					<button
 						type="button"
@@ -1032,7 +1047,7 @@ export function Cornerstone3DViewer({
 						}}
 						onClick={simulateImplantPlacement}
 					>
-						Implant (+Log)
+						Имплантат (+Протокол)
 					</button>
 				</div>
 
@@ -1130,7 +1145,7 @@ export function Cornerstone3DViewer({
 						style={{ width: "96px", cursor: "pointer" }}
 					/>
 					<span style={{ width: "24px", textAlign: "right" }}>
-						{panorexThickness}mm
+						{panorexThickness} мм
 					</span>
 				</div>
 
@@ -1405,7 +1420,7 @@ export function Cornerstone3DViewer({
 							marginBottom: "16px",
 						}}
 					>
-						Surgical Module Logs
+						Протокол хирургического планирования
 					</div>
 
 					{aiProtocolLog && implants.length > 0 && (
@@ -1456,7 +1471,7 @@ export function Cornerstone3DViewer({
 										d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
 									></path>
 								</svg>
-								AI Auto-Protocol
+								Автопротокол планирования
 							</div>
 							<p style={{ fontSize: "12px", lineHeight: 1.5 }}>
 								{aiProtocolLog}
