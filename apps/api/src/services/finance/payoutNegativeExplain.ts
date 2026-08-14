@@ -214,16 +214,35 @@ export function negativeRowExplanation(row: DoctorPayoutRow): string | null {
 			: `начислено ${moneyRub(row.accruedRub)} — это ${percentText(row.commissionPct)} от кассы ${moneyRub(
 					row.revenueRub,
 				)}`;
+	const withheldParts: string[] = [];
+	if (row.withheldMaterialRub && row.withheldMaterialRub > 0) {
+		withheldParts.push(
+			row.materialDeductionPct === null
+				? `удержано ${moneyRub(row.withheldMaterialRub)} за материалы себестоимостью ${moneyRub(row.materialCostRub)}`
+				: `удержано ${moneyRub(row.withheldMaterialRub)} — это ${percentText(
+						row.materialDeductionPct,
+					)} себестоимости материалов ${moneyRub(row.materialCostRub)}`,
+		);
+	}
+	if (row.withheldLabRub && row.withheldLabRub > 0) {
+		withheldParts.push(
+			row.labDeductionPct === null || row.labDeductionPct === undefined
+				? `удержано ${moneyRub(row.withheldLabRub)} за лабораторию (ЗТЛ) стоимостью ${moneyRub(row.labCostRub)}`
+				: `удержано ${moneyRub(row.withheldLabRub)} — это ${percentText(
+						row.labDeductionPct,
+					)} стоимости ЗТЛ ${moneyRub(row.labCostRub)}`,
+		);
+	}
+
 	const withheldClause =
-		row.materialDeductionPct === null
-			? `удержано ${moneyRub(row.withheldMaterialRub)} за материалы себестоимостью ${moneyRub(row.materialCostRub)}`
-			: `удержано ${moneyRub(row.withheldMaterialRub)} — это ${percentText(
-					row.materialDeductionPct,
-				)} себестоимости материалов ${moneyRub(row.materialCostRub)}`;
+		withheldParts.length > 0 ? withheldParts.join(", ") : "удержаний нет";
+	const totalWithheldRub = roundMoney(
+		new Decimal(row.withheldMaterialRub ?? 0).plus(row.withheldLabRub ?? 0),
+	);
 
 	parts.push(
 		`Выплаты за период нет: получился долг врача клинике ${moneyRub(debtRub)}. Считалось так: ${accruedClause}, ` +
-			`${withheldClause}. ${moneyRub(row.accruedRub)} минус ${moneyRub(row.withheldMaterialRub)} = ` +
+			`${withheldClause}. ${moneyRub(row.accruedRub)} минус ${moneyRub(totalWithheldRub)} = ` +
 			`${moneyRub(row.payoutRub)} — число отрицательное, и обнулять его нельзя: клиника потеряет эти деньги.`,
 	);
 

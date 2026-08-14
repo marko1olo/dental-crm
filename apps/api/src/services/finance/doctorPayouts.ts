@@ -804,6 +804,7 @@ function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 			labOrdersCount: doctorRows.labOrdersCount,
 			commissionPct: doctorRows.commissionPct,
 			materialDeductionPct: doctorRows.materialDeductionPct,
+			labDeductionPct: doctorRows.labDeductionPct,
 			rateEffectiveFrom: doctorRows.rateEffectiveFrom,
 			rateRowCount: doctorRows.rateRowCount,
 			totalRevenueRub: periodRevenue.totalRevenueRub,
@@ -948,6 +949,10 @@ export async function doctorPayouts(
 			row.materialDeductionPct,
 			"процент удержания за материалы (material_cost_deduction_pct)",
 		);
+		const labDeductionPct = percentFromDb(
+			row.labDeductionPct,
+			"процент удержания за лабораторию (lab_cost_deduction_pct)",
+		);
 
 		const computed = computeDoctorPayout({
 			revenueRub,
@@ -957,6 +962,7 @@ export async function doctorPayouts(
 			materialDeductionPct,
 			labCostRub,
 			labOrdersCount,
+			labDeductionPct,
 		});
 		const materialsState = materialsStateOf(
 			materialMovements,

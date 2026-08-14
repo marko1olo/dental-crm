@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, or } from "drizzle-orm";
+import { and, eq, inArray, isNull, ne, or } from "drizzle-orm";
 import type { db } from "../../db/client.js";
 import {
 	inventoryItems,
@@ -79,7 +79,7 @@ export async function deductMaterialsForVisit(
 		transactionType = "auto_deduct",
 	} = params;
 
-	// 1. Выбираем только позиции лечения приёма
+	// 1. Выбираем только незавершённые позиции лечения приёма (защита от повторного списания)
 	const uncompletedItems = await tx
 		.select()
 		.from(treatmentItems)
@@ -87,6 +87,7 @@ export async function deductMaterialsForVisit(
 			and(
 				eq(treatmentItems.visitId, visitId),
 				eq(treatmentItems.organizationId, organizationId),
+				ne(treatmentItems.status, "completed"),
 			),
 		);
 
