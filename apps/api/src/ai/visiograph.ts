@@ -92,7 +92,7 @@ export async function analyzeVisiographImage(
 					choices?: Array<{ message?: { content?: string } }>;
 				};
 				rawContent = data.choices?.[0]?.message?.content || "";
-				if (!rawContent) throw new Error("Empty response from model");
+				if (!rawContent) throw new Error("Пустой ответ модели анализа визиограммы");
 
 				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				recordProviderKeySuccess(provider as any, candidate);

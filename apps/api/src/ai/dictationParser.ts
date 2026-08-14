@@ -165,11 +165,11 @@ export async function parseDictationWithLLM(
 			);
 
 			const payload = await response.json().catch(() => ({}));
-			if (!response.ok) throw new Error("LLM Error");
+			if (!response.ok) throw new Error("Ошибка сервиса распознавания диктовки");
 
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			const content = (payload as any).choices?.[0]?.message?.content;
-			if (!content) throw new Error("Empty LLM response");
+			if (!content) throw new Error("Пустой ответ сервиса распознавания диктовки");
 
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			let parsed: any;
@@ -178,7 +178,7 @@ export async function parseDictationWithLLM(
 			} catch {
 				const match = content.match(/\{[\s\S]*\}/);
 				if (match) parsed = JSON.parse(match[0]);
-				else throw new Error("Invalid JSON");
+				else throw new Error("Некорректный формат JSON в ответе распознавания");
 			}
 
 			recordProviderKeySuccess(keyProviderId, keyCandidate);

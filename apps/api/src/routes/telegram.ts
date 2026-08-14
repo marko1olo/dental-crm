@@ -1078,7 +1078,7 @@ async function executeTelegramOutboxSend(
 
 	const deliveryClientMutationId = clientMutationId;
 	if (!deliveryClientMutationId) {
-		throw new Error("clientMutationId missing after non-dry-run validation");
+		throw new Error("Идентификатор клиентской мутации (clientMutationId) отсутствует после валидации");
 	}
 
 	const claimKey = outboxDeliveryClaimKey(

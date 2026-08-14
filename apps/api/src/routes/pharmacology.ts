@@ -237,7 +237,7 @@ export async function registerPharmacologyRoutes(app: FastifyInstance) {
 				.returning();
 
 			if (!presc) {
-				throw new Error("Failed to create electronic prescription");
+				throw new Error("Не удалось создать электронный рецепт");
 			}
 
 			// Insert items

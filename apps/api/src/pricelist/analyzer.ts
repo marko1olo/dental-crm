@@ -2624,7 +2624,7 @@ async function callGroqPricelist(
 			 * Считать здесь нечего, чинить надо было частичную потерю.
 			 */
 			if (!parsedRows.items.length) {
-				throw new Error("Groq returned JSON without pricelist items.");
+				throw new Error("Модель вернула ответ без распознанных позиций прайс-листа.");
 			}
 			recordProviderKeySuccess(groqProviderId, key);
 			return parsedRows;

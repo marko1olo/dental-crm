@@ -234,7 +234,7 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				.returning()) as any;
 			const patient = resultPatient[0];
-			if (!patient) throw new Error("PatientCreateFailed");
+			if (!patient) throw new Error("Не удалось создать карту пациента из лида");
 
 			// 2. Create Appointment via protected business logic
 			const appointment = await createAppointmentInDb(
