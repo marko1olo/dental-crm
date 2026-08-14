@@ -54,6 +54,7 @@ import { registerFlexbeRoutes } from "./routes/integrations/flexbe.js";
 import { inventoryRoutes } from "./routes/inventory.js";
 import { registerLabRoutes } from "./routes/lab.js";
 import { registerLeadsRoutes } from "./routes/leads.js";
+import { registerLoyaltyRoutes } from "./routes/loyalty.js";
 import { registerMaxRoutes } from "./routes/max.js";
 import { registerMigrationRoutes } from "./routes/migration.js";
 import { registerMigrationRunRoutes } from "./routes/migrationRuns.js";
@@ -66,6 +67,7 @@ import { portalRoutes } from "./routes/portal.js";
 import { registerPricelistRoutes } from "./routes/pricelist.js";
 import { registerPublicAppointmentActionRoutes } from "./routes/publicAppointmentActions.js";
 import { registerPublicBookingRoutes } from "./routes/publicBooking.js";
+import { registerReferralRoutes } from "./routes/referrals.js";
 import { registerReportRoutes } from "./routes/reports.js";
 import { registerSberbankRoutes } from "./routes/sberbank.js";
 import { registerScheduleRoutes } from "./routes/schedule.js";
@@ -610,6 +612,8 @@ export async function createDenteApiApp(
 	await registerOdontogramRoutes(app);
 	await registerToothHistoryRoutes(app);
 	await registerPerioRoutes(app);
+	await registerLoyaltyRoutes(app);
+	await registerReferralRoutes(app);
 	// Ни один из этих модулей раньше не регистрировался, поэтому семейный кошелёк,
 	// ДМС, зуботехническая лаборатория, лист ожидания, лиды, стерилизация,
 	// файлы, планирование по снимкам и каналы VK/WhatsApp/MAX отвечали 404.

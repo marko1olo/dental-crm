@@ -12017,3 +12017,187 @@ export function calculatePsrSextants(
 	return results;
 }
 
+// ─── Loyalty Programs, Bonus Ledger & Referral Architecture ──────────────────
+
+export const loyaltyProgramTierSchema = z.enum([
+	"bronze",
+	"silver",
+	"gold",
+	"platinum",
+	"vip",
+]);
+export type LoyaltyProgramTier = z.infer<typeof loyaltyProgramTierSchema>;
+
+export const loyaltyProgramSchema = z.object({
+	id: z.string().uuid(),
+	organizationId: z.string().uuid(),
+	name: z.string().min(1).max(200),
+	tier: loyaltyProgramTierSchema.default("bronze"),
+	minSpendThresholdRub: z.number().nonnegative().default(0),
+	cashbackPercent: z.number().min(0).max(100).default(3),
+	maxInvoiceCoveragePercent: z.number().min(0).max(100).default(30),
+	pointsTtlDays: z.number().int().positive().nullable().optional().default(180),
+	pointRateRub: z.number().positive().default(1),
+	isActive: z.boolean().default(true),
+	createdAt: z.string().optional(),
+	updatedAt: z.string().optional(),
+});
+export type LoyaltyProgram = z.infer<typeof loyaltyProgramSchema>;
+
+export const patientBonusBalanceSchema = z.object({
+	id: z.string().uuid(),
+	organizationId: z.string().uuid(),
+	patientId: z.string().uuid(),
+	activePoints: z.number().nonnegative().default(0),
+	pendingPoints: z.number().nonnegative().default(0),
+	lifetimeEarnedPoints: z.number().nonnegative().default(0),
+	lifetimeSpentPoints: z.number().nonnegative().default(0),
+	lifetimeExpiredPoints: z.number().nonnegative().default(0),
+	currentLoyaltyProgramId: z.string().uuid().nullable().optional(),
+	tier: loyaltyProgramTierSchema.default("bronze"),
+	cashbackPercent: z.number().min(0).max(100).default(3),
+	maxInvoiceCoveragePercent: z.number().min(0).max(100).default(30),
+	updatedAt: z.string().optional(),
+});
+export type PatientBonusBalance = z.infer<typeof patientBonusBalanceSchema>;
+
+export const bonusTransactionTypeSchema = z.enum([
+	"accrual_payment",
+	"accrual_referral_l1",
+	"accrual_referral_l2",
+	"accrual_welcome",
+	"accrual_birthday",
+	"accrual_manual_admin",
+	"redemption_payment",
+	"expiration",
+	"reversal_refund",
+]);
+export type BonusTransactionType = z.infer<typeof bonusTransactionTypeSchema>;
+
+export const bonusTransactionSchema = z.object({
+	id: z.string().uuid(),
+	organizationId: z.string().uuid(),
+	patientId: z.string().uuid(),
+	amountPoints: z.number(),
+	balanceAfterPoints: z.number().nonnegative(),
+	type: bonusTransactionTypeSchema,
+	relatedPaymentId: z.string().uuid().nullable().optional(),
+	relatedInvoiceId: z.string().uuid().nullable().optional(),
+	relatedReferralId: z.string().uuid().nullable().optional(),
+	expiresAt: z.string().nullable().optional(),
+	unspentPoints: z.number().nonnegative().default(0),
+	clientMutationId: z.string().nullable().optional(),
+	description: z.string(),
+	createdById: z.string().uuid().nullable().optional(),
+	createdAt: z.string(),
+});
+export type BonusTransaction = z.infer<typeof bonusTransactionSchema>;
+
+export const referralCampaignSchema = z.object({
+	id: z.string().uuid(),
+	organizationId: z.string().uuid(),
+	name: z.string().min(1).max(200),
+	isActive: z.boolean().default(true),
+	refereeWelcomePoints: z.number().nonnegative().default(500),
+	referrerTier1Points: z.number().nonnegative().default(1000),
+	referrerTier2Points: z.number().nonnegative().default(300),
+	minFirstSpendThresholdRub: z.number().nonnegative().default(1500),
+	shareMessageTemplate: z.string().default(
+		"Привет! Дарю тебе 500 ₽ на первое лечение в стоматологии {clinicName}. Запишись по ссылке: {inviteLink}",
+	),
+	createdAt: z.string().optional(),
+	updatedAt: z.string().optional(),
+});
+export type ReferralCampaign = z.infer<typeof referralCampaignSchema>;
+
+export const patientReferralCodeSchema = z.object({
+	id: z.string().uuid(),
+	organizationId: z.string().uuid(),
+	patientId: z.string().uuid(),
+	referralCode: z.string(),
+	referralToken: z.string(),
+	inviteUrl: z.string().url().optional(),
+	clickCount: z.number().int().nonnegative().default(0),
+	signupCount: z.number().int().nonnegative().default(0),
+	convertedCount: z.number().int().nonnegative().default(0),
+	createdAt: z.string().optional(),
+});
+export type PatientReferralCode = z.infer<typeof patientReferralCodeSchema>;
+
+export const referralStatusSchema = z.enum([
+	"registered",
+	"appointment_booked",
+	"first_visit_paid",
+	"rewarded",
+	"expired",
+	"rejected_fraud",
+]);
+export type ReferralStatus = z.infer<typeof referralStatusSchema>;
+
+export const patientReferralSchema = z.object({
+	id: z.string().uuid(),
+	organizationId: z.string().uuid(),
+	campaignId: z.string().uuid().nullable().optional(),
+	referrerPatientId: z.string().uuid(),
+	parentReferrerPatientId: z.string().uuid().nullable().optional(),
+	refereePatientId: z.string().uuid(),
+	status: referralStatusSchema.default("registered"),
+	qualifyingPaymentId: z.string().uuid().nullable().optional(),
+	qualifyingAmountRub: z.number().nonnegative().nullable().optional(),
+	rewardedAt: z.string().nullable().optional(),
+	createdAt: z.string().optional(),
+	updatedAt: z.string().optional(),
+});
+export type PatientReferral = z.infer<typeof patientReferralSchema>;
+
+/**
+ * Расчёт максимальной суммы баллов, допустимой к списанию в счёт чека.
+ */
+export function calculateMaxRedeemablePoints(
+	invoiceAmountRub: number,
+	activePoints: number,
+	maxCoveragePercent = 30,
+	pointRateRub = 1,
+): {
+	maxAllowedPoints: number;
+	maxDiscountRub: number;
+	remainingPaymentRub: number;
+} {
+	if (invoiceAmountRub <= 0 || activePoints <= 0 || pointRateRub <= 0) {
+		return {
+			maxAllowedPoints: 0,
+			maxDiscountRub: 0,
+			remainingPaymentRub: Math.max(0, invoiceAmountRub),
+		};
+	}
+
+	const maxInvoiceCoverageRub = Number(
+		((invoiceAmountRub * maxCoveragePercent) / 100).toFixed(2),
+	);
+	const maxPointsByCoverage = Math.floor(maxInvoiceCoverageRub / pointRateRub);
+	const maxAllowedPoints = Math.min(Math.floor(activePoints), maxPointsByCoverage);
+	const maxDiscountRub = Number((maxAllowedPoints * pointRateRub).toFixed(2));
+	const remainingPaymentRub = Number((invoiceAmountRub - maxDiscountRub).toFixed(2));
+
+	return {
+		maxAllowedPoints,
+		maxDiscountRub,
+		remainingPaymentRub,
+	};
+}
+
+/**
+ * Расчёт кешбэка баллами от суммы оплаченного лечения.
+ */
+export function calculateCashbackPoints(
+	paidAmountRub: number,
+	cashbackPercent: number,
+	pointRateRub = 1,
+): number {
+	if (paidAmountRub <= 0 || cashbackPercent <= 0 || pointRateRub <= 0) {
+		return 0;
+	}
+	const cashbackRub = (paidAmountRub * cashbackPercent) / 100;
+	return Number((cashbackRub / pointRateRub).toFixed(2));
+}
+

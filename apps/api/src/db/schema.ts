@@ -5420,3 +5420,274 @@ export const visitsRelations = relations(visits, ({ one }) => ({
 		references: [appointments.id],
 	}),
 }));
+
+// ─── Loyalty Programs & Patient Bonus Balances ───────────────────────────────
+
+export const loyaltyPrograms = pgTable(
+	"loyalty_programs",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		name: text("name").notNull(),
+		tier: text("tier").notNull().default("bronze"),
+		minSpendThresholdRub: numeric("min_spend_threshold_rub", {
+			precision: 12,
+			scale: 2,
+		})
+			.notNull()
+			.default("0.00"),
+		cashbackPercent: numeric("cashback_percent", {
+			precision: 5,
+			scale: 2,
+		})
+			.notNull()
+			.default("3.00"),
+		maxInvoiceCoveragePercent: numeric("max_invoice_coverage_percent", {
+			precision: 5,
+			scale: 2,
+		})
+			.notNull()
+			.default("30.00"),
+		pointsTtlDays: integer("points_ttl_days").default(180),
+		pointRateRub: numeric("point_rate_rub", {
+			precision: 12,
+			scale: 2,
+		})
+			.notNull()
+			.default("1.00"),
+		isActive: boolean("is_active").notNull().default(true),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		orgIdx: index("loyalty_programs_org_idx").on(t.organizationId),
+	}),
+);
+
+export const patientBonusBalances = pgTable(
+	"patient_bonus_balances",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id, { onDelete: "cascade" }),
+		activePoints: numeric("active_points", { precision: 12, scale: 2 })
+			.notNull()
+			.default("0.00"),
+		pendingPoints: numeric("pending_points", { precision: 12, scale: 2 })
+			.notNull()
+			.default("0.00"),
+		lifetimeEarnedPoints: numeric("lifetime_earned_points", {
+			precision: 12,
+			scale: 2,
+		})
+			.notNull()
+			.default("0.00"),
+		lifetimeSpentPoints: numeric("lifetime_spent_points", {
+			precision: 12,
+			scale: 2,
+		})
+			.notNull()
+			.default("0.00"),
+		lifetimeExpiredPoints: numeric("lifetime_expired_points", {
+			precision: 12,
+			scale: 2,
+		})
+			.notNull()
+			.default("0.00"),
+		currentLoyaltyProgramId: uuid("current_loyalty_program_id").references(
+			() => loyaltyPrograms.id,
+		),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		orgPatientIdx: uniqueIndex("patient_bonus_balances_org_patient_idx").on(
+			t.organizationId,
+			t.patientId,
+		),
+	}),
+);
+
+export const bonusTransactions = pgTable(
+	"bonus_transactions",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id, { onDelete: "cascade" }),
+		amountPoints: numeric("amount_points", { precision: 12, scale: 2 }).notNull(),
+		balanceAfterPoints: numeric("balance_after_points", {
+			precision: 12,
+			scale: 2,
+		}).notNull(),
+		type: text("type").notNull(),
+		relatedPaymentId: uuid("related_payment_id").references(() => payments.id),
+		relatedInvoiceId: uuid("related_invoice_id"),
+		relatedReferralId: uuid("related_referral_id"),
+		expiresAt: timestamp("expires_at", { withTimezone: true }),
+		unspentPoints: numeric("unspent_points", { precision: 12, scale: 2 }).default(
+			"0.00",
+		),
+		clientMutationId: text("client_mutation_id"),
+		description: text("description").notNull(),
+		createdById: uuid("created_by_id").references(() => users.id),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		patientIdx: index("bonus_transactions_patient_idx").on(
+			t.organizationId,
+			t.patientId,
+			t.createdAt,
+		),
+		mutationIdx: uniqueIndex("bonus_tx_org_mutation_unique").on(
+			t.organizationId,
+			t.clientMutationId,
+		),
+	}),
+);
+
+export const referralCampaigns = pgTable(
+	"referral_campaigns",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		name: text("name").notNull().default("Приведи друга"),
+		isActive: boolean("is_active").notNull().default(true),
+		refereeWelcomePoints: numeric("referee_welcome_points", {
+			precision: 12,
+			scale: 2,
+		})
+			.notNull()
+			.default("500.00"),
+		referrerTier1Points: numeric("referrer_tier1_points", {
+			precision: 12,
+			scale: 2,
+		})
+			.notNull()
+			.default("1000.00"),
+		referrerTier2Points: numeric("referrer_tier2_points", {
+			precision: 12,
+			scale: 2,
+		})
+			.notNull()
+			.default("300.00"),
+		minFirstSpendThresholdRub: numeric("min_first_spend_threshold_rub", {
+			precision: 12,
+			scale: 2,
+		})
+			.notNull()
+			.default("1500.00"),
+		shareMessageTemplate: text("share_message_template")
+			.notNull()
+			.default(
+				"Привет! Дарю тебе 500 ₽ на первое лечение в стоматологии {clinicName}. Запишись по ссылке: {inviteLink}",
+			),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		orgIdx: index("referral_campaigns_org_idx").on(t.organizationId),
+	}),
+);
+
+export const patientReferralCodes = pgTable(
+	"patient_referral_codes",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id, { onDelete: "cascade" }),
+		referralCode: text("referral_code").notNull(),
+		referralToken: text("referral_token").notNull(),
+		clickCount: integer("click_count").notNull().default(0),
+		signupCount: integer("signup_count").notNull().default(0),
+		convertedCount: integer("converted_count").notNull().default(0),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		codeIdx: uniqueIndex("patient_referral_codes_code_idx").on(
+			t.organizationId,
+			t.referralCode,
+		),
+		tokenIdx: uniqueIndex("patient_referral_codes_token_idx").on(
+			t.referralToken,
+		),
+		patientIdx: uniqueIndex("patient_referral_codes_patient_idx").on(
+			t.organizationId,
+			t.patientId,
+		),
+	}),
+);
+
+export const patientReferrals = pgTable(
+	"patient_referrals",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		campaignId: uuid("campaign_id").references(() => referralCampaigns.id),
+		referrerPatientId: uuid("referrer_patient_id")
+			.notNull()
+			.references(() => patients.id),
+		parentReferrerPatientId: uuid("parent_referrer_patient_id").references(
+			() => patients.id,
+		),
+		refereePatientId: uuid("referee_patient_id")
+			.notNull()
+			.references(() => patients.id),
+		status: text("status").notNull().default("registered"),
+		qualifyingPaymentId: uuid("qualifying_payment_id").references(
+			() => payments.id,
+		),
+		qualifyingAmountRub: numeric("qualifying_amount_rub", {
+			precision: 12,
+			scale: 2,
+		}),
+		rewardedAt: timestamp("rewarded_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		refereeIdx: uniqueIndex("patient_referrals_referee_idx").on(
+			t.organizationId,
+			t.refereePatientId,
+		),
+		referrerIdx: index("patient_referrals_referrer_idx").on(
+			t.organizationId,
+			t.referrerPatientId,
+		),
+	}),
+);
+
