@@ -184,7 +184,7 @@ function FiscalDetails({
 							placeholder=" "
 						/>
 						<label htmlFor="payment-fiscal-fn">
-							ФО (номер фискального накопителя)
+							ФН (номер фискального накопителя)
 						</label>
 					</div>
 					<div className="smart-field">
@@ -223,7 +223,7 @@ function FiscalDetails({
 							placeholder=" "
 						/>
 						<label htmlFor="payment-fiscal-receipt-url">
-							Ссылка НФД (https://...)
+							Ссылка ОФД (https://...)
 						</label>
 					</div>
 					<div className="smart-field">
@@ -819,13 +819,13 @@ export function PaymentCapture({
 			: null,
 		amountMissingStep,
 		fiscalReceiptUrlInvalid
-			? "ссылка НФД должна начинаться с http:// или https://"
+			? "ссылка ОФД должна начинаться с http:// или https://"
 			: null,
 		payerInnInvalid ? "ИНН плательщика должен содержать 10 или 12 цифр" : null,
 		taxDeductionRequested && !fiscalReceiptIssuedAt.trim()
 			? "для вычета укажите дату фискального чека"
 			: null,
-		taxDeductionRequested && !fiscalFn.trim() ? "для вычета укажите ФО" : null,
+		taxDeductionRequested && !fiscalFn.trim() ? "для вычета укажите ФН" : null,
 		taxDeductionRequested && !fiscalFd.trim() ? "для вычета укажите ФД" : null,
 		taxDeductionRequested && !fiscalFpd.trim()
 			? "для вычета укажите ФПД"

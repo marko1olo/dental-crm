@@ -5,6 +5,7 @@ import { vec3 } from "gl-matrix";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
 import {
+	calculateImplantBoneDensity,
 	distancePointToSpline,
 	mat3ToMat4Direction,
 	type Point2D,
@@ -816,22 +817,55 @@ export function Cornerstone3DViewer({
 	};
 
 	const simulateImplantPlacement = () => {
-		// 1. We mock the physical placing in 3D world space (DICOM coords)
-		const implantStart = vec3.fromValues(10, 20, -50);
-		const implantEnd = vec3.fromValues(10, 20, -60); // 10mm length
+		const renderingEngine = cornerstone.getRenderingEngine("my-engine");
+		const axialVp = renderingEngine?.getViewport(VIEWPORT_IDS.axial);
+		const camera = axialVp?.getCamera();
+		const focal = camera?.focalPoint;
 
-		// 2. We mock nerve spline
-		const nerveSpline = [
-			vec3.fromValues(10, 22, -62),
-			vec3.fromValues(12, 24, -65),
-		];
+		// 1. Положение имплантата в 3D мировых координатах (по текущему фокальному срезу или центру тома)
+		const startX = focal ? focal[0] : 10;
+		const startY = focal ? focal[1] : 20;
+		const startZ = focal ? focal[2] : -50;
+		const implantStart = vec3.fromValues(startX, startY, startZ);
+		const implantEnd = vec3.fromValues(startX, startY, startZ - 10.0); // 10 мм длина
 
-		// 3. Collision Detection Math
-		const distToNerve = distancePointToSpline(implantEnd, nerveSpline);
+		// 2. Расчет дистанции до нижнечелюстного канала (по сохраненным точкам нерва, если размечены)
+		let distToNerve = 4.5;
+		const nervePoints = restoredMarkupRef.current?.nervePoints;
+		if (nervePoints && nervePoints.length > 0) {
+			const nerveSpline = nervePoints.map((p) => vec3.fromValues(p.x, p.y, p.z));
+			distToNerve = distancePointToSpline(implantEnd, nerveSpline);
+		}
 
-		// 4. Bone Density Math (Mocking scalarData since we'd normally get it from volume)
-		const classification = "D2";
-		const avgHu = 650;
+		// 3. Вычисление реальной плотности кости по вокселям активного тома
+		let boneDensity = { averageHU: 650, classification: "D2" };
+		const volume = cornerstone.cache.getVolume("my-volume");
+		if (volume) {
+			const voxels = readVolumeScalarData(
+				{
+					dimensions: volume.dimensions,
+					imageIds: volume.imageIds,
+					voxelManager: volume.voxelManager,
+				},
+				(imageId) => cornerstone.cache.getImage(imageId) !== undefined,
+			);
+			if (voxels.status === "ready") {
+				const computed = calculateImplantBoneDensity(
+					toTransferableScalarData(voxels.scalarData),
+					volume.dimensions,
+					vec3.fromValues(volume.origin[0], volume.origin[1], volume.origin[2]),
+					mat3ToMat4Direction(volume.direction),
+					vec3.fromValues(volume.spacing[0], volume.spacing[1], volume.spacing[2]),
+					implantStart,
+					implantEnd,
+					4.0,
+				);
+				boneDensity = {
+					averageHU: Math.round(computed.averageHU),
+					classification: computed.classification,
+				};
+			}
+		}
 
 		const newImplant: ImplantData = {
 			id: Math.random().toString(36).substring(7),
@@ -840,7 +874,7 @@ export function Cornerstone3DViewer({
 			length: 10.0,
 			startWorld: implantStart,
 			endWorld: implantEnd,
-			boneDensity: { averageHU: avgHu, classification },
+			boneDensity,
 			distanceToNerve: distToNerve,
 		};
 
