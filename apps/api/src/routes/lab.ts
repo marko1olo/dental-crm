@@ -584,38 +584,93 @@ export async function registerLabRoutes(app: FastifyInstance) {
 		return reply.send({ items });
 	});
 
+const createLabItemSchema = z.object({
+	toothFdi: z.number().int().min(11).max(85),
+	restorationType: restorationTypeSchema.default("crown_monolithic"),
+	material: restorationMaterialSchema.default("zirconia_multilayer_gradient"),
+	shadeSystem: z
+		.enum(["VITA_CLASSICAL", "VITA_3D_MASTER", "BLEACH"])
+		.default("VITA_CLASSICAL"),
+	shadeFinal: z.string().trim().default("A2"),
+	shadeStump: stumpPreparationShadeSchema.optional().nullable(),
+	shadeGingiva: z.string().trim().optional().nullable(),
+	translucencyLevel: z.enum(["HT", "ST", "UT", "MO", "LT"]).default("HT"),
+	cementGapMicrons: z.number().int().min(0).max(200).default(30),
+	extraMarginGapMicrons: z.number().int().min(0).max(100).default(10),
+	minimalThicknessMm: z
+		.union([z.number(), z.string()])
+		.transform(String)
+		.default("0.60"),
+	implantSystem: z.string().trim().optional().nullable(),
+	implantPlatformDiameterMm: z
+		.union([z.number(), z.string()])
+		.transform(String)
+		.optional()
+		.nullable(),
+	tiBaseHeightMm: z
+		.union([z.number(), z.string()])
+		.transform(String)
+		.optional()
+		.nullable(),
+	meshTriangleCount: z.number().int().optional().nullable(),
+	meshSurfaceAreaMm2: z
+		.union([z.number(), z.string()])
+		.transform(String)
+		.optional()
+		.nullable(),
+	meshVolumeMm3: z
+		.union([z.number(), z.string()])
+		.transform(String)
+		.optional()
+		.nullable(),
+	meshBboxMm: z.record(z.unknown()).optional().nullable(),
+	isManifold: z.boolean().default(true),
+	priceRub: labOrderPriceRubSchema,
+});
+
 	app.post("/api/clinical/lab-orders/:id/items", async (request, reply) => {
-		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+		);
 		if (!orgId) return;
 
 		const { id: labOrderId } = request.params as { id: string };
-		const body = request.body as any;
+		const parsed = createLabItemSchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "LabItemValidationError",
+				message: "Проверьте данные единицы протезирования (номер зуба, материал, цвет).",
+				details: parsed.error.format(),
+			});
+		}
+		const body = parsed.data;
 
 		const [createdItem] = await db
 			.insert(labItems)
 			.values({
 				organizationId: orgId,
 				labOrderId,
-				toothFdi: Number(body.toothFdi),
-				restorationType: body.restorationType || "crown_monolithic",
-				material: body.material || "zirconia_multilayer_gradient",
-				shadeSystem: body.shadeSystem || "VITA_CLASSICAL",
-				shadeFinal: body.shadeFinal || "A2",
-				shadeStump: body.shadeStump || null,
-				shadeGingiva: body.shadeGingiva || null,
-				translucencyLevel: body.translucencyLevel || "HT",
-				cementGapMicrons: body.cementGapMicrons != null ? Number(body.cementGapMicrons) : 30,
-				extraMarginGapMicrons: body.extraMarginGapMicrons != null ? Number(body.extraMarginGapMicrons) : 10,
-				minimalThicknessMm: body.minimalThicknessMm ? String(body.minimalThicknessMm) : "0.60",
-				implantSystem: body.implantSystem || null,
-				implantPlatformDiameterMm: body.implantPlatformDiameterMm ? String(body.implantPlatformDiameterMm) : null,
-				tiBaseHeightMm: body.tiBaseHeightMm ? String(body.tiBaseHeightMm) : null,
-				meshTriangleCount: body.meshTriangleCount != null ? Number(body.meshTriangleCount) : null,
-				meshSurfaceAreaMm2: body.meshSurfaceAreaMm2 ? String(body.meshSurfaceAreaMm2) : null,
-				meshVolumeMm3: body.meshVolumeMm3 ? String(body.meshVolumeMm3) : null,
-				meshBboxMm: body.meshBboxMm || null,
-				isManifold: body.isManifold ?? true,
-				priceRub: body.priceRub != null ? String(body.priceRub) : null,
+				toothFdi: body.toothFdi,
+				restorationType: body.restorationType,
+				material: body.material,
+				shadeSystem: body.shadeSystem,
+				shadeFinal: body.shadeFinal,
+				shadeStump: body.shadeStump ?? null,
+				shadeGingiva: body.shadeGingiva ?? null,
+				translucencyLevel: body.translucencyLevel,
+				cementGapMicrons: body.cementGapMicrons,
+				extraMarginGapMicrons: body.extraMarginGapMicrons,
+				minimalThicknessMm: body.minimalThicknessMm,
+				implantSystem: body.implantSystem ?? null,
+				implantPlatformDiameterMm: body.implantPlatformDiameterMm ?? null,
+				tiBaseHeightMm: body.tiBaseHeightMm ?? null,
+				meshTriangleCount: body.meshTriangleCount ?? null,
+				meshSurfaceAreaMm2: body.meshSurfaceAreaMm2 ?? null,
+				meshVolumeMm3: body.meshVolumeMm3 ?? null,
+				meshBboxMm: body.meshBboxMm ?? null,
+				isManifold: body.isManifold,
+				priceRub: body.priceRub ? String(body.priceRub) : null,
 			})
 			.returning();
 
@@ -644,26 +699,49 @@ export async function registerLabRoutes(app: FastifyInstance) {
 		return reply.send({ events });
 	});
 
+const createLabOrderEventSchema = z.object({
+	milestone: labOrderMilestoneSchema.default("submitted"),
+	actorType: z
+		.enum(["clinic_doctor", "dental_technician", "courier", "administrator"])
+		.default("clinic_doctor"),
+	actorId: z.string().uuid().optional().nullable(),
+	actorName: z.string().trim().default("Сотрудник клиники"),
+	notes: z.string().trim().max(1000).optional().nullable(),
+	barcodeScanned: z.string().trim().optional().nullable(),
+	photoUrls: z
+		.array(z.string().url().or(z.string().startsWith("/")))
+		.default([]),
+	cadPreviewGlbUrl: z.string().trim().optional().nullable(),
+});
+
 	app.post("/api/clinical/lab-orders/:id/events", async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
 		const { id: labOrderId } = request.params as { id: string };
-		const body = request.body as any;
+		const parsed = createLabOrderEventSchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "LabOrderEventValidationError",
+				message: "Проверьте данные этапа наряда ЗТЛ.",
+				details: parsed.error.format(),
+			});
+		}
+		const body = parsed.data;
 
 		const [createdEvent] = await db
 			.insert(labOrderEvents)
 			.values({
 				organizationId: orgId,
 				labOrderId,
-				milestone: body.milestone || "in_progress",
-				actorType: body.actorType || "clinic_doctor",
-				actorId: body.actorId || null,
-				actorName: body.actorName || "Сотрудник клиники",
-				notes: body.notes || null,
-				barcodeScanned: body.barcodeScanned || null,
-				photoUrls: Array.isArray(body.photoUrls) ? body.photoUrls : [],
-				cadPreviewGlbUrl: body.cadPreviewGlbUrl || null,
+				milestone: body.milestone,
+				actorType: body.actorType,
+				actorId: body.actorId ?? null,
+				actorName: body.actorName,
+				notes: body.notes ?? null,
+				barcodeScanned: body.barcodeScanned ?? null,
+				photoUrls: body.photoUrls,
+				cadPreviewGlbUrl: body.cadPreviewGlbUrl ?? null,
 			})
 			.returning();
 
