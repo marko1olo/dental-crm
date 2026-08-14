@@ -248,6 +248,7 @@ export function rowToPatient(
 		 * СТАЛО: nullable UUID группы; null — пациент не состоит в семье.
 		 */
 		familyGroupId: p.familyGroupId ?? null,
+		mergedIntoPatientId: p.mergedIntoPatientId ?? null,
 		...(balanceRub === null ? {} : { balanceRub }),
 		createdAt: rowTimestampToIso(p.createdAt, "created_at", p.id),
 		updatedAt: rowTimestampToIso(p.updatedAt, "updated_at", p.id),
@@ -348,7 +349,7 @@ export async function createPatientInDb(
 			})
 			.returning();
 
-		if (!created) throw new Error("Failed to create patient in DB");
+		if (!created) throw new Error("Не удалось создать карточку пациента в базе данных");
 
 		/* Ноль здесь ИЗМЕРЕН, а не подставлен: идентификатор выдан этой самой
 		   вставкой, а treatment_items.patient_id и payments.patient_id — внешние
@@ -652,7 +653,7 @@ export async function createPatientSafeInDb(
 			})
 			.returning();
 
-		if (!created) throw new Error("Failed to create patient in DB");
+		if (!created) throw new Error("Не удалось создать карточку пациента в базе данных");
 
 		return { type: "success", patient: rowToPatient(created, 0) };
 	});

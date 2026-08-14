@@ -21,6 +21,75 @@ import {
 } from "../db/schema.js";
 import { createTelegramQrSvg } from "../telegramQr.js";
 
+/** Helper to map FFD 1.2 Tag 1054 operation types accurately */
+function resolveTag1054(operationType: "income" | "income_return" | "expense" | "expense_return"): number {
+	switch (operationType) {
+		case "income":
+			return 1;
+		case "income_return":
+			return 2;
+		case "expense":
+			return 3;
+		case "expense_return":
+			return 4;
+	}
+}
+
+/** Helper to map FFD 1.2 Tag 1212 payment subject */
+function resolveTag1212(subject: "commodity" | "job" | "service" | "payment"): number {
+	switch (subject) {
+		case "commodity":
+			return 1;
+		case "job":
+			return 3;
+		case "service":
+			return 4;
+		case "payment":
+			return 10;
+	}
+}
+
+/** Helper to map FFD 1.2 Tag 1214 payment method */
+function resolveTag1214(method: string): number {
+	switch (method) {
+		case "full_prepayment":
+			return 1;
+		case "prepayment":
+			return 2;
+		case "advance":
+			return 3;
+		case "full_payment":
+			return 4;
+		case "partial_payment_and_credit":
+			return 5;
+		case "credit_handover":
+			return 6;
+		case "credit_payment":
+			return 7;
+		default:
+			return 4;
+	}
+}
+
+/** Helper to map FFD 1.2 Tag 1199 VAT rate */
+function resolveTag1199(vatRate: string): number {
+	switch (vatRate) {
+		case "vat_20":
+			return 1;
+		case "vat_10":
+			return 2;
+		case "vat_20_120":
+			return 3;
+		case "vat_10_110":
+			return 4;
+		case "vat_0":
+			return 5;
+		case "vat_none":
+		default:
+			return 6; // Без НДС — ст. 149 п. 2 пп. 2 НК РФ
+	}
+}
+
 export async function registerSbpQrRoutes(app: FastifyInstance) {
 	/**
 	 * 1. POST /api/billing/sbp/generate-qr
@@ -138,30 +207,77 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 			});
 		}
 
+		// Verify invoice if provided
+		if (input.invoiceId) {
+			const [invoice] = await db
+				.select()
+				.from(patientInvoices)
+				.where(
+					and(
+						eq(patientInvoices.id, input.invoiceId),
+						eq(patientInvoices.organizationId, orgId),
+					),
+				)
+				.limit(1);
+
+			if (!invoice) {
+				return reply.code(404).send({
+					error: "InvoiceNotFound",
+					message: "Счёт на оплату не найден в этой клинике.",
+				});
+			}
+		}
+
+		// Idempotency check with payload integrity verification
+		if (input.clientMutationId) {
+			const [existingPayment] = await db
+				.select()
+				.from(payments)
+				.where(
+					and(
+						eq(payments.organizationId, orgId),
+						eq(payments.clientMutationId, input.clientMutationId),
+					),
+				)
+				.limit(1);
+
+			if (existingPayment) {
+				const expectedAmountRub = Number(kopecksToNumericString(input.totalKopecks));
+				if (
+					Math.abs(Number(existingPayment.amountRub) - expectedAmountRub) > 0.001 ||
+					existingPayment.patientId !== input.patientId
+				) {
+					return reply.code(409).send({
+						error: "IdempotencyConflict",
+						message: "Ключ операции (clientMutationId) уже зарегистрирован с другими реквизитами платежа.",
+					});
+				}
+				return reply.code(200).send({
+					success: true,
+					payment: existingPayment,
+					fiscalReceiptNumber: existingPayment.fiscalReceiptNumber,
+					isExisting: true,
+				});
+			}
+		}
+
 		const fiscalReceiptNumber = `FD-${Date.now().toString().slice(-6)}`;
 		const now = new Date();
 		const effectiveMutationId =
 			input.clientMutationId || `fiscal:${fiscalReceiptNumber}`;
 
+		const itemizedFfd12Tags = input.items.map((item) => ({
+			name: item.name,
+			priceKopecks: item.priceKopecks,
+			quantity: item.quantity,
+			amountKopecks: item.amountKopecks,
+			tag1212_paymentSubject: resolveTag1212(item.subject),
+			tag1214_paymentMethod: resolveTag1214(item.method),
+			tag1199_vatRate: resolveTag1199(item.vatRate),
+			medicalServiceCodeMzk: item.medicalServiceCodeMzk || null,
+		}));
+
 		const result = await db.transaction(async (tx) => {
-			// 1. Идемпотентность фискализации (защита от повторного списания/чека)
-			if (input.clientMutationId) {
-				const [existingPayment] = await tx
-					.select()
-					.from(payments)
-					.where(
-						and(
-							eq(payments.organizationId, orgId),
-							eq(payments.clientMutationId, input.clientMutationId),
-						),
-					)
-					.limit(1);
-
-				if (existingPayment) {
-					return existingPayment;
-				}
-			}
-
 			// 2. Блокировка и валидация счёта (если указан)
 			if (input.invoiceId) {
 				const [lockedInvoice] = await tx
@@ -267,53 +383,18 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 			return payment;
 		});
 
-		// Dynamic FFD 1.2 Tag Mapping (Приказ ФНС РФ № ЕД-7-20/662@)
-		const firstItem = input.items[0];
-		const subject = firstItem?.subject ?? "service";
-		const tag1212 =
-			subject === "commodity" ? 1 : subject === "job" ? 3 : subject === "payment" ? 10 : 4;
-
-		const method = firstItem?.method ?? "full_payment";
-		const tag1214 =
-			method === "full_prepayment"
-				? 1
-				: method === "prepayment"
-					? 2
-					: method === "advance"
-						? 3
-						: method === "partial_payment_and_credit"
-							? 5
-							: method === "credit_handover"
-								? 6
-								: method === "credit_payment"
-									? 7
-									: 4;
-
-		const vat = firstItem?.vatRate ?? "vat_none";
-		const tag1199 =
-			vat === "vat_20"
-				? 1
-				: vat === "vat_10"
-					? 2
-					: vat === "vat_20_120"
-						? 3
-						: vat === "vat_10_110"
-							? 4
-							: vat === "vat_0"
-								? 5
-								: 6;
-
 		return reply.code(201).send({
 			success: true,
 			payment: result,
 			fiscalReceiptNumber,
 			ffd12Tags: {
-				tag1054_operationType: input.operationType === "income" ? 1 : 2,
-				tag1212_paymentSubject: tag1212,
-				tag1214_paymentMethod: tag1214,
-				tag1199_vatRate: tag1199,
+				tag1054_operationType: resolveTag1054(input.operationType),
 				tag1008_customerContact: input.customerContact,
 				tag1021_cashier: input.cashierFullName,
+				tag1031_cashSumKopecks: input.cashKopecks,
+				tag1081_electronicSumKopecks: input.electronicCardKopecks + input.sbpKopecks,
+				tag1215_prepaidSumKopecks: input.prepaidKopecks,
+				items: itemizedFfd12Tags,
 			},
 		});
 	});

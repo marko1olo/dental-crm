@@ -702,6 +702,8 @@ export async function setDoctorCommissionRateInDb(
 			.select({
 				materialCostDeductionPct:
 					schema.doctorCommissions.materialCostDeductionPct,
+				labCostDeductionPct:
+					schema.doctorCommissions.labCostDeductionPct,
 			})
 			.from(schema.doctorCommissions)
 			.where(
@@ -759,6 +761,7 @@ export async function setDoctorCommissionRateInDb(
 				commissionPct: normalizedPct,
 				commissionPercent: normalizedPct,
 				materialCostDeductionPct: previous?.materialCostDeductionPct ?? "0",
+				labCostDeductionPct: previous?.labCostDeductionPct ?? "0",
 				isActive: true,
 				effectiveFrom,
 			})
@@ -766,6 +769,8 @@ export async function setDoctorCommissionRateInDb(
 				commissionPct: schema.doctorCommissions.commissionPct,
 				materialCostDeductionPct:
 					schema.doctorCommissions.materialCostDeductionPct,
+				labCostDeductionPct:
+					schema.doctorCommissions.labCostDeductionPct,
 				effectiveFrom: schema.doctorCommissions.effectiveFrom,
 			});
 		if (!inserted)
@@ -792,7 +797,7 @@ export async function createChairInDb(
 		.from(schema.clinics)
 		.where(eq(schema.clinics.organizationId, organizationId))
 		.limit(1);
-	if (!clinic) throw new Error("Clinic not found");
+	if (!clinic) throw new Error("Клиника не найдена в базе данных.");
 
 	await db.insert(schema.chairs).values({
 		organizationId,

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { matchesPatientSearch } from "../utils/patientSearchUtils";
 
 interface CommandPaletteProps {
 	patients: {
@@ -58,13 +59,7 @@ export function CommandPalette({
 	}, [isOpen]);
 
 	const filteredPatients = query
-		? (patients ?? []).filter(
-				(p) =>
-					(p?.fullName ?? "")
-						.toLowerCase()
-						.includes((query ?? "").toLowerCase()) ||
-					(p?.phone ?? "").includes(query),
-			)
+		? (patients ?? []).filter((p) => matchesPatientSearch(p, query))
 		: [];
 
 	const commands = [

@@ -228,7 +228,13 @@ export function patientName(patients: Patient[], patientId: string | null) {
 
 export function findPatient(patients: Patient[], patientId: string | null) {
 	if (!patientId) return null;
-	return patients.find((patient) => patient.id === patientId) ?? null;
+	const direct = patients.find((patient) => patient.id === patientId);
+	if (!direct) return null;
+	if (direct.mergedIntoPatientId) {
+		const target = patients.find((p) => p.id === direct.mergedIntoPatientId);
+		if (target) return target;
+	}
+	return direct;
 }
 
 /**

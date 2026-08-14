@@ -861,6 +861,8 @@ async function hydrateFromDatabase(
 			email: patient.email ?? null,
 			notes: patient.notes ?? null,
 			administrativeProfile: patient.administrativeProfile ?? null,
+			familyGroupId: patient.familyGroupId ?? null,
+			mergedIntoPatientId: patient.mergedIntoPatientId ?? null,
 			balanceRub: Math.round(
 				(paidByPatient.get(patient.id) ?? 0) -
 					(plannedByPatient.get(patient.id) ?? 0),

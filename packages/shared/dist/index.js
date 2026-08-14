@@ -2584,6 +2584,7 @@ export const patientSchema = z.object({
      * СТАЛО: nullable UUID группы; null — пациент не состоит в семье.
      */
     familyGroupId: z.string().uuid().nullable().optional(),
+    mergedIntoPatientId: z.string().uuid().nullable().optional(),
     createdAt: z.string(),
     updatedAt: z.string(),
 });

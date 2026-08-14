@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { kopecksToNumericString } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import {
@@ -23,10 +24,6 @@ export function verifySberbankChecksum(
 	secret: string,
 	incomingChecksum: string,
 ): boolean {
-	if (timingSafeSecretEqual(incomingChecksum, secret)) {
-		return true;
-	}
-
 	const cleanPayload: Record<string, string> = {};
 	for (const [key, value] of Object.entries(payload)) {
 		if (
@@ -263,7 +260,7 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 							mappedStatus === "success"
 						) {
 							const amountRub = Number(
-								(Number(lockedTx.amount) / 100).toFixed(2),
+								kopecksToNumericString(lockedTx.amount),
 							);
 							await tx
 								.insert(payments)
@@ -273,6 +270,7 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 									method: "card",
 									status: "paid",
 									amountRub,
+									paidAt: new Date(),
 									clientMutationId: `sberbank:${orderId}`,
 									note: `Оплата через Сбербанк Эквайринг (заказ ${orderId})`,
 								})
@@ -478,13 +476,21 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 				});
 			}
 
-			// 4. Success / Deposited (Final Charge)
+			// Prevent state machine inversion on terminal states
+			if (lockedTx.status === "refunded" && operation !== "refunded") {
+				return reply.status(200).send({
+					success: true,
+					processed: false,
+					reason: "already_refunded",
+					status: "refunded",
+				});
+			}
+
+			// 4. Success / Deposited (Final Charge / Code 2)
 			const isSuccess =
 				operation === "deposited" ||
 				rawStatus === "success" ||
 				rawStatus === "deposited" ||
-				rawStatus === "0" ||
-				rawStatus === "1" ||
 				rawStatus === "2";
 
 			if (isSuccess) {
@@ -506,7 +512,7 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 					.where(eq(sberbankTransactions.id, lockedTx.id));
 
 				const amountRub = Number(
-					(Number(lockedTx.amount) / 100).toFixed(2),
+					kopecksToNumericString(lockedTx.amount),
 				);
 				await tx
 					.insert(payments)
@@ -516,6 +522,7 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 						method: "card",
 						status: "paid",
 						amountRub,
+						paidAt: new Date(),
 						clientMutationId: `sberbank:${lockedTx.orderId}`,
 						note: `Оплата через Сбербанк Эквайринг (заказ ${lockedTx.orderId})`,
 					})

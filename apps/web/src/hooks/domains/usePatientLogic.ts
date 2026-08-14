@@ -30,6 +30,7 @@ import { actionFailureToast } from "../../lib/panelStateText";
 import { useDocumentStore } from "../../store/documentStore";
 import { usePatientStore } from "../../store/patientStore";
 import { fetchWithHandling } from "../../utils/networkUtils";
+import { matchesPatientSearch } from "../../utils/patientSearchUtils";
 
 /** Заготовка приёма из гидратации базы: приёмов нет, объект есть. */
 const NIL_VISIT_UUID = "00000000-0000-0000-0000-000000000000";
@@ -259,18 +260,10 @@ export function usePatientLogic({
 	 */
 	const filteredPatients = useMemo(() => {
 		if (!dashboard) return [];
-		const normalizedQuery = query.trim().toLowerCase();
-		if (!normalizedQuery) return dashboard.patients || [];
-		const queryDigits = patientPhoneDigits(normalizedQuery);
-		const queryLooksLikePhone =
-			queryDigits.length >= PATIENT_PHONE_QUERY_MIN_DIGITS;
-		return (dashboard.patients || []).filter((patient) => {
-			if ((patient.fullName ?? "").toLowerCase().includes(normalizedQuery)) {
-				return true;
-			}
-			if (!queryLooksLikePhone) return false;
-			return patientPhoneDigits(patient.phone).includes(queryDigits);
-		});
+		if (!query.trim()) return dashboard.patients || [];
+		return (dashboard.patients || []).filter((patient) =>
+			matchesPatientSearch(patient, query),
+		);
 	}, [dashboard, query]);
 
 	const savePatientAdministrativeProfile = useCallback(async () => {
