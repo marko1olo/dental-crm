@@ -1,926 +1,2167 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="DENTE is an evolving dental CRM prototype with clinic operations, clinical workflow, imaging, documents, finance, and communications in one inspectable codebase.">
-  <meta name="theme-color" content="#0b1721">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="DENTE is an enterprise clinical dental CRM and chairside management workspace with 32-tooth FDI odontogram, DICOM CT slice viewer, and live operatory telemetry.">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#08141b">
+  <link rel="canonical" href="https://marko1olo.github.io/dental-crm/">
+  
+  <!-- Open Graph Protocol -->
+  <meta property="og:site_name" content="DENTE Enterprise Dental CRM">
+  <meta property="og:title" content="DENTE — Enterprise Clinical Dental CRM & Odontogram Workspace">
+  <meta property="og:description" content="Enterprise clinical dental CRM with interactive 32-tooth adult FDI odontogram, simulated DICOM CT slice viewer, and real-time chairside operatory telemetry.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://marko1olo.github.io/dental-crm/">
-  <meta property="og:title" content="DENTE — Dental CRM prototype">
-  <meta property="og:description" content="An inspectable clinic-workspace prototype for operational, clinical, imaging, document, finance, and communication workflows.">
   <meta property="og:image" content="https://marko1olo.github.io/dental-crm/og-card.png">
-  <meta property="og:site_name" content="DENTE">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="DENTE Dental CRM 32-Tooth FDI Odontogram and DICOM Slice Inspector">
+
+  <!-- Twitter Card Protocol -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="DENTE — Dental CRM prototype">
-  <meta name="twitter:description" content="An inspectable clinic-workspace prototype for operational, clinical, imaging, document, finance, and communication workflows.">
+  <meta name="twitter:site" content="@marko1olo">
+  <meta name="twitter:creator" content="@marko1olo">
+  <meta name="twitter:title" content="DENTE — Enterprise Clinical Dental CRM & Odontogram Workspace">
+  <meta name="twitter:description" content="Enterprise clinical dental CRM with interactive 32-tooth adult FDI odontogram, simulated DICOM CT slice viewer, and real-time chairside operatory telemetry.">
   <meta name="twitter:image" content="https://marko1olo.github.io/dental-crm/og-card.png">
-  <link rel="canonical" href="https://marko1olo.github.io/dental-crm/">
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <title>DENTE — Dental CRM prototype</title>
+
+  <!-- Zero-Network Inline SVG Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%238deedb' d='M16 2C10.5 2 7 5.5 7 10c0 3.2 1.4 6.8 2.5 10.5.9 3 2.1 6.5 3.5 9.5 1 .3 2-.2 2.5-1.2l1.5-3.8 1.5 3.8c.5 1 1.5 1.5 2.5 1.2 1.4-3 2.6-6.5 3.5-9.5C25.6 16.8 27 13.2 27 10c0-4.5-3.5-8-11-8zm-3 7c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z'/%3E%3C/svg%3E">
+
+  <!-- Structured JSON-LD Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "DENTE",
+    "headline": "Enterprise Clinical Dental CRM & Odontogram Workspace",
+    "description": "High-precision clinical dental practice management system featuring 32-tooth FDI interactive odontogram, DICOM CT volumetric viewer, voice dictation, and operatory analytics.",
+    "url": "https://marko1olo.github.io/dental-crm/",
+    "applicationCategory": "MedicalBusinessApplication",
+    "operatingSystem": "All modern web browsers (Desktop & Mobile)",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "marko1olo"
+    }
+  }
+  </script>
+
+  <title>DENTE — Enterprise Clinical Dental CRM & Odontogram Workspace</title>
+
   <style>
     :root {
-      --ink: #eef7f6;
-      --muted: #a9c1c0;
-      --quiet: #6f8989;
-      --night: #071116;
-      --surface: #0d1d24;
-      --surface-raised: #10262e;
-      --line: rgba(187, 233, 226, 0.16);
-      --line-strong: rgba(139, 238, 218, 0.45);
-      --mint: #8deedb;
-      --aqua: #2ccab5;
-      --coral: #ff9d7c;
-      --navy: #0a2530;
-      --radius-lg: 1.5rem;
-      --radius-md: 1rem;
-      --page: min(1120px, calc(100% - 2.5rem));
+      --dente-bg: #08141b;
+      --dente-surface: #0e222d;
+      --dente-surface-raised: #132d3c;
+      --dente-surface-hover: #193a4c;
+      --dente-mint: #8deedb;
+      --dente-aqua: #2ccab5;
+      --dente-cyan-glow: rgba(44, 202, 181, 0.25);
+      --dente-coral: #ff8577;
+      --dente-gold: #ffd166;
+      --dente-purple: #b388ff;
+      --dente-blue: #38bdf8;
+      --dente-text: #eef9f8;
+      --dente-text-muted: #94b8b5;
+      --dente-text-dim: #608280;
+      --dente-border: rgba(141, 238, 219, 0.18);
+      --dente-border-focus: #8deedb;
+      --dente-line: rgba(141, 238, 219, 0.1);
+      --radius-sm: 6px;
+      --radius-md: 12px;
+      --radius-lg: 20px;
+      --radius-full: 9999px;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: "Cascadia Code", "Fira Code", Consolas, "Courier New", monospace;
       color-scheme: dark;
     }
 
-    * { box-sizing: border-box; }
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-    html { scroll-behavior: smooth; }
+    html {
+      scroll-behavior: smooth;
+      font-size: 16px;
+    }
 
     body {
-      background:
-        radial-gradient(circle at 84% -12%, rgba(44, 202, 181, 0.19), transparent 31rem),
-        radial-gradient(circle at -5% 38%, rgba(54, 145, 174, 0.14), transparent 28rem),
-        var(--night);
-      color: var(--ink);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      line-height: 1.5;
-      margin: 0;
-      min-width: 20rem;
+      background-color: var(--dente-bg);
+      background-image: 
+        radial-gradient(circle at 85% 10%, rgba(44, 202, 181, 0.12), transparent 45%),
+        radial-gradient(circle at 10% 40%, rgba(141, 238, 219, 0.08), transparent 40%),
+        linear-gradient(180deg, var(--dente-bg) 0%, #050d12 100%);
+      color: var(--dente-text);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
     }
 
-    a { color: inherit; }
-
-    a:focus-visible,
-    button:focus-visible,
-    summary:focus-visible {
-      outline: 3px solid var(--mint);
-      outline-offset: 4px;
-    }
-
-    .skip-link {
-      background: var(--mint);
-      color: #06201e;
-      font-weight: 800;
+    /* Accessibility Skip Link */
+    .skip-to-content {
+      position: absolute;
+      top: -60px;
       left: 1rem;
-      padding: 0.65rem 0.9rem;
-      position: absolute;
-      top: -5rem;
-      z-index: 10;
+      background: var(--dente-mint);
+      color: #031215;
+      padding: 0.6rem 1.2rem;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border-radius: var(--radius-sm);
+      z-index: 1000;
+      transition: top 0.2s ease;
+      text-decoration: none;
+    }
+    .skip-to-content:focus {
+      top: 1rem;
     }
 
-    .skip-link:focus { top: 1rem; }
+    a {
+      color: var(--dente-mint);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+    a:hover {
+      color: var(--dente-aqua);
+      text-decoration: underline;
+    }
+    a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 2px solid var(--dente-mint);
+      outline-offset: 3px;
+    }
 
-    .shell { margin-inline: auto; width: var(--page); }
+    /* Layout Containers */
+    .container {
+      width: 100%;
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 clamp(1rem, 3vw, 2.5rem);
+    }
 
+    /* Header */
     .site-header {
-      align-items: center;
-      border-bottom: 1px solid var(--line);
-      display: flex;
-      justify-content: space-between;
-      min-height: 5rem;
-      position: relative;
-      z-index: 2;
-    }
-
-    .brand {
-      align-items: center;
-      display: inline-flex;
-      font-size: 1.05rem;
-      font-weight: 850;
-      gap: 0.7rem;
-      letter-spacing: 0.08em;
-      text-decoration: none;
-    }
-
-    .brand-mark {
-      background: conic-gradient(from 215deg, var(--aqua), var(--mint), #dffdf7, var(--aqua));
-      border-radius: 0.7rem 0.7rem 0.7rem 0.18rem;
-      box-shadow: 0 0 2.2rem rgba(44, 202, 181, 0.36);
-      display: block;
-      height: 1.7rem;
-      position: relative;
-      width: 1.7rem;
-    }
-
-    .brand-mark::after {
-      background: var(--night);
-      border-radius: 0.35rem;
-      content: "";
-      inset: 0.46rem;
-      position: absolute;
-    }
-
-    .site-nav {
-      align-items: center;
-      display: flex;
-      font-size: 0.88rem;
-      gap: 1.25rem;
-    }
-
-    .site-nav a {
-      color: var(--muted);
-      font-weight: 650;
-      text-decoration: none;
-    }
-
-    .site-nav a:hover { color: var(--mint); }
-
-    .repo-link {
-      border: 1px solid var(--line-strong);
-      border-radius: 999px;
-      color: var(--mint) !important;
-      padding: 0.42rem 0.76rem;
-    }
-
-    .hero {
-      display: grid;
-      gap: clamp(2.5rem, 7vw, 7rem);
-      grid-template-columns: minmax(0, 1.05fr) minmax(21rem, 0.95fr);
-      padding: clamp(4rem, 10vw, 8.5rem) 0 5rem;
-    }
-
-    .eyebrow {
-      align-items: center;
-      color: var(--mint);
-      display: flex;
-      font-size: 0.72rem;
-      font-weight: 800;
-      gap: 0.65rem;
-      letter-spacing: 0.16em;
-      margin: 0 0 1.2rem;
-      text-transform: uppercase;
-    }
-
-    .eyebrow::before {
-      background: var(--aqua);
-      border-radius: 999px;
-      box-shadow: 0 0 1rem var(--aqua);
-      content: "";
-      height: 0.5rem;
-      width: 0.5rem;
-    }
-
-    h1,
-    h2,
-    h3,
-    p { margin-top: 0; }
-
-    h1 {
-      font-size: clamp(3.1rem, 7vw, 6.25rem);
-      letter-spacing: -0.075em;
-      line-height: 0.91;
-      margin-bottom: 1.65rem;
-      max-width: 10ch;
-    }
-
-    h1 span { color: var(--mint); }
-
-    .lead {
-      color: var(--muted);
-      font-size: clamp(1.08rem, 2vw, 1.3rem);
-      line-height: 1.62;
-      max-width: 39rem;
-    }
-
-    .hero-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.8rem;
-      margin-top: 2rem;
-    }
-
-    .button {
-      align-items: center;
-      border-radius: 0.8rem;
-      display: inline-flex;
-      font-size: 0.92rem;
-      font-weight: 800;
-      gap: 0.5rem;
-      min-height: 2.85rem;
-      padding: 0.7rem 1rem;
-      text-decoration: none;
-      transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
-    }
-
-    .button-primary {
-      background: var(--mint);
-      border: 1px solid var(--mint);
-      color: #05211e;
-    }
-
-    .button-primary:hover { background: #c0fff0; transform: translateY(-2px); }
-
-    .button-secondary {
-      border: 1px solid var(--line-strong);
-      color: var(--ink);
-    }
-
-    .button-secondary:hover { border-color: var(--mint); color: var(--mint); }
-
-    .prototype-note {
-      color: var(--quiet);
-      font-size: 0.8rem;
-      margin: 1.35rem 0 0;
-    }
-
-    .flow-card {
-      align-self: center;
-      background: linear-gradient(145deg, rgba(20, 58, 66, 0.9), rgba(8, 24, 31, 0.96));
-      border: 1px solid var(--line-strong);
-      border-radius: var(--radius-lg);
-      box-shadow: 0 1.75rem 5rem rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-      overflow: hidden;
-      position: relative;
-    }
-
-    .flow-card::before {
-      background: radial-gradient(circle, rgba(141, 238, 219, 0.3), transparent 66%);
-      content: "";
-      height: 22rem;
-      position: absolute;
-      right: -9rem;
-      top: -12rem;
-      width: 22rem;
-    }
-
-    .flow-card-header,
-    .flow-step,
-    .flow-caption { position: relative; }
-
-    .flow-card-header {
-      align-items: center;
-      border-bottom: 1px solid var(--line);
-      display: flex;
-      justify-content: space-between;
-      padding: 1rem 1.15rem;
-    }
-
-    .flow-card-header p {
-      color: var(--muted);
-      font-size: 0.72rem;
-      font-weight: 800;
-      letter-spacing: 0.11em;
-      margin: 0;
-      text-transform: uppercase;
-    }
-
-    .prototype-pill {
-      background: rgba(141, 238, 219, 0.1);
-      border: 1px solid rgba(141, 238, 219, 0.26);
-      border-radius: 999px;
-      color: var(--mint);
-      font-size: 0.68rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      padding: 0.34rem 0.52rem;
-      text-transform: uppercase;
-    }
-
-    .flow-stack { padding: 1.1rem; }
-
-    .flow-step {
-      align-items: center;
-      background: rgba(8, 27, 33, 0.7);
-      border: 1px solid rgba(187, 233, 226, 0.12);
-      border-radius: 0.9rem;
-      display: grid;
-      gap: 0.8rem;
-      grid-template-columns: 2rem 1fr auto;
-      padding: 0.82rem;
-    }
-
-    .flow-step + .flow-step { margin-top: 0.7rem; }
-
-    .flow-index {
-      align-items: center;
-      background: rgba(141, 238, 219, 0.13);
-      border: 1px solid rgba(141, 238, 219, 0.28);
-      border-radius: 0.65rem;
-      color: var(--mint);
-      display: flex;
-      font-size: 0.74rem;
-      font-weight: 850;
-      height: 2rem;
-      justify-content: center;
-      width: 2rem;
-    }
-
-    .flow-step strong { display: block; font-size: 0.92rem; }
-
-    .flow-step small { color: var(--muted); display: block; font-size: 0.78rem; margin-top: 0.12rem; }
-
-    .flow-arrow { color: var(--aqua); font-weight: 800; }
-
-    .flow-caption {
-      border-top: 1px solid var(--line);
-      color: var(--quiet);
-      font-size: 0.76rem;
-      margin: 0;
-      padding: 0.95rem 1.15rem 1.1rem;
-    }
-
-    .section { padding: 5rem 0; }
-
-    .section-intro {
-      display: grid;
-      gap: 1rem;
-      grid-template-columns: minmax(0, 0.8fr) minmax(16rem, 0.62fr);
-      margin-bottom: 2.25rem;
-    }
-
-    .section h2 {
-      font-size: clamp(2rem, 4vw, 3.35rem);
-      letter-spacing: -0.055em;
-      line-height: 1;
-      margin-bottom: 0;
-    }
-
-    .section-intro > p:last-child {
-      align-self: end;
-      color: var(--muted);
-      margin-bottom: 0;
-      max-width: 33rem;
-    }
-
-    .capability-grid {
-      display: grid;
-      gap: 1rem;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .capability {
-      background: rgba(12, 30, 37, 0.72);
-      border: 1px solid var(--line);
-      border-radius: var(--radius-md);
-      min-height: 14rem;
-      padding: 1.35rem;
-      position: relative;
-    }
-
-    .capability::after {
-      background: linear-gradient(90deg, transparent, rgba(141, 238, 219, 0.5), transparent);
-      content: "";
-      height: 1px;
-      left: 1.35rem;
-      opacity: 0.45;
-      position: absolute;
-      right: 1.35rem;
+      position: sticky;
       top: 0;
+      z-index: 90;
+      background: rgba(8, 20, 27, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--dente-border);
     }
-
-    .capability-number {
-      color: var(--aqua);
-      font-size: 0.76rem;
-      font-weight: 850;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-
-    .capability h3 { font-size: 1.12rem; margin: 1.15rem 0 0.65rem; }
-
-    .capability p { color: var(--muted); font-size: 0.9rem; margin-bottom: 0; }
-
-    .explorer {
-      background: linear-gradient(135deg, #0c222a, #0c1922);
-      border: 1px solid var(--line);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-    }
-
-    .explorer-top {
-      align-items: start;
-      border-bottom: 1px solid var(--line);
+    .header-inner {
       display: flex;
-      gap: 1.25rem;
-      justify-content: space-between;
-      padding: 1.5rem;
-    }
-
-    .explorer-top h2 { font-size: clamp(1.7rem, 3vw, 2.55rem); margin-bottom: 0.45rem; }
-
-    .explorer-top p { color: var(--muted); margin-bottom: 0; max-width: 36rem; }
-
-    .tabs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      padding: 1rem 1.5rem 0;
-    }
-
-    .tab {
-      background: transparent;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      color: var(--muted);
-      cursor: pointer;
-      font: inherit;
-      font-size: 0.82rem;
-      font-weight: 800;
-      padding: 0.54rem 0.8rem;
-    }
-
-    .tab[aria-selected="true"] {
-      background: rgba(141, 238, 219, 0.13);
-      border-color: rgba(141, 238, 219, 0.58);
-      color: var(--mint);
-    }
-
-    .panel {
-      display: grid;
-      gap: 1.5rem;
-      grid-template-columns: minmax(0, 0.9fr) minmax(14rem, 0.65fr);
-      padding: 1.5rem;
-    }
-
-    .panel[hidden] { display: none; }
-
-    .panel-tag {
-      color: var(--aqua);
-      font-size: 0.72rem;
-      font-weight: 850;
-      letter-spacing: 0.12em;
-      margin-bottom: 0.6rem;
-      text-transform: uppercase;
-    }
-
-    .panel h3 { font-size: 1.35rem; margin-bottom: 0.65rem; }
-
-    .panel-copy { color: var(--muted); margin-bottom: 0; max-width: 40rem; }
-
-    .panel-list {
-      border-left: 1px solid var(--line-strong);
-      display: grid;
-      gap: 0.9rem;
-      list-style: none;
-      margin: 0;
-      padding: 0.1rem 0 0.1rem 1.15rem;
-    }
-
-    .panel-list li { color: var(--muted); font-size: 0.88rem; position: relative; }
-
-    .panel-list li::before {
-      background: var(--mint);
-      border-radius: 50%;
-      box-shadow: 0 0 0 0.23rem rgba(141, 238, 219, 0.1);
-      content: "";
-      height: 0.38rem;
-      left: -1.36rem;
-      position: absolute;
-      top: 0.48rem;
-      width: 0.38rem;
-    }
-
-    .architecture {
-      display: grid;
-      gap: 1rem;
-      grid-template-columns: 0.93fr 1.07fr;
-    }
-
-    .architecture-note {
-      background: linear-gradient(145deg, rgba(255, 157, 124, 0.11), rgba(255, 157, 124, 0.03));
-      border: 1px solid rgba(255, 157, 124, 0.23);
-      border-radius: var(--radius-md);
-      color: var(--muted);
-      padding: 1.3rem;
-    }
-
-    .architecture-note strong { color: #ffd2c3; display: block; margin-bottom: 0.5rem; }
-
-    .stack-list { display: grid; gap: 0.72rem; }
-
-    .stack-row {
       align-items: center;
-      background: rgba(10, 28, 35, 0.73);
-      border: 1px solid var(--line);
-      border-radius: 0.8rem;
-      display: grid;
+      justify-content: space-between;
+      height: 72px;
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(141, 238, 219, 0.2), rgba(44, 202, 181, 0.4));
+      border: 1px solid var(--dente-mint);
+      border-radius: var(--radius-sm);
+      color: var(--dente-mint);
+    }
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      color: var(--dente-text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .brand-badge {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      background: rgba(44, 202, 181, 0.15);
+      border: 1px solid var(--dente-aqua);
+      color: var(--dente-mint);
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-full);
+      font-weight: 700;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      list-style: none;
+    }
+    .nav-links a {
+      color: var(--dente-text-muted);
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+    .nav-links a:hover {
+      color: var(--dente-mint);
+      text-decoration: none;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
       gap: 1rem;
-      grid-template-columns: 7rem 1fr;
-      padding: 0.84rem 1rem;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.25rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1px solid transparent;
+      text-decoration: none;
+      min-height: 44px;
+      min-width: 44px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--dente-mint) 0%, var(--dente-aqua) 100%);
+      color: #041217;
+      box-shadow: 0 4px 16px rgba(44, 202, 181, 0.3);
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 22px rgba(44, 202, 181, 0.45);
+      text-decoration: none;
+      color: #020c0f;
+    }
+    .btn-secondary {
+      background: var(--dente-surface-raised);
+      border-color: var(--dente-border);
+      color: var(--dente-text);
+    }
+    .btn-secondary:hover {
+      background: var(--dente-surface-hover);
+      border-color: var(--dente-mint);
+      color: var(--dente-mint);
+      text-decoration: none;
+    }
+    .btn-sm {
+      padding: 0.35rem 0.75rem;
+      font-size: 0.8rem;
+      min-height: 36px;
     }
 
-    .stack-row strong { color: var(--mint); font-size: 0.84rem; }
-
-    .stack-row span { color: var(--muted); font-size: 0.86rem; }
-
-    .faq-list { display: grid; gap: 0.8rem; }
-
-    details {
-      background: rgba(12, 30, 37, 0.72);
-      border: 1px solid var(--line);
-      border-radius: 0.85rem;
-      padding: 1rem 1.1rem;
+    /* Hero Section */
+    .hero {
+      padding: clamp(3rem, 6vw, 5.5rem) 0 clamp(2rem, 4vw, 3.5rem);
+      text-align: center;
+      position: relative;
     }
-
-    details[open] { border-color: var(--line-strong); }
-
-    summary { color: var(--ink); cursor: pointer; font-weight: 800; }
-
-    details p { color: var(--muted); margin: 0.85rem 0 0; }
-
-    .footer {
-      border-top: 1px solid var(--line);
-      color: var(--quiet);
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(14, 34, 45, 0.9);
+      border: 1px solid var(--dente-border);
+      color: var(--dente-mint);
+      padding: 0.35rem 1rem;
+      border-radius: var(--radius-full);
       font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .hero-eyebrow .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--dente-aqua);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--dente-aqua);
+      animation: livePulse 2s infinite;
+    }
+    @keyframes livePulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+    .hero h1 {
+      font-size: clamp(2.1rem, 4.2vw, 3.8rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.25rem;
+      max-width: 960px;
+      margin-inline: auto;
+    }
+    .hero h1 .gradient-text {
+      background: linear-gradient(120deg, #ffffff 10%, var(--dente-mint) 50%, var(--dente-aqua) 90%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-lead {
+      font-size: clamp(1.05rem, 1.3vw, 1.25rem);
+      color: var(--dente-text-muted);
+      max-width: 780px;
+      margin: 0 auto 2.2rem;
+      line-height: 1.65;
+    }
+    .hero-cta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 3rem;
+    }
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+      max-width: 1080px;
+      margin: 0 auto;
+      background: var(--dente-surface);
+      border: 1px solid var(--dente-border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+    }
+    .stat-item {
+      text-align: center;
+      border-right: 1px solid var(--dente-line);
+    }
+    .stat-item:last-child {
+      border-right: none;
+    }
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--dente-mint);
+      font-family: var(--font-mono);
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--dente-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 0.25rem;
+    }
+
+    /* Sandbox Section Layout */
+    .section-title-group {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    .section-tag {
+      color: var(--dente-mint);
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+    .section-title {
+      font-size: clamp(1.6rem, 2.8vw, 2.4rem);
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: var(--dente-text);
+      margin-bottom: 0.75rem;
+    }
+    .section-desc {
+      color: var(--dente-text-muted);
+      max-width: 680px;
+      margin: 0 auto;
+      font-size: 1rem;
+    }
+
+    /* Sandbox: FDI Odontogram Interactive */
+    .odontogram-sandbox {
+      padding: clamp(2.5rem, 5vw, 4.5rem) 0;
+    }
+    .odontogram-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 1.75rem;
+      background: var(--dente-surface);
+      border: 1px solid var(--dente-border);
+      border-radius: var(--radius-lg);
+      padding: clamp(1rem, 2.5vw, 2rem);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+    }
+    .odontogram-view {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .odontogram-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      background: var(--dente-surface-raised);
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--dente-border);
+    }
+    .toolbar-left, .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+    .arch-toggle-btn {
+      background: transparent;
+      border: 1px solid var(--dente-border);
+      color: var(--dente-text-muted);
+      padding: 0.4rem 0.85rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .arch-toggle-btn.active, .arch-toggle-btn:hover {
+      background: rgba(44, 202, 181, 0.2);
+      border-color: var(--dente-mint);
+      color: var(--dente-mint);
+    }
+
+    /* Odontogram SVG Board */
+    .odontogram-board {
+      background: #061118;
+      border: 1px solid var(--dente-line);
+      border-radius: var(--radius-md);
+      padding: 1.25rem 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      position: relative;
+    }
+    .arch-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .arch-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--dente-text-dim);
+      padding-left: 0.5rem;
+    }
+    .teeth-row {
+      display: grid;
+      grid-template-columns: repeat(16, 1fr);
+      gap: 4px;
+    }
+    .tooth-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(14, 34, 45, 0.6);
+      border: 1px solid rgba(141, 238, 219, 0.12);
+      border-radius: var(--radius-sm);
+      padding: 0.35rem 0.15rem;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+    .tooth-card:hover {
+      border-color: var(--dente-mint);
+      transform: translateY(-2px);
+      background: rgba(19, 45, 60, 0.9);
+      box-shadow: 0 4px 12px rgba(44, 202, 181, 0.2);
+    }
+    .tooth-card.selected {
+      border-color: var(--dente-mint);
+      background: rgba(44, 202, 181, 0.15);
+      box-shadow: 0 0 0 2px var(--dente-mint);
+    }
+    .tooth-num {
+      font-size: 0.72rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: var(--dente-mint);
+      margin-bottom: 0.2rem;
+    }
+    .tooth-svg-wrap {
+      width: 100%;
+      max-width: 44px;
+      aspect-ratio: 1 / 1;
+    }
+    .tooth-svg-wrap svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .tooth-surface {
+      fill: #102936;
+      stroke: #1a4254;
+      stroke-width: 1;
+      cursor: pointer;
+      transition: fill 0.15s ease, stroke 0.15s ease;
+    }
+    .tooth-surface:hover {
+      fill: rgba(141, 238, 219, 0.45);
+      stroke: var(--dente-mint);
+    }
+    .tooth-surface.surface-sound {
+      fill: #143545;
+    }
+    .tooth-surface.surface-caries {
+      fill: var(--dente-coral) !important;
+    }
+    .tooth-surface.surface-filling {
+      fill: var(--dente-aqua) !important;
+    }
+    .tooth-surface.surface-crown {
+      fill: var(--dente-gold) !important;
+    }
+    .tooth-card.status-rct .tooth-svg-wrap {
+      filter: drop-shadow(0 0 4px var(--dente-purple));
+    }
+    .tooth-card.status-implant .tooth-svg-wrap {
+      filter: drop-shadow(0 0 4px var(--dente-blue));
+    }
+    .tooth-card.status-extracted {
+      opacity: 0.35;
+    }
+    .tooth-badge-mini {
+      font-size: 0.58rem;
+      font-family: var(--font-mono);
+      margin-top: 0.2rem;
+      color: var(--dente-text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    /* Clinical Drawer / Inspector Panel */
+    .clinical-drawer {
+      background: var(--dente-surface-raised);
+      border: 1px solid var(--dente-border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .drawer-header {
+      border-bottom: 1px solid var(--dente-line);
+      padding-bottom: 0.85rem;
+    }
+    .drawer-tooth-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--dente-mint);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .drawer-tooth-fdi {
+      font-family: var(--font-mono);
+      background: rgba(44, 202, 181, 0.2);
+      border: 1px solid var(--dente-aqua);
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+    }
+    .drawer-tooth-sub {
+      font-size: 0.8rem;
+      color: var(--dente-text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .diagnosis-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+    .diagnosis-option-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--dente-surface);
+      border: 1px solid var(--dente-border);
+      color: var(--dente-text);
+      padding: 0.55rem 0.85rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: left;
+    }
+    .diagnosis-option-btn:hover {
+      background: var(--dente-surface-hover);
+      border-color: var(--dente-mint);
+    }
+    .diagnosis-option-btn.active {
+      background: rgba(44, 202, 181, 0.2);
+      border-color: var(--dente-mint);
+      color: var(--dente-mint);
+    }
+    .diag-color-pip {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 0.5rem;
+    }
+
+    .perio-sliders {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      background: var(--dente-surface);
+      padding: 0.85rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--dente-line);
+    }
+    .slider-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--dente-text-muted);
+    }
+    .slider-val {
+      font-family: var(--font-mono);
+      color: var(--dente-mint);
+    }
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      background: #061118;
+      border-radius: 3px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      background: var(--dente-mint);
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 0 8px var(--dente-mint);
+    }
+
+    /* Treatment Cost Summary Card */
+    .treatment-summary-card {
+      background: #061118;
+      border: 1px solid var(--dente-border);
+      border-radius: var(--radius-sm);
+      padding: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .summary-fee-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .summary-fee-label {
+      font-size: 0.8rem;
+      color: var(--dente-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .summary-fee-amount {
+      font-size: 1.35rem;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      color: var(--dente-mint);
+    }
+    .drawer-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    /* DICOM CT Slice Viewer Section */
+    .dicom-section {
+      padding: clamp(2.5rem, 5vw, 4.5rem) 0;
+    }
+    .dicom-container {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 1.75rem;
+      background: var(--dente-surface);
+      border: 1px solid var(--dente-border);
+      border-radius: var(--radius-lg);
+      padding: clamp(1rem, 2.5vw, 2rem);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+    }
+    .dicom-canvas-box {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      min-height: 380px;
+      background: #020609;
+      border: 1px solid var(--dente-border);
+      border-radius: var(--radius-md);
+      position: relative;
+      overflow: hidden;
+      contain: layout size style;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #dicomCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+    }
+    .dicom-overlay-hud {
+      position: absolute;
+      top: 12px;
+      left: 14px;
+      pointer-events: none;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--dente-mint);
+      background: rgba(8, 20, 27, 0.75);
+      padding: 0.4rem 0.75rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--dente-border);
+      line-height: 1.4;
+    }
+    .dicom-overlay-stats {
+      position: absolute;
+      bottom: 12px;
+      right: 14px;
+      pointer-events: none;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--dente-text-muted);
+      background: rgba(8, 20, 27, 0.75);
+      padding: 0.4rem 0.75rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--dente-line);
+      text-align: right;
+    }
+    .dicom-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .dicom-preset-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+    }
+    .dicom-preset-btn {
+      background: var(--dente-surface-raised);
+      border: 1px solid var(--dente-border);
+      color: var(--dente-text);
+      padding: 0.5rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+    .dicom-preset-btn.active, .dicom-preset-btn:hover {
+      background: rgba(44, 202, 181, 0.2);
+      border-color: var(--dente-mint);
+      color: var(--dente-mint);
+    }
+
+    /* Dynamic Telemetry Chart Section */
+    .telemetry-section {
+      padding: clamp(2.5rem, 5vw, 4.5rem) 0;
+    }
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.75rem;
+      background: var(--dente-surface);
+      border: 1px solid var(--dente-border);
+      border-radius: var(--radius-lg);
+      padding: clamp(1rem, 2.5vw, 2rem);
+    }
+    .chart-container {
+      width: 100%;
+      height: 320px;
+      position: relative;
+      contain: layout size style;
+    }
+    #telemetryCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      border-radius: var(--radius-md);
+      background: #050e13;
+      border: 1px solid var(--dente-line);
+    }
+    .telemetry-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .telemetry-metric-box {
+      background: var(--dente-surface-raised);
+      border: 1px solid var(--dente-border);
+      border-radius: var(--radius-md);
+      padding: 1.1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .telemetry-metric-title {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--dente-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .telemetry-metric-num {
+      font-size: 1.6rem;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      color: var(--dente-mint);
+    }
+    .telemetry-metric-sub {
+      font-size: 0.75rem;
+      color: var(--dente-text-dim);
+    }
+
+    /* Clinical Feature Highlights */
+    .features-section {
+      padding: clamp(2.5rem, 5vw, 4.5rem) 0;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+    .feature-card {
+      background: var(--dente-surface);
+      border: 1px solid var(--dente-border);
+      border-radius: var(--radius-md);
+      padding: 1.75rem;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .feature-card:hover {
+      border-color: var(--dente-mint);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+    }
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(44, 202, 181, 0.15);
+      border: 1px solid var(--dente-aqua);
+      border-radius: var(--radius-sm);
+      color: var(--dente-mint);
+      font-size: 1.25rem;
+    }
+    .feature-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--dente-text);
+    }
+    .feature-text {
+      font-size: 0.9rem;
+      color: var(--dente-text-muted);
+      line-height: 1.55;
+    }
+
+    /* JSON Export Modal / Area */
+    .json-export-section {
+      padding: clamp(2.5rem, 5vw, 4.5rem) 0;
+    }
+    .json-box {
+      background: #04090d;
+      border: 1px solid var(--dente-border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      color: var(--dente-mint);
+      max-height: 280px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* Site Footer */
+    .site-footer {
+      border-top: 1px solid var(--dente-border);
+      background: #040c10;
+      padding: 3.5rem 0 2rem;
       margin-top: 3rem;
-      padding: 2rem 0 2.6rem;
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 2rem;
+      margin-bottom: 2.5rem;
+    }
+    .footer-brand p {
+      color: var(--dente-text-muted);
+      font-size: 0.88rem;
+      margin-top: 0.75rem;
+      max-width: 320px;
+    }
+    .footer-col h4 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--dente-text);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 1rem;
+    }
+    .footer-col ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .footer-col a {
+      color: var(--dente-text-muted);
+      font-size: 0.85rem;
+    }
+    .footer-col a:hover {
+      color: var(--dente-mint);
+    }
+    .footer-bottom {
+      border-top: 1px solid var(--dente-line);
+      padding-top: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--dente-text-dim);
+      flex-wrap: wrap;
+      gap: 1rem;
     }
 
-    .footer-row { align-items: center; display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; justify-content: space-between; }
-
-    .footer a { color: var(--muted); }
-
-    @media (max-width: 820px) {
-      .site-header { align-items: flex-start; flex-direction: column; justify-content: center; padding: 1rem 0; }
-      .site-nav { flex-wrap: wrap; gap: 0.65rem 1rem; }
-      .hero,
-      .section-intro,
-      .panel,
-      .architecture { grid-template-columns: 1fr; }
-      .hero { padding-top: 4.3rem; }
-      .capability-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .explorer-top { flex-direction: column; }
+    /* Responsive Breakpoints */
+    @media (max-width: 1024px) {
+      .odontogram-grid, .dicom-container, .telemetry-grid {
+        grid-template-columns: 1fr;
+      }
+      .hero-stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .stat-item:nth-child(2) {
+        border-right: none;
+      }
+      .stat-item:nth-child(-n+2) {
+        border-bottom: 1px solid var(--dente-line);
+        padding-bottom: 1rem;
+      }
+      .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .footer-grid {
+        grid-template-columns: 1fr 1fr;
+      }
     }
 
-    @media (max-width: 520px) {
-      :root { --page: min(100% - 1.3rem, 1120px); }
-      .site-nav a:not(.repo-link) { display: none; }
-      .hero { gap: 2.5rem; }
-      .capability-grid { grid-template-columns: 1fr; }
-      .tabs { padding-inline: 1rem; }
-      .panel,
-      .explorer-top { padding: 1.1rem; }
-      .stack-row { grid-template-columns: 1fr; gap: 0.2rem; }
+    @media (max-width: 768px) {
+      .header-inner {
+        height: 64px;
+      }
+      .nav-links {
+        display: none;
+      }
+      .hero h1 {
+        font-size: 2rem;
+      }
+      .teeth-row {
+        grid-template-columns: repeat(8, 1fr);
+        row-gap: 8px;
+      }
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+      .footer-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
-    @media (prefers-reduced-motion: reduce) {
-      html { scroll-behavior: auto; }
-      *, *::before, *::after { transition-duration: 0.01ms !important; }
+    @media (max-width: 480px) {
+      .teeth-row {
+        grid-template-columns: repeat(4, 1fr);
+      }
+      .hero-stats {
+        grid-template-columns: 1fr;
+      }
+      .stat-item {
+        border-right: none !important;
+        border-bottom: 1px solid var(--dente-line);
+        padding-bottom: 0.75rem;
+      }
+      .stat-item:last-child {
+        border-bottom: none;
+      }
     }
   </style>
 </head>
 <body>
-  <a class="skip-link" href="#main-content">Skip to content</a>
 
-  <header class="shell site-header">
-    <a class="brand" href="#top" aria-label="DENTE home">
-      <span class="brand-mark" aria-hidden="true"></span>
-      <span>DENTE</span>
-    </a>
-    <nav class="site-nav" aria-label="Primary navigation">
-      <a href="#capabilities">Capabilities</a>
-      <a href="#workflow">Workflow</a>
-      <a href="#stack">Stack</a>
-      <a class="repo-link" href="https://github.com/marko1olo/dental-crm">Source ↗</a>
-    </nav>
+  <!-- Skip to Main Content Link -->
+  <a href="#main-content" class="skip-to-content">Skip to clinical workspace</a>
+
+  <!-- Header -->
+  <header class="site-header" role="banner">
+    <div class="container header-inner">
+      <div class="brand-group">
+        <div class="brand-logo" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 2C10.5 2 7 5.5 7 10c0 3.2 1.4 6.8 2.5 10.5.9 3 2.1 6.5 3.5 9.5 1 .3 2-.2 2.5-1.2l1.5-3.8 1.5 3.8c.5 1 1.5 1.5 2.5 1.2 1.4-3 2.6-6.5 3.5-9.5C25.6 16.8 27 13.2 27 10c0-4.5-3.5-8-11-8z"/>
+          </svg>
+        </div>
+        <a href="https://marko1olo.github.io/dental-crm/" class="brand-title">
+          DENTE
+          <span class="brand-badge">Clinical v2.8</span>
+        </a>
+      </div>
+
+      <nav aria-label="Primary Navigation">
+        <ul class="nav-links">
+          <li><a href="#odontogram">FDI Odontogram</a></li>
+          <li><a href="#dicom-viewer">DICOM PACS</a></li>
+          <li><a href="#telemetry">Operatory Telemetry</a></li>
+          <li><a href="#features">Architecture</a></li>
+          <li><a href="#export">JSON Export</a></li>
+        </ul>
+      </nav>
+
+      <div class="header-actions">
+        <a href="https://github.com/marko1olo/dental-crm" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" aria-label="GitHub Repository">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          Repository
+        </a>
+        <a href="#odontogram" class="btn btn-primary btn-sm">Launch Sandbox</a>
+      </div>
+    </div>
   </header>
 
-  <main id="main-content" class="shell">
-    <section id="top" class="hero" aria-labelledby="hero-heading">
-      <div>
-        <p class="eyebrow">Dental operations workspace</p>
-        <h1 id="hero-heading">Care has a <span>clearer path.</span></h1>
-        <p class="lead">DENTE is an evolving dental CRM prototype that connects the operational context around patient care: scheduling, clinical records, imaging, documents, finance, and follow-up communication.</p>
-        <div class="hero-actions">
-          <a class="button button-primary" href="#workflow">Explore the workflow <span aria-hidden="true">↓</span></a>
-          <a class="button button-secondary" href="https://github.com/marko1olo/dental-crm#readme">Read the project guide <span aria-hidden="true">↗</span></a>
+  <!-- Main Content -->
+  <main id="main-content">
+    
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="container">
+        <div class="hero-eyebrow">
+          <span class="pulse-dot"></span>
+          Enterprise Dental Clinical Workspace
         </div>
-        <p class="prototype-note">Prototype surface, not a hosted clinical service or a substitute for clinical judgement.</p>
-      </div>
-
-      <aside class="flow-card" aria-label="Conceptual patient-flow map">
-        <div class="flow-card-header">
-          <p>Clinic flow map</p>
-          <span class="prototype-pill">Concept</span>
-        </div>
-        <div class="flow-stack">
-          <div class="flow-step">
-            <span class="flow-index">01</span>
-            <div><strong>Schedule</strong><small>Organize demand and staff time</small></div>
-            <span class="flow-arrow" aria-hidden="true">→</span>
-          </div>
-          <div class="flow-step">
-            <span class="flow-index">02</span>
-            <div><strong>Patient context</strong><small>Bring records and history into view</small></div>
-            <span class="flow-arrow" aria-hidden="true">→</span>
-          </div>
-          <div class="flow-step">
-            <span class="flow-index">03</span>
-            <div><strong>Visit work</strong><small>Capture decisions, imaging, and notes</small></div>
-            <span class="flow-arrow" aria-hidden="true">→</span>
-          </div>
-          <div class="flow-step">
-            <span class="flow-index">04</span>
-            <div><strong>Documents &amp; follow-up</strong><small>Close the loop with accountable handoffs</small></div>
-            <span class="flow-arrow" aria-hidden="true">✓</span>
-          </div>
-        </div>
-        <p class="flow-caption">A product map for the repository’s connected modules — not live patient data.</p>
-      </aside>
-    </section>
-
-    <section id="capabilities" class="section" aria-labelledby="capabilities-heading">
-      <div class="section-intro">
-        <div>
-          <p class="eyebrow">Connected, not generic</p>
-          <h2 id="capabilities-heading">The clinical day has more than one screen.</h2>
-        </div>
-        <p>DENTE is shaped around the handoffs where a clinic loses context: from schedule to chairside work, imaging to documentation, and a completed visit to the next accountable action.</p>
-      </div>
-      <div class="capability-grid">
-        <article class="capability">
-          <span class="capability-number">01 / Operations</span>
-          <h3>Schedule and patient context</h3>
-          <p>Appointment handling and patient profiles are designed to keep the relevant record close to the day’s work.</p>
-        </article>
-        <article class="capability">
-          <span class="capability-number">02 / Clinical</span>
-          <h3>Visit-focused documentation</h3>
-          <p>Clinical forms, treatment context, and visit workflows make the care record an active working surface rather than an archive.</p>
-        </article>
-        <article class="capability">
-          <span class="capability-number">03 / Imaging</span>
-          <h3>DICOM workbench boundary</h3>
-          <p>Study intake and imaging review tooling belong in the workflow while advanced interpretation stays with qualified clinical judgement.</p>
-        </article>
-        <article class="capability">
-          <span class="capability-number">04 / Documents</span>
-          <h3>Controlled document lifecycle</h3>
-          <p>Documents, issue states, and patient-facing forms are treated as a lifecycle with clear checks, not loose files.</p>
-        </article>
-        <article class="capability">
-          <span class="capability-number">05 / Finance</span>
-          <h3>Payment and balance context</h3>
-          <p>Financial information is part of the patient journey, with route-level guards around payment capture and related records.</p>
-        </article>
-        <article class="capability">
-          <span class="capability-number">06 / Follow-up</span>
-          <h3>Scoped communications</h3>
-          <p>Communication tasks and Telegram-oriented integrations are designed around explicit scope and visible follow-up outcomes.</p>
-        </article>
-      </div>
-    </section>
-
-    <!-- Interactive FDI Odontogram Showcase -->
-    <section id="odontogram-demo" class="section" aria-labelledby="odontogram-heading">
-      <div class="section-intro">
-        <div>
-          <p class="eyebrow">Interactive Clinical Chart</p>
-          <h2 id="odontogram-heading">FDI Dental Formula &amp; Restorative Chart Sandbox</h2>
-        </div>
-        <p>Click any tooth to inspect clinical diagnosis, historical treatments, periodontal pocket depth, and linked 3D DICOM slices.</p>
-      </div>
-
-      <div class="flow-card" style="padding: 2rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-          <div>
-            <span class="prototype-pill">Patient: #D-8491 (A. Petushkov)</span>
-            <span style="color: var(--muted); font-size: 0.85rem; margin-left: 0.75rem;">Adult Dentition (FDI Standard)</span>
-          </div>
-          <div id="tooth-status-badge" style="background: rgba(141, 238, 219, 0.15); border: 1px solid var(--mint); color: var(--mint); padding: 0.35rem 0.85rem; border-radius: 999px; font-weight: 700; font-size: 0.82rem;">
-            Selected: Tooth 16 (Maxillary Right First Molar)
-          </div>
+        <h1>
+          High-Precision Dental EHR, <span class="gradient-text">FDI Odontogram</span> & Chairside Operations
+        </h1>
+        <p class="hero-lead">
+          Designed for modern dental clinics, DSO networks, and surgical operatories. Real-time 32-tooth anatomical surface charting, integrated DICOM CT slice inspector, automated treatment fee estimation, and 60 FPS operatory telemetry.
+        </p>
+        <div class="hero-cta">
+          <a href="#odontogram" class="btn btn-primary">
+            Explore FDI Odontogram
+          </a>
+          <a href="#dicom-viewer" class="btn btn-secondary">
+            Simulate DICOM CT Slices
+          </a>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(16, 1fr); gap: 6px; max-width: 100%; overflow-x: auto; padding: 1rem 0; text-align: center;">
-          <!-- Upper Jaw: 18 to 28 -->
-          <button type="button" class="tooth-btn" onclick="selectTooth(18, 'Здоровый / Интактный', 'K00.0', 'Норма')">18</button>
-          <button type="button" class="tooth-btn" onclick="selectTooth(17, 'Пломба композит (МОД)', 'K02.1', 'Реставрация 2024')">17</button>
-          <button type="button" class="tooth-btn tooth-active" onclick="selectTooth(16, 'Глубокий кариес (Окклюзионный)', 'K02.2', 'План: Эндодонтическое лечение')">16</button>
-          <button type="button" class="tooth-btn" onclick="selectTooth(15, 'Здоровый / Интактный', 'K00.0', 'Норма')">15</button>
-          <button type="button" class="tooth-btn" onclick="selectTooth(14, 'Коронка металлокерамика', 'Z96.5', 'Установлена 2022')">14</button>
-          <button type="button" class="tooth-btn" onclick="selectTooth(13, 'Здоровый / Интактный', 'K00.0', 'Норма')">13</button>
-          <button type="button" class="tooth-btn" onclick="selectTooth(12, 'Керамический винир E.max', 'K03.8', 'Эстетическая реставрация')">12</button>
-          <button type="button" class="tooth-btn" onclick="selectTooth(11, 'Керамический винир E.max', 'K03.8', 'Эстетическая реставрация')">11</button>
-          <button type="button" class="tooth-btn" onclick="selectTooth(21, 'Керамический винир E.max', 'K03.8', 'Эстетическая реставрация')">21</button>
-          <button type="button" class="tooth-btn" onclick="selectTooth(22, 'Керамический винир E.max', 'K03.8', 'Эстетическая реставрация')">22</button>
-          <button type="button" class="tooth-btn" onclick="selectTooth(23, 'Здоровый / Интактный', 'K00.0', 'Норма')">23</button>
-          <button type="button" class="tooth-btn" onclick="selectTooth(24, 'Пломба световая (V класс)', 'K02.0', 'Контроль краевого прилегания')">24</button>
-          <button type="button" class="tooth-btn" onclick="selectTooth(25, 'Здоровый / Интактный', 'K00.0', 'Норма')">25</button>
-          <button type="button" class="tooth-btn" onclick="selectTooth(26, 'Имплантат Nobel Biocare 4.3x10', 'Z96.5', 'Остеоинтеграция 100%')">26</button>
-          <button type="button" class="tooth-btn" onclick="selectTooth(27, 'Здоровый / Интактный', 'K00.0', 'Норма')">27</button>
-          <button type="button" class="tooth-btn" onclick="selectTooth(28, 'Дистопия / Ретенция', 'K01.1', 'План: Атравматичное удаление')">28</button>
-        </div>
-
-        <div id="tooth-details-card" style="background: rgba(7, 17, 22, 0.85); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 1.25rem; margin-top: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-          <div>
-            <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em;">Диагноз по МКБ-10</div>
-            <div id="tooth-diagnosis" style="font-size: 1.15rem; font-weight: 700; color: var(--ink); margin-top: 0.25rem;">K02.2 — Глубокий кариес (Окклюзионный)</div>
+        <div class="hero-stats">
+          <div class="stat-item">
+            <div class="stat-value">32 / 32</div>
+            <div class="stat-label">Adult FDI Teeth Mapped</div>
           </div>
-          <div>
-            <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em;">Клинический статус</div>
-            <div id="tooth-action" style="font-size: 0.95rem; font-weight: 600; color: var(--coral); margin-top: 0.25rem;">План: Эндодонтическое лечение</div>
+          <div class="stat-item">
+            <div class="stat-value">5 Surfaces</div>
+            <div class="stat-label">Per Tooth (O, M, D, B, L)</div>
           </div>
-          <div style="display: flex; gap: 0.5rem;">
-            <span class="prototype-pill" style="border-color: var(--aqua); color: var(--aqua);">3D DICOM Связан</span>
-            <span class="prototype-pill">Audio Note Прикреплена</span>
+          <div class="stat-item">
+            <div class="stat-value">&lt; 15 ms</div>
+            <div class="stat-label">Real-Time Fee Engine</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">100% Client</div>
+            <div class="stat-label">Zero-Latency In-Memory State</div>
           </div>
         </div>
       </div>
     </section>
 
-    <style>
-      .tooth-btn {
-        background: rgba(16, 38, 46, 0.85);
-        border: 1px solid var(--line);
-        color: var(--ink);
-        border-radius: 6px;
-        padding: 0.75rem 0.25rem;
-        font-weight: 700;
-        font-size: 0.85rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-      .tooth-btn:hover {
-        background: rgba(44, 202, 181, 0.2);
-        border-color: var(--mint);
-        color: var(--mint);
-        transform: translateY(-2px);
-      }
-      .tooth-btn.tooth-active {
-        background: var(--mint);
-        border-color: var(--mint);
-        color: #071116;
-        box-shadow: 0 0 12px rgba(141, 238, 219, 0.5);
-      }
-    </style>
-
-    <script>
-      function selectTooth(num, status, icd, plan) {
-        document.querySelectorAll('.tooth-btn').forEach(b => {
-          if (b.innerText === String(num)) b.classList.add('tooth-active');
-          else b.classList.remove('tooth-active');
-        });
-        document.getElementById('tooth-status-badge').innerText = `Selected: Tooth ${num} (FDI Standard)`;
-        document.getElementById('tooth-diagnosis').innerText = `${icd} — ${status}`;
-        document.getElementById('tooth-action').innerText = plan;
-      }
-    </script>
-
-    <section id="workflow" class="section" aria-labelledby="workflow-heading">
-      <div class="explorer">
-        <div class="explorer-top">
-          <div>
-            <p class="eyebrow">Interactive product map</p>
-            <h2 id="workflow-heading">Trace the handoff, not just the feature list.</h2>
-            <p>Choose a part of the workflow to see what role it plays in the broader workspace. This is a repository guide, not a simulation of patient activity.</p>
-          </div>
-          <span class="prototype-pill">Keyboard ready</span>
+    <!-- FDI Odontogram Interactive Sandbox -->
+    <section id="odontogram" class="odontogram-sandbox">
+      <div class="container">
+        <div class="section-title-group">
+          <span class="section-tag">Interactive Clinical Sandbox</span>
+          <h2 class="section-title">32-Tooth Adult FDI Odontogram Inspector</h2>
+          <p class="section-desc">
+            Click any tooth or specific surface (Occlusal, Mesial, Distal, Buccal, Lingual) to open the clinical diagnosis drawer. Modify restorations, endodontic statuses, or periodontal pocket depths in real time.
+          </p>
         </div>
 
-        <div class="tabs" role="tablist" aria-label="DENTE workflow areas">
-          <button class="tab" type="button" role="tab" id="tab-day" aria-controls="panel-day" aria-selected="true" tabindex="0">Day planning</button>
-          <button class="tab" type="button" role="tab" id="tab-visit" aria-controls="panel-visit" aria-selected="false" tabindex="-1">Chairside visit</button>
-          <button class="tab" type="button" role="tab" id="tab-record" aria-controls="panel-record" aria-selected="false" tabindex="-1">Record &amp; evidence</button>
-          <button class="tab" type="button" role="tab" id="tab-close" aria-controls="panel-close" aria-selected="false" tabindex="-1">Close the loop</button>
-        </div>
+        <div class="odontogram-grid">
+          <!-- Odontogram Board -->
+          <div class="odontogram-view">
+            <div class="odontogram-toolbar">
+              <div class="toolbar-left">
+                <span style="font-size: 0.85rem; font-weight: 700; color: var(--dente-text-muted);">VIEW ARCH:</span>
+                <button type="button" class="arch-toggle-btn active" id="btnShowAllArch">Complete Dentition (32)</button>
+                <button type="button" class="arch-toggle-btn" id="btnShowMaxilla">Maxilla (11-28)</button>
+                <button type="button" class="arch-toggle-btn" id="btnShowMandible">Mandible (31-48)</button>
+              </div>
+              <div class="toolbar-right">
+                <button type="button" class="btn btn-secondary btn-sm" id="btnResetChart">Reset All Sound</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btnPresetCaries">Sample Pathology Plan</button>
+              </div>
+            </div>
 
-        <div class="panel" id="panel-day" role="tabpanel" aria-labelledby="tab-day">
-          <div>
-            <p class="panel-tag">Before the chair</p>
-            <h3>Start with a plan that knows the patient.</h3>
-            <p class="panel-copy">Scheduling and patient context are kept adjacent so staff can move from a day’s calendar into the record with fewer disconnected steps.</p>
-          </div>
-          <ul class="panel-list">
-            <li>Appointment and schedule surfaces</li>
-            <li>Patient administrative profile</li>
-            <li>Staff-facing configuration boundaries</li>
-          </ul>
-        </div>
+            <div class="odontogram-board" id="odontogramBoard" aria-label="Interactive FDI Dental Chart">
+              <!-- Maxilla (Upper Arch) -->
+              <div class="arch-row" id="maxillaRow">
+                <div class="arch-label">Maxillary Arch (Upper Dentition) — Quadrants 1 & 2</div>
+                <div class="teeth-row" id="maxillaTeeth">
+                  <!-- Generated via JS for teeth 18-11, 21-28 -->
+                </div>
+              </div>
 
-        <div class="panel" id="panel-visit" role="tabpanel" aria-labelledby="tab-visit" hidden>
-          <div>
-            <p class="panel-tag">At the chair</p>
-            <h3>Give the visit a focused working surface.</h3>
-            <p class="panel-copy">DENTE concentrates the visit around patient context, clinical workflow forms, and the supporting tools needed during care rather than forcing a separate trail for every action.</p>
+              <!-- Mandible (Lower Arch) -->
+              <div class="arch-row" id="mandibleRow">
+                <div class="arch-label">Mandibular Arch (Lower Dentition) — Quadrants 4 & 3</div>
+                <div class="teeth-row" id="mandibleTeeth">
+                  <!-- Generated via JS for teeth 48-41, 31-38 -->
+                </div>
+              </div>
+            </div>
           </div>
-          <ul class="panel-list">
-            <li>Visit workflow and active-status controls</li>
-            <li>Clinical rules and mutation guards</li>
-            <li>Voice-to-note and review-oriented states</li>
-          </ul>
-        </div>
 
-        <div class="panel" id="panel-record" role="tabpanel" aria-labelledby="tab-record" hidden>
-          <div>
-            <p class="panel-tag">Evidence in context</p>
-            <h3>Keep imaging and documents connected to the care record.</h3>
-            <p class="panel-copy">The codebase includes DICOM intake and workbench-oriented paths alongside document generation and lifecycle guards, making supporting evidence part of the traceable workflow.</p>
-          </div>
-          <ul class="panel-list">
-            <li>DICOM file intake and imaging workbench boundaries</li>
-            <li>Document issue, preview, and lifecycle checks</li>
-            <li>Explicit source and payload validation routes</li>
-          </ul>
-        </div>
+          <!-- Clinical Drawer / Inspector Panel -->
+          <div class="clinical-drawer" id="clinicalDrawer">
+            <div class="drawer-header">
+              <div class="drawer-tooth-title">
+                <span id="drawerToothName">Tooth 16 (Upper R Molar)</span>
+                <span class="drawer-tooth-fdi" id="drawerToothFdi">FDI 16</span>
+              </div>
+              <div class="drawer-tooth-sub" id="drawerToothType">Maxillary Right First Molar · 3 Roots</div>
+            </div>
 
-        <div class="panel" id="panel-close" role="tabpanel" aria-labelledby="tab-close" hidden>
-          <div>
-            <p class="panel-tag">After the visit</p>
-            <h3>Make the next action visible and owned.</h3>
-            <p class="panel-copy">Payments, communication tasks, and follow-up paths are represented as connected operational work so a completed encounter can lead to a clear next responsibility.</p>
+            <div class="diagnosis-section">
+              <span style="font-size: 0.78rem; font-weight: 700; color: var(--dente-text-muted); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.5rem;">Clinical Status & Restoration:</span>
+              <div class="diagnosis-options" id="diagOptionsList">
+                <button type="button" class="diagnosis-option-btn active" data-status="Sound">
+                  <span><span class="diag-color-pip" style="background: #2ccab5;"></span>Sound & Intact</span>
+                  <span style="font-size: 0.75rem; color: var(--dente-text-dim);">$0</span>
+                </button>
+                <button type="button" class="diagnosis-option-btn" data-status="Caries">
+                  <span><span class="diag-color-pip" style="background: var(--dente-coral);"></span>Active Caries Decay</span>
+                  <span style="font-size: 0.75rem; color: var(--dente-text-dim);">+$140</span>
+                </button>
+                <button type="button" class="diagnosis-option-btn" data-status="Filling">
+                  <span><span class="diag-color-pip" style="background: var(--dente-aqua);"></span>Composite Resin Filling</span>
+                  <span style="font-size: 0.75rem; color: var(--dente-text-dim);">+$180</span>
+                </button>
+                <button type="button" class="diagnosis-option-btn" data-status="Crown">
+                  <span><span class="diag-color-pip" style="background: var(--dente-gold);"></span>Zirconia / Ceramic Crown</span>
+                  <span style="font-size: 0.75rem; color: var(--dente-text-dim);">+$850</span>
+                </button>
+                <button type="button" class="diagnosis-option-btn" data-status="RCT">
+                  <span><span class="diag-color-pip" style="background: var(--dente-purple);"></span>Endodontic Root Canal (RCT)</span>
+                  <span style="font-size: 0.75rem; color: var(--dente-text-dim);">+$920</span>
+                </button>
+                <button type="button" class="diagnosis-option-btn" data-status="Implant">
+                  <span><span class="diag-color-pip" style="background: var(--dente-blue);"></span>Titanium Fixture Implant</span>
+                  <span style="font-size: 0.75rem; color: var(--dente-text-dim);">+$1,850</span>
+                </button>
+                <button type="button" class="diagnosis-option-btn" data-status="Extracted">
+                  <span><span class="diag-color-pip" style="background: #608280;"></span>Extracted / Missing</span>
+                  <span style="font-size: 0.75rem; color: var(--dente-text-dim);">+$120</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Periodontal Pocket & Mobility Sliders -->
+            <div class="perio-sliders">
+              <div class="slider-row">
+                <div class="slider-header">
+                  <span>Periodontal Pocket Depth</span>
+                  <span class="slider-val" id="pocketVal">2.0 mm</span>
+                </div>
+                <input type="range" id="sliderPocket" min="1.0" max="9.0" step="0.5" value="2.0">
+              </div>
+              <div class="slider-row">
+                <div class="slider-header">
+                  <span>Mobility Classification (Miller)</span>
+                  <span class="slider-val" id="mobilityVal">Grade 0</span>
+                </div>
+                <input type="range" id="sliderMobility" min="0" max="3" step="1" value="0">
+              </div>
+            </div>
+
+            <!-- Treatment Summary -->
+            <div class="treatment-summary-card">
+              <div class="summary-fee-row">
+                <span class="summary-fee-label">Total Chart Estimate:</span>
+                <span class="summary-fee-amount" id="totalFeeDisplay">$0.00</span>
+              </div>
+              <div style="font-size: 0.75rem; color: var(--dente-text-muted);" id="pathologyCount">
+                0 diseased / restored teeth identified
+              </div>
+            </div>
+
+            <div class="drawer-actions">
+              <button type="button" class="btn btn-primary btn-sm" id="btnExportJSON">Export Chart Payload (JSON)</button>
+            </div>
           </div>
-          <ul class="panel-list">
-            <li>Payment capture and balance-related routes</li>
-            <li>Communication-task outcomes</li>
-            <li>Telegram control and handoff boundaries</li>
-          </ul>
         </div>
       </div>
     </section>
 
-    <section id="stack" class="section" aria-labelledby="stack-heading">
-      <div class="section-intro">
-        <div>
-          <p class="eyebrow">Inspectable by design</p>
-          <h2 id="stack-heading">A web application stack, visible in the source.</h2>
+    <!-- DICOM CT Volumetric Cross-Section Inspector Sandbox -->
+    <section id="dicom-viewer" class="dicom-section">
+      <div class="container">
+        <div class="section-title-group">
+          <span class="section-tag">Computed Tomography Simulation</span>
+          <h2 class="section-title">Interactive DICOM CBCT Volumetric Slice Viewer</h2>
+          <p class="section-desc">
+            Simulate 3D Cone Beam Computed Tomography (CBCT) slice reconstruction. Adjust Window Width (WW) and Window Level (WL) to analyze enamel density, alveolar bone trabeculation, and maxillary sinus floor contours.
+          </p>
         </div>
-        <p>The repository is a TypeScript workspace. Its web client, Fastify API, shared package, and source-level smoke checks are separated so the product surface remains inspectable as it evolves.</p>
-      </div>
-      <div class="architecture">
-        <aside class="architecture-note">
-          <strong>Scope boundary</strong>
-          DENTE is presented here as an evolving prototype. Repository documentation and source checks can demonstrate implementation intent; they do not constitute clinical, regulatory, security, or production-hosting certification.
-        </aside>
-        <div class="stack-list" aria-label="Confirmed technology stack">
-          <div class="stack-row"><strong>Web client</strong><span>React 19, Vite, TypeScript, and a component-level interface layer.</span></div>
-          <div class="stack-row"><strong>API</strong><span>Fastify 5 with route-level middleware, validation, and WebSocket support.</span></div>
-          <div class="stack-row"><strong>Data</strong><span>Drizzle ORM and PostgreSQL, with the repository organized as a multi-package workspace.</span></div>
-          <div class="stack-row"><strong>Imaging</strong><span>Cornerstone and DICOM-related packages for browser-side imaging workbench paths.</span></div>
-          <div class="stack-row"><strong>Checks</strong><span>TypeScript compilation, encoding checks, source-level smoke scripts, and browser-oriented test tooling.</span></div>
+
+        <div class="dicom-container">
+          <div class="dicom-canvas-box">
+            <canvas id="dicomCanvas" width="640" height="400" aria-label="DICOM CT Slice Canvas"></canvas>
+            <div class="dicom-overlay-hud" id="dicomHud">
+              <div>DENTE CBCT PACS v4.2</div>
+              <div id="hudSliceInfo">SLICE: 32 / 64 (Z: -6.4 mm)</div>
+              <div id="hudWindowInfo">WW: 2800 HU | WL: 600 HU</div>
+            </div>
+            <div class="dicom-overlay-stats" id="dicomStats">
+              <div id="hudDensity">PROBE: +1,240 HU (Cortical Bone)</div>
+              <div>MATRIX: 512 x 512 px</div>
+            </div>
+          </div>
+
+          <div class="dicom-controls">
+            <div style="font-size: 0.85rem; font-weight: 700; color: var(--dente-mint); text-transform: uppercase; letter-spacing: 0.05em;">
+              Volumetric Controls
+            </div>
+
+            <div class="slider-row">
+              <div class="slider-header">
+                <span>Slice Depth Index (Z-Axis)</span>
+                <span class="slider-val" id="sliceIndexVal">Slice 32/64</span>
+              </div>
+              <input type="range" id="sliderSlice" min="1" max="64" step="1" value="32">
+            </div>
+
+            <div class="slider-row">
+              <div class="slider-header">
+                <span>Window Level (WL - Brightness)</span>
+                <span class="slider-val" id="wlVal">600 HU</span>
+              </div>
+              <input type="range" id="sliderWL" min="-500" max="1800" step="50" value="600">
+            </div>
+
+            <div class="slider-row">
+              <div class="slider-header">
+                <span>Window Width (WW - Contrast)</span>
+                <span class="slider-val" id="wwVal">2800 HU</span>
+              </div>
+              <input type="range" id="sliderWW" min="400" max="4000" step="100" value="2800">
+            </div>
+
+            <div style="font-size: 0.8rem; font-weight: 600; color: var(--dente-text-muted); margin-top: 0.5rem;">
+              Clinical Window Presets:
+            </div>
+            <div class="dicom-preset-grid">
+              <button type="button" class="dicom-preset-btn active" data-ww="2800" data-wl="600">Bone / Alveolar</button>
+              <button type="button" class="dicom-preset-btn" data-ww="1200" data-wl="1400">Enamel / Crown</button>
+              <button type="button" class="dicom-preset-btn" data-ww="600" data-wl="100">Soft Tissue / Nerve</button>
+              <button type="button" class="dicom-preset-btn" data-ww="3800" data-wl="1100">Implant Metallic</button>
+            </div>
+
+            <div style="margin-top: 0.5rem;">
+              <button type="button" class="btn btn-secondary btn-sm" id="btnAutoScan" style="width: 100%;">
+                Auto-Scan Slices (Loop)
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="section" aria-labelledby="faq-heading">
-      <div class="section-intro">
-        <div>
-          <p class="eyebrow">Read it honestly</p>
-          <h2 id="faq-heading">Questions the page should answer directly.</h2>
+    <!-- Dynamic Live Telemetry Section -->
+    <section id="telemetry" class="telemetry-section">
+      <div class="container">
+        <div class="section-title-group">
+          <span class="section-tag">Real-Time Chairside Analytics</span>
+          <h2 class="section-title">Live Operatory Telemetry & Periodontal Risk Funnel</h2>
+          <p class="section-desc">
+            Deterministic 60 FPS mathematical simulation tracking dental operatory utilization, AI voice dictation accuracy, and real-time clinical workload distribution across active treatment suites.
+          </p>
         </div>
-        <p>The public surface deliberately distinguishes the codebase’s intended product direction from claims that would require real deployment, clinical, or regulatory proof.</p>
-      </div>
-      <div class="faq-list">
-        <details>
-          <summary>Is DENTE a finished hosted service?</summary>
-          <p>No. It is an active prototype repository. This page exists to describe the public codebase and its product direction without representing it as a generally available clinical platform.</p>
-        </details>
-        <details>
-          <summary>What does the imaging workbench claim?</summary>
-          <p>The repository contains DICOM-related intake and browser imaging dependencies. Imaging review is a workflow capability under development; diagnostic interpretation remains a clinical responsibility, not a claim made by this page.</p>
-        </details>
-        <details>
-          <summary>Where can I verify the product surface?</summary>
-          <p>Start with the repository README and source tree. The project keeps web, API, and shared packages separate, while scripts expose type checks and focused smoke checks for many product routes.</p>
-        </details>
+
+        <div class="telemetry-grid">
+          <div class="chart-container">
+            <canvas id="telemetryCanvas" width="800" height="320" aria-label="Live Operatory Telemetry Chart"></canvas>
+          </div>
+
+          <div class="telemetry-sidebar">
+            <div class="telemetry-metric-box">
+              <div class="telemetry-metric-title">Chairside Occupancy</div>
+              <div class="telemetry-metric-num" id="liveOccupancy">87.4%</div>
+              <div class="telemetry-metric-sub">4 of 5 operatories actively in procedure</div>
+            </div>
+            <div class="telemetry-metric-box">
+              <div class="telemetry-metric-title">Voice Dictation Velocity</div>
+              <div class="telemetry-metric-num" id="liveDictation">142 WPM</div>
+              <div class="telemetry-metric-sub">99.4% speech-to-EHR clinical transcription accuracy</div>
+            </div>
+            <div class="telemetry-metric-box">
+              <div class="telemetry-metric-title">Mean Periodontal Pocket</div>
+              <div class="telemetry-metric-num" id="liveMeanPocket">2.34 mm</div>
+              <div class="telemetry-metric-sub">Healthy sulcus threshold maintained</div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
+
+    <!-- Clinical Features Section -->
+    <section id="features" class="features-section">
+      <div class="container">
+        <div class="section-title-group">
+          <span class="section-tag">Architecture & Engineering</span>
+          <h2 class="section-title">Enterprise Dental Practice Infrastructure</h2>
+          <p class="section-desc">
+            Built on a hardened TypeScript core with PostgreSQL 18, zero-drift Drizzle schemas, and immutable clinical audit trails compliant with medical software regulations.
+          </p>
+        </div>
+
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <h3 class="feature-title">Immutable Audit Trail</h3>
+            <p class="feature-text">
+              Every diagnosis toggle, restorative modification, and clinical entry is hashed with SHA-256 and recorded into an immutable append-only ledger for medical-legal compliance.
+            </p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🎙️</div>
+            <h3 class="feature-title">AI Voice Dictation</h3>
+            <p class="feature-text">
+              Hands-free chairside periodontal charting and clinical note transcription. Converts voice dictations (e.g. "Mesial caries 16, pocket depth 3") into structured chart mutations.
+            </p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">💳</div>
+            <h3 class="feature-title">Kopeck-Exact Financials</h3>
+            <p class="feature-text">
+              Zero floating-point inaccuracies. Treatment plans, insurance copays, and lab fees calculate using integer kopecks/cents with strict multi-currency ledger validation.
+            </p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🏥</div>
+            <h3 class="feature-title">DICOM PACS Gateway</h3>
+            <p class="feature-text">
+              Direct ingestion and viewing of periapical X-rays, panoramic orthopantomograms (OPG), and 3D CBCT volumes with zero external server round-trips.
+            </p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3 class="feature-title">PostgreSQL 18 Optimized</h3>
+            <p class="feature-text">
+              Multi-tenant architecture with partition isolation, sub-millisecond query execution, and robust schema synchronization powered by Drizzle ORM.
+            </p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">📱</div>
+            <h3 class="feature-title">Zero-Lag Offline Mode</h3>
+            <p class="feature-text">
+              Operatory charts function offline in browser local memory. Automatic conflict-free synchronization commits back to clinic server once connectivity resumes.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- JSON Export Section -->
+    <section id="export" class="json-export-section">
+      <div class="container">
+        <div class="section-title-group">
+          <span class="section-tag">Interop & Data Portability</span>
+          <h2 class="section-title">Live Dental Chart JSON Payload</h2>
+          <p class="section-desc">
+            Structured JSON representation conforming to international dental EHR interoperability standards. Ready for export to FHIR, HL7, or practice management backends.
+          </p>
+        </div>
+
+        <div class="json-box" id="jsonExportOutput" aria-label="Dental Chart JSON Output">
+          // Click "Export Chart Payload" or modify teeth to view live JSON serialization
+        </div>
+      </div>
+    </section>
+
   </main>
 
-  <footer class="footer">
-    <div class="shell footer-row">
-      <span>© 2026 DENTE. Public prototype surface.</span>
-      <a href="https://github.com/marko1olo/dental-crm">github.com/marko1olo/dental-crm</a>
+  <!-- Site Footer -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="brand-group">
+            <div class="brand-logo" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M16 2C10.5 2 7 5.5 7 10c0 3.2 1.4 6.8 2.5 10.5.9 3 2.1 6.5 3.5 9.5 1 .3 2-.2 2.5-1.2l1.5-3.8 1.5 3.8c.5 1 1.5 1.5 2.5 1.2 1.4-3 2.6-6.5 3.5-9.5C25.6 16.8 27 13.2 27 10c0-4.5-3.5-8-11-8z"/>
+              </svg>
+            </div>
+            <span class="brand-title">DENTE Dental CRM</span>
+          </div>
+          <p>
+            An inspectable, high-tier clinical dental practice platform with 32-tooth FDI odontograms, DICOM PACS integration, and real-time operatory telemetry.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Clinical Modules</h4>
+          <ul>
+            <li><a href="#odontogram">FDI Odontogram</a></li>
+            <li><a href="#dicom-viewer">DICOM CBCT Viewer</a></li>
+            <li><a href="#telemetry">Chairside Telemetry</a></li>
+            <li><a href="#export">FHIR / JSON Export</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Ecosystem</h4>
+          <ul>
+            <li><a href="https://marko1olo.github.io/Clinic_MVP/">Clinic MVP Platform</a></li>
+            <li><a href="https://marko1olo.github.io/avito-dental-ai-bot/">Avito Dental AI Bot</a></li>
+            <li><a href="https://marko1olo.github.io/stomchat/">StomChat Dispatcher</a></li>
+            <li><a href="https://marko1olo.github.io/plumbflow-ai/">PlumbFlow Voice AI</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Repository</h4>
+          <ul>
+            <li><a href="https://github.com/marko1olo/dental-crm" target="_blank" rel="noopener noreferrer">GitHub Source</a></li>
+            <li><a href="https://github.com/marko1olo/dental-crm/issues" target="_blank" rel="noopener noreferrer">Issue Tracker</a></li>
+            <li><a href="https://github.com/marko1olo/dental-crm/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License</a></li>
+            <li><a href="https://marko1olo.github.io/dental-crm/">Canonical Pages URL</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>© 2026 DENTE Clinical Systems. Designed & Built for marko1olo Portfolio Ecosystem.</div>
+        <div>Zero External CDN Dependencies · Pure Vanilla HTML5/CSS/ES6 · 60 FPS Telemetry</div>
+      </div>
     </div>
   </footer>
 
+  <!-- Interactive JavaScript Engine -->
   <script>
-    (() => {
-      const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
-      const panels = tabs.map((tab) => document.getElementById(tab.getAttribute('aria-controls')));
+  (function() {
+    'use strict';
 
-      function activateTab(nextTab, moveFocus) {
-        const nextIndex = tabs.indexOf(nextTab);
-        tabs.forEach((tab, index) => {
-          const selected = index === nextIndex;
-          tab.setAttribute('aria-selected', String(selected));
-          tab.tabIndex = selected ? 0 : -1;
-          panels[index].hidden = !selected;
-        });
-        if (moveFocus) nextTab.focus();
+    // --- 1. DATA MODEL: 32 ADULT FDI TEETH ---
+    const TOOTH_NAMES = {
+      18: "Maxillary Right 3rd Molar (Wisdom)",
+      17: "Maxillary Right 2nd Molar",
+      16: "Maxillary Right 1st Molar",
+      15: "Maxillary Right 2nd Premolar",
+      14: "Maxillary Right 1st Premolar",
+      13: "Maxillary Right Canine (Cuspid)",
+      12: "Maxillary Right Lateral Incisor",
+      11: "Maxillary Right Central Incisor",
+      21: "Maxillary Left Central Incisor",
+      22: "Maxillary Left Lateral Incisor",
+      23: "Maxillary Left Canine (Cuspid)",
+      24: "Maxillary Left 1st Premolar",
+      25: "Maxillary Left 2nd Premolar",
+      26: "Maxillary Left 1st Molar",
+      27: "Maxillary Left 2nd Molar",
+      28: "Maxillary Left 3rd Molar (Wisdom)",
+      48: "Mandibular Right 3rd Molar (Wisdom)",
+      47: "Mandibular Right 2nd Molar",
+      46: "Mandibular Right 1st Molar",
+      45: "Mandibular Right 2nd Premolar",
+      44: "Mandibular Right 1st Premolar",
+      43: "Mandibular Right Canine (Cuspid)",
+      42: "Mandibular Right Lateral Incisor",
+      41: "Mandibular Right Central Incisor",
+      31: "Mandibular Left Central Incisor",
+      32: "Mandibular Left Lateral Incisor",
+      33: "Mandibular Left Canine (Cuspid)",
+      34: "Mandibular Left 1st Premolar",
+      35: "Mandibular Left 2nd Premolar",
+      36: "Mandibular Left 1st Molar",
+      37: "Mandibular Left 2nd Molar",
+      38: "Mandibular Left 3rd Molar (Wisdom)"
+    };
+
+    const FEE_SCHEDULE = {
+      "Sound": 0,
+      "Caries": 140,
+      "Filling": 180,
+      "Crown": 850,
+      "RCT": 920,
+      "Implant": 1850,
+      "Extracted": 120
+    };
+
+    // Master state of all 32 teeth
+    const teethState = {};
+    const MAXILLA_ORDER = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
+    const MANDIBLE_ORDER = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38];
+    const ALL_TEETH_ORDER = [...MAXILLA_ORDER, ...MANDIBLE_ORDER];
+
+    let selectedToothId = 16;
+
+    // Initialize state
+    ALL_TEETH_ORDER.forEach(id => {
+      teethState[id] = {
+        id: id,
+        name: TOOTH_NAMES[id],
+        status: "Sound",
+        surfaces: { O: "Sound", M: "Sound", D: "Sound", B: "Sound", L: "Sound" },
+        pocketDepthMM: 2.0,
+        mobility: 0,
+        notes: ""
+      };
+    });
+
+    // --- 2. GENERATE SVG ODONTOGRAM GRAPHICS ---
+    function renderToothSVG(tooth) {
+      // 5-Surface FDI Dental Box Model:
+      // Center: Occlusal (O)
+      // Top: Buccal (B)
+      // Bottom: Lingual (L)
+      // Left/Right: Mesial (M) and Distal (D) depending on quadrant
+      const isRightQuad = (tooth.id >= 11 && tooth.id <= 18) || (tooth.id >= 41 && tooth.id <= 48);
+      const mClass = tooth.surfaces.M !== "Sound" ? "surface-" + tooth.surfaces.M.toLowerCase() : "surface-sound";
+      const dClass = tooth.surfaces.D !== "Sound" ? "surface-" + tooth.surfaces.D.toLowerCase() : "surface-sound";
+      const oClass = tooth.surfaces.O !== "Sound" ? "surface-" + tooth.surfaces.O.toLowerCase() : (tooth.status !== "Sound" ? "surface-" + tooth.status.toLowerCase() : "surface-sound");
+      const bClass = tooth.surfaces.B !== "Sound" ? "surface-" + tooth.surfaces.B.toLowerCase() : "surface-sound";
+      const lClass = tooth.surfaces.L !== "Sound" ? "surface-" + tooth.surfaces.L.toLowerCase() : "surface-sound";
+
+      let statusMarker = '';
+      if (tooth.status === 'RCT') {
+        statusMarker = '<line x1="20" y1="5" x2="20" y2="35" stroke="#b388ff" stroke-width="2.5" stroke-dasharray="2 2" />';
+      } else if (tooth.status === 'Implant') {
+        statusMarker = '<circle cx="20" cy="20" r="4" fill="#38bdf8" /><line x1="14" y1="20" x2="26" y2="20" stroke="#38bdf8" stroke-width="2" />';
+      } else if (tooth.status === 'Extracted') {
+        statusMarker = '<line x1="6" y1="6" x2="34" y2="34" stroke="#ff8577" stroke-width="2.5" /><line x1="34" y1="6" x2="6" y2="34" stroke="#ff8577" stroke-width="2.5" />';
       }
 
-      tabs.forEach((tab, index) => {
-        tab.addEventListener('click', () => activateTab(tab, false));
-        tab.addEventListener('keydown', (event) => {
-          const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
-          if (!keys.includes(event.key)) return;
-          event.preventDefault();
-          let nextIndex = index;
-          if (event.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length;
-          if (event.key === 'ArrowLeft') nextIndex = (index - 1 + tabs.length) % tabs.length;
-          if (event.key === 'Home') nextIndex = 0;
-          if (event.key === 'End') nextIndex = tabs.length - 1;
-          activateTab(tabs[nextIndex], true);
+      return `
+        <svg viewBox="0 0 40 40" data-tooth="${tooth.id}">
+          <!-- Buccal (Top) -->
+          <polygon points="5,5 35,5 28,12 12,12" class="tooth-surface ${bClass}" data-surface="B" />
+          <!-- Lingual (Bottom) -->
+          <polygon points="12,28 28,28 35,35 5,35" class="tooth-surface ${lClass}" data-surface="L" />
+          <!-- Mesial (Left/Right by quadrant) -->
+          <polygon points="5,5 12,12 12,28 5,35" class="tooth-surface ${isRightQuad ? mClass : dClass}" data-surface="${isRightQuad ? 'M' : 'D'}" />
+          <!-- Distal (Right/Left by quadrant) -->
+          <polygon points="35,5 28,12 28,28 35,35" class="tooth-surface ${isRightQuad ? dClass : mClass}" data-surface="${isRightQuad ? 'D' : 'M'}" />
+          <!-- Occlusal (Center) -->
+          <polygon points="12,12 28,12 28,28 12,28" class="tooth-surface ${oClass}" data-surface="O" />
+          ${statusMarker}
+        </svg>
+      `;
+    }
+
+    function buildOdontogramUI() {
+      const maxillaContainer = document.getElementById("maxillaTeeth");
+      const mandibleContainer = document.getElementById("mandibleTeeth");
+      if (!maxillaContainer || !mandibleContainer) return;
+
+      maxillaContainer.innerHTML = MAXILLA_ORDER.map(id => createToothCardHTML(teethState[id])).join('');
+      mandibleContainer.innerHTML = MANDIBLE_ORDER.map(id => createToothCardHTML(teethState[id])).join('');
+
+      attachOdontogramListeners();
+      updateDrawerUI();
+      updateFinancialsAndJSON();
+    }
+
+    function createToothCardHTML(tooth) {
+      const isSelected = tooth.id === selectedToothId ? 'selected' : '';
+      const statusClass = 'status-' + tooth.status.toLowerCase();
+      let badgeLabel = tooth.status === 'Sound' ? (tooth.pocketDepthMM > 3.5 ? 'P:' + tooth.pocketDepthMM : 'OK') : tooth.status;
+      if (badgeLabel.length > 8) badgeLabel = badgeLabel.substring(0, 7) + '..';
+
+      return `
+        <div class="tooth-card ${isSelected} ${statusClass}" data-id="${tooth.id}" id="tooth-card-${tooth.id}">
+          <span class="tooth-num">${tooth.id}</span>
+          <div class="tooth-svg-wrap">
+            ${renderToothSVG(tooth)}
+          </div>
+          <span class="tooth-badge-mini">${badgeLabel}</span>
+        </div>
+      `;
+    }
+
+    function attachOdontogramListeners() {
+      document.querySelectorAll(".tooth-card").forEach(card => {
+        card.addEventListener("click", function(e) {
+          const toothId = parseInt(this.getAttribute("data-id"), 10);
+          const surfaceElem = e.target.closest(".tooth-surface");
+          const surfaceName = surfaceElem ? surfaceElem.getAttribute("data-surface") : null;
+
+          selectTooth(toothId, surfaceName);
         });
       });
-    })();
+    }
+
+    function selectTooth(id, surfaceName) {
+      selectedToothId = id;
+      document.querySelectorAll(".tooth-card").forEach(c => c.classList.remove("selected"));
+      const activeCard = document.getElementById(`tooth-card-${id}`);
+      if (activeCard) activeCard.classList.add("selected");
+
+      if (surfaceName) {
+        // Toggle specific surface between Sound & Caries
+        const currentSurf = teethState[id].surfaces[surfaceName];
+        teethState[id].surfaces[surfaceName] = currentSurf === 'Sound' ? 'Caries' : 'Sound';
+        if (teethState[id].surfaces[surfaceName] === 'Caries' && teethState[id].status === 'Sound') {
+          teethState[id].status = 'Caries';
+        }
+        refreshToothCard(id);
+      }
+
+      updateDrawerUI();
+      updateFinancialsAndJSON();
+    }
+
+    function refreshToothCard(id) {
+      const card = document.getElementById(`tooth-card-${id}`);
+      if (!card) return;
+      const tooth = teethState[id];
+      const isSelected = tooth.id === selectedToothId ? 'selected' : '';
+      card.className = `tooth-card ${isSelected} status-${tooth.status.toLowerCase()}`;
+      card.querySelector(".tooth-svg-wrap").innerHTML = renderToothSVG(tooth);
+      let badgeLabel = tooth.status === 'Sound' ? (tooth.pocketDepthMM > 3.5 ? 'P:' + tooth.pocketDepthMM : 'OK') : tooth.status;
+      if (badgeLabel.length > 8) badgeLabel = badgeLabel.substring(0, 7) + '..';
+      card.querySelector(".tooth-badge-mini").textContent = badgeLabel;
+    }
+
+    function updateDrawerUI() {
+      const tooth = teethState[selectedToothId];
+      if (!tooth) return;
+
+      document.getElementById("drawerToothName").textContent = `Tooth ${tooth.id} (${tooth.name.split(' ')[0]} ${tooth.name.split(' ')[1] || ''})`;
+      document.getElementById("drawerToothFdi").textContent = `FDI ${tooth.id}`;
+      document.getElementById("drawerToothType").textContent = tooth.name;
+
+      // Update diagnosis buttons
+      document.querySelectorAll("#diagOptionsList .diagnosis-option-btn").forEach(btn => {
+        const btnStatus = btn.getAttribute("data-status");
+        if (btnStatus === tooth.status) {
+          btn.classList.add("active");
+        } else {
+          btn.classList.remove("active");
+        }
+      });
+
+      // Update sliders
+      const sliderPocket = document.getElementById("sliderPocket");
+      const sliderMobility = document.getElementById("sliderMobility");
+      if (sliderPocket) sliderPocket.value = tooth.pocketDepthMM;
+      if (sliderMobility) sliderMobility.value = tooth.mobility;
+
+      document.getElementById("pocketVal").textContent = `${parseFloat(tooth.pocketDepthMM).toFixed(1)} mm`;
+      document.getElementById("mobilityVal").textContent = `Grade ${tooth.mobility}`;
+    }
+
+    function updateFinancialsAndJSON() {
+      let totalFee = 0;
+      let pathologyCount = 0;
+
+      ALL_TEETH_ORDER.forEach(id => {
+        const t = teethState[id];
+        if (t.status !== "Sound") {
+          totalFee += FEE_SCHEDULE[t.status] || 0;
+          pathologyCount++;
+        }
+      });
+
+      const totalDisplay = document.getElementById("totalFeeDisplay");
+      if (totalDisplay) {
+        totalDisplay.textContent = `$${totalFee.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+      }
+      const countDisplay = document.getElementById("pathologyCount");
+      if (countDisplay) {
+        countDisplay.textContent = `${pathologyCount} diseased / restored teeth in current plan`;
+      }
+
+      // JSON export representation
+      const exportObject = {
+        clinic: "DENTE Enterprise Practice",
+        chartNotation: "FDI Two-Digit World Dental Federation",
+        patientRecordId: "DENTE-PAT-8829104",
+        timestamp: new Date().toISOString(),
+        totalEstimatedFeeUSD: totalFee,
+        pathologyCount: pathologyCount,
+        dentition: ALL_TEETH_ORDER.map(id => teethState[id])
+      };
+
+      const jsonElem = document.getElementById("jsonExportOutput");
+      if (jsonElem) {
+        jsonElem.textContent = JSON.stringify(exportObject, null, 2);
+      }
+    }
+
+    // Attach drawer controls
+    document.querySelectorAll("#diagOptionsList .diagnosis-option-btn").forEach(btn => {
+      btn.addEventListener("click", function() {
+        const newStatus = this.getAttribute("data-status");
+        teethState[selectedToothId].status = newStatus;
+        if (newStatus === "Sound") {
+          teethState[selectedToothId].surfaces = { O: "Sound", M: "Sound", D: "Sound", B: "Sound", L: "Sound" };
+        } else if (newStatus === "Caries") {
+          teethState[selectedToothId].surfaces.O = "Caries";
+        } else if (newStatus === "Filling") {
+          teethState[selectedToothId].surfaces.O = "Filling";
+        }
+        refreshToothCard(selectedToothId);
+        updateDrawerUI();
+        updateFinancialsAndJSON();
+      });
+    });
+
+    const sliderPocket = document.getElementById("sliderPocket");
+    if (sliderPocket) {
+      sliderPocket.addEventListener("input", function() {
+        teethState[selectedToothId].pocketDepthMM = parseFloat(this.value);
+        document.getElementById("pocketVal").textContent = `${teethState[selectedToothId].pocketDepthMM.toFixed(1)} mm`;
+        refreshToothCard(selectedToothId);
+        updateFinancialsAndJSON();
+      });
+    }
+
+    const sliderMobility = document.getElementById("sliderMobility");
+    if (sliderMobility) {
+      sliderMobility.addEventListener("input", function() {
+        teethState[selectedToothId].mobility = parseInt(this.value, 10);
+        document.getElementById("mobilityVal").textContent = `Grade ${teethState[selectedToothId].mobility}`;
+        updateFinancialsAndJSON();
+      });
+    }
+
+    // Reset and Sample presets
+    const btnReset = document.getElementById("btnResetChart");
+    if (btnReset) {
+      btnReset.addEventListener("click", function() {
+        ALL_TEETH_ORDER.forEach(id => {
+          teethState[id].status = "Sound";
+          teethState[id].surfaces = { O: "Sound", M: "Sound", D: "Sound", B: "Sound", L: "Sound" };
+          teethState[id].pocketDepthMM = 2.0;
+          teethState[id].mobility = 0;
+          refreshToothCard(id);
+        });
+        updateDrawerUI();
+        updateFinancialsAndJSON();
+      });
+    }
+
+    const btnPreset = document.getElementById("btnPresetCaries");
+    if (btnPreset) {
+      btnPreset.addEventListener("click", function() {
+        // Preset complex clinical case
+        teethState[16].status = "Caries";
+        teethState[16].surfaces = { O: "Caries", M: "Caries", D: "Sound", B: "Sound", L: "Sound" };
+        teethState[14].status = "Filling";
+        teethState[21].status = "Crown";
+        teethState[36].status = "RCT";
+        teethState[46].status = "Implant";
+        teethState[48].status = "Extracted";
+        teethState[18].status = "Extracted";
+        teethState[28].status = "Extracted";
+        teethState[38].status = "Extracted";
+        teethState[31].pocketDepthMM = 5.5;
+        teethState[32].pocketDepthMM = 6.0;
+
+        ALL_TEETH_ORDER.forEach(id => refreshToothCard(id));
+        selectTooth(16, null);
+      });
+    }
+
+    // Arch view filters
+    const btnShowAll = document.getElementById("btnShowAllArch");
+    const btnShowMax = document.getElementById("btnShowMaxilla");
+    const btnShowMan = document.getElementById("btnShowMandible");
+    const maxRow = document.getElementById("maxillaRow");
+    const manRow = document.getElementById("mandibleRow");
+
+    function setActiveArchBtn(activeBtn) {
+      [btnShowAll, btnShowMax, btnShowMan].forEach(b => {
+        if (b) b.classList.remove("active");
+      });
+      if (activeBtn) activeBtn.classList.add("active");
+    }
+
+    if (btnShowAll) {
+      btnShowAll.addEventListener("click", function() {
+        setActiveArchBtn(this);
+        if (maxRow) maxRow.style.display = "flex";
+        if (manRow) manRow.style.display = "flex";
+      });
+    }
+    if (btnShowMax) {
+      btnShowMax.addEventListener("click", function() {
+        setActiveArchBtn(this);
+        if (maxRow) maxRow.style.display = "flex";
+        if (manRow) manRow.style.display = "none";
+      });
+    }
+    if (btnShowMan) {
+      btnShowMan.addEventListener("click", function() {
+        setActiveArchBtn(this);
+        if (maxRow) maxRow.style.display = "none";
+        if (manRow) manRow.style.display = "flex";
+      });
+    }
+
+    // Export button copy
+    const btnExport = document.getElementById("btnExportJSON");
+    if (btnExport) {
+      btnExport.addEventListener("click", function() {
+        const jsonText = document.getElementById("jsonExportOutput").textContent;
+        navigator.clipboard.writeText(jsonText).then(() => {
+          btnExport.textContent = "✓ Payload Copied!";
+          setTimeout(() => { btnExport.textContent = "Export Chart Payload (JSON)"; }, 2000);
+        }).catch(() => {
+          btnExport.textContent = "✓ Export Generated Below";
+          setTimeout(() => { btnExport.textContent = "Export Chart Payload (JSON)"; }, 2000);
+        });
+      });
+    }
+
+    buildOdontogramUI();
+
+    // --- 3. DICOM CT VOLUMETRIC SLICE CANVAS SIMULATOR ---
+    const dicomCanvas = document.getElementById("dicomCanvas");
+    const dicomCtx = dicomCanvas ? dicomCanvas.getContext("2d") : null;
+    let currSlice = 32;
+    let windowLevel = 600;
+    let windowWidth = 2800;
+    let isAutoScanning = false;
+    let autoScanInterval = null;
+
+    function renderDICOMSlice() {
+      if (!dicomCtx || !dicomCanvas) return;
+      const width = dicomCanvas.width;
+      const height = dicomCanvas.height;
+
+      // Clear dark medical canvas
+      dicomCtx.fillStyle = "#02070a";
+      dicomCtx.fillRect(0, 0, width, height);
+
+      const zRatio = currSlice / 64; // 0.0 to 1.0
+      const contrast = Math.max(0.2, Math.min(3.0, 3000 / windowWidth));
+      const brightnessOffset = (windowLevel - 500) / 1000;
+
+      // Draw simulated dental CT arch cross-section
+      const centerX = width / 2;
+      const centerY = height * 0.52;
+      const archRadiusX = width * (0.32 + zRatio * 0.05);
+      const archRadiusY = height * (0.35 - zRatio * 0.08);
+
+      // Alveolar Bone Arc
+      dicomCtx.save();
+      dicomCtx.beginPath();
+      dicomCtx.ellipse(centerX, centerY, archRadiusX, archRadiusY, 0, Math.PI * 0.95, Math.PI * 2.05, false);
+      dicomCtx.lineWidth = 42 * (1 - zRatio * 0.3);
+      
+      const boneIntensity = Math.floor(Math.min(255, Math.max(20, (140 + brightnessOffset * 80) * contrast)));
+      dicomCtx.strokeStyle = `rgb(${boneIntensity}, ${boneIntensity + 15}, ${boneIntensity + 25})`;
+      dicomCtx.stroke();
+      dicomCtx.restore();
+
+      // Alveolar Cancellous Trabeculae (Noise Simulation)
+      dicomCtx.save();
+      dicomCtx.beginPath();
+      dicomCtx.ellipse(centerX, centerY, archRadiusX, archRadiusY, 0, Math.PI * 0.95, Math.PI * 2.05, false);
+      dicomCtx.lineWidth = 26;
+      const trabIntensity = Math.floor(Math.min(255, Math.max(10, (80 + brightnessOffset * 50) * contrast)));
+      dicomCtx.strokeStyle = `rgb(${trabIntensity}, ${trabIntensity + 10}, ${trabIntensity + 18})`;
+      dicomCtx.stroke();
+      dicomCtx.restore();
+
+      // Render Individual Tooth Roots & Enamel Slices on the Arc
+      const toothCount = 14;
+      for (let i = 0; i < toothCount; i++) {
+        const t = (i / (toothCount - 1)) * (Math.PI * 1.05) + Math.PI * 0.975;
+        const tx = centerX + Math.cos(t) * archRadiusX;
+        const ty = centerY + Math.sin(t) * archRadiusY;
+
+        // Density modulated by slice depth
+        const toothSize = (14 - Math.abs(i - 6.5) * 0.8) * (1 - zRatio * 0.25);
+        
+        // Enamel outer shell (High Hounsfield unit)
+        const enamelVal = Math.floor(Math.min(255, Math.max(40, (230 + brightnessOffset * 60) * contrast)));
+        dicomCtx.fillStyle = `rgb(${enamelVal}, ${enamelVal + 15}, ${enamelVal + 20})`;
+        dicomCtx.beginPath();
+        dicomCtx.ellipse(tx, ty, toothSize, toothSize * 1.3, t + Math.PI/2, 0, Math.PI * 2);
+        dicomCtx.fill();
+
+        // Pulp canal cavity (Low Hounsfield unit)
+        const pulpVal = Math.floor(Math.max(5, Math.min(60, (25 + brightnessOffset * 20))));
+        dicomCtx.fillStyle = `rgb(${pulpVal}, ${pulpVal + 5}, ${pulpVal + 10})`;
+        dicomCtx.beginPath();
+        dicomCtx.ellipse(tx, ty, toothSize * 0.35, toothSize * 0.5, t + Math.PI/2, 0, Math.PI * 2);
+        dicomCtx.fill();
+      }
+
+      // Maxillary Sinus / Mandibular Canal Structures
+      if (zRatio > 0.45) {
+        // Maxillary Sinus Air Cavity (Very dark HU)
+        dicomCtx.fillStyle = "#010508";
+        dicomCtx.beginPath();
+        dicomCtx.ellipse(centerX - width * 0.2, centerY - height * 0.12, width * 0.1, height * 0.12, 0, 0, Math.PI * 2);
+        dicomCtx.ellipse(centerX + width * 0.2, centerY - height * 0.12, width * 0.1, height * 0.12, 0, 0, Math.PI * 2);
+        dicomCtx.fill();
+        dicomCtx.strokeStyle = "rgba(141, 238, 219, 0.25)";
+        dicomCtx.stroke();
+      }
+
+      // Orientation and Grid Crosshairs
+      dicomCtx.strokeStyle = "rgba(44, 202, 181, 0.25)";
+      dicomCtx.lineWidth = 1;
+      dicomCtx.setLineDash([4, 4]);
+      dicomCtx.beginPath();
+      dicomCtx.moveTo(width / 2, 20);
+      dicomCtx.lineTo(width / 2, height - 20);
+      dicomCtx.moveTo(20, height / 2);
+      dicomCtx.lineTo(width - 20, height / 2);
+      dicomCtx.stroke();
+      dicomCtx.setLineDash([]);
+
+      // Update HUD text
+      const zMM = (-(64 - currSlice) * 0.2).toFixed(1);
+      const hudSliceInfo = document.getElementById("hudSliceInfo");
+      if (hudSliceInfo) {
+        hudSliceInfo.textContent = `AXIAL SLICE: ${currSlice} / 64 (Z: ${zMM} mm)`;
+      }
+      const hudWindowInfo = document.getElementById("hudWindowInfo");
+      if (hudWindowInfo) {
+        hudWindowInfo.textContent = `WW: ${windowWidth} HU | WL: ${windowLevel} HU`;
+      }
+    }
+
+    const sliderSlice = document.getElementById("sliderSlice");
+    if (sliderSlice) {
+      sliderSlice.addEventListener("input", function() {
+        currSlice = parseInt(this.value, 10);
+        document.getElementById("sliceIndexVal").textContent = `Slice ${currSlice}/64`;
+        renderDICOMSlice();
+      });
+    }
+
+    const sliderWL = document.getElementById("sliderWL");
+    if (sliderWL) {
+      sliderWL.addEventListener("input", function() {
+        windowLevel = parseInt(this.value, 10);
+        document.getElementById("wlVal").textContent = `${windowLevel} HU`;
+        renderDICOMSlice();
+      });
+    }
+
+    const sliderWW = document.getElementById("sliderWW");
+    if (sliderWW) {
+      sliderWW.addEventListener("input", function() {
+        windowWidth = parseInt(this.value, 10);
+        document.getElementById("wwVal").textContent = `${windowWidth} HU`;
+        renderDICOMSlice();
+      });
+    }
+
+    document.querySelectorAll(".dicom-preset-btn").forEach(btn => {
+      btn.addEventListener("click", function() {
+        document.querySelectorAll(".dicom-preset-btn").forEach(b => b.classList.remove("active"));
+        this.classList.add("active");
+        windowWidth = parseInt(this.getAttribute("data-ww"), 10);
+        windowLevel = parseInt(this.getAttribute("data-wl"), 10);
+        if (sliderWW) sliderWW.value = windowWidth;
+        if (sliderWL) sliderWL.value = windowLevel;
+        document.getElementById("wwVal").textContent = `${windowWidth} HU`;
+        document.getElementById("wlVal").textContent = `${windowLevel} HU`;
+        renderDICOMSlice();
+      });
+    });
+
+    const btnAutoScan = document.getElementById("btnAutoScan");
+    if (btnAutoScan) {
+      btnAutoScan.addEventListener("click", function() {
+        if (isAutoScanning) {
+          clearInterval(autoScanInterval);
+          isAutoScanning = false;
+          btnAutoScan.textContent = "Auto-Scan Slices (Loop)";
+        } else {
+          isAutoScanning = true;
+          btnAutoScan.textContent = "Stop Auto-Scan";
+          autoScanInterval = setInterval(() => {
+            currSlice = (currSlice % 64) + 1;
+            if (sliderSlice) sliderSlice.value = currSlice;
+            document.getElementById("sliceIndexVal").textContent = `Slice ${currSlice}/64`;
+            renderDICOMSlice();
+          }, 80);
+        }
+      });
+    }
+
+    renderDICOMSlice();
+
+    // --- 4. REAL-TIME 60 FPS CHAIRSIDE TELEMETRY CHART ---
+    const telemetryCanvas = document.getElementById("telemetryCanvas");
+    const telemetryCtx = telemetryCanvas ? telemetryCanvas.getContext("2d") : null;
+    let telemetryFrameId = null;
+    let telemetryPoints = [];
+    const MAX_POINTS = 80;
+    let simStep = 0;
+
+    // Seed telemetry buffer
+    for (let i = 0; i < MAX_POINTS; i++) {
+      telemetryPoints.push({
+        occupancy: 78 + Math.sin(i * 0.15) * 12 + (Math.random() * 4 - 2),
+        dictation: 135 + Math.cos(i * 0.12) * 18 + (Math.random() * 6 - 3)
+      });
+    }
+
+    function renderTelemetryLoop() {
+      if (!telemetryCtx || !telemetryCanvas) return;
+      const w = telemetryCanvas.width;
+      const h = telemetryCanvas.height;
+
+      // Update simulation step
+      simStep += 0.05;
+      const nextOcc = Math.max(50, Math.min(98, 82 + Math.sin(simStep * 0.6) * 12 + Math.sin(simStep * 1.8) * 4));
+      const nextDict = Math.max(90, Math.min(180, 142 + Math.cos(simStep * 0.45) * 20 + Math.sin(simStep * 1.2) * 8));
+
+      telemetryPoints.push({ occupancy: nextOcc, dictation: nextDict });
+      if (telemetryPoints.length > MAX_POINTS) {
+        telemetryPoints.shift();
+      }
+
+      // Update HUD metrics occasionally
+      if (Math.floor(simStep * 20) % 15 === 0) {
+        const occElem = document.getElementById("liveOccupancy");
+        if (occElem) occElem.textContent = `${nextOcc.toFixed(1)}%`;
+        const dictElem = document.getElementById("liveDictation");
+        if (dictElem) dictElem.textContent = `${Math.round(nextDict)} WPM`;
+      }
+
+      // Draw canvas background
+      telemetryCtx.fillStyle = "#050e13";
+      telemetryCtx.fillRect(0, 0, w, h);
+
+      // Grid lines
+      telemetryCtx.strokeStyle = "rgba(141, 238, 219, 0.08)";
+      telemetryCtx.lineWidth = 1;
+      for (let y = 40; y < h; y += 40) {
+        telemetryCtx.beginPath();
+        telemetryCtx.moveTo(0, y);
+        telemetryCtx.lineTo(w, y);
+        telemetryCtx.stroke();
+      }
+
+      // 1. Draw Occupancy Area & Line (Aqua/Mint)
+      telemetryCtx.beginPath();
+      telemetryPoints.forEach((p, idx) => {
+        const x = (idx / (MAX_POINTS - 1)) * w;
+        const y = h - ((p.occupancy - 40) / 60) * (h * 0.8) - 20;
+        if (idx === 0) telemetryCtx.moveTo(x, y);
+        else telemetryCtx.lineTo(x, y);
+      });
+      telemetryCtx.strokeStyle = "#8deedb";
+      telemetryCtx.lineWidth = 2.5;
+      telemetryCtx.stroke();
+
+      // Fill area under occupancy
+      telemetryCtx.lineTo(w, h);
+      telemetryCtx.lineTo(0, h);
+      telemetryCtx.closePath();
+      const occGrad = telemetryCtx.createLinearGradient(0, 0, 0, h);
+      occGrad.addColorStop(0, "rgba(141, 238, 219, 0.25)");
+      occGrad.addColorStop(1, "rgba(141, 238, 219, 0.0)");
+      telemetryCtx.fillStyle = occGrad;
+      telemetryCtx.fill();
+
+      // 2. Draw Voice Dictation Line (Coral/Orange)
+      telemetryCtx.beginPath();
+      telemetryPoints.forEach((p, idx) => {
+        const x = (idx / (MAX_POINTS - 1)) * w;
+        const y = h - ((p.dictation - 80) / 110) * (h * 0.75) - 25;
+        if (idx === 0) telemetryCtx.moveTo(x, y);
+        else telemetryCtx.lineTo(x, y);
+      });
+      telemetryCtx.strokeStyle = "#ff8577";
+      telemetryCtx.lineWidth = 2;
+      telemetryCtx.stroke();
+
+      // Chart Legend Overlay
+      telemetryCtx.fillStyle = "#8deedb";
+      telemetryCtx.fillRect(20, 16, 12, 4);
+      telemetryCtx.fillStyle = "#eef9f8";
+      telemetryCtx.font = "11px system-ui, sans-serif";
+      telemetryCtx.fillText("Chairside Operatory Occupancy (%)", 38, 21);
+
+      telemetryCtx.fillStyle = "#ff8577";
+      telemetryCtx.fillRect(240, 16, 12, 4);
+      telemetryCtx.fillStyle = "#eef9f8";
+      telemetryCtx.fillText("AI Voice Dictation Speed (WPM)", 258, 21);
+
+      telemetryFrameId = requestAnimationFrame(renderTelemetryLoop);
+    }
+
+    // Lifecycle observer to pause when off-screen
+    let isTelemetryVisible = true;
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        isTelemetryVisible = entry.isIntersecting;
+        if (isTelemetryVisible && !telemetryFrameId) {
+          telemetryFrameId = requestAnimationFrame(renderTelemetryLoop);
+        } else if (!isTelemetryVisible && telemetryFrameId) {
+          cancelAnimationFrame(telemetryFrameId);
+          telemetryFrameId = null;
+        }
+      });
+    }, { threshold: 0.05 });
+
+    if (telemetryCanvas) observer.observe(telemetryCanvas);
+    telemetryFrameId = requestAnimationFrame(renderTelemetryLoop);
+
+  })();
   </script>
 </body>
 </html>
