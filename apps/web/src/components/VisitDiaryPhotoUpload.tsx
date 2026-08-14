@@ -442,16 +442,17 @@ export function VisitDiaryPhotoUpload({
 
 	return (
 		<div className="space-y-1.5 lg:col-span-2">
-			<div className="text-xs tracking-widest uppercase text-zinc-400 font-semibold flex items-center justify-between">
+			<div className="text-xs tracking-widest uppercase text-[var(--muted)] font-semibold flex items-center justify-between">
 				<span className="flex items-center gap-1.5">
-					<Camera className="w-3 h-3 text-rose-400" /> Вложения (Фотографии)
+					<Camera className="w-3.5 h-3.5 text-[var(--bad-fg)]" /> Вложения
+					(Фотографии)
 				</span>
 				{!isLocked && diaryId && (
 					<label
 						htmlFor="visit-diary-photo-upload"
-						className="cursor-pointer text-xs flex items-center gap-1 bg-zinc-800 hover:bg-zinc-700 px-3 py-1 rounded-lg transition-colors border border-zinc-700"
+						className="cursor-pointer text-xs min-h-[44px] flex items-center gap-1.5 bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] px-3 py-2 rounded-lg transition-colors border border-[var(--line-strong)] text-[var(--ink)]"
 					>
-						<Paperclip className="w-3 h-3" />
+						<Paperclip className="w-3.5 h-3.5" />
 						{isUploading ? "Сжатие..." : "Прикрепить фото"}
 						<input
 							id="visit-diary-photo-upload"
@@ -477,7 +478,7 @@ export function VisitDiaryPhotoUpload({
 								<div
 									key={att.id}
 									title={failed ? AUTHED_API_FILE_FAILURE : att.name}
-									className="h-20 w-20 shrink-0 rounded-lg border border-dashed border-zinc-700 bg-zinc-900/60 text-[10px] leading-tight text-zinc-500 flex items-center justify-center text-center px-1"
+									className="h-20 w-20 shrink-0 rounded-lg border border-dashed border-[var(--line-strong)] bg-[var(--paper-soft)] text-[10px] leading-tight text-[var(--muted)] flex items-center justify-center text-center px-1"
 								>
 									{failed ? "Снимок не открылся" : "Загрузка…"}
 								</div>
@@ -488,7 +489,7 @@ export function VisitDiaryPhotoUpload({
 								<img
 									src={objectUrl}
 									alt={att.name}
-									className="h-20 w-20 object-cover rounded-lg border border-zinc-700 shadow-sm"
+									className="h-20 w-20 object-cover rounded-lg border border-[var(--line)] shadow-sm"
 								/>
 								<a
 									href={objectUrl}
@@ -504,11 +505,11 @@ export function VisitDiaryPhotoUpload({
 					})}
 				</div>
 			) : loadState.phase === "loading" ? (
-				<div className="w-full bg-zinc-900/60 border border-zinc-800 border-dashed rounded-xl p-4 text-sm text-zinc-500 text-center">
+				<div className="w-full bg-[var(--paper-soft)] border border-[var(--line)] border-dashed rounded-xl p-4 text-sm text-[var(--muted)] text-center">
 					Загрузка снимков…
 				</div>
 			) : loadState.phase === "failed" ? (
-				<div className="w-full bg-zinc-900/60 border border-rose-900/50 border-dashed rounded-xl p-4 text-sm text-zinc-400 text-center space-y-2">
+				<div className="w-full bg-[var(--paper-soft)] border border-[var(--bad-fg)] border-dashed rounded-xl p-4 text-sm text-[var(--ink)] text-center space-y-2">
 					<p>
 						Список снимков не прочитан
 						{loadState.status != null
@@ -519,13 +520,13 @@ export function VisitDiaryPhotoUpload({
 					<button
 						type="button"
 						onClick={reloadAttachments}
-						className="text-xs px-3 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-200"
+						className="text-xs px-3 py-2 min-h-[44px] rounded-lg bg-[var(--paper-strong)] hover:bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]"
 					>
 						Повторить
 					</button>
 				</div>
 			) : (
-				<div className="w-full bg-zinc-900/60 border border-zinc-800 border-dashed rounded-xl p-4 text-sm text-zinc-500 text-center">
+				<div className="w-full bg-[var(--paper-soft)] border border-[var(--line)] border-dashed rounded-xl p-4 text-sm text-[var(--muted)] text-center">
 					{diaryId
 						? isLocked
 							? "Нет прикрепленных фото."

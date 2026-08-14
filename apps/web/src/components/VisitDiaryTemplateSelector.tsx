@@ -409,11 +409,11 @@ export function VisitDiaryTemplateSelector({
 	const createFormEl =
 		showCreateForm && !isLocked ? (
 			<div
-				className="flex flex-col gap-2 w-full max-w-lg p-3 rounded-xl border border-zinc-700/60 bg-zinc-900/80"
+				className="flex flex-col gap-2 w-full max-w-lg p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)]"
 				data-testid="diary-template-create-form"
 			>
 				<div className="flex items-center justify-between gap-2">
-					<span className="text-xs font-medium text-zinc-300">
+					<span className="text-xs font-medium text-[var(--ink)]">
 						Новый свой протокол приёма
 					</span>
 					<button
@@ -421,7 +421,7 @@ export function VisitDiaryTemplateSelector({
 						data-testid="diary-template-create-cancel"
 						disabled={isCreating}
 						onClick={() => resetCreateForm()}
-						className="inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 disabled:opacity-50"
+						className="inline-flex items-center gap-1 min-h-[44px] text-xs text-[var(--muted)] hover:text-[var(--ink)] disabled:opacity-50"
 						title="Закрыть форму"
 					>
 						<X className="w-3.5 h-3.5" />
@@ -429,7 +429,7 @@ export function VisitDiaryTemplateSelector({
 					</button>
 				</div>
 				<label className="flex flex-col gap-1">
-					<span className="text-[11px] text-zinc-500">
+					<span className="text-[11px] text-[var(--muted)]">
 						Название (обязательно)
 					</span>
 					<input
@@ -439,11 +439,11 @@ export function VisitDiaryTemplateSelector({
 						onChange={(e) => setCreateTitle(e.target.value)}
 						disabled={isCreating}
 						placeholder="Например: Кариес · композит"
-						className="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-700/60 text-zinc-200 text-sm rounded-lg focus:ring-2 focus:ring-emerald-500/50 outline-none disabled:opacity-50"
+						className="w-full px-2.5 py-2 min-h-[44px] bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] text-sm rounded-lg focus:ring-2 focus:ring-[var(--teal-glow)] outline-none disabled:opacity-50"
 					/>
 				</label>
 				<label className="flex flex-col gap-1">
-					<span className="text-[11px] text-zinc-500">Категория</span>
+					<span className="text-[11px] text-[var(--muted)]">Категория</span>
 					<input
 						type="text"
 						data-testid="diary-template-create-category"
@@ -451,22 +451,24 @@ export function VisitDiaryTemplateSelector({
 						onChange={(e) => setCreateCategory(e.target.value)}
 						disabled={isCreating}
 						placeholder="Общие"
-						className="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-700/60 text-zinc-200 text-sm rounded-lg focus:ring-2 focus:ring-emerald-500/50 outline-none disabled:opacity-50"
+						className="w-full px-2.5 py-2 min-h-[44px] bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] text-sm rounded-lg focus:ring-2 focus:ring-[var(--teal-glow)] outline-none disabled:opacity-50"
 					/>
 				</label>
 				<label className="flex flex-col gap-1">
-					<span className="text-[11px] text-zinc-500">Анамнез (заготовка)</span>
+					<span className="text-[11px] text-[var(--muted)]">
+						Анамнез (заготовка)
+					</span>
 					<textarea
 						data-testid="diary-template-create-anamnesis"
 						value={createAnamnesis}
 						onChange={(e) => setCreateAnamnesis(e.target.value)}
 						disabled={isCreating}
 						rows={2}
-						className="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-700/60 text-zinc-200 text-sm rounded-lg focus:ring-2 focus:ring-emerald-500/50 outline-none disabled:opacity-50 resize-y"
+						className="w-full px-2.5 py-1.5 bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] text-sm rounded-lg focus:ring-2 focus:ring-[var(--teal-glow)] outline-none disabled:opacity-50 resize-y"
 					/>
 				</label>
 				<label className="flex flex-col gap-1">
-					<span className="text-[11px] text-zinc-500">
+					<span className="text-[11px] text-[var(--muted)]">
 						Объективно (заготовка)
 					</span>
 					<textarea
@@ -475,22 +477,26 @@ export function VisitDiaryTemplateSelector({
 						onChange={(e) => setCreateObjective(e.target.value)}
 						disabled={isCreating}
 						rows={2}
-						className="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-700/60 text-zinc-200 text-sm rounded-lg focus:ring-2 focus:ring-emerald-500/50 outline-none disabled:opacity-50 resize-y"
+						className="w-full px-2.5 py-1.5 bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] text-sm rounded-lg focus:ring-2 focus:ring-[var(--teal-glow)] outline-none disabled:opacity-50 resize-y"
 					/>
 				</label>
 				<label className="flex flex-col gap-1">
-					<span className="text-[11px] text-zinc-500">Лечение (заготовка)</span>
+					<span className="text-[11px] text-[var(--muted)]">
+						Лечение (заготовка)
+					</span>
 					<textarea
 						data-testid="diary-template-create-treatment"
 						value={createTreatment}
 						onChange={(e) => setCreateTreatment(e.target.value)}
 						disabled={isCreating}
 						rows={2}
-						className="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-700/60 text-zinc-200 text-sm rounded-lg focus:ring-2 focus:ring-emerald-500/50 outline-none disabled:opacity-50 resize-y"
+						className="w-full px-2.5 py-1.5 bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] text-sm rounded-lg focus:ring-2 focus:ring-[var(--teal-glow)] outline-none disabled:opacity-50 resize-y"
 					/>
 				</label>
 				<label className="flex flex-col gap-1">
-					<span className="text-[11px] text-zinc-500">МКБ-10 по умолчанию</span>
+					<span className="text-[11px] text-[var(--muted)]">
+						МКБ-10 по умолчанию
+					</span>
 					<input
 						type="text"
 						data-testid="diary-template-create-icd10"
@@ -498,7 +504,7 @@ export function VisitDiaryTemplateSelector({
 						onChange={(e) => setCreateIcd10(e.target.value)}
 						disabled={isCreating}
 						placeholder="K02.1"
-						className="w-full px-2.5 py-1.5 bg-zinc-950 border border-zinc-700/60 text-zinc-200 text-sm rounded-lg focus:ring-2 focus:ring-emerald-500/50 outline-none disabled:opacity-50"
+						className="w-full px-2.5 py-2 min-h-[44px] bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] text-sm rounded-lg focus:ring-2 focus:ring-[var(--teal-glow)] outline-none disabled:opacity-50"
 					/>
 				</label>
 				<button
@@ -506,7 +512,7 @@ export function VisitDiaryTemplateSelector({
 					data-testid="diary-template-create-submit"
 					disabled={isCreating || !createTitle.trim()}
 					onClick={() => void createTemplate()}
-					className="inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-emerald-100 bg-emerald-600/90 hover:bg-emerald-500 border border-emerald-400/40 rounded-xl disabled:opacity-50 transition-colors"
+					className="inline-flex items-center justify-center gap-2 px-3 py-2 min-h-[44px] text-sm font-medium text-[var(--on-teal,white)] bg-[var(--teal-dark)] hover:bg-[var(--teal)] rounded-xl disabled:opacity-50 transition-colors"
 				>
 					{isCreating ? (
 						<>
@@ -530,7 +536,7 @@ export function VisitDiaryTemplateSelector({
 				className="flex flex-col gap-2 w-full sm:w-auto max-w-md flex-shrink-0"
 				data-testid="diary-template-empty"
 			>
-				<div className="text-xs text-zinc-400 leading-snug">
+				<div className="text-xs text-[var(--muted)] leading-snug">
 					{isSeedFailed
 						? seedError ||
 							"Встроенные протоколы не установились — список пуст из‑за сбоя, а не потому что протоколов нет."
@@ -545,7 +551,7 @@ export function VisitDiaryTemplateSelector({
 					data-testid="diary-template-seed"
 					disabled={isLocked || isSeeding}
 					onClick={() => void seedBuiltIns()}
-					className="inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-emerald-100 bg-emerald-600/90 hover:bg-emerald-500 border border-emerald-400/40 rounded-xl disabled:opacity-50 transition-colors"
+					className="inline-flex items-center justify-center gap-2 px-3 py-2 min-h-[44px] text-sm font-medium text-[var(--on-teal,white)] bg-[var(--teal-dark)] hover:bg-[var(--teal)] rounded-xl disabled:opacity-50 transition-colors"
 				>
 					{isSeeding ? (
 						<>
@@ -564,7 +570,7 @@ export function VisitDiaryTemplateSelector({
 						type="button"
 						data-testid="diary-template-create-open"
 						onClick={() => setShowCreateForm(true)}
-						className="inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-zinc-200 bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-600/50 rounded-xl disabled:opacity-50 transition-colors"
+						className="inline-flex items-center justify-center gap-2 px-3 py-2 min-h-[44px] text-sm font-medium text-[var(--ink)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] border border-[var(--line)] rounded-xl disabled:opacity-50 transition-colors"
 					>
 						<Plus className="w-4 h-4" />
 						Создать свой протокол
@@ -573,7 +579,7 @@ export function VisitDiaryTemplateSelector({
 				{createFormEl}
 				{seedError && !isSeedFailed && (
 					<p
-						className="text-xs text-rose-400/90"
+						className="text-xs text-[var(--bad-fg)]"
 						data-testid="diary-template-seed-error"
 					>
 						{seedError}
@@ -587,7 +593,7 @@ export function VisitDiaryTemplateSelector({
 		<div className="flex flex-col gap-2 w-full sm:w-auto flex-shrink-0">
 			<div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
 				<div className="relative w-full sm:w-60">
-					<Clipboard className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500 pointer-events-none" />
+					<Clipboard className="absolute left-3 top-3 w-4 h-4 text-[var(--muted)] pointer-events-none" />
 					<select
 						id="diary-template-select"
 						data-testid="diary-template-select"
@@ -602,7 +608,7 @@ export function VisitDiaryTemplateSelector({
 								onSelectTemplate(tmpl);
 							}
 						}}
-						className="w-full pl-9 pr-3 py-2 bg-zinc-900 border border-zinc-700/60 text-zinc-200 text-sm rounded-xl focus:ring-2 focus:ring-emerald-500/50 outline-none appearance-none disabled:opacity-50"
+						className="w-full pl-9 pr-3 py-2 min-h-[44px] bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] text-sm rounded-xl focus:ring-2 focus:ring-[var(--teal-glow)] outline-none appearance-none disabled:opacity-50"
 					>
 						<option value="">
 							{isLoading ? "Загружаем протоколы…" : "— Клинический шаблон —"}
@@ -625,7 +631,7 @@ export function VisitDiaryTemplateSelector({
 						disabled={isDeleting || isSeeding || isCreating}
 						onClick={() => void deleteSelectedTemplate()}
 						title="Удалить выбранный свой протокол из списка клиники (встроенные удалить нельзя)"
-						className="inline-flex items-center justify-center gap-1.5 px-2.5 py-2 text-xs font-medium text-rose-200/90 bg-rose-950/40 hover:bg-rose-900/50 border border-rose-700/40 rounded-xl disabled:opacity-50 transition-colors whitespace-nowrap"
+						className="inline-flex items-center justify-center gap-1.5 px-3 py-2 min-h-[44px] text-xs font-medium text-[var(--bad-fg)] bg-[var(--bad-bg)] hover:brightness-95 border border-[var(--bad-fg)] rounded-xl disabled:opacity-50 transition-colors whitespace-nowrap"
 					>
 						{isDeleting ? (
 							<>
@@ -646,7 +652,7 @@ export function VisitDiaryTemplateSelector({
 						data-testid="diary-template-create-open"
 						onClick={() => setShowCreateForm(true)}
 						title="Создать свой протокол приёма (не встроенный)"
-						className="inline-flex items-center justify-center gap-1.5 px-2.5 py-2 text-xs font-medium text-emerald-200/90 bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-700/40 rounded-xl disabled:opacity-50 transition-colors whitespace-nowrap"
+						className="inline-flex items-center justify-center gap-1.5 px-3 py-2 min-h-[44px] text-xs font-medium text-[var(--teal-dark)] bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] border border-[var(--teal)] rounded-xl disabled:opacity-50 transition-colors whitespace-nowrap"
 					>
 						<Plus className="w-3.5 h-3.5" />
 						Свой
@@ -659,7 +665,7 @@ export function VisitDiaryTemplateSelector({
 						disabled={isSeeding || isDeleting || isCreating}
 						onClick={() => void seedBuiltIns()}
 						title="Добавить недостающие встроенные протоколы (уже имеющиеся не дублируются)"
-						className="text-xs text-zinc-500 hover:text-emerald-400 underline-offset-2 hover:underline disabled:opacity-50 transition-colors whitespace-nowrap"
+						className="min-h-[44px] flex items-center text-xs text-[var(--muted)] hover:text-[var(--teal)] underline-offset-2 hover:underline disabled:opacity-50 transition-colors whitespace-nowrap"
 					>
 						{isSeeding ? "Восстанавливаю…" : "Восстановить встроенные"}
 					</button>

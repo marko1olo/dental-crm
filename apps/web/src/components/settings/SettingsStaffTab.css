@@ -223,8 +223,8 @@
 	color: rgb(5, 150, 105);
 }
 .perm-tag.manager {
-	background: rgba(139, 92, 246, 0.1);
-	color: rgb(109, 40, 217);
+	background: var(--info-bg);
+	color: var(--info-fg);
 }
 .perm-tag.danger {
 	background: rgba(239, 68, 68, 0.1);

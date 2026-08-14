@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { SbpQrEngine } from "@dental/shared";
+import { SbpQrEngine, createFiscalReceiptPayloadSchema } from "@dental/shared";
 
 describe("NSPK SBP Dynamic QR & 54-FZ Fiscal Engine", () => {
 	it("computes CRC16-CCITT according to GOST R 56042-2014", () => {
@@ -44,5 +44,89 @@ describe("NSPK SBP Dynamic QR & 54-FZ Fiscal Engine", () => {
 		const tamperedUrl = original.payloadUrl.replace("sum=120050", "sum=100");
 		const failedVerify = SbpQrEngine.verifyNspkPayload(tamperedUrl);
 		assert.equal(failedVerify.isValid, false);
+	});
+
+	describe("54-FZ FFD 1.2 Fiscal Receipt Schema Validation", () => {
+		const validPatientId = "00000000-0000-0000-0000-000000000001";
+		const validVisitId = "00000000-0000-0000-0000-000000000002";
+		const validDocId = "00000000-0000-0000-0000-000000000003";
+
+		it("accepts valid fiscal receipt payload with visitId and documentId", () => {
+			const rawPayload = {
+				patientId: validPatientId,
+				visitId: validVisitId,
+				documentId: validDocId,
+				customerContact: "patient@example.com",
+				cashierFullName: "Иванова Мария Сергеевна",
+				totalKopecks: 150000, // 1500.00 RUB
+				sbpKopecks: 150000,
+				items: [
+					{
+						name: "Лечение кариеса (эмалепластика)",
+						priceKopecks: 150000,
+						quantity: 1,
+						amountKopecks: 150000,
+						subject: "service",
+						method: "full_payment",
+						vatRate: "vat_none",
+						measure: "piece",
+						medicalServiceCodeMzk: "A16.07.002.001",
+					},
+				],
+			};
+
+			const parsed = createFiscalReceiptPayloadSchema.safeParse(rawPayload);
+			assert.equal(parsed.success, true);
+			if (parsed.success) {
+				assert.equal(parsed.data.visitId, validVisitId);
+				assert.equal(parsed.data.documentId, validDocId);
+				assert.equal(parsed.data.totalKopecks, 150000);
+				assert.equal(parsed.data.items[0]?.medicalServiceCodeMzk, "A16.07.002.001");
+			}
+		});
+
+		it("rejects invalid UUID formats for visitId and documentId", () => {
+			const invalidPayload = {
+				patientId: validPatientId,
+				visitId: "not-a-valid-uuid",
+				documentId: "also-not-a-uuid",
+				customerContact: "+79991234567",
+				totalKopecks: 50000,
+				cashKopecks: 50000,
+				items: [
+					{
+						name: "Осмотр и консультация",
+						priceKopecks: 50000,
+						quantity: 1,
+						amountKopecks: 50000,
+					},
+				],
+			};
+
+			const parsed = createFiscalReceiptPayloadSchema.safeParse(invalidPayload);
+			assert.equal(parsed.success, false);
+		});
+
+		it("rejects kopeck mismatch between payment methods and items total", () => {
+			const mismatchedPayload = {
+				patientId: validPatientId,
+				visitId: validVisitId,
+				customerContact: "+79991234567",
+				totalKopecks: 100000,
+				sbpKopecks: 90000, // 10000 коп не хватает
+				cashKopecks: 0,
+				items: [
+					{
+						name: "Профессиональная гигиена",
+						priceKopecks: 100000,
+						quantity: 1,
+						amountKopecks: 100000,
+					},
+				],
+			};
+
+			const parsed = createFiscalReceiptPayloadSchema.safeParse(mismatchedPayload);
+			assert.equal(parsed.success, false);
+		});
 	});
 });

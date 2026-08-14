@@ -1,10 +1,17 @@
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import { after, before, describe, test } from "node:test";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
-import { organizations, patients, payments, sberbankTransactions } from "../../db/schema.js";
+import {
+	generatedDocuments,
+	organizations,
+	patients,
+	payments,
+	sberbankTransactions,
+	visits,
+} from "../../db/schema.js";
 import { registerSberbankRoutes, verifySberbankChecksum } from "../../routes/sberbank.js";
 import {
 	fixtureUuid,
@@ -16,6 +23,8 @@ import { createTenantTestApp } from "../support/tenantTestApp.js";
 const TEST_NS = "sberbankWebhookTest";
 const ORG_ID = fixtureUuid(TEST_NS, 1);
 const PATIENT_ID = fixtureUuid(TEST_NS, 2);
+const VISIT_ID = fixtureUuid(TEST_NS, 3);
+const DOC_ID = fixtureUuid(TEST_NS, 4);
 const SECRET_KEY = "test-sberbank-webhook-secret-key-999";
 
 function generateSberbankChecksum(
@@ -96,6 +105,15 @@ describe("POST /api/sberbank/webhook — Async Payment Receiver Integration Test
 		await registerSberbankRoutes(app);
 
 		try {
+			await db.execute(
+				sql`ALTER TABLE "sberbank_transactions" ADD COLUMN IF NOT EXISTS "visit_id" text;`,
+			);
+			await db.execute(
+				sql`ALTER TABLE "sberbank_transactions" ADD COLUMN IF NOT EXISTS "document_id" text;`,
+			);
+			await db.execute(
+				sql`ALTER TABLE "sberbank_transactions" ADD COLUMN IF NOT EXISTS "invoice_id" text;`,
+			);
 			await purgeFixtureOrganizations([ORG_ID]);
 			await withFixtureTenant(ORG_ID, async () => {
 				await db.insert(organizations).values({
@@ -106,6 +124,21 @@ describe("POST /api/sberbank/webhook — Async Payment Receiver Integration Test
 					id: PATIENT_ID,
 					organizationId: ORG_ID,
 					fullName: "Тестовый Пациент Вебхука",
+				});
+				await db.insert(visits).values({
+					id: VISIT_ID,
+					organizationId: ORG_ID,
+					patientId: PATIENT_ID,
+					status: "signed",
+				});
+				await db.insert(generatedDocuments).values({
+					id: DOC_ID,
+					organizationId: ORG_ID,
+					patientId: PATIENT_ID,
+					visitId: VISIT_ID,
+					kind: "completed_works_act",
+					status: "draft",
+					title: "Акт выполненных работ",
 				});
 			});
 		} catch (err) {
@@ -271,5 +304,77 @@ describe("POST /api/sberbank/webhook — Async Payment Receiver Integration Test
 		assert.equal(response.statusCode, 404);
 		const body = response.json();
 		assert.equal(body.error, "TransactionNotFound");
+	});
+
+	test("e. Webhook settlement with visitId and documentId links payment, marks generatedDocument as issued, and updates visit", async (context) => {
+		if (!databaseAvailable) return context.skip("Database unavailable");
+
+		const orderId = "sber-order-visit-doc-102";
+		const amountKopecks = 150000; // 1,500.00 RUB
+
+		// Seed pending transaction with visitId, documentId, invoiceId
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.insert(sberbankTransactions).values({
+				organizationId: ORG_ID,
+				patientId: PATIENT_ID,
+				visitId: VISIT_ID,
+				documentId: DOC_ID,
+				orderId,
+				amount: amountKopecks,
+				status: "pending",
+			});
+		});
+
+		const paramsToSign = {
+			orderId,
+			operation: "deposited",
+			status: "success",
+			amount: String(amountKopecks),
+		};
+		const checksum = generateSberbankChecksum(paramsToSign, SECRET_KEY);
+
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/sberbank/webhook",
+			payload: { ...paramsToSign, checksum },
+		});
+
+		assert.equal(response.statusCode, 200);
+		const body = response.json();
+		assert.equal(body.success, true);
+		assert.equal(body.status, "success");
+
+		// Assert payment record has visitId and documentId
+		const [pRow] = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select()
+				.from(payments)
+				.where(
+					and(
+						eq(payments.organizationId, ORG_ID),
+						eq(payments.clientMutationId, `sberbank:${orderId}`),
+					),
+				),
+		);
+		assert.ok(pRow);
+		assert.equal(pRow.visitId, VISIT_ID);
+		assert.equal(pRow.documentId, DOC_ID);
+		assert.equal(pRow.amountRub, 1500);
+
+		// Assert generatedDocument is atomically issued
+		const [doc] = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select()
+				.from(generatedDocuments)
+				.where(
+					and(
+						eq(generatedDocuments.organizationId, ORG_ID),
+						eq(generatedDocuments.id, DOC_ID),
+					),
+				),
+		);
+		assert.ok(doc);
+		assert.equal(doc.status, "issued");
+		assert.ok(doc.issuedAt);
 	});
 });

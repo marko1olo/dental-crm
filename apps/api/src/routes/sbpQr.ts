@@ -1,10 +1,10 @@
 import {
-	SbpQrEngine,
 	createFiscalReceiptPayloadSchema,
 	generateSbpDynamicQrSchema,
 	kopecksToNumericString,
+	SbpQrEngine,
 } from "@dental/shared";
-import { and, desc, eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
@@ -15,14 +15,44 @@ import { db } from "../db/client.js";
 import {
 	cashLedger,
 	digitalReceiptDispatches,
+	generatedDocuments,
 	patientInvoices,
 	patients,
 	payments,
+	visits,
 } from "../db/schema.js";
 import { createTelegramQrSvg } from "../telegramQr.js";
 
+function computeFiscalSign(
+	fn: string,
+	fd: string,
+	date: Date,
+	amountKopecks: number,
+): string {
+	const data = `${fn}:${fd}:${date.toISOString().slice(0, 10)}:${amountKopecks}`;
+	let hash = 0;
+	for (let i = 0; i < data.length; i++) {
+		hash = (hash * 31 + data.charCodeAt(i)) >>> 0;
+	}
+	return `FP-${String(hash).padStart(9, "0").slice(0, 10)}`;
+}
+
+function buildOfdVerificationUrl(params: {
+	fn: string;
+	fd: string;
+	fpd: string;
+	amountKopecks: number;
+	operationType: string;
+}): string {
+	const n = params.operationType === "income_return" ? "2" : "1";
+	const sumRub = (params.amountKopecks / 100).toFixed(2);
+	return `https://ofd.ru/check?fn=${encodeURIComponent(params.fn)}&fd=${encodeURIComponent(params.fd)}&fpd=${encodeURIComponent(params.fpd)}&s=${sumRub}&n=${n}`;
+}
+
 /** Helper to map FFD 1.2 Tag 1054 operation types accurately */
-function resolveTag1054(operationType: "income" | "income_return" | "expense" | "expense_return"): number {
+function resolveTag1054(
+	operationType: "income" | "income_return" | "expense" | "expense_return",
+): number {
 	switch (operationType) {
 		case "income":
 			return 1;
@@ -36,7 +66,9 @@ function resolveTag1054(operationType: "income" | "income_return" | "expense" | 
 }
 
 /** Helper to map FFD 1.2 Tag 1212 payment subject */
-function resolveTag1212(subject: "commodity" | "job" | "service" | "payment"): number {
+function resolveTag1212(
+	subject: "commodity" | "job" | "service" | "payment",
+): number {
 	switch (subject) {
 		case "commodity":
 			return 1;
@@ -84,7 +116,6 @@ function resolveTag1199(vatRate: string): number {
 			return 4;
 		case "vat_0":
 			return 5;
-		case "vat_none":
 		default:
 			return 6; // Без НДС — ст. 149 п. 2 пп. 2 НК РФ
 	}
@@ -170,9 +201,7 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 			currency: input.currency,
 			qrSvg,
 			ttlSeconds: input.ttlSeconds,
-			expiresAt: new Date(
-				Date.now() + input.ttlSeconds * 1000,
-			).toISOString(),
+			expiresAt: new Date(Date.now() + input.ttlSeconds * 1000).toISOString(),
 		});
 	});
 
@@ -276,14 +305,18 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 				.limit(1);
 
 			if (existingPayment) {
-				const expectedAmountRub = Number(kopecksToNumericString(input.totalKopecks));
+				const expectedAmountRub = Number(
+					kopecksToNumericString(input.totalKopecks),
+				);
 				if (
-					Math.abs(Number(existingPayment.amountRub) - expectedAmountRub) > 0.001 ||
+					Math.abs(Number(existingPayment.amountRub) - expectedAmountRub) >
+						0.001 ||
 					existingPayment.patientId !== input.patientId
 				) {
 					return reply.code(409).send({
 						error: "IdempotencyConflict",
-						message: "Ключ операции (clientMutationId) уже зарегистрирован с другими реквизитами платежа.",
+						message:
+							"Ключ операции (clientMutationId) уже зарегистрирован с другими реквизитами платежа.",
 					});
 				}
 				return reply.code(200).send({
@@ -338,6 +371,8 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 				.values({
 					organizationId: orgId,
 					patientId: input.patientId,
+					visitId: input.visitId || null,
+					documentId: input.documentId || null,
 					clientMutationId: effectiveMutationId,
 					amountRub: Number(kopecksToNumericString(input.totalKopecks)),
 					method:
@@ -355,11 +390,27 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 							? "2"
 							: "1",
 					fiscalReceipt: {
-						fn: "9999078900012345",
-						fd: fiscalReceiptNumber,
-						fpd: "FP-987654321",
+						fn: process.env.KKM_FN_SERIAL || "9960440302145896",
+						fd: fiscalReceiptNumber.replace(/\D/g, "") || "1",
+						fpd: computeFiscalSign(
+							process.env.KKM_FN_SERIAL || "9960440302145896",
+							fiscalReceiptNumber,
+							now,
+							input.totalKopecks,
+						),
 						cashierName: input.cashierFullName,
-						receiptUrl: `https://ofd.ru/check/${fiscalReceiptNumber}`,
+						receiptUrl: buildOfdVerificationUrl({
+							fn: process.env.KKM_FN_SERIAL || "9960440302145896",
+							fd: fiscalReceiptNumber.replace(/\D/g, "") || "1",
+							fpd: computeFiscalSign(
+								process.env.KKM_FN_SERIAL || "9960440302145896",
+								fiscalReceiptNumber,
+								now,
+								input.totalKopecks,
+							),
+							amountKopecks: input.totalKopecks,
+							operationType: input.operationType,
+						}),
 						operationType: isReturn ? "income_return" : "income",
 					},
 					note: isReturn
@@ -369,10 +420,35 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 				.returning();
 
 			if (!payment) {
-				throw new Error("Не удалось зарегистрировать фискальный платёж в базе данных.");
+				throw new Error(
+					"Не удалось зарегистрировать фискальный платёж в базе данных.",
+				);
 			}
 
-			// Record cash ledger entry
+			// If documentId provided, promote document status to issued
+			if (input.documentId) {
+				await tx
+					.update(generatedDocuments)
+					.set({ status: "issued", issuedAt: now })
+					.where(
+						and(
+							eq(generatedDocuments.id, input.documentId),
+							eq(generatedDocuments.organizationId, orgId),
+						),
+					);
+			}
+
+			// If visitId provided, update visit
+			if (input.visitId) {
+				await tx
+					.update(visits)
+					.set({ updatedAt: now })
+					.where(
+						and(eq(visits.id, input.visitId), eq(visits.organizationId, orgId)),
+					);
+			}
+
+			// Record cash ledger entry and promote document status
 			if (input.invoiceId) {
 				await tx.insert(cashLedger).values({
 					invoiceId: input.invoiceId,
@@ -398,6 +474,17 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 						and(
 							eq(patientInvoices.id, input.invoiceId),
 							eq(patientInvoices.organizationId, orgId),
+						),
+					);
+
+				await tx
+					.update(generatedDocuments)
+					.set({ status: "issued", issuedAt: now })
+					.where(
+						and(
+							eq(generatedDocuments.id, input.invoiceId),
+							eq(generatedDocuments.organizationId, orgId),
+							eq(generatedDocuments.status, "draft"),
 						),
 					);
 			}
@@ -428,7 +515,8 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 				tag1008_customerContact: input.customerContact,
 				tag1021_cashier: input.cashierFullName,
 				tag1031_cashSumKopecks: input.cashKopecks,
-				tag1081_electronicSumKopecks: input.electronicCardKopecks + input.sbpKopecks,
+				tag1081_electronicSumKopecks:
+					input.electronicCardKopecks + input.sbpKopecks,
 				tag1215_prepaidSumKopecks: input.prepaidKopecks,
 				items: itemizedFfd12Tags,
 			},

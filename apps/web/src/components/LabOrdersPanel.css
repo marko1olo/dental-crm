@@ -132,9 +132,9 @@
 	border: 1px solid rgba(34, 197, 94, 0.3);
 }
 .status-badge.fitting {
-	background: rgba(168, 85, 247, 0.2);
-	color: #d8b4fe;
-	border: 1px solid rgba(168, 85, 247, 0.3);
+	background: var(--info-bg);
+	color: var(--info-fg);
+	border: 1px solid var(--info-fg);
 }
 .status-badge.refitting {
 	background: rgba(239, 68, 68, 0.2);

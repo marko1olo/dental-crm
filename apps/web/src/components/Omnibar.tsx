@@ -281,7 +281,7 @@ export function Omnibar() {
 									style={{ maxHeight: "calc(60vh - 56px)" }}
 								>
 									{(filteredCommands ?? []).length === 0 ? (
-										<div className="p-8 text-center text-neutral-500 dark:text-slate-400">
+										<div className="p-8 text-center text-[var(--muted)]">
 											Ничего не найдено
 										</div>
 									) : (
@@ -294,16 +294,16 @@ export function Omnibar() {
 												return (
 													<React.Fragment key={cmd.id}>
 														{showCategory && (
-															<div className="px-3 pt-3 pb-1 text-xs font-semibold text-neutral-400 dark:text-slate-500 uppercase tracking-wider">
+															<div className="px-3 pt-3 pb-1 text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">
 																{cmd.category}
 															</div>
 														)}
 														<button
 															type="button"
-															className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors ${
+															className={`w-full text-left flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-xl cursor-pointer transition-colors ${
 																idx === selectedIndex
-																	? "bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300"
-																	: "text-neutral-700 dark:text-slate-200 hover:bg-neutral-50 dark:hover:bg-slate-800/60"
+																	? "bg-[var(--teal-surface)] text-[var(--teal-dark)]"
+																	: "text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 															}`}
 															onClick={() => {
 																cmd.action();
@@ -312,7 +312,7 @@ export function Omnibar() {
 															onMouseEnter={() => setSelectedIndex(idx)}
 														>
 															<div
-																className={`flex items-center justify-center w-8 h-8 rounded-lg ${idx === selectedIndex ? "bg-teal-100/50 dark:bg-teal-900/50 text-teal-600 dark:text-teal-300" : "bg-neutral-100 dark:bg-slate-800 text-neutral-500 dark:text-slate-400"}`}
+																className={`flex items-center justify-center w-8 h-8 rounded-lg ${idx === selectedIndex ? "bg-[var(--teal-soft)] text-[var(--teal-dark)]" : "bg-[var(--paper-soft)] text-[var(--muted)]"}`}
 															>
 																{React.cloneElement(
 																	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -323,7 +323,7 @@ export function Omnibar() {
 															<span className="font-medium">{cmd.title}</span>
 
 															{idx === selectedIndex && (
-																<span className="ml-auto text-xs text-teal-500 dark:text-teal-400 font-medium">
+																<span className="ml-auto text-xs text-[var(--teal)] font-medium">
 																	↵ Выбрать
 																</span>
 															)}
@@ -336,19 +336,19 @@ export function Omnibar() {
 								</div>
 
 								{/* Footer */}
-								<div className="bg-neutral-50 dark:bg-slate-900/90 px-4 py-2 border-t border-neutral-100 dark:border-slate-800 flex items-center justify-between text-xs text-neutral-500 dark:text-slate-400">
+								<div className="bg-[var(--paper-soft)] px-4 py-2 border-t border-[var(--line)] flex items-center justify-between text-xs text-[var(--muted)]">
 									<div className="flex items-center gap-4">
 										<span className="flex items-center gap-1">
-											<kbd className="font-sans px-1.5 py-0.5 bg-white dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded text-[10px] font-semibold text-neutral-600 dark:text-slate-300 shadow-sm">
+											<kbd className="font-sans px-1.5 py-0.5 bg-[var(--paper)] border border-[var(--line)] rounded text-[10px] font-semibold text-[var(--ink)] shadow-sm">
 												↑
 											</kbd>
-											<kbd className="font-sans px-1.5 py-0.5 bg-white dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded text-[10px] font-semibold text-neutral-600 dark:text-slate-300 shadow-sm">
+											<kbd className="font-sans px-1.5 py-0.5 bg-[var(--paper)] border border-[var(--line)] rounded text-[10px] font-semibold text-[var(--ink)] shadow-sm">
 												↓
 											</kbd>
 											<span>навигация</span>
 										</span>
 										<span className="flex items-center gap-1">
-											<kbd className="font-sans px-1.5 py-0.5 bg-white dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded text-[10px] font-semibold text-neutral-600 dark:text-slate-300 shadow-sm">
+											<kbd className="font-sans px-1.5 py-0.5 bg-[var(--paper)] border border-[var(--line)] rounded text-[10px] font-semibold text-[var(--ink)] shadow-sm">
 												↵
 											</kbd>
 											<span>выбрать</span>

@@ -460,13 +460,13 @@
 }
 
 .modal-btn.primary {
-	background-color: #4f46e5;
-	color: white;
-	box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.39);
+	background-color: var(--teal);
+	color: var(--on-teal, #ffffff);
+	box-shadow: 0 4px 14px 0 var(--teal-glow);
 }
 
 .modal-btn.primary:hover {
-	background-color: #4338ca;
+	background-color: var(--teal-dark);
 }
 
 .modal-input {
@@ -486,7 +486,7 @@
 }
 
 .modal-input:focus {
-	border-color: #4f46e5;
+	border-color: var(--teal);
 }
 
 @keyframes zoomIn {
@@ -638,7 +638,7 @@
 .spinner {
 	width: 24px;
 	height: 24px;
-	border: 2px solid #4f46e5;
+	border: 2px solid var(--teal);
 	border-top-color: transparent;
 	border-radius: 50%;
 	animation: spin 1s linear infinite;
@@ -712,7 +712,7 @@
 .timeline-date {
 	font-size: 12px;
 	font-weight: 600;
-	color: #4f46e5;
+	color: var(--teal);
 	margin-bottom: 4px;
 }
 

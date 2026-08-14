@@ -1,13 +1,15 @@
-import type { CreatePaymentInput, Payment } from "@dental/shared";
-import { formatKopecksRu, sumKopecks, type Kopecks } from "@dental/shared";
-import { and, eq, inArray, ne } from "drizzle-orm";
 import {
-	chargeLineKopecks,
-	toKopecks,
-} from "../money/patientDebt.js";
+	type CreatePaymentInput,
+	formatKopecksRu,
+	type Kopecks,
+	type Payment,
+	sumKopecks,
+} from "@dental/shared";
+import { and, eq, inArray, ne } from "drizzle-orm";
+import { chargeLineKopecks, toKopecks } from "../money/patientDebt.js";
+import { payments as inMemoryPayments } from "../sampleData.js";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
-import { payments as inMemoryPayments } from "../sampleData.js";
 
 // The DB stores tax_deduction_code as free `text`, but the Payment DTO narrows it
 // to the fiscal codes "1" | "2" | null. Validate at the read boundary instead of
@@ -315,7 +317,10 @@ export async function createPaymentInDb(
 				throw new Error("К аннулированному документу нельзя привязать оплату.");
 			}
 
-			if (lockedDoc.totalAmountRub !== null && lockedDoc.totalAmountRub !== undefined) {
+			if (
+				lockedDoc.totalAmountRub !== null &&
+				lockedDoc.totalAmountRub !== undefined
+			) {
 				const documentTotalKopecks = toKopecks(
 					lockedDoc.totalAmountRub,
 					"общая сумма документа",
@@ -386,6 +391,19 @@ export async function createPaymentInDb(
 
 		if (!newPayment) {
 			throw new Error("Не удалось создать запись платежа в базе данных.");
+		}
+
+		if (input.documentId) {
+			await tx
+				.update(schema.generatedDocuments)
+				.set({ status: "issued", issuedAt: new Date() })
+				.where(
+					and(
+						eq(schema.generatedDocuments.id, input.documentId),
+						eq(schema.generatedDocuments.organizationId, organizationId),
+						eq(schema.generatedDocuments.status, "draft"),
+					),
+				);
 		}
 
 		return {
@@ -479,11 +497,11 @@ export async function getPaymentsByPatientIdInDb(
 	patientId: string,
 ): Promise<Payment[]> {
 	if (process.env.DENTAL_STATE_PERSISTENCE === "off") {
-	        return inMemoryPayments.filter(
-	                (payment) =>
-	                        payment.organizationId === organizationId &&
-	                        payment.patientId === patientId,
-	        );
+		return inMemoryPayments.filter(
+			(payment) =>
+				payment.organizationId === organizationId &&
+				payment.patientId === patientId,
+		);
 	}
 	const res = await db
 		.select()

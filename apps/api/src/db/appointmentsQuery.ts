@@ -37,30 +37,47 @@ async function lockAppointmentResources(
 	organizationId: string,
 	resources: {
 		chairId?: string | null | undefined;
+		chairIds?: (string | null | undefined)[];
 		doctorUserId?: string | null | undefined;
 		assistantUserId?: string | null | undefined;
+		userIds?: (string | null | undefined)[];
 		patientId?: string | null | undefined;
+		patientIds?: (string | null | undefined)[];
 	},
 ) {
-	if (resources.chairId) {
+	// Level 1: Кресла (сортировка по UUID исключает deadlock)
+	const rawChairIds = [...(resources.chairIds ?? []), resources.chairId];
+	const chairIdsToLock = Array.from(
+		new Set(
+			rawChairIds.filter(
+				(id): id is string => typeof id === "string" && id.trim().length > 0,
+			),
+		),
+	).sort();
+
+	for (const chairId of chairIdsToLock) {
 		await executor
 			.select({ id: schema.chairs.id })
 			.from(schema.chairs)
 			.where(
 				and(
 					eq(schema.chairs.organizationId, organizationId),
-					eq(schema.chairs.id, resources.chairId),
+					eq(schema.chairs.id, chairId),
 				),
 			)
 			.for("update")
 			.limit(1);
 	}
 
-	// Детерминированный порядок сортировки UUID исключает взаимную блокировку (40P01 deadlock),
-	// если врач и ассистент меняются ролями в параллельных транзакциях.
+	// Level 2: Сотрудники (врачи + ассистенты, дедуплицированы и отсортированы по UUID)
+	const rawUserIds = [
+		...(resources.userIds ?? []),
+		resources.doctorUserId,
+		resources.assistantUserId,
+	];
 	const userIdsToLock = Array.from(
 		new Set(
-			[resources.doctorUserId, resources.assistantUserId].filter(
+			rawUserIds.filter(
 				(id): id is string => typeof id === "string" && id.trim().length > 0,
 			),
 		),
@@ -80,14 +97,24 @@ async function lockAppointmentResources(
 			.limit(1);
 	}
 
-	if (resources.patientId) {
+	// Level 3: Пациенты (сортировка по UUID)
+	const rawPatientIds = [...(resources.patientIds ?? []), resources.patientId];
+	const patientIdsToLock = Array.from(
+		new Set(
+			rawPatientIds.filter(
+				(id): id is string => typeof id === "string" && id.trim().length > 0,
+			),
+		),
+	).sort();
+
+	for (const patientId of patientIdsToLock) {
 		await executor
 			.select({ id: schema.patients.id })
 			.from(schema.patients)
 			.where(
 				and(
 					eq(schema.patients.organizationId, organizationId),
-					eq(schema.patients.id, resources.patientId),
+					eq(schema.patients.id, patientId),
 				),
 			)
 			.for("update")
@@ -159,7 +186,10 @@ async function assertNoResourceOverlap(
 	if (candidate.doctorUserId && ov.doctorUserId === candidate.doctorUserId) {
 		throw new Error("У врача уже есть запись в это время");
 	}
-	if (candidate.assistantUserId && ov.assistantUserId === candidate.assistantUserId) {
+	if (
+		candidate.assistantUserId &&
+		ov.assistantUserId === candidate.assistantUserId
+	) {
 		throw new Error("У ассистента уже есть запись в это время");
 	}
 	throw new Error("Кресло уже занято другой записью в это время");
@@ -228,7 +258,8 @@ async function assertAppointmentResourcesBelongToOrganization(
 			id: input.assistantUserId,
 			table: schema.users,
 			what: "Ассистент",
-			action: "Обновите список сотрудников и выберите ассистента своей клиники.",
+			action:
+				"Обновите список сотрудников и выберите ассистента своей клиники.",
 		});
 	if (input.chairId)
 		checks.push({
@@ -328,7 +359,8 @@ export async function createAppointmentInDb(
 			})
 			.returning();
 
-		if (!created) throw new Error("Не удалось создать запись на приём в базе данных");
+		if (!created)
+			throw new Error("Не удалось создать запись на приём в базе данных");
 
 		return {
 			id: created.id,
@@ -364,6 +396,8 @@ export async function updateAppointmentInDb(
 	// и записью другой администратор успевает занять слот. Всё внутри одной
 	// транзакции с блокировкой строк ресурсов.
 	const updated = await db.transaction(async (tx) => {
+		// Шаг 1: Чтение исходной записи без FOR UPDATE (MVCC snapshot).
+		// Это исключает deadlock инверсии appointments <-> chairs/users/patients.
 		const [existing] = await tx
 			.select()
 			.from(schema.appointments)
@@ -373,7 +407,6 @@ export async function updateAppointmentInDb(
 					eq(schema.appointments.organizationId, organizationId),
 				),
 			)
-			.for("update")
 			.limit(1);
 		if (!existing) throw new Error("Запись не найдена");
 
@@ -410,12 +443,34 @@ export async function updateAppointmentInDb(
 		const newPatientId = input.patientId ?? existing.patientId;
 
 		if (newStatus !== "cancelled" && newStatus !== "no_show") {
+			// Шаг 2: Блокировка всех затрагиваемых ресурсов (старых И новых) в каноническом порядке
 			await lockAppointmentResources(tx, organizationId, {
-				chairId: newChairId,
-				doctorUserId: newDoctorUserId,
-				assistantUserId: newAssistantUserId,
-				patientId: newPatientId,
+				chairIds: [existing.chairId, newChairId],
+				userIds: [
+					existing.doctorUserId,
+					newDoctorUserId,
+					existing.assistantUserId,
+					newAssistantUserId,
+				],
+				patientIds: [existing.patientId, newPatientId],
 			});
+
+			// Шаг 3: Блокировка самой строки приёма (Level 4)
+			const [locked] = await tx
+				.select()
+				.from(schema.appointments)
+				.where(
+					and(
+						eq(schema.appointments.id, appointmentId),
+						eq(schema.appointments.organizationId, organizationId),
+					),
+				)
+				.for("update")
+				.limit(1);
+
+			if (!locked) throw new Error("Запись не найдена");
+
+			// Шаг 4: Проверка отсутствия пересечений
 			await assertNoResourceOverlap(tx, organizationId, {
 				startsAt: candidateStarts,
 				endsAt: candidateEnds,

@@ -175,4 +175,51 @@
 		min-height: 44px;
 		min-width: 44px;
 	}
+
+	/* --- Дополнительные интерактивные элементы управления (аудит эргономики) --- */
+	.memory-watchdog-action,
+	._ccm-btn,
+	._ccm-close-btn,
+	.auth-input-icon-btn,
+	.auth-link-btn,
+	.auth-link-btn--muted,
+	.sa-icon-btn,
+	.sa-enhance-toggle,
+	.cmd-palette-esc,
+	.acknowledge-btn,
+	.kanban-new-btn,
+	.kanban-modal-close,
+	.timeline-action-btn,
+	.auth-text-btn,
+	.logout-btn,
+	.btn-confirm,
+	.btn-cancel,
+	.close-btn,
+	.tour-nav button,
+	.chair-equipment-picker button,
+	.routing-rule-remove,
+	.routing-add-rule,
+	.profile-input-toggle-btn,
+	.day-hours input[type="time"],
+	.dnt-actions__trigger {
+		min-height: 44px;
+		min-width: 44px;
+		box-sizing: border-box;
+	}
+
+	.auth-input-icon-btn,
+	.sa-icon-btn,
+	.kanban-modal-close,
+	.profile-input-toggle-btn,
+	.close-btn,
+	.routing-rule-remove {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.sidebar .nav-item,
+	.app-shell .sidebar .nav-item {
+		min-height: 44px;
+	}
 }
