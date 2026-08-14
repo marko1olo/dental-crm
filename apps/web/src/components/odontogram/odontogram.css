@@ -13,8 +13,7 @@
 	--tooth-crown-fill: #fdfdfd;
 }
 
-[data-theme="dark"],
-.dark {
+:is([data-theme="dark"], [data-theme="night"], .dark) {
 	--odontogram-paper: rgba(9, 9, 11, 0.4);
 	--odontogram-surface: rgba(24, 24, 27, 0.3);
 	--odontogram-surface-hover: rgba(39, 39, 42, 0.4);
@@ -514,33 +513,33 @@
 	color: var(--slate-600);
 	animation: slideUp 0.3s ease-out;
 }
-.theme-dark .odontogram-hints {
-	background: var(--slate-800);
-	color: var(--slate-300);
+:is([data-theme="dark"], [data-theme="night"], .dark) .odontogram-hints {
+	background: var(--paper-soft, #1e293b);
+	color: var(--muted, #94a3b8);
 }
 
 .odontogram-hints kbd {
 	font-family: inherit;
 	font-weight: 600;
-	background: white;
-	border: 1px solid var(--slate-300);
+	background: var(--paper, white);
+	border: 1px solid var(--line, #cbd5e1);
 	border-bottom-width: 2px;
 	padding: 2px 6px;
 	border-radius: 4px;
 	font-size: 0.8rem;
-	color: var(--slate-700);
+	color: var(--ink, #334155);
 }
-.theme-dark .odontogram-hints kbd {
-	background: var(--slate-900);
-	border-color: var(--slate-700);
-	color: var(--slate-200);
+:is([data-theme="dark"], [data-theme="night"], .dark) .odontogram-hints kbd {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f1f5f9);
 }
 
 .hint-divider {
-	color: var(--slate-300);
+	color: var(--line, #cbd5e1);
 }
-.theme-dark .hint-divider {
-	color: var(--slate-600);
+:is([data-theme="dark"], [data-theme="night"], .dark) .hint-divider {
+	color: var(--line, #475569);
 }
 
 @keyframes slideUp {

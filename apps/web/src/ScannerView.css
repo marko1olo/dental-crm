@@ -1,8 +1,10 @@
+/* Стили сканера лотков стерилизации и журнала автоклавирования.
+   Полная поддержка светлой, тёмной и ночной темы DENTE. */
+
 .scanner-view-container {
 	padding: 24px;
 	max-width: 800px;
 	margin: 0 auto;
-	font-family: "Inter", sans-serif;
 	animation: fadeIn 0.4s ease;
 }
 
@@ -17,28 +19,27 @@
 	font-size: 1.75rem;
 	font-weight: 700;
 	margin: 0;
-	color: var(--slate-900);
+	color: var(--ink, #0f172a);
 }
-@media (prefers-color-scheme: dark) {
-	.scanner-title {
-		color: var(--slate-100);
-	}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .scanner-title {
+	color: var(--ink, #f1f5f9);
 }
 
 .scanner-card {
-	background: var(--paper);
+	background: var(--paper, #ffffff);
 	padding: 32px;
 	border-radius: 16px;
-	box-shadow: var(--shadow-md);
+	box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
 	position: relative;
 	overflow: hidden;
 	margin-bottom: 32px;
-	border: 1px solid var(--slate-200);
+	border: 1px solid var(--line, #e2e8f0);
 }
-@media (prefers-color-scheme: dark) {
-	.scanner-card {
-		border-color: var(--slate-800);
-	}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .scanner-card {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, #1e293b);
 }
 
 .scanner-laser {
@@ -47,8 +48,8 @@
 	left: 0;
 	right: 0;
 	height: 2px;
-	background: var(--brand-500);
-	box-shadow: 0 0 12px 2px var(--brand-400);
+	background: var(--teal, #0d9488);
+	box-shadow: 0 0 12px 2px var(--teal-soft, rgba(13, 148, 136, 0.5));
 	pointer-events: none;
 	opacity: 0;
 	transition:
@@ -84,27 +85,13 @@
 }
 
 .scanner-hint {
-	color: var(--slate-500);
+	color: var(--muted, #64748b);
 	text-align: center;
 	font-size: 1rem;
 	max-width: 400px;
 	margin: 0;
 }
 
-/*
- * ПОЛЯ «АВТОКЛАВ» И «РЕЗУЛЬТАТ» БЫЛИ БЕЗ ОФОРМЛЕНИЯ ВООБЩЕ.
- *
- * Разметка ссылалась на .scanner-select-group и .scanner-select, а в этом файле
- * таких правил не было ни одного: два системных элемента управления стояли в
- * потоке рядом со крупным полем штрих-кода. Заодно у полей не было подписей —
- * различить «Автоклав» и «Результат» можно было только по содержимому списка.
- *
- * Правила ниже написаны на теми же токенами, что и остальной файл, и на реальном
- * механизме тем проекта — [data-theme], а не prefers-color-scheme. Существующие
- * блоки выше используют prefers-color-scheme, из-за чего их тёмные варианты не
- * срабатывают при переключении темы в приложении: это отдельный долг, записанный
- * в отчёте, а не то, что стоит менять вслепую без снимка экрана.
- */
 .scanner-select-group {
 	display: flex;
 	flex-wrap: wrap;
@@ -124,11 +111,11 @@
 .scanner-field-label {
 	font-size: 0.8125rem;
 	font-weight: 600;
-	color: var(--slate-600);
+	color: var(--ink-soft, #475569);
 }
-[data-theme="dark"] .scanner-field-label,
-[data-theme="night"] .scanner-field-label {
-	color: var(--slate-400);
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .scanner-field-label {
+	color: var(--muted, #94a3b8);
 }
 
 .scanner-select {
@@ -138,23 +125,24 @@
 	font-size: 1rem;
 	font-family: inherit;
 	border-radius: 12px;
-	border: 2px solid var(--slate-300);
-	background: var(--slate-50);
-	color: var(--slate-900);
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper-soft, #f8fafc);
+	color: var(--ink, #0f172a);
 	transition:
 		border-color 0.2s,
 		box-shadow 0.2s;
 }
+
 .scanner-select:focus {
 	outline: none;
-	border-color: var(--brand-500);
-	box-shadow: 0 0 0 4px var(--brand-100);
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 3px var(--teal-soft, rgba(13, 148, 136, 0.2));
 }
-[data-theme="dark"] .scanner-select,
-[data-theme="night"] .scanner-select {
-	background: var(--paper);
-	border-color: var(--line-strong);
-	color: var(--ink);
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .scanner-select {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f1f5f9);
 }
 
 .scanner-load-error {
@@ -165,12 +153,13 @@
 	margin-bottom: 16px;
 	padding: 12px 16px;
 	border-radius: 12px;
-	border: 1px solid var(--rust);
-	background: var(--rust-soft);
-	color: var(--rust);
+	border: 1px solid var(--bad, #ef4444);
+	background: var(--bad-soft, rgba(239, 68, 68, 0.1));
+	color: var(--bad, #ef4444);
 	font-size: 0.875rem;
 	line-height: 1.5;
 }
+
 .scanner-load-error p {
 	margin: 0;
 	flex: 1 1 14rem;
@@ -185,34 +174,32 @@
 	padding: 16px 24px;
 	font-size: 1.25rem;
 	border-radius: 12px;
-	border: 2px solid var(--slate-300);
+	border: 1px solid var(--line, #cbd5e1);
 	width: 100%;
 	max-width: 400px;
 	text-align: center;
-	background: var(--slate-50);
-	color: var(--slate-900);
+	background: var(--paper-soft, #f8fafc);
+	color: var(--ink, #0f172a);
 	transition: all 0.2s;
-	font-family: monospace;
+	font-family: ui-monospace, SFMono-Regular, monospace;
 }
+
 .scanner-input:focus {
 	outline: none;
-	border-color: var(--brand-500);
-	box-shadow: 0 0 0 4px var(--brand-100);
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 3px var(--teal-soft, rgba(13, 148, 136, 0.2));
 }
-@media (prefers-color-scheme: dark) {
-	.scanner-input {
-		background: var(--slate-900);
-		border-color: var(--slate-700);
-		color: var(--slate-100);
-	}
-	.scanner-input:focus {
-		box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
-	}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .scanner-input {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f1f5f9);
 }
 
 .scanner-btn {
+	min-height: 44px;
 	padding: 14px 40px;
-	background: var(--brand-600);
+	background: var(--teal, #0d9488);
 	color: white;
 	border: none;
 	border-radius: 12px;
@@ -220,28 +207,30 @@
 	font-weight: 600;
 	cursor: pointer;
 	transition: all 0.2s;
-	box-shadow: var(--shadow-sm);
+	box-shadow: var(--shadow-sm, 0 2px 4px rgba(0, 0, 0, 0.1));
 }
+
 .scanner-btn:hover:not(:disabled) {
-	background: var(--brand-700);
+	background: var(--teal-dark, #0f766e);
 	transform: translateY(-1px);
 }
+
 .scanner-btn:disabled {
 	opacity: 0.6;
 	cursor: not-allowed;
 }
 
 .scanner-log-section {
-	background: var(--paper);
+	background: var(--paper, #ffffff);
 	border-radius: 16px;
 	padding: 24px;
-	box-shadow: var(--shadow-sm);
-	border: 1px solid var(--slate-200);
+	box-shadow: var(--shadow-sm, 0 2px 4px rgba(0, 0, 0, 0.05));
+	border: 1px solid var(--line, #e2e8f0);
 }
-@media (prefers-color-scheme: dark) {
-	.scanner-log-section {
-		border-color: var(--slate-800);
-	}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .scanner-log-section {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, #1e293b);
 }
 
 .scanner-log-title {
@@ -250,12 +239,12 @@
 	align-items: center;
 	gap: 12px;
 	font-size: 1.25rem;
-	color: var(--slate-900);
+	font-weight: 700;
+	color: var(--ink, #0f172a);
 }
-@media (prefers-color-scheme: dark) {
-	.scanner-log-title {
-		color: var(--slate-100);
-	}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .scanner-log-title {
+	color: var(--ink, #f1f5f9);
 }
 
 .scanner-grid {
@@ -269,15 +258,14 @@
 	grid-template-columns: 1fr 1fr 120px 140px;
 	gap: 16px;
 	padding: 0 16px 12px;
-	border-bottom: 2px solid var(--slate-100);
-	color: var(--slate-500);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	color: var(--muted, #64748b);
 	font-weight: 600;
 	font-size: 0.9rem;
 }
-@media (prefers-color-scheme: dark) {
-	.scanner-grid-header {
-		border-bottom-color: var(--slate-800);
-	}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .scanner-grid-header {
+	border-bottom-color: var(--line, #1e293b);
 }
 
 .scanner-log-row {
@@ -285,50 +273,46 @@
 	grid-template-columns: 1fr 1fr 120px 140px;
 	gap: 16px;
 	padding: 16px;
-	background: var(--slate-50);
+	background: var(--paper-soft, #f8fafc);
 	border-radius: 12px;
 	align-items: center;
-	border: 1px solid transparent;
+	border: 1px solid var(--line, transparent);
 	transition: border-color 0.2s;
 }
+
 .scanner-log-row:hover {
-	border-color: var(--slate-200);
+	border-color: var(--line, #cbd5e1);
 }
-@media (prefers-color-scheme: dark) {
-	.scanner-log-row {
-		background: var(--slate-800);
-	}
-	.scanner-log-row:hover {
-		border-color: var(--slate-700);
-	}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .scanner-log-row {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, #334155);
 }
 
 .log-barcode {
 	font-weight: 600;
 	font-size: 1.05rem;
-	color: var(--slate-900);
-	font-family: monospace;
+	color: var(--ink, #0f172a);
+	font-family: ui-monospace, SFMono-Regular, monospace;
 }
-@media (prefers-color-scheme: dark) {
-	.log-barcode {
-		color: var(--slate-100);
-	}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .log-barcode {
+	color: var(--ink, #f1f5f9);
 }
 
 .log-autoclave {
-	color: var(--slate-600);
+	color: var(--ink-soft, #475569);
 	display: flex;
 	align-items: center;
 	gap: 8px;
 }
-@media (prefers-color-scheme: dark) {
-	.log-autoclave {
-		color: var(--slate-400);
-	}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .log-autoclave {
+	color: var(--muted, #94a3b8);
 }
 
 .log-time {
-	color: var(--slate-500);
+	color: var(--muted, #64748b);
 	font-size: 0.9rem;
 	text-align: right;
 }
@@ -337,48 +321,38 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	color: var(--emerald-700);
-	background: var(--emerald-100);
+	color: var(--good, #059669);
+	background: var(--good-soft, rgba(16, 185, 129, 0.15));
 	padding: 6px 12px;
 	border-radius: 20px;
 	font-size: 0.85rem;
 	font-weight: 700;
 }
+
 .badge-error {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	color: var(--red-700);
-	background: var(--red-100);
+	color: var(--bad, #dc2626);
+	background: var(--bad-soft, rgba(239, 68, 68, 0.15));
 	padding: 6px 12px;
 	border-radius: 20px;
 	font-size: 0.85rem;
 	font-weight: 700;
-}
-@media (prefers-color-scheme: dark) {
-	.badge-success {
-		background: rgba(16, 185, 129, 0.2);
-		color: var(--emerald-400);
-	}
-	.badge-error {
-		background: rgba(239, 68, 68, 0.2);
-		color: var(--red-400);
-	}
 }
 
 .scanner-empty {
 	text-align: center;
 	padding: 40px 20px;
-	color: var(--slate-500);
-	background: var(--slate-50);
+	color: var(--muted, #64748b);
+	background: var(--paper-soft, #f8fafc);
 	border-radius: 12px;
-	border: 1px dashed var(--slate-300);
+	border: 1px dashed var(--line, #cbd5e1);
 }
-@media (prefers-color-scheme: dark) {
-	.scanner-empty {
-		background: var(--slate-800);
-		border-color: var(--slate-700);
-	}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .scanner-empty {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, #334155);
 }
 
 /* Mobile Responsiveness */
@@ -399,7 +373,7 @@
 		text-align: left;
 	}
 	.scanner-grid-header {
-		display: none; /* Hide tabular header on mobile */
+		display: none;
 	}
 	.scanner-log-row {
 		grid-template-columns: 1fr;
@@ -419,12 +393,10 @@
 		text-align: left;
 		margin-top: 8px;
 		padding-top: 8px;
-		border-top: 1px solid var(--slate-200);
+		border-top: 1px solid var(--line, #e2e8f0);
 	}
-	@media (prefers-color-scheme: dark) {
-		.log-time {
-			border-top-color: var(--slate-700);
-		}
+	:is([data-theme="dark"], [data-theme="night"], .dark) .log-time {
+		border-top-color: var(--line, #1e293b);
 	}
 }
 

@@ -192,7 +192,7 @@ export function VoiceDictationOverlay({
 								style={{
 									width: 8,
 									height: h,
-									background: "var(--primary-color, #a082ff)",
+									background: "var(--teal, #0d9488)",
 									borderRadius: 4,
 									transition: "height 0.15s ease",
 								}}
@@ -217,13 +217,13 @@ export function VoiceDictationOverlay({
 					height: 120,
 					borderRadius: "50%",
 					background: isListening
-						? "var(--primary-color, #a082ff)"
+						? "var(--teal, #0d9488)"
 						: "rgba(255,255,255,0.1)",
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "center",
 					boxShadow: isListening
-						? "0 0 40px var(--primary-color, #a082ff)"
+						? "0 0 40px var(--teal, rgba(13, 148, 136, 0.6))"
 						: "none",
 					transition: "all 0.3s",
 					marginBottom: 32,
@@ -235,7 +235,7 @@ export function VoiceDictationOverlay({
 							position: "absolute",
 							inset: -20,
 							borderRadius: "50%",
-							background: "var(--primary-color, #a082ff)",
+							background: "var(--teal, #0d9488)",
 							opacity: 0.3,
 							animation: "pulse 1.5s infinite",
 						}}
@@ -302,7 +302,7 @@ export function VoiceDictationOverlay({
 						style={{
 							padding: "16px 32px",
 							borderRadius: 32,
-							background: "var(--primary-color, #a082ff)",
+							background: "var(--teal, #0d9488)",
 							color: "#fff",
 							border: "none",
 							fontSize: 18,
