@@ -1011,13 +1011,13 @@ html.dark .vde-043__letter--p {
 	width: 140px;
 	height: 140px;
 	object-fit: cover;
-	border: 1px solid #cbd5e1;
+	border: 1px solid var(--line, #cbd5e1);
 	border-radius: 4px;
 	display: block;
 }
 .vde-043-print-photos__item figcaption {
 	font-size: 0.65rem;
-	color: #475569;
+	color: var(--muted, #475569);
 	margin-top: 0.25rem;
 	word-break: break-all;
 	line-height: 1.2;

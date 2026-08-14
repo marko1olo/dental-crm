@@ -265,13 +265,13 @@ function ToggleSwitch({
 					width: 48,
 					height: 26,
 					borderRadius: 13,
-					border: "1.5px solid rgba(255,255,255,.15)",
-					background: checked ? color : "rgba(255,255,255,.08)",
+					background: checked ? color : "var(--line-strong, #cbd5e1)",
 					transition: "background .25s, box-shadow .25s",
 					cursor: "pointer",
 					flexShrink: 0,
 					boxShadow: checked ? `0 0 10px 2px ${color}55` : "none",
 					padding: 0,
+					border: "none",
 				} as React.CSSProperties
 			}
 		>
@@ -280,9 +280,9 @@ function ToggleSwitch({
 					width: 20,
 					height: 20,
 					borderRadius: "50%",
-					background: "#fff",
-					boxShadow: "0 1px 4px rgba(0,0,0,.35)",
-					transform: `translateX(${checked ? 24 : 2}px)`,
+					background: "#ffffff",
+					boxShadow: "0 1px 4px rgba(0,0,0,.25)",
+					transform: `translateX(${checked ? 24 : 3}px)`,
 					transition: "transform .22s cubic-bezier(.4,0,.2,1)",
 					display: "block",
 				}}
@@ -338,15 +338,11 @@ export function WorkspaceFeaturesSelector() {
 	return (
 		<div
 			id="workspace-features-selector"
-			style={{
-				display: "flex",
-				flexDirection: "column",
-				gap: 12,
-			}}
+			className="flex flex-col gap-3"
 		>
-			<p style={{ margin: "0 0 4px", opacity: 0.6, fontSize: 13 }}>
+			<p className="m-0 mb-1 text-xs text-slate-500 dark:text-slate-400">
 				Активный профиль:{" "}
-				<strong style={{ textTransform: "capitalize" }}>
+				<strong className="capitalize text-slate-800 dark:text-slate-200">
 					{store.workspacePreset.replace(/_/g, " ")}
 				</strong>
 			</p>
@@ -360,86 +356,54 @@ export function WorkspaceFeaturesSelector() {
 					<div
 						key={def.key}
 						id={`feature-toggle-${def.key}`}
+						className={`flex items-start gap-3.5 p-3.5 sm:p-4 rounded-xl border transition-all ${
+							isOn
+								? "bg-white dark:bg-slate-900/80 shadow-sm"
+								: "bg-slate-50/60 dark:bg-slate-900/40 opacity-80"
+						}`}
 						style={{
-							display: "flex",
-							alignItems: "flex-start",
-							gap: 14,
-							padding: "14px 18px",
-							borderRadius: 14,
-							background: "rgba(255,255,255,.04)",
-							backdropFilter: "blur(10px)",
-							border: `1.5px solid ${isOn ? `${def.color}55` : "rgba(255,255,255,.08)"}`,
-							transition: "border-color .3s",
+							borderColor: isOn ? `${def.color}55` : "var(--line, #e2e8f0)",
 						}}
 					>
 						<div
+							className="mt-0.5 w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors"
 							style={{
-								marginTop: 2,
-								width: 36,
-								height: 36,
-								borderRadius: 10,
-								background: isOn ? `${def.color}20` : "rgba(255,255,255,.06)",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-								color: isOn ? def.color : "rgba(255,255,255,.35)",
-								flexShrink: 0,
-								transition: "background .3s, color .3s",
+								background: isOn ? `${def.color}20` : "var(--paper-soft, rgba(0,0,0,.04))",
+								color: isOn ? def.color : "var(--muted, #64748b)",
 							}}
 						>
 							{def.icon}
 						</div>
 
-						<div style={{ flex: 1, minWidth: 0 }}>
-							<div
-								style={{
-									display: "flex",
-									alignItems: "center",
-									gap: 8,
-									marginBottom: 4,
-								}}
-							>
-								<span style={{ fontWeight: 600, fontSize: 15 }}>
+						<div className="flex-1 min-w-0">
+							<div className="flex items-center gap-2 mb-1">
+								<span className="font-semibold text-sm text-slate-900 dark:text-slate-100">
 									{def.label}
 								</span>
 								{isSaving && (
 									<Loader2
 										size={14}
-										className="animate-spin"
-										style={{ opacity: 0.5 }}
+										className="animate-spin text-slate-400"
 									/>
 								)}
 								{isSaved && (
-									<CheckCircle2 size={14} style={{ color: "#4ade80" }} />
+									<CheckCircle2 size={14} className="text-emerald-500" />
 								)}
 							</div>
-							<p
-								style={{
-									margin: 0,
-									fontSize: 13,
-									opacity: 0.58,
-									lineHeight: 1.5,
-								}}
-							>
+							<p className="m-0 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
 								{def.description}
 							</p>
 							{failure?.key === def.key && (
 								<p
 									role="alert"
-									style={{
-										margin: "6px 0 0",
-										fontSize: 13,
-										lineHeight: 1.5,
-										color: "var(--bad-fg, #f4795c)",
-										fontWeight: 600,
-									}}
+									className="mt-1.5 m-0 text-xs leading-relaxed text-rose-600 dark:text-rose-400 font-semibold"
 								>
 									{failure.text}
 								</p>
 							)}
 						</div>
 
-						<div style={{ marginTop: 8 }}>
+						<div className="mt-1">
 							<ToggleSwitch
 								checked={isOn}
 								onChange={(v) => handleToggle(def.key, v)}
@@ -450,22 +414,9 @@ export function WorkspaceFeaturesSelector() {
 				);
 			})}
 
-			<div
-				style={{
-					marginTop: 8,
-					padding: "10px 16px",
-					borderRadius: 10,
-					background: "rgba(255,255,255,.03)",
-					border: "1px solid rgba(255,255,255,.07)",
-					fontSize: 12,
-					opacity: 0.5,
-					display: "flex",
-					alignItems: "center",
-					gap: 6,
-				}}
-			>
-				<Stethoscope size={13} />
-				Изменения применяются мгновенно и сохраняются в базе данных клиники.
+			<div className="mt-2 p-2.5 px-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
+				<Stethoscope size={14} className="text-teal-500 shrink-0" />
+				<span>Изменения применяются мгновенно и сохраняются в базе данных клиники.</span>
 			</div>
 		</div>
 	);

@@ -397,16 +397,16 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 			{/* Create Form */}
 			<form
 				onSubmit={handleCreateOrder}
-				className="bg-slate-800/20 p-4 border border-slate-700/40 rounded-xl space-y-4"
+				className="bg-slate-50/70 dark:bg-slate-800/20 p-4 border border-slate-200 dark:border-slate-700/40 rounded-xl space-y-4 shadow-sm"
 			>
-				<h4 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
-					<FlaskConical className="w-4 h-4 text-teal-400" />
+				<h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2 m-0">
+					<FlaskConical className="w-4 h-4 text-teal-600 dark:text-teal-400" />
 					Новый наряд ЗТЛ
 				</h4>
 
 				<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
 					<div className="space-y-1">
-						<label htmlFor="lab-order-tooth" className="text-xs text-slate-400">
+						<label htmlFor="lab-order-tooth" className="text-xs text-slate-600 dark:text-slate-400">
 							Зуб (FDI)
 						</label>
 						<input
@@ -415,14 +415,14 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							placeholder="Напр. 16, 24"
 							value={toothFdi}
 							onChange={(e) => setToothFdi(e.target.value)}
-							className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
+							className="w-full min-h-[38px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-500"
 						/>
 					</div>
 
 					<div className="space-y-1">
 						<label
 							htmlFor="lab-order-material"
-							className="text-xs text-slate-400"
+							className="text-xs text-slate-600 dark:text-slate-400"
 						>
 							Материал
 						</label>
@@ -430,7 +430,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							id="lab-order-material"
 							value={material}
 							onChange={(e) => setMaterial(e.target.value)}
-							className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
+							className="w-full min-h-[38px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-500"
 						>
 							<option value="zirconia">Диоксид циркония</option>
 							<option value="emax">E.max (керамика)</option>
@@ -443,7 +443,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 					<div className="space-y-1">
 						<label
 							htmlFor="lab-order-color-vita"
-							className="text-xs text-slate-400"
+							className="text-xs text-slate-600 dark:text-slate-400"
 						>
 							Цвет (Vita)
 						</label>
@@ -451,7 +451,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							id="lab-order-color-vita"
 							value={colorVita}
 							onChange={(e) => setColorVita(e.target.value)}
-							className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
+							className="w-full min-h-[38px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-500"
 						>
 							{[
 								"OM1",
@@ -478,16 +478,9 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 					</div>
 
 					<div className="space-y-1">
-						<label htmlFor="lab-order-price" className="text-xs text-slate-400">
+						<label htmlFor="lab-order-price" className="text-xs text-slate-600 dark:text-slate-400">
 							Стоимость, ₽
 						</label>
-						{/*
-							Было type="number". Такое поле в русском браузере не принимает
-							запятую: «12500,50» стирается в пустоту прямо под рукой, и наряд
-							уходит без цены. Обычное текстовое поле с цифровой клавиатурой на
-							телефоне принимает и «12 500», и «12500,50» — разбирает их
-							normalizeRubAmountInput при отправке.
-						*/}
 						<input
 							id="lab-order-price"
 							type="text"
@@ -495,7 +488,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							placeholder="например 12500"
 							value={priceRub}
 							onChange={(e) => setPriceRub(e.target.value)}
-							className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
+							className="w-full min-h-[38px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-500"
 						/>
 					</div>
 				</div>
@@ -504,7 +497,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 					<div className="space-y-1">
 						<label
 							htmlFor="lab-order-doctor"
-							className="text-xs text-slate-400"
+							className="text-xs text-slate-600 dark:text-slate-400"
 						>
 							Лечащий врач
 						</label>
@@ -512,7 +505,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							id="lab-order-doctor"
 							value={doctorId}
 							onChange={(e) => setDoctorId(e.target.value)}
-							className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
+							className="w-full min-h-[38px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-500"
 						>
 							<option value="">Не указан</option>
 							{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
@@ -527,7 +520,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 					<div className="space-y-1">
 						<label
 							htmlFor="lab-order-due-date"
-							className="text-xs text-slate-400"
+							className="text-xs text-slate-600 dark:text-slate-400"
 						>
 							Срок готовности
 						</label>
@@ -536,14 +529,14 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							type="datetime-local"
 							value={dueDate}
 							onChange={(e) => setDueDate(e.target.value)}
-							className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
+							className="w-full min-h-[38px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-500"
 						/>
 					</div>
 
 					<div className="space-y-1">
 						<label
 							htmlFor="lab-order-clinical-notes"
-							className="text-xs text-slate-400"
+							className="text-xs text-slate-600 dark:text-slate-400"
 						>
 							Клиническое примечание
 						</label>
@@ -553,7 +546,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							placeholder="Опишите особенности прикуса, уступы..."
 							value={clinicalNotes}
 							onChange={(e) => setClinicalNotes(e.target.value)}
-							className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
+							className="w-full min-h-[38px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-500"
 						/>
 					</div>
 				</div>
@@ -562,7 +555,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 					type="submit"
 					disabled={isCreating}
 					aria-busy={isCreating}
-					className="w-full py-2 bg-teal-500 hover:bg-teal-600 active:bg-teal-700 text-[#1e293b] font-bold rounded-lg text-xs transition-colors shadow-md shadow-teal-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+					className="w-full min-h-[44px] py-2 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold rounded-lg text-xs transition-colors shadow-md shadow-teal-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
 				>
 					{isCreating ? "Создание..." : "Создать наряд ЗТЛ"}
 				</button>
@@ -700,7 +693,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 												e.target.value as LabOrder["status"],
 											)
 										}
-										className="py-1 px-2 bg-[#1e293b] border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-teal-500"
+										className="py-1.5 px-2.5 min-h-[36px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-200 focus:outline-none focus:border-teal-500 text-xs"
 										title="Изменить статус заказа ЗТЛ"
 									>
 										{clinicStatusFlow.map((s) => (
@@ -719,15 +712,9 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 									<button
 										type="button"
 										onClick={() => copyPortalLink(order.secureToken)}
-										className="py-1 px-2.5 bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 border border-teal-500/20 rounded-lg font-semibold transition-colors flex items-center gap-1"
+										className="py-1.5 px-2.5 min-h-[36px] bg-teal-50 dark:bg-teal-500/10 hover:bg-teal-100 dark:hover:bg-teal-500/20 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-500/20 rounded-lg font-semibold transition-colors flex items-center gap-1 text-xs"
 									>
 										<Link className="w-3.5 h-3.5" />
-										{/*
-											Было «Линк» — английское слово русскими буквами, которое
-											на этом экране не объясняет ничего. Кнопка копирует
-											ссылку для зуботехника, о чём и говорит всплывающая
-											подсказка после нажатия.
-										*/}
 										Ссылка технику
 									</button>
 									<button

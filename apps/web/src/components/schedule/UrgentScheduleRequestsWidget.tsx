@@ -67,62 +67,48 @@ export function UrgentScheduleRequestsWidget() {
 	};
 
 	if (loading) {
-		return <div>Загрузка...</div>;
+		return (
+			<div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-xs text-slate-500 dark:text-slate-400">
+				Загрузка срочных обращений...
+			</div>
+		);
 	}
 
 	if (requests.length === 0) {
 		return (
-			<div>
-				<p style={{ color: "var(--muted)", fontSize: "14px" }}>
-					Срочных обращений нет. Окна резерва готовы
-				</p>
+			<div className="p-3 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/30 text-xs text-slate-500 dark:text-slate-400 text-center">
+				Срочных обращений нет. Окна резерва готовы к записи.
 			</div>
 		);
 	}
 
 	return (
-		<div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-			<h3 style={{ fontSize: "16px", fontWeight: 600 }}>Срочные обращения</h3>
+		<div className="flex flex-col gap-2.5">
+			<h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 m-0">
+				Срочные обращения
+			</h3>
 			{requests.map((r) => (
 				<div
 					key={r.id}
-					style={{
-						border: "1px solid var(--border)",
-						borderRadius: "8px",
-						padding: "12px",
-						background: "var(--background)",
-					}}
+					className="p-3 rounded-xl border shadow-sm bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 space-y-2"
 				>
-					<div style={{ fontWeight: 500, marginBottom: "4px" }}>
-						{r.patientName} - {r.requestType}
+					<div className="font-semibold text-xs flex items-center justify-between">
+						<span>{r.patientName}</span>
+						<span className="text-[11px] font-normal text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 px-1.5 py-0.5 rounded border border-rose-200 dark:border-rose-800">
+							{r.requestType}
+						</span>
 					</div>
-					<div
-						style={{
-							fontSize: "14px",
-							color: "var(--muted)",
-							marginBottom: "8px",
-						}}
-					>
-						Уровень срочности: {r.urgencyLevel}
-						<br />
-						Врач: {r.doctorName || "Любой"}
-						<br />
-						Желаемое время: {r.preferredSlotTime || "Не указано"}
+					<div className="text-[11px] text-slate-500 dark:text-slate-400 space-y-0.5">
+						<div>Уровень срочности: <strong className="text-slate-700 dark:text-slate-300">{r.urgencyLevel}</strong></div>
+						<div>Врач: <span className="text-slate-700 dark:text-slate-300">{r.doctorName || "Любой свободный"}</span></div>
+						<div>Желаемое время: <span className="text-slate-700 dark:text-slate-300">{r.preferredSlotTime || "Не указано"}</span></div>
 					</div>
 					<button
 						type="button"
 						onClick={() => handleResolve(r.id)}
-						style={{
-							background: "var(--primary)",
-							color: "var(--primary-foreground)",
-							border: "none",
-							padding: "6px 12px",
-							borderRadius: "4px",
-							cursor: "pointer",
-							fontSize: "14px",
-						}}
+						className="primary-button min-h-[44px] w-full text-xs font-semibold"
 					>
-						Отметить решенным
+						Отметить решённым
 					</button>
 				</div>
 			))}

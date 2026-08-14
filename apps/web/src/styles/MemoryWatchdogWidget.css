@@ -17,13 +17,35 @@
 }
 
 .memory-watchdog-widget.warning {
-	border-left-color: #f59e0b; /* amber-500 */
-	background-color: #fffbeb; /* amber-50 */
+	border-left-color: var(--warn, #f59e0b);
+	background-color: var(--warn-bg, #fffbeb);
+	border: 1px solid var(--line, #e2e8f0);
+	border-left-width: 4px;
+	border-left-color: var(--warn, #f59e0b);
 }
 
 .memory-watchdog-widget.critical {
-	border-left-color: #ef4444; /* red-500 */
-	background-color: #fef2f2; /* red-50 */
+	border-left-color: var(--danger, #ef4444);
+	background-color: var(--danger-bg, #fef2f2);
+	border: 1px solid var(--line, #e2e8f0);
+	border-left-width: 4px;
+	border-left-color: var(--danger, #ef4444);
+}
+
+[data-theme="dark"] .memory-watchdog-widget.warning,
+[data-theme="night"] .memory-watchdog-widget.warning,
+.dark .memory-watchdog-widget.warning {
+	background-color: rgba(245, 158, 11, 0.12);
+	border-color: rgba(245, 158, 11, 0.3);
+	border-left-color: #f59e0b;
+}
+
+[data-theme="dark"] .memory-watchdog-widget.critical,
+[data-theme="night"] .memory-watchdog-widget.critical,
+.dark .memory-watchdog-widget.critical {
+	background-color: rgba(239, 68, 68, 0.12);
+	border-color: rgba(239, 68, 68, 0.3);
+	border-left-color: #ef4444;
 }
 
 .memory-watchdog-icon {
@@ -34,11 +56,11 @@
 }
 
 .memory-watchdog-widget.warning .memory-watchdog-icon {
-	color: #d97706; /* amber-600 */
+	color: var(--warn, #d97706);
 }
 
 .memory-watchdog-widget.critical .memory-watchdog-icon {
-	color: #dc2626; /* red-600 */
+	color: var(--danger, #dc2626);
 }
 
 .memory-watchdog-content {
@@ -51,12 +73,12 @@
 .memory-watchdog-title {
 	font-weight: 600;
 	font-size: 14px;
-	color: #111827; /* gray-900 */
+	color: var(--ink, #111827);
 }
 
 .memory-watchdog-details {
 	font-size: 13px;
-	color: #4b5563; /* gray-600 */
+	color: var(--muted, #4b5563);
 	line-height: 1.4;
 }
 
@@ -73,19 +95,19 @@
 }
 
 .memory-watchdog-widget.warning .memory-watchdog-action {
-	color: #b45309; /* amber-700 */
-	background: #fef3c7; /* amber-100 */
+	color: var(--warn, #b45309);
+	background: rgba(245, 158, 11, 0.15);
 }
 .memory-watchdog-widget.warning .memory-watchdog-action:hover {
-	background: #fde68a; /* amber-200 */
+	background: rgba(245, 158, 11, 0.25);
 }
 
 .memory-watchdog-widget.critical .memory-watchdog-action {
-	color: #b91c1c; /* red-700 */
-	background: #fee2e2; /* red-100 */
+	color: var(--danger, #b91c1c);
+	background: rgba(239, 68, 68, 0.15);
 }
 .memory-watchdog-widget.critical .memory-watchdog-action:hover {
-	background: #fecaca; /* red-200 */
+	background: rgba(239, 68, 68, 0.25);
 }
 
 @keyframes slideInUp {
