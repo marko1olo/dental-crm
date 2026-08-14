@@ -96,6 +96,11 @@ graph TD
 ---
 
 ## 🩺 Practical Clinical Workflows & Doctor Cockpit Architecture
+<p align="center">
+  <img src="https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/dente_operatory.jpg" width="100%" alt="DENTE Next-Gen Clinical Operatory & DICOM Cockpit"/>
+</p>
+
+
 
 DENTE is built specifically around the day-to-day operational reality of private dental clinics: fast appointment flow, zero-lag tooth chart updates, automated paperwork generation, and rock-solid billing integrity.
 
