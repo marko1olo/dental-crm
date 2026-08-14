@@ -19,6 +19,8 @@ import {
 	ShieldAlert,
 } from "lucide-react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
+import { actionFailureToast } from "../../lib/panelStateText";
+import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 
 interface PeriodontalChartModuleProps {
@@ -97,7 +99,7 @@ export function PeriodontalChartModule({
 					}
 				}
 			} catch (err) {
-				console.error("Failed to load perio chart:", err);
+				logger.error("[perio] Ошибка загрузки пародонтологической карты:", err);
 			} finally {
 				if (isMounted) setLoading(false);
 			}
@@ -151,11 +153,27 @@ export function PeriodontalChartModule({
 					"success",
 				);
 			} else {
-				const errJson = await res.json().catch(() => ({}));
-				showToast(errJson.message || "Не удалось сохранить карту", "error");
+				const errJson = (await res.json().catch(() => ({}))) as {
+					message?: string;
+				};
+				showToast(
+					errJson.message ||
+						"Не удалось сохранить пародонтологическую карту: проверьте данные приёма.",
+					"error",
+				);
 			}
-		} catch (err: any) {
-			showToast(err.message || "Сетевая ошибка при отправке карты", "error");
+		} catch (err) {
+			logger.error(
+				"[perio] Ошибка отправки пародонтологической карты:",
+				err,
+			);
+			showToast(
+				actionFailureToast(
+					"Ошибка отправки пародонтологической карты",
+					(err as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
 		} finally {
 			setSaving(false);
 		}

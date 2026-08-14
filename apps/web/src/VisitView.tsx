@@ -411,6 +411,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const [smartParsedData, setSmartParsedData] = useState<any>(null);
 
+	const setVisitNoteForm = useVisitStore((state) => state.setVisitNoteForm);
 	const _visitAiDiagnosesByCode = useVisitStore(
 		(state) => state.visitAiDiagnosesByCode,
 	);
@@ -2484,7 +2485,27 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				/>
 				{activePatient?.id ? (
 					<div className="mt-4" data-testid="visit-note-draft-mount">
-						<VisitNoteDraftPanel patientId={activePatient.id} />
+						<VisitNoteDraftPanel
+							patientId={activePatient.id}
+							initialTranscript={transcript}
+							onApply={(draft) => {
+								if (draft) {
+									setVisitNoteForm((prev) => ({
+										...prev,
+										complaint: draft.complaint ?? prev.complaint,
+										anamnesis: draft.anamnesis ?? prev.anamnesis,
+										objectiveStatus:
+											draft.objectiveStatus ?? prev.objectiveStatus,
+										diagnosis: draft.diagnosis ?? prev.diagnosis,
+										treatmentPlan: draft.treatmentPlan ?? prev.treatmentPlan,
+									}));
+									showToast(
+										"Черновик приема успешно применен в форму",
+										"success",
+									);
+								}
+							}}
+						/>
 					</div>
 				) : null}
 

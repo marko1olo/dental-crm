@@ -205,10 +205,13 @@ export function VisitEmkTab() {
 			document.body.removeChild(a);
 			URL.revokeObjectURL(url);
 			showToast("Документ CDA R2 (XML) успешно скачан", "success");
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (err: any) {
+		} catch (err) {
+			logger.error("[EMK] Ошибка скачивания CDA R2:", err);
 			showToast(
-				`Не удалось скачать CDA R2: ${err?.message || "Ошибка сети"}`,
+				actionFailureToast(
+					"Ошибка скачивания CDA R2",
+					(err as { status?: number })?.status ?? null,
+				),
 				"error",
 			);
 		} finally {
@@ -248,8 +251,7 @@ export function VisitEmkTab() {
 				body: JSON.stringify({ visitId, barcode: trayBarcode.trim() }),
 			});
 			if (!res.ok) {
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				const errData = await res.json().catch((err: any) => {
+				const errData = (await res.json().catch((err: unknown) => {
 					logger.error(err);
 					showToast(
 						actionFailureToast(
@@ -259,7 +261,7 @@ export function VisitEmkTab() {
 						"error",
 					);
 					return null;
-				});
+				})) as { message?: string; error?: string } | null;
 				showToast(
 					errData?.message ||
 						errData?.error ||
@@ -274,10 +276,13 @@ export function VisitEmkTab() {
 				`Лоток ${trayBarcode.trim()} успешно привязан к дневнику приема`,
 				"success",
 			);
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (err: any) {
+		} catch (err) {
+			logger.error("[EMK] Ошибка привязки лотка стерилизации:", err);
 			showToast(
-				`Ошибка привязки лотка: ${err?.message || "Ошибка сети"}`,
+				actionFailureToast(
+					"Ошибка привязки лотка стерилизации",
+					(err as { status?: number })?.status ?? null,
+				),
 				"error",
 			);
 		} finally {
