@@ -178,6 +178,19 @@
      использования классов в apps/web/src), поэтому речь о будущем подключении, а
      не о живом экране. */
 	--text-muted: var(--ink-2);
+
+	/* Семантические расширения токенов для идеальной совместимости */
+	--warn: var(--warn-fg, #d97706);
+	--warn-border: rgba(217, 119, 6, 0.3);
+	--border: var(--line);
+	--surface-2: var(--paper-soft);
+	--surface-floating: var(--paper-strong);
+	--danger-bg: var(--bad-bg);
+	--text: var(--ink);
+	--text-2: var(--ink-2, var(--ink));
+	--amber-800: var(--warn-fg, #92400e);
+	--primary-strong: var(--teal-dark, #0f766e);
+	--violet-700: var(--teal-dark, #0f766e);
 }
 
 /* Светлые значения ровно те, что были зашиты в main.css.
