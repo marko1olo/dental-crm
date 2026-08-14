@@ -782,6 +782,21 @@ async function runDiarySigningCeremony(
 			diagnosisTooth: diary.diagnosisTooth,
 			treatmentDescription: diary.treatmentDescription,
 		});
+
+		await tx
+			.update(visits)
+			.set({
+				status: "signed",
+				signedAt: lockedAt,
+				updatedAt: lockedAt,
+			})
+			.where(
+				and(
+					eq(visits.id, diary.visitId),
+					eq(visits.organizationId, organizationId),
+					eq(visits.status, "draft"),
+				),
+			);
 	}
 
 	return {

@@ -336,7 +336,7 @@ export function computeDoctorPayout(
 	if (labOrdersCount > 0 && labCostRub > 0) {
 		const labPct = isUsablePercent(input.labDeductionPct ?? null)
 			? (input.labDeductionPct as number)
-			: 100;
+			: input.commissionPct;
 		withheldLabRub = percentOfMoney(labCostRub, labPct);
 	}
 
@@ -590,9 +590,15 @@ function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 				and(
 					eq(labOrders.organizationId, organizationId),
 					isNotNull(labOrders.doctorId),
-					inArray(labOrders.status, ["delivered", "fitted", "completed"]),
-					gte(labOrders.createdAt, from),
-					lte(labOrders.createdAt, to),
+					inArray(labOrders.status, ["received", "completed"]),
+					gte(
+						sql`coalesce(${labOrders.completedAt}, ${labOrders.createdAt})`,
+						from,
+					),
+					lte(
+						sql`coalesce(${labOrders.completedAt}, ${labOrders.createdAt})`,
+						to,
+					),
 				),
 			)
 			.groupBy(labOrders.doctorId),
@@ -611,6 +617,7 @@ function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 				userId: doctorCommissions.userId,
 				commissionPct: doctorCommissions.commissionPct,
 				materialDeductionPct: doctorCommissions.materialCostDeductionPct,
+				labDeductionPct: doctorCommissions.labCostDeductionPct,
 				effectiveFrom: doctorCommissions.effectiveFrom,
 				rowNumber: sql<number>`row_number() over (
 					partition by ${doctorCommissions}."user_id"
@@ -736,6 +743,7 @@ function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 					),
 				commissionPct: rateCandidates.commissionPct,
 				materialDeductionPct: rateCandidates.materialDeductionPct,
+				labDeductionPct: rateCandidates.labDeductionPct,
 				rateEffectiveFrom: rateCandidates.effectiveFrom,
 				rateRowCount:
 					sql<number>`coalesce(${rateCandidates.rateRowCount}, 0)::int`.as(

@@ -3345,6 +3345,12 @@ export const doctorCommissions = pgTable(
 		})
 			.notNull()
 			.default("0"),
+		labCostDeductionPct: numeric("lab_cost_deduction_pct", {
+			precision: 5,
+			scale: 2,
+		})
+			.notNull()
+			.default("0"),
 		isActive: boolean("is_active").notNull().default(true),
 		effectiveFrom: timestamp("effective_from", { withTimezone: true })
 			.notNull()

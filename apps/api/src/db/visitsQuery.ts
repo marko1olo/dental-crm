@@ -343,6 +343,22 @@ export async function acceptVisitDraftInDb(
 			transactionType: "auto_deduct",
 		});
 
+		// Atomically lock corresponding visit_diaries row if present
+		await tx
+			.update(schema.visitDiaries)
+			.set({
+				isLocked: true,
+				lockedAt: savedAt,
+				updatedAt: savedAt,
+			})
+			.where(
+				and(
+					eq(schema.visitDiaries.visitId, input.visitId),
+					eq(schema.visitDiaries.organizationId, organizationId),
+					eq(schema.visitDiaries.isLocked, false),
+				),
+			);
+
 		const signedVisit = projectVisitRow(signedRow);
 		const saveReceipt = buildVisitSaveReceipt(
 			input,
