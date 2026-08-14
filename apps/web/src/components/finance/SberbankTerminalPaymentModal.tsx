@@ -151,8 +151,28 @@ export function SberbankTerminalPaymentModal({
 					// временная сетевая ошибка не значит, что платёж отклонён.
 					return;
 				}
-				const data = await res.json().catch(() => ({}));
-				if (data.status === "PAID" || data.status === "CONFIRMED") {
+				const data = (await res.json().catch(() => ({}))) as {
+					success?: boolean;
+					status?: string;
+					errorDescription?: string;
+					message?: string;
+				};
+				const normalizedStatus =
+					typeof data.status === "string" ? data.status.toUpperCase() : "";
+				const isSuccess =
+					data.success === true ||
+					normalizedStatus === "PAID" ||
+					normalizedStatus === "CONFIRMED" ||
+					normalizedStatus === "SUCCESS" ||
+					normalizedStatus === "APPROVED";
+				const isFailed =
+					normalizedStatus === "FAILED" ||
+					normalizedStatus === "DECLINED" ||
+					normalizedStatus === "EXPIRED" ||
+					normalizedStatus === "ERROR" ||
+					normalizedStatus === "REJECTED";
+
+				if (isSuccess) {
 					setStatus("success");
 					clearInterval(interval);
 					showToast("Оплата через терминал успешно принята", "success");
@@ -160,11 +180,7 @@ export function SberbankTerminalPaymentModal({
 						onSuccess();
 						onClose();
 					}, 1500);
-				} else if (
-					data.status === "FAILED" ||
-					data.status === "DECLINED" ||
-					data.status === "EXPIRED"
-				) {
+				} else if (isFailed) {
 					setStatus("error");
 					setErrorMsg(
 						data.errorDescription ||
