@@ -5691,3 +5691,78 @@ export const patientReferrals = pgTable(
 	}),
 );
 
+// ─── Anesthesia & Vital Signs Monitoring Logs ────────────────────────────────
+
+export const anesthesiaLogs = pgTable(
+	"anesthesia_logs",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		visitId: uuid("visit_id").references(() => visits.id, {
+			onDelete: "set null",
+		}),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id, { onDelete: "cascade" }),
+		doctorId: uuid("doctor_id").references(() => users.id, {
+			onDelete: "set null",
+		}),
+		technique: text("technique").notNull().default("infiltration"),
+		drug: text("drug").notNull().default("articaine"),
+		drugBrandName: text("drug_brand_name").notNull().default("Ультракаин Д-С"),
+		concentrationPct: numeric("concentration_pct", { precision: 4, scale: 2 })
+			.notNull()
+			.default("4.00"),
+		vasoconstrictor: text("vasoconstrictor").notNull().default("1:200000"),
+		carpuleVolumeMl: numeric("carpule_volume_ml", { precision: 4, scale: 2 })
+			.notNull()
+			.default("1.70"),
+		carpulesAdministered: numeric("carpules_administered", {
+			precision: 4,
+			scale: 2,
+		})
+			.notNull()
+			.default("1.00"),
+		totalDoseMg: numeric("total_dose_mg", { precision: 6, scale: 2 }).notNull(),
+		maxAllowedDoseMg: numeric("max_allowed_dose_mg", {
+			precision: 6,
+			scale: 2,
+		}).notNull(),
+		epinephrineMg: numeric("epinephrine_mg", { precision: 6, scale: 4 })
+			.notNull()
+			.default("0.0000"),
+		maxEpinephrineMg: numeric("max_epinephrine_mg", {
+			precision: 6,
+			scale: 4,
+		})
+			.notNull()
+			.default("0.2000"),
+		aspirationTestPositive: boolean("aspiration_test_positive")
+			.notNull()
+			.default(false),
+		toothNumbers: jsonb("tooth_numbers").notNull().default(sql`'[]'::jsonb`),
+		injectionSite: text("injection_site"),
+		lotNumber: text("lot_number"),
+		expirationDate: date("expiration_date"),
+		vitalsPre: jsonb("vitals_pre"),
+		vitalsIntra: jsonb("vitals_intra"),
+		vitalsPost: jsonb("vitals_post"),
+		notes: text("notes"),
+		complications: text("complications"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		orgPatientIdx: index("anesthesia_logs_org_patient_idx").on(
+			t.organizationId,
+			t.patientId,
+			t.createdAt,
+		),
+		visitIdx: index("anesthesia_logs_visit_idx").on(t.visitId),
+	}),
+);
+
+

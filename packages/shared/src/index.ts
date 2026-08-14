@@ -12201,3 +12201,241 @@ export function calculateCashbackPoints(
 	return Number((cashbackRub / pointRateRub).toFixed(2));
 }
 
+// ─── Clinical Anesthesia, Sedation & Vital Signs Safety Engine ───────────────
+
+export const anestheticDrugSchema = z.enum([
+	"articaine",
+	"mepivacaine",
+	"lidocaine",
+	"bupivacaine",
+]);
+export type AnestheticDrug = z.infer<typeof anestheticDrugSchema>;
+
+export const vasoconstrictorRatioSchema = z.enum([
+	"none",
+	"1:100000",
+	"1:200000",
+	"1:50000",
+]);
+export type VasoconstrictorRatio = z.infer<typeof vasoconstrictorRatioSchema>;
+
+export const anesthesiaTechniqueSchema = z.enum([
+	"infiltration",
+	"mandibular_block",
+	"tuberal_block",
+	"infraorbital_block",
+	"incisive_block",
+	"palatine_block",
+	"mental_block",
+	"intraligamentary",
+	"intraseptal",
+	"intraosseous",
+	"sedation_nitrous",
+	"sedation_iv",
+]);
+export type AnesthesiaTechnique = z.infer<typeof anesthesiaTechniqueSchema>;
+
+export const asaClassificationSchema = z.enum([
+	"ASA_I",
+	"ASA_II",
+	"ASA_III",
+	"ASA_IV",
+]);
+export type AsaClassification = z.infer<typeof asaClassificationSchema>;
+
+export const vitalSignsMeasurementSchema = z.object({
+	systolicBp: z.number().int().min(40).max(300),
+	diastolicBp: z.number().int().min(20).max(200),
+	heartRateBpm: z.number().int().min(30).max(250),
+	spO2Pct: z.number().int().min(50).max(100).optional().nullable(),
+	respiratoryRate: z.number().int().min(5).max(60).optional().nullable(),
+	measuredAt: z.string(),
+});
+export type VitalSignsMeasurement = z.infer<typeof vitalSignsMeasurementSchema>;
+
+export const anesthesiaLogRecordSchema = z.object({
+	id: z.string().uuid().optional(),
+	organizationId: z.string().uuid(),
+	visitId: z.string().uuid().optional().nullable(),
+	patientId: z.string().uuid(),
+	doctorId: z.string().uuid().optional().nullable(),
+	technique: anesthesiaTechniqueSchema,
+	drug: anestheticDrugSchema,
+	drugBrandName: z.string().default("Ультракаин Д-С"),
+	concentrationPct: z.number().positive().default(4.0),
+	vasoconstrictor: vasoconstrictorRatioSchema.default("1:200000"),
+	carpuleVolumeMl: z.number().positive().default(1.7),
+	carpulesAdministered: z.number().positive().default(1.0),
+	totalDoseMg: z.number().nonnegative(),
+	maxAllowedDoseMg: z.number().nonnegative(),
+	epinephrineMg: z.number().nonnegative().default(0),
+	maxEpinephrineMg: z.number().nonnegative().default(0.2),
+	aspirationTestPositive: z.boolean().default(false),
+	toothNumbers: z.array(z.number().int()).default([]),
+	injectionSite: z.string().optional().nullable(),
+	lotNumber: z.string().optional().nullable(),
+	expirationDate: z.string().optional().nullable(),
+	vitalsPre: vitalSignsMeasurementSchema.optional().nullable(),
+	vitalsIntra: vitalSignsMeasurementSchema.optional().nullable(),
+	vitalsPost: vitalSignsMeasurementSchema.optional().nullable(),
+	notes: z.string().optional().nullable(),
+	complications: z.string().optional().nullable(),
+	createdAt: z.string().optional(),
+});
+export type AnesthesiaLogRecord = z.infer<typeof anesthesiaLogRecordSchema>;
+
+export interface AnestheticSafetyCalculation {
+	totalAnestheticMg: number;
+	maxRecommendedAnestheticMg: number;
+	anestheticUtilizationPct: number;
+	totalEpinephrineMg: number;
+	maxRecommendedEpinephrineMg: number;
+	epinephrineUtilizationPct: number;
+	isAnestheticOverdose: boolean;
+	isEpinephrineOverdose: boolean;
+	maxSafeCarpules: number;
+	remainingSafeCarpules: number;
+	clinicalWarnings: string[];
+}
+
+/**
+ * Расчёт предельно допустимой дозы (MRD) и карпул анестетика с проверкой токсичности.
+ */
+export function calculateAnestheticSafety(params: {
+	drug: AnestheticDrug;
+	concentrationPct: number;
+	vasoconstrictor: VasoconstrictorRatio;
+	carpuleVolumeMl: number;
+	carpulesAdministered: number;
+	patientWeightKg: number;
+	patientAgeYears?: number;
+	asaClass?: AsaClassification;
+	hasCardiovascularDisease?: boolean;
+}): AnestheticSafetyCalculation {
+	const {
+		drug,
+		concentrationPct,
+		vasoconstrictor,
+		carpuleVolumeMl,
+		carpulesAdministered,
+		patientWeightKg,
+		patientAgeYears = 35,
+		asaClass = "ASA_I",
+		hasCardiovascularDisease = false,
+	} = params;
+
+	const weight = Math.max(5, Math.min(250, patientWeightKg));
+	const warnings: string[] = [];
+
+	// 1. Определение предельной дозы на 1 кг массы тела (MRD) и абсолютного максимума
+	let mrdPerKg = 7.0; // мг/кг
+	let absoluteMaxMg = 500; // мг
+
+	if (drug === "articaine") {
+		mrdPerKg = 7.0;
+		absoluteMaxMg = 500;
+		if (patientAgeYears < 4) {
+			warnings.push("Артикаин противопоказан детям в возрасте до 4 лет.");
+		} else if (patientAgeYears < 12) {
+			mrdPerKg = 5.0; // консервативный педиатрический предел
+		}
+	} else if (drug === "mepivacaine") {
+		mrdPerKg = 6.6;
+		absoluteMaxMg = 400;
+	} else if (drug === "lidocaine") {
+		mrdPerKg = vasoconstrictor === "none" ? 4.4 : 7.0;
+		absoluteMaxMg = vasoconstrictor === "none" ? 300 : 500;
+	} else if (drug === "bupivacaine") {
+		mrdPerKg = 2.0;
+		absoluteMaxMg = 90;
+	}
+
+	const maxRecommendedAnestheticMg = Number(
+		Math.min(absoluteMaxMg, weight * mrdPerKg).toFixed(1),
+	);
+
+	// 2. Расчет содержания анестетика в 1 карпуле
+	const mgPerMl = concentrationPct * 10;
+	const mgPerCarpule = mgPerMl * carpuleVolumeMl;
+	const totalAnestheticMg = Number((carpulesAdministered * mgPerCarpule).toFixed(1));
+
+	// 3. Расчет вазоконстриктора (Адреналин / Эпинефрин)
+	let epiMgPerMl = 0;
+	if (vasoconstrictor === "1:100000") epiMgPerMl = 0.01;
+	else if (vasoconstrictor === "1:200000") epiMgPerMl = 0.005;
+	else if (vasoconstrictor === "1:50000") epiMgPerMl = 0.02;
+
+	const totalEpinephrineMg = Number(
+		(carpulesAdministered * carpuleVolumeMl * epiMgPerMl).toFixed(4),
+	);
+
+	// Кардиальный предел адреналина: 0.04 мг при сердечно-сосудистой патологии (ASA III/IV), иначе 0.2 мг
+	const isCardiacRisk =
+		hasCardiovascularDisease || asaClass === "ASA_III" || asaClass === "ASA_IV";
+	const maxRecommendedEpinephrineMg = isCardiacRisk ? 0.04 : 0.2;
+
+	if (isCardiacRisk && vasoconstrictor !== "none") {
+		warnings.push(
+			"Кардиальный риск (ASA III/IV): лимит адреналина снижен до 0.04 мг (макс. 2 карпулы 1:100k или 4 карпулы 1:200k).",
+		);
+	}
+
+	// 4. Расчет максимального безопасного количества карпул
+	const maxCarpulesByDrug = mgPerCarpule > 0 ? maxRecommendedAnestheticMg / mgPerCarpule : 0;
+	const maxCarpulesByEpi =
+		epiMgPerMl > 0
+			? maxRecommendedEpinephrineMg / (carpuleVolumeMl * epiMgPerMl)
+			: 999;
+
+	const maxSafeCarpules = Number(
+		Math.min(maxCarpulesByDrug, maxCarpulesByEpi).toFixed(1),
+	);
+	const remainingSafeCarpules = Number(
+		Math.max(0, maxSafeCarpules - carpulesAdministered).toFixed(1),
+	);
+
+	const anestheticUtilizationPct = Number(
+		((totalAnestheticMg / (maxRecommendedAnestheticMg || 1)) * 100).toFixed(1),
+	);
+	const epinephrineUtilizationPct =
+		maxRecommendedEpinephrineMg > 0
+			? Number(
+					(
+						(totalEpinephrineMg / maxRecommendedEpinephrineMg) *
+						100
+					).toFixed(1),
+				)
+			: 0;
+
+	const isAnestheticOverdose = totalAnestheticMg > maxRecommendedAnestheticMg;
+	const isEpinephrineOverdose =
+		vasoconstrictor !== "none" &&
+		totalEpinephrineMg > maxRecommendedEpinephrineMg;
+
+	if (isAnestheticOverdose) {
+		warnings.push(
+			`ПРЕВЫШЕНА ТОКСИЧЕСКАЯ ДОЗА АНЕСТЕТИКА: ${totalAnestheticMg} мг при допустимом максимуме ${maxRecommendedAnestheticMg} мг!`,
+		);
+	}
+	if (isEpinephrineOverdose) {
+		warnings.push(
+			`ПРЕВЫШЕНА ДОЗА АДРЕНАЛИНА: ${totalEpinephrineMg} мг при максимуме ${maxRecommendedEpinephrineMg} мг!`,
+		);
+	}
+
+	return {
+		totalAnestheticMg,
+		maxRecommendedAnestheticMg,
+		anestheticUtilizationPct,
+		totalEpinephrineMg,
+		maxRecommendedEpinephrineMg,
+		epinephrineUtilizationPct,
+		isAnestheticOverdose,
+		isEpinephrineOverdose,
+		maxSafeCarpules,
+		remainingSafeCarpules,
+		clinicalWarnings: warnings,
+	};
+}
+
+
