@@ -1,7 +1,7 @@
 import { and, eq, gte, lte, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { requireClinicalMutationAccess } from "../../accessGuard.js";
+import { requireClinicalReadAccess } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
 import { payments } from "../../db/schema.js";
@@ -21,11 +21,20 @@ const ndflQuerySchema = z.object({
 
 export async function register(app: FastifyInstance) {
 	app.get("/api/documents/ndfl-calculator", async (request, reply) => {
-		if (!(await requireClinicalMutationAccess(request, reply, "document read")))
+		if (!(await requireClinicalReadAccess(request, reply, "document read")))
 			return;
 		const organizationId = requireOrganizationId(request, reply);
 		if (!organizationId) return;
-		const query = ndflQuerySchema.parse(request.query);
+
+		const parsed = ndflQuerySchema.safeParse(request.query);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "NdflQueryValidationError",
+				message:
+					"Проверьте параметры запроса: требуется идентификатор пациента (UUID) и даты периода (ISO).",
+			});
+		}
+		const query = parsed.data;
 		const start = new Date(query.startDate);
 		const end = new Date(query.endDate);
 
