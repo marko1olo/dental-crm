@@ -71,73 +71,75 @@ export function ScheduleFilterStrip({
 					borderRight: "1px solid var(--line)",
 					paddingRight: "12px",
 					marginRight: "4px",
-					height: "32px",
 				}}
 			>
-				<button
-					type="button"
-					className="secondary-button schedule-day-step-prev"
-					onClick={() => stepScheduleDay(-1)}
-					aria-label="Показать предыдущий день"
-					title="День назад"
+				<div
+					className="schedule-date-stepper"
 					style={{
-						height: "32px",
-						minHeight: "32px",
-						maxHeight: "32px",
-						padding: "0 8px",
-						lineHeight: "1",
 						display: "inline-flex",
 						alignItems: "center",
-						justifyContent: "center",
-						boxSizing: "border-box",
+						gap: "4px",
 					}}
 				>
-					<ChevronLeft size={16} aria-hidden="true" />
-				</button>
-				<input
-					type="date"
-					aria-label="Фильтр расписания по дате"
-					value={scheduleDateFilter}
-					onChange={(event) => setScheduleDateFilter(event.target.value)}
-					style={{
-						height: "32px",
-						minHeight: "32px",
-						maxHeight: "32px",
-						lineHeight: "1",
-						boxSizing: "border-box",
-						border: "1px solid var(--line)",
-						borderRadius: "8px",
-						background: "var(--paper-soft)",
-						padding: "4px 8px",
-						fontSize: "13px",
-						fontWeight: 600,
-						color: "var(--ink)",
-						outline: "none",
-						cursor: "pointer",
-						display: "inline-flex",
-						alignItems: "center",
-					}}
-				/>
-				<button
-					type="button"
-					className="secondary-button schedule-day-step-next"
-					onClick={() => stepScheduleDay(1)}
-					aria-label="Показать следующий день"
-					title="День вперёд"
-					style={{
-						height: "32px",
-						minHeight: "32px",
-						maxHeight: "32px",
-						padding: "0 8px",
-						lineHeight: "1",
-						display: "inline-flex",
-						alignItems: "center",
-						justifyContent: "center",
-						boxSizing: "border-box",
-					}}
-				>
-					<ChevronRight size={16} aria-hidden="true" />
-				</button>
+					<button
+						type="button"
+						className="secondary-button schedule-day-step-prev"
+						onClick={() => stepScheduleDay(-1)}
+						aria-label="Показать предыдущий день"
+						title="День назад"
+						style={{
+							minHeight: "36px",
+							padding: "0 10px",
+							lineHeight: "1",
+							display: "inline-flex",
+							alignItems: "center",
+							justifyContent: "center",
+							boxSizing: "border-box",
+						}}
+					>
+						<ChevronLeft size={16} aria-hidden="true" />
+					</button>
+					<input
+						type="date"
+						aria-label="Фильтр расписания по дате"
+						value={scheduleDateFilter}
+						onChange={(event) => setScheduleDateFilter(event.target.value)}
+						style={{
+							minHeight: "36px",
+							lineHeight: "1",
+							boxSizing: "border-box",
+							border: "1px solid var(--line)",
+							borderRadius: "8px",
+							background: "var(--paper-soft)",
+							padding: "4px 8px",
+							fontSize: "13px",
+							fontWeight: 600,
+							color: "var(--ink)",
+							outline: "none",
+							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+						}}
+					/>
+					<button
+						type="button"
+						className="secondary-button schedule-day-step-next"
+						onClick={() => stepScheduleDay(1)}
+						aria-label="Показать следующий день"
+						title="День вперёд"
+						style={{
+							minHeight: "36px",
+							padding: "0 10px",
+							lineHeight: "1",
+							display: "inline-flex",
+							alignItems: "center",
+							justifyContent: "center",
+							boxSizing: "border-box",
+						}}
+					>
+						<ChevronRight size={16} aria-hidden="true" />
+					</button>
+				</div>
 			</div>
 
 			{/* "Все записи" filter chip button */}
@@ -146,9 +148,7 @@ export function ScheduleFilterStrip({
 				className={`quick-chip ${activeScheduleFilterCount === 0 ? "active" : ""}`}
 				onClick={resetScheduleFilters}
 				style={{
-					height: "32px",
-					minHeight: "32px",
-					maxHeight: "32px",
+					minHeight: "36px",
 					lineHeight: "1",
 					padding: "0 14px",
 					boxSizing: "border-box",
@@ -181,9 +181,7 @@ export function ScheduleFilterStrip({
 								)
 							}
 							style={{
-								height: "32px",
-								minHeight: "32px",
-								maxHeight: "32px",
+								minHeight: "36px",
 								boxSizing: "border-box",
 								display: "inline-flex",
 								alignItems: "center",
@@ -210,9 +208,7 @@ export function ScheduleFilterStrip({
 							)
 						}
 						style={{
-							height: "32px",
-							minHeight: "32px",
-							maxHeight: "32px",
+							minHeight: "36px",
 							boxSizing: "border-box",
 							display: "inline-flex",
 							alignItems: "center",

@@ -702,7 +702,8 @@ export function MarketingView({
 								<button
 									type="button"
 									onClick={() => handleRemoveSeoKey(key)}
-									className="bg-transparent border-0 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer p-0"
+									aria-label={`Удалить ключ ${key}`}
+									className="bg-transparent border-0 text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer min-h-[36px] min-w-[36px] -my-2 -mr-2 inline-flex items-center justify-center text-base font-bold transition-colors"
 								>
 									×
 								</button>

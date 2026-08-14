@@ -888,8 +888,8 @@ export function PaymentCapture({
 						style={{
 							gridColumn: "1 / -1",
 							marginBottom: "12px",
-							border: "1px solid var(--brand-300)",
-							boxShadow: "0 2px 8px rgba(14, 165, 233, 0.05)",
+							border: "1px solid var(--line-strong)",
+							boxShadow: "0 2px 8px rgba(13, 148, 136, 0.05)",
 							borderRadius: "12px",
 							padding: "8px 12px",
 							background: "var(--paper)",
@@ -899,7 +899,7 @@ export function PaymentCapture({
 							gap: "8px",
 						}}
 					>
-						<Bot size={18} color="var(--brand-600)" />
+						<Bot size={18} color="var(--teal-dark)" />
 						<div style={{ position: "relative", flex: 1 }}>
 							<input
 								type="text"
@@ -921,6 +921,7 @@ export function PaymentCapture({
 									outline: "none",
 									fontSize: "14px",
 									fontFamily: "inherit",
+									color: "var(--ink)",
 								}}
 							/>
 							<DictationHints
@@ -936,7 +937,7 @@ export function PaymentCapture({
 								handleSmartDictation(normalized);
 							}}
 							style={{
-								color: "var(--brand-600)",
+								color: "var(--teal-dark)",
 								background: "transparent",
 								border: "none",
 							}}
