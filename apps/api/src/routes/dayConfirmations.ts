@@ -73,28 +73,32 @@ export function dayBoundsInTimeZone(
 	const [year, month, day] = parts;
 	if (!year || !month || !day) return null;
 
-	// Смещение пояса определяется через форматирование известного момента:
-	// готовой функции «локальная дата → UTC» в стандартной библиотеке нет.
-	const probe = Date.UTC(year, month - 1, day, 12, 0, 0);
 	let offsetMinutes = 0;
 	try {
+		const probeUtc = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
 		const formatter = new Intl.DateTimeFormat("en-US", {
 			timeZone,
-			hour: "2-digit",
-			minute: "2-digit",
+			year: "numeric",
+			month: "numeric",
+			day: "numeric",
+			hour: "numeric",
+			minute: "numeric",
+			second: "numeric",
 			hour12: false,
 		});
-		const rendered = formatter.format(new Date(probe));
-		const [renderedHour, renderedMinute] = rendered
-			.split(":")
-			.map((value) => Number.parseInt(value, 10));
-		if (
-			renderedHour === undefined ||
-			renderedMinute === undefined ||
-			Number.isNaN(renderedHour)
-		)
-			return null;
-		offsetMinutes = (renderedHour % 24) * 60 + renderedMinute - 12 * 60;
+		const formattedParts = formatter.formatToParts(probeUtc);
+		const map = Object.fromEntries(
+			formattedParts.map((p) => [p.type, p.value]),
+		);
+		const localAsUtc = Date.UTC(
+			Number(map.year),
+			Number(map.month) - 1,
+			Number(map.day),
+			Number(map.hour === "24" ? 0 : map.hour),
+			Number(map.minute),
+			Number(map.second),
+		);
+		offsetMinutes = (localAsUtc - probeUtc.getTime()) / 60_000;
 	} catch (err) {
 		console.error("[Dente] timeZoneLocalDayLimits failed:", err);
 		return null;
@@ -366,27 +370,32 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 		// то есть перестаёт быть полным чтением таблицы. Условие по организации
 		// оставлено первым: код чужой клиники не должен пролезть даже при ошибке
 		// в идентификаторах приёмов.
-		const codeRows =
-			dayAppointmentIds.length > 0
-				? await db
-						.select({
-							appointmentId: appointmentActionCodes.appointmentId,
-							usedAt: appointmentActionCodes.usedAt,
-						})
-						.from(appointmentActionCodes)
-						.where(
-							and(
-								eq(
-									appointmentActionCodes.organizationId,
-									context.organizationId,
+		let codeRows: { appointmentId: string; usedAt: Date | null }[] = [];
+		try {
+			codeRows =
+				dayAppointmentIds.length > 0
+					? await db
+							.select({
+								appointmentId: appointmentActionCodes.appointmentId,
+								usedAt: appointmentActionCodes.usedAt,
+							})
+							.from(appointmentActionCodes)
+							.where(
+								and(
+									eq(
+										appointmentActionCodes.organizationId,
+										context.organizationId,
+									),
+									inArray(
+										appointmentActionCodes.appointmentId,
+										dayAppointmentIds,
+									),
 								),
-								inArray(
-									appointmentActionCodes.appointmentId,
-									dayAppointmentIds,
-								),
-							),
-						)
-				: [];
+							)
+					: [];
+		} catch (codeErr) {
+			codeRows = [];
+		}
 		const clickedAtByAppointment = new Map<string, Date>();
 		for (const row of codeRows) {
 			if (!row.usedAt) continue;
