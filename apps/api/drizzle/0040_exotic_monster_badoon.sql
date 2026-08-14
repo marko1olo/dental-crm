@@ -9,7 +9,7 @@ CREATE TYPE "public"."migration_run_status" AS ENUM('draft', 'staging', 'mapping
 CREATE TYPE "public"."migration_source_kind" AS ENUM('delimited', 'spreadsheet', 'json', 'xml', 'dbf', 'sql_dump', 'clipboard', 'free_text', 'api');--> statement-breakpoint
 CREATE TYPE "public"."migration_staging_status" AS ENUM('pending', 'normalized', 'mapped', 'ready', 'loaded', 'updated', 'duplicate', 'quarantined', 'skipped');--> statement-breakpoint
 
-ALTER TYPE "public"."communication_channel" ADD VALUE 'max';--> statement-breakpoint
+ALTER TYPE "public"."communication_channel" ADD VALUE IF NOT EXISTS 'max';--> statement-breakpoint
 ALTER TYPE "public"."communication_intent" ADD VALUE 'transactional_reply';--> statement-breakpoint
 ALTER TYPE "public"."document_kind" ADD VALUE 'dental_medical_card_043u' BEFORE 'medical_record_extract';--> statement-breakpoint
 CREATE TABLE "advance_deposit_taggings" (
