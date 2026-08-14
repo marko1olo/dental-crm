@@ -910,6 +910,51 @@ async function processRow(
 		return "retried";
 	}
 
+	// Динамический каскадный переход на резервный канал (Dynamic Channel Fallback Cascade)
+	// Если отправка в текущий канал завершилась неустранимой ошибкой (блокировка чата,
+	// отсутствие аккаунта или ненастроенный транспорт), проверяем следующие каналы
+	// в цепочке настроек (напр. Telegram -> WhatsApp -> SMS).
+	if (
+		row.patientId &&
+		Array.isArray(settings.channelFallback) &&
+		settings.channelFallback.length > 1
+	) {
+		const currentIdx = settings.channelFallback.indexOf(channel);
+		if (currentIdx >= 0 && currentIdx < settings.channelFallback.length - 1) {
+			for (let nextIdx = currentIdx + 1; nextIdx < settings.channelFallback.length; nextIdx++) {
+				const nextChannel = settings.channelFallback[nextIdx];
+				if (!nextChannel || !isMachineDeliverableChannel(nextChannel)) continue;
+
+				const nextAddr = await resolveRecipientAddress(
+					row.organizationId,
+					nextChannel,
+					row.patientId,
+				);
+				if (nextAddr.address) {
+					const fit = checkChannelFit(nextChannel, row.body);
+					if (fit.fits) {
+						await db
+							.update(communicationOutbox)
+							.set({
+								channel: nextChannel,
+								recipientAddress: nextAddr.address,
+								status: "queued",
+								attempts: 0,
+								lockedAt: null,
+								lockedBy: null,
+								nextAttemptAt: now,
+								lastErrorClass: outcome.errorClass,
+								lastErrorMessage: `Каскад доставки: сбой канала ${channel} (${outcome.errorMessage ?? "ошибка"}), эскалация на ${nextChannel}`,
+								updatedAt: now,
+							})
+							.where(eq(communicationOutbox.id, row.id));
+						return "retried";
+					}
+				}
+			}
+		}
+	}
+
 	await db
 		.update(communicationOutbox)
 		.set({

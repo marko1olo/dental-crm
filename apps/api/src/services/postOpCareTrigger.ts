@@ -1,20 +1,24 @@
-import { db } from "../db/client.js";
-import { outgoingNotifications } from "../db/schema.js";
+import { enqueueMessage } from "./communications/dispatcher.js";
 
+/**
+ * Триггер контроля самочувствия и пост-операционных инструкций после лечения.
+ * Ставит сервисное сообщение в очередь с автоматическим каскадом доставки.
+ */
 export async function triggerPostOpCare(
 	orgId: string,
 	patientId: string,
 	itemTitle: string,
 ) {
-	await db.insert(outgoingNotifications).values({
+	const dedupeKey = `postop:${orgId}:${patientId}:${Date.now().toString(36)}`;
+	const body = `Контроль самочувствия Dente: вы прошли процедуру «${itemTitle}». Пожалуйста, соблюдайте рекомендации врача. При возникновении острой боли или кровотечения немедленно свяжитесь с клиникой.`;
+
+	return await enqueueMessage({
 		organizationId: orgId,
-		patientId: patientId,
-		type: "PostOp_Care",
-		payload: {
-			patientId,
-			itemTitle,
-			alertMessage: `Позвонить пациенту (ID: ${patientId}) - контроль самочувствия после: ${itemTitle}`,
-		},
-		status: "pending",
+		patientId,
+		channel: "sms",
+		intent: "post_visit_instruction",
+		scope: "service",
+		body,
+		dedupeKey,
 	});
 }
