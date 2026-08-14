@@ -11649,15 +11649,23 @@ html.dark .emk-tab-button.active,
 .document-payload-card input,
 .document-payload-card select,
 .document-payload-card textarea {
-	background: #fbfefd;
+	background: var(--paper-soft, #fbfefd);
 	border: 1px solid var(--line-strong);
 	border-radius: 6px;
 	color: var(--ink);
 	font: inherit;
-	min-height: 32px;
+	min-height: 36px;
 	min-width: 0;
 	padding: 7px 8px;
 	resize: vertical;
+}
+
+.document-payload-card input:focus,
+.document-payload-card select:focus,
+.document-payload-card textarea:focus {
+	border-color: var(--teal);
+	outline: none;
+	box-shadow: 0 0 0 2px var(--teal-soft, rgba(13, 148, 136, 0.2));
 }
 
 /*

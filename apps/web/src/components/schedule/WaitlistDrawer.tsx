@@ -656,22 +656,22 @@ export function WaitlistDrawer(props: Props) {
 												disabled={loadingId === item.id}
 												aria-busy={loadingId === item.id}
 												onClick={() => handleFulfill(item)}
-												className="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg border border-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+												className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-lg border border-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 												title="Дождался приёма: убрать из очереди, запись о заявке сохранить"
 												aria-label="Дождался приёма: убрать из очереди, запись о заявке сохранить"
 											>
-												<CheckCircle2 className="w-3.5 h-3.5" />
+												<CheckCircle2 className="w-4 h-4" />
 											</button>
 											<button
 												type="button"
 												disabled={loadingId === item.id}
 												aria-busy={loadingId === item.id}
 												onClick={() => handleDelete(item.id)}
-												className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+												className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 bg-red-500/10 hover:bg-red-500/20 text-rose-600 dark:text-rose-400 rounded-lg border border-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 												title="Убрать совсем: заявка ошибочная или человек больше не хочет"
 												aria-label="Убрать совсем: заявка ошибочная или человек больше не хочет"
 											>
-												<Trash2 className="w-3.5 h-3.5" />
+												<Trash2 className="w-4 h-4" />
 											</button>
 										</div>
 									</li>

@@ -278,10 +278,10 @@ export const ScheduleClipboardPanel: React.FC<Props> = ({
 			data-testid="schedule-clipboard-panel"
 			style={{
 				position: "fixed",
-				bottom: "24px",
-				right: "24px",
-				width: "380px",
-				maxHeight: isCollapsed ? "60px" : "500px",
+				bottom: "min(24px, 16px)",
+				right: "min(24px, 16px)",
+				width: "min(380px, calc(100vw - 32px))",
+				maxHeight: isCollapsed ? "60px" : "min(500px, calc(100dvh - 48px))",
 				overflowY: isCollapsed ? "hidden" : "auto",
 				zIndex: 1000,
 				boxShadow: "0 8px 30px rgba(0,0,0,0.2)",

@@ -73,13 +73,13 @@ export function IncomingCallToast() {
 
 	return (
 		<div
-			className="fixed bottom-6 right-6 z-[999999] flex w-96 flex-col gap-3 rounded-xl border-l-4 border-[var(--teal-500,#14b8a6)] bg-[var(--paper,#1e293b)] text-[var(--ink,#f8fafc)] shadow-2xl p-5 border border-[var(--line,#334155)] animate-slide-in"
+			className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 left-4 sm:left-auto max-w-[calc(100vw-32px)] sm:w-96 z-[999999] flex flex-col gap-3 rounded-xl border-l-4 border-[var(--teal)] bg-[var(--paper)] text-[var(--ink)] shadow-2xl p-4 sm:p-5 border border-[var(--line)] animate-slide-in"
 			role="dialog"
 			aria-label="Уведомление о входящем звонке"
 		>
 			{/* Header */}
 			<div className="flex items-start justify-between">
-				<div className="flex items-center gap-2 text-[var(--teal-500,#14b8a6)]">
+				<div className="flex items-center gap-2 text-[var(--teal)]">
 					<PhoneIncoming size={18} className="animate-pulse" />
 					<span className="text-xs font-bold uppercase tracking-wider">
 						Входящий звонок
@@ -88,7 +88,7 @@ export function IncomingCallToast() {
 				<button
 					type="button"
 					onClick={() => setIncomingCall(null)}
-					className="text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] rounded-md p-1"
+					className="text-[var(--muted)] hover:text-[var(--ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--teal)] rounded-md p-1 min-h-[36px] min-w-[36px] inline-flex items-center justify-center"
 					aria-label="Закрыть уведомление"
 				>
 					<X size={16} />

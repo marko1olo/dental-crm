@@ -386,10 +386,10 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 		draft: "text-slate-700 dark:text-slate-400 border-slate-300 dark:border-slate-700/50 bg-slate-100 dark:bg-slate-800/40",
 		sent: "text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10",
 		in_progress: "text-amber-800 dark:text-amber-400 border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10",
-		shipped: "text-purple-800 dark:text-purple-400 border-purple-300 dark:border-purple-500/30 bg-purple-50 dark:bg-purple-500/10",
-		received: "text-indigo-800 dark:text-indigo-400 border-indigo-300 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10",
+		shipped: "text-sky-800 dark:text-sky-400 border-sky-300 dark:border-sky-500/30 bg-sky-50 dark:bg-sky-500/10",
+		received: "text-teal-800 dark:text-teal-400 border-teal-300 dark:border-teal-500/30 bg-teal-50 dark:bg-teal-500/10",
 		refitting: "text-rose-800 dark:text-rose-400 border-rose-300 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10",
-		completed: "text-teal-800 dark:text-teal-400 border-teal-300 dark:border-teal-500/30 bg-teal-50 dark:bg-teal-500/10",
+		completed: "text-emerald-800 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10",
 	};
 
 	return (

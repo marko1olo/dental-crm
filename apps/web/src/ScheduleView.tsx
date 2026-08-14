@@ -862,17 +862,17 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				/>
 			</div>
 			{showConfirmationsPanel && (
-				<div className="my-4 p-4 bg-slate-900/90 text-white rounded-xl border border-slate-700 shadow-xl">
+				<div className="my-4 p-4 bg-[var(--paper)] text-[var(--ink)] rounded-xl border border-[var(--line)] shadow-xl transition-colors">
 					<DayConfirmationsPanel />
 				</div>
 			)}
 			{showFreedSlotsPanel && (
-				<div className="my-4 p-4 bg-slate-900/90 text-white rounded-xl border border-slate-700 shadow-xl">
+				<div className="my-4 p-4 bg-[var(--paper)] text-[var(--ink)] rounded-xl border border-[var(--line)] shadow-xl transition-colors">
 					<FreedSlotsPanel />
 				</div>
 			)}
 			{showClipboardPanel && (
-				<div className="my-4 p-4 bg-slate-900/90 text-white rounded-xl border border-slate-700 shadow-xl">
+				<div className="my-4 p-4 bg-[var(--paper)] text-[var(--ink)] rounded-xl border border-[var(--line)] shadow-xl transition-colors">
 					<ScheduleClipboardPanel
 						reloadToken={clipboardReloadToken}
 						onPasted={() => {
