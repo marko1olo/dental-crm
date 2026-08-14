@@ -51,6 +51,7 @@ import { registerIngestionRoutes } from "./routes/ingestion.js";
 import { registerInsuranceRoutes } from "./routes/insurance.js";
 import { registerDiagnocatRoutes } from "./routes/integrations/diagnocat.js";
 import { registerFlexbeRoutes } from "./routes/integrations/flexbe.js";
+import registerIntegrationsRoutes from "./routes/integrations.js";
 import { inventoryRoutes } from "./routes/inventory.js";
 import { registerLabRoutes } from "./routes/lab.js";
 import { registerLeadsRoutes } from "./routes/leads.js";
@@ -658,6 +659,7 @@ export async function createDenteApiApp(
 	await registerDicomwebRoutes(app);
 	await registerXrayRoutes(app);
 	await registerDiagnocatRoutes(app);
+	await registerIntegrationsRoutes(app);
 	await registerAuthRoutes(app);
 	await registerAnalyticsRoutes(app);
 	await registerAuditRoutes(app);

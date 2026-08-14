@@ -41,7 +41,7 @@
  * СТАЛО: пустая выборка → []. Снимок не читаем.
  */
 
-import { and, asc, eq, gt, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "./client.js";
 import {
 	appointments,
@@ -116,7 +116,7 @@ export async function getLostPatientsFiltersFromDb(orgId: string) {
 			and(
 				eq(patientTaskTickets.organizationId, orgId),
 				eq(patientTaskTickets.patientId, patients.id),
-				eq(patientTaskTickets.status, "pending"),
+				inArray(patientTaskTickets.status, ["pending", "in_progress"]),
 			),
 		)
 		.where(
@@ -146,9 +146,6 @@ export async function getLostPatientsFiltersFromDb(orgId: string) {
 			phone: row.phone || "Не указан",
 			daysSinceLastVisit: daysBetween(lastAt, now),
 			hasFutureAppointment: false,
-			/*
-			 * hasActiveCrmTask всегда false по определению потерянного пациента
-			 */
 			hasActiveCrmTask: false,
 			createdAt: row.createdAt
 				? row.createdAt.toISOString()

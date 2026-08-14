@@ -22,7 +22,8 @@ import {
 } from "./lib/route-topology.mjs";
 
 // Побудувати повну перепись обох сторін
-const serverRoutes = collectServerRoutes();
+const serverRouteTopology = collectServerRoutes();
+const serverRoutes = serverRouteTopology.routes;
 const clientUsage = collectClientUsage();
 
 console.log("=== СТАТИЧНИЙ РОЗБІР ===");
