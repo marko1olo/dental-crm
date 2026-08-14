@@ -2486,5 +2486,63 @@ window.addEventListener('keydown', (e) => {
 });
 </script>
 
+
+<script id="eco-audio-theme-script">
+// Universal Web Audio UI Synthesizer (0 external assets, zero latency)
+let uiAudioCtx = null;
+let soundEnabled = true;
+
+function playUiSound(type = 'click') {
+    if (!soundEnabled) return;
+    try {
+        if (!uiAudioCtx) {
+            uiAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (uiAudioCtx.state === 'suspended') {
+            uiAudioCtx.resume();
+        }
+        const osc = uiAudioCtx.createOscillator();
+        const gain = uiAudioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(uiAudioCtx.destination);
+        
+        const now = uiAudioCtx.currentTime;
+        if (type === 'click') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, now);
+            osc.frequency.exponentialRampToValueAtTime(400, now + 0.04);
+            gain.gain.setValueAtTime(0.05, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+            osc.start(now);
+            osc.stop(now + 0.04);
+        } else if (type === 'hover') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(320, now);
+            osc.frequency.linearRampToValueAtTime(440, now + 0.03);
+            gain.gain.setValueAtTime(0.02, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+            osc.start(now);
+            osc.stop(now + 0.03);
+        } else if (type === 'open') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(300, now);
+            osc.frequency.exponentialRampToValueAtTime(900, now + 0.08);
+            gain.gain.setValueAtTime(0.08, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+            osc.start(now);
+            osc.stop(now + 0.08);
+        }
+    } catch(e) {}
+}
+
+// Add UI hover sounds to interactive elements
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('button, a, .card, .btn, input[type="range"]').forEach(el => {
+        el.addEventListener('mouseenter', () => playUiSound('hover'), { passive: true });
+        el.addEventListener('click', () => playUiSound('click'), { passive: true });
+    });
+});
+</script>
+
 </body>
 </html>
