@@ -256,3 +256,23 @@ test("период отвергается, а не обрезается молч
 	assert.equal(garbage.ok, false);
 	if (!garbage.ok) assert.match(garbage.message, /не разобраны/);
 });
+
+test("расходы ЗТЛ (лаборатория) корректно удерживаются из выплаты врача", () => {
+	const result = computeDoctorPayout({
+		revenueRub: 50000,
+		commissionPct: 30, // 15 000 ₽ начислено
+		materialCostRub: 2000,
+		materialMovements: 1,
+		materialDeductionPct: 100, // 2 000 ₽ удержано материалов
+		labCostRub: 5000,
+		labOrdersCount: 2,
+		labDeductionPct: 100, // 5 000 ₽ удержано ЗТЛ
+	});
+	assert.equal(result.state, "computed");
+	assert.equal(result.accruedRub, 15000);
+	assert.equal(result.withheldMaterialRub, 2000);
+	assert.equal(result.withheldLabRub, 5000);
+	// 15000 - 2000 - 5000 = 8000
+	assert.equal(result.payoutRub, 8000);
+});
+

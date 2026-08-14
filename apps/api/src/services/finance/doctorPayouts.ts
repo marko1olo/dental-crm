@@ -53,13 +53,14 @@
  */
 
 import { Decimal } from "decimal.js";
-import { and, eq, gte, isNotNull, lte, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, lte, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	appointments,
 	doctorCommissions,
 	inventoryTransactions,
+	labOrders,
 	payments,
 	users,
 	visits,
@@ -185,9 +186,15 @@ export type DoctorPayoutRow = {
 	readonly materialMovementsUnpriced: number;
 	readonly materialsState: DoctorPayoutMaterialsState;
 
+	/** Расходы на зуботехническую лабораторию (ЗТЛ). */
+	readonly labCostRub: number;
+	readonly labOrdersCount: number;
+	readonly withheldLabRub: number | null;
+
 	/** Ставка: `commission_pct`, ничто иное. null — строки ставки нет. */
 	readonly commissionPct: number | null;
 	readonly materialDeductionPct: number | null;
+	readonly labDeductionPct?: number | null;
 	readonly rateEffectiveFrom: string | null;
 	/** Сколько активных ставок нашлось: уникальности в БД нет, взята свежая. */
 	readonly rateRowCount: number;
@@ -210,9 +217,11 @@ export type DoctorPayoutTotals = {
 	/** Касса без врача: платёж без визита или визит без приёма. */
 	readonly unattributedRevenueRub: number;
 	readonly materialCostRub: number;
+	readonly labCostRub: number;
 	/** Итоги считаются ТОЛЬКО по врачам, у которых ставка задана. */
 	readonly accruedRub: number;
 	readonly withheldMaterialRub: number;
+	readonly withheldLabRub: number;
 	readonly payoutRub: number;
 	readonly doctorsCounted: number;
 	readonly doctorsWithoutRate: number;
@@ -258,12 +267,16 @@ export type PayoutFormulaInput = {
 	readonly materialMovements: number;
 	readonly commissionPct: number | null;
 	readonly materialDeductionPct: number | null;
+	readonly labCostRub?: number;
+	readonly labOrdersCount?: number;
+	readonly labDeductionPct?: number | null;
 };
 
 export type PayoutFormulaResult = {
 	readonly state: DoctorPayoutState;
 	readonly accruedRub: number | null;
 	readonly withheldMaterialRub: number | null;
+	readonly withheldLabRub: number | null;
 	readonly payoutRub: number | null;
 };
 
@@ -271,7 +284,7 @@ export type PayoutFormulaResult = {
  * Выплата врачу за период.
  *
  * Начислено = касса × ставка. Удержано = себестоимость материалов × процент
- * удержания. Выплата = начислено − удержано, со знаком.
+ * удержания + расходы ЗТЛ × процент удержания. Выплата = начислено − удержано, со знаком.
  */
 export function computeDoctorPayout(
 	input: PayoutFormulaInput,
@@ -281,6 +294,7 @@ export function computeDoctorPayout(
 			state: "rate_missing",
 			accruedRub: null,
 			withheldMaterialRub: null,
+			withheldLabRub: null,
 			payoutRub: null,
 		};
 	}
@@ -289,45 +303,54 @@ export function computeDoctorPayout(
 			state: "rate_invalid",
 			accruedRub: null,
 			withheldMaterialRub: null,
+			withheldLabRub: null,
 			payoutRub: null,
 		};
 	}
 
 	const accruedRub = percentOfMoney(input.revenueRub, input.commissionPct);
 
-	// Списаний нет — удерживать нечего, и это не то же самое, что «процент
-	// удержания не задан»: результат одинаков, но причина разная, и она уходит
-	// в текст строки.
-	if (input.materialMovements === 0 || input.materialCostRub === 0) {
-		return {
-			state: "computed",
-			accruedRub,
-			withheldMaterialRub: 0,
-			payoutRub: accruedRub,
-		};
+	// Вычет материалов
+	let withheldMaterialRub: number | null = 0;
+	if (input.materialMovements > 0 && input.materialCostRub > 0) {
+		if (!isUsablePercent(input.materialDeductionPct)) {
+			// Себестоимость есть, а доля удержания неизвестна.
+			return {
+				state: "material_policy_missing",
+				accruedRub,
+				withheldMaterialRub: null,
+				withheldLabRub: null,
+				payoutRub: null,
+			};
+		}
+		withheldMaterialRub = percentOfMoney(
+			input.materialCostRub,
+			input.materialDeductionPct,
+		);
 	}
 
-	if (!isUsablePercent(input.materialDeductionPct)) {
-		// Себестоимость есть, а доля удержания неизвестна. Подставить 0 значит
-		// выплатить врачу материалы клиники; подставить 100 — удержать то, о чём
-		// не договаривались. Показываем начисленное и отказываемся от итога.
-		return {
-			state: "material_policy_missing",
-			accruedRub,
-			withheldMaterialRub: null,
-			payoutRub: null,
-		};
+	// Вычет зуботехнической лаборатории (ЗТЛ)
+	const labOrdersCount = input.labOrdersCount ?? 0;
+	const labCostRub = input.labCostRub ?? 0;
+	let withheldLabRub: number | null = 0;
+	if (labOrdersCount > 0 && labCostRub > 0) {
+		const labPct = isUsablePercent(input.labDeductionPct ?? null)
+			? (input.labDeductionPct as number)
+			: 100;
+		withheldLabRub = percentOfMoney(labCostRub, labPct);
 	}
 
-	const withheldMaterialRub = percentOfMoney(
-		input.materialCostRub,
-		input.materialDeductionPct,
+	const totalWithheld = new Decimal(withheldMaterialRub ?? 0).plus(
+		withheldLabRub ?? 0,
 	);
+	const payoutRub = roundMoney(new Decimal(accruedRub).minus(totalWithheld));
+
 	return {
 		state: "computed",
 		accruedRub,
 		withheldMaterialRub,
-		payoutRub: roundMoney(new Decimal(accruedRub).minus(withheldMaterialRub)),
+		withheldLabRub,
+		payoutRub,
 	};
 }
 
@@ -550,6 +573,32 @@ function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 	);
 
 	/*
+	 * Зуботехническая лаборатория (ЗТЛ): стоимость выполненных и сданных заказов.
+	 */
+	const labOrdersCte = db.$with("payout_lab_orders").as(
+		db
+			.select({
+				doctorUserId: labOrders.doctorId,
+				labCostRub:
+					sql<number>`coalesce(sum(${labOrders.priceRub}), 0)::numeric(12,2)`.as(
+						"lab_cost_rub",
+					),
+				labOrdersCount: sql<number>`count(*)::int`.as("lab_orders_count"),
+			})
+			.from(labOrders)
+			.where(
+				and(
+					eq(labOrders.organizationId, organizationId),
+					isNotNull(labOrders.doctorId),
+					inArray(labOrders.status, ["delivered", "fitted", "completed"]),
+					gte(labOrders.createdAt, from),
+					lte(labOrders.createdAt, to),
+				),
+			)
+			.groupBy(labOrders.doctorId),
+	);
+
+	/*
 	 * Ставки врачей. Уникальности в БД нет (единственный индекс —
 	 * doctor_commissions_pkey по id), поэтому у врача может быть несколько
 	 * активных строк. Берётся самая свежая по effective_from; сколько их было
@@ -677,6 +726,14 @@ function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 					sql<number>`coalesce(${materials.movementsUnpriced}, 0)::int`.as(
 						"doctor_material_movements_unpriced",
 					),
+				labCostRub:
+					sql<number>`coalesce(${labOrdersCte.labCostRub}, 0)::numeric(12,2)`.as(
+						"doctor_lab_cost_rub",
+					),
+				labOrdersCount:
+					sql<number>`coalesce(${labOrdersCte.labOrdersCount}, 0)::int`.as(
+						"doctor_lab_orders_count",
+					),
 				commissionPct: rateCandidates.commissionPct,
 				materialDeductionPct: rateCandidates.materialDeductionPct,
 				rateEffectiveFrom: rateCandidates.effectiveFrom,
@@ -688,6 +745,7 @@ function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 			.from(users)
 			.leftJoin(revenue, eq(revenue.doctorUserId, users.id))
 			.leftJoin(materials, eq(materials.doctorUserId, users.id))
+			.leftJoin(labOrdersCte, eq(labOrdersCte.doctorUserId, users.id))
 			// Ставка присоединяется только самой свежей строкой: остальные оставлены
 			// в CTE ради счётчика rate_row_count.
 			.leftJoin(
@@ -702,14 +760,13 @@ function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 					doctorFilter,
 					/*
 					 * В отчёт попадают врачи клиники И любой сотрудник, на которого за
-					 * период пришла касса или списание материалов. Второе условие
-					 * обязательно: приём может вести владелец или сотрудник с иной
-					 * ролью, и его заработок нельзя потерять из-за фильтра по роли.
+					 * период пришла касса или списание материалов или заказы ЗТЛ.
 					 */
 					or(
 						eq(users.role, "doctor"),
 						isNotNull(revenue.doctorUserId),
 						isNotNull(materials.doctorUserId),
+						isNotNull(labOrdersCte.doctorUserId),
 					),
 				),
 			),
@@ -720,6 +777,7 @@ function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 			paidVisits,
 			revenue,
 			materials,
+			labOrdersCte,
 			rateCandidates,
 			periodRevenue,
 			doctorRows,
@@ -734,6 +792,8 @@ function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 			materialCostRub: doctorRows.materialCostRub,
 			materialMovements: doctorRows.materialMovements,
 			materialMovementsUnpriced: doctorRows.materialMovementsUnpriced,
+			labCostRub: doctorRows.labCostRub,
+			labOrdersCount: doctorRows.labOrdersCount,
 			commissionPct: doctorRows.commissionPct,
 			materialDeductionPct: doctorRows.materialDeductionPct,
 			rateEffectiveFrom: doctorRows.rateEffectiveFrom,
@@ -870,6 +930,8 @@ export async function doctorPayouts(
 		const materialMovementsUnpriced = Number(
 			row.materialMovementsUnpriced ?? 0,
 		);
+		const labCostRub = moneyFromDb(row.labCostRub, "расходы ЗТЛ");
+		const labOrdersCount = Number(row.labOrdersCount ?? 0);
 		const commissionPct = percentFromDb(
 			row.commissionPct,
 			"ставка врача (commission_pct)",
@@ -885,6 +947,8 @@ export async function doctorPayouts(
 			materialMovements,
 			commissionPct,
 			materialDeductionPct,
+			labCostRub,
+			labOrdersCount,
 		});
 		const materialsState = materialsStateOf(
 			materialMovements,
@@ -903,6 +967,9 @@ export async function doctorPayouts(
 			materialMovements,
 			materialMovementsUnpriced,
 			materialsState,
+			labCostRub,
+			labOrdersCount,
+			withheldLabRub: computed.withheldLabRub,
 			commissionPct,
 			materialDeductionPct,
 			rateEffectiveFrom: row.rateEffectiveFrom
@@ -941,21 +1008,25 @@ export async function doctorPayouts(
 	);
 
 	let accrued = new Decimal(0);
-	let withheld = new Decimal(0);
+	let withheldMaterial = new Decimal(0);
+	let withheldLab = new Decimal(0);
 	let payout = new Decimal(0);
 	let materialCost = new Decimal(0);
+	let totalLabCost = new Decimal(0);
 	let doctorsCounted = 0;
 	let doctorsWithoutRate = 0;
 
 	for (const row of rows) {
 		materialCost = materialCost.plus(row.materialCostRub);
+		totalLabCost = totalLabCost.plus(row.labCostRub);
 		if (
 			row.state === "computed" &&
 			row.payoutRub !== null &&
 			row.withheldMaterialRub !== null
 		) {
 			accrued = accrued.plus(row.accruedRub ?? 0);
-			withheld = withheld.plus(row.withheldMaterialRub);
+			withheldMaterial = withheldMaterial.plus(row.withheldMaterialRub);
+			withheldLab = withheldLab.plus(row.withheldLabRub ?? 0);
 			payout = payout.plus(row.payoutRub);
 			doctorsCounted += 1;
 		} else {
@@ -1002,8 +1073,10 @@ export async function doctorPayouts(
 				new Decimal(totalRevenueRub).minus(attributableRevenueRub),
 			),
 			materialCostRub: roundMoney(materialCost),
+			labCostRub: roundMoney(totalLabCost),
 			accruedRub: roundMoney(accrued),
-			withheldMaterialRub: roundMoney(withheld),
+			withheldMaterialRub: roundMoney(withheldMaterial),
+			withheldLabRub: roundMoney(withheldLab),
 			payoutRub: roundMoney(payout),
 			doctorsCounted,
 			doctorsWithoutRate,
