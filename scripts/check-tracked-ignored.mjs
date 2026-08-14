@@ -82,11 +82,11 @@ const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
  * ронять проверку, а не молча приниматься.
  */
 const BUDGETS = new Map([
-	["artifacts/", 2212],
+	["artifacts/", 0],
 	[".data/", 909],
 	["dist/", 24],
 	["apps/api/.data/", 21],
-	["local-secrets/*.env", 2],
+	["local-secrets/*.env", 0],
 ]);
 
 /** Сколько путей печатать по группе, вышедшей за бюджет. */
