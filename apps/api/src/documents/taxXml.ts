@@ -448,6 +448,10 @@ function identityDocumentKindCode(value: string): string {
 
 function identityDocumentNumber(value: string): string | null {
 	const normalized = repairMojibakeText(value).trim();
+	const allDigits = normalized.replace(/\D/g, "");
+	if (allDigits.length === 10) {
+		return `${allDigits.slice(0, 4)} ${allDigits.slice(4, 10)}`;
+	}
 	const passport = normalized.match(/(\d{2})\s*(\d{2})\s*(\d{6})/);
 	if (passport) return `${passport[1]}${passport[2]} ${passport[3]}`;
 	const serialNumber = normalized.match(
