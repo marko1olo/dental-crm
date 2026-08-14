@@ -280,10 +280,10 @@ export async function requireClinicalMutationContext(
 	reply: FastifyReply,
 	protectedArea = "clinical mutation",
 ): Promise<{ organizationId: string } | null> {
-	if (!(await requireClinicalMutationAccess(request, reply, protectedArea)))
-		return null;
 	const organizationId = await requireVerifiedOrganizationId(request, reply);
 	if (!organizationId) return null;
+if (!(await requireClinicalMutationAccess(request, reply, protectedArea)))
+		return null;
 	return { organizationId };
 }
 

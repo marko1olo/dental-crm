@@ -6,6 +6,11 @@ import { db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 import { requireOrganizationId } from "../security/identity.js";
 import {
+	canonicalizeCdaXml,
+	egiszRemdPackageSchema,
+	type EgiszRemdPackage,
+} from "../services/cda/index.js";
+import {
 	type EgiszCdaParams,
 	generateDentalCdaXml,
 } from "../services/egiszCdaGenerator.js";
@@ -1129,6 +1134,124 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				return reply.status(500).send({
 					error: "InternalServerError",
 					message: "Ошибка при постановке выгрузки в очередь",
+				});
+			}
+		},
+	);
+
+	/**
+	 * POST /api/egisz/packages — приём подписанного пакета СЭМД с УКЭП врача и клиники для отправки в РЭМД ЕГИСЗ.
+	 */
+	app.post(
+		"/api/egisz/packages",
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			try {
+				if (
+					!(await requireClinicalMutationAccess(
+						request,
+						reply,
+						"egisz package submit",
+					))
+				)
+					return;
+				const orgId = requireOrganizationId(request, reply);
+				if (!orgId) return;
+
+				const parsed = egiszRemdPackageSchema.safeParse(request.body);
+				if (!parsed.success) {
+					return reply.status(400).send({
+						error: "ValidationError",
+						message: "Некорректный формат пакета СЭМД РЭМД ЕГИСЗ",
+						issues: parsed.error.issues.map((i) => ({
+							path: i.path.join("."),
+							message: i.message,
+						})),
+					});
+				}
+
+				const pkg = parsed.data;
+
+				// Verify patient SNILS format
+				if (!isValidSnils(pkg.metadata.patientSnils)) {
+					return reply.status(422).send({
+						error: "InvalidSnils",
+						message: "Некорректный СНИЛС пациента в метаданных пакета ЕГИСЗ.",
+					});
+				}
+
+				// Verify that document/visit belongs to this organization
+				const [visit] = await db
+					.select({
+						id: schema.visits.id,
+						patientId: schema.visits.patientId,
+					})
+					.from(schema.visits)
+					.where(
+						and(
+							eq(schema.visits.id, pkg.documentId),
+							eq(schema.visits.organizationId, orgId),
+						),
+					)
+					.limit(1);
+
+				if (!visit) {
+					return reply.status(404).send({
+						error: "VisitNotFound",
+						message: "Приём не найден в текущей клинике.",
+					});
+				}
+
+				const canonicalXml = canonicalizeCdaXml(pkg.xmlCanonicalPayload);
+				const transactionId = `REMD-${Date.now()}-${pkg.documentId.slice(0, 8)}`;
+
+				const [insertedLog] = await db
+					.insert(schema.egiszLogs)
+					.values({
+						organizationId: orgId,
+						patientId: visit.patientId,
+						visitId: visit.id,
+						status: "Sent",
+						transactionId,
+						errorDetails: {
+							documentVersion: pkg.documentVersion,
+							docTypeNsiCode: pkg.metadata.docTypeNsiCode,
+							clinicOid: pkg.metadata.clinicOid,
+							doctorCertSerial: pkg.doctorSignature.certificateSerialNumber,
+							doctorCertSubject: pkg.doctorSignature.certificateSubject,
+							moCertSerial: pkg.moSignature?.certificateSerialNumber ?? null,
+							canonicalXmlLength: canonicalXml.length,
+							signedAt: pkg.doctorSignature.signedAt,
+						},
+					})
+					.returning();
+
+				// Record audit log
+				await db.insert(schema.clinicalAuditLogs).values({
+					organizationId: orgId,
+					patientId: visit.patientId,
+					entityType: "egisz_remd_package",
+					entityId: visit.id,
+					action: "remd_cda_signed_and_sent",
+					meta: {
+						logId: insertedLog?.id,
+						transactionId,
+						docTypeNsiCode: pkg.metadata.docTypeNsiCode,
+						doctorCertSubject: pkg.doctorSignature.certificateSubject,
+					},
+				});
+
+				return reply.status(200).send({
+					success: true,
+					logId: insertedLog?.id,
+					status: "Sent",
+					transactionId,
+					canonicalXmlLength: canonicalXml.length,
+				});
+			} catch (error: unknown) {
+				request.log.error(error);
+				return reply.status(500).send({
+					error: "InternalServerError",
+					message: "Ошибка при отправке пакета СЭМД в РЭМД ЕГИСЗ",
 				});
 			}
 		},

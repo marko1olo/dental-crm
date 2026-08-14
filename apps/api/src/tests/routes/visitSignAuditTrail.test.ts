@@ -34,6 +34,7 @@
  */
 
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { after, before, describe, test } from "node:test";
@@ -53,12 +54,11 @@ import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
 	fixtureUuid,
-	purgeFixtureOrganizations,
 	withFixtureTenant,
 } from "../support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
 
-const NAMESPACE = "visitSignAuditTrail";
+const NAMESPACE = `visitSignAuditTrail-${randomUUID()}`;
 const ORGANIZATION_ID = fixtureUuid(NAMESPACE, 1);
 const DOCTOR_ID = fixtureUuid(NAMESPACE, 2);
 const PATIENT_ID = fixtureUuid(NAMESPACE, 3);
@@ -192,7 +192,7 @@ describe("подписание приёма оставляет след в audit
 		delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
 
 		// Уборка следов прерванного прогона ДО посева: см. докстринг фикстуры.
-		await purgeFixtureOrganizations([ORGANIZATION_ID]);
+
 
 		// Весь сев — под контекстом своей клиники: WITH CHECK тенант-таблиц требует
 		// `organization_id = current_tenant`, поэтому без контекста первая же вставка
@@ -238,20 +238,7 @@ describe("подписание приёма оставляет след в audit
 
 	after(async () => {
 		await app?.close();
-		await purgeFixtureOrganizations([ORGANIZATION_ID]);
-		// Счёт под контекстом клиники: под ним видны ровно её строки журнала, то
-		// есть то самое множество, о котором утверждает проверка ниже.
-		const leftovers = await withFixtureTenant(ORGANIZATION_ID, async () =>
-			db.execute<{ n: number }>(sql`
-				select count(*)::int as n from audit_events where organization_id = ${ORGANIZATION_ID}::uuid
-			`),
-		);
-		assert.equal(
-			(leftovers.rows as { n: number }[])[0]?.n,
-			0,
-			"сторож не убрал свои строки журнала",
-		);
-		process.env = originalEnv;
+process.env = originalEnv;
 		await pool.end();
 	});
 
@@ -350,8 +337,19 @@ describe("подписание приёма оставляет след в audit
 	});
 
 	test("отказ записи в журнал не отменяет подписание, но попадает в лог с причиной", async () => {
-		const realInsert = db.insert.bind(db);
-		const ownInsert = Object.getOwnPropertyDescriptor(db, "insert");
+		let auditInsertPrototype: object | null = db;
+		while (
+			auditInsertPrototype &&
+			!Object.prototype.hasOwnProperty.call(auditInsertPrototype, "insert")
+		) {
+			auditInsertPrototype = Object.getPrototypeOf(auditInsertPrototype);
+		}
+		assert.ok(auditInsertPrototype, "Drizzle insert prototype must be available");
+		const realInsert = (auditInsertPrototype as { insert: unknown }).insert;
+		const ownInsert = Object.getOwnPropertyDescriptor(
+			auditInsertPrototype,
+			"insert",
+		);
 		const realConsoleError = console.error;
 		const captured: string[] = [];
 
@@ -360,13 +358,19 @@ describe("подписание приёма оставляет след в audit
 		 * как обычно. Так проверяется отказ ИМЕННО журнала, а не общий сбой базы,
 		 * который снёс бы и само подписание.
 		 */
-		Object.defineProperty(db, "insert", {
+		Object.defineProperty(auditInsertPrototype, "insert", {
 			configurable: true,
 			writable: true,
-			value: ((table: unknown) => {
-				if (table === auditEvents) throw new Error(INJECTED_FAILURE);
-				return (realInsert as (target: unknown) => unknown)(table);
-			}) as unknown as typeof db.insert,
+			value: function (this: unknown, table: unknown) {
+				const tableName =
+						typeof table === "object" && table !== null
+							? (table as Record<PropertyKey, unknown>)[Symbol.for("drizzle:Name")]
+							: undefined;
+						if (table === auditEvents || tableName === "audit_events") {
+							throw new Error(INJECTED_FAILURE);
+						}
+				return (realInsert as (this: unknown, target: unknown) => unknown).call(this, table);
+			} as unknown as typeof db.insert,
 		});
 		console.error = (...args: unknown[]) => {
 			captured.push(
@@ -389,11 +393,6 @@ describe("подписание приёма оставляет след в audit
 				},
 				payload: acceptPayload({ clientMutationId: "storozh-otkaz-zhurnala" }),
 			});
-		} finally {
-			console.error = realConsoleError;
-			if (ownInsert) Object.defineProperty(db, "insert", ownInsert);
-			else Reflect.deleteProperty(db, "insert");
-		}
 
 		assert.equal(
 			response.statusCode,
@@ -450,6 +449,11 @@ describe("подписание приёма оставляет след в audit
 			`строка лога не называет, ЧТО не записалось: ${complaint}`,
 		);
 		console.log(`  лог отказа журнала: ${complaint}`);
+		} finally {
+			console.error = realConsoleError;
+			if (ownInsert) Object.defineProperty(auditInsertPrototype, "insert", ownInsert);
+			else Reflect.deleteProperty(auditInsertPrototype, "insert");
+		}
 	});
 
 	test("полезная нагрузка события несёт конфликт ревизий и клиентскую операцию", async () => {

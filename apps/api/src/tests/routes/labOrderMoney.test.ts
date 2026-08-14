@@ -158,8 +158,8 @@ describe("цена заказа ЗТЛ — деньги с точностью д
 			priceRub: 1500.5,
 		});
 		assert.equal(
-			saved.statusCode,
-			200,
+                        saved.statusCode,
+                        201,
 			`маршрут не сохранил заказ: ${saved.body}`,
 		);
 		assert.ok(saved.json.id, "маршрут не вернул id заказа");

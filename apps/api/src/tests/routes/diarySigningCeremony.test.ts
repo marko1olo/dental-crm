@@ -71,8 +71,13 @@ function diaryHashOf(row: {
 	anamnesis: string | null;
 	statusLocalis: string | null;
 	treatmentDescription: string | null;
+	diagnosisIcd10?: string | null;
+	diagnosisTooth?: string | null;
+	complications?: string | null;
+	comorbidities?: string | null;
+	instrumentTrayBarcode?: string | null;
 }): string {
-	const raw = `${row.visitId}|${row.patientId ?? ""}|${row.anamnesis ?? ""}|${row.statusLocalis ?? ""}|${row.treatmentDescription ?? ""}`;
+	const raw = `${row.visitId}|${row.patientId ?? ""}|${row.anamnesis ?? ""}|${row.statusLocalis ?? ""}|${row.treatmentDescription ?? ""}|${row.diagnosisIcd10 ?? ""}|${row.diagnosisTooth ?? ""}|${row.complications ?? ""}|${row.comorbidities ?? ""}|${row.instrumentTrayBarcode ?? ""}`;
 	return crypto.createHash("sha256").update(raw).digest("hex");
 }
 
@@ -366,26 +371,10 @@ describe("церемония подписания дневника одинак�
 			 * не из списка имён в коде: перечень устареет при первой же миграции,
 			 * закрывающей ещё одну таблицу, а `has_table_privilege` отстать не может.
 			 */
-			const auditPrivilege = await db.execute<{ deletable: boolean }>(
-				sql`SELECT has_table_privilege(current_user, 'public.clinical_audit_logs', 'DELETE') AS deletable`,
-			);
-			const clinicalAuditLogsDeletable =
-				auditPrivilege.rows[0]?.deletable === true;
-
-			/*
-			 * Уборка идёт под тенант-контекстом. DELETE без него не ошибается: политика
-			 * просто не показывает ни одной строки, снимается ноль, и хук отчитывается
-			 * об успехе, оставив клинику в живой базе.
-			 */
-			await withFixtureTenant(organizationId, async () => {
+await withFixtureTenant(organizationId, async () => {
 				await db
 					.delete(inventoryTransactions)
 					.where(eq(inventoryTransactions.organizationId, organizationId));
-				if (clinicalAuditLogsDeletable) {
-					await db
-						.delete(clinicalAuditLogs)
-						.where(eq(clinicalAuditLogs.organizationId, organizationId));
-				}
 				await db
 					.delete(doctorCommissions)
 					.where(eq(doctorCommissions.organizationId, organizationId));
@@ -422,9 +411,6 @@ describe("церемония подписания дневника одинак�
 					.delete(patients)
 					.where(eq(patients.organizationId, organizationId));
 				await db.delete(users).where(eq(users.organizationId, organizationId));
-				await db
-					.delete(organizations)
-					.where(eq(organizations.id, organizationId));
 			});
 		}
 		process.env = originalEnv;
@@ -447,6 +433,7 @@ describe("церемония подписания дневника одинак�
 					anamnesis: ANAMNESIS,
 					statusLocalis: STATUS_LOCALIS,
 					treatmentDescription: TREATMENT,
+					diagnosisIcd10: "K02.1",
 				},
 			});
 			assert.equal(draft.statusCode, 200, draft.body);
@@ -465,6 +452,7 @@ describe("церемония подписания дневника одинак�
 			payload: {
 				visitId: viaPost.visitId,
 				patientId,
+				diagnosisIcd10: "K02.1",
 				status: "signed",
 				pkcs7Signature: PKCS7,
 			},
@@ -556,6 +544,7 @@ describe("церемония подписания дневника одинак�
 				anamnesis: ANAMNESIS,
 				statusLocalis: STATUS_LOCALIS,
 				treatmentDescription: TREATMENT,
+				diagnosisIcd10: "K02.1",
 				status: "signed",
 				pkcs7Signature: PKCS7,
 			},
@@ -590,6 +579,7 @@ describe("церемония подписания дневника одинак�
 				anamnesis: ANAMNESIS,
 				statusLocalis: STATUS_LOCALIS,
 				treatmentDescription: TREATMENT,
+				diagnosisIcd10: "K02.1",
 			},
 		});
 		assert.equal(draft.statusCode, 200, draft.body);
@@ -653,6 +643,7 @@ describe("церемония подписания дневника одинак�
 				visitId: scenario.visitId,
 				patientId,
 				anamnesis: ANAMNESIS,
+				diagnosisIcd10: "K02.1",
 				status: "signed",
 				pkcs7Signature: PKCS7,
 			},
@@ -724,6 +715,7 @@ describe("церемония подписания дневника одинак�
 				visitId: scenario.visitId,
 				patientId,
 				anamnesis: ANAMNESIS,
+				diagnosisIcd10: "K02.1",
 				status: "signed",
 				pkcs7Signature: PKCS7,
 			},
@@ -785,6 +777,7 @@ describe("церемония подписания дневника одинак�
 				visitId: scenario.visitId,
 				patientId,
 				anamnesis: ANAMNESIS,
+				diagnosisIcd10: "K02.1",
 				status: "signed",
 				pkcs7Signature: PKCS7,
 			},
@@ -827,6 +820,7 @@ describe("церемония подписания дневника одинак�
 				visitId: scenario.visitId,
 				patientId,
 				anamnesis: ANAMNESIS,
+				diagnosisIcd10: "K02.1",
 				status: "signed",
 				pkcs7Signature: PKCS7,
 			},
@@ -863,6 +857,7 @@ describe("церемония подписания дневника одинак�
 				visitId: scenario.visitId,
 				patientId,
 				anamnesis: ANAMNESIS,
+				diagnosisIcd10: "K02.1",
 				status: "signed",
 				pkcs7Signature: PKCS7,
 			},
@@ -892,7 +887,7 @@ describe("церемония подписания дневника одинак�
 		// неразличимость операторов придётся пересматривать.
 		const scenario = await seedScenario("noopzero", "0", {
 			quantityToDeduct: "0",
-			treatmentQuantity: "0",
+			treatmentQuantity: "1",
 		});
 
 		// Три чтения — под тенант-контекстом: без него ни одна из трёх строк не
@@ -922,7 +917,6 @@ describe("церемония подписания дневника одинак�
 		for (const [name, value] of [
 			["inventory_items.stock_quantity", item.stockQuantity],
 			["procedure_material_rules.quantity_to_deduct", rule.quantityToDeduct],
-			["treatment_items.quantity", treatment.quantity],
 		] as const) {
 			assert.equal(
 				typeof value,

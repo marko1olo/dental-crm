@@ -220,7 +220,7 @@ before(async () => {
 		 * приходит из восстановления дампа чужой системы и из правок SQL руками.
 		 */
 		await db.execute(sql`
-			update appointments set starts_at = 'infinity', ends_at = 'infinity'
+			update appointments set starts_at = '-infinity', ends_at = 'infinity'
 			 where id = ${APPOINTMENT_BROKEN_ID}::uuid`);
 		await db.execute(sql`
 			update patients set created_at = 'infinity'
@@ -267,7 +267,7 @@ describe("GET /api/dashboard: время строки берётся из баз
 			}>(sql`
 				select
 					(select count(*)::int from appointments
-					  where organization_id = ${ORGANIZATION_ID}::uuid and starts_at = 'infinity') as broken_appointments,
+					  where organization_id = ${ORGANIZATION_ID}::uuid and starts_at = '-infinity') as broken_appointments,
 					(select count(*)::int from patients
 					  where organization_id = ${ORGANIZATION_ID}::uuid and created_at = 'infinity') as broken_patients,
 					(select count(*)::int from appointments

@@ -39,6 +39,7 @@
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { after, before, describe, test } from "node:test";
+import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db, pool } from "../../db/client.js";
@@ -53,7 +54,7 @@ import {
 } from "../support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
 
-const NAMESPACE = "invoiceKeepsItsAmount";
+const NAMESPACE = "invoiceKeepsItsAmount:" + randomUUID();
 const ORGANIZATION_ID = fixtureUuid(NAMESPACE, 1);
 const CLINIC_ID = fixtureUuid(NAMESPACE, 11);
 const OWNER_ID = fixtureUuid(NAMESPACE, 21);
@@ -286,7 +287,15 @@ describe("сумма счёта не теряется по дороге в ба�
 
 	after(async () => {
 		await app?.close();
-		await purgeFixtureOrganizations([ORGANIZATION_ID]);
+                await withFixtureTenant(ORGANIZATION_ID, async () => {
+                        await db.execute(
+                                sql.raw(
+                                        "delete from generated_documents where organization_id = '" +
+                                                ORGANIZATION_ID +
+                                                "'",
+                                ),
+                        );
+                });
 		// Счёт остатка — под тенант-контекстом: без него политика прячет от счёта
 		// любые уцелевшие документы, и проверка «мусора не осталось» стала бы тождеством.
 		const leftovers = await withFixtureTenant(ORGANIZATION_ID, async () =>

@@ -172,6 +172,12 @@ export async function mergePatients(
 	}
 
 	const columns = await patientReferenceColumns();
+	const availableReferenceColumns = new Set(
+		columns.map((column) => `${column.tableName}.${column.columnName}`),
+	);
+	const existingConflictTables = UNIQUE_CONFLICT_TABLES.filter((conflict) =>
+		availableReferenceColumns.has(`${conflict.table}.${conflict.column}`),
+	);
 	if (columns.length === 0) {
 		// Пустой список означал бы, что каталог не прочитан: переносить нечего,
 		// и молча «успешно объединить» в такой ситуации нельзя.
@@ -189,7 +195,7 @@ export async function mergePatients(
 		await withTenantCtx(input.organizationId, async (tx) =>
 			tx.transaction(async (inner) => {
 				// Сначала снимаем конфликты уникальности, иначе перенос упадёт.
-				const conflictPromises = UNIQUE_CONFLICT_TABLES.map(
+				const conflictPromises = existingConflictTables.map(
 					async (conflict) => {
 						const scopeMatch =
 							conflict.scope.length === 0

@@ -70,6 +70,7 @@
  */
 
 import assert from "node:assert/strict";
+import { randomBytes } from "node:crypto";
 import { after, before, describe, it } from "node:test";
 import { dashboardSchema } from "@dental/shared";
 import { sql } from "drizzle-orm";
@@ -133,6 +134,9 @@ type ActiveVisit = {
 };
 
 let app: FastifyInstance;
+const inheritedClinicalAdminSecret = process.env.DENTE_CLINICAL_ADMIN_SECRET;
+const dashboardTestClinicalAdminSecret =
+	inheritedClinicalAdminSecret ?? randomBytes(48).toString("base64url");
 
 function headersFor(organizationId: string): Record<string, string> {
 	const secret = clinicalAdminSecret();
@@ -208,6 +212,7 @@ async function visitRowExists(
 }
 
 before(async () => {
+	process.env.DENTE_CLINICAL_ADMIN_SECRET = dashboardTestClinicalAdminSecret;
 	// Уборка НА ВХОДЕ: прогон, убитый снаружи, до `after` не доходит, и его строки
 	// в живой базе следующий прогон читает как данные клиники.
 	await purgeFixtureOrganizations(FIXTURE_ORGANIZATION_IDS);
@@ -256,6 +261,11 @@ before(async () => {
 });
 
 after(async () => {
+	if (inheritedClinicalAdminSecret === undefined) {
+		delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
+	} else {
+		process.env.DENTE_CLINICAL_ADMIN_SECRET = inheritedClinicalAdminSecret;
+	}
 	await app?.close();
 	await purgeFixtureOrganizations(FIXTURE_ORGANIZATION_IDS);
 	/*

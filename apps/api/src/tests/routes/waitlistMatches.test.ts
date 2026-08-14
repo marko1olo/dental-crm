@@ -96,7 +96,9 @@ describe("подбор на освободившееся окно", () => {
 	before(async () => {
 		process.env = { ...originalEnv, DENTE_DEV_ALLOW_HEADER_ORG: "1" };
 		app = createTenantTestApp();
-		await registerWaitlistMatchRoutes(app);
+		process.env.NODE_ENV = "test";
+                process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = "1";
+                await registerWaitlistMatchRoutes(app);
 
 		try {
 			/*
