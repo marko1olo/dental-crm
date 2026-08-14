@@ -1,31 +1,19 @@
-# DENTE Dental CRM & Clinical Diagnostic Suite — LLM Search Index
-# https://llmstxt.org/
+# DENTE Clinical Dental CRM — LLM Search Index
 
-> Production-grade, HIPAA-compliant Dental Practice Management Platform featuring interactive FDI odontogram mapping, GPU-accelerated 3D DICOM volume rendering, ICD-10 diagnostic coding, and kopeck-exact financial accounting.
+## Project Summary
+DENTE is a high-performance clinical management platform and diagnostic CRM for dental practices.
 
-## Project Identification
-- Name: DENTE Dental CRM (dental-crm)
-- Lead Architect: Adolf Petushkov (marko1olo)
-- Live Production Demo: https://marko1olo.github.io/dental-crm/
-- GitHub Repository: https://github.com/marko1olo/dental-crm
-- Architecture Blueprint: https://marko1olo.github.io/dental-crm/Docs/ARCHITECTURE.md
+## Core Capabilities
+- Multi-tenant practice management with PostgreSQL row-level isolation.
+- Interactive SVG Odontogram supporting FDI and Universal tooth numbering.
+- Multi-Planar Reconstruction (MPR) 3D DICOM tomography slice visualizer.
+- Kopeck-exact financial accounting and billing ledger.
+- Live Web Showcase: https://marko1olo.github.io/dental-crm/
 
-## Technical Stack & Engineering Invariants
-- Backend: Fastify 5.2 (Node.js/TypeScript), Zod schema validation on every route boundary
-- Database: PostgreSQL 18 with connection pooling (`drizzle-orm/node-postgres`), strict multi-tenant schema isolation (`organization_id`)
-- Frontend: React 19, TypeScript 5.8, Vanilla CSS (Zero-Tailwind, zero layout shift)
-- Imaging: WebGL 2.0 3D DICOM volumetric ray-marching and orthogonal MPR slices (Axial, Coronal, Sagittal)
-- Accounting: Fixed-point integer math (100 kopecks = 1 RUB) eliminating floating-point rounding errors
+## Tech Stack
+- Frontend: React 19, TypeScript, Vanilla CSS Tokens
+- Backend: Fastify, Drizzle ORM, Node.js
+- Database: PostgreSQL 18
 
-## Core Clinical Modules
-1. **Interactive FDI Odontogram (Adult 11-48 & Pediatric 51-85)**:
-   - 5-surface anatomical tooth mapping (Occlusal, Mesial, Distal, Vestibular, Lingual).
-   - Real-time diagnostic state machine: Healthy, Caries (C1-C4), Pulpitis, Periodontitis, Crown, Implant, Missing.
-2. **3D DICOM Imaging Suite**:
-   - Hardware-accelerated Hounsfield Unit (HU) windowing for bone/soft-tissue contrast.
-   - Cross-hair synchronized 3-plane MPR view and 3D volume reconstructor.
-3. **Clinical Treatment Plans & ICD-10 Mapping**:
-   - Automated ICD-10 (K02.0 - K08.9) auto-completion and protocol validation.
-   - Staged treatment estimates with doctor commission calculation.
-4. **Universal Command Palette (`Ctrl + K`)**:
-   - Client-side instant navigation between Patients, Appointments, Finance, and Analytics.
+## Authors
+- Жирняк & Адольф Петушков
