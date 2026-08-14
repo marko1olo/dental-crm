@@ -1,53 +1,50 @@
 .lab-orders-panel {
-	background: rgba(24, 24, 27, 0.85); /* zinc-900 */
-	backdrop-filter: blur(16px);
-	border: 1px solid rgba(63, 63, 70, 0.5); /* zinc-700 */
+	background: var(--paper);
+	border: 1px solid var(--line);
 	border-radius: 16px;
-	box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+	box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.05));
 	padding: 24px;
 	display: flex;
 	flex-direction: column;
 	gap: 20px;
-	color: #e4e4e7; /* zinc-200 */
+	color: var(--ink);
 }
 
 .lab-orders-empty {
 	padding: 20px;
 	text-align: center;
-	color: #a1a1aa; /* zinc-400 */
+	color: var(--muted);
 }
 
 .lab-orders-header h3 {
 	margin: 0;
-	font-size: 1.3rem;
-	color: #f4f4f5; /* zinc-100 */
+	font-size: 1.25rem;
+	color: var(--ink);
 	font-weight: 600;
-	letter-spacing: 0.02em;
+	letter-spacing: 0.01em;
 }
 
 .lab-orders-list {
 	display: grid;
-	/* min(...): колонка не должна оставаться шире контейнера на телефоне. */
 	grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
 	gap: 16px;
 }
 
 .lab-order-card {
-	border: 1px solid rgba(82, 82, 91, 0.3); /* zinc-600 */
+	border: 1px solid var(--line);
 	border-radius: 12px;
 	padding: 16px;
 	display: flex;
 	flex-direction: column;
 	gap: 14px;
-	background: rgba(39, 39, 42, 0.4); /* zinc-800 */
-	transition: all 0.2s ease;
+	background: var(--paper-soft);
+	transition: border-color 0.2s ease, transform 0.2s ease;
 }
 
 .lab-order-card:hover {
-	background: rgba(63, 63, 70, 0.6); /* zinc-700 */
-	border-color: rgba(161, 161, 170, 0.3); /* zinc-400 */
+	background: var(--paper-elevated, var(--paper-soft));
+	border-color: var(--line-strong);
 	transform: translateY(-2px);
-	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .lab-order-main {
@@ -57,16 +54,15 @@
 }
 
 .fdi-badge {
-	background: rgba(59, 130, 246, 0.2);
-	color: #60a5fa; /* blue-400 */
-	border: 1px solid rgba(59, 130, 246, 0.4);
+	background: var(--info-bg, rgba(59, 130, 246, 0.15));
+	color: var(--info-fg, #0284c7);
+	border: 1px solid var(--info-fg, rgba(59, 130, 246, 0.3));
 	font-weight: bold;
-	font-size: 1.25rem;
-	padding: 10px;
+	font-size: 1.2rem;
+	padding: 8px 12px;
 	border-radius: 8px;
-	min-width: 48px;
+	min-width: 44px;
 	text-align: center;
-	box-shadow: 0 0 10px rgba(59, 130, 246, 0.1);
 }
 
 .order-details {
@@ -76,13 +72,13 @@
 }
 
 .order-details strong {
-	font-size: 1.1rem;
-	color: #f4f4f5;
-	letter-spacing: 0.05em;
+	font-size: 1.05rem;
+	color: var(--ink);
+	letter-spacing: 0.02em;
 }
 
 .order-details small {
-	color: #a1a1aa; /* zinc-400 */
+	color: var(--muted);
 	font-size: 0.85rem;
 }
 
@@ -90,19 +86,18 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	border-top: 1px solid rgba(82, 82, 91, 0.4);
+	border-top: 1px solid var(--line);
 	padding-top: 14px;
 	font-size: 0.9rem;
 }
 
 .status-badge {
-	padding: 6px 12px;
+	padding: 4px 10px;
 	border-radius: 6px;
 	font-weight: 600;
 	font-size: 0.8rem;
 	text-transform: uppercase;
-	letter-spacing: 0.05em;
-	backdrop-filter: blur(4px);
+	letter-spacing: 0.03em;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -112,24 +107,24 @@
 }
 
 .status-badge.draft {
-	background: rgba(113, 113, 122, 0.2);
-	color: #d4d4d8;
-	border: 1px solid rgba(113, 113, 122, 0.3);
+	background: var(--paper-strong);
+	color: var(--muted);
+	border: 1px solid var(--line);
 }
 .status-badge.sent {
-	background: rgba(59, 130, 246, 0.2);
-	color: #93c5fd;
-	border: 1px solid rgba(59, 130, 246, 0.3);
+	background: var(--info-bg, rgba(59, 130, 246, 0.15));
+	color: var(--info-fg, #0284c7);
+	border: 1px solid var(--info-fg, rgba(59, 130, 246, 0.3));
 }
 .status-badge.in_progress {
-	background: rgba(234, 179, 8, 0.2);
-	color: #fde047;
-	border: 1px solid rgba(234, 179, 8, 0.3);
+	background: var(--warn-bg, rgba(234, 179, 8, 0.15));
+	color: var(--warn-fg, #d97706);
+	border: 1px solid var(--warn-fg, rgba(234, 179, 8, 0.3));
 }
 .status-badge.delivered {
-	background: rgba(34, 197, 94, 0.2);
-	color: #86efac;
-	border: 1px solid rgba(34, 197, 94, 0.3);
+	background: var(--ok-bg, rgba(34, 197, 94, 0.15));
+	color: var(--ok-fg, #15803d);
+	border: 1px solid var(--ok-fg, rgba(34, 197, 94, 0.3));
 }
 .status-badge.fitting {
 	background: var(--info-bg);
@@ -137,24 +132,23 @@
 	border: 1px solid var(--info-fg);
 }
 .status-badge.refitting {
-	background: rgba(239, 68, 68, 0.2);
-	color: #fca5a5;
-	border: 1px solid rgba(239, 68, 68, 0.3);
+	background: var(--bad-bg, rgba(239, 68, 68, 0.15));
+	color: var(--bad-fg, #b91c1c);
+	border: 1px solid var(--bad-fg, rgba(239, 68, 68, 0.3));
 }
 .status-badge.completed {
-	background: rgba(16, 185, 129, 0.2);
-	color: #6ee7b7;
-	border: 1px solid rgba(16, 185, 129, 0.4);
-	box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
+	background: var(--ok-bg, rgba(16, 185, 129, 0.15));
+	color: var(--ok-fg, #15803d);
+	border: 1px solid var(--ok-fg, rgba(16, 185, 129, 0.3));
 }
 
 .delivery-date {
-	color: #a1a1aa;
+	color: var(--muted);
 }
 
 .cost {
 	font-weight: bold;
-	color: #d4d4d8;
+	color: var(--ink);
 	font-family: monospace;
 	font-size: 1.05rem;
 }
@@ -162,13 +156,17 @@
 .lab-order-warning {
 	margin-top: 12px;
 	padding: 12px;
-	background: rgba(234, 179, 8, 0.1);
-	border: 1px solid rgba(234, 179, 8, 0.4);
-	color: #fde047;
+	background: var(--warn-bg, rgba(234, 179, 8, 0.1));
+	border: 1px solid var(--warn-fg, rgba(234, 179, 8, 0.3));
+	color: var(--warn-fg, #92400e);
 	border-radius: 8px;
 	font-size: 0.85rem;
 	font-weight: 500;
 	line-height: 1.4;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .lab-order-warning {
+	color: var(--warn-fg, #fde047);
 }
 
 @media (max-width: 480px) {

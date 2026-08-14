@@ -211,16 +211,22 @@
 }
 
 .logout-btn {
-	background: rgba(239, 68, 68, 0.1);
-	color: #fca5a5;
-	border: 1px solid rgba(239, 68, 68, 0.3);
+	background: var(--bad-bg, rgba(239, 68, 68, 0.1));
+	color: var(--bad-fg, #b91c1c);
+	border: 1px solid var(--bad-fg, rgba(239, 68, 68, 0.3));
 	padding: 8px 16px;
 	border-radius: 8px;
 	cursor: pointer;
+	min-height: 44px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 500;
+	transition: background 0.15s ease;
 }
 
 .logout-btn:hover {
-	background: rgba(239, 68, 68, 0.2);
+	background: var(--bad-bg, rgba(239, 68, 68, 0.2));
 }
 
 .portal-grid {
@@ -277,23 +283,43 @@
 }
 
 .btn-confirm {
-	background: rgba(16, 185, 129, 0.2);
-	color: #6ee7b7;
-	border: 1px solid rgba(16, 185, 129, 0.4);
-	padding: 6px 12px;
-	border-radius: 6px;
+	background: var(--ok-bg, rgba(16, 185, 129, 0.15));
+	color: var(--ok-fg, #15803d);
+	border: 1px solid var(--ok-fg, rgba(16, 185, 129, 0.3));
+	padding: 8px 14px;
+	border-radius: 8px;
 	cursor: pointer;
 	flex: 1;
+	min-height: 44px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 500;
+	transition: opacity 0.15s ease;
+}
+
+.btn-confirm:hover {
+	opacity: 0.9;
 }
 
 .btn-cancel {
-	background: rgba(239, 68, 68, 0.1);
-	color: #fca5a5;
-	border: 1px solid rgba(239, 68, 68, 0.3);
-	padding: 6px 12px;
-	border-radius: 6px;
+	background: var(--bad-bg, rgba(239, 68, 68, 0.1));
+	color: var(--bad-fg, #b91c1c);
+	border: 1px solid var(--bad-fg, rgba(239, 68, 68, 0.3));
+	padding: 8px 14px;
+	border-radius: 8px;
 	cursor: pointer;
 	flex: 1;
+	min-height: 44px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 500;
+	transition: opacity 0.15s ease;
+}
+
+.btn-cancel:hover {
+	opacity: 0.9;
 }
 
 .financial-summary {
@@ -319,10 +345,10 @@
 	font-size: 1.1rem;
 }
 .text-green {
-	color: var(--green);
+	color: var(--ok-fg, #15803d);
 }
 .text-orange {
-	color: var(--amber);
+	color: var(--warn-fg, #d97706);
 }
 
 .stages-list {
@@ -342,11 +368,11 @@
 }
 
 .stage-item.completed {
-	border-left-color: var(--green);
+	border-left-color: var(--ok-fg, #15803d);
 	opacity: 0.8;
 }
 .stage-item.pending {
-	border-left-color: var(--amber);
+	border-left-color: var(--warn-fg, #d97706);
 }
 
 .stage-desc {
@@ -372,9 +398,9 @@
 }
 
 .btn-download {
-	background: rgba(59, 130, 246, 0.1);
-	color: #93c5fd;
-	border: 1px solid rgba(59, 130, 246, 0.3);
+	background: var(--info-bg, rgba(59, 130, 246, 0.1));
+	color: var(--info-fg, #0284c7);
+	border: 1px solid var(--info-fg, rgba(59, 130, 246, 0.3));
 	padding: 8px 16px;
 	min-height: 44px;
 	display: flex;
@@ -382,6 +408,12 @@
 	justify-content: center;
 	border-radius: 8px;
 	cursor: pointer;
+	font-weight: 500;
+	transition: opacity 0.15s ease;
+}
+
+.btn-download:hover {
+	opacity: 0.9;
 }
 
 @media (max-width: 768px) {

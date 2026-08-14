@@ -8,7 +8,12 @@ import {
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
-import { payments, sberbankTransactions } from "../db/schema.js";
+import {
+	generatedDocuments,
+	payments,
+	sberbankTransactions,
+	visits,
+} from "../db/schema.js";
 import { requirePermission } from "../security/permissions.js";
 import { SberbankClient } from "../services/sberbankClient.js";
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
@@ -117,6 +122,9 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 					properties: {
 						patientId: { type: "string", format: "uuid" },
 						amount: { type: "integer", minimum: 1 },
+						visitId: { type: "string" },
+						documentId: { type: "string" },
+						invoiceId: { type: "string" },
 					},
 				},
 			},
@@ -128,9 +136,12 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 			const organizationId = await requireOrganizationContext(request, reply);
 			if (!organizationId) return;
 
-			const { patientId, amount } = request.body as {
+			const { patientId, amount, visitId, documentId, invoiceId } = request.body as {
 				patientId: string;
 				amount: number;
+				visitId?: string;
+				documentId?: string;
+				invoiceId?: string;
 			};
 
 			let client: SberbankClient;
@@ -163,6 +174,9 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 				await db.insert(sberbankTransactions).values({
 					organizationId,
 					patientId,
+					visitId: visitId || null,
+					documentId: documentId || null,
+					invoiceId: invoiceId || null,
 					orderId: res.orderId,
 					amount,
 					status: "pending",
@@ -268,6 +282,8 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 								.values({
 									organizationId: orgId,
 									patientId: lockedTx.patientId,
+									visitId: lockedTx.visitId ? lockedTx.visitId : null,
+									documentId: lockedTx.documentId ? lockedTx.documentId : null,
 									method: "card",
 									status: "paid",
 									amountRub,
@@ -278,6 +294,30 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 								.onConflictDoNothing({
 									target: [payments.organizationId, payments.clientMutationId],
 								});
+
+							if (lockedTx.documentId) {
+								await tx
+									.update(generatedDocuments)
+									.set({ status: "issued", issuedAt: new Date() })
+									.where(
+										and(
+											eq(generatedDocuments.id, lockedTx.documentId),
+											eq(generatedDocuments.organizationId, orgId),
+										),
+									);
+							}
+
+							if (lockedTx.visitId) {
+								await tx
+									.update(visits)
+									.set({ updatedAt: new Date() })
+									.where(
+										and(
+											eq(visits.id, lockedTx.visitId),
+											eq(visits.organizationId, orgId),
+										),
+									);
+							}
 						}
 					}
 
@@ -520,6 +560,8 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 					.values({
 						organizationId: lockedTx.organizationId,
 						patientId: lockedTx.patientId,
+						visitId: lockedTx.visitId ? lockedTx.visitId : null,
+						documentId: lockedTx.documentId ? lockedTx.documentId : null,
 						method: "card",
 						status: "paid",
 						amountRub,
@@ -530,6 +572,30 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 					.onConflictDoNothing({
 						target: [payments.organizationId, payments.clientMutationId],
 					});
+
+				if (lockedTx.documentId) {
+					await tx
+						.update(generatedDocuments)
+						.set({ status: "issued", issuedAt: new Date() })
+						.where(
+							and(
+								eq(generatedDocuments.id, lockedTx.documentId),
+								eq(generatedDocuments.organizationId, lockedTx.organizationId),
+							),
+						);
+				}
+
+				if (lockedTx.visitId) {
+					await tx
+						.update(visits)
+						.set({ updatedAt: new Date() })
+						.where(
+							and(
+								eq(visits.id, lockedTx.visitId),
+								eq(visits.organizationId, lockedTx.organizationId),
+							),
+						);
+				}
 
 				return reply.status(200).send({
 					success: true,

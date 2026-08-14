@@ -3857,6 +3857,9 @@ export const sberbankTransactions = pgTable(
 		amount: integer("amount").notNull(),
 		status: text("status").notNull(),
 		patientId: uuid("patient_id").notNull(),
+		visitId: text("visit_id"),
+		documentId: text("document_id"),
+		invoiceId: text("invoice_id"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),

@@ -102061,6 +102061,8 @@ export type FiscalReceiptItem = z.infer<typeof fiscalReceiptItemSchema>;
 export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<{
     clientMutationId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     invoiceId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    visitId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    documentId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     patientId: z.ZodString;
     operationType: z.ZodDefault<z.ZodEnum<["income", "income_return", "expense", "expense_return"]>>;
     taxationSystem: z.ZodDefault<z.ZodEnum<["osn", "usn_income", "usn_income_expense", "esxn", "psn"]>>;
@@ -102153,6 +102155,8 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
     totalKopecks: number;
     cashierFullName: string;
     taxDeductionSummaryCode: "code_1_standard" | "code_2_expensive_treatment";
+    visitId?: string | null | undefined;
+    documentId?: string | null | undefined;
     clientMutationId?: string | null | undefined;
     invoiceId?: string | null | undefined;
     cashierInn?: string | null | undefined;
@@ -102172,7 +102176,9 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
     }[];
     customerContact: string;
     totalKopecks: number;
+    visitId?: string | null | undefined;
     operationType?: "income" | "income_return" | "expense" | "expense_return" | undefined;
+    documentId?: string | null | undefined;
     clientMutationId?: string | null | undefined;
     invoiceId?: string | null | undefined;
     taxationSystem?: "osn" | "usn_income" | "usn_income_expense" | "esxn" | "psn" | undefined;
@@ -102207,6 +102213,8 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
     totalKopecks: number;
     cashierFullName: string;
     taxDeductionSummaryCode: "code_1_standard" | "code_2_expensive_treatment";
+    visitId?: string | null | undefined;
+    documentId?: string | null | undefined;
     clientMutationId?: string | null | undefined;
     invoiceId?: string | null | undefined;
     cashierInn?: string | null | undefined;
@@ -102226,7 +102234,9 @@ export declare const createFiscalReceiptPayloadSchema: z.ZodEffects<z.ZodObject<
     }[];
     customerContact: string;
     totalKopecks: number;
+    visitId?: string | null | undefined;
     operationType?: "income" | "income_return" | "expense" | "expense_return" | undefined;
+    documentId?: string | null | undefined;
     clientMutationId?: string | null | undefined;
     invoiceId?: string | null | undefined;
     taxationSystem?: "osn" | "usn_income" | "usn_income_expense" | "esxn" | "psn" | undefined;

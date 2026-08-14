@@ -515,8 +515,8 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 					and(
 						eq(appointments.organizationId, organizationId),
 						inArray(appointments.doctorUserId, doctorIds),
-						gte(appointments.startsAt, dayStartUtc),
 						lt(appointments.startsAt, dayEndUtc),
+						gt(appointments.endsAt, dayStartUtc),
 						notInArray(appointments.status, [...FREED_APPOINTMENT_STATUSES]),
 					),
 				);
@@ -813,13 +813,6 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 							a.id.localeCompare(b.id),
 						);
 						for (const chair of sortedChairs) {
-							await tx
-								.select({ id: chairs.id })
-								.from(chairs)
-								.where(eq(chairs.id, chair.id))
-								.limit(1)
-								.for("update");
-
 							const [occupied] = await tx
 								.select({ id: appointments.id })
 								.from(appointments)
@@ -846,14 +839,6 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 							return { conflict: true as const };
 						}
 					}
-
-					// 2. Pessimistic lock for doctor
-					await tx
-						.select({ id: users.id })
-						.from(users)
-						.where(eq(users.id, doctorId))
-						.limit(1)
-						.for("update");
 
 					// 3. Identify and lock/create patient
 					const phoneDigits = normalizePhoneDigits(patientPhone);
@@ -909,11 +894,45 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 							.returning({ id: patients.id });
 						if (!createdPatient) throw new Error("patient_insert_failed");
 						patientId = createdPatient.id;
-					} else {
+					}
+
+					// 3. Acquire locks in STRICT CANONICAL ORDER: Chair (Level 1) -> Doctor (Level 2) -> Patient (Level 3)
+					if (selectedChairId) {
+						await tx
+							.select({ id: chairs.id })
+							.from(chairs)
+							.where(
+								and(
+									eq(chairs.organizationId, organizationId),
+									eq(chairs.id, selectedChairId),
+								),
+							)
+							.limit(1)
+							.for("update");
+					}
+
+					await tx
+						.select({ id: users.id })
+						.from(users)
+						.where(
+							and(
+								eq(users.organizationId, organizationId),
+								eq(users.id, doctorId),
+							),
+						)
+						.limit(1)
+						.for("update");
+
+					if (patientId) {
 						await tx
 							.select({ id: patients.id })
 							.from(patients)
-							.where(eq(patients.id, patientId))
+							.where(
+								and(
+									eq(patients.organizationId, organizationId),
+									eq(patients.id, patientId),
+								),
+							)
 							.limit(1)
 							.for("update");
 					}

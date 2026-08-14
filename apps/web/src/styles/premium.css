@@ -331,8 +331,11 @@ html.light .nav-item.active .nav-copy small,
 	}
 
 	.nav-item {
-		min-height: auto;
+		min-height: 44px;
 		padding: 8px 4px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.nav-item.active {

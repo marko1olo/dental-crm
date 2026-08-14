@@ -592,35 +592,33 @@
 	color: #b91c1c;
 }
 
-/* Dark mode tweaks */
-@media (prefers-color-scheme: dark) {
-	body.dark .telegram-status-grid article {
-		background: var(--surface-100);
-		border-color: var(--border-default);
-	}
-	body.dark .telegram-status-grid article strong {
-		color: var(--slate-100);
-	}
-	body.dark .premium-feature-card {
-		background: var(--surface-100);
-		border-color: var(--border-default);
-	}
-	body.dark .premium-feature-card.active {
-		background: linear-gradient(145deg, var(--surface-100), var(--brand-900));
-		border-color: var(--brand-600);
-	}
-	body.dark .telegram-settings-panel {
-		background: var(--surface-100);
-		border-color: var(--border-default);
-	}
-	body.dark .telegram-settings-panel-header {
-		background: var(--surface-200);
-		border-bottom-color: var(--border-default);
-	}
-	body.dark .security-zone .telegram-settings-panel-header {
-		background: rgba(127, 29, 29, 0.2);
-	}
-	body.dark .security-zone .telegram-settings-panel-header h3 {
-		color: #fca5a5;
-	}
+/* Dark & Night mode tweaks */
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-status-grid article {
+	background: var(--surface-100);
+	border-color: var(--border-default);
+}
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-status-grid article strong {
+	color: var(--ink);
+}
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .premium-feature-card {
+	background: var(--surface-100);
+	border-color: var(--border-default);
+}
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .premium-feature-card.active {
+	background: var(--paper-soft);
+	border-color: var(--teal);
+}
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-settings-panel {
+	background: var(--surface-100);
+	border-color: var(--border-default);
+}
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-settings-panel-header {
+	background: var(--surface-200);
+	border-bottom-color: var(--border-default);
+}
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .security-zone .telegram-settings-panel-header {
+	background: rgba(127, 29, 29, 0.2);
+}
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .security-zone .telegram-settings-panel-header h3 {
+	color: #fca5a5;
 }

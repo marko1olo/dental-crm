@@ -114,18 +114,15 @@
 }
 
 .timeline-item.medical_alert .marker-icon {
-	border-color: rgba(239, 68, 68, 0.5);
-	box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+	border-color: var(--bad-fg, #b91c1c);
 }
 
 .timeline-item.transaction .marker-icon {
-	border-color: rgba(34, 197, 94, 0.5);
-	box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
+	border-color: var(--ok-fg, #15803d);
 }
 
 .timeline-item.inventory_depletion .marker-icon {
-	border-color: rgba(234, 179, 8, 0.5);
-	box-shadow: 0 0 15px rgba(234, 179, 8, 0.4);
+	border-color: var(--warn-fg, #d97706);
 }
 
 .timeline-content {
@@ -138,13 +135,12 @@
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
-	transition: all 0.2s ease;
+	transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .timeline-content:hover {
-	background: var(--paper-strong, rgba(63, 63, 70, 0.5));
+	background: var(--paper-elevated, var(--paper-strong));
 	border-color: var(--line-strong, var(--line));
-	transform: translateX(4px);
 }
 
 .content-header {
@@ -168,7 +164,7 @@
 
 .timeline-content p {
 	margin: 0;
-	color: var(--muted, #d4d4d8);
+	color: var(--ink-2, var(--muted));
 	font-size: 0.95rem;
 	line-height: 1.5;
 }
@@ -176,7 +172,7 @@
 .amount-highlight {
 	font-size: 1.2rem;
 	font-family: monospace;
-	color: #86efac;
+	color: var(--ok-fg, #15803d);
 	font-weight: bold;
 	margin-top: 4px;
 }
@@ -184,19 +180,21 @@
 .timeline-action-btn {
 	align-self: flex-start;
 	margin-top: 8px;
-	background: rgba(59, 130, 246, 0.1);
-	color: #93c5fd;
-	border: 1px solid rgba(59, 130, 246, 0.3);
+	background: var(--info-bg, rgba(59, 130, 246, 0.1));
+	color: var(--info-fg, #0284c7);
+	border: 1px solid var(--info-fg, rgba(59, 130, 246, 0.3));
 	padding: 6px 12px;
+	min-height: 44px;
+	display: inline-flex;
+	align-items: center;
 	border-radius: 6px;
 	font-size: 0.85rem;
 	cursor: pointer;
-	transition: all 0.2s ease;
+	transition: background 0.15s ease;
 }
 
 .timeline-action-btn:hover {
-	background: rgba(59, 130, 246, 0.3);
-	color: #fff;
+	background: var(--info-bg, rgba(59, 130, 246, 0.2));
 }
 
 @media (max-width: 480px) {
@@ -247,10 +245,9 @@
 
 .progress-bar-fill {
 	height: 100%;
-	background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+	background: var(--ok-fg, #10b981);
 	border-radius: 4px;
-	transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
-	box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+	transition: width 0.5s ease;
 }
 
 .progress-hint {
@@ -259,20 +256,17 @@
 	margin: 0;
 }
 
-/* Serial Position Effect Highlights */
+/* Highlights */
 .highlight-item .timeline-content {
-	background: var(--paper-strong, rgba(63, 63, 70, 0.6));
-	border-color: rgba(161, 161, 170, 0.3);
-	box-shadow: var(--shadow-premium);
-	transform: scale(1.02);
-	transform-origin: left center;
+	background: var(--paper-strong);
+	border-color: var(--teal, #0d9488);
+	box-shadow: var(--shadow-sm);
 }
 
 .highlight-item .marker-icon-large {
 	width: 50px;
 	height: 50px;
 	font-size: 1.5rem;
-	border-color: rgba(96, 165, 250, 0.6);
-	box-shadow: 0 0 20px rgba(96, 165, 250, 0.3);
+	border-color: var(--teal, #0d9488);
 	z-index: 3;
 }

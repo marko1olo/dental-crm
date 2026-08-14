@@ -2,7 +2,7 @@ import path from "node:path";
 import { chromium } from "playwright";
 
 const ARTIFACT_DIR =
-	"C:\\Users\\Admin\\.gemini\\antigravity\\brain\\005bd331-1b27-451e-bba5-2fdf74d50047";
+	"C:\\Users\\Admin\\.gemini\\antigravity\\brain\\bb25bcf6-b417-4d6b-8825-0189fff20e2b";
 
 async function run() {
 	const browser = await chromium.launch({ headless: true });
@@ -31,16 +31,17 @@ async function run() {
 			console.log("No login button found or already logged in.");
 		}
 
-		// Force light mode
-		await page.evaluate(() =>
-			document.documentElement.classList.remove("dark"),
-		);
+		// 1. Desktop Light Mode
+		await page.evaluate(() => {
+			document.documentElement.classList.remove("dark");
+			document.documentElement.setAttribute("data-theme", "light");
+		});
 		await page.waitForTimeout(500);
 		await page.screenshot({
-			path: path.join(ARTIFACT_DIR, "pc_light.png"),
+			path: path.join(ARTIFACT_DIR, "desktop_light.png"),
 			fullPage: true,
 		});
-		console.log("Took pc_light.png");
+		console.log("Took desktop_light.png");
 
 		// Click around to show details (e.g. patients, schedule)
 		try {
@@ -61,22 +62,26 @@ async function run() {
 			});
 			await page.waitForTimeout(2000);
 			await page.screenshot({
-				path: path.join(ARTIFACT_DIR, "pc_light_patient.png"),
+				path: path.join(ARTIFACT_DIR, "desktop_light_patient.png"),
 				fullPage: true,
 			});
 		} catch (e) {
 			console.log("Could not navigate to patient:", e.message);
 		}
 
-		// Force dark mode
-		await page.evaluate(() => document.documentElement.classList.add("dark"));
+		// 2. Desktop Dark Mode
+		await page.evaluate(() => {
+			document.documentElement.classList.add("dark");
+			document.documentElement.setAttribute("data-theme", "dark");
+		});
 		await page.waitForTimeout(500);
 		await page.screenshot({
-			path: path.join(ARTIFACT_DIR, "pc_dark.png"),
+			path: path.join(ARTIFACT_DIR, "desktop_dark.png"),
 			fullPage: true,
 		});
-		console.log("Took pc_dark.png");
+		console.log("Took desktop_dark.png");
 
+		// 3. Mobile Viewport
 		const mobileContext = await browser.newContext({
 			viewport: { width: 375, height: 812 },
 			isMobile: true,
@@ -88,9 +93,10 @@ async function run() {
 		await mobilePage.waitForTimeout(2000);
 
 		// Mobile Dark
-		await mobilePage.evaluate(() =>
-			document.documentElement.classList.add("dark"),
-		);
+		await mobilePage.evaluate(() => {
+			document.documentElement.classList.add("dark");
+			document.documentElement.setAttribute("data-theme", "dark");
+		});
 		await mobilePage.waitForTimeout(500);
 		await mobilePage.screenshot({
 			path: path.join(ARTIFACT_DIR, "mobile_dark.png"),
@@ -99,9 +105,10 @@ async function run() {
 		console.log("Took mobile_dark.png");
 
 		// Mobile Light
-		await mobilePage.evaluate(() =>
-			document.documentElement.classList.remove("dark"),
-		);
+		await mobilePage.evaluate(() => {
+			document.documentElement.classList.remove("dark");
+			document.documentElement.setAttribute("data-theme", "light");
+		});
 		await mobilePage.waitForTimeout(500);
 		await mobilePage.screenshot({
 			path: path.join(ARTIFACT_DIR, "mobile_light.png"),

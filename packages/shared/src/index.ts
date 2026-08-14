@@ -13247,6 +13247,8 @@ export const createFiscalReceiptPayloadSchema = z
 	.object({
 		clientMutationId: z.string().trim().min(1).max(128).optional().nullable(),
 		invoiceId: z.string().uuid().optional().nullable(),
+		visitId: z.string().uuid().optional().nullable(),
+		documentId: z.string().uuid().optional().nullable(),
 		patientId: z.string().uuid(),
 		operationType: ffd12OperationTypeSchema.default("income"),
 		taxationSystem: ffd12TaxationSystemSchema.default("usn_income"),

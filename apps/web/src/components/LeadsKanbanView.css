@@ -1,33 +1,46 @@
-:root {
-	--surface-100: #ffffff;
-	--surface-200: #f8fafc;
-	--surface-300: #f1f5f9;
-	--text-500: #64748b;
-	--text-600: #475569;
-	--text-900: #0f172a;
-	--border-300: #cbd5e1;
-	--border-400: #94a3b8;
-	--brand-500: #3b82f6;
-	--brand-600: #2563eb;
-	--brand-600-rgb: 37, 99, 235;
-	--emerald-500: #10b981;
-	--emerald-600: #059669;
+:root,
+:root[data-theme="light"] {
+	--surface-100: var(--paper, #ffffff);
+	--surface-200: var(--paper-soft, #f8fafc);
+	--surface-300: var(--paper-elevated, #f1f5f9);
+	--text-500: var(--muted, #64748b);
+	--text-600: var(--ink-2, #475569);
+	--text-900: var(--ink, #0f172a);
+	--border-300: var(--line, #cbd5e1);
+	--border-400: var(--line-strong, #94a3b8);
+	--brand-500: var(--teal, #0d9488);
+	--brand-600: var(--teal-dark, #0f766e);
+	--brand-600-rgb: 15, 118, 110;
+	--emerald-500: var(--ok-fg, #10b981);
+	--emerald-600: var(--ok-fg, #059669);
 	--emerald-600-rgb: 5, 150, 105;
-	--blue-500: #3b82f6;
-	--yellow-500: #eab308;
-	--slate-500: #64748b;
-	--red-500: #ef4444;
+	--blue-500: var(--info-fg, #3b82f6);
+	--yellow-500: var(--warn-fg, #eab308);
+	--slate-500: var(--muted, #64748b);
+	--red-500: var(--bad-fg, #ef4444);
 }
 
-[data-theme="dark"] {
-	--surface-100: #1e1e22;
-	--surface-200: #0f0f11;
-	--surface-300: #27272a;
-	--text-500: #8a8a93;
-	--text-600: #a1a1aa;
-	--text-900: #f4f4f5;
-	--border-300: #27272a;
-	--border-400: #3f3f46;
+:root[data-theme="dark"],
+html.dark:not([data-theme]) {
+	--surface-100: var(--paper, #1e1e22);
+	--surface-200: var(--paper-soft, #0f0f11);
+	--surface-300: var(--paper-elevated, #27272a);
+	--text-500: var(--muted, #8a8a93);
+	--text-600: var(--ink-2, #a1a1aa);
+	--text-900: var(--ink, #f4f4f5);
+	--border-300: var(--line, #27272a);
+	--border-400: var(--line-strong, #3f3f46);
+}
+
+:root[data-theme="night"] {
+	--surface-100: var(--paper, #171310);
+	--surface-200: var(--paper-soft, #231c17);
+	--surface-300: var(--paper-elevated, #2a221c);
+	--text-500: var(--muted, #a89f91);
+	--text-600: var(--ink-2, #cdbfae);
+	--text-900: var(--ink, #f6efe9);
+	--border-300: var(--line, #382e26);
+	--border-400: var(--line-strong, #4d3f34);
 }
 
 .kanban-view {
