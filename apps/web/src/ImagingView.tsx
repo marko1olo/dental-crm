@@ -1374,9 +1374,11 @@ export function ImagingView(props: ImagingViewProps) {
 									/>
 								</div>
 							)}
-							<div className="px-4">
-								<BoneQualityPanel />
-							</div>
+							{selectedImagingStudy.kind === "cbct" && (
+								<div className="px-4">
+									<BoneQualityPanel />
+								</div>
+							)}
 						</>
 					) : (
 						<div className="w-full h-full flex flex-col items-center justify-center gap-4 p-8">

@@ -55,17 +55,18 @@ export const ClinicalStore = {
 				new CustomEvent("clinical-collision", {
 					detail: {
 						type: "WARNING",
-						message: `CRITICAL: Implant ${implant.id} is too close to mandibular nerve!`,
+						message: `Критическое расстояние: имплантат ${implant.toothFdi ? `зуба ${implant.toothFdi}` : implant.id} слишком близко к нижнечелюстному каналу!`,
 					},
 				}),
 			);
 		}
-		// Hardcoded tooth 46 for e2e testing purposes and demo integration
-		window.dispatchEvent(
-			new CustomEvent("clinical-implant-placed", {
-				detail: { toothNumber: 46, implantId: implant.id },
-			}),
-		);
+		if (implant.toothFdi) {
+			window.dispatchEvent(
+				new CustomEvent("clinical-implant-placed", {
+					detail: { toothNumber: implant.toothFdi, implantId: implant.id },
+				}),
+			);
+		}
 		this.notify();
 	},
 
