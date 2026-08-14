@@ -1071,6 +1071,15 @@
   }
   </script>
 
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration:', err));
+  });
+}
+</script>
+
 </head>
 <body>
 
@@ -2424,5 +2433,98 @@
 
   })();
   </script>
+
+<!-- ==========================================================================
+     GLOBAL ECOSYSTEM COMMAND PALETTE & FLOATING DOCK (CTRL + K)
+     ========================================================================== -->
+<div id="eco-floating-dock" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; align-items: center; gap: 8px; background: rgba(10, 15, 29, 0.85); border: 1px solid rgba(56, 189, 248, 0.3); padding: 6px 14px; border-radius: 999px; backdrop-filter: blur(16px); box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 20px rgba(56,189,248,0.25);">
+    <span style="display: flex; align-items: center; gap: 6px; font-family: monospace; font-size: 0.78rem; color: #fff; font-weight: 700;">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981;"></span>
+        ADOLF PETUSHKOV ECOSYSTEM
+    </span>
+    <span style="color: rgba(255,255,255,0.2);">|</span>
+    <button onclick="toggleEcoPalette()" style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; font-family: monospace; font-size: 0.75rem; font-weight: bold; padding: 4px 10px; border-radius: 999px; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s;">
+        <span>⚡ Quick Jump</span>
+        <kbd style="background: rgba(0,0,0,0.5); padding: 1px 5px; border-radius: 4px; font-size: 0.65rem; border: 1px solid rgba(255,255,255,0.2);">Ctrl+K</kbd>
+    </button>
+</div>
+
+<!-- Modal Palette -->
+<div id="eco-palette-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;" onclick="if(event.target===this) toggleEcoPalette()">
+    <div style="background: #090e1a; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 14px; width: 100%; max-width: 600px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.9), 0 0 30px rgba(56,189,248,0.2);">
+        <div style="padding: 1rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.1rem; color: #38bdf8;">🔍</span>
+            <input type="text" id="eco-search-input" placeholder="Search sister apps, tools, games (e.g. Dente, Sonar, FFT, WAF)..." style="flex: 1; background: transparent; border: none; color: #fff; font-size: 0.95rem; outline: none; font-family: sans-serif;" oninput="filterEcoApps(this.value)">
+            <button onclick="toggleEcoPalette()" style="background: transparent; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer;">&times;</button>
+        </div>
+        <div id="eco-apps-list" style="overflow-y: auto; padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 6px; max-height: 400px;">
+            <!-- Apps rendered via JS -->
+        </div>
+        <div style="padding: 0.6rem 1.25rem; background: #060a12; border-top: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; font-size: 0.72rem; color: #64748b; font-family: monospace;">
+            <span>Navigation: Click or Press Enter</span>
+            <span>ESC to close</span>
+        </div>
+    </div>
+</div>
+
+<script id="eco-palette-script">
+const ECO_APPS = [
+    { name: "DENTE Dental CRM", cat: "Clinical AI", desc: "FDI Odontogram, ICD-10 & 3D DICOM", url: "https://marko1olo.github.io/dental-crm/" },
+    { name: "StomChat Dispatcher", cat: "Clinical AI", desc: "Omni-Channel WA/TG Operator Console", url: "https://marko1olo.github.io/stomchat/" },
+    { name: "Avito Dental AI Bot", cat: "Clinical AI", desc: "Zero-Hallucination Veto Lead Intake", url: "https://marko1olo.github.io/avito-dental-ai-bot/" },
+    { name: "AgentRouter Hub", cat: "Dev Tools", desc: "Claude Code CLI WAF Bypass & Config Matrix", url: "https://marko1olo.github.io/agentrouter-setup-guide/" },
+    { name: "Token Audit", cat: "Dev Tools", desc: "Real-time LLM Token Waterfall & Matrix Terminal", url: "https://marko1olo.github.io/token-audit/" },
+    { name: "Nexus Media Engine", cat: "DSP & Audio", desc: "60 FPS FFT Spectrum & Ambilight Synth", url: "https://marko1olo.github.io/nexus-media-engine/" },
+    { name: "dvachbot Stream", cat: "Media Scraping", desc: "Makaba Scraper & WebP Dither Transcoder", url: "https://marko1olo.github.io/dvachbot/" },
+    { name: "Hecton-8", cat: "Game Engine", desc: "NASA-Punk Deep Sea Hydro-X Sonar (0B GC)", url: "https://marko1olo.github.io/Hecton8/" },
+    { name: "Gigahrush Raycaster", cat: "Game Engine", desc: "2.5D DDA Samosbor & Cellular Gas Lab", url: "https://marko1olo.github.io/gigahrush/" },
+    { name: "Starcluster Sim", cat: "Deep Tech", desc: "10,000-Star N-Body Orbital Platform", url: "https://jirnyak.github.io/starcluster/" },
+    { name: "OOMMF Framework", cat: "Deep Tech", desc: "Landau-Lifshitz-Gilbert 3D Vector Lattice", url: "https://jirnyak.github.io/oommf/" },
+    { name: "Macromac Engine", cat: "Automation", desc: "macOS CoreGraphics HID Event Engine", url: "https://jirnyak.github.io/macromac/" }
+];
+
+function toggleEcoPalette() {
+    const m = document.getElementById('eco-palette-modal');
+    if (!m) return;
+    const isVis = m.style.display === 'flex';
+    m.style.display = isVis ? 'none' : 'flex';
+    if (!isVis) {
+        renderEcoApps(ECO_APPS);
+        setTimeout(() => document.getElementById('eco-search-input')?.focus(), 50);
+    }
+}
+
+function renderEcoApps(apps) {
+    const list = document.getElementById('eco-apps-list');
+    if (!list) return;
+    list.innerHTML = apps.map(a => `
+        <a href="${a.url}" style="text-decoration: none; padding: 0.6rem 0.85rem; border-radius: 8px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between; transition: all 0.15s;" onmouseover="this.style.background='rgba(56,189,248,0.1)'; this.style.borderColor='rgba(56,189,248,0.3)';" onmouseout="this.style.background='rgba(255,255,255,0.02)'; this.style.borderColor='rgba(255,255,255,0.06)';">
+            <div>
+                <div style="font-weight: 700; color: #fff; font-size: 0.88rem;">${a.name}</div>
+                <div style="font-size: 0.75rem; color: #94a3b8;">${a.desc}</div>
+            </div>
+            <span style="font-family: monospace; font-size: 0.68rem; color: #38bdf8; background: rgba(56,189,248,0.12); padding: 2px 6px; border-radius: 4px;">${a.cat}</span>
+        </a>
+    `).join('');
+}
+
+function filterEcoApps(q) {
+    const filter = q.toLowerCase();
+    const matches = ECO_APPS.filter(a => a.name.toLowerCase().includes(filter) || a.desc.toLowerCase().includes(filter) || a.cat.toLowerCase().includes(filter));
+    renderEcoApps(matches);
+}
+
+window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        toggleEcoPalette();
+    }
+    if (e.key === 'Escape') {
+        const m = document.getElementById('eco-palette-modal');
+        if (m) m.style.display = 'none';
+    }
+});
+</script>
+
 </body>
 </html>
