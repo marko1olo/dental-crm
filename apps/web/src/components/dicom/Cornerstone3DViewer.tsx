@@ -1390,16 +1390,16 @@ export function Cornerstone3DViewer({
 							left: "8px",
 							padding: "4px 8px",
 							borderRadius: "4px",
-							backgroundColor: "rgba(0,0,0,0.5)",
+							backgroundColor: "rgba(0,0,0,0.6)",
 							backdropFilter: "blur(4px)",
 							color: "#f87171",
-							fontSize: "10px",
+							fontSize: "11px",
 							fontWeight: "bold",
 							letterSpacing: "0.05em",
 							zIndex: 10,
 						}}
 					>
-						AXIAL
+						АКСИАЛЬНЫЙ (AXIAL)
 					</div>
 					<section
 						ref={axialRef}
@@ -1416,16 +1416,16 @@ export function Cornerstone3DViewer({
 							left: "8px",
 							padding: "4px 8px",
 							borderRadius: "4px",
-							backgroundColor: "rgba(0,0,0,0.5)",
+							backgroundColor: "rgba(0,0,0,0.6)",
 							backdropFilter: "blur(4px)",
 							color: "#4ade80",
-							fontSize: "10px",
+							fontSize: "11px",
 							fontWeight: "bold",
 							letterSpacing: "0.05em",
 							zIndex: 10,
 						}}
 					>
-						SAGITTAL
+						САГИТТАЛЬНЫЙ (SAGITTAL)
 					</div>
 					<section
 						ref={sagittalRef}
@@ -1442,16 +1442,16 @@ export function Cornerstone3DViewer({
 							left: "8px",
 							padding: "4px 8px",
 							borderRadius: "4px",
-							backgroundColor: "rgba(0,0,0,0.5)",
+							backgroundColor: "rgba(0,0,0,0.6)",
 							backdropFilter: "blur(4px)",
 							color: "#60a5fa",
-							fontSize: "10px",
+							fontSize: "11px",
 							fontWeight: "bold",
 							letterSpacing: "0.05em",
 							zIndex: 10,
 						}}
 					>
-						CORONAL
+						КОРОНАЛЬНЫЙ (CORONAL)
 					</div>
 					<section
 						ref={coronalRef}

@@ -1,29 +1,27 @@
-/* Tailwind 4 требует объявить источник темы, иначе @apply не знает про
-   утилиты и сборка падает. До подключения Tailwind директивы @apply были
-   недопустимым CSS и браузер выбрасывал эти правила целиком — компонент
-   оставался вовсе без оформления. */
+/* Панель семейного баланса и общего счёта.
+   Полная поддержка тёмной, светлой и ночной темы через токены DENTE. */
 
 .family-wallet-panel {
-	background-color: #ffffff;
-	border: 1px solid #e2e8f0;
-	color: #0f172a;
+	background-color: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	color: var(--ink, #0f172a);
 	border-radius: 0.75rem;
 	padding: 1.25rem;
-	box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+	box-shadow: var(--shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
 	position: relative;
 	overflow: hidden;
 	margin-top: 1rem;
 	transition: box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.dark .family-wallet-panel {
-	background-color: #0f172a;
-	border-color: #1e293b;
-	color: #f1f5f9;
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-wallet-panel {
+	background-color: var(--paper-soft, #0f172a);
+	border-color: var(--line, #1e293b);
+	color: var(--ink, #f1f5f9);
 }
 
 .family-wallet-panel:hover {
-	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+	box-shadow: var(--shadow-md, 0 8px 24px rgba(0, 0, 0, 0.08));
 }
 
 .family-wallet-bg-icon {
@@ -31,13 +29,13 @@
 	top: 0;
 	right: 0;
 	padding: 16px;
-	opacity: 0.1;
+	opacity: 0.08;
 	transition: opacity 0.2s ease-out;
-	color: currentColor;
+	color: var(--teal, #0d9488);
 }
 
 .family-wallet-panel:hover .family-wallet-bg-icon {
-	opacity: 0.2;
+	opacity: 0.15;
 }
 
 .family-wallet-header {
@@ -55,23 +53,23 @@
 	font-size: 1.125rem;
 	line-height: 1.75rem;
 	font-weight: 700;
-	color: #0f172a;
+	color: var(--ink, #0f172a);
 	margin: 0;
 }
 
-.dark .family-wallet-title-row {
-	color: #ffffff;
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-wallet-title-row {
+	color: var(--ink, #ffffff);
 }
 
 .family-wallet-subtitle {
 	font-size: 0.875rem;
 	line-height: 1.25rem;
-	color: #64748b;
+	color: var(--muted, #64748b);
 	margin-top: 0.25rem;
 }
 
-.dark .family-wallet-subtitle {
-	color: #94a3b8;
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-wallet-subtitle {
+	color: var(--muted, #94a3b8);
 }
 
 .family-wallet-balance-container {
@@ -85,19 +83,18 @@
 		ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
 		"Courier New", monospace;
 	font-weight: 900;
-	color: #059669;
+	color: var(--good, #059669);
 	letter-spacing: -0.025em;
-	text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.dark .family-wallet-balance {
-	color: #34d399;
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-wallet-balance {
+	color: var(--good, #34d399);
 }
 
 .family-wallet-balance-label {
 	font-size: 0.75rem;
 	line-height: 1rem;
-	color: #64748b;
+	color: var(--muted, #64748b);
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 	margin-top: 0.125rem;
@@ -107,8 +104,8 @@
 	gap: 0.25rem;
 }
 
-.dark .family-wallet-balance-label {
-	color: #94a3b8;
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-wallet-balance-label {
+	color: var(--muted, #94a3b8);
 }
 
 .family-wallet-actions {
@@ -136,35 +133,35 @@
 	line-height: 1rem;
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
-	color: #64748b;
+	color: var(--muted, #64748b);
 	font-weight: 600;
 }
 
-.dark .family-wallet-input-label {
-	color: #94a3b8;
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-wallet-input-label {
+	color: var(--muted, #94a3b8);
 }
 
 .family-wallet-input {
 	width: 100%;
-	background-color: #f8fafc;
-	border: 1px solid #cbd5e1;
+	background-color: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #cbd5e1);
 	border-radius: 0.5rem;
 	padding: 0.75rem;
-	color: #0f172a;
+	color: var(--ink, #0f172a);
 	outline: 2px solid transparent;
 	outline-offset: 2px;
 	transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.dark .family-wallet-input {
-	background-color: #1e293b;
-	border-color: #334155;
-	color: #ffffff;
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-wallet-input {
+	background-color: var(--paper, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--ink, #ffffff);
 }
 
 .family-wallet-input:focus {
-	border-color: #0ea5e9;
-	box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 2px var(--teal-soft, rgba(13, 148, 136, 0.2));
 }
 
 .family-wallet-btn-container {
@@ -173,16 +170,14 @@
 }
 
 .family-wallet-btn {
-	height: 46px;
+	min-height: 44px;
 	padding: 0 1.5rem;
-	background-color: #0284c7;
+	background-color: var(--teal, #0d9488);
 	color: #ffffff;
 	border: 0;
 	border-radius: 0.5rem;
-	font-weight: 500;
-	box-shadow:
-		0 4px 6px -1px rgba(0, 0, 0, 0.1),
-		0 2px 4px -1px rgba(0, 0, 0, 0.06);
+	font-weight: 600;
+	box-shadow: var(--shadow-sm, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
 	transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
 	display: flex;
 	align-items: center;
@@ -190,8 +185,8 @@
 	cursor: pointer;
 }
 
-.family-wallet-btn:hover {
-	background-color: #0369a1;
+.family-wallet-btn:hover:not(:disabled) {
+	background-color: var(--teal-dark, #0f766e);
 }
 
 .family-wallet-btn:disabled {
@@ -200,7 +195,7 @@
 }
 
 .family-wallet-loading {
-	color: #64748b;
+	color: var(--muted, #64748b);
 	font-size: 0.875rem;
 	line-height: 1.25rem;
 	padding: 1rem;
@@ -209,45 +204,37 @@
 	gap: 0.5rem;
 }
 
-.dark .family-wallet-loading {
-	color: #94a3b8;
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-wallet-loading {
+	color: var(--muted, #94a3b8);
 }
 
-/* За кого списывают деньги. Читается как обычная фраза, а не как подпись поля,
-   поэтому без uppercase и без разрядки: имя человека должно быть видно сразу и
-   целиком. Размер тот же, что у остального текста панели, — на кассе в это место
-   смотрят перед нажатием «Списать». */
 .family-wallet-payer {
 	font-size: 0.875rem;
 	line-height: 1.25rem;
-	color: #334155;
+	color: var(--ink-soft, #334155);
 	margin: 0;
 }
 
-.dark .family-wallet-payer {
-	color: #e2e8f0;
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-wallet-payer {
+	color: var(--ink-soft, #e2e8f0);
 }
 
 .family-wallet-payer strong {
 	font-weight: 600;
-	color: #0f172a;
+	color: var(--ink, #0f172a);
 }
 
-.dark .family-wallet-payer strong {
-	color: #ffffff;
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-wallet-payer strong {
+	color: var(--ink, #ffffff);
 }
 
-/* Объяснение, почему «Списать с баланса» не нажимается. Тон предупреждения, а не
-   ошибки: ничего ещё не сломалось, человеку просто нужно поправить сумму.
-   Оформление — теми же утилитами, что и остальная панель, чтобы на экране кассы
-   не появилось второго языка сообщений. */
 .family-wallet-hint {
 	margin-top: 0.75rem;
 	font-size: 0.875rem;
 	line-height: 1.625;
-	color: #92400e;
+	color: var(--warn-fg, #92400e);
 }
 
-.dark .family-wallet-hint {
-	color: #fde68a;
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-wallet-hint {
+	color: var(--warn-fg, #fde68a);
 }

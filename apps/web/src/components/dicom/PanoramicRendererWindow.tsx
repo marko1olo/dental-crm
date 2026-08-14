@@ -183,11 +183,12 @@ export function PanoramicRendererWindow({
 			className="bg-neutral-900 border border-neutral-700 shadow-2xl rounded-lg overflow-hidden flex flex-col z-50"
 		>
 			<div className="bg-neutral-800 p-2 flex justify-between items-center cursor-move handle">
-				<h3 className="text-white font-medium text-sm">Panorex (Curved MPR)</h3>
+				<h3 className="text-white font-medium text-sm">Панорамная реконструкция (Curved MPR)</h3>
 				<button
 					type="button"
 					onClick={onClose}
-					className="text-neutral-400 hover:text-white px-2"
+					aria-label="Закрыть окно панорамы"
+					className="text-neutral-400 hover:text-white px-2 text-base font-bold transition-colors"
 				>
 					&times;
 				</button>
@@ -195,9 +196,9 @@ export function PanoramicRendererWindow({
 			<div className="flex-1 relative bg-black flex items-center justify-center p-4">
 				{loading && (
 					<div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-10">
-						<div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-						<span className="text-blue-400 mt-4 text-sm font-medium animate-pulse">
-							Calculating Trilinear Interpolation...
+						<div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+						<span className="text-teal-400 mt-4 text-sm font-medium animate-pulse">
+							Построение трилинейной интерполяции среза...
 						</span>
 					</div>
 				)}

@@ -234,31 +234,27 @@ export function SberbankTerminalPaymentModal({
 			}}
 		>
 			<div
-				className="w-full max-w-md p-6 rounded-xl shadow-xl"
-				style={{
-					background: "var(--paper)",
-					color: "var(--ink)",
-				}}
+				className="w-full max-w-md p-6 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
 			>
 				<h2
 					id="sber-terminal-modal-title"
-					style={{ marginTop: 0, marginBottom: "16px", fontSize: "20px" }}
+					className="text-xl font-bold mb-4 mt-0 text-slate-900 dark:text-white"
 				>
 					Оплата через терминал Сбербанка
 				</h2>
-				<div style={{ fontSize: "16px", marginBottom: "20px" }}>
-					Сумма к оплате: <strong>{money(amountInRubles)}</strong>
+				<div className="text-base mb-5 text-slate-700 dark:text-slate-300">
+					Сумма к оплате: <strong className="text-slate-900 dark:text-white font-bold">{money(amountInRubles)}</strong>
 				</div>
 
 				{status === "initiating" && (
-					<div style={{ color: "var(--brand-600)" }}>
+					<div style={{ color: "var(--teal, #0d9488)" }}>
 						Отправка запроса на терминал...
 					</div>
 				)}
 
 				{status === "polling" && (
 					<div style={{ marginBottom: "16px" }}>
-						<div style={{ color: "var(--brand-600)", fontWeight: "bold" }}>
+						<div style={{ color: "var(--teal, #0d9488)", fontWeight: "bold" }}>
 							Ожидание оплаты клиентом на терминале...
 						</div>
 						{formUrl && (
@@ -282,7 +278,7 @@ export function SberbankTerminalPaymentModal({
 						)}
 						<div
 							style={{
-								color: "var(--danger, #ef4444)",
+								color: "var(--bad, #ef4444)",
 								fontSize: "13px",
 								marginTop: "6px",
 							}}
@@ -294,13 +290,13 @@ export function SberbankTerminalPaymentModal({
 				)}
 
 				{status === "success" && (
-					<div style={{ color: "var(--success-600)", fontWeight: "bold" }}>
+					<div style={{ color: "var(--good, #10b981)", fontWeight: "bold" }}>
 						Оплата успешно проведена!
 					</div>
 				)}
 
 				{status === "error" && (
-					<div style={{ color: "var(--rust)", marginBottom: "16px" }}>
+					<div style={{ color: "var(--bad, #ef4444)", marginBottom: "16px" }}>
 						Ошибка: {errorMsg}
 					</div>
 				)}

@@ -208,13 +208,13 @@ export function BoneQualityPanel({
 						>
 							<span>Протокол сверления</span>
 							{protocol.underdrillingApplied && (
-								<span className="text-[10px] text-amber-600 font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950">
-									UNDERDRILL
+								<span className="text-[10px] text-amber-700 dark:text-amber-300 font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/80">
+									НЕДОСВЕРЛИВАНИЕ (МЯГКАЯ КОСТЬ)
 								</span>
 							)}
 							{protocol.corticalTapRequired && (
-								<span className="text-[10px] text-rose-600 font-bold px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-950">
-									CORTICAL TAP
+								<span className="text-[10px] text-rose-700 dark:text-rose-300 font-bold px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-950/80">
+									МЕТЧИК (ПЛОТНЫЙ КОРТИКАЛ)
 								</span>
 							)}
 						</div>
@@ -278,7 +278,7 @@ function PanelHeader({
 		<button
 			type="button"
 			onClick={onToggle}
-			className="w-full flex justify-between items-center cursor-pointer pb-1.5 border-b select-none"
+			className="w-full flex justify-between items-center cursor-pointer min-h-[44px] pb-1.5 border-b select-none"
 			style={{
 				borderColor: "var(--line)",
 				background: "none",
@@ -287,8 +287,8 @@ function PanelHeader({
 				borderTop: "none",
 			}}
 		>
-			<span className="text-xs font-bold flex items-center gap-1.5 text-sky-600 dark:text-sky-400">
-				<Activity className="w-4 h-4 text-sky-500" />
+			<span className="text-xs font-bold flex items-center gap-1.5 text-teal-600 dark:text-teal-400">
+				<Activity className="w-4 h-4 text-teal-500" />
 				Плотность кости (HU){toothFdi ? ` • Зуб #${toothFdi}` : ""}
 			</span>
 			<span style={{ color: "var(--muted)" }}>
