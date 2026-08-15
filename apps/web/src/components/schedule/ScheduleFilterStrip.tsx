@@ -88,8 +88,6 @@ export function ScheduleFilterStrip({
 						aria-label="Показать предыдущий день"
 						title="День назад"
 						style={{
-							height: "32px",
-							minHeight: "32px",
 							padding: "0 10px",
 							lineHeight: "1",
 							display: "inline-flex",
@@ -106,8 +104,6 @@ export function ScheduleFilterStrip({
 						value={scheduleDateFilter}
 						onChange={(event) => setScheduleDateFilter(event.target.value)}
 						style={{
-							height: "32px",
-							minHeight: "32px",
 							lineHeight: "1",
 							boxSizing: "border-box",
 							border: "1px solid var(--line)",
@@ -130,8 +126,6 @@ export function ScheduleFilterStrip({
 						aria-label="Показать следующий день"
 						title="День вперёд"
 						style={{
-							height: "32px",
-							minHeight: "32px",
 							padding: "0 10px",
 							lineHeight: "1",
 							display: "inline-flex",
@@ -151,7 +145,6 @@ export function ScheduleFilterStrip({
 				className={`quick-chip ${activeScheduleFilterCount === 0 ? "active" : ""}`}
 				onClick={resetScheduleFilters}
 				style={{
-					minHeight: "36px",
 					lineHeight: "1",
 					padding: "0 14px",
 					boxSizing: "border-box",
@@ -184,7 +177,6 @@ export function ScheduleFilterStrip({
 								)
 							}
 							style={{
-								minHeight: "36px",
 								boxSizing: "border-box",
 								display: "inline-flex",
 								alignItems: "center",
@@ -211,7 +203,6 @@ export function ScheduleFilterStrip({
 							)
 						}
 						style={{
-							minHeight: "36px",
 							boxSizing: "border-box",
 							display: "inline-flex",
 							alignItems: "center",

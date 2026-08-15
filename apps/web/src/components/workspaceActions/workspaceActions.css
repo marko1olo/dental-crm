@@ -324,8 +324,10 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 2.25rem;
-	height: 2.25rem;
+	width: 2.75rem;
+	height: 2.75rem;
+	min-width: 44px;
+	min-height: 44px;
 	flex: 0 0 auto;
 	border: 1px solid transparent;
 	border-radius: 0.625rem;
@@ -431,8 +433,10 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 2rem;
-	height: 2rem;
+	width: 2.75rem;
+	height: 2.75rem;
+	min-width: 44px;
+	min-height: 44px;
 	flex: 0 0 auto;
 	border: 1px solid transparent;
 	border-radius: 0.5rem;

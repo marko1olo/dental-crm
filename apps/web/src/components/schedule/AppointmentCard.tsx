@@ -309,7 +309,6 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							title={`Повторить запись: те же пациент, врач и кресло — останется выбрать время`}
 							style={{
 								padding: "6px 14px",
-								minHeight: "36px",
 								fontSize: "13px",
 							}}
 						>
@@ -324,7 +323,6 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								title="Скопировать в буфер расписания для вставки на другое время"
 								style={{
 									padding: "6px 14px",
-									minHeight: "36px",
 									fontSize: "13px",
 								}}
 							>
@@ -341,7 +339,6 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							title={`Настроить запись: ${appointmentPatientName}, ${formatTime(appointment.startsAt)}-${formatTime(appointment.endsAt)}`}
 							style={{
 								padding: "6px 14px",
-								minHeight: "36px",
 								fontSize: "13px",
 							}}
 						>

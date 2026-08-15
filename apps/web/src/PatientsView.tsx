@@ -129,7 +129,7 @@ const quickCreateInputStyle: CSSProperties = {
 	borderRadius: "9px",
 	color: "var(--ink)",
 	fontSize: "0.95rem",
-	minHeight: "2.5rem",
+	minHeight: "44px",
 	padding: "10px 12px",
 	width: "100%",
 };

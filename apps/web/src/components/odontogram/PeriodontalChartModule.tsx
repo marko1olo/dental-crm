@@ -634,7 +634,7 @@ export function PeriodontalChartModule({
 													}
 													className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
 														site.suppuration
-															? "bg-purple-600 text-white"
+															? "bg-teal-600 dark:bg-teal-500 text-white"
 															: "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
 													}`}
 												>
@@ -787,7 +787,7 @@ export function PeriodontalChartModule({
 													}
 													className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
 														site.suppuration
-															? "bg-purple-600 text-white"
+															? "bg-teal-600 dark:bg-teal-500 text-white"
 															: "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
 													}`}
 												>

@@ -878,6 +878,7 @@ button:disabled {
 }
 
 [data-theme="dark"] .onboarding-draft-strip,
+[data-theme="night"] .onboarding-draft-strip,
 .dark .onboarding-draft-strip,
 html.dark .onboarding-draft-strip,
 body.dark-mode .onboarding-draft-strip {
@@ -887,6 +888,7 @@ body.dark-mode .onboarding-draft-strip {
 }
 
 [data-theme="dark"] .onboarding-draft-strip strong,
+[data-theme="night"] .onboarding-draft-strip strong,
 .dark .onboarding-draft-strip strong,
 html.dark .onboarding-draft-strip strong,
 body.dark-mode .onboarding-draft-strip strong {
@@ -894,6 +896,7 @@ body.dark-mode .onboarding-draft-strip strong {
 }
 
 [data-theme="dark"] .onboarding-draft-strip span,
+[data-theme="night"] .onboarding-draft-strip span,
 .dark .onboarding-draft-strip span,
 html.dark .onboarding-draft-strip span,
 body.dark-mode .onboarding-draft-strip span {
@@ -2708,7 +2711,7 @@ section.imaging-panel {
 .imaging-viewer-tools {
 	display: grid;
 	gap: 6px;
-	grid-template-columns: repeat(7, minmax(40px, 1fr));
+	grid-template-columns: repeat(7, minmax(44px, 1fr));
 }
 
 .viewer-tool-button {
@@ -2719,9 +2722,10 @@ section.imaging-panel {
 	color: #eafffa;
 	display: inline-flex;
 	font-weight: 900;
-	height: 40px;
+	height: 44px;
+	min-height: 44px;
 	justify-content: center;
-	min-width: 40px;
+	min-width: 44px;
 }
 
 .viewer-tool-button.active,
@@ -6706,7 +6710,9 @@ section.imaging-panel {
 }
 
 [data-theme="dark"] .mode-readiness > div,
-[data-theme="dark"] .clinic-legal-form {
+[data-theme="night"] .mode-readiness > div,
+[data-theme="dark"] .clinic-legal-form,
+[data-theme="night"] .clinic-legal-form {
 	background: var(--glass-panel, rgba(15, 23, 42, 0.7));
 	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
 }
@@ -6726,7 +6732,8 @@ section.imaging-panel {
 	padding: 2px 9px;
 }
 
-[data-theme="dark"] .mode-readiness span {
+[data-theme="dark"] .mode-readiness span,
+[data-theme="night"] .mode-readiness span {
 	background: rgba(15, 118, 110, 0.2);
 	color: #5eead4;
 }
@@ -9587,7 +9594,8 @@ section.imaging-panel {
 	padding: 12px;
 }
 
-[data-theme="dark"] .patient-admin-panel {
+[data-theme="dark"] .patient-admin-panel,
+[data-theme="night"] .patient-admin-panel {
 	background: var(--glass-panel, rgba(15, 23, 42, 0.7));
 	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
 }
@@ -9813,8 +9821,12 @@ section.imaging-panel {
 
 :root[data-theme="dark"] .status-neutral,
 :root[data-theme="dark"] .status-empty,
+:root[data-theme="night"] .status-neutral,
+:root[data-theme="night"] .status-empty,
 [data-theme="dark"] .status-neutral,
 [data-theme="dark"] .status-empty,
+[data-theme="night"] .status-neutral,
+[data-theme="night"] .status-empty,
 .dark .status-neutral,
 .dark .status-empty {
 	background: rgba(30, 41, 59, 0.8);
@@ -10565,7 +10577,8 @@ section.imaging-panel {
 	text-align: left;
 }
 
-[data-theme="dark"] .dictation-action-guidance {
+[data-theme="dark"] .dictation-action-guidance,
+[data-theme="night"] .dictation-action-guidance {
 	background: rgba(15, 118, 110, 0.2);
 	border-color: rgba(45, 212, 191, 0.3);
 	color: #5eead4;
@@ -10583,7 +10596,8 @@ section.imaging-panel {
 	text-align: left;
 }
 
-[data-theme="dark"] .visit-draft-missing {
+[data-theme="dark"] .visit-draft-missing,
+[data-theme="night"] .visit-draft-missing {
 	background: rgba(180, 83, 9, 0.2);
 	border-color: rgba(245, 158, 11, 0.4);
 	color: #fde68a;
@@ -10859,21 +10873,9 @@ section.imaging-panel {
 	pointer-events: none;
 }
 
-@keyframes ai-pulse {
-	0% {
-		box-shadow: 0 0 0 0 rgba(15, 118, 110, 0.6);
-	}
-	70% {
-		box-shadow: 0 0 0 6px rgba(15, 118, 110, 0);
-	}
-	100% {
-		box-shadow: 0 0 0 0 rgba(15, 118, 110, 0);
-	}
-}
-
 .tooth.tooth-ai-detected {
-	animation: ai-pulse 2s infinite;
 	border-color: var(--teal);
+	box-shadow: 0 0 0 2px var(--teal-soft);
 }
 
 .tooth-planned {
@@ -10972,7 +10974,8 @@ section.imaging-panel {
 }
 
 html.dark .visit-note-panel,
-[data-theme="dark"] .visit-note-panel {
+[data-theme="dark"] .visit-note-panel,
+[data-theme="night"] .visit-note-panel {
 	background: var(--glass-panel, rgba(15, 23, 42, 0.7));
 	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
 	color: var(--ink, #f8fafc);
@@ -10983,13 +10986,19 @@ html.dark .visit-note-panel h4,
 html.dark .visit-note-panel strong,
 [data-theme="dark"] .visit-note-panel h3,
 [data-theme="dark"] .visit-note-panel h4,
-[data-theme="dark"] .visit-note-panel strong {
+[data-theme="dark"] .visit-note-panel strong,
+[data-theme="night"] .visit-note-panel h3,
+[data-theme="night"] .visit-note-panel h4,
+[data-theme="night"] .visit-note-panel strong {
 	color: var(--ink, #f8fafc);
 }
 
 html.dark .emk-tabs-container,
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 	[data-theme="dark"]
+	.emk-tabs-container,
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+	[data-theme="night"]
 	.emk-tabs-container {
 	background: rgba(30, 41, 59, 0.8);
 	border-color: rgba(255, 255, 255, 0.1);
@@ -10998,6 +11007,9 @@ html.dark .emk-tabs-container,
 html.dark .emk-tab-button,
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 	[data-theme="dark"]
+	.emk-tab-button,
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+	[data-theme="night"]
 	.emk-tab-button {
 	color: var(--muted, #94a3b8);
 }
@@ -11005,6 +11017,9 @@ html.dark .emk-tab-button,
 html.dark .emk-tab-button.active,
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 	[data-theme="dark"]
+	.emk-tab-button.active,
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+	[data-theme="night"]
 	.emk-tab-button.active {
 	background: var(--primary-strong, #0d9488);
 	color: #ffffff;
@@ -12180,7 +12195,11 @@ html.dark .payment-capture h3,
 [data-theme="dark"] .plan-scenarios h2,
 [data-theme="dark"] .plan-scenarios h3,
 [data-theme="dark"] .payment-capture h2,
-[data-theme="dark"] .payment-capture h3 {
+[data-theme="dark"] .payment-capture h3,
+[data-theme="night"] .plan-scenarios h2,
+[data-theme="night"] .plan-scenarios h3,
+[data-theme="night"] .payment-capture h2,
+[data-theme="night"] .payment-capture h3 {
 	color: #f8fafc;
 }
 
@@ -13044,7 +13063,9 @@ html.dark .payment-capture h3,
 html.dark .communication-side section h3,
 html.dark .communication-side .panel-heading h3,
 [data-theme="dark"] .communication-side section h3,
-[data-theme="dark"] .communication-side .panel-heading h3 {
+[data-theme="dark"] .communication-side .panel-heading h3,
+[data-theme="night"] .communication-side section h3,
+[data-theme="night"] .communication-side .panel-heading h3 {
 	color: #f8fafc;
 }
 
@@ -13405,20 +13426,24 @@ html.dark .communication-side .panel-heading h3,
 	margin: 0;
 }
 
-[data-theme="dark"] .compliance-bar {
+[data-theme="dark"] .compliance-bar,
+[data-theme="night"] .compliance-bar {
 	background: var(--glass-panel, rgba(15, 23, 42, 0.7));
 	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
 }
 
-[data-theme="dark"] .compliance-bar summary {
+[data-theme="dark"] .compliance-bar summary,
+[data-theme="night"] .compliance-bar summary {
 	color: var(--teal-light, #2dd4bf);
 }
 
-[data-theme="dark"] .compliance-bar summary::after {
+[data-theme="dark"] .compliance-bar summary::after,
+[data-theme="night"] .compliance-bar summary::after {
 	color: var(--muted, #94a3b8);
 }
 
-[data-theme="dark"] .compliance-bar p {
+[data-theme="dark"] .compliance-bar p,
+[data-theme="night"] .compliance-bar p {
 	color: var(--ink, #f8fafc);
 }
 
@@ -14533,16 +14558,6 @@ html.dark .communication-side .panel-heading h3,
 	}
 }
 
-@keyframes pulse-soft {
-	0%,
-	100% {
-		opacity: 1;
-	}
-	50% {
-		opacity: 0.55;
-	}
-}
-
 @keyframes slide-in-left {
 	from {
 		opacity: 0;
@@ -14754,7 +14769,7 @@ html.dark .communication-side .panel-heading h3,
    STATUS PILL PULSE (loading state)
    ─────────────────────────────────────────────── */
 .status-pill.status-loading {
-	animation: pulse-soft 1.6s ease-in-out infinite;
+	opacity: 0.75;
 }
 
 /* ───────────────────────────────────────────────
@@ -15346,28 +15361,34 @@ textarea:focus {
 	border-bottom: 1px solid var(--border-color, #e2e8f0);
 }
 
-[data-theme="dark"] .settings-advanced-block {
+[data-theme="dark"] .settings-advanced-block,
+[data-theme="night"] .settings-advanced-block {
 	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
 }
 
-[data-theme="dark"] .settings-advanced-toggle {
+[data-theme="dark"] .settings-advanced-toggle,
+[data-theme="night"] .settings-advanced-toggle {
 	background: var(--glass-panel, rgba(15, 23, 42, 0.7));
 	color: var(--ink, #f8fafc);
 }
 
-[data-theme="dark"] .settings-advanced-toggle:hover {
+[data-theme="dark"] .settings-advanced-toggle:hover,
+[data-theme="night"] .settings-advanced-toggle:hover {
 	background: rgba(30, 41, 59, 0.9);
 }
 
-[data-theme="dark"] .settings-advanced-label {
+[data-theme="dark"] .settings-advanced-label,
+[data-theme="night"] .settings-advanced-label {
 	color: var(--ink, #f8fafc);
 }
 
-[data-theme="dark"] .settings-advanced-hint {
+[data-theme="dark"] .settings-advanced-hint,
+[data-theme="night"] .settings-advanced-hint {
 	color: var(--muted, #94a3b8);
 }
 
-[data-theme="dark"] .settings-advanced-form {
+[data-theme="dark"] .settings-advanced-form,
+[data-theme="night"] .settings-advanced-form {
 	background: rgba(15, 23, 42, 0.85);
 }
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
@@ -16738,7 +16759,11 @@ html.dark .weekday-toggle-row,
 [data-theme="dark"] .settings-grid label,
 [data-theme="dark"] .clinic-profile-form-grid label,
 [data-theme="dark"] .rule-form-grid label,
-[data-theme="dark"] .weekday-toggle-row {
+[data-theme="dark"] .weekday-toggle-row,
+[data-theme="night"] .settings-grid label,
+[data-theme="night"] .clinic-profile-form-grid label,
+[data-theme="night"] .rule-form-grid label,
+[data-theme="night"] .weekday-toggle-row {
 	background: rgba(30, 41, 59, 0.7);
 	border-color: rgba(255, 255, 255, 0.1);
 	color: var(--ink, #f8fafc);
@@ -16749,7 +16774,10 @@ html.dark .clinic-profile-form-grid select,
 html.dark .clinic-profile-form-grid textarea,
 [data-theme="dark"] .clinic-profile-form-grid input,
 [data-theme="dark"] .clinic-profile-form-grid select,
-[data-theme="dark"] .clinic-profile-form-grid textarea {
+[data-theme="dark"] .clinic-profile-form-grid textarea,
+[data-theme="night"] .clinic-profile-form-grid input,
+[data-theme="night"] .clinic-profile-form-grid select,
+[data-theme="night"] .clinic-profile-form-grid textarea {
 	background: rgba(15, 23, 42, 0.8);
 	border-color: rgba(255, 255, 255, 0.15);
 	color: #f8fafc;
@@ -17011,7 +17039,7 @@ html.dark .clinic-profile-form-grid textarea,
 	top: calc(100% + 8px);
 	left: 0;
 	right: 0;
-	background: rgba(255, 255, 255, 0.95);
+	background: var(--paper);
 	backdrop-filter: blur(8px);
 	border: 1px solid var(--brand-200, #bae6fd);
 	border-radius: 12px;
@@ -17677,15 +17705,15 @@ html.dark .clinic-profile-form-grid textarea,
 }
 
 .chip-suggestion.priority-urgent {
-	background: #fee2e2;
-	color: #991b1b;
-	border-color: #fca5a5;
+	background: var(--bad-bg);
+	color: var(--bad-fg);
+	border-color: var(--bad-fg);
 }
 
 .chip-suggestion.priority-important {
-	background: #fef3c7;
-	color: #92400e;
-	border-color: #fcd34d;
+	background: var(--warn-bg);
+	color: var(--warn-fg);
+	border-color: var(--warn-fg);
 }
 
 .appointment-edit-button {
@@ -17741,7 +17769,7 @@ html.dark .clinic-profile-form-grid textarea,
 /* --- APPOINTMENT CARD PREMIUM AESTHETICS --- */
 .appointment-card {
 	padding: 16px;
-	background: rgba(255, 255, 255, 0.85);
+	background: var(--glass-panel);
 	backdrop-filter: blur(12px);
 	border: 1px solid var(--line);
 	border-radius: 12px;
@@ -17985,6 +18013,7 @@ html.dark .clinic-profile-form-grid textarea,
 
 /* --- Schedule Dark Mode Theme Harmony --- */
 [data-theme="dark"] .schedule-shift-summary,
+[data-theme="night"] .schedule-shift-summary,
 .dark .schedule-shift-summary,
 body.dark-mode .schedule-shift-summary {
 	background: var(--surface-alt, #1e293b);
@@ -17993,6 +18022,7 @@ body.dark-mode .schedule-shift-summary {
 }
 
 [data-theme="dark"] .schedule-shift-summary-grid article,
+[data-theme="night"] .schedule-shift-summary-grid article,
 .dark .schedule-shift-summary-grid article,
 body.dark-mode .schedule-shift-summary-grid article {
 	background: var(--surface, #0f172a);
@@ -18001,6 +18031,7 @@ body.dark-mode .schedule-shift-summary-grid article {
 }
 
 [data-theme="dark"] .schedule-filter-strip,
+[data-theme="night"] .schedule-filter-strip,
 .dark .schedule-filter-strip,
 body.dark-mode .schedule-filter-strip {
 	background: var(--surface-alt, #1e293b);
@@ -18008,6 +18039,7 @@ body.dark-mode .schedule-filter-strip {
 }
 
 [data-theme="dark"] .schedule-secret-collapsible,
+[data-theme="night"] .schedule-secret-collapsible,
 .dark .schedule-secret-collapsible,
 body.dark-mode .schedule-secret-collapsible {
 	background: var(--surface-alt, #1e293b);
@@ -18016,6 +18048,7 @@ body.dark-mode .schedule-secret-collapsible {
 }
 
 [data-theme="dark"] .schedule-secret-collapsible .schedule-admin-unlock,
+[data-theme="night"] .schedule-secret-collapsible .schedule-admin-unlock,
 .dark .schedule-secret-collapsible .schedule-admin-unlock,
 body.dark-mode .schedule-secret-collapsible .schedule-admin-unlock {
 	background: var(--surface, #0f172a);
@@ -18025,21 +18058,27 @@ body.dark-mode .schedule-secret-collapsible .schedule-admin-unlock {
 
 /* --- Communications Dark Mode Theme Harmony --- */
 [data-theme="dark"] .communications-summary-grid article,
+[data-theme="night"] .communications-summary-grid article,
 .dark .communications-summary-grid article,
 body.dark-mode .communications-summary-grid article,
 [data-theme="dark"] .communication-note-row,
+[data-theme="night"] .communication-note-row,
 .dark .communication-note-row,
 body.dark-mode .communication-note-row,
 [data-theme="dark"] .communication-task,
+[data-theme="night"] .communication-task,
 .dark .communication-task,
 body.dark-mode .communication-task,
 [data-theme="dark"] .communication-side section,
+[data-theme="night"] .communication-side section,
 .dark .communication-side section,
 body.dark-mode .communication-side section,
 [data-theme="dark"] .template-list article,
+[data-theme="night"] .template-list article,
 .dark .template-list article,
 body.dark-mode .template-list article,
 [data-theme="dark"] .communication-empty-state,
+[data-theme="night"] .communication-empty-state,
 .dark .communication-empty-state,
 body.dark-mode .communication-empty-state {
 	background: var(--surface-alt, #1e293b);
@@ -18049,30 +18088,39 @@ body.dark-mode .communication-empty-state {
 
 /* --- Finance Dark Mode Theme Harmony --- */
 [data-theme="dark"] .finance-summary-grid article,
+[data-theme="night"] .finance-summary-grid article,
 .dark .finance-summary-grid article,
 body.dark-mode .finance-summary-grid article,
 [data-theme="dark"] .payment-capture,
+[data-theme="night"] .payment-capture,
 .dark .payment-capture,
 body.dark-mode .payment-capture,
 [data-theme="dark"] .plan-scenarios,
+[data-theme="night"] .plan-scenarios,
 .dark .plan-scenarios,
 body.dark-mode .plan-scenarios,
 [data-theme="dark"] .plan-scenario,
+[data-theme="night"] .plan-scenario,
 .dark .plan-scenario,
 body.dark-mode .plan-scenario,
 [data-theme="dark"] .clinical-rule-panel,
+[data-theme="night"] .clinical-rule-panel,
 .dark .clinical-rule-panel,
 body.dark-mode .clinical-rule-panel,
 [data-theme="dark"] .clinical-rule-card,
+[data-theme="night"] .clinical-rule-card,
 .dark .clinical-rule-card,
 body.dark-mode .clinical-rule-card,
 [data-theme="dark"] .finance-list,
+[data-theme="night"] .finance-list,
 .dark .finance-list,
 body.dark-mode .finance-list,
 [data-theme="dark"] .service-catalog-strip article,
+[data-theme="night"] .service-catalog-strip article,
 .dark .service-catalog-strip article,
 body.dark-mode .service-catalog-strip article,
 [data-theme="dark"] .payment-capture-detail-section,
+[data-theme="night"] .payment-capture-detail-section,
 .dark .payment-capture-detail-section,
 body.dark-mode .payment-capture-detail-section {
 	background: var(--surface-alt, #1e293b);
@@ -18084,6 +18132,9 @@ body.dark-mode .payment-capture-detail-section {
 html.dark .document-manual-override,
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 	[data-theme="dark"]
+	.document-manual-override,
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+	[data-theme="night"]
 	.document-manual-override,
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 .dark .document-manual-override,

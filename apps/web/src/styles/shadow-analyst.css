@@ -268,19 +268,8 @@
  */
 .sa-icon-btn--active {
 	color: var(--ok-fg);
-	background: rgba(16, 185, 129, 0.08);
-	border-color: rgba(16, 185, 129, 0.25);
-	animation: sa-pulse-border 1.5s infinite;
-}
-
-@keyframes sa-pulse-border {
-	0%,
-	100% {
-		border-color: rgba(16, 185, 129, 0.25);
-	}
-	50% {
-		border-color: rgba(16, 185, 129, 0.55);
-	}
+	background: var(--ok-bg);
+	border-color: var(--ok-fg);
 }
 
 /* ---- Panel body / sections ---- */
@@ -479,11 +468,11 @@
 	top: 0;
 	bottom: 0;
 	width: 3px;
-	background: #38bdf8;
+	background: var(--teal, #38bdf8);
 	cursor: ew-resize;
 	transform: translateX(-50%);
 	z-index: 10;
-	box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+	box-shadow: var(--shadow-1);
 }
 
 .sa-slider-line {

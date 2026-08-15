@@ -358,8 +358,8 @@ export const InsuranceContractsPanel: React.FC = () => {
 											background: "rgba(245,158,11,0.15)",
 											color: "var(--amber, #d97706)",
 											border: "none",
-											width: 34,
-											height: 34,
+											width: 44,
+											height: 44,
 											borderRadius: 8,
 											cursor: "pointer",
 											display: "flex",
@@ -368,7 +368,7 @@ export const InsuranceContractsPanel: React.FC = () => {
 										}}
 										title="Редактировать"
 									>
-										<Edit2 size={14} />
+										<Edit2 size={16} />
 									</button>
 									<button
 										type="button"
@@ -377,8 +377,8 @@ export const InsuranceContractsPanel: React.FC = () => {
 											background: "rgba(239,68,68,0.15)",
 											color: "var(--tomato, #ef4444)",
 											border: "none",
-											width: 34,
-											height: 34,
+											width: 44,
+											height: 44,
 											borderRadius: 8,
 											cursor: "pointer",
 											display: "flex",
@@ -387,7 +387,7 @@ export const InsuranceContractsPanel: React.FC = () => {
 										}}
 										title="Удалить"
 									>
-										<Trash2 size={14} />
+										<Trash2 size={16} />
 									</button>
 								</div>
 							</div>

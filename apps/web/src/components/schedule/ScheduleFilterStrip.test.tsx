@@ -48,8 +48,8 @@ describe("ScheduleFilterStrip Component", () => {
 			"Renders date filter input control",
 		);
 		assert.ok(
-			html.includes("height:32px") || html.includes("height: 32px"),
-			"Enforces explicit matching 32px height for vertical alignment",
+			html.includes("schedule-date-picker-group"),
+			"Renders schedule date picker control group with date stepper and input",
 		);
 	});
 

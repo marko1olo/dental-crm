@@ -1,5 +1,6 @@
 import type { UrgentScheduleRequest } from "@dental/shared";
 import { useEffect, useState } from "react";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
@@ -16,6 +17,7 @@ export function UrgentScheduleRequestsWidget() {
 		setError(null);
 		fetch("/api/schedule/urgent-schedule-requests", {
 			credentials: "include",
+			headers: denteAdminSecretRequestHeaders(),
 		})
 			.then(async (res) => {
 				if (!res.ok) {
@@ -50,6 +52,7 @@ export function UrgentScheduleRequestsWidget() {
 				{
 					method: "PATCH",
 					credentials: "include",
+					headers: denteAdminSecretRequestHeaders(),
 				},
 			);
 			if (res.ok) {

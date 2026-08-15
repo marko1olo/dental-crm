@@ -768,7 +768,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 				{/* O — Objective */}
 				<div className="vde-043__field">
 					<label className="vde-043__label" htmlFor="diary-status-localis">
-						<Search className="w-3 h-3" style={{ color: "#7c3aed" }} />
+						<Search className="w-3 h-3 text-teal-600 dark:text-teal-400" />
 						<span className="vde-043__letter vde-043__letter--o">O</span> —
 						Объективно (Status Localis)
 						{!fieldsDisabled && (

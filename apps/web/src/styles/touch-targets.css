@@ -201,7 +201,13 @@
 	.routing-add-rule,
 	.profile-input-toggle-btn,
 	.day-hours input[type="time"],
-	.dnt-actions__trigger {
+	.dnt-actions__trigger,
+	.dnt-actions__control,
+	.dnt-actions__sheet-close,
+	.dnt-actions__panel-close,
+	.viewer-tool-button,
+	.schedule-day-step-prev,
+	.schedule-day-step-next {
 		min-height: 44px;
 		min-width: 44px;
 		box-sizing: border-box;
@@ -212,6 +218,8 @@
 	.kanban-modal-close,
 	.profile-input-toggle-btn,
 	.close-btn,
+	.dnt-actions__sheet-close,
+	.dnt-actions__panel-close,
 	.routing-rule-remove {
 		display: inline-flex;
 		align-items: center;

@@ -228,10 +228,10 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 				}}
 			>
 				<div>
-					<h3 style={{ margin: 0, color: "#f4f4f5", fontSize: "1.1rem" }}>
+					<h3 style={{ margin: 0, color: "var(--ink)", fontSize: "1.1rem" }}>
 						🦷 Зуботехническая лаборатория (CAD/CAM ЗТЛ)
 					</h3>
-					<small style={{ color: "#71717a" }}>
+					<small style={{ color: "var(--muted)" }}>
 						Оформление нарядов, выбор реставраций, шкалы VITA, культей ND1-ND9 и трекинг статусов
 					</small>
 				</div>
@@ -240,12 +240,13 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 					onClick={() => setShowForm(!showForm)}
 					style={{
 						padding: "8px 16px",
-						background: showForm ? "rgba(239, 68, 68, 0.15)" : "rgba(59, 130, 246, 0.2)",
-						color: showForm ? "#fca5a5" : "#93c5fd",
-						border: `1px solid ${showForm ? "rgba(239, 68, 68, 0.3)" : "rgba(59, 130, 246, 0.3)"}`,
+						background: showForm ? "var(--bad-bg)" : "var(--info-bg)",
+						color: showForm ? "var(--bad-fg)" : "var(--info-fg)",
+						border: `1px solid ${showForm ? "var(--bad-fg)" : "var(--info-fg)"}`,
 						borderRadius: "6px",
 						cursor: "pointer",
 						fontWeight: 500,
+						minHeight: "44px",
 					}}
 				>
 					{showForm ? "✕ Отмена" : "+ Новый наряд в ЗТЛ"}
@@ -260,18 +261,18 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						display: "flex",
 						flexDirection: "column",
 						gap: "12px",
-						background: "rgba(24, 24, 27, 0.8)",
+						background: "var(--paper-soft)",
 						padding: "18px",
 						borderRadius: "8px",
-						border: "1px solid rgba(63, 63, 70, 0.5)",
+						border: "1px solid var(--line)",
 						marginBottom: "20px",
 					}}
 				>
-					<h4 style={{ margin: 0, color: "#e4e4e7" }}>Параметры ортопедической работы</h4>
+					<h4 style={{ margin: 0, color: "var(--ink)" }}>Параметры ортопедической работы</h4>
 
 					{!patientId && (
 						<div>
-							<label style={{ display: "block", fontSize: "12px", color: "#a1a1aa", marginBottom: "4px" }}>
+							<label style={{ display: "block", fontSize: "12px", color: "var(--muted)", marginBottom: "4px" }}>
 								ID Пациента
 							</label>
 							<input
@@ -284,9 +285,9 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 									width: "100%",
 									padding: "8px",
 									borderRadius: "4px",
-									border: "1px solid #52525b",
-									background: "#27272a",
-									color: "#fff",
+									border: "1px solid var(--line)",
+									background: "var(--paper)",
+									color: "var(--ink)",
 								}}
 							/>
 						</div>
@@ -294,10 +295,10 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 
 					{/* Зубная формула быстрый выбор */}
 					<div>
-						<label style={{ display: "block", fontSize: "12px", color: "#a1a1aa", marginBottom: "4px" }}>
+						<label style={{ display: "block", fontSize: "12px", color: "var(--muted)", marginBottom: "4px" }}>
 							Зубы по FDI (выбрано: {selectedTeeth.length > 0 ? selectedTeeth.join(", ") : "не выбрано"})
 						</label>
-						<div style={{ display: "flex", flexWrap: "wrap", gap: "4px", background: "#18181b", padding: "8px", borderRadius: "6px" }}>
+						<div style={{ display: "flex", flexWrap: "wrap", gap: "4px", background: "var(--paper)", padding: "8px", borderRadius: "6px", border: "1px solid var(--line)" }}>
 							{[18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28].map((t) => (
 								<button
 									key={t}
@@ -307,17 +308,19 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 										padding: "4px 8px",
 										fontSize: "12px",
 										borderRadius: "4px",
-										background: selectedTeeth.includes(t) ? "#3b82f6" : "#27272a",
-										color: selectedTeeth.includes(t) ? "#fff" : "#a1a1aa",
-										border: "1px solid #3f3f46",
+										background: selectedTeeth.includes(t) ? "var(--teal)" : "var(--paper-soft)",
+										color: selectedTeeth.includes(t) ? "var(--on-teal, #ffffff)" : "var(--ink)",
+										border: "1px solid var(--line)",
 										cursor: "pointer",
+										minHeight: "32px",
+										minWidth: "32px",
 									}}
 								>
 									{t}
 								</button>
 							))}
 						</div>
-						<div style={{ display: "flex", flexWrap: "wrap", gap: "4px", background: "#18181b", padding: "8px", borderRadius: "6px", marginTop: "4px" }}>
+						<div style={{ display: "flex", flexWrap: "wrap", gap: "4px", background: "var(--paper)", padding: "8px", borderRadius: "6px", marginTop: "4px", border: "1px solid var(--line)" }}>
 							{[48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38].map((t) => (
 								<button
 									key={t}
@@ -327,10 +330,12 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 										padding: "4px 8px",
 										fontSize: "12px",
 										borderRadius: "4px",
-										background: selectedTeeth.includes(t) ? "#3b82f6" : "#27272a",
-										color: selectedTeeth.includes(t) ? "#fff" : "#a1a1aa",
-										border: "1px solid #3f3f46",
+										background: selectedTeeth.includes(t) ? "var(--teal)" : "var(--paper-soft)",
+										color: selectedTeeth.includes(t) ? "var(--on-teal, #ffffff)" : "var(--ink)",
+										border: "1px solid var(--line)",
 										cursor: "pointer",
+										minHeight: "32px",
+										minWidth: "32px",
 									}}
 								>
 									{t}
@@ -341,7 +346,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 
 					<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
 						<div>
-							<label style={{ display: "block", fontSize: "12px", color: "#a1a1aa", marginBottom: "4px" }}>
+							<label style={{ display: "block", fontSize: "12px", color: "var(--muted)", marginBottom: "4px" }}>
 								Тип конструкции
 							</label>
 							<select
@@ -351,9 +356,9 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 									width: "100%",
 									padding: "8px",
 									borderRadius: "4px",
-									border: "1px solid #52525b",
-									background: "#27272a",
-									color: "#fff",
+									border: "1px solid var(--line)",
+									background: "var(--paper)",
+									color: "var(--ink)",
 								}}
 							>
 								{RESTORATION_TYPES.map((rt) => (
@@ -365,7 +370,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						</div>
 
 						<div>
-							<label style={{ display: "block", fontSize: "12px", color: "#a1a1aa", marginBottom: "4px" }}>
+							<label style={{ display: "block", fontSize: "12px", color: "var(--muted)", marginBottom: "4px" }}>
 								Материал
 							</label>
 							<select
@@ -375,9 +380,9 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 									width: "100%",
 									padding: "8px",
 									borderRadius: "4px",
-									border: "1px solid #52525b",
-									background: "#27272a",
-									color: "#fff",
+									border: "1px solid var(--line)",
+									background: "var(--paper)",
+									color: "var(--ink)",
 								}}
 							>
 								{MATERIALS.map((m) => (
@@ -391,7 +396,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 
 					<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
 						<div>
-							<label style={{ display: "block", fontSize: "12px", color: "#a1a1aa", marginBottom: "4px" }}>
+							<label style={{ display: "block", fontSize: "12px", color: "var(--muted)", marginBottom: "4px" }}>
 								Цвет реставрации (VITA)
 							</label>
 							<select
@@ -401,9 +406,9 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 									width: "100%",
 									padding: "8px",
 									borderRadius: "4px",
-									border: "1px solid #52525b",
-									background: "#27272a",
-									color: "#fff",
+									border: "1px solid var(--line)",
+									background: "var(--paper)",
+									color: "var(--ink)",
 								}}
 							>
 								{VITA_CLASSICAL_SHADES.map((s) => (
@@ -415,7 +420,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						</div>
 
 						<div>
-							<label style={{ display: "block", fontSize: "12px", color: "#a1a1aa", marginBottom: "4px" }}>
+							<label style={{ display: "block", fontSize: "12px", color: "var(--muted)", marginBottom: "4px" }}>
 								Цвет культи (IPS Natural Die)
 							</label>
 							<select
@@ -425,9 +430,9 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 									width: "100%",
 									padding: "8px",
 									borderRadius: "4px",
-									border: "1px solid #52525b",
-									background: "#27272a",
-									color: "#fff",
+									border: "1px solid var(--line)",
+									background: "var(--paper)",
+									color: "var(--ink)",
 								}}
 							>
 								<option value="">Не указан (обычная)</option>
@@ -440,7 +445,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						</div>
 
 						<div>
-							<label style={{ display: "block", fontSize: "12px", color: "#a1a1aa", marginBottom: "4px" }}>
+							<label style={{ display: "block", fontSize: "12px", color: "var(--muted)", marginBottom: "4px" }}>
 								Цементный зазор (мкм)
 							</label>
 							<input
@@ -453,9 +458,9 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 									width: "100%",
 									padding: "8px",
 									borderRadius: "4px",
-									border: "1px solid #52525b",
-									background: "#27272a",
-									color: "#fff",
+									border: "1px solid var(--line)",
+									background: "var(--paper)",
+									color: "var(--ink)",
 								}}
 							/>
 						</div>
@@ -463,7 +468,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 
 					<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
 						<div>
-							<label style={{ display: "block", fontSize: "12px", color: "#a1a1aa", marginBottom: "4px" }}>
+							<label style={{ display: "block", fontSize: "12px", color: "var(--muted)", marginBottom: "4px" }}>
 								Срок сдачи работы
 							</label>
 							<input
@@ -474,15 +479,16 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 									width: "100%",
 									padding: "8px",
 									borderRadius: "4px",
-									border: "1px solid #52525b",
-									background: "#27272a",
-									color: "#fff",
+									border: "1px solid var(--line)",
+									background: "var(--paper)",
+									color: "var(--ink)",
+									minHeight: "44px",
 								}}
 							/>
 						</div>
 
 						<div>
-							<label style={{ display: "block", fontSize: "12px", color: "#a1a1aa", marginBottom: "4px" }}>
+							<label style={{ display: "block", fontSize: "12px", color: "var(--muted)", marginBottom: "4px" }}>
 								Стоимость ЗТЛ (₽)
 							</label>
 							<input
@@ -495,16 +501,16 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 									width: "100%",
 									padding: "8px",
 									borderRadius: "4px",
-									border: "1px solid #52525b",
-									background: "#27272a",
-									color: "#fff",
+									border: "1px solid var(--line)",
+									background: "var(--paper)",
+									color: "var(--ink)",
 								}}
 							/>
 						</div>
 					</div>
 
 					<div>
-						<label style={{ display: "block", fontSize: "12px", color: "#a1a1aa", marginBottom: "4px" }}>
+						<label style={{ display: "block", fontSize: "12px", color: "var(--muted)", marginBottom: "4px" }}>
 							Клинические заметки технику
 						</label>
 						<textarea
@@ -515,9 +521,9 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 								width: "100%",
 								padding: "8px",
 								borderRadius: "4px",
-								border: "1px solid #52525b",
-								background: "#27272a",
-								color: "#fff",
+								border: "1px solid var(--line)",
+								background: "var(--paper)",
+								color: "var(--ink)",
 								minHeight: "60px",
 							}}
 						/>
@@ -528,14 +534,15 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						disabled={submitting}
 						style={{
 							padding: "10px",
-							borderRadius: "4px",
-							background: "#2563eb",
-							color: "#fff",
+							borderRadius: "6px",
+							background: "var(--teal)",
+							color: "var(--on-teal, #ffffff)",
 							border: "none",
 							cursor: "pointer",
 							fontWeight: "bold",
 							opacity: submitting ? 0.7 : 1,
 							marginTop: "8px",
+							minHeight: "44px",
 						}}
 					>
 						{submitting ? "Оформление наряда..." : "🚀 Отправить заказ в лабораторию"}
@@ -546,74 +553,45 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 			{error && <div className="lab-order-warning">{error}</div>}
 
 			{loading ? (
-				<div style={{ color: "#a1a1aa", textAlign: "center", padding: "20px" }}>
+				<div style={{ color: "var(--muted)", textAlign: "center", padding: "20px" }}>
 					Загрузка заказов...
 				</div>
 			) : orders.length === 0 ? (
-				<div className="lab-orders-empty" style={{ textAlign: "center", padding: "30px", color: "#71717a" }}>
+				<div className="lab-orders-empty" style={{ textAlign: "center", padding: "30px", color: "var(--muted)" }}>
 					Нет оформленных нарядов в зуботехническую лабораторию
 				</div>
 			) : (
-				<div className="lab-orders-list" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+				<div className="lab-orders-list">
 					{orders.map((order) => (
 						<div
 							key={order.id}
 							className="lab-order-card"
-							style={{
-								display: "flex",
-								justifyContent: "space-between",
-								alignItems: "center",
-								padding: "14px 18px",
-								background: "rgba(24, 24, 27, 0.6)",
-								border: "1px solid rgba(63, 63, 70, 0.4)",
-								borderRadius: "8px",
-							}}
 						>
-							<div className="lab-order-main" style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+							<div className="lab-order-main">
 								{order.toothFdi && (
-									<div
-										className="fdi-badge"
-										style={{
-											background: "rgba(59, 130, 246, 0.2)",
-											color: "#93c5fd",
-											padding: "4px 8px",
-											borderRadius: "4px",
-											fontWeight: "bold",
-											fontSize: "13px",
-										}}
-									>
+									<div className="fdi-badge">
 										Зуб {order.toothFdi}
 									</div>
 								)}
 								<div className="order-details">
-									<strong style={{ color: "#f4f4f5", display: "block" }}>{order.patientName}</strong>
-									<div style={{ display: "flex", gap: "12px", color: "#a1a1aa", fontSize: "12px", marginTop: "2px" }}>
+									<strong style={{ color: "var(--ink)", display: "block" }}>{order.patientName}</strong>
+									<div style={{ display: "flex", gap: "12px", color: "var(--muted)", fontSize: "12px", marginTop: "2px" }}>
 										{order.material && <span>{order.material}</span>}
 										{order.colorVita && <span>Цвет: VITA {order.colorVita}</span>}
 									</div>
 								</div>
 							</div>
-							<div className="lab-order-meta" style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-								<span
-									className={`status-badge ${order.status}`}
-									style={{
-										padding: "4px 10px",
-										borderRadius: "12px",
-										fontSize: "12px",
-										background: "rgba(16, 185, 129, 0.15)",
-										color: "#6ee7b7",
-										border: "1px solid rgba(16, 185, 129, 0.3)",
-									}}
-								>
+							<div className="lab-order-meta">
+								<span className={`status-badge ${order.status}`}>
 									{getStatusLabel(order.status)}
 								</span>
 								{order.dueDate && (
-									<span className="delivery-date" style={{ color: "#a1a1aa", fontSize: "12px" }}>
+									<span className="delivery-date">
 										Срок: {new Date(order.dueDate).toLocaleDateString()}
 									</span>
 								)}
 								{order.priceRub != null && (
-									<span className="cost" style={{ color: "#f4f4f5", fontWeight: "bold", fontSize: "14px" }}>
+									<span className="cost">
 										{order.priceRub.toLocaleString("ru-RU")} ₽
 									</span>
 								)}

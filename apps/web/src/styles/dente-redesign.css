@@ -299,15 +299,6 @@
 		transform: none;
 	}
 }
-@keyframes dntPulse {
-	0%,
-	100% {
-		opacity: 1;
-	}
-	50% {
-		opacity: 0.3;
-	}
-}
 @keyframes dntWave {
 	0%,
 	100% {
@@ -1119,7 +1110,6 @@ select:focus {
 	background: var(--teal-surface);
 }
 .recording-icon-pulse {
-	animation: dntPulse 1.2s ease infinite;
 	color: var(--bad-fg);
 }
 .skeleton-wave {
@@ -1997,7 +1987,6 @@ textarea:focus {
 	height: 6px;
 	border-radius: 50%;
 	background: var(--ok-fg);
-	animation: dntPulse 1.8s ease infinite;
 	display: inline-block;
 	flex-shrink: 0;
 }

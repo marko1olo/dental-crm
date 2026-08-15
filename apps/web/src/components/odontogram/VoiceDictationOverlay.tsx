@@ -223,8 +223,9 @@ export function VoiceDictationOverlay({
 					alignItems: "center",
 					justifyContent: "center",
 					boxShadow: isListening
-						? "0 0 40px var(--teal, rgba(13, 148, 136, 0.6))"
+						? "var(--shadow-md, 0 4px 12px rgba(0,0,0,0.15))"
 						: "none",
+					border: isListening ? "3px solid var(--teal, #0d9488)" : "3px solid transparent",
 					transition: "all 0.3s",
 					marginBottom: 32,
 				}}
@@ -233,11 +234,10 @@ export function VoiceDictationOverlay({
 					<div
 						style={{
 							position: "absolute",
-							inset: -20,
+							inset: -12,
 							borderRadius: "50%",
-							background: "var(--teal, #0d9488)",
-							opacity: 0.3,
-							animation: "pulse 1.5s infinite",
+							border: "2px solid var(--teal, #0d9488)",
+							opacity: 0.4,
 						}}
 					/>
 				)}

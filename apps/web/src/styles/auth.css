@@ -25,7 +25,6 @@
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
-	animation: pulse-glow 4s ease-in-out infinite alternate;
 }
 
 .auth-glow--left {
@@ -37,18 +36,6 @@
 	top: 75%;
 	left: 75%;
 	background: rgba(5, 150, 105, 0.04); /* emerald-600 */
-	animation-delay: 2s;
-}
-
-@keyframes pulse-glow {
-	0% {
-		transform: translate(-50%, -50%) scale(1);
-		opacity: 0.8;
-	}
-	100% {
-		transform: translate(-50%, -50%) scale(1.1);
-		opacity: 1;
-	}
 }
 
 @keyframes animate-shake {
@@ -244,7 +231,7 @@
 .auth-staff-card.active {
 	background: rgba(13, 148, 136, 0.15);
 	border-color: #0d9488; /* teal-600 */
-	box-shadow: 0 0 15px rgba(13, 148, 136, 0.2);
+	box-shadow: var(--shadow-2);
 }
 
 .auth-staff-avatar {
@@ -354,8 +341,8 @@
 
 .auth-pin-dot.filled {
 	background: var(--teal, #0d9488);
-	transform: scale(1.2);
-	box-shadow: 0 0 8px rgba(13, 148, 136, 0.5);
+	transform: scale(1.1);
+	box-shadow: var(--shadow-1);
 }
 
 /* PIN Grid */
@@ -503,7 +490,7 @@
 	justify-content: center;
 	gap: 8px;
 	transition: all 0.2s;
-	box-shadow: 0 0 20px rgba(13, 148, 136, 0.3);
+	box-shadow: var(--shadow-2);
 	margin-top: 16px;
 }
 

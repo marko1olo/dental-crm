@@ -199,6 +199,8 @@
 	--text-2: var(--ink-2, var(--ink));
 	--amber-800: var(--warn-fg, #92400e);
 	--primary-strong: var(--teal-dark, #0f766e);
+	--violet-50: #f5f3ff;
+	--violet-200: #ddd6fe;
 	--violet-700: var(--teal-dark, #0f766e);
 }
 
@@ -255,6 +257,10 @@
      (main.css:14752 и shadow-analyst.css:217), байт в байт. */
 	--surface-alt: var(--surface-50);
 	--surface-hover: var(--surface-100);
+
+	--violet-50: #f5f3ff;
+	--violet-200: #ddd6fe;
+	--violet-700: #6d28d9;
 }
 
 :root[data-theme="dark"],
@@ -272,6 +278,10 @@ html.dark:not([data-theme]) {
      светлее (--surface-100 = #334155): на тёмном фоне отклик обязан светлеть. */
 	--surface-alt: var(--surface-50);
 	--surface-hover: var(--surface-100);
+
+	--violet-50: rgba(167, 139, 250, 0.14);
+	--violet-200: rgba(167, 139, 250, 0.32);
+	--violet-700: #c4b5fd;
 }
 
 :root[data-theme="night"] {
@@ -291,4 +301,8 @@ html.dark:not([data-theme]) {
      (#f8fafc -> #f1f5f9), то есть направление отклика одно во всех темах. */
 	--surface-alt: var(--elev);
 	--surface-hover: var(--paper);
+
+	--violet-50: rgba(167, 139, 250, 0.12);
+	--violet-200: rgba(167, 139, 250, 0.28);
+	--violet-700: #ddd6fe;
 }

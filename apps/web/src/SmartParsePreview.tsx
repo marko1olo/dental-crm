@@ -199,7 +199,7 @@ export function SmartParsePreview({
 				<div className="space-y-2 text-sm">
 					{data.isAiTask && (
 						<div className="flex flex-col border-b border-slate-100 pb-2 mb-2">
-							<span className="bg-purple-100 text-purple-800 p-2 rounded text-xs font-semibold uppercase mb-2">
+							<span className="bg-teal-50 dark:bg-teal-950/50 text-teal-800 dark:text-teal-200 p-2 rounded text-xs font-semibold uppercase mb-2 border border-teal-200 dark:border-teal-800">
 								Сложный запрос. Требуется ИИ
 							</span>
 							<span className="text-slate-500 text-xs mb-1">
@@ -299,7 +299,7 @@ export function SmartParsePreview({
 				<div className="space-y-2 text-sm">
 					{data.isAiTask && (
 						<div className="flex flex-col border-b border-slate-100 pb-2 mb-2">
-							<span className="bg-purple-100 text-purple-800 p-2 rounded text-xs font-semibold uppercase mb-2">
+							<span className="bg-teal-50 dark:bg-teal-950/50 text-teal-800 dark:text-teal-200 p-2 rounded text-xs font-semibold uppercase mb-2 border border-teal-200 dark:border-teal-800">
 								Сложный запрос. Требуется ИИ
 							</span>
 							<span className="text-slate-500 text-xs mb-1">
@@ -355,7 +355,7 @@ export function SmartParsePreview({
 				<div className="space-y-2 text-sm">
 					{data.isAiTask && (
 						<div className="flex flex-col border-b border-slate-100 pb-2 mb-2">
-							<span className="bg-purple-100 text-purple-800 p-2 rounded text-xs font-semibold uppercase mb-2">
+							<span className="bg-teal-50 dark:bg-teal-950/50 text-teal-800 dark:text-teal-200 p-2 rounded text-xs font-semibold uppercase mb-2 border border-teal-200 dark:border-teal-800">
 								Сложный запрос. Требуется ИИ
 							</span>
 							<span className="text-slate-500 text-xs mb-1">
@@ -413,7 +413,7 @@ export function SmartParsePreview({
 				<div className="space-y-2 text-sm">
 					{data.isAiTask && (
 						<div className="flex flex-col border-b border-slate-100 pb-2 mb-2">
-							<span className="bg-purple-100 text-purple-800 p-2 rounded text-xs font-semibold uppercase mb-2">
+							<span className="bg-teal-50 dark:bg-teal-950/50 text-teal-800 dark:text-teal-200 p-2 rounded text-xs font-semibold uppercase mb-2 border border-teal-200 dark:border-teal-800">
 								Сложный запрос. Требуется ИИ
 							</span>
 							<span className="text-slate-500 text-xs mb-1">
@@ -490,8 +490,8 @@ export function SmartParsePreview({
 		if (isAiLoading) {
 			return (
 				<div className="flex flex-col items-center justify-center p-6 space-y-3">
-					<div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-					<p className="text-sm text-purple-700 dark:text-purple-300 font-medium">
+					<div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+					<p className="text-sm text-teal-700 dark:text-teal-300 font-medium">
 						Разбираем надиктованное…
 					</p>
 				</div>
@@ -609,7 +609,7 @@ export function SmartParsePreview({
 							type="button"
 							onClick={handleAiParse}
 							disabled={isAiLoading}
-							className="flex-1 bg-purple-100 hover:bg-purple-200 dark:bg-purple-950/80 dark:hover:bg-purple-900 dark:text-purple-300 text-purple-700 font-medium text-sm py-2 px-3 rounded-lg transition-colors flex justify-center items-center gap-1"
+							className="flex-1 bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/60 dark:hover:bg-teal-900/60 dark:text-teal-300 text-teal-700 font-medium text-sm py-2 px-3 rounded-lg transition-colors flex justify-center items-center gap-1 border border-teal-200 dark:border-teal-800"
 						>
 							<svg
 								aria-hidden="true"

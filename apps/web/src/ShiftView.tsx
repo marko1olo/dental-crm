@@ -653,7 +653,6 @@ export function ShiftView({
 							aria-expanded={showAnalytics}
 							onClick={() => setShowAnalytics((v) => !v)}
 							style={{
-								minHeight: "30px",
 								padding: "0 12px",
 								fontSize: "12px",
 								flexShrink: 0,

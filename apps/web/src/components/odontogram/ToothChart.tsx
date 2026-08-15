@@ -153,7 +153,7 @@ const ToothSVG = ({
 			preserveAspectRatio="none"
 			className={
 				colors.isPulsing
-					? "animate-pulse drop-shadow-[0_0_8px_rgba(253,224,71,0.5)]"
+					? "opacity-90 stroke-[2.5px]"
 					: ""
 			}
 		>
@@ -210,7 +210,7 @@ const ToothSVG = ({
 			preserveAspectRatio="none"
 			className={
 				colors.isPulsing
-					? "animate-pulse drop-shadow-[0_0_8px_rgba(253,224,71,0.5)]"
+					? "opacity-90 stroke-[2.5px]"
 					: ""
 			}
 		>
@@ -614,7 +614,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 						<div className="w-2.5 h-2.5 rounded-full bg-blue-400"></div> Коронка
 					</span>
 					<span className="tooth-chart-legend-item">
-						<div className="w-2.5 h-2.5 rounded-full bg-yellow-300 animate-pulse shadow-[0_0_5px_#fde047]"></div>{" "}
+						<div className="w-2.5 h-2.5 rounded-full bg-yellow-400 border border-yellow-500"></div>{" "}
 						План
 					</span>
 				</div>

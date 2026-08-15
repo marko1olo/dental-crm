@@ -238,22 +238,22 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 
 	return (
 		<section
-			className="rounded-2xl border border-violet-500/25 bg-zinc-950/80 p-4 shadow-[0_0_40px_-18px_rgba(139,92,246,0.35)]"
+			className="rounded-2xl border border-line bg-paper-soft p-4 shadow-sm"
 			data-testid="visit-note-draft-panel"
 			aria-label="ИИ-черновик заметки приёма"
 		>
 			<div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3">
 				<div>
-					<h3 className="text-sm font-bold text-violet-200 tracking-wide">
+					<h3 className="text-sm font-bold text-ink tracking-wide">
 						ИИ · Черновик заметки из диктовки
 					</h3>
-					<p className="text-xs text-zinc-500 mt-0.5">
+					<p className="text-xs text-muted mt-0.5">
 						Разложит жалобу, анамнез, статус, диагноз и план. Врач всегда
 						проверяет перед сохранением.
 					</p>
 				</div>
 				{qualityLabel && (
-					<span className="text-[11px] px-2.5 py-1 rounded-lg border border-violet-400/30 bg-violet-500/10 text-violet-200 shrink-0">
+					<span className="text-[11px] px-2.5 py-1 rounded-lg border border-teal-200 dark:border-teal-800 bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200 shrink-0">
 						{qualityLabel}
 						{typeof draft?.quality?.confidence === "number"
 							? ` · ${Math.round(draft.quality.confidence * 100)}%`
@@ -263,12 +263,12 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 			</div>
 
 			{!patientId ? (
-				<p className="text-xs text-amber-200/90 bg-amber-500/10 border border-amber-500/25 rounded-xl px-3 py-2">
+				<p className="text-xs text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl px-3 py-2">
 					Выберите пациента на приёме — без карточки сервер не соберёт черновик.
 				</p>
 			) : (
 				<>
-					<label className="block text-xs text-zinc-400 mb-1.5">
+					<label className="block text-xs text-muted mb-1.5">
 						Текст диктовки / транскрипт
 						<textarea
 							data-testid="visit-note-draft-transcript"
@@ -276,17 +276,17 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 							onChange={(e) => setTranscript(e.target.value)}
 							rows={4}
 							placeholder="Со слов: боль на холод в 16, глубокий кариес, анестезия, пломба…"
-							className="mt-1 w-full bg-zinc-900/80 border border-zinc-700 rounded-xl p-3 text-sm text-zinc-100 focus:ring-1 focus:ring-violet-500/50 outline-none resize-y min-h-[96px]"
+							className="mt-1 w-full bg-paper border border-line rounded-xl p-3 text-sm text-ink focus:ring-1 focus:ring-teal-500/50 outline-none resize-y min-h-[96px]"
 						/>
 					</label>
 					<div className="flex flex-col sm:flex-row gap-2 sm:items-end mt-2">
-						<label className="text-xs text-zinc-400 flex-1">
+						<label className="text-xs text-muted flex-1">
 							Специальность
 							<select
 								data-testid="visit-note-draft-specialty"
 								value={specialty}
 								onChange={(e) => setSpecialty(e.target.value as Specialty)}
-								className="mt-1 w-full bg-zinc-900/80 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-100 outline-none focus:ring-1 focus:ring-violet-500/50"
+								className="mt-1 w-full bg-paper border border-line rounded-xl px-3 py-2 text-sm text-ink outline-none focus:ring-1 focus:ring-teal-500/50 min-h-[44px]"
 							>
 								{SPECIALTIES.map((s) => (
 									<option key={s.value} value={s.value}>
@@ -300,7 +300,7 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 							data-testid="visit-note-draft-run"
 							disabled={busy}
 							onClick={() => void runDraft()}
-							className="px-4 py-2 text-sm font-medium rounded-xl bg-violet-600/90 hover:bg-violet-500 text-white border border-violet-400/40 disabled:opacity-50"
+							className="px-4 py-2 text-sm font-medium rounded-xl bg-teal-600 hover:bg-teal-500 text-white border border-teal-400/40 disabled:opacity-50 min-h-[44px] inline-flex items-center justify-center"
 						>
 							{busy ? "Собираю черновик…" : "Собрать черновик"}
 						</button>
@@ -309,7 +309,7 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 			)}
 
 			{error && (
-				<p className="mt-3 text-xs text-rose-300 bg-rose-500/10 border border-rose-500/25 rounded-xl px-3 py-2">
+				<p className="mt-3 text-xs text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-xl px-3 py-2">
 					{error}
 				</p>
 			)}
@@ -327,27 +327,27 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 					).map(([label, value]) => (
 						<div
 							key={label}
-							className="rounded-xl border border-zinc-800 bg-zinc-900/50 px-3 py-2"
+							className="rounded-xl border border-line bg-paper px-3 py-2"
 						>
-							<div className="text-[10px] uppercase tracking-wider text-zinc-500 mb-0.5">
+							<div className="text-[10px] uppercase tracking-wider text-muted mb-0.5">
 								{label}
 							</div>
-							<div className="text-sm text-zinc-200 whitespace-pre-wrap">
+							<div className="text-sm text-ink whitespace-pre-wrap">
 								{value?.trim() ? value : "—"}
 							</div>
 						</div>
 					))}
 					{draft.quality?.detectedToothCodes &&
 						(draft.quality.detectedToothCodes ?? []).length > 0 && (
-							<p className="text-xs text-zinc-400">
+							<p className="text-xs text-muted">
 								Зубы:{" "}
-								<span className="font-mono text-violet-200">
+								<span className="font-mono font-semibold text-teal-600 dark:text-teal-400">
 									{(draft.quality.detectedToothCodes ?? []).join(", ")}
 								</span>
 							</p>
 						)}
 					{draft.warnings && (draft.warnings ?? []).length > 0 && (
-						<ul className="text-xs text-amber-200/90 list-disc pl-4 space-y-0.5">
+						<ul className="text-xs text-amber-800 dark:text-amber-200 list-disc pl-4 space-y-0.5">
 							{(draft.warnings ?? []).map((w) => (
 								<li key={w}>{w}</li>
 							))}
@@ -358,7 +358,7 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 							type="button"
 							data-testid="visit-note-draft-apply"
 							onClick={applyDraft}
-							className="px-4 py-2 text-sm font-medium rounded-xl bg-emerald-600/90 hover:bg-emerald-500 text-white border border-emerald-400/40"
+							className="px-4 py-2 text-sm font-medium rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-400/40 min-h-[44px] inline-flex items-center justify-center"
 						>
 							{onApply ? "Вставить в заметку приёма" : "Скопировать"}
 						</button>

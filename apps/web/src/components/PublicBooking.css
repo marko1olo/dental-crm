@@ -46,8 +46,8 @@
 }
 
 .step-dot.active {
-	background: #3b82f6;
-	box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+	background: var(--teal, #0d9488);
+	box-shadow: 0 0 0 2px var(--teal-soft);
 }
 
 .step-line {
@@ -58,7 +58,7 @@
 }
 
 .step-line.active {
-	background: #3b82f6;
+	background: var(--teal, #0d9488);
 }
 
 .booking-step {

@@ -50,14 +50,18 @@ const fixtureParent = join(scriptsDirectory, "..", "node_modules", ".cache");
  * возврата вместе со склеенным выводом (сводка идёт в stdout, список нарушений
  * — в stderr). Дерево удаляется всегда, даже если утверждение упало.
  */
-function runGuardOn(files) {
+function runGuardOn(files, modifier = null) {
 	mkdirSync(fixtureParent, { recursive: true });
 	const root = mkdtempSync(join(fixtureParent, "dente-css-token-guard-"));
 	try {
 		const guardCopy = join(root, "scripts", "check-css-tokens.mjs");
 		mkdirSync(dirname(guardCopy), { recursive: true });
 		mkdirSync(join(root, "apps", "web", "src"), { recursive: true });
-		copyFileSync(guardPath, guardCopy);
+		let source = readFileSync(guardPath, "utf8");
+		if (modifier) {
+			source = modifier(source);
+		}
+		writeFileSync(guardCopy, source, "utf8");
 		for (const [relativeName, content] of Object.entries(files)) {
 			const target = join(root, "apps", "web", "src", relativeName);
 			mkdirSync(dirname(target), { recursive: true });
@@ -105,7 +109,7 @@ function offenderTotals(output) {
  */
 function debtEntries() {
 	const source = readFileSync(guardPath, "utf8");
-	return [
+	const parsed = [
 		...source.matchAll(
 			/\["(--[\w-]+)",\s*\{\s*occurrences:\s*(\d+),\s*file:\s*"([^"]+)"\s*\}\]/g,
 		),
@@ -114,7 +118,23 @@ function debtEntries() {
 		occurrences: Number(match[2]),
 		file: match[3],
 	}));
+	if (parsed.length > 0) return parsed;
+	return [
+		{
+			name: "--fixture-debt-token",
+			occurrences: 1,
+			file: "apps/web/src/styles/fixture-debt.css",
+		},
+	];
 }
+
+const withFixtureDebt = (source) =>
+	source.includes('"occurrences"')
+		? source
+		: source.replace(
+				/const KNOWN_LIGHT_FALLBACK_DEBT = new Map\([^)]*\);/,
+				'const KNOWN_LIGHT_FALLBACK_DEBT = new Map([\n\t["--fixture-debt-token", { occurrences: 1, file: "apps/web/src/styles/fixture-debt.css" }],\n]);',
+			);
 
 /** Путь записи долга -> имя внутри дерева-фикстуры (она пишет от apps/web/src). */
 const fixtureRelative = (repoPath) => repoPath.replace(/^apps\/web\/src\//, "");
@@ -315,11 +335,15 @@ test("расхождение списка долга не съедает спи�
 	// Записанный файл в дереве ЕСТЬ, весь список удовлетворён — кроме одного
 	// имени: его долг заплачен, а запись осталась. Это расхождение. Рядом лежит
 	// настоящее нарушение, и оно обязано быть напечатано ПОИМЁННО, а не съедено.
-	const { status, output } = runGuardOn({
-		...debtSatisfyingCss(entries, paid.name),
-		"styles/real-offender.css":
-			".x { color: var(--definitely-missing-abc); }\n",
-	});
+	const { status, output } = runGuardOn(
+		{
+			...debtSatisfyingCss(entries, paid.name),
+			[fixtureRelative(paid.file)]: "/* file exists with 0 occurrences */\n",
+			"styles/real-offender.css":
+				".x { color: var(--definitely-missing-abc); }\n",
+		},
+		withFixtureDebt,
+	);
 
 	assert.match(
 		output,
@@ -356,10 +380,13 @@ test("разрешение долга действует только на за�
 	// То же имя, тот же светлый запас, но в ДРУГОМ файле. Пока разрешение
 	// действовало на имя вообще, такое вхождение проходило молча под чужой
 	// записью долга: перенеси нарушение в новый файл — и гейт его не видит.
-	const { status, output } = runGuardOn({
-		...debtSatisfyingCss(entries),
-		"styles/elsewhere.css": `.moved { background: var(${moved.name}, ${LIGHT_FALLBACK}); }\n`,
-	});
+	const { status, output } = runGuardOn(
+		{
+			...debtSatisfyingCss(entries),
+			"styles/elsewhere.css": `.moved { background: var(${moved.name}, ${LIGHT_FALLBACK}); }\n`,
+		},
+		withFixtureDebt,
+	);
 
 	assert.equal(
 		summaryNumber(output, "СВЕТЛЫЙ ЗАПАС ВО ВСЕХ ТЕМАХ:"),

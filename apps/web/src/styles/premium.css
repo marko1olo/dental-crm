@@ -240,9 +240,9 @@ body {
 .nav-item.active {
 	background: var(--active-item-bg);
 	border: 1px solid var(--active-item-border);
-	box-shadow: var(--teal-glow);
+	box-shadow: var(--shadow-1);
 	color: #fff;
-	text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+	text-shadow: none;
 	transform: scale(1.02);
 }
 

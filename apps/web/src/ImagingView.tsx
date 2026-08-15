@@ -1245,7 +1245,6 @@ export function ImagingView(props: ImagingViewProps) {
 															display: "inline-flex",
 															alignItems: "center",
 															gap: "6px",
-															minHeight: "32px",
 														}}
 													>
 														<ClipboardList size={15} aria-hidden="true" />

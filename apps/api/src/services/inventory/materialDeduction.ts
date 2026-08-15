@@ -1,5 +1,6 @@
 import { and, eq, inArray, isNull, ne, or } from "drizzle-orm";
 import type { db } from "../../db/client.js";
+import type { TenantDb } from "../../db/rls.js";
 import {
 	inventoryItems,
 	inventoryTransactions,
@@ -7,7 +8,9 @@ import {
 	treatmentItems,
 } from "../../db/schema.js";
 
-export type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type DbTransaction =
+	| Parameters<Parameters<typeof db.transaction>[0]>[0]
+	| TenantDb;
 
 export interface StockDeductionRecord {
 	inventoryItemId: string;

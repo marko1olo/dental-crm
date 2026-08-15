@@ -76,7 +76,7 @@ export const ICD_GROUP_COLORS: Record<string, string> = {
 	Кариес: "bg-red-500/10 text-red-400 border-red-500/25",
 	Пульпа: "bg-amber-500/10 text-amber-400 border-amber-500/25",
 	Периапикал: "bg-orange-500/10 text-orange-400 border-orange-500/25",
-	Пародонт: "bg-purple-500/10 text-purple-400 border-purple-500/25",
+	Пародонт: "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/25",
 	Ортодонтия: "bg-blue-500/10 text-blue-400 border-blue-500/25",
 	Хирургия: "bg-rose-500/10 text-rose-400 border-rose-500/25",
 	Другое: "bg-zinc-500/10 text-zinc-400 border-zinc-500/25",

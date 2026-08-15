@@ -679,10 +679,10 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 
 				{planLoad.phase === "ready" && items.length === 0 && (
 					<div className="flex flex-col items-center justify-center p-8 mx-2 my-8 rounded-2xl border border-dashed border-zinc-300/50 dark:border-zinc-700/50 bg-zinc-50/30 dark:bg-zinc-900/20 backdrop-blur-sm text-center">
-						<div className="p-5 mb-4 rounded-full bg-indigo-500/5 dark:bg-indigo-500/10 shadow-[0_0_30px_5px_rgba(99,102,241,0.1)] dark:shadow-[0_0_30px_5px_rgba(99,102,241,0.1)] border border-indigo-500/10 dark:border-indigo-500/20">
+						<div className="p-5 mb-4 rounded-full bg-teal-500/10 dark:bg-teal-500/20 border border-teal-500/20 shadow-sm">
 							<Calculator
 								size={40}
-								className="text-indigo-500 dark:text-indigo-400 opacity-40"
+								className="text-teal-600 dark:text-teal-400 opacity-60"
 							/>
 						</div>
 						<h4 className="text-base font-bold text-slate-800 dark:text-zinc-100 mb-2">

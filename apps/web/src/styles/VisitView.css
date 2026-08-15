@@ -234,26 +234,11 @@
 :is([data-theme="dark"], [data-theme="night"], .dark) .clinical-rules-toggle > summary:hover {
 	background: var(--paper-strong, rgba(51, 65, 85, 0.7));
 }
-/* Skeleton Loader and Pulse Animations for Dictation */
-@keyframes pulse-record {
-	0% {
-		transform: scale(1);
-		box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-	}
-	70% {
-		transform: scale(1.1);
-		box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
-	}
-	100% {
-		transform: scale(1);
-		box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
-	}
-}
-
+/* Dictation Recording State */
 .recording-icon-pulse {
-	animation: pulse-record 1.5s infinite;
 	border-radius: 50%;
-	background-color: rgba(239, 68, 68, 0.1);
+	background-color: var(--bad-bg, rgba(239, 68, 68, 0.1));
+	color: var(--bad-fg);
 }
 
 .transcribing-badge-pulse {
@@ -263,7 +248,6 @@
 	padding: 2px 8px;
 	border-radius: 12px;
 	font-weight: 600;
-	animation: _ccm-fade 1s infinite alternate;
 }
 
 .dictation-overlay-skeleton {

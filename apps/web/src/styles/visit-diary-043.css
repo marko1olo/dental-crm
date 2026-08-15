@@ -941,8 +941,8 @@ html.dark .vde-043__letter--p {
 	left: 0;
 	right: 0;
 	height: 2px;
-	background: #ef4444;
-	box-shadow: 0 0 20px 10px rgba(239, 68, 68, 0.55);
+	background: var(--bad-fg, #ef4444);
+	box-shadow: 0 0 0 1px var(--bad-fg, #ef4444);
 	z-index: 50;
 	pointer-events: none;
 	animation: visitScanLaser 2s linear infinite;

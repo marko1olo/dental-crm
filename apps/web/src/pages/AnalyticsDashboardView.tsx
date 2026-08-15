@@ -609,7 +609,7 @@ export function AnalyticsDashboardView() {
 								{/* Виджет 4 — выработка врачей по завершённым визитам. */}
 								<article className="glass-widget">
 									<h3>
-										<Users className="w-5 h-5 text-purple-500" /> Эффективность
+										<Users className="w-5 h-5 text-teal-600 dark:text-teal-400" /> Эффективность
 										врачей
 									</h3>
 									<div

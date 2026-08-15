@@ -49,7 +49,7 @@
 	right: 0;
 	height: 2px;
 	background: var(--teal, #0d9488);
-	box-shadow: 0 0 12px 2px var(--teal-soft, rgba(13, 148, 136, 0.5));
+	box-shadow: 0 0 0 1px var(--teal, #0d9488);
 	pointer-events: none;
 	opacity: 0;
 	transition:

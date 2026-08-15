@@ -120,10 +120,10 @@ export function SmartMicrophoneButton({
 					alignItems: "center",
 					justifyContent: "center",
 					padding: "8px",
-					/* Палец в перчатке у кресла: держим цель нажатия не меньше 36px
+					/* Палец в перчатке у кресла: держим цель нажатия не меньше 44px
              даже когда вызывающий код просит компактный паддинг. */
-					minWidth: "36px",
-					minHeight: "36px",
+					minWidth: "44px",
+					minHeight: "44px",
 					borderRadius: "50%",
 					transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
 					boxShadow: isRecording ? "0 0 0 4px rgba(239, 68, 68, 0.15)" : "none",
@@ -145,7 +145,6 @@ export function SmartMicrophoneButton({
 				) : (
 					<Mic
 						size={20}
-						className={isRecording ? "animate-pulse" : ""}
 						style={{ flexShrink: 0 }}
 					/>
 				)}

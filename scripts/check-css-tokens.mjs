@@ -308,10 +308,7 @@ const LIGHT_FALLBACK_LUMINANCE = 0.5;
  * правильное закрытие — лестница 50/200/700 для фиолета в тёмной и ночной теме;
  * отдельная задача. Долг named, а не спрятан.
  */
-const KNOWN_LIGHT_FALLBACK_DEBT = new Map([
-	["--violet-50", { occurrences: 1, file: "apps/web/src/styles/main.css" }],
-	["--violet-200", { occurrences: 1, file: "apps/web/src/styles/main.css" }],
-]);
+const KNOWN_LIGHT_FALLBACK_DEBT = new Map();
 
 /** Строковый литерал с именем кастомного свойства -> само имя, иначе null. */
 function customPropertyLiteral(node) {

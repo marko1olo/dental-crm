@@ -365,7 +365,6 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 											style={{
 												padding: "4px 10px",
 												fontSize: 12,
-												minHeight: 28,
 												textDecoration: "none",
 												display: "inline-flex",
 												alignItems: "center",
@@ -389,7 +388,6 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 											style={{
 												padding: "4px 10px",
 												fontSize: 12,
-												minHeight: 28,
 											}}
 											data-testid={`waitlist-match-mark-called-${match.entryId}`}
 											onClick={() =>
