@@ -289,10 +289,30 @@ Use these exclusively. Blind terminal navigation is banned.
    - *Multi-Theme*: Support Light, Dark, and System theme selections. Utilize Tailwind semantic coloring (such as `dark:` selectors or CSS theme variables); never hardcode specific colors.
    - *Multi-Scale*: Layouts must behave fluidly under different resolutions, high DPI screens, and browser zooming. Use relative metrics (`rem`, `em`, `%`) and responsive breakpoint modifiers.
 
+## [SPEC-FIRST & DISCIPLINED ROADMAP EXECUTION MANDATE]
 
+1. **STRICT SPECIFICATION BEFORE IMPLEMENTATION**
+   Every non-trivial engineering epic MUST have a corresponding specification in `docs/architecture/` and a granular task item in `docs/AgentTasks/TASK_BACKLOG_AND_SPECIFICATIONS.md`.
+   Agents are ABSOLUTELY FORBIDDEN from writing impromptu code that is not tied to a defined task with explicit acceptance criteria.
+
+2. **ANATOMY OF A VALID TASK SPECIFICATION**
+   Each task in the backlog MUST define:
+   - `Target Files`: Exact read/write scope with line numbers.
+   - `Data & API Contract`: Strongly-typed TypeScript interfaces / Zod schemas / SQL DDL.
+   - `Step-by-Step Execution Sequence`: Atomic code modifications without skipping steps.
+   - `Edge Cases & Failure Modes`: Concurrency locks, network drops, rollback safety.
+   - `Machine Verification Gates`: Exact CLI commands with expected exit codes and outputs.
+
+3. **PROHIBITION OF HALF-ASSED WORK ("БАН НА ХАЛЯВУ И НА-ОТЪЕБИСЬ")**
+   Any pull request, commit, or report that:
+   - Implements a feature without connecting it to the UI (orphan hooks/components).
+   - Omits multi-tenancy compound filters (`organizationId`).
+   - Leaves unverified assumptions without real compiler or test logs.
+   is classified as a Critical Compliance Failure and must be rejected immediately with an order for a complete rewrite.
 
 
 ## [ORCHESTRATION HIERARCHY v2]
 1. **Antigravity (Orchestrator L1):** Master console and process launcher. Antigravity sets up daemons and timers. Does not block. Can be closed or idled while daemons run.
 2. **Goose / Grok (Agent L2):** Autonomous worker running inside the UniversalDaemonLoop. Goose L2 MUST spawn 3-4 subagents for its own parallel needs (e.g., database schema verification, component audits) and MUST NOT stop or wait for user input. Completion signals are blocked by proxy DAEMON MANDATE.
 3. This architecture REPLACES the legacy Cline integrations.
+
