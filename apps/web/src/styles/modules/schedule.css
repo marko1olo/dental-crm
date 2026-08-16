@@ -1,17 +1,17 @@
 /* ═══════════════════════════════════════════════════════════════════
    SCHEDULE & APPOINTMENT MODULE
    Extracted from main.css (TASK-3.3)
+   Single-surface flat design refactor
    ═══════════════════════════════════════════════════════════════════ */
 
-/* ================================================================ SCHEDULE ADMIN SECRET COLLAPSIBLE ================== */
 /* ================================================================
    SCHEDULE ADMIN SECRET COLLAPSIBLE
    ================================================================ */
 .schedule-secret-collapsible {
-	border: 1px solid var(--border-color, #e2e8f0);
+	border: none;
 	border-radius: 8px;
 	margin: 0.5rem 0;
-	background: var(--surface-alt, #f8fafc);
+	background: var(--paper-soft);
 }
 .schedule-secret-collapsible summary {
 	display: flex;
@@ -32,14 +32,12 @@
 }
 .schedule-secret-collapsible .schedule-admin-unlock {
 	padding: 0.75rem 1rem 1rem;
-	border-top: 1px solid var(--border-color, #e2e8f0);
-	background: var(--surface, #fff);
+	border-top: none;
+	background: var(--paper-soft);
 	border-radius: 0 0 8px 8px;
 	animation: accordion-open 0.2s ease both;
 }
 
-
-/* Today's Schedule interactive hover states */
 /* Today's Schedule interactive hover states */
 .today-schedule-item:hover {
 	background: rgba(13, 148, 136, 0.08);
@@ -54,8 +52,6 @@
 	transform: translateY(0);
 }
 
-
-/* ========== APPOINTMENT CARD COMPONENT - STRICT CLS-PROOF LAYOUT ========== */
 /* ========== APPOINTMENT CARD COMPONENT - STRICT CLS-PROOF LAYOUT ========== */
 
 .appointment-card-time {
@@ -79,7 +75,7 @@
 	align-items: center;
 	margin-top: 8px;
 	padding-top: 8px;
-	border-top: 1px solid var(--slate-100);
+	border-top: 1px solid var(--line);
 	gap: 8px;
 }
 
@@ -121,42 +117,12 @@
 	color: var(--slate-700);
 }
 
-/*
- * --amber-50 / --amber-200 / --amber-700 НЕ ОБЪЯВЛЕНЫ НИ В ОДНОМ ФАЙЛЕ.
- *
- * Поэтому побеждали резервные литералы, и подложка была #fffbeb — почти белая
- * — в любой теме. Поправка ниже перекрывала это только для [data-theme="dark"]
- * («Ночь»). Тема «Тепло» — data-theme="night" — в перечислении отсутствовала.
- *
- * ПО КАКОЙ ПАЛИТРЕ СЧИТАНО. Порядок тем: светлая / «Ночь» (data-theme="dark")
- * / «Тепло» (data-theme="night"). --amber и --ink для светлой и «Ночи» берутся
- * из main.css:126-151 и main.css:66-91 — селектор :root[data-theme="..."],
- * специфичность (0,2,0), он перебивает dente-redesign.css:11/67 (0,1,0). В
- * «Тепле» блока --amber нет ни в одном night-блоке, поэтому имя приходит из
- * :root-плеча dente-redesign.css:46 как var(--warn-fg) и разрешается в #e8b45a.
- * --warn-bg / --warn-fg объявлены только в dente-redesign.css:29/84/149 и
- * выигрывают во всех трёх темах. Первая версия замера взяла --ink «Ночи» из
- * проигравшего файла (#e9f2ef вместо #f8fafc), отсюда 11.61 вместо 12.89.
- *
- * До правки: заметка о передаче приёма (--amber #d97706 / #f59e0b / #e8b45a на
- * литерале #fffbeb) — 3.07 / 2.07 / 1.82 при норме 4.5. Это промах во всех
- * трёх темах, включая светлую: янтарный текст на янтарно-белом. Плашка
- * .handoff-lock (--amber-700, резерв #b45309, на том же #fffbeb) давала 4.84 во
- * всех темах — по норме проходила, но в обеих тёмных оставалась белым пятном.
- *
- * Смысл цвета переносится на подложку и левую полосу (--warn-bg / --warn-fg,
- * объявлены во всех трёх темах), а текст уходит на --ink: цвет по-прежнему
- * читается как предупреждение, но надпись видна. Подложка стала #fef3c7 /
- * rgb(48,47,41) / rgb(61,48,31). Стало: 15.93 / 12.89 / 10.56. Поправка на
- * «Ночь» удалена как ставшая лишней — токены уже дают тёмный фон в обеих
- * тёмных темах.
- */
 .handoff-lock {
 	font-size: 11px;
 	font-weight: 600;
 	color: var(--ink);
 	background: var(--warn-bg);
-	border: 1px solid var(--warn-fg);
+	border: none;
 	border-radius: 999px;
 	padding: 2px 8px;
 	white-space: nowrap;
@@ -206,24 +172,20 @@
 	font-size: 12px;
 }
 
-
-/* ========== SMART AI BOOKING BLOCK ========== */
 /* ========== SMART AI BOOKING BLOCK ========== */
 
 .smart-ai-booking {
 	margin-bottom: 12px;
-	border: 1px solid var(--brand-300);
+	border: none;
 	box-shadow: 0 2px 8px rgba(14, 165, 233, 0.05);
 	border-radius: 12px;
 	padding: 12px;
-	background: var(--paper);
+	background: var(--paper-soft);
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
 }
 
-
-/* ========== SCHEDULE ENTITY GRID (editor chip selectors) ========== */
 /* ========== SCHEDULE ENTITY GRID (editor chip selectors) ========== */
 
 .schedule-entity-grid {
@@ -254,27 +216,24 @@
 	min-height: 24px;
 }
 
-
-/* --- APPOINTMENT CARD PREMIUM AESTHETICS --- */
 /* --- APPOINTMENT CARD PREMIUM AESTHETICS --- */
 .appointment-card {
 	padding: 16px;
-	background: var(--glass-panel);
-	backdrop-filter: blur(12px);
+	background: var(--paper);
 	border: 1px solid var(--line);
 	border-radius: 12px;
 	margin-bottom: 12px;
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
-	box-shadow: 0 4px 16px rgba(13, 148, 136, 0.08);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 	transition:
 		transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
 		box-shadow 0.2s;
 }
 .appointment-card:hover {
 	transform: translateY(-2px);
-	box-shadow: 0 8px 24px rgba(13, 148, 136, 0.15);
+	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 	border-color: var(--line-strong);
 }
 .appointment-card-header {
@@ -313,17 +272,42 @@
 	justify-content: flex-end;
 	margin-top: 4px;
 	padding-top: 10px;
-	border-top: 1px solid rgba(208, 226, 217, 0.15);
+	border-top: 1px solid var(--line);
 }
 
+/* --- SCHEDULE FILTERS --- */
+.schedule-sub-nav-tabs {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+	white-space: nowrap;
+	max-width: 100%;
+	width: 100%;
+	padding: 4px 0;
+	flex-shrink: 0;
+}
+.schedule-sub-nav-tabs::-webkit-scrollbar {
+	display: none;
+}
+.schedule-sub-nav-tabs > * {
+	flex-shrink: 0;
+	white-space: nowrap;
+}
 
-/* --- SCHEDULE FILTERS --- */
-/* --- SCHEDULE FILTERS --- */
 .schedule-shift-summary {
 	display: flex;
 	gap: 8px;
 	flex-wrap: wrap;
 	align-items: center;
+}
+.schedule-shift-summary:empty {
+	display: none !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	border: none !important;
 }
 .schedule-shift-summary-grid {
 	width: 100%;
@@ -496,6 +480,71 @@
 	min-height: 80px;
 }
 
+/* --- De-nesting Subpanels in ScheduleView --- */
+.schedule-panel .ops-panel,
+.schedule-panel .day-confirmations-panel,
+.schedule-panel .freed-slots-panel {
+	border: none;
+	box-shadow: none;
+	background: var(--paper-soft);
+	border-radius: 12px;
+	padding: 16px;
+	margin-bottom: 16px;
+}
+
+.schedule-panel .ops-metric {
+	border: none;
+	background: var(--paper);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.schedule-panel .ops-table-wrap {
+	border: none;
+	background: var(--paper);
+	border-radius: 10px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.schedule-command-grid,
+.schedule-shift-summary-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 12px;
+}
+
+.schedule-command-grid article,
+.schedule-shift-summary-grid article {
+	background: var(--paper-soft);
+	border: none;
+	border-radius: 10px;
+	padding: 12px 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.schedule-command-grid article span,
+.schedule-shift-summary-grid article span {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--muted);
+	text-transform: uppercase;
+}
+
+.schedule-command-grid article strong,
+.schedule-shift-summary-grid article strong {
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.schedule-command-grid article p,
+.schedule-shift-summary-grid article p {
+	margin: 0;
+	font-size: 12px;
+	color: var(--muted);
+}
+
 @media (max-width: 768px) {
 	.schedule-shift-summary-grid,
 	.schedule-filter-strip {
@@ -503,49 +552,68 @@
 	}
 }
 
+@media (max-width: 390px) {
+	.schedule-filter-strip {
+		overflow-x: hidden;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 12px;
+	}
+	.schedule-date-picker-group {
+		border-right: none;
+		border-bottom: 1px solid var(--line);
+		padding-right: 0;
+		padding-bottom: 8px;
+		margin-right: 0;
+	}
+}
 
-/* --- Schedule Dark Mode Theme Harmony --- */
 /* --- Schedule Dark Mode Theme Harmony --- */
 [data-theme="dark"] .schedule-shift-summary,
 [data-theme="night"] .schedule-shift-summary,
 .dark .schedule-shift-summary,
 body.dark-mode .schedule-shift-summary {
-	background: var(--surface-alt, #1e293b);
-	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
-	color: var(--text-color, #f8fafc);
+	background: var(--paper, #1e293b);
+	border-color: var(--line, rgba(255, 255, 255, 0.1));
+	color: var(--ink, #f8fafc);
 }
 
 [data-theme="dark"] .schedule-shift-summary-grid article,
 [data-theme="night"] .schedule-shift-summary-grid article,
 .dark .schedule-shift-summary-grid article,
-body.dark-mode .schedule-shift-summary-grid article {
-	background: var(--surface, #0f172a);
-	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
-	color: var(--text-color, #f8fafc);
+body.dark-mode .schedule-shift-summary-grid article,
+[data-theme="dark"] .schedule-command-grid article,
+[data-theme="night"] .schedule-command-grid article,
+.dark .schedule-command-grid article,
+body.dark-mode .schedule-command-grid article {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, rgba(255, 255, 255, 0.1));
+	color: var(--ink, #f8fafc);
 }
 
 [data-theme="dark"] .schedule-filter-strip,
 [data-theme="night"] .schedule-filter-strip,
 .dark .schedule-filter-strip,
 body.dark-mode .schedule-filter-strip {
-	background: var(--surface-alt, #1e293b);
-	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+	background: var(--paper, #1e293b);
+	border-color: var(--line, rgba(255, 255, 255, 0.1));
 }
 
 [data-theme="dark"] .schedule-secret-collapsible,
 [data-theme="night"] .schedule-secret-collapsible,
 .dark .schedule-secret-collapsible,
 body.dark-mode .schedule-secret-collapsible {
-	background: var(--surface-alt, #1e293b);
-	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
-	color: var(--text-color, #f8fafc);
+	background: var(--paper, #1e293b);
+	border-color: var(--line, rgba(255, 255, 255, 0.1));
+	color: var(--ink, #f8fafc);
 }
 
 [data-theme="dark"] .schedule-secret-collapsible .schedule-admin-unlock,
 [data-theme="night"] .schedule-secret-collapsible .schedule-admin-unlock,
 .dark .schedule-secret-collapsible .schedule-admin-unlock,
 body.dark-mode .schedule-secret-collapsible .schedule-admin-unlock {
-	background: var(--surface, #0f172a);
-	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
-	color: var(--text-color, #f8fafc);
+	background: var(--paper, #0f172a);
+	border-color: var(--line, rgba(255, 255, 255, 0.1));
+	color: var(--ink, #f8fafc);
 }
+

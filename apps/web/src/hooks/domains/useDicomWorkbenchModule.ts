@@ -1604,6 +1604,7 @@ export function useDicomWorkbenchModule({
 		restoreDicomWorkbenchServerBundle,
 		loadDicomWorkbenchBundles,
 		saveDicomWorkbenchBundleToServer,
+		retryImagingViewerSessionSave: saveDicomWorkbenchBundleToServer,
 		reconnectDicomWorkbenchFromCurrentFolder,
 		checkDicomWorkstationReadiness,
 		buildDicomRenderCachePlan,

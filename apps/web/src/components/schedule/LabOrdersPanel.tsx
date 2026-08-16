@@ -592,7 +592,14 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 						Загрузка…
 					</div>
 				) : orders.length === 0 && !loadError ? (
-					<div className="text-center py-6 text-xs text-slate-500 border border-dashed border-slate-700/60 rounded-xl">
+					<div
+						className="text-center py-6 text-xs rounded-xl border"
+						style={{
+							borderColor: "var(--line)",
+							background: "var(--paper-soft)",
+							color: "var(--muted)",
+						}}
+					>
 						{/*
 							Честная пустота: сказано, что список пришёл и он пуст, и откуда
 							здесь вообще берутся наряды. Без второй строки «нет заказов»

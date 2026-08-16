@@ -310,7 +310,6 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 								key={match.entryId}
 								data-testid={`waitlist-match-row-${match.entryId}`}
 								style={{
-									border: "1px solid var(--line)",
 									borderRadius: 10,
 									padding: "8px 10px",
 									background: "var(--paper-soft)",

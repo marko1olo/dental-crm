@@ -1,11 +1,5 @@
 /**
  * Live 4-state visual audit screenshot runner for DENTE dental-crm.
- *
- * Strategy:
- *   1. Create a fresh test clinic via POST /api/auth/setup/init (gets clinicToken)
- *   2. Unlock staff via POST /api/auth/staff/unlock (gets staffToken)
- *   3. Inject tokens + onboardingDismissed into browser localStorage so the real screen views render
- *   4. Capture all 16 states: desktop/mobile × light/dark for Schedule, Visit, Finance, Imaging
  */
 
 import puppeteer from "puppeteer";
@@ -14,9 +8,9 @@ import path from "path";
 const API_BASE = "http://127.0.0.1:4100";
 const APP_BASE = "http://127.0.0.1:5173";
 const CHROME_PATH = "C:/Program Files/Google/Chrome/Application/chrome.exe";
-const OUT_DIR = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\ac0ebfe0-b3db-438a-bc2d-a6e0bee44a2a";
+const OUT_DIR = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\37b8f253-5512-4e6a-af2e-6b6677f4c08f";
 
-// ─── 1. Auth provisioning ────────────────────────────────────────────────────────
+// ─── 1. Auth & Data Provisioning ──────────────────────────────────────────────────
 
 async function provisionTestClinic() {
   const uniqueId = Date.now();
@@ -30,17 +24,17 @@ async function provisionTestClinic() {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      clinicName: `Клиника Дент-Аудит ${uniqueId}`,
+      clinicName: `Стоматология Дент-Премиум ${uniqueId}`,
       email: loginEmail,
       password,
-      ownerName: "Д-р Иванов Иван Иванович",
+      ownerName: "Д-р Смирнов Алексей Петрович",
       ownerPin,
     }),
   });
 
   if (!initRes.ok) throw new Error(`setup/init failed ${initRes.status}: ${await initRes.text()}`);
   const initData = await initRes.json();
-  console.log(`[AUTH] Clinic OK. orgId=${initData.organizationId}, ownerUserId=${initData.ownerUserId}`);
+  console.log(`[AUTH] Clinic OK. orgId=${initData.organizationId}`);
 
   const unlockRes = await fetch(`${API_BASE}/api/auth/staff/unlock`, {
     method: "POST",
@@ -55,7 +49,38 @@ async function provisionTestClinic() {
   const unlockData = await unlockRes.json();
   console.log(`[AUTH] Staff unlocked. staffToken OK`);
 
-  return { clinicToken: initData.clinicToken, staffToken: unlockData.staffToken };
+  const headers = {
+    "Content-Type": "application/json",
+    "x-dente-clinic-token": initData.clinicToken,
+    "x-dente-staff-token": unlockData.staffToken,
+  };
+
+  // Seed patient
+  let patientId = null;
+  try {
+    const pRes = await fetch(`${API_BASE}/api/patients`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        fullName: "Кузнецова Елена Павловна",
+        phone: "+7 (999) 777-66-55",
+        birthDate: "1994-03-22",
+      }),
+    });
+    if (pRes.ok) {
+      const patient = await pRes.json();
+      patientId = patient.id;
+      console.log(`[SEED] Patient created: ${patientId}`);
+    }
+  } catch (err) {
+    console.log(`[SEED WARN] Patient seed: ${err.message}`);
+  }
+
+  return {
+    clinicToken: initData.clinicToken,
+    staffToken: unlockData.staffToken,
+    patientId,
+  };
 }
 
 // ─── 2. Browser Navigation ────────────────────────────────────────────────────────
@@ -65,56 +90,59 @@ const VIEWPORTS = {
   mobile:  { width: 390,  height: 844 },
 };
 
-async function seedTokensAndGo(page, clinicToken, staffToken, url) {
-  // Step 1: navigate to origin to access localStorage
-  try {
-    await page.goto(`${APP_BASE}/`, { waitUntil: "domcontentloaded", timeout: 15000 });
-  } catch (e) {
-    console.log(`  [WARN] Initial load: ${e.message}`);
-  }
-
-  // Seed auth tokens and dismiss onboarding flags
-  await page.evaluate((ct, st) => {
+async function seedTokensAndGo(page, clinicToken, staffToken, patientId, url, themeMode, perspective = "standard") {
+  await page.evaluateOnNewDocument((ct, st, pid, tm, pers) => {
     localStorage.setItem("dente_clinic_token", ct);
     localStorage.setItem("dente_staff_token", st);
+    localStorage.setItem("dente_theme_mode", tm);
+    localStorage.setItem("dente_workspace_perspective", pers);
     localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ dismissed: true, step: "done" }));
-    localStorage.setItem("dente_ui_preferences_v1", JSON.stringify({ onboardingDismissed: true }));
-  }, clinicToken, staffToken);
+    localStorage.setItem("dental-crm:web-ui-preferences:v1", JSON.stringify({
+      version: 1,
+      uiLanguage: "ru",
+      selectedWorkspaceRole: "owner",
+      selectedSpecialty: "therapist",
+      selectedPatientId: pid || null,
+      onboardingDismissed: true,
+      soundNotificationsMuted: false,
+    }));
+  }, clinicToken, staffToken, patientId, themeMode, perspective);
 
-  // Step 2: navigate to target page
   try {
-    await page.goto(url, { waitUntil: "networkidle2", timeout: 25000 });
+    await page.goto(url, { waitUntil: "networkidle2", timeout: 15000 });
   } catch (e) {
     console.log(`  [WARN] Page load: ${e.message}`);
   }
 
-  // Wait until boot state disappears and main layout is rendered
+  // Handle retry button if visible
   try {
-    await page.waitForFunction(() => !document.querySelector(".boot-state"), { timeout: 20000 });
-    await page.waitForSelector(".topbar", { visible: true, timeout: 20000 });
-  } catch (e) {
-    console.log(`  [WARN] Wait boot-state/topbar: ${e.message}`);
-  }
+    const retryBtn = await page.$(".boot-retry-button");
+    if (retryBtn) {
+      console.log("  [ACTION] Clicking boot-retry-button...");
+      await retryBtn.click();
+      await new Promise(r => setTimeout(r, 1500));
+    }
+  } catch {}
 
-  // Settle CSS transitions & fetch calls
-  await new Promise(r => setTimeout(r, 1200));
+  await applyTheme(page, themeMode);
+  await new Promise(r => setTimeout(r, 1500));
 }
 
-async function applyTheme(page, dark) {
-  await page.evaluate((isDark) => {
+async function applyTheme(page, themeMode) {
+  await page.evaluate((mode) => {
     const root = document.documentElement;
-    if (isDark) {
+    root.setAttribute("data-theme", mode);
+    if (mode === "dark" || mode === "night") {
       root.classList.add("dark");
-      root.setAttribute("data-theme", "dark");
-      localStorage.setItem("dente_theme", "dark");
+      root.classList.remove("light");
     } else {
       root.classList.remove("dark");
-      root.setAttribute("data-theme", "light");
-      localStorage.setItem("dente_theme", "light");
+      root.classList.add("light");
     }
-  }, dark);
+    localStorage.setItem("dente_theme_mode", mode);
+  }, themeMode);
 
-  await new Promise(r => setTimeout(r, 600));
+  await new Promise(r => setTimeout(r, 400));
 }
 
 async function screenshot(page, name) {
@@ -124,13 +152,20 @@ async function screenshot(page, name) {
   return p;
 }
 
-// ─── 3. Main ──────────────────────────────────────────────────────────────────
+// ─── 3. Main Capture Loop ─────────────────────────────────────────────────────────
 
-const PAGES = [
-  { name: "schedule", url: `${APP_BASE}/#schedule` },
-  { name: "visit",    url: `${APP_BASE}/#visit` },
-  { name: "finance",  url: `${APP_BASE}/#finance` },
-  { name: "imaging",  url: `${APP_BASE}/#imaging` },
+const TEST_SCENARIOS = [
+  // 1. Core Screens
+  { name: "schedule", url: `${APP_BASE}/#schedule`, perspective: "standard" },
+  { name: "visit", url: `${APP_BASE}/#visit`, perspective: "standard" },
+  { name: "settings", url: `${APP_BASE}/#settings`, perspective: "standard" },
+
+  // 2. Clinical Perspectives
+  { name: "perspective_chairsider", url: `${APP_BASE}/#shift`, perspective: "chairsider" },
+  { name: "perspective_frontdesk", url: `${APP_BASE}/#shift`, perspective: "frontdesk" },
+  { name: "perspective_presentation", url: `${APP_BASE}/#shift`, perspective: "presentation" },
+  { name: "perspective_orthodontic", url: `${APP_BASE}/#shift`, perspective: "orthodontic" },
+  { name: "perspective_pediatric", url: `${APP_BASE}/#shift`, perspective: "pediatric" },
 ];
 
 async function main() {
@@ -146,34 +181,45 @@ async function main() {
   });
 
   try {
-    for (const { name, url } of PAGES) {
+    // 4-State Matrix: Mobile Light, Mobile Dark, Desktop Light, Desktop Dark
+    for (const scenario of TEST_SCENARIOS) {
       for (const [size, viewport] of Object.entries(VIEWPORTS)) {
-        for (const dark of [false, true]) {
-          const theme = dark ? "dark" : "light";
-          const label = `${name}_${size}_${theme}`;
+        for (const themeMode of ["light", "dark"]) {
+          const label = `${scenario.name}_${size}_${themeMode}`;
           console.log(`\n[CAPTURE] ${label} (${viewport.width}×${viewport.height})`);
 
           const page = await browser.newPage();
           await page.setViewport(viewport);
 
           try {
-            await seedTokensAndGo(page, auth.clinicToken, auth.staffToken, url);
-            await applyTheme(page, dark);
+            await seedTokensAndGo(page, auth.clinicToken, auth.staffToken, auth.patientId, scenario.url, themeMode, scenario.perspective);
             await screenshot(page, label);
-            
-            // Capture scrolled view
-            await page.evaluate(() => window.scrollBy(0, 700));
-            await new Promise(r => setTimeout(r, 400));
-            await screenshot(page, `${label}_scrolled`);
           } catch (err) {
             console.error(`  [ERR] ${label}: ${err.message}`);
-            try { await screenshot(page, `${label}`); } catch {}
+            try { await screenshot(page, `${label}_err`); } catch {}
           } finally {
             await page.close();
           }
         }
       }
     }
+
+    // Additional Themes on Desktop: calm_teal, contrast, night
+    for (const themeMode of ["calm_teal", "contrast", "night"]) {
+      const label = `theme_${themeMode}_desktop`;
+      console.log(`\n[CAPTURE THEME] ${label}`);
+      const page = await browser.newPage();
+      await page.setViewport(VIEWPORTS.desktop);
+      try {
+        await seedTokensAndGo(page, auth.clinicToken, auth.staffToken, auth.patientId, `${APP_BASE}/#schedule`, themeMode, "standard");
+        await screenshot(page, label);
+      } catch (err) {
+        console.error(`  [ERR] ${label}: ${err.message}`);
+      } finally {
+        await page.close();
+      }
+    }
+
   } finally {
     await browser.close();
   }

@@ -200,7 +200,10 @@ export function AppointmentCard(props: AppointmentCardProps) {
 					</div>
 
 					<div className="appointment-card-body">
-						<h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+						<h3
+							className="text-base font-semibold"
+							style={{ color: "var(--ink)" }}
+						>
 							{appointmentPatientName}
 						</h3>
 						<div
@@ -216,11 +219,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								<button
 									type="button"
 									key={suggestion.id}
-									className={`chip chip-suggestion priority-${suggestion.priority} cursor-pointer px-2 py-0.5 rounded border text-xs font-semibold ${
-										suggestion.priority === "urgent"
-											? "bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800"
-											: "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800"
-									}`}
+									className={`chip chip-suggestion priority-${suggestion.priority}`}
 									onClick={(e) => {
 										e.stopPropagation();
 										openScheduleSuggestion(suggestion.section);
@@ -265,7 +264,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 
 					{appointmentHasOpenVisit ? (
 						<p
-							className="appointment-handoff-note text-xs text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-800 p-2 rounded-md mt-1"
+							className="appointment-handoff-note text-xs"
 							id={appointmentHandoffNoteId}
 						>
 							Пациент и закрывающий статус этой записи меняются только после
@@ -300,7 +299,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						</div>
 					) : null}
 
-					<div className="appointment-card-footer flex flex-wrap justify-end gap-2 mt-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+					<div className="appointment-card-footer flex flex-wrap justify-end gap-2 mt-2 pt-2 border-t border-[var(--line)]">
 						<button
 							className="secondary-button appointment-repeat-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
 							type="button"
@@ -422,7 +421,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 											disabled={
 												appointment.id === dashboard.activeVisit?.appointmentId
 											}
-											className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm outline-none"
+											className="w-full p-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none"
 											aria-describedby={
 												appointmentHasOpenVisit
 													? appointmentHandoffNoteId
@@ -467,7 +466,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								</div>
 
 								<div>
-									<span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">
+									<span className="text-xs font-semibold text-[var(--muted)] block mb-2">
 										Врач
 									</span>
 									{useManualSelects ? (
@@ -480,7 +479,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 													e.target.value,
 												)
 											}
-											className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm outline-none"
+											className="w-full p-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none"
 										>
 											<option value="">-- Выберите врача --</option>
 											{(dashboard.clinicSettings?.staff ?? [])
@@ -526,7 +525,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 
 								{dashboard?.clinicSettings?.profile?.mode !== "solo_doctor" && (
 									<div>
-										<span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">
+										<span className="text-xs font-semibold text-[var(--muted)] block mb-2">
 											Ассистент
 										</span>
 										<div className="flex flex-wrap gap-1.5">
@@ -558,7 +557,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								)}
 
 								<div>
-									<span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">
+									<span className="text-xs font-semibold text-[var(--muted)] block mb-2">
 										Кресло
 									</span>
 									<div className="flex flex-wrap gap-1.5">
@@ -584,7 +583,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								</div>
 
 								<div>
-									<span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">
+									<span className="text-xs font-semibold text-[var(--muted)] block mb-2">
 										Статус
 									</span>
 									<div className="flex flex-wrap gap-1.5">
@@ -618,7 +617,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									{appointmentHasOpenVisit && (
 										<div
 											id={appointmentHandoffNoteId}
-											className="status-blocker-note appointment-handoff-note text-xs text-amber-800 dark:text-amber-300 mt-1 font-medium bg-amber-50 dark:bg-amber-950/40 p-2 rounded border border-amber-200 dark:border-amber-900/60"
+											className="status-blocker-note appointment-handoff-note text-xs mt-1 font-medium p-2 rounded"
 										>
 											Статус приема заблокирован: по этому приему открыт
 											активный визит. Завершите или отмените визит в рабочем

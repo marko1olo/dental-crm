@@ -2102,21 +2102,20 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 								role="status"
 								aria-live="polite"
 								style={{
-									border: "1px solid var(--warning-color)",
 									borderRadius: "10px",
 									padding: "14px 16px",
 									marginBottom: "16px",
-									background: "var(--surface-muted)",
+									background: "var(--warn-bg, rgba(245, 158, 11, 0.08))",
 								}}
 							>
-								<strong style={{ color: "var(--warning-color)" }}>
+								<strong style={{ color: "var(--warn-fg, #d97706)" }}>
 									Прайс целиком: замечаний —{" "}
 									{typedPricelistResponseWarnings.length}
 								</strong>
 								<p
 									style={{
 										margin: "6px 0 10px",
-										color: "var(--text-muted)",
+										color: "var(--muted)",
 										fontSize: "13px",
 									}}
 								>
@@ -2138,20 +2137,9 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 											key={warning}
 											style={{
 												marginBottom: "4px",
-												color: "var(--warning-color)",
+												color: "var(--warn-fg, #d97706)",
 											}}
 										>
-											{/*
-                        Разбирает ключ ТА ЖЕ функция, что и предупреждения
-                        позиций. Ключи с хвостом («pricelist_rows_skipped:3»,
-                        «groq_failed:…») уже разбираются внутри
-                        pricelistWarningText (pricelistUiMeta.ts:143-156), и
-                        второго места, где префикс отрезают руками, быть не
-                        должно: разойдясь, они дадут клинике два разных текста
-                        про одно событие. Массив из одного элемента — потому
-                        что склейка запятой здесь не нужна, каждое замечание
-                        своей строкой.
-                      */}
 											{pricelistWarningsText([warning])}
 										</li>
 									))}
@@ -2164,21 +2152,12 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 								style={{
 									margin: "0 0 16px",
 									padding: "10px 14px",
-									border: "1px solid var(--line)",
 									borderRadius: "10px",
-									background: "var(--surface-muted)",
-									color: "var(--text-muted)",
+									background: "var(--paper-soft)",
+									color: "var(--muted)",
 									fontSize: "13px",
 								}}
 							>
-								{/*
-                  Разбор шёл по СЖАТОЙ картинке, и до сих пор это было не видно.
-                  preparePricelistImage уменьшает фото до 1600/1200/900/720 px и
-                  жмёт JPEG до 82/72/62%, лишь бы влезть в предел base64, — то
-                  есть с мелкого шрифта строки могли не прочитаться именно из-за
-                  сжатия. Клиника обязана видеть, что именно ушло на разбор,
-                  прежде чем решать «прайс плохой» или «фото плохое».
-                */}
 								Фото прайса: {pricelistImageNote}
 							</p>
 						) : null}
@@ -2186,18 +2165,17 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 							<section
 								aria-label="Материалы и бренды, распознанные в прайсе"
 								style={{
-									border: "1px solid var(--line)",
 									borderRadius: "10px",
 									padding: "14px 16px",
 									marginBottom: "16px",
-									background: "var(--surface-muted)",
+									background: "var(--paper-soft)",
 								}}
 							>
-								<strong>Материалы, распознанные в прайсе</strong>
+								<strong style={{ color: "var(--ink)" }}>Материалы, распознанные в прайсе</strong>
 								<p
 									style={{
 										margin: "6px 0 10px",
-										color: "var(--text-muted)",
+										color: "var(--muted)",
 										fontSize: "13px",
 									}}
 								>
@@ -2223,13 +2201,13 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 											{serviceCategoryLabels[summary.category] ??
 												summary.category}{" "}
 											— строк {summary.count}, с ценой {summary.pricedCount}:{" "}
-											<span style={{ color: "var(--text-muted)" }}>
+											<span style={{ color: "var(--muted)" }}>
 												{pricelistMaterialSummaryText(summary)}
 											</span>
 											<br />
 											<span
 												style={{
-													color: "var(--text-muted)",
+													color: "var(--muted)",
 													fontSize: "12px",
 												}}
 											>
@@ -2245,14 +2223,13 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 							<section
 								aria-label="Строки прайса, требующие ручной проверки"
 								style={{
-									border: "1px solid var(--warning-color)",
 									borderRadius: "10px",
 									padding: "14px 16px",
 									marginBottom: "16px",
-									background: "var(--surface-muted)",
+									background: "var(--warn-bg, rgba(245, 158, 11, 0.08))",
 								}}
 							>
-								<strong style={{ color: "var(--warning-color)" }}>
+								<strong style={{ color: "var(--warn-fg, #d97706)" }}>
 									Проверьте руками: строк с предупреждениями —{" "}
 									{(pricelistWarningRows ?? []).length} из{" "}
 									{(typedPricelistItems ?? []).length}
@@ -2260,7 +2237,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 								<p
 									style={{
 										margin: "6px 0 10px",
-										color: "var(--text-muted)",
+										color: "var(--muted)",
 										fontSize: "13px",
 									}}
 								>
@@ -2282,21 +2259,13 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 									{(pricelistWarningRows ?? []).map((item) => (
 										<li key={item.id} style={{ marginBottom: "6px" }}>
 											Строка {item.sourceLine} — {item.title}:{" "}
-											<span style={{ color: "var(--warning-color)" }}>
+											<span style={{ color: "var(--warn-fg, #d97706)" }}>
 												{pricelistWarningsText(item.warnings)}
 											</span>
-											{/*
-                        Материал стоит здесь, а не отдельной вкладкой: одно из
-                        предупреждений — ровно «Материал требует проверки», и
-                        проверять его без того, что разбор решил, нельзя. Функция
-                        pricelistItemMaterialText была написана, экспортирована и
-                        протянута через App → AppHelpers → useAppLogic в три
-                        вкладки, но не вызвана НИ РАЗУ; это её первый вызов.
-                      */}
 											<br />
 											<span
 												style={{
-													color: "var(--text-muted)",
+													color: "var(--muted)",
 													fontSize: "12px",
 												}}
 											>

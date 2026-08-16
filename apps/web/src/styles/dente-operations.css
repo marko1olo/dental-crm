@@ -544,9 +544,9 @@
 	margin: 0;
 	padding: 22px 16px;
 	text-align: center;
-	border: 1px dashed var(--line-strong);
+	border: 1px solid var(--line);
 	border-radius: 14px;
-	background: var(--paper);
+	background: var(--paper-soft);
 	color: var(--muted);
 	font-size: 13.5px;
 }

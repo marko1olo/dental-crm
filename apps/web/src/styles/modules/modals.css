@@ -39,6 +39,7 @@
 
 .inventory-confirm-window p {
 	color: var(--muted);
+}
 
 /* DICOM-like Image Viewer Modal Overlay */
 /* DICOM-like Image Viewer Modal Overlay */
@@ -252,6 +253,17 @@
 	max-width: 900px;
 	max-height: 85vh;
 	animation: scale-up 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	overflow-y: auto;
+}
+
+@media (max-width: 390px) {
+	.modal-content {
+		width: 100vw;
+		height: 100vh;
+		max-height: 100vh;
+		border-radius: 0;
+		padding: 10px;
+	}
 }
 
 @keyframes fade-in {
@@ -329,9 +341,9 @@
 ._ccm-panel {
 	flex: 1;
 	min-width: 0;
-	background: rgba(255, 255, 255, 0.92);
+	background: var(--paper, rgba(255, 255, 255, 0.92));
 	backdrop-filter: blur(20px);
-	border: 1px solid rgba(255, 255, 255, 0.6);
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.6));
 	box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.22);
 	border-radius: 22px;
 	padding: 1.25rem 1rem;

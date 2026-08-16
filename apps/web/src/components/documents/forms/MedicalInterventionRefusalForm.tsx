@@ -178,8 +178,7 @@ export const MedicalInterventionRefusalForm = React.memo(
 								rows={2}
 								className="mt-0"
 							/>
-							<QuickChipsRow
-								chips={REFUSAL_REASON_CHIPS}
+							<QuickChipsRow chips={REFUSAL_REASON_CHIPS}
 								onPick={(chip) =>
 									setRefusalPatientReason(
 										appendChipToText(refusalPatientReason, chip),
@@ -211,8 +210,7 @@ export const MedicalInterventionRefusalForm = React.memo(
 								rows={3}
 								className="mt-0"
 							/>
-							<QuickChipsRow
-								chips={REFUSAL_RISK_CHIPS}
+							<QuickChipsRow chips={REFUSAL_RISK_CHIPS}
 								onPick={(chip) =>
 									setRefusalExplainedRisks(
 										appendChipToText(refusalExplainedRisks, chip),
@@ -244,8 +242,7 @@ export const MedicalInterventionRefusalForm = React.memo(
 								rows={3}
 								className="mt-0"
 							/>
-							<QuickChipsRow
-								chips={REFUSAL_ALT_CHIPS}
+							<QuickChipsRow chips={REFUSAL_ALT_CHIPS}
 								onPick={(chip) =>
 									setRefusalAlternatives(
 										appendChipToText(refusalAlternatives, chip),
@@ -277,8 +274,7 @@ export const MedicalInterventionRefusalForm = React.memo(
 								rows={3}
 								className="mt-0"
 							/>
-							<QuickChipsRow
-								chips={REFUSAL_WARNING_CHIPS}
+							<QuickChipsRow chips={REFUSAL_WARNING_CHIPS}
 								onPick={(chip) =>
 									setRefusalUrgentWarningSigns(
 										appendChipToText(refusalUrgentWarningSigns, chip),

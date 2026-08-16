@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════
    PATIENT WORKSPACE & CLINICAL VISIT MODULE
    Extracted from main.css (TASK-3.3)
+   Single-surface flat design refactor
    ═══════════════════════════════════════════════════════════════════ */
 
 /* Patient Row & Risk Labels */
@@ -22,33 +23,6 @@
 	padding: 5px 8px;
 }
 
-/* БЫЛО `.patient-row-meta span:first-child` — оформление метки риска доставалось
-   тому, кто оказался первым в строке. Метка теперь рисуется только когда
-   отличает пациента от остальных (apps/web/src/PatientsView.tsx), и на строках
-   без неё первой становилась плашка остатка по деньгам: сумма долга выглядела
-   меткой риска. Класс от порядка отрисовки не зависит. */
-/* МЕТКА РИСКА НЕ ЗАМЕЧАЛА ТЕМУ ВООБЩЕ, И ЭТО ИЗМЕРЕНО, А НЕ ОЦЕНЕНО НА ГЛАЗ.
-   БЫЛО: `background: #f4ead8; color: #744d18` у «контроль» и `#f5e0dc / #7d2c25`
-   у «риск» — четыре литерала, одинаковые во всех трёх темах. Контраст текста к
-   подложке получался 6.25 и 7.34 в КАЖДОЙ теме — ровно потому, что ни один из
-   четырёх цветов от темы не зависел. Относительная яркость подложки при этом
-   0.830 и 0.779, тогда как --paper в «Ночи» и «Тепле» равна 0.009: метка была
-   почти белым пятном на почти чёрной странице, в девяносто раз ярче бумаги. В
-   вечернюю смену, когда тёплую тему и включают, регистратор видел на экране
-   картотеки два светящихся ярлыка.
-   ТЕПЕРЬ цвет несёт подложка на токенах предупреждения и отказа, а текст —
-   --ink, как у .finance-due и .handoff-lock. Замер:
-     «контроль» --ink на --warn-bg — 15.93 / 12.89 / 10.56
-     «риск»     --ink на --bad-bg  — 14.52 / 13.89 / 11.02
-   Текст не --warn-fg: штатная пара предупреждения даёт в светлой теме 4.42 при
-   норме AA 4.5 для текста 12px (жирный, но не крупный), то есть норму не держит.
-   Числа пересчитываются из живого CSS в src/tests/themeContrastGuard.test.ts.
-
-   БЫЛО ещё раньше `.patient-row-meta span:first-child` — оформление метки риска
-   доставалось тому, кто оказался первым в строке. Метка рисуется только когда
-   отличает пациента от остальных (apps/web/src/PatientsView.tsx), и на строках
-   без неё первой становилась плашка остатка по деньгам: сумма долга выглядела
-   меткой риска. Класс от порядка отрисовки не зависит. */
 .risk-watch .patient-insight-head span,
 .patient-row.risk-watch .patient-row-meta .patient-risk-label {
 	background: var(--warn-bg);
@@ -73,8 +47,8 @@
 }
 
 .patient-insight-meta span {
-	background: #eef8f5;
-	border: 1px solid var(--line);
+	background: var(--teal-soft);
+	border: none;
 	border-radius: 999px;
 	color: var(--teal-dark);
 	font-size: 12px;
@@ -95,9 +69,9 @@
 }
 
 .patient-feature-grid article {
-	background: var(--paper-strong);
-	border: 1px solid var(--line);
-	border-radius: 8px;
+	background: var(--paper-soft);
+	border: none;
+	border-radius: 10px;
 	display: grid;
 	gap: 10px;
 	grid-template-rows: auto minmax(0, 1fr);
@@ -127,8 +101,6 @@
 	padding: 0;
 }
 
-
-/* --- CLINICIAN WORKSPACE OPTIMIZATIONS --- */
 /* --- CLINICIAN WORKSPACE OPTIMIZATIONS --- */
 
 .visit-grid-container {
@@ -154,17 +126,17 @@
 
 /* Sidebar Section Box */
 .visit-sidebar-box {
-	background: var(--paper-strong);
-	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	border: none;
 	border-radius: 12px;
 	padding: 16px;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .visit-sidebar-box h3 {
 	font-size: 15px;
 	font-weight: 700;
-	color: var(--slate-800);
+	color: var(--ink);
 	margin: 0 0 12px 0;
 	display: flex;
 	align-items: center;
@@ -179,19 +151,19 @@
 }
 
 .visit-image-card {
-	background: var(--paper-light);
-	border: 1px solid var(--line);
+	background: var(--paper);
+	border: none;
 	border-radius: 8px;
 	overflow: hidden;
 	cursor: pointer;
 	transition: all 0.2s ease;
 	position: relative;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .visit-image-card:hover {
 	transform: translateY(-2px);
 	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-	border-color: var(--teal);
 }
 
 .visit-image-card img {
@@ -209,7 +181,7 @@
 .visit-image-info strong {
 	display: block;
 	font-size: 11px;
-	color: var(--slate-800);
+	color: var(--ink);
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -217,7 +189,7 @@
 
 .visit-image-info span {
 	font-size: 10px;
-	color: var(--slate-500);
+	color: var(--muted);
 }
 
 .visit-image-tag {
@@ -234,8 +206,6 @@
 	text-transform: uppercase;
 }
 
-
-/* Documents List Styles */
 /* Documents List Styles */
 .visit-documents-list {
 	display: flex;
@@ -248,14 +218,19 @@
 	align-items: center;
 	justify-content: space-between;
 	padding: 10px 12px;
-	background: var(--paper-light);
-	border: 1px solid var(--line);
+	background: var(--paper);
+	border: none;
 	border-radius: 8px;
-	transition: border-color 0.2s;
+	transition: all 0.2s ease;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .visit-document-row:hover {
-	border-color: var(--teal);
+	transform: translateX(4px);
+	background: var(--paper-soft);
+}
+.visit-document-row:active {
+	transform: translateX(0);
 }
 
 .visit-document-info {
@@ -267,7 +242,7 @@
 
 .visit-document-info strong {
 	font-size: 12px;
-	color: var(--slate-800);
+	color: var(--ink);
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -275,7 +250,7 @@
 
 .visit-document-info span {
 	font-size: 10px;
-	color: var(--slate-500);
+	color: var(--muted);
 }
 
 .visit-document-badge {
@@ -287,17 +262,15 @@
 }
 
 .visit-document-badge.status-draft {
-	background: #fef3c7;
-	color: #d97706;
+	background: var(--warn-bg);
+	color: var(--warn-fg);
 }
 
 .visit-document-badge.status-signed {
-	background: #d1fae5;
-	color: #059669;
+	background: var(--ok-bg);
+	color: var(--ok-fg);
 }
 
-
-/* Clinical Risk & Somatic Status */
 /* Clinical Risk & Somatic Status */
 .visit-risk-card {
 	border-radius: 10px;
@@ -306,24 +279,22 @@
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
+	border: none;
 }
 
 .visit-risk-card.risk-high {
-	background: #fef2f2;
-	border: 1px solid #fecaca;
-	color: #991b1b;
+	background: var(--bad-bg);
+	color: var(--bad-fg);
 }
 
 .visit-risk-card.risk-watch {
-	background: #fffbeb;
-	border: 1px solid #fef3c7;
-	color: #92400e;
+	background: var(--warn-bg);
+	color: var(--warn-fg);
 }
 
 .visit-risk-card.risk-low {
-	background: #f0fdf4;
-	border: 1px solid #dcfce7;
-	color: #166534;
+	background: var(--ok-bg);
+	color: var(--ok-fg);
 }
 
 .visit-risk-header {
@@ -357,8 +328,6 @@
 	font-weight: 600;
 }
 
-
-/* Past Visits History */
 /* Past Visits History */
 .visit-history-list {
 	display: flex;
@@ -367,11 +336,12 @@
 }
 
 .visit-history-item {
-	background: var(--paper-light);
-	border: 1px solid var(--line);
+	background: var(--paper);
+	border: none;
 	border-radius: 8px;
 	padding: 10px 12px;
 	font-size: 12px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .visit-history-item-header {
@@ -380,21 +350,19 @@
 	align-items: center;
 	margin-bottom: 6px;
 	font-size: 11px;
-	color: var(--slate-500);
+	color: var(--muted);
 }
 
 .visit-history-item-header strong {
-	color: var(--slate-800);
+	color: var(--ink);
 }
 
 .visit-history-item-body {
 	font-size: 11px;
 	line-height: 1.4;
-	color: var(--slate-600);
+	color: var(--muted);
 }
 
-
-/* ── ЭМК Вкладки (EMK Tabs) ─────────────────────────────────────── */
 /* ── ЭМК Вкладки (EMK Tabs) ─────────────────────────────────────── */
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 .emk-tabs-container {
@@ -408,8 +376,8 @@
 
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 .emk-tab-button {
-	background: var(--paper-light);
-	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	border: none;
 	color: var(--muted);
 	font-size: 11px;
 	font-weight: 850;
@@ -425,15 +393,12 @@
 .emk-tab-button:hover {
 	background: var(--teal-soft);
 	color: var(--teal-dark);
-	border-color: rgba(15, 118, 110, 0.3);
 }
 
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 .emk-tab-button.active {
-	/* --teal-fill: белый текст на #0d9488 даёт 3.74:1 при норме 4.5. */
 	background: var(--teal-fill);
 	color: #ffffff;
-	border-color: var(--teal-fill);
 	box-shadow: 0 2px 5px rgba(13, 148, 136, 0.2);
 }
 
@@ -462,8 +427,6 @@
 	font-size: 14px;
 }
 
-
-/* Patient List CLS Fixes */
 /* Patient List CLS Fixes */
 .patient-row {
 	display: grid;
@@ -471,9 +434,16 @@
 	min-height: 80px;
 }
 
-@media (max-width: 768px) {
-	.schedule-shift-summary-grid,
-	.schedule-filter-strip {
+@media (max-width: 390px) {
+	.visit-grid-container {
 		grid-template-columns: 1fr;
 	}
+	.patient-feature-grid {
+		grid-template-columns: 1fr;
+	}
+	.emk-tabs-container {
+		flex-direction: column;
+		align-items: stretch;
+	}
 }
+

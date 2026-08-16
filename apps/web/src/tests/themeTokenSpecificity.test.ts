@@ -212,7 +212,7 @@ describe("token-aliases.css: палитру решает data-theme, а не к�
 		const state: RootState = { theme: "night", classes: ["dark"] };
 		assert.equal(
 			winningValue(rules, "--srf-chip-soft", state),
-			"#1a1714",
+			"#121215",
 			"ночная тема получила тёмные значения вместо своих",
 		);
 	});
@@ -220,6 +220,16 @@ describe("token-aliases.css: палитру решает data-theme, а не к�
 	test("тёмная тема получает свои значения", () => {
 		const state: RootState = { theme: "dark", classes: ["dark"] };
 		assert.equal(winningValue(rules, "--srf-chip-soft", state), "#16211f");
+	});
+
+	test("тема calm_teal получает свои значения", () => {
+		const state: RootState = { theme: "calm_teal", classes: ["light"] };
+		assert.equal(winningValue(rules, "--srf-chip-soft", state), "#e6fffa");
+	});
+
+	test("тема contrast получает свои значения", () => {
+		const state: RootState = { theme: "contrast", classes: ["light"] };
+		assert.equal(winningValue(rules, "--srf-chip-soft", state), "#f4f4f5");
 	});
 
 	test("первый кадр: класс dark без атрибута остаётся тёмным", () => {
@@ -230,12 +240,20 @@ describe("token-aliases.css: палитру решает data-theme, а не к�
 		assert.equal(winningValue(rules, "--srf-chip-soft", state), "#16211f");
 	});
 
-	test("все шесть токенов имеют значение в каждой из трёх тем", () => {
-		for (const theme of ["light", "dark", "night"] as const) {
+	test("все шесть токенов имеют значение в каждой из пяти тем", () => {
+		for (const theme of [
+			"light",
+			"dark",
+			"night",
+			"calm_teal",
+			"contrast",
+		] as const) {
 			for (const token of SURFACE_TOKENS) {
 				const value = winningValue(rules, token, {
 					theme,
-					classes: [theme === "night" ? "" : theme],
+					classes: [
+						theme === "dark" || theme === "night" ? "dark" : "light",
+					],
 				});
 				assert.ok(value, `${token} не имеет значения в теме ${theme}`);
 			}
@@ -243,7 +261,13 @@ describe("token-aliases.css: палитру решает data-theme, а не к�
 	});
 
 	test("посторонний класс не меняет ни один из шести токенов ни в одной теме", () => {
-		for (const theme of ["light", "dark", "night"] as const) {
+		for (const theme of [
+			"light",
+			"dark",
+			"night",
+			"calm_teal",
+			"contrast",
+		] as const) {
 			for (const token of SURFACE_TOKENS) {
 				const clean = winningValue(rules, token, { theme, classes: [] });
 				for (const stray of ["dark", "light"]) {

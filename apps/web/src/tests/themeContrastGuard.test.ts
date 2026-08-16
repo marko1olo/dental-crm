@@ -79,13 +79,30 @@ function parseRules(css: string): Rule[] {
 /** Порядок листов берётся из main.tsx, а не из списка в тесте: иначе тест разойдётся со сборкой. */
 function importedStylesheets(): string[] {
 	const entry = readFileSync(path.join(webSrc, "main.tsx"), "utf8");
-	return [...entry.matchAll(/import\s+"\.\/styles\/([\w.-]+\.css)"/g)].map(
+	const files = [...entry.matchAll(/import\s+"\.\/styles\/([\w.-]+\.css)"/g)].map(
 		(match) => {
 			const file = match[1];
 			if (file === undefined) throw new Error("имя листа не разобрано");
 			return file;
 		},
 	);
+	const allFiles: string[] = [];
+	for (const file of files) {
+		const filePath = path.join(webSrc, "styles", file);
+		const content = readFileSync(filePath, "utf8");
+		const nestedImports = [
+			...content.matchAll(/@import\s+["']\.\/([\w./-]+\.css)["'];/g),
+		].map((m) => m[1]);
+		for (const nested of nestedImports) {
+			if (nested && !allFiles.includes(nested)) {
+				allFiles.push(nested);
+			}
+		}
+		if (!allFiles.includes(file)) {
+			allFiles.push(file);
+		}
+	}
+	return allFiles;
 }
 
 const STYLESHEETS = importedStylesheets();
@@ -270,34 +287,34 @@ const MEASURED = [
 	{
 		fg: ".onboarding-compact-strip strong",
 		bg: ".onboarding-compact-strip",
-		ratios: [16.69, 14.19, 12.81],
+		ratios: [16.69, 14.19, 17.31],
 	},
 	{
 		fg: ".onboarding-compact-strip span",
 		bg: ".onboarding-compact-strip",
-		ratios: [7.62, 8.64, 8.62],
+		ratios: [7.62, 8.64, 11.71],
 	},
 	{
 		fg: ".onboarding-compact-score",
 		bg: ".onboarding-compact-score",
-		ratios: [5.47, 7.17, 6.59],
+		ratios: [5.47, 7.17, 7.99],
 	},
 	// У .finance-due своего color нет: текст строки наследуется, и это тоже часть правки.
-	{ fg: "--ink", bg: ".finance-due", ratios: [14.52, 13.89, 11.02] },
-	{ fg: ".handoff-lock", bg: ".handoff-lock", ratios: [15.93, 12.89, 10.56] },
+	{ fg: "--ink", bg: ".finance-due", ratios: [14.52, 13.89, 16.64] },
+	{ fg: ".handoff-lock", bg: ".handoff-lock", ratios: [15.93, 12.89, 15.26] },
 	{
 		fg: ".appointment-handoff-note",
 		bg: ".appointment-handoff-note",
-		ratios: [15.93, 12.89, 10.56],
+		ratios: [15.93, 12.89, 15.26],
 	},
-	{ fg: ".chip-reason", bg: ".chip-reason", ratios: [15.46, 13.24, 10.85] },
-	{ fg: ".chip-doctor", bg: ".chip-doctor", ratios: [16.69, 14.19, 12.81] },
-	{ fg: ".chip-chair", bg: ".chip-chair", ratios: [15.93, 12.89, 10.56] },
+	{ fg: ".chip-reason", bg: ".chip-reason", ratios: [15.46, 13.24, 15.97] },
+	{ fg: ".chip-doctor", bg: ".chip-doctor", ratios: [16.69, 14.19, 17.31] },
+	{ fg: ".chip-chair", bg: ".chip-chair", ratios: [15.93, 12.89, 15.26] },
 	// Подпись лежит на поверхности карточки, своей подложки у правила нет.
 	{
 		fg: ".smart-field input:focus ~ label",
 		bg: "--paper",
-		ratios: [5.93, 8.33, 8.35],
+		ratios: [5.93, 8.33, 9.29],
 	},
 	/*
 	 * Плашка состояния СОХРАНЕНИЯ карточки пациента (dente-redesign.css, раздел 8a).
@@ -310,24 +327,24 @@ const MEASURED = [
 	{
 		fg: ".save-pill.save-pill-saving",
 		bg: ".save-pill.save-pill-saving",
-		ratios: [7.74, 11.73, 10.25],
+		ratios: [7.74, 11.73, 14.21],
 	},
 	// Текст здесь --ink, а не --warn-fg: штатная пара предупреждения даёт в светлой
 	// теме 4.42 и норму не держит. Замер и причина — в комментарии рядом с правилом.
 	{
 		fg: ".save-pill.save-pill-dirty",
 		bg: ".save-pill.save-pill-dirty",
-		ratios: [15.93, 12.89, 10.56],
+		ratios: [15.93, 12.89, 15.26],
 	},
 	{
 		fg: ".save-pill.save-pill-error",
 		bg: ".save-pill.save-pill-error",
-		ratios: [5.3, 5.26, 4.92],
+		ratios: [5.3, 5.26, 6.02],
 	},
 	{
 		fg: ".save-pill.save-pill-saved",
 		bg: ".save-pill.save-pill-saved",
-		ratios: [4.57, 7.72, 7.26],
+		ratios: [4.57, 7.72, 8.85],
 	},
 	/*
 	 * Метка риска в строке пациента. До правки её четыре цвета были литералами и
@@ -339,12 +356,12 @@ const MEASURED = [
 	{
 		fg: ".patient-row.risk-watch .patient-row-meta .patient-risk-label",
 		bg: ".patient-row.risk-watch .patient-row-meta .patient-risk-label",
-		ratios: [15.93, 12.89, 10.56],
+		ratios: [15.93, 12.89, 15.26],
 	},
 	{
 		fg: ".patient-row.risk-high .patient-row-meta .patient-risk-label",
 		bg: ".patient-row.risk-high .patient-row-meta .patient-risk-label",
-		ratios: [14.52, 13.89, 11.02],
+		ratios: [14.52, 13.89, 16.64],
 	},
 ] as const;
 
@@ -419,9 +436,9 @@ describe("контраст правок считается по палитре, 
 		assert.equal(winningToken("--paper", "dark"), "#0f172a");
 		assert.equal(winningToken("--ink", "light"), "#111827");
 		assert.equal(winningToken("--ink", "dark"), "#f8fafc");
-		// В «Тепле» блока в main.css нет вовсе, поэтому побеждает dente-redesign.css:115.
-		assert.equal(winningToken("--paper", "night"), "#1c1714");
-		assert.equal(winningToken("--ink", "night"), "#f1e8dd");
+		// В ночной теме (OLED) побеждают токены из main.css
+		assert.equal(winningToken("--paper", "night"), "#09090b");
+		assert.equal(winningToken("--ink", "night"), "#ffffff");
 	});
 
 	test("каждое отношение из комментариев воспроизводится и держит норму 4.5", () => {

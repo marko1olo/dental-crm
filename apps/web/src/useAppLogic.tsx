@@ -181,6 +181,7 @@ import { useScheduleLogic } from "./hooks/domains/useScheduleLogic";
 import { useStaffSettingsLogic } from "./hooks/domains/useStaffSettingsLogic";
 import { useTelegramModule } from "./hooks/domains/useTelegramModule";
 import { useVisitLogic } from "./hooks/domains/useVisitLogic";
+import { useScheduleSettingsLogic } from "./hooks/domains/useScheduleSettingsLogic";
 import { useSoundNotifications } from "./hooks/useSoundNotifications";
 
 import { loadWorkspaceProfile } from "./hooks/useWorkspaceProfile";
@@ -1686,38 +1687,19 @@ export function useAppLogic(): any {
 		setClinicProfileSaveState("idle");
 	}
 
-	function toggleClinicWorkingDay(day: number) {
-		setClinicProfileDraft((current) => {
-			const nextDays = current.workingDays.includes(day)
-				? current.workingDays.filter((item) => item !== day)
-				: [...current.workingDays, day];
-			return { ...current, workingDays: normalizeWorkingDaysDraft(nextDays) };
-		});
-		setClinicProfileDirty(true);
-		setClinicProfileSaveState("idle");
-	}
-
-	function toggleStaffWorkingDay(staffId: string, day: number) {
-		const currentDraft =
-			staffScheduleDrafts[staffId] ?? defaultStaffScheduleDraft();
-		const workingDays = currentDraft.workingDays.includes(day)
-			? currentDraft.workingDays.filter((item) => item !== day)
-			: [...currentDraft.workingDays, day];
-		updateStaffScheduleDraft(staffId, {
-			workingDays: normalizeWorkingDaysDraft(workingDays),
-		});
-	}
-
-	function toggleChairWorkingDay(chairId: string, day: number) {
-		const currentDraft =
-			chairScheduleDrafts[chairId] ?? defaultStaffScheduleDraft();
-		const workingDays = currentDraft.workingDays.includes(day)
-			? currentDraft.workingDays.filter((item) => item !== day)
-			: [...currentDraft.workingDays, day];
-		updateChairScheduleDraft(chairId, {
-			workingDays: normalizeWorkingDaysDraft(workingDays),
-		});
-	}
+	const {
+		toggleClinicWorkingDay,
+		toggleStaffWorkingDay,
+		toggleChairWorkingDay,
+	} = useScheduleSettingsLogic({
+		setClinicProfileDraft,
+		setClinicProfileDirty,
+		setClinicProfileSaveState,
+		staffScheduleDrafts,
+		updateStaffScheduleDraft,
+		chairScheduleDrafts,
+		updateChairScheduleDraft,
+	});
 
 	const reconcileDashboardScopedUiSelections = useCallback(
 		function reconcileDashboardScopedUiSelections() {
@@ -4911,14 +4893,8 @@ export function useAppLogic(): any {
 		setClinicalAdminSecretDraft,
 		loadDashboard,
 		operatorWorkflowFailureMessage,
-		...clinicalVisitLogic,
-		...staffSettingsLogic,
-		...patientIntakeLogic,
-		...migrationQueries,
 		previewImport,
 		commitImport,
-		...imagingQueries,
-		...communicationsQueries,
 		activeCommunicationTasks: null,
 		activeImagingStudies: null,
 		activePayments,

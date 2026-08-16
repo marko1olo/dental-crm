@@ -38,6 +38,12 @@ import {
 import { useSettingsStore } from "./store/settingsStore";
 import { type ThemeMode, useThemeStore } from "./store/themeStore";
 import {
+	type WorkspacePerspective,
+	perspectiveDescriptions,
+	perspectiveLabels,
+	usePerspectiveStore,
+} from "./store/perspectiveStore";
+import {
 	type AppView,
 	appViews,
 	getFallbackAppView,
@@ -418,30 +424,32 @@ export function WorkspaceSidebar({
 function ThemeSwitcher() {
 	const themeMode = useThemeStore((state) => state.themeMode);
 	const setThemeMode = useThemeStore((state) => state.setThemeMode);
-	/*
-	 * Подписи были «День», «Тьма», «Ночь»: чем «Тьма» отличается от «Ночи», по
-	 * экрану понять нельзя. Темы при этом разные по-настоящему — у dark холодная
-	 * серо-синяя палитра, у night тёплая коричневая (см. dente-redesign.css). Так
-	 * и подписываем, а подробное объяснение уходит в подсказку при наведении.
-	 */
+
 	const options: Array<{ mode: ThemeMode; label: string; hint: string }> = [
-		{ mode: "light", label: "День", hint: "Светлая тема" },
+		{ mode: "light", label: "День", hint: "Клиническая светлая тема" },
 		{
 			mode: "dark",
-			label: "Ночь",
-			hint: "Тёмная тема в холодных серо-синих тонах",
+			label: "Тьма",
+			hint: "Хирургическая тёмная тема в холодных серо-синих тонах",
 		},
 		{
 			mode: "night",
-			label: "Тепло",
-			hint: "Тёмная тема в тёплых коричневых тонах — мягче для глаз вечером",
+			label: "OLED",
+			hint: "Истинный глубокий ночной чёрный для OLED-планшетов",
+		},
+		{
+			mode: "calm_teal",
+			label: "Морская",
+			hint: "Мягкая мятная тема для детского приема и презентации планов",
+		},
+		{
+			mode: "contrast",
+			label: "Контраст",
+			hint: "Высокий контраст WCAG AAA (7:1) для слабовидящих и яркого света",
 		},
 	];
 
 	return (
-		// В слове «интерфейса» предпоследняя буква была латинской c: подпись
-		// выглядела верно, но программа чтения с экрана произносила её неправильно,
-		// и поиск по тексту такую строку не находил.
 		<div role="toolbar" className="theme-switcher" aria-label="Тема интерфейса">
 			{options.map((option) => (
 				<button
@@ -456,6 +464,46 @@ function ThemeSwitcher() {
 				</button>
 			))}
 		</div>
+	);
+}
+
+export function PerspectiveSwitcher() {
+	const perspective = usePerspectiveStore((state) => state.perspective);
+	const setPerspective = usePerspectiveStore((state) => state.setPerspective);
+
+	const options: WorkspacePerspective[] = [
+		"standard",
+		"chairsider",
+		"frontdesk",
+		"pediatric",
+		"presentation",
+		"orthodontic",
+	];
+
+	return (
+		<details className="workspace-role-switcher workspace-perspective-switcher" aria-label="Клинический режим">
+			<summary title={perspectiveDescriptions[perspective]}>
+				<span>Режим</span>
+				<strong>{perspectiveLabels[perspective]}</strong>
+			</summary>
+			<div className="role-switcher-options">
+				{options.map((mode) => (
+					<button
+						className={perspective === mode ? "active" : ""}
+						key={mode}
+						type="button"
+						aria-pressed={perspective === mode}
+						title={perspectiveDescriptions[mode]}
+						onClick={(event) => {
+							setPerspective(mode);
+							event.currentTarget.closest("details")?.removeAttribute("open");
+						}}
+					>
+						{perspectiveLabels[mode]}
+					</button>
+				))}
+			</div>
+		</details>
 	);
 }
 
@@ -568,6 +616,7 @@ export function WorkspaceTopbar({
 						))}
 					</div>
 				</details>
+				<PerspectiveSwitcher />
 				<RecentPatientHistoryWidget compactDropdown />
 			</div>
 			{/*

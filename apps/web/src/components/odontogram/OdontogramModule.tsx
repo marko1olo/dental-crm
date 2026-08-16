@@ -27,6 +27,7 @@ import { ToothHistoryChronicle } from "./ToothHistoryChronicle";
 import { TreatmentEstimator } from "./TreatmentEstimator";
 import { VoiceDictationOverlay } from "./VoiceDictationOverlay";
 import "./odontogram.css";
+import { usePerspectiveStore } from "../../store/perspectiveStore";
 import { logger } from "../../utils/logger";
 
 /**
@@ -325,9 +326,10 @@ export const OdontogramModule = ({
 	} | null>(null);
 	const [historyTooth, setHistoryTooth] = useState<number | null>(null);
 
+	const perspective = usePerspectiveStore((state) => state.perspective);
 	// New States for Pediatric & Multi-Select
 	const [isPediatricMode, setIsPediatricMode] = useState(
-		pediatricMode || false,
+		pediatricMode ?? perspective === "pediatric",
 	);
 	const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
 	const [selectedTeeth, setSelectedTeeth] = useState<number[]>([]);
@@ -419,8 +421,8 @@ export const OdontogramModule = ({
 	}, [lastMessage, patientId]);
 
 	useEffect(() => {
-		setIsPediatricMode(pediatricMode || false);
-	}, [pediatricMode]);
+		setIsPediatricMode(pediatricMode ?? perspective === "pediatric");
+	}, [pediatricMode, perspective]);
 
 	// Load states from API
 	const updateToothState = useCallback(

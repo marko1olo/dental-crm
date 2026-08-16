@@ -50,7 +50,14 @@ describe("разрешение темы", () => {
 	});
 
 	test("класс dark и класс light никогда не стоят одновременно", () => {
-		for (const mode of ["light", "dark", "night", "auto"] as const) {
+		for (const mode of [
+			"light",
+			"dark",
+			"night",
+			"calm_teal",
+			"contrast",
+			"auto",
+		] as const) {
 			for (const prefersDark of [true, false]) {
 				const resolved = resolveTheme(mode, prefersDark);
 				assert.ok(
@@ -58,6 +65,16 @@ describe("разрешение темы", () => {
 					`${mode}/${prefersDark}: оба класса сразу — правила тем начнут конфликтовать`,
 				);
 			}
+		}
+	});
+
+	test("темы calm_teal и contrast получают lightClass и colorScheme light", () => {
+		for (const mode of ["calm_teal", "contrast"] as const) {
+			const resolved = resolveTheme(mode, false);
+			assert.equal(resolved.theme, mode);
+			assert.equal(resolved.darkClass, false);
+			assert.equal(resolved.lightClass, true);
+			assert.equal(resolved.colorScheme, "light");
 		}
 	});
 });

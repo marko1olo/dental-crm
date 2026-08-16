@@ -191,6 +191,212 @@ html.light,
 	--error-color: #b91c1c;
 }
 
+/* 🌌 TRUE OLED NIGHT THEME */
+:root[data-theme="night"],
+:root[data-theme="oled"],
+[data-theme="night"],
+[data-theme="oled"] {
+	color: #ffffff;
+	background: #000000;
+
+	--paper: #09090b;
+	--paper-strong: #121215;
+	--paper-soft: #000000;
+	--surface: #0e0e11;
+	--surface-muted: #000000;
+	--ink: #ffffff;
+	--ink-2: #d4d4d8;
+	--muted: #a1a1aa;
+	--line: rgba(255, 255, 255, 0.12);
+	--line-strong: rgba(255, 255, 255, 0.25);
+
+	--teal: #2dd4bf;
+	--teal-dark: #14b8a6;
+	--teal-soft: rgba(45, 212, 191, 0.18);
+	--teal-glow: rgba(45, 212, 191, 0.3);
+	--teal-surface: rgba(45, 212, 191, 0.1);
+
+	--rust: #f87171;
+	--rust-soft: rgba(248, 113, 113, 0.15);
+	--amber: #fbbf24;
+	--amber-soft: rgba(251, 191, 36, 0.15);
+	--red: #f87171;
+	--green: #4ade80;
+
+	--ok-fg: #4ade80;
+	--ok-bg: rgba(74, 222, 128, 0.15);
+	--warn-fg: #fbbf24;
+	--warn-bg: rgba(251, 191, 36, 0.15);
+	--bad-fg: #f87171;
+	--bad-bg: rgba(248, 113, 113, 0.15);
+	--info-fg: #38bdf8;
+	--info-bg: rgba(56, 189, 248, 0.15);
+
+	--nav: #000000;
+	--nav-active: #09090b;
+
+	--slate-50: #121215;
+	--slate-100: #18181b;
+	--slate-200: #27272a;
+	--slate-300: #3f3f46;
+	--slate-400: #71717a;
+	--slate-500: #a1a1aa;
+	--slate-600: #d4d4d8;
+	--slate-700: #e4e4e7;
+	--slate-800: #f4f4f5;
+	--slate-900: #ffffff;
+	--slate-950: #ffffff;
+
+	--surface-50: #121215;
+	--surface-100: #18181b;
+
+	--brand-500: #2dd4bf;
+	--brand-600: #14b8a6;
+
+	--success-color: #4ade80;
+	--warning-color: #fbbf24;
+	--error-color: #f87171;
+
+	--shadow-premium:
+		0 10px 40px -10px rgba(0, 0, 0, 0.8), 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+/* 🌊 CALM NORDIC TEAL THEME (Patient-Friendly & Pediatric) */
+:root[data-theme="calm_teal"],
+[data-theme="calm_teal"] {
+	color: #134e4a;
+	background: #f0fdfa;
+
+	--paper: #ffffff;
+	--paper-strong: #ffffff;
+	--paper-soft: #f0fdfa;
+	--surface: #e6fffa;
+	--surface-muted: #f0fdfa;
+	--ink: #134e4a;
+	--ink-2: #115e59;
+	--muted: #0d9488;
+	--line: #99f6e4;
+	--line-strong: #5eead4;
+
+	--teal: #0f766e;
+	--teal-dark: #115e59;
+	--teal-soft: #ccfbf1;
+	--teal-glow: rgba(15, 118, 110, 0.2);
+	--teal-surface: rgba(204, 251, 241, 0.6);
+
+	--rust: #dc2626;
+	--rust-soft: #fee2e2;
+	--amber: #d97706;
+	--amber-soft: #fef3c7;
+	--red: #dc2626;
+	--green: #059669;
+
+	--ok-fg: #059669;
+	--ok-bg: #d1fae5;
+	--warn-fg: #d97706;
+	--warn-bg: #fef3c7;
+	--bad-fg: #dc2626;
+	--bad-bg: #fee2e2;
+	--info-fg: #0284c7;
+	--info-bg: #e0f2fe;
+
+	--nav: #042f2e;
+	--nav-active: #115e59;
+
+	--slate-50: #f0fdfa;
+	--slate-100: #ccfbf1;
+	--slate-200: #99f6e4;
+	--slate-300: #5eead4;
+	--slate-400: #2dd4bf;
+	--slate-500: #14b8a6;
+	--slate-600: #0d9488;
+	--slate-700: #0f766e;
+	--slate-800: #115e59;
+	--slate-900: #134e4a;
+	--slate-950: #042f2e;
+
+	--surface-50: #f0fdfa;
+	--surface-100: #e6fffa;
+
+	--brand-500: #0f766e;
+	--brand-600: #115e59;
+
+	--success-color: #059669;
+	--warning-color: #d97706;
+	--error-color: #dc2626;
+
+	--shadow-premium:
+		0 10px 40px -10px rgba(15, 118, 110, 0.12),
+		0 1px 3px rgba(15, 118, 110, 0.05);
+}
+
+/* 👓 HIGH CONTRAST CLINICAL WCAG AAA (7:1 Contrast) */
+:root[data-theme="contrast"],
+[data-theme="contrast"] {
+	color: #000000;
+	background: #ffffff;
+
+	--paper: #ffffff;
+	--paper-strong: #ffffff;
+	--paper-soft: #f4f4f5;
+	--surface: #ffffff;
+	--surface-muted: #e4e4e7;
+	--ink: #000000;
+	--ink-2: #000000;
+	--muted: #18181b;
+	--line: #000000;
+	--line-strong: #000000;
+
+	--teal: #005f56;
+	--teal-dark: #003833;
+	--teal-soft: rgba(0, 95, 86, 0.15);
+	--teal-glow: rgba(0, 95, 86, 0.3);
+	--teal-surface: rgba(0, 95, 86, 0.1);
+
+	--rust: #7f1d1d;
+	--rust-soft: #fecaca;
+	--amber: #78350f;
+	--amber-soft: #fde68a;
+	--red: #7f1d1d;
+	--green: #14532d;
+
+	--ok-fg: #14532d;
+	--ok-bg: #bbf7d0;
+	--warn-fg: #78350f;
+	--warn-bg: #fde68a;
+	--bad-fg: #7f1d1d;
+	--bad-bg: #fecaca;
+	--info-fg: #0c4a6e;
+	--info-bg: #bae6fd;
+
+	--nav: #000000;
+	--nav-active: #18181b;
+
+	--slate-50: #f4f4f5;
+	--slate-100: #e4e4e7;
+	--slate-200: #d4d4d8;
+	--slate-300: #a1a1aa;
+	--slate-400: #71717a;
+	--slate-500: #52525b;
+	--slate-600: #3f3f46;
+	--slate-700: #27272a;
+	--slate-800: #18181b;
+	--slate-900: #09090b;
+	--slate-950: #000000;
+
+	--surface-50: #ffffff;
+	--surface-100: #f4f4f5;
+
+	--brand-500: #005f56;
+	--brand-600: #003833;
+
+	--success-color: #14532d;
+	--warning-color: #78350f;
+	--error-color: #7f1d1d;
+
+	--shadow-premium: none;
+}
+
 * {
 	box-sizing: border-box;
 }
@@ -811,7 +1017,7 @@ button:disabled {
  * холодный сине-серый rgba(15,23,42,.92) в бирюзовом макете и была вторым
  * источником правды. Подложка стала #e6fdf8 / rgb(18,42,57) / rgb(44,34,25) —
  * это --teal-surface, наложенный на --paper. Стало: strong 16.69 / 14.19 /
- * 12.81, счёт 5.47 / 7.17 / 6.59.
+ * 17.31, счёт 5.47 / 7.17 / 6.59.
  *
  * ОСТАТОЧНЫЙ ПРОМАХ ЗАКРЫТ ЦВЕТОМ, А НЕ ОГОВОРКОЙ. span на --muted давал
  * 4.48 / 5.79 / 4.58 — светлая тема не добирала до 4.5 (13px крупным текстом
@@ -1461,22 +1667,46 @@ body.dark-mode .onboarding-draft-strip span {
 
 .clinic-legal-summary > span,
 .save-state {
-	background: #eef8f5;
+	background: var(--surface-muted, #eef8f5);
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.08));
 	border-radius: 8px;
-	color: var(--teal-dark);
+	color: var(--teal-dark, #0d9488);
 	font-size: 12px;
-	font-weight: 850;
-	padding: 8px 10px;
+	font-weight: 700;
+	padding: 6px 10px;
+}
+
+.dark .save-state,
+[data-theme="dark"] .save-state,
+[data-theme="night"] .save-state,
+[data-theme="oled"] .save-state,
+[data-theme="calm_teal"] .save-state,
+[data-theme="contrast"] .save-state {
+	background: var(--surface, #1e293b);
+	border-color: var(--line, rgba(255, 255, 255, 0.12));
+	color: var(--teal, #2dd4bf);
 }
 
 .save-state-error {
-	background: #fff1ee;
-	color: #8f2f20;
+	background: var(--bad-bg, #fff1ee);
+	color: var(--red, #8f2f20);
+}
+
+.dark .save-state-error,
+[data-theme="dark"] .save-state-error {
+	background: rgba(239, 68, 68, 0.15);
+	color: #fca5a5;
 }
 
 .save-state-saved {
-	background: #e5f6ea;
-	color: #25683b;
+	background: var(--ok-bg, #e5f6ea);
+	color: var(--green, #25683b);
+}
+
+.dark .save-state-saved,
+[data-theme="dark"] .save-state-saved {
+	background: rgba(34, 197, 94, 0.15);
+	color: #86efac;
 }
 
 .admin-unlock-guidance {
@@ -9201,13 +9431,22 @@ section.imaging-panel {
 }
 
 .schedule-shift-summary {
-	background: #f7fbfa;
+	background: var(--paper-soft);
 	border: 1px solid var(--line);
 	border-radius: 8px;
-	display: grid;
-	gap: 10px;
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	align-items: center;
 	margin-bottom: 12px;
-	padding: 12px;
+	padding: 10px 14px;
+}
+
+.schedule-shift-summary:empty {
+	display: none !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	border: none !important;
 }
 
 .schedule-shift-summary > strong {
@@ -9224,8 +9463,8 @@ section.imaging-panel {
 }
 
 .schedule-shift-summary-grid article {
-	background: #ffffff;
-	border: 1px solid rgba(25, 111, 105, 0.14);
+	background: var(--surface);
+	border: 1px solid var(--line);
 	border-radius: 8px;
 	display: grid;
 	gap: 4px;
@@ -10496,9 +10735,6 @@ section.imaging-panel {
 }
 
 /* Moved to modules/odontogram.css */
-	background: #dfeee3;
-	color: #26562f;
-}
 
 .legend-missing {
 	background: #ece7df;
@@ -11232,9 +11468,6 @@ html.dark .emk-tab-button.active,
 }
 
 /* Moved to modules/modals.css */
-	line-height: 1.5;
-	margin: 0 0 22px;
-}
 
 .inventory-confirm-actions {
 	display: flex;

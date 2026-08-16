@@ -70,6 +70,12 @@ import {
 	WorkspaceSidebar,
 	WorkspaceTopbar,
 } from "./workspaceShell";
+import { CasePresentationView } from "./components/perspectives/CasePresentationView";
+import { ChairsiderPerspectiveView } from "./components/perspectives/ChairsiderPerspectiveView";
+import { FrontdeskPerspectiveView } from "./components/perspectives/FrontdeskPerspectiveView";
+import { OrthodonticPerspectiveView } from "./components/perspectives/OrthodonticPerspectiveView";
+import { PediatricPerspectiveView } from "./components/perspectives/PediatricPerspectiveView";
+import { usePerspectiveStore } from "./store/perspectiveStore";
 
 const ImagingView = lazy(() =>
 	import("./ImagingView").then((module) => ({ default: module.ImagingView })),
@@ -177,6 +183,7 @@ export function App() {
 			return next;
 		});
 	};
+	const perspective = usePerspectiveStore((s) => s.perspective);
 	const appLogicValue = useAppLogic();
 	const {
 		acceptDraftToVisit,
@@ -1142,10 +1149,15 @@ export function App() {
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const [activeStaffUser, setActiveStaffUser] = useState<any>(null);
 	const staffProfileFetchAttemptedRef = useRef<boolean>(false);
+	const initialDashboardLoadTriggeredRef = useRef<boolean>(false);
+	const loadDashboardRef = useRef(loadDashboard);
+	loadDashboardRef.current = loadDashboard;
+
 	// On mount: if clinic token already in localStorage (page refresh / persisted session), load dashboard + restore user profile
 	useEffect(() => {
-		if (clinicAuthed && !dashboard) {
-			void loadDashboard().catch((e) => {
+		if (clinicAuthed && !dashboard && !initialDashboardLoadTriggeredRef.current) {
+			initialDashboardLoadTriggeredRef.current = true;
+			void loadDashboardRef.current().catch((e) => {
 				// Only force re-login on explicit 401 auth failure, not network/db errors
 				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				const statusCode = (e as any)?.statusCode ?? (e as any)?.status ?? 0;
@@ -1211,7 +1223,7 @@ export function App() {
 					);
 				});
 		}
-	}, [loadDashboard, dashboard, clinicAuthed, activeStaffUser]); // Run once on mount only
+	}, [clinicAuthed, dashboard, activeStaffUser]); // Stable dependencies with single-trigger guards
 	// Auto-lock on inactivity (5 minutes)
 	useEffect(() => {
 		if (!clinicAuthed || !staffAuthed) return;
@@ -2245,7 +2257,19 @@ export function App() {
 							</button>
 						</section>
 					) : null}
-					{currentView === "shift" ? (
+					{perspective === "chairsider" ? (
+						<ChairsiderPerspectiveView />
+					) : perspective === "frontdesk" ? (
+						<FrontdeskPerspectiveView />
+					) : perspective === "presentation" ? (
+						<CasePresentationView />
+					) : perspective === "orthodontic" ? (
+						<OrthodonticPerspectiveView />
+					) : perspective === "pediatric" ? (
+						<PediatricPerspectiveView />
+					) : (
+						<>
+							{currentView === "shift" ? (
 						/*
           Граница и Suspense здесь появились последними из всех разделов, и это
           было не украшение. `ShiftView` объявлен через `lazy()` (строка 399),
@@ -4093,6 +4117,8 @@ export function App() {
 							</Suspense>
 						</WorkspaceRouteErrorBoundary>
 					) : null}
+						</>
+					)}
 					<VoiceAssistantUI
 						onNavigate={(view) => {
 							setCurrentView(view);

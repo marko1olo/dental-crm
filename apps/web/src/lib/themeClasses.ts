@@ -25,12 +25,12 @@
  * ошибка в этих четырёх строках не ловилась ничем.
  */
 
-export type ThemeMode = "light" | "dark" | "night" | "auto";
+export type ThemeMode = "light" | "dark" | "night" | "calm_teal" | "contrast" | "auto";
 
 /** Что именно выставляется на корневом элементе. */
 export type ResolvedTheme = {
 	/** Значение data-theme: единственный источник истины для палитры. */
-	readonly theme: "light" | "dark" | "night";
+	readonly theme: "light" | "dark" | "night" | "calm_teal" | "contrast";
 	/**
 	 * Классы на <html>. Вариант Tailwind `dark:` на них НЕ опирается — он читает
 	 * data-theme, иначе ночная тема осталась бы без тёмных вариантов. Классы
@@ -48,13 +48,14 @@ export function resolveTheme(
 ): ResolvedTheme {
 	const theme =
 		themeMode === "auto" ? (prefersDark ? "dark" : "light") : themeMode;
+	const isDark = theme === "dark" || theme === "night";
 	return {
 		theme,
-		darkClass: theme === "dark",
-		lightClass: theme === "light",
+		darkClass: isDark,
+		lightClass: !isDark,
 		// Ночная тема — тоже тёмная: системные полосы прокрутки и поля ввода
 		// должны быть тёмными, иначе браузер рисует их светлыми поверх тёмного.
-		colorScheme: theme === "light" ? "light" : "dark",
+		colorScheme: isDark ? "dark" : "light",
 	};
 }
 

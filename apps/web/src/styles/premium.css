@@ -52,8 +52,8 @@ html.light {
 }
 
 [data-theme="dark"] {
-	--bg-app: #0a1211;
-	--glass-panel: rgba(16, 26, 25, 0.8);
+	--bg-app: #020617;
+	--glass-panel: rgba(15, 23, 42, 0.85);
 	--glass-border: rgba(45, 212, 191, 0.15);
 	--glass-shadow:
 		0 16px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -70,15 +70,15 @@ html.light {
 	);
 	--active-item-border: rgba(45, 212, 191, 0.5);
 
-	--text-primary: #e9f2ef;
-	--text-secondary: #7e948e;
+	--text-primary: #f8fafc;
+	--text-secondary: #94a3b8;
 
-	--paper: #101a19;
-	--paper-strong: #15211f;
-	--paper-soft: #0d1615;
-	--ink: #e9f2ef;
-	--muted: #7e948e;
-	--line: rgba(150, 180, 172, 0.14);
+	--paper: #0f172a;
+	--paper-strong: #1e293b;
+	--paper-soft: #020617;
+	--ink: #f8fafc;
+	--muted: #94a3b8;
+	--line: rgba(204, 251, 241, 0.15);
 
 	--mesh-bg-1: radial-gradient(
 		circle at 0% 0%,
@@ -92,55 +92,130 @@ html.light {
 	);
 	--mesh-bg-3: radial-gradient(
 		circle at 50% 50%,
-		rgba(10, 18, 17, 0.9) 0px,
+		rgba(2, 6, 23, 0.9) 0px,
 		transparent 50%
 	);
 }
 
 [data-theme="night"] {
-	--bg-app: #141110;
-	--glass-panel: rgba(28, 23, 20, 0.82);
-	--glass-border: rgba(224, 164, 88, 0.18);
+	--bg-app: #000000;
+	--glass-panel: rgba(9, 9, 11, 0.9);
+	--glass-border: rgba(255, 255, 255, 0.15);
 	--glass-shadow:
-		0 16px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+		0 16px 40px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 	--glass-blur: blur(12px);
-	--shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
-	--shadow-2: 0 20px 48px -16px rgba(0, 0, 0, 0.6);
-	--shadow-3: 0 28px 64px -12px rgba(0, 0, 0, 0.8);
-	--focus-ring: rgba(224, 164, 88, 0.7);
-	--teal-glow: 0 0 30px rgba(224, 164, 88, 0.25);
+	--shadow-1: 0 1px 2px rgba(0, 0, 0, 0.6);
+	--shadow-2: 0 20px 48px -16px rgba(0, 0, 0, 0.8);
+	--shadow-3: 0 28px 64px -12px rgba(0, 0, 0, 0.95);
+	--focus-ring: rgba(45, 212, 191, 0.7);
+	--teal-glow: 0 0 30px rgba(45, 212, 191, 0.3);
 	--active-item-bg: linear-gradient(
 		135deg,
-		rgba(224, 164, 88, 0.2),
-		rgba(207, 145, 70, 0.08)
+		rgba(45, 212, 191, 0.25),
+		rgba(20, 184, 166, 0.1)
 	);
-	--active-item-border: rgba(224, 164, 88, 0.5);
+	--active-item-border: rgba(45, 212, 191, 0.6);
 
-	--text-primary: #f1e8dd;
-	--text-secondary: #98897a;
+	--text-primary: #ffffff;
+	--text-secondary: #a1a1aa;
 
-	--paper: #1c1714;
-	--paper-strong: #231d19;
-	--paper-soft: #171310;
-	--ink: #f1e8dd;
-	--muted: #98897a;
-	--line: rgba(220, 195, 160, 0.13);
+	--paper: #09090b;
+	--paper-strong: #121215;
+	--paper-soft: #000000;
+	--ink: #ffffff;
+	--muted: #a1a1aa;
+	--line: rgba(255, 255, 255, 0.12);
 
 	--mesh-bg-1: radial-gradient(
 		circle at 0% 0%,
-		rgba(224, 164, 88, 0.08) 0px,
+		rgba(45, 212, 191, 0.08) 0px,
 		transparent 50%
 	);
 	--mesh-bg-2: radial-gradient(
 		circle at 100% 100%,
-		rgba(35, 29, 25, 0.6) 0px,
+		rgba(18, 18, 21, 0.8) 0px,
 		transparent 50%
 	);
 	--mesh-bg-3: radial-gradient(
 		circle at 50% 50%,
-		rgba(20, 17, 16, 0.9) 0px,
+		rgba(0, 0, 0, 0.95) 0px,
 		transparent 50%
 	);
+}
+
+[data-theme="calm_teal"] {
+	--bg-app: #f0fdfa;
+	--glass-panel: rgba(255, 255, 255, 0.95);
+	--glass-border: rgba(153, 246, 228, 0.8);
+	--glass-shadow:
+		0 10px 25px -5px rgba(19, 78, 74, 0.05), inset 0 1px 0 rgba(255, 255, 255, 1);
+	--glass-blur: blur(12px);
+	--shadow-1: 0 1px 2px rgba(19, 78, 74, 0.05);
+	--shadow-2: 0 16px 40px -16px rgba(15, 118, 110, 0.2);
+	--shadow-3: 0 24px 60px -12px rgba(19, 78, 74, 0.15);
+	--focus-ring: rgba(15, 118, 110, 0.5);
+	--teal-glow: 0 0 20px rgba(15, 118, 110, 0.2);
+	--active-item-bg: linear-gradient(
+		135deg,
+		rgba(15, 118, 110, 0.12),
+		rgba(19, 78, 74, 0.04)
+	);
+	--active-item-border: rgba(15, 118, 110, 0.4);
+
+	--text-primary: #134e4a;
+	--text-secondary: #0d9488;
+
+	--paper: #ffffff;
+	--paper-strong: #ffffff;
+	--paper-soft: #f0fdfa;
+	--ink: #134e4a;
+	--muted: #0d9488;
+	--line: #99f6e4;
+
+	--mesh-bg-1: radial-gradient(
+		circle at 0% 0%,
+		rgba(15, 118, 110, 0.06) 0px,
+		transparent 50%
+	);
+	--mesh-bg-2: radial-gradient(
+		circle at 100% 100%,
+		rgba(13, 148, 136, 0.05) 0px,
+		transparent 50%
+	);
+	--mesh-bg-3: radial-gradient(
+		circle at 50% 50%,
+		rgba(240, 253, 250, 0.8) 0px,
+		transparent 50%
+	);
+}
+
+[data-theme="contrast"] {
+	--bg-app: #ffffff;
+	--glass-panel: #ffffff;
+	--glass-border: #000000;
+	--glass-shadow: none;
+	--glass-blur: none;
+	--shadow-1: none;
+	--shadow-2: none;
+	--shadow-3: none;
+	--focus-ring: #000000;
+	--teal-glow: none;
+	--active-item-bg: #000000;
+	--active-item-border: #000000;
+
+	--text-primary: #000000;
+	--text-secondary: #18181b;
+
+	--paper: #ffffff;
+	--paper-strong: #ffffff;
+	--paper-soft: #f4f4f5;
+	--ink: #000000;
+	--muted: #18181b;
+	--line: #000000;
+
+	--mesh-bg-1: none;
+	--mesh-bg-2: none;
+	--mesh-bg-3: none;
 }
 
 /* Unified Zone Containers Styling */

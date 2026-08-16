@@ -38,15 +38,14 @@ export interface TaxDeductionApplicationFormProps {
  * представителя становятся обязательными по родству, контакт обязателен без
  * подсказки), записаны в taxApplicationBlockers.ts.
  */
-export const TaxDeductionApplicationForm = React.memo(
-	function TaxDeductionApplicationForm({
-		deliveryChannelOptions,
-		formOptions,
-		normalizeDeliveryChannel,
-		normalizeForm,
-		normalizeRelationship,
-		relationshipOptions,
-	}: TaxDeductionApplicationFormProps) {
+export function TaxDeductionApplicationForm({
+	deliveryChannelOptions,
+	formOptions,
+	normalizeDeliveryChannel,
+	normalizeForm,
+	normalizeRelationship,
+	relationshipOptions,
+}: TaxDeductionApplicationFormProps) {
 		const taxApplicationAuthorityDocument = useDocumentStore(
 			(state) => state.taxApplicationAuthorityDocument,
 		);
@@ -334,7 +333,4 @@ export const TaxDeductionApplicationForm = React.memo(
 				)}
 			</DocumentPayloadCard>
 		);
-	},
-);
-
-TaxDeductionApplicationForm.displayName = "TaxDeductionApplicationForm";
+}

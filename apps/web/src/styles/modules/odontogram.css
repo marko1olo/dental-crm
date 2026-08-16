@@ -257,7 +257,7 @@
 }
 
 .tooth:active {
-	transform: scale(0.95);
+	transform: scale(0.92);
 }
 
 .tooth span {
@@ -342,6 +342,9 @@
 }
 
 .legend-done {
+	background: #dfeee3;
+	color: #26562f;
+}
 
 /* ── Навигация квадрантов зубной карты (Quadrant Zoom) ──────────── */
 /* ── Навигация квадрантов зубной карты (Quadrant Zoom) ──────────── */
@@ -365,7 +368,7 @@
 	padding: 6px 12px;
 	border-radius: 6px;
 	cursor: pointer;
-	transition: all 0.15s ease;
+	transition: all 0.2s ease;
 	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
@@ -373,6 +376,10 @@
 	background: var(--teal-soft, rgba(13, 148, 136, 0.1));
 	color: var(--teal-dark, var(--teal));
 	border-color: rgba(15, 118, 110, 0.3);
+	transform: translateY(-1px);
+}
+.quadrant-nav-btn:active {
+	transform: translateY(0);
 }
 
 .quadrant-nav-btn.active {
@@ -492,4 +499,25 @@
 	background: #475569;
 	border-color: #334155;
 	color: #f87171;
+}
+@media (max-width: 390px) {
+	.tooth-map {
+		padding: 8px;
+	}
+	.tooth-arch-wrapper {
+		transform: scale(0.85);
+		transform-origin: top center;
+		margin-bottom: -20px;
+	}
+	.tooth-jaw {
+		gap: 0;
+	}
+	.tooth {
+		min-width: 28px;
+		min-height: 72px;
+	}
+	.tooth-stamp-bar {
+		flex-direction: column;
+		align-items: stretch;
+	}
 }

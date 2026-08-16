@@ -842,6 +842,15 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		},
 	];
 
+	const hasSummaryContent =
+		visibleAppointmentCount > 0 ||
+		activeScheduleFilterLabels.length > 0 ||
+		(activeScheduleFilterLabels.length === 0 &&
+			(visibleDayGroups?.length ?? 0) > 1) ||
+		scheduleOverlapCount > 0 ||
+		(shiftWarnings?.length ?? 0) > 0 ||
+		showShiftAnalytics;
+
 	return (
 		<div
 			className="panel schedule-panel"
@@ -865,27 +874,17 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					setShowClipboardPanel={setShowClipboardPanel}
 				/>
 			</div>
-			{showConfirmationsPanel && (
-				<div className="my-4 p-4 bg-[var(--paper)] text-[var(--ink)] rounded-xl border border-[var(--line)] shadow-xl transition-colors">
-					<DayConfirmationsPanel />
-				</div>
-			)}
-			{showFreedSlotsPanel && (
-				<div className="my-4 p-4 bg-[var(--paper)] text-[var(--ink)] rounded-xl border border-[var(--line)] shadow-xl transition-colors">
-					<FreedSlotsPanel />
-				</div>
-			)}
+			{showConfirmationsPanel && <DayConfirmationsPanel />}
+			{showFreedSlotsPanel && <FreedSlotsPanel />}
 			{showClipboardPanel && (
-				<div className="my-4 p-4 bg-[var(--paper)] text-[var(--ink)] rounded-xl border border-[var(--line)] shadow-xl transition-colors">
-					<ScheduleClipboardPanel
-						reloadToken={clipboardReloadToken}
-						onPasted={() => {
-							if (typeof props.loadDashboard === "function") {
-								void props.loadDashboard();
-							}
-						}}
-					/>
-				</div>
+				<ScheduleClipboardPanel
+					reloadToken={clipboardReloadToken}
+					onPasted={() => {
+						if (typeof props.loadDashboard === "function") {
+							void props.loadDashboard();
+						}
+					}}
+				/>
 			)}
 
 			{showShiftAnalytics && (
@@ -939,107 +938,109 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					</article>
 				</div>
 			)}
-			<section
-				className="schedule-shift-summary"
-				data-testid="schedule-shift-summary"
-				aria-label="Короткая сводка смены"
-				aria-live="polite"
-				style={{
-					display: "flex",
-					gap: "8px",
-					flexWrap: "wrap",
-					alignItems: "center",
-				}}
-			>
-				{visibleAppointmentCount > 0 ? (
-					<span className="status-pill status-confirmed">
-						Записей: {visibleAppointmentCount}
-					</span>
-				) : null}
-				{/*
-                Названные условия отбора вместо числа «Фильтров: 2»: раньше
-                причина короткого списка была не видна нигде, и человек решал,
-                что день пустой. Формулировка «Отбор: …» намеренно нейтральна —
-                она верна и когда отбор действительно сокращает список, и когда
-                (см. selectedDayKey) список приходит сверху несокращённым.
-              */}
-				{activeScheduleFilterLabels.length > 0 ? (
-					<>
-						<span
-							className="status-pill status-arrived"
-							title="Что сейчас отобрано на экране"
-						>
-							Отбор: {activeScheduleFilterLabels.join(", ")}
+			{hasSummaryContent ? (
+				<section
+					className="schedule-shift-summary"
+					data-testid="schedule-shift-summary"
+					aria-label="Короткая сводка смены"
+					aria-live="polite"
+					style={{
+						display: "flex",
+						gap: "8px",
+						flexWrap: "wrap",
+						alignItems: "center",
+					}}
+				>
+					{visibleAppointmentCount > 0 ? (
+						<span className="status-pill status-confirmed">
+							Записей: {visibleAppointmentCount}
 						</span>
-						<button
-							className="text-button"
-							type="button"
-							onClick={resetScheduleFilters}
-						>
-							Снять отбор
-						</button>
-					</>
-				) : null}
-				{/*
-                Несколько дней на одном экране — это законный режим («покажи всё»),
-                но человек должен знать, что он в нём: иначе запись из прошлого
-                года читается как сегодняшняя.
-              */}
-				{activeScheduleFilterLabels.length === 0 &&
-				visibleDayGroups?.length > 1 ? (
-					<>
-						<span className="status-pill status-planned">
-							Показаны все дни: {visibleDayGroups?.length}
+					) : null}
+					{/*
+					Названные условия отбора вместо числа «Фильтров: 2»: раньше
+					причина короткого списка была не видна нигде, и человек решал,
+					что день пустой. Формулировка «Отбор: …» намеренно нейтральна —
+					она верна и когда отбор действительно сокращает список, и когда
+					(см. selectedDayKey) список приходит сверху несокращённым.
+				*/}
+					{activeScheduleFilterLabels.length > 0 ? (
+						<>
+							<span
+								className="status-pill status-arrived"
+								title="Что сейчас отобрано на экране"
+							>
+								Отбор: {activeScheduleFilterLabels.join(", ")}
+							</span>
+							<button
+								className="text-button"
+								type="button"
+								onClick={resetScheduleFilters}
+							>
+								Снять отбор
+							</button>
+						</>
+					) : null}
+					{/*
+					Несколько дней на одном экране — это законный режим («покажи всё»),
+					но человек должен знать, что он в нём: иначе запись из прошлого
+					года читается как сегодняшняя.
+				*/}
+					{activeScheduleFilterLabels.length === 0 &&
+					visibleDayGroups?.length > 1 ? (
+						<>
+							<span className="status-pill status-planned">
+								Показаны все дни: {visibleDayGroups?.length}
+							</span>
+							<button
+								className="text-button"
+								type="button"
+								onClick={() => setScheduleDateFilter(todayScheduleDate())}
+							>
+								Только сегодня
+							</button>
+						</>
+					) : null}
+					{/* Накладки называются на самом верху: это то, из-за чего в коридоре встречаются двое. */}
+					{scheduleOverlapCount > 0 ? (
+						<span className="status-pill status-cancelled" role="alert">
+							Наложений на одно время: {scheduleOverlapCount}
 						</span>
+					) : null}
+					{/*
+					Здесь стояли чипы «Нет записей», «Предупреждений: 1» и «Ок».
+					Первый повторял пустое состояние панели ниже. Второй показывал
+					только цифру: что именно требует внимания, было спрятано под
+					кнопкой «Показать аналитику» в карточке «Контроль». Третий не
+					говорил ничего. Теперь предупреждение называет себя и по нажатию
+					ведёт туда, где его закрывают.
+				*/}
+					{(shiftWarnings || []).map((warning) => (
 						<button
-							className="text-button"
+							key={warning.id}
 							type="button"
-							onClick={() => setScheduleDateFilter(todayScheduleDate())}
+							className={`status-pill schedule-warning-chip ${warning.severity === "critical" ? "status-cancelled" : "status-overdue"}`}
+							onClick={() => openScheduleWarning(warning)}
+							title={warning.detail}
 						>
-							Только сегодня
+							{warning.title} — {warning.actionLabel.toLowerCase()}
 						</button>
-					</>
-				) : null}
-				{/* Накладки называются на самом верху: это то, из-за чего в коридоре встречаются двое. */}
-				{scheduleOverlapCount > 0 ? (
-					<span className="status-pill status-cancelled" role="alert">
-						Наложений на одно время: {scheduleOverlapCount}
-					</span>
-				) : null}
-				{/*
-                Здесь стояли чипы «Нет записей», «Предупреждений: 1» и «Ок».
-                Первый повторял пустое состояние панели ниже. Второй показывал
-                только цифру: что именно требует внимания, было спрятано под
-                кнопкой «Показать аналитику» в карточке «Контроль». Третий не
-                говорил ничего. Теперь предупреждение называет себя и по нажатию
-                ведёт туда, где его закрывают.
-              */}
-				{(shiftWarnings || []).map((warning) => (
-					<button
-						key={warning.id}
-						type="button"
-						className={`status-pill schedule-warning-chip ${warning.severity === "critical" ? "status-cancelled" : "status-overdue"}`}
-						onClick={() => openScheduleWarning(warning)}
-						title={warning.detail}
-					>
-						{warning.title} — {warning.actionLabel.toLowerCase()}
-					</button>
-				))}
-				{showShiftAnalytics && (
-					<div
-						className="schedule-shift-summary-grid"
-						style={{ width: "100%", marginTop: "12px" }}
-					>
-						{scheduleLoadSummaryCards.map((card) => (
-							<article key={card.id}>
-								<span>{card.title}</span>
-								<strong>{card.value}</strong>
-								<p>{card.detail}</p>
-							</article>
-						))}
-					</div>
-				)}
-			</section>
+					))}
+					{showShiftAnalytics && (
+						<div
+							className="schedule-shift-summary-grid"
+							style={{ width: "100%", marginTop: "12px" }}
+						>
+							{scheduleLoadSummaryCards.map((card) => (
+								<article key={card.id}>
+									<span>{card.title}</span>
+									<strong>{card.value}</strong>
+									<p>{card.detail}</p>
+								</article>
+							))}
+						</div>
+					)}
+				</section>
+			) : null}
 			<ScheduleFilterStrip
 				scheduleDateFilter={scheduleDateFilter}
 				setScheduleDateFilter={setScheduleDateFilter}
@@ -1067,7 +1068,6 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 						padding: "16px",
 						borderRadius: "10px",
 						background: "var(--paper-soft)",
-						border: "1px solid var(--line)",
 						marginTop: "8px",
 					}}
 				>
@@ -1217,7 +1217,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 										style={{
 											margin: "6px 0 6px 12px",
 											padding: "6px 10px",
-											borderLeft: "3px dashed var(--line-strong)",
+											borderLeft: "3px solid var(--line-strong)",
 											fontSize: "12px",
 											fontWeight: 700,
 											color: "var(--muted)",
@@ -1252,7 +1252,6 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 											padding: "8px 10px",
 											borderRadius: "8px",
 											background: "var(--bad-bg)",
-											border: "1px solid var(--red)",
 											fontSize: "12px",
 											fontWeight: 700,
 											color: "var(--ink)",
@@ -1475,7 +1474,3 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	);
 }
 
-/*
-onClick={unlockScheduleAdminSession}
-                      aria-describedby={!adminSecretReady ? "schedule-admin-unlock-guidance" : undefined}
-*/

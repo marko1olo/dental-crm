@@ -286,23 +286,49 @@ html.dark:not([data-theme]) {
 
 :root[data-theme="night"] {
 	--teal-fill: var(--teal);
-	--srf-check-task: #1c1815;
-	--srf-check-task-blocking: #2c2114;
-	--srf-chip-soft: #1a1714;
-	--srf-badge-official: #1b2419;
-	--srf-badge-official-line: rgba(181, 201, 138, 0.32);
+	--srf-check-task: #121215;
+	--srf-check-task-blocking: #1f1608;
+	--srf-chip-soft: #121215;
+	--srf-badge-official: #0a1f14;
+	--srf-badge-official-line: rgba(74, 222, 128, 0.32);
 
-	/* Ночная тема — то место, ради которого весь этот блок и написан. Прежде
-     здесь рисовался светлый запас #f8fafc, и заголовок раскрывающегося блока
-     давал 1.16:1. --elev (#231d19) светлее и --paper (#1c1714), и подложки
-     панели (--glass-panel над --bg, около #1a1512), поэтому полоса читается как
-     приподнятая, а не как дыра: --text-primary (#f1e8dd) на ней даёт 13.9:1.
-     Наведение уходит на --paper — темнее основы, как и в светлой теме
-     (#f8fafc -> #f1f5f9), то есть направление отклика одно во всех темах. */
-	--surface-alt: var(--elev);
-	--surface-hover: var(--paper);
+	--surface-alt: var(--surface-50);
+	--surface-hover: var(--surface-100);
 
 	--violet-50: rgba(167, 139, 250, 0.12);
 	--violet-200: rgba(167, 139, 250, 0.28);
 	--violet-700: #ddd6fe;
 }
+
+:root[data-theme="calm_teal"] {
+	--teal-fill: var(--teal-dark);
+	--srf-check-task: #f0fdfa;
+	--srf-check-task-blocking: #fffbeb;
+	--srf-chip-soft: #e6fffa;
+	--srf-badge-official: #ccfbf1;
+	--srf-badge-official-line: #99f6e4;
+
+	--surface-alt: var(--surface-50);
+	--surface-hover: var(--surface-100);
+
+	--violet-50: #f5f3ff;
+	--violet-200: #ddd6fe;
+	--violet-700: #0f766e;
+}
+
+:root[data-theme="contrast"] {
+	--teal-fill: #000000;
+	--srf-check-task: #ffffff;
+	--srf-check-task-blocking: #ffffff;
+	--srf-chip-soft: #f4f4f5;
+	--srf-badge-official: #ffffff;
+	--srf-badge-official-line: #000000;
+
+	--surface-alt: var(--surface-50);
+	--surface-hover: var(--surface-100);
+
+	--violet-50: #ffffff;
+	--violet-200: #000000;
+	--violet-700: #000000;
+}
+

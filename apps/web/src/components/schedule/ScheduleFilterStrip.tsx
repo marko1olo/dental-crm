@@ -58,7 +58,7 @@ export function ScheduleFilterStrip({
 				flexWrap: "wrap",
 				alignItems: "center",
 				padding: "12px 16px",
-				borderBottom: "1px solid var(--paper-soft)",
+				borderBottom: "1px solid var(--line)",
 			}}
 		>
 			{/* Date control group */}

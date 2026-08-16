@@ -158,7 +158,7 @@ describe("вынесенные формы подключены, а не лежа
 			const source = read(form.file);
 			assert.match(
 				source,
-				new RegExp(`export function ${form.name}\\(`),
+				new RegExp(`export (?:function|const) ${form.name}\\b`),
 				`${form.file}: пропало объявление компонента`,
 			);
 			assert.match(

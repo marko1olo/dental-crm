@@ -159,63 +159,176 @@
 }
 
 [data-theme="night"] {
-	--bg: #141110;
-	--paper: #1c1714;
-	--paper-strong: #231d19;
-	--paper-soft: #171310;
-	--elev: #231d19;
-	--ink: #f1e8dd;
-	--ink-2: #cdbfae;
-	--muted: #98897a;
-	--line: rgba(220, 195, 160, 0.13);
-	--line-strong: rgba(220, 195, 160, 0.26);
-	--teal: #e0a458;
-	--teal-dark: #cf9146;
-	--teal-2: #ecb872;
-	--on-teal: #231505;
-	--teal-soft: rgba(224, 164, 88, 0.18);
-	--teal-surface: rgba(224, 164, 88, 0.08);
-	--teal-glow: rgba(224, 164, 88, 0.35);
-	--teal-ring: rgba(224, 164, 88, 0.35);
-	/*
-   * СОСТОЯНИЯ В НОЧНОЙ ТЕМЕ РАЗВЕДЕНЫ ПО ЦВЕТУ.
-   *
-   * Было: info #d4b483 (бежевый) и warn #e8b45a (янтарный) — практически один
-   * оттенок, bad #f0906d от них отличался слабо. На снимке списка обзвона
-   * «отправлено», «в очереди», «не доставлено» и «не отправлялось» слились в
-   * одну янтарную массу, тогда как в тёмной теме они читались как синий,
-   * красный и серый. Этот список сканируют глазами по цвету, а не читают
-   * построчно: администратор утром не отличал проваленное напоминание от
-   * успешного.
-   *
-   * Тёплый характер темы сохраняется — фон, основной цвет и warn остаются
-   * тёплыми. Разводятся только те два цвета, которые несут противоположный
-   * смысл: «идёт своим ходом» уходит в приглушённый голубой, «сломалось» — в
-   * более красный. Приглушённость важна: ночная тема выбрана ради глаз, и
-   * чистый #38bdf8 из тёмной темы здесь бил бы по ним.
-   */
-	--ok-bg: rgba(163, 190, 110, 0.16);
-	--ok-fg: #b5c98a;
-	--warn-bg: rgba(232, 180, 90, 0.16);
-	--warn-fg: #e8b45a;
-	--bad-bg: rgba(244, 121, 92, 0.18);
-	--bad-fg: #f4795c;
-	--info-bg: rgba(143, 184, 201, 0.16);
-	--info-fg: #8fb8c9;
-	--side-bg: #18130f;
-	--glass-panel: rgba(28, 23, 20, 0.82);
-	--glass-border: rgba(224, 164, 88, 0.18);
-	--glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+	--bg: #000000;
+	--paper: #09090b;
+	--paper-strong: #121215;
+	--paper-soft: #000000;
+	--elev: #121215;
+	--ink: #ffffff;
+	--ink-2: #d4d4d8;
+	--muted: #a1a1aa;
+	--line: rgba(255, 255, 255, 0.12);
+	--line-strong: rgba(255, 255, 255, 0.25);
+	--teal: #2dd4bf;
+	--teal-dark: #14b8a6;
+	--teal-2: #5eead4;
+	--on-teal: #000000;
+	--teal-soft: rgba(45, 212, 191, 0.18);
+	--teal-surface: rgba(45, 212, 191, 0.1);
+	--teal-glow: rgba(45, 212, 191, 0.3);
+	--teal-ring: rgba(45, 212, 191, 0.4);
+	--ok-bg: rgba(74, 222, 128, 0.15);
+	--ok-fg: #4ade80;
+	--warn-bg: rgba(251, 191, 36, 0.15);
+	--warn-fg: #fbbf24;
+	--bad-bg: rgba(248, 113, 113, 0.15);
+	--bad-fg: #f87171;
+	--info-bg: rgba(56, 189, 248, 0.15);
+	--info-fg: #38bdf8;
+	--side-bg: #000000;
+	--glass-panel: rgba(9, 9, 11, 0.9);
+	--glass-border: rgba(255, 255, 255, 0.15);
+	--glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
 	--glass-blur: blur(12px);
-	--shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
-	--shadow-2: 0 20px 48px -16px rgba(0, 0, 0, 0.6);
-	--shadow-3: 0 28px 64px -12px rgba(0, 0, 0, 0.8);
-	--shadow-premium: 0 20px 48px -16px rgba(0, 0, 0, 0.6);
-	--focus-ring: rgba(224, 164, 88, 0.7);
+	--shadow-1: 0 1px 2px rgba(0, 0, 0, 0.6);
+	--shadow-2: 0 20px 48px -16px rgba(0, 0, 0, 0.8);
+	--shadow-3: 0 28px 64px -12px rgba(0, 0, 0, 0.95);
+	--shadow-premium: 0 20px 48px -16px rgba(0, 0, 0, 0.8);
+	--focus-ring: rgba(45, 212, 191, 0.7);
 	--transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 	--transition-smooth: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 	--transition-spring: 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 	/* slate & surface compatibility mappings */
+	--slate-50: var(--paper-soft);
+	--slate-100: var(--paper-soft);
+	--slate-200: var(--line);
+	--slate-300: var(--line-strong);
+	--slate-400: var(--muted);
+	--slate-500: var(--muted);
+	--slate-600: var(--ink-2);
+	--slate-700: var(--ink-2);
+	--slate-800: var(--ink);
+	--slate-900: var(--ink);
+	--slate-950: var(--ink);
+	--surface-50: var(--paper-soft);
+	--surface-100: var(--paper-soft);
+	--surface-200: var(--line);
+	--surface-300: var(--line-strong);
+	--surface-400: var(--muted);
+	--surface-500: var(--muted);
+	--surface-600: var(--ink-2);
+	--surface-700: var(--ink-2);
+	--surface-800: var(--paper);
+	--surface-900: var(--paper);
+	color: var(--ink);
+	background: var(--bg);
+}
+
+[data-theme="calm_teal"] {
+	--bg: #f0fdfa;
+	--paper: #ffffff;
+	--paper-strong: #ffffff;
+	--paper-soft: #f0fdfa;
+	--elev: #ffffff;
+	--ink: #134e4a;
+	--ink-2: #115e59;
+	--muted: #0d9488;
+	--line: #99f6e4;
+	--line-strong: #5eead4;
+	--teal: #0f766e;
+	--teal-dark: #115e59;
+	--teal-2: #0d9488;
+	--on-teal: #ffffff;
+	--teal-soft: #ccfbf1;
+	--teal-surface: rgba(15, 118, 110, 0.08);
+	--teal-glow: rgba(15, 118, 110, 0.25);
+	--teal-ring: rgba(15, 118, 110, 0.3);
+	--ok-bg: #d1fae5;
+	--ok-fg: #059669;
+	--warn-bg: #fef3c7;
+	--warn-fg: #d97706;
+	--bad-bg: #fee2e2;
+	--bad-fg: #dc2626;
+	--info-bg: #e0f2fe;
+	--info-fg: #0284c7;
+	--side-bg: #042f2e;
+	--glass-panel: rgba(255, 255, 255, 0.95);
+	--glass-border: rgba(153, 246, 228, 0.8);
+	--glass-shadow: 0 10px 25px -5px rgba(19, 78, 74, 0.05);
+	--glass-blur: blur(12px);
+	--shadow-1: 0 1px 2px rgba(19, 78, 74, 0.05);
+	--shadow-2: 0 16px 40px -16px rgba(15, 118, 110, 0.2);
+	--shadow-3: 0 24px 60px -12px rgba(19, 78, 74, 0.15);
+	--shadow-premium: 0 16px 40px -16px rgba(15, 118, 110, 0.2);
+	--focus-ring: rgba(15, 118, 110, 0.5);
+	--transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	--transition-smooth: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+	--transition-spring: 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+	--slate-50: var(--paper-soft);
+	--slate-100: var(--paper-soft);
+	--slate-200: var(--line);
+	--slate-300: var(--line-strong);
+	--slate-400: var(--muted);
+	--slate-500: var(--muted);
+	--slate-600: var(--ink-2);
+	--slate-700: var(--ink-2);
+	--slate-800: var(--ink);
+	--slate-900: var(--ink);
+	--slate-950: var(--ink);
+	--surface-50: var(--paper-soft);
+	--surface-100: var(--paper-soft);
+	--surface-200: var(--line);
+	--surface-300: var(--line-strong);
+	--surface-400: var(--muted);
+	--surface-500: var(--muted);
+	--surface-600: var(--ink-2);
+	--surface-700: var(--ink-2);
+	--surface-800: var(--paper);
+	--surface-900: var(--paper);
+	color: var(--ink);
+	background: var(--bg);
+}
+
+[data-theme="contrast"] {
+	--bg: #ffffff;
+	--paper: #ffffff;
+	--paper-strong: #ffffff;
+	--paper-soft: #f4f4f5;
+	--elev: #ffffff;
+	--ink: #000000;
+	--ink-2: #000000;
+	--muted: #18181b;
+	--line: #000000;
+	--line-strong: #000000;
+	--teal: #005f56;
+	--teal-dark: #003833;
+	--teal-2: #005f56;
+	--on-teal: #ffffff;
+	--teal-soft: rgba(0, 95, 86, 0.15);
+	--teal-surface: rgba(0, 95, 86, 0.1);
+	--teal-glow: rgba(0, 95, 86, 0.3);
+	--teal-ring: #000000;
+	--ok-bg: #bbf7d0;
+	--ok-fg: #14532d;
+	--warn-bg: #fde68a;
+	--warn-fg: #78350f;
+	--bad-bg: #fecaca;
+	--bad-fg: #7f1d1d;
+	--info-bg: #bae6fd;
+	--info-fg: #0c4a6e;
+	--side-bg: #000000;
+	--glass-panel: #ffffff;
+	--glass-border: #000000;
+	--glass-shadow: none;
+	--glass-blur: none;
+	--shadow-1: none;
+	--shadow-2: none;
+	--shadow-3: none;
+	--shadow-premium: none;
+	--focus-ring: #000000;
+	--transition-fast: 0.1s ease;
+	--transition-smooth: 0.15s ease;
+	--transition-spring: 0.15s ease;
 	--slate-50: var(--paper-soft);
 	--slate-100: var(--paper-soft);
 	--slate-200: var(--line);
@@ -563,29 +676,36 @@ select:focus {
 	border-top: 1px solid var(--line);
 }
 .theme-switcher {
-	display: inline-flex;
+	display: grid;
+	grid-template-columns: repeat(5, minmax(0, 1fr));
 	align-items: center;
 	gap: 2px;
 	background: var(--paper-soft);
 	border: 1px solid var(--line);
 	border-radius: 10px;
-	padding: 3px;
+	padding: 2px;
 	flex: 1;
+	min-width: 0;
 }
 .theme-switcher button {
-	flex: 1;
 	border: none;
 	background: transparent;
 	color: var(--muted);
-	font-size: 11.5px;
+	font-size: 10.5px;
 	font-weight: 600;
-	padding: 5px 6px;
-	border-radius: 7px;
+	padding: 5px 2px;
+	border-radius: 6px;
 	transition: all 0.15s ease;
 	cursor: pointer;
+	text-align: center;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	line-height: 1.2;
 }
 .theme-switcher button:hover {
 	color: var(--ink);
+	background: var(--teal-surface);
 }
 .theme-switcher button[aria-pressed="true"] {
 	background: var(--paper);
@@ -596,6 +716,16 @@ select:focus {
 [data-theme="dark"] .theme-switcher button[aria-pressed="true"],
 [data-theme="night"] .theme-switcher button[aria-pressed="true"] {
 	color: var(--teal);
+	background: var(--paper-strong);
+}
+[data-theme="calm_teal"] .theme-switcher button[aria-pressed="true"] {
+	color: var(--teal-dark);
+	background: var(--paper);
+}
+[data-theme="contrast"] .theme-switcher button[aria-pressed="true"] {
+	color: #ffffff;
+	background: #000000;
+	border: 1px solid #000000;
 }
 .sidebar-collapse-button svg {
 	transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);

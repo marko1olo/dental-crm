@@ -340,9 +340,9 @@ export function WaitlistDrawer(props: Props) {
 	if (!isOpen) return null;
 
 	const priorityColors = {
-		high: "bg-red-500/20 text-red-400 border border-red-500/30",
-		medium: "bg-amber-500/20 text-amber-400 border border-amber-500/30",
-		low: "bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line-strong)]",
+		high: "bg-[var(--bad-bg)] text-[var(--bad-fg)]",
+		medium: "bg-[var(--warn-bg)] text-[var(--warn-fg)]",
+		low: "bg-[var(--paper-soft)] text-[var(--muted)]",
 	};
 
 	const priorityLabels = {
@@ -451,7 +451,7 @@ export function WaitlistDrawer(props: Props) {
 					{/* Add to Waitlist Form */}
 					<form
 						onSubmit={handleAdd}
-						className="bg-[var(--paper-soft)] rounded-xl p-4 border border-[var(--line)] space-y-4"
+						className="bg-[var(--paper-soft)] rounded-xl p-4 space-y-4"
 					>
 						<h4 className="text-sm font-semibold text-[var(--ink-2)] flex items-center gap-2">
 							<UserPlus className="w-4 h-4 text-[var(--teal)]" />
@@ -469,7 +469,7 @@ export function WaitlistDrawer(props: Props) {
 								id="waitlist-patient-select"
 								value={selectedPatientId}
 								onChange={(e) => setSelectedPatientId(e.target.value)}
-								className="w-full bg-[var(--paper-soft)] border border-[var(--line)] rounded-lg p-2 text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
+								className="w-full bg-[var(--paper)] rounded-lg p-2 text-sm text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)] border-0"
 								required
 							>
 								<option value="">-- Выберите пациента --</option>
@@ -492,7 +492,7 @@ export function WaitlistDrawer(props: Props) {
 								id="waitlist-doctor-select"
 								value={preferredDoctorId}
 								onChange={(e) => setPreferredDoctorId(e.target.value)}
-								className="w-full bg-[var(--paper-soft)] border border-[var(--line)] rounded-lg p-2 text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
+								className="w-full bg-[var(--paper)] rounded-lg p-2 text-sm text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)] border-0"
 							>
 								<option value="">-- Любой врач --</option>
 								{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
@@ -514,14 +514,14 @@ export function WaitlistDrawer(props: Props) {
 										key={p}
 										type="button"
 										onClick={() => setPriorityLevel(p)}
-										className={`flex-1 min-h-[44px] py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${
+										className={`flex-1 min-h-[44px] py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
 											priorityLevel === p
 												? p === "high"
-													? "bg-[var(--bad-bg)] border-[var(--bad-fg)] text-[var(--bad-fg)]"
+													? "bg-[var(--bad-bg)] text-[var(--bad-fg)] ring-1 ring-[var(--bad-fg)]"
 													: p === "medium"
-														? "bg-[var(--warn-bg)] border-[var(--warn-fg)] text-[var(--warn-fg)]"
-														: "bg-[var(--paper-soft)] border-[var(--line-strong)] text-[var(--ink)]"
-												: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
+														? "bg-[var(--warn-bg)] text-[var(--warn-fg)] ring-1 ring-[var(--warn-fg)]"
+														: "bg-[var(--paper-strong)] text-[var(--ink)] ring-1 ring-[var(--line-strong)]"
+												: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)]"
 										}`}
 									>
 										{priorityLabels[p]}
@@ -530,31 +530,6 @@ export function WaitlistDrawer(props: Props) {
 							</div>
 						</div>
 
-						{/*
-							ГЛАВНОЕ ДЕЙСТВИЕ ЯЩИКА БРАЛО ЦВЕТ НЕ ИЗ ТЕМЫ.
-
-							Здесь стояли стоковые классы Tailwind (bg-teal-500, текст
-							#1e293b). Палитра Tailwind в проекте не переопределена, поэтому
-							кнопка красилась одинаково во всех трёх темах. Измерено по
-							снимкам .dente-ops-shots/*_waitlist.png: кнопка #00bba7 в
-							светлой, тёмной И ночной, тогда как подложка ящика уходит с
-							#e2e8f0 на #2a3847 и на тёплый #342d26, а иконка пустого
-							состояния рядом честно меняется с #0f766e на #14b8a6 и на тёплый
-							#cf9146. То есть в ночной теме — она ТЁПЛАЯ, а не просто тёмная —
-							самый громкий элемент панели оставался холодной бирюзой. И даже
-							в светлой теме кнопка была мимо палитры: --teal там #0d9488, а на
-							экране #00bba7.
-
-							ПОЧЕМУ ИМЕННО --teal-dark, А НЕ --teal. Пара «фон --teal-dark +
-							текст --on-teal» даёт контраст 5.47:1 в светлой, 6.81:1 в тёмной,
-							6.60:1 в ночной — при норме 4.5:1 для полужирного текста 14px.
-							Пара с --teal провалила бы светлую тему: белый на #0d9488 — 3.74:1.
-							Починка темы не имеет права стоить читаемости.
-
-							Наведение сделано яркостью, а не вторым цветом: --teal светлее
-							--teal-dark во всех трёх темах, но текст на нём теряет контраст,
-							а brightness двигает фон и текст вместе.
-						*/}
 						<button
 							type="submit"
 							disabled={isSubmitting}
@@ -602,7 +577,7 @@ export function WaitlistDrawer(props: Props) {
 											);
 											e.dataTransfer.effectAllowed = "copy";
 										}}
-										className="bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl p-4 flex flex-col gap-3 hover:border-[var(--teal-ring)] cursor-grab active:cursor-grabbing transition-colors"
+										className="bg-[var(--paper-soft)] rounded-xl p-4 flex flex-col gap-3 hover:bg-[var(--surface-hover,var(--paper-soft))] cursor-grab active:cursor-grabbing transition-colors"
 									>
 										<div className="flex justify-between items-start">
 											<div>
@@ -637,26 +612,16 @@ export function WaitlistDrawer(props: Props) {
 												disabled={loadingId === item.id}
 												aria-busy={loadingId === item.id}
 												onClick={() => handleBook(item)}
-												className="flex-1 min-h-[44px] py-2 px-3 bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] text-[var(--teal-dark)] font-semibold rounded-xl text-xs transition-colors border border-[var(--teal-ring)] disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center"
+												className="flex-1 min-h-[44px] py-2 px-3 bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] text-[var(--teal-dark)] font-semibold rounded-xl text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center"
 											>
 												Записать на прием
 											</button>
-											{/*
-												«Дождался» закрывает заявку, СОХРАНЯЯ запись: PUT со
-												статусом fulfilled. Раньше здесь стоял тот же DELETE,
-												что и у корзины рядом, — две разные кнопки давали на
-												сервере ровно один результат, и запись о том, что
-												человека всё-таки приняли, уничтожалась вместе с
-												заявкой. Список показывает только status = active
-												(routes/waitlist.ts:60), поэтому закрытая заявка из
-												очереди уходит, а из базы — нет.
-											*/}
 											<button
 												type="button"
 												disabled={loadingId === item.id}
 												aria-busy={loadingId === item.id}
 												onClick={() => handleFulfill(item)}
-												className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-lg border border-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+												className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 bg-[var(--ok-bg,rgba(16,185,129,0.1))] hover:brightness-105 text-[var(--ok-fg,#0d9488)] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 												title="Дождался приёма: убрать из очереди, запись о заявке сохранить"
 												aria-label="Дождался приёма: убрать из очереди, запись о заявке сохранить"
 											>
@@ -667,7 +632,7 @@ export function WaitlistDrawer(props: Props) {
 												disabled={loadingId === item.id}
 												aria-busy={loadingId === item.id}
 												onClick={() => handleDelete(item.id)}
-												className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 bg-red-500/10 hover:bg-red-500/20 text-rose-600 dark:text-rose-400 rounded-lg border border-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+												className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 bg-[var(--bad-bg,rgba(239,68,68,0.1))] hover:brightness-105 text-[var(--bad-fg,#ef4444)] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 												title="Убрать совсем: заявка ошибочная или человек больше не хочет"
 												aria-label="Убрать совсем: заявка ошибочная или человек больше не хочет"
 											>

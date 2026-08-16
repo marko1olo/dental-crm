@@ -64,7 +64,10 @@ const DOMAIN_SPREADS: ReadonlyMap<string, { file: string; fn: string }> = new Ma
 	["documentWorkflow", { file: join(DOMAINS_DIR, "useDocumentWorkflowModule.ts"), fn: "useDocumentWorkflowModule" }],
 	["imagingQueries", { file: join(DOMAINS_DIR, "useImagingQueries.ts"), fn: "useImagingQueries" }],
 	["migrationQueries", { file: join(DOMAINS_DIR, "useMigrationQueries.ts"), fn: "useMigrationQueries" }],
+	["modalOrchestrator", { file: join(DOMAINS_DIR, "useModalOrchestrator.ts"), fn: "useModalOrchestrator" }],
+	["navigationRouter", { file: join(DOMAINS_DIR, "useNavigationRouter.ts"), fn: "useNavigationRouter" }],
 	["patientIntakeLogic", { file: join(DOMAINS_DIR, "usePatientIntakeLogic.ts"), fn: "usePatientIntakeLogic" }],
+	["scheduleFilterController", { file: join(DOMAINS_DIR, "useScheduleFilterController.ts"), fn: "useScheduleFilterController" }],
 	["staffSettingsLogic", { file: join(DOMAINS_DIR, "useStaffSettingsLogic.ts"), fn: "useStaffSettingsLogic" }],
 ]);
 
@@ -145,7 +148,10 @@ const RESOLVED_SPREADS = [
 	"documentWorkflow",
 	"imagingQueries",
 	"migrationQueries",
+	"modalOrchestrator",
+	"navigationRouter",
 	"patientIntakeLogic",
+	"scheduleFilterController",
 	"staffSettingsLogic",
 	"telegram",
 	"telegramSettingsModule",
