@@ -734,47 +734,16 @@ export function useAppLogic(): any {
 		setUiPreferencesSyncError,
 	} = useAppStore();
 
+	const [soundNotificationsMuted, setSoundNotificationsMuted] = useState<boolean>(() => {
+		return loadUiPreferences().soundNotificationsMuted ?? false;
+	});
+
+	const uiPreferences = { soundNotificationsMuted };
+
 	const clinicalVisitLogic = useClinicalVisitLogic();
 	const { odontogramUseSurfaces, setOdontogramUseSurfaces } =
 		clinicalVisitLogic;
 
-	/**
-	 * ОХРАННИК МАРШРУТА ПО РОЛИ. Считается ПРИ РЕНДЕРЕ, а не в useEffect.
-	 *
-	 * ЧТО БЫЛО СЛОМАНО. Проверка прав целиком жила в useEffect (он остался ниже,
-	 * но занят теперь только адресом). Эффекты выполняются ПОСЛЕ коммита, значит
-	 * запрещённый роли раздел успевал СМОНТИРОВАТЬСЯ полностью: отрабатывали его
-	 * собственные эффекты, уходили сетевые запросы за клиническими данными, и лишь
-	 * следующим проходом раздел сменялся «Сменой». Редирект убирал раздел с экрана,
-	 * но не отменял того, что тот уже успел сделать: администратор, открывший
-	 * ссылку #visit, отправлял запросы данных приёма — раздела, которого нет в его
-	 * getFilteredAppViews. Ровно тот случай, про который документация React
-	 * («You Might Not Need an Effect») говорит прямо: значение, выводимое из уже
-	 * имеющегося состояния, считают при рендере, а не досылают эффектом, иначе
-	 * первый проход уходит на экран со старым значением.
-	 *
-	 * ЧТО ИМЕННО ПОМЕНЯЛОСЬ. `currentView` ниже по файлу и во всём возвращаемом
-	 * объекте — уже ПРОВЕРЕННОЕ значение, поэтому запрещённый раздел не попадает
-	 * даже в первый коммит и монтировать нечего. Запрошенное значение осталось
-	 * доступным как `requestedWorkspaceView` и нужно только для правки адреса.
-	 *
-	 * ПРО ЗАПАСНОЙ РАЗДЕЛ. Здесь стояла КОНСТАНТА «shift», и она была дефектом,
-	 * а не настройкой. У ролей «Администратор» и «Управляющий» getFilteredAppViews
-	 * «shift» НЕ содержит — ни разу за всю историю функции (заведена коммитом
-	 * 4867a6afc уже без него, пять последующих правок его этим ролям не
-	 * добавляли). То есть охранник, поставленный СОБЛЮДАТЬ список, сам отправлял
-	 * две роли в раздел вне списка: «Смена» им показывалась, при том что её пункта
-	 * нет в боковом меню (getVisibleRailViews считается от того же списка) — уйдя
-	 * с неё, вернуться было уже нечем.
-	 *
-	 * Теперь запасной раздел берётся из списка САМОЙ роли (getFallbackAppView,
-	 * рядом со списком, чтобы они не разъехались). Прав это не прибавляет никому:
-	 * для врача, ассистента и владельца «shift» и так стоит в их списке первым,
-	 * поэтому у них ничего не меняется; администратор и управляющий вместо чужой
-	 * «Смены» получают первый СВОЙ раздел — «Записи». Обратный вариант (выдать
-	 * двум ролям «shift») — продуктовое решение, а не починка, и здесь не
-	 * принимается.
-	 */
 	const {
 		onboardingDismissed,
 		setOnboardingDismissed,
@@ -952,9 +921,6 @@ export function useAppLogic(): any {
 	 * появилось что-то новое.
 	 */
 	const [recentPatientViewsVersion, setRecentPatientViewsVersion] = useState(0);
-	const [soundNotificationsMuted, setSoundNotificationsMuted] = useState<boolean>(() => {
-		return loadUiPreferences().soundNotificationsMuted ?? false;
-	});
 	if (initialUiPreferencesRef.current === null) {
 		initialUiPreferencesRef.current = loadUiPreferences();
 	}
@@ -1788,7 +1754,7 @@ export function useAppLogic(): any {
 				setSelectedProtocolId(null);
 			if (scheduleDoctorFilterId && !doctorIds.has(scheduleDoctorFilterId))
 				setScheduleDoctorFilterId(null);
-			if (
+			if(
 				scheduleAssistantFilterId &&
 				!assistantIds.has(scheduleAssistantFilterId)
 			)
@@ -2644,6 +2610,7 @@ export function useAppLogic(): any {
 		setTelegramLinkStaffId(preferences.telegramLinkStaffId ?? "");
 		setTelegramOutboxStatusFilter(preferences.telegramOutboxStatusFilter);
 		setTelegramOutboxTemplateFilter(preferences.telegramOutboxTemplateFilter);
+		setSoundNotificationsMuted(preferences.soundNotificationsMuted ?? false);
 	}, []);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: applyUiPreferences/queueUiPreferencesServerSync are plain functions recreated each render; listing them causes infinite re-run
@@ -4213,6 +4180,7 @@ export function useAppLogic(): any {
 		telegram,
 		...auth,
 		...clinicalVisitLogic,
+		soundNotifications,
 		...staffSettingsLogic,
 		...patientIntakeLogic,
 		...migrationQueries,
