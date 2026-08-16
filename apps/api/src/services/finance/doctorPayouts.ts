@@ -270,6 +270,8 @@ export type PayoutFormulaInput = {
 	readonly labCostRub?: number;
 	readonly labOrdersCount?: number;
 	readonly labDeductionPct?: number | null;
+	readonly refundRub?: number;
+	readonly refundCount?: number;
 };
 
 export type PayoutFormulaResult = {
@@ -278,12 +280,13 @@ export type PayoutFormulaResult = {
 	readonly withheldMaterialRub: number | null;
 	readonly withheldLabRub: number | null;
 	readonly payoutRub: number | null;
+	readonly refundClawbackRub?: number;
 };
 
 /**
  * Выплата врачу за период.
  *
- * Начислено = касса × ставка. Удержано = себестоимость материалов × процент
+ * Начислено = (касса − возвраты) × ставка. Удержано = себестоимость материалов × процент
  * удержания + расходы ЗТЛ × процент удержания. Выплата = начислено − удержано, со знаком.
  */
 export function computeDoctorPayout(
@@ -308,7 +311,13 @@ export function computeDoctorPayout(
 		};
 	}
 
-	const accruedRub = percentOfMoney(input.revenueRub, input.commissionPct);
+	const netRevenueRub = roundMoney(
+		new Decimal(input.revenueRub).minus(input.refundRub ?? 0),
+	);
+	const accruedRub = percentOfMoney(netRevenueRub, input.commissionPct);
+	const refundClawbackRub = input.refundRub && input.refundRub > 0
+		? percentOfMoney(input.refundRub, input.commissionPct)
+		: 0;
 
 	// Вычет материалов
 	let withheldMaterialRub: number | null = 0;
@@ -351,6 +360,7 @@ export function computeDoctorPayout(
 		withheldMaterialRub,
 		withheldLabRub,
 		payoutRub,
+		refundClawbackRub,
 	};
 }
 

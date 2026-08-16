@@ -1,0 +1,60 @@
+/*
+ * Mobile Touch Target Ergonomics (WCAG 2.1 AA / AAA standard >= 44px)
+ * Optimizes clinic ergonomics on tablet / smartphone viewports for doctors and receptionists.
+ */
+
+@media (pointer: coarse), (max-width: 768px) {
+	/* Interactive Buttons & Action Bars */
+	button,
+	.primary-button,
+	.secondary-button,
+	.ghost-button,
+	.danger-button,
+	.action-button {
+		min-height: 44px;
+		min-width: 44px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	/* Form Inputs, Selects & Checkbox Containers */
+	input[type="text"],
+	input[type="date"],
+	input[type="time"],
+	input[type="number"],
+	input[type="tel"],
+	input[type="email"],
+	select,
+	textarea {
+		min-height: 44px;
+		font-size: 16px; /* Prevents auto-zoom in mobile Safari */
+	}
+
+	/* Checkbox & Radio Labels */
+	.document-payload-checkbox,
+	label.checkbox-label,
+	label.radio-label {
+		min-height: 44px;
+		display: inline-flex;
+		align-items: center;
+		padding: 6px 0;
+		cursor: pointer;
+	}
+
+	/* Odontogram FDI Tooth Buttons on Tablet */
+	.odontogram-tooth-btn,
+	.tooth-cell {
+		min-width: 44px;
+		min-height: 44px;
+		touch-action: manipulation;
+	}
+
+	/* Navigation Tabs & Header Items */
+	.nav-tab,
+	.header-role-badge,
+	.view-switcher-button {
+		min-height: 44px;
+		padding: 10px 16px;
+	}
+}

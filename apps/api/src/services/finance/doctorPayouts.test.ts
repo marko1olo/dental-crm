@@ -276,3 +276,20 @@ test("расходы ЗТЛ (лаборатория) корректно удер
 	assert.equal(result.payoutRub, 8000);
 });
 
+test("возвраты за период (сторно) уменьшают начисленную комиссию врача", () => {
+	const result = computeDoctorPayout({
+		revenueRub: 100000,
+		refundRub: 20000, // Чистая выручка = 80 000 ₽
+		commissionPct: 30, // Начислено 30% от 80 000 = 24 000 ₽
+		materialCostRub: 3000,
+		materialMovements: 1,
+		materialDeductionPct: 100, // 3 000 ₽ материалов
+	});
+	assert.equal(result.state, "computed");
+	assert.equal(result.accruedRub, 24000);
+	assert.equal(result.withheldMaterialRub, 3000);
+	assert.equal(result.refundClawbackRub, 6000); // 30% от 20 000 ₽ возврата
+	assert.equal(result.payoutRub, 21000); // 24000 - 3000 = 21000
+});
+
+

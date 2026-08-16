@@ -3,6 +3,7 @@
 @import "./modules/schedule.css";
 @import "./modules/odontogram.css";
 @import "./modules/patient-workspace.css";
+@import "./modules/mobile-touch.css";
 
 :root {
 	/* LIGHT THEME (Premium Aesthetics) */
