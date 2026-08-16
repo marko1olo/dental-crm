@@ -1,7 +1,9 @@
 import { db } from "./db/client.js";
-import { auditEvents, organizations } from "./db/schema.js";
+import { auditEvents } from "./db/schema.js";
+import { sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { auditEvents as inMemoryAuditEvents } from "./sampleData.js";
+import { withTenantCtx } from "./db/rls.js";
 
 /**
  * Писатель журнала аудита для пути документов (`db/documentQuery.ts`).
@@ -80,8 +82,10 @@ export async function recordAuditEvent(input: {
 
 	let orgId = input.organizationId?.trim();
 	if (!orgId) {
-		const [org] = await db.select().from(organizations).limit(1);
-		orgId = org?.id;
+		const res = await db.execute<{ id: string }>(
+			sql`SELECT NULLIF(current_setting('app.current_tenant', true), '') AS id`
+		);
+		orgId = res.rows[0]?.id;
 	}
 
 	if (!orgId) {
@@ -94,13 +98,15 @@ export async function recordAuditEvent(input: {
 	}
 
 	try {
-		await db.insert(auditEvents).values({
-			organizationId: orgId,
-			actorUserId: input.actorUserId ?? null,
-			entityType: input.entityType,
-			entityId: input.entityId,
-			action: input.action,
-			reason: input.reason,
+		await withTenantCtx(orgId, async (tx) => {
+			await tx.insert(auditEvents).values({
+				organizationId: orgId,
+				actorUserId: input.actorUserId ?? null,
+				entityType: input.entityType,
+				entityId: input.entityId,
+				action: input.action,
+				reason: input.reason,
+			});
 		});
 	} catch (error) {
 		// Аварийный канал: событие целиком уходит в лог одной строкой, чтобы его

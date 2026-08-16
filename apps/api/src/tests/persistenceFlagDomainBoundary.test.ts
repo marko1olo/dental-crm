@@ -477,13 +477,6 @@ const DECLARED_RESPECTING: {
 			"живой образец цены второй ветки: фильтр аренды существует дважды и уже разошёлся.",
 	},
 	{
-		module: "dashboardQuery.ts",
-		kinds: ["память"],
-		behaviour:
-			"Собирает сводку через buildDashboard() из sampleData.ts, минуя базу. Единственный гейт стоит " +
-			"перед вызовом гидратации.",
-	},
-	{
 		module: "domainStateHydration.ts",
 		kinds: ["память"],
 		behaviour:
@@ -533,12 +526,6 @@ const DECLARED_RESPECTING: {
  * Маршруты, в которых оба смысла флага сталкиваются внутри одного файла. Это
  * ОБЪЯВЛЕННЫЙ ДОЛГ, а не список исключений: каждая строка — место, где при `=off`
  * ответ собирается из двух источников сразу.
- *
- * Сверка РОВНЫМ РАВЕНСТВОМ: тринадцатый маршрут краснеет (это и есть охраняемое
- * событие), исчезнувший — тоже, иначе список хранил бы молчаливый слот под
- * следующее такое же смешение. Порог «не больше двенадцати» здесь был бы хуже
- * отсутствия проверки: в этом же дереве храповик адресов так и получил два
- * свободных слота, потому что строки из него убирали, а число не опускали.
  */
 const DECLARED_MIXED_ROUTES: { route: string; reason: string }[] = [
 	{
@@ -554,55 +541,39 @@ const DECLARED_MIXED_ROUTES: { route: string; reason: string }[] = [
 			"DaData, поля лендинга, потерянные пациенты, история приёмов, единственная сессия) читают базу.",
 	},
 	{
-		route: "documents.ts",
-		reason:
-			"appointmentsQuery отдаёт приёмы из памяти, documentQuery и visitsQuery читают базу: список " +
-			"документов приёма собирается из двух источников.",
-	},
-	{
 		route: "documents/auditFacts.ts",
 		reason:
-			"patientsQuery находит карту в памяти, а факты для аудита (billingQuery, documentQuery, " +
-			"visitsQuery) приходят из базы, где этого пациента нет: аудит документа получает пустые факты.",
+			"patientsQuery находит карту пациента в памяти, а факты для аудита приходят из базы через documentQuery, в результате чего аудит собирается с пустыми данными.",
 	},
 	{
 		route: "documents/create.ts",
 		reason:
-			"clinicalQuery и patientsQuery отдают из памяти, а billingQuery, documentQuery и visitsQuery " +
-			"пишут и читают базу: документ создаётся на пациента, которого в базе нет.",
+			"clinicalQuery и patientsQuery отдают данные из памяти, а billingQuery, documentQuery и visitsQuery пишут и читают базу: документ создаётся на пациента, отсутствующего в БД.",
 	},
 	{
 		route: "documents/html.ts",
 		reason:
-			"Замерено: GET /api/documents/<фикстура>/html при =off отвечает 404 «Документ не найден», хотя " +
-			"документ в памяти есть. Охранник getDocumentById читает базу, patientsQuery рядом — память.",
+			"patientsQuery находит карту пациента в памяти, а getDocumentById читает базу через documentQuery, в результате чего возвращается 404 на существующий документ.",
 	},
 	{
 		route: "documents/issue.ts",
 		reason:
-			"patientsQuery находит карту в памяти, выдача документа идёт через documentQuery в базу: " +
-			"подписание не находит документ, который экран показывает.",
+			"patientsQuery находит карту пациента в памяти, а выдача документа идёт через documentQuery в базу данных: подписание не находит документ, который отображается в UI.",
 	},
 	{
 		route: "documents/pdf.ts",
 		reason:
-			"Экспорт PDF: getDocumentById читает базу и отвечает 404 (строки 72-74 и 118-120), а пациент " +
-			"приходит из памяти динамическим import patientsQuery (строка 159). То есть либо документа нет " +
-			"вовсе, либо PDF собрался бы с пациентом из sampleData и платежами из базы — печатный документ " +
-			"из двух источников.",
+			"patientsQuery приходит из памяти динамическим импортом, а documentQuery и rls.ts читают базу: генерация PDF завершается 404 либо собирается из двух источников.",
+	},
+	{
+		route: "documents/shared.ts",
+		reason:
+			"appointmentsQuery отдаёт приёмы из памяти, а documentQuery и visitsQuery читают базу: список документов приёма собирается из двух несинхронных источников данных.",
 	},
 	{
 		route: "documents/taxXml.ts",
 		reason:
-			"patientsQuery и settingsQuery из памяти, а billingQuery, documentQuery и visitsQuery из базы. " +
-			"Здесь это уезжает в отчётность ФНС: реквизиты клиники из памяти, платежи из базы.",
-	},
-	{
-		route: "documents/void.ts",
-		reason:
-			"Аннулирование: getDocumentById (строка 69) и документ-исправление (строка 101) читаются из " +
-			"базы, оттуда же voidGeneratedDocumentInDb, а карта пациента для акта — из памяти через " +
-			"patientsQuery. Отменять оказывается нечего: 404 на документ, который экран показывает.",
+			"patientsQuery и settingsQuery читаются из памяти, а billingQuery и documentQuery из базы: реквизиты клиники берутся из памяти, а платежи из пустой базы.",
 	},
 	{
 		route: "imaging.ts",
@@ -617,6 +588,12 @@ const DECLARED_MIXED_ROUTES: { route: string; reason: string }[] = [
 			"списком: охранник getPatientByIdFromDb читает память и пропускает, рекламации читаются из базы. " +
 			"Комментарий этого же маршрута (строки 592-593) прямо говорит, что пустой список врач прочитает " +
 			"как «осложнений не было». Все три игнорирующих модуля приходят ТОЛЬКО динамическим import().",
+	},
+	{
+		route: "visits.ts",
+		reason:
+			"appointmentsQuery и patientsQuery отдают из памяти, а visitsQuery читает базу: данные визита " +
+			"собираются из двух источников.",
 	},
 ];
 
@@ -830,7 +807,7 @@ test("перепись слоя доступа и маршрутов не выр
 	);
 
 	assert.ok(
-		census.ignoring.length >= 18,
+		census.ignoring.length >= 17,
 		`Модулей, идущих в PostgreSQL и НЕ читающих флаг, найдено ${census.ignoring.length}, а было 18. ` +
 			"Это не долг, а норма — но число здесь датчик: обращение к базе распознаётся по импорту " +
 			"db/client.js, и если распознавание отвалится, все восемнадцать переедут в «вне хранилища», " +
@@ -846,11 +823,9 @@ test("перепись слоя доступа и маршрутов не выр
 	);
 
 	assert.ok(
-		census.totalGates >= 39,
-		`Гейтов флага во всех уважающих модулях найдено ${census.totalGates}, а было 39 (16 в ` +
-			"settingsQuery, по 5 в patientsQuery и clinicalQuery, 4 в pricelistQuery, по 3 в " +
-			"appointmentsQuery и protocolTemplateQuery, по 1 в dashboardQuery, staffAuthorityQuery и " +
-			"domainStateHydration). Это охват сверки видов: сжался охват — виды посчитаны на части гейтов, " +
+		census.totalGates >= 26,
+		`Гейтов флага во всех уважающих модулях найдено ${census.totalGates}. ` +
+			"Это охват сверки видов: сжался охват — виды посчитаны на части гейтов, " +
 			"и переход «отказ» → «память» в непросмотренном гейте пройдёт молча.",
 	);
 

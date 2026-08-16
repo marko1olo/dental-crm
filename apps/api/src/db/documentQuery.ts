@@ -24,7 +24,7 @@ import {
 } from "../sampleData.js";
 
 function useInMemory(): boolean {
-	return process.env.DENTAL_STATE_PERSISTENCE === "off";
+	return false;
 }
 
 function documentSnapshotPath(documentId: string): string {

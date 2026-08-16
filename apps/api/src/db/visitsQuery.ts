@@ -526,15 +526,6 @@ function buildVisitSaveReceipt(
 }
 
 export async function getVisitByIdInDb(organizationId: string, id: string) {
-	if (process.env.DENTAL_STATE_PERSISTENCE === "off") {
-		return (
-			inMemoryActiveVisit.organizationId === organizationId &&
-			inMemoryActiveVisit.id === id
-				? inMemoryActiveVisit
-				: null
-		);
-	}
-
 	const [res] = await db
 		.select()
 		.from(schema.visits)

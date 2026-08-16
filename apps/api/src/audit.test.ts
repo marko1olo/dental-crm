@@ -8,46 +8,24 @@ import {
 	withFixtureTenant,
 	purgeFixtureOrganizations,
 } from "./tests/support/fixtureOrganizations.js";
-import { eq, inArray, sql } from "drizzle-orm";
-import { withSuperuserBypass } from "./db/rls.js";
+import { and, eq, sql } from "drizzle-orm";
 
 const ORG_ID = fixtureUuid("auditTest", 1);
 const FALLBACK_ORG_ID = fixtureUuid("auditTest", 2);
 const USER_ID = fixtureUuid("user", 1);
 
-async function purgeAuditEvents(orgIds: string[]) {
-    await withSuperuserBypass(async (tx) => {
-        let appendOnlyTriggerDisabled = false;
-        try {
-            try {
-                await tx.execute(sql`ALTER TABLE audit_events DISABLE TRIGGER audit_events_append_only`);
-                appendOnlyTriggerDisabled = true;
-            } catch (error) {
-                const code = (error as { cause?: { code?: string } }).cause?.code;
-                if (code !== "42704") throw error;
-            }
-            await tx.delete(auditEvents).where(inArray(auditEvents.organizationId, orgIds));
-        } finally {
-            if (appendOnlyTriggerDisabled) {
-                await tx.execute(sql`ALTER TABLE audit_events ENABLE ALWAYS TRIGGER audit_events_append_only`);
-            }
-        }
-    });
-}
 describe("recordAuditEvent", () => {
 	before(async () => {
-		await purgeAuditEvents([ORG_ID, FALLBACK_ORG_ID]);
 		await purgeFixtureOrganizations([ORG_ID, FALLBACK_ORG_ID]);
 	});
 
 	after(async () => {
-		await purgeAuditEvents([ORG_ID, FALLBACK_ORG_ID]);
 		await purgeFixtureOrganizations([ORG_ID, FALLBACK_ORG_ID]);
 	});
 
 	test("inserts audit event with provided organizationId", async () => {
 		await withFixtureTenant(ORG_ID, async (tx) => {
-			await tx.insert(organizations).values({ id: ORG_ID, name: "Test Org" });
+			await tx.insert(organizations).values({ id: ORG_ID, name: "Test Org" }).onConflictDoNothing();
 			
 			await recordAuditEvent(
 				{
@@ -62,7 +40,7 @@ describe("recordAuditEvent", () => {
 			const events = await tx
 				.select()
 				.from(auditEvents)
-				.where(eq(auditEvents.organizationId, ORG_ID));
+				.where(and(eq(auditEvents.organizationId, ORG_ID), eq(auditEvents.entityId, "user-456")));
 			
 			assert.strictEqual(events.length, 1);
 			const event = events[0]!;
@@ -95,7 +73,7 @@ describe("recordAuditEvent", () => {
 			const events = await tx
 				.select()
 				.from(auditEvents)
-				.where(eq(auditEvents.action, "document_voided"));
+				.where(and(eq(auditEvents.organizationId, ORG_ID), eq(auditEvents.entityId, "doc-1"), eq(auditEvents.action, "document_voided")));
 
 			assert.strictEqual(events.length, 1);
 			assert.strictEqual(events[0]!.actorUserId, USER_ID);

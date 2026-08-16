@@ -517,13 +517,6 @@ export async function getPaymentsByPatientIdInDb(
 	organizationId: string,
 	patientId: string,
 ): Promise<Payment[]> {
-	if (process.env.DENTAL_STATE_PERSISTENCE === "off") {
-		return inMemoryPayments.filter(
-			(payment) =>
-				payment.organizationId === organizationId &&
-				payment.patientId === patientId,
-		);
-	}
 	const res = await db
 		.select()
 		.from(schema.payments)

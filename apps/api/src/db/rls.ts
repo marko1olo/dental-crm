@@ -105,10 +105,6 @@ export async function withTenantCtx<T>(
 	organizationId: string,
 	callback: (tx: TenantDb) => Promise<T>,
 ): Promise<T> {
-
-	if (process.env.DENTAL_STATE_PERSISTENCE === "off") {
-		return callback(undefined as unknown as TenantDb);
-	}
 	const existingTx = transactionStorage.getStore();
 	if (existingTx) {
 		// Re-assert the tenant on the existing transaction rather than opening a
@@ -183,7 +179,7 @@ export async function withTenantCtx<T>(
 		// rolls back, preventing the setting from leaking to the next request that
 		// reuses the same pooled connection.
 		await tx.execute(
-			sql`SELECT set_config('app.current_tenant', ${organizationId}, true)`,
+			sql`SELECT set_config('app.current_tenant', ${organizationId}, true), set_config('app.superuser_bypass', 'off', true)`,
 		);
 		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		return transactionStorage.run(tx as any, () => callback(tx as any));
