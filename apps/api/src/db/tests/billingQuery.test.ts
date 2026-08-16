@@ -106,7 +106,7 @@ describe("createPaymentInDb", () => {
 					amountRub: 1000,
 					method: "card",
 				}),
-			{ message: "Failed to create payment" },
+			{ message: "Не удалось создать запись платежа в базе данных." },
 		);
 	});
 
@@ -125,7 +125,7 @@ describe("createPaymentInDb", () => {
 					amountRub: 1000,
 					method: "card",
 				}),
-			/not found or locked by another transaction/,
+			/не найден или заблокирован/,
 		);
 		assert.strictEqual(calls.insert, 0);
 	});

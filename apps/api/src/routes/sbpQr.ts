@@ -4,7 +4,7 @@ import {
 	kopecksToNumericString,
 	SbpQrEngine,
 } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
@@ -15,6 +15,7 @@ import { db } from "../db/client.js";
 import {
 	cashLedger,
 	digitalReceiptDispatches,
+	fiscalReceiptQueue,
 	generatedDocuments,
 	patientInvoices,
 	patients,
@@ -383,7 +384,7 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 			}
 
 			const isReturn = input.operationType === "income_return";
-			let [payment] = await tx
+			const [payment] = await tx
 				.insert(payments)
 				.values({
 					organizationId: orgId,
@@ -455,6 +456,7 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 				if (existing) {
 					return {
 						payment: existing,
+						queueEntry: null,
 						fiscalReceiptNumber: existing.fiscalReceiptNumber,
 						isExisting: true,
 					};
@@ -542,13 +544,81 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 				paperPrintSkipped: true,
 			});
 
-			return payment;
+			// Register receipt in fiscal queue buffer with pending_print status
+			const [queueEntry] = await tx
+				.insert(fiscalReceiptQueue)
+				.values({
+					organizationId: orgId,
+					paymentId: payment.id,
+					visitId: input.visitId || null,
+					receiptType: input.operationType || "income",
+					status: "pending_print",
+					payloadJson: {
+						...input,
+						fiscalReceiptNumber,
+						issuedAt: now.toISOString(),
+						itemizedFfd12Tags,
+					},
+					retryCount: 0,
+				})
+				.returning();
+
+			return { payment, queueEntry };
 		});
+
+		// Physical KKT print dispatch (non-blocking for financial records)
+		const isKktOffline =
+			process.env.KKM_FORCE_OFFLINE === "1" ||
+			process.env.KKM_HARDWARE_TIMEOUT === "1";
+
+		let queueStatus: "printed" | "hardware_offline" = "printed";
+		let printError: string | null = null;
+
+		if (isKktOffline) {
+			queueStatus = "hardware_offline";
+			printError = "KKT connection timed out (5000ms) or printer offline";
+			request.log.warn(
+				{ queueId: result.queueEntry?.id, orgId },
+				"Physical KKT printer offline; buffered in fiscal_receipt_queue",
+			);
+			if (result.queueEntry?.id) {
+				await db
+					.update(fiscalReceiptQueue)
+					.set({
+						status: "hardware_offline",
+						lastError: printError,
+						retryCount: sql`${fiscalReceiptQueue.retryCount} + 1`,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(fiscalReceiptQueue.id, result.queueEntry.id),
+							eq(fiscalReceiptQueue.organizationId, orgId),
+						),
+					);
+			}
+		} else if (result.queueEntry?.id) {
+			await db
+				.update(fiscalReceiptQueue)
+				.set({
+					status: "printed",
+					printedAt: new Date(),
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(fiscalReceiptQueue.id, result.queueEntry.id),
+						eq(fiscalReceiptQueue.organizationId, orgId),
+					),
+				);
+		}
 
 		return reply.code(201).send({
 			success: true,
-			payment: result,
+			payment: result.payment,
 			fiscalReceiptNumber,
+			queueId: result.queueEntry?.id,
+			queueStatus,
 			ffd12Tags: {
 				tag1054_operationType: resolveTag1054(input.operationType),
 				tag1055_taxationSystem: resolveTag1055(input.taxationSystem),

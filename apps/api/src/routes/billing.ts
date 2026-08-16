@@ -5,6 +5,7 @@ import {
 	type Payment,
 	paymentSchema,
 } from "@dental/shared";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
@@ -20,6 +21,8 @@ import {
 	getPatientForBilling,
 	getVisitForBilling,
 } from "../db/billingQuery.js";
+import { db } from "../db/client.js";
+import { fiscalReceiptQueue } from "../db/schema.js";
 import { getRequestIdentity } from "../security/identity.js";
 import {
 	enforcePermissionWhenStaffKnown,
@@ -737,5 +740,267 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 			}
 			throw error;
 		}
+	});
+
+	/**
+	 * GET /api/billing/fiscal-queue/pending
+	 * Возвращает список чеков в фискальном буфере (ожидающих печати или со статусом сбоя оборудования).
+	 */
+	app.get("/api/billing/fiscal-queue/pending", async (request, reply) => {
+		if (
+			!(await requireClinicalReadAccess(
+				request,
+				reply,
+				"billing fiscal queue read",
+			))
+		)
+			return;
+		const orgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"billing fiscal queue read",
+		);
+		if (!orgId) return;
+
+		const querySchema = z.object({
+			status: z
+				.enum(["pending_print", "hardware_offline", "printed", "failed", "all"])
+				.optional(),
+			limit: z.coerce.number().int().min(1).max(200).default(50),
+		});
+		const parsedQuery = querySchema.safeParse(request.query);
+		const requestedStatus = parsedQuery.success
+			? parsedQuery.data.status
+			: undefined;
+		const limit = parsedQuery.success ? parsedQuery.data.limit : 50;
+
+		const statusFilter =
+			requestedStatus === "all"
+				? undefined
+				: requestedStatus
+					? eq(fiscalReceiptQueue.status, requestedStatus)
+					: inArray(fiscalReceiptQueue.status, [
+							"pending_print",
+							"hardware_offline",
+						]);
+
+		const conditions = [eq(fiscalReceiptQueue.organizationId, orgId)];
+		if (statusFilter) {
+			conditions.push(statusFilter);
+		}
+
+		const items = await db
+			.select()
+			.from(fiscalReceiptQueue)
+			.where(and(...conditions))
+			.orderBy(desc(fiscalReceiptQueue.createdAt))
+			.limit(limit);
+
+		return reply.code(200).send({
+			items,
+			total: items.length,
+		});
+	});
+
+	/**
+	 * POST /api/billing/fiscal-queue/:id/retry
+	 * Повторная отправка чека на печать в фискальный регистратор ККТ.
+	 */
+	app.post("/api/billing/fiscal-queue/:id/retry", async (request, reply) => {
+		if (
+			!(await requireClinicalMutationAccess(
+				request,
+				reply,
+				"billing fiscal queue retry",
+			))
+		)
+			return;
+		if (!enforcePermissionWhenStaffKnown(request, reply, "finance.write"))
+			return;
+
+		const orgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"billing fiscal queue retry",
+		);
+		if (!orgId) return;
+
+		const paramsSchema = z.object({
+			id: z.string().uuid(),
+		});
+		const parsedParams = paramsSchema.safeParse(request.params);
+		if (!parsedParams.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор чека в очереди (требуется UUID).",
+			});
+		}
+		const { id } = parsedParams.data;
+
+		const [queueItem] = await db
+			.select()
+			.from(fiscalReceiptQueue)
+			.where(
+				and(
+					eq(fiscalReceiptQueue.id, id),
+					eq(fiscalReceiptQueue.organizationId, orgId),
+				),
+			)
+			.limit(1);
+
+		if (!queueItem) {
+			return reply.code(404).send({
+				error: "FiscalQueueItemNotFound",
+				message: "Запись фискального чека не найдена в этой клинике.",
+			});
+		}
+
+		if (queueItem.status === "printed") {
+			return reply.code(200).send({
+				success: true,
+				status: "printed",
+				message: "Чек уже успешно распечатан на ККТ.",
+				item: queueItem,
+			});
+		}
+
+		const isKktOffline =
+			process.env.KKM_FORCE_OFFLINE === "1" ||
+			process.env.KKM_HARDWARE_TIMEOUT === "1";
+
+		if (isKktOffline) {
+			const [updated] = await db
+				.update(fiscalReceiptQueue)
+				.set({
+					status: "hardware_offline",
+					lastError: "KKT connection timed out (5000ms) or printer offline",
+					retryCount: sql`${fiscalReceiptQueue.retryCount} + 1`,
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(fiscalReceiptQueue.id, id),
+						eq(fiscalReceiptQueue.organizationId, orgId),
+					),
+				)
+				.returning();
+
+			return reply.code(200).send({
+				success: false,
+				status: "hardware_offline",
+				error: "KKT connection timed out (5000ms) or printer offline",
+				retryCount: updated?.retryCount ?? queueItem.retryCount + 1,
+				item: updated,
+			});
+		}
+
+		const [updated] = await db
+			.update(fiscalReceiptQueue)
+			.set({
+				status: "printed",
+				printedAt: new Date(),
+				lastError: null,
+				updatedAt: new Date(),
+			})
+			.where(
+				and(
+					eq(fiscalReceiptQueue.id, id),
+					eq(fiscalReceiptQueue.organizationId, orgId),
+				),
+			)
+			.returning();
+
+		return reply.code(200).send({
+			success: true,
+			status: "printed",
+			item: updated,
+		});
+	});
+
+	/**
+	 * POST /api/billing/fiscal-queue/retry-all
+	 * Массовая повторная отправка всех отложенных чеков на печать.
+	 */
+	app.post("/api/billing/fiscal-queue/retry-all", async (request, reply) => {
+		if (
+			!(await requireClinicalMutationAccess(
+				request,
+				reply,
+				"billing fiscal queue retry-all",
+			))
+		)
+			return;
+		if (!enforcePermissionWhenStaffKnown(request, reply, "finance.write"))
+			return;
+
+		const orgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"billing fiscal queue retry-all",
+		);
+		if (!orgId) return;
+
+		const pendingItems = await db
+			.select()
+			.from(fiscalReceiptQueue)
+			.where(
+				and(
+					eq(fiscalReceiptQueue.organizationId, orgId),
+					inArray(fiscalReceiptQueue.status, [
+						"pending_print",
+						"hardware_offline",
+					]),
+				),
+			);
+
+		const isKktOffline =
+			process.env.KKM_FORCE_OFFLINE === "1" ||
+			process.env.KKM_HARDWARE_TIMEOUT === "1";
+
+		let printedCount = 0;
+		let failedCount = 0;
+
+		for (const item of pendingItems) {
+			if (isKktOffline) {
+				await db
+					.update(fiscalReceiptQueue)
+					.set({
+						status: "hardware_offline",
+						lastError: "KKT connection timed out (5000ms) or printer offline",
+						retryCount: sql`${fiscalReceiptQueue.retryCount} + 1`,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(fiscalReceiptQueue.id, item.id),
+							eq(fiscalReceiptQueue.organizationId, orgId),
+						),
+					);
+				failedCount++;
+			} else {
+				await db
+					.update(fiscalReceiptQueue)
+					.set({
+						status: "printed",
+						printedAt: new Date(),
+						lastError: null,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(fiscalReceiptQueue.id, item.id),
+							eq(fiscalReceiptQueue.organizationId, orgId),
+						),
+					);
+				printedCount++;
+			}
+		}
+
+		return reply.code(200).send({
+			success: !isKktOffline,
+			processedCount: pendingItems.length,
+			printedCount,
+			failedCount,
+		});
 	});
 }

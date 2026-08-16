@@ -302,6 +302,13 @@
       "when": 1786690000000,
       "tag": "0170_schedule_4d_exclusion_hardening",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1786982400000,
+      "tag": "0171_fiscal_receipt_queue",
+      "breakpoints": true
     }
   ]
 }

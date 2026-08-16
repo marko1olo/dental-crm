@@ -406,6 +406,27 @@ export async function createPaymentInDb(
 				);
 		}
 
+		if (input.fiscalReceiptNumber || input.fiscalReceipt) {
+			await tx.insert(schema.fiscalReceiptQueue).values({
+				organizationId,
+				paymentId: newPayment.id,
+				visitId: input.visitId || null,
+				receiptType: input.fiscalReceipt?.operationType || "income",
+				status: "pending_print",
+				payloadJson: {
+					amountRub: input.amountRub,
+					method: input.method,
+					fiscalReceiptNumber: input.fiscalReceiptNumber,
+					fiscalReceipt: input.fiscalReceipt,
+					payerFullName: input.payerFullName,
+					payerInn: input.payerInn,
+					taxDeductionCode: input.taxDeductionCode,
+					note: input.note,
+				},
+				retryCount: 0,
+			});
+		}
+
 		return {
 			id: newPayment.id,
 			organizationId: newPayment.organizationId,

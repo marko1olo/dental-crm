@@ -1041,6 +1041,51 @@ export const payments = pgTable(
 	},
 );
 
+export const fiscalReceiptQueue = pgTable(
+	"fiscal_receipt_queue",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id, { onDelete: "cascade" }),
+		paymentId: uuid("payment_id").references(() => payments.id, {
+			onDelete: "set null",
+		}),
+		visitId: uuid("visit_id").references(() => visits.id, {
+			onDelete: "set null",
+		}),
+		receiptType: varchar("receipt_type", { length: 32 }).notNull(),
+		status: varchar("status", { length: 32 })
+			.$type<"pending_print" | "hardware_offline" | "printed" | "failed">()
+			.notNull()
+			.default("pending_print"),
+		payloadJson: jsonb("payload_json").notNull(),
+		retryCount: integer("retry_count").notNull().default(0),
+		lastError: text("last_error"),
+		printedAt: timestamp("printed_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => ({
+		idxFiscalReceiptQueueOrgStatus: index(
+			"idx_fiscal_receipt_queue_org_status",
+		).on(table.organizationId, table.status),
+		idxFiscalReceiptQueueOrgCreatedAt: index(
+			"idx_fiscal_receipt_queue_org_created_at",
+		).on(table.organizationId, table.createdAt),
+		idxFiscalReceiptQueuePaymentId: index(
+			"idx_fiscal_receipt_queue_payment_id",
+		).on(table.paymentId),
+	}),
+);
+
+export type FiscalReceiptQueueItem = typeof fiscalReceiptQueue.$inferSelect;
+export type NewFiscalReceiptQueueItem = typeof fiscalReceiptQueue.$inferInsert;
+
 export const generatedDocuments = pgTable(
 	"generated_documents",
 	{
@@ -5434,6 +5479,24 @@ export const visitsRelations = relations(visits, ({ one }) => ({
 		references: [appointments.id],
 	}),
 }));
+
+export const fiscalReceiptQueueRelations = relations(
+	fiscalReceiptQueue,
+	({ one }) => ({
+		organization: one(organizations, {
+			fields: [fiscalReceiptQueue.organizationId],
+			references: [organizations.id],
+		}),
+		payment: one(payments, {
+			fields: [fiscalReceiptQueue.paymentId],
+			references: [payments.id],
+		}),
+		visit: one(visits, {
+			fields: [fiscalReceiptQueue.visitId],
+			references: [visits.id],
+		}),
+	}),
+);
 
 // ─── Loyalty Programs & Patient Bonus Balances ───────────────────────────────
 
