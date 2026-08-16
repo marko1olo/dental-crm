@@ -79,8 +79,10 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 	const [searchFailed, setSearchFailed] = useState(false);
 
 	useEffect(() => {
+		let active = true;
 		if (isLinking && searchQuery.length >= 2) {
 			const delayFn = setTimeout(async () => {
+				if (!active) return;
 				setSearchLoading(true);
 				try {
 					const res = await fetch(
@@ -89,6 +91,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 							headers: denteAdminSecretRequestHeaders(),
 						},
 					);
+					if (!active) return;
 					if (res.ok) {
 						const data = await res.json();
 						// Не массив — тоже не ответ: .map по такому значению уронил бы
@@ -100,18 +103,27 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 						setSearchFailed(true);
 					}
 				} catch (e) {
+					if (!active) return;
 					logger.error("Family search failed", e);
 					setSearchResults([]);
 					setSearchFailed(true);
 				} finally {
-					setSearchLoading(false);
+					if (active) {
+						setSearchLoading(false);
+					}
 				}
 			}, 300);
-			return () => clearTimeout(delayFn);
+			return () => {
+				active = false;
+				clearTimeout(delayFn);
+			};
 		} else if (isLinking && searchQuery.length < 2) {
 			setSearchResults([]);
 			setSearchFailed(false);
 		}
+		return () => {
+			active = false;
+		};
 	}, [searchQuery, isLinking]);
 
 	/*

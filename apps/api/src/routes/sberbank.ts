@@ -108,6 +108,42 @@ export function verifySberbankChecksum(
 		return true;
 	}
 
+	// Format 4: SHA-256 checksum (key1=val1;...;secret)
+	const shaKeyEq = crypto
+		.createHash("sha256")
+		.update(`${strKeyEq}${secret}`)
+		.digest("hex");
+	if (
+		timingSafeSecretEqual(
+			shaKeyEq.toUpperCase(),
+			incomingChecksum.toUpperCase(),
+		) ||
+		timingSafeSecretEqual(
+			shaKeyEq.toLowerCase(),
+			incomingChecksum.toLowerCase(),
+		)
+	) {
+		return true;
+	}
+
+	// Format 5: SHA-256 checksum (key1;val1;...;secret)
+	const shaStandard = crypto
+		.createHash("sha256")
+		.update(`${strStandard}${secret}`)
+		.digest("hex");
+	if (
+		timingSafeSecretEqual(
+			shaStandard.toUpperCase(),
+			incomingChecksum.toUpperCase(),
+		) ||
+		timingSafeSecretEqual(
+			shaStandard.toLowerCase(),
+			incomingChecksum.toLowerCase(),
+		)
+	) {
+		return true;
+	}
+
 	return false;
 }
 
@@ -258,6 +294,18 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 						});
 					}
 
+					const [lockedPayment] = await tx
+						.select()
+						.from(payments)
+						.where(
+							and(
+								eq(payments.organizationId, orgId),
+								eq(payments.clientMutationId, `sberbank:${orderId}`),
+							),
+						)
+						.for("update")
+						.limit(1);
+
 					if (mappedStatus !== lockedTx.status) {
 						await tx
 							.update(sberbankTransactions)
@@ -272,7 +320,8 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 						if (
 							(lockedTx.status === "pending" ||
 								lockedTx.status === "approved") &&
-							mappedStatus === "success"
+							mappedStatus === "success" &&
+							!lockedPayment
 						) {
 							const amountRub = Number(
 								kopecksToNumericString(lockedTx.amount),
@@ -303,6 +352,7 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 										and(
 											eq(generatedDocuments.id, lockedTx.documentId),
 											eq(generatedDocuments.organizationId, orgId),
+											eq(generatedDocuments.status, "draft"),
 										),
 									);
 							}
@@ -441,6 +491,19 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 				});
 			}
 
+			// Pessimistically lock payments row for this order
+			const [lockedPayment] = await tx
+				.select()
+				.from(payments)
+				.where(
+					and(
+						eq(payments.organizationId, targetTx.organizationId),
+						eq(payments.clientMutationId, `sberbank:${lockedTx.orderId}`),
+					),
+				)
+				.for("update")
+				.limit(1);
+
 			// Validate incoming amount in kopecks if provided by gateway
 			if (payload.amount !== undefined && payload.amount !== null) {
 				const incomingKopecks = Number(payload.amount);
@@ -476,18 +539,20 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 						),
 					);
 
-				await tx
-					.update(payments)
-					.set({
-						status: "refunded",
-						updatedAt: new Date(),
-					})
-					.where(
-						and(
-							eq(payments.organizationId, lockedTx.organizationId),
-							eq(payments.clientMutationId, `sberbank:${lockedTx.orderId}`),
-						),
-					);
+				if (lockedPayment) {
+					await tx
+						.update(payments)
+						.set({
+							status: "refunded",
+							updatedAt: new Date(),
+						})
+						.where(
+							and(
+								eq(payments.organizationId, lockedTx.organizationId),
+								eq(payments.id, lockedPayment.id),
+							),
+						);
+				}
 
 				return reply.status(200).send({
 					success: true,
@@ -550,20 +615,27 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 				});
 			}
 
-			// 4. Success / Deposited (Final Charge / Code 2)
+			// 4. Success / Deposited / Paid (Final Charge / Code 2)
 			const isSuccess =
 				operation === "deposited" ||
+				operation === "paid" ||
 				rawStatus === "success" ||
 				rawStatus === "deposited" ||
-				rawStatus === "2";
+				rawStatus === "paid" ||
+				rawStatus === "2" ||
+				rawStatus === "0";
 
 			if (isSuccess) {
-				if (lockedTx.status === "success") {
+				if (
+					lockedTx.status === "success" ||
+					(lockedPayment && lockedPayment.status === "paid")
+				) {
 					return reply.status(200).send({
 						success: true,
 						processed: false,
 						reason: "already_processed",
 						status: "success",
+						paymentId: lockedPayment?.id,
 					});
 				}
 
@@ -583,7 +655,7 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 				const amountRub = Number(
 					kopecksToNumericString(lockedTx.amount),
 				);
-				await tx
+				const [insertedPayment] = await tx
 					.insert(payments)
 					.values({
 						organizationId: lockedTx.organizationId,
@@ -599,7 +671,8 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 					})
 					.onConflictDoNothing({
 						target: [payments.organizationId, payments.clientMutationId],
-					});
+					})
+					.returning();
 
 				if (lockedTx.documentId) {
 					await tx
@@ -609,6 +682,7 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 							and(
 								eq(generatedDocuments.id, lockedTx.documentId),
 								eq(generatedDocuments.organizationId, lockedTx.organizationId),
+								eq(generatedDocuments.status, "draft"),
 							),
 						);
 				}
@@ -629,6 +703,7 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 					success: true,
 					processed: true,
 					status: "success",
+					paymentId: insertedPayment?.id || lockedPayment?.id,
 					amount: lockedTx.amount,
 				});
 			}

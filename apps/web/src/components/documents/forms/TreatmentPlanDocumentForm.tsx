@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { useDocumentStore } from "../../../store/documentStore";
 
 interface TreatmentPlanDocumentFormProps {
@@ -12,7 +12,7 @@ interface TreatmentPlanDocumentFormProps {
 
 export const TreatmentPlanDocumentForm: React.FC<
 	TreatmentPlanDocumentFormProps
-> = ({
+> = React.memo(({
 	activeDoctorFullName,
 	activeVisitComplaint,
 	activeVisitDiagnosis,
@@ -332,4 +332,6 @@ export const TreatmentPlanDocumentForm: React.FC<
 			</details>
 		</article>
 	);
-};
+});
+
+TreatmentPlanDocumentForm.displayName = "TreatmentPlanDocumentForm";

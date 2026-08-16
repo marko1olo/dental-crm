@@ -5,7 +5,7 @@ import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { usePatientStore } from "../../store/patientStore";
 import { PatientDuplicateMergeQueuesWidget } from "../crm/PatientDuplicateMergeQueuesWidget";
 import { LabOrdersPanel } from "../LabOrdersPanel";
-import { PatientJourneyTimeline } from "../PatientJourneyTimeline";
+import { PatientWorkspaceView } from "../patient/PatientWorkspaceView";
 import { OrthodonticProgressWidget } from "./OrthodonticProgressWidget";
 import { PatientArchiveAndBlacklistWidget } from "./PatientArchiveAndBlacklistWidget";
 import { PatientCommunicationTimelineWidget } from "./PatientCommunicationTimelineWidget";
@@ -197,8 +197,9 @@ export function PatientOverviewTab() {
 					/>
 
 					{selectedPatientId && (
-						<PatientJourneyTimeline
+						<PatientWorkspaceView
 							patientId={selectedPatientId}
+							patientName={selectedPatient?.fullName || null}
 							dashboard={dashboard}
 						/>
 					)}

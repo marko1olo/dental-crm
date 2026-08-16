@@ -1,5 +1,5 @@
 import type { PhotoVideoConsentMaterial } from "@dental/shared";
-import React from "react";
+import React, { useMemo } from "react";
 import { useDocumentStore } from "../../../store/documentStore";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import { photoVideoConsentBlockersReview } from "../photoVideoConsentBlockers";
@@ -21,41 +21,90 @@ export interface PhotoVideoConsentFormProps {
  * недействительная сама по себе отметка узнаваемой публикации), записаны в
  * photoVideoConsentBlockers.ts.
  */
-export function PhotoVideoConsentForm({
+export const PhotoVideoConsentForm = React.memo(function PhotoVideoConsentForm({
 	materialOptions,
 	toggleMaterial,
 }: PhotoVideoConsentFormProps) {
-	const {
-		photoVideoAnonymizationConfirmed,
-		photoVideoClinicalRecordUseConfirmed,
-		photoVideoColleagueConsultationAllowed,
-		photoVideoEducationUseAllowed,
-		photoVideoLabTransferAllowed,
-		photoVideoMarketingUseAllowed,
-		photoVideoMaterials,
-		photoVideoRecognizablePublicationAllowed,
-		photoVideoRevocationChannel,
-		photoVideoScopeNotes,
-		setPhotoVideoAnonymizationConfirmed,
-		setPhotoVideoClinicalRecordUseConfirmed,
-		setPhotoVideoColleagueConsultationAllowed,
-		setPhotoVideoEducationUseAllowed,
-		setPhotoVideoLabTransferAllowed,
-		setPhotoVideoMarketingUseAllowed,
-		setPhotoVideoRecognizablePublicationAllowed,
-		setPhotoVideoRevocationChannel,
-		setPhotoVideoScopeNotes,
-	} = useDocumentStore();
+	const photoVideoAnonymizationConfirmed = useDocumentStore(
+		(state) => state.photoVideoAnonymizationConfirmed,
+	);
+	const setPhotoVideoAnonymizationConfirmed = useDocumentStore(
+		(state) => state.setPhotoVideoAnonymizationConfirmed,
+	);
+	const photoVideoClinicalRecordUseConfirmed = useDocumentStore(
+		(state) => state.photoVideoClinicalRecordUseConfirmed,
+	);
+	const setPhotoVideoClinicalRecordUseConfirmed = useDocumentStore(
+		(state) => state.setPhotoVideoClinicalRecordUseConfirmed,
+	);
+	const photoVideoColleagueConsultationAllowed = useDocumentStore(
+		(state) => state.photoVideoColleagueConsultationAllowed,
+	);
+	const setPhotoVideoColleagueConsultationAllowed = useDocumentStore(
+		(state) => state.setPhotoVideoColleagueConsultationAllowed,
+	);
+	const photoVideoEducationUseAllowed = useDocumentStore(
+		(state) => state.photoVideoEducationUseAllowed,
+	);
+	const setPhotoVideoEducationUseAllowed = useDocumentStore(
+		(state) => state.setPhotoVideoEducationUseAllowed,
+	);
+	const photoVideoLabTransferAllowed = useDocumentStore(
+		(state) => state.photoVideoLabTransferAllowed,
+	);
+	const setPhotoVideoLabTransferAllowed = useDocumentStore(
+		(state) => state.setPhotoVideoLabTransferAllowed,
+	);
+	const photoVideoMarketingUseAllowed = useDocumentStore(
+		(state) => state.photoVideoMarketingUseAllowed,
+	);
+	const setPhotoVideoMarketingUseAllowed = useDocumentStore(
+		(state) => state.setPhotoVideoMarketingUseAllowed,
+	);
+	const photoVideoMaterials = useDocumentStore(
+		(state) => state.photoVideoMaterials,
+	);
+	const photoVideoRecognizablePublicationAllowed = useDocumentStore(
+		(state) => state.photoVideoRecognizablePublicationAllowed,
+	);
+	const setPhotoVideoRecognizablePublicationAllowed = useDocumentStore(
+		(state) => state.setPhotoVideoRecognizablePublicationAllowed,
+	);
+	const photoVideoRevocationChannel = useDocumentStore(
+		(state) => state.photoVideoRevocationChannel,
+	);
+	const setPhotoVideoRevocationChannel = useDocumentStore(
+		(state) => state.setPhotoVideoRevocationChannel,
+	);
+	const photoVideoScopeNotes = useDocumentStore(
+		(state) => state.photoVideoScopeNotes,
+	);
+	const setPhotoVideoScopeNotes = useDocumentStore(
+		(state) => state.setPhotoVideoScopeNotes,
+	);
 
-	const review = photoVideoConsentBlockersReview({
-		materials: photoVideoMaterials,
-		clinicalRecordUseConfirmed: photoVideoClinicalRecordUseConfirmed,
-		anonymizationConfirmed: photoVideoAnonymizationConfirmed,
-		revocationChannel: photoVideoRevocationChannel,
-		recognizablePublicationAllowed: photoVideoRecognizablePublicationAllowed,
-		marketingUseAllowed: photoVideoMarketingUseAllowed,
-		educationUseAllowed: photoVideoEducationUseAllowed,
-	});
+	const review = useMemo(
+		() =>
+			photoVideoConsentBlockersReview({
+				materials: photoVideoMaterials,
+				clinicalRecordUseConfirmed: photoVideoClinicalRecordUseConfirmed,
+				anonymizationConfirmed: photoVideoAnonymizationConfirmed,
+				revocationChannel: photoVideoRevocationChannel,
+				recognizablePublicationAllowed:
+					photoVideoRecognizablePublicationAllowed,
+				marketingUseAllowed: photoVideoMarketingUseAllowed,
+				educationUseAllowed: photoVideoEducationUseAllowed,
+			}),
+		[
+			photoVideoMaterials,
+			photoVideoClinicalRecordUseConfirmed,
+			photoVideoAnonymizationConfirmed,
+			photoVideoRevocationChannel,
+			photoVideoRecognizablePublicationAllowed,
+			photoVideoMarketingUseAllowed,
+			photoVideoEducationUseAllowed,
+		],
+	);
 
 	return (
 		<DocumentPayloadCard
@@ -87,8 +136,7 @@ export function PhotoVideoConsentForm({
 							пересчитывается сам, пока вы отмечаете.
 						</small>
 					</div>
-				) : null
-			}
+				) : null}
 		>
 			<div className="document-payload-row">
 				{materialOptions.map((option) => (
@@ -193,4 +241,6 @@ export function PhotoVideoConsentForm({
 			</label>
 		</DocumentPayloadCard>
 	);
-}
+});
+
+PhotoVideoConsentForm.displayName = "PhotoVideoConsentForm";

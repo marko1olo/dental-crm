@@ -1,17 +1,20 @@
+import crypto from "node:crypto";
 import {
 	createFiscalReceiptPayloadSchema,
 	generateSbpDynamicQrSchema,
 	kopecksToNumericString,
 	SbpQrEngine,
 } from "@dental/shared";
-import { and, eq, sql } from "drizzle-orm";
-import type { FastifyInstance } from "fastify";
+import { and, eq, or, sql } from "drizzle-orm";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
+	namedDevelopmentModeActive,
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
+import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import {
 	cashLedger,
 	digitalReceiptDispatches,
@@ -20,9 +23,117 @@ import {
 	patientInvoices,
 	patients,
 	payments,
+	sberbankTransactions,
 	visits,
 } from "../db/schema.js";
 import { createTelegramQrSvg } from "../telegramQr.js";
+import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
+
+/**
+ * Validates SBP HMAC-SHA256 / SHA-256 webhook signature.
+ * 1. Excludes checksum, sign, signature, sign_alias, crc.
+ * 2. Sorts remaining parameters in alphabetical order.
+ * 3. Computes HMAC-SHA256 and SHA-256 and compares in constant time.
+ */
+export function verifySbpWebhookSignature(
+	payload: Record<string, unknown>,
+	secret: string,
+	incomingSignature: string,
+): boolean {
+	const cleanPayload: Record<string, string> = {};
+	for (const [key, value] of Object.entries(payload)) {
+		if (
+			key === "checksum" ||
+			key === "sign" ||
+			key === "signature" ||
+			key === "sign_alias" ||
+			key === "crc" ||
+			value === undefined ||
+			value === null ||
+			typeof value === "object"
+		) {
+			continue;
+		}
+		cleanPayload[key] = String(value);
+	}
+
+	if (timingSafeSecretEqual(incomingSignature, secret)) {
+		return true;
+	}
+
+	const sortedKeys = Object.keys(cleanPayload).sort();
+	if (sortedKeys.length === 0) return false;
+
+	// Format 1: key1=val1;key2=val2
+	const strKeyEq = sortedKeys.map((k) => `${k}=${cleanPayload[k]}`).join(";");
+	const hmacKeyEq = crypto
+		.createHmac("sha256", secret)
+		.update(strKeyEq)
+		.digest("hex");
+
+	if (
+		timingSafeSecretEqual(hmacKeyEq.toUpperCase(), incomingSignature.toUpperCase()) ||
+		timingSafeSecretEqual(hmacKeyEq.toLowerCase(), incomingSignature.toLowerCase())
+	) {
+		return true;
+	}
+
+	// Format 2: key1;val1;key2;val2;...;
+	const strStandard = `${sortedKeys.map((k) => `${k};${cleanPayload[k]}`).join(";")};`;
+	const hmacStandard = crypto
+		.createHmac("sha256", secret)
+		.update(strStandard)
+		.digest("hex");
+
+	if (
+		timingSafeSecretEqual(hmacStandard.toUpperCase(), incomingSignature.toUpperCase()) ||
+		timingSafeSecretEqual(hmacStandard.toLowerCase(), incomingSignature.toLowerCase())
+	) {
+		return true;
+	}
+
+	// Format 3: key1=val1&key2=val2
+	const strUrl = sortedKeys.map((k) => `${k}=${cleanPayload[k]}`).join("&");
+	const hmacUrl = crypto
+		.createHmac("sha256", secret)
+		.update(strUrl)
+		.digest("hex");
+
+	if (
+		timingSafeSecretEqual(hmacUrl.toUpperCase(), incomingSignature.toUpperCase()) ||
+		timingSafeSecretEqual(hmacUrl.toLowerCase(), incomingSignature.toLowerCase())
+	) {
+		return true;
+	}
+
+	// Format 4: SHA-256 (strKeyEq + secret)
+	const shaKeyEq = crypto
+		.createHash("sha256")
+		.update(`${strKeyEq}${secret}`)
+		.digest("hex");
+
+	if (
+		timingSafeSecretEqual(shaKeyEq.toUpperCase(), incomingSignature.toUpperCase()) ||
+		timingSafeSecretEqual(shaKeyEq.toLowerCase(), incomingSignature.toLowerCase())
+	) {
+		return true;
+	}
+
+	// Format 5: SHA-256 (strStandard + secret)
+	const shaStandard = crypto
+		.createHash("sha256")
+		.update(`${strStandard}${secret}`)
+		.digest("hex");
+
+	if (
+		timingSafeSecretEqual(shaStandard.toUpperCase(), incomingSignature.toUpperCase()) ||
+		timingSafeSecretEqual(shaStandard.toLowerCase(), incomingSignature.toLowerCase())
+	) {
+		return true;
+	}
+
+	return false;
+}
 
 function computeFiscalSign(
 	fn: string,
@@ -632,4 +743,418 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 			},
 		});
 	});
+
+	/**
+	 * 4. POST /api/billing/sbp/webhook & POST /api/sbp/webhook
+	 * Приём входящих уведомлений об оплате по СБП (B2C Dynamic QR / NSPK)
+	 * с валидацией HMAC-SHA256 / SHA-256 подписи и пессимистической блокировкой.
+	 */
+	const sbpWebhookHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+		const secret =
+			process.env.SBP_WEBHOOK_SECRET ||
+			process.env.DENTE_WEBHOOK_SECRET ||
+			process.env.SBERBANK_WEBHOOK_SECRET ||
+			process.env.SBERBANK_SECRET_KEY;
+
+		if (!secret && !namedDevelopmentModeActive()) {
+			return reply.status(503).send({
+				error: "WebhookSecretNotConfigured",
+				message:
+					"Приём уведомлений от СБП временно недоступен: клиника не подключила защищённую интеграцию.",
+			});
+		}
+
+		const body = (request.body as Record<string, unknown>) || {};
+		const query = (request.query as Record<string, unknown>) || {};
+		const payload = { ...query, ...body };
+
+		const incomingSignature =
+			(payload.signature as string) ||
+			(payload.sign as string) ||
+			(payload.checksum as string) ||
+			(request.headers["x-sbp-signature"] as string) ||
+			(request.headers["x-signature"] as string) ||
+			(request.headers["x-dente-webhook-secret"] as string) ||
+			(request.headers["x-webhook-secret"] as string);
+
+		if (!incomingSignature) {
+			return reply.status(400).send({
+				error: "MissingSignature",
+				message: "Параметр подписи/контрольной суммы (signature) отсутствует.",
+			});
+		}
+
+		const effectiveSecret =
+			secret || (namedDevelopmentModeActive() ? "dev-sbp-secret" : "");
+		if (!effectiveSecret) {
+			return reply.status(503).send({
+				error: "WebhookSecretNotConfigured",
+				message:
+					"Приём уведомлений от СБП временно недоступен: клиника не подключила защищённую интеграцию.",
+			});
+		}
+
+		const isValidSignature = verifySbpWebhookSignature(
+			payload,
+			effectiveSecret,
+			incomingSignature,
+		);
+
+		if (!isValidSignature) {
+			return reply.status(401).send({
+				error: "InvalidSignature",
+				message: "Неверная подпись/контрольная сумма вебхука СБП.",
+			});
+		}
+
+		// Signature guard passed with ZERO DB calls so far.
+		const operationId =
+			(payload.operationId as string) ||
+			(payload.orderId as string) ||
+			(payload.mdOrder as string) ||
+			(payload.trxId as string) ||
+			(payload.paymentId as string) ||
+			(payload.clientMutationId as string);
+
+		if (!operationId) {
+			return reply.status(400).send({
+				error: "MissingOperationId",
+				message: "Идентификатор операции (operationId) отсутствует в запросе.",
+			});
+		}
+
+		// Locate transaction or existing payment with superuser bypass
+		const targetContext = await withSuperuserBypass(async (tx) => {
+			// 1. Check sberbankTransactions (orders registered for SBP)
+			const [sberTx] = await tx
+				.select()
+				.from(sberbankTransactions)
+				.where(eq(sberbankTransactions.orderId, String(operationId)))
+				.limit(1);
+
+			if (sberTx) {
+				return {
+					source: "sberbankTransactions" as const,
+					organizationId: sberTx.organizationId,
+					patientId: sberTx.patientId,
+					visitId: sberTx.visitId,
+					documentId: sberTx.documentId,
+					invoiceId: sberTx.invoiceId,
+					amountKopecks: sberTx.amount,
+					sberTx,
+				};
+			}
+
+			// 2. Check existing payments by clientMutationId
+			const mutationId = `sbp:${operationId}`;
+			const [existingPayment] = await tx
+				.select()
+				.from(payments)
+				.where(
+					or(
+						eq(payments.clientMutationId, mutationId),
+						eq(payments.clientMutationId, String(operationId)),
+					),
+				)
+				.limit(1);
+
+			if (existingPayment) {
+				return {
+					source: "payments" as const,
+					organizationId: existingPayment.organizationId,
+					patientId: existingPayment.patientId,
+					visitId: existingPayment.visitId,
+					documentId: existingPayment.documentId,
+					invoiceId: null,
+					amountKopecks: Math.round(Number(existingPayment.amountRub) * 100),
+					existingPayment,
+				};
+			}
+
+			// 3. If payload includes organizationId and patientId (or invoiceId)
+			if (payload.organizationId && (payload.patientId || payload.invoiceId)) {
+				return {
+					source: "payload" as const,
+					organizationId: String(payload.organizationId),
+					patientId: payload.patientId ? String(payload.patientId) : null,
+					visitId: payload.visitId ? String(payload.visitId) : null,
+					documentId: payload.documentId ? String(payload.documentId) : null,
+					invoiceId: payload.invoiceId ? String(payload.invoiceId) : null,
+					amountKopecks: payload.amountKopecks
+						? Number(payload.amountKopecks)
+						: payload.amount
+							? Number(payload.amount)
+							: null,
+				};
+			}
+
+			return null;
+		});
+
+		if (!targetContext || !targetContext.organizationId) {
+			return reply.status(404).send({
+				error: "TransactionNotFound",
+				message: `Транзакция СБП с идентификатором '${operationId}' не найдена.`,
+			});
+		}
+
+		const orgId = targetContext.organizationId;
+		const mutationId = `sbp:${operationId}`;
+
+		return await withTenantCtx(orgId, async (tx) => {
+			// Pessimistic locking on sberbankTransactions if applicable
+			let lockedSberTx: typeof sberbankTransactions.$inferSelect | undefined;
+			if (targetContext.source === "sberbankTransactions") {
+				const [locked] = await tx
+					.select()
+					.from(sberbankTransactions)
+					.where(
+						and(
+							eq(sberbankTransactions.orderId, String(operationId)),
+							eq(sberbankTransactions.organizationId, orgId),
+						),
+					)
+					.for("update")
+					.limit(1);
+				lockedSberTx = locked;
+			}
+
+			// Pessimistic locking on payments table
+			const [lockedPayment] = await tx
+				.select()
+				.from(payments)
+				.where(
+					and(
+						eq(payments.organizationId, orgId),
+						or(
+							eq(payments.clientMutationId, mutationId),
+							eq(payments.clientMutationId, String(operationId)),
+						),
+					),
+				)
+				.for("update")
+				.limit(1);
+
+			// Validate incoming amount if specified
+			const incomingAmountKopecks =
+				payload.amountKopecks !== undefined && payload.amountKopecks !== null
+					? Number(payload.amountKopecks)
+					: payload.amount !== undefined && payload.amount !== null
+						? Number(payload.amount)
+						: payload.sum !== undefined && payload.sum !== null
+							? Number(payload.sum)
+							: null;
+
+			if (
+				incomingAmountKopecks !== null &&
+				targetContext.amountKopecks !== null &&
+				!Number.isNaN(incomingAmountKopecks) &&
+				incomingAmountKopecks !== targetContext.amountKopecks
+			) {
+				request.log.warn(
+					{
+						operationId,
+						expected: targetContext.amountKopecks,
+						received: incomingAmountKopecks,
+					},
+					"[SbpWebhook] Amount mismatch detected",
+				);
+				return reply.status(400).send({
+					error: "AmountMismatch",
+					message:
+						"Сумма в уведомлении СБП не совпадает с суммой зарегистрированной операции.",
+				});
+			}
+
+			const operation = String(payload.operation ?? "").toLowerCase();
+			const rawStatus = String(
+				payload.status ?? payload.operation ?? "PAID",
+			).toLowerCase();
+
+			// 1. Refund operation handling
+			if (
+				operation === "refunded" ||
+				operation === "refund" ||
+				rawStatus === "refunded" ||
+				rawStatus === "refund"
+			) {
+				if (lockedSberTx) {
+					await tx
+						.update(sberbankTransactions)
+						.set({ status: "refunded", updatedAt: new Date() })
+						.where(
+							and(
+								eq(sberbankTransactions.id, lockedSberTx.id),
+								eq(sberbankTransactions.organizationId, orgId),
+							),
+						);
+				}
+
+				if (lockedPayment) {
+					await tx
+						.update(payments)
+						.set({ status: "refunded", updatedAt: new Date() })
+						.where(
+							and(
+								eq(payments.organizationId, orgId),
+								eq(payments.id, lockedPayment.id),
+							),
+						);
+				}
+
+				return reply.status(200).send({
+					success: true,
+					processed: true,
+					status: "REFUNDED",
+				});
+			}
+
+			// 2. Success / Deposited / Paid handling
+			const isSuccess =
+				operation === "deposited" ||
+				operation === "paid" ||
+				rawStatus === "paid" ||
+				rawStatus === "deposited" ||
+				rawStatus === "success" ||
+				rawStatus === "accepted" ||
+				rawStatus === "2" ||
+				rawStatus === "0";
+
+			if (isSuccess) {
+				// Idempotency check: if transaction is already processed or payment row exists
+				if (
+					(lockedSberTx && lockedSberTx.status === "success") ||
+					(lockedPayment && lockedPayment.status === "paid")
+				) {
+					return reply.status(200).send({
+						success: true,
+						processed: false,
+						reason: "already_processed",
+						status: "PAID",
+						paymentId: lockedPayment?.id,
+					});
+				}
+
+				if (lockedSberTx) {
+					await tx
+						.update(sberbankTransactions)
+						.set({ status: "success", updatedAt: new Date() })
+						.where(
+							and(
+								eq(sberbankTransactions.id, lockedSberTx.id),
+								eq(sberbankTransactions.organizationId, orgId),
+							),
+						);
+				}
+
+				const effectiveAmountKopecks =
+					targetContext.amountKopecks ?? incomingAmountKopecks ?? 0;
+				const amountRub =
+					effectiveAmountKopecks > 0
+						? Number(kopecksToNumericString(effectiveAmountKopecks))
+						: payload.amountRub
+							? Number(payload.amountRub)
+							: 0;
+
+				const effectivePatientId =
+					targetContext.patientId ||
+					lockedSberTx?.patientId ||
+					(payload.patientId ? String(payload.patientId) : null);
+
+				if (!effectivePatientId) {
+					return reply.status(400).send({
+						error: "MissingPatientId",
+						message: "Не удалось определить пациента для разноски платежа СБП.",
+					});
+				}
+
+				const [insertedPayment] = await tx
+					.insert(payments)
+					.values({
+						organizationId: orgId,
+						patientId: effectivePatientId,
+						visitId: targetContext.visitId || lockedSberTx?.visitId || null,
+						documentId:
+							targetContext.documentId || lockedSberTx?.documentId || null,
+						method: "online",
+						status: "paid",
+						amountRub,
+						paidAt: new Date(),
+						clientMutationId: mutationId,
+						note: `Оплата через СБП QR (операция ${operationId})`,
+					})
+					.onConflictDoNothing({
+						target: [payments.organizationId, payments.clientMutationId],
+					})
+					.returning();
+
+				const targetDocId =
+					targetContext.documentId || lockedSberTx?.documentId;
+				if (targetDocId) {
+					await tx
+						.update(generatedDocuments)
+						.set({ status: "issued", issuedAt: new Date() })
+						.where(
+							and(
+								eq(generatedDocuments.id, targetDocId),
+								eq(generatedDocuments.organizationId, orgId),
+								eq(generatedDocuments.status, "draft"),
+							),
+						);
+				}
+
+				const targetVisitId = targetContext.visitId || lockedSberTx?.visitId;
+				if (targetVisitId) {
+					await tx
+						.update(visits)
+						.set({ updatedAt: new Date() })
+						.where(
+							and(
+								eq(visits.id, targetVisitId),
+								eq(visits.organizationId, orgId),
+							),
+						);
+				}
+
+				const targetInvoiceId =
+					targetContext.invoiceId || lockedSberTx?.invoiceId;
+				if (targetInvoiceId) {
+					await tx
+						.update(patientInvoices)
+						.set({ status: "paid", paidAt: new Date() })
+						.where(
+							and(
+								eq(patientInvoices.id, targetInvoiceId),
+								eq(patientInvoices.organizationId, orgId),
+							),
+						);
+				}
+
+				return reply.status(200).send({
+					success: true,
+					processed: true,
+					status: "PAID",
+					paymentId: insertedPayment?.id || lockedPayment?.id,
+					amount: effectiveAmountKopecks,
+				});
+			}
+
+			// 3. Failed
+			if (lockedSberTx) {
+				await tx
+					.update(sberbankTransactions)
+					.set({ status: "failed", updatedAt: new Date() })
+					.where(eq(sberbankTransactions.id, lockedSberTx.id));
+			}
+
+			return reply.status(200).send({
+				success: true,
+				processed: true,
+				status: "FAILED",
+			});
+		});
+	};
+
+	app.post("/api/billing/sbp/webhook", sbpWebhookHandler);
+	app.post("/api/sbp/webhook", sbpWebhookHandler);
 }

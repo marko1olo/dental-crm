@@ -1,5 +1,4 @@
-import type React from "react";
-import { useEffect, useState } from "react";
+import React, { useMemo } from "react";
 import "./PatientJourneyTimeline.css";
 import type { Dashboard } from "@dental/shared";
 import { money } from "../AppHelpers";
@@ -49,7 +48,7 @@ const paymentStatusLabels: Record<string, string> = {
 	voided: "аннулирована",
 };
 
-interface JourneyEvent {
+export interface JourneyEvent {
 	id: string;
 	timestamp: string;
 	type:
@@ -65,264 +64,256 @@ interface JourneyEvent {
 	actionUrl?: string;
 }
 
-export const PatientJourneyTimeline: React.FC<{
+export interface PatientJourneyTimelineProps {
 	patientId: string;
 	dashboard?: Dashboard | null;
-}> = ({ patientId, dashboard }) => {
-	const [events, setEvents] = useState<JourneyEvent[]>([]);
+}
 
-	useEffect(() => {
-		/*
-		 * Лента показывалась человеку с сырыми данными из базы:
-		 *  - «Врач: 8356141b-7cfa-4221-95f7-70f47e7344b1» — вместо фамилии
-		 *    печатался идентификатор строки;
-		 *  - «Прием: planned» — английский ключ статуса;
-		 *  - «Аналитика: churn_risk» — английский ключ категории;
-		 *  - плашка состояния «Completed» и «Draft» по-английски;
-		 *  - сумма форматировалась своей копией кода, из-за чего копейки
-		 *    печатались одной цифрой: «1 500,5 ₽»;
-		 *  - ключ строки брался из Math.random(), и React пересоздавал строки
-		 *    на каждой перерисовке.
-		 */
-		const staffById = new Map<string, { fullName?: string }>(
-			(dashboard?.clinicSettings?.staff ?? [])?.map((member) => [
-				member.id,
-				member,
-			]),
-		);
-		const doctorName = (doctorUserId: string | null | undefined) => {
-			if (!doctorUserId) return "врач не назначен";
-			return staffById.get(doctorUserId)?.fullName ?? "врач не найден в списке";
-		};
+export const PatientJourneyTimeline: React.FC<PatientJourneyTimelineProps> =
+	React.memo(({ patientId, dashboard }) => {
+		const staffById = useMemo(() => {
+			return new Map<string, { fullName?: string }>(
+				(dashboard?.clinicSettings?.staff ?? [])?.map((member) => [
+					member.id,
+					member,
+				]),
+			);
+		}, [dashboard?.clinicSettings?.staff]);
 
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		const appointments: any[] = dashboard?.appointments || [];
-		const visitEvents: JourneyEvent[] = appointments
-			.filter((a) => a.patientId === patientId)
-			?.map((a) => {
-				const statusKey = String(a.status ?? "").toLowerCase();
-				return {
-					id: a.id,
-					timestamp: a.startsAt,
-					type: "appointment",
-					title: `Приём ${appointmentStatusLabels[statusKey] ?? statusKey}`,
-					description: `${doctorName(a.doctorUserId)} · ${a.reason || "повод не указан"}`,
-					status: appointmentStatusLabels[statusKey] ?? statusKey,
-					actionUrl: `/patients/${patientId}/visit/${a.id}`,
-				};
-			});
+		const events = useMemo<JourneyEvent[]>(() => {
+			const doctorName = (doctorUserId: string | null | undefined) => {
+				if (!doctorUserId) return "врач не назначен";
+				return (
+					staffById.get(doctorUserId)?.fullName ?? "врач не найден в списке"
+				);
+			};
 
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		const payments: any[] = dashboard?.payments || [];
-		const paymentEvents: JourneyEvent[] = payments
-			.filter((p) => p.patientId === patientId)
-			?.map((p) => ({
-				id: p.id,
-				timestamp: p.paidAt || p.createdAt,
-				type: "transaction",
-				title: `Оплата: ${paymentMethodLabels[String(p.method)] ?? p.method}`,
-				description: `Сумма ${money(p.amountRub)}`,
-				amount: p.amountRub,
-				status: paymentStatusLabels[String(p.status)] ?? p.status,
-				actionUrl: `#finance`,
-			}));
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+			const appointments: any[] = dashboard?.appointments || [];
+			const visitEvents: JourneyEvent[] = appointments
+				.filter((a) => a.patientId === patientId)
+				?.map((a) => {
+					const statusKey = String(a.status ?? "").toLowerCase();
+					return {
+						id: a.id,
+						timestamp: a.startsAt,
+						type: "appointment",
+						title: `Приём ${appointmentStatusLabels[statusKey] ?? statusKey}`,
+						description: `${doctorName(a.doctorUserId)} · ${a.reason || "повод не указан"}`,
+						status: appointmentStatusLabels[statusKey] ?? statusKey,
+						actionUrl: `/patients/${patientId}/visit/${a.id}`,
+					};
+				});
 
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		const insights: any[] = dashboard?.patientInsights || [];
-		const insightEvents: JourneyEvent[] = insights
-			.filter((i) => i.patientId === patientId)
-			?.map((i) => ({
-				id: i.id ?? `insight-${i.patientId}-${i.category}`,
-				timestamp: i.createdAt || new Date().toISOString(),
-				type: "medical_alert",
-				title: insightCategoryLabels[String(i.category)] ?? String(i.category),
-				description: i.reason,
-				status: insightRiskLabels[String(i.riskLevel)] ?? i.riskLevel,
-			}));
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+			const payments: any[] = dashboard?.payments || [];
+			const paymentEvents: JourneyEvent[] = payments
+				.filter((p) => p.patientId === patientId)
+				?.map((p) => ({
+					id: p.id,
+					timestamp: p.paidAt || p.createdAt,
+					type: "transaction",
+					title: `Оплата: ${paymentMethodLabels[String(p.method)] ?? p.method}`,
+					description: `Сумма ${money(p.amountRub)}`,
+					amount: p.amountRub,
+					status: paymentStatusLabels[String(p.status)] ?? p.status,
+					actionUrl: "#finance",
+				}));
 
-		const allEvents = [...visitEvents, ...paymentEvents, ...insightEvents];
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+			const insights: any[] = dashboard?.patientInsights || [];
+			const insightEvents: JourneyEvent[] = insights
+				.filter((i) => i.patientId === patientId)
+				?.map((i) => ({
+					id: i.id ?? `insight-${i.patientId}-${i.category}`,
+					timestamp: i.createdAt || new Date().toISOString(),
+					type: "medical_alert",
+					title:
+						insightCategoryLabels[String(i.category)] ?? String(i.category),
+					description: i.reason,
+					status: insightRiskLabels[String(i.riskLevel)] ?? i.riskLevel,
+				}));
 
-		// Sort by timestamp
-		setEvents(
-			allEvents.sort(
+			const allEvents = [...visitEvents, ...paymentEvents, ...insightEvents];
+
+			return allEvents.sort(
 				(a, b) =>
 					new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-			),
-		);
+			);
+		}, [
+			patientId,
+			dashboard?.appointments,
+			dashboard?.payments,
+			dashboard?.patientInsights,
+			staffById,
+		]);
 
-		return () => {
-			setEvents([]);
+		// Real Zeigarnik Effect Progress Calculation
+		const {
+			totalItemsCount,
+			completedItemsCount,
+			progressPercentage,
+			showProgress,
+		} = useMemo(() => {
+			const planItems = (dashboard?.treatmentPlanItems ?? []).filter(
+				(i) => i?.patientId === patientId,
+			);
+			const activeItems = (planItems ?? []).filter(
+				(i) => i?.status !== "cancelled",
+			);
+			const completedItems = (activeItems ?? []).filter(
+				(i) => i?.status === "completed",
+			);
+
+			const total = activeItems.length;
+			const completed = completedItems.length;
+			const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+			const show = total > 0 && percentage < 100;
+
+			return {
+				totalItemsCount: total,
+				completedItemsCount: completed,
+				progressPercentage: percentage,
+				showProgress: show,
+			};
+		}, [dashboard?.treatmentPlanItems, patientId]);
+
+		const getIcon = (type: string) => {
+			switch (type) {
+				case "medical_alert":
+					return "⚠️";
+				case "appointment":
+					return "📅";
+				case "transaction":
+					return "💰";
+				case "inventory_depletion":
+					return "📦";
+				case "lab_order":
+					return "🦷";
+				default:
+					return "🔹";
+			}
 		};
-	}, [
-		patientId,
-		dashboard?.appointments,
-		dashboard?.payments,
-		dashboard?.patientInsights,
-		dashboard?.clinicSettings?.staff,
-	]);
 
-	// Real Zeigarnik Effect Progress Calculation
-	const planItems = (dashboard?.treatmentPlanItems ?? []).filter(
-		(i) => i?.patientId === patientId,
-	);
-	const activeItems = (planItems ?? []).filter(
-		(i) => i?.status !== "cancelled",
-	);
-	const completedItems = (activeItems ?? []).filter(
-		(i) => i?.status === "completed",
-	);
-
-	const totalItemsCount = activeItems.length;
-	const completedItemsCount = completedItems.length;
-	const progressPercentage =
-		totalItemsCount > 0
-			? Math.round((completedItemsCount / totalItemsCount) * 100)
-			: 0;
-
-	const showProgress = totalItemsCount > 0 && progressPercentage < 100;
-
-	const getIcon = (type: string) => {
-		switch (type) {
-			case "medical_alert":
-				return "⚠️";
-			case "appointment":
-				return "📅";
-			case "transaction":
-				return "💰";
-			case "inventory_depletion":
-				return "📦";
-			case "lab_order":
-				return "🦷";
-			default:
-				return "🔹";
-		}
-	};
-
-	return (
-		<div className="patient-journey-timeline">
-			<div className="timeline-header">
-				<h3>Лента приемов пациента</h3>
-				<span className="patient-id-badge">
-					ID: {typeof patientId === "string" ? patientId.slice(0, 8) : ""}
-				</span>
-			</div>
-
-			{/* Эффект Зейгарник: Прогресс-бар лечения */}
-			{showProgress && (
-				<div className="zeigarnik-progress-container">
-					<div className="progress-header">
-						<span className="progress-title">План лечения: Общий прогресс</span>
-						<span className="progress-percentage text-emerald-400">
-							{progressPercentage}%
-						</span>
-					</div>
-					<div className="progress-bar-bg">
-						<div
-							className="progress-bar-fill"
-							style={{ width: `${progressPercentage}%` }}
-						></div>
-					</div>
-					<p className="progress-hint">
-						Пройдено {completedItemsCount} процедуры из {totalItemsCount}.
-						Следующий визит приблизит вас к завершению плана!
-					</p>
-				</div>
-			)}
-
-			{/*
-				Пустого состояния не было вовсе: у пациента без приёмов на экране
-				оставался чёрный прямоугольник с заголовком и идентификатором —
-				выглядел как незагрузившийся блок.
-			*/}
-			{(events ?? []).length === 0 ? (
-				<div className="timeline-empty">
-					<p>Здесь пока ничего не было</p>
-					<span>
-						Записи на приём, оплаты и предупреждения по этому пациенту появятся
-						в этой ленте сами, как только они появятся в клинике.
+		return (
+			<div className="patient-journey-timeline">
+				<div className="timeline-header">
+					<h3>Лента приемов пациента</h3>
+					<span className="patient-id-badge">
+						ID: {typeof patientId === "string" ? patientId.slice(0, 8) : ""}
 					</span>
 				</div>
-			) : null}
 
-			<div className="timeline-track">
-				{(events ?? []).map((evt, index) => {
-					// Эффект Края (Serial Position Effect): выделяем первый и последний элементы
-					const isFirst = index === 0;
-					const isLast = index === (events ?? []).length - 1;
-					const isHighlight = isFirst || isLast;
+				{/* Эффект Зейгарник: Прогресс-бар лечения */}
+				{showProgress && (
+					<div className="zeigarnik-progress-container">
+						<div className="progress-header">
+							<span className="progress-title">План лечения: Общий прогресс</span>
+							<span className="progress-percentage text-emerald-400">
+								{progressPercentage}%
+							</span>
+						</div>
+						<div className="progress-bar-bg">
+							<div
+								className="progress-bar-fill"
+								style={{ width: `${progressPercentage}%` }}
+							/>
+						</div>
+						<p className="progress-hint">
+							Пройдено {completedItemsCount} процедуры из {totalItemsCount}.
+							Следующий визит приблизит вас к завершению плана!
+						</p>
+					</div>
+				)}
 
-					return (
-						<div
-							key={evt.id}
-							className={`timeline-item ${evt.type} ${isHighlight ? "highlight-item" : ""}`}
-						>
-							<div className="timeline-marker">
-								<div
-									className={`marker-icon ${isHighlight ? "marker-icon-large" : ""}`}
-								>
-									{getIcon(evt.type)}
-								</div>
-								{index !== (events ?? []).length - 1 && (
-									<div className="marker-line" />
-								)}
-							</div>
+				{/*
+					Пустого состояния не было вовсе: у пациента без приёмов на экране
+					оставался чёрный прямоугольник с заголовком и идентификатором —
+					выглядел как незагрузившийся блок.
+				*/}
+				{(events ?? []).length === 0 ? (
+					<div className="timeline-empty">
+						<p>Здесь пока ничего не было</p>
+						<span>
+							Записи на приём, оплаты и предупреждения по этому пациенту появятся
+							в этой ленте сами, как только они появятся в клинике.
+						</span>
+					</div>
+				) : null}
 
-							<div className="timeline-content">
-								<div className="content-header">
-									{/* Было toLocaleString() без локали: формат зависел от настроек
-									    браузера, и у части пользователей дата выходила как 7/27/2026. */}
-									{/* Цвета текста здесь были из тёмной палитры (text-white,
-								    text-zinc-300/400) под чёрный фон блока. Фон теперь по
-								    теме, поэтому цвет тоже берём из токенов — иначе на
-								    светлой теме получился бы белый текст на белом. */}
-									<span className="timestamp text-xs font-mono">
-										{(() => {
-											if (!evt.timestamp) return "";
-											const d = new Date(evt.timestamp);
-											return !Number.isNaN(d.getTime())
-												? d.toLocaleString("ru-RU", {
-														day: "2-digit",
-														month: "2-digit",
-														year: "numeric",
-														hour: "2-digit",
-														minute: "2-digit",
-													})
-												: "";
-										})()}
-									</span>
-									{evt.status && (
-										<span
-											className={`status-badge ${(evt.status ?? "").toLowerCase().replace(" ", "-")}`}
-										>
-											{evt.status}
-										</span>
+				<div className="timeline-track">
+					{(events ?? []).map((evt, index) => {
+						// Эффект Края (Serial Position Effect): выделяем первый и последний элементы
+						const isFirst = index === 0;
+						const isLast = index === (events ?? []).length - 1;
+						const isHighlight = isFirst || isLast;
+
+						return (
+							<div
+								key={evt.id}
+								className={`timeline-item ${evt.type} ${isHighlight ? "highlight-item" : ""}`}
+							>
+								<div className="timeline-marker">
+									<div
+										className={`marker-icon ${isHighlight ? "marker-icon-large" : ""}`}
+									>
+										{getIcon(evt.type)}
+									</div>
+									{index !== (events ?? []).length - 1 && (
+										<div className="marker-line" />
 									)}
 								</div>
-								<h4 className={isHighlight ? "text-lg font-bold" : "text-base"}>
-									{evt.title}
-								</h4>
-								<p className="text-sm">{evt.description}</p>
-								{/* Было toLocaleString() без локали и без копеек: 1500.5
-								    печаталось как «1500.5 ₽», а разряды не разделялись. */}
-								{evt.amount ? (
-									<div className="amount-highlight">+{money(evt.amount)}</div>
-								) : null}
-								{evt.actionUrl && (
-									<button
-										type="button"
-										className="timeline-action-btn"
-										onClick={() => {
-											window.location.hash = evt.actionUrl ?? "";
-										}}
-									>
-										Подробнее &rarr;
-									</button>
-								)}
+
+								<div className="timeline-content">
+									<div className="content-header">
+										<span className="timestamp text-xs font-mono">
+											{(() => {
+												if (!evt.timestamp) return "";
+												const d = new Date(evt.timestamp);
+												return !Number.isNaN(d.getTime())
+													? d.toLocaleString("ru-RU", {
+															day: "2-digit",
+															month: "2-digit",
+															year: "numeric",
+															hour: "2-digit",
+															minute: "2-digit",
+														})
+													: "";
+											})()}
+										</span>
+										{evt.status && (
+											<span
+												className={`status-badge ${(evt.status ?? "").toLowerCase().replace(" ", "-")}`}
+											>
+												{evt.status}
+											</span>
+										)}
+									</div>
+									<h4 className={isHighlight ? "text-lg font-bold" : "text-base"}>
+										{evt.title}
+									</h4>
+									<p className="text-sm">{evt.description}</p>
+									{evt.amount ? (
+										<div className="amount-highlight">+{money(evt.amount)}</div>
+									) : null}
+									{evt.actionUrl && (
+										<button
+											type="button"
+											className="timeline-action-btn"
+											onClick={() => {
+												window.location.hash = evt.actionUrl ?? "";
+											}}
+										>
+											Подробнее &rarr;
+										</button>
+									)}
+								</div>
 							</div>
-						</div>
-					);
-				})}
+						);
+					})}
+				</div>
 			</div>
-		</div>
-	);
-};
+		);
+	});
+
+PatientJourneyTimeline.displayName = "PatientJourneyTimeline";

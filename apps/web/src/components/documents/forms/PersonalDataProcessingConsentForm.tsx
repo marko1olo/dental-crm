@@ -1,5 +1,5 @@
 import type { ClinicProfileDraft } from "../../../AppConstants";
-import React from "react";
+import React, { useMemo } from "react";
 import { useDocumentStore } from "../../../store/documentStore";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import {
@@ -37,204 +37,263 @@ export interface PersonalDataProcessingConsentFormProps {
  * администратор до него: три пустые серые рамки и отказ по одной позиции за
  * нажатие, без указания экрана, на котором эти реквизиты заполняют.
  */
-export function PersonalDataProcessingConsentForm({
-	clinicProfileDraft,
-}: PersonalDataProcessingConsentFormProps) {
-	const operatorReview =
-		personalDataOperatorRequisitesReview(clinicProfileDraft);
-	const {
-		personalDataActions,
-		personalDataAutomatedDecisionAllowed,
-		personalDataCategories,
-		personalDataConsentGivenAt,
-		personalDataCrossBorderAllowed,
-		personalDataMedicalProcessingAcknowledged,
-		personalDataPurposes,
-		personalDataRetentionPeriod,
-		personalDataRevocationChannel,
-		personalDataTransferRules,
-		personalDataVoluntaryConsentConfirmed,
-		setPersonalDataActions,
-		setPersonalDataAutomatedDecisionAllowed,
-		setPersonalDataCategories,
-		setPersonalDataConsentGivenAt,
-		setPersonalDataCrossBorderAllowed,
-		setPersonalDataMedicalProcessingAcknowledged,
-		setPersonalDataPurposes,
-		setPersonalDataRetentionPeriod,
-		setPersonalDataRevocationChannel,
-		setPersonalDataTransferRules,
-		setPersonalDataVoluntaryConsentConfirmed,
-	} = useDocumentStore();
+export const PersonalDataProcessingConsentForm = React.memo(
+	function PersonalDataProcessingConsentForm({
+		clinicProfileDraft,
+	}: PersonalDataProcessingConsentFormProps) {
+		const operatorReview = useMemo(
+			() => personalDataOperatorRequisitesReview(clinicProfileDraft),
+			[clinicProfileDraft],
+		);
+		const personalDataActions = useDocumentStore(
+			(state) => state.personalDataActions,
+		);
+		const setPersonalDataActions = useDocumentStore(
+			(state) => state.setPersonalDataActions,
+		);
+		const personalDataAutomatedDecisionAllowed = useDocumentStore(
+			(state) => state.personalDataAutomatedDecisionAllowed,
+		);
+		const setPersonalDataAutomatedDecisionAllowed = useDocumentStore(
+			(state) => state.setPersonalDataAutomatedDecisionAllowed,
+		);
+		const personalDataCategories = useDocumentStore(
+			(state) => state.personalDataCategories,
+		);
+		const setPersonalDataCategories = useDocumentStore(
+			(state) => state.setPersonalDataCategories,
+		);
+		const personalDataConsentGivenAt = useDocumentStore(
+			(state) => state.personalDataConsentGivenAt,
+		);
+		const setPersonalDataConsentGivenAt = useDocumentStore(
+			(state) => state.setPersonalDataConsentGivenAt,
+		);
+		const personalDataCrossBorderAllowed = useDocumentStore(
+			(state) => state.personalDataCrossBorderAllowed,
+		);
+		const setPersonalDataCrossBorderAllowed = useDocumentStore(
+			(state) => state.setPersonalDataCrossBorderAllowed,
+		);
+		const personalDataMedicalProcessingAcknowledged = useDocumentStore(
+			(state) => state.personalDataMedicalProcessingAcknowledged,
+		);
+		const setPersonalDataMedicalProcessingAcknowledged = useDocumentStore(
+			(state) => state.setPersonalDataMedicalProcessingAcknowledged,
+		);
+		const personalDataPurposes = useDocumentStore(
+			(state) => state.personalDataPurposes,
+		);
+		const setPersonalDataPurposes = useDocumentStore(
+			(state) => state.setPersonalDataPurposes,
+		);
+		const personalDataRetentionPeriod = useDocumentStore(
+			(state) => state.personalDataRetentionPeriod,
+		);
+		const setPersonalDataRetentionPeriod = useDocumentStore(
+			(state) => state.setPersonalDataRetentionPeriod,
+		);
+		const personalDataRevocationChannel = useDocumentStore(
+			(state) => state.personalDataRevocationChannel,
+		);
+		const setPersonalDataRevocationChannel = useDocumentStore(
+			(state) => state.setPersonalDataRevocationChannel,
+		);
+		const personalDataTransferRules = useDocumentStore(
+			(state) => state.personalDataTransferRules,
+		);
+		const setPersonalDataTransferRules = useDocumentStore(
+			(state) => state.setPersonalDataTransferRules,
+		);
+		const personalDataVoluntaryConsentConfirmed = useDocumentStore(
+			(state) => state.personalDataVoluntaryConsentConfirmed,
+		);
+		const setPersonalDataVoluntaryConsentConfirmed = useDocumentStore(
+			(state) => state.setPersonalDataVoluntaryConsentConfirmed,
+		);
 
-	return (
-		<DocumentPayloadCard
-			title="Согласие на ПДн"
-			description="Оператор, цели, категории данных, передачи и отзыв согласия без пустого шаблона."
-			notice={
-				operatorReview.problems.length > 0 ? (
-					<div
-						className="schedule-create-missing document-operator-requisites-missing"
-						role="status"
-						aria-live="polite"
-						style={{ marginTop: "12px" }}
-					>
-						<strong>
-							Согласие на ПДн не создастся: у клиники не хватает{" "}
-							{operatorReview.problems.length} из {operatorReview.requiredCount}{" "}
-							реквизитов оператора. Вписать их в самом согласии нельзя — они
-							приходят из профиля клиники:
-						</strong>
-						<ul>
-							{operatorReview.problems.map((problem) => (
-								<li key={problem.field}>
-									{problem.label} — {problem.hint}
-								</li>
-							))}
-						</ul>
-						<small>
-							Заполните их в «{CLINIC_REQUISITES_LOCATION}», сохраните и
-							вернитесь сюда — предупреждение исчезнет само. Если в настройках
-							реквизиты уже стоят, значит они не загрузились: обновите страницу
-							и откройте раздел заново.
-						</small>
-					</div>
-				) : null
-			}
-		>
-			<div className="document-payload-row">
+		return (
+			<DocumentPayloadCard
+				title="Согласие на ПДн"
+				description="Оператор, цели, категории данных, передачи и отзыв согласия без пустого шаблона."
+				notice={
+					operatorReview.problems.length > 0 ? (
+						<div
+							className="schedule-create-missing document-operator-requisites-missing"
+							role="status"
+							aria-live="polite"
+							style={{ marginTop: "12px" }}
+						>
+							<strong>
+								Согласие на ПДн не создастся: у клиники не хватает{" "}
+								{operatorReview.problems.length} из{" "}
+								{operatorReview.requiredCount} реквизитов оператора. Вписать
+								их в самом согласии нельзя — они приходят из профиля
+								клиники:
+							</strong>
+							<ul>
+								{operatorReview.problems.map((problem) => (
+									<li key={problem.field}>
+										{problem.label} — {problem.hint}
+									</li>
+								))}
+							</ul>
+							<small>
+								Заполните их в «{CLINIC_REQUISITES_LOCATION}», сохраните и
+								вернитесь сюда — предупреждение исчезнет само. Если в
+								настройках реквизиты уже стоят, значит они не загрузились:
+								обновите страницу и откройте раздел заново.
+							</small>
+						</div>
+					) : null
+				}
+			>
+				<div className="document-payload-row">
+					<label>
+						Оператор
+						<input
+							value={
+								clinicProfileDraft.legalName ||
+								clinicProfileDraft.clinicName
+							}
+							readOnly
+							placeholder={`пусто — заполните в «${CLINIC_REQUISITES_LOCATION}»`}
+						/>
+					</label>
+					<label>
+						ИНН оператора
+						<input
+							value={clinicProfileDraft.inn}
+							readOnly
+							placeholder={`пусто — заполните в «${CLINIC_REQUISITES_LOCATION}»`}
+						/>
+					</label>
+				</div>
 				<label>
-					Оператор
+					Адрес оператора
 					<input
-						value={
-							clinicProfileDraft.legalName || clinicProfileDraft.clinicName
-						}
+						value={clinicProfileDraft.address}
 						readOnly
 						placeholder={`пусто — заполните в «${CLINIC_REQUISITES_LOCATION}»`}
 					/>
 				</label>
 				<label>
-					ИНН оператора
-					<input
-						value={clinicProfileDraft.inn}
-						readOnly
-						placeholder={`пусто — заполните в «${CLINIC_REQUISITES_LOCATION}»`}
-					/>
-				</label>
-			</div>
-			<label>
-				Адрес оператора
-				<input
-					value={clinicProfileDraft.address}
-					readOnly
-					placeholder={`пусто — заполните в «${CLINIC_REQUISITES_LOCATION}»`}
-				/>
-			</label>
-			<label>
-				Цели обработки
-				<textarea
-					value={personalDataPurposes}
-					onChange={(event) => setPersonalDataPurposes(event.target.value)}
-					rows={4}
-				/>
-			</label>
-			<label>
-				Категории данных
-				<textarea
-					value={personalDataCategories}
-					onChange={(event) => setPersonalDataCategories(event.target.value)}
-					rows={4}
-				/>
-			</label>
-			<label>
-				Действия с данными
-				<textarea
-					value={personalDataActions}
-					onChange={(event) => setPersonalDataActions(event.target.value)}
-					rows={4}
-				/>
-			</label>
-			<label>
-				Передача третьим лицам
-				<textarea
-					value={personalDataTransferRules}
-					onChange={(event) => setPersonalDataTransferRules(event.target.value)}
-					rows={3}
-				/>
-			</label>
-			<div className="document-payload-row">
-				<label className="document-payload-checkbox">
-					<input
-						checked={personalDataCrossBorderAllowed}
-						type="checkbox"
-						onChange={(event) =>
-							setPersonalDataCrossBorderAllowed(event.target.checked)
-						}
-					/>
-					Разрешена трансграничная передача
-				</label>
-				<label className="document-payload-checkbox">
-					<input
-						checked={personalDataAutomatedDecisionAllowed}
-						type="checkbox"
-						onChange={(event) =>
-							setPersonalDataAutomatedDecisionAllowed(event.target.checked)
-						}
-					/>
-					Разрешены автоматизированные решения
-				</label>
-			</div>
-			<label>
-				Срок хранения
-				<textarea
-					value={personalDataRetentionPeriod}
-					onChange={(event) =>
-						setPersonalDataRetentionPeriod(event.target.value)
-					}
-					rows={2}
-				/>
-			</label>
-			<div className="document-payload-row">
-				<label>
-					Порядок отзыва
+					Цели обработки
 					<textarea
-						value={personalDataRevocationChannel}
+						value={personalDataPurposes}
+						onChange={(event) => setPersonalDataPurposes(event.target.value)}
+						rows={4}
+					/>
+				</label>
+				<label>
+					Категории данных
+					<textarea
+						value={personalDataCategories}
 						onChange={(event) =>
-							setPersonalDataRevocationChannel(event.target.value)
+							setPersonalDataCategories(event.target.value)
+						}
+						rows={4}
+					/>
+				</label>
+				<label>
+					Действия с данными
+					<textarea
+						value={personalDataActions}
+						onChange={(event) => setPersonalDataActions(event.target.value)}
+						rows={4}
+					/>
+				</label>
+				<label>
+					Передача третьим лицам
+					<textarea
+						value={personalDataTransferRules}
+						onChange={(event) =>
+							setPersonalDataTransferRules(event.target.value)
+						}
+						rows={3}
+					/>
+				</label>
+				<div className="document-payload-row">
+					<label className="document-payload-checkbox">
+						<input
+							checked={personalDataCrossBorderAllowed}
+							type="checkbox"
+							onChange={(event) =>
+								setPersonalDataCrossBorderAllowed(event.target.checked)
+							}
+						/>
+						Разрешена трансграничная передача
+					</label>
+					<label className="document-payload-checkbox">
+						<input
+							checked={personalDataAutomatedDecisionAllowed}
+							type="checkbox"
+							onChange={(event) =>
+								setPersonalDataAutomatedDecisionAllowed(
+									event.target.checked,
+								)
+							}
+						/>
+						Разрешены автоматизированные решения
+					</label>
+				</div>
+				<label>
+					Срок хранения
+					<textarea
+						value={personalDataRetentionPeriod}
+						onChange={(event) =>
+							setPersonalDataRetentionPeriod(event.target.value)
 						}
 						rows={2}
 					/>
 				</label>
-				<label>
-					Дата согласия
+				<div className="document-payload-row">
+					<label>
+						Порядок отзыва
+						<textarea
+							value={personalDataRevocationChannel}
+							onChange={(event) =>
+								setPersonalDataRevocationChannel(event.target.value)
+							}
+							rows={2}
+						/>
+					</label>
+					<label>
+						Дата согласия
+						<input
+							value={personalDataConsentGivenAt}
+							onChange={(event) =>
+								setPersonalDataConsentGivenAt(event.target.value)
+							}
+						/>
+					</label>
+				</div>
+				<label className="document-payload-checkbox">
 					<input
-						value={personalDataConsentGivenAt}
+						checked={personalDataVoluntaryConsentConfirmed}
+						type="checkbox"
 						onChange={(event) =>
-							setPersonalDataConsentGivenAt(event.target.value)
+							setPersonalDataVoluntaryConsentConfirmed(event.target.checked)
 						}
 					/>
+					Пациент добровольно согласен на обработку персональных данных
 				</label>
-			</div>
-			<label className="document-payload-checkbox">
-				<input
-					checked={personalDataVoluntaryConsentConfirmed}
-					type="checkbox"
-					onChange={(event) =>
-						setPersonalDataVoluntaryConsentConfirmed(event.target.checked)
-					}
-				/>
-				Пациент добровольно согласен на обработку персональных данных
-			</label>
-			<label className="document-payload-checkbox">
-				<input
-					checked={personalDataMedicalProcessingAcknowledged}
-					type="checkbox"
-					onChange={(event) =>
-						setPersonalDataMedicalProcessingAcknowledged(event.target.checked)
-					}
-				/>
-				Пациент понимает обработку медицинских данных
-			</label>
-		</DocumentPayloadCard>
-	);
-}
+				<label className="document-payload-checkbox">
+					<input
+						checked={personalDataMedicalProcessingAcknowledged}
+						type="checkbox"
+						onChange={(event) =>
+							setPersonalDataMedicalProcessingAcknowledged(
+								event.target.checked,
+							)
+						}
+					/>
+					Пациент понимает обработку медицинских данных
+				</label>
+			</DocumentPayloadCard>
+		);
+	},
+);
+
+PersonalDataProcessingConsentForm.displayName =
+	"PersonalDataProcessingConsentForm";

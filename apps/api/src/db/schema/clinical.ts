@@ -1883,6 +1883,50 @@ export const electronicPrescriptionItems = pgTable(
 	}),
 );
 
+export const clinicalQualityAudits = pgTable(
+	"clinical_quality_audits",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		visitId: uuid("visit_id")
+			.notNull()
+			.references(() => visits.id, { onDelete: "cascade" }),
+		diaryId: uuid("diary_id").references(() => visitDiaries.id, {
+			onDelete: "set null",
+		}),
+		patientId: uuid("patient_id").references(() => patients.id, {
+			onDelete: "cascade",
+		}),
+		reviewerDoctorId: uuid("reviewer_doctor_id")
+			.notNull()
+			.references(() => users.id),
+		attendingDoctorId: uuid("attending_doctor_id").references(() => users.id),
+		verdict: text("verdict").notNull(), // 'approved' | 'deficiencies_found' | 'critical_violation'
+		notes: text("notes"),
+		actNumber: text("act_number").notNull(),
+		protocolNumber: text("protocol_number"),
+		criteriaEvaluation: jsonb("criteria_evaluation"),
+		complianceScorePct: integer("compliance_score_pct").notNull().default(100),
+		expertSummary: text("expert_summary").notNull(),
+		recommendations: text("recommendations"),
+		reviewedAt: timestamp("reviewed_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		orgIdx: index("clinical_quality_audits_org_idx").on(t.organizationId),
+		visitIdx: index("clinical_quality_audits_visit_idx").on(t.visitId),
+		reviewerIdx: index("clinical_quality_audits_reviewer_idx").on(
+			t.reviewerDoctorId,
+		),
+	}),
+);
+
 export const visitsRelations = relations(visits, ({ one }) => ({
 	organization: one(organizations, {
 		fields: [visits.organizationId],
@@ -1897,3 +1941,4 @@ export const visitsRelations = relations(visits, ({ one }) => ({
 		references: [appointments.id],
 	}),
 }));
+

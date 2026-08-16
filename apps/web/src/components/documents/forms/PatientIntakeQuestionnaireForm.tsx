@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { AnamnesisField } from "../AnamnesisField";
 import { useDocumentStore } from "../../../store/documentStore";
 
@@ -8,7 +8,7 @@ interface PatientIntakeQuestionnaireFormProps {
 
 export const PatientIntakeQuestionnaireForm: React.FC<
 	PatientIntakeQuestionnaireFormProps
-> = ({ activeVisitComplaint }) => {
+> = React.memo(({ activeVisitComplaint }) => {
 	const intakeChiefComplaint = useDocumentStore(
 		(state) => state.intakeChiefComplaint,
 	);
@@ -227,4 +227,6 @@ export const PatientIntakeQuestionnaireForm: React.FC<
 			</details>
 		</article>
 	);
-};
+});
+
+PatientIntakeQuestionnaireForm.displayName = "PatientIntakeQuestionnaireForm";

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useDocumentStore } from "../../../store/documentStore";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import { informedConsentBlockersReview } from "../informedConsentBlockers";
@@ -16,60 +16,137 @@ import type { DocumentVisitHints } from "./documentFormTypes";
  * до него (четыре отказа подряд на каждом согласии, три из них про галочки в
  * самом низу свёрнутого блока), записаны в informedConsentBlockers.ts.
  */
-export function InformedConsentForm({
+export const InformedConsentForm = React.memo(function InformedConsentForm({
 	activeDoctorFullName,
 	activeVisitComplaint,
 	inferredTreatmentArea,
 }: DocumentVisitHints) {
-	const {
-		informedConsentAftercare,
-		informedConsentAlternatives,
-		informedConsentAnesthesia,
-		informedConsentConfirmedAt,
-		informedConsentDiagnosisOrIndication,
-		informedConsentDoctorFullName,
-		informedConsentExpectedBenefit,
-		informedConsentIntervention,
-		informedConsentMaterialNotes,
-		informedConsentQuestionsAnswered,
-		informedConsentRisks,
-		informedConsentRisksUnderstood,
-		informedConsentToothOrArea,
-		informedConsentTrustedContact,
-		informedConsentWithdrawUnderstood,
-		setInformedConsentAftercare,
-		setInformedConsentAlternatives,
-		setInformedConsentAnesthesia,
-		setInformedConsentConfirmedAt,
-		setInformedConsentDiagnosisOrIndication,
-		setInformedConsentDoctorFullName,
-		setInformedConsentExpectedBenefit,
-		setInformedConsentIntervention,
-		setInformedConsentMaterialNotes,
-		setInformedConsentQuestionsAnswered,
-		setInformedConsentRisks,
-		setInformedConsentRisksUnderstood,
-		setInformedConsentToothOrArea,
-		setInformedConsentTrustedContact,
-		setInformedConsentWithdrawUnderstood,
-	} = useDocumentStore();
+	const informedConsentAftercare = useDocumentStore(
+		(state) => state.informedConsentAftercare,
+	);
+	const setInformedConsentAftercare = useDocumentStore(
+		(state) => state.setInformedConsentAftercare,
+	);
+	const informedConsentAlternatives = useDocumentStore(
+		(state) => state.informedConsentAlternatives,
+	);
+	const setInformedConsentAlternatives = useDocumentStore(
+		(state) => state.setInformedConsentAlternatives,
+	);
+	const informedConsentAnesthesia = useDocumentStore(
+		(state) => state.informedConsentAnesthesia,
+	);
+	const setInformedConsentAnesthesia = useDocumentStore(
+		(state) => state.setInformedConsentAnesthesia,
+	);
+	const informedConsentConfirmedAt = useDocumentStore(
+		(state) => state.informedConsentConfirmedAt,
+	);
+	const setInformedConsentConfirmedAt = useDocumentStore(
+		(state) => state.setInformedConsentConfirmedAt,
+	);
+	const informedConsentDiagnosisOrIndication = useDocumentStore(
+		(state) => state.informedConsentDiagnosisOrIndication,
+	);
+	const setInformedConsentDiagnosisOrIndication = useDocumentStore(
+		(state) => state.setInformedConsentDiagnosisOrIndication,
+	);
+	const informedConsentDoctorFullName = useDocumentStore(
+		(state) => state.informedConsentDoctorFullName,
+	);
+	const setInformedConsentDoctorFullName = useDocumentStore(
+		(state) => state.setInformedConsentDoctorFullName,
+	);
+	const informedConsentExpectedBenefit = useDocumentStore(
+		(state) => state.informedConsentExpectedBenefit,
+	);
+	const setInformedConsentExpectedBenefit = useDocumentStore(
+		(state) => state.setInformedConsentExpectedBenefit,
+	);
+	const informedConsentIntervention = useDocumentStore(
+		(state) => state.informedConsentIntervention,
+	);
+	const setInformedConsentIntervention = useDocumentStore(
+		(state) => state.setInformedConsentIntervention,
+	);
+	const informedConsentMaterialNotes = useDocumentStore(
+		(state) => state.informedConsentMaterialNotes,
+	);
+	const setInformedConsentMaterialNotes = useDocumentStore(
+		(state) => state.setInformedConsentMaterialNotes,
+	);
+	const informedConsentQuestionsAnswered = useDocumentStore(
+		(state) => state.informedConsentQuestionsAnswered,
+	);
+	const setInformedConsentQuestionsAnswered = useDocumentStore(
+		(state) => state.setInformedConsentQuestionsAnswered,
+	);
+	const informedConsentRisks = useDocumentStore(
+		(state) => state.informedConsentRisks,
+	);
+	const setInformedConsentRisks = useDocumentStore(
+		(state) => state.setInformedConsentRisks,
+	);
+	const informedConsentRisksUnderstood = useDocumentStore(
+		(state) => state.informedConsentRisksUnderstood,
+	);
+	const setInformedConsentRisksUnderstood = useDocumentStore(
+		(state) => state.setInformedConsentRisksUnderstood,
+	);
+	const informedConsentToothOrArea = useDocumentStore(
+		(state) => state.informedConsentToothOrArea,
+	);
+	const setInformedConsentToothOrArea = useDocumentStore(
+		(state) => state.setInformedConsentToothOrArea,
+	);
+	const informedConsentTrustedContact = useDocumentStore(
+		(state) => state.informedConsentTrustedContact,
+	);
+	const setInformedConsentTrustedContact = useDocumentStore(
+		(state) => state.setInformedConsentTrustedContact,
+	);
+	const informedConsentWithdrawUnderstood = useDocumentStore(
+		(state) => state.informedConsentWithdrawUnderstood,
+	);
+	const setInformedConsentWithdrawUnderstood = useDocumentStore(
+		(state) => state.setInformedConsentWithdrawUnderstood,
+	);
 
-	const review = informedConsentBlockersReview({
-		intervention: informedConsentIntervention,
-		toothOrArea: informedConsentToothOrArea,
-		inferredTreatmentArea: inferredTreatmentArea ?? "",
-		diagnosisOrIndication: informedConsentDiagnosisOrIndication,
-		activeVisitComplaint: activeVisitComplaint ?? "",
-		expectedBenefit: informedConsentExpectedBenefit,
-		risks: informedConsentRisks,
-		alternatives: informedConsentAlternatives,
-		aftercare: informedConsentAftercare,
-		doctorFullName: informedConsentDoctorFullName,
-		activeDoctorFullName: activeDoctorFullName ?? "",
-		questionsAnswered: informedConsentQuestionsAnswered,
-		risksUnderstood: informedConsentRisksUnderstood,
-		withdrawUnderstood: informedConsentWithdrawUnderstood,
-	});
+	const review = useMemo(
+		() =>
+			informedConsentBlockersReview({
+				intervention: informedConsentIntervention,
+				toothOrArea: informedConsentToothOrArea,
+				inferredTreatmentArea: inferredTreatmentArea ?? "",
+				diagnosisOrIndication: informedConsentDiagnosisOrIndication,
+				activeVisitComplaint: activeVisitComplaint ?? "",
+				expectedBenefit: informedConsentExpectedBenefit,
+				risks: informedConsentRisks,
+				alternatives: informedConsentAlternatives,
+				aftercare: informedConsentAftercare,
+				doctorFullName: informedConsentDoctorFullName,
+				activeDoctorFullName: activeDoctorFullName ?? "",
+				questionsAnswered: informedConsentQuestionsAnswered,
+				risksUnderstood: informedConsentRisksUnderstood,
+				withdrawUnderstood: informedConsentWithdrawUnderstood,
+			}),
+		[
+			informedConsentIntervention,
+			informedConsentToothOrArea,
+			inferredTreatmentArea,
+			informedConsentDiagnosisOrIndication,
+			activeVisitComplaint,
+			informedConsentExpectedBenefit,
+			informedConsentRisks,
+			informedConsentAlternatives,
+			informedConsentAftercare,
+			informedConsentDoctorFullName,
+			activeDoctorFullName,
+			informedConsentQuestionsAnswered,
+			informedConsentRisksUnderstood,
+			informedConsentWithdrawUnderstood,
+		],
+	);
 
 	return (
 		<DocumentPayloadCard
@@ -100,8 +177,7 @@ export function InformedConsentForm({
 							создании.
 						</small>
 					</div>
-				) : null
-			}
+				) : null}
 		>
 			<label>
 				Планируемое вмешательство
@@ -257,4 +333,6 @@ export function InformedConsentForm({
 			</label>
 		</DocumentPayloadCard>
 	);
-}
+});
+
+InformedConsentForm.displayName = "InformedConsentForm";
