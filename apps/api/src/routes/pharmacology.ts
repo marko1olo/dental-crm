@@ -169,6 +169,18 @@ export async function registerPharmacologyRoutes(app: FastifyInstance) {
 				),
 			);
 
+		let patientAgeYears = 35;
+		if (patient.birthDate) {
+			const bDate = new Date(patient.birthDate);
+			if (!Number.isNaN(bDate.getTime())) {
+				const ageDiffMs = Date.now() - bDate.getTime();
+				patientAgeYears = Math.max(
+					0,
+					Math.floor(ageDiffMs / (365.25 * 24 * 60 * 60 * 1000)),
+				);
+			}
+		}
+
 		const safetyAudit = DentalInteractionMatrixEngine.evaluatePrescriptionSafety(
 			{
 				patientId: input.patientId,
@@ -176,7 +188,7 @@ export async function registerPharmacologyRoutes(app: FastifyInstance) {
 				currentMedications: input.currentMedications,
 				chronicDiseases: [],
 				vasoconstrictorPlanned: "1:200000",
-				patientAgeYears: 35,
+				patientAgeYears,
 				isPregnant: false,
 				isLactating: false,
 			},

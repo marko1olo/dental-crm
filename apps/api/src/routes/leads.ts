@@ -187,41 +187,50 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 		}
 		const payload = convertParsed.data;
 
-		const [lead] = await db
-			.select()
-			.from(crmLeads)
-			.where(
-				and(eq(crmLeads.id, id), eq(crmLeads.organizationId, organizationId)),
-			)
-			.limit(1);
-		if (!lead) return reply.status(404).send({ error: "Lead not found" });
-
-		const [doctor] = await db
-			.select({ id: users.id })
-			.from(users)
-			.where(
-				and(
-					eq(users.id, payload.doctorId),
-					eq(users.organizationId, organizationId),
-					eq(users.isActive, true),
-				),
-			)
-			.limit(1);
-		if (!doctor) return reply.code(400).send({ error: "DoctorNotFound" });
-		const [chair] = await db
-			.select({ id: clinicChairs.id })
-			.from(clinicChairs)
-			.where(
-				and(
-					eq(clinicChairs.id, payload.chairId),
-					eq(clinicChairs.organizationId, organizationId),
-				),
-			)
-			.limit(1);
-		if (!chair) return reply.code(400).send({ error: "ChairNotFound" });
-
-		// Transaction for Lead conversion
+		// Transaction for Lead conversion with row-level lock
 		const result = await db.transaction(async (tx) => {
+			const [lead] = await tx
+				.select()
+				.from(crmLeads)
+				.where(
+					and(eq(crmLeads.id, id), eq(crmLeads.organizationId, organizationId)),
+				)
+				.for("update")
+				.limit(1);
+
+			if (!lead) {
+				return { notFound: true as const };
+			}
+
+			if (lead.status === "consult_booked") {
+				return { alreadyConverted: true as const };
+			}
+
+			const [doctor] = await tx
+				.select({ id: users.id })
+				.from(users)
+				.where(
+					and(
+						eq(users.id, payload.doctorId),
+						eq(users.organizationId, organizationId),
+						eq(users.isActive, true),
+					),
+				)
+				.limit(1);
+			if (!doctor) return { doctorNotFound: true as const };
+
+			const [chair] = await tx
+				.select({ id: clinicChairs.id })
+				.from(clinicChairs)
+				.where(
+					and(
+						eq(clinicChairs.id, payload.chairId),
+						eq(clinicChairs.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+			if (!chair) return { chairNotFound: true as const };
+
 			// 1. Create Patient from Lead
 			const resultPatient = (await tx
 				.insert(patients)
@@ -260,6 +269,22 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 
 			return { patient, appointment };
 		});
+
+		if ("notFound" in result) {
+			return reply.status(404).send({ error: "Lead not found" });
+		}
+		if ("alreadyConverted" in result) {
+			return reply.status(409).send({
+				error: "LeadAlreadyConverted",
+				message: "Лид уже был сконвертирован в запись другим администратором.",
+			});
+		}
+		if ("doctorNotFound" in result) {
+			return reply.code(400).send({ error: "DoctorNotFound" });
+		}
+		if ("chairNotFound" in result) {
+			return reply.code(400).send({ error: "ChairNotFound" });
+		}
 
 		wsBroker.broadcastToOrganization(organizationId, {
 			type: "LEAD_UPDATED",
