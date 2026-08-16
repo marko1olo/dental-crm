@@ -33,6 +33,7 @@ const ORG_ID = fixtureUuid(TEST_NS, 1);
 const PATIENT_ID = fixtureUuid(TEST_NS, 2);
 const VISIT_ID = fixtureUuid(TEST_NS, 3);
 const DOC_ID = fixtureUuid(TEST_NS, 4);
+const INVOICE_ID = fixtureUuid(TEST_NS, 5);
 // gitleaks:allow
 const FIXTURE_CALLBACK_TOKEN = "fixture_sig_callback_token_val_404";
 

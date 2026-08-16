@@ -46,6 +46,7 @@ import registerEgiszRoutes from "./routes/egisz.js";
 // отвечали 404, то есть функциональность существовала только в исходниках.
 import { registerFilesRoutes } from "./routes/files.js";
 import { registerFamilyFinanceRoutes } from "./routes/finance_family.js";
+import { registerHealthRoutes } from "./routes/health.js";
 import { registerImagingRoutes } from "./routes/imaging.js";
 import { registerImagingPlanningRoutes } from "./routes/imaging_planning.js";
 import { registerImportRoutes } from "./routes/imports.js";
@@ -590,11 +591,7 @@ export async function createDenteApiApp(
 		return payload;
 	});
 
-	app.get("/api/health", async () => ({
-		ok: true,
-		service: "dental-crm-api",
-		time: new Date().toISOString(),
-	}));
+	await registerHealthRoutes(app);
 
 	await registerAiRoutes(app);
 	await registerBillingRoutes(app);
