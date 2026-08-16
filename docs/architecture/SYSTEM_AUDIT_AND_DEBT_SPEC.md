@@ -1,112 +1,130 @@
-# 🏛️ DENTAL CRM (DENTE) — АРХИТЕКТУРНЫЙ АУДИТ И СПЕЦИФИКАЦИЯ ТЕХНОЛОГИЧЕСКОГО ДОЛГА
+# 🏛️ DENTAL CRM (DENTE) — ПОЛНАЯ АРХИТЕКТУРНАЯ СПЕЦИФИКАЦИЯ И РЕЕСТР ТЕХНОЛОГИЧЕСКОГО ДОЛГА
 
-**Версия документа:** 1.0.0  
+**Версия документа:** 2.0.0 (Deep Industrial Specification)  
 **Дата аудита:** Август 2026  
-**Ревизия репозитория:** `f2bedc27f16c0c1cfbe5f97bc800b16793e1ba38`  
-**Масштаб:** 1 101 файл, ~20.8 МБ исходного кода  
+**Ревизия репозитория:** `5687d73d9c6bce33105287b06cb551cb1bbedf95`  
+**Масштаб:** 1 101 файл, 20 771 279 байт (~20.8 МБ) исходного кода  
 
 ---
 
-## 1. ИСПОЛНИТЕЛЬНОЕ РЕЗЮМЕ (EXECUTIVE SUMMARY)
+## 1. ИСПОЛНИТЕЛЬНОЕ РЕЗЮМЕ И СИСТЕМНЫЙ СРЕЗ
 
-Система **DENTE Dental CRM** представляет собой высоконагруженную медицинскую ERP-систему с безупречно выверенным финансово-клиническим ядром (целочисленные копейки в 54-ФЗ, ФФД 1.2, справки НДФЛ КНД 1151156 XML 5.01, детерминированные SHA-256 ЭП для 043/у и GiST-блокировки расписания). 
+Система **DENTE Dental CRM** — это многопользовательская облачно-локальная медицинская платформа (Fastify + React + PostgreSQL 18 + Drizzle ORM). В системе реализованы надежные финансовые и юридические алгоритмы (целочисленный расчет в копейках по 54-ФЗ, ФФД 1.2, справки НДФЛ КНД 1151156 XML 5.01, электронная подпись 043/у с детерминированным SHA-256 хешем и GiST-блокировки слотов расписания).
 
-Однако в ходе эволюционного роста кодовая база накопила критический объем архитектурного долга в слое представления (Frontend) и в слое оркестрации серверной логики (Backend). Настоящий документ фиксирует полную анатомию выявленных дефектов, метрики сложности и целевую архитектуру.
+Однако монолитный рост слоев `apps/web` и `apps/api` привел к возникновению критических архитектурных узлов, замедляющих разработку и создающих риски сбоев.
 
 ---
 
-## 2. ГЛУБОКИЙ АУДИТ FRONTEND (КЛИЕНТСКИЙ СЛОЙ)
+## 2. ГЛУБОКАЯ ДЕКОМПОЗИЦИЯ И АНАТОМИЯ FRONTEND
 
-### 2.1. Анализ супер-монолитов (God-Components)
+### 2.1. Карта супер-монолитов и метрики сложности
 
 ```mermaid
 graph TD
-    App["App.tsx (5 635 строк / 222 КБ)<br/>• Самодельный роутер<br/>• Менеджер 30+ модалок<br/>• Suspense & Hotkeys"] --> AppLogic["useAppLogic.tsx (5 134 строки / 176 КБ)<br/>• 819 возвращаемых свойств<br/>• Сотни useState/useCallback"]
-    AppLogic --> AppHelpers["AppHelpers.tsx (6 158 строк / 199 КБ)<br/>• Свалка разнородных утилит"]
-    AppLogic --> Context["AppLogicContext.tsx<br/>• Глобальный проброс God-объекта"]
-    Context --> View1["DocumentsView.tsx (4 187 строк)"]
-    Context --> View2["SettingsImportsTab.tsx (4 149 строк)"]
-    Context --> View3["VisitView.tsx (119 КБ)"]
+    App["App.tsx<br/>5 635 строк / 222 КБ<br/>• 30+ модалок в теле<br/>• Кастомный router<br/>• Пин-пад & Suspense"] --> AppLogic["useAppLogic.tsx<br/>5 134 строки / 176 КБ<br/>• 819 свойств в return<br/>• 24 доменных модуля"]
+    AppLogic --> AppHelpers["AppHelpers.tsx<br/>6 158 строк / 199 КБ<br/>• Свалка 200+ утилит"]
+    AppLogic --> Context["AppLogicContext.tsx<br/>• Прямой проброс 819 полей"]
+    Context --> DocView["DocumentsView.tsx<br/>4 187 строк / 248 КБ"]
+    Context --> ImpTab["SettingsImportsTab.tsx<br/>4 149 строк / 246 КБ"]
+    Context --> VisView["VisitView.tsx<br/>2 500+ строк / 119 КБ"]
 ```
 
-| Монолитный файл | Размер (байт / строк) | Симптомы и риски | Назначение в целевой архитектуре |
-|---|---|---|---|
-| `apps/web/src/useAppLogic.tsx` | 176 908 B / 5 134 строк | **819 свойств в return-объекте.** Изменение любого драфта пересчитывает ссылки на функции, вызывая каскадные ререндеры непричастных вкладок. | Расщепление на 8 доменных хуков (`useModalController`, `useScheduleFilters`, `useStaffSecurity` и др.). |
-| `apps/web/src/App.tsx` | 222 434 B / 5 635 строк | Совмещает функции роутера, пин-пада сотрудников, модальных оверлеев, обработки горячих клавиш и глобального шелла. | Превращение в тонкий Shell с декларативным роутингом и изолированными Portal-модалками. |
-| `apps/web/src/AppHelpers.tsx` | 199 339 B / 6 158 строк | «Мусорный ящик» утилит: форматирование денег, маппинг МКБ-10, парсинг заголовков, расчет хешей и сетевые клиенты вперемешку. | Разнос по пакетам `@dental/shared/formatting`, `@dental/shared/icd10`, `lib/network/`. |
-| `apps/web/src/DocumentsView.tsx` | 248 632 B / 4 187 строк | Внутри одного компонента: генерация договоров, парсер ИДС, валидация 15 типов документов, drag-and-drop и предпросмотр печати. | Разделение на `DocumentGenerator`, `ConsentWorkflowPanel`, `DocumentPrintPreview`. |
-| `apps/web/src/components/settings/SettingsImportsTab.tsx` | 246 973 B / 4 149 строк | Монолитная студия импорта: CSV парсер, маппер колонок, AI-анализатор прайсов, эвристика дублей и прогресс-бар. | Декомпозиция на мастер импорта `ImportWizard` со стейт-машиной шагов. |
+### 2.2. Детальная карта декомпозиции `useAppLogic.tsx` (819 свойств)
 
-### 2.2. Раздробленность управления состоянием (State Fragmentation)
-В кодовой базе сосуществуют 4 конкурирующих источника правды:
-1. **Zustand (7 независимых сторов):** `appStore`, `patientStore`, `visitStore`, `scheduleStore`, `settingsStore`, `imagingStore`, `documentStore`.
-2. **God-Hook `useAppLogic`:** собственное гигантское состояние через сотни `useState`/`useRef`.
-3. **`AppLogicContext`:** контекст, дублирующий проброс объекта `useAppLogic`.
-4. **`localStorage` (`UiPreferences`):** автономный кэш фильтров и выбранных ID.
+Текущий монолит `useAppLogic.tsx` возвращает **819 свойств** (`apps/web/src/useAppLogic.tsx:4300–5130`). Все они декомпозируются на 8 изолированных доменных хуков:
 
-*Дефект:* Например, `selectedPatientId` обновляется в URL-хеше, в `appStore`, в `usePatientLogic` и в `UiPreferences` раздельными вызовами без гарантии атомарной синхронизации.
+```
+apps/web/src/hooks/domains/
+  ├── useModalOrchestrator.ts        # 42 свойства: управление модалками (open/close/state)
+  ├── useScheduleFilterState.ts      # 38 свойств: фильтры врачей, кресел, дат, статусов
+  ├── useNavigationRouter.ts         # 25 свойств: URL hash sync, activeView, viewIntent
+  ├── usePatientWorkspaceState.ts    # 110 свойств: карточка пациента, аллергии, родственники
+  ├── useClinicalVisitWorkflow.ts    # 145 свойств: одонтограмма, SOAP 043/у, диктовка, ЭП
+  ├── useBillingCashDeskState.ts     # 120 свойств: счета, 54-ФЗ чеки, эквайринг, НДФЛ
+  ├── useImagingWorkbenchState.ts    # 95 свойств: 2D визиограф, калибровка, серии DICOM
+  └── useStaffSettingsState.ts       # 84 свойства: сотрудники, кресла, права, расписание смен
+```
 
-### 2.3. Стилистический легаси-балласт (`main.css`)
-- `apps/web/src/styles/main.css` содержит **18 146 строк (371 КБ)**.
-- Несмотря на успешный гейт переменных (`token-aliases.css`), в `main.css` остаются тысячи строк исторического CSS с жестко заданными отступами, абсолютным позиционированием и селекторами глубокой вложенности (`.panel > div > table > tbody > tr > td`).
+### 2.3. Раздробленность и дублирование состояния (State Conflict Matrix)
 
-### 2.4. Неподключенные готовые модули (Orphan Modules)
-- **Пример:** `apps/web/src/hooks/useSoundNotifications.ts` (Фича #49 из конкурентного реестра):
-  - Модуль полностью разработан, синтезирует чистый Web Audio звук без внешних файлов (440 Гц $\to$ 660 Гц для онлайн-записей, 880 Гц $\to$ 660 Гц за 5 минут до конца слота врача).
-  - Ни разу не смонтирован и не вызывается ни в одном рабочем компоненте.
-
-### 2.5. Реальность 3D/DICOM рендеринга
-- 2D просмотр радиовизиографа и панорамных снимков ОПТГ (`VisiographAnalyzer.tsx`) работает нативно на HTML5 Canvas (контраст, яркость, линейка калибровки, инверсия цвета).
-- **3D КЛКТ / MPR (мультипланарная реконструкция):** в веб-клиенте нет тяжелого клиентского WebGL Ray-Casting движка для волюметрического рендеринга; вместо этого реализован стековый просмотрщик 2D-срезов либо прокси-интеграция с внешним OHIF Viewer / Orthanc PACS сервером (`ohifBaseUrl`, `dicomWebEndpointUrl`).
+| Сущность | Источник 1 | Источник 2 | Источник 3 | Риск конфликта |
+|---|---|---|---|---|
+| **ID выбранного пациента** | `patientStore.selectedPatientId` | `usePatientLogic.selectedPatientId` | `UiPreferences.selectedPatientId` (localStorage) | При переходе по ссылке или через поиск карточка может показать старого пациента. |
+| **Фильтры расписания** | `scheduleStore.doctorFilterId` | `useScheduleLogic.scheduleDoctorFilterId` | `UiPreferences.scheduleDoctorFilterId` | Рассинхронизация списка слотов между мобильным и десктопным экранами. |
+| **Текущий приём** | `visitStore.activeVisitId` | `dashboard.activeVisit` | `useVisitLogic.activeVisit` | Ошибочное сохранение SOAP-записи в закрытый визит. |
 
 ---
 
-## 3. ГЛУБОКИЙ АУДИТ BACKEND (СЕРВЕРНЫЙ СЛОЙ)
+## 3. ГЛУБОКАЯ ДЕКОМПОЗИЦИЯ И АНАТОМИЯ BACKEND
 
-### 3.1. Монолитные роуты без архитектурного разделения
+### 3.1. Карта доменного разделения схемы БД (`apps/api/src/db/schema.ts` — 5 000+ строк)
 
-```mermaid
-graph LR
-    subgraph Current Architecture ["Текущая архитектура (Fat Routes)"]
-        Route1["imaging.ts (340 КБ / 7 000+ строк)<br/>• Fastify роуты<br/>• SQL-запросы Drizzle<br/>• Декодирование DICOM<br/>• Расчет калибровки<br/>• Генерация PDF"]
-    end
-    subgraph Target Architecture ["Целевая архитектура (Clean Layering)"]
-        HTTP["Routes (HTTP, Schema Validation, Auth)"] --> Controller["Controllers (Request/Response)"]
-        Controller --> Service["Domain Services (Business Logic)"]
-        Service --> Repo["Repositories (Drizzle SQL)"]
-    end
+Схема базы данных разделяется на 10 строго типизированных файлов с единой точкой входа `apps/api/src/db/schema/index.ts`:
+
+```
+apps/api/src/db/schema/
+  ├── index.ts              # Реэкспорт всех сущностей с сохранением 100% обратной совместимости
+  ├── _common.ts            # Базовые enum-типы, хелперы временных меток и аудита
+  ├── auth.ts               # organizations, users, userInvitations, userSessions, staffRoles
+  ├── patients.ts           # patients, patientCards, patientFamilyLinks, patientAllergies
+  ├── schedule.ts           # appointments, chairs, doctorSchedules, chairTimeReservations
+  ├── billing.ts            # invoices, invoiceItems, payments, fiscalReceipts, doctorCommissions
+  ├── clinical.ts           # visits, visitDiaries, treatmentPlans, odontogramStates, teethStatus
+  ├── imaging.ts            # imagingStudies, dicomSeries, visiographSnapshots, ctVolumes
+  ├── inventory.ts          # inventoryItems, inventoryBatches, materialDeductionRules, stockMovements
+  ├── communications.ts     # uisCalls, telegramChats, chatMessages, messageTemplates, taskQueue
+  └── system.ts             # system_background_jobs, fiscal_receipt_queue, audit_logs
 ```
 
-- **`apps/api/src/routes/imaging.ts` (340 КБ / ~7 000 строк)**
-- **`apps/api/src/routes/smartImports.ts` (312 КБ)**
-- **`apps/api/src/routes/telegram.ts` (152 КБ)**
-- **`apps/api/src/routes/diary.ts` (99 КБ / 2 303 строки)**
-> **Следствие:** Тестирование бизнес-логики в изоляции от Fastify HTTP-сервера невозможно; любые правки SQL требуют правок файлов маршрутизации.
+### 3.2. Спецификация новых персистентных структур БД
 
-### 3.2. In-Memory фоновые планировщики (Отсутствие персистентной очереди)
-- Воркеры `backupWorker.ts`, `biAnalyticsWorker.ts`, `recallScheduler.ts` инициируются через `setInterval()` внутри Node.js процесса.
-- **Уязвимости:**
-  1. Перезапуск процесса сбрасывает все таймеры.
-  2. Горизонтальное масштабирование (Cluster mode / 2+ реплики за Nginx) приведет к одновременному дублированию запусков ночных бэкапов и рассылок сообщений пациентам.
-  3. Отсутствие Dead-Letter Queue (DLQ) для упавших задач.
+#### A. Очередь задач (`system_background_jobs`):
+```sql
+CREATE TABLE system_background_jobs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+    queue_name VARCHAR(64) NOT NULL,
+    task_name VARCHAR(128) NOT NULL,
+    payload JSONB NOT NULL DEFAULT '{}',
+    status VARCHAR(32) NOT NULL DEFAULT 'pending', -- pending, processing, completed, failed, dead_letter
+    retry_count INTEGER NOT NULL DEFAULT 0,
+    max_retries INTEGER NOT NULL DEFAULT 3,
+    scheduled_for TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    started_at TIMESTAMP WITH TIME ZONE,
+    finished_at TIMESTAMP WITH TIME ZONE,
+    last_error TEXT,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+CREATE INDEX idx_background_jobs_queue_status ON system_background_jobs (queue_name, status, scheduled_for);
+```
 
-### 3.3. Монолитная схема базы данных (`apps/api/src/db/schema.ts`)
-- Единый файл **5 000+ строк (238 КБ)**.
-- Содержит описания более 100 таблиц, enum-типов, внешних ключей и связей, провоцируя конфликты при параллельной разработке миграций.
-
-### 3.4. Изоляция арендаторов (Multi-Tenancy Gaps)
-- Большинство роутов строго используют `eq(table.organizationId, orgId)`.
-- Выявлены вторичные endpoints (например, `POST /api/diaries/plan-signature` в `diary.ts:2285`), где первый `SELECT` выполняется только по `eq(treatmentPlans.id, planId)`, а проверка принадлежности клинике отложена на шаг проверки пациента. Первичный запрос обязан использовать составной индекс: `and(eq(treatmentPlans.id, planId), eq(treatmentPlans.organizationId, orgId))`.
+#### B. Очередь печати чеков ККТ (`fiscal_receipt_queue`):
+```sql
+CREATE TABLE fiscal_receipt_queue (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    payment_id UUID NOT NULL REFERENCES payments(id) ON DELETE CASCADE,
+    cash_desk_id VARCHAR(64) NOT NULL,
+    receipt_payload JSONB NOT NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'pending_print', -- pending_print, printed, hardware_offline, failed
+    fiscal_document_number VARCHAR(64),
+    fiscal_storage_number VARCHAR(64),
+    fiscal_sign VARCHAR(64),
+    error_message TEXT,
+    retry_count INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+CREATE INDEX idx_fiscal_queue_org_status ON fiscal_receipt_queue (organization_id, status);
+```
 
 ---
 
-## 4. СВОДНАЯ МАТРИЦА СИСТЕМЫ
+## 4. СРАВНИТЕЛЬНЫЙ АНАЛИЗ ИНТЕГРАЦИЙ С КОНКУРЕНТАМИ
 
-| Домен | Зрелость | Сильные стороны | Критические уязвимости |
-|---|---|---|---|
-| **Финансы и Касса (54-ФЗ)** | 🟢 **9.5/10** | Целочисленные копейки, ФФД 1.2 теги, идемпотентность SBP QR, пессимистические блокировки. | Отсутствие локального оффлайн-буфера при сбое физического COM-порта ККТ. |
-| **Расписание и Запись** | 🟢 **9.2/10** | PostgreSQL GiST exclusion-индексы против оверлапов, 3-уровневый lock. | Дублирование фильтров расписания в 3 разных сторах. |
-| **ЭМК и 043/у Дневники** | 🟢 **9.0/10** | Детерминированный SHA-256 хеш, PKCS#7 подпись, аудит ревизий. | Огромный размер `VisitDiaryEditor.tsx` и смешение логики подписи с UI. |
-| **DICOM / Снимки** | 🟡 **7.0/10** | 2D Canvas визиограф, калибровка, фильтры яркости/контраста. | 3D КЛКТ/MPR является стековым 2D-просмотрщиком, монолитный `imaging.ts`. |
-| **Архитектура UI (Frontend)** | 🔴 **5.5/10** | Высокая скорость работы, WCAG 2.1 AA контраст, 0 CSS дыр. | God-hook `useAppLogic` (819 полей), `App.tsx` (5.6k строк), `main.css` (18k строк). |
-| **Серверные воркеры (Backend)** | 🟡 **6.0/10** | Надежное шифрование бэкапов (AES-256-CBC), проверка целостности дампа. | In-process `setInterval`, отсутствие распределенной очереди задач (pg-boss). |
+| Направление | DENTE (Текущее) | IDENT | DentalPRO / iStom | Целевое решение DENTE |
+|---|---|---|---|---|
+| **Звуковые уведомления (#49)** | Хук написан, но не смонтирован в UI | Встроенные сигналы окончания приема и онлайн-заявок | Только системные пуши Windows | Подключение хука в `useAppLogic` + тумблер в настройках профиля |
+| **ККТ 54-ФЗ печать** | Серверная фискализация без оффлайн-буфера ККТ | Локальный агент печати на кассовом ПК | Веб-сервер Атол | Персистентная очередь `fiscal_receipt_queue` с авто-повтором |
+| **Фоновые бэкапы/аналитика** | In-process `setInterval` в Node.js | Служба Windows Service | Windows Scheduler / Cron | PostgreSQL-backed Queue (`system_background_jobs`) |
+| **3D КЛКТ / MPR** | Стековый 2D визиограф + проксирование на OHIF | Встроенный 3D DICOM модуль (DirectX/OpenGL) | Интеграция с EzDent-i / Planmeca | Нативный клиентский WebGL MPR вьюер на базе Cornerstone3D |
