@@ -1,0 +1,479 @@
+/* ═══════════════════════════════════════════════════════════════════
+   PATIENT WORKSPACE & CLINICAL VISIT MODULE
+   Extracted from main.css (TASK-3.3)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Patient Row & Risk Labels */
+
+.patient-insight-head {
+	align-items: start;
+	display: grid;
+	gap: 8px;
+	grid-template-columns: auto minmax(0, 1fr);
+}
+
+.patient-insight-head span,
+.patient-row-meta span {
+	background: var(--teal-soft);
+	border-radius: 999px;
+	color: var(--teal-dark);
+	font-size: 12px;
+	font-weight: 900;
+	padding: 5px 8px;
+}
+
+/* БЫЛО `.patient-row-meta span:first-child` — оформление метки риска доставалось
+   тому, кто оказался первым в строке. Метка теперь рисуется только когда
+   отличает пациента от остальных (apps/web/src/PatientsView.tsx), и на строках
+   без неё первой становилась плашка остатка по деньгам: сумма долга выглядела
+   меткой риска. Класс от порядка отрисовки не зависит. */
+/* МЕТКА РИСКА НЕ ЗАМЕЧАЛА ТЕМУ ВООБЩЕ, И ЭТО ИЗМЕРЕНО, А НЕ ОЦЕНЕНО НА ГЛАЗ.
+   БЫЛО: `background: #f4ead8; color: #744d18` у «контроль» и `#f5e0dc / #7d2c25`
+   у «риск» — четыре литерала, одинаковые во всех трёх темах. Контраст текста к
+   подложке получался 6.25 и 7.34 в КАЖДОЙ теме — ровно потому, что ни один из
+   четырёх цветов от темы не зависел. Относительная яркость подложки при этом
+   0.830 и 0.779, тогда как --paper в «Ночи» и «Тепле» равна 0.009: метка была
+   почти белым пятном на почти чёрной странице, в девяносто раз ярче бумаги. В
+   вечернюю смену, когда тёплую тему и включают, регистратор видел на экране
+   картотеки два светящихся ярлыка.
+   ТЕПЕРЬ цвет несёт подложка на токенах предупреждения и отказа, а текст —
+   --ink, как у .finance-due и .handoff-lock. Замер:
+     «контроль» --ink на --warn-bg — 15.93 / 12.89 / 10.56
+     «риск»     --ink на --bad-bg  — 14.52 / 13.89 / 11.02
+   Текст не --warn-fg: штатная пара предупреждения даёт в светлой теме 4.42 при
+   норме AA 4.5 для текста 12px (жирный, но не крупный), то есть норму не держит.
+   Числа пересчитываются из живого CSS в src/tests/themeContrastGuard.test.ts.
+
+   БЫЛО ещё раньше `.patient-row-meta span:first-child` — оформление метки риска
+   доставалось тому, кто оказался первым в строке. Метка рисуется только когда
+   отличает пациента от остальных (apps/web/src/PatientsView.tsx), и на строках
+   без неё первой становилась плашка остатка по деньгам: сумма долга выглядела
+   меткой риска. Класс от порядка отрисовки не зависит. */
+.risk-watch .patient-insight-head span,
+.patient-row.risk-watch .patient-row-meta .patient-risk-label {
+	background: var(--warn-bg);
+	color: var(--ink);
+}
+
+.risk-high .patient-insight-head span,
+.patient-row.risk-high .patient-row-meta .patient-risk-label {
+	background: var(--bad-bg);
+	color: var(--ink);
+}
+
+.patient-insight-head strong {
+	line-height: 1.25;
+}
+
+.patient-insight-meta,
+.patient-row-meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.patient-insight-meta span {
+	background: #eef8f5;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	color: var(--teal-dark);
+	font-size: 12px;
+	font-weight: 850;
+	padding: 5px 8px;
+}
+
+.patient-insight-panel p {
+	color: var(--muted);
+	margin: 0;
+}
+
+.patient-feature-grid {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: repeat(5, minmax(0, 1fr));
+	min-width: 0;
+}
+
+.patient-feature-grid article {
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 10px;
+	grid-template-rows: auto minmax(0, 1fr);
+	min-height: 168px;
+	padding: 14px;
+}
+
+.patient-feature-grid svg {
+	color: var(--teal);
+	height: 24px;
+	width: 24px;
+}
+
+.patient-feature-grid h3 {
+	font-size: 15px;
+	line-height: 1.2;
+	margin: 0;
+}
+
+.patient-feature-grid p {
+	color: var(--muted);
+	margin: 6px 0 0;
+}
+
+.feature-link {
+	margin-top: 8px;
+	padding: 0;
+}
+
+
+/* --- CLINICIAN WORKSPACE OPTIMIZATIONS --- */
+/* --- CLINICIAN WORKSPACE OPTIMIZATIONS --- */
+
+.visit-grid-container {
+	display: grid;
+	gap: 20px;
+	grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.6fr);
+	align-items: start;
+}
+
+@media (max-width: 1200px) {
+	.visit-grid-container {
+		grid-template-columns: 1fr;
+	}
+}
+
+.visit-sidebar-materials {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	position: sticky;
+	top: 20px;
+}
+
+/* Sidebar Section Box */
+.visit-sidebar-box {
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 16px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.visit-sidebar-box h3 {
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--slate-800);
+	margin: 0 0 12px 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+/* Imaging Gallery Styles */
+.visit-imaging-gallery {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+	gap: 10px;
+}
+
+.visit-image-card {
+	background: var(--paper-light);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	overflow: hidden;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	position: relative;
+}
+
+.visit-image-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+	border-color: var(--teal);
+}
+
+.visit-image-card img {
+	width: 100%;
+	height: 90px;
+	object-fit: cover;
+	background: #111;
+	display: block;
+}
+
+.visit-image-info {
+	padding: 6px 8px;
+}
+
+.visit-image-info strong {
+	display: block;
+	font-size: 11px;
+	color: var(--slate-800);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.visit-image-info span {
+	font-size: 10px;
+	color: var(--slate-500);
+}
+
+.visit-image-tag {
+	position: absolute;
+	top: 4px;
+	right: 4px;
+	background: rgba(15, 23, 42, 0.75);
+	backdrop-filter: blur(4px);
+	color: white;
+	font-size: 9px;
+	font-weight: 800;
+	padding: 2px 5px;
+	border-radius: 4px;
+	text-transform: uppercase;
+}
+
+
+/* Documents List Styles */
+/* Documents List Styles */
+.visit-documents-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.visit-document-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 12px;
+	background: var(--paper-light);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	transition: border-color 0.2s;
+}
+
+.visit-document-row:hover {
+	border-color: var(--teal);
+}
+
+.visit-document-info {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.visit-document-info strong {
+	font-size: 12px;
+	color: var(--slate-800);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.visit-document-info span {
+	font-size: 10px;
+	color: var(--slate-500);
+}
+
+.visit-document-badge {
+	font-size: 10px;
+	font-weight: 700;
+	padding: 2px 6px;
+	border-radius: 4px;
+	text-transform: uppercase;
+}
+
+.visit-document-badge.status-draft {
+	background: #fef3c7;
+	color: #d97706;
+}
+
+.visit-document-badge.status-signed {
+	background: #d1fae5;
+	color: #059669;
+}
+
+
+/* Clinical Risk & Somatic Status */
+/* Clinical Risk & Somatic Status */
+.visit-risk-card {
+	border-radius: 10px;
+	padding: 12px;
+	margin-bottom: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.visit-risk-card.risk-high {
+	background: #fef2f2;
+	border: 1px solid #fecaca;
+	color: #991b1b;
+}
+
+.visit-risk-card.risk-watch {
+	background: #fffbeb;
+	border: 1px solid #fef3c7;
+	color: #92400e;
+}
+
+.visit-risk-card.risk-low {
+	background: #f0fdf4;
+	border: 1px solid #dcfce7;
+	color: #166534;
+}
+
+.visit-risk-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-weight: 800;
+	font-size: 12px;
+	text-transform: uppercase;
+}
+
+.visit-risk-reasons {
+	margin: 0;
+	padding-left: 16px;
+	font-size: 11px;
+	line-height: 1.4;
+}
+
+.visit-risk-flags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 4px;
+}
+
+.visit-risk-flag {
+	background: rgba(0, 0, 0, 0.05);
+	padding: 2px 6px;
+	border-radius: 4px;
+	font-size: 10px;
+	font-weight: 600;
+}
+
+
+/* Past Visits History */
+/* Past Visits History */
+.visit-history-list {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.visit-history-item {
+	background: var(--paper-light);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 10px 12px;
+	font-size: 12px;
+}
+
+.visit-history-item-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 6px;
+	font-size: 11px;
+	color: var(--slate-500);
+}
+
+.visit-history-item-header strong {
+	color: var(--slate-800);
+}
+
+.visit-history-item-body {
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--slate-600);
+}
+
+
+/* ── ЭМК Вкладки (EMK Tabs) ─────────────────────────────────────── */
+/* ── ЭМК Вкладки (EMK Tabs) ─────────────────────────────────────── */
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+.emk-tabs-container {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-bottom: 12px;
+	border-bottom: 1px solid var(--line);
+	padding-bottom: 8px;
+}
+
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+.emk-tab-button {
+	background: var(--paper-light);
+	border: 1px solid var(--line);
+	color: var(--muted);
+	font-size: 11px;
+	font-weight: 850;
+	padding: 6px 12px;
+	border-radius: 6px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	transition: all 0.15s ease;
+}
+
+.emk-tab-button:hover {
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+	border-color: rgba(15, 118, 110, 0.3);
+}
+
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+.emk-tab-button.active {
+	/* --teal-fill: белый текст на #0d9488 даёт 3.74:1 при норме 4.5. */
+	background: var(--teal-fill);
+	color: #ffffff;
+	border-color: var(--teal-fill);
+	box-shadow: 0 2px 5px rgba(13, 148, 136, 0.2);
+}
+
+/* Точка-индикатор заполненности поля */
+.emk-tab-dot {
+	width: 6px;
+	height: 6px;
+	background-color: #22c55e;
+	border-radius: 50%;
+	display: inline-block;
+	box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+.emk-tab-button.active .emk-tab-dot {
+	background-color: #ffffff;
+	box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+/* Увеличенный размер textarea в режиме одной вкладки */
+.visit-fields.single-tab-mode {
+	grid-template-columns: 1fr;
+}
+
+.visit-fields.single-tab-mode textarea {
+	min-height: 160px;
+	font-size: 14px;
+}
+
+
+/* Patient List CLS Fixes */
+/* Patient List CLS Fixes */
+.patient-row {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	min-height: 80px;
+}
+
+@media (max-width: 768px) {
+	.schedule-shift-summary-grid,
+	.schedule-filter-strip {
+		grid-template-columns: 1fr;
+	}
+}

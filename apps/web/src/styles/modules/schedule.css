@@ -1,0 +1,551 @@
+/* ═══════════════════════════════════════════════════════════════════
+   SCHEDULE & APPOINTMENT MODULE
+   Extracted from main.css (TASK-3.3)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ================================================================ SCHEDULE ADMIN SECRET COLLAPSIBLE ================== */
+/* ================================================================
+   SCHEDULE ADMIN SECRET COLLAPSIBLE
+   ================================================================ */
+.schedule-secret-collapsible {
+	border: 1px solid var(--border-color, #e2e8f0);
+	border-radius: 8px;
+	margin: 0.5rem 0;
+	background: var(--surface-alt, #f8fafc);
+}
+.schedule-secret-collapsible summary {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	padding: 0.7rem 1rem;
+	cursor: pointer;
+	font-size: 0.82rem;
+	color: var(--text-muted, #718096);
+	list-style: none;
+	user-select: none;
+}
+.schedule-secret-collapsible summary::-webkit-details-marker {
+	display: none;
+}
+.schedule-secret-collapsible summary::marker {
+	display: none;
+}
+.schedule-secret-collapsible .schedule-admin-unlock {
+	padding: 0.75rem 1rem 1rem;
+	border-top: 1px solid var(--border-color, #e2e8f0);
+	background: var(--surface, #fff);
+	border-radius: 0 0 8px 8px;
+	animation: accordion-open 0.2s ease both;
+}
+
+
+/* Today's Schedule interactive hover states */
+/* Today's Schedule interactive hover states */
+.today-schedule-item:hover {
+	background: rgba(13, 148, 136, 0.08);
+	border-color: var(--teal);
+	transform: translateY(-1px);
+	box-shadow:
+		0 4px 6px -1px rgba(0, 0, 0, 0.05),
+		0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+.today-schedule-item:active {
+	transform: translateY(0);
+}
+
+
+/* ========== APPOINTMENT CARD COMPONENT - STRICT CLS-PROOF LAYOUT ========== */
+/* ========== APPOINTMENT CARD COMPONENT - STRICT CLS-PROOF LAYOUT ========== */
+
+.appointment-card-time {
+	font-weight: 600;
+	font-size: 14px;
+	color: var(--slate-900);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.appointment-card-time .time-end {
+	font-weight: 400;
+	color: var(--slate-400);
+	font-size: 13px;
+}
+
+.appointment-card-footer {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	margin-top: 8px;
+	padding-top: 8px;
+	border-top: 1px solid var(--slate-100);
+	gap: 8px;
+}
+
+.appt-readiness-row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-top: 6px;
+	font-size: 12px;
+	color: var(--slate-500);
+}
+
+.readiness-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+.readiness-dot-ok {
+	background: var(--teal, #14b8a6);
+}
+.readiness-dot-needs_attention {
+	background: var(--amber, #f59e0b);
+}
+.readiness-dot-blocked {
+	background: var(--red, #ef4444);
+}
+
+.appt-next-action {
+	flex: 1;
+	font-size: 12px;
+	color: var(--slate-600);
+}
+
+.appt-readiness-score {
+	font-weight: 600;
+	font-size: 12px;
+	color: var(--slate-700);
+}
+
+/*
+ * --amber-50 / --amber-200 / --amber-700 НЕ ОБЪЯВЛЕНЫ НИ В ОДНОМ ФАЙЛЕ.
+ *
+ * Поэтому побеждали резервные литералы, и подложка была #fffbeb — почти белая
+ * — в любой теме. Поправка ниже перекрывала это только для [data-theme="dark"]
+ * («Ночь»). Тема «Тепло» — data-theme="night" — в перечислении отсутствовала.
+ *
+ * ПО КАКОЙ ПАЛИТРЕ СЧИТАНО. Порядок тем: светлая / «Ночь» (data-theme="dark")
+ * / «Тепло» (data-theme="night"). --amber и --ink для светлой и «Ночи» берутся
+ * из main.css:126-151 и main.css:66-91 — селектор :root[data-theme="..."],
+ * специфичность (0,2,0), он перебивает dente-redesign.css:11/67 (0,1,0). В
+ * «Тепле» блока --amber нет ни в одном night-блоке, поэтому имя приходит из
+ * :root-плеча dente-redesign.css:46 как var(--warn-fg) и разрешается в #e8b45a.
+ * --warn-bg / --warn-fg объявлены только в dente-redesign.css:29/84/149 и
+ * выигрывают во всех трёх темах. Первая версия замера взяла --ink «Ночи» из
+ * проигравшего файла (#e9f2ef вместо #f8fafc), отсюда 11.61 вместо 12.89.
+ *
+ * До правки: заметка о передаче приёма (--amber #d97706 / #f59e0b / #e8b45a на
+ * литерале #fffbeb) — 3.07 / 2.07 / 1.82 при норме 4.5. Это промах во всех
+ * трёх темах, включая светлую: янтарный текст на янтарно-белом. Плашка
+ * .handoff-lock (--amber-700, резерв #b45309, на том же #fffbeb) давала 4.84 во
+ * всех темах — по норме проходила, но в обеих тёмных оставалась белым пятном.
+ *
+ * Смысл цвета переносится на подложку и левую полосу (--warn-bg / --warn-fg,
+ * объявлены во всех трёх темах), а текст уходит на --ink: цвет по-прежнему
+ * читается как предупреждение, но надпись видна. Подложка стала #fef3c7 /
+ * rgb(48,47,41) / rgb(61,48,31). Стало: 15.93 / 12.89 / 10.56. Поправка на
+ * «Ночь» удалена как ставшая лишней — токены уже дают тёмный фон в обеих
+ * тёмных темах.
+ */
+.handoff-lock {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--ink);
+	background: var(--warn-bg);
+	border: 1px solid var(--warn-fg);
+	border-radius: 999px;
+	padding: 2px 8px;
+	white-space: nowrap;
+}
+
+.appointment-handoff-note {
+	font-size: 12px;
+	color: var(--ink);
+	background: var(--warn-bg);
+	padding: 6px 8px;
+	border-radius: 4px;
+	margin-top: 4px;
+	border-left: 3px solid var(--warn-fg);
+}
+
+.chip-assistant {
+	background: var(--violet-50, #f5f3ff);
+	color: var(--violet-700, #6d28d9);
+	border-color: var(--violet-200, #ddd6fe);
+}
+
+.chip-suggestion {
+	cursor: pointer;
+	font-size: 12px;
+	transition: opacity 0.15s;
+}
+
+.chip-suggestion:hover {
+	opacity: 0.8;
+}
+
+.chip-suggestion.priority-urgent {
+	background: var(--bad-bg);
+	color: var(--bad-fg);
+	border-color: var(--bad-fg);
+}
+
+.chip-suggestion.priority-important {
+	background: var(--warn-bg);
+	color: var(--warn-fg);
+	border-color: var(--warn-fg);
+}
+
+.appointment-edit-button {
+	padding: 4px 12px;
+	min-height: 28px;
+	font-size: 12px;
+}
+
+
+/* ========== SMART AI BOOKING BLOCK ========== */
+/* ========== SMART AI BOOKING BLOCK ========== */
+
+.smart-ai-booking {
+	margin-bottom: 12px;
+	border: 1px solid var(--brand-300);
+	box-shadow: 0 2px 8px rgba(14, 165, 233, 0.05);
+	border-radius: 12px;
+	padding: 12px;
+	background: var(--paper);
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+
+/* ========== SCHEDULE ENTITY GRID (editor chip selectors) ========== */
+/* ========== SCHEDULE ENTITY GRID (editor chip selectors) ========== */
+
+.schedule-entity-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 16px;
+	margin-bottom: 16px;
+}
+
+.schedule-entity-label {
+	font-size: 13px;
+	color: var(--slate-500);
+	font-weight: 500;
+	display: block;
+	margin-bottom: 8px;
+}
+
+.schedule-select {
+	width: 100%;
+	padding: 8px;
+	border-radius: 8px;
+	border: 1px solid var(--slate-300);
+}
+
+.quick-chip--sm {
+	font-size: 11px;
+	padding: 2px 8px;
+	min-height: 24px;
+}
+
+
+/* --- APPOINTMENT CARD PREMIUM AESTHETICS --- */
+/* --- APPOINTMENT CARD PREMIUM AESTHETICS --- */
+.appointment-card {
+	padding: 16px;
+	background: var(--glass-panel);
+	backdrop-filter: blur(12px);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	margin-bottom: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	box-shadow: 0 4px 16px rgba(13, 148, 136, 0.08);
+	transition:
+		transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+		box-shadow 0.2s;
+}
+.appointment-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 8px 24px rgba(13, 148, 136, 0.15);
+	border-color: var(--line-strong);
+}
+.appointment-card-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	border-bottom: 1px solid var(--line);
+	padding-bottom: 10px;
+}
+.appointment-card-time {
+	font-weight: 600;
+	font-size: 15px;
+	color: var(--ink);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.appointment-card-body {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+.appointment-card-body h3 {
+	margin: 0;
+	font-size: 16px;
+	color: var(--ink);
+}
+.chip-group {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	align-items: center;
+}
+.appointment-card-footer {
+	display: flex;
+	justify-content: flex-end;
+	margin-top: 4px;
+	padding-top: 10px;
+	border-top: 1px solid rgba(208, 226, 217, 0.15);
+}
+
+
+/* --- SCHEDULE FILTERS --- */
+/* --- SCHEDULE FILTERS --- */
+.schedule-shift-summary {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	align-items: center;
+}
+.schedule-shift-summary-grid {
+	width: 100%;
+	margin-top: 12px;
+}
+.schedule-filter-strip {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	align-items: center;
+	padding: 12px 16px;
+	border-bottom: 1px solid var(--line);
+}
+.schedule-filter-strip input[type="date"],
+.schedule-filter-strip input.schedule-date-input {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	line-height: 1;
+	box-sizing: border-box;
+	padding: 4px 8px;
+	font-size: 13px;
+	font-weight: 600;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	margin: 0;
+	display: inline-flex;
+	align-items: center;
+}
+.schedule-filter-strip .quick-chip {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	line-height: 1;
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 14px;
+	margin: 0;
+	align-self: center;
+}
+.schedule-date-picker-group {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	border-right: 1px solid var(--line);
+	padding-right: 12px;
+	margin-right: 4px;
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+}
+.schedule-date-picker-group .secondary-button {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	line-height: 1;
+	box-sizing: border-box;
+	padding: 0 8px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0;
+}
+.schedule-date-filter-wrap {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	border-right: 1px solid var(--line-strong);
+	padding-right: 12px;
+	margin-right: 4px;
+}
+.schedule-date-filter-input {
+	border: none;
+	background: transparent;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--ink);
+	outline: none;
+	cursor: pointer;
+}
+
+/* Timeline CLS Fixes */
+.timeline-node {
+	display: grid;
+	grid-template-columns: 80px minmax(0, 1fr);
+	gap: 16px;
+	position: relative;
+	min-height: 120px;
+}
+
+.timeline-time {
+	font-weight: 700;
+	color: var(--slate-500);
+	text-align: right;
+	padding-top: 16px;
+}
+
+.timeline-content {
+	position: relative;
+	padding-bottom: 24px;
+}
+
+.timeline-line {
+	position: absolute;
+	left: 90px;
+	top: 0;
+	bottom: 0;
+	width: 2px;
+	background-color: var(--slate-200);
+	z-index: 0;
+}
+
+.timeline-content article.appointment-card {
+	position: relative;
+	z-index: 1;
+	min-height: 100px;
+}
+
+/* UX/UI Polish & CLS Prevention Classes */
+.fixed-grid-cell {
+	aspect-ratio: auto;
+	min-height: 80px;
+	contain: layout size;
+}
+
+.min-h-reserved-error {
+	min-height: 24px;
+	display: flex;
+	align-items: flex-start;
+}
+
+.chip-template-button {
+	background: var(--slate-100);
+	color: var(--slate-700);
+	border: 1px solid var(--slate-200);
+	border-radius: 12px;
+	padding: 4px 10px;
+	font-size: 11px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	white-space: nowrap;
+}
+
+.chip-template-button:hover {
+	background: var(--slate-200);
+	color: var(--slate-900);
+}
+
+.chip-template-button:active {
+	transform: scale(0.96);
+}
+
+.chip-templates-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 6px;
+	margin-bottom: 6px;
+}
+
+/* Patient List CLS Fixes */
+.patient-row {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	min-height: 80px;
+}
+
+@media (max-width: 768px) {
+	.schedule-shift-summary-grid,
+	.schedule-filter-strip {
+		grid-template-columns: 1fr;
+	}
+}
+
+
+/* --- Schedule Dark Mode Theme Harmony --- */
+/* --- Schedule Dark Mode Theme Harmony --- */
+[data-theme="dark"] .schedule-shift-summary,
+[data-theme="night"] .schedule-shift-summary,
+.dark .schedule-shift-summary,
+body.dark-mode .schedule-shift-summary {
+	background: var(--surface-alt, #1e293b);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+	color: var(--text-color, #f8fafc);
+}
+
+[data-theme="dark"] .schedule-shift-summary-grid article,
+[data-theme="night"] .schedule-shift-summary-grid article,
+.dark .schedule-shift-summary-grid article,
+body.dark-mode .schedule-shift-summary-grid article {
+	background: var(--surface, #0f172a);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+	color: var(--text-color, #f8fafc);
+}
+
+[data-theme="dark"] .schedule-filter-strip,
+[data-theme="night"] .schedule-filter-strip,
+.dark .schedule-filter-strip,
+body.dark-mode .schedule-filter-strip {
+	background: var(--surface-alt, #1e293b);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+}
+
+[data-theme="dark"] .schedule-secret-collapsible,
+[data-theme="night"] .schedule-secret-collapsible,
+.dark .schedule-secret-collapsible,
+body.dark-mode .schedule-secret-collapsible {
+	background: var(--surface-alt, #1e293b);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+	color: var(--text-color, #f8fafc);
+}
+
+[data-theme="dark"] .schedule-secret-collapsible .schedule-admin-unlock,
+[data-theme="night"] .schedule-secret-collapsible .schedule-admin-unlock,
+.dark .schedule-secret-collapsible .schedule-admin-unlock,
+body.dark-mode .schedule-secret-collapsible .schedule-admin-unlock {
+	background: var(--surface, #0f172a);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+	color: var(--text-color, #f8fafc);
+}

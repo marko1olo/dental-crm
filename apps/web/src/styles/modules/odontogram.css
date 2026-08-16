@@ -1,0 +1,495 @@
+/* ═══════════════════════════════════════════════════════════════════
+   DENTAL ODONTOGRAM MODULE
+   Extracted from main.css (TASK-3.3)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Tooth Map & Selected Tooth Actions */
+.tooth-map {
+	background: #fdf9f2;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 10px;
+	margin-bottom: 14px;
+	padding: 12px;
+}
+
+.tooth-map-head {
+	align-items: center;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+}
+
+.tooth-map-head h3,
+.close-checklist h3 {
+	font-size: 15px;
+	margin: 0;
+}
+
+.tooth-map-head p {
+	color: var(--muted);
+	margin: 4px 0 0;
+}
+
+.tooth-map-head .secondary-button {
+	flex: 0 0 auto;
+	min-height: 36px;
+	padding: 0 10px;
+}
+
+.tooth-map-selected {
+	align-items: center;
+	background: #fffdf9;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 10px;
+	grid-template-columns: minmax(84px, 0.16fr) minmax(0, 1fr);
+	padding: 10px;
+}
+
+.tooth-map-selected strong {
+	color: var(--teal-dark);
+	font-size: 18px;
+	line-height: 1.1;
+}
+
+.tooth-map-selected > div {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	justify-content: flex-end;
+}
+
+.tooth-map-selected button {
+	background: #ffffff;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	color: var(--teal-dark);
+	font-size: 12px;
+	font-weight: 900;
+	min-height: 32px;
+	padding: 5px 9px;
+}
+
+.tooth-map-selected button:hover {
+	background: var(--teal-soft);
+	border-color: rgba(15, 118, 110, 0.28);
+}
+
+.tooth-map-selected button.active {
+	background: var(--teal);
+	border-color: var(--teal);
+	color: #ffffff;
+	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+}
+
+
+/* ── Зубная карта: обёртка-арка ─────────────────────────────────── */
+/* ── Зубная карта: обёртка-арка ─────────────────────────────────── */
+.tooth-arch-wrapper {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+.tooth-quadrant-labels {
+	display: flex;
+	justify-content: space-between;
+	padding: 0 4px;
+	pointer-events: none;
+	user-select: none;
+}
+
+.tooth-quadrant-labels.upper-labels {
+	margin-bottom: 4px;
+}
+
+.tooth-quadrant-labels.lower-labels {
+	margin-top: 4px;
+}
+
+.quadrant-label {
+	flex: 1;
+	text-align: center;
+	font-size: 11px;
+	font-weight: 800;
+	color: var(--muted);
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+.tooth-jaw {
+	display: flex;
+	align-items: flex-end; /* коронки к линии окклюзии */
+	gap: 0;
+}
+
+.tooth-jaw.lower-jaw {
+	align-items: flex-start; /* для нижней — корни вниз */
+}
+
+.tooth-half {
+	display: flex;
+	flex: 1;
+	gap: 3px;
+}
+
+/* Q2/Q3 — зубы идут от центра влево (8 7 6 5 4 3 2 1 | центр) */
+.tooth-jaw .tooth-half:first-child {
+	justify-content: flex-end;
+}
+
+/* Q1/Q4 — зубы идут от центра вправо (центр | 1 2 3 4 5 6 7 8) */
+.tooth-jaw .tooth-half:last-child {
+	justify-content: flex-start;
+}
+
+.tooth-center-line {
+	width: 2px;
+	background: linear-gradient(
+		to bottom,
+		transparent,
+		var(--teal) 30%,
+		var(--teal) 70%,
+		transparent
+	);
+	opacity: 0.3;
+	flex-shrink: 0;
+	border-radius: 1px;
+	margin: 0 2px;
+	align-self: stretch;
+}
+
+.tooth-occlusion-line {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 6px 0;
+	color: var(--muted);
+	font-size: 10px;
+	font-weight: 600;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+}
+
+.tooth-occlusion-line::before,
+.tooth-occlusion-line::after {
+	content: "";
+	flex: 1;
+	height: 1px;
+	background: var(--line);
+}
+
+.tooth-occlusion-line span {
+	white-space: nowrap;
+	opacity: 0.6;
+}
+
+.tooth-fdi-badge {
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+	font-size: 11px;
+	font-weight: 800;
+	padding: 3px 8px;
+	border-radius: 999px;
+	letter-spacing: 0.06em;
+}
+
+/* Старый tooth-row оставляем как fallback, но новый layout не использует */
+.tooth-row {
+	display: flex;
+	gap: 3px;
+	flex-wrap: nowrap;
+}
+
+.tooth {
+	background: #ffffff;
+	border: 1px solid var(--line);
+	border-radius: 7px 7px 12px 12px;
+	color: var(--ink);
+	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-end;
+	min-height: 88px;
+	min-width: 36px;
+	padding: 4px 3px;
+	gap: 3px;
+	transition: all 0.18s ease;
+	touch-action: manipulation;
+	outline: none;
+	font-family: inherit;
+	flex-shrink: 0;
+}
+
+/* Нижние зубы: код сверху, SVG флипнут */
+.tooth.tooth-lower {
+	justify-content: flex-start;
+	border-radius: 12px 12px 7px 7px;
+}
+
+.tooth-svg-wrap {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	transition: filter 0.15s ease;
+}
+
+.tooth-code {
+	display: block;
+	font-size: 10px;
+	font-weight: 900;
+	color: #64748b;
+	line-height: 1;
+	letter-spacing: -0.01em;
+	pointer-events: none;
+}
+
+.tooth:hover,
+.tooth:focus-visible {
+	border-color: var(--teal);
+	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.16);
+	z-index: 1;
+}
+
+.tooth:active {
+	transform: scale(0.95);
+}
+
+.tooth span {
+	display: block;
+	font-size: 13px;
+	font-weight: 900;
+	pointer-events: none;
+}
+
+.tooth.tooth-ai-detected {
+	border-color: var(--teal);
+	box-shadow: 0 0 0 2px var(--teal-soft);
+}
+
+.tooth-planned {
+	background: var(--rust-soft);
+	border-color: rgba(163, 79, 50, 0.5);
+	color: #7d2c25;
+}
+
+.tooth-watch {
+	background: #fff3d8;
+	border-color: rgba(184, 120, 31, 0.5);
+	color: #79500f;
+}
+
+.tooth-done {
+	background: #dfeee3;
+	border-color: rgba(47, 115, 64, 0.45);
+	color: #26562f;
+}
+
+.tooth-treatment {
+	background: #eef2ff;
+	border-color: rgba(67, 56, 202, 0.4);
+	color: #3730a3;
+}
+
+.tooth-missing {
+	background: #ece7df;
+	color: #8c8177;
+	text-decoration: line-through;
+}
+
+.tooth-legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 12px;
+}
+
+.tooth-map-legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.tooth-legend-item {
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 850;
+	min-height: 26px;
+	padding: 5px 9px;
+	display: inline-flex;
+	align-items: center;
+}
+
+.legend-planned {
+	background: var(--rust-soft);
+	color: #7d2c25;
+}
+
+.legend-watch {
+	background: #fff3d8;
+	color: #79500f;
+}
+
+.legend-treatment {
+	background: #eef2ff;
+	color: #3730a3;
+}
+
+.legend-done {
+
+/* ── Навигация квадрантов зубной карты (Quadrant Zoom) ──────────── */
+/* ── Навигация квадрантов зубной карты (Quadrant Zoom) ──────────── */
+.tooth-quadrant-nav {
+	display: flex;
+	justify-content: center;
+	gap: 8px;
+	margin: 12px 0 16px;
+	background: var(--paper-soft, #f8fafc);
+	padding: 6px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+.quadrant-nav-btn {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	color: var(--muted, #64748b);
+	font-size: 11px;
+	font-weight: 800;
+	padding: 6px 12px;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.quadrant-nav-btn:hover {
+	background: var(--teal-soft, rgba(13, 148, 136, 0.1));
+	color: var(--teal-dark, var(--teal));
+	border-color: rgba(15, 118, 110, 0.3);
+}
+
+.quadrant-nav-btn.active {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 2px 4px rgba(13, 148, 136, 0.2);
+}
+
+[data-theme="dark"] .quadrant-nav-btn,
+[data-theme="night"] .quadrant-nav-btn,
+.dark .quadrant-nav-btn {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
+}
+
+/* Режим фокуса (зум квадранта) */
+.tooth-arch-wrapper.zoom-active {
+	background: var(--paper-soft, #fbfefd);
+	padding: 16px 8px;
+	border-radius: 12px;
+	border: 1px dashed rgba(15, 118, 110, 0.3);
+}
+
+.tooth-arch-wrapper.zoom-active .tooth-half {
+	justify-content: center;
+}
+
+.tooth-arch-wrapper.zoom-active .tooth {
+	min-width: 58px;
+	min-height: 104px;
+	border-width: 1.5px;
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.tooth-arch-wrapper.zoom-active .tooth-code {
+	font-size: 12px;
+}
+
+/* Панель быстрого штампа статуса зуба (Quick Stamp) */
+.tooth-stamp-bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	margin-bottom: 12px;
+	background: var(--paper-soft, #f8fafc);
+	padding: 6px 12px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+.stamp-bar-title {
+	font-size: 11px;
+	font-weight: 900;
+	color: var(--muted, #64748b);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	margin-right: 6px;
+}
+
+.stamp-btn {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	color: var(--ink, #334155);
+	font-size: 11px;
+	font-weight: 800;
+	padding: 4px 10px;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: all 0.1s ease;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.stamp-btn:hover {
+	background: var(--paper-strong, #f1f5f9);
+	border-color: var(--line-strong, #cbd5e1);
+}
+
+.stamp-btn.active {
+	background: var(--paper-strong, #e2e8f0);
+	border-color: var(--line-strong, #94a3b8);
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .stamp-btn,
+[data-theme="night"] .stamp-btn,
+.dark .stamp-btn {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
+}
+
+.stamp-btn.active.stamp-planned {
+	background: #0284c7;
+	border-color: #0369a1;
+	color: #ffffff;
+}
+.stamp-btn.active.stamp-treatment {
+	background: #dc2626;
+	border-color: #b91c1c;
+	color: #ffffff;
+}
+.stamp-btn.active.stamp-watch {
+	background: #d97706;
+	border-color: #b45309;
+	color: #ffffff;
+}
+.stamp-btn.active.stamp-done {
+	background: #16a34a;
+	border-color: #15803d;
+	color: #ffffff;
+}
+.stamp-btn.active.stamp-missing {
+	background: #475569;
+	border-color: #334155;
+	color: #f87171;
+}

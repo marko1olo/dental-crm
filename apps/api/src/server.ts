@@ -108,6 +108,7 @@ import {
 	startBackupDaemon,
 	stopBackupDaemon,
 } from "./services/backupWorker.js";
+import { TaskQueueService } from "./services/TaskQueueService.js";
 import { startCommunicationDispatchWorker } from "./services/communications/dispatchWorker.js";
 import { getProxyAgent } from "./speech/keyPool.js";
 import { ensureSshTunnel } from "./speech/tunnel.js";
@@ -842,6 +843,9 @@ export async function startDenteApiServer() {
 				process.exit(1);
 			}, 10000);
 			try {
+				if (taskQueueWorker) {
+					await taskQueueWorker.stop();
+				}
 				stopBackupDaemon();
 				await app.close();
 				// Единственное закрытие пула на процесс: владелец — процесс, не
@@ -858,6 +862,12 @@ export async function startDenteApiServer() {
 				process.exit(1);
 			}
 		};
+
+		// Фоновый обработчик персистентных очередей задач (PostgreSQL FOR UPDATE SKIP LOCKED)
+		const taskQueueWorker = TaskQueueService.startWorker({
+			queues: ["default", "system", "communications"],
+			logger: app.log,
+		});
 
 		// Резервное копирование базы. БЫЛО: модуль существовал, но startBackupDaemon
 		// не вызывался НИ ОТКУДА — копий не создавалось вообще, при том что в логах
