@@ -1309,17 +1309,7 @@ export function App() {
 		 * пустой, и экран советовал заводить кадры клинике, у которой в базе трое
 		 * действующих сотрудников. Охраняется tests/staffUnlockListState.test.ts.
 		 */
-		if (dashboard) {
-			console.log("DEBUG: dashboard keys:", Object.keys(dashboard));
-			console.log(
-				"DEBUG: dashboard.clinicSettings is:",
-				dashboard.clinicSettings,
-			);
-			console.log(
-				"DEBUG: Array.isArray(staff)?",
-				Array.isArray(dashboard.clinicSettings?.staff),
-			);
-		}
+
 		return (
 			<StaffPinPad
 				staffMembers={dashboard ? dashboard.clinicSettings?.staff : undefined}
