@@ -310,7 +310,9 @@ async function executeXrayAnalysisJob(job: XrayAnalysisJob): Promise<void> {
 function startDetachedXrayAnalysis(job: XrayAnalysisJob): void {
 	setImmediate(() => {
 		transactionStorage.exit(() => {
-			void executeXrayAnalysisJob(job);
+			void executeXrayAnalysisJob(job).catch((err) => {
+				console.error(`[XrayAI] Detached analysis job failed for scan ${job.scanId}:`, err);
+			});
 		});
 	});
 }

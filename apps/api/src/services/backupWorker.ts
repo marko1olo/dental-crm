@@ -701,7 +701,9 @@ export function startBackupDaemon(): void {
 	);
 	const firstRun: ReturnType<typeof setTimeout> = setTimeout(
 		() => {
-			void createEncryptedBackup();
+			void createEncryptedBackup().catch((err) => {
+				console.error("[BackupWorker] Uncaught error during initial backup run:", err);
+			});
 		},
 		Math.max(0, firstRunDelayMs),
 	);
@@ -709,10 +711,11 @@ export function startBackupDaemon(): void {
 	(firstRun as unknown as { unref?: () => void }).unref?.();
 
 	backupInterval = setInterval(() => {
-		void createEncryptedBackup();
+		void createEncryptedBackup().catch((err) => {
+			console.error("[BackupWorker] Uncaught error during scheduled backup cycle:", err);
+		});
 	}, backupIntervalMs());
-	(backupInterval as any).unref?.();
-	(backupInterval as any).unref?.();
+	(backupInterval as unknown as { unref?: () => void }).unref?.();
 }
 
 export function stopBackupDaemon(): void {

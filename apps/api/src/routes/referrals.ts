@@ -190,7 +190,12 @@ export async function registerReferralRoutes(app: FastifyInstance) {
 				await db
 					.update(patientReferralCodes)
 					.set({ signupCount: sql`${patientReferralCodes.signupCount} + 1` })
-					.where(eq(patientReferralCodes.id, codeRecord.id));
+					.where(
+						and(
+							eq(patientReferralCodes.id, codeRecord.id),
+							eq(patientReferralCodes.organizationId, orgId),
+						),
+					);
 
 				return reply.status(201).send({
 					success: true,
@@ -221,147 +226,167 @@ export async function registerReferralRoutes(app: FastifyInstance) {
 			const { refereePatientId, paymentId, paidAmountRub } = parsed.data;
 
 			return withTenantCtx(orgId, async () => {
-				const [referral] = await db
-					.select()
-					.from(patientReferrals)
-					.where(
-						and(
-							eq(patientReferrals.organizationId, orgId),
-							eq(patientReferrals.refereePatientId, refereePatientId),
-							eq(patientReferrals.status, "registered"),
-						),
-					)
-					.limit(1);
+				return await db.transaction(async (tx) => {
+					const [referral] = await tx
+						.select()
+						.from(patientReferrals)
+						.where(
+							and(
+								eq(patientReferrals.organizationId, orgId),
+								eq(patientReferrals.refereePatientId, refereePatientId),
+								eq(patientReferrals.status, "registered"),
+							),
+						)
+						.for("update")
+						.limit(1);
 
-				if (!referral) {
-					return reply.status(404).send({
-						message: "Активная реферальная привязка со статусом 'registered' не найдена",
-					});
-				}
+					if (!referral) {
+						return reply.status(404).send({
+							message: "Активная реферальная привязка со статусом 'registered' не найдена",
+						});
+					}
 
-				const minSpend = 1500;
-				if (paidAmountRub < minSpend) {
-					return reply.status(200).send({
-						rewarded: false,
-						message: `Сумма первого чека (${paidAmountRub} ₽) меньше порога активации бонуса (${minSpend} ₽)`,
-					});
-				}
+					const minSpend = 1500;
+					if (paidAmountRub < minSpend) {
+						return reply.status(200).send({
+							rewarded: false,
+							message: `Сумма первого чека (${paidAmountRub} ₽) меньше порога активации бонуса (${minSpend} ₽)`,
+						});
+					}
 
-				// Award Level 1 Referrer (+1000 points)
-				const referrerL1Points = 1000;
-				const [ref1Balance] = await db
-					.select()
-					.from(patientBonusBalances)
-					.where(
-						and(
-							eq(patientBonusBalances.organizationId, orgId),
-							eq(patientBonusBalances.patientId, referral.referrerPatientId),
-						),
-					)
-					.limit(1);
-
-				const currentL1Active = Number(ref1Balance?.activePoints ?? 0);
-				const currentL1Lifetime = Number(ref1Balance?.lifetimeEarnedPoints ?? 0);
-				const newL1Active = Number((currentL1Active + referrerL1Points).toFixed(2));
-				const newL1Lifetime = Number((currentL1Lifetime + referrerL1Points).toFixed(2));
-
-				if (ref1Balance) {
-					await db
-						.update(patientBonusBalances)
-						.set({
-							activePoints: String(newL1Active),
-							lifetimeEarnedPoints: String(newL1Lifetime),
-							updatedAt: new Date(),
-						})
-						.where(eq(patientBonusBalances.id, ref1Balance.id));
-				} else {
-					await db.insert(patientBonusBalances).values({
-						organizationId: orgId,
-						patientId: referral.referrerPatientId,
-						activePoints: String(newL1Active),
-						lifetimeEarnedPoints: String(newL1Lifetime),
-					});
-				}
-
-				await db.insert(bonusTransactions).values({
-					organizationId: orgId,
-					patientId: referral.referrerPatientId,
-					amountPoints: String(referrerL1Points),
-					balanceAfterPoints: String(newL1Active),
-					type: "accrual_referral_l1",
-					relatedPaymentId: paymentId || null,
-					relatedReferralId: referral.id,
-					description: "Бонус за первую оплату лечения приглашённого друга (+1000 ₽)",
-					unspentPoints: String(referrerL1Points),
-				});
-
-				// Award Level 2 Referrer (+300 points) if exists
-				if (referral.parentReferrerPatientId) {
-					const referrerL2Points = 300;
-					const [ref2Balance] = await db
+					// Award Level 1 Referrer (+1000 points)
+					const referrerL1Points = 1000;
+					const [ref1Balance] = await tx
 						.select()
 						.from(patientBonusBalances)
 						.where(
 							and(
 								eq(patientBonusBalances.organizationId, orgId),
-								eq(patientBonusBalances.patientId, referral.parentReferrerPatientId),
+								eq(patientBonusBalances.patientId, referral.referrerPatientId),
 							),
 						)
+						.for("update")
 						.limit(1);
 
-					const currentL2Active = Number(ref2Balance?.activePoints ?? 0);
-					const currentL2Lifetime = Number(ref2Balance?.lifetimeEarnedPoints ?? 0);
-					const newL2Active = Number((currentL2Active + referrerL2Points).toFixed(2));
-					const newL2Lifetime = Number((currentL2Lifetime + referrerL2Points).toFixed(2));
+					const currentL1Active = Number(ref1Balance?.activePoints ?? 0);
+					const currentL1Lifetime = Number(ref1Balance?.lifetimeEarnedPoints ?? 0);
+					const newL1Active = Number((currentL1Active + referrerL1Points).toFixed(2));
+					const newL1Lifetime = Number((currentL1Lifetime + referrerL1Points).toFixed(2));
 
-					if (ref2Balance) {
-						await db
+					if (ref1Balance) {
+						await tx
 							.update(patientBonusBalances)
 							.set({
-								activePoints: String(newL2Active),
-								lifetimeEarnedPoints: String(newL2Lifetime),
+								activePoints: String(newL1Active),
+								lifetimeEarnedPoints: String(newL1Lifetime),
 								updatedAt: new Date(),
 							})
-							.where(eq(patientBonusBalances.id, ref2Balance.id));
+							.where(
+								and(
+									eq(patientBonusBalances.id, ref1Balance.id),
+									eq(patientBonusBalances.organizationId, orgId),
+								),
+							);
 					} else {
-						await db.insert(patientBonusBalances).values({
+						await tx.insert(patientBonusBalances).values({
 							organizationId: orgId,
-							patientId: referral.parentReferrerPatientId,
-							activePoints: String(newL2Active),
-							lifetimeEarnedPoints: String(newL2Lifetime),
+							patientId: referral.referrerPatientId,
+							activePoints: String(newL1Active),
+							lifetimeEarnedPoints: String(newL1Lifetime),
 						});
 					}
 
-					await db.insert(bonusTransactions).values({
+					await tx.insert(bonusTransactions).values({
 						organizationId: orgId,
-						patientId: referral.parentReferrerPatientId,
-						amountPoints: String(referrerL2Points),
-						balanceAfterPoints: String(newL2Active),
-						type: "accrual_referral_l2",
+						patientId: referral.referrerPatientId,
+						amountPoints: String(referrerL1Points),
+						balanceAfterPoints: String(newL1Active),
+						type: "accrual_referral_l1",
 						relatedPaymentId: paymentId || null,
 						relatedReferralId: referral.id,
-						description: "Бонус 2-го уровня за визит друга вашего друга (+300 ₽)",
-						unspentPoints: String(referrerL2Points),
+						description: "Бонус за первую оплату лечения приглашённого друга (+1000 ₽)",
+						unspentPoints: String(referrerL1Points),
 					});
-				}
 
-				// Update referral status to rewarded
-				await db
-					.update(patientReferrals)
-					.set({
-						status: "rewarded",
-						qualifyingPaymentId: paymentId || null,
-						qualifyingAmountRub: String(paidAmountRub),
-						rewardedAt: new Date(),
-						updatedAt: new Date(),
-					})
-					.where(eq(patientReferrals.id, referral.id));
+					// Award Level 2 Referrer (+300 points) if exists
+					if (referral.parentReferrerPatientId) {
+						const referrerL2Points = 300;
+						const [ref2Balance] = await tx
+							.select()
+							.from(patientBonusBalances)
+							.where(
+								and(
+									eq(patientBonusBalances.organizationId, orgId),
+									eq(patientBonusBalances.patientId, referral.parentReferrerPatientId),
+								),
+							)
+							.for("update")
+							.limit(1);
 
-				return reply.status(200).send({
-					success: true,
-					rewarded: true,
-					referrerTier1RewardedPoints: referrerL1Points,
-					referrerTier2RewardedPoints: referral.parentReferrerPatientId ? 300 : 0,
+						const currentL2Active = Number(ref2Balance?.activePoints ?? 0);
+						const currentL2Lifetime = Number(ref2Balance?.lifetimeEarnedPoints ?? 0);
+						const newL2Active = Number((currentL2Active + referrerL2Points).toFixed(2));
+						const newL2Lifetime = Number((currentL2Lifetime + referrerL2Points).toFixed(2));
+
+						if (ref2Balance) {
+							await tx
+								.update(patientBonusBalances)
+								.set({
+									activePoints: String(newL2Active),
+									lifetimeEarnedPoints: String(newL2Lifetime),
+									updatedAt: new Date(),
+								})
+								.where(
+									and(
+										eq(patientBonusBalances.id, ref2Balance.id),
+										eq(patientBonusBalances.organizationId, orgId),
+									),
+								);
+						} else {
+							await tx.insert(patientBonusBalances).values({
+								organizationId: orgId,
+								patientId: referral.parentReferrerPatientId,
+								activePoints: String(newL2Active),
+								lifetimeEarnedPoints: String(newL2Lifetime),
+							});
+						}
+
+						await tx.insert(bonusTransactions).values({
+							organizationId: orgId,
+							patientId: referral.parentReferrerPatientId,
+							amountPoints: String(referrerL2Points),
+							balanceAfterPoints: String(newL2Active),
+							type: "accrual_referral_l2",
+							relatedPaymentId: paymentId || null,
+							relatedReferralId: referral.id,
+							description: "Бонус 2-го уровня за визит друга вашего друга (+300 ₽)",
+							unspentPoints: String(referrerL2Points),
+						});
+					}
+
+					// Update referral status to rewarded
+					await tx
+						.update(patientReferrals)
+						.set({
+							status: "rewarded",
+							qualifyingPaymentId: paymentId || null,
+							qualifyingAmountRub: String(paidAmountRub),
+							rewardedAt: new Date(),
+							updatedAt: new Date(),
+						})
+						.where(
+							and(
+								eq(patientReferrals.id, referral.id),
+								eq(patientReferrals.organizationId, orgId),
+							),
+						);
+
+					return reply.status(200).send({
+						success: true,
+						rewarded: true,
+						referrerTier1RewardedPoints: referrerL1Points,
+						referrerTier2RewardedPoints: referral.parentReferrerPatientId ? 300 : 0,
+					});
 				});
 			});
 		},

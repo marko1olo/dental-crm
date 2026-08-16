@@ -469,7 +469,12 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 						status: "refunded",
 						updatedAt: new Date(),
 					})
-					.where(eq(sberbankTransactions.id, lockedTx.id));
+					.where(
+						and(
+							eq(sberbankTransactions.id, lockedTx.id),
+							eq(sberbankTransactions.organizationId, lockedTx.organizationId),
+						),
+					);
 
 				await tx
 					.update(payments)
@@ -499,7 +504,12 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 						status: "reversed",
 						updatedAt: new Date(),
 					})
-					.where(eq(sberbankTransactions.id, lockedTx.id));
+					.where(
+						and(
+							eq(sberbankTransactions.id, lockedTx.id),
+							eq(sberbankTransactions.organizationId, lockedTx.organizationId),
+						),
+					);
 
 				return reply.status(200).send({
 					success: true,
@@ -516,7 +526,12 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 						status: "approved",
 						updatedAt: new Date(),
 					})
-					.where(eq(sberbankTransactions.id, lockedTx.id));
+					.where(
+						and(
+							eq(sberbankTransactions.id, lockedTx.id),
+							eq(sberbankTransactions.organizationId, lockedTx.organizationId),
+						),
+					);
 
 				return reply.status(200).send({
 					success: true,
@@ -558,7 +573,12 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 						status: "success",
 						updatedAt: new Date(),
 					})
-					.where(eq(sberbankTransactions.id, lockedTx.id));
+					.where(
+						and(
+							eq(sberbankTransactions.id, lockedTx.id),
+							eq(sberbankTransactions.organizationId, lockedTx.organizationId),
+						),
+					);
 
 				const amountRub = Number(
 					kopecksToNumericString(lockedTx.amount),

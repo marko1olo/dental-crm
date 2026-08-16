@@ -5,7 +5,7 @@ import {
 	type UpdatePatientAdministrativeProfileInput,
 	type UpdatePatientInput,
 } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import {
 	buildPatientLedgers,
 	MoneyPrecisionError,
@@ -86,23 +86,28 @@ async function patientAccountBalancesRub(
 	if (patientIds.length === 0) return balances;
 
 	/*
-	 * Одна карточка — сужаем выборку по пациенту; список клиники — берём деньги
-	 * организации одним проходом. Условие по организации стоит в ОБОИХ случаях:
-	 * без него в сальдо попали бы строки чужой клиники.
+	 * Оптимизация выборки сальдо: запрашиваем начисления и платежи
+	 * ИСКЛЮЧИТЕЛЬНО для запрашиваемого набора patientIds через inArray.
+	 * Условие по organizationId строго сохраняется для multi-tenant изоляции.
 	 */
-	const singlePatientId = patientIds.length === 1 ? patientIds[0] : null;
-	const chargeScope = singlePatientId
-		? and(
-				eq(schema.treatmentItems.organizationId, organizationId),
-				eq(schema.treatmentItems.patientId, singlePatientId),
-			)
-		: eq(schema.treatmentItems.organizationId, organizationId);
-	const paymentScope = singlePatientId
-		? and(
-				eq(schema.payments.organizationId, organizationId),
-				eq(schema.payments.patientId, singlePatientId),
-			)
-		: eq(schema.payments.organizationId, organizationId);
+	const firstPatientId = patientIds[0];
+	const patientIdFilter =
+		patientIds.length === 1 && firstPatientId !== undefined
+			? eq(schema.treatmentItems.patientId, firstPatientId)
+			: inArray(schema.treatmentItems.patientId, patientIds as string[]);
+	const chargeScope = and(
+		eq(schema.treatmentItems.organizationId, organizationId),
+		patientIdFilter,
+	);
+
+	const paymentPatientFilter =
+		patientIds.length === 1 && firstPatientId !== undefined
+			? eq(schema.payments.patientId, firstPatientId)
+			: inArray(schema.payments.patientId, patientIds as string[]);
+	const paymentScope = and(
+		eq(schema.payments.organizationId, organizationId),
+		paymentPatientFilter,
+	);
 
 	const [chargeRows, paymentRows] = await Promise.all([
 		db

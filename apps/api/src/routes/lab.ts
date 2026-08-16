@@ -523,7 +523,12 @@ export async function registerLabRoutes(app: FastifyInstance) {
 				await db
 					.update(labOrders)
 					.set({ labComments, updatedAt: new Date() })
-					.where(eq(labOrders.id, updated.id));
+					.where(
+						and(
+							eq(labOrders.id, updated.id),
+							eq(labOrders.organizationId, updated.organizationId),
+						),
+					);
 			}
 
 			wsBroker.broadcastToOrganization(updated.organizationId, {
