@@ -22,13 +22,15 @@ import { appendChipToText } from "../components/documents/documentChipText";
 import { AnesthesiaConsentLogForm } from "../components/documents/forms/AnesthesiaConsentLogForm";
 import { InformedConsentForm } from "../components/documents/forms/InformedConsentForm";
 import { MedicalInterventionRefusalForm } from "../components/documents/forms/MedicalInterventionRefusalForm";
+import { PaidServiceContractForm } from "../components/documents/forms/PaidServiceContractForm";
+import { PaymentInvoiceDocumentForm } from "../components/documents/forms/PaymentInvoiceDocumentForm";
 import { PersonalDataProcessingConsentForm } from "../components/documents/forms/PersonalDataProcessingConsentForm";
 import { PhotoVideoConsentForm } from "../components/documents/forms/PhotoVideoConsentForm";
 import { ProcedureSpecificConsentForm } from "../components/documents/forms/ProcedureSpecificConsentForm";
 import { TaxDeductionApplicationForm } from "../components/documents/forms/TaxDeductionApplicationForm";
 
 /**
- * СЕМЬ ФОРМ ДОКУМЕНТОВ ВЫНЕСЕНЫ ИЗ DocumentsView.tsx — И ДОЛЖНЫ РИСОВАТЬСЯ.
+ * ФОРМЫ ДОКУМЕНТОВ ВЫНЕСЕНЫ ИЗ DocumentsView.tsx — И ДОЛЖНЫ РИСОВАТЬСЯ.
  *
  * Запуск: из apps/web
  *   node --import tsx --test src/tests/documentPayloadForms.test.ts
@@ -75,6 +77,14 @@ const extractedForms = [
 	{
 		name: "MedicalInterventionRefusalForm",
 		file: "components/documents/forms/MedicalInterventionRefusalForm.tsx",
+	},
+	{
+		name: "PaidServiceContractForm",
+		file: "components/documents/forms/PaidServiceContractForm.tsx",
+	},
+	{
+		name: "PaymentInvoiceDocumentForm",
+		file: "components/documents/forms/PaymentInvoiceDocumentForm.tsx",
 	},
 	{
 		name: "PersonalDataProcessingConsentForm",
@@ -181,8 +191,8 @@ describe("вынесенные формы подключены, а не лежа
 		);
 		assert.equal(
 			users.length,
-			6,
-			`общую карточку используют ${users.length} форм из 6 ожидаемых`,
+			7,
+			`общую карточку используют ${users.length} форм из 7 ожидаемых`,
 		);
 
 		const refusal = read(
@@ -205,6 +215,80 @@ describe("вынесенные формы подключены, а не лежа
 });
 
 describe("формы рисуются и сохранили текст, который видел врач", () => {
+	it("договор платных услуг: заголовок, реквизиты, суммы и 4 подтверждения", () => {
+		const html = renderForm(
+			createElement(PaidServiceContractForm, {
+				documentPatientFullName: "Петров Пётр Петрович",
+				activeDoctorFullName: "Иванова Мария Сергеевна",
+				activeVisitComplaint: "кариес 36",
+				activeVisitTreatmentPlan: "пломба",
+				totalRubValue: 15000,
+				totalRubFormatted: "15 000 ₽",
+			}),
+		);
+		assert.ok(html.includes("Договор платных медицинских услуг"));
+		assert.ok(html.includes("Номер договора"));
+		assert.ok(html.includes("Дата договора"));
+		assert.ok(html.includes("Начало оказания"));
+		assert.ok(html.includes("Завершение"));
+		assert.ok(html.includes("Заказчик"));
+		assert.ok(html.includes("Петров Пётр Петрович"));
+		assert.ok(html.includes("Иванова Мария Сергеевна"));
+		assert.ok(html.includes("Сумма договора"));
+		assert.ok(html.includes("15 000 ₽"));
+		assert.ok(html.includes("Порядок оплаты"));
+		assert.ok(html.includes("Изменение цены и объема"));
+		assert.ok(html.includes("Уведомление о бесплатной помощи"));
+		assert.ok(html.includes("Предупреждение о рекомендациях врача"));
+		assert.ok(html.includes("Отказ и возврат"));
+		assert.ok(html.includes("Гарантия и претензии"));
+		assert.ok(
+			html.includes("Пациент получил сведения о клинике, лицензии и исполнителе"),
+		);
+		assert.ok(
+			html.includes("Перечень услуг и стоимость переданы пациенту до подписания"),
+		);
+		assert.ok(html.includes("Пациент понимает платную основу оказания услуг"));
+		assert.ok(
+			html.includes("Изменения состава или стоимости оформляются письменно"),
+		);
+	});
+
+	it("счет на оплату: заголовок, реквизиты, плательщик, банк и QR", () => {
+		const html = renderForm(
+			createElement(PaymentInvoiceDocumentForm, {
+				documentPatientFullName: "Петров Пётр Петрович",
+				documentPatientPhone: "+7 999 123-45-67",
+				documentPatientEmail: "petrov@example.com",
+				clinicBankDetails: "АО ТИНЬКОФФ БАНК, БИК 044525974",
+				totalRubFormatted: "12 500 ₽",
+				serviceLinesCount: 3,
+			}),
+		);
+		assert.ok(html.includes("Счет на оплату"));
+		assert.ok(html.includes("Номер счета"));
+		assert.ok(html.includes("Дата счета"));
+		assert.ok(html.includes("Плательщик"));
+		assert.ok(html.includes("Петров Пётр Петрович"));
+		assert.ok(html.includes("+7 999 123-45-67"));
+		assert.ok(html.includes("petrov@example.com"));
+		assert.ok(html.includes("Срок оплаты"));
+		assert.ok(html.includes("Назначение платежа"));
+		assert.ok(html.includes("Условия оплаты"));
+		assert.ok(html.includes("Реквизиты клиники"));
+		assert.ok(html.includes("АО ТИНЬКОФФ БАНК, БИК 044525974"));
+		assert.ok(html.includes("QR/платежная строка"));
+		assert.ok(html.includes("Сумма из плана лечения: 12 500 ₽. Строк услуг: 3."));
+		assert.ok(html.includes("Безналичная оплата разрешена"));
+		assert.ok(html.includes("Оплата в кассе разрешена"));
+		assert.ok(html.includes("Реквизиты клиники проверены"));
+		assert.ok(
+			html.includes("Состав услуг соответствует плану или договору"),
+		);
+		assert.ok(
+			html.includes("Плательщик предупрежден: счет не является кассовым чеком"),
+		);
+	});
 	it("информированное согласие: заголовок, поля и три галочки", () => {
 		const html = renderForm(
 			createElement(InformedConsentForm, {

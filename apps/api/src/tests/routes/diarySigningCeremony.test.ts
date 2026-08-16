@@ -434,6 +434,7 @@ await withFixtureTenant(organizationId, async () => {
 					statusLocalis: STATUS_LOCALIS,
 					treatmentDescription: TREATMENT,
 					diagnosisIcd10: "K02.1",
+					diagnosisTooth: "36",
 				},
 			});
 			assert.equal(draft.statusCode, 200, draft.body);
@@ -469,6 +470,7 @@ await withFixtureTenant(organizationId, async () => {
 				visitId: viaPost.visitId,
 				patientId,
 				diagnosisIcd10: "K02.1",
+				diagnosisTooth: "36",
 				status: "signed",
 				pkcs7Signature: PKCS7,
 			},
@@ -561,6 +563,7 @@ await withFixtureTenant(organizationId, async () => {
 				statusLocalis: STATUS_LOCALIS,
 				treatmentDescription: TREATMENT,
 				diagnosisIcd10: "K02.1",
+				diagnosisTooth: "36",
 				status: "signed",
 				pkcs7Signature: PKCS7,
 			},
@@ -596,6 +599,7 @@ await withFixtureTenant(organizationId, async () => {
 				statusLocalis: STATUS_LOCALIS,
 				treatmentDescription: TREATMENT,
 				diagnosisIcd10: "K02.1",
+				diagnosisTooth: "36",
 			},
 		});
 		assert.equal(draft.statusCode, 200, draft.body);
@@ -660,6 +664,7 @@ await withFixtureTenant(organizationId, async () => {
 				patientId,
 				anamnesis: ANAMNESIS,
 				diagnosisIcd10: "K02.1",
+				diagnosisTooth: "36",
 				status: "signed",
 				pkcs7Signature: PKCS7,
 			},
@@ -732,6 +737,7 @@ await withFixtureTenant(organizationId, async () => {
 				patientId,
 				anamnesis: ANAMNESIS,
 				diagnosisIcd10: "K02.1",
+				diagnosisTooth: "36",
 				status: "signed",
 				pkcs7Signature: PKCS7,
 			},
@@ -794,6 +800,7 @@ await withFixtureTenant(organizationId, async () => {
 				patientId,
 				anamnesis: ANAMNESIS,
 				diagnosisIcd10: "K02.1",
+				diagnosisTooth: "36",
 				status: "signed",
 				pkcs7Signature: PKCS7,
 			},
@@ -837,6 +844,7 @@ await withFixtureTenant(organizationId, async () => {
 				patientId,
 				anamnesis: ANAMNESIS,
 				diagnosisIcd10: "K02.1",
+				diagnosisTooth: "36",
 				status: "signed",
 				pkcs7Signature: PKCS7,
 			},
@@ -874,6 +882,7 @@ await withFixtureTenant(organizationId, async () => {
 				patientId,
 				anamnesis: ANAMNESIS,
 				diagnosisIcd10: "K02.1",
+				diagnosisTooth: "36",
 				status: "signed",
 				pkcs7Signature: PKCS7,
 			},
@@ -945,5 +954,77 @@ await withFixtureTenant(organizationId, async () => {
 				`${name}: строка нуля истинна, поэтому || не проваливается`,
 			);
 		}
+	});
+
+	test("подписание отклоняется с 422 Icd10Invalid при не-стоматологическом коде МКБ", async () => {
+		const scenario = await seedScenario("badicd");
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/diaries",
+			headers: { "x-dente-staff-token": staffToken },
+			payload: {
+				visitId: scenario.visitId,
+				patientId,
+				anamnesis: ANAMNESIS,
+				statusLocalis: STATUS_LOCALIS,
+				treatmentDescription: TREATMENT,
+				diagnosisIcd10: "J06.9", // ОРВИ
+				diagnosisTooth: "36",
+				status: "signed",
+				pkcs7Signature: PKCS7,
+			},
+		});
+		assert.equal(res.statusCode, 422, res.body);
+		const body = JSON.parse(res.body);
+		assert.equal(body.error, "Icd10Invalid");
+		assert.match(body.message, /стоматологический раздел МКБ-10/);
+	});
+
+	test("подписание кариеса (K02) без номера зуба отклоняется с 422 ToothRequired", async () => {
+		const scenario = await seedScenario("notooth");
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/diaries",
+			headers: { "x-dente-staff-token": staffToken },
+			payload: {
+				visitId: scenario.visitId,
+				patientId,
+				anamnesis: ANAMNESIS,
+				statusLocalis: STATUS_LOCALIS,
+				treatmentDescription: TREATMENT,
+				diagnosisIcd10: "K02.1",
+				// diagnosisTooth намеренно не передан
+				status: "signed",
+				pkcs7Signature: PKCS7,
+			},
+		});
+		assert.equal(res.statusCode, 422, res.body);
+		const body = JSON.parse(res.body);
+		assert.equal(body.error, "ToothRequired");
+		assert.match(body.message, /обязательно укажите номер зуба/);
+	});
+
+	test("подписание с невалидным номером зуба отклоняется с 422 ToothInvalid", async () => {
+		const scenario = await seedScenario("badtooth");
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/diaries",
+			headers: { "x-dente-staff-token": staffToken },
+			payload: {
+				visitId: scenario.visitId,
+				patientId,
+				anamnesis: ANAMNESIS,
+				statusLocalis: STATUS_LOCALIS,
+				treatmentDescription: TREATMENT,
+				diagnosisIcd10: "K04.0",
+				diagnosisTooth: "99", // не существует в FDI 11-48, 51-85
+				status: "signed",
+				pkcs7Signature: PKCS7,
+			},
+		});
+		assert.equal(res.statusCode, 422, res.body);
+		const body = JSON.parse(res.body);
+		assert.equal(body.error, "ToothInvalid");
+		assert.match(body.message, /недопустимый номер зуба/);
 	});
 });

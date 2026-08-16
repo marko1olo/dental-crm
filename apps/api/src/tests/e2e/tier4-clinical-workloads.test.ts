@@ -352,6 +352,7 @@ describe("Tier 4: Real-World Clinical Workload Scenarios & Edge Environments", (
 				anamnesis: "Жалобы на зубные отложения и кровоточивость десен.",
 				statusLocalis: "Зубной камень во фронтальном отделе нижней челюсти.",
 				diagnosisIcd10: "K05.0",
+				diagnosisTooth: "31, 32, 41, 42",
 				treatmentDescription: "Ультразвуковой скейлинг, полировка Air-Flow.",
 				status: "signed",
 			},

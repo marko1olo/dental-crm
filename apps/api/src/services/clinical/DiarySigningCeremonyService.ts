@@ -27,6 +27,7 @@ import {
 	visits,
 } from "../../db/schema.js";
 import { verifyCredential } from "../../utils/cryptoHelper.js";
+import { Icd10ClinicalValidator } from "./Icd10ClinicalValidator.js";
 
 export const SIMPLE_PIN_PREFIX = "PIN:";
 export const SIMPLE_PIN_EP_MARK = "SIMPLE_PIN_EP";
@@ -65,6 +66,9 @@ export type DiarySigningFailureCode =
 	| "AlreadyLocked"
 	| "InsufficientStock"
 	| "Icd10Required"
+	| "Icd10Invalid"
+	| "ToothRequired"
+	| "ToothInvalid"
 	| "PinRejected";
 
 export class DiarySigningError extends Error {
@@ -358,12 +362,14 @@ export async function runDiarySigningCeremony(
 		throw new DiarySigningError("AlreadyLocked", "Дневник уже подписан.");
 	}
 
-	const icdForLock =
-		typeof diary.diagnosisIcd10 === "string" ? diary.diagnosisIcd10.trim() : "";
-	if (!icdForLock) {
+	const validation = Icd10ClinicalValidator.validate(
+		diary.diagnosisIcd10,
+		diary.diagnosisTooth,
+	);
+	if (!validation.isValid) {
 		throw new DiarySigningError(
-			"Icd10Required",
-			"Перед подписью дневника 043/у укажите код диагноза по МКБ-10. Сохраните черновик с кодом и повторите подписание.",
+			validation.errorCode,
+			validation.errorMessage,
 		);
 	}
 
@@ -606,6 +612,11 @@ export class DiarySigningCeremonyService {
 	static buildEmkDiagnosis = buildEmkDiagnosisText;
 	static syncVisitEmk = syncVisitEmkFromDiarySoap;
 	static runCeremony = runDiarySigningCeremony;
+	static validateClinicalProtocol = Icd10ClinicalValidator.validate;
+	static isDentalIcd10 = Icd10ClinicalValidator.isDentalIcd10;
+	static isToothSpecificDiagnosis = Icd10ClinicalValidator.isToothSpecificDiagnosis;
+	static isValidFdiTooth = Icd10ClinicalValidator.isValidFdiTooth;
+	static parseAndValidateTeeth = Icd10ClinicalValidator.parseAndValidateTeeth;
 
 	static async signDiary(params: {
 		diaryId: string;

@@ -124,5 +124,41 @@ describe("DiarySigningCeremonyService — Unit & Domain Logic", () => {
 		assert.equal(err.code, "Icd10Required");
 		assert.equal(err.message, "МКБ-10 обязателен");
 		assert.ok(err instanceof Error);
+
+		const toothErr = new DiarySigningError("ToothRequired", "Зуб обязателен");
+		assert.equal(toothErr.code, "ToothRequired");
+
+		const invalidToothErr = new DiarySigningError("ToothInvalid", "Недопустимый зуб");
+		assert.equal(invalidToothErr.code, "ToothInvalid");
+
+		const invalidIcdErr = new DiarySigningError("Icd10Invalid", "Недопустимый МКБ");
+		assert.equal(invalidIcdErr.code, "Icd10Invalid");
+	});
+
+	it("DiarySigningCeremonyService delegates clinical protocol validation", () => {
+		assert.equal(DiarySigningCeremonyService.isDentalIcd10("K02.1"), true);
+		assert.equal(DiarySigningCeremonyService.isDentalIcd10("J00"), false);
+		assert.equal(DiarySigningCeremonyService.isToothSpecificDiagnosis("K02.1"), true);
+		assert.equal(DiarySigningCeremonyService.isToothSpecificDiagnosis("K04.0"), true);
+		assert.equal(DiarySigningCeremonyService.isToothSpecificDiagnosis("K05.1"), true);
+		assert.equal(DiarySigningCeremonyService.isToothSpecificDiagnosis("K08.1"), false);
+
+		// Valid tooth-specific protocol
+		const validRes = DiarySigningCeremonyService.validateClinicalProtocol("K02.1", "36");
+		assert.equal(validRes.isValid, true);
+
+		// Missing tooth on tooth-specific diagnosis
+		const missingTooth = DiarySigningCeremonyService.validateClinicalProtocol("K02.1", null);
+		assert.equal(missingTooth.isValid, false);
+		if (!missingTooth.isValid) {
+			assert.equal(missingTooth.errorCode, "ToothRequired");
+		}
+
+		// Invalid tooth on tooth-specific diagnosis
+		const badTooth = DiarySigningCeremonyService.validateClinicalProtocol("K04.0", "99");
+		assert.equal(badTooth.isValid, false);
+		if (!badTooth.isValid) {
+			assert.equal(badTooth.errorCode, "ToothInvalid");
+		}
 	});
 });

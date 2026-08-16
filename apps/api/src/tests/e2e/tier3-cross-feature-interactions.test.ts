@@ -543,6 +543,7 @@ describe("Tier 3: Cross-Feature Interactions & Multi-Module Pipelines", () => {
 				patientId: PATIENT_1_ID,
 				anamnesis: "Первичный анамнез",
 				diagnosisIcd10: "K02.0",
+				diagnosisTooth: "16",
 				status: "signed",
 			},
 		});

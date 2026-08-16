@@ -890,6 +890,7 @@ describe("Tier 2: Boundary & Corner Cases (Stress & Edge-Condition Testing)", ()
 					visitId: BOUNDARY_VISIT_ID,
 					patientId: PATIENT_1_ID,
 					diagnosisIcd10: "K02.1",
+					diagnosisTooth: "16",
 					status: "signed",
 				},
 			});
@@ -928,6 +929,7 @@ describe("Tier 2: Boundary & Corner Cases (Stress & Edge-Condition Testing)", ()
 					visitId: largeVisitId,
 					patientId: PATIENT_1_ID,
 					diagnosisIcd10: "K02.1",
+					diagnosisTooth: "16",
 					anamnesis: longNotes,
 					status: "signed",
 				},

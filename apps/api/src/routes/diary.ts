@@ -741,10 +741,15 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 						.code(403)
 						.send({ error: "DiaryLocked", message: err.message });
 				}
-				if (err.code === "Icd10Required") {
+				if (
+					err.code === "Icd10Required" ||
+					err.code === "Icd10Invalid" ||
+					err.code === "ToothRequired" ||
+					err.code === "ToothInvalid"
+				) {
 					return reply
 						.code(422)
-						.send({ error: "Icd10Required", message: err.message });
+						.send({ error: err.code, message: err.message });
 				}
 				if (err.code === "InsufficientStock") {
 					return reply
@@ -1168,10 +1173,15 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 						.code(500)
 						.send({ error: "DiaryNotSaved", message: err.message });
 				}
-				if (err.code === "Icd10Required") {
+				if (
+					err.code === "Icd10Required" ||
+					err.code === "Icd10Invalid" ||
+					err.code === "ToothRequired" ||
+					err.code === "ToothInvalid"
+				) {
 					return reply
 						.code(422)
-						.send({ error: "Icd10Required", message: err.message });
+						.send({ error: err.code, message: err.message });
 				}
 				return reply
 					.code(400)

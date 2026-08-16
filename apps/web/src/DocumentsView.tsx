@@ -27,14 +27,14 @@ import { AnesthesiaConsentLogForm } from "./components/documents/forms/Anesthesi
 import type { DocumentSelectOption } from "./components/documents/forms/documentFormTypes";
 import { InformedConsentForm } from "./components/documents/forms/InformedConsentForm";
 import { MedicalInterventionRefusalForm } from "./components/documents/forms/MedicalInterventionRefusalForm";
+import { PaidServiceContractForm } from "./components/documents/forms/PaidServiceContractForm";
 import { PatientIntakeQuestionnaireForm } from "./components/documents/forms/PatientIntakeQuestionnaireForm";
+import { PaymentInvoiceDocumentForm } from "./components/documents/forms/PaymentInvoiceDocumentForm";
 import { PersonalDataProcessingConsentForm } from "./components/documents/forms/PersonalDataProcessingConsentForm";
 import { PhotoVideoConsentForm } from "./components/documents/forms/PhotoVideoConsentForm";
 import { ProcedureSpecificConsentForm } from "./components/documents/forms/ProcedureSpecificConsentForm";
 import { TaxDeductionApplicationForm } from "./components/documents/forms/TaxDeductionApplicationForm";
 import { TreatmentPlanDocumentForm } from "./components/documents/forms/TreatmentPlanDocumentForm";
-import { PaidContractRequiredFieldsPanel } from "./components/documents/PaidContractRequiredFieldsPanel";
-import { paidContractRequiredFieldsReview } from "./components/documents/paidContractRequiredFields";
 import { EmptyState } from "./components/EmptyState";
 import { showToast } from "./components/GlobalToast";
 import {
@@ -92,14 +92,6 @@ const _REFUND_REASON_CHIPS = [
 	"Оплата авансом",
 	"Медицинские противопоказания",
 ];
-/*
-  Подпись блока с полями договора. Одна на две разметки: рамка «чего не хватает»
-  отправляет человека именно в этот блок, поэтому название не должно расходиться.
-  Раньше блок назывался «Ручная корректировка полей» — слово «корректировка»
-  обещает необязательную доводку, а внутри лежат восемнадцать полей, без которых
-  договор не создаётся.
-*/
-const PAID_CONTRACT_FIELDS_BLOCK_TITLE = "Обязательные поля договора";
 
 function humanizeDocumentAuditText(value: string): string {
 	return value
@@ -497,17 +489,6 @@ export function DocumentsView(props: DocumentsViewProps) {
 		installmentScheduleRows,
 		installmentScheduleTotalRub,
 		installmentScheduleWrittenChangesConfirmed,
-		intakeAccuracyConfirmed,
-		intakeAdditionalNotes,
-		intakeAllergyStatus,
-		intakeAnticoagulants,
-		intakeCardioEndocrineNotes,
-		intakeChiefComplaint,
-		intakeChronicConditions,
-		intakeCurrentMedications,
-		intakeEmergencyContact,
-		intakeInfectiousRiskNotes,
-		intakePregnancyStatus,
 		labDeadline,
 		labMaterial,
 		labShade,
@@ -543,42 +524,6 @@ export function DocumentsView(props: DocumentsViewProps) {
 		outpatient025uRegistrationUrbanRuralCode,
 		outpatient025uSocialSupportCode,
 		outpatient025uStayUrbanRuralCode,
-		paidContractCareReason,
-		paidContractClinicInfoConfirmed,
-		paidContractCustomerFullName,
-		paidContractDate,
-		paidContractDoctorFullName,
-		paidContractFreeCareNotice,
-		paidContractNumber,
-		paidContractPaidBasisConfirmed,
-		paidContractPaymentTerms,
-		paidContractPriceChangeRules,
-		paidContractRecommendationWarning,
-		paidContractRefundTerms,
-		paidContractRepresentativeFullName,
-		paidContractServiceEnd,
-		paidContractServiceListConfirmed,
-		paidContractServiceScope,
-		paidContractServiceStart,
-		paidContractSignedAt,
-		paidContractTotalRub,
-		paidContractWarrantyTerms,
-		paidContractWrittenChangesConfirmed,
-		paymentInvoiceBankDetails,
-		paymentInvoiceCashDeskAllowed,
-		paymentInvoiceCashlessAllowed,
-		paymentInvoiceDate,
-		paymentInvoiceDueDate,
-		paymentInvoiceFiscalNoticeConfirmed,
-		paymentInvoiceNumber,
-		paymentInvoicePayerEmail,
-		paymentInvoicePayerFullName,
-		paymentInvoicePayerPhone,
-		paymentInvoicePaymentTerms,
-		paymentInvoicePurpose,
-		paymentInvoiceQrPayload,
-		paymentInvoiceRequisitesVerified,
-		paymentInvoiceServiceScopeConfirmed,
 		paymentReceiptDate,
 		paymentReceiptFiscalNoticeConfirmed,
 		paymentReceiptIssuedBy,
@@ -660,17 +605,6 @@ export function DocumentsView(props: DocumentsViewProps) {
 		setInstallmentScheduleRows,
 		setInstallmentScheduleTotalRub,
 		setInstallmentScheduleWrittenChangesConfirmed,
-		setIntakeAccuracyConfirmed,
-		setIntakeAdditionalNotes,
-		setIntakeAllergyStatus,
-		setIntakeAnticoagulants,
-		setIntakeCardioEndocrineNotes,
-		setIntakeChiefComplaint,
-		setIntakeChronicConditions,
-		setIntakeCurrentMedications,
-		setIntakeEmergencyContact,
-		setIntakeInfectiousRiskNotes,
-		setIntakePregnancyStatus,
 		setLabDeadline,
 		setLabMaterial,
 		setLabShade,
@@ -706,42 +640,6 @@ export function DocumentsView(props: DocumentsViewProps) {
 		setOutpatient025uRegistrationUrbanRuralCode,
 		setOutpatient025uSocialSupportCode,
 		setOutpatient025uStayUrbanRuralCode,
-		setPaidContractCareReason,
-		setPaidContractClinicInfoConfirmed,
-		setPaidContractCustomerFullName,
-		setPaidContractDate,
-		setPaidContractDoctorFullName,
-		setPaidContractFreeCareNotice,
-		setPaidContractNumber,
-		setPaidContractPaidBasisConfirmed,
-		setPaidContractPaymentTerms,
-		setPaidContractPriceChangeRules,
-		setPaidContractRecommendationWarning,
-		setPaidContractRefundTerms,
-		setPaidContractRepresentativeFullName,
-		setPaidContractServiceEnd,
-		setPaidContractServiceListConfirmed,
-		setPaidContractServiceScope,
-		setPaidContractServiceStart,
-		setPaidContractSignedAt,
-		setPaidContractTotalRub,
-		setPaidContractWarrantyTerms,
-		setPaidContractWrittenChangesConfirmed,
-		setPaymentInvoiceBankDetails,
-		setPaymentInvoiceCashDeskAllowed,
-		setPaymentInvoiceCashlessAllowed,
-		setPaymentInvoiceDate,
-		setPaymentInvoiceDueDate,
-		setPaymentInvoiceFiscalNoticeConfirmed,
-		setPaymentInvoiceNumber,
-		setPaymentInvoicePayerEmail,
-		setPaymentInvoicePayerFullName,
-		setPaymentInvoicePayerPhone,
-		setPaymentInvoicePaymentTerms,
-		setPaymentInvoicePurpose,
-		setPaymentInvoiceQrPayload,
-		setPaymentInvoiceRequisitesVerified,
-		setPaymentInvoiceServiceScopeConfirmed,
 		setPaymentReceiptDate,
 		setPaymentReceiptFiscalNoticeConfirmed,
 		setPaymentReceiptIssuedBy,
@@ -827,21 +725,6 @@ export function DocumentsView(props: DocumentsViewProps) {
 		setTreatmentEstimateTotalRub,
 		setTreatmentEstimateTreatmentBasis,
 		setTreatmentEstimateValidUntil,
-		setTreatmentPlanAlternatives,
-		setTreatmentPlanClinicalReason,
-		setTreatmentPlanControlPlan,
-		setTreatmentPlanDiagnosisSummary,
-		setTreatmentPlanDoctorFullName,
-		setTreatmentPlanEstimatedTotalRub,
-		setTreatmentPlanGoals,
-		setTreatmentPlanNewApprovalAcknowledged,
-		setTreatmentPlanPlannedAt,
-		setTreatmentPlanPrognosis,
-		setTreatmentPlanQuestionsAnswered,
-		setTreatmentPlanRisks,
-		setTreatmentPlanSeparateConsentAcknowledged,
-		setTreatmentPlanStages,
-		setTreatmentPlanTeethOrArea,
 		setWarrantyAftercareReceived,
 		setWarrantyCompletedAt,
 		setWarrantyControlVisitSchedule,
@@ -902,21 +785,6 @@ export function DocumentsView(props: DocumentsViewProps) {
 		treatmentEstimateTotalRub,
 		treatmentEstimateTreatmentBasis,
 		treatmentEstimateValidUntil,
-		treatmentPlanAlternatives,
-		treatmentPlanClinicalReason,
-		treatmentPlanControlPlan,
-		treatmentPlanDiagnosisSummary,
-		treatmentPlanDoctorFullName,
-		treatmentPlanEstimatedTotalRub,
-		treatmentPlanGoals,
-		treatmentPlanNewApprovalAcknowledged,
-		treatmentPlanPlannedAt,
-		treatmentPlanPrognosis,
-		treatmentPlanQuestionsAnswered,
-		treatmentPlanRisks,
-		treatmentPlanSeparateConsentAcknowledged,
-		treatmentPlanStages,
-		treatmentPlanTeethOrArea,
 		warrantyAftercareReceived,
 		warrantyCompletedAt,
 		warrantyControlVisitSchedule,
@@ -1052,44 +920,6 @@ export function DocumentsView(props: DocumentsViewProps) {
 	const documentVoidMissingGuidanceId = "document-void-missing-guidance";
 	const selectedDocumentNeedsPayload =
 		structuredPayloadDocumentKinds.has(selectedDocumentKind);
-	/*
-    Чего не хватает договору платных услуг. Считается здесь один раз, потому что
-    нужно в двух местах разметки: в рамке со всем перечнем и в счётчике у подписи
-    блока полей. Для остальных видов документов не считается вовсе.
-
-    Подстановки повторяют запасы из useAppLogic (paidContractCustomerFullNameValue
-    и соседние): пустое поле заказчика закрывается пациентом приёма, пустой состав
-    услуг — планом лечения, пустой врач — врачом приёма. Без этого перечень просил
-    бы вписать то, что программа подставит сама.
-  */
-	const paidContractRequired =
-		selectedDocumentKind === "paid_medical_services_contract"
-			? paidContractRequiredFieldsReview({
-					contractNumber: paidContractNumber,
-					serviceStart: paidContractServiceStart,
-					serviceEnd: paidContractServiceEnd,
-					customerFullName: paidContractCustomerFullName,
-					patientFullName: documentPatient?.fullName ?? "",
-					careReason: paidContractCareReason,
-					visitComplaint: dashboard?.activeVisit?.complaint ?? "",
-					serviceScope: paidContractServiceScope,
-					visitTreatmentPlan: dashboard?.activeVisit?.treatmentPlan ?? "",
-					visitDoctorSummary: dashboard?.activeVisit?.doctorSummary ?? "",
-					totalRub: paidContractTotalRubValue(),
-					paymentTerms: paidContractPaymentTerms,
-					priceChangeRules: paidContractPriceChangeRules,
-					freeCareNotice: paidContractFreeCareNotice,
-					recommendationWarning: paidContractRecommendationWarning,
-					refundTerms: paidContractRefundTerms,
-					warrantyTerms: paidContractWarrantyTerms,
-					doctorFullName: paidContractDoctorFullName,
-					activeDoctorFullName: activeDoctor?.fullName ?? "",
-					clinicInfoConfirmed: paidContractClinicInfoConfirmed,
-					serviceListConfirmed: paidContractServiceListConfirmed,
-					paidBasisConfirmed: paidContractPaidBasisConfirmed,
-					writtenChangesConfirmed: paidContractWrittenChangesConfirmed,
-				})
-			: null;
 	function releaseSourceRequestOptionLabel(
 		document: MedicalCopyRequestSourceDocument,
 	): string {
@@ -1386,324 +1216,19 @@ export function DocumentsView(props: DocumentsViewProps) {
 					aria-label="Данные для документов с обязательными полями"
 				>
 					{selectedDocumentKind === "paid_medical_services_contract" ? (
-						<article className="document-payload-card">
-							<div>
-								<h3>Договор платных медицинских услуг</h3>
-								<p>
-									Фиксация номера, сроков, состава услуг, стоимости, порядка
-									оплаты и обязательных уведомлений пациента до лечения.
-								</p>
-							</div>
-							{paidContractRequired ? (
-								<PaidContractRequiredFieldsPanel
-									review={paidContractRequired}
-									fieldsBlockTitle={PAID_CONTRACT_FIELDS_BLOCK_TITLE}
-								/>
-							) : null}
-							<details
-								className="document-manual-override"
-								style={{
-									background: "var(--surface-100)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid var(--line)",
-									marginTop: "16px",
-								}}
-							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
-								>
-									{/*
-        В подписи стоит счётчик нехваток: сам блок свёрнут, и без счётчика
-        человек не понимал, что разворачивать его обязательно.
-      */}
-									✏️ {PAID_CONTRACT_FIELDS_BLOCK_TITLE}
-									{paidContractRequired?.missing.length
-										? ` — не хватает ${paidContractRequired.missing.length}`
-										: " — всё заполнено"}
-									{" (развернуть)"}
-								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
-								>
-									<div className="document-payload-row">
-										<label>
-											Номер договора
-											<input
-												value={paidContractNumber}
-												onChange={(event) =>
-													setPaidContractNumber(event.target.value)
-												}
-												placeholder="например: ДПМУ-2026-001"
-											/>
-										</label>
-										<label>
-											Дата договора
-											<input
-												value={paidContractDate}
-												onChange={(event) =>
-													setPaidContractDate(event.target.value)
-												}
-											/>
-										</label>
-									</div>
-									<div className="document-payload-row">
-										<label>
-											Начало оказания
-											<input
-												value={paidContractServiceStart}
-												onChange={(event) =>
-													setPaidContractServiceStart(event.target.value)
-												}
-												placeholder="дата и время первого этапа"
-											/>
-										</label>
-										<label>
-											Завершение
-											<input
-												value={paidContractServiceEnd}
-												onChange={(event) =>
-													setPaidContractServiceEnd(event.target.value)
-												}
-											/>
-										</label>
-									</div>
-									<div className="document-payload-row">
-										<label>
-											Заказчик
-											<input
-												value={paidContractCustomerFullName}
-												onChange={(event) =>
-													setPaidContractCustomerFullName(event.target.value)
-												}
-												placeholder={
-													documentPatient?.fullName ??
-													"если не отличается от пациента"
-												}
-											/>
-										</label>
-										<label>
-											Представитель
-											<input
-												value={paidContractRepresentativeFullName}
-												onChange={(event) =>
-													setPaidContractRepresentativeFullName(
-														event.target.value,
-													)
-												}
-												placeholder="если действует представитель"
-											/>
-										</label>
-									</div>
-									<label>
-										Основание обращения
-										<textarea
-											value={paidContractCareReason}
-											onChange={(event) =>
-												setPaidContractCareReason(event.target.value)
-											}
-											placeholder={
-												dashboard?.activeVisit?.complaint ??
-												"жалоба, диагноз или плановый повод"
-											}
-											rows={2}
-										/>
-										<div
-											className="quick-chips-row"
-											style={{ marginTop: "6px", flexWrap: "wrap" }}
-										>
-											{[
-												"Кариес",
-												"Пульпит",
-												"Острая боль",
-												"Плановый осмотр",
-												"Профгигиена",
-												"Жалобы отсутствуют",
-											].map((chip) => (
-												<button
-													key={chip}
-													type="button"
-													className="quick-chip quick-chip--sm"
-													onClick={() =>
-														setPaidContractCareReason(
-															appendChipToText(paidContractCareReason, chip),
-														)
-													}
-												>
-													+ {chip}
-												</button>
-											))}
-										</div>
-									</label>
-									<label>
-										Состав услуг
-										<textarea
-											value={paidContractServiceScope}
-											onChange={(event) =>
-												setPaidContractServiceScope(event.target.value)
-											}
-											placeholder={
-												dashboard?.activeVisit?.treatmentPlan ||
-												dashboard?.activeVisit?.doctorSummary ||
-												"перечень согласованных платных услуг"
-											}
-											rows={3}
-										/>
-									</label>
-									<div className="document-payload-row">
-										<label>
-											Сумма договора
-											<input
-												inputMode="numeric"
-												value={paidContractTotalRub}
-												onChange={(event) =>
-													setPaidContractTotalRub(event.target.value)
-												}
-												placeholder={
-													paidContractTotalRubValue()
-														? money(paidContractTotalRubValue())
-														: "сумма цифрами, копейки после запятой"
-												}
-											/>
-										</label>
-										<label>
-											Ответственный врач
-											<input
-												value={paidContractDoctorFullName}
-												onChange={(event) =>
-													setPaidContractDoctorFullName(event.target.value)
-												}
-												placeholder={activeDoctor?.fullName ?? "лечащий врач"}
-											/>
-										</label>
-									</div>
-									<label>
-										Порядок оплаты
-										<textarea
-											value={paidContractPaymentTerms}
-											onChange={(event) =>
-												setPaidContractPaymentTerms(event.target.value)
-											}
-											rows={2}
-										/>
-									</label>
-									<label>
-										Изменение цены и объема
-										<textarea
-											value={paidContractPriceChangeRules}
-											onChange={(event) =>
-												setPaidContractPriceChangeRules(event.target.value)
-											}
-											rows={2}
-										/>
-									</label>
-									<label>
-										Уведомление о бесплатной помощи
-										<textarea
-											value={paidContractFreeCareNotice}
-											onChange={(event) =>
-												setPaidContractFreeCareNotice(event.target.value)
-											}
-											rows={2}
-										/>
-									</label>
-									<label>
-										Предупреждение о рекомендациях врача
-										<textarea
-											value={paidContractRecommendationWarning}
-											onChange={(event) =>
-												setPaidContractRecommendationWarning(event.target.value)
-											}
-											rows={2}
-										/>
-									</label>
-									<label>
-										Отказ и возврат
-										<textarea
-											value={paidContractRefundTerms}
-											onChange={(event) =>
-												setPaidContractRefundTerms(event.target.value)
-											}
-											rows={2}
-										/>
-									</label>
-									<label>
-										Гарантия и претензии
-										<textarea
-											value={paidContractWarrantyTerms}
-											onChange={(event) =>
-												setPaidContractWarrantyTerms(event.target.value)
-											}
-											rows={2}
-										/>
-									</label>
-									<label>
-										Подписано
-										<input
-											value={paidContractSignedAt}
-											onChange={(event) =>
-												setPaidContractSignedAt(event.target.value)
-											}
-										/>
-									</label>
-									<label className="document-payload-checkbox">
-										<input
-											checked={paidContractClinicInfoConfirmed}
-											type="checkbox"
-											onChange={(event) =>
-												setPaidContractClinicInfoConfirmed(event.target.checked)
-											}
-										/>
-										Пациент получил сведения о клинике, лицензии и исполнителе
-									</label>
-									<label className="document-payload-checkbox">
-										<input
-											checked={paidContractServiceListConfirmed}
-											type="checkbox"
-											onChange={(event) =>
-												setPaidContractServiceListConfirmed(
-													event.target.checked,
-												)
-											}
-										/>
-										Перечень услуг и стоимость переданы пациенту до подписания
-									</label>
-									<label className="document-payload-checkbox">
-										<input
-											checked={paidContractPaidBasisConfirmed}
-											type="checkbox"
-											onChange={(event) =>
-												setPaidContractPaidBasisConfirmed(event.target.checked)
-											}
-										/>
-										Пациент понимает платную основу оказания услуг
-									</label>
-									<label className="document-payload-checkbox">
-										<input
-											checked={paidContractWrittenChangesConfirmed}
-											type="checkbox"
-											onChange={(event) =>
-												setPaidContractWrittenChangesConfirmed(
-													event.target.checked,
-												)
-											}
-										/>
-										Изменения состава или стоимости оформляются письменно
-									</label>
-								</div>
-							</details>
-						</article>
+						<PaidServiceContractForm
+							documentPatientFullName={documentPatient?.fullName}
+							activeVisitComplaint={dashboard?.activeVisit?.complaint}
+							activeVisitTreatmentPlan={dashboard?.activeVisit?.treatmentPlan}
+							activeVisitDoctorSummary={dashboard?.activeVisit?.doctorSummary}
+							activeDoctorFullName={activeDoctor?.fullName}
+							totalRubValue={paidContractTotalRubValue()}
+							totalRubFormatted={
+								paidContractTotalRubValue()
+									? money(paidContractTotalRubValue())
+									: null
+							}
+						/>
 					) : null}
 
 					{selectedDocumentKind === "completed_works_act" ? (
@@ -2294,219 +1819,18 @@ export function DocumentsView(props: DocumentsViewProps) {
 					) : null}
 
 					{selectedDocumentKind === "payment_invoice" ? (
-						<article className="document-payload-card">
-							<div>
-								<h3>Счет на оплату</h3>
-								<p>
-									Реквизиты, плательщик, срок оплаты и состав услуг. Счет не
-									заменяет кассовый чек.
-								</p>
-							</div>
-							<details
-								className="document-manual-override"
-								style={{
-									background: "var(--surface-100)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid var(--line)",
-									marginTop: "16px",
-								}}
-							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
-								>
-									✏️ Ручная корректировка полей (развернуть)
-								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
-								>
-									<div className="document-payload-row">
-										<label>
-											Номер счета
-											<input
-												value={paymentInvoiceNumber}
-												onChange={(event) =>
-													setPaymentInvoiceNumber(event.target.value)
-												}
-												placeholder="например: СЧ-2026-001"
-											/>
-										</label>
-										<label>
-											Дата счета
-											<input
-												value={paymentInvoiceDate}
-												onChange={(event) =>
-													setPaymentInvoiceDate(event.target.value)
-												}
-											/>
-										</label>
-									</div>
-									<div className="document-payload-row">
-										<label>
-											Плательщик
-											<input
-												value={paymentInvoicePayerFullName}
-												onChange={(event) =>
-													setPaymentInvoicePayerFullName(event.target.value)
-												}
-												placeholder={
-													documentPatient?.fullName ?? "ФИО плательщика"
-												}
-											/>
-										</label>
-										<label>
-											Срок оплаты
-											<input
-												value={paymentInvoiceDueDate}
-												onChange={(event) =>
-													setPaymentInvoiceDueDate(event.target.value)
-												}
-												placeholder="например: до 25.05.2026"
-											/>
-										</label>
-									</div>
-									<div className="document-payload-row">
-										<label>
-											Телефон плательщика
-											<input
-												value={paymentInvoicePayerPhone}
-												onChange={(event) =>
-													setPaymentInvoicePayerPhone(event.target.value)
-												}
-												placeholder={documentPatient?.phone ?? "необязательно"}
-											/>
-										</label>
-										<label>
-											Email плательщика
-											<input
-												value={paymentInvoicePayerEmail}
-												onChange={(event) =>
-													setPaymentInvoicePayerEmail(event.target.value)
-												}
-												placeholder={documentPatient?.email ?? "необязательно"}
-											/>
-										</label>
-									</div>
-									<label>
-										Назначение платежа
-										<textarea
-											value={paymentInvoicePurpose}
-											onChange={(event) =>
-												setPaymentInvoicePurpose(event.target.value)
-											}
-											rows={2}
-										/>
-									</label>
-									<label>
-										Условия оплаты
-										<textarea
-											value={paymentInvoicePaymentTerms}
-											onChange={(event) =>
-												setPaymentInvoicePaymentTerms(event.target.value)
-											}
-											rows={2}
-										/>
-									</label>
-									<label>
-										Реквизиты клиники
-										<textarea
-											value={paymentInvoiceBankDetails}
-											onChange={(event) =>
-												setPaymentInvoiceBankDetails(event.target.value)
-											}
-											placeholder={
-												dashboard?.clinicSettings.profile.bankDetails ??
-												"расчетный счет, банк, БИК, корр. счет"
-											}
-											rows={3}
-										/>
-									</label>
-									<label>
-										QR/платежная строка
-										<textarea
-											value={paymentInvoiceQrPayload}
-											onChange={(event) =>
-												setPaymentInvoiceQrPayload(event.target.value)
-											}
-											placeholder="необязательно: данные СБП или платежная ссылка"
-											rows={2}
-										/>
-									</label>
-									<p className="small">
-										Сумма из плана лечения:{" "}
-										{money(paymentInvoiceTotalRubValue())}. Строк услуг:{" "}
-										{plannedServiceLinesForFinancialPayload().length}.
-									</p>
-									<label className="document-payload-checkbox">
-										<input
-											checked={paymentInvoiceCashlessAllowed}
-											type="checkbox"
-											onChange={(event) =>
-												setPaymentInvoiceCashlessAllowed(event.target.checked)
-											}
-										/>
-										Безналичная оплата разрешена
-									</label>
-									<label className="document-payload-checkbox">
-										<input
-											checked={paymentInvoiceCashDeskAllowed}
-											type="checkbox"
-											onChange={(event) =>
-												setPaymentInvoiceCashDeskAllowed(event.target.checked)
-											}
-										/>
-										Оплата в кассе разрешена
-									</label>
-									<label className="document-payload-checkbox">
-										<input
-											checked={paymentInvoiceRequisitesVerified}
-											type="checkbox"
-											onChange={(event) =>
-												setPaymentInvoiceRequisitesVerified(
-													event.target.checked,
-												)
-											}
-										/>
-										Реквизиты клиники проверены
-									</label>
-									<label className="document-payload-checkbox">
-										<input
-											checked={paymentInvoiceServiceScopeConfirmed}
-											type="checkbox"
-											onChange={(event) =>
-												setPaymentInvoiceServiceScopeConfirmed(
-													event.target.checked,
-												)
-											}
-										/>
-										Состав услуг соответствует плану или договору
-									</label>
-									<label className="document-payload-checkbox">
-										<input
-											checked={paymentInvoiceFiscalNoticeConfirmed}
-											type="checkbox"
-											onChange={(event) =>
-												setPaymentInvoiceFiscalNoticeConfirmed(
-													event.target.checked,
-												)
-											}
-										/>
-										Плательщик предупрежден: счет не является кассовым чеком
-									</label>
-								</div>
-							</details>
-						</article>
+						<PaymentInvoiceDocumentForm
+							documentPatientFullName={documentPatient?.fullName}
+							documentPatientPhone={documentPatient?.phone}
+							documentPatientEmail={documentPatient?.email}
+							clinicBankDetails={
+								dashboard?.clinicSettings.profile.bankDetails
+							}
+							totalRubFormatted={money(paymentInvoiceTotalRubValue())}
+							serviceLinesCount={
+								plannedServiceLinesForFinancialPayload().length
+							}
+						/>
 					) : null}
 
 					{selectedDocumentKind === "payment_receipt" ? (
