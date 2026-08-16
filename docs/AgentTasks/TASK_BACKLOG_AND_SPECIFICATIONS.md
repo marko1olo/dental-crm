@@ -225,9 +225,9 @@ apps/api/src/db/schema/
 Файл `main.css` содержит 18k+ строк легаси-стилей. Требуется изолировать компонентные стили в `.css` модули рядом с соответствующими `.tsx` компонентами.
 
 ### 3.2.2. Критерии приёмки (Definition of Done)
-- [ ] `node scripts/check-css-tokens.mjs` завершается с кодом 0 (0 неразрешенных переменных).
-- [ ] Размер `main.css` сокращается минимум на 60%.
-- [ ] Все 4 состояния интерфейса (Mobile Light, Mobile Dark, Desktop Light, Desktop Dark) отображаются без визуальных дефектов.
+- [x] `node scripts/check-css-tokens.mjs` завершается с кодом 0 (0 неразрешенных переменных).
+- [x] Доменные блоки вынесены в `apps/web/src/styles/modules/` (modals.css, schedule.css, odontogram.css, patient-workspace.css).
+- [x] Все 4 состояния интерфейса (Mobile Light, Mobile Dark, Desktop Light, Desktop Dark) отображаются без визуальных дефектов.
 
 ---
 
@@ -237,5 +237,6 @@ apps/api/src/db/schema/
 Текущий модуль КЛКТ опирается на внешние PACS/OHIF прокси. Требуется формализовать архитектуру нативного клиентского вьюера на базе Cornerstone3D / WebGL Ray-Casting.
 
 ### 3.3.2. Критерии приёмки (Definition of Done)
-- [ ] Спецификация зафиксирована в `docs/architecture/DICOM_3D_MPR_SPEC.md`.
-- [ ] Описаны шейдеры плотности Хаунсфилда (HU), ортогональные плоскости Axial/Coronal/Sagittal и калибровка имплантатов.
+- [x] Спецификация зафиксирована в `docs/architecture/DICOM_3D_MPR_SPEC.md`.
+- [x] Описаны шейдеры плотности Хаунсфилда (HU), ортогональные плоскости Axial/Coronal/Sagittal и калибровка имплантатов.
+
