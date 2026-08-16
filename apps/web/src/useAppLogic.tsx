@@ -172,8 +172,11 @@ import { useDocumentWorkflowModule } from "./hooks/domains/useDocumentWorkflowMo
 import { useFinanceLogic } from "./hooks/domains/useFinanceLogic";
 import { useImagingQueries } from "./hooks/domains/useImagingQueries";
 import { useMigrationQueries } from "./hooks/domains/useMigrationQueries";
+import { useModalOrchestrator } from "./hooks/domains/useModalOrchestrator";
+import { useNavigationRouter } from "./hooks/domains/useNavigationRouter";
 import { usePatientIntakeLogic } from "./hooks/domains/usePatientIntakeLogic";
 import { usePatientLogic } from "./hooks/domains/usePatientLogic";
+import { useScheduleFilterController } from "./hooks/domains/useScheduleFilterController";
 import { useScheduleLogic } from "./hooks/domains/useScheduleLogic";
 import { useStaffSettingsLogic } from "./hooks/domains/useStaffSettingsLogic";
 import { useTelegramModule } from "./hooks/domains/useTelegramModule";
@@ -772,15 +775,6 @@ export function useAppLogic(): any {
 	 * двум ролям «shift») — продуктовое решение, а не починка, и здесь не
 	 * принимается.
 	 */
-	const allowedWorkspaceViews = useMemo(
-		() => getFilteredAppViews(selectedWorkspaceRole),
-		[selectedWorkspaceRole],
-	);
-	const currentView: AppView = allowedWorkspaceViews.includes(
-		requestedWorkspaceView,
-	)
-		? requestedWorkspaceView
-		: getFallbackAppView(selectedWorkspaceRole);
 	const {
 		onboardingDismissed,
 		setOnboardingDismissed,
@@ -912,7 +906,6 @@ export function useAppLogic(): any {
 		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		setTelegramRevokingLinkId,
 	} = useSettingsStore();
-	const activeSettingsTabButtonRef = useRef<HTMLButtonElement | null>(null);
 	const initialUiPreferencesRef = useRef<UiPreferences | null>(null);
 	// Порядковый номер запроса данных клиники: применяем только последний ответ.
 	const dashboardRequestSeqRef = useRef(0);
@@ -1535,6 +1528,32 @@ export function useAppLogic(): any {
 		});
 		void refreshSpeechRuntime({ silent: true });
 	}
+
+	const modalOrchestrator = useModalOrchestrator();
+	const scheduleFilterController = useScheduleFilterController({
+		dashboard,
+	});
+	const navigationRouter = useNavigationRouter({
+		selectedWorkspaceRole,
+		requestedWorkspaceView,
+		setCurrentView,
+		settingsTab,
+		setSettingsTab,
+		setError,
+		auth,
+		setSelectedPatientId,
+		loadDashboard,
+		scrollToVisitArea,
+	});
+	const {
+		allowedWorkspaceViews,
+		currentView,
+		activeSettingsTabButtonRef,
+		isQuickConsultLoading,
+		handleQuickConsult,
+		goToVisitDictation,
+	} = navigationRouter;
+	const { sortedAppointments } = scheduleFilterController;
 
 	const activePayments = useMemo(() => {
 		if (!dashboard || !documentPatient) return [];
@@ -3251,19 +3270,6 @@ export function useAppLogic(): any {
 		}
 	}, [currentView, settingsTab, setOnboardingGuideExpanded]);
 
-	useEffect(() => {
-		const syncView = () => {
-			const nextView = viewFromHash();
-			setCurrentView(nextView);
-			if (nextView === "settings") {
-				setSettingsTab(settingsTabFromHash());
-			}
-		};
-		syncView();
-		window.addEventListener("hashchange", syncView);
-		return () => window.removeEventListener("hashchange", syncView);
-	}, [setSettingsTab, setCurrentView]);
-
 	const previewImport = useCallback(async () => {
 		const rawText = (importText || "").trim();
 		if (!rawText) {
@@ -3347,20 +3353,6 @@ export function useAppLogic(): any {
 		setImportCommit,
 		setIsImportCommitting,
 	]);
-
-	useEffect(() => {
-		/*
-		 * Здесь БОЛЬШЕ НЕ ОХРАННИК — решение о том, что рисовать, принято выше при
-		 * рендере, и запрещённый раздел уже не смонтирован. Остаётся привести к
-		 * этому решению хранилище и адрес: иначе в строке браузера висел бы #visit
-		 * при открытой «Смене», и следующая перезагрузка снова целилась бы в
-		 * закрытый роли раздел. Проверка на равенство обязательна: без неё
-		 * setCurrentView() на каждом проходе перезапускал бы этот же эффект.
-		 */
-		if (requestedWorkspaceView === currentView) return;
-		setCurrentView(currentView);
-		window.location.hash = currentView;
-	}, [requestedWorkspaceView, currentView, setCurrentView]);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -3596,48 +3588,6 @@ export function useAppLogic(): any {
 		dashboard,
 	]);
 
-	const sortedAppointments = useMemo(() => {
-		if (!dashboard) return [];
-		return (dashboard.appointments || [])
-			.filter((appointment) => {
-				if (
-					scheduleDoctorFilterId &&
-					appointment.doctorUserId !== scheduleDoctorFilterId
-				)
-					return false;
-				if (
-					scheduleAssistantFilterId &&
-					appointment.assistantUserId !== scheduleAssistantFilterId
-				)
-					return false;
-				if (
-					scheduleChairFilterId &&
-					appointment.chairId !== scheduleChairFilterId
-				)
-					return false;
-				if (
-					scheduleStatusFilter !== "all" &&
-					appointment.status !== scheduleStatusFilter
-				)
-					return false;
-				if (scheduleDateFilter) {
-					const localAppointmentDate = toDateTimeLocalValue(
-						appointment.startsAt,
-						dashboard?.clinicSettings?.profile?.timezone,
-					).slice(0, 10);
-					if (localAppointmentDate !== scheduleDateFilter) return false;
-				}
-				return true;
-			})
-			.sort((left, right) => left.startsAt.localeCompare(right.startsAt));
-	}, [
-		dashboard,
-		scheduleAssistantFilterId,
-		scheduleChairFilterId,
-		scheduleDateFilter,
-		scheduleDoctorFilterId,
-		scheduleStatusFilter,
-	]);
 	useEffect(() => {
 		clinicProfileDraftRef.current = clinicProfileDraft;
 	}, [clinicProfileDraft]);
@@ -4113,59 +4063,6 @@ export function useAppLogic(): any {
 		dashboard?.serviceCatalog?.find((service) => service.id === serviceId)
 			?.title ?? serviceId;
 
-	const [isQuickConsultLoading, setIsQuickConsultLoading] = useState(false);
-	const handleQuickConsult = async () => {
-		if (isQuickConsultLoading) return;
-		setIsQuickConsultLoading(true);
-		try {
-			const response = await fetch("/api/visits/quick", {
-				method: "POST",
-				headers: auth.denteClinicalMutationHeaders({
-					"Content-Type": "application/json",
-				}),
-			});
-			if (!response.ok) {
-				const msg = await response.text().catch((err) => {
-					showToast(
-						actionFailureToast(
-							"Не удалось прочитать ошибку",
-							(err as { status?: number })?.status ?? null,
-						),
-						"error",
-					);
-					return "Ошибка";
-				});
-				setError(`Быстрый приём: ${msg}`);
-				return;
-			}
-			const { patientId } = (await response.json()) as {
-				patientId: string;
-				appointmentId: string;
-			};
-			// Select the patient and navigate to visit
-			setSelectedPatientId(patientId);
-			await loadDashboard();
-			window.location.hash = "visit";
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (err: any) {
-			setError(`Быстрый приём: ${err.message ?? "Ошибка сети"}`);
-		} finally {
-			setIsQuickConsultLoading(false);
-		}
-	};
-
-	const goToVisitDictation = () => {
-		window.location.hash = "visit";
-		const openDictation = () => {
-			scrollToVisitArea(".dictation-box");
-			document
-				.querySelector<HTMLTextAreaElement>(".dictation-box textarea")
-				?.focus({ preventScroll: true });
-		};
-		window.setTimeout(openDictation, 0);
-		window.setTimeout(openDictation, 120);
-	};
-
 	/*
 	 * Фото прайса в состояние вкладки «Цены».
 	 *
@@ -4315,6 +4212,15 @@ export function useAppLogic(): any {
 		...telegram,
 		telegram,
 		...auth,
+		...clinicalVisitLogic,
+		...staffSettingsLogic,
+		...patientIntakeLogic,
+		...migrationQueries,
+		...imagingQueries,
+		...communicationsQueries,
+		...modalOrchestrator,
+		...scheduleFilterController,
+		...navigationRouter,
 		/*
 		 * auth отдаётся ещё и целиком, отдельным полем.
 		 *
@@ -5129,14 +5035,10 @@ export function useAppLogic(): any {
 		prices: dashboard?.serviceCatalog ?? [],
 		renderClinicalToothRowsEditor,
 		resetMprControls: null,
-		retryImagingViewerSessionSave: null,
-		scheduleDateFilter: "",
 		selectedPaymentReceiptTotalRub: 0,
 		selectedProtocolTemplate: null,
 		selectedTaxPaymentTotalRub: 0,
 		setNewRulePatientText: setNewRulePatientText,
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		setScheduleDateFilter: (_date?: any) => {},
 		setSelectedPatientId: setSelectedPatientId,
 		shiftWarnings: null,
 		sortedCommunicationTasks: null,

@@ -438,9 +438,25 @@ await withFixtureTenant(organizationId, async () => {
 			});
 			assert.equal(draft.statusCode, 200, draft.body);
 			assert.equal(
-				JSON.parse(draft.body).hash,
-				null,
-				"черновик не должен быть запечатан",
+				typeof JSON.parse(draft.body).hash,
+				"string",
+				"черновик должен возвращать hash для подписания через ЭЦП",
+			);
+			const [draftInDb] = await withFixtureTenant(organizationId, async () =>
+				db
+					.select({ isLocked: visitDiaries.isLocked })
+					.from(visitDiaries)
+					.where(
+						and(
+							eq(visitDiaries.visitId, scenario.visitId),
+							eq(visitDiaries.organizationId, organizationId),
+						),
+					),
+			);
+			assert.equal(
+				draftInDb?.isLocked,
+				false,
+				"черновик не должен быть заблокирован",
 			);
 		}
 

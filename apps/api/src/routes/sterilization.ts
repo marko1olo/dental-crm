@@ -79,11 +79,8 @@ const scanSchema = z.object({
 	durationMin: z.number().int().min(1).max(300).optional().nullable(),
 });
 
-/**
- * 8-сегментный криптографический отпечаток SHA-256 для формы 043/у.
- * Лоток входит в неизменяемый отпечаток дневника: смена штрихкода лотка
- * пересчитывает diary_hash синхронно с подписью.
- */
+import { computeDiaryHash } from "../services/clinical/DiarySigningCeremonyService.js";
+
 function computeDiaryHashForTrayLink(row: {
 	visitId: string;
 	patientId: string | null;
@@ -96,19 +93,18 @@ function computeDiaryHashForTrayLink(row: {
 	comorbidities: string | null;
 	instrumentTrayBarcode: string | null;
 }): string {
-	const raw = [
+	return computeDiaryHash(
 		row.visitId,
 		row.patientId ?? "",
-		row.anamnesis ?? "",
-		row.statusLocalis ?? "",
-		row.treatmentDescription ?? "",
-		row.diagnosisIcd10 ?? "",
-		row.diagnosisTooth ?? "",
-		row.complications ?? "",
-		row.comorbidities ?? "",
-		row.instrumentTrayBarcode ?? "",
-	].join("|");
-	return crypto.createHash("sha256").update(raw).digest("hex");
+		row.anamnesis,
+		row.statusLocalis,
+		row.treatmentDescription,
+		row.diagnosisIcd10,
+		row.diagnosisTooth,
+		row.complications,
+		row.comorbidities,
+		row.instrumentTrayBarcode,
+	);
 }
 
 export async function registerSterilizationRoutes(app: FastifyInstance) {

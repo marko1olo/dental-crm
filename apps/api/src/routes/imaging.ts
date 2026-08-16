@@ -117,6 +117,12 @@ import {
 	requireClinicalReadAccess,
 	unguardedBypassAllowed,
 } from "../accessGuard.js";
+import {
+	DicomProcessorService,
+	commitImagingImport as commitImagingImportService,
+	parseDicomSeriesManifest as parseDicomSeriesManifestService,
+	parseImagingManifest as parseImagingManifestService,
+} from "../services/imaging/DicomProcessorService.js";
 import { analyzeVisiographImage } from "../ai/visiograph.js";
 import { analyzeImagingStudy } from "../ai/visionAnalyzer.js";
 import {
