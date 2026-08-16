@@ -1,13 +1,17 @@
 import {
 	AlertTriangle,
+	Bell,
 	Eye,
 	EyeOff,
 	KeyRound,
 	ShieldCheck,
 	User,
+	Volume2,
+	VolumeX,
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { actionFailureToast, panelStateText } from "../../lib/panelStateText";
 import { readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { logger } from "../../utils/logger";
@@ -32,6 +36,12 @@ interface SettingsProfileTabProps {
 }
 
 export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
+	const appLogic = useAppLogicContext() as {
+		soundNotificationsMuted?: boolean;
+		setSoundNotificationsMuted?: (muted: boolean) => void;
+		testOnlineBookingSound?: () => void;
+		testSlotEndSound?: () => void;
+	} | null;
 	const [profile, setProfile] = useState<StaffProfile | null>(
 		(props.activeStaffUser as StaffProfile | undefined) ?? null,
 	);
@@ -645,6 +655,67 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 							</button>
 						</div>
 					</form>
+				</section>
+
+				{/* Sound Notifications Block (Feature #49) */}
+				<section className="settings-section">
+					<div className="flex items-center gap-2 mb-2">
+						<Bell size={18} className="text-teal-600 dark:text-teal-400" />
+						<h3 className="m-0">Звуковые оповещения</h3>
+					</div>
+					<p className="section-desc">
+						Дифференцированные звуковые сигналы: двойной восходящий аккорд при поступлении онлайн-записи с виджета и предупреждающий сигнал врачу за 5 минут до окончания текущего приёма.
+					</p>
+					<div className="settings-form-grid">
+						<div className="form-span-2 flex items-center justify-between p-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)]">
+							<div className="flex items-center gap-3">
+								{appLogic?.soundNotificationsMuted ? (
+									<VolumeX size={20} className="text-slate-400" />
+								) : (
+									<Volume2 size={20} className="text-teal-600 dark:text-teal-400" />
+								)}
+								<div>
+									<div className="text-sm font-semibold text-[var(--ink)]">
+										Звуковые сигналы в браузере
+									</div>
+									<div className="text-xs text-[var(--muted)]">
+										{appLogic?.soundNotificationsMuted
+											? "Все звуковые сигналы отключены"
+											: "Синтез аудиосигналов через Web Audio API активен"}
+									</div>
+								</div>
+							</div>
+							<label className="relative inline-flex items-center cursor-pointer">
+								<input
+									type="checkbox"
+									checked={!appLogic?.soundNotificationsMuted}
+									onChange={(e) =>
+										appLogic?.setSoundNotificationsMuted?.(!e.target.checked)
+									}
+									className="sr-only peer"
+								/>
+								<div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600" />
+							</label>
+						</div>
+						<div className="form-actions form-span-2 flex gap-3 flex-wrap pt-2">
+							<button
+								type="button"
+								onClick={() => appLogic?.testOnlineBookingSound?.()}
+								disabled={appLogic?.soundNotificationsMuted}
+								className="secondary-button inline-flex items-center gap-2 text-xs py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
+							>
+								<Volume2 size={14} /> Проверить: Онлайн-запись (440→660 Гц)
+							</button>
+							<button
+								type="button"
+								onClick={() => appLogic?.testSlotEndSound?.()}
+								disabled={appLogic?.soundNotificationsMuted}
+								className="secondary-button inline-flex items-center gap-2 text-xs py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
+							>
+								<Volume2 size={14} /> Проверить: 5 мин до конца приёма (880→660 Гц)
+							</button>
+						</div>
+					</div>
 				</section>
 
 				{/* PIN Security Block */}

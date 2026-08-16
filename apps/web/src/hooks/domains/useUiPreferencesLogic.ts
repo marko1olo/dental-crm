@@ -132,6 +132,8 @@ export interface UiPreferencesLogicProps {
 	setOnboardingStep: any;
 	onboardingDraftMode: any;
 	setOnboardingDraftMode: any;
+	soundNotificationsMuted?: any;
+	setSoundNotificationsMuted?: any;
 }
 
 
@@ -264,6 +266,7 @@ export function useUiPreferencesLogic(props: UiPreferencesLogicProps) {
 		setOnboardingStep,
 		onboardingDraftMode,
 		setOnboardingDraftMode,
+		soundNotificationsMuted,
 	} = props;
 
 	
@@ -336,6 +339,7 @@ export function useUiPreferencesLogic(props: UiPreferencesLogicProps) {
 			onboardingDismissedAt,
 			onboardingStep,
 			onboardingDraftMode,
+			soundNotificationsMuted: soundNotificationsMuted ?? false,
 		};
 	}
 

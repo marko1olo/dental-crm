@@ -2282,20 +2282,35 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		const [plan] = await db
 			.select()
 			.from(treatmentPlans)
-			.where(eq(treatmentPlans.id, planId));
+			.where(
+				and(
+					eq(treatmentPlans.id, planId),
+					eq(treatmentPlans.organizationId, orgId),
+				),
+			);
 		if (!plan) return reply.code(404).send({ error: "Not found", message: "План лечения не найден. Обновите страницу и выберите существующий план." });
 
 		const [patient] = await db
 			.select()
 			.from(patients)
-			.where(eq(patients.id, plan.patientId));
-		if (!patient || patient.organizationId !== orgId)
+			.where(
+				and(
+					eq(patients.id, plan.patientId),
+					eq(patients.organizationId, orgId),
+				),
+			);
+		if (!patient)
 			return reply.code(403).send({ error: "Forbidden", message: "Нет доступа к плану лечения этого пациента. Выберите план своей клиники." });
 
 		await db
 			.update(treatmentPlans)
 			.set({ patientSignature, updatedAt: new Date() })
-			.where(eq(treatmentPlans.id, planId));
+			.where(
+				and(
+					eq(treatmentPlans.id, planId),
+					eq(treatmentPlans.organizationId, orgId),
+				),
+			);
 
 		return reply.send({ success: true });
 	});

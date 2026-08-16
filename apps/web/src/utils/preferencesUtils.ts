@@ -84,6 +84,7 @@ export type UiPreferences = {
 	onboardingDismissedAt: string | null;
 	onboardingStep: OnboardingStep;
 	onboardingDraftMode: boolean;
+	soundNotificationsMuted: boolean;
 	savedAt: string;
 };
 
@@ -144,6 +145,7 @@ export const defaultUiPreferences: UiPreferences = {
 	onboardingDismissedAt: null,
 	onboardingStep: "intro",
 	onboardingDraftMode: false,
+	soundNotificationsMuted: false,
 	savedAt: "",
 };
 

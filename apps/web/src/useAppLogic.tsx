@@ -178,6 +178,7 @@ import { useScheduleLogic } from "./hooks/domains/useScheduleLogic";
 import { useStaffSettingsLogic } from "./hooks/domains/useStaffSettingsLogic";
 import { useTelegramModule } from "./hooks/domains/useTelegramModule";
 import { useVisitLogic } from "./hooks/domains/useVisitLogic";
+import { useSoundNotifications } from "./hooks/useSoundNotifications";
 
 import { loadWorkspaceProfile } from "./hooks/useWorkspaceProfile";
 import {
@@ -958,6 +959,9 @@ export function useAppLogic(): any {
 	 * появилось что-то новое.
 	 */
 	const [recentPatientViewsVersion, setRecentPatientViewsVersion] = useState(0);
+	const [soundNotificationsMuted, setSoundNotificationsMuted] = useState<boolean>(() => {
+		return loadUiPreferences().soundNotificationsMuted ?? false;
+	});
 	if (initialUiPreferencesRef.current === null) {
 		initialUiPreferencesRef.current = loadUiPreferences();
 	}
@@ -1140,6 +1144,21 @@ export function useAppLogic(): any {
 			) ?? null
 		);
 	}, [activeAppointment, dashboard]);
+	const todayDoctorSlots = useMemo(() => {
+		if (!dashboard?.appointments || !activeDoctor?.id) return [];
+		return (dashboard.appointments as { doctorUserId?: string; status?: string; startsAt?: string; endsAt?: string }[])
+			.filter(
+				(app) =>
+					app.doctorUserId === activeDoctor.id &&
+					!["cancelled", "no_show"].includes(String(app.status ?? "").toLowerCase()),
+			)
+			.map((app) => ({ endsAt: app.endsAt ?? app.startsAt ?? "" }));
+	}, [dashboard?.appointments, activeDoctor?.id]);
+	const soundNotifications = useSoundNotifications({
+		currentDoctorUserId: activeDoctor?.id ?? null,
+		doctorTodaySlots: todayDoctorSlots,
+		muted: soundNotificationsMuted,
+	});
 	const activeChair = useMemo(() => {
 		if (!dashboard || !activeAppointment) return null;
 		return (
@@ -2067,6 +2086,7 @@ export function useAppLogic(): any {
 			onboardingDismissedAt,
 			onboardingStep,
 			onboardingDraftMode,
+			soundNotificationsMuted,
 		};
 	}
 
@@ -4971,6 +4991,10 @@ export function useAppLogic(): any {
 		uiLanguage,
 		uiLanguageOptions,
 		uiPreferencesSyncError,
+		soundNotificationsMuted,
+		setSoundNotificationsMuted,
+		testOnlineBookingSound: soundNotifications.testOnlineBookingSound,
+		testSlotEndSound: soundNotifications.testSlotEndSound,
 		undoTranscriptClear,
 		updateAppointmentScheduleDraft,
 		updateChairScheduleDay,

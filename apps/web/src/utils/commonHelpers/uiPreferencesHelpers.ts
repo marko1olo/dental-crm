@@ -1070,6 +1070,12 @@ export function normalizeUiPreferencesPayload(
 			defaultUiPreferences.onboardingDraftMode,
 			isBooleanPreference,
 		),
+		soundNotificationsMuted: pickUiPreference(
+			source,
+			"soundNotificationsMuted",
+			defaultUiPreferences.soundNotificationsMuted,
+			isBooleanPreference,
+		),
 		savedAt: typeof source.savedAt === "string" ? source.savedAt : "",
 	};
 }
