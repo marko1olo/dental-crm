@@ -58,6 +58,12 @@
 		[data-theme="dark"] *,
 		[data-theme="night"],
 		[data-theme="night"] *,
+		[data-theme="ocean"],
+		[data-theme="ocean"] *,
+		[data-theme="emerald"],
+		[data-theme="emerald"] *,
+		[data-theme="cyber_xray"],
+		[data-theme="cyber_xray"] *,
 		.dark,
 		.dark *
 	)

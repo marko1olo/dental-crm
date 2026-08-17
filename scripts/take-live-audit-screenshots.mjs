@@ -47,12 +47,13 @@ async function provisionTestClinic() {
 
   if (!unlockRes.ok) throw new Error(`staff/unlock failed ${unlockRes.status}: ${await unlockRes.text()}`);
   const unlockData = await unlockRes.json();
+  const staffToken = unlockData.staffToken;
   console.log(`[AUTH] Staff unlocked. staffToken OK`);
 
   const headers = {
     "Content-Type": "application/json",
     "x-dente-clinic-token": initData.clinicToken,
-    "x-dente-staff-token": unlockData.staffToken,
+    "x-dente-staff-token": staffToken,
   };
 
   // Seed patient
@@ -78,7 +79,7 @@ async function provisionTestClinic() {
 
   return {
     clinicToken: initData.clinicToken,
-    staffToken: unlockData.staffToken,
+    staffToken: staffToken || initData.clinicToken,
     patientId,
   };
 }
@@ -204,8 +205,8 @@ async function main() {
       }
     }
 
-    // Additional Themes on Desktop: calm_teal, contrast, night
-    for (const themeMode of ["calm_teal", "contrast", "night"]) {
+    // Additional Themes on Desktop: calm_teal, contrast, night, sakura, ocean, emerald, cyber_xray, warm_sand
+    for (const themeMode of ["calm_teal", "contrast", "night", "sakura", "ocean", "emerald", "cyber_xray", "warm_sand"]) {
       const label = `theme_${themeMode}_desktop`;
       console.log(`\n[CAPTURE THEME] ${label}`);
       const page = await browser.newPage();

@@ -397,6 +397,361 @@ html.light,
 	--shadow-premium: none;
 }
 
+/* 🌸 SAKURA THEME (Aesthetic & Relaxing Rose) */
+:root[data-theme="sakura"],
+[data-theme="sakura"] {
+	color: #4c0519;
+	background: #fff1f2;
+
+	--paper: #ffffff;
+	--paper-strong: #fff1f2;
+	--paper-soft: #ffe4e6;
+	--surface: #fdf2f8;
+	--surface-muted: #ffe4e6;
+	--glass-panel: rgba(255, 241, 242, 0.92);
+	--glass-border: #fbcfe8;
+	--ink: #4c0519;
+	--ink-2: #881337;
+	--muted: #9f1239;
+	--line: #fbcfe8;
+	--line-strong: #f472b6;
+
+	--teal: #db2777;
+	--teal-dark: #be185d;
+	--teal-soft: #fce7f3;
+	--teal-glow: rgba(219, 39, 119, 0.25);
+	--teal-surface: rgba(252, 231, 243, 0.6);
+
+	--rust: #e11d48;
+	--rust-soft: #ffe4e6;
+	--amber: #d97706;
+	--amber-soft: #fef3c7;
+	--red: #e11d48;
+	--green: #059669;
+
+	--ok-fg: #059669;
+	--ok-bg: #d1fae5;
+	--warn-fg: #d97706;
+	--warn-bg: #fef3c7;
+	--bad-fg: #e11d48;
+	--bad-bg: #ffe4e6;
+	--info-fg: #db2777;
+	--info-bg: #fce7f3;
+
+	--nav: #4c0519;
+	--nav-active: #881337;
+
+	--slate-50: #fff1f2;
+	--slate-100: #ffe4e6;
+	--slate-200: #fecdd3;
+	--slate-300: #fda4af;
+	--slate-400: #fb7185;
+	--slate-500: #f43f5e;
+	--slate-600: #e11d48;
+	--slate-700: #be185d;
+	--slate-800: #9f1239;
+	--slate-900: #881337;
+	--slate-950: #4c0519;
+
+	--surface-50: #fff1f2;
+	--surface-100: #fdf2f8;
+
+	--brand-500: #db2777;
+	--brand-600: #be185d;
+
+	--success-color: #059669;
+	--warning-color: #d97706;
+	--error-color: #e11d48;
+
+	--shadow-premium:
+		0 10px 40px -10px rgba(219, 39, 119, 0.12),
+		0 1px 3px rgba(219, 39, 119, 0.05);
+}
+
+/* 🌊 OCEAN THEME (Deep Sapphire Navy) */
+:root[data-theme="ocean"],
+[data-theme="ocean"] {
+	color: #f0f9ff;
+	background: #081226;
+
+	--paper: #0c1e3d;
+	--paper-strong: #132a54;
+	--paper-soft: #081226;
+	--surface: #0f2447;
+	--surface-muted: #081226;
+	--glass-panel: rgba(12, 30, 61, 0.9);
+	--glass-border: rgba(56, 189, 248, 0.25);
+	--ink: #f0f9ff;
+	--ink-2: #bae6fd;
+	--muted: #7dd3fc;
+	--line: rgba(56, 189, 248, 0.18);
+	--line-strong: rgba(56, 189, 248, 0.35);
+
+	--teal: #38bdf8;
+	--teal-dark: #0284c7;
+	--teal-soft: rgba(56, 189, 248, 0.18);
+	--teal-glow: rgba(56, 189, 248, 0.3);
+	--teal-surface: rgba(56, 189, 248, 0.1);
+
+	--rust: #f87171;
+	--rust-soft: rgba(248, 113, 113, 0.15);
+	--amber: #fbbf24;
+	--amber-soft: rgba(251, 191, 36, 0.15);
+	--red: #f87171;
+	--green: #34d399;
+
+	--ok-fg: #34d399;
+	--ok-bg: rgba(52, 211, 153, 0.15);
+	--warn-fg: #fbbf24;
+	--warn-bg: rgba(251, 191, 36, 0.15);
+	--bad-fg: #f87171;
+	--bad-bg: rgba(248, 113, 113, 0.15);
+	--info-fg: #38bdf8;
+	--info-bg: rgba(56, 189, 248, 0.15);
+
+	--nav: #050b17;
+	--nav-active: #0c1e3d;
+
+	--slate-50: #132a54;
+	--slate-100: #1e3a8a;
+	--slate-200: #1d4ed8;
+	--slate-300: #2563eb;
+	--slate-400: #3b82f6;
+	--slate-500: #60a5fa;
+	--slate-600: #93c5fd;
+	--slate-700: #bfdbfe;
+	--slate-800: #dbeafe;
+	--slate-900: #eff6ff;
+	--slate-950: #ffffff;
+
+	--surface-50: #0c1e3d;
+	--surface-100: #132a54;
+
+	--brand-500: #38bdf8;
+	--brand-600: #0284c7;
+
+	--success-color: #34d399;
+	--warning-color: #fbbf24;
+	--error-color: #f87171;
+
+	--shadow-premium:
+		0 10px 40px -10px rgba(0, 0, 0, 0.7),
+		0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* 🌲 EMERALD THEME (Forest Restorative) */
+:root[data-theme="emerald"],
+[data-theme="emerald"] {
+	color: #ecfdf5;
+	background: #022013;
+
+	--paper: #064e3b;
+	--paper-strong: #047857;
+	--paper-soft: #022013;
+	--surface: #065f46;
+	--surface-muted: #022013;
+	--glass-panel: rgba(6, 78, 59, 0.9);
+	--glass-border: rgba(52, 211, 153, 0.25);
+	--ink: #ecfdf5;
+	--ink-2: #a7f3d0;
+	--muted: #6ee7b7;
+	--line: rgba(52, 211, 153, 0.2);
+	--line-strong: rgba(52, 211, 153, 0.4);
+
+	--teal: #34d399;
+	--teal-dark: #10b981;
+	--teal-soft: rgba(52, 211, 153, 0.2);
+	--teal-glow: rgba(52, 211, 153, 0.3);
+	--teal-surface: rgba(52, 211, 153, 0.1);
+
+	--rust: #f87171;
+	--rust-soft: rgba(248, 113, 113, 0.15);
+	--amber: #fbbf24;
+	--amber-soft: rgba(251, 191, 36, 0.15);
+	--red: #f87171;
+	--green: #34d399;
+
+	--ok-fg: #34d399;
+	--ok-bg: rgba(52, 211, 153, 0.15);
+	--warn-fg: #fbbf24;
+	--warn-bg: rgba(251, 191, 36, 0.15);
+	--bad-fg: #f87171;
+	--bad-bg: rgba(248, 113, 113, 0.15);
+	--info-fg: #6ee7b7;
+	--info-bg: rgba(110, 231, 183, 0.15);
+
+	--nav: #01140b;
+	--nav-active: #064e3b;
+
+	--slate-50: #047857;
+	--slate-100: #065f46;
+	--slate-200: #047857;
+	--slate-300: #059669;
+	--slate-400: #10b981;
+	--slate-500: #34d399;
+	--slate-600: #6ee7b7;
+	--slate-700: #a7f3d0;
+	--slate-800: #d1fae5;
+	--slate-900: #ecfdf5;
+	--slate-950: #ffffff;
+
+	--surface-50: #064e3b;
+	--surface-100: #065f46;
+
+	--brand-500: #34d399;
+	--brand-600: #10b981;
+
+	--success-color: #34d399;
+	--warning-color: #fbbf24;
+	--error-color: #f87171;
+
+	--shadow-premium:
+		0 10px 40px -10px rgba(0, 0, 0, 0.7),
+		0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* ⚡ CYBER_XRAY THEME (Neon Cyberpunk CT) */
+:root[data-theme="cyber_xray"],
+[data-theme="cyber_xray"] {
+	color: #00f0ff;
+	background: #030712;
+
+	--paper: #081026;
+	--paper-strong: #0d1a3a;
+	--paper-soft: #030712;
+	--surface: #0a1532;
+	--surface-muted: #030712;
+	--glass-panel: rgba(8, 16, 38, 0.92);
+	--glass-border: rgba(0, 240, 255, 0.35);
+	--ink: #e0f2fe;
+	--ink-2: #38bdf8;
+	--muted: #00f0ff;
+	--line: rgba(0, 240, 255, 0.25);
+	--line-strong: rgba(0, 240, 255, 0.5);
+
+	--teal: #00f0ff;
+	--teal-dark: #00c8d7;
+	--teal-soft: rgba(0, 240, 255, 0.2);
+	--teal-glow: rgba(0, 240, 255, 0.4);
+	--teal-surface: rgba(0, 240, 255, 0.12);
+
+	--rust: #ff0055;
+	--rust-soft: rgba(255, 0, 85, 0.2);
+	--amber: #ffd700;
+	--amber-soft: rgba(255, 215, 0, 0.2);
+	--red: #ff0055;
+	--green: #00ff88;
+
+	--ok-fg: #00ff88;
+	--ok-bg: rgba(0, 255, 136, 0.18);
+	--warn-fg: #ffd700;
+	--warn-bg: rgba(255, 215, 0, 0.18);
+	--bad-fg: #ff0055;
+	--bad-bg: rgba(255, 0, 85, 0.18);
+	--info-fg: #00f0ff;
+	--info-bg: rgba(0, 240, 255, 0.18);
+
+	--nav: #02040a;
+	--nav-active: #081026;
+
+	--slate-50: #0d1a3a;
+	--slate-100: #10224d;
+	--slate-200: #142a60;
+	--slate-300: #1e3a8a;
+	--slate-400: #0284c7;
+	--slate-500: #00c8d7;
+	--slate-600: #00f0ff;
+	--slate-700: #38bdf8;
+	--slate-800: #7dd3fc;
+	--slate-900: #e0f2fe;
+	--slate-950: #ffffff;
+
+	--surface-50: #081026;
+	--surface-100: #0a1532;
+
+	--brand-500: #00f0ff;
+	--brand-600: #00c8d7;
+
+	--success-color: #00ff88;
+	--warning-color: #ffd700;
+	--error-color: #ff0055;
+
+	--shadow-premium:
+		0 0 30px rgba(0, 240, 255, 0.25),
+		0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+/* 🏜️ WARM_SAND THEME (Cozy Boutique Ceramic) */
+:root[data-theme="warm_sand"],
+[data-theme="warm_sand"] {
+	color: #451a03;
+	background: #fefce8;
+
+	--paper: #ffffff;
+	--paper-strong: #fffbeb;
+	--paper-soft: #fefce8;
+	--surface: #fef3c7;
+	--surface-muted: #fefce8;
+	--glass-panel: rgba(255, 251, 235, 0.95);
+	--glass-border: #fde68a;
+	--ink: #451a03;
+	--ink-2: #78350f;
+	--muted: #b45309;
+	--line: #fde68a;
+	--line-strong: #f59e0b;
+
+	--teal: #d97706;
+	--teal-dark: #b45309;
+	--teal-soft: #fef3c7;
+	--teal-glow: rgba(217, 119, 6, 0.2);
+	--teal-surface: rgba(254, 243, 199, 0.6);
+
+	--rust: #dc2626;
+	--rust-soft: #fee2e2;
+	--amber: #d97706;
+	--amber-soft: #fef3c7;
+	--red: #dc2626;
+	--green: #15803d;
+
+	--ok-fg: #15803d;
+	--ok-bg: #dcfce7;
+	--warn-fg: #b45309;
+	--warn-bg: #fef3c7;
+	--bad-fg: #dc2626;
+	--bad-bg: #fee2e2;
+	--info-fg: #d97706;
+	--info-bg: #fef3c7;
+
+	--nav: #451a03;
+	--nav-active: #78350f;
+
+	--slate-50: #fefce8;
+	--slate-100: #fef9c3;
+	--slate-200: #fef08a;
+	--slate-300: #fde047;
+	--slate-400: #eab308;
+	--slate-500: #ca8a04;
+	--slate-600: #a16207;
+	--slate-700: #854d0e;
+	--slate-800: #713f12;
+	--slate-900: #451a03;
+	--slate-950: #291002;
+
+	--surface-50: #fefce8;
+	--surface-100: #fef3c7;
+
+	--brand-500: #d97706;
+	--brand-600: #b45309;
+
+	--success-color: #15803d;
+	--warning-color: #d97706;
+	--error-color: #dc2626;
+
+	--shadow-premium:
+		0 10px 40px -10px rgba(180, 83, 9, 0.12),
+		0 1px 3px rgba(180, 83, 9, 0.05);
+}
+
 * {
 	box-sizing: border-box;
 }
@@ -9592,13 +9947,14 @@ section.imaging-panel {
 
 .schedule-empty-state {
 	align-items: center;
-	background: #fbfefd;
-	border: 1px dashed var(--line-strong);
-	border-radius: 8px;
+	background: var(--paper-soft);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	border-radius: 12px;
 	display: grid;
 	gap: 12px;
 	grid-template-columns: minmax(0, 1fr) auto;
-	padding: 14px;
+	padding: 18px;
 }
 
 .schedule-empty-state strong {
@@ -9606,6 +9962,7 @@ section.imaging-panel {
 	font-size: 15px;
 	line-height: 1.25;
 	margin-bottom: 4px;
+	color: var(--ink);
 }
 
 .schedule-empty-state p {

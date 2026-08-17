@@ -4,7 +4,18 @@ import {
 	safeLocalStorageSetItem,
 } from "../lib/safeLocalStorage";
 
-export type ThemeMode = "auto" | "light" | "dark" | "night" | "calm_teal" | "contrast";
+export type ThemeMode =
+	| "auto"
+	| "light"
+	| "dark"
+	| "night"
+	| "calm_teal"
+	| "contrast"
+	| "sakura"
+	| "ocean"
+	| "emerald"
+	| "cyber_xray"
+	| "warm_sand";
 
 const THEME_STORAGE_KEY = "dente_theme_mode";
 
@@ -15,7 +26,12 @@ function isThemeMode(value: unknown): value is ThemeMode {
 		value === "dark" ||
 		value === "night" ||
 		value === "calm_teal" ||
-		value === "contrast"
+		value === "contrast" ||
+		value === "sakura" ||
+		value === "ocean" ||
+		value === "emerald" ||
+		value === "cyber_xray" ||
+		value === "warm_sand"
 	);
 }
 

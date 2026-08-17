@@ -354,6 +354,41 @@
 	background: var(--bg);
 }
 
+[data-theme="sakura"] {
+	--glass-panel: rgba(255, 241, 242, 0.92);
+	--glass-border: #fbcfe8;
+	--glass-shadow: 0 12px 36px -8px rgba(219, 39, 119, 0.15);
+	--glass-blur: blur(14px);
+}
+
+[data-theme="ocean"] {
+	--glass-panel: rgba(12, 30, 61, 0.9);
+	--glass-border: rgba(56, 189, 248, 0.25);
+	--glass-shadow: 0 12px 36px -8px rgba(0, 0, 0, 0.6);
+	--glass-blur: blur(14px);
+}
+
+[data-theme="emerald"] {
+	--glass-panel: rgba(6, 78, 59, 0.9);
+	--glass-border: rgba(52, 211, 153, 0.25);
+	--glass-shadow: 0 12px 36px -8px rgba(0, 0, 0, 0.6);
+	--glass-blur: blur(14px);
+}
+
+[data-theme="cyber_xray"] {
+	--glass-panel: rgba(8, 16, 38, 0.92);
+	--glass-border: rgba(0, 240, 255, 0.35);
+	--glass-shadow: 0 0 30px rgba(0, 240, 255, 0.25);
+	--glass-blur: blur(14px);
+}
+
+[data-theme="warm_sand"] {
+	--glass-panel: rgba(255, 251, 235, 0.95);
+	--glass-border: #fde68a;
+	--glass-shadow: 0 12px 36px -8px rgba(180, 83, 9, 0.12);
+	--glass-blur: blur(14px);
+}
+
 /* ---------- BADGE PRIMITIVES ---------- */
 .dnt-badge {
 	display: inline-flex;
@@ -675,57 +710,58 @@ select:focus {
 	padding-top: 14px;
 	border-top: 1px solid var(--line);
 }
-.theme-switcher {
-	display: grid;
-	grid-template-columns: repeat(5, minmax(0, 1fr));
+.workspace-theme-switcher {
+	position: relative;
+}
+.workspace-theme-switcher summary {
+	display: inline-flex;
 	align-items: center;
-	gap: 2px;
-	background: var(--paper-soft);
+	gap: 6px;
+	padding: 6px 12px;
 	border: 1px solid var(--line);
-	border-radius: 10px;
-	padding: 2px;
-	flex: 1;
-	min-width: 0;
-}
-.theme-switcher button {
-	border: none;
-	background: transparent;
-	color: var(--muted);
-	font-size: 10.5px;
+	border-radius: 999px;
+	background: var(--paper-soft);
+	color: var(--ink-2);
+	font-size: 11.5px;
 	font-weight: 600;
-	padding: 5px 2px;
-	border-radius: 6px;
-	transition: all 0.15s ease;
 	cursor: pointer;
-	text-align: center;
+	list-style: none;
 	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	line-height: 1.2;
+	transition: all 0.15s ease;
 }
-.theme-switcher button:hover {
+.workspace-theme-switcher summary:hover {
+	border-color: var(--teal-ring);
 	color: var(--ink);
-	background: var(--teal-surface);
 }
-.theme-switcher button[aria-pressed="true"] {
-	background: var(--paper);
-	color: var(--teal-dark);
-	font-weight: 700;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+.workspace-theme-switcher summary::-webkit-details-marker {
+	display: none;
 }
-[data-theme="dark"] .theme-switcher button[aria-pressed="true"],
-[data-theme="night"] .theme-switcher button[aria-pressed="true"] {
-	color: var(--teal);
-	background: var(--paper-strong);
+.theme-dot {
+	display: inline-block;
+	width: 9px;
+	height: 9px;
+	border-radius: 50%;
+	flex-shrink: 0;
+	box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
 }
-[data-theme="calm_teal"] .theme-switcher button[aria-pressed="true"] {
-	color: var(--teal-dark);
-	background: var(--paper);
+.theme-switcher-grid {
+	bottom: calc(100% + 8px);
+	top: auto;
+	margin-bottom: 4px;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(130px, 1fr));
+	gap: 4px;
+	min-width: 290px;
+	max-height: 380px;
+	overflow-y: auto;
 }
-[data-theme="contrast"] .theme-switcher button[aria-pressed="true"] {
-	color: #ffffff;
-	background: #000000;
-	border: 1px solid #000000;
+.theme-switcher-grid button {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	padding: 7px 10px;
+	font-size: 12px;
+	white-space: nowrap;
 }
 .sidebar-collapse-button svg {
 	transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -974,6 +1010,7 @@ select:focus {
 	font-size: 15px;
 	font-weight: 700;
 	margin: 0;
+	color: var(--ink);
 }
 
 .role-focus-strip {

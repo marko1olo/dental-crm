@@ -332,3 +332,84 @@ html.dark:not([data-theme]) {
 	--violet-700: #000000;
 }
 
+:root[data-theme="sakura"] {
+	--teal-fill: var(--teal-dark);
+	--srf-check-task: #fff1f2;
+	--srf-check-task-blocking: #fffbeb;
+	--srf-chip-soft: #fce7f3;
+	--srf-badge-official: #ffe4e6;
+	--srf-badge-official-line: #fbcfe8;
+
+	--surface-alt: var(--surface-50);
+	--surface-hover: var(--surface-100);
+
+	--violet-50: #fff1f2;
+	--violet-200: #fecdd3;
+	--violet-700: #be185d;
+}
+
+:root[data-theme="ocean"] {
+	--teal-fill: var(--teal);
+	--srf-check-task: #0c1e3d;
+	--srf-check-task-blocking: #172554;
+	--srf-chip-soft: #0f2447;
+	--srf-badge-official: #0f2447;
+	--srf-badge-official-line: rgba(56, 189, 248, 0.35);
+
+	--surface-alt: var(--surface-50);
+	--surface-hover: var(--surface-100);
+
+	--violet-50: rgba(56, 189, 248, 0.15);
+	--violet-200: rgba(56, 189, 248, 0.3);
+	--violet-700: #93c5fd;
+}
+
+:root[data-theme="emerald"] {
+	--teal-fill: var(--teal);
+	--srf-check-task: #064e3b;
+	--srf-check-task-blocking: #14532d;
+	--srf-chip-soft: #065f46;
+	--srf-badge-official: #065f46;
+	--srf-badge-official-line: rgba(52, 211, 153, 0.35);
+
+	--surface-alt: var(--surface-50);
+	--surface-hover: var(--surface-100);
+
+	--violet-50: rgba(52, 211, 153, 0.15);
+	--violet-200: rgba(52, 211, 153, 0.3);
+	--violet-700: #a7f3d0;
+}
+
+:root[data-theme="cyber_xray"] {
+	--teal-fill: var(--teal);
+	--srf-check-task: #081026;
+	--srf-check-task-blocking: #1e1b4b;
+	--srf-chip-soft: #0d1a3a;
+	--srf-badge-official: #0a1532;
+	--srf-badge-official-line: rgba(0, 240, 255, 0.4);
+
+	--surface-alt: var(--surface-50);
+	--surface-hover: var(--surface-100);
+
+	--violet-50: rgba(0, 240, 255, 0.15);
+	--violet-200: rgba(0, 240, 255, 0.35);
+	--violet-700: #38bdf8;
+}
+
+:root[data-theme="warm_sand"] {
+	--teal-fill: var(--teal-dark);
+	--srf-check-task: #fefce8;
+	--srf-check-task-blocking: #fffbeb;
+	--srf-chip-soft: #fef3c7;
+	--srf-badge-official: #fef3c7;
+	--srf-badge-official-line: #fde68a;
+
+	--surface-alt: var(--surface-50);
+	--surface-hover: var(--surface-100);
+
+	--violet-50: #fefce8;
+	--violet-200: #fde68a;
+	--violet-700: #b45309;
+}
+
+

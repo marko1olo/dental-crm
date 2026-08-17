@@ -82,12 +82,14 @@ export function ScheduleFilterStrip({
 				>
 					<button
 						type="button"
-						className="secondary-button schedule-day-step-prev min-h-[44px] min-w-[44px]"
+						className="secondary-button schedule-day-step-prev"
 						onClick={() => stepScheduleDay(-1)}
 						aria-label="Показать предыдущий день"
 						title="День назад"
 						style={{
 							padding: "0 10px",
+							minHeight: "44px",
+							minWidth: "44px",
 							lineHeight: "1",
 							display: "inline-flex",
 							alignItems: "center",
@@ -102,8 +104,9 @@ export function ScheduleFilterStrip({
 						aria-label="Фильтр расписания по дате"
 						value={scheduleDateFilter}
 						onChange={(event) => setScheduleDateFilter(event.target.value)}
-						className="min-h-[44px]"
+						className="schedule-date-input"
 						style={{
+							minHeight: "44px",
 							lineHeight: "1",
 							boxSizing: "border-box",
 							border: "1px solid var(--line)",
@@ -121,12 +124,14 @@ export function ScheduleFilterStrip({
 					/>
 					<button
 						type="button"
-						className="secondary-button schedule-day-step-next min-h-[44px] min-w-[44px]"
+						className="secondary-button schedule-day-step-next"
 						onClick={() => stepScheduleDay(1)}
 						aria-label="Показать следующий день"
 						title="День вперёд"
 						style={{
 							padding: "0 10px",
+							minHeight: "44px",
+							minWidth: "44px",
 							lineHeight: "1",
 							display: "inline-flex",
 							alignItems: "center",
@@ -142,9 +147,10 @@ export function ScheduleFilterStrip({
 			{/* "Все записи" filter chip button */}
 			<button
 				type="button"
-				className={`quick-chip min-h-[44px] ${activeScheduleFilterCount === 0 ? "active" : ""}`}
+				className={`quick-chip ${activeScheduleFilterCount === 0 ? "active" : ""}`.trim()}
 				onClick={resetScheduleFilters}
 				style={{
+					minHeight: "44px",
 					lineHeight: "1",
 					padding: "0 14px",
 					boxSizing: "border-box",

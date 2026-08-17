@@ -425,45 +425,53 @@ function ThemeSwitcher() {
 	const themeMode = useThemeStore((state) => state.themeMode);
 	const setThemeMode = useThemeStore((state) => state.setThemeMode);
 
-	const options: Array<{ mode: ThemeMode; label: string; hint: string }> = [
-		{ mode: "light", label: "День", hint: "Клиническая светлая тема" },
-		{
-			mode: "dark",
-			label: "Тьма",
-			hint: "Хирургическая тёмная тема в холодных серо-синих тонах",
-		},
-		{
-			mode: "night",
-			label: "OLED",
-			hint: "Истинный глубокий ночной чёрный для OLED-планшетов",
-		},
-		{
-			mode: "calm_teal",
-			label: "Морская",
-			hint: "Мягкая мятная тема для детского приема и презентации планов",
-		},
-		{
-			mode: "contrast",
-			label: "Контраст",
-			hint: "Высокий контраст WCAG AAA (7:1) для слабовидящих и яркого света",
-		},
+	const options: Array<{
+		mode: ThemeMode;
+		label: string;
+		hint: string;
+		icon: string;
+		dot: string;
+	}> = [
+		{ mode: "auto", label: "Авто", hint: "Следовать системной теме устройства", icon: "⚙️", dot: "#94a3b8" },
+		{ mode: "light", label: "День", hint: "Клиническая светлая тема", icon: "☀️", dot: "#0d9488" },
+		{ mode: "dark", label: "Тьма", hint: "Хирургическая тёмная (Slate)", icon: "🌙", dot: "#2dd4bf" },
+		{ mode: "night", label: "OLED", hint: "Истинный глубокий чёрный для OLED", icon: "🌌", dot: "#ffffff" },
+		{ mode: "calm_teal", label: "Морская", hint: "Мягкая мятная успокаивающая тема", icon: "🌊", dot: "#14b8a6" },
+		{ mode: "sakura", label: "Сакура", hint: "Нежная розовая сакура для детской и эстетики", icon: "🌸", dot: "#f43f5e" },
+		{ mode: "ocean", label: "Океан", hint: "Глубокий сапфировый ультрамарин", icon: "💎", dot: "#38bdf8" },
+		{ mode: "emerald", label: "Изумруд", hint: "Хвойно-изумрудная свежесть", icon: "🌲", dot: "#34d399" },
+		{ mode: "cyber_xray", label: "Рентген", hint: "Неоновый кибер-КТ визиограф", icon: "⚡", dot: "#00f0ff" },
+		{ mode: "warm_sand", label: "Песок", hint: "Тёплый уют шамотной керамики", icon: "🏜️", dot: "#d97706" },
+		{ mode: "contrast", label: "Контраст", hint: "Высокий контраст WCAG AAA (7:1)", icon: "👓", dot: "#000000" },
 	];
 
+	const currentOption = options.find((opt) => opt.mode === themeMode) ?? options[0]!;
+
 	return (
-		<div role="toolbar" className="theme-switcher" aria-label="Тема интерфейса">
-			{options.map((option) => (
-				<button
-					key={option.mode}
-					type="button"
-					aria-pressed={themeMode === option.mode}
-					aria-label={option.hint}
-					title={option.hint}
-					onClick={() => setThemeMode(option.mode)}
-				>
-					{option.label}
-				</button>
-			))}
-		</div>
+		<details className="workspace-role-switcher workspace-theme-switcher" aria-label="Тема оформления">
+			<summary title={currentOption.hint}>
+				<span className="theme-dot" style={{ backgroundColor: currentOption.dot }} />
+				<strong>{currentOption.icon} {currentOption.label}</strong>
+			</summary>
+			<div className="role-switcher-options theme-switcher-grid">
+				{options.map((option) => (
+					<button
+						className={themeMode === option.mode ? "active" : ""}
+						key={option.mode}
+						type="button"
+						aria-pressed={themeMode === option.mode}
+						title={option.hint}
+						onClick={(event) => {
+							setThemeMode(option.mode);
+							event.currentTarget.closest("details")?.removeAttribute("open");
+						}}
+					>
+						<span className="theme-dot" style={{ backgroundColor: option.dot }} />
+						<span>{option.icon} {option.label}</span>
+					</button>
+				))}
+			</div>
+		</details>
 	);
 }
 
