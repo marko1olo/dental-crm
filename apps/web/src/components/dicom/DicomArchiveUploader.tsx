@@ -1,7 +1,7 @@
 import cornerstoneDICOMImageLoader from "@cornerstonejs/dicom-image-loader";
 import * as fflate from "fflate";
 import type React from "react";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
@@ -10,14 +10,66 @@ interface DicomArchiveUploaderProps {
 	onImagesLoaded: (imageIds: string[]) => void;
 }
 
+const MAX_SAFE_FILE_SIZE_BYTES = 1.5 * 1024 * 1024 * 1024; // 1.5 GB
+const BATCH_PROCESSING_CHUNK_SIZE = 50;
+
+/**
+ * Checks if a byte buffer or filename represents a valid DICOM slice.
+ * Standard DICOM has 128-byte preamble followed by "DICM" magic string.
+ * Non-preamble DICOM or raw files identified by .dcm/.dicom extensions.
+ */
+function isDicomEntry(filename: string, byteArray: Uint8Array): boolean {
+	const lower = filename.toLowerCase();
+	if (
+		lower.includes("__macosx") ||
+		lower.includes("/._") ||
+		lower.startsWith("._") ||
+		lower.endsWith(".ds_store") ||
+		lower.endsWith("thumbs.db") ||
+		lower.endsWith("desktop.ini")
+	) {
+		return false;
+	}
+
+	if (byteArray.length >= 132) {
+		const dicmPrefix = String.fromCharCode(
+			byteArray[128] ?? 0,
+			byteArray[129] ?? 0,
+			byteArray[130] ?? 0,
+			byteArray[131] ?? 0,
+		);
+		if (dicmPrefix === "DICM") {
+			return true;
+		}
+	}
+
+	if (lower.endsWith(".dcm") || lower.endsWith(".dicom")) {
+		return byteArray.length > 32;
+	}
+
+	// DICOM without preamble typically begins with Group 0x0002 or Group 0x0008 tag
+	if (byteArray.length >= 4) {
+		const tagGroup = (byteArray[0] ?? 0) | ((byteArray[1] ?? 0) << 8);
+		if (tagGroup === 0x0002 || tagGroup === 0x0008) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 export function DicomArchiveUploader({
 	onImagesLoaded,
 }: DicomArchiveUploaderProps) {
 	const [isDragging, setIsDragging] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [status, setStatus] = useState<string>(
-		"Перетащите ZIP-архив или папку со снимками сюда",
+		"Перетащите ZIP-архив КЛКТ, папку со снимками или отдельные файлы .dcm",
 	);
+	const [progressPercent, setProgressPercent] = useState<number | null>(null);
+
+	const folderInputRef = useRef<HTMLInputElement>(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const processFile = useCallback(
 		async (file: File): Promise<string | null> => {
@@ -28,24 +80,11 @@ export function DicomArchiveUploader({
 						const arrayBuffer = reader.result as ArrayBuffer;
 						const byteArray = new Uint8Array(arrayBuffer);
 
-						// Check DICOM magic number at offset 128
-						if (byteArray.length < 132) {
+						if (!isDicomEntry(file.name, byteArray)) {
 							resolve(null);
 							return;
 						}
 
-						const dicmPrefix = String.fromCharCode(
-							byteArray[128] ?? 0,
-							byteArray[129] ?? 0,
-							byteArray[130] ?? 0,
-							byteArray[131] ?? 0,
-						);
-						if (dicmPrefix !== "DICM") {
-							resolve(null);
-							return;
-						}
-
-						// Generate imageId using cornerstone wado-uri fileManager
 						const imageId =
 							cornerstoneDICOMImageLoader.wadouri.fileManager.add(file);
 						resolve(imageId);
@@ -62,31 +101,26 @@ export function DicomArchiveUploader({
 					}
 				};
 				reader.onerror = () => resolve(null);
-				reader.readAsArrayBuffer(file.slice(0, 1024)); // Only read first 1KB for DICM check
+				reader.readAsArrayBuffer(file.slice(0, 1024)); // Only read first 1KB for DICOM header check
 			});
 		},
 		[],
 	);
 
-	const MAX_SAFE_FILE_SIZE_BYTES = 1.5 * 1024 * 1024 * 1024; // 1.5 GB
-
 	const processZip = useCallback(
-		async (zipFile: File) => {
+		async (zipFile: File): Promise<string[]> => {
 			if (zipFile.size > MAX_SAFE_FILE_SIZE_BYTES) {
 				setStatus(
-					"Файл слишком велик для обработки в памяти браузера. Используйте просмотр по срезам.",
+					"Файл слишком велик для обработки в памяти браузера (>1.5 ГБ). Используйте просмотр по папке со срезами.",
 				);
-				return;
+				return [];
 			}
 
-			setStatus("Распаковка ZIP-архива в память...");
+			setStatus(`Распаковка архива ${zipFile.name}...`);
+			setProgressPercent(0);
 			const buffer = new Uint8Array(await zipFile.arrayBuffer());
 
-			return new Promise<void>((resolve, reject) => {
-				const imageIds: string[] = [];
-				let totalFiles = 0;
-				let processedFiles = 0;
-
+			return new Promise<string[]>((resolve, reject) => {
 				fflate.unzip(buffer, (err, unzipped) => {
 					if (err) {
 						reject(err);
@@ -94,37 +128,29 @@ export function DicomArchiveUploader({
 					}
 
 					const entries = Object.keys(unzipped);
-					totalFiles = entries.length;
+					const totalFiles = entries.length;
+					const imageIds: string[] = [];
 
-					const processEntry = async (index: number) => {
-						if (index >= entries.length) {
-							if (imageIds.length > 0) {
-								setStatus(`Загружено объектов DICOM: ${imageIds.length}`);
-								onImagesLoaded(imageIds);
-							} else {
-								setStatus("Файлы DICOM в ZIP-архиве не найдены.");
-							}
-							resolve();
-							return;
-						}
+					if (totalFiles === 0) {
+						resolve([]);
+						return;
+					}
 
-						// biome-ignore lint/style/noNonNullAssertion: automated suppression
-						const filename = entries[index]!;
-						const fileData = unzipped[filename];
-						processedFiles++;
+					let currentIndex = 0;
 
-						if (processedFiles % 10 === 0) {
-							setStatus(`Обработка ZIP: ${processedFiles}/${totalFiles}`);
-						}
+					const processNextBatch = () => {
+						const batchEnd = Math.min(
+							currentIndex + BATCH_PROCESSING_CHUNK_SIZE,
+							totalFiles,
+						);
 
-						if (fileData && fileData.length > 132) {
-							const dicmPrefix = String.fromCharCode(
-								fileData[128] ?? 0,
-								fileData[129] ?? 0,
-								fileData[130] ?? 0,
-								fileData[131] ?? 0,
-							);
-							if (dicmPrefix === "DICM") {
+						for (let i = currentIndex; i < batchEnd; i++) {
+							const filename = entries[i];
+							if (!filename) continue;
+							const fileData = unzipped[filename];
+							if (!fileData) continue;
+
+							if (isDicomEntry(filename, fileData)) {
 								const file = new File([fileData], filename);
 								const imageId =
 									cornerstoneDICOMImageLoader.wadouri.fileManager.add(file);
@@ -132,18 +158,29 @@ export function DicomArchiveUploader({
 							}
 						}
 
-						setTimeout(() => processEntry(index + 1), 0);
+						currentIndex = batchEnd;
+						const pct = Math.round((currentIndex / totalFiles) * 100);
+						setProgressPercent(pct);
+						setStatus(`Обработка срезов КЛКТ: ${currentIndex}/${totalFiles} (${imageIds.length} DICOM)...`);
+
+						if (currentIndex < totalFiles) {
+							// Yield to event loop to keep UI responsive
+							setTimeout(processNextBatch, 0);
+						} else {
+							setProgressPercent(null);
+							resolve(imageIds);
+						}
 					};
 
-					processEntry(0);
+					processNextBatch();
 				});
 			});
 		},
-		[onImagesLoaded],
+		[],
 	);
 
 	const traverseFileTree = useCallback(
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+		// biome-ignore lint/suspicious/noExplicitAny: FileSystemEntry abstraction
 		async (item: any, path: string = ""): Promise<File[]> => {
 			return new Promise((resolve) => {
 				if (item.isFile) {
@@ -151,16 +188,11 @@ export function DicomArchiveUploader({
 						resolve([file]);
 					});
 				} else if (item.isDirectory) {
-					// БЫЛО: readEntries вызывался ОДИН раз. По спецификации FileSystem API он
-					// отдаёт не больше ~100 записей за вызов и требует повторных вызовов,
-					// пока не вернёт пустой массив. Папка КЛКТ на 400 срезов загружалась
-					// на 100 файлов, реконструкция строилась по неполной челюсти,
-					// а статус бодро сообщал «Загружено объектов DICOM: 100».
 					const dirReader = item.createReader();
 					const files: File[] = [];
 					const readBatch = () => {
 						dirReader.readEntries(
-							// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+							// biome-ignore lint/suspicious/noExplicitAny: FileSystemEntry entries
 							async (entries: any[]) => {
 								if (!entries || entries.length === 0) {
 									resolve(files);
@@ -187,19 +219,78 @@ export function DicomArchiveUploader({
 		[],
 	);
 
+	const handleIncomingFiles = useCallback(
+		async (files: File[]) => {
+			if (files.length === 0) return;
+			if (loading) return;
+
+			setLoading(true);
+			setProgressPercent(null);
+
+			try {
+				const validImageIds: string[] = [];
+				const zipFiles = files.filter((f) =>
+					f.name.toLowerCase().endsWith(".zip"),
+				);
+				const nonZipFiles = files.filter(
+					(f) => !f.name.toLowerCase().endsWith(".zip"),
+				);
+
+				// Process ZIP files
+				for (const zipFile of zipFiles) {
+					const zipImageIds = await processZip(zipFile);
+					validImageIds.push(...zipImageIds);
+				}
+
+				// Process individual / folder files
+				if (nonZipFiles.length > 0) {
+					setStatus(`Сканирование файлов: ${nonZipFiles.length}...`);
+					for (let i = 0; i < nonZipFiles.length; i++) {
+						if (i % 25 === 0) {
+							setStatus(`Сканирование файлов: ${i}/${nonZipFiles.length}`);
+							setProgressPercent(Math.round((i / nonZipFiles.length) * 100));
+						}
+						const f = nonZipFiles[i];
+						if (f) {
+							const imageId = await processFile(f);
+							if (imageId) validImageIds.push(imageId);
+						}
+					}
+				}
+
+				if (validImageIds.length > 0) {
+					setStatus(`Успешно загружено объектов DICOM: ${validImageIds.length}`);
+					onImagesLoaded(validImageIds);
+				} else {
+					setStatus("Подходящие файлы DICOM (.dcm) или срезы КЛКТ не найдены.");
+				}
+			} catch (error) {
+				showToast(
+					actionFailureToast(
+						"Ошибка обработки архива DICOM",
+						(error as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
+				logger.error("[DicomArchiveUploader] Ошибка обработки:", error);
+				setStatus(
+					"Не удалось прочитать файлы: архив повреждён, зашифрован или не содержит DICOM. Попробуйте распаковать вручную.",
+				);
+			} finally {
+				setLoading(false);
+				setProgressPercent(null);
+			}
+		},
+		[loading, onImagesLoaded, processFile, processZip],
+	);
+
 	const onDrop = useCallback(
 		async (e: React.DragEvent<HTMLElement>) => {
 			e.preventDefault();
 			setIsDragging(false);
 
 			if (loading) return;
-			setLoading(true);
 
-			// БЫЛО: тела обработчика без try/catch. Если processZip падал на битом или
-			// зашифрованном архиве, setLoading(false) в конце не выполнялся: крутилка
-			// висела вечно, статус замирал на «Распаковка ZIP-архива в память...»,
-			// а проверка `if (loading) return` блокировала все следующие попытки.
-			// Загрузчик умирал до перезагрузки страницы, и врач не видел причины.
 			try {
 				const items = e.dataTransfer.items;
 				let allFiles: File[] = [];
@@ -218,77 +309,39 @@ export function DicomArchiveUploader({
 					allFiles = Array.from(e.dataTransfer.files);
 				}
 
-				const firstFile = allFiles[0];
-				if (
-					allFiles.length === 1 &&
-					firstFile &&
-					firstFile.name.toLowerCase().endsWith(".zip")
-				) {
-					await processZip(firstFile);
-				} else {
-					setStatus(`Сканирование файлов: ${allFiles.length}...`);
-					const validImageIds: string[] = [];
-
-					for (let i = 0; i < allFiles.length; i++) {
-						if (i % 10 === 0)
-							setStatus(`Сканирование файлов: ${i}/${allFiles.length}`);
-						const f = allFiles[i];
-						if (f) {
-							const imageId = await processFile(f);
-							if (imageId) validImageIds.push(imageId);
-						}
-					}
-
-					if (validImageIds.length > 0) {
-						setStatus(`Загружено объектов DICOM: ${validImageIds.length}`);
-						onImagesLoaded(validImageIds);
-					} else {
-						setStatus("Подходящие файлы DICOM не найдены.");
-					}
-				}
+				await handleIncomingFiles(allFiles);
 			} catch (error) {
-				showToast(
-					actionFailureToast(
-						"Ошибка выполнения операции",
-						(error as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
-				logger.error("[DicomArchiveUploader] Ошибка обработки:", error);
-				setStatus(
-					"Не удалось прочитать файлы: архив повреждён, зашифрован или не содержит DICOM. Попробуйте другой архив или распакуйте его вручную.",
-				);
-			} finally {
-				setLoading(false);
+				logger.error("[DicomArchiveUploader] Drop failed:", error);
+				setStatus("Ошибка при перетаскивании файлов.");
 			}
 		},
-		[loading, onImagesLoaded, traverseFileTree, processZip, processFile],
+		[loading, traverseFileTree, handleIncomingFiles],
 	);
 
 	return (
-		<button
-			type="button"
-			aria-label="Зона загрузки DICOM"
+		<div
+			aria-label="Зона загрузки DICOM и КЛКТ"
 			onDragOver={(e) => {
 				e.preventDefault();
 				setIsDragging(true);
 			}}
 			onDragLeave={() => setIsDragging(false)}
 			onDrop={onDrop}
-			onClick={() => document.getElementById("dicom-folder-input")?.click()}
-			onKeyDown={(e) => {
-				if (e.key === "Enter" || e.key === " ") {
-					e.preventDefault();
-					document.getElementById("dicom-folder-input")?.click();
-				}
-			}}
-			className={`w-full h-32 flex flex-col items-center justify-center border-2 border-dashed rounded-lg transition-colors cursor-pointer bg-transparent ${
-				isDragging
-					? "border-teal-500 bg-teal-500/10"
-					: "border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 hover:bg-slate-100 dark:hover:bg-neutral-800"
+			className={`w-full flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl transition-all dicom-dropzone ${
+				isDragging ? "dicom-dropzone--dragging" : ""
 			}`}
+			style={{
+				background: isDragging
+					? "var(--teal-soft, rgba(20,184,166,0.12))"
+					: "var(--paper, rgba(255,255,255,0.05))",
+				borderColor: isDragging
+					? "var(--teal, #14b8a6)"
+					: "var(--line, rgba(0,0,0,0.15))",
+				color: "var(--ink, #0f172a)",
+			}}
 		>
 			<input
+				ref={folderInputRef}
 				id="dicom-folder-input"
 				type="file"
 				webkitdirectory="true"
@@ -296,41 +349,95 @@ export function DicomArchiveUploader({
 				multiple
 				style={{ display: "none" }}
 				onChange={async (e) => {
-					if (loading || !e.target.files) return;
-					setLoading(true);
-					const allFiles = Array.from(e.target.files);
-					setStatus(`Сканирование файлов: ${allFiles.length}...`);
-					const validImageIds: string[] = [];
-					for (let i = 0; i < allFiles.length; i++) {
-						if (i % 10 === 0)
-							setStatus(`Сканирование файлов: ${i}/${allFiles.length}`);
-						const f = allFiles[i];
-						if (f) {
-							const imageId = await processFile(f);
-							if (imageId) validImageIds.push(imageId);
-						}
-					}
-					if (validImageIds.length > 0) {
-						setStatus(`Загружено объектов DICOM: ${validImageIds.length}`);
-						onImagesLoaded(validImageIds);
-					} else {
-						setStatus("Подходящие файлы DICOM не найдены.");
-					}
-					setLoading(false);
-					// reset input
+					if (!e.target.files) return;
+					const files = Array.from(e.target.files);
 					e.target.value = "";
+					await handleIncomingFiles(files);
 				}}
 			/>
-			<div className="text-slate-700 dark:text-neutral-300 font-medium">
-				{status} (Кликните для выбора или перетащите папку)
+			<input
+				ref={fileInputRef}
+				id="dicom-file-input"
+				type="file"
+				accept=".zip,.dcm,.dicom,application/zip,application/x-zip-compressed"
+				multiple
+				style={{ display: "none" }}
+				onChange={async (e) => {
+					if (!e.target.files) return;
+					const files = Array.from(e.target.files);
+					e.target.value = "";
+					await handleIncomingFiles(files);
+				}}
+			/>
+
+			<div className="flex items-center gap-2 mb-2">
+				<div
+					style={{
+						color: "var(--ink)",
+						fontWeight: 600,
+						fontSize: "14px",
+						textAlign: "center",
+					}}
+				>
+					{status}
+				</div>
 			</div>
+
 			{loading && (
-				<div className="mt-2 w-6 h-6 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+				<div className="w-full max-w-xs my-2 flex flex-col items-center gap-2">
+					<div className="w-6 h-6 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+					{progressPercent !== null && (
+						<div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+							<div
+								className="bg-teal-500 h-full transition-all duration-150"
+								style={{ width: `${progressPercent}%` }}
+							></div>
+						</div>
+					)}
+				</div>
 			)}
-			<div className="text-xs text-slate-500 dark:text-neutral-500 mt-2">
-				Локальная обработка в браузере. Данные не передаются на сторонние
-				сервера.
+
+			<div className="flex flex-wrap items-center justify-center gap-3 mt-3">
+				<button
+					type="button"
+					disabled={loading}
+					onClick={() => fileInputRef.current?.click()}
+					className="px-4 py-2 text-xs font-semibold rounded-lg shadow-sm border transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
+					style={{
+						background: "var(--surface-50, #f8fafc)",
+						borderColor: "var(--line, #cbd5e1)",
+						color: "var(--ink, #0f172a)",
+					}}
+				>
+					📦 Выбрать ZIP-архив / .DCM
+				</button>
+				<button
+					type="button"
+					disabled={loading}
+					onClick={() => folderInputRef.current?.click()}
+					className="px-4 py-2 text-xs font-semibold rounded-lg shadow-sm border transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
+					style={{
+						background: "var(--surface-50, #f8fafc)",
+						borderColor: "var(--line, #cbd5e1)",
+						color: "var(--ink, #0f172a)",
+					}}
+				>
+					📁 Выбрать папку КЛКТ
+				</button>
 			</div>
-		</button>
+
+			<div
+				style={{
+					color: "var(--muted, #64748b)",
+					fontSize: "11px",
+					marginTop: "10px",
+					textAlign: "center",
+				}}
+			>
+				⚡ Локальная обработка в браузере. Конфиденциальные данные исследования не
+				передаются на сторонние серверы.
+			</div>
+		</div>
 	);
 }
+
