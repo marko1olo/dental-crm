@@ -56,7 +56,7 @@ const TOOTH_STATE_ACTIONS: ReadonlyArray<{
 		state: "Pulpitis",
 		label: "Пульпит",
 		className:
-			"bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20",
+			"bg-purple-500/10 text-purple-400 border-purple-500/20 hover:bg-purple-500/20",
 	},
 	{
 		state: "Periodontitis",
@@ -80,13 +80,13 @@ const TOOTH_STATE_ACTIONS: ReadonlyArray<{
 		state: "Implant",
 		label: "Имплантат",
 		className:
-			"bg-yellow-500/10 text-yellow-400 border-yellow-500/20 hover:bg-yellow-500/20",
+			"bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20",
 	},
 	{
 		state: "Planned_Implant",
 		label: "Имплантат в плане",
 		className:
-			"bg-lime-500/10 text-lime-300 border-lime-500/20 hover:bg-lime-500/20",
+			"bg-indigo-500/10 text-indigo-300 border-indigo-500/20 hover:bg-indigo-500/20",
 	},
 	{
 		state: "Missing",
@@ -996,7 +996,7 @@ export const OdontogramModule = ({
 							/>
 							<div
 								role="menu"
-								className={`absolute grid grid-cols-2 gap-2 p-3 w-[254px] bg-zinc-950/40 backdrop-blur-md border border-zinc-800/50 shadow-2xl rounded-2xl`}
+								className="tooth-radial-menu"
 								style={
 									{
 										left: menuConfig.x,

@@ -51,11 +51,11 @@ import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 const TOOTH_SHORT_CODES: Record<ToothState, { code: string; dotColor: string }> = {
 	Healthy: { code: "Зд", dotColor: "#10b981" },
 	Caries: { code: "К", dotColor: "#ef4444" },
-	Pulpitis: { code: "П", dotColor: "#f59e0b" },
-	Periodontitis: { code: "Пер", dotColor: "#dc2626" },
-	Filled: { code: "Пл", dotColor: "#0d9488" },
+	Pulpitis: { code: "П", dotColor: "#a855f7" },
+	Periodontitis: { code: "Пер", dotColor: "#f97316" },
+	Filled: { code: "Пл", dotColor: "#10b981" },
 	Crown: { code: "Кр", dotColor: "#3b82f6" },
-	Implant: { code: "Имп", dotColor: "#a855f7" },
+	Implant: { code: "Имп", dotColor: "#f59e0b" },
 	Planned_Implant: { code: "ПлИ", dotColor: "#6366f1" },
 	Missing: { code: "Отс", dotColor: "#64748b" },
 };
@@ -80,9 +80,9 @@ const CHAIRSIDE_TOOTH_STATUS_OPTIONS: ReadonlyArray<{
 		state: "Pulpitis",
 		label: "Пульпит",
 		shortCode: "П",
-		colorClass: "bg-amber-500/15 text-amber-800 dark:text-amber-300 hover:bg-amber-500/25",
-		borderClass: "border-amber-500/40",
-		badgeClass: "bg-amber-600 text-white",
+		colorClass: "bg-purple-500/15 text-purple-800 dark:text-purple-300 hover:bg-purple-500/25",
+		borderClass: "border-purple-500/40",
+		badgeClass: "bg-purple-600 text-white",
 	},
 	{
 		state: "Periodontitis",
@@ -112,9 +112,9 @@ const CHAIRSIDE_TOOTH_STATUS_OPTIONS: ReadonlyArray<{
 		state: "Implant",
 		label: "Имплантат",
 		shortCode: "Имп",
-		colorClass: "bg-purple-500/15 text-purple-700 dark:text-purple-300 hover:bg-purple-500/25",
-		borderClass: "border-purple-500/40",
-		badgeClass: "bg-purple-600 text-white",
+		colorClass: "bg-amber-500/15 text-amber-800 dark:text-amber-300 hover:bg-amber-500/25",
+		borderClass: "border-amber-500/40",
+		badgeClass: "bg-amber-600 text-white",
 	},
 	{
 		state: "Planned_Implant",
@@ -508,7 +508,7 @@ export function ChairsiderPerspectiveView() {
 													key={tNum}
 													type="button"
 													onClick={() => setSelectedTooth(tNum)}
-													className={`min-h-[56px] min-w-[36px] sm:min-w-[40px] md:min-h-[64px] p-1 rounded-xl flex flex-col items-center justify-center font-black transition-all border cursor-pointer active:scale-95 whitespace-nowrap ${
+													className={`min-h-[56px] min-w-[44px] md:min-h-[64px] p-1 rounded-xl flex flex-col items-center justify-center font-black transition-all border cursor-pointer active:scale-95 whitespace-nowrap ${
 														isSelected
 															? "bg-teal-600 text-white border-teal-700 shadow-lg shadow-teal-600/30 scale-105 z-10"
 															: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 border-[var(--line,#cbd5e1)] dark:border-slate-700"
@@ -553,7 +553,7 @@ export function ChairsiderPerspectiveView() {
 													key={tNum}
 													type="button"
 													onClick={() => setSelectedTooth(tNum)}
-													className={`min-h-[56px] min-w-[36px] sm:min-w-[40px] md:min-h-[64px] p-1 rounded-xl flex flex-col items-center justify-center font-black transition-all border cursor-pointer active:scale-95 whitespace-nowrap ${
+													className={`min-h-[56px] min-w-[44px] md:min-h-[64px] p-1 rounded-xl flex flex-col items-center justify-center font-black transition-all border cursor-pointer active:scale-95 whitespace-nowrap ${
 														isSelected
 															? "bg-teal-600 text-white border-teal-700 shadow-lg shadow-teal-600/30 scale-105 z-10"
 															: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 border-[var(--line,#cbd5e1)] dark:border-slate-700"
@@ -676,7 +676,7 @@ export function ChairsiderPerspectiveView() {
 											key={surf}
 											type="button"
 											onClick={() => toggleSurface(surf)}
-											className={`min-h-[36px] min-w-[36px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
+											className={`min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
 												isSurfActive
 													? "bg-teal-600 text-white border-teal-700 shadow-sm"
 													: "bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-600 hover:bg-teal-50 dark:hover:bg-slate-600"
@@ -689,14 +689,14 @@ export function ChairsiderPerspectiveView() {
 								<button
 									type="button"
 									onClick={() => handleSurfaceChange(["V", "L", "M", "D", "O"])}
-									className="min-h-[36px] px-2 py-1 rounded-lg text-[11px] font-semibold bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-600 hover:bg-slate-100 cursor-pointer"
+									className="min-h-[44px] min-w-[44px] px-3 py-1 rounded-lg text-xs font-semibold bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-600 hover:bg-slate-100 cursor-pointer"
 								>
 									Все
 								</button>
 								<button
 									type="button"
 									onClick={() => handleSurfaceChange([])}
-									className="min-h-[36px] px-2 py-1 rounded-lg text-[11px] font-semibold bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-red-600 dark:text-red-400 border border-[var(--line,#cbd5e1)] dark:border-slate-600 hover:bg-red-50 cursor-pointer"
+									className="min-h-[44px] min-w-[44px] px-3 py-1 rounded-lg text-xs font-semibold bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-red-600 dark:text-red-400 border border-[var(--line,#cbd5e1)] dark:border-slate-600 hover:bg-red-50 cursor-pointer"
 								>
 									Сброс
 								</button>

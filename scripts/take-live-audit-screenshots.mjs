@@ -72,6 +72,34 @@ async function provisionTestClinic() {
       const patient = await pRes.json();
       patientId = patient.id;
       console.log(`[SEED] Patient created: ${patientId}`);
+
+      // Seed rich tooth pathology for visual shader demonstration
+      const pathologySeed = [
+        { toothNumbers: [16, 24], state: "Caries", surfaces: ["O", "M"] },
+        { toothNumbers: [14], state: "Pulpitis" },
+        { toothNumbers: [46], state: "Periodontitis" },
+        { toothNumbers: [36], state: "Filled", surfaces: ["O", "D"] },
+        { toothNumbers: [21], state: "Crown" },
+        { toothNumbers: [47], state: "Implant" },
+        { toothNumbers: [38], state: "Missing" },
+        { toothNumbers: [28], state: "Planned_Implant" },
+      ];
+      for (const seed of pathologySeed) {
+        try {
+          const tRes = await fetch(`${API_BASE}/api/patients/${patientId}/tooth-states/batch`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify(seed),
+          });
+          if (tRes.ok) {
+            console.log(`  [TOOTH] ${seed.state} → [${seed.toothNumbers}] OK`);
+          } else {
+            console.log(`  [TOOTH WARN] ${seed.state} → ${tRes.status}: ${await tRes.text()}`);
+          }
+        } catch (err) {
+          console.log(`  [TOOTH ERR] ${seed.state}: ${err.message}`);
+        }
+      }
     }
   } catch (err) {
     console.log(`[SEED WARN] Patient seed: ${err.message}`);
