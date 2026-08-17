@@ -368,3 +368,7 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 	toggleMute: () => set((state) => ({ isMuted: !state.isMuted })),
 	clearHistory: () => set({ callHistory: [] }),
 }));
+
+if (typeof window !== "undefined") {
+	(window as unknown as { useTelephonyStore: typeof useTelephonyStore }).useTelephonyStore = useTelephonyStore;
+}
