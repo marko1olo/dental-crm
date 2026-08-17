@@ -43,9 +43,15 @@ export interface ToothData {
 export interface ToothChartProps {
 	teethData: ToothData[];
 	pediatricMode?: boolean;
+	mixedDentition?: boolean;
+	topTeeth?: number[];
+	bottomTeeth?: number[];
 	selectedTeeth?: number[];
 	onToothClick: (num: number, rect: DOMRect, surface?: string) => void;
 	useSurfaces?: boolean | undefined;
+	hideHeader?: boolean;
+	hideLegend?: boolean;
+	className?: string;
 }
 
 const TOP_TEETH = [
@@ -56,15 +62,13 @@ const BOTTOM_TEETH = [
 ];
 const PEDIATRIC_TOP_TEETH = [55, 54, 53, 52, 51, 61, 62, 63, 64, 65];
 const PEDIATRIC_BOTTOM_TEETH = [85, 84, 83, 82, 81, 71, 72, 73, 74, 75];
+const MIXED_TOP_TEETH = [16, 55, 54, 53, 52, 51, 61, 62, 63, 64, 65, 26];
+const MIXED_BOTTOM_TEETH = [46, 85, 84, 83, 82, 81, 71, 72, 73, 74, 75, 36];
 
 /**
- * Нижняя граница масштаба. Дуга не влезает в 270px мобильного экрана ни при
- * каком разумном уменьшении: понадобился бы масштаб около 0.27, зуб стал бы 9px
- * и попасть по нему пальцем было бы невозможно. Ниже этой границы масштаб не
- * опускается, а остаток добирается горизонтальной прокруткой — она у контейнера
- * дуги уже есть.
+ * Нижняя граница масштаба. Дуга масштабируется под экран мобильного устройства.
  */
-const MIN_ARCH_SCALE = 0.6;
+const MIN_ARCH_SCALE = 0.5;
 
 /** "56px" × 0.68 → "38.08px". Нечисловое значение возвращается как есть. */
 function scaleCssPx(value: string, factor: number): string {
@@ -137,15 +141,14 @@ const ToothSVG = ({
 	const cfg = getToothConfig(number);
 	const colors = getToothColors(state);
 
-	// Масштаб идёт в атрибуты width/height, а внутренняя геометрия задана viewBox,
-	// поэтому зуб сжимается целиком и без искажений пропорций. Раньше параметр
-	// scale принимался, но не использовался: дуга всегда занимала свои 1012px, и
-	// на ноутбуке 1024px врач видел половину челюсти.
 	const scaledWidth = scaleCssPx(cfg.width, scale);
 	const scaledHeight = scaleCssPx(cfg.height, scale);
 
 	const isRightSide =
-		(number >= 21 && number <= 28) || (number >= 31 && number <= 38);
+		(number >= 21 && number <= 28) ||
+		(number >= 31 && number <= 38) ||
+		(number >= 61 && number <= 65) ||
+		(number >= 71 && number <= 75);
 	const transform = `scaleX(${isRightSide ? -1 : 1})`;
 
 	const renderImplant = () => (
@@ -520,12 +523,252 @@ const ToothSVG = ({
 	);
 };
 
+export const SurfaceSelector = ({
+	selected,
+	onChange,
+	size = 100,
+	disabled = false,
+}: {
+	selected: string[];
+	onChange: (newSelected: string[]) => void;
+	size?: number;
+	disabled?: boolean;
+}) => {
+	const toggle = (surface: string) => {
+		if (disabled) return;
+		if (selected.includes(surface)) {
+			onChange(selected.filter((s) => s !== surface));
+		} else {
+			onChange([...selected, surface]);
+		}
+	};
+
+	return (
+		<div className="flex flex-col items-center justify-center">
+			<svg
+				width={size}
+				height={size}
+				viewBox="0 0 100 100"
+				className={`drop-shadow-md group ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+				role="img"
+				aria-label="Поверхности зуба"
+			>
+				<title>Поверхности зуба</title>
+				{/* Top (B/V - Вестибулярная) */}
+				<polygon
+					role="tab"
+					tabIndex={0}
+					points="0,0 100,0 70,30 30,30"
+					fill={
+						selected.includes("B") || selected.includes("V")
+							? "var(--teal, #0d9488)"
+							: "var(--paper-soft, #f8fafc)"
+					}
+					stroke={
+						selected.includes("B") || selected.includes("V")
+							? "var(--teal-dark, #0f766e)"
+							: "var(--line-strong, #cbd5e1)"
+					}
+					strokeWidth="2"
+					onClick={() => toggle("V")}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							toggle("V");
+						}
+					}}
+					className="hover:opacity-90 transition-colors duration-200"
+				/>
+				<text
+					x="50"
+					y="18"
+					fill={
+						selected.includes("B") || selected.includes("V")
+							? "#ffffff"
+							: "var(--ink, #0f172a)"
+					}
+					fontSize="12"
+					fontWeight="bold"
+					textAnchor="middle"
+					pointerEvents="none"
+				>
+					V
+				</text>
+
+				{/* Bottom (L/P - Язычная/Нёбная) */}
+				<polygon
+					role="tab"
+					tabIndex={0}
+					points="30,70 70,70 100,100 0,100"
+					fill={
+						selected.includes("L") || selected.includes("P")
+							? "var(--teal, #0d9488)"
+							: "var(--paper-soft, #f8fafc)"
+					}
+					stroke={
+						selected.includes("L") || selected.includes("P")
+							? "var(--teal-dark, #0f766e)"
+							: "var(--line-strong, #cbd5e1)"
+					}
+					strokeWidth="2"
+					onClick={() => toggle("L")}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							toggle("L");
+						}
+					}}
+					className="hover:opacity-90 transition-colors duration-200"
+				/>
+				<text
+					x="50"
+					y="90"
+					fill={
+						selected.includes("L") || selected.includes("P")
+							? "#ffffff"
+							: "var(--ink, #0f172a)"
+					}
+					fontSize="12"
+					fontWeight="bold"
+					textAnchor="middle"
+					pointerEvents="none"
+				>
+					L
+				</text>
+
+				{/* Left (M - Мезиальная) */}
+				<polygon
+					role="tab"
+					tabIndex={0}
+					points="0,0 30,30 30,70 0,100"
+					fill={
+						selected.includes("M")
+							? "var(--teal, #0d9488)"
+							: "var(--paper-soft, #f8fafc)"
+					}
+					stroke={
+						selected.includes("M")
+							? "var(--teal-dark, #0f766e)"
+							: "var(--line-strong, #cbd5e1)"
+					}
+					strokeWidth="2"
+					onClick={() => toggle("M")}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							toggle("M");
+						}
+					}}
+					className="hover:opacity-90 transition-colors duration-200"
+				/>
+				<text
+					x="12"
+					y="54"
+					fill={
+						selected.includes("M") ? "#ffffff" : "var(--ink, #0f172a)"
+					}
+					fontSize="12"
+					fontWeight="bold"
+					textAnchor="middle"
+					pointerEvents="none"
+				>
+					M
+				</text>
+
+				{/* Right (D - Дистальная) */}
+				<polygon
+					role="tab"
+					tabIndex={0}
+					points="100,0 70,30 70,70 100,100"
+					fill={
+						selected.includes("D")
+							? "var(--teal, #0d9488)"
+							: "var(--paper-soft, #f8fafc)"
+					}
+					stroke={
+						selected.includes("D")
+							? "var(--teal-dark, #0f766e)"
+							: "var(--line-strong, #cbd5e1)"
+					}
+					strokeWidth="2"
+					onClick={() => toggle("D")}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							toggle("D");
+						}
+					}}
+					className="hover:opacity-90 transition-colors duration-200"
+				/>
+				<text
+					x="88"
+					y="54"
+					fill={
+						selected.includes("D") ? "#ffffff" : "var(--ink, #0f172a)"
+					}
+					fontSize="12"
+					fontWeight="bold"
+					textAnchor="middle"
+					pointerEvents="none"
+				>
+					D
+				</text>
+
+				{/* Center (O - Окклюзионная) */}
+				<polygon
+					role="tab"
+					tabIndex={0}
+					points="30,30 70,30 70,70 30,70"
+					fill={
+						selected.includes("O")
+							? "var(--teal, #0d9488)"
+							: "var(--paper-soft, #f8fafc)"
+					}
+					stroke={
+						selected.includes("O")
+							? "var(--teal-dark, #0f766e)"
+							: "var(--line-strong, #cbd5e1)"
+					}
+					strokeWidth="2"
+					onClick={() => toggle("O")}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							toggle("O");
+						}
+					}}
+					className="hover:opacity-90 transition-colors duration-200"
+				/>
+				<text
+					x="50"
+					y="54"
+					fill={
+						selected.includes("O") ? "#ffffff" : "var(--ink, #0f172a)"
+					}
+					fontSize="12"
+					fontWeight="bold"
+					textAnchor="middle"
+					pointerEvents="none"
+				>
+					O
+				</text>
+			</svg>
+		</div>
+	);
+};
+
 export const ToothChart: React.FC<ToothChartProps> = ({
 	teethData = [],
 	pediatricMode,
+	mixedDentition,
+	topTeeth: customTopTeeth,
+	bottomTeeth: customBottomTeeth,
 	selectedTeeth = [],
 	onToothClick,
 	useSurfaces,
+	hideHeader = false,
+	hideLegend = false,
+	className = "",
 }) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const archContainerRef = useRef<HTMLDivElement>(null);
@@ -534,25 +777,23 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 	// было бы устаревшим: измеренную ширину ряда делим именно на него.
 	const appliedArchScaleRef = useRef(1);
 
-	const topTeethList = pediatricMode ? PEDIATRIC_TOP_TEETH : TOP_TEETH;
-	const bottomTeethList = pediatricMode ? PEDIATRIC_BOTTOM_TEETH : BOTTOM_TEETH;
+	const topTeethList =
+		customTopTeeth ??
+		(mixedDentition
+			? MIXED_TOP_TEETH
+			: pediatricMode
+				? PEDIATRIC_TOP_TEETH
+				: TOP_TEETH);
+	const bottomTeethList =
+		customBottomTeeth ??
+		(mixedDentition
+			? MIXED_BOTTOM_TEETH
+			: pediatricMode
+				? PEDIATRIC_BOTTOM_TEETH
+				: BOTTOM_TEETH);
 
 	/**
 	 * Подгоняет дугу под фактическую ширину контейнера.
-	 *
-	 * Смысл одонтограммы — видеть всю полость сразу. Дуга же занимала свою
-	 * собственную ширину независимо от экрана: на 1024px было видно 8 зубов из 16,
-	 * на телефоне 4, остальное приходилось искать горизонтальной прокруткой.
-	 *
-	 * Своя ширина ряда не вычисляется из размеров зубов, а ИЗМЕРЯЕТСЯ: сумма
-	 * cfg.width её недооценивает, потому что ряд шире на обёртки зубов, подписи
-	 * номеров и рамки — с расчётной оценкой дуга всё равно не влезала. Берём
-	 * измеренную ширину при текущем масштабе и делим на него, получая ширину при
-	 * масштабе 1.
-	 *
-	 * Ширина контейнера задана родителем (width: 100% при overflow-x: auto), а не
-	 * содержимым, поэтому уменьшение зубов её не меняет и ResizeObserver не входит
-	 * в самоподдерживающийся цикл.
 	 */
 	useEffect(() => {
 		const element = archContainerRef.current;
@@ -600,29 +841,33 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 	const bottomTeeth = bottomTeethList;
 
 	return (
-		<div className="tooth-chart-container" ref={containerRef}>
-			<div className="tooth-chart-header">
-				<h2 className="tooth-chart-title">
-					<Settings size={18} className="text-zinc-400" />
-					Зубная формула (FDI)
-				</h2>
-				<div className="tooth-chart-legend">
-					<span className="tooth-chart-legend-item">
-						<div className="w-2.5 h-2.5 rounded-full bg-red-500"></div> Кариес
-					</span>
-					<span className="tooth-chart-legend-item">
-						<div className="w-2.5 h-2.5 rounded-full bg-amber-400"></div>{" "}
-						Имплант
-					</span>
-					<span className="tooth-chart-legend-item">
-						<div className="w-2.5 h-2.5 rounded-full bg-blue-400"></div> Коронка
-					</span>
-					<span className="tooth-chart-legend-item">
-						<div className="w-2.5 h-2.5 rounded-full bg-yellow-400 border border-yellow-500"></div>{" "}
-						План
-					</span>
+		<div className={`tooth-chart-container ${className}`.trim()} ref={containerRef}>
+			{!hideHeader && (
+				<div className="tooth-chart-header">
+					<h2 className="tooth-chart-title">
+						<Settings size={18} className="text-zinc-400" />
+						Зубная формула (FDI)
+					</h2>
+					{!hideLegend && (
+						<div className="tooth-chart-legend">
+							<span className="tooth-chart-legend-item">
+								<div className="w-2.5 h-2.5 rounded-full bg-red-500"></div> Кариес
+							</span>
+							<span className="tooth-chart-legend-item">
+								<div className="w-2.5 h-2.5 rounded-full bg-amber-400"></div>{" "}
+								Имплант
+							</span>
+							<span className="tooth-chart-legend-item">
+								<div className="w-2.5 h-2.5 rounded-full bg-blue-400"></div> Коронка
+							</span>
+							<span className="tooth-chart-legend-item">
+								<div className="w-2.5 h-2.5 rounded-full bg-yellow-400 border border-yellow-500"></div>{" "}
+								План
+							</span>
+						</div>
+					)}
 				</div>
-			</div>
+			)}
 
 			<div className="tooth-chart-arch-container" ref={archContainerRef}>
 				<div

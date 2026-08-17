@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { useAppStore } from "../../store/appStore";
 import { useImagingStore } from "../../store/imagingStore";
@@ -38,10 +39,13 @@ import { useVisitStore } from "../../store/visitStore";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 import {
+	SurfaceSelector,
 	TOOTH_STATE_LABELS,
+	ToothChart,
 	type ToothData,
 	type ToothState,
 } from "../odontogram/ToothChart";
+import "../odontogram/odontogram.css";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 
 const TOOTH_SHORT_CODES: Record<ToothState, { code: string; dotColor: string }> = {
@@ -59,6 +63,7 @@ const TOOTH_SHORT_CODES: Record<ToothState, { code: string; dotColor: string }> 
 const CHAIRSIDE_TOOTH_STATUS_OPTIONS: ReadonlyArray<{
 	state: ToothState;
 	label: string;
+	shortCode: string;
 	colorClass: string;
 	borderClass: string;
 	badgeClass: string;
@@ -66,6 +71,7 @@ const CHAIRSIDE_TOOTH_STATUS_OPTIONS: ReadonlyArray<{
 	{
 		state: "Caries",
 		label: "Кариес",
+		shortCode: "К",
 		colorClass: "bg-red-500/15 text-red-700 dark:text-red-300 hover:bg-red-500/25",
 		borderClass: "border-red-500/40",
 		badgeClass: "bg-red-600 text-white",
@@ -73,6 +79,7 @@ const CHAIRSIDE_TOOTH_STATUS_OPTIONS: ReadonlyArray<{
 	{
 		state: "Pulpitis",
 		label: "Пульпит",
+		shortCode: "П",
 		colorClass: "bg-amber-500/15 text-amber-800 dark:text-amber-300 hover:bg-amber-500/25",
 		borderClass: "border-amber-500/40",
 		badgeClass: "bg-amber-600 text-white",
@@ -80,6 +87,7 @@ const CHAIRSIDE_TOOTH_STATUS_OPTIONS: ReadonlyArray<{
 	{
 		state: "Periodontitis",
 		label: "Периодонтит",
+		shortCode: "Пер",
 		colorClass: "bg-orange-500/15 text-orange-800 dark:text-orange-300 hover:bg-orange-500/25",
 		borderClass: "border-orange-500/40",
 		badgeClass: "bg-orange-600 text-white",
@@ -87,6 +95,7 @@ const CHAIRSIDE_TOOTH_STATUS_OPTIONS: ReadonlyArray<{
 	{
 		state: "Filled",
 		label: "Пломба",
+		shortCode: "Пл",
 		colorClass: "bg-teal-500/15 text-teal-800 dark:text-teal-200 hover:bg-teal-500/25",
 		borderClass: "border-teal-500/40",
 		badgeClass: "bg-teal-600 text-white",
@@ -94,6 +103,7 @@ const CHAIRSIDE_TOOTH_STATUS_OPTIONS: ReadonlyArray<{
 	{
 		state: "Crown",
 		label: "Коронка",
+		shortCode: "Кр",
 		colorClass: "bg-blue-500/15 text-blue-700 dark:text-blue-300 hover:bg-blue-500/25",
 		borderClass: "border-blue-500/40",
 		badgeClass: "bg-blue-600 text-white",
@@ -101,13 +111,23 @@ const CHAIRSIDE_TOOTH_STATUS_OPTIONS: ReadonlyArray<{
 	{
 		state: "Implant",
 		label: "Имплантат",
+		shortCode: "Имп",
 		colorClass: "bg-purple-500/15 text-purple-700 dark:text-purple-300 hover:bg-purple-500/25",
 		borderClass: "border-purple-500/40",
 		badgeClass: "bg-purple-600 text-white",
 	},
 	{
+		state: "Planned_Implant",
+		label: "Имплант (План)",
+		shortCode: "ПлИ",
+		colorClass: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/25",
+		borderClass: "border-indigo-500/40",
+		badgeClass: "bg-indigo-600 text-white",
+	},
+	{
 		state: "Missing",
 		label: "Удалён",
+		shortCode: "Отс",
 		colorClass: "bg-slate-500/15 text-slate-700 dark:text-slate-300 hover:bg-slate-500/25",
 		borderClass: "border-slate-500/40",
 		badgeClass: "bg-slate-600 text-white",
@@ -115,6 +135,7 @@ const CHAIRSIDE_TOOTH_STATUS_OPTIONS: ReadonlyArray<{
 	{
 		state: "Healthy",
 		label: "Здоров",
+		shortCode: "Зд",
 		colorClass: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/25",
 		borderClass: "border-emerald-500/40",
 		badgeClass: "bg-emerald-600 text-white",
@@ -148,16 +169,36 @@ export function ChairsiderPerspectiveView() {
 		return dashboard.patients[0] ?? null;
 	}, [dashboard?.patients, selectedPatientId]);
 
+	// View mode: SVG anatomical arc vs 56px touch tiles
+	const [viewMode, setViewMode] = useState<"svg" | "tiles">("svg");
+
 	const [selectedTooth, setSelectedTooth] = useState<number>(16);
 	const [toothStates, setToothStates] = useState<Record<number, ToothState>>({});
+	const [toothSurfaces, setToothSurfaces] = useState<Record<number, string[]>>({});
 	const [isLoadingTeeth, setIsLoadingTeeth] = useState(false);
 	const [isSavingTooth, setIsSavingTooth] = useState(false);
 	const [appliedProcedures, setAppliedProcedures] = useState<string[]>([]);
 	const [voiceNotes, setVoiceNotes] = useState<string>("");
 
-	// Adult teeth arrays
+	// Adult teeth arrays for FDI
 	const upperJawTeeth = useMemo(() => [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28], []);
 	const lowerJawTeeth = useMemo(() => [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38], []);
+
+	// Format teethData for ToothChart SVG engine
+	const teethData: ToothData[] = useMemo(() => {
+		const result: ToothData[] = [];
+		const allTeeth = [...upperJawTeeth, ...lowerJawTeeth];
+		for (const tNum of allTeeth) {
+			const state = toothStates[tNum] || "Healthy";
+			const surfaces = toothSurfaces[tNum];
+			result.push({
+				toothNumber: tNum,
+				state,
+				...(surfaces && surfaces.length > 0 ? { surfaces } : {}),
+			});
+		}
+		return result;
+	}, [toothStates, toothSurfaces, upperJawTeeth, lowerJawTeeth]);
 
 	const fetchToothStates = useCallback(async () => {
 		if (!activePatient?.id) return;
@@ -167,16 +208,26 @@ export function ChairsiderPerspectiveView() {
 				headers: auth.denteClinicalMutationHeaders(),
 			});
 			if (res.ok) {
-				const data = await res.json();
-				if (Array.isArray(data)) {
-					const map: Record<number, ToothState> = {};
-					for (const item of data) {
-						if (item.toothNumber && item.state) {
-							map[item.toothNumber] = item.state as ToothState;
+				const body = await res.json();
+				const stateList: Array<{ toothNumber: number; state: ToothState; surfaces?: string[] }> =
+					Array.isArray(body)
+						? body
+						: body?.states && Array.isArray(body.states)
+							? body.states
+							: [];
+
+				const stateMap: Record<number, ToothState> = {};
+				const surfaceMap: Record<number, string[]> = {};
+				for (const item of stateList) {
+					if (item.toothNumber && item.state) {
+						stateMap[item.toothNumber] = item.state;
+						if (Array.isArray(item.surfaces) && item.surfaces.length > 0) {
+							surfaceMap[item.toothNumber] = item.surfaces;
 						}
 					}
-					setToothStates(map);
 				}
+				setToothStates(stateMap);
+				setToothSurfaces(surfaceMap);
 			}
 		} catch (err) {
 			logger.error("[ChairsiderPerspective] Failed to load tooth states", err);
@@ -189,9 +240,40 @@ export function ChairsiderPerspectiveView() {
 		void fetchToothStates();
 	}, [fetchToothStates]);
 
+	// Current tooth active surfaces
+	const currentSurfaces = useMemo(() => {
+		return toothSurfaces[selectedTooth] || [];
+	}, [toothSurfaces, selectedTooth]);
+
+	const handleSurfaceChange = (newSurfaces: string[]) => {
+		setToothSurfaces((prev) => ({
+			...prev,
+			[selectedTooth]: newSurfaces,
+		}));
+	};
+
+	const toggleSurface = (surface: string) => {
+		const existing = toothSurfaces[selectedTooth] || [];
+		const updated = existing.includes(surface)
+			? existing.filter((s) => s !== surface)
+			: [...existing, surface];
+		handleSurfaceChange(updated);
+	};
+
 	const handleToothStatusSelect = async (state: ToothState) => {
 		if (!activePatient?.id || !selectedTooth) return;
 		setIsSavingTooth(true);
+
+		const previousState = toothStates[selectedTooth] || "Healthy";
+		const previousSurfaces = toothSurfaces[selectedTooth] ? [...toothSurfaces[selectedTooth]] : [];
+		const activeSurfaces = toothSurfaces[selectedTooth] || [];
+
+		// Optimistic update
+		setToothStates((prev) => ({
+			...prev,
+			[selectedTooth]: state,
+		}));
+
 		try {
 			const res = await fetch(`/api/patients/${activePatient.id}/tooth-states/batch`, {
 				method: "POST",
@@ -199,32 +281,53 @@ export function ChairsiderPerspectiveView() {
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
-					updates: [
-						{
-							toothNumber: selectedTooth,
-							state,
-							surfaces: [],
-							diagnosis: TOOTH_STATE_LABELS[state] || state,
-						},
-					],
+					toothNumbers: [selectedTooth],
+					state,
+					surfaces: activeSurfaces.length > 0 ? activeSurfaces : undefined,
 				}),
 			});
 
 			if (!res.ok) {
+				// Rollback
+				setToothStates((prev) => ({
+					...prev,
+					[selectedTooth]: previousState,
+				}));
+				setToothSurfaces((prev) => ({
+					...prev,
+					[selectedTooth]: previousSurfaces,
+				}));
 				showToast(actionFailureToast("Состояние зуба не обновлено", res.status), "error");
 				return;
 			}
 
+			showToast(
+				`Зуб #${selectedTooth}: статус установлен «${TOOTH_STATE_LABELS[state] || state}»${
+					activeSurfaces.length > 0 ? ` (${activeSurfaces.join(", ")})` : ""
+				}`,
+				"success",
+			);
+		} catch (err) {
+			// Rollback
 			setToothStates((prev) => ({
 				...prev,
-				[selectedTooth]: state,
+				[selectedTooth]: previousState,
 			}));
-			showToast(`Зуб ${selectedTooth}: статус изменен на «${TOOTH_STATE_LABELS[state]}»`, "success");
-		} catch (err) {
+			setToothSurfaces((prev) => ({
+				...prev,
+				[selectedTooth]: previousSurfaces,
+			}));
 			logger.error("[ChairsiderPerspective] Save tooth state error", err);
 			showToast("Ошибка сохранения статуса зуба", "error");
 		} finally {
 			setIsSavingTooth(false);
+		}
+	};
+
+	const handleToothClickFromChart = (num: number, _rect: DOMRect, surface?: string) => {
+		setSelectedTooth(num);
+		if (surface) {
+			toggleSurface(surface);
 		}
 	};
 
@@ -250,6 +353,10 @@ export function ChairsiderPerspectiveView() {
 		setVoiceNotes((prev) => (prev ? `${prev}. ${text}` : text));
 		showToast("Голосовая заметка добавлена", "success");
 	};
+
+	const selectedToothState = toothStates[selectedTooth] || "Healthy";
+	const selectedToothMeta = TOOTH_SHORT_CODES[selectedToothState] || { code: "Зд", dotColor: "#10b981" };
+	const selectedToothName = getToothAnatomicalNameRu(selectedTooth);
 
 	return (
 		<div
@@ -320,127 +427,283 @@ export function ChairsiderPerspectiveView() {
 
 			{/* Main High-Ergonomics Touch Matrix */}
 			<main className="grid grid-cols-1 lg:grid-cols-12 gap-4 mt-4 flex-1">
-				{/* Left: Quick Odontogram Matrix (Large Sterile Buttons) */}
+				{/* Left: Odontogram Canvas / Matrix */}
 				<section className="lg:col-span-8 bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl p-4 md:p-6 flex flex-col justify-between shadow-sm">
 					<div>
-						<div className="flex items-center justify-between mb-4 pb-2 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
-							<h2 className="text-lg font-bold flex items-center gap-2 m-0 text-[var(--ink,#0f172a)] dark:text-slate-100">
+						{/* View Mode Toggle & Header */}
+						<div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
+							<div className="flex items-center gap-2">
 								<Stethoscope size={24} className="text-teal-600 dark:text-teal-400 shrink-0" />
-								<span>Зубная формула (Выбран зуб #{selectedTooth})</span>
-							</h2>
-							<span className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 font-medium">Тач-кнопки ≥56px</span>
+								<h2 className="text-lg font-bold m-0 text-[var(--ink,#0f172a)] dark:text-slate-100">
+									Зубная формула (FDI)
+								</h2>
+								{isLoadingTeeth && (
+									<span className="text-xs text-teal-600 dark:text-teal-400 flex items-center gap-1">
+										<Loader2 size={14} className="animate-spin" /> Загрузка...
+									</span>
+								)}
+							</div>
+
+							{/* View Mode Switcher: [🦷 Анатомическая дуга (SVG) | 🔲 Крупные плитки (56px)] */}
+							<div
+								role="group"
+								aria-label="Режим отображения формулы"
+								className="inline-flex p-1 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 shadow-inner"
+							>
+								<button
+									type="button"
+									onClick={() => setViewMode("svg")}
+									aria-pressed={viewMode === "svg"}
+									className={`min-h-[44px] px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+										viewMode === "svg"
+											? "bg-teal-600 text-white shadow-md shadow-teal-600/30"
+											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-300"
+									}`}
+								>
+									<span>🦷 Анатомическая дуга (SVG)</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => setViewMode("tiles")}
+									aria-pressed={viewMode === "tiles"}
+									className={`min-h-[44px] px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+										viewMode === "tiles"
+											? "bg-teal-600 text-white shadow-md shadow-teal-600/30"
+											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-300"
+									}`}
+								>
+									<span>🔲 Крупные плитки (56px)</span>
+								</button>
+							</div>
 						</div>
 
-						{/* Upper Arch */}
-						<div className="mb-4">
-							<div className="text-xs font-bold text-[var(--muted,#64748b)] dark:text-slate-400 uppercase tracking-wider mb-2">
-								Верхняя челюсть (18–28)
+						{/* Rendering Branch: Anatomical SVG Arc vs Touch Tiles Matrix */}
+						{viewMode === "svg" ? (
+							<div className="w-full overflow-x-auto pb-2">
+								<ToothChart
+									teethData={teethData}
+									selectedTeeth={[selectedTooth]}
+									onToothClick={handleToothClickFromChart}
+									useSurfaces={true}
+									hideHeader={true}
+									className="border-0 shadow-none p-0 bg-transparent"
+								/>
 							</div>
-							<div className="grid grid-cols-8 sm:grid-cols-16 gap-1.5 md:gap-2 overflow-x-auto pb-1">
-								{upperJawTeeth.map((tNum) => {
-									const isSelected = selectedTooth === tNum;
-									const toothState = toothStates[tNum] || "Healthy";
-									const meta = TOOTH_SHORT_CODES[toothState] || { code: "Зд", dotColor: "#10b981" };
-									return (
-										<button
-											key={tNum}
-											type="button"
-											onClick={() => setSelectedTooth(tNum)}
-											className={`min-h-[56px] min-w-[36px] sm:min-w-[40px] md:min-h-[64px] p-1 rounded-xl flex flex-col items-center justify-center font-black transition-all border cursor-pointer active:scale-95 whitespace-nowrap ${
-												isSelected
-													? "bg-teal-600 text-white border-teal-700 shadow-lg shadow-teal-600/30 scale-105 z-10"
-													: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 border-[var(--line,#cbd5e1)] dark:border-slate-700"
-											}`}
-										>
-											<span className="text-xs sm:text-sm md:text-base font-black whitespace-nowrap leading-tight">{tNum}</span>
-											<span
-												className={`flex items-center justify-center gap-1 mt-0.5 text-[10px] font-bold px-0.5 rounded-sm whitespace-nowrap leading-none ${
-													isSelected ? "text-teal-100" : "text-[var(--ink,#0f172a)] dark:text-slate-300"
-												}`}
-											>
-												<span
-													className="w-1.5 h-1.5 rounded-full shrink-0"
-													style={{ backgroundColor: meta.dotColor }}
-												/>
-												<span className="whitespace-nowrap">{meta.code}</span>
-											</span>
-										</button>
-									);
-								})}
-							</div>
-						</div>
+						) : (
+							<div className="space-y-4">
+								{/* Upper Arch */}
+								<div>
+									<div className="text-xs font-bold text-[var(--muted,#64748b)] dark:text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+										<span>Верхняя челюсть (18–28)</span>
+										<span className="text-[11px] font-normal">Тач-кнопки ≥56px</span>
+									</div>
+									<div className="grid grid-cols-8 sm:grid-cols-16 gap-1.5 md:gap-2 overflow-x-auto pb-1">
+										{upperJawTeeth.map((tNum) => {
+											const isSelected = selectedTooth === tNum;
+											const toothState = toothStates[tNum] || "Healthy";
+											const meta = TOOTH_SHORT_CODES[toothState] || { code: "Зд", dotColor: "#10b981" };
+											const surfaces = toothSurfaces[tNum];
+											return (
+												<button
+													key={tNum}
+													type="button"
+													onClick={() => setSelectedTooth(tNum)}
+													className={`min-h-[56px] min-w-[36px] sm:min-w-[40px] md:min-h-[64px] p-1 rounded-xl flex flex-col items-center justify-center font-black transition-all border cursor-pointer active:scale-95 whitespace-nowrap ${
+														isSelected
+															? "bg-teal-600 text-white border-teal-700 shadow-lg shadow-teal-600/30 scale-105 z-10"
+															: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 border-[var(--line,#cbd5e1)] dark:border-slate-700"
+													}`}
+												>
+													<span className="text-xs sm:text-sm md:text-base font-black whitespace-nowrap leading-tight">{tNum}</span>
+													<span
+														className={`flex items-center justify-center gap-1 mt-0.5 text-[10px] font-bold px-0.5 rounded-sm whitespace-nowrap leading-none ${
+															isSelected ? "text-teal-100" : "text-[var(--ink,#0f172a)] dark:text-slate-300"
+														}`}
+													>
+														<span
+															className="w-1.5 h-1.5 rounded-full shrink-0"
+															style={{ backgroundColor: meta.dotColor }}
+														/>
+														<span className="whitespace-nowrap">{meta.code}</span>
+													</span>
+													{surfaces && surfaces.length > 0 && (
+														<span className="text-[8px] leading-tight text-teal-300 dark:text-teal-200 mt-0.5 truncate max-w-full">
+															{surfaces.join("")}
+														</span>
+													)}
+												</button>
+											);
+										})}
+									</div>
+								</div>
 
-						{/* Lower Arch */}
-						<div>
-							<div className="text-xs font-bold text-[var(--muted,#64748b)] dark:text-slate-400 uppercase tracking-wider mb-2">
-								Нижняя челюсть (48–38)
+								{/* Lower Arch */}
+								<div>
+									<div className="text-xs font-bold text-[var(--muted,#64748b)] dark:text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+										<span>Нижняя челюсть (48–38)</span>
+									</div>
+									<div className="grid grid-cols-8 sm:grid-cols-16 gap-1.5 md:gap-2 overflow-x-auto pb-1">
+										{lowerJawTeeth.map((tNum) => {
+											const isSelected = selectedTooth === tNum;
+											const toothState = toothStates[tNum] || "Healthy";
+											const meta = TOOTH_SHORT_CODES[toothState] || { code: "Зд", dotColor: "#10b981" };
+											const surfaces = toothSurfaces[tNum];
+											return (
+												<button
+													key={tNum}
+													type="button"
+													onClick={() => setSelectedTooth(tNum)}
+													className={`min-h-[56px] min-w-[36px] sm:min-w-[40px] md:min-h-[64px] p-1 rounded-xl flex flex-col items-center justify-center font-black transition-all border cursor-pointer active:scale-95 whitespace-nowrap ${
+														isSelected
+															? "bg-teal-600 text-white border-teal-700 shadow-lg shadow-teal-600/30 scale-105 z-10"
+															: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 border-[var(--line,#cbd5e1)] dark:border-slate-700"
+													}`}
+												>
+													<span className="text-xs sm:text-sm md:text-base font-black whitespace-nowrap leading-tight">{tNum}</span>
+													<span
+														className={`flex items-center justify-center gap-1 mt-0.5 text-[10px] font-bold px-0.5 rounded-sm whitespace-nowrap leading-none ${
+															isSelected ? "text-teal-100" : "text-[var(--ink,#0f172a)] dark:text-slate-300"
+														}`}
+													>
+														<span
+															className="w-1.5 h-1.5 rounded-full shrink-0"
+															style={{ backgroundColor: meta.dotColor }}
+														/>
+														<span className="whitespace-nowrap">{meta.code}</span>
+													</span>
+													{surfaces && surfaces.length > 0 && (
+														<span className="text-[8px] leading-tight text-teal-300 dark:text-teal-200 mt-0.5 truncate max-w-full">
+															{surfaces.join("")}
+														</span>
+													)}
+												</button>
+											);
+										})}
+									</div>
+								</div>
 							</div>
-							<div className="grid grid-cols-8 sm:grid-cols-16 gap-1.5 md:gap-2 overflow-x-auto pb-1">
-								{lowerJawTeeth.map((tNum) => {
-									const isSelected = selectedTooth === tNum;
-									const toothState = toothStates[tNum] || "Healthy";
-									const meta = TOOTH_SHORT_CODES[toothState] || { code: "Зд", dotColor: "#10b981" };
-									return (
-										<button
-											key={tNum}
-											type="button"
-											onClick={() => setSelectedTooth(tNum)}
-											className={`min-h-[56px] min-w-[36px] sm:min-w-[40px] md:min-h-[64px] p-1 rounded-xl flex flex-col items-center justify-center font-black transition-all border cursor-pointer active:scale-95 whitespace-nowrap ${
-												isSelected
-													? "bg-teal-600 text-white border-teal-700 shadow-lg shadow-teal-600/30 scale-105 z-10"
-													: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 border-[var(--line,#cbd5e1)] dark:border-slate-700"
-											}`}
-										>
-											<span className="text-xs sm:text-sm md:text-base font-black whitespace-nowrap leading-tight">{tNum}</span>
-											<span
-												className={`flex items-center justify-center gap-1 mt-0.5 text-[10px] font-bold px-0.5 rounded-sm whitespace-nowrap leading-none ${
-													isSelected ? "text-teal-100" : "text-[var(--ink,#0f172a)] dark:text-slate-300"
-												}`}
-											>
-												<span
-													className="w-1.5 h-1.5 rounded-full shrink-0"
-													style={{ backgroundColor: meta.dotColor }}
-												/>
-												<span className="whitespace-nowrap">{meta.code}</span>
-											</span>
-										</button>
-									);
-								})}
-							</div>
-						</div>
+						)}
 					</div>
 
-					{/* 1-Tap Tooth Status Action Bar */}
+					{/* 1-Tap Tooth Status Action Bar (Bottom Quick Controls) */}
 					<div className="mt-6 pt-4 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">
-						<div className="text-sm font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 mb-3 flex items-center justify-between">
-							<span>Быстрое присвоение статуса для зуба #{selectedTooth}:</span>
+						<div className="text-sm font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 mb-3 flex items-center justify-between flex-wrap gap-2">
+							<span className="flex items-center gap-2">
+								<span>Быстрое присвоение статуса для зуба #{selectedTooth}:</span>
+								<span className="text-xs px-2 py-0.5 rounded bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border border-teal-500/30">
+									{TOOTH_STATE_LABELS[selectedToothState] || selectedToothState}
+								</span>
+							</span>
 							{isSavingTooth && (
 								<span className="text-teal-600 dark:text-teal-400 text-xs flex items-center gap-1">
 									<Loader2 size={14} className="animate-spin" /> Сохранение...
 								</span>
 							)}
 						</div>
-						<div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
-							{CHAIRSIDE_TOOTH_STATUS_OPTIONS.map((opt) => (
-								<button
-									key={opt.state}
-									type="button"
-									disabled={isSavingTooth}
-									onClick={() => void handleToothStatusSelect(opt.state)}
-									className={`min-h-[58px] p-2 rounded-xl font-bold text-sm border flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer shadow-sm ${opt.colorClass} ${opt.borderClass}`}
-								>
-									<span>{opt.label}</span>
-									<span className={`text-[10px] px-1.5 py-0.5 rounded-full ${opt.badgeClass}`}>
-										1 тап
-									</span>
-								</button>
-							))}
+						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2">
+							{CHAIRSIDE_TOOTH_STATUS_OPTIONS.map((opt) => {
+								const isActive = selectedToothState === opt.state;
+								return (
+									<button
+										key={opt.state}
+										type="button"
+										disabled={isSavingTooth}
+										onClick={() => void handleToothStatusSelect(opt.state)}
+										className={`min-h-[58px] p-2 rounded-xl font-bold text-xs border flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer shadow-sm ${opt.colorClass} ${opt.borderClass} ${
+											isActive ? "ring-2 ring-teal-500 ring-offset-1 font-black" : ""
+										}`}
+									>
+										<span className="whitespace-nowrap">{opt.label}</span>
+										<span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${opt.badgeClass}`}>
+											{opt.shortCode}
+										</span>
+									</button>
+								);
+							})}
 						</div>
 					</div>
 				</section>
 
-				{/* Right: Sterile Actions, CT Launcher & Voice Dictation */}
+				{/* Right: Selected Tooth Inspector, Surfaces, CT Launcher & Dictation */}
 				<section className="lg:col-span-4 flex flex-col gap-4">
+					{/* Selected Tooth Detailed Inspector */}
+					<div className="bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+						<div className="flex items-center justify-between pb-3 mb-3 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
+							<div>
+								<div className="text-xs uppercase tracking-wider text-teal-700 dark:text-teal-300 font-black">
+									Инспектор зуба FDI
+								</div>
+								<h3 className="text-lg font-black text-[var(--ink,#0f172a)] dark:text-white m-0">
+									Зуб #{selectedTooth}
+								</h3>
+							</div>
+							<div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 border border-[var(--line,#cbd5e1)] dark:border-slate-700 text-xs font-bold">
+								<span
+									className="w-2.5 h-2.5 rounded-full"
+									style={{ backgroundColor: selectedToothMeta.dotColor }}
+								/>
+								<span>{TOOTH_STATE_LABELS[selectedToothState] || selectedToothState}</span>
+							</div>
+						</div>
+
+						<p className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 mb-4 leading-relaxed">
+							{selectedToothName}
+						</p>
+
+						{/* Surface Selector Matrix */}
+						<div className="p-3 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800/80 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 mb-4">
+							<div className="text-xs font-bold text-[var(--ink,#0f172a)] dark:text-slate-200 mb-2 flex items-center justify-between">
+								<span>Поверхности поражения / пломбы:</span>
+								<span className="text-[11px] text-teal-700 dark:text-teal-300 font-mono font-bold">
+									{currentSurfaces.length > 0 ? currentSurfaces.join(", ") : "Вся коронка"}
+								</span>
+							</div>
+
+							<div className="flex items-center justify-center my-2">
+								<SurfaceSelector
+									selected={currentSurfaces}
+									onChange={handleSurfaceChange}
+									size={96}
+								/>
+							</div>
+
+							{/* Quick Surface Toggle Badges */}
+							<div className="flex flex-wrap items-center justify-center gap-1.5 mt-2 pt-2 border-t border-[var(--line,#e2e8f0)] dark:border-slate-700">
+								{(["V", "L", "M", "D", "O"] as const).map((surf) => {
+									const isSurfActive = currentSurfaces.includes(surf);
+									return (
+										<button
+											key={surf}
+											type="button"
+											onClick={() => toggleSurface(surf)}
+											className={`min-h-[36px] min-w-[36px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
+												isSurfActive
+													? "bg-teal-600 text-white border-teal-700 shadow-sm"
+													: "bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-600 hover:bg-teal-50 dark:hover:bg-slate-600"
+											}`}
+										>
+											{surf}
+										</button>
+									);
+								})}
+								<button
+									type="button"
+									onClick={() => handleSurfaceChange(["V", "L", "M", "D", "O"])}
+									className="min-h-[36px] px-2 py-1 rounded-lg text-[11px] font-semibold bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-600 hover:bg-slate-100 cursor-pointer"
+								>
+									Все
+								</button>
+								<button
+									type="button"
+									onClick={() => handleSurfaceChange([])}
+									className="min-h-[36px] px-2 py-1 rounded-lg text-[11px] font-semibold bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-red-600 dark:text-red-400 border border-[var(--line,#cbd5e1)] dark:border-slate-600 hover:bg-red-50 cursor-pointer"
+								>
+									Сброс
+								</button>
+							</div>
+						</div>
+					</div>
+
 					{/* Single-Tap CT / 3D Launcher */}
 					<div className="bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
 						<div className="flex items-center justify-between mb-3">
