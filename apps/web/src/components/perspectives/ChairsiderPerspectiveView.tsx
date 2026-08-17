@@ -45,6 +45,7 @@ import {
 	type ToothData,
 	type ToothState,
 } from "../odontogram/ToothChart";
+import { PeriodontalChartModule } from "../odontogram/PeriodontalChartModule";
 import "../odontogram/odontogram.css";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 
@@ -169,8 +170,8 @@ export function ChairsiderPerspectiveView() {
 		return dashboard.patients[0] ?? null;
 	}, [dashboard?.patients, selectedPatientId]);
 
-	// View mode: SVG anatomical arc vs 56px touch tiles
-	const [viewMode, setViewMode] = useState<"svg" | "tiles">("svg");
+	// View mode: SVG anatomical arc vs 56px touch tiles vs Florida Probe Periodontogram
+	const [viewMode, setViewMode] = useState<"svg" | "tiles" | "perio">("svg");
 
 	const [selectedTooth, setSelectedTooth] = useState<number>(16);
 	const [toothStates, setToothStates] = useState<Record<number, ToothState>>({});
@@ -444,41 +445,60 @@ export function ChairsiderPerspectiveView() {
 								)}
 							</div>
 
-							{/* View Mode Switcher: [🦷 Анатомическая дуга (SVG) | 🔲 Крупные плитки (56px)] */}
+							{/* View Mode Switcher: [🦷 Анатомическая дуга (SVG) | 🔲 Крупные плитки (56px) | 📊 Пародонтограмма] */}
 							<div
 								role="group"
 								aria-label="Режим отображения формулы"
-								className="inline-flex p-1 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 shadow-inner"
+								className="inline-flex p-1 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 shadow-inner flex-wrap gap-1"
 							>
 								<button
 									type="button"
 									onClick={() => setViewMode("svg")}
 									aria-pressed={viewMode === "svg"}
-									className={`min-h-[44px] px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+									className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
 										viewMode === "svg"
 											? "bg-teal-600 text-white shadow-md shadow-teal-600/30"
 											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-300"
 									}`}
 								>
-									<span>🦷 Анатомическая дуга (SVG)</span>
+									<span>🦷 Анатомическая дуга</span>
 								</button>
 								<button
 									type="button"
 									onClick={() => setViewMode("tiles")}
 									aria-pressed={viewMode === "tiles"}
-									className={`min-h-[44px] px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+									className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
 										viewMode === "tiles"
 											? "bg-teal-600 text-white shadow-md shadow-teal-600/30"
 											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-300"
 									}`}
 								>
-									<span>🔲 Крупные плитки (56px)</span>
+									<span>🔲 Плитки (56px)</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => setViewMode("perio")}
+									aria-pressed={viewMode === "perio"}
+									className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+										viewMode === "perio"
+											? "bg-teal-600 text-white shadow-md shadow-teal-600/30"
+											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-300"
+									}`}
+								>
+									<span>📊 Пародонтограмма</span>
 								</button>
 							</div>
 						</div>
 
-						{/* Rendering Branch: Anatomical SVG Arc vs Touch Tiles Matrix */}
-						{viewMode === "svg" ? (
+						{/* Rendering Branch: Anatomical SVG Arc vs Touch Tiles Matrix vs Florida Probe */}
+						{viewMode === "perio" ? (
+							<div className="w-full overflow-x-auto pb-2">
+								<PeriodontalChartModule
+									patientId={activePatient?.id || ""}
+									doctorId={dashboard?.currentDoctor?.id || null}
+								/>
+							</div>
+						) : viewMode === "svg" ? (
 							<div className="w-full overflow-x-auto pb-2">
 								<ToothChart
 									teethData={teethData}
@@ -585,43 +605,45 @@ export function ChairsiderPerspectiveView() {
 						)}
 					</div>
 
-					{/* 1-Tap Tooth Status Action Bar (Bottom Quick Controls) */}
-					<div className="mt-6 pt-4 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">
-						<div className="text-sm font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 mb-3 flex items-center justify-between flex-wrap gap-2">
-							<span className="flex items-center gap-2">
-								<span>Быстрое присвоение статуса для зуба #{selectedTooth}:</span>
-								<span className="text-xs px-2 py-0.5 rounded bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border border-teal-500/30">
-									{TOOTH_STATE_LABELS[selectedToothState] || selectedToothState}
+					{/* 1-Tap Tooth Status Action Bar (Bottom Quick Controls - hidden in perio mode) */}
+					{viewMode !== "perio" && (
+						<div className="mt-6 pt-4 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">
+							<div className="text-sm font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 mb-3 flex items-center justify-between flex-wrap gap-2">
+								<span className="flex items-center gap-2">
+									<span>Быстрое присвоение статуса для зуба #{selectedTooth}:</span>
+									<span className="text-xs px-2 py-0.5 rounded bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border border-teal-500/30">
+										{TOOTH_STATE_LABELS[selectedToothState] || selectedToothState}
+									</span>
 								</span>
-							</span>
-							{isSavingTooth && (
-								<span className="text-teal-600 dark:text-teal-400 text-xs flex items-center gap-1">
-									<Loader2 size={14} className="animate-spin" /> Сохранение...
-								</span>
-							)}
+								{isSavingTooth && (
+									<span className="text-teal-600 dark:text-teal-400 text-xs flex items-center gap-1">
+										<Loader2 size={14} className="animate-spin" /> Сохранение...
+									</span>
+								)}
+							</div>
+							<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2">
+								{CHAIRSIDE_TOOTH_STATUS_OPTIONS.map((opt) => {
+									const isActive = selectedToothState === opt.state;
+									return (
+										<button
+											key={opt.state}
+											type="button"
+											disabled={isSavingTooth}
+											onClick={() => void handleToothStatusSelect(opt.state)}
+											className={`min-h-[58px] p-2 rounded-xl font-bold text-xs border flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer shadow-sm ${opt.colorClass} ${opt.borderClass} ${
+												isActive ? "ring-2 ring-teal-500 ring-offset-1 font-black" : ""
+											}`}
+										>
+											<span className="whitespace-nowrap">{opt.label}</span>
+											<span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${opt.badgeClass}`}>
+												{opt.shortCode}
+											</span>
+										</button>
+									);
+								})}
+							</div>
 						</div>
-						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2">
-							{CHAIRSIDE_TOOTH_STATUS_OPTIONS.map((opt) => {
-								const isActive = selectedToothState === opt.state;
-								return (
-									<button
-										key={opt.state}
-										type="button"
-										disabled={isSavingTooth}
-										onClick={() => void handleToothStatusSelect(opt.state)}
-										className={`min-h-[58px] p-2 rounded-xl font-bold text-xs border flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer shadow-sm ${opt.colorClass} ${opt.borderClass} ${
-											isActive ? "ring-2 ring-teal-500 ring-offset-1 font-black" : ""
-										}`}
-									>
-										<span className="whitespace-nowrap">{opt.label}</span>
-										<span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${opt.badgeClass}`}>
-											{opt.shortCode}
-										</span>
-									</button>
-								);
-							})}
-						</div>
-					</div>
+					)}
 				</section>
 
 				{/* Right: Selected Tooth Inspector, Surfaces, CT Launcher & Dictation */}
