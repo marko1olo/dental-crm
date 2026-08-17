@@ -18,7 +18,7 @@ import { DictationHints } from "./DictationHints";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
 import { SmartParsePreview } from "./SmartParsePreview";
 import { useVisitStore } from "./store/visitStore";
-import { getToothConfig, getToothPath } from "./utils/toothGeometry";
+import { getToothConfig, getToothPath } from "./utils/math/toothGeometry";
 // Список разделов роли и их названия берём из реестра разделов, а не переписываем
 // рядом: разъехавшаяся копия — это ровно тот случай, когда шаг закрытия приёма
 // уводит врача на «Смену».

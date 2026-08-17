@@ -875,7 +875,7 @@ export const OdontogramModule = ({
 	};
 
 	return (
-		<div className="flex flex-col lg:flex-row items-start gap-6 w-full h-full p-6 bg-zinc-50/40 dark:bg-zinc-950/40 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl shadow-2xl text-slate-900 dark:text-zinc-100">
+		<div className="flex flex-col lg:flex-row items-start gap-6 w-full h-full p-3 sm:p-4 md:p-6 bg-[var(--odontogram-paper,#ffffff)] dark:bg-zinc-950/40 backdrop-blur-md border border-[var(--odontogram-border,#cbd5e1)] dark:border-zinc-800/50 rounded-2xl shadow-2xl text-[var(--odontogram-ink,#0f172a)] dark:text-zinc-100">
 			<div
 				className="flex-2 min-w-0 flex flex-col gap-6 relative w-full"
 				ref={containerRef}
@@ -1011,7 +1011,7 @@ export const OdontogramModule = ({
 								{menuConfig.position === "bottom" ? (
 									<svg
 										aria-hidden="true"
-										className="absolute -top-3 text-zinc-800/50 drop-shadow-md"
+										className="absolute -top-3 text-[var(--odontogram-border,#cbd5e1)] dark:text-zinc-800/50 drop-shadow-md"
 										style={{
 											left: `${menuConfig.caretOffset}%`,
 											transform: "translateX(-50%)",
@@ -1031,7 +1031,7 @@ export const OdontogramModule = ({
 								) : (
 									<svg
 										aria-hidden="true"
-										className="absolute -bottom-3 text-zinc-800/50 drop-shadow-md"
+										className="absolute -bottom-3 text-[var(--odontogram-border,#cbd5e1)] dark:text-zinc-800/50 drop-shadow-md"
 										style={{
 											left: `${menuConfig.caretOffset}%`,
 											transform: "translateX(-50%)",
@@ -1050,7 +1050,7 @@ export const OdontogramModule = ({
 									</svg>
 								)}
 
-								<div className="col-span-2 text-center mb-2 text-sm font-bold text-zinc-100">
+								<div className="col-span-2 text-center mb-2 text-sm font-black text-[var(--odontogram-ink,#0f172a)] dark:text-zinc-100">
 									{selectedTeeth.length > 1
 										? `Выбрано: ${selectedTeeth.length} зубов`
 										: `Зуб ${menuConfig.toothNumber}`}
