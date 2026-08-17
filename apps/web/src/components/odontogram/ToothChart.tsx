@@ -34,10 +34,14 @@ export const TOOTH_STATE_LABELS: Record<ToothState, string> = {
 	Healthy: "здоров",
 };
 
+import type { EndoToothClinicalData } from "./EndoCanalLogModal";
+
 export interface ToothData {
 	toothNumber: number;
 	state: ToothState;
 	surfaces?: string[];
+	notes?: string;
+	clinicalData?: EndoToothClinicalData | Record<string, unknown>;
 }
 
 export interface ToothChartProps {

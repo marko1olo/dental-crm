@@ -256,3 +256,92 @@ describe("EndoCanalLogModal — Clinical Dictionaries & Options", () => {
 		);
 	});
 });
+
+describe("EndoCanalLogModal — EMR Clinical Data & Canal Persistence", () => {
+	test("Ранее сохранённые измерения каналов (initialCanals) сохраняют точные значения и не сбрасываются", () => {
+		const customCanals: EndoCanalData[] = [
+			{
+				id: "custom-mb1",
+				canalName: "MB1 (Сложный)",
+				referencePoint: "Щечный бугор (MB cusp)",
+				workingLengthMm: 23.5,
+				masterApicalFile: "ISO 30 (#30 синий)",
+				taper: ".04 (Конусность 4%)",
+				obturationTechnique: "Биокерамика (BioRoot RCS / TotalFill)",
+				sealer: "BioRoot RCS",
+				notes: "Искривление в апикальной трети",
+			},
+			{
+				id: "custom-mb2",
+				canalName: "MB2",
+				referencePoint: "Щечный бугор (MB cusp)",
+				workingLengthMm: 21.0,
+				masterApicalFile: "ISO 20 (#20 жёлтый)",
+				taper: ".04 (Конусность 4%)",
+				obturationTechnique: "Биокерамика (BioRoot RCS / TotalFill)",
+			},
+		];
+
+		// Проверяем, что сохранённый набор каналов отличается от стандартного FDI зуба 16 (4 канала)
+		const fdiDefaults = getDefaultCanalsForTooth(16);
+		assert.equal(fdiDefaults.length, 4);
+
+		assert.equal(customCanals.length, 2);
+		assert.equal(customCanals[0]?.canalName, "MB1 (Сложный)");
+		assert.equal(customCanals[0]?.workingLengthMm, 23.5);
+		assert.equal(customCanals[0]?.masterApicalFile, "ISO 30 (#30 синий)");
+		assert.equal(
+			customCanals[0]?.obturationTechnique,
+			"Биокерамика (BioRoot RCS / TotalFill)",
+		);
+	});
+
+	test("Генерация протокола 043/у включает ирригацию, визиографию и все сохранённые каналы", () => {
+		const canals: EndoCanalData[] = [
+			{
+				id: "c1",
+				canalName: "MB",
+				referencePoint: "Щечный бугор",
+				workingLengthMm: 22.5,
+				masterApicalFile: "ISO 25",
+				taper: ".06",
+				obturationTechnique: "Метод непрерывной волны (System B / Elements)",
+			},
+			{
+				id: "c2",
+				canalName: "ML",
+				referencePoint: "Медиально-язычный бугор",
+				workingLengthMm: 22.0,
+				masterApicalFile: "ISO 25",
+				taper: ".06",
+				obturationTechnique: "Метод непрерывной волны (System B / Elements)",
+			},
+			{
+				id: "c3",
+				canalName: "D",
+				referencePoint: "Дистально-щечный бугор",
+				workingLengthMm: 23.0,
+				masterApicalFile: "ISO 30",
+				taper: ".06",
+				obturationTechnique: "Метод непрерывной волны (System B / Elements)",
+			},
+		];
+
+		const customIrrigation = "5.25% NaOCl + 17% EDTA с ультразвуковой активацией";
+		const customRadiology = "Визиография: плотная трёхмерная обтурация до верхушки";
+
+		const protocolText = generateEndoProtocol043({
+			toothNumber: 46,
+			canals,
+			irrigation: customIrrigation,
+			radiologyControl: customRadiology,
+		});
+
+		assert.ok(protocolText.includes("Зуб 46"));
+		assert.ok(protocolText.includes("Канал MB"));
+		assert.ok(protocolText.includes("WL = 22.5 мм"));
+		assert.ok(protocolText.includes("System B"));
+		assert.ok(protocolText.includes(customIrrigation));
+		assert.ok(protocolText.includes(customRadiology));
+	});
+});

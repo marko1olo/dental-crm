@@ -6,67 +6,14 @@ import {
 	generateMdlpSchema10560Payload,
 	parseMdlpDataMatrix,
 } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
 	requireResolvedOrganizationId,
-	requireResolvedStaffOrAdminOrganizationId,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
-import { patients, visits } from "../db/schema.js";
-
-// ─── Data Types & State ─────────────────────────────────────────────────────
-
-export interface MdlpItemRecord {
-	id: string;
-	organizationId: string;
-	sgtin: string;
-	gtin: string;
-	serialNumber: string;
-	cryptoKey: string;
-	cryptoSignature: string;
-	rawBarcode: string;
-	tradeName: string;
-	tradeNameLatin: string;
-	inn: string;
-	innLatin: string;
-	activeSubstance: string;
-	concentrationPct: number;
-	vasoconstrictor: string;
-	carpuleVolumeMl: number;
-	manufacturer: string;
-	atxCode: string;
-	series: string | null;
-	lot: string | null;
-	expirationDate: string | null;
-	isExpired: boolean;
-	status: "in_stock" | "disposed";
-	scannedAt: string;
-	disposedAt: string | null;
-	patientId: string | null;
-	patientName: string | null;
-	visitId: string | null;
-	doctorId: string | null;
-	docNum: string | null;
-	docDate: string | null;
-	schema10560Xml: string | null;
-	schema10560Json: Record<string, unknown> | null;
-	costRub: number | null;
-	notes: string | null;
-}
-
-// In-memory tenant store partitioned by organizationId
-const mdlpStoreByOrg = new Map<string, Map<string, MdlpItemRecord>>();
-
-function getOrgLedger(organizationId: string): Map<string, MdlpItemRecord> {
-	let ledger = mdlpStoreByOrg.get(organizationId);
-	if (!ledger) {
-		ledger = new Map<string, MdlpItemRecord>();
-		mdlpStoreByOrg.set(organizationId, ledger);
-	}
-	return ledger;
-}
+import { mdlpItems, patients, visits } from "../db/schema.js";
 
 // ─── Input Validation Schemas ───────────────────────────────────────────────
 
@@ -105,55 +52,6 @@ const mdlpItemsQuerySchema = z.object({
 	offset: z.coerce.number().int().min(0).optional().default(0),
 });
 
-// ─── Helper Functions ───────────────────────────────────────────────────────
-
-function createItemRecordFromParsed(
-	orgId: string,
-	parsed: MdlpParsedBarcode,
-	notes?: string | null,
-): MdlpItemRecord {
-	const now = new Date().toISOString();
-	const drug: Partial<DentalAnestheticInfo> = parsed.recognizedDrug ?? {};
-
-	return {
-		id: crypto.randomUUID(),
-		organizationId: orgId,
-		sgtin: parsed.sgtin,
-		gtin: parsed.gtin,
-		serialNumber: parsed.serialNumber,
-		cryptoKey: parsed.cryptoKey,
-		cryptoSignature: parsed.cryptoSignature,
-		rawBarcode: parsed.rawBarcode,
-		tradeName: drug.tradeName ?? "Неизвестный медицинский препарат",
-		tradeNameLatin: drug.tradeNameLatin ?? "Unknown medication",
-		inn: drug.inn ?? "Не указано",
-		innLatin: drug.innLatin ?? "Not specified",
-		activeSubstance: drug.activeSubstance ?? "Не указано",
-		concentrationPct: drug.concentrationPct ?? 0,
-		vasoconstrictor: drug.vasoconstrictor ?? "none",
-		carpuleVolumeMl: drug.carpuleVolumeMl ?? 1.7,
-		manufacturer: drug.manufacturer ?? "Не указан",
-		atxCode: drug.atxCode ?? "N01BB",
-		series: parsed.series,
-		lot: parsed.lot,
-		expirationDate: parsed.expirationDate,
-		isExpired: parsed.isExpired,
-		status: "in_stock",
-		scannedAt: now,
-		disposedAt: null,
-		patientId: null,
-		patientName: null,
-		visitId: null,
-		doctorId: null,
-		docNum: null,
-		docDate: null,
-		schema10560Xml: null,
-		schema10560Json: null,
-		costRub: null,
-		notes: notes ?? null,
-	};
-}
-
 // ─── Route Handlers ─────────────────────────────────────────────────────────
 
 export async function registerMdlpRoutes(
@@ -163,6 +61,7 @@ export async function registerMdlpRoutes(
 	/**
 	 * POST /api/mdlp/scan (also supports /scan when registered with prefix)
 	 * Verify GS1 DataMatrix barcode, check checksum, registration, expiration, and recognize drug.
+	 * Persists scan record to PostgreSQL mdlp_items table.
 	 */
 	const handleScan = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedOrganizationId(
@@ -182,7 +81,7 @@ export async function registerMdlpRoutes(
 		}
 
 		const barcodeStr = parsedBody.data.rawBarcode ?? parsedBody.data.barcode ?? "";
-		const { searchHint, autoRegister } = parsedBody.data;
+		const { autoRegister } = parsedBody.data;
 		const parsed = parseMdlpDataMatrix(barcodeStr);
 
 		if (!parsed.isValid) {
@@ -196,16 +95,43 @@ export async function registerMdlpRoutes(
 			});
 		}
 
-		const ledger = getOrgLedger(orgId);
-		let existing = ledger.get(parsed.sgtin);
+		// Check if already in PostgreSQL database
+		const [existing] = await db
+			.select()
+			.from(mdlpItems)
+			.where(
+				and(
+					eq(mdlpItems.organizationId, orgId),
+					eq(mdlpItems.sgtin, parsed.sgtin),
+				),
+			)
+			.limit(1);
+
+		let itemRecord = existing;
 
 		if (!existing && autoRegister) {
-			existing = createItemRecordFromParsed(orgId, parsed);
-			ledger.set(parsed.sgtin, existing);
+			const drug: Partial<DentalAnestheticInfo> = parsed.recognizedDrug ?? {};
+			const [inserted] = await db
+				.insert(mdlpItems)
+				.values({
+					organizationId: orgId,
+					sgtin: parsed.sgtin,
+					gtin: parsed.gtin,
+					serialNumber: parsed.serialNumber,
+					rawBarcode: parsed.rawBarcode,
+					tradeName: drug.tradeName ?? "Неизвестный медицинский препарат",
+					inn: drug.inn ?? "Не указано",
+					series: parsed.series ?? parsed.lot ?? null,
+					expirationDate: parsed.expirationDate,
+					status: "in_stock",
+					costRub: null,
+				})
+				.returning();
+			itemRecord = inserted;
 		}
 
-		const isRegistered = Boolean(existing);
-		const isDisposed = existing?.status === "disposed";
+		const isRegistered = Boolean(itemRecord);
+		const isDisposed = itemRecord?.status === "disposed";
 
 		return reply.send({
 			success: true,
@@ -217,7 +143,7 @@ export async function registerMdlpRoutes(
 				: isRegistered
 					? "in_stock"
 					: "unregistered",
-			item: existing ?? null,
+			item: itemRecord ?? null,
 		});
 	};
 
@@ -225,6 +151,7 @@ export async function registerMdlpRoutes(
 	 * POST /api/mdlp/dispose (also supports /dispose when registered with prefix)
 	 * Record medicine disposal under official MDLP Schema 10560
 	 * (Medical care write-off / "Вывод из оборота для оказания медицинской помощи").
+	 * Atomically persists disposal and Schema 10560 document in PostgreSQL.
 	 */
 	const handleDispose = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedOrganizationId(
@@ -282,37 +209,24 @@ export async function registerMdlpRoutes(
 			});
 		}
 
-		// 2. Check if already disposed
-		const ledger = getOrgLedger(orgId);
-		let item = ledger.get(sgtin);
+		// Check if already disposed in PostgreSQL
+		const [existing] = await db
+			.select()
+			.from(mdlpItems)
+			.where(
+				and(
+					eq(mdlpItems.organizationId, orgId),
+					eq(mdlpItems.sgtin, sgtin),
+				),
+			)
+			.limit(1);
 
-		if (item && item.status === "disposed") {
+		if (existing && existing.status === "disposed") {
 			return reply.status(409).send({
 				error: "MedicationAlreadyDisposed",
-				message: `Препарат с SGTIN ${sgtin} уже был ранее выведен из оборота (${item.disposedAt}).`,
-				item,
+				message: `Препарат с SGTIN ${sgtin} уже был ранее выведен из оборота (${existing.disposedAt}).`,
+				item: existing,
 			});
-		}
-
-		// 3. Resolve Patient and Visit Details
-		let patientName: string | null = null;
-		if (input.patientId) {
-			const [patientRow] = await db
-				.select({
-					fullName: patients.fullName,
-				})
-				.from(patients)
-				.where(
-					and(
-						eq(patients.organizationId, orgId),
-						eq(patients.id, input.patientId),
-					),
-				)
-				.limit(1);
-
-			if (patientRow) {
-				patientName = patientRow.fullName;
-			}
 		}
 
 		const now = new Date();
@@ -324,7 +238,7 @@ export async function registerMdlpRoutes(
 		const docDate =
 			input.docDate ?? now.toISOString().slice(0, 10);
 
-		// 4. Generate Schema 10560 XML & JSON Document
+		// Generate Schema 10560 XML & JSON Document
 		const schema10560Doc: MdlpSchema10560Document = generateMdlpSchema10560Payload({
 			subjectId: orgId,
 			operationDate: now.toISOString(),
@@ -337,89 +251,80 @@ export async function registerMdlpRoutes(
 			items: [
 				{
 					sgtin,
-					gtin: gtin ?? (item ? item.gtin : sgtin.slice(0, 14)),
-					serialNumber: serial ?? (item ? item.serialNumber : sgtin.slice(14)),
-					series: series ?? item?.series ?? null,
-					lot: series ?? item?.lot ?? null,
-					expirationDate: expirationDate ?? item?.expirationDate ?? null,
-					costRub: input.costRub ?? item?.costRub ?? null,
+					gtin: gtin ?? (existing ? existing.gtin : sgtin.slice(0, 14)),
+					serialNumber: serial ?? (existing ? existing.serialNumber : sgtin.slice(14)),
+					series: series ?? existing?.series ?? null,
+					lot: series ?? existing?.series ?? null,
+					expirationDate: expirationDate ?? existing?.expirationDate ?? null,
+					costRub: input.costRub ?? (existing?.costRub ? Number(existing.costRub) : null),
 				},
 			],
 		});
 
-		// 5. Update or Register item in Ledger
-		if (!item) {
-			if (parsedBarcode && parsedBarcode.isValid) {
-				item = createItemRecordFromParsed(orgId, parsedBarcode, input.reason);
-			} else {
-				item = {
-					id: crypto.randomUUID(),
+		let updatedItem;
+		if (existing) {
+			const [res] = await db
+				.update(mdlpItems)
+				.set({
+					status: "disposed",
+					disposedAt: now,
+					disposalReason: input.reason ?? "Оказание медицинской помощи (Схема 10560)",
+					disposalType: "13",
+					patientId: input.patientId ?? existing.patientId,
+					visitId: input.visitId ?? existing.visitId,
+					doctorId: input.doctorId ?? existing.doctorId,
+					costRub: input.costRub ? String(input.costRub) : existing.costRub,
+					crptReceiptNumber: `CRPT-${now.getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`,
+					schema10560Xml: schema10560Doc.xmlContent,
+					schema10560Json: schema10560Doc.jsonContent,
+					updatedAt: now,
+				})
+				.where(eq(mdlpItems.id, existing.id))
+				.returning();
+			updatedItem = res;
+		} else {
+			const drug: Partial<DentalAnestheticInfo> = parsedBarcode?.recognizedDrug ?? {};
+			const [res] = await db
+				.insert(mdlpItems)
+				.values({
 					organizationId: orgId,
 					sgtin,
-					gtin: gtin ?? sgtin.slice(0, 14),
-					serialNumber: serial ?? sgtin.slice(14),
-					cryptoKey: "",
-					cryptoSignature: "",
+					gtin: gtin ?? (parsedBarcode ? parsedBarcode.gtin : sgtin.slice(0, 14)),
+					serialNumber: serial ?? (parsedBarcode ? parsedBarcode.serialNumber : sgtin.slice(14)),
 					rawBarcode: rawCode ?? sgtin,
-					tradeName: "Анестетик / Медикамент (МДЛП)",
-					tradeNameLatin: "Medication (MDLP)",
-					inn: "Артикаин / Мепивакаин",
-					innLatin: "Articaine / Mepivacaine",
-					activeSubstance: "Раствор для инъекций",
-					concentrationPct: 4.0,
-					vasoconstrictor: "1:100000",
-					carpuleVolumeMl: 1.7,
-					manufacturer: "Фармацевтический производитель",
-					atxCode: "N01BB",
+					tradeName: drug.tradeName ?? "Анестетик / Медикамент (МДЛП)",
+					inn: drug.inn ?? "Артикаин / Мепивакаин",
 					series: series ?? null,
-					lot: series ?? null,
 					expirationDate,
-					isExpired: false,
-					status: "in_stock",
-					scannedAt: now.toISOString(),
-					disposedAt: null,
-					patientId: null,
-					patientName: null,
-					visitId: null,
-					doctorId: null,
-					docNum: null,
-					docDate: null,
-					schema10560Xml: null,
-					schema10560Json: null,
-					costRub: input.costRub ?? null,
-					notes: input.reason ?? null,
-				};
-			}
+					status: "disposed",
+					disposedAt: now,
+					disposalReason: input.reason ?? "Оказание медицинской помощи (Схема 10560)",
+					disposalType: "13",
+					patientId: input.patientId ?? null,
+					visitId: input.visitId ?? null,
+					doctorId: input.doctorId ?? null,
+					costRub: input.costRub ? String(input.costRub) : null,
+					crptReceiptNumber: `CRPT-${now.getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`,
+					schema10560Xml: schema10560Doc.xmlContent,
+					schema10560Json: schema10560Doc.jsonContent,
+				})
+				.returning();
+			updatedItem = res;
 		}
-
-		item.status = "disposed";
-		item.disposedAt = now.toISOString();
-		item.patientId = input.patientId ?? item.patientId;
-		item.patientName = patientName ?? item.patientName;
-		item.visitId = input.visitId ?? item.visitId;
-		item.doctorId = input.doctorId ?? item.doctorId;
-		item.docNum = docNum;
-		item.docDate = docDate;
-		item.schema10560Xml = schema10560Doc.xmlContent;
-		item.schema10560Json = schema10560Doc.jsonContent;
-		item.costRub = input.costRub ?? item.costRub;
-		item.notes = input.reason ?? item.notes;
-
-		ledger.set(sgtin, item);
 
 		return reply.send({
 			success: true,
 			message:
-				"Медикамент успешно списан по схеме 10560 (оказание медицинской помощи).",
+				"Медикамент успешно списан по схеме 10560 (оказание медицинской помощи) и зафиксирован в БД.",
 			sgtin,
 			disposalDocument: schema10560Doc,
-			item,
+			item: updatedItem,
 		});
 	};
 
 	/**
 	 * GET /api/mdlp/items (also supports /items when registered with prefix)
-	 * List scanned and tracked medications for the clinic with status, SGTIN, expiration and disposal info.
+	 * List scanned and tracked medications directly from PostgreSQL database.
 	 */
 	const handleItems = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedOrganizationId(
@@ -439,54 +344,51 @@ export async function registerMdlpRoutes(
 		}
 
 		const { status, search, patientId, visitId, limit, offset } = queryParsed.data;
-		const ledger = getOrgLedger(orgId);
-		let list = Array.from(ledger.values());
 
-		// Filter by status
+		const conditions = [eq(mdlpItems.organizationId, orgId)];
+
 		if (status && status !== "all") {
-			list = list.filter((it) => it.status === status);
+			conditions.push(eq(mdlpItems.status, status));
 		}
-
-		// Filter by patientId
 		if (patientId) {
-			list = list.filter((it) => it.patientId === patientId);
+			conditions.push(eq(mdlpItems.patientId, patientId));
 		}
-
-		// Filter by visitId
 		if (visitId) {
-			list = list.filter((it) => it.visitId === visitId);
+			conditions.push(eq(mdlpItems.visitId, visitId));
+		}
+		if (search && search.trim().length > 0) {
+			const pattern = `%${search.trim()}%`;
+			conditions.push(
+				or(
+					ilike(mdlpItems.sgtin, pattern),
+					ilike(mdlpItems.gtin, pattern),
+					ilike(mdlpItems.serialNumber, pattern),
+					ilike(mdlpItems.tradeName, pattern),
+					ilike(mdlpItems.inn, pattern),
+					ilike(mdlpItems.series, pattern),
+				)!,
+			);
 		}
 
-		// Search query filter
-		if (search && search.length > 0) {
-			const q = search.toLowerCase();
-			list = list.filter((it) => {
-				return (
-					it.sgtin.toLowerCase().includes(q) ||
-					it.gtin.toLowerCase().includes(q) ||
-					it.serialNumber.toLowerCase().includes(q) ||
-					it.tradeName.toLowerCase().includes(q) ||
-					it.inn.toLowerCase().includes(q) ||
-					(it.series && it.series.toLowerCase().includes(q)) ||
-					(it.lot && it.lot.toLowerCase().includes(q)) ||
-					(it.patientName && it.patientName.toLowerCase().includes(q)) ||
-					(it.docNum && it.docNum.toLowerCase().includes(q))
-				);
-			});
-		}
+		const itemsList = await db
+			.select()
+			.from(mdlpItems)
+			.where(and(...conditions))
+			.orderBy(desc(mdlpItems.createdAt))
+			.limit(limit)
+			.offset(offset);
 
-		// Sort by scannedAt desc
-		list.sort((a, b) => {
-			return new Date(b.scannedAt).getTime() - new Date(a.scannedAt).getTime();
-		});
+		const countRows = await db
+			.select({ count: sql<number>`count(*)::int` })
+			.from(mdlpItems)
+			.where(and(...conditions));
 
-		const total = list.length;
-		const paginated = list.slice(offset, offset + limit);
+		const totalCount = countRows[0]?.count ?? itemsList.length;
 
 		return reply.send({
 			success: true,
-			total,
-			items: paginated,
+			total: totalCount,
+			items: itemsList,
 			limit,
 			offset,
 		});

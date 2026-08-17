@@ -5,6 +5,7 @@ import {
 	date,
 	index,
 	integer,
+	jsonb,
 	numeric,
 	pgTable,
 	text,
@@ -13,6 +14,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { organizations, users } from "./auth.js";
 import { serviceCatalogItems } from "./clinical.js";
+import { patients } from "./patients.js";
 
 // inventory items (clinic supplies and materials)
 export const inventoryItems = pgTable(
@@ -285,3 +287,76 @@ export const autoclaveDailyTests = pgTable(
 		),
 	}),
 );
+
+// inventory transfers (TORG-13)
+export const inventoryTransfers = pgTable("inventory_transfers", {
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
+	senderOrganizationId: uuid("sender_organization_id").notNull().references(() => organizations.id),
+	receiverOrganizationId: uuid("receiver_organization_id").notNull().references(() => organizations.id),
+	status: text("status").notNull().default("draft"), // draft, in_transit, partially_received, completed, cancelled
+	notes: text("notes"),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const inventoryTransferItems = pgTable("inventory_transfer_items", {
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
+	transferId: uuid("transfer_id").notNull().references(() => inventoryTransfers.id),
+	inventoryItemId: uuid("inventory_item_id").notNull().references(() => inventoryItems.id),
+	quantitySent: numeric("quantity_sent", { precision: 10, scale: 3 }).notNull(),
+	quantityReceived: numeric("quantity_received", { precision: 10, scale: 3 }).default("0"),
+	quantityDamaged: numeric("quantity_damaged", { precision: 10, scale: 3 }).default("0"),
+	notes: text("notes"),
+});
+
+// ─── MDLP / Chestny Znak (ФЗ № 425-ФЗ & Постановление № 1556) ─────────────
+
+export const mdlpItems = pgTable(
+	"mdlp_items",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		sgtin: text("sgtin").notNull(),
+		gtin: text("gtin").notNull(),
+		serialNumber: text("serial_number").notNull(),
+		rawBarcode: text("raw_barcode").notNull(),
+		tradeName: text("trade_name").notNull(),
+		inn: text("inn"),
+		series: text("series"),
+		expirationDate: text("expiration_date"),
+		status: text("status").notNull().default("in_stock"), // in_stock | disposed | quarantine | expired
+		disposedAt: timestamp("disposed_at", { withTimezone: true }),
+		disposalReason: text("disposal_reason"),
+		disposalType: text("disposal_type").default("13"), // 13 = медицинское применение (Схема 10560)
+		patientId: uuid("patient_id").references(() => patients.id, {
+			onDelete: "set null",
+		}),
+		visitId: uuid("visit_id"),
+		doctorId: uuid("doctor_id").references(() => users.id, {
+			onDelete: "set null",
+		}),
+		costRub: numeric("cost_rub", { precision: 10, scale: 2 }),
+		crptReceiptNumber: text("crpt_receipt_number"),
+		schema10560Xml: text("schema_10560_xml"),
+		schema10560Json: jsonb("schema_10560_json"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		orgSgtinIdx: index("mdlp_items_org_sgtin_idx").on(
+			t.organizationId,
+			t.sgtin,
+		),
+		orgStatusIdx: index("mdlp_items_org_status_idx").on(
+			t.organizationId,
+			t.status,
+		),
+	}),
+);
+
+

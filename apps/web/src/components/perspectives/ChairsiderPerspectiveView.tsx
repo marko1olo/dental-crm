@@ -46,7 +46,11 @@ import {
 	type ToothState,
 } from "../odontogram/ToothChart";
 import { PeriodontalChartModule } from "../odontogram/PeriodontalChartModule";
-import { EndoCanalLogModal } from "../odontogram/EndoCanalLogModal";
+import {
+	type EndoCanalData,
+	EndoCanalLogModal,
+	type EndoToothClinicalData,
+} from "../odontogram/EndoCanalLogModal";
 import "../odontogram/odontogram.css";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 
@@ -177,6 +181,9 @@ export function ChairsiderPerspectiveView() {
 	const [selectedTooth, setSelectedTooth] = useState<number>(16);
 	const [toothStates, setToothStates] = useState<Record<number, ToothState>>({});
 	const [toothSurfaces, setToothSurfaces] = useState<Record<number, string[]>>({});
+	const [toothClinicalData, setToothClinicalData] = useState<
+		Record<number, EndoToothClinicalData>
+	>({});
 	const [isLoadingTeeth, setIsLoadingTeeth] = useState(false);
 	const [isSavingTooth, setIsSavingTooth] = useState(false);
 	const [appliedProcedures, setAppliedProcedures] = useState<string[]>([]);
@@ -194,14 +201,16 @@ export function ChairsiderPerspectiveView() {
 		for (const tNum of allTeeth) {
 			const state = toothStates[tNum] || "Healthy";
 			const surfaces = toothSurfaces[tNum];
+			const clinicalData = toothClinicalData[tNum];
 			result.push({
 				toothNumber: tNum,
 				state,
 				...(surfaces && surfaces.length > 0 ? { surfaces } : {}),
+				...(clinicalData ? { clinicalData } : {}),
 			});
 		}
 		return result;
-	}, [toothStates, toothSurfaces, upperJawTeeth, lowerJawTeeth]);
+	}, [toothStates, toothSurfaces, toothClinicalData, upperJawTeeth, lowerJawTeeth]);
 
 	const fetchToothStates = useCallback(async () => {
 		if (!activePatient?.id) return;
@@ -212,7 +221,13 @@ export function ChairsiderPerspectiveView() {
 			});
 			if (res.ok) {
 				const body = await res.json();
-				const stateList: Array<{ toothNumber: number; state: ToothState; surfaces?: string[] }> =
+				const stateList: Array<{
+					toothNumber: number;
+					state: ToothState;
+					surfaces?: string[];
+					notes?: string;
+					clinicalData?: EndoToothClinicalData;
+				}> =
 					Array.isArray(body)
 						? body
 						: body?.states && Array.isArray(body.states)
@@ -221,16 +236,25 @@ export function ChairsiderPerspectiveView() {
 
 				const stateMap: Record<number, ToothState> = {};
 				const surfaceMap: Record<number, string[]> = {};
+				const clinicalMap: Record<number, EndoToothClinicalData> = {};
 				for (const item of stateList) {
 					if (item.toothNumber && item.state) {
 						stateMap[item.toothNumber] = item.state;
 						if (Array.isArray(item.surfaces) && item.surfaces.length > 0) {
 							surfaceMap[item.toothNumber] = item.surfaces;
 						}
+						if (
+							item.clinicalData &&
+							typeof item.clinicalData === "object" &&
+							Array.isArray(item.clinicalData.canals)
+						) {
+							clinicalMap[item.toothNumber] = item.clinicalData;
+						}
 					}
 				}
 				setToothStates(stateMap);
 				setToothSurfaces(surfaceMap);
+				setToothClinicalData(clinicalMap);
 			}
 		} catch (err) {
 			logger.error("[ChairsiderPerspective] Failed to load tooth states", err);
@@ -854,6 +878,40 @@ export function ChairsiderPerspectiveView() {
 				onClose={() => setIsEndoModalOpen(false)}
 				toothNumber={selectedTooth}
 				toothState={TOOTH_STATE_LABELS[selectedToothState] || selectedToothState}
+				patientId={activePatient?.id}
+				initialCanals={toothClinicalData[selectedTooth]?.canals}
+				initialIrrigation={toothClinicalData[selectedTooth]?.irrigation}
+				initialRadiologyControl={toothClinicalData[selectedTooth]?.radiologyControl}
+				onSaveCanals={async (canals, clinicalData) => {
+					if (!activePatient?.id) return;
+					setToothClinicalData((prev) => ({
+						...prev,
+						[selectedTooth]: clinicalData,
+					}));
+					const activeSurfaces = toothSurfaces[selectedTooth] || [];
+					try {
+						const res = await fetch(
+							`/api/patients/${activePatient.id}/tooth-states/batch`,
+							{
+								method: "POST",
+								headers: auth.denteClinicalMutationHeaders({
+									"Content-Type": "application/json",
+								}),
+								body: JSON.stringify({
+									toothNumbers: [selectedTooth],
+									state: selectedToothState,
+									surfaces: activeSurfaces.length > 0 ? activeSurfaces : undefined,
+									clinicalData,
+								}),
+							},
+						);
+						if (!res.ok) {
+							showToast("Не удалось сохранить параметры каналов в БД", "error");
+						}
+					} catch (err) {
+						logger.error("[ChairsiderPerspective] Save endo canals error", err);
+					}
+				}}
 				onInsertToProtocol={(protocolText) => {
 					handleVoiceResult(protocolText);
 				}}

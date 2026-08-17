@@ -57,12 +57,64 @@ export const CLINICAL_TOOTH_STATE_VALUES = [
 
 export type ClinicalToothState = (typeof CLINICAL_TOOTH_STATE_VALUES)[number];
 
+export const endoCanalMeasurementSchema = z.object({
+	id: z.string().optional(),
+	canalName: z.string().trim().min(1).max(50),
+	referencePoint: z.string().trim().max(100).optional().default(""),
+	workingLengthMm: z.union([z.number(), z.string()]).optional().default(""),
+	masterApicalFile: z.string().trim().max(100).optional().default(""),
+	taper: z.string().trim().max(50).optional().default(""),
+	obturationTechnique: z.string().trim().max(200).optional().default(""),
+	sealer: z.string().trim().max(200).optional().default(""),
+	notes: z.string().trim().max(500).optional().default(""),
+});
+
+export const endoToothClinicalDataSchema = z
+	.object({
+		canals: z.array(endoCanalMeasurementSchema).default([]),
+		irrigation: z.string().trim().max(1000).optional(),
+		radiologyControl: z.string().trim().max(1000).optional(),
+		notes: z.string().trim().max(2000).optional(),
+		updatedAt: z.string().optional(),
+	})
+	.passthrough();
+
+export type EndoToothClinicalData = z.infer<typeof endoToothClinicalDataSchema>;
+
+const toothEndoUpsertSchema = z.object({
+	canals: z.array(endoCanalMeasurementSchema).min(1),
+	irrigation: z.string().trim().max(1000).optional(),
+	radiologyControl: z.string().trim().max(1000).optional(),
+	state: z.enum(CLINICAL_TOOTH_STATE_VALUES).optional(),
+	surfaces: z.array(z.string().trim().min(1).max(30)).max(8).optional(),
+	visitId: z.string().uuid().optional().nullable(),
+});
+
 const batchToothStateSchema = z.object({
 	toothNumbers: z.array(fdiToothNumberSchema).min(1).max(64),
 	state: z.enum(CLINICAL_TOOTH_STATE_VALUES),
 	surfaces: z.array(z.string().trim().min(1).max(30)).max(8).optional(),
+	notes: z.string().max(10000).optional().nullable(),
+	clinicalData: endoToothClinicalDataSchema.optional().nullable(),
 	visitId: z.string().uuid().optional().nullable(),
 });
+
+function parseClinicalDataFromNotes(
+	notes: string | null | undefined,
+): EndoToothClinicalData | null {
+	if (!notes) return null;
+	const trimmed = notes.trim();
+	if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) return null;
+	try {
+		const parsed = JSON.parse(trimmed);
+		if (parsed && typeof parsed === "object" && Array.isArray(parsed.canals)) {
+			return parsed as EndoToothClinicalData;
+		}
+	} catch {
+		// Non-JSON notes
+	}
+	return null;
+}
 
 const treatmentPlanMoneyRubSchema = nonNegativeMoneyRubSchema.refine(
 	(value) => value <= 100_000_000,
@@ -221,11 +273,12 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 			return reply.code(404).send({ error: "PatientNotFound" });
 		}
 
-		const states = await db
+		const rawStates = await db
 			.select({
 				toothNumber: toothStates.toothNumber,
 				state: toothStates.state,
 				surfaces: toothStates.surfaces,
+				notes: toothStates.notes,
 			})
 			.from(toothStates)
 			.where(
@@ -234,6 +287,14 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 					eq(toothStates.patientId, patientId),
 				),
 			);
+
+		const states = rawStates.map((row) => ({
+			toothNumber: row.toothNumber,
+			state: row.state,
+			surfaces: row.surfaces,
+			notes: row.notes,
+			clinicalData: parseClinicalDataFromNotes(row.notes),
+		}));
 
 		return reply.send({ success: true, states });
 	});
@@ -279,6 +340,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 						toothNumber: toothStates.toothNumber,
 						state: toothStates.state,
 						surfaces: toothStates.surfaces,
+						notes: toothStates.notes,
 					})
 					.from(toothStates)
 					.where(
@@ -293,6 +355,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 					toothNumber: number;
 					state: string;
 					surfaces: unknown;
+					notes: string | null;
 				};
 				const previousByTooth = new Map<number, PreviousToothState>(
 					(previousStates as PreviousToothState[]).map((row) => [
@@ -313,7 +376,11 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 
 				const changedTeeth = toothNumbers.filter((toothNumber) => {
 					const previous = previousByTooth.get(toothNumber);
-					return !previous || previous.state !== parsed.data.state;
+					return (
+						!previous ||
+						previous.state !== parsed.data.state ||
+						Boolean(parsed.data.clinicalData)
+					);
 				});
 
 				if (changedTeeth.length > 0) {
@@ -329,30 +396,55 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 								previousByTooth.get(toothNumber)?.surfaces ?? null,
 							newSurfaces: parsed.data.surfaces || null,
 							changedByUserId: actorUserId,
+							reason: parsed.data.clinicalData
+								? "Эндодонтический протокол / обработка каналов"
+								: null,
 							changedAt: now,
 						})),
 					);
 				}
 
-				return await tx
+				const serializedClinicalNotes = parsed.data.clinicalData
+					? JSON.stringify(parsed.data.clinicalData)
+					: parsed.data.notes;
+
+				const rowsToInsert = toothNumbers.map((toothNumber) => {
+					const prev = previousByTooth.get(toothNumber);
+					const effectiveNotes =
+						serializedClinicalNotes !== undefined
+							? serializedClinicalNotes
+							: (prev?.notes ?? null);
+
+					return {
+						organizationId,
+						patientId,
+						toothNumber,
+						state: parsed.data.state,
+						surfaces: parsed.data.surfaces || null,
+						notes: effectiveNotes,
+						updatedAt: now,
+						isSynced: false,
+						version: 1,
+					};
+				});
+
+				const resultRows = await tx
 					.insert(toothStates)
-					.values(
-						toothNumbers.map((toothNumber) => ({
-							organizationId,
-							patientId,
-							toothNumber,
-							state: parsed.data.state,
-							surfaces: parsed.data.surfaces || null,
-							updatedAt: now,
-							isSynced: false,
-							version: 1,
-						})),
-					)
+					.values(rowsToInsert)
 					.returning({
 						toothNumber: toothStates.toothNumber,
 						state: toothStates.state,
 						surfaces: toothStates.surfaces,
+						notes: toothStates.notes,
 					});
+
+				return resultRows.map((row) => ({
+					toothNumber: row.toothNumber,
+					state: row.state,
+					surfaces: row.surfaces,
+					notes: row.notes,
+					clinicalData: parseClinicalDataFromNotes(row.notes),
+				}));
 			});
 
 			wsBroker.broadcastToOrganization(organizationId, {
@@ -360,6 +452,188 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 				payload: { patientId, states: inserted },
 			});
 			return reply.send({ success: true, states: inserted });
+		},
+	);
+
+	app.get(
+		"/api/patients/:patientId/tooth-states/:toothNumber/endo",
+		async (request, reply) => {
+			const organizationId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"tooth endo read",
+			);
+			if (!organizationId) return;
+			const { patientId, toothNumber: toothParam } = request.params as {
+				patientId: string;
+				toothNumber: string;
+			};
+			const toothNumber = parseInt(toothParam, 10);
+			if (!UUID_SHAPE.test(patientId) || Number.isNaN(toothNumber)) {
+				return reply.code(400).send({ error: "InvalidParameters" });
+			}
+			if (!(await ensurePatientInOrganization(patientId, organizationId))) {
+				return reply.code(404).send({ error: "PatientNotFound" });
+			}
+
+			const [tooth] = await db
+				.select({
+					toothNumber: toothStates.toothNumber,
+					state: toothStates.state,
+					surfaces: toothStates.surfaces,
+					notes: toothStates.notes,
+				})
+				.from(toothStates)
+				.where(
+					and(
+						eq(toothStates.organizationId, organizationId),
+						eq(toothStates.patientId, patientId),
+						eq(toothStates.toothNumber, toothNumber),
+					),
+				)
+				.limit(1);
+
+			if (!tooth) {
+				return reply.send({
+					success: true,
+					toothNumber,
+					state: "Healthy",
+					clinicalData: null,
+				});
+			}
+
+			return reply.send({
+				success: true,
+				toothNumber: tooth.toothNumber,
+				state: tooth.state,
+				surfaces: tooth.surfaces,
+				notes: tooth.notes,
+				clinicalData: parseClinicalDataFromNotes(tooth.notes),
+			});
+		},
+	);
+
+	app.post(
+		"/api/patients/:patientId/tooth-states/:toothNumber/endo",
+		async (request, reply) => {
+			const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+				request,
+				reply,
+				"tooth endo save",
+			);
+			if (!organizationId) return;
+			const { patientId, toothNumber: toothParam } = request.params as {
+				patientId: string;
+				toothNumber: string;
+			};
+			const toothNumber = parseInt(toothParam, 10);
+			if (!UUID_SHAPE.test(patientId) || Number.isNaN(toothNumber)) {
+				return reply.code(400).send({ error: "InvalidParameters" });
+			}
+			if (!(await ensurePatientInOrganization(patientId, organizationId))) {
+				return reply.code(404).send({ error: "PatientNotFound" });
+			}
+
+			const parsed = toothEndoUpsertSchema.safeParse(request.body);
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "EndoValidationError",
+					message: "Некорректные параметры корневых каналов.",
+					details: parsed.error.format(),
+				});
+			}
+
+			const actorUserId = getRequestIdentity(request).userId;
+			const now = new Date();
+
+			const clinicalData: EndoToothClinicalData = {
+				canals: parsed.data.canals,
+				irrigation: parsed.data.irrigation,
+				radiologyControl: parsed.data.radiologyControl,
+				updatedAt: now.toISOString(),
+			};
+
+			const serializedNotes = JSON.stringify(clinicalData);
+
+			const updated = await db.transaction(async (tx) => {
+				const [existing] = await tx
+					.select({
+						state: toothStates.state,
+						surfaces: toothStates.surfaces,
+						notes: toothStates.notes,
+					})
+					.from(toothStates)
+					.where(
+						and(
+							eq(toothStates.organizationId, organizationId),
+							eq(toothStates.patientId, patientId),
+							eq(toothStates.toothNumber, toothNumber),
+						),
+					)
+					.limit(1);
+
+				const targetState = parsed.data.state || existing?.state || "Pulpitis";
+				const targetSurfaces = parsed.data.surfaces || existing?.surfaces || null;
+
+				await tx
+					.delete(toothStates)
+					.where(
+						and(
+							eq(toothStates.organizationId, organizationId),
+							eq(toothStates.patientId, patientId),
+							eq(toothStates.toothNumber, toothNumber),
+						),
+					);
+
+				await tx.insert(toothStateHistory).values({
+					organizationId,
+					patientId,
+					visitId: parsed.data.visitId ?? null,
+					toothNumber,
+					previousState: existing?.state ?? null,
+					newState: targetState,
+					previousSurfaces: existing?.surfaces ?? null,
+					newSurfaces: targetSurfaces,
+					changedByUserId: actorUserId,
+					reason: "Эндодонтический протокол / обработка каналов",
+					changedAt: now,
+				});
+
+				const [insertedRow] = await tx
+					.insert(toothStates)
+					.values({
+						organizationId,
+						patientId,
+						toothNumber,
+						state: targetState,
+						surfaces: targetSurfaces,
+						notes: serializedNotes,
+						updatedAt: now,
+						isSynced: false,
+						version: 1,
+					})
+					.returning({
+						toothNumber: toothStates.toothNumber,
+						state: toothStates.state,
+						surfaces: toothStates.surfaces,
+						notes: toothStates.notes,
+					});
+
+				return {
+					toothNumber: insertedRow?.toothNumber ?? toothNumber,
+					state: insertedRow?.state ?? targetState,
+					surfaces: insertedRow?.surfaces ?? targetSurfaces,
+					notes: insertedRow?.notes ?? serializedNotes,
+					clinicalData,
+				};
+			});
+
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "UPDATE_ODONTOGRAM",
+				payload: { patientId, states: [updated] },
+			});
+
+			return reply.send({ success: true, ...updated });
 		},
 	);
 

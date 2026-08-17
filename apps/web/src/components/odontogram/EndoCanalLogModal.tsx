@@ -14,6 +14,7 @@ import {
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { showToast } from "../GlobalToast";
 
@@ -29,17 +30,30 @@ export interface EndoCanalData {
 	notes?: string;
 }
 
+export interface EndoToothClinicalData {
+	canals: EndoCanalData[];
+	irrigation?: string;
+	radiologyControl?: string;
+	updatedAt?: string;
+}
+
 export interface EndoCanalLogModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly toothNumber: number;
 	readonly toothState?: string | undefined;
+	readonly patientId?: string | undefined;
 	readonly initialCanals?: readonly EndoCanalData[] | undefined;
+	readonly initialIrrigation?: string | undefined;
+	readonly initialRadiologyControl?: string | undefined;
 	readonly onInsertToProtocol?: (
 		protocolText: string,
 		canals: EndoCanalData[],
 	) => void;
-	readonly onSaveCanals?: (canals: EndoCanalData[]) => Promise<void> | void;
+	readonly onSaveCanals?: (
+		canals: EndoCanalData[],
+		clinicalData: EndoToothClinicalData,
+	) => Promise<void> | void;
 }
 
 /** Предустановленные варианты названий корневых каналов */
@@ -310,7 +324,10 @@ export function EndoCanalLogModal({
 	onClose,
 	toothNumber,
 	toothState,
+	patientId,
 	initialCanals,
+	initialIrrigation,
+	initialRadiologyControl,
 	onInsertToProtocol,
 	onSaveCanals,
 }: EndoCanalLogModalProps) {
@@ -322,21 +339,73 @@ export function EndoCanalLogModal({
 	});
 
 	const [irrigation, setIrrigation] = useState<string>(
-		"3% NaOCl + 17% EDTA с ультразвуковой активацией",
+		initialIrrigation || "3% NaOCl + 17% EDTA с ультразвуковой активацией",
 	);
 	const [radiologyControl, setRadiologyControl] = useState<string>(
-		"Контрольная визиография: каналы обтурированы плотно, гомогенно до апекса.",
+		initialRadiologyControl ||
+			"Контрольная визиография: каналы обтурированы плотно, гомогенно до апекса.",
 	);
 	const [copied, setCopied] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
+	const [isLoadingFromDb, setIsLoadingFromDb] = useState(false);
 
-	// При смене номера зуба или переоткрытии окна инициализируем каналы
+	// При смене номера зуба, переоткрытии окна или передаче initialCanals
 	useEffect(() => {
+		if (!isOpen) return;
+
 		if (initialCanals && initialCanals.length > 0) {
 			setCanals(initialCanals.map((c) => ({ ...c })));
-		} else {
-			setCanals(getDefaultCanalsForTooth(toothNumber));
+			if (initialIrrigation) setIrrigation(initialIrrigation);
+			if (initialRadiologyControl) setRadiologyControl(initialRadiologyControl);
+			return;
 		}
-	}, [toothNumber, initialCanals]);
+
+		// Если initialCanals не переданы, но известен patientId — пробуем загрузить сохранённые данные из БД
+		if (patientId) {
+			let cancelled = false;
+			setIsLoadingFromDb(true);
+
+			fetch(`/api/patients/${patientId}/tooth-states/${toothNumber}/endo`, {
+				headers: denteAdminSecretRequestHeaders(),
+			})
+				.then((res) => (res.ok ? res.json() : null))
+				.then((data) => {
+					if (cancelled) return;
+					if (
+						data?.success &&
+						data?.clinicalData?.canals &&
+						Array.isArray(data.clinicalData.canals) &&
+						data.clinicalData.canals.length > 0
+					) {
+						setCanals(data.clinicalData.canals.map((c: EndoCanalData) => ({ ...c })));
+						if (data.clinicalData.irrigation) {
+							setIrrigation(data.clinicalData.irrigation);
+						}
+						if (data.clinicalData.radiologyControl) {
+							setRadiologyControl(data.clinicalData.radiologyControl);
+						}
+					} else {
+						setCanals(getDefaultCanalsForTooth(toothNumber));
+					}
+				})
+				.catch(() => {
+					if (!cancelled) {
+						setCanals(getDefaultCanalsForTooth(toothNumber));
+					}
+				})
+				.finally(() => {
+					if (!cancelled) setIsLoadingFromDb(false);
+				});
+
+			return () => {
+				cancelled = true;
+			};
+		}
+
+		setCanals(getDefaultCanalsForTooth(toothNumber));
+		if (initialIrrigation) setIrrigation(initialIrrigation);
+		if (initialRadiologyControl) setRadiologyControl(initialRadiologyControl);
+	}, [isOpen, toothNumber, initialCanals, initialIrrigation, initialRadiologyControl, patientId]);
 
 	// ESC to close
 	useEffect(() => {
@@ -394,15 +463,81 @@ export function EndoCanalLogModal({
 		});
 	}, [toothNumber, canals, irrigation, radiologyControl]);
 
-	const handleInsertToProtocol = async () => {
+	const persistCanalsToBackend = async (
+		clinicalData: EndoToothClinicalData,
+	): Promise<boolean> => {
 		if (onSaveCanals) {
-			await onSaveCanals(canals);
+			await onSaveCanals(canals, clinicalData);
+			return true;
 		}
+
+		if (patientId) {
+			try {
+				const res = await fetch(
+					`/api/patients/${patientId}/tooth-states/${toothNumber}/endo`,
+					{
+						method: "POST",
+						headers: denteAdminSecretRequestHeaders({
+							"Content-Type": "application/json",
+						}),
+						body: JSON.stringify({
+							canals,
+							irrigation,
+							radiologyControl,
+						}),
+					},
+				);
+				if (!res.ok) {
+					showToast("Не удалось сохранить параметры каналов в БД", "error");
+					return false;
+				}
+				return true;
+			} catch (err) {
+				showToast("Ошибка сохранения параметров каналов в БД", "error");
+				return false;
+			}
+		}
+
+		return true;
+	};
+
+	const handleSaveCanalsOnly = async () => {
+		setIsSaving(true);
+		const clinicalData: EndoToothClinicalData = {
+			canals,
+			irrigation,
+			radiologyControl,
+			updatedAt: new Date().toISOString(),
+		};
+
+		const ok = await persistCanalsToBackend(clinicalData);
+		setIsSaving(false);
+		if (ok) {
+			showToast(
+				`Параметры каналов зуба #${toothNumber} успешно сохранены в карту!`,
+				"success",
+			);
+			onClose();
+		}
+	};
+
+	const handleInsertToProtocol = async () => {
+		setIsSaving(true);
+		const clinicalData: EndoToothClinicalData = {
+			canals,
+			irrigation,
+			radiologyControl,
+			updatedAt: new Date().toISOString(),
+		};
+
+		await persistCanalsToBackend(clinicalData);
+		setIsSaving(false);
+
 		if (onInsertToProtocol) {
 			onInsertToProtocol(generatedProtocolText, canals);
 		}
 		showToast(
-			`Эндодонтический протокол для зуба #${toothNumber} вставлен в карту 043/у!`,
+			`Эндодонтический протокол для зуба #${toothNumber} сохранен и вставлен в карту 043/у!`,
 			"success",
 		);
 		onClose();
@@ -728,20 +863,35 @@ export function EndoCanalLogModal({
 					<button
 						type="button"
 						onClick={onClose}
+						disabled={isSaving}
 						className="min-h-[50px] px-5 py-2.5 rounded-xl text-sm font-bold bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 border border-[var(--line,#cbd5e1)] dark:border-slate-700 transition-colors cursor-pointer"
 					>
 						Отмена
 					</button>
 
-					<button
-						type="button"
-						data-testid="insert-endo-protocol-btn"
-						onClick={handleInsertToProtocol}
-						className="min-h-[50px] px-6 py-2.5 rounded-xl text-sm font-black bg-purple-600 hover:bg-purple-500 active:scale-98 text-white flex items-center gap-2.5 shadow-lg shadow-purple-600/30 transition-all cursor-pointer"
-					>
-						<Sparkles size={18} />
-						<span>Вставить в протокол Формы 043/у</span>
-					</button>
+					<div className="flex items-center gap-3 flex-wrap">
+						<button
+							type="button"
+							data-testid="save-endo-canals-btn"
+							disabled={isSaving || isLoadingFromDb}
+							onClick={handleSaveCanalsOnly}
+							className="min-h-[50px] px-5 py-2.5 rounded-xl text-sm font-bold bg-purple-100 hover:bg-purple-200 dark:bg-purple-950/80 dark:hover:bg-purple-900 text-purple-900 dark:text-purple-200 border border-purple-400/50 flex items-center gap-2 transition-all active:scale-98 cursor-pointer"
+						>
+							<Check size={18} className="text-purple-600 dark:text-purple-400" />
+							<span>Сохранить в карту</span>
+						</button>
+
+						<button
+							type="button"
+							data-testid="insert-endo-protocol-btn"
+							disabled={isSaving || isLoadingFromDb}
+							onClick={handleInsertToProtocol}
+							className="min-h-[50px] px-6 py-2.5 rounded-xl text-sm font-black bg-purple-600 hover:bg-purple-500 active:scale-98 text-white flex items-center gap-2.5 shadow-lg shadow-purple-600/30 transition-all cursor-pointer disabled:opacity-50"
+						>
+							<Sparkles size={18} />
+							<span>Вставить в протокол Формы 043/у</span>
+						</button>
+					</div>
 				</footer>
 			</div>
 		</div>,

@@ -312,10 +312,28 @@ export default async function registerToothHistoryRoutes(app: FastifyInstance) {
 					.orderBy(desc(toothStates.updatedAt));
 
 				for (const s of states) {
+					let endoDetail = "";
+					if (s.notes) {
+						try {
+							const parsed = JSON.parse(s.notes);
+							if (Array.isArray(parsed.canals) && parsed.canals.length > 0) {
+								const canalSummaries = parsed.canals
+									.map(
+										// biome-ignore lint/suspicious/noExplicitAny: generic canal row
+										(c: any) =>
+											`${c.canalName}: ${c.workingLengthMm || "—"}мм`,
+									)
+									.join(", ");
+								endoDetail = ` (Каналы: ${canalSummaries})`;
+							}
+						} catch {
+							// non-JSON notes
+						}
+					}
 					events.push({
 						type: "state_change",
 						date: s.updatedAt || new Date(),
-						description: `Текущий статус: ${s.state} (история до включения журнала не сохранялась)`,
+						description: `Текущий статус: ${s.state}${endoDetail} (история до включения журнала не сохранялась)`,
 						authorId: "Не указан",
 					});
 				}

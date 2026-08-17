@@ -3089,6 +3089,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					}}
 					toothNumber={endoModalToothNumber}
 					toothState={endoModalToothState}
+					patientId={
+						activePatient?.id ||
+						(typeof dashboard?.activeVisit?.patientId === "string"
+							? dashboard.activeVisit.patientId
+							: undefined)
+					}
 					onInsertToProtocol={(protocolText) => {
 						appendToEMKField("treatmentPlan", protocolText);
 					}}

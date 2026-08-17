@@ -85,3 +85,34 @@ describe("Tooth History Timeline Compound References Matching", () => {
 		assert.equal(isToothReferenced("116", 16), false);
 	});
 });
+
+describe("Endodontic Canal Measurement & Clinical Data Schemas", () => {
+	test("validates full endodontic canal measurement object", async () => {
+		const { endoCanalMeasurementSchema, endoToothClinicalDataSchema } =
+			await import("../../routes/odontogram.js");
+
+		const validCanal = {
+			id: "c-mb1",
+			canalName: "MB1",
+			referencePoint: "Щечный бугор (MB cusp)",
+			workingLengthMm: 21.5,
+			masterApicalFile: "ISO 25 (#25 красный)",
+			taper: ".06 (Конусность 6%)",
+			obturationTechnique: "Гуттаперча + Силер (AH Plus)",
+			sealer: "AH Plus",
+			notes: "Апекс проходим",
+		};
+
+		const parsedCanal = endoCanalMeasurementSchema.safeParse(validCanal);
+		assert.equal(parsedCanal.success, true);
+
+		const validClinicalData = {
+			canals: [validCanal],
+			irrigation: "3% NaOCl + 17% EDTA с ультразвуковой активацией",
+			radiologyControl: "Контрольная визиография: каналы обтурированы плотно",
+		};
+
+		const parsedClinical = endoToothClinicalDataSchema.safeParse(validClinicalData);
+		assert.equal(parsedClinical.success, true);
+	});
+});

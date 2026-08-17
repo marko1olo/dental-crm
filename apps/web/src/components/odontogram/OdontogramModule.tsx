@@ -24,7 +24,10 @@ import {
 	type ToothState,
 } from "./ToothChart";
 import { ToothHistoryChronicle } from "./ToothHistoryChronicle";
-import { EndoCanalLogModal } from "./EndoCanalLogModal";
+import {
+	type EndoToothClinicalData,
+	EndoCanalLogModal,
+} from "./EndoCanalLogModal";
 import { TreatmentEstimator } from "./TreatmentEstimator";
 import { VoiceDictationOverlay } from "./VoiceDictationOverlay";
 import "./odontogram.css";
@@ -1130,6 +1133,60 @@ export const OdontogramModule = ({
 									"Pulpitis"
 							]
 						}
+						patientId={patientId}
+						initialCanals={
+							(
+								teethData.find((t) => t.toothNumber === endoTooth)
+									?.clinicalData as EndoToothClinicalData | undefined
+							)?.canals
+						}
+						initialIrrigation={
+							(
+								teethData.find((t) => t.toothNumber === endoTooth)
+									?.clinicalData as EndoToothClinicalData | undefined
+							)?.irrigation
+						}
+						initialRadiologyControl={
+							(
+								teethData.find((t) => t.toothNumber === endoTooth)
+									?.clinicalData as EndoToothClinicalData | undefined
+							)?.radiologyControl
+						}
+						onSaveCanals={async (canals, clinicalData) => {
+							setTeethData((prev) =>
+								prev.map((t) =>
+									t.toothNumber === endoTooth ? { ...t, clinicalData } : t,
+								),
+							);
+							const tooth = teethData.find((t) => t.toothNumber === endoTooth);
+							const state = tooth?.state || "Pulpitis";
+							const surfaces = tooth?.surfaces || [];
+							try {
+								const res = await fetch(
+									`/api/patients/${patientId}/tooth-states/batch`,
+									{
+										method: "POST",
+										headers: denteAdminSecretRequestHeaders({
+											"Content-Type": "application/json",
+										}),
+										body: JSON.stringify({
+											toothNumbers: [endoTooth],
+											state,
+											surfaces: surfaces.length > 0 ? surfaces : undefined,
+											clinicalData,
+										}),
+									},
+								);
+								if (!res.ok) {
+									showToast(
+										"Не удалось сохранить параметры каналов в БД",
+										"error",
+									);
+								}
+							} catch (err) {
+								logger.error("[OdontogramModule] Save endo canals error", err);
+							}
+						}}
 					/>
 				)}
 			</div>
