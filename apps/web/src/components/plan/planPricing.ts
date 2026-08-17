@@ -124,6 +124,11 @@ export const PLAN_SERVICE_RULES: Partial<Record<ToothState, PlanServiceRule>> =
 			keywords: ["пульпит", "эндо", "канал"],
 			humanName: "лечение пульпита",
 		},
+		Periodontitis: {
+			category: "therapy",
+			keywords: ["периодонтит", "эндо", "канал"],
+			humanName: "лечение периодонтита",
+		},
 		Planned_Implant: {
 			category: "surgery",
 			keywords: ["имплант"],

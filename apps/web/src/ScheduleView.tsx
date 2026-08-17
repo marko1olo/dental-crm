@@ -975,6 +975,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 								className="text-button"
 								type="button"
 								onClick={resetScheduleFilters}
+								style={{ minHeight: "44px", display: "inline-flex", alignItems: "center", padding: "0 10px" }}
 							>
 								Снять отбор
 							</button>
@@ -995,6 +996,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 								className="text-button"
 								type="button"
 								onClick={() => setScheduleDateFilter(todayScheduleDate())}
+								style={{ minHeight: "44px", display: "inline-flex", alignItems: "center", padding: "0 10px" }}
 							>
 								Только сегодня
 							</button>
@@ -1021,6 +1023,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 							className={`status-pill schedule-warning-chip ${warning.severity === "critical" ? "status-cancelled" : "status-overdue"}`}
 							onClick={() => openScheduleWarning(warning)}
 							title={warning.detail}
+							style={{ minHeight: "44px", display: "inline-flex", alignItems: "center" }}
 						>
 							{warning.title} — {warning.actionLabel.toLowerCase()}
 						</button>
@@ -1369,7 +1372,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 								{scheduleDateFilter.trim() &&
 								scheduleDateFilter.trim() !== clinicToday ? (
 									<button
-										className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+										className="secondary-button min-h-[44px] px-3.5 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
 										type="button"
 										onClick={() => setScheduleDateFilter(todayScheduleDate())}
 									>
@@ -1378,7 +1381,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 								) : null}
 								{activeScheduleFilterCount > 0 ? (
 									<button
-										className="text-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+										className="text-button min-h-[44px] px-3.5 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
 										type="button"
 										onClick={resetScheduleFilters}
 									>
@@ -1386,7 +1389,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 									</button>
 								) : null}
 								<button
-									className="primary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+									className="primary-button min-h-[44px] px-4 flex items-center justify-center gap-1.5 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
 									type="button"
 									onClick={focusNewAppointmentEditor}
 								>

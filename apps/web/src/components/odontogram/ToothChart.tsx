@@ -6,6 +6,7 @@ import { getToothConfig, getToothPath } from "../../utils/math/toothGeometry";
 export type ToothState =
 	| "Caries"
 	| "Pulpitis"
+	| "Periodontitis"
 	| "Missing"
 	| "Crown"
 	| "Implant"
@@ -24,6 +25,7 @@ export type ToothState =
 export const TOOTH_STATE_LABELS: Record<ToothState, string> = {
 	Caries: "кариес",
 	Pulpitis: "пульпит",
+	Periodontitis: "периодонтит",
 	Filled: "пломба",
 	Crown: "коронка",
 	Implant: "имплантат",
@@ -83,6 +85,8 @@ const getToothColors = (state: ToothState) => {
 			return { fill: "#ef4444", stroke: "#b91c1c", opacity: "1" };
 		case "Pulpitis":
 			return { fill: "#a855f7", stroke: "#7e22ce", opacity: "1" };
+		case "Periodontitis":
+			return { fill: "#f97316", stroke: "#c2410c", opacity: "1" };
 		case "Missing":
 			return {
 				fill: "var(--odontogram-paper)",

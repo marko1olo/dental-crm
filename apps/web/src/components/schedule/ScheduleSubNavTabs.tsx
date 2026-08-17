@@ -17,9 +17,8 @@ export interface ScheduleSubNavTabsProps {
 
 /**
  * ScheduleSubNavTabs component for header navigation in Schedule view.
- * Solves Mobile Schedule Header Tabs Text Collapse (Defect 1) by utilizing
- * a clean horizontal scroll bar (`overflow-x-auto whitespace-nowrap scrollbar-none flex gap-2`)
- * with flex `shrink-0` buttons to prevent overlapping and text stacking on 390px mobile viewports.
+ * Solves Mobile Schedule Header Tabs Text Collapse by utilizing
+ * a clean horizontal scroll bar with flex shrink-0 buttons and >=44px touch targets.
  */
 export function ScheduleSubNavTabs({
 	showShiftAnalytics,
@@ -38,22 +37,21 @@ export function ScheduleSubNavTabs({
 	return (
 		<div className="schedule-sub-nav-tabs flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none max-w-full w-full py-1 shrink-0">
 			<button
-				className="secondary-button shrink-0 whitespace-nowrap"
+				className="secondary-button shrink-0 whitespace-nowrap min-h-[44px] px-3.5 text-xs font-semibold"
 				type="button"
 				onClick={() => setShowShiftAnalytics((prev) => !prev)}
-				style={{ minHeight: "44px", padding: "0 12px", fontSize: "12px" }}
 			>
 				{showShiftAnalytics ? "Скрыть аналитику" : "Показать аналитику"}
 			</button>
 			<button
-				className="text-button shrink-0 whitespace-nowrap"
+				className="text-button shrink-0 whitespace-nowrap min-h-[44px] px-3 text-xs font-semibold"
 				type="button"
 				onClick={() => setScheduleDateFilter(todayScheduleDate())}
 			>
 				Сегодня
 			</button>
 			<button
-				className="text-button shrink-0 whitespace-nowrap"
+				className="text-button shrink-0 whitespace-nowrap min-h-[44px] px-3 text-xs font-semibold"
 				type="button"
 				onClick={() => setWaitlistOpen(true)}
 				title="Пациенты, которые ждут свободного окна"
@@ -61,7 +59,7 @@ export function ScheduleSubNavTabs({
 				Лист ожидания{waitlistCount > 0 ? ` · ${waitlistCount}` : ""}
 			</button>
 			<button
-				className={`text-button shrink-0 whitespace-nowrap ${showConfirmationsPanel ? "active" : ""}`}
+				className={`text-button shrink-0 whitespace-nowrap min-h-[44px] px-3 text-xs font-semibold ${showConfirmationsPanel ? "active" : ""}`}
 				type="button"
 				onClick={() => {
 					setShowConfirmationsPanel((prev) => !prev);
@@ -73,7 +71,7 @@ export function ScheduleSubNavTabs({
 				Утренний обзвон
 			</button>
 			<button
-				className={`text-button shrink-0 whitespace-nowrap ${showFreedSlotsPanel ? "active" : ""}`}
+				className={`text-button shrink-0 whitespace-nowrap min-h-[44px] px-3 text-xs font-semibold ${showFreedSlotsPanel ? "active" : ""}`}
 				type="button"
 				onClick={() => {
 					setShowFreedSlotsPanel((prev) => !prev);
@@ -85,7 +83,7 @@ export function ScheduleSubNavTabs({
 				Освободившиеся окна
 			</button>
 			<button
-				className={`text-button shrink-0 whitespace-nowrap ${showClipboardPanel ? "active" : ""}`}
+				className={`text-button shrink-0 whitespace-nowrap min-h-[44px] px-3 text-xs font-semibold ${showClipboardPanel ? "active" : ""}`}
 				type="button"
 				onClick={() => {
 					setShowClipboardPanel((prev) => !prev);

@@ -20,13 +20,13 @@ const TreatmentPlanCardItem: React.FC<{
 	const statusColorClass = useMemo(() => {
 		switch (item.status) {
 			case "completed":
-				return "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300";
+				return "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-200 border border-emerald-500/30";
 			case "in_progress":
-				return "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300";
+				return "bg-sky-50 text-sky-800 dark:bg-sky-950/70 dark:text-sky-200 border border-sky-500/30";
 			case "cancelled":
-				return "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300";
+				return "bg-rose-50 text-rose-800 dark:bg-rose-950/70 dark:text-rose-200 border border-rose-500/30";
 			default:
-				return "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300";
+				return "bg-amber-50 text-amber-900 dark:bg-amber-950/70 dark:text-amber-200 border border-amber-500/30";
 		}
 	}, [item.status]);
 
@@ -44,36 +44,36 @@ const TreatmentPlanCardItem: React.FC<{
 	}, [item.status]);
 
 	return (
-		<div className="p-3.5 rounded-xl flex flex-col gap-2 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/60 transition-colors">
-			<div className="flex items-center justify-between gap-2">
+		<div className="p-4 rounded-xl flex flex-col gap-2 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/80 border border-[var(--line,#e2e8f0)] dark:border-slate-700 transition-colors shadow-sm">
+			<div className="flex items-center justify-between gap-2 flex-wrap">
 				<div className="flex items-center gap-2">
-					<Stethoscope className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+					<Stethoscope className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
 					<span className="font-semibold text-xs text-[var(--ink,#1e293b)] dark:text-slate-100">
 						{item.snapshotServiceName || "Услуга плана лечения"}
 					</span>
 				</div>
 				<span
-					className={`text-[10px] px-2.5 py-0.5 rounded-full font-medium ${statusColorClass}`}
+					className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold ${statusColorClass}`}
 				>
 					{statusLabel}
 				</span>
 			</div>
 			{item.toothCode ? (
-				<div className="text-[11px] text-[var(--muted,#64748b)]">
-					Зуб / область: <strong>{item.toothCode}</strong>
+				<div className="text-[11px] text-[var(--muted,#64748b)] dark:text-slate-400">
+					Зуб / область: <strong className="text-[var(--ink,#1e293b)] dark:text-slate-200">{item.toothCode}</strong>
 				</div>
 			) : null}
-			<div className="flex items-center justify-between mt-1 pt-1.5 border-t border-[var(--line,#e2e8f0)] dark:border-slate-700/60 text-[11px]">
-				<span className="text-[var(--muted,#64748b)] font-mono">
+			<div className="flex items-center justify-between mt-1 pt-2 border-t border-[var(--line,#e2e8f0)] dark:border-slate-700/80 text-xs">
+				<span className="text-[var(--ink,#1e293b)] dark:text-slate-200 font-bold font-mono">
 					{item.unitPriceRub !== undefined && item.unitPriceRub !== null ? money(item.unitPriceRub) : "—"}
 				</span>
 				{onOpenPlan ? (
 					<button
 						type="button"
 						onClick={() => onOpenPlan(item.id)}
-						className="text-[var(--teal,#0d9488)] hover:underline font-semibold bg-transparent border-0 cursor-pointer p-0 text-[11px]"
+						className="min-h-[44px] px-2 text-teal-700 dark:text-teal-300 hover:underline font-bold bg-transparent border-0 cursor-pointer text-xs inline-flex items-center"
 					>
-						Открыть план
+						Открыть план &rarr;
 					</button>
 				) : null}
 			</div>
@@ -118,21 +118,21 @@ const VisitHistoryCardItem: React.FC<{
 	}, [appointment.status]);
 
 	return (
-		<div className="p-3.5 rounded-xl flex flex-col gap-1.5 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/60 transition-colors">
-			<div className="flex items-center justify-between gap-2">
-				<div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--ink,#1e293b)] dark:text-slate-100">
-					<Calendar className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
+		<div className="p-4 rounded-xl flex flex-col gap-2 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/80 border border-[var(--line,#e2e8f0)] dark:border-slate-700 transition-colors shadow-sm">
+			<div className="flex items-center justify-between gap-2 flex-wrap">
+				<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink,#1e293b)] dark:text-slate-100">
+					<Calendar className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
 					<span>{formattedDate}</span>
 				</div>
-				<span className="text-[10px] px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium">
+				<span className="text-[10px] px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold border border-slate-300 dark:border-slate-600">
 					{statusLabel}
 				</span>
 			</div>
-			<div className="text-[11px] text-[var(--muted,#64748b)]">
-				Врач: {doctorFullName || "Врач не назначен"}
+			<div className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400">
+				Врач: <strong className="text-[var(--ink,#1e293b)] dark:text-slate-200">{doctorFullName || "Врач не назначен"}</strong>
 			</div>
 			{appointment.reason ? (
-				<div className="text-[11px] text-[var(--ink,#1e293b)] dark:text-slate-200 line-clamp-2">
+				<div className="text-xs text-[var(--ink,#1e293b)] dark:text-slate-300 line-clamp-2">
 					{appointment.reason}
 				</div>
 			) : null}
@@ -141,7 +141,7 @@ const VisitHistoryCardItem: React.FC<{
 					<button
 						type="button"
 						onClick={() => onOpenVisit(appointment.id)}
-						className="text-[var(--teal,#0d9488)] hover:underline font-semibold bg-transparent border-0 cursor-pointer p-0 text-[11px]"
+						className="min-h-[44px] px-2 text-teal-700 dark:text-teal-300 hover:underline font-bold bg-transparent border-0 cursor-pointer text-xs inline-flex items-center"
 					>
 						К визиту &rarr;
 					</button>
@@ -167,7 +167,6 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 				"timeline",
 			);
 
-			// Clean listeners on mount / unmount if any
 			useEffect(() => {
 				let isMounted = true;
 				const handleCustomRefresh = () => {
@@ -241,53 +240,53 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 			return (
 				<div
 					data-testid="patient-workspace-view"
-					className="patient-workspace-view flex flex-col gap-4 rounded-xl bg-[var(--paper,#ffffff)] p-4 text-[var(--ink,#1e293b)] dark:bg-slate-900 dark:text-slate-100"
+					className="patient-workspace-view flex flex-col gap-4 rounded-2xl bg-[var(--paper,#ffffff)] dark:bg-slate-900 p-4 md:p-6 text-[var(--ink,#1e293b)] dark:text-slate-100 border border-[var(--line,#e2e8f0)] dark:border-slate-800 shadow-sm"
 				>
-					<div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line,#e2e8f0)] pb-3 dark:border-slate-800">
+					<div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line,#e2e8f0)] pb-4 dark:border-slate-800">
 						<div className="flex items-center gap-2">
-							<span className="text-base font-bold text-[var(--ink,#1e293b)] dark:text-white">
+							<span className="text-base md:text-lg font-black text-[var(--ink,#1e293b)] dark:text-white">
 								{patientName || "Карточка пациента"}
 							</span>
-							<span className="text-xs font-mono text-[var(--muted,#64748b)] bg-[var(--paper-soft,#f8fafc)] px-2 py-0.5 rounded dark:bg-slate-800">
-								{patientId.slice(0, 8)}
+							<span className="text-xs font-mono text-[var(--muted,#64748b)] bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 px-2 py-0.5 rounded border border-[var(--line,#e2e8f0)] dark:border-slate-700">
+								{patientId ? patientId.slice(0, 8) : "—"}
 							</span>
 						</div>
 
-						<div className="flex items-center gap-1.5">
+						<div className="flex items-center gap-1.5 flex-wrap">
 							<button
 								type="button"
-								className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer border-0 ${
+								className={`min-h-[44px] px-3.5 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer border ${
 									activeTab === "timeline"
-										? "bg-[var(--teal,#0d9488)] text-white"
-										: "bg-transparent text-[var(--muted,#64748b)] hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-800"
+										? "bg-teal-600 text-white border-teal-600 shadow-sm"
+										: "bg-transparent text-[var(--muted,#64748b)] dark:text-slate-300 border-transparent hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-800"
 								}`}
 								onClick={() => setActiveTab("timeline")}
 							>
-								<Clock className="w-3.5 h-3.5 inline mr-1" />
+								<Clock className="w-3.5 h-3.5 inline mr-1.5" />
 								Лента
 							</button>
 							<button
 								type="button"
-								className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer border-0 ${
+								className={`min-h-[44px] px-3.5 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer border ${
 									activeTab === "plans"
-										? "bg-[var(--teal,#0d9488)] text-white"
-										: "bg-transparent text-[var(--muted,#64748b)] hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-800"
+										? "bg-teal-600 text-white border-teal-600 shadow-sm"
+										: "bg-transparent text-[var(--muted,#64748b)] dark:text-slate-300 border-transparent hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-800"
 								}`}
 								onClick={() => setActiveTab("plans")}
 							>
-								<FileText className="w-3.5 h-3.5 inline mr-1" />
+								<FileText className="w-3.5 h-3.5 inline mr-1.5" />
 								Планы лечения ({patientPlanItems.length})
 							</button>
 							<button
 								type="button"
-								className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer border-0 ${
+								className={`min-h-[44px] px-3.5 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer border ${
 									activeTab === "visits"
-										? "bg-[var(--teal,#0d9488)] text-white"
-										: "bg-transparent text-[var(--muted,#64748b)] hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-800"
+										? "bg-teal-600 text-white border-teal-600 shadow-sm"
+										: "bg-transparent text-[var(--muted,#64748b)] dark:text-slate-300 border-transparent hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-800"
 								}`}
 								onClick={() => setActiveTab("visits")}
 							>
-								<Calendar className="w-3.5 h-3.5 inline mr-1" />
+								<Calendar className="w-3.5 h-3.5 inline mr-1.5" />
 								Визиты ({patientAppointments.length})
 							</button>
 						</div>
@@ -303,12 +302,12 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 					{activeTab === "plans" && (
 						<div className="flex flex-col gap-3">
 							<div className="flex items-center justify-between">
-								<h4 className="text-sm font-semibold m-0">
+								<h4 className="text-sm font-bold text-[var(--ink,#1e293b)] dark:text-white m-0">
 									Позиции плана лечения ({patientPlanItems.length})
 								</h4>
 							</div>
 							{patientPlanItems.length === 0 ? (
-								<div className="p-6 text-center text-xs text-[var(--muted)] bg-[var(--paper-soft)] dark:bg-slate-800/60 rounded-xl">
+								<div className="p-8 text-center text-xs text-[var(--muted,#64748b)] dark:text-slate-400 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/60 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800">
 									Планы лечения для пациента пока не составлены.
 								</div>
 							) : (
@@ -328,12 +327,12 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 					{activeTab === "visits" && (
 						<div className="flex flex-col gap-3">
 							<div className="flex items-center justify-between">
-								<h4 className="text-sm font-semibold m-0">
+								<h4 className="text-sm font-bold text-[var(--ink,#1e293b)] dark:text-white m-0">
 									История визитов и записей ({patientAppointments.length})
 								</h4>
 							</div>
 							{patientAppointments.length === 0 ? (
-								<div className="p-6 text-center text-xs text-[var(--muted)] bg-[var(--paper-soft)] dark:bg-slate-800/60 rounded-xl">
+								<div className="p-8 text-center text-xs text-[var(--muted,#64748b)] dark:text-slate-400 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/60 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800">
 									История приёмов пациента пуста.
 								</div>
 							) : (

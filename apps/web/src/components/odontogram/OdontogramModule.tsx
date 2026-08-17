@@ -59,6 +59,12 @@ const TOOTH_STATE_ACTIONS: ReadonlyArray<{
 			"bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20",
 	},
 	{
+		state: "Periodontitis",
+		label: "Периодонтит",
+		className:
+			"bg-orange-500/10 text-orange-400 border-orange-500/20 hover:bg-orange-500/20",
+	},
+	{
 		state: "Filled",
 		label: "Пломба",
 		className:

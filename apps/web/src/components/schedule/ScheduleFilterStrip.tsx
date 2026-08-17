@@ -31,8 +31,7 @@ export interface ScheduleFilterStripProps {
 
 /**
  * ScheduleFilterStrip component for filtering schedule view by date, doctor, or chair.
- * Ensures strict vertical alignment and matching heights (32px) between date controls,
- * the "Все записи" quick chip, and filter chips across light and dark themes.
+ * Ensures strict vertical alignment and >=44px touch targets on mobile viewports.
  */
 export function ScheduleFilterStrip({
 	scheduleDateFilter,
@@ -83,7 +82,7 @@ export function ScheduleFilterStrip({
 				>
 					<button
 						type="button"
-						className="secondary-button schedule-day-step-prev"
+						className="secondary-button schedule-day-step-prev min-h-[44px] min-w-[44px]"
 						onClick={() => stepScheduleDay(-1)}
 						aria-label="Показать предыдущий день"
 						title="День назад"
@@ -103,6 +102,7 @@ export function ScheduleFilterStrip({
 						aria-label="Фильтр расписания по дате"
 						value={scheduleDateFilter}
 						onChange={(event) => setScheduleDateFilter(event.target.value)}
+						className="min-h-[44px]"
 						style={{
 							lineHeight: "1",
 							boxSizing: "border-box",
@@ -121,7 +121,7 @@ export function ScheduleFilterStrip({
 					/>
 					<button
 						type="button"
-						className="secondary-button schedule-day-step-next"
+						className="secondary-button schedule-day-step-next min-h-[44px] min-w-[44px]"
 						onClick={() => stepScheduleDay(1)}
 						aria-label="Показать следующий день"
 						title="День вперёд"
@@ -142,7 +142,7 @@ export function ScheduleFilterStrip({
 			{/* "Все записи" filter chip button */}
 			<button
 				type="button"
-				className={`quick-chip ${activeScheduleFilterCount === 0 ? "active" : ""}`}
+				className={`quick-chip min-h-[44px] ${activeScheduleFilterCount === 0 ? "active" : ""}`}
 				onClick={resetScheduleFilters}
 				style={{
 					lineHeight: "1",
@@ -170,7 +170,7 @@ export function ScheduleFilterStrip({
 						<button
 							key={member.id}
 							type="button"
-							className={`quick-chip ${scheduleDoctorFilterId === member.id ? "active" : ""}`}
+							className={`quick-chip min-h-[44px] ${scheduleDoctorFilterId === member.id ? "active" : ""}`}
 							onClick={() =>
 								setScheduleDoctorFilterId(
 									scheduleDoctorFilterId === member.id ? null : member.id,
@@ -196,7 +196,7 @@ export function ScheduleFilterStrip({
 					<button
 						key={chair.id}
 						type="button"
-						className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""}`}
+						className={`quick-chip min-h-[44px] ${scheduleChairFilterId === chair.id ? "active" : ""}`}
 						onClick={() =>
 							setScheduleChairFilterId(
 								scheduleChairFilterId === chair.id ? null : chair.id,
