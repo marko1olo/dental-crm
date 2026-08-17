@@ -26,6 +26,8 @@ import {
 	UserPlus,
 	Users,
 } from "lucide-react";
+import { IncomingCallPopup } from "./components/telephony/IncomingCallPopup";
+import { TelephonySimulatorModal } from "./components/telephony/TelephonySimulatorModal";
 import { RecentPatientHistoryWidget } from "./components/workspace/RecentPatientHistoryWidget";
 import { WorkspaceActionsMount } from "./components/workspaceActions/WorkspaceActions";
 import { useWorkspaceProfile } from "./hooks/useWorkspaceProfile";
@@ -78,6 +80,8 @@ export {
 	getFilteredAppViews,
 	viewHints,
 	viewLabels,
+	IncomingCallPopup,
+	TelephonySimulatorModal,
 };
 
 type WorkspaceViewIntentHandler = (view: AppView) => void;
@@ -818,6 +822,8 @@ export function WorkspaceTopbar({
 					</button>
 				) : null}
 			</div>
+			<IncomingCallPopup />
+			<TelephonySimulatorModal />
 		</header>
 	);
 }

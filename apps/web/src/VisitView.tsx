@@ -237,6 +237,7 @@ export interface VisitViewProps {
 import { ClinicalAiPersonalizePanel } from "./ClinicalAiPersonalizePanel";
 import { ClinicalTasksPanel } from "./ClinicalTasksPanel";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
+import { EndoCanalLogModal } from "./components/odontogram/EndoCanalLogModal";
 import { VisitNoteDraftPanel } from "./VisitNoteDraftPanel";
 
 export function VisitView(rawProps?: Partial<VisitViewProps>) {
@@ -430,6 +431,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const [materialCategory, setMaterialCategory] = React.useState<
 		"filling" | "crown" | "implant" | "veneer" | null
 	>(null);
+	const [isEndoModalOpen, setIsEndoModalOpen] = React.useState(false);
+	const [endoModalToothNumber, setEndoModalToothNumber] = React.useState<number | null>(null);
+	const [endoModalToothState, setEndoModalToothState] = React.useState<string | undefined>(undefined);
 
 	/*
     НАЗВАНИЯ МАТЕРИАЛОВ ПОПАДАЮТ В ТЕКСТ ПЛАНА ЛЕЧЕНИЯ, ПОЭТОМУ ОНИ ТОЧНЫЕ.
@@ -2942,6 +2946,28 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 											</button>
 											<button
 												type="button"
+												data-testid="visit-view-endo-canal-log-btn"
+												className="_ccm-btn"
+												data-color="pink"
+												style={{
+													borderColor: "#ec4899",
+													backgroundColor: "#fdf2f8",
+													fontWeight: "bold",
+												}}
+												onClick={() => {
+													setEndoModalToothNumber(Number(code));
+													setEndoModalToothState(
+														state === "treatment"
+															? "Пульпит / Периодонтит"
+															: state,
+													);
+													setIsEndoModalOpen(true);
+												}}
+											>
+												📋 Журнал каналов (MB1, MB2, DB, P) <span>🌀</span>
+											</button>
+											<button
+												type="button"
 												className="_ccm-btn"
 												data-color="amber"
 												onClick={() =>
@@ -3052,6 +3078,22 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
           Возвращать эти блоки имеет смысл вместе с работающей начинкой, а не
           раньше.
         */}
+
+			{/* Endodontic Root Canal Log Modal */}
+			{endoModalToothNumber && (
+				<EndoCanalLogModal
+					isOpen={isEndoModalOpen}
+					onClose={() => {
+						setIsEndoModalOpen(false);
+						setEndoModalToothNumber(null);
+					}}
+					toothNumber={endoModalToothNumber}
+					toothState={endoModalToothState}
+					onInsertToProtocol={(protocolText) => {
+						appendToEMKField("treatmentPlan", protocolText);
+					}}
+				/>
+			)}
 		</>
 	);
 }

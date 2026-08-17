@@ -60,6 +60,7 @@ import { registerLabRoutes } from "./routes/lab.js";
 import { registerLeadsRoutes } from "./routes/leads.js";
 import { registerLoyaltyRoutes } from "./routes/loyalty.js";
 import { registerMaxRoutes } from "./routes/max.js";
+import { registerMdlpRoutes } from "./routes/mdlp.js";
 import { registerPharmacologyRoutes } from "./routes/pharmacology.js";
 import { registerMigrationRoutes } from "./routes/migration.js";
 import { registerMigrationRunRoutes } from "./routes/migrationRuns.js";
@@ -621,6 +622,7 @@ export async function createDenteApiApp(
 	await registerClinicalImplantRoutes(app);
 	await registerSbpQrRoutes(app);
 	await registerPharmacologyRoutes(app);
+	await registerMdlpRoutes(app);
 	// Ни один из этих модулей раньше не регистрировался, поэтому семейный кошелёк,
 	// ДМС, зуботехническая лаборатория, лист ожидания, лиды, стерилизация,
 	// файлы, планирование по снимкам и каналы VK/WhatsApp/MAX отвечали 404.

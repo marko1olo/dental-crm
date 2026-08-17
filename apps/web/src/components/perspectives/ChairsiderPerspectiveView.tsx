@@ -46,6 +46,7 @@ import {
 	type ToothState,
 } from "../odontogram/ToothChart";
 import { PeriodontalChartModule } from "../odontogram/PeriodontalChartModule";
+import { EndoCanalLogModal } from "../odontogram/EndoCanalLogModal";
 import "../odontogram/odontogram.css";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 
@@ -180,6 +181,7 @@ export function ChairsiderPerspectiveView() {
 	const [isSavingTooth, setIsSavingTooth] = useState(false);
 	const [appliedProcedures, setAppliedProcedures] = useState<string[]>([]);
 	const [voiceNotes, setVoiceNotes] = useState<string>("");
+	const [isEndoModalOpen, setIsEndoModalOpen] = useState(false);
 
 	// Adult teeth arrays for FDI
 	const upperJawTeeth = useMemo(() => [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28], []);
@@ -724,6 +726,31 @@ export function ChairsiderPerspectiveView() {
 								</button>
 							</div>
 						</div>
+
+						{/* Endo Canal Log Quick Access when Pulpitis / Periodontitis */}
+						{(selectedToothState === "Pulpitis" || selectedToothState === "Periodontitis") && (
+							<div className="pt-2 border-t border-[var(--line,#e2e8f0)] dark:border-slate-700">
+								<button
+									type="button"
+									data-testid="chairsider-endo-canal-log-btn"
+									onClick={() => setIsEndoModalOpen(true)}
+									className="min-h-[52px] w-full p-3 rounded-xl bg-purple-600/15 hover:bg-purple-600/25 dark:bg-purple-950/70 dark:hover:bg-purple-900/80 text-purple-900 dark:text-purple-200 border-2 border-purple-500/60 font-black flex items-center justify-between transition-all active:scale-98 cursor-pointer shadow-sm"
+								>
+									<span className="flex items-center gap-2.5">
+										<span className="text-xl">📋</span>
+										<span className="flex flex-col text-left">
+											<span className="text-xs font-black">Журнал корневых каналов</span>
+											<span className="text-[10px] font-semibold text-purple-700 dark:text-purple-300">
+												MB1, MB2, DB, P · Апекслокатор · MAF
+											</span>
+										</span>
+									</span>
+									<span className="px-2.5 py-1 rounded-lg bg-purple-600 text-white text-xs font-black shadow-sm">
+										Эндо 043/у
+									</span>
+								</button>
+							</div>
+						)}
 					</div>
 
 					{/* Single-Tap CT / 3D Launcher */}
@@ -820,6 +847,17 @@ export function ChairsiderPerspectiveView() {
 					</div>
 				</section>
 			</main>
+
+			{/* Endodontic Root Canal Log Modal */}
+			<EndoCanalLogModal
+				isOpen={isEndoModalOpen}
+				onClose={() => setIsEndoModalOpen(false)}
+				toothNumber={selectedTooth}
+				toothState={TOOTH_STATE_LABELS[selectedToothState] || selectedToothState}
+				onInsertToProtocol={(protocolText) => {
+					handleVoiceResult(protocolText);
+				}}
+			/>
 		</div>
 	);
 }

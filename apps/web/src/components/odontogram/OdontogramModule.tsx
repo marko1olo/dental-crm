@@ -1,5 +1,5 @@
 import { isValidFdiToothNumber } from "@dental/shared";
-import { History, Mic, Stethoscope } from "lucide-react";
+import { Activity, History, Mic, Stethoscope } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
@@ -24,6 +24,7 @@ import {
 	type ToothState,
 } from "./ToothChart";
 import { ToothHistoryChronicle } from "./ToothHistoryChronicle";
+import { EndoCanalLogModal } from "./EndoCanalLogModal";
 import { TreatmentEstimator } from "./TreatmentEstimator";
 import { VoiceDictationOverlay } from "./VoiceDictationOverlay";
 import "./odontogram.css";
@@ -331,6 +332,7 @@ export const OdontogramModule = ({
 		caretOffset: number;
 	} | null>(null);
 	const [historyTooth, setHistoryTooth] = useState<number | null>(null);
+	const [endoTooth, setEndoTooth] = useState<number | null>(null);
 
 	const perspective = usePerspectiveStore((state) => state.perspective);
 	// New States for Pediatric & Multi-Select
@@ -1093,6 +1095,17 @@ export const OdontogramModule = ({
 								>
 									<History className="w-4 h-4 inline mr-2" /> История зуба
 								</button>
+								<button
+									type="button"
+									data-testid="radial-menu-endo-log-btn"
+									onClick={() => {
+										setEndoTooth(menuConfig.toothNumber);
+										setMenuConfig(null);
+									}}
+									className="col-span-2 flex items-center justify-center p-3 rounded-xl border transition-all duration-200 font-medium tracking-wide text-xs bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20 hover:bg-purple-500/20"
+								>
+									<Activity className="w-4 h-4 inline mr-2" /> Журнал каналов (Эндо)
+								</button>
 							</div>
 						</>,
 						document.body,
@@ -1103,6 +1116,20 @@ export const OdontogramModule = ({
 						patientId={patientId}
 						toothNumber={historyTooth}
 						onClose={() => setHistoryTooth(null)}
+					/>
+				)}
+
+				{endoTooth !== null && (
+					<EndoCanalLogModal
+						isOpen={true}
+						onClose={() => setEndoTooth(null)}
+						toothNumber={endoTooth}
+						toothState={
+							TOOTH_STATE_LABELS[
+								teethData.find((t) => t.toothNumber === endoTooth)?.state ||
+									"Pulpitis"
+							]
+						}
 					/>
 				)}
 			</div>

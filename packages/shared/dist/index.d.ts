@@ -1,5 +1,6 @@
 import { z } from "zod";
 export * from "./money.js";
+export * from "./utils/mdlpDataMatrix.js";
 export declare function isHttpUrl(value: string): boolean;
 export declare const httpUrlSchema: z.ZodEffects<z.ZodString, string, string>;
 export declare const patientStatusSchema: z.ZodEnum<["active", "archived"]>;
@@ -4141,7 +4142,7 @@ export declare const dentalPricelistItemSchema: z.ZodObject<{
     normalizedTitle: string;
     treatmentKind: string;
     materialKind: "unknown" | "other" | "imaging" | "composite" | "glass_ionomer" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "bone_graft" | "membrane" | "aligner" | "bracket" | "fluoride" | "whitening" | "anesthetic" | "lab";
-    restorationType: "unknown" | "none" | "sealant" | "whitening" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "veneer" | "crown" | "bridge" | "implant_crown" | "temporary_crown" | "post_core" | "denture" | "ortho_appliance" | "implant" | "surgical_guide";
+    restorationType: "none" | "unknown" | "sealant" | "whitening" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "veneer" | "crown" | "bridge" | "implant_crown" | "temporary_crown" | "post_core" | "denture" | "ortho_appliance" | "implant" | "surgical_guide";
     crownType: string | null;
     brand: string | null;
     toothScope: string | null;
@@ -4162,7 +4163,7 @@ export declare const dentalPricelistItemSchema: z.ZodObject<{
     normalizedTitle: string;
     treatmentKind: string;
     materialKind: "unknown" | "other" | "imaging" | "composite" | "glass_ionomer" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "bone_graft" | "membrane" | "aligner" | "bracket" | "fluoride" | "whitening" | "anesthetic" | "lab";
-    restorationType: "unknown" | "none" | "sealant" | "whitening" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "veneer" | "crown" | "bridge" | "implant_crown" | "temporary_crown" | "post_core" | "denture" | "ortho_appliance" | "implant" | "surgical_guide";
+    restorationType: "none" | "unknown" | "sealant" | "whitening" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "veneer" | "crown" | "bridge" | "implant_crown" | "temporary_crown" | "post_core" | "denture" | "ortho_appliance" | "implant" | "surgical_guide";
     crownType: string | null;
     brand: string | null;
     toothScope: string | null;
@@ -4285,7 +4286,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         normalizedTitle: string;
         treatmentKind: string;
         materialKind: "unknown" | "other" | "imaging" | "composite" | "glass_ionomer" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "bone_graft" | "membrane" | "aligner" | "bracket" | "fluoride" | "whitening" | "anesthetic" | "lab";
-        restorationType: "unknown" | "none" | "sealant" | "whitening" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "veneer" | "crown" | "bridge" | "implant_crown" | "temporary_crown" | "post_core" | "denture" | "ortho_appliance" | "implant" | "surgical_guide";
+        restorationType: "none" | "unknown" | "sealant" | "whitening" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "veneer" | "crown" | "bridge" | "implant_crown" | "temporary_crown" | "post_core" | "denture" | "ortho_appliance" | "implant" | "surgical_guide";
         crownType: string | null;
         brand: string | null;
         toothScope: string | null;
@@ -4306,7 +4307,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         normalizedTitle: string;
         treatmentKind: string;
         materialKind: "unknown" | "other" | "imaging" | "composite" | "glass_ionomer" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "bone_graft" | "membrane" | "aligner" | "bracket" | "fluoride" | "whitening" | "anesthetic" | "lab";
-        restorationType: "unknown" | "none" | "sealant" | "whitening" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "veneer" | "crown" | "bridge" | "implant_crown" | "temporary_crown" | "post_core" | "denture" | "ortho_appliance" | "implant" | "surgical_guide";
+        restorationType: "none" | "unknown" | "sealant" | "whitening" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "veneer" | "crown" | "bridge" | "implant_crown" | "temporary_crown" | "post_core" | "denture" | "ortho_appliance" | "implant" | "surgical_guide";
         crownType: string | null;
         brand: string | null;
         toothScope: string | null;
@@ -4389,7 +4390,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         normalizedTitle: string;
         treatmentKind: string;
         materialKind: "unknown" | "other" | "imaging" | "composite" | "glass_ionomer" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "bone_graft" | "membrane" | "aligner" | "bracket" | "fluoride" | "whitening" | "anesthetic" | "lab";
-        restorationType: "unknown" | "none" | "sealant" | "whitening" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "veneer" | "crown" | "bridge" | "implant_crown" | "temporary_crown" | "post_core" | "denture" | "ortho_appliance" | "implant" | "surgical_guide";
+        restorationType: "none" | "unknown" | "sealant" | "whitening" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "veneer" | "crown" | "bridge" | "implant_crown" | "temporary_crown" | "post_core" | "denture" | "ortho_appliance" | "implant" | "surgical_guide";
         crownType: string | null;
         brand: string | null;
         toothScope: string | null;
@@ -4437,7 +4438,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         normalizedTitle: string;
         treatmentKind: string;
         materialKind: "unknown" | "other" | "imaging" | "composite" | "glass_ionomer" | "sealant" | "ceramic" | "zirconia" | "lithium_disilicate" | "metal_ceramic" | "pmma" | "metal" | "titanium" | "implant_system" | "abutment" | "bone_graft" | "membrane" | "aligner" | "bracket" | "fluoride" | "whitening" | "anesthetic" | "lab";
-        restorationType: "unknown" | "none" | "sealant" | "whitening" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "veneer" | "crown" | "bridge" | "implant_crown" | "temporary_crown" | "post_core" | "denture" | "ortho_appliance" | "implant" | "surgical_guide";
+        restorationType: "none" | "unknown" | "sealant" | "whitening" | "filling" | "direct_restoration" | "inlay" | "onlay" | "overlay" | "veneer" | "crown" | "bridge" | "implant_crown" | "temporary_crown" | "post_core" | "denture" | "ortho_appliance" | "implant" | "surgical_guide";
         crownType: string | null;
         brand: string | null;
         toothScope: string | null;
@@ -100348,7 +100349,7 @@ export declare const perioToothRecordSchema: z.ZodObject<{
     isMissing: boolean;
     isImplant: boolean;
     mobility: 0 | 1 | 2 | 3;
-    furcation: 0 | 1 | 2 | 4 | 3;
+    furcation: 0 | 4 | 1 | 2 | 3;
     distoBuccal: {
         probingDepthMm: number;
         gingivalMarginMm: number;
@@ -100408,7 +100409,7 @@ export declare const perioToothRecordSchema: z.ZodObject<{
     isMissing?: boolean | undefined;
     isImplant?: boolean | undefined;
     mobility?: 0 | 1 | 2 | 3 | undefined;
-    furcation?: 0 | 1 | 2 | 4 | 3 | undefined;
+    furcation?: 0 | 4 | 1 | 2 | 3 | undefined;
     distoBuccal?: {
         probingDepthMm?: number | undefined;
         gingivalMarginMm?: number | undefined;
@@ -100744,7 +100745,7 @@ export declare const perioChartDataSchema: z.ZodObject<{
         isMissing: boolean;
         isImplant: boolean;
         mobility: 0 | 1 | 2 | 3;
-        furcation: 0 | 1 | 2 | 4 | 3;
+        furcation: 0 | 4 | 1 | 2 | 3;
         distoBuccal: {
             probingDepthMm: number;
             gingivalMarginMm: number;
@@ -100804,7 +100805,7 @@ export declare const perioChartDataSchema: z.ZodObject<{
         isMissing?: boolean | undefined;
         isImplant?: boolean | undefined;
         mobility?: 0 | 1 | 2 | 3 | undefined;
-        furcation?: 0 | 1 | 2 | 4 | 3 | undefined;
+        furcation?: 0 | 4 | 1 | 2 | 3 | undefined;
         distoBuccal?: {
             probingDepthMm?: number | undefined;
             gingivalMarginMm?: number | undefined;
@@ -100931,7 +100932,7 @@ export declare const perioChartDataSchema: z.ZodObject<{
         isMissing: boolean;
         isImplant: boolean;
         mobility: 0 | 1 | 2 | 3;
-        furcation: 0 | 1 | 2 | 4 | 3;
+        furcation: 0 | 4 | 1 | 2 | 3;
         distoBuccal: {
             probingDepthMm: number;
             gingivalMarginMm: number;
@@ -101017,7 +101018,7 @@ export declare const perioChartDataSchema: z.ZodObject<{
         isMissing?: boolean | undefined;
         isImplant?: boolean | undefined;
         mobility?: 0 | 1 | 2 | 3 | undefined;
-        furcation?: 0 | 1 | 2 | 4 | 3 | undefined;
+        furcation?: 0 | 4 | 1 | 2 | 3 | undefined;
         distoBuccal?: {
             probingDepthMm?: number | undefined;
             gingivalMarginMm?: number | undefined;

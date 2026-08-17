@@ -40,7 +40,6 @@ import { AuthHub } from "./components/auth/AuthHub";
 import { StaffPinPad } from "./components/auth/StaffPinPad";
 import { CommandPalette } from "./components/CommandPalette";
 import { showToast } from "./components/GlobalToast";
-import { IncomingCallToast } from "./components/IncomingCallToast";
 import { OnboardingWizardModal } from "./components/onboarding/OnboardingWizardModal";
 import { Omnibar } from "./components/Omnibar";
 import { VoiceAssistantUI } from "./components/VoiceAssistantUI";
@@ -4141,7 +4140,6 @@ export function App() {
 						// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 						onNavigate={(view) => setCurrentView(view as any)}
 					/>
-					<IncomingCallToast />
 				</section>
 				<nav className="dnt-bottom-nav" aria-label="Мобильная навигация">
 					{(["shift", "schedule", "patients", "visit"] as const).map((view) => (
