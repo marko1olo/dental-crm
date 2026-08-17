@@ -73,7 +73,7 @@ async function provisionTestClinic() {
       patientId = patient.id;
       console.log(`[SEED] Patient created: ${patientId}`);
 
-      // Seed rich tooth pathology for visual shader demonstration
+      // Seed rich tooth pathology for visual shader demonstration (Adult + Pediatric)
       const pathologySeed = [
         { toothNumbers: [16, 24], state: "Caries", surfaces: ["O", "M"] },
         { toothNumbers: [14], state: "Pulpitis" },
@@ -83,6 +83,11 @@ async function provisionTestClinic() {
         { toothNumbers: [47], state: "Implant" },
         { toothNumbers: [38], state: "Missing" },
         { toothNumbers: [28], state: "Planned_Implant" },
+        // Pediatric FDI Teeth
+        { toothNumbers: [54], state: "Caries", surfaces: ["O", "M"] },
+        { toothNumbers: [84], state: "Pulpitis" },
+        { toothNumbers: [65], state: "Filled", surfaces: ["O", "D"] },
+        { toothNumbers: [71], state: "Missing" },
       ];
       for (const seed of pathologySeed) {
         try {
@@ -99,6 +104,23 @@ async function provisionTestClinic() {
         } catch (err) {
           console.log(`  [TOOTH ERR] ${seed.state}: ${err.message}`);
         }
+      }
+
+      // Seed a visit for frontdesk checkout demonstration
+      try {
+        await fetch(`${API_BASE}/api/visits`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            patientId,
+            visitType: "treatment",
+            complaints: "Лечение кариеса 16 и молочного зуба 54",
+            status: "completed",
+            totalCostKopecks: 540000,
+          }),
+        });
+      } catch (err) {
+        console.log(`  [VISIT WARN] ${err.message}`);
       }
     }
   } catch (err) {

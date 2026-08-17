@@ -498,10 +498,10 @@ export function CasePresentationView() {
 										<div className="text-3xl font-black text-[var(--ink,#0f172a)] dark:text-white mt-1">
 											{formatKopecksRu(tier.totalKopecks)}
 										</div>
-										<div className="text-xs text-teal-700 dark:text-teal-300 font-semibold mt-1 flex items-center justify-center gap-2">
-											<span>Срок: ~{tier.durationWeeks} нед.</span>
+										<div className="text-xs text-teal-700 dark:text-teal-300 font-semibold mt-1 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5">
+											<span className="whitespace-nowrap">Срок: ~{tier.durationWeeks} нед.</span>
 											<span>·</span>
-											<span>
+											<span className="whitespace-nowrap">
 												Гарантия: {tier.warrantyYears}{" "}
 												{typeof tier.warrantyYears === "number"
 													? pluralizeRu(tier.warrantyYears, "год", "года", "лет")

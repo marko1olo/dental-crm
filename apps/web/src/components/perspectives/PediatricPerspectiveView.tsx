@@ -21,6 +21,7 @@ import {
 	Star,
 	User,
 	Users,
+	X,
 	Zap,
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -196,6 +197,7 @@ export function PediatricPerspectiveView() {
 	const [isSavingTooth, setIsSavingTooth] = useState(false);
 	const [appliedTemplates, setAppliedTemplates] = useState<string[]>([]);
 	const [isMixedDentition, setIsMixedDentition] = useState(false);
+	const [isFairyModalOpen, setIsFairyModalOpen] = useState(false);
 
 	// Milk Teeth FDI
 	const upperMilkTeeth = useMemo(
@@ -354,6 +356,10 @@ export function PediatricPerspectiveView() {
 		}
 	};
 
+	const handlePrintFairyCertificate = () => {
+		setIsFairyModalOpen(true);
+	};
+
 	const handleToothClickFromChart = (num: number, _rect: DOMRect, surface?: string) => {
 		setSelectedTooth(num);
 		if (surface) {
@@ -369,10 +375,6 @@ export function PediatricPerspectiveView() {
 		if (t) {
 			showToast(`Добавлено: ${t.title}`, "success");
 		}
-	};
-
-	const handlePrintFairyCertificate = () => {
-		showToast("Печать «Грамоты за смелость от Зубной Феи»...", "success");
 	};
 
 	const selectedToothState = toothStates[selectedTooth] || "Healthy";
@@ -818,6 +820,84 @@ export function PediatricPerspectiveView() {
 					</div>
 				</section>
 			</main>
+
+			{/* Tooth Fairy Bravery Certificate Modal */}
+			<AnimatePresence>
+				{isFairyModalOpen && (
+					<div
+						role="dialog"
+						aria-modal="true"
+						className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+					>
+						<motion.div
+							initial={{ opacity: 0, scale: 0.9, y: 20 }}
+							animate={{ opacity: 1, scale: 1, y: 0 }}
+							exit={{ opacity: 0, scale: 0.9, y: 20 }}
+							className="relative w-full max-w-lg bg-gradient-to-b from-pink-50 via-purple-50 to-white dark:from-slate-900 dark:via-purple-950/40 dark:to-slate-900 rounded-3xl p-6 md:p-8 border-4 border-pink-300 dark:border-pink-500/50 shadow-2xl text-center"
+						>
+							<button
+								type="button"
+								onClick={() => setIsFairyModalOpen(false)}
+								className="absolute top-4 right-4 p-2 rounded-full hover:bg-pink-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-pointer transition-colors"
+							>
+								<X size={20} />
+							</button>
+
+							<div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-3xl shadow-lg shadow-pink-400/30">
+								🧚✨
+							</div>
+
+							<span className="text-xs uppercase tracking-widest font-black text-pink-600 dark:text-pink-400 bg-pink-100 dark:bg-pink-950 px-3 py-1 rounded-full border border-pink-300 dark:border-pink-700">
+								Королевство Зубных Фей
+							</span>
+
+							<h2 className="text-2xl font-black text-purple-950 dark:text-pink-200 mt-3 mb-1">
+								ГРАМОТА ЗА СМЕЛОСТЬ
+							</h2>
+
+							<p className="text-sm text-slate-600 dark:text-slate-300 mb-4">
+								Настоящим удостоверяется, что юный герой:
+							</p>
+
+							<div className="p-3 bg-white/80 dark:bg-slate-800/80 rounded-2xl border-2 border-dashed border-pink-400 dark:border-pink-500/60 mb-4">
+								<div className="text-lg font-black text-pink-700 dark:text-pink-300">
+									{activePatient?.fullName || "Супер-Пациент"}
+								</div>
+								<div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+									проявил(а) выдающееся мужество и отвагу в кресле стоматолога!
+								</div>
+							</div>
+
+							<div className="flex items-center justify-around text-xs text-slate-500 dark:text-slate-400 py-2 border-t border-b border-pink-200 dark:border-slate-700 mb-6">
+								<div>
+									<span className="font-bold">Дата:</span> {new Date().toLocaleDateString("ru-RU")}
+								</div>
+								<div>
+									<span className="font-bold">Печать:</span> 🌟 Золотой Зубик
+								</div>
+							</div>
+
+							<div className="flex items-center gap-3">
+								<button
+									type="button"
+									onClick={() => window.print()}
+									className="flex-1 min-h-[48px] bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-pink-500/20 cursor-pointer active:scale-95 transition-all"
+								>
+									<Printer size={18} />
+									<span>Распечатать грамоту (PDF)</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => setIsFairyModalOpen(false)}
+									className="min-h-[48px] px-5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-xl text-xs cursor-pointer active:scale-95 transition-all"
+								>
+									Закрыть
+								</button>
+							</div>
+						</motion.div>
+					</div>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 }
