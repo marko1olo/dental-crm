@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientStore } from "../../store/patientStore";
 import {
@@ -364,14 +365,15 @@ export function TelephonySimulatorModal() {
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [isSimulatorOpen, closeSimulator]);
 
-	if (!isSimulatorOpen) return null;
+	if (!isSimulatorOpen || typeof document === "undefined") return null;
 
-	return (
+	return createPortal(
 		<div
 			className="fixed inset-0 z-[9999999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-fade-in"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="telephony-simulator-title"
+			data-testid="telephony-simulator-modal"
 		>
 			<div className="relative w-full max-w-2xl bg-[var(--paper,#0f172a)] text-[var(--ink,#f8fafc)] rounded-2xl border border-[var(--line,#334155)] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
 				{/* Modal Header */}
@@ -811,6 +813,7 @@ export function TelephonySimulatorModal() {
 					</div>
 				</div>
 			</div>
-		</div>
+		</div>,
+		document.body,
 	);
 }

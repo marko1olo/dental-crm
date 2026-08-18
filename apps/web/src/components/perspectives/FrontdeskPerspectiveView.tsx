@@ -351,8 +351,8 @@ export function FrontdeskPerspectiveView() {
 								placeholder="Поиск по имени или телефону..."
 								value={filterSearch}
 								onChange={(e) => setFilterSearch(e.target.value)}
-								style={{ paddingLeft: "38px" }}
-								className="w-full min-h-[44px] pr-3 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 border border-[var(--line,#cbd5e1)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 text-xs outline-none focus:border-teal-500"
+								style={{ paddingLeft: "2.75rem" }}
+								className="w-full min-h-[44px] !pl-11 pr-3 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 border border-[var(--line,#cbd5e1)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 text-xs outline-none focus:border-teal-500"
 							/>
 						</div>
 

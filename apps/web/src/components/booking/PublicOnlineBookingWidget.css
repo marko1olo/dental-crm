@@ -46,9 +46,9 @@
 /* Dark mode support */
 .dark .dente-booking-widget,
 .dente-booking-widget[data-theme="dark"] {
-	--dbw-primary: #3b82f6;
-	--dbw-primary-hover: #60a5fa;
-	--dbw-primary-light: rgba(59, 130, 246, 0.15);
+	--dbw-primary: #60a5fa;
+	--dbw-primary-hover: #93c5fd;
+	--dbw-primary-light: rgba(96, 165, 250, 0.18);
 	--dbw-success: #10b981;
 	--dbw-success-light: rgba(16, 185, 129, 0.15);
 	--dbw-bg: #0f172a;

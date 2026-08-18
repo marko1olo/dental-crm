@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWebsocket } from "../../hooks/useWebsocket";
 import { useAppStore } from "../../store/appStore";
@@ -328,16 +329,19 @@ export function IncomingCallPopup() {
 		showToast(`Вызов ${formattedPhone} отклонён`, "info");
 	};
 
-	return (
+	if (typeof document === "undefined") return null;
+
+	return createPortal(
 		<div
-			className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 left-4 sm:left-auto w-auto sm:w-[440px] max-w-[calc(100vw-32px)] z-[999999] flex flex-col gap-3 rounded-2xl border border-[var(--line,#334155)] bg-[var(--paper,#0f172a)] text-[var(--ink,#f8fafc)] shadow-2xl p-4 sm:p-5 backdrop-blur-xl animate-slide-in"
+			className="fixed bottom-6 right-6 left-4 sm:left-auto w-auto sm:w-[440px] max-w-[calc(100vw-32px)] z-[999999] flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xl p-4 sm:p-5 backdrop-blur-xl animate-slide-in"
 			style={{
 				boxShadow:
-					"0 20px 40px -15px rgba(0,0,0,0.5), 0 0 20px 2px rgba(15,118,110,0.25)",
+					"0 20px 40px -15px rgba(0,0,0,0.3), 0 0 20px 2px rgba(15,118,110,0.15)",
 			}}
 			role="dialog"
 			aria-labelledby="incoming-call-title"
 			aria-modal="false"
+			data-testid="incoming-call-popup"
 		>
 			{/* Top Bar: Provider Tag, Pulse Indicator & Controls */}
 			<div className="flex items-center justify-between pb-2 border-b border-[var(--line,rgba(255,255,255,0.08))]">
@@ -415,54 +419,54 @@ export function IncomingCallPopup() {
 				{/* Identity Info */}
 				<div className="flex-1 min-w-0">
 					<div className="flex items-center gap-2">
-						<h3 className="text-base font-bold text-[var(--ink,#f8fafc)] truncate leading-tight">
+						<h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 leading-tight">
 							{callerName}
 						</h3>
 						{isKnownPatient ? (
 							<span
-								className="flex-shrink-0 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-950/40 border border-emerald-800/50 px-1.5 py-0.5 rounded-md"
+								className="flex-shrink-0 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800/50 px-1.5 py-0.5 rounded-md"
 								title="Пациент зарегистрирован в клинике"
 							>
 								<UserCheck size={11} /> Пациент
 							</span>
 						) : (
 							<span
-								className="flex-shrink-0 inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-950/40 border border-amber-800/50 px-1.5 py-0.5 rounded-md"
+								className="flex-shrink-0 inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800/50 px-1.5 py-0.5 rounded-md"
 								title="Номер не найден в базе пациентов"
 							>
 								<AlertCircle size={11} /> Новый лид
 							</span>
 						)}
 					</div>
-					<div className="flex items-center gap-2 text-sm font-semibold text-[var(--muted,#94a3b8)] mt-0.5">
-						<Phone size={13} className="text-emerald-500" />
+					<div className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 mt-0.5">
+						<Phone size={13} className="text-emerald-600 dark:text-emerald-400" />
 						<span>{formattedPhone}</span>
 					</div>
 				</div>
 			</div>
 
 			{/* Clinical & Financial Summary Panel */}
-			<div className="grid grid-cols-2 gap-2 bg-[var(--paper-soft,rgba(30,41,59,0.5))] rounded-xl p-3 border border-[var(--line,rgba(255,255,255,0.06))] text-xs">
+			<div className="grid grid-cols-2 gap-2 bg-slate-100/80 dark:bg-slate-800/70 rounded-xl p-3 border border-slate-200 dark:border-slate-700/60 text-xs">
 				{/* Financial Balance */}
 				<div className="flex flex-col gap-0.5">
-					<span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted,#94a3b8)] flex items-center gap-1">
-						<CreditCard size={11} className="text-[var(--teal,#0f766e)]" />
+					<span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
+						<CreditCard size={11} className="text-teal-600 dark:text-teal-400" />
 						Баланс / Долг:
 					</span>
 					<div className="flex items-baseline gap-1.5">
 						<span
 							className={`font-black text-sm ${
 								financialSummary.balanceRub < 0
-									? "text-rose-400"
+									? "text-rose-600 dark:text-rose-400"
 									: financialSummary.balanceRub > 0
-										? "text-emerald-400"
-										: "text-[var(--ink,#f8fafc)]"
+										? "text-emerald-600 dark:text-emerald-400"
+										: "text-slate-900 dark:text-slate-100"
 							}`}
 						>
 							{financialSummary.formattedBalance}
 						</span>
 						{hasDebt && (
-							<span className="text-[10px] font-bold text-rose-300 bg-rose-950/60 px-1.5 py-0.2 rounded border border-rose-800/40">
+							<span className="text-[10px] font-bold text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/60 px-1.5 py-0.2 rounded border border-rose-300 dark:border-rose-800/40">
 								Долг {financialSummary.formattedDebt}
 							</span>
 						)}
@@ -471,11 +475,11 @@ export function IncomingCallPopup() {
 
 				{/* Insurance Status */}
 				<div className="flex flex-col gap-0.5">
-					<span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted,#94a3b8)] flex items-center gap-1">
-						<Shield size={11} className="text-cyan-400" />
+					<span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
+						<Shield size={11} className="text-cyan-600 dark:text-cyan-400" />
 						Страховка / ДМС:
 					</span>
-					<span className="font-semibold text-[var(--ink,#f8fafc)] truncate">
+					<span className="font-semibold text-slate-900 dark:text-slate-100 truncate">
 						{hasDms
 							? financialSummary.insuranceName || "Полис ДМС активен"
 							: "Без полиса ДМС"}
@@ -483,25 +487,25 @@ export function IncomingCallPopup() {
 				</div>
 
 				{/* Last Visit */}
-				<div className="col-span-2 pt-2 mt-1 border-t border-[var(--line,rgba(255,255,255,0.06))] flex items-start justify-between gap-2">
+				<div className="col-span-2 pt-2 mt-1 border-t border-slate-200 dark:border-slate-700/60 flex items-start justify-between gap-2">
 					<div className="flex items-start gap-1.5 text-[11px]">
 						<Calendar
 							size={13}
-							className="text-[var(--muted,#94a3b8)] mt-0.5 flex-shrink-0"
+							className="text-teal-600 dark:text-teal-400 mt-0.5 flex-shrink-0"
 						/>
 						<div>
-							<span className="text-[var(--muted,#94a3b8)]">
+							<span className="text-slate-500 dark:text-slate-400">
 								Последний визит:{" "}
 							</span>
-							<strong className="text-[var(--ink,#f8fafc)]">
+							<strong className="text-slate-900 dark:text-slate-100 font-semibold">
 								{lastVisitSummary.formattedLastVisit}
 							</strong>
 						</div>
 					</div>
 
 					{lastVisitSummary.doctorName && (
-						<div className="flex items-center gap-1 text-[11px] text-[var(--muted,#94a3b8)] truncate">
-							<Stethoscope size={12} className="text-teal-400 flex-shrink-0" />
+						<div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 truncate">
+							<Stethoscope size={12} className="text-teal-600 dark:text-teal-400 flex-shrink-0" />
 							<span className="truncate">{lastVisitSummary.doctorName}</span>
 						</div>
 					)}
@@ -593,6 +597,7 @@ export function IncomingCallPopup() {
 					</span>
 				</button>
 			</div>
-		</div>
+		</div>,
+		document.body,
 	);
 }
