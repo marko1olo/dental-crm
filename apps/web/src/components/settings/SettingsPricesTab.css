@@ -52,7 +52,7 @@
 }
 
 .pricelist-search-wrapper input {
-	padding: 8px 12px 8px 36px;
+	padding: 8px 12px 8px 40px;
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	background: var(--paper);
@@ -227,9 +227,9 @@
 	justify-content: center;
 	padding: 48px;
 	color: var(--muted);
-	background: rgba(0, 0, 0, 0.02);
+	background: var(--paper-soft);
 	border-radius: 12px;
-	border: 1px dashed var(--line);
+	border: 1px solid var(--line);
 }
 
 .empty-catalog-state p {
@@ -309,7 +309,7 @@
 }
 
 .pricelist-file-dropzone {
-	border: 2px dashed var(--line);
+	border: 1.5px solid var(--line);
 	border-radius: 12px;
 	padding: 32px;
 	display: flex;
