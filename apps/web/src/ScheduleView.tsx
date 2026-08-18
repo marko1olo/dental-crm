@@ -54,6 +54,10 @@ import {
 } from "./components/schedule/scheduleDayGrouping";
 import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
 import { WaitlistDrawer } from "./components/schedule/WaitlistDrawer";
+import {
+	type TargetSlotInfo,
+	WaitlistQuickFillModal,
+} from "./components/schedule/WaitlistQuickFillModal";
 import { actionFailureToast } from "./lib/panelStateText";
 import { motionSafeScrollIntoView } from "./motionPreference";
 import { useScheduleStore } from "./store/scheduleStore";
@@ -308,6 +312,9 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	const focusCreateFormRequestedRef = useRef(false);
 	/** Открыт ли лист ожидания. Экран есть, а войти в него было неоткуда. */
 	const [waitlistOpen, setWaitlistOpen] = useState(false);
+	/** Освободившееся окно для целевого подбора из листа ожидания. */
+	const [waitlistQuickFillSlot, setWaitlistQuickFillSlot] =
+		useState<TargetSlotInfo | null>(null);
 	/**
 	 * Открыта ли панель утреннего обзвона / подтверждения приёмов.
 	 *
@@ -1468,6 +1475,15 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 			<WaitlistDrawer
 				isOpen={waitlistOpen}
 				onClose={() => setWaitlistOpen(false)}
+				updateNewAppointmentDraft={updateNewAppointmentDraft}
+				focusNewAppointmentEditor={focusNewAppointmentEditor}
+				dashboard={dashboard}
+				auth={auth}
+			/>
+			<WaitlistQuickFillModal
+				isOpen={waitlistQuickFillSlot !== null}
+				onClose={() => setWaitlistQuickFillSlot(null)}
+				targetSlot={waitlistQuickFillSlot}
 				updateNewAppointmentDraft={updateNewAppointmentDraft}
 				focusNewAppointmentEditor={focusNewAppointmentEditor}
 				dashboard={dashboard}

@@ -17,6 +17,7 @@ import { showToast } from "../GlobalToast";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 import { CompletedServicesChecklist } from "./CompletedServicesChecklist";
 import { EgiszMultipleDiagnosesWidget } from "./EgiszMultipleDiagnosesWidget";
+import { EgiszCdaExportModal } from "../egisz/EgiszCdaExportModal";
 import { VisitFlowProgress } from "./VisitFlowProgress";
 import {
 	forgetVisitFlowResultOwner,
@@ -157,6 +158,7 @@ export function VisitEmkTab() {
 	]);
 
 	const [isExportingCda, setIsExportingCda] = React.useState(false);
+	const [isEgiszModalOpen, setIsEgiszModalOpen] = React.useState(false);
 	const [trayBarcode, setTrayBarcode] = React.useState("");
 	const [linkedBarcode, setLinkedBarcode] = React.useState<string | null>(null);
 	const [isLinkingTray, setIsLinkingTray] = React.useState(false);
@@ -729,17 +731,45 @@ export function VisitEmkTab() {
 							Экспорт готового медицинского документа в формате CDA R2 XML
 						</p>
 					</div>
-					<button
-						className="secondary-button flex items-center gap-2 text-xs py-1.5 px-3"
-						type="button"
-						onClick={handleDownloadCdaXml}
-						disabled={isExportingCda}
-						data-testid="btn-download-cda-xml"
-					>
-						<Download className="w-3.5 h-3.5" />
-						{isExportingCda ? "Формирование XML…" : "Скачать CDA R2 (XML)"}
-					</button>
+					<div className="flex items-center gap-2">
+						<button
+							className="primary-button flex items-center gap-2 text-xs py-1.5 px-3 bg-teal-600 hover:bg-teal-500 text-white rounded-lg shadow-sm"
+							type="button"
+							onClick={() => setIsEgiszModalOpen(true)}
+							data-testid="btn-open-egisz-cda-modal"
+						>
+							<ShieldCheck className="w-3.5 h-3.5" />
+							СЭМД ЕГИСЗ (Валидатор & Экспорт)
+						</button>
+						<button
+							className="secondary-button flex items-center gap-2 text-xs py-1.5 px-3"
+							type="button"
+							onClick={handleDownloadCdaXml}
+							disabled={isExportingCda}
+							data-testid="btn-download-cda-xml"
+						>
+							<Download className="w-3.5 h-3.5" />
+							{isExportingCda ? "Формирование XML…" : "Скачать CDA R2 (XML)"}
+						</button>
+					</div>
 				</div>
+
+				{/* Модальное окно валидатора и экспорта СЭМД ЕГИСЗ */}
+				<EgiszCdaExportModal
+					isOpen={isEgiszModalOpen}
+					onClose={() => setIsEgiszModalOpen(false)}
+					visitId={realVisitFieldId(dashboard?.activeVisit?.id) || "00000000-0000-0000-0000-000000000000"}
+					patientId={activePatient?.id || ""}
+					patientName={activePatient?.fullName}
+					patientSnils={activePatient?.administrativeProfile?.snils}
+					patientBirthDate={activePatient?.birthDate}
+					patientGender={activePatient?.administrativeProfile?.gender || (activePatient?.gender as any)}
+					patientPolisOms={activePatient?.administrativeProfile?.omsPolis}
+					diagnosisText={noteForm?.diagnosis || dashboard?.activeVisit?.diagnosis}
+					anamnesis={noteForm?.anamnesis || noteForm?.complaint}
+					objectiveStatus={noteForm?.objectiveStatus}
+					treatmentDescription={noteForm?.treatmentPlan}
+				/>
 
 				<div className="mb-3">
 					<EgiszMultipleDiagnosesWidget />

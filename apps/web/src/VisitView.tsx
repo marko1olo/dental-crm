@@ -238,6 +238,7 @@ import { ClinicalAiPersonalizePanel } from "./ClinicalAiPersonalizePanel";
 import { ClinicalTasksPanel } from "./ClinicalTasksPanel";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { EndoCanalLogModal } from "./components/odontogram/EndoCanalLogModal";
+import { DentalLabOrderModal } from "./components/lab/DentalLabOrderModal";
 import { VisitNoteDraftPanel } from "./VisitNoteDraftPanel";
 
 export function VisitView(rawProps?: Partial<VisitViewProps>) {
@@ -434,6 +435,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const [isEndoModalOpen, setIsEndoModalOpen] = React.useState(false);
 	const [endoModalToothNumber, setEndoModalToothNumber] = React.useState<number | null>(null);
 	const [endoModalToothState, setEndoModalToothState] = React.useState<string | undefined>(undefined);
+	const [isLabOrderModalOpen, setIsLabOrderModalOpen] = React.useState(false);
+	const [labOrderModalToothNumber, setLabOrderModalToothNumber] = React.useState<number | string | null>(null);
 
 	/*
     НАЗВАНИЯ МАТЕРИАЛОВ ПОПАДАЮТ В ТЕКСТ ПЛАНА ЛЕЧЕНИЯ, ПОЭТОМУ ОНИ ТОЧНЫЕ.
@@ -848,7 +851,14 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
 				{visitSubViewTab === "diagnostics" && (
 					<div style={{ margin: "16px 0" }}>
-						<VisitDiagnosticsTab activePatient={activePatient} />
+						<VisitDiagnosticsTab
+							activePatient={activePatient}
+							onInsertToProtocol={(protocolText) => {
+								if (typeof appendToTranscript === "function") {
+									appendToTranscript(`\n\n${protocolText}`);
+								}
+							}}
+						/>
 					</div>
 				)}
 
@@ -3006,6 +3016,18 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 											>
 												Винир <span>✨</span>
 											</button>
+											<button
+												type="button"
+												className="_ccm-btn"
+												data-color="teal"
+												onClick={() => {
+													setLabOrderModalToothNumber(selectedToothForMenu?.code);
+													setIsLabOrderModalOpen(true);
+													closeClinicalModal();
+												}}
+											>
+												Наряд в ЗТЛ (CAD/CAM) <span>🦷</span>
+											</button>
 
 											<div className="_ccm-label">Хирургия</div>
 											<button
@@ -3100,6 +3122,33 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					}}
 				/>
 			)}
+
+			{/* Dental Lab Order Modal (ЗТЛ) */}
+			<DentalLabOrderModal
+				isOpen={isLabOrderModalOpen}
+				onClose={() => {
+					setIsLabOrderModalOpen(false);
+					setLabOrderModalToothNumber(null);
+				}}
+				patientId={
+					activePatient?.id ||
+					(typeof dashboard?.activeVisit?.patientId === "string"
+						? dashboard.activeVisit.patientId
+						: undefined)
+				}
+				patientName={activePatient?.fullName}
+				doctorId={activeDoctor?.id}
+				doctorName={activeDoctor?.fullName}
+				initialToothFdi={labOrderModalToothNumber ?? undefined}
+				onOrderSaved={(order) => {
+					if (order?.toothFdi && order?.material) {
+						appendToEMKField(
+							"treatmentPlan",
+							`Оформлен наряд ЗТЛ на зуб ${order.toothFdi} (${order.material}, цвет ${order.colorVita || "A2"}).`,
+						);
+					}
+				}}
+			/>
 		</>
 	);
 }

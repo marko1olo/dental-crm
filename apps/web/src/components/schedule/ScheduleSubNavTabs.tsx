@@ -53,6 +53,7 @@ export function ScheduleSubNavTabs({
 			<button
 				className="text-button shrink-0 whitespace-nowrap min-h-[44px] px-3 text-xs font-semibold"
 				type="button"
+				data-testid="schedule-waitlist-btn"
 				onClick={() => setWaitlistOpen(true)}
 				title="Пациенты, которые ждут свободного окна"
 			>

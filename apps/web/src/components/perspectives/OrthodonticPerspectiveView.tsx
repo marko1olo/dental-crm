@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
+	Activity,
 	AlertCircle,
 	ArrowLeft,
 	ArrowRight,
@@ -33,6 +34,7 @@ import { usePatientStore } from "../../store/patientStore";
 import { usePerspectiveStore } from "../../store/perspectiveStore";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
+import { CephalometricAnalysisModal } from "../orthodontics/CephalometricAnalysisModal";
 
 interface OrthoStage {
 	number: number;
@@ -72,6 +74,7 @@ export function OrthodonticPerspectiveView() {
 	const [totalAligners, setTotalAligners] = useState<number>(36);
 	const [sliderPosition, setSliderPosition] = useState<number>(50);
 	const [activeAngle, setActiveAngle] = useState<"frontal" | "occlusal_up" | "occlusal_low" | "profile">("frontal");
+	const [isCephModalOpen, setIsCephModalOpen] = useState<boolean>(false);
 
 	// Clinical Timeline Stages
 	const stages: OrthoStage[] = useMemo(
@@ -218,21 +221,35 @@ export function OrthodonticPerspectiveView() {
 					</div>
 				</div>
 
-				{/* Patient Selector */}
-				{dashboard?.patients && dashboard.patients.length > 1 && (
-					<select
-						aria-label="Выбор ортодонтического пациента"
-						value={activePatient?.id || ""}
-						onChange={(e) => setSelectedPatientId(e.target.value)}
-						className="min-h-[48px] px-4 py-2 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 border border-[var(--line,#cbd5e1)] dark:border-slate-700 rounded-xl text-[var(--ink,#0f172a)] dark:text-slate-100 font-semibold text-sm cursor-pointer outline-none focus:border-teal-500"
+				{/* Top Right Actions: TRG Analysis & Patient Selector */}
+				<div className="flex items-center gap-3 flex-wrap">
+					<button
+						type="button"
+						onClick={() => setIsCephModalOpen(true)}
+						data-testid="open-ceph-analysis-btn"
+						className="min-h-[48px] px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold flex items-center gap-2 shadow-md shadow-teal-600/20 active:scale-95 transition-all text-sm cursor-pointer border border-teal-500/30"
+						title="Открыть цефалометрический анализ ТРГ в боковой проекции"
 					>
-						{dashboard.patients.map((p) => (
-							<option key={p.id} value={p.id}>
-								{p.fullName}
-							</option>
-						))}
-					</select>
-				)}
+						<Activity size={18} />
+						<span>Расчет ТРГ (Цефалометрия)</span>
+					</button>
+
+					{/* Patient Selector */}
+					{dashboard?.patients && dashboard.patients.length > 1 && (
+						<select
+							aria-label="Выбор ортодонтического пациента"
+							value={activePatient?.id || ""}
+							onChange={(e) => setSelectedPatientId(e.target.value)}
+							className="min-h-[48px] px-4 py-2 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 border border-[var(--line,#cbd5e1)] dark:border-slate-700 rounded-xl text-[var(--ink,#0f172a)] dark:text-slate-100 font-semibold text-sm cursor-pointer outline-none focus:border-teal-500"
+						>
+							{dashboard.patients.map((p) => (
+								<option key={p.id} value={p.id}>
+									{p.fullName}
+								</option>
+							))}
+						</select>
+					)}
+				</div>
 			</header>
 
 			{/* Main Grid: Aligner Tracker & Timeline (Left) + Before/After & Ledger (Right) */}
@@ -347,7 +364,7 @@ export function OrthodonticPerspectiveView() {
 											<p className="text-xs text-[var(--muted,#64748b)] dark:text-slate-300 m-0 mt-1 leading-relaxed">
 												{stg.description}
 											</p>
-											<div className="mt-2 flex items-center gap-2">
+											<div className="mt-2 flex items-center gap-2 flex-wrap">
 												<span className="text-[10px] uppercase font-bold bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 px-2 py-0.5 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200">
 													{stg.alignerRange}
 												</span>
@@ -355,6 +372,16 @@ export function OrthodonticPerspectiveView() {
 													<span className="text-[10px] uppercase font-bold bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-200 px-2 py-0.5 rounded border border-teal-500/30">
 														Текущий этап
 													</span>
+												)}
+												{stg.number === 1 && (
+													<button
+														type="button"
+														onClick={() => setIsCephModalOpen(true)}
+														className="text-[11px] font-bold text-teal-700 dark:text-teal-300 hover:underline flex items-center gap-1 cursor-pointer bg-teal-50 dark:bg-teal-950/60 px-2 py-0.5 rounded border border-teal-500/30"
+													>
+														<Activity size={12} />
+														<span>Открыть расчет ТРГ</span>
+													</button>
 												)}
 											</div>
 										</div>
@@ -557,6 +584,14 @@ export function OrthodonticPerspectiveView() {
 					</div>
 				</section>
 			</main>
+
+			{/* Cephalometric Analysis Modal */}
+			<CephalometricAnalysisModal
+				isOpen={isCephModalOpen}
+				onClose={() => setIsCephModalOpen(false)}
+				patientId={activePatient?.id}
+				patientName={activePatient?.fullName}
+			/>
 		</div>
 	);
 }

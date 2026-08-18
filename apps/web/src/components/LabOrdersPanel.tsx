@@ -2,6 +2,7 @@ import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
 import { showToast } from "./GlobalToast";
+import { LabOrdersPage } from "../pages/LabOrdersPage";
 import "./LabOrdersPanel.css";
 
 export interface LabOrder {
@@ -74,6 +75,9 @@ const MATERIALS = [
 ];
 
 export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
+	if (!patientId) {
+		return <LabOrdersPage />;
+	}
 	const [orders, setOrders] = useState<LabOrder[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);

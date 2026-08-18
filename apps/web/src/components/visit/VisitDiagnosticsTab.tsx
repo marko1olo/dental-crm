@@ -1,7 +1,10 @@
+import { Activity } from "lucide-react";
+import React, { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { usePatientStore } from "../../store/patientStore";
 import { VisiographAnalyzer } from "../imaging/VisiographAnalyzer";
+import { CephalometricAnalysisModal } from "../orthodontics/CephalometricAnalysisModal";
 import { LabOrdersPanel } from "../schedule/LabOrdersPanel";
 import { imagingWriteTarget, realVisitFieldId } from "./visitIdentity";
 
@@ -33,10 +36,15 @@ import { imagingWriteTarget, realVisitFieldId } from "./visitIdentity";
   в эту территорию не входит.
 */
 // biome-ignore lint/suspicious/noExplicitAny: automated suppression
-export function VisitDiagnosticsTab(props?: { activePatient?: any }) {
+export function VisitDiagnosticsTab(props?: {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+	activePatient?: any;
+	onInsertToProtocol?: (text: string) => void;
+}) {
 	const ctx = useAppLogicContext();
 	const activePatient = props?.activePatient ?? ctx?.activePatient;
 	const workspaceFlags = useWorkspaceProfile();
+	const [isCephModalOpen, setIsCephModalOpen] = useState<boolean>(false);
 
 	const selectedPatientId = usePatientStore((state) => state.selectedPatientId);
 	const setSelectedPatientId = usePatientStore(
@@ -70,6 +78,41 @@ export function VisitDiagnosticsTab(props?: { activePatient?: any }) {
 			data-testid="visit-diagnostics-tab"
 			className="visit-diagnostics-tab bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-4 flex flex-col gap-6"
 		>
+			{/* Orthodontic Cephalometric (TRG) Analysis Module Card */}
+			<div
+				data-testid="visit-ceph-diagnostic-card"
+				className="p-4 rounded-xl bg-gradient-to-r from-teal-50/80 to-cyan-50/80 dark:from-teal-950/40 dark:to-cyan-950/40 border border-teal-200 dark:border-teal-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 shadow-sm"
+			>
+				<div className="flex items-center gap-3">
+					<div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+						<Activity size={20} />
+					</div>
+					<div>
+						<div className="flex items-center gap-2">
+							<strong className="text-sm font-bold text-slate-900 dark:text-white">
+								Цефалометрический анализ ТРГ (Телерентгенография)
+							</strong>
+							<span className="text-[10px] font-bold text-teal-800 dark:text-teal-300 bg-teal-100 dark:bg-teal-950 px-2 py-0.5 rounded border border-teal-500/30">
+								Форма 043/у
+							</span>
+						</div>
+						<p className="text-xs text-slate-600 dark:text-slate-300 m-0 mt-0.5">
+							Интерактивная разметка анатомических ориентиров, расчет углов Steiner / Tweed / Ricketts и перенос заключения в дневник
+						</p>
+					</div>
+				</div>
+
+				<button
+					type="button"
+					onClick={() => setIsCephModalOpen(true)}
+					data-testid="open-visit-ceph-modal-btn"
+					className="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shrink-0 shadow-md shadow-teal-600/20 active:scale-95 transition-all cursor-pointer border border-teal-500/30"
+				>
+					<Activity size={15} />
+					<span>Открыть анализ ТРГ</span>
+				</button>
+			</div>
+
 			{target === "another-patient" ? (
 				<div
 					role="alert"
@@ -174,6 +217,21 @@ export function VisitDiagnosticsTab(props?: { activePatient?: any }) {
 					</div>
 				)
 			) : null}
+
+			{/* Orthodontic Cephalometric Modal */}
+			<CephalometricAnalysisModal
+				isOpen={isCephModalOpen}
+				onClose={() => setIsCephModalOpen(false)}
+				patientId={visitPatientId ?? activePatient?.id}
+				patientName={visitPatientName ?? activePatient?.fullName}
+				onInsertToProtocol={(text) => {
+					if (props?.onInsertToProtocol) {
+						props.onInsertToProtocol(text);
+					} else if (typeof ctx?.appendToTranscript === "function") {
+						ctx.appendToTranscript(`\n\n${text}`);
+					}
+				}}
+			/>
 		</div>
 	);
 }

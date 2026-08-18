@@ -1,4 +1,4 @@
-import { Calendar, CheckCircle2, Trash2, UserPlus, X } from "lucide-react";
+import { Calendar, CheckCircle2, Sparkles, Trash2, UserPlus, X } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -10,6 +10,7 @@ import { logger } from "../../utils/logger";
 import { EmptyState } from "../EmptyState";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
+import { WaitlistQuickFillModal } from "./WaitlistQuickFillModal";
 
 /**
  * Как называется содержимое очереди для сообщений о загрузке и отказе. Общий
@@ -144,6 +145,7 @@ export function WaitlistDrawer(props: Props) {
 	>(undefined);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [loadingId, setLoadingId] = useState<string | null>(null);
+	const [isQuickFillOpen, setIsQuickFillOpen] = useState(false);
 
 	// Form State
 	const [selectedPatientId, setSelectedPatientId] = useState("");
@@ -413,7 +415,17 @@ export function WaitlistDrawer(props: Props) {
 							Лист ожидания
 						</h3>
 					</div>
-					<div className="flex items-center gap-1">
+					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							data-testid="waitlist-quickfill-btn"
+							onClick={() => setIsQuickFillOpen(true)}
+							className="min-h-[38px] px-3 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-800 dark:text-teal-300 text-xs font-bold flex items-center gap-1.5 border border-teal-500/30 transition-all cursor-pointer shadow-sm active:scale-95"
+							title="Умный подбор пациентов на горящие окна"
+						>
+							<Sparkles size={14} className="text-teal-600 dark:text-teal-400" />
+							<span>Быстрый подбор</span>
+						</button>
 						<button
 							type="button"
 							onClick={() => setIsMinimized(true)}
@@ -646,6 +658,14 @@ export function WaitlistDrawer(props: Props) {
 					</div>
 				</div>
 			</div>
+			<WaitlistQuickFillModal
+				isOpen={isQuickFillOpen}
+				onClose={() => setIsQuickFillOpen(false)}
+				onAppointmentCreated={() => {
+					fetchWaitlist();
+					setIsQuickFillOpen(false);
+				}}
+			/>
 		</div>,
 		document.body,
 	);

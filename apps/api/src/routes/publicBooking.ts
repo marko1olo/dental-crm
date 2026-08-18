@@ -343,6 +343,11 @@ const publicBookingFieldLabels: Record<string, string> = {
 };
 
 export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
+	// Root health/discovery endpoint
+	server.get("/", async (_request, reply) => {
+		return reply.send({ status: "ok", service: "public_booking" });
+	});
+
 	// 1. Get doctors for an organization
 	server.get<{ Params: { organizationId: string } }>(
 		"/:organizationId/doctors",

@@ -9,6 +9,7 @@ import {
 	CheckCircle2,
 	ChevronRight,
 	Eye,
+	FileCode,
 	FileText,
 	Heart,
 	Layers,
@@ -46,11 +47,9 @@ import {
 	type ToothState,
 } from "../odontogram/ToothChart";
 import { PeriodontalChartModule } from "../odontogram/PeriodontalChartModule";
-import {
-	type EndoCanalData,
-	EndoCanalLogModal,
-	type EndoToothClinicalData,
-} from "../odontogram/EndoCanalLogModal";
+import { EndoCanalLogModal, type EndoToothClinicalData } from "../odontogram/EndoCanalLogModal";
+import { DentalLabOrderModal } from "../lab/DentalLabOrderModal";
+import { EgiszCdaExportModal } from "../egisz/EgiszCdaExportModal";
 import "../odontogram/odontogram.css";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 
@@ -159,7 +158,7 @@ const QUICK_PROCEDURE_TEMPLATES = [
 ];
 
 export function ChairsiderPerspectiveView() {
-	const { dashboard, auth } = useAppLogicContext();
+	const { dashboard, auth, activeDoctor } = useAppLogicContext();
 	const setPerspective = usePerspectiveStore((s) => s.setPerspective);
 	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
 	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
@@ -189,6 +188,8 @@ export function ChairsiderPerspectiveView() {
 	const [appliedProcedures, setAppliedProcedures] = useState<string[]>([]);
 	const [voiceNotes, setVoiceNotes] = useState<string>("");
 	const [isEndoModalOpen, setIsEndoModalOpen] = useState(false);
+	const [isLabModalOpen, setIsLabModalOpen] = useState(false);
+	const [isEgiszModalOpen, setIsEgiszModalOpen] = useState(false);
 
 	// Adult teeth arrays for FDI
 	const upperJawTeeth = useMemo(() => [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28], []);
@@ -449,6 +450,18 @@ export function ChairsiderPerspectiveView() {
 							))}
 						</select>
 					)}
+
+					{/* EGISZ SEMD CDA Export Button */}
+					<button
+						type="button"
+						data-testid="chairsider-egisz-cda-btn"
+						onClick={() => setIsEgiszModalOpen(true)}
+						className="min-h-[56px] px-3.5 py-2.5 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-800 dark:text-teal-300 font-bold flex items-center gap-2 border border-teal-500/30 active:scale-95 transition-all text-sm cursor-pointer shadow-sm"
+						title="Открыть СЭМД ЕГИСЗ (CDA R2) валидатор и экспорт"
+					>
+						<FileCode size={20} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<span className="hidden md:inline">СЭМД ЕГИСЗ</span>
+					</button>
 				</div>
 			</header>
 
@@ -775,6 +788,29 @@ export function ChairsiderPerspectiveView() {
 								</button>
 							</div>
 						)}
+
+						{/* Dental Lab Work Order Quick Access */}
+						<div className="pt-2 border-t border-[var(--line,#e2e8f0)] dark:border-slate-700">
+							<button
+								type="button"
+								data-testid="chairsider-lab-order-btn"
+								onClick={() => setIsLabModalOpen(true)}
+								className="min-h-[52px] w-full p-3 rounded-xl bg-teal-600/15 hover:bg-teal-600/25 dark:bg-teal-950/70 dark:hover:bg-teal-900/80 text-teal-900 dark:text-teal-200 border-2 border-teal-500/60 font-black flex items-center justify-between transition-all active:scale-98 cursor-pointer shadow-sm"
+							>
+								<span className="flex items-center gap-2.5">
+									<span className="text-xl">🦷</span>
+									<span className="flex flex-col text-left">
+										<span className="text-xs font-black">Наряд в лабораторию (ЗТЛ)</span>
+										<span className="text-[10px] font-semibold text-teal-700 dark:text-teal-300">
+											Коронка · Винир · VITA · Себестоимость
+										</span>
+									</span>
+								</span>
+								<span className="px-2.5 py-1 rounded-lg bg-teal-600 text-white text-xs font-black shadow-sm">
+									CAD/CAM
+								</span>
+							</button>
+						</div>
 					</div>
 
 					{/* Single-Tap CT / 3D Launcher */}
@@ -915,6 +951,44 @@ export function ChairsiderPerspectiveView() {
 				onInsertToProtocol={(protocolText) => {
 					handleVoiceResult(protocolText);
 				}}
+			/>
+
+			{/* Dental Lab Order Modal (ЗТЛ) */}
+			<DentalLabOrderModal
+				isOpen={isLabModalOpen}
+				onClose={() => setIsLabModalOpen(false)}
+				patientId={activePatient?.id}
+				patientName={activePatient?.fullName}
+				doctorId={activeDoctor?.id}
+				doctorName={activeDoctor?.fullName}
+				initialToothFdi={selectedTooth}
+				onOrderSaved={(order) => {
+					if (order?.toothFdi) {
+						showToast(`Наряд ЗТЛ на зуб ${order.toothFdi} сохранен`, "success");
+					}
+				}}
+			/>
+
+			{/* EGISZ SEMD CDA R2 Export & Validator Modal */}
+			<EgiszCdaExportModal
+				isOpen={isEgiszModalOpen}
+				onClose={() => setIsEgiszModalOpen(false)}
+				visitId={dashboard?.activeVisit?.id || "00000000-0000-0000-0000-000000000000"}
+				patientId={activePatient?.id || ""}
+				patientName={activePatient?.fullName}
+				patientSnils={activePatient?.administrativeProfile?.snils}
+				patientBirthDate={activePatient?.birthDate}
+				patientGender={activePatient?.administrativeProfile?.gender || (activePatient?.gender as any)}
+				patientPolisOms={activePatient?.administrativeProfile?.omsPolis}
+				doctorName={activeDoctor?.fullName}
+				diagnosisTooth={selectedTooth}
+				diagnosisText={`Зуб ${selectedTooth}: ${TOOTH_STATE_LABELS[selectedToothState] || selectedToothState}`}
+				toothStates={toothStates}
+				toothSurfaces={toothSurfaces}
+				treatmentDescription={appliedProcedures.map((p) => {
+					const found = QUICK_PROCEDURE_TEMPLATES.find((t) => t.id === p);
+					return found ? `${found.label} (зуб ${selectedTooth})` : p;
+				}).join("; ")}
 			/>
 		</div>
 	);
