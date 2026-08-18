@@ -1,5 +1,3 @@
-import { showToast } from "../components/GlobalToast";
-import { actionFailureToast } from "../lib/panelStateText";
 import { logger } from "./logger";
 
 /**
@@ -44,13 +42,6 @@ export async function checkCryptoProPlugin(): Promise<boolean> {
 		await window.cadesplugin.then;
 		return true;
 	} catch (e) {
-		showToast(
-			actionFailureToast(
-				"Ошибка выполнения операции",
-				(e as { status?: number })?.status ?? null,
-			),
-			"error",
-		);
 		logger.warn("CryptoPro plugin check failed:", e);
 		return false;
 	}
@@ -108,13 +99,6 @@ export async function getPersonalCertificates(): Promise<
 					certObject: cert,
 				});
 			} catch (certError) {
-				showToast(
-					actionFailureToast(
-						"Ошибка выполнения операции",
-						(certError as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
 				logger.warn(`Failed to parse certificate index ${i}:`, certError);
 			}
 		}

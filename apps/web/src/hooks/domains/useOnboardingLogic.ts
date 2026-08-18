@@ -298,13 +298,7 @@ async function continueOnboardingInDraftMode(targetView?: AppView) {
 				);
 				setUiPreferencesSyncError(null);
 			} catch (preferencesError) {
-				showToast(
-					actionFailureToast(
-						"Ошибка выполнения операции",
-						(preferencesError as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
+				logger.warn("[Dente] UI preferences sync queued:", preferencesError);
 				queueUiPreferencesServerSync(savedPreferences, { delayMs: 5000 });
 				setUiPreferencesSyncError(
 					uiPreferencesSyncErrorMessage(preferencesError),

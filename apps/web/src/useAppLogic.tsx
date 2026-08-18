@@ -2213,13 +2213,7 @@ export function useAppLogic(): any {
 				);
 				setUiPreferencesSyncError(null);
 			} catch (preferencesError) {
-				showToast(
-					actionFailureToast(
-						"Ошибка выполнения операции",
-						(preferencesError as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
+				logger.warn("[Dente] UI preferences sync queued:", preferencesError);
 				queueUiPreferencesServerSync(savedPreferences, { delayMs: 5000 });
 				setUiPreferencesSyncError(
 					uiPreferencesSyncErrorMessage(preferencesError),
@@ -2414,14 +2408,14 @@ export function useAppLogic(): any {
 			try {
 				setBrowserContinuity(await inspectBrowserContinuity());
 			} catch (continuityError) {
-				showToast(
-					actionFailureToast(
-						"Ошибка выполнения операции",
-						(continuityError as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
 				if (!options.silent) {
+					showToast(
+						actionFailureToast(
+							"Ошибка выполнения операции",
+							(continuityError as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
 					setError(
 						browserCapabilityFailureMessage(
 							"Проверка сохранности браузера не выполнена",

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { showToast } from "../components/GlobalToast";
-import { actionFailureToast, panelFailureCause } from "../lib/panelStateText";
+import { panelFailureCause } from "../lib/panelStateText";
 import { logger } from "../utils/logger";
 
 /**
@@ -114,14 +113,6 @@ export function usePatientResource<T>(
 				if (cancelled) return;
 				setData(parsed);
 			} catch (requestError) {
-				showToast(
-					actionFailureToast(
-						// biome-ignore lint/suspicious/noTemplateCurlyInString: automated suppression
-						"${panelFailureCause(null)}.",
-						(requestError as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
 				if (cancelled) return;
 				if ((requestError as Error)?.name === "AbortError") return;
 				logger.error(`[usePatientResource ${patientId}]`, requestError);

@@ -1,5 +1,3 @@
-import { showToast } from "../components/GlobalToast";
-import { actionFailureToast } from "../lib/panelStateText";
 import { logger } from "./logger";
 
 /**
@@ -51,13 +49,6 @@ export async function checkRutokenPlugin(): Promise<boolean> {
 
 		return false;
 	} catch (e) {
-		showToast(
-			actionFailureToast(
-				"Ошибка выполнения операции",
-				(e as { status?: number })?.status ?? null,
-			),
-			"error",
-		);
 		logger.warn("Rutoken plugin check failed:", e);
 		return false;
 	}
@@ -174,14 +165,7 @@ export async function signDataWithRutoken(
 		logger.error("Rutoken signing error:", error);
 		try {
 			await plugin.logout(deviceId);
-		} catch (_e) {
-			showToast(
-				actionFailureToast(
-					"Ошибка выполнения операции",
-					(_e as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
+		} catch {
 			// ignore logout errors on failure
 		}
 

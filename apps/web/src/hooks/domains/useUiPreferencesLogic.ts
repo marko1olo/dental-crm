@@ -547,14 +547,14 @@ export function useUiPreferencesLogic(props: UiPreferencesLogicProps) {
 			try {
 				setBrowserContinuity(await inspectBrowserContinuity());
 			} catch (continuityError) {
-				showToast(
-					actionFailureToast(
-						"Ошибка выполнения операции",
-						(continuityError as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
 				if (!options.silent) {
+					showToast(
+						actionFailureToast(
+							"Ошибка выполнения операции",
+							(continuityError as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
 					setError(
 						browserCapabilityFailureMessage(
 							"Проверка сохранности браузера не выполнена",
