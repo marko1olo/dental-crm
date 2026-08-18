@@ -750,6 +750,7 @@ export function WaitlistQuickFillModal({
 					<button
 						type="button"
 						onClick={onClose}
+						data-testid="waitlist-quickfill-close-btn"
 						className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-strong)] transition-colors"
 						aria-label="Закрыть модальное окно"
 					>
@@ -1022,7 +1023,8 @@ export function WaitlistQuickFillModal({
 										value={searchQuery}
 										onChange={(e) => setSearchQuery(e.target.value)}
 										placeholder="Поиск по ФИО, телефону или примечанию..."
-										className="w-full pl-9 pr-3 py-2 bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl text-xs text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)] min-h-[44px]"
+										style={{ paddingLeft: "2.75rem" }}
+										className="w-full !pl-11 pr-3 py-2 bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl text-xs text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)] min-h-[44px]"
 									/>
 								</div>
 								<div className="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap">
@@ -1037,10 +1039,10 @@ export function WaitlistQuickFillModal({
 											key={filter.id}
 											type="button"
 											onClick={() => setSelectedPriorityFilter(filter.id)}
-											className={`px-3 py-1.5 min-h-[44px] rounded-xl text-xs font-semibold transition-all ${
+											className={`px-3 py-1.5 min-h-[44px] rounded-xl text-xs font-semibold border transition-all ${
 												selectedPriorityFilter === filter.id
-													? "bg-[var(--teal)] text-[var(--on-teal)]"
-													: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)]"
+													? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-sm"
+													: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
 											}`}
 										>
 											{filter.label}

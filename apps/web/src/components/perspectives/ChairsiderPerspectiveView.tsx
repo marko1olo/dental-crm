@@ -764,30 +764,32 @@ export function ChairsiderPerspectiveView() {
 							</div>
 						</div>
 
-						{/* Endo Canal Log Quick Access when Pulpitis / Periodontitis */}
-						{(selectedToothState === "Pulpitis" || selectedToothState === "Periodontitis") && (
-							<div className="pt-2 border-t border-[var(--line,#e2e8f0)] dark:border-slate-700">
-								<button
-									type="button"
-									data-testid="chairsider-endo-canal-log-btn"
-									onClick={() => setIsEndoModalOpen(true)}
-									className="min-h-[52px] w-full p-3 rounded-xl bg-purple-600/15 hover:bg-purple-600/25 dark:bg-purple-950/70 dark:hover:bg-purple-900/80 text-purple-900 dark:text-purple-200 border-2 border-purple-500/60 font-black flex items-center justify-between transition-all active:scale-98 cursor-pointer shadow-sm"
-								>
-									<span className="flex items-center gap-2.5">
-										<span className="text-xl">📋</span>
-										<span className="flex flex-col text-left">
-											<span className="text-xs font-black">Журнал корневых каналов</span>
-											<span className="text-[10px] font-semibold text-purple-700 dark:text-purple-300">
-												MB1, MB2, DB, P · Апекслокатор · MAF
-											</span>
+						{/* Endo Canal Log Quick Access */}
+						<div className="pt-2 border-t border-[var(--line,#e2e8f0)] dark:border-slate-700">
+							<button
+								type="button"
+								data-testid="chairsider-endo-canal-log-btn"
+								onClick={() => setIsEndoModalOpen(true)}
+								className={`min-h-[52px] w-full p-3 rounded-xl border-2 font-black flex items-center justify-between transition-all active:scale-98 cursor-pointer shadow-sm ${
+									selectedToothState === "Pulpitis" || selectedToothState === "Periodontitis"
+										? "bg-purple-600/15 hover:bg-purple-600/25 dark:bg-purple-950/70 dark:hover:bg-purple-900/80 text-purple-900 dark:text-purple-200 border-purple-500/60"
+										: "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700"
+								}`}
+							>
+								<span className="flex items-center gap-2.5">
+									<span className="text-xl">📋</span>
+									<span className="flex flex-col text-left">
+										<span className="text-xs font-black">Журнал корневых каналов</span>
+										<span className="text-[10px] font-semibold text-purple-700 dark:text-purple-300">
+											MB1, MB2, DB, P · Апекслокатор · MAF
 										</span>
 									</span>
-									<span className="px-2.5 py-1 rounded-lg bg-purple-600 text-white text-xs font-black shadow-sm">
-										Эндо 043/у
-									</span>
-								</button>
-							</div>
-						)}
+								</span>
+								<span className="px-2.5 py-1 rounded-lg bg-purple-600 text-white text-xs font-black shadow-sm">
+									Эндо 043/у
+								</span>
+							</button>
+						</div>
 
 						{/* Dental Lab Work Order Quick Access */}
 						<div className="pt-2 border-t border-[var(--line,#e2e8f0)] dark:border-slate-700">

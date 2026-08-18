@@ -563,6 +563,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
+						data-testid="egisz-cda-modal-close-btn"
 						className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
 						aria-label="Закрыть модальное окно"
 					>

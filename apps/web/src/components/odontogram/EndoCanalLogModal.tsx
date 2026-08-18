@@ -595,6 +595,7 @@ export function EndoCanalLogModal({
 					<button
 						type="button"
 						onClick={onClose}
+						data-testid="endo-modal-close-btn"
 						className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center cursor-pointer"
 						aria-label="Закрыть модальное окно"
 					>

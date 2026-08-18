@@ -798,6 +798,7 @@ export function DentalLabOrderModal({
 						<button
 							type="button"
 							onClick={onClose}
+							data-testid="lab-order-modal-close-btn"
 							className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
 							aria-label="Закрыть модальное окно"
 						>
@@ -807,7 +808,7 @@ export function DentalLabOrderModal({
 				</div>
 
 				{/* ─── NAVIGATION TABS ───────────────────────────────────────────── */}
-				<div className="flex items-center gap-1 px-6 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-900/40 overflow-x-auto text-xs">
+				<div className="flex items-center gap-1.5 px-6 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-900/40 overflow-x-auto text-xs scrollbar-none">
 					{[
 						{ id: "main", label: "1. Зубная формула & Реставрация", icon: FlaskConical },
 						{ id: "shades", label: "2. Расцветка VITA & Культя", icon: Palette },
@@ -823,7 +824,7 @@ export function DentalLabOrderModal({
 								key={tab.id}
 								type="button"
 								onClick={() => setActiveTab(tab.id as TabKey)}
-								className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
+								className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg font-medium whitespace-nowrap shrink-0 transition-all ${
 									isActive
 										? "bg-white dark:bg-slate-800 text-teal-600 dark:text-teal-400 shadow-sm border border-slate-200 dark:border-slate-700 font-semibold"
 										: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50"

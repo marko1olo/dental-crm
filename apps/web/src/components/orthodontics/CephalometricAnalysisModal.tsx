@@ -194,6 +194,7 @@ export function CephalometricAnalysisModal({
 						<button
 							type="button"
 							onClick={onClose}
+							data-testid="ceph-modal-close-btn"
 							aria-label="Закрыть окно цефалометрического анализа"
 							className="w-9 h-9 rounded-xl flex items-center justify-center bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--muted,#64748b)] dark:text-slate-300 hover:text-[var(--ink,#0f172a)] dark:hover:text-white transition-colors cursor-pointer"
 						>
