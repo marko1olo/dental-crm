@@ -798,9 +798,10 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								placeholder="Поиск материала..."
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
+								className="!pl-11"
 								style={{
 									width: "100%",
-									padding: "10px 12px 10px 36px",
+									padding: "10px 12px 10px 42px",
 									borderRadius: 8,
 									border: `1px solid ${borderColor}`,
 									background: paperBg,

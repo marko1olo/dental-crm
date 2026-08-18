@@ -411,7 +411,22 @@ export function PediatricPerspectiveView() {
 							)}
 						</div>
 						<h1 className="text-xl md:text-2xl font-black text-[var(--ink,#0f172a)] dark:text-white m-0 mt-1 flex items-center gap-2 flex-wrap">
-							<span>{activePatient?.fullName || "Ребёнок (Пациент не выбран)"}</span>
+							{dashboard?.patients && dashboard.patients.length > 1 ? (
+								<select
+									aria-label="Выбор детского пациента"
+									value={activePatient?.id || ""}
+									onChange={(e) => setSelectedPatientId(e.target.value)}
+									className="min-h-[44px] px-3 py-1.5 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 border border-[var(--line,#cbd5e1)] dark:border-slate-700 rounded-xl text-[var(--ink,#0f172a)] dark:text-slate-100 font-bold text-base sm:text-lg cursor-pointer outline-none focus:border-pink-500"
+								>
+									{dashboard.patients.map((p) => (
+										<option key={p.id} value={p.id}>
+											{p.fullName}
+										</option>
+									))}
+								</select>
+							) : (
+								<span>{activePatient?.fullName || "Ребёнок (Пациент не выбран)"}</span>
+							)}
 							<span className="text-sm font-bold text-pink-700 dark:text-pink-300 bg-pink-50 dark:bg-pink-950/50 px-2.5 py-0.5 rounded-full border border-pink-500/30">
 								🧸 Детский возраст
 							</span>
