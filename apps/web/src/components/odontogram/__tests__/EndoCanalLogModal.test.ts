@@ -344,4 +344,29 @@ describe("EndoCanalLogModal — EMR Clinical Data & Canal Persistence", () => {
 		assert.ok(protocolText.includes(customIrrigation));
 		assert.ok(protocolText.includes(customRadiology));
 	});
+
+	test("Генерация протокола 043/у отображает силер и клинические примечания при их наличии", () => {
+		const canals: EndoCanalData[] = [
+			{
+				id: "c-sealer-1",
+				canalName: "P",
+				referencePoint: "Нёбный бугор (P cusp)",
+				workingLengthMm: 22.0,
+				masterApicalFile: "ISO 30 (#30 синий)",
+				taper: ".06 (Конусность 6%)",
+				obturationTechnique: "Биокерамика (BioRoot RCS / TotalFill)",
+				sealer: "BioRoot RCS",
+				notes: "Широкий апекс",
+			},
+		];
+
+		const protocolText = generateEndoProtocol043({
+			toothNumber: 26,
+			canals,
+		});
+
+		assert.ok(protocolText.includes("Канал P (репер: Нёбный бугор (P cusp))"));
+		assert.ok(protocolText.includes("силер: BioRoot RCS"));
+		assert.ok(protocolText.includes("[Широкий апекс]"));
+	});
 });

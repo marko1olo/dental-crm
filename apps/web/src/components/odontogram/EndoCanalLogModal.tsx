@@ -299,7 +299,9 @@ export function generateEndoProtocol043(params: {
 		const taperClean = taperMatch ? taperMatch[0] : c.taper;
 		const lengthStr = c.workingLengthMm ? `${c.workingLengthMm} мм` : "—";
 		const refStr = c.referencePoint ? ` (репер: ${c.referencePoint})` : "";
-		return `  • Канал ${c.canalName}${refStr}: WL = ${lengthStr} (апекслокатор), MAF = ${mafClean}/${taperClean}, обтурация: ${c.obturationTechnique}`;
+		const sealerStr = c.sealer ? `, силер: ${c.sealer}` : "";
+		const notesStr = c.notes ? ` [${c.notes}]` : "";
+		return `  • Канал ${c.canalName}${refStr}: WL = ${lengthStr} (апекслокатор), MAF = ${mafClean}/${taperClean}, обтурация: ${c.obturationTechnique}${sealerStr}${notesStr}`;
 	});
 
 	const irrigation =
