@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
 	Activity,
 	AlertCircle,
@@ -754,7 +755,7 @@ export function DentalLabOrderModal({
 
 	const portalUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/#/portal/lab-order/${secureToken}`;
 
-	return (
+	const modalContent = (
 		<div
 			className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/80 backdrop-blur-sm overflow-y-auto"
 			role="dialog"
@@ -1797,4 +1798,8 @@ export function DentalLabOrderModal({
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined"
+		? createPortal(modalContent, document.body)
+		: modalContent;
 }

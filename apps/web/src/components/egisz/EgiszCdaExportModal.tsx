@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { type CertificateInfo, signatureService } from "../../lib/cryptopro";
 import { actionFailureToast } from "../../lib/panelStateText";
@@ -523,7 +524,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 		selectedCertInfo?.provider === "rutoken" ||
 		selectedCertInfo?.deviceId !== undefined;
 
-	return (
+	const modalContent = (
 		<div
 			className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-sm animate-fadeIn"
 			role="dialog"
@@ -1513,4 +1514,8 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined"
+		? createPortal(modalContent, document.body)
+		: modalContent;
 };
