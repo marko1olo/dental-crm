@@ -15275,7 +15275,7 @@ textarea:focus {
 
 /* DOCUMENT FACTORY SELECTED KIND REDESIGN */
 .document-factory-selected-kind {
-	background: #f4fbf8;
+	background: var(--paper-soft);
 	border: 1px solid var(--line);
 	border-radius: 12px;
 	color: var(--muted);
@@ -15298,7 +15298,7 @@ textarea:focus {
 
 .document-factory-selected-kind select {
 	width: 100%;
-	background: #fff;
+	background: var(--paper);
 	border: 1px solid var(--line-strong);
 	border-radius: 8px;
 	color: var(--ink);
@@ -15318,8 +15318,8 @@ textarea:focus {
 	font-size: 11px;
 	line-height: 1.4;
 	color: var(--muted);
-	background: #fdfaf2;
-	border: 1px solid #f5d393;
+	background: var(--paper-subtle, var(--paper-soft));
+	border: 1px solid var(--line);
 	padding: 8px 12px;
 	border-radius: 6px;
 }

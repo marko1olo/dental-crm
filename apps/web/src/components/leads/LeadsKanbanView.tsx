@@ -526,7 +526,8 @@ export function LeadsKanbanView() {
 							placeholder="Поиск по имени или телефону..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="pl-9 pr-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink)] text-xs focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all w-64"
+							className="!pl-10 pr-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink)] text-xs focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all w-64"
+							style={{ paddingLeft: "40px" }}
 							aria-label="Поиск по имени или телефону"
 						/>
 					</div>
@@ -540,7 +541,7 @@ export function LeadsKanbanView() {
 							value={sourceFilter}
 							onChange={(e) => setSourceFilter(e.target.value)}
 							style={{
-								padding: "8px 12px 8px 32px",
+								padding: "8px 12px 8px 36px",
 								borderRadius: 8,
 								border: `1px solid ${borderColor}`,
 								background: colBg,
