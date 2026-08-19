@@ -4,6 +4,7 @@
  */
 
 import { randomUUID } from "node:crypto";
+import { kopecksToNumericString, parseKopecks } from "@dental/shared";
 import { escapeXml } from "../cda/util.js";
 
 export interface FnsClinicInfo {
@@ -57,6 +58,8 @@ export interface FnsTaxPayload {
 	expenses: {
 		code1AmountRub?: number;
 		code2AmountRub?: number;
+		code1AmountKopecks?: number;
+		code2AmountKopecks?: number;
 	};
 	signatory: {
 		signatoryRole: "1" | "2"; // 1 = Head/IP, 2 = Authorized Representative
@@ -265,17 +268,25 @@ export function buildFnsKnd1151156Xml(
 
 	// 4. Expenses block (<СведРасхУсл>)
 	const expenseNodes: string[] = [];
-	const code1Amt = payload.expenses.code1AmountRub;
-	const code2Amt = payload.expenses.code2AmountRub;
+	const code1Kopecks =
+		payload.expenses.code1AmountKopecks ??
+		(payload.expenses.code1AmountRub != null
+			? parseKopecks(payload.expenses.code1AmountRub)
+			: 0);
+	const code2Kopecks =
+		payload.expenses.code2AmountKopecks ??
+		(payload.expenses.code2AmountRub != null
+			? parseKopecks(payload.expenses.code2AmountRub)
+			: 0);
 
-	if (code1Amt && code1Amt > 0) {
+	if (code1Kopecks > 0) {
 		expenseNodes.push(
-			`    <СведРасхУсл КодУслуг="1" СумОпл="${code1Amt.toFixed(2)}"/>`,
+			`    <СведРасхУсл КодУслуг="1" СумОпл="${kopecksToNumericString(code1Kopecks)}"/>`,
 		);
 	}
-	if (code2Amt && code2Amt > 0) {
+	if (code2Kopecks > 0) {
 		expenseNodes.push(
-			`    <СведРасхУсл КодУслуг="2" СумОпл="${code2Amt.toFixed(2)}"/>`,
+			`    <СведРасхУсл КодУслуг="2" СумОпл="${kopecksToNumericString(code2Kopecks)}"/>`,
 		);
 	}
 
