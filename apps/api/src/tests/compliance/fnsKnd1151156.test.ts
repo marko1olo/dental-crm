@@ -146,35 +146,14 @@ describe("FNS 13% NDFL Tax Exporter (КНД 1151156 Format 5.01 / Приказ �
 	});
 
 	it("1.5 Validates kopeck integer arithmetic without floating point degradation", () => {
-		const doc: GeneratedDocument = {
-			id: "doc-1",
-			organizationId: "org-1",
-			patientId: "pat-1",
-			kind: "tax_deduction_certificate",
-			title: "Справка об оплате медицинских услуг",
-			status: "issued",
-			issuedAt: "2026-08-19T10:00:00.000Z",
-			taxYear: 2025,
-			totalAmountRub: 1110.99,
-			createdAt: "2026-08-19T10:00:00.000Z",
-			updatedAt: "2026-08-19T10:00:00.000Z",
-		};
-
-		const patient: Patient = {
-			id: "pat-1",
-			organizationId: "org-1",
-			fullName: "Иванов Иван Иванович",
-			birthDate: "1990-05-10",
-			phone: "+79991112233",
-			createdAt: "2026-01-01T00:00:00.000Z",
-			updatedAt: "2026-01-01T00:00:00.000Z",
-		};
-
 		const payments: Payment[] = [
 			{
 				id: "pay-1",
 				organizationId: "org-1",
 				patientId: "pat-1",
+				visitId: null,
+				documentId: null,
+				note: null,
 				amountRub: 555.5,
 				paidAt: "2025-06-10T12:00:00.000Z",
 				payerFullName: "Иванов Иван Иванович",
@@ -190,6 +169,9 @@ describe("FNS 13% NDFL Tax Exporter (КНД 1151156 Format 5.01 / Приказ �
 				id: "pay-2",
 				organizationId: "org-1",
 				patientId: "pat-1",
+				visitId: null,
+				documentId: null,
+				note: null,
 				amountRub: 555.49,
 				paidAt: "2025-07-15T12:00:00.000Z",
 				payerFullName: "Иванов Иван Иванович",
@@ -203,15 +185,54 @@ describe("FNS 13% NDFL Tax Exporter (КНД 1151156 Format 5.01 / Приказ �
 			},
 		];
 
-		const clinicProfile: ClinicProfile = {
+		const doc = {
+			id: "doc-1",
+			organizationId: "org-1",
+			patientId: "pat-1",
+			kind: "tax_deduction_certificate",
+			title: "Справка об оплате медицинских услуг",
+			status: "issued",
+			issuedAt: "2026-08-19T10:00:00.000Z",
+			taxYear: 2025,
+			totalAmountRub: 1110.99,
+			taxPaymentSnapshot: {
+				createdAt: "2026-08-19T10:00:00.000Z",
+				taxYear: 2025,
+				taxPayerInn: "770112345678",
+				paymentIds: ["pay-1", "pay-2"],
+				fiscalReceiptKeys: ["k-1", "k-2"],
+				payments,
+			},
+		} as unknown as GeneratedDocument;
+
+		const patient: Patient = {
+			id: "pat-1",
+			organizationId: "org-1",
+			fullName: "Иванов Иван Иванович",
+			birthDate: "1990-05-10",
+			phone: "+79991112233",
+			status: "active",
+			notes: null,
+			email: null,
+			administrativeProfile: null,
+			balanceRub: 0,
+			createdAt: "2026-01-01T00:00:00.000Z",
+			updatedAt: "2026-01-01T00:00:00.000Z",
+		};
+
+		const clinicProfile = {
+			organizationId: "org-1",
 			clinicName: "ООО ДЕНТЕ",
 			legalName: "ООО Стоматология ДЕНТЕ",
 			inn: "7701234567",
 			kpp: "770101001",
 			ogrn: "1157746123456",
 			signatoryName: "Петров Петр Сергеевич",
-			signatoryRole: "Генеральный директор",
-		};
+			signatoryTitle: "Генеральный директор",
+			phone: "+79991112233",
+			mode: "small_clinic" as const,
+			updatedAt: "2026-01-01T00:00:00.000Z",
+		} as unknown as ClinicProfile;
 
 		const res = buildKnd1151156Xml(doc, patient, {
 			clinicProfile,

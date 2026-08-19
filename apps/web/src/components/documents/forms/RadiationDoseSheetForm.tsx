@@ -5,7 +5,8 @@ import {
 	type RadiationDoseSheetPayload,
 	type PatientRadiationExposureRecord,
 	type DentalRadiologyStudyType,
-	STANDARD_DENTAL_RADIATION_DOSES,
+	DEFAULT_EFFECTIVE_DOSES_MSV,
+	dentalRadiologyStudyLabels,
 } from "@dental/shared";
 
 export interface RadiationDoseSheetFormProps {
@@ -17,15 +18,15 @@ export interface RadiationDoseSheetFormProps {
 export const RadiationDoseSheetForm: React.FC<RadiationDoseSheetFormProps> = React.memo(
 	function RadiationDoseSheetForm({ initialPayload, onChange, disabled }) {
 		const [currentYear, setCurrentYear] = useState<number>(
-			initialPayload?.summaryAnnualDose?.currentYear ?? new Date().getFullYear(),
+			(initialPayload as any)?.summaryAnnualDose?.currentYear ?? new Date().getFullYear(),
 		);
 
 		const [records, setRecords] = useState<PatientRadiationExposureRecord[]>(() => {
 			return (
-				initialPayload?.exposureRecords ?? [
+				(initialPayload as any)?.exposureRecords ?? [
 					{
 						studyDate: "2026-03-12",
-						studyType: "radiovisiography_periapical",
+						studyType: "intraoral_radiovisiography",
 						anatomicalArea: "Зуб 26",
 						effectiveDoseMsv: 0.003,
 						effectiveDoseMicrosv: 3.0,
@@ -37,10 +38,10 @@ export const RadiationDoseSheetForm: React.FC<RadiationDoseSheetFormProps> = Rea
 					},
 					{
 						studyDate: "2026-08-01",
-						studyType: "cbct_maxilla_mandible_8x8",
+						studyType: "cbct_jaw_8x8",
 						anatomicalArea: "Обе челюсти 8x8 см",
-						effectiveDoseMsv: 0.045,
-						effectiveDoseMicrosv: 45.0,
+						effectiveDoseMsv: 0.055,
+						effectiveDoseMicrosv: 55.0,
 						apparatusName: "Planmeca ProMax 3D",
 						voltageKv: 90,
 						currentMa: 10,
@@ -58,7 +59,7 @@ export const RadiationDoseSheetForm: React.FC<RadiationDoseSheetFormProps> = Rea
 
 		const addStudyRow = (studyType: DentalRadiologyStudyType) => {
 			if (disabled) return;
-			const standardDose = STANDARD_DENTAL_RADIATION_DOSES[studyType]?.typicalDoseMsv ?? 0.003;
+			const standardDose = DEFAULT_EFFECTIVE_DOSES_MSV[studyType] ?? 0.003;
 			setRecords((prev) => [
 				...prev,
 				{
@@ -117,7 +118,7 @@ export const RadiationDoseSheetForm: React.FC<RadiationDoseSheetFormProps> = Rea
 							<button
 								type="button"
 								className="btn btn-sm btn-outline-primary"
-								onClick={() => addStudyRow("radiovisiography_periapical")}
+								onClick={() => addStudyRow("intraoral_radiovisiography")}
 								disabled={disabled}
 							>
 								+ Визиография
@@ -125,7 +126,7 @@ export const RadiationDoseSheetForm: React.FC<RadiationDoseSheetFormProps> = Rea
 							<button
 								type="button"
 								className="btn btn-sm btn-outline-primary"
-								onClick={() => addStudyRow("optg_panoramic_digital")}
+								onClick={() => addStudyRow("optg_digital_panoramic")}
 								disabled={disabled}
 							>
 								+ ОПТГ
@@ -141,7 +142,7 @@ export const RadiationDoseSheetForm: React.FC<RadiationDoseSheetFormProps> = Rea
 							<button
 								type="button"
 								className="btn btn-sm btn-outline-primary"
-								onClick={() => addStudyRow("cbct_maxilla_mandible_8x8")}
+								onClick={() => addStudyRow("cbct_jaw_8x8")}
 								disabled={disabled}
 							>
 								+ КЛКТ 8x8
@@ -166,13 +167,13 @@ export const RadiationDoseSheetForm: React.FC<RadiationDoseSheetFormProps> = Rea
 								{records.map((r, idx) => (
 									<tr key={idx}>
 										<td>{r.studyDate}</td>
-										<td>{STANDARD_DENTAL_RADIATION_DOSES[r.studyType]?.label ?? r.studyType}</td>
+										<td>{(dentalRadiologyStudyLabels as Record<string, string>)[r.studyType] ?? r.studyType}</td>
 										<td>{r.anatomicalArea}</td>
 										<td>{r.apparatusName}</td>
 										<td>
-											<strong>{r.effectiveDoseMsv.toFixed(4)}</strong>
+											<strong>{Number(r.effectiveDoseMsv ?? 0).toFixed(4)}</strong>
 										</td>
-										<td>{r.effectiveDoseMicrosv.toFixed(1)}</td>
+										<td>{Number(r.effectiveDoseMicrosv ?? 0).toFixed(1)}</td>
 										<td>{r.technicianOrDoctorFullName}</td>
 									</tr>
 								))}

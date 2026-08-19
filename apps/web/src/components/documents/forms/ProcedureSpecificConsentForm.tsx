@@ -1,4 +1,7 @@
-import type { ProcedureSpecificConsentProcedure } from "@dental/shared";
+import {
+	CLINICAL_CONSENT_PRESETS,
+	type ProcedureSpecificConsentProcedure,
+} from "@dental/shared";
 import type { ReactNode } from "react";
 import React from "react";
 import { useDocumentStore } from "../../../store/documentStore";
@@ -128,21 +131,114 @@ export const ProcedureSpecificConsentForm = React.memo(
 			(state) => state.setProcedureConsentToothOrArea,
 		);
 
+		const applyClinicalPreset = (procType: ProcedureSpecificConsentProcedure) => {
+			const preset = CLINICAL_CONSENT_PRESETS[procType];
+			if (!preset) return;
+			setProcedureConsentProcedureType(procType);
+			setProcedureConsentProcedureName(preset.procedureName);
+			setProcedureConsentDiagnosisOrIndication(preset.diagnosisOrIndication);
+			setProcedureConsentAnesthesia(preset.plannedAnesthesia ?? "");
+			setProcedureConsentMaterials(preset.materialsAndSystems ?? "");
+			setProcedureConsentPatientRiskFactors(preset.patientSpecificRiskFactors.join("\n"));
+			setProcedureConsentSpecificRisks(preset.procedureSpecificRisks.join("\n"));
+			setProcedureConsentAlternatives(preset.alternatives.join("\n"));
+			setProcedureConsentAftercare(preset.aftercareAndLimits.join("\n"));
+		};
+
 		return (
 			<DocumentPayloadCard
 				title="Процедурное согласие"
 				description="Приложение к согласию для конкретной процедуры: тип, зона, материалы, риски, альтернативы и послеоперационные ограничения."
 			>
+				<div style={{ marginBottom: "12px" }}>
+					<span style={{ fontSize: "12px", color: "var(--muted, #64748b)", display: "block", marginBottom: "6px" }}>
+						⚡ Быстрое заполнение по клиническому профилю (1 клик):
+					</span>
+					<div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+						<button
+							type="button"
+							className="secondary-button"
+							style={{ fontSize: "11.5px", padding: "3px 8px" }}
+							onClick={() => applyClinicalPreset("therapy_endo_restoration")}
+						>
+							🦷 Терапия / Эндодонтия
+						</button>
+						<button
+							type="button"
+							className="secondary-button"
+							style={{ fontSize: "11.5px", padding: "3px 8px" }}
+							onClick={() => applyClinicalPreset("local_anesthesia")}
+						>
+							💉 Местная анестезия
+						</button>
+						<button
+							type="button"
+							className="secondary-button"
+							style={{ fontSize: "11.5px", padding: "3px 8px" }}
+							onClick={() => applyClinicalPreset("sedation")}
+						>
+							💨 Седация (ЗАКС / в/в)
+						</button>
+						<button
+							type="button"
+							className="secondary-button"
+							style={{ fontSize: "11.5px", padding: "3px 8px" }}
+							onClick={() => applyClinicalPreset("surgery_extraction")}
+						>
+							🔪 Хирургия / Удаление
+						</button>
+						<button
+							type="button"
+							className="secondary-button"
+							style={{ fontSize: "11.5px", padding: "3px 8px" }}
+							onClick={() => applyClinicalPreset("implantation_bone_graft")}
+						>
+							🔩 Имплантация / Костная пластика
+						</button>
+						<button
+							type="button"
+							className="secondary-button"
+							style={{ fontSize: "11.5px", padding: "3px 8px" }}
+							onClick={() => applyClinicalPreset("prosthetics")}
+						>
+							👑 Ортопедия (коронки, виниры)
+						</button>
+						<button
+							type="button"
+							className="secondary-button"
+							style={{ fontSize: "11.5px", padding: "3px 8px" }}
+							onClick={() => applyClinicalPreset("orthodontics")}
+						>
+							📐 Ортодонтия (брекеты, элайнеры)
+						</button>
+						<button
+							type="button"
+							className="secondary-button"
+							style={{ fontSize: "11.5px", padding: "3px 8px" }}
+							onClick={() => applyClinicalPreset("hygiene_whitening")}
+						>
+							🪥 Гигиена и отбеливание
+						</button>
+						<button
+							type="button"
+							className="secondary-button"
+							style={{ fontSize: "11.5px", padding: "3px 8px" }}
+							onClick={() => applyClinicalPreset("periodontology")}
+						>
+							🩸 Пародонтология
+						</button>
+					</div>
+				</div>
+
 				<div className="document-payload-row">
 					<label>
 						Блок процедуры
 						<select
 							value={procedureConsentProcedureType}
-							onChange={(event) =>
-								setProcedureConsentProcedureType(
-									normalizeProcedure(event.target.value),
-								)
-							}
+							onChange={(event) => {
+								const nextType = normalizeProcedure(event.target.value);
+								setProcedureConsentProcedureType(nextType);
+							}}
 						>
 							{procedureOptions.map((option) => (
 								<option key={option.value} value={option.value}>

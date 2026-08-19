@@ -1,3 +1,4 @@
+import { BASE_INFORMED_CONSENT_PRESET } from "@dental/shared";
 import React, { useMemo } from "react";
 import { useDocumentStore } from "../../../store/documentStore";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
@@ -179,6 +180,25 @@ export const InformedConsentForm = React.memo(function InformedConsentForm({
 					</div>
 				) : null}
 		>
+			<div style={{ marginBottom: "12px" }}>
+				<button
+					type="button"
+					className="secondary-button"
+					style={{ fontSize: "12px", padding: "4px 10px" }}
+					onClick={() => {
+						setInformedConsentIntervention(BASE_INFORMED_CONSENT_PRESET.intervention);
+						setInformedConsentDiagnosisOrIndication(BASE_INFORMED_CONSENT_PRESET.diagnosisOrIndication);
+						setInformedConsentExpectedBenefit(BASE_INFORMED_CONSENT_PRESET.expectedBenefit);
+						setInformedConsentAnesthesia(BASE_INFORMED_CONSENT_PRESET.plannedAnesthesia ?? "");
+						setInformedConsentMaterialNotes(BASE_INFORMED_CONSENT_PRESET.materialOrMedicationNotes ?? "");
+						setInformedConsentRisks(BASE_INFORMED_CONSENT_PRESET.explainedRisks.join("\n"));
+						setInformedConsentAlternatives(BASE_INFORMED_CONSENT_PRESET.alternatives.join("\n"));
+						setInformedConsentAftercare(BASE_INFORMED_CONSENT_PRESET.aftercareRequirements.join("\n"));
+					}}
+				>
+					📋 1 клик: Первичный осмотр, консультация и рентген-диагностика (Приказ № 1051н)
+				</button>
+			</div>
 			<label>
 				Планируемое вмешательство
 				<textarea

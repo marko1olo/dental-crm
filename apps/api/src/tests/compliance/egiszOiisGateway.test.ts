@@ -8,10 +8,10 @@ import {
 	OiisGatewayClient,
 } from "../../services/egisz/OiisGatewayClient.js";
 import {
-	EgiszOutboxDispatcher,
-} from "../../services/egisz/EgiszOutboxDispatcher.js";
-import {
 	appendEgiszAuditLog,
+	computeAuditEntryHash,
+	computePayloadSha256,
+	GENESIS_HASH,
 	verifyAuditLogChain,
 } from "../../services/egisz/EgiszAuditService.js";
 
@@ -53,7 +53,7 @@ describe("EGISZ REMD Dental SEMD 108 & OIIS Gateway Client Tests", () => {
 				signedAt: "2026-08-19T10:35:00.000Z",
 				algorithmOid: "1.2.643.7.1.1.1.1",
 			},
-			patientSnils: "12345678901",
+			patientSnils: "11223344595",
 			clinicOid: "1.2.643.5.1.13.13.12.2.77.1001",
 			clinicOgrn: "1157746123456",
 			docTypeNsiCode: "108",
@@ -108,7 +108,7 @@ describe("EGISZ REMD Dental SEMD 108 & OIIS Gateway Client Tests", () => {
 				algorithmOid: "1.2.643.7.1.1.1.1",
 			},
 			metadata: {
-				patientSnils: "12345678901",
+				patientSnils: "11223344595", // Valid checksum (sum=95)
 				clinicOid: "1.2.643.5.1.13.13.12.2.77.1001",
 				docTypeNsiCode: "108",
 			},
@@ -136,8 +136,8 @@ describe("EGISZ REMD Dental SEMD 108 & OIIS Gateway Client Tests", () => {
 				id: "log-1",
 				organizationId: "org-1",
 				sequenceNumber: 1,
-				previousHash: "0000000000000000000000000000000000000000000000000000000000000000",
-				currentHash: "hash-placeholder",
+				previousHash: GENESIS_HASH,
+				currentHash: "",
 				eventType: "REMD_SEMD_DISPATCHED",
 				entityType: "egisz_log",
 				entityId: "item-1",
@@ -147,11 +147,11 @@ describe("EGISZ REMD Dental SEMD 108 & OIIS Gateway Client Tests", () => {
 			},
 		];
 
-		// Compute real hashes
-		const { computePayloadSha256, computeAuditEntryHash, GENESIS_HASH } = require("../../services/egisz/EgiszAuditService.js");
-		const payloadHash = computePayloadSha256(rows[0].payloadJson);
-		rows[0].payloadSha256 = payloadHash;
-		rows[0].currentHash = computeAuditEntryHash({
+		const firstRow = rows[0];
+		assert.ok(firstRow);
+		const payloadHash = computePayloadSha256(firstRow.payloadJson);
+		firstRow.payloadSha256 = payloadHash;
+		firstRow.currentHash = computeAuditEntryHash({
 			previousHash: GENESIS_HASH,
 			sequenceNumber: 1,
 			organizationId: "org-1",

@@ -1,3 +1,4 @@
+import { PERSONAL_DATA_EGISZ_CONSENT_PRESET } from "@dental/shared";
 import type { ClinicProfileDraft } from "../../../AppConstants";
 import React, { useMemo } from "react";
 import { useDocumentStore } from "../../../store/documentStore";
@@ -177,6 +178,23 @@ export const PersonalDataProcessingConsentForm = React.memo(
 						placeholder={`пусто — заполните в «${CLINIC_REQUISITES_LOCATION}»`}
 					/>
 				</label>
+				<div style={{ marginBottom: "12px" }}>
+					<button
+						type="button"
+						className="secondary-button"
+						style={{ fontSize: "12px", padding: "4px 10px" }}
+						onClick={() => {
+							setPersonalDataPurposes(PERSONAL_DATA_EGISZ_CONSENT_PRESET.purposes.join("\n"));
+							setPersonalDataCategories(PERSONAL_DATA_EGISZ_CONSENT_PRESET.categories.join("\n"));
+							setPersonalDataActions(PERSONAL_DATA_EGISZ_CONSENT_PRESET.actions.join("\n"));
+							setPersonalDataTransferRules(PERSONAL_DATA_EGISZ_CONSENT_PRESET.transferRules);
+							setPersonalDataRetentionPeriod(PERSONAL_DATA_EGISZ_CONSENT_PRESET.retentionPeriod);
+							setPersonalDataRevocationChannel(PERSONAL_DATA_EGISZ_CONSENT_PRESET.revocationChannel);
+						}}
+					>
+						🔒 1 клик: Заполнить формулировки 152-ФЗ + ЕГИСЗ Минздрава (Постановление № 140)
+					</button>
+				</div>
 				<label>
 					Цели обработки
 					<textarea

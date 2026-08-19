@@ -1,3 +1,4 @@
+import { MEDICAL_REFUSAL_COMPLICATIONS_PRESET } from "@dental/shared";
 import React from "react";
 import { useDocumentStore } from "../../../store/documentStore";
 import { SmartMicrophoneButton } from "../../SmartMicrophoneButton";
@@ -128,6 +129,73 @@ export const MedicalInterventionRefusalForm = React.memo(
 						✏️ Ручная корректировка полей (развернуть)
 					</summary>
 					<div className="document-payload-collapsed-content mt-4 flex flex-col gap-4">
+						<div style={{ marginBottom: "8px" }}>
+							<span style={{ fontSize: "12px", color: "var(--muted, #64748b)", display: "block", marginBottom: "6px" }}>
+								⚡ Пресеты клинических осложнений отказа (1 клик):
+							</span>
+							<div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+								<button
+									type="button"
+									className="secondary-button"
+									style={{ fontSize: "11.5px", padding: "3px 8px" }}
+									onClick={() => {
+										const p = MEDICAL_REFUSAL_COMPLICATIONS_PRESET.caries_endo_refusal;
+										setRefusalIntervention(p.refusedIntervention);
+										setRefusalClinicalIndication(p.clinicalIndication);
+										setRefusalExplainedRisks(p.explainedRisks.join("\n"));
+										setRefusalAlternatives(p.alternativesOffered.join("\n"));
+										setRefusalUrgentWarningSigns(p.urgentWarningSigns.join("\n"));
+									}}
+								>
+									🦷 Отказ от терапии/эндодонтии
+								</button>
+								<button
+									type="button"
+									className="secondary-button"
+									style={{ fontSize: "11.5px", padding: "3px 8px" }}
+									onClick={() => {
+										const p = MEDICAL_REFUSAL_COMPLICATIONS_PRESET.surgery_extraction_refusal;
+										setRefusalIntervention(p.refusedIntervention);
+										setRefusalClinicalIndication(p.clinicalIndication);
+										setRefusalExplainedRisks(p.explainedRisks.join("\n"));
+										setRefusalAlternatives(p.alternativesOffered.join("\n"));
+										setRefusalUrgentWarningSigns(p.urgentWarningSigns.join("\n"));
+									}}
+								>
+									🔪 Отказ от удаления/хирургии
+								</button>
+								<button
+									type="button"
+									className="secondary-button"
+									style={{ fontSize: "11.5px", padding: "3px 8px" }}
+									onClick={() => {
+										const p = MEDICAL_REFUSAL_COMPLICATIONS_PRESET.prosthetics_implant_refusal;
+										setRefusalIntervention(p.refusedIntervention);
+										setRefusalClinicalIndication(p.clinicalIndication);
+										setRefusalExplainedRisks(p.explainedRisks.join("\n"));
+										setRefusalAlternatives(p.alternativesOffered.join("\n"));
+										setRefusalUrgentWarningSigns(p.urgentWarningSigns.join("\n"));
+									}}
+								>
+									👑 Отказ от протезирования/имплантации
+								</button>
+								<button
+									type="button"
+									className="secondary-button"
+									style={{ fontSize: "11.5px", padding: "3px 8px" }}
+									onClick={() => {
+										const p = MEDICAL_REFUSAL_COMPLICATIONS_PRESET.anesthesia_refusal;
+										setRefusalIntervention(p.refusedIntervention);
+										setRefusalClinicalIndication(p.clinicalIndication);
+										setRefusalExplainedRisks(p.explainedRisks.join("\n"));
+										setRefusalAlternatives(p.alternativesOffered.join("\n"));
+										setRefusalUrgentWarningSigns(p.urgentWarningSigns.join("\n"));
+									}}
+								>
+									💉 Отказ от анестезии
+								</button>
+							</div>
+						</div>
 						<label>
 							Предложенное вмешательство
 							<input
