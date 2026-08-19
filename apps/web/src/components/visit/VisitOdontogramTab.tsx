@@ -72,22 +72,10 @@ export function VisitOdontogramTab(props?: {
 	return (
 		<div
 			data-testid="visit-odontogram-tab"
-			className="visit-odontogram-tab bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl p-4"
-			style={{
-				display: "flex",
-				flexWrap: "wrap",
-				gap: "24px",
-				margin: "24px 0",
-				width: "100%",
-				maxWidth: "100%",
-			}}
+			className="visit-odontogram-tab flex flex-col gap-6 w-full max-w-full my-2"
 		>
-			<div
-				style={{
-					flex: "1 1 45%",
-					minWidth: "300px",
-				}}
-			>
+			{/* Top Full-Width Section: Odontogram & Treatment Planning */}
+			<div className="w-full">
 				<OdontogramModule
 					patientId={activePatient.id}
 					pediatricMode={
@@ -96,24 +84,9 @@ export function VisitOdontogramTab(props?: {
 					}
 				/>
 			</div>
-			<div
-				style={{
-					flex: "1 1 50%",
-					minWidth: "300px",
-				}}
-			>
-				{/*
-					НАЖАТИЕ НА ВКЛАДКУ «ЗУБНАЯ ФОРМУЛА» РОНЯЛО ВЕСЬ РАЗДЕЛ «ПРИЁМ».
-					Здесь стояло `visitId={activeAppointment.id}` без проверки, а
-					проверка выше смотрит только на пациента. У клиники без приёмов
-					activeAppointment равен undefined — «Cannot read properties of
-					undefined (reading 'id')». Экран схлопывался вместе с кнопками
-					вкладок: вернуться можно было только перезагрузкой страницы.
 
-					Зубная карта приёма не требует — она принадлежит пациенту и
-					показывается всегда. Дневник приёма и мониторинг ЕГИСЗ без
-					открытого визита (visits.id) показывать нечего.
-				*/}
+			{/* Bottom Section: Visit Diary & Clinical Documentation */}
+			<div className="w-full">
 				{diaryVisitId && diaryPatientId ? (
 					<>
 						{/*
@@ -153,15 +126,15 @@ export function VisitOdontogramTab(props?: {
 						)}
 					</>
 				) : (
-					<div className="text-center py-10 px-6 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400">
+					<div className="text-center py-10 px-6 rounded-2xl border border-dashed border-[var(--odontogram-border,#cbd5e1)] bg-[var(--odontogram-surface,#f8fafc)] text-[var(--odontogram-ink-muted,#64748b)]">
 						<div className="text-3xl mb-2">📝</div>
-						<h4 className="text-base font-semibold text-slate-900 dark:text-white m-0">
+						<h4 className="text-base font-bold text-[var(--odontogram-ink,#0f172a)] m-0">
 							{appointmentId
 								? "Дневник приёма появится, когда визит откроют"
 								: "Дневник приёма появится, когда приём откроют"}
 						</h4>
 						<p className="text-sm m-0 mt-1">
-							Зубную карту слева можно заполнять уже сейчас: она хранится у
+							Зубную карту выше можно заполнять уже сейчас: она хранится у
 							пациента.
 							{appointmentId
 								? " Дневник и ЕГИСЗ привязаны к открытому визиту — начните приём в разделе «Записи», чтобы появилась запись 043/у."

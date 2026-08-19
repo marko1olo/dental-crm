@@ -71,3 +71,19 @@ test("getToothAnatomicalNameRu — formats adult and pediatric teeth names corre
 	assert.ok(name54.includes("временный"), "identifies as primary/temporary");
 	assert.ok(name54.includes("первый моляр"), "identifies as first molar");
 });
+
+test("createDefaultAdultTeethData — initializes exactly 32 healthy adult teeth", async () => {
+	const { ALL_ADULT_TEETH_NUMBERS, createDefaultAdultTeethData } = await import(
+		"../components/odontogram/ToothChart"
+	);
+	assert.equal(ALL_ADULT_TEETH_NUMBERS.length, 32, "32 adult teeth in arch");
+	const uniqueNumbers = new Set(ALL_ADULT_TEETH_NUMBERS);
+	assert.equal(uniqueNumbers.size, 32, "all 32 tooth numbers are unique");
+
+	const defaultData = createDefaultAdultTeethData();
+	assert.equal(defaultData.length, 32, "32 items generated");
+	for (const tooth of defaultData) {
+		assert.equal(tooth.state, "Healthy", `tooth ${tooth.toothNumber} is Healthy`);
+		assert.ok(ALL_ADULT_TEETH_NUMBERS.includes(tooth.toothNumber));
+	}
+});

@@ -46,28 +46,40 @@ export interface ToothData {
 
 export interface ToothChartProps {
 	teethData: ToothData[];
-	pediatricMode?: boolean;
-	mixedDentition?: boolean;
-	topTeeth?: number[];
-	bottomTeeth?: number[];
-	selectedTeeth?: number[];
-	onToothClick: (num: number, rect: DOMRect, surface?: string) => void;
+	pediatricMode?: boolean | undefined;
+	mixedDentition?: boolean | undefined;
+	topTeeth?: number[] | undefined;
+	bottomTeeth?: number[] | undefined;
+	selectedTeeth?: number[] | undefined;
+	onToothClick: (num: number, rect: DOMRect, surface?: string | undefined) => void;
 	useSurfaces?: boolean | undefined;
-	hideHeader?: boolean;
-	hideLegend?: boolean;
-	className?: string;
+	hideHeader?: boolean | undefined;
+	hideLegend?: boolean | undefined;
+	className?: string | undefined;
 }
 
-const TOP_TEETH = [
+export const TOP_TEETH = [
 	18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28,
 ];
-const BOTTOM_TEETH = [
+export const BOTTOM_TEETH = [
 	48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38,
 ];
-const PEDIATRIC_TOP_TEETH = [55, 54, 53, 52, 51, 61, 62, 63, 64, 65];
-const PEDIATRIC_BOTTOM_TEETH = [85, 84, 83, 82, 81, 71, 72, 73, 74, 75];
-const MIXED_TOP_TEETH = [16, 55, 54, 53, 52, 51, 61, 62, 63, 64, 65, 26];
-const MIXED_BOTTOM_TEETH = [46, 85, 84, 83, 82, 81, 71, 72, 73, 74, 75, 36];
+export const ALL_ADULT_TEETH_NUMBERS: readonly number[] = [
+	...TOP_TEETH,
+	...BOTTOM_TEETH,
+];
+
+export function createDefaultAdultTeethData(): ToothData[] {
+	return ALL_ADULT_TEETH_NUMBERS.map((toothNumber) => ({
+		toothNumber,
+		state: "Healthy" as ToothState,
+	}));
+}
+
+export const PEDIATRIC_TOP_TEETH = [55, 54, 53, 52, 51, 61, 62, 63, 64, 65];
+export const PEDIATRIC_BOTTOM_TEETH = [85, 84, 83, 82, 81, 71, 72, 73, 74, 75];
+export const MIXED_TOP_TEETH = [16, 55, 54, 53, 52, 51, 61, 62, 63, 64, 65, 26];
+export const MIXED_BOTTOM_TEETH = [46, 85, 84, 83, 82, 81, 71, 72, 73, 74, 75, 36];
 
 /**
  * Нижняя граница масштаба. Дуга масштабируется под экран мобильного устройства.

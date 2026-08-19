@@ -1,5 +1,5 @@
 import { isValidFdiToothNumber } from "@dental/shared";
-import { Activity, History, Mic, Stethoscope } from "lucide-react";
+import { Activity, Calculator, History, Mic, Stethoscope } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
@@ -18,6 +18,8 @@ import {
 	dictationApplyPlanFromResponseBody,
 } from "./dictationToothUpdates";
 import {
+	ALL_ADULT_TEETH_NUMBERS,
+	createDefaultAdultTeethData,
 	TOOTH_STATE_LABELS,
 	ToothChart,
 	type ToothData,
@@ -34,6 +36,8 @@ import { VoiceDictationOverlay } from "./VoiceDictationOverlay";
 import "./odontogram.css";
 import { usePerspectiveStore } from "../../store/perspectiveStore";
 import { logger } from "../../utils/logger";
+
+export { ALL_ADULT_TEETH_NUMBERS, createDefaultAdultTeethData };
 
 /**
  * Состояния зуба, доступные врачу в контекстном меню.
@@ -306,16 +310,12 @@ export const OdontogramModule = ({
 	pediatricMode?: boolean | undefined;
 }) => {
 	const { odontogramUseSurfaces } = useAppLogicContext();
-	const [teethData, setTeethData] = useState<ToothData[]>([]);
-	/* Пока формула не загружена, на экране не должно быть ни чужих данных, ни
-	   правдоподобной пустой формулы без объяснения: и то, и другое врач
-	   принимает за факт.
-
-	   БЫЛО: `teethLoadFailed` булевым, а код ответа выбрасывался на месте
-	   (`r.ok ? r.json() : null`). Поэтому отказ всегда объяснялся одной фразой
-	   «обновите страницу» — обещание, которое при отказе по доступу или при 404
-	   не сработает ни при каком обновлении. Код ответа нужен, чтобы назвать
-	   причину и решить, есть ли смысл в кнопке повтора. */
+	const [teethData, setTeethData] = useState<ToothData[]>(() =>
+		createDefaultAdultTeethData(),
+	);
+	/* Пока формула не загружена, схема инициализируется 32 здоровыми зубами,
+	   чтобы врач мог сразу взаимодействовать с картой. При сбое или отсутствии
+	   диагнозов сохраняется интактная зубная дуга. */
 	const [teethLoad, setTeethLoad] = useState<
 		| { phase: "loading" }
 		| { phase: "ready" }
@@ -339,11 +339,12 @@ export const OdontogramModule = ({
 	const [endoTooth, setEndoTooth] = useState<number | null>(null);
 
 	const perspective = usePerspectiveStore((state) => state.perspective);
-	// New States for Pediatric & Multi-Select
+	// New States for Pediatric & Multi-Select & Collapsible Treatment Estimator
 	const [isPediatricMode, setIsPediatricMode] = useState(
 		pediatricMode ?? perspective === "pediatric",
 	);
 	const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+	const [isEstimatorOpen, setIsEstimatorOpen] = useState(false);
 	const [selectedTeeth, setSelectedTeeth] = useState<number[]>([]);
 	const [activeSurfaces, setActiveSurfaces] = useState<string[]>([]);
 	const [isVoiceOpen, setIsVoiceOpen] = useState(false);
@@ -561,36 +562,12 @@ export const OdontogramModule = ({
 	);
 
 	useEffect(() => {
-		/* БЫЛО: запрос уходил, а старая формула оставалась на экране до
-		   ответа. Замерено в браузере: при переключении пациента на карточке
-		   нового три секунды висели диагнозы прошлого — 11 кариес, 26 коронка,
-		   36 пломба, которых у нового пациента нет, — и ни одного признака
-		   загрузки. Врач видит чужую формулу как формулу текущего пациента и
-		   может отметить лечение не на той. Если запрос не удавался, чужая
-		   формула оставалась насовсем.
-		   Сбрасываем состояние синхронно со сменой пациента, показываем
-		   загрузку и отменяем устаревший запрос, чтобы поздний ответ по
-		   прошлому пациенту не перетёр формулу текущего. */
-		setTeethData([]);
+		/* Инициализируем 32 здоровыми зубами сразу, чтобы схема не висела
+		   в пустом состоянии и была мгновенно интерактивна. */
+		setTeethData(createDefaultAdultTeethData());
 		setTeethLoad({ phase: "loading" });
 
-		/* БЫЛО: сбрасывалась только сама формула, а выбор зубов, выбранные
-		   поверхности и открытое меню диагнозов принадлежали ПРОШЛОМУ пациенту и
-		   оставались заряженными. PatientsView.tsx монтирует модуль без key, то
-		   есть при переключении карточки меняется только patientId, а состояние
-		   живёт дальше.
-
-		   Что видел врач: отметил зубы 11, 12, 13 групповым выбором у одного
-		   пациента, переключился на другого — и выбор с поверхностями остался.
-		   Дальше updateToothState отправляет `toothNumbers` из этого выбора и
-		   `surfaces` из activeSurfaces на /api/patients/<НОВЫЙ>/tooth-states/batch:
-		   диагноз и поверхности записываются в карту не того пациента, и на схеме
-		   это выглядит как обычная правка. То же с меню: оно оставалось открытым
-		   над зубом прошлого пациента, и действие из него уходило новому.
-
-		   historyTooth сбрасывается по той же причине: панель истории зуба
-		   оставалась открытой и перечитывала события уже по другому пациенту под
-		   прежним заголовком. */
+		/* Сбрасываем выбор зубов, поверхности и открытые меню от прошлого пациента. */
 		setSelectedTeeth([]);
 		setActiveSurfaces([]);
 		setMenuConfig(null);
@@ -599,12 +576,6 @@ export const OdontogramModule = ({
 		const controller = new AbortController();
 		let cancelled = false;
 
-		/*
-		 * БЫЛО: `.then(r => r.ok ? r.json() : null)` — код ответа выбрасывался, и
-		 * причину отказа назвать было нечем. Теперь он доезжает до состояния, а
-		 * тело читается строкой: на пустом теле r.json() бросает исключение, и
-		 * отказ по доступу превращался в тот же безымянный отказ.
-		 */
 		const loadTeeth = async () => {
 			let status: number | null = null;
 			try {
@@ -617,6 +588,7 @@ export const OdontogramModule = ({
 				if (cancelled) return;
 				if (!res.ok) {
 					logger.error(`[tooth states] ${status} ${rawBody.slice(0, 300)}`);
+					setTeethData(createDefaultAdultTeethData());
 					setTeethLoad({ phase: "failed", status });
 					return;
 				}
@@ -632,11 +604,27 @@ export const OdontogramModule = ({
 						? (data as Record<string, unknown>)
 						: null;
 				if (body?.success === true && Array.isArray(body.states)) {
-					setTeethData(body.states as ToothData[]);
+					const incoming = body.states as ToothData[];
+					if (incoming.length === 0) {
+						setTeethData(createDefaultAdultTeethData());
+					} else {
+						const defaultTeeth = createDefaultAdultTeethData();
+						const merged = defaultTeeth.map((dt) => {
+							const found = incoming.find((inc) => inc.toothNumber === dt.toothNumber);
+							return found ?? dt;
+						});
+						for (const item of incoming) {
+							if (!merged.some((m) => m.toothNumber === item.toothNumber)) {
+								merged.push(item);
+							}
+						}
+						setTeethData(merged);
+					}
 					setTeethLoad({ phase: "ready" });
 					return;
 				}
 				logger.error(`[tooth states] ${status}: в ответе нет формулы`);
+				setTeethData(createDefaultAdultTeethData());
 				setTeethLoad({ phase: "failed", status });
 			} catch (err) {
 				showToast(
@@ -651,6 +639,7 @@ export const OdontogramModule = ({
 				if (cancelled) return;
 				logger.error("[tooth states] запрос не выполнен", err);
 				// До сервера не дошли: кода ответа нет, придумывать его нельзя.
+				setTeethData(createDefaultAdultTeethData());
 				setTeethLoad({ phase: "failed", status });
 			}
 		};
@@ -881,46 +870,66 @@ export const OdontogramModule = ({
 	};
 
 	return (
-		<div className="flex flex-col lg:flex-row items-start gap-6 w-full h-full p-3 sm:p-4 md:p-6 bg-[var(--odontogram-paper,#ffffff)] dark:bg-zinc-950/40 backdrop-blur-md border border-[var(--odontogram-border,#cbd5e1)] dark:border-zinc-800/50 rounded-2xl shadow-2xl text-[var(--odontogram-ink,#0f172a)] dark:text-zinc-100">
+		<div className="flex flex-col gap-6 w-full p-4 sm:p-6 bg-[var(--odontogram-paper,#ffffff)] dark:bg-zinc-950/40 backdrop-blur-md border border-[var(--odontogram-border,#cbd5e1)] dark:border-zinc-800/50 rounded-2xl shadow-xl text-[var(--odontogram-ink,#0f172a)] dark:text-zinc-100">
 			<div
-				className="flex-2 min-w-0 flex flex-col gap-6 relative w-full"
+				className="w-full min-w-0 flex flex-col gap-6 relative"
 				ref={containerRef}
 			>
-				<div className="flex gap-4 p-4 items-center bg-zinc-100/30 dark:bg-zinc-900/30 border-b border-zinc-200/50 dark:border-zinc-800/50 rounded-t-xl">
-					<label className="flex items-center gap-2 cursor-pointer select-none">
-						<input
-							type="checkbox"
-							checked={isPediatricMode}
-							onChange={(e) => setIsPediatricMode(e.target.checked)}
-							className="accent-indigo-500"
-						/>
-						<span className="text-sm font-medium">Детский прикус</span>
-					</label>
-					<label
-						className={`flex items-center gap-2 cursor-pointer select-none ${isMultiSelectMode ? "text-indigo-600 dark:text-indigo-400" : ""}`}
-					>
-						<input
-							type="checkbox"
-							checked={isMultiSelectMode}
-							onChange={(e) => {
-								setIsMultiSelectMode(e.target.checked);
-								if (!e.target.checked && selectedTeeth.length === 0)
-									setMenuConfig(null);
-							}}
-							className="accent-indigo-500"
-						/>
-						<span className="text-sm font-medium">Групповой выбор (Shift)</span>
-					</label>
+				<div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-zinc-100/60 dark:bg-zinc-900/60 border-b border-zinc-200/60 dark:border-zinc-800/60 rounded-t-xl">
+					<div className="flex flex-wrap items-center gap-3 sm:gap-4">
+						<label className="flex items-center gap-2 cursor-pointer select-none">
+							<input
+								type="checkbox"
+								checked={isPediatricMode}
+								onChange={(e) => setIsPediatricMode(e.target.checked)}
+								className="accent-indigo-500 rounded cursor-pointer"
+							/>
+							<span className="text-xs sm:text-sm font-medium whitespace-nowrap">Детский прикус</span>
+						</label>
+						<label
+							className={`flex items-center gap-2 cursor-pointer select-none transition-colors ${
+								isMultiSelectMode ? "text-indigo-600 dark:text-indigo-400 font-semibold" : ""
+							}`}
+						>
+							<input
+								type="checkbox"
+								checked={isMultiSelectMode}
+								onChange={(e) => {
+									setIsMultiSelectMode(e.target.checked);
+									if (!e.target.checked && selectedTeeth.length === 0)
+										setMenuConfig(null);
+								}}
+								className="accent-indigo-500 rounded cursor-pointer"
+							/>
+							<span className="text-xs sm:text-sm font-medium whitespace-nowrap">Групповой выбор (Shift)</span>
+						</label>
+					</div>
 
-					<button
-						type="button"
-						onClick={loadDiagnocatReport}
-						disabled={diagnocatLoading}
-						className="ml-auto flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 rounded-md transition-colors"
-					>
-						<Stethoscope className="w-4 h-4" />
-						{diagnocatLoading ? "Загрузка..." : "Diagnocat Анализ"}
-					</button>
+					<div className="flex flex-wrap items-center gap-2">
+						<button
+							type="button"
+							onClick={() => setIsEstimatorOpen((prev) => !prev)}
+							className={`flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg border transition-all shrink-0 cursor-pointer select-none ${
+								isEstimatorOpen
+									? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40 shadow-xs"
+									: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
+							}`}
+							title="Открыть / скрыть смету и расчет плана лечения"
+						>
+							<Calculator className="w-4 h-4" />
+							<span className="whitespace-nowrap">{isEstimatorOpen ? "Скрыть смету" : "Смета лечения"}</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={loadDiagnocatReport}
+							disabled={diagnocatLoading}
+							className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 rounded-lg transition-colors shrink-0 cursor-pointer select-none"
+						>
+							<Stethoscope className="w-4 h-4" />
+							<span className="whitespace-nowrap">{diagnocatLoading ? "Загрузка..." : "Diagnocat Анализ"}</span>
+						</button>
+					</div>
 				</div>
 				{/* Состояние формулы проговаривается словами. Пустая формула
 				    выглядит как «все зубы здоровы», а это утверждение о пациенте,
@@ -972,6 +981,7 @@ export const OdontogramModule = ({
 						void updateToothState(targets, state);
 					}}
 					useSurfaces={odontogramUseSurfaces}
+					onOpenVoiceDictation={() => setIsVoiceOpen(true)}
 				/>
 
 				{/* Radial Menu via Portal — avoids backdrop-filter stack */}
@@ -1196,41 +1206,12 @@ export const OdontogramModule = ({
 				)}
 			</div>
 
-			<div className="flex-1 min-w-[320px] max-w-[480px] flex flex-col w-full relative">
-				<TreatmentEstimator patientId={patientId} currentTeeth={teethData} />
-
-				{/* Floating Voice Dictation Button */}
-				{/* Кнопка состоит только из иконки, поэтому без aria-label и type
-				    она объявлялась безымянной и по умолчанию считалась submit. */}
-				<button
-					type="button"
-					aria-label="Диктовка состояния зубов голосом"
-					title="Диктовка состояния зубов голосом"
-					onClick={() => setIsVoiceOpen(true)}
-					style={{
-						position: "absolute",
-						bottom: 24,
-						right: 24,
-						width: 72,
-						height: 72,
-						borderRadius: 36,
-						background: "var(--primary-color, rgba(160, 130, 255, 0.2))",
-						backdropFilter: "blur(12px)",
-						border: "2px solid var(--primary-color, #a082ff)",
-						boxShadow:
-							"0 8px 32px var(--primary-color, rgba(160, 130, 255, 0.4))",
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-						cursor: "pointer",
-						zIndex: 100,
-						transition: "all 0.3s",
-					}}
-					className="hover:scale-110 active:scale-95"
-				>
-					<Mic size={32} color="var(--primary-color, #a082ff)" />
-				</button>
-			</div>
+			{/* Collapsible Full-width Treatment Planning Section below Odontogram */}
+			{isEstimatorOpen && (
+				<div className="w-full flex flex-col gap-4 mt-2 animate-in fade-in duration-200">
+					<TreatmentEstimator patientId={patientId} currentTeeth={teethData} />
+				</div>
+			)}
 
 			<VoiceDictationOverlay
 				isOpen={isVoiceOpen}
