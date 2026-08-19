@@ -28,6 +28,7 @@ import {
 } from "../db/schema.js";
 import { createTelegramQrSvg } from "../telegramQr.js";
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
+import { FiscalReceiptFactory } from "../services/kkt/FiscalReceiptFactory.js";
 
 /**
  * Validates SBP HMAC-SHA256 / SHA-256 webhook signature.

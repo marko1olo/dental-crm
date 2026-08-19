@@ -108,7 +108,14 @@ export const fiscalReceiptQueue = pgTable(
 		}),
 		receiptType: varchar("receipt_type", { length: 32 }).notNull(),
 		status: varchar("status", { length: 32 })
-			.$type<"pending_print" | "hardware_offline" | "printed" | "failed">()
+			.$type<
+				| "pending_print"
+				| "printing"
+				| "printed"
+				| "hardware_offline"
+				| "dead_letter"
+				| "failed"
+			>()
 			.notNull()
 			.default("pending_print"),
 		payloadJson: jsonb("payload_json").notNull(),
@@ -441,20 +448,21 @@ export const cashLedger = pgTable("cash_ledger", {
 		.defaultNow(),
 });
 
-export const fiscalReceiptQueueRelations = relations(
-	fiscalReceiptQueue,
-	({ one }) => ({
-		organization: one(organizations, {
-			fields: [fiscalReceiptQueue.organizationId],
-			references: [organizations.id],
-		}),
-		payment: one(payments, {
-			fields: [fiscalReceiptQueue.paymentId],
-			references: [payments.id],
-		}),
-		visit: one(visits, {
-			fields: [fiscalReceiptQueue.visitId],
-			references: [visits.id],
-		}),
-	}),
-);
+export const cashShifts = pgTable("cash_shifts", {
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	operatorId: uuid("operator_id").notNull(),
+	status: text("status").notNull().default("open"), // open, closing, closed, discrepancy_flagged
+	openedAt: timestamp("opened_at", { withTimezone: true }).notNull().defaultNow(),
+	closedAt: timestamp("closed_at", { withTimezone: true }),
+	expectedCash: numeric("expected_cash", { precision: 12, scale: 2 }).notNull().default('0'),
+	actualCash: numeric("actual_cash", { precision: 12, scale: 2 }),
+});
+
+export const shiftDiscrepancyReports = pgTable("shift_discrepancy_reports", {
+	id: uuid("id").primaryKey().default(sql`uuidv7()`),
+	shiftId: uuid("shift_id").notNull().references(() => cashShifts.id),
+	discrepancyAmount: numeric("discrepancy_amount", { precision: 12, scale: 2 }).notNull(),
+	reason: text("reason"),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});

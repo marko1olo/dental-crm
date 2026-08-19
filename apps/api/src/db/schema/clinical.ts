@@ -8,6 +8,7 @@ import type {
 } from "@dental/shared";
 import { sql, relations } from "drizzle-orm";
 import {
+	bigint,
 	boolean,
 	check,
 	date,
@@ -16,6 +17,7 @@ import {
 	integer,
 	jsonb,
 	numeric,
+	pgEnum,
 	pgTable,
 	text,
 	timestamp,
@@ -122,6 +124,17 @@ export const serviceCatalogItems = pgTable(
 		durationMinutes: integer("duration_minutes").notNull().default(30),
 		taxDeductible: boolean("tax_deductible").notNull().default(true),
 		taxDeductionCode: text("tax_deduction_code"),
+		order804nCode: text("order_804n_code"),
+		uetAdult: numeric("uet_adult", { precision: 6, scale: 2, mode: "number" })
+			.notNull()
+			.default(0),
+		uetChild: numeric("uet_child", { precision: 6, scale: 2, mode: "number" })
+			.notNull()
+			.default(0),
+		isDecree458Expensive: boolean("is_decree_458_expensive")
+			.notNull()
+			.default(false),
+		nsiServiceId: text("nsi_service_id"),
 		isActive: boolean("is_active").notNull().default(true),
 	},
 	(t) => ({
@@ -390,6 +403,19 @@ export const generatedDocuments = pgTable(
 		signatureSvg: text("signature_svg"),
 		// UKEP / GOST-2012 detached PKCS#7 CMS signature blob (base64)
 		cryptoSignaturePkcs7: text("crypto_signature_pkcs7"),
+		cdaXmlSnapshot: text("cda_xml_snapshot"),
+		cdaXmlSha256: text("cda_xml_sha256"),
+		cdaTemplateOid: text("cda_template_oid"),
+		cdaDocumentVersion: integer("cda_document_version").default(1),
+		doctorSignaturePkcs7: text("doctor_signature_pkcs7"),
+		doctorCertSerial: text("doctor_cert_serial"),
+		doctorCertSubject: text("doctor_cert_subject"),
+		doctorSignedAt: timestamp("doctor_signed_at", { withTimezone: true }),
+		moSignaturePkcs7: text("mo_signature_pkcs7"),
+		moCertSerial: text("mo_cert_serial"),
+		moCertSubject: text("mo_cert_subject"),
+		moSignedAt: timestamp("mo_signed_at", { withTimezone: true }),
+		egiszOutboxId: uuid("egisz_outbox_id"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -1234,6 +1260,131 @@ export const egiszLogs = pgTable(
 		),
 		patientIdIdx: index("egisz_logs_patientId_idx").on(t.patientId),
 		visitIdIdx: index("egisz_logs_visitId_idx").on(t.visitId),
+	}),
+);
+
+export const egiszOutboxStatus = pgEnum("egisz_outbox_status_enum", [
+	"queued",
+	"validating",
+	"signing_pending",
+	"ready_for_dispatch",
+	"sending",
+	"registered_in_remd",
+	"delivered_to_epgu",
+	"failed",
+	"rejected_by_remd",
+]);
+
+export const egiszOutbox = pgTable(
+	"egisz_outbox",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		visitId: uuid("visit_id")
+			.notNull()
+			.references(() => visits.id, { onDelete: "cascade" }),
+		documentId: uuid("document_id").references(() => generatedDocuments.id),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id, { onDelete: "cascade" }),
+		doctorId: uuid("doctor_id")
+			.notNull()
+			.references(() => users.id),
+		docTypeNsiCode: text("doc_type_nsi_code").notNull().default("108"),
+		status: egiszOutboxStatus("status").notNull().default("queued"),
+		payloadXml: text("payload_xml").notNull(),
+		payloadHashSha256: text("payload_hash_sha256").notNull(),
+		doctorSignaturePkcs7: text("doctor_signature_pkcs7").notNull(),
+		doctorCertSerial: text("doctor_cert_serial").notNull(),
+		doctorCertSubject: text("doctor_cert_subject").notNull(),
+		doctorSignedAt: timestamp("doctor_signed_at", { withTimezone: true }),
+		moSignaturePkcs7: text("mo_signature_pkcs7"),
+		moCertSerial: text("mo_cert_serial"),
+		moCertSubject: text("mo_cert_subject"),
+		moSignedAt: timestamp("mo_signed_at", { withTimezone: true }),
+		remdDocumentId: text("remd_document_id"),
+		remdTransactionId: text("remd_transaction_id"),
+		attempts: integer("attempts").notNull().default(0),
+		maxAttempts: integer("max_attempts").notNull().default(5),
+		scheduledAt: timestamp("scheduled_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		lockedAt: timestamp("locked_at", { withTimezone: true }),
+		lockedBy: text("locked_by"),
+		lastErrorClass: text("last_error_class"),
+		lastErrorMessage: text("last_error_message"),
+		gatewayResponseJson: jsonb("gateway_response_json"),
+		dedupeKey: text("dedupe_key").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		orgDedupeUnique: unique("egisz_outbox_org_dedupe_unique").on(
+			t.organizationId,
+			t.dedupeKey,
+		),
+		pollIdx: index("egisz_outbox_poll_idx").on(
+			t.organizationId,
+			t.status,
+			t.nextAttemptAt,
+		),
+		patientIdx: index("egisz_outbox_patient_idx").on(
+			t.organizationId,
+			t.patientId,
+		),
+		visitIdx: index("egisz_outbox_visit_idx").on(t.organizationId, t.visitId),
+	}),
+);
+
+export const egiszAuditLogs = pgTable(
+	"egisz_audit_logs",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		sequenceNumber: bigint("sequence_number", { mode: "number" }).notNull(),
+		previousHash: text("previous_hash").notNull(),
+		currentHash: text("current_hash").notNull(),
+		eventType: text("event_type").notNull(),
+		entityType: text("entity_type").notNull(),
+		entityId: text("entity_id").notNull(),
+		patientId: uuid("patient_id").references(() => patients.id),
+		actorUserId: uuid("actor_user_id").references(() => users.id),
+		actorIpAddress: text("actor_ip_address"),
+		actorUserAgent: text("actor_user_agent"),
+		payloadJson: jsonb("payload_json"),
+		payloadSha256: text("payload_sha256").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		orgSeqUnique: unique("egisz_audit_logs_org_seq_unique").on(
+			t.organizationId,
+			t.sequenceNumber,
+		),
+		orgHashUnique: unique("egisz_audit_logs_org_hash_unique").on(
+			t.organizationId,
+			t.currentHash,
+		),
+		orgCreatedIdx: index("egisz_audit_logs_org_created_idx").on(
+			t.organizationId,
+			t.createdAt,
+		),
+		patientIdx: index("egisz_audit_logs_patient_idx").on(
+			t.organizationId,
+			t.patientId,
+		),
 	}),
 );
 

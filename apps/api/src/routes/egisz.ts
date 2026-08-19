@@ -14,6 +14,8 @@ import {
 	type EgiszCdaParams,
 	generateDentalCdaXml,
 } from "../services/egiszCdaGenerator.js";
+import { EgiszOutboxDispatcher } from "../services/egisz/EgiszOutboxDispatcher.js";
+import { OiisGatewayClient } from "../services/egisz/OiisGatewayClient.js";
 import { isValidSnils, normalizeSnils } from "../utils/snils.js";
 
 /**
@@ -1202,7 +1204,9 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				}
 
 				const canonicalXml = canonicalizeCdaXml(pkg.xmlCanonicalPayload);
-				const transactionId = `REMD-${Date.now()}-${pkg.documentId.slice(0, 8)}`;
+				const gatewayClient = new OiisGatewayClient();
+				const gatewayRes = await gatewayClient.sendRemdDocument(pkg);
+				const transactionId = gatewayRes.transactionId;
 
 				const [insertedLog] = await db
 					.insert(schema.egiszLogs)
@@ -1210,7 +1214,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 						organizationId: orgId,
 						patientId: visit.patientId,
 						visitId: visit.id,
-						status: "Sent",
+						status: gatewayRes.status === "Registered" ? "Registered" : gatewayRes.status === "Sent" ? "Sent" : "Error",
 						transactionId,
 						errorDetails: {
 							documentVersion: pkg.documentVersion,
@@ -1221,6 +1225,9 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 							moCertSerial: pkg.moSignature?.certificateSerialNumber ?? null,
 							canonicalXmlLength: canonicalXml.length,
 							signedAt: pkg.doctorSignature.signedAt,
+							remdDocumentId: gatewayRes.remdDocumentId,
+							errorMessage: gatewayRes.errorMessage,
+							gatewayRawResponse: gatewayRes.rawResponse,
 						},
 					})
 					.returning();
@@ -1237,14 +1244,16 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 						transactionId,
 						docTypeNsiCode: pkg.metadata.docTypeNsiCode,
 						doctorCertSubject: pkg.doctorSignature.certificateSubject,
+						remdDocumentId: gatewayRes.remdDocumentId,
 					},
 				});
 
 				return reply.status(200).send({
-					success: true,
+					success: gatewayRes.success,
 					logId: insertedLog?.id,
-					status: "Sent",
+					status: gatewayRes.status,
 					transactionId,
+					remdDocumentId: gatewayRes.remdDocumentId,
 					canonicalXmlLength: canonicalXml.length,
 				});
 			} catch (error: unknown) {
@@ -1254,6 +1263,60 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 					message: "Ошибка при отправке пакета СЭМД в РЭМД ЕГИСЗ",
 				});
 			}
+		},
+	);
+
+	/**
+	 * POST /api/clinical/egisz/outbox/dispatch — обработка очереди отправки СЭМД в РЭМД.
+	 */
+	app.post(
+		"/api/clinical/egisz/outbox/dispatch",
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			if (
+				!(await requireClinicalMutationAccess(
+					request,
+					reply,
+					"egisz outbox dispatch",
+				))
+			)
+				return;
+			const orgId = requireOrganizationId(request, reply);
+			if (!orgId) return;
+
+			const dispatcher = new EgiszOutboxDispatcher();
+			const result = await dispatcher.processPendingQueue(orgId);
+
+			return reply.status(200).send({
+				success: true,
+				...result,
+			});
+		},
+	);
+
+	/**
+	 * POST /api/clinical/egisz/outbox/sync-status — синхронизация статусов зарегистрированных документов из РЭМД.
+	 */
+	app.post(
+		"/api/clinical/egisz/outbox/sync-status",
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			if (
+				!(await requireClinicalMutationAccess(
+					request,
+					reply,
+					"egisz outbox sync status",
+				))
+			)
+				return;
+			const orgId = requireOrganizationId(request, reply);
+			if (!orgId) return;
+
+			const dispatcher = new EgiszOutboxDispatcher();
+			const updatedCount = await dispatcher.syncPendingStatuses(orgId);
+
+			return reply.status(200).send({
+				success: true,
+				updatedCount,
+			});
 		},
 	);
 }
