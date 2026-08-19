@@ -277,14 +277,19 @@ export function renderForm043uHtml(payload: FullForm043uPayload | any): string {
 
 /** 2. Рендерер Формы № 043-1/у — Медицинская карта ортодонтического пациента */
 export function renderForm043_1uHtml(payload: OrthodonticCard043_1uPayload | any): string {
-	const clinicName = payload.organization?.fullName || payload.clinicLegalName || "Стоматологическая клиника";
-	const clinicAddress = payload.organization?.address || payload.clinicAddress || "";
+	const clinicName = payload.organization?.fullName || payload.clinicLegalName || payload.clinic?.name || "Стоматологическая клиника";
+	const clinicAddress = payload.organization?.address || payload.clinicAddress || payload.clinic?.address || "";
 	const cardNum = payload.patient?.medicalCardNumber || payload.medicalCardNumber || "—";
 	const patientName = payload.patient?.fullName || payload.patientFullName || "—";
 	const patientBirth = payload.patient?.birthDate || payload.patientBirthDate || "—";
 	const patientSex = (payload.patient?.gender || payload.patientSex || "female") === "male" ? "Мужской" : "Женский";
-	const doctorName = payload.treatingOrthodontist?.fullName || payload.orthodontistFullName || "Врач-ортодонт";
-	const applianceName = payload.treatmentPlan?.applianceName || payload.appliancePlan?.applianceType || "Брекет-система";
+	const doctorName = payload.treatingOrthodontist?.fullName || payload.doctor?.fullName || payload.orthodontistFullName || "Врач-ортодонт";
+	const applianceName = payload.treatmentPlan?.applianceType || payload.treatmentPlan?.applianceName || payload.appliancePlan?.applianceType || "Брекет-система Damon Q2";
+
+	const morph = payload.morphometry || {};
+	const ceph = payload.cephalometry || {};
+	const ind = payload.indices || {};
+	const plan = payload.treatmentPlan || {};
 
 	return `<!DOCTYPE html>
 <html lang="ru">
@@ -314,18 +319,79 @@ export function renderForm043_1uHtml(payload: OrthodonticCard043_1uPayload | any
   <div class="section-title">1. Паспортные данные</div>
   <table class="data-table">
     <tr>
-      <td><strong>Пациент:</strong></td>
-      <td><strong>${escapeHtml(patientName)}</strong></td>
-      <td><strong>Пол / Д.Р.:</strong></td>
-      <td>${patientSex} / ${escapeHtml(patientBirth)}</td>
+      <td style="width:25%;"><strong>Пациент:</strong></td>
+      <td style="width:45%;"><strong>${escapeHtml(patientName)}</strong></td>
+      <td style="width:15%;"><strong>Пол / Д.Р.:</strong></td>
+      <td style="width:15%;">${patientSex} / ${escapeHtml(patientBirth)}</td>
     </tr>
   </table>
 
-  <div class="section-title">2. Аппаратурное лечение и ретенция</div>
-  <p><strong>Аппаратура:</strong> <strong>${escapeHtml(applianceName)}</strong></p>
-  <p><strong>Ретенционный протокол:</strong> ${escapeHtml(payload.treatmentPlan?.retentionPlan || payload.appliancePlan?.retentionProtocol || "Ретейнеры")}</p>
+  <div class="section-title">2. Антропометрия и цефалометрия (ТРГ)</div>
+  <table class="data-table">
+    <tr>
+      <td style="width:25%;"><strong>Тип лица / Профиль:</strong></td>
+      <td>${escapeHtml(morph.faceType || "Мезопрозопический")}, профиль ${escapeHtml(morph.profile || "Прямой")}</td>
+      <td style="width:20%;"><strong>Линия улыбки:</strong></td>
+      <td>${escapeHtml(morph.smileLine || "Средняя")}</td>
+    </tr>
+    <tr>
+      <td><strong>Углы SNA / SNB / ANB:</strong></td>
+      <td>SNA: ${ceph.sna ?? "82.0"}°, SNB: ${ceph.snb ?? "80.0"}°, ANB: ${ceph.anb ?? "2.0"}°</td>
+      <td><strong>Wits / FMA:</strong></td>
+      <td>Wits: ${ceph.wits ?? "0"} мм, FMA: ${ceph.fma ?? "25.0"}°</td>
+    </tr>
+  </table>
 
-  <div class="signature-row">
+  <div class="section-title">3. Биометрические индексы моделей</div>
+  <table class="data-table">
+    <thead>
+      <tr><th>Индекс</th><th>Норма</th><th>Расчетное значение</th><th>Заключение</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Индекс Тона (SI/Si)</strong></td>
+        <td>1.33 (пост.) / 1.30 (мол.)</td>
+        <td>${ind.tonn?.ratio ? Number(ind.tonn.ratio).toFixed(2) : "1.33"}</td>
+        <td>${escapeHtml(ind.tonn?.interpretation || "Пропорциональное соотношение резцов")}</td>
+      </tr>
+      <tr>
+        <td><strong>Индекс Пона</strong></td>
+        <td>Премоляры: ${ind.pont?.premolarsExpectedWidthMm ?? "36.0"} мм | Моляры: ${ind.pont?.molarsExpectedWidthMm ?? "45.0"} мм</td>
+        <td>Фактическая ширина дуг</td>
+        <td>${escapeHtml(ind.pont?.interpretation || "Нормогнатия, ширина дуг в норме")}</td>
+      </tr>
+      <tr>
+        <td><strong>Индекс Болтона</strong></td>
+        <td>Передний: 77.2% | Полный: 91.3%</td>
+        <td>Передний: ${ind.bolton?.anteriorRatio ? Number(ind.bolton.anteriorRatio).toFixed(1) : "77.2"}%</td>
+        <td>${escapeHtml(ind.bolton?.interpretation || "Гармоничное соотношение зубных рядов")}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">4. План аппаратурного лечения и ретенция</div>
+  <table class="data-table">
+    <tr>
+      <td style="width:25%;"><strong>Диагноз:</strong></td>
+      <td colspan="3"><strong>${escapeHtml(plan.diagnosis || "Аномалии положения зубов и соотношения зубных дуг")}</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Аппаратура:</strong></td>
+      <td><strong>${escapeHtml(applianceName)}</strong></td>
+      <td><strong>Срок лечения:</strong></td>
+      <td>${plan.estimatedDurationMonths ?? 18} месяцев</td>
+    </tr>
+    <tr>
+      <td><strong>Этапы лечения:</strong></td>
+      <td colspan="3">${escapeHtml(plan.treatmentStages || "1. Нивелирование. 2. Торк и юстировка. 3. Ретенция.")}</td>
+    </tr>
+    <tr>
+      <td><strong>Ретенционный протокол:</strong></td>
+      <td colspan="3">${escapeHtml(plan.retentionProtocol || plan.retentionPlan || "Несъемные ретейнеры + ночные капы")}</td>
+    </tr>
+  </table>
+
+  <div class="signature-row" style="margin-top:20px;">
     <div>
       <div class="sig-line"></div>
       <div class="sig-caption">Врач-ортодонт: ${escapeHtml(doctorName)}</div>
@@ -342,18 +408,35 @@ export function renderForm043_1uHtml(payload: OrthodonticCard043_1uPayload | any
 
 /** 3. Рендерер Формы № 037/у-88 — Листок ежедневного учета работы врача-стоматолога */
 export function renderForm037uHtml(payload: DailyDentistDiary037uPayload | any): string {
-	const clinicName = payload.organization?.fullName || payload.clinicLegalName || "Стоматологическая клиника";
+	const clinicName = payload.organization?.fullName || payload.clinicLegalName || payload.clinic?.name || "Стоматологическая клиника";
 	const doctorName = payload.doctor?.fullName || payload.doctorFullName || "Врач-стоматолог";
-	const workDate = payload.workDate || payload.shiftDate || new Date().toISOString().slice(0, 10);
-	const totals = payload.dailyTotals || payload.summaryTotals || {
-		totalPatientsSeen: 0,
-		totalPatientsCount: 0,
-		sanatedPatientsCount: 0,
-		totalFillingsPlaced: 0,
-		totalUetAccumulated: 0,
-		uetTotals: { totalUet: 0 },
+	const workDate = payload.date || payload.workDate || payload.shiftDate || new Date().toISOString().slice(0, 10);
+	const shift = payload.shift || "1 смена";
+	const totals = payload.totals || payload.dailyTotals || payload.summaryTotals || {
+		totalPatients: 0,
+		primaryCount: 0,
+		sanatedCount: 0,
+		fillingsTotal: 0,
+		extractionsTotal: 0,
+		uetGrandTotal: 0,
+		shiftTargetUet: 21.0,
+		quotaFulfilledPercent: 0,
 	};
-	const totalUet = totals.uetTotals?.totalUet ?? totals.totalUetAccumulated ?? 0;
+	const totalUet = totals.uetGrandTotal ?? totals.uetTotals?.totalUet ?? totals.totalUetAccumulated ?? 0;
+	const patients = payload.patients || [];
+
+	const patientsRows = patients.map((p: any) => `
+    <tr>
+      <td class="center">${p.orderNumber ?? 1}</td>
+      <td><strong>${escapeHtml(p.patientFullName || p.fullName || "")}</strong></td>
+      <td class="center">${p.age ?? "—"}</td>
+      <td class="center">${p.isPrimary ? "Да" : "Нет"}</td>
+      <td class="center">${p.isSanated ? "Да" : "Нет"}</td>
+      <td>${escapeHtml(Array.isArray(p.diagnoses) ? p.diagnoses.join(", ") : (p.diagnoses || "—"))}</td>
+      <td>${escapeHtml(Array.isArray(p.procedures) ? p.procedures.join("; ") : (p.procedures || "—"))}</td>
+      <td class="center"><strong>${Number(p.uetTotal ?? p.uetEarned ?? 0).toFixed(2)}</strong></td>
+    </tr>
+  `).join("");
 
 	return `<!DOCTYPE html>
 <html lang="ru">
@@ -378,19 +461,34 @@ export function renderForm037uHtml(payload: DailyDentistDiary037uPayload | any):
 
   <div class="doc-title-block">
     <h1 class="doc-main-title">ЛИСТОК ЕЖЕДНЕВНОГО УЧЕТА РАБОТЫ ВРАЧА-СТОМАТОЛОГА</h1>
-    <p class="doc-sub-title">Дата: <strong>${escapeHtml(workDate)}</strong></p>
+    <p class="doc-sub-title">Дата: <strong>${escapeHtml(workDate)}</strong> | Смена: <strong>${escapeHtml(shift)}</strong></p>
   </div>
 
-  <div class="section-title">Сводные итоги смены</div>
+  <div class="section-title">1. Реестр принятых пациентов</div>
+  <table class="data-table">
+    <thead>
+      <tr><th>№</th><th>ФИО Пациента</th><th>Возраст</th><th>Перв.</th><th>Санир.</th><th>Диагноз</th><th>Оказанная помощь</th><th>УЕТ</th></tr>
+    </thead>
+    <tbody>
+      ${patientsRows || `<tr><td colspan="8" class="center">Записи смены отсутствуют</td></tr>`}
+    </tbody>
+  </table>
+
+  <div class="section-title">2. Сводные итоги смены</div>
   <table class="data-table">
     <tr>
-      <td><strong>Всего пациентов:</strong> ${totals.totalPatientsSeen ?? totals.totalPatientsCount ?? 0}</td>
-      <td><strong>Санировано:</strong> ${totals.sanatedPatientsCount ?? totals.totalSanatedCount ?? 0}</td>
-      <td><strong>ИТОГО УЕТ: ${Number(totalUet).toFixed(2)}</strong></td>
+      <td><strong>Всего пациентов:</strong> ${totals.totalPatients ?? totals.totalPatientsSeen ?? patients.length}</td>
+      <td><strong>Первичных:</strong> ${totals.primaryCount ?? 0}</td>
+      <td><strong>Санировано:</strong> ${totals.sanatedCount ?? totals.sanatedPatientsCount ?? 0}</td>
+    </tr>
+    <tr>
+      <td><strong>Наложено пломб:</strong> ${totals.fillingsTotal ?? 0}</td>
+      <td><strong>Удалено зубов:</strong> ${totals.extractionsTotal ?? 0}</td>
+      <td><strong>ИТОГО ВЫРАБОТКА: <span style="color:#1e40af; font-size:12pt;">${Number(totalUet).toFixed(2)} УЕТ</span></strong> (${totals.quotaFulfilledPercent ?? 0}% нормы)</td>
     </tr>
   </table>
 
-  <div class="signature-row">
+  <div class="signature-row" style="margin-top:20px;">
     <div>
       <div class="sig-line"></div>
       <div class="sig-caption">Врач: ${escapeHtml(doctorName)}</div>
@@ -403,11 +501,12 @@ export function renderForm037uHtml(payload: DailyDentistDiary037uPayload | any):
 
 /** 4. Рендерер Формы № 039/у-88 — Сводная ведомость учета работы врача-стоматолога */
 export function renderForm039uHtml(payload: SummaryDentistStatement039uPayload | any): string {
-	const clinicName = payload.organization?.fullName || payload.clinicLegalName || "Стоматологическая клиника";
-	const doctorName = payload.reportingDoctor?.fullName || payload.doctorFullName || "Врач-стоматолог";
-	const period = payload.periodLabel || payload.reportingPeriodMonthYear || "Отчетный период";
-	const uet = payload.uetBreakdown || { totalUetEarned: 0, totalUetAccumulated: 0 };
-	const totalUet = uet.totalUetEarned ?? uet.totalUetAccumulated ?? 0;
+	const clinicName = payload.organization?.fullName || payload.clinicLegalName || payload.clinic?.name || "Стоматологическая клиника";
+	const doctorName = payload.reportingDoctor?.fullName || payload.doctor?.fullName || payload.doctorFullName || "Врач-стоматолог";
+	const period = payload.period || payload.periodLabel || payload.reportingPeriodMonthYear || "Отчетный месяц";
+	const totalUet = payload.uetGrandTotal ?? payload.uetBreakdown?.totalUetEarned ?? payload.uetBreakdown?.totalUetAccumulated ?? 0;
+	const spec = payload.uetBySpecialty || {};
+	const fillings = payload.fillingsByBlackClass || {};
 
 	return `<!DOCTYPE html>
 <html lang="ru">
@@ -432,21 +531,59 @@ export function renderForm039uHtml(payload: SummaryDentistStatement039uPayload |
 
   <div class="doc-title-block">
     <h1 class="doc-main-title">СВОДНАЯ ВЕДОМОСТЬ УЧЕТА РАБОТЫ ВРАЧА-СТОМАТОЛОГА</h1>
-    <p class="doc-sub-title">Период: <strong>${escapeHtml(period)}</strong></p>
+    <p class="doc-sub-title">Период: <strong>${escapeHtml(period)}</strong> | Отработано рабочих дней: <strong>${payload.workingDays ?? 21}</strong></p>
   </div>
 
-  <div class="section-title">Выработка УЕТ (Приказ № 804н)</div>
+  <div class="section-title">1. Объемы приёма и санации</div>
   <table class="data-table">
     <tr>
-      <td><strong>ИТОГО ВЫРАБОТАНО УЕТ:</strong></td>
-      <td class="center" style="font-size:12pt; font-weight:bold; color:#1e40af;">${Number(totalUet).toFixed(2)} УЕТ</td>
+      <td><strong>Всего посещений:</strong> ${payload.totalVisits ?? 0}</td>
+      <td><strong>Взрослые:</strong> ${payload.adultsCount ?? 0}</td>
+      <td><strong>Дети:</strong> ${payload.childrenCount ?? 0}</td>
+      <td><strong>Санировано:</strong> ${payload.sanatedTotal ?? 0}</td>
     </tr>
   </table>
 
-  <div class="signature-row">
+  <div class="section-title">2. Выработка УЕТ по специальностям (Приказ Минздрава № 804н)</div>
+  <table class="data-table">
+    <thead>
+      <tr><th>Терапия</th><th>Эндодонтия</th><th>Хирургия</th><th>Гигиена / Пародонтология</th><th>ИТОГО УЕТ</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="center">${Number(spec.therapy ?? 0).toFixed(1)} УЕТ</td>
+        <td class="center">${Number(spec.endodontics ?? 0).toFixed(1)} УЕТ</td>
+        <td class="center">${Number(spec.surgery ?? 0).toFixed(1)} УЕТ</td>
+        <td class="center">${Number(spec.hygiene ?? 0).toFixed(1)} УЕТ</td>
+        <td class="center" style="font-size:12pt; font-weight:bold; color:#1e40af;">${Number(totalUet).toFixed(2)} УЕТ</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">3. Структура выполненных манипуляций</div>
+  <table class="data-table">
+    <tr>
+      <td><strong>Пломбы по Блэку (I–V):</strong></td>
+      <td>I: ${fillings.classI ?? 0}, II: ${fillings.classII ?? 0}, III: ${fillings.classIII ?? 0}, IV: ${fillings.classIV ?? 0}, V: ${fillings.classV ?? 0}</td>
+      <td><strong>Корневых каналов:</strong></td>
+      <td>${payload.endodonticsCanalsCount ?? 0}</td>
+    </tr>
+    <tr>
+      <td><strong>Удалений зубов:</strong></td>
+      <td>${payload.surgicalExtractionsCount ?? 0}</td>
+      <td><strong>Имплантов / Коронок:</strong></td>
+      <td>Имплантов: ${payload.implantsPlaced ?? 0}, Коронок: ${payload.orthopedicCrownsCount ?? 0}</td>
+    </tr>
+  </table>
+
+  <div class="signature-row" style="margin-top:20px;">
     <div>
       <div class="sig-line"></div>
       <div class="sig-caption">Врач: ${escapeHtml(doctorName)}</div>
+    </div>
+    <div>
+      <div class="sig-line"></div>
+      <div class="sig-caption">Главный врач: _________________</div>
     </div>
   </div>
 </div>
@@ -456,19 +593,20 @@ export function renderForm039uHtml(payload: SummaryDentistStatement039uPayload |
 
 /** 5. Рендерер Формы № 003-В/у — Выписка из медицинской карты */
 export function renderForm003vuHtml(payload: MedicalCardExtract003vuPayload | any): string {
-	const clinicName = payload.organization?.fullName || payload.clinicLegalName || "Стоматологическая клиника";
+	const clinicName = payload.organization?.fullName || payload.clinicLegalName || payload.clinic?.name || "Стоматологическая клиника";
 	const patientName = payload.patient?.fullName || payload.patientFullName || "—";
-	const doctorName = payload.attendingDoctorFullName || "Лечащий врач";
-	const clinicalDiag = payload.clinicalDiagnosisDetailed || payload.primaryDiagnosisText || payload.diagnosisOnAdmission || "—";
-	const stages = payload.treatmentStages || payload.treatmentStagesTimeline || [];
+	const doctorName = payload.attendingDoctorFullName || payload.attendingDoctor || "Лечащий врач";
+	const headDoctor = payload.headOfDepartment || "Заведующий отделением";
+	const clinicalDiag = payload.clinicalDiagnosisDetailed || payload.diagnosis || payload.primaryDiagnosisText || "—";
+	const stages = payload.treatmentStages || payload.treatmentStagesTimeline || payload.chronology || [];
 
 	const stagesHtml = stages.map((st: any) => `
     <tr>
-      <td class="center">${escapeHtml(st.stageDate || st.treatmentDate || "")}</td>
-      <td class="center">${escapeHtml(st.toothNumber || st.toothOrAnatomicalArea || "—")}</td>
+      <td class="center">${escapeHtml(st.date || st.stageDate || st.treatmentDate || "")}</td>
+      <td class="center"><strong>${escapeHtml(String(st.toothNumber || st.toothOrAnatomicalArea || "—"))}</strong></td>
       <td>${escapeHtml(st.diagnosis || st.diagnosisText || "")}</td>
-      <td>${escapeHtml(st.interventionSummary || st.performedIntervention || "")}</td>
-      <td>${escapeHtml(st.treatingDoctorFullName || st.attendingDoctorFullName || doctorName)}</td>
+      <td>${escapeHtml(st.intervention || st.interventionSummary || st.performedIntervention || "")}</td>
+      <td>${escapeHtml(st.doctorName || st.treatingDoctorFullName || doctorName)}</td>
     </tr>
   `).join("");
 
@@ -494,15 +632,16 @@ export function renderForm003vuHtml(payload: MedicalCardExtract003vuPayload | an
 
   <div class="doc-title-block">
     <h1 class="doc-main-title">ВЫПИСКА ИЗ МЕДИЦИНСКОЙ КАРТЫ СТОМАТОЛОГИЧЕСКОГО БОЛЬНОГО</h1>
+    <p class="doc-sub-title">Период лечения: <strong>${escapeHtml(payload.treatmentPeriod || "—")}</strong></p>
   </div>
 
-  <div class="section-title">1. Пациент и диагноз</div>
+  <div class="section-title">1. Пациент и клинический диагноз</div>
   <table class="data-table">
     <tr>
-      <td><strong>Пациент:</strong></td>
-      <td><strong>${escapeHtml(patientName)}</strong></td>
-      <td><strong>Клинический диагноз:</strong></td>
-      <td><strong>${escapeHtml(clinicalDiag)}</strong></td>
+      <td style="width:20%;"><strong>Пациент:</strong></td>
+      <td style="width:40%;"><strong>${escapeHtml(patientName)}</strong></td>
+      <td style="width:20%;"><strong>Клинический диагноз:</strong></td>
+      <td style="width:20%;"><strong>${escapeHtml(clinicalDiag)}</strong></td>
     </tr>
   </table>
 
@@ -529,16 +668,25 @@ export function renderForm003vuHtml(payload: MedicalCardExtract003vuPayload | an
 
 /** 6. Рендерер Листа учета дозовых нагрузок пациента */
 export function renderRadiationDoseSheetHtml(payload: RadiationDoseSheetPayload | any): string {
-	const clinicName = payload.organization?.fullName || payload.clinicLegalName || "Стоматологическая клиника";
+	const clinicName = payload.organization?.fullName || payload.clinicLegalName || payload.clinic?.name || "Стоматологическая клиника";
 	const patientName = payload.patient?.fullName || payload.patientFullName || "—";
-	const summary = payload.summaryAnnualDose || payload.annualSummary || {
-		currentYear: 2026,
-		totalEffectiveDoseMsv: 0.003,
-		totalDoseYearMsv: 0.003,
-		interpretationText: "Дозовая нагрузка в норме",
-		safetyRecommendation: "В пределах нормы",
-	};
-	const doseMsv = summary.totalEffectiveDoseMsv ?? summary.totalDoseYearMsv ?? 0;
+	const year = payload.year || new Date().getFullYear();
+	const doseMsv = payload.cumulativeDoseMsv ?? payload.summaryAnnualDose?.totalEffectiveDoseMsv ?? payload.annualSummary?.totalDoseYearMsv ?? 0;
+	const safetyZone = payload.safetyZone || (doseMsv < 0.5 ? "green" : (doseMsv < 1.0 ? "yellow" : "red"));
+	const exposures = payload.exposures || payload.radiationStudies || [];
+
+	const zoneColor = safetyZone === "green" ? "#15803d" : (safetyZone === "yellow" ? "#b45309" : "#b91c1c");
+	const zoneLabel = safetyZone === "green" ? "Зеленая (Безопасная нагрузка < 0.5 мЗв)" : (safetyZone === "yellow" ? "Желтая (Умеренная нагрузка 0.5–1.0 мЗв)" : "Красная (Превышение годового порога > 1.0 мЗв)");
+
+	const exposuresRows = exposures.map((ex: any) => `
+    <tr>
+      <td class="center">${escapeHtml(ex.date || ex.studyDate || "")}</td>
+      <td><strong>${escapeHtml(ex.studyType || ex.procedureName || "")}</strong></td>
+      <td class="center"><strong>${Number(ex.effectiveDoseMsv ?? 0).toFixed(4)} мЗв</strong> (${Number((ex.effectiveDoseMsv ?? 0) * 1000).toFixed(1)} мкЗв)</td>
+      <td>${escapeHtml(ex.apparatusModel || ex.xrayApparatus || "—")}</td>
+      <td>${escapeHtml(ex.operatorName || ex.radiologistFullName || "—")}</td>
+    </tr>
+  `).join("");
 
 	return `<!DOCTYPE html>
 <html lang="ru">
@@ -555,29 +703,46 @@ export function renderRadiationDoseSheetHtml(payload: RadiationDoseSheetPayload 
     </div>
     <div class="doc-requisites">
       <strong>СанПиН 2.6.1.1192-03</strong><br/>
-      <strong>ЛИСТ УЧЕТА ДОЗОВЫХ НАГРУЗОК</strong>
+      <strong>ЛИСТ УЧЕТА ДОЗОВЫХ НАГРУЗОК</strong><br/>
+      Паспорт радиационной безопасности
     </div>
   </div>
 
   <div class="doc-title-block">
     <h1 class="doc-main-title">ЛИСТ УЧЕТА ДОЗОВЫХ НАГРУЗОК ПАЦИЕНТА ПРИ РЕНТГЕНОЛОГИЧЕСКИХ ИССЛЕДОВАНИЯХ</h1>
+    <p class="doc-sub-title">Год учета: <strong>${escapeHtml(String(year))}</strong></p>
   </div>
 
-  <div class="section-title">1. Пациент</div>
+  <div class="section-title">1. Данные пациента</div>
   <table class="data-table">
     <tr>
-      <td><strong>Пациент:</strong></td>
-      <td><strong>${escapeHtml(patientName)}</strong></td>
+      <td style="width:20%;"><strong>Пациент:</strong></td>
+      <td style="width:40%;"><strong>${escapeHtml(patientName)}</strong></td>
+      <td style="width:20%;"><strong>Суммарная доза за год:</strong></td>
+      <td style="width:20%; font-size:11pt; font-weight:bold; color:${zoneColor};">${Number(doseMsv).toFixed(4)} мЗв</td>
+    </tr>
+    <tr>
+      <td><strong>Зона радиационной безопасности:</strong></td>
+      <td colspan="3"><strong style="color:${zoneColor};">${zoneLabel}</strong> (Годовой предел СанПиН: 1.0 мЗв)</td>
     </tr>
   </table>
 
-  <div class="section-title">2. Суммарная эффективная доза</div>
+  <div class="section-title">2. Реестр проведенных рентгенологических исследований</div>
   <table class="data-table">
-    <tr>
-      <td><strong>Суммарная доза за год:</strong></td>
-      <td class="center" style="font-size:12pt; font-weight:bold; color:#1e40af;">${Number(doseMsv).toFixed(4)} мЗв</td>
-    </tr>
+    <thead>
+      <tr><th>Дата</th><th>Вид исследования</th><th>Эффективная доза</th><th>Аппарат</th><th>Рентгенлаборант / Врач</th></tr>
+    </thead>
+    <tbody>
+      ${exposuresRows || `<tr><td colspan="5" class="center">Исследования не проводились</td></tr>`}
+    </tbody>
   </table>
+
+  <div class="signature-row" style="margin-top:20px;">
+    <div>
+      <div class="sig-line"></div>
+      <div class="sig-caption">Ответственный за радиационную безопасность: ${escapeHtml(payload.chiefSafetyOfficer || "Д-р Смирнов А.П.")}</div>
+    </div>
+  </div>
 </div>
 </body>
 </html>`;
