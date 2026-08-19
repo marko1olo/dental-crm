@@ -57,6 +57,7 @@ export const radiationExposureEntrySchema = z.object({
 	effectiveDoseMicrosieverts: z.number().min(0.1).max(5000.0), // в микрозивертах (мкЗв = мЗв * 1000)
 	radiologistFullName: z.string().trim().min(1).max(160),
 	notes: z.string().trim().max(500).nullable().optional(),
+});
 export type RadiationExposureEntry = z.infer<typeof radiationExposureEntrySchema>;
 export type PatientRadiationExposureRecord = any;
 export const STANDARD_DENTAL_RADIATION_DOSES: Record<string, number> = DEFAULT_EFFECTIVE_DOSES_MSV;
