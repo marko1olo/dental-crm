@@ -1141,7 +1141,7 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 			actualTemp: data.temperatureCelsius,
 			targetHumidityMin: equipment.targetHumidityMinPercent ? Number(equipment.targetHumidityMinPercent) : null,
 			targetHumidityMax: equipment.targetHumidityMaxPercent ? Number(equipment.targetHumidityMaxPercent) : null,
-			actualHumidity: data.relativeHumidityPercent,
+			actualHumidity: data.relativeHumidityPercent ?? null,
 		});
 
 		const [log] = await db

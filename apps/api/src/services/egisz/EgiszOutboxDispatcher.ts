@@ -44,7 +44,7 @@ export class EgiszOutboxDispatcher {
 			.where(
 				and(
 					eq(egiszLogs.organizationId, organizationId),
-					inArray(egiszLogs.status, ["Pending", "Retry"]),
+					inArray(egiszLogs.status, ["Pending", "Error"]),
 				),
 			)
 			.limit(limit);
@@ -119,7 +119,7 @@ export class EgiszOutboxDispatcher {
 					await db
 						.update(egiszLogs)
 						.set({
-							status: submissionRes.status === "Registered" ? "Registered" : "Sent",
+							status: submissionRes.status === "Registered" ? "Accepted" : "Sent",
 							transactionId: submissionRes.transactionId,
 							errorDetails: {
 								...logDetails,
@@ -175,7 +175,7 @@ export class EgiszOutboxDispatcher {
 						visitId: log.visitId,
 						status: "Error",
 						transactionId: submissionRes.transactionId,
-						error: submissionRes.errorMessage,
+						...(submissionRes.errorMessage ? { error: submissionRes.errorMessage } : {}),
 					});
 				}
 			} catch (err: unknown) {
@@ -229,7 +229,7 @@ export class EgiszOutboxDispatcher {
 					await db
 						.update(egiszLogs)
 						.set({
-							status: statusRes.status,
+							status: statusRes.status === "Registered" ? "Accepted" : "Error",
 							errorDetails: {
 								...(log.errorDetails as Record<string, unknown>),
 								remdDocumentId: statusRes.remdDocumentId,

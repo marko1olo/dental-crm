@@ -1214,7 +1214,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 						organizationId: orgId,
 						patientId: visit.patientId,
 						visitId: visit.id,
-						status: gatewayRes.status === "Registered" ? "Registered" : gatewayRes.status === "Sent" ? "Sent" : "Error",
+						status: gatewayRes.status === "Registered" ? "Accepted" : gatewayRes.status === "Sent" ? "Sent" : "Error",
 						transactionId,
 						errorDetails: {
 							documentVersion: pkg.documentVersion,

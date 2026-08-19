@@ -3,6 +3,7 @@ import { z } from "zod";
 export * from "./money.js";
 export * from "./utils/mdlpDataMatrix.js";
 export * from "./sanpin.js";
+export * from "./legal/legalContractsAndConsents.js";
 
 import {
 	moneyRubSchema,
