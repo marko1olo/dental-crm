@@ -67,25 +67,37 @@ export interface TonnIndexResult {
 	sumUpperIncisorsMm: number; // SI = 11 + 12 + 21 + 22
 	sumLowerIncisorsMm: number; // Si = 31 + 32 + 41 + 42
 	tonnRatio: number; // SI / Si
+	ratio: number;
 	isDeciduous: boolean;
 	normRatio: number; // 1.33 для постоянных, 1.30 для временных
+	normReference: number;
+	discrepancyType: "normal" | "upper_macrodontia" | "lower_macrodontia";
+	interpretation: string;
 	deviationInterpretation: string;
 }
 
 export function calculateTonnIndex(
-	upperIncisorWidths: [number, number, number, number], // 12, 11, 21, 22
-	lowerIncisorWidths: [number, number, number, number], // 42, 41, 31, 32
+	upperIncisors: [number, number, number, number] | number,
+	lowerIncisors: [number, number, number, number] | number,
 	isDeciduous = false,
 ): TonnIndexResult {
-	const sumUpper = upperIncisorWidths.reduce((a, b) => a + b, 0);
-	const sumLower = lowerIncisorWidths.reduce((a, b) => a + b, 0);
+	const sumUpper = typeof upperIncisors === "number"
+		? upperIncisors
+		: upperIncisors.reduce((a, b) => a + b, 0);
+	const sumLower = typeof lowerIncisors === "number"
+		? lowerIncisors
+		: lowerIncisors.reduce((a, b) => a + b, 0);
+
 	const ratio = sumLower > 0 ? Number((sumUpper / sumLower).toFixed(2)) : 0;
 	const norm = isDeciduous ? 1.30 : 1.33;
 
+	let discrepancyType: TonnIndexResult["discrepancyType"] = "normal";
 	let interpretation = "Пропорциональное соотношение размеров коронок верхних и нижних резцов (норма).";
-	if (ratio > norm + 0.05) {
+	if (ratio > norm + 0.02) {
+		discrepancyType = "upper_macrodontia";
 		interpretation = `Относительная макродентия верхних резцов или микродентия нижних (индекс ${ratio} > нормы ${norm}).`;
-	} else if (ratio < norm - 0.05) {
+	} else if (ratio < norm - 0.02) {
+		discrepancyType = "lower_macrodontia";
 		interpretation = `Относительная макродентия нижних резцов или микродентия верхних (индекс ${ratio} < нормы ${norm}).`;
 	}
 
@@ -93,8 +105,12 @@ export function calculateTonnIndex(
 		sumUpperIncisorsMm: Number(sumUpper.toFixed(1)),
 		sumLowerIncisorsMm: Number(sumLower.toFixed(1)),
 		tonnRatio: ratio,
+		ratio,
 		isDeciduous,
 		normRatio: norm,
+		normReference: norm,
+		discrepancyType,
+		interpretation,
 		deviationInterpretation: interpretation,
 	};
 }
@@ -108,6 +124,18 @@ export interface PontIndexResult {
 	measuredMolarWidthMm: number;
 	premolarDiscrepancyMm: number; // measured - calculated (отрицательный = сужение)
 	molarDiscrepancyMm: number;
+	premolars: {
+		expectedWidthMm: number;
+		actualWidthMm: number;
+		discrepancyMm: number;
+		status: "narrowed" | "widened" | "normal";
+	};
+	molars: {
+		expectedWidthMm: number;
+		actualWidthMm: number;
+		discrepancyMm: number;
+		status: "narrowed" | "widened" | "normal";
+	};
 	interpretation: string;
 }
 
@@ -123,9 +151,9 @@ export function calculatePontIndex(
 	const diffM = Number((measuredMolarWidthMm - calcMolar).toFixed(1));
 
 	const pDesc =
-		diffP < -1 ? `сужение в области премоляров на ${Math.abs(diffP)} мм` : diffP > 1 ? `расширение в премолярах на ${diffP} мм` : "норма в премолярах";
+		diffP < -0.5 ? `сужение в области премоляров на ${Math.abs(diffP)} мм` : diffP > 0.5 ? `расширение в премолярах на ${diffP} мм` : "норма в премолярах";
 	const mDesc =
-		diffM < -1 ? `сужение в области моляров на ${Math.abs(diffM)} мм` : diffM > 1 ? `расширение в молярах на ${diffM} мм` : "норма в молярах";
+		diffM < -0.5 ? `сужение в области моляров на ${Math.abs(diffM)} мм` : diffM > 0.5 ? `расширение в молярах на ${diffM} мм` : "норма в молярах";
 
 	return {
 		sumUpperIncisorsMm: Number(sumUpperIncisorsMm.toFixed(1)),
@@ -135,6 +163,18 @@ export function calculatePontIndex(
 		measuredMolarWidthMm: Number(measuredMolarWidthMm.toFixed(1)),
 		premolarDiscrepancyMm: diffP,
 		molarDiscrepancyMm: diffM,
+		premolars: {
+			expectedWidthMm: calcPremolar,
+			actualWidthMm: Number(measuredPremolarWidthMm.toFixed(1)),
+			discrepancyMm: diffP,
+			status: diffP < -0.5 ? "narrowed" : diffP > 0.5 ? "widened" : "normal",
+		},
+		molars: {
+			expectedWidthMm: calcMolar,
+			actualWidthMm: Number(measuredMolarWidthMm.toFixed(1)),
+			discrepancyMm: diffM,
+			status: diffM < -0.5 ? "narrowed" : diffM > 0.5 ? "widened" : "normal",
+		},
 		interpretation: `Индекс Пона: ${pDesc}, ${mDesc}.`,
 	};
 }
@@ -144,26 +184,42 @@ export interface BoltonIndexResult {
 	sumUpper6Mm: number; // 13-23
 	sumLower6Mm: number; // 33-43
 	anteriorRatio: number; // (sumLower6 / sumUpper6) * 100% (норма 77.2%)
+	anteriorRatioPercent: number;
 	anteriorDiscrepancyInterpretation: string;
 	sumUpper12Mm: number; // 16-26
 	sumLower12Mm: number; // 36-46
 	overallRatio: number; // (sumLower12 / sumUpper12) * 100% (норма 91.3%)
+	overallRatioPercent: number;
+	overallDiscrepancyMm: number;
 	overallDiscrepancyInterpretation: string;
 }
 
 export function calculateBoltonIndex(
-	upper12Widths: number[], // 16..26 (12 зубов)
-	lower12Widths: number[], // 46..36 (12 зубов)
+	upperInput: number[] | number, // массив 12 ширины или sumUpper6
+	lowerInput: number[] | number, // массив 12 ширины или sumLower6
+	overallUpperSum?: number,
+	overallLowerSum?: number,
 ): BoltonIndexResult {
-	// 6 передних зубов (индексы 3..8: 13, 12, 11, 21, 22, 23 и 43, 42, 41, 31, 32, 33)
-	const upper6 = upper12Widths.slice(3, 9).reduce((a, b) => a + b, 0);
-	const lower6 = lower12Widths.slice(3, 9).reduce((a, b) => a + b, 0);
+	let upper6 = 0;
+	let lower6 = 0;
+	let upper12 = 0;
+	let lower12 = 0;
 
-	const upper12 = upper12Widths.reduce((a, b) => a + b, 0);
-	const lower12 = lower12Widths.reduce((a, b) => a + b, 0);
+	if (typeof upperInput === "number" && typeof lowerInput === "number") {
+		upper6 = upperInput;
+		lower6 = lowerInput;
+		upper12 = overallUpperSum ?? upperInput * 1.8;
+		lower12 = overallLowerSum ?? lowerInput * 1.8;
+	} else if (Array.isArray(upperInput) && Array.isArray(lowerInput)) {
+		upper6 = upperInput.slice(3, 9).reduce((a, b) => a + b, 0);
+		lower6 = lowerInput.slice(3, 9).reduce((a, b) => a + b, 0);
+		upper12 = upperInput.reduce((a, b) => a + b, 0);
+		lower12 = lowerInput.reduce((a, b) => a + b, 0);
+	}
 
 	const antRatio = upper6 > 0 ? Number(((lower6 / upper6) * 100).toFixed(1)) : 0;
 	const overRatio = upper12 > 0 ? Number(((lower12 / upper12) * 100).toFixed(1)) : 0;
+	const overDiscrepancy = Number((lower12 - (upper12 * 91.3) / 100).toFixed(1));
 
 	let antDesc = "Переднее соотношение Болтона гармонично (норма 77.2% ± 1.6%).";
 	if (antRatio > 78.8) {
@@ -185,10 +241,13 @@ export function calculateBoltonIndex(
 		sumUpper6Mm: Number(upper6.toFixed(1)),
 		sumLower6Mm: Number(lower6.toFixed(1)),
 		anteriorRatio: antRatio,
+		anteriorRatioPercent: antRatio,
 		anteriorDiscrepancyInterpretation: antDesc,
 		sumUpper12Mm: Number(upper12.toFixed(1)),
 		sumLower12Mm: Number(lower12.toFixed(1)),
 		overallRatio: overRatio,
+		overallRatioPercent: overRatio,
+		overallDiscrepancyMm: overDiscrepancy,
 		overallDiscrepancyInterpretation: overDesc,
 	};
 }

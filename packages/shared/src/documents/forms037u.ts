@@ -47,28 +47,73 @@ export type DailySummaryTotals037u = z.infer<typeof dailySummaryTotals037uSchema
 
 /** Калькулятор сводных показателей дня для формы 037/у */
 export function calculateDaily037uTotals(
-	records: readonly DailyPatientRecord037u[],
+	records: readonly any[],
 	standardShiftQuota = 21.0,
-): DailySummaryTotals037u {
+): DailySummaryTotals037u & {
+	totalPatientsSeen: number;
+	adultsCount: number;
+	childrenUnder18Count: number;
+	ruralResidentsCount: number;
+	primaryVisitsCount: number;
+	repeatVisitsCount: number;
+	sanatedPatientsCount: number;
+	totalFillingsPlaced: number;
+	totalTeethExtracted: number;
+	uetTotals: {
+		therapeuticUet: number;
+		surgicalUet: number;
+		orthopedicUet: number;
+		orthodonticUet: number;
+		childrenUet: number;
+		totalUet: number;
+	};
+} {
 	let adults = 0;
 	let children = 0;
 	let adolescents = 0;
+	let ruralCount = 0;
 	let primary = 0;
 	let repeat = 0;
 	let sanated = 0;
+	let fillingsPlaced = 0;
+	let teethExtracted = 0;
 	let totalUet = 0;
+	let therapeuticUet = 0;
+	let surgicalUet = 0;
+	let orthopedicUet = 0;
+	let orthodonticUet = 0;
+	let childrenUet = 0;
 
 	for (const r of records) {
-		if (r.patientCategory === "adult") adults += 1;
-		else if (r.patientCategory === "child_under_14") children += 1;
-		else adolescents += 1;
+		const isChild = r.isChildUnder18 ?? r.patientCategory === "child_under_14" ?? false;
+		const isAdol = r.patientCategory === "adolescent_15_17" ?? false;
+		if (isChild) children += 1;
+		else if (isAdol) adolescents += 1;
+		else adults += 1;
 
-		if (r.isPrimaryVisit) primary += 1;
+		if (r.isRuralResident) ruralCount += 1;
+
+		const isPrim = r.isPrimaryVisit ?? r.visitPurpose === "preventive" ?? false;
+		if (isPrim) primary += 1;
 		else repeat += 1;
 
-		if (r.isSanatedInVisit) sanated += 1;
+		if (r.isSanated || r.isSanatedInVisit) sanated += 1;
 
-		totalUet += r.totalUetForVisit;
+		fillingsPlaced += (r.fillingsCompositeCount ?? 0) + (r.fillingsCementCount ?? 0) + (r.fillingsCount ?? 0);
+		teethExtracted += (r.extractionsSimpleCount ?? 0) + (r.extractionsComplicatedCount ?? 0) + (r.extractionsCount ?? 0);
+
+		if (r.uetEarned) {
+			therapeuticUet += r.uetEarned.therapeuticUet ?? 0;
+			surgicalUet += r.uetEarned.surgicalUet ?? 0;
+			orthopedicUet += r.uetEarned.orthopedicUet ?? 0;
+			orthodonticUet += r.uetEarned.orthodonticUet ?? 0;
+			childrenUet += r.uetEarned.childrenUet ?? 0;
+			totalUet += r.uetEarned.totalUet ?? 0;
+		} else {
+			const u = r.totalUetForVisit ?? 0;
+			therapeuticUet += u;
+			totalUet += u;
+		}
 	}
 
 	const totalPatients = records.length;
@@ -78,15 +123,32 @@ export function calculateDaily037uTotals(
 
 	return {
 		totalPatientsCount: totalPatients,
+		totalPatientsSeen: totalPatients,
 		totalAdultsCount: adults,
+		adultsCount: adults,
 		totalChildrenUnder14Count: children,
 		totalAdolescents15_17Count: adolescents,
+		childrenUnder18Count: children + adolescents,
+		ruralResidentsCount: ruralCount,
 		totalPrimaryVisitsCount: primary,
+		primaryVisitsCount: primary,
 		totalRepeatVisitsCount: repeat,
+		repeatVisitsCount: repeat,
 		totalSanatedCount: sanated,
+		sanatedPatientsCount: sanated,
+		totalFillingsPlaced: fillingsPlaced,
+		totalTeethExtracted: teethExtracted,
 		totalUetAccumulated: roundedUet,
 		shiftStandardQuotaUet: standardShiftQuota,
 		planExecutionPercentage: execPct,
+		uetTotals: {
+			therapeuticUet: Number(therapeuticUet.toFixed(2)),
+			surgicalUet: Number(surgicalUet.toFixed(2)),
+			orthopedicUet: Number(orthopedicUet.toFixed(2)),
+			orthodonticUet: Number(orthodonticUet.toFixed(2)),
+			childrenUet: Number(childrenUet.toFixed(2)),
+			totalUet: roundedUet,
+		},
 	};
 }
 

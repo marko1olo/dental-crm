@@ -4266,6 +4266,8 @@ export function DocumentsView(props: DocumentsViewProps) {
 								</div>
 							</details>
 						</article>
+					) : null}
+
 					{selectedDocumentKind === "dental_medical_card_043u" ? (
 						<DentalMedicalCard043uForm />
 					) : null}

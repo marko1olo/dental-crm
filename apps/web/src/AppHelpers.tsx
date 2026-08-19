@@ -3206,6 +3206,7 @@ export const procedureSpecificConsentProcedureOptions: Array<{
 		value: "therapy_endo_restoration",
 		label: "Терапия, эндодонтия, реставрация",
 	},
+	{ value: "sedation", label: "Седация (ЗАКС / в/в)" },
 	{ value: "surgery_extraction", label: "Хирургия / удаление" },
 	{ value: "implantation_bone_graft", label: "Имплантация / костная пластика" },
 	{ value: "prosthetics", label: "Ортопедия" },
