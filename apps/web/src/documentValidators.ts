@@ -1801,6 +1801,58 @@ export function validateMedicalInterventionRefusal(
 	);
 }
 
+export function validateOrthodonticMedicalCard043_1U(
+	state: DocumentState,
+): string[] | string | null {
+	const { documentPatient, clinicProfileDraft, requiredDocumentField } = state;
+	return (
+		requiredDocumentField(
+			documentPatient?.fullName,
+			"ортодонтическая карта, пациент",
+		) ??
+		requiredDocumentField(
+			clinicProfileDraft?.legalName || clinicProfileDraft?.clinicName,
+			"ортодонтическая карта, организация",
+		)
+	);
+}
+
+export function validateDailyDentistDiary037U(
+	state: DocumentState,
+): string[] | string | null {
+	const { clinicProfileDraft, requiredDocumentField } = state;
+	return requiredDocumentField(
+		clinicProfileDraft?.legalName || clinicProfileDraft?.clinicName,
+		"листок 037/у, организация",
+	);
+}
+
+export function validateSummaryDentistStatement039U(
+	state: DocumentState,
+): string[] | string | null {
+	const { clinicProfileDraft, requiredDocumentField } = state;
+	return requiredDocumentField(
+		clinicProfileDraft?.legalName || clinicProfileDraft?.clinicName,
+		"сводная ведомость 039/у, организация",
+	);
+}
+
+export function validateRadiationDoseSheet(
+	state: DocumentState,
+): string[] | string | null {
+	const { documentPatient, clinicProfileDraft, requiredDocumentField } = state;
+	return (
+		requiredDocumentField(
+			documentPatient?.fullName,
+			"лист лучевых нагрузок, пациент",
+		) ??
+		requiredDocumentField(
+			clinicProfileDraft?.legalName || clinicProfileDraft?.clinicName,
+			"лист лучевых нагрузок, организация",
+		)
+	);
+}
+
 export const documentPayloadValidators: Record<
 	string,
 	(state: DocumentState) => string[] | string | null
@@ -1827,6 +1879,10 @@ export const documentPayloadValidators: Record<
 	xray_cbct_referral: validateXrayCbctReferral,
 	outpatient_medical_card_025u: validateOutpatientMedicalCard025U,
 	dental_medical_card_043u: validateDentalMedicalCard043U,
+	orthodontic_medical_card_043_1u: validateOrthodonticMedicalCard043_1U,
+	daily_dentist_diary_037u: validateDailyDentistDiary037U,
+	summary_dentist_statement_039u: validateSummaryDentistStatement039U,
+	radiation_dose_sheet: validateRadiationDoseSheet,
 	medical_record_extract: validateMedicalRecordExtract,
 	medical_record_copy_request: validateMedicalRecordCopyRequest,
 	visit_attendance_certificate: validateVisitAttendanceCertificate,

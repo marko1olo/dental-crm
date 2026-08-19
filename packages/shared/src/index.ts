@@ -7,6 +7,15 @@ export * from "./legal/legalContractsAndConsents.js";
 export * from "./documents/index.js";
 
 import {
+	dailyDentistDiary037uPayloadSchema,
+	fullForm043uPayloadSchema,
+	medicalCardExtract003vuPayloadSchema,
+	orthodonticCard043_1uPayloadSchema,
+	radiationDoseSheetPayloadSchema,
+	summaryDentistStatement039uPayloadSchema,
+} from "./documents/index.js";
+
+import {
 	moneyRubSchema,
 	nonNegativeMoneyRubSchema,
 	positiveMoneyRubSchema,
@@ -346,6 +355,33 @@ const documentKindBaseMetadata = {
 		requiresVisit: false,
 		requiresPaidRecord: false,
 	},
+	orthodontic_medical_card_043_1u: {
+		title: "Медицинская карта ортодонтического пациента (форма N 043-1/у)",
+		label: "Карта 043-1/у",
+		actionLabel: "Карта 043-1/у",
+		group: "legal",
+		amountSource: "none",
+		requiresVisit: false,
+		requiresPaidRecord: false,
+	},
+	daily_dentist_diary_037u: {
+		title: "Листок ежедневного учета работы врача-стоматолога (форма N 037/у-88)",
+		label: "Листок 037/у",
+		actionLabel: "Листок 037/у",
+		group: "legal",
+		amountSource: "none",
+		requiresVisit: false,
+		requiresPaidRecord: false,
+	},
+	summary_dentist_statement_039u: {
+		title: "Сводная ведомость учета работы врача-стоматолога (форма N 039/у-88)",
+		label: "Сводная 039/у",
+		actionLabel: "Сводная 039/у",
+		group: "legal",
+		amountSource: "none",
+		requiresVisit: false,
+		requiresPaidRecord: false,
+	},
 	medical_record_extract: {
 		title: "Выписка из медицинской карты",
 		label: "Выписка",
@@ -380,6 +416,15 @@ const documentKindBaseMetadata = {
 		group: "legal",
 		amountSource: "none",
 		requiresVisit: true,
+		requiresPaidRecord: false,
+	},
+	radiation_dose_sheet: {
+		title: "Лист учета дозовых нагрузок пациента при рентгенологических исследованиях",
+		label: "Лист доз",
+		actionLabel: "Лист доз",
+		group: "legal",
+		amountSource: "none",
+		requiresVisit: false,
 		requiresPaidRecord: false,
 	},
 	lab_work_order: {
@@ -629,6 +674,33 @@ export const documentKindSourceMetadata = {
 			"DENTE заполняет структуру формы 043/у из дневника приёма (visit_diaries), карточки пациента и профиля клиники. Неизвестные разделы остаются явно пустыми; юридически значимый электронный обмен требует отдельного контура УКЭП/МИС/ЕГИСЗ.",
 		sourceCheckedAt: documentSourceCheckedAt,
 	},
+	orthodontic_medical_card_043_1u: {
+		sourceStatus: "official_form",
+		sourceAuthority: "Минздрав России",
+		sourceReference:
+			"Приказ Минздрава России / СтАР, форма N 043-1/у (ортодонтическая карта)",
+		sourceNote:
+			"DENTE формирует ортодонтическую карту с антропометрией, цефалометрией ТРГ, расчетом индексов Тона, Пона, Болтона и планом аппаратурного лечения.",
+		sourceCheckedAt: documentSourceCheckedAt,
+	},
+	daily_dentist_diary_037u: {
+		sourceStatus: "official_form",
+		sourceAuthority: "Минздрав СССР / РФ",
+		sourceReference:
+			"Приказ Минздрава СССР от 25.01.1988 N 50, форма N 037/у-88",
+		sourceNote:
+			"DENTE формирует ежедневный листок учета принятых пациентов с автоматическим подсчетом выработанных УЕТ.",
+		sourceCheckedAt: documentSourceCheckedAt,
+	},
+	summary_dentist_statement_039u: {
+		sourceStatus: "official_form",
+		sourceAuthority: "Минздрав СССР / РФ",
+		sourceReference:
+			"Приказ Минздрава СССР N 50-88 / Приказ Минздрава РФ N 804н",
+		sourceNote:
+			"DENTE автоматически агрегирует объем стоматологической помощи и выработку УЕТ за отчетный период по номенклатуре Минздрава.",
+		sourceCheckedAt: documentSourceCheckedAt,
+	},
 	medical_record_extract: {
 		sourceStatus: "official_workflow",
 		sourceAuthority: "Минздрав России",
@@ -661,6 +733,15 @@ export const documentKindSourceMetadata = {
 			"Приказ N 560н, правила проведения рентгенологических исследований",
 		sourceNote:
 			"Направление DENTE фиксирует клинический вопрос, область, показание, ограничения, архив снимков/отчет и передачу результата.",
+		sourceCheckedAt: documentSourceCheckedAt,
+	},
+	radiation_dose_sheet: {
+		sourceStatus: "official_form",
+		sourceAuthority: "Роспотребнадзор / Минздрав России",
+		sourceReference:
+			"СанПиН 2.6.1.1192-03, СанПиН 2.6.1.2523-09 (НРБ-99/2009)",
+		sourceNote:
+			"DENTE ведет индивидуальный радиационный паспорт пациента и рассчитывает суммарную эффективную дозу облучения с контролем безопасных порогов.",
 		sourceCheckedAt: documentSourceCheckedAt,
 	},
 	lab_work_order: {
@@ -792,6 +873,9 @@ export const documentKindSourceUrls = {
 	post_visit_recommendations: [],
 	outpatient_medical_card_025u: [minzdravAmbulatoryFormsSourceUrl],
 	dental_medical_card_043u: [minzdravAmbulatoryFormsSourceUrl],
+	orthodontic_medical_card_043_1u: [minzdravAmbulatoryFormsSourceUrl],
+	daily_dentist_diary_037u: [minzdravAmbulatoryFormsSourceUrl],
+	summary_dentist_statement_039u: [minzdravAmbulatoryFormsSourceUrl],
 	medical_record_extract: [
 		minzdravMedicalDocumentReleaseSourceUrl,
 		minzdravAmbulatoryFormsSourceUrl,
@@ -799,6 +883,7 @@ export const documentKindSourceUrls = {
 	medical_record_copy_request: [minzdravMedicalDocumentReleaseSourceUrl],
 	medical_document_release_receipt: [minzdravMedicalDocumentReleaseSourceUrl],
 	xray_cbct_referral: [minzdravRadiologyRulesSourceUrl],
+	radiation_dose_sheet: [minzdravRadiologyRulesSourceUrl],
 	lab_work_order: [],
 	visit_attendance_certificate: [],
 	warranty_service_memo: [],
@@ -873,10 +958,14 @@ export const documentFactoryGroups = [
 			"medical_intervention_refusal",
 			"outpatient_medical_card_025u",
 			"dental_medical_card_043u",
+			"orthodontic_medical_card_043_1u",
+			"daily_dentist_diary_037u",
+			"summary_dentist_statement_039u",
 			"medical_record_extract",
 			"medical_record_copy_request",
 			"medical_document_release_receipt",
 			"xray_cbct_referral",
+			"radiation_dose_sheet",
 			"warranty_service_memo",
 		],
 	},
@@ -5284,6 +5373,12 @@ export const documentPayloadSchema = z
 		outpatientMedicalCard025u:
 			outpatientMedicalCard025uPayloadSchema.optional(),
 		dentalMedicalCard043u: dentalMedicalCard043uPayloadSchema.optional(),
+		orthodonticCard043_1u: dentalMedicalCard043uPayloadSchema.optional(),
+		dailyDentistDiary037u: dailyDentistDiary037uPayloadSchema.optional(),
+		summaryDentistStatement039u:
+			summaryDentistStatement039uPayloadSchema.optional(),
+		medicalCardExtract003vu: medicalCardExtract003vuPayloadSchema.optional(),
+		radiationDoseSheet: radiationDoseSheetPayloadSchema.optional(),
 		medicalRecordExtract: medicalRecordExtractPayloadSchema.optional(),
 		medicalRecordCopyRequest: medicalRecordCopyRequestPayloadSchema.optional(),
 		postVisitRecommendations: postVisitRecommendationsPayloadSchema.optional(),
@@ -5340,8 +5435,12 @@ export const documentPayloadKeysByKind: Partial<
 	xray_cbct_referral: ["xrayCbctReferral"],
 	medical_document_release_receipt: ["medicalDocumentReleaseReceipt"],
 	outpatient_medical_card_025u: ["outpatientMedicalCard025u"],
-	dental_medical_card_043u: ["dentalMedicalCard043u"],
-	medical_record_extract: ["medicalRecordExtract"],
+	dental_medical_card_043u: ["dentalMedicalCard043u", "fullForm043u"],
+	orthodontic_medical_card_043_1u: ["orthodonticCard043_1u"],
+	daily_dentist_diary_037u: ["dailyDentistDiary037u"],
+	summary_dentist_statement_039u: ["summaryDentistStatement039u"],
+	medical_record_extract: ["medicalRecordExtract", "medicalCardExtract003vu"],
+	radiation_dose_sheet: ["radiationDoseSheet"],
 	medical_record_copy_request: ["medicalRecordCopyRequest"],
 	post_visit_recommendations: ["postVisitRecommendations"],
 	treatment_plan: ["treatmentPlan"],

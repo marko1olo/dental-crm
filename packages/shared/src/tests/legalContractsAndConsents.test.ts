@@ -79,7 +79,7 @@ test("MEDICAL_REFUSAL_COMPLICATIONS_PRESET covers odontogenic phlegmons, osteomy
 test("PERSONAL_DATA_EGISZ_CONSENT_PRESET includes 152-FZ and Decree No. 140 EGISZ provisions", () => {
 	assert.ok(PERSONAL_DATA_EGISZ_CONSENT_PRESET.purposes.some((p) => p.includes("ЕГИСЗ") && p.includes("РЭМД")));
 	assert.ok(PERSONAL_DATA_EGISZ_CONSENT_PRESET.purposes.some((p) => p.includes("Госуслуги")));
-	assert.ok(PERSONAL_DATA_EGISZ_CONSENT_PRESET.transferRules.includes("Постановлением Правительства"));
+	assert.ok(PERSONAL_DATA_EGISZ_CONSENT_PRESET.transferRules.includes("ЕГИСЗ Минздрава России"));
 	assert.ok(PERSONAL_DATA_EGISZ_CONSENT_PRESET.categories.some((c) => c.includes("Специальные категории")));
 });
 
