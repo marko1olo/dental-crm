@@ -1,6 +1,7 @@
 import { z } from "zod";
 export * from "./money.js";
 export * from "./utils/mdlpDataMatrix.js";
+export * from "./sanpin.js";
 import { moneyRubSchema, nonNegativeMoneyRubSchema, positiveMoneyRubSchema, } from "./money.js";
 /**
  * Адрес, который пришёл от пользователя и потом уходит либо в браузер сотрудника
