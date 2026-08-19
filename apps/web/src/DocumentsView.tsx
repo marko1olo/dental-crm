@@ -35,6 +35,12 @@ import { PhotoVideoConsentForm } from "./components/documents/forms/PhotoVideoCo
 import { ProcedureSpecificConsentForm } from "./components/documents/forms/ProcedureSpecificConsentForm";
 import { TaxDeductionApplicationForm } from "./components/documents/forms/TaxDeductionApplicationForm";
 import { TreatmentPlanDocumentForm } from "./components/documents/forms/TreatmentPlanDocumentForm";
+import { DentalMedicalCard043uForm } from "./components/documents/forms/DentalMedicalCard043uForm";
+import { OrthodonticCard043_1uForm } from "./components/documents/forms/OrthodonticCard043_1uForm";
+import { DailyDentistWorkSheet037uForm } from "./components/documents/forms/DailyDentistWorkSheet037uForm";
+import { SummaryWorkStatement039uForm } from "./components/documents/forms/SummaryWorkStatement039uForm";
+import { MedicalCardExtract003vuForm } from "./components/documents/forms/MedicalCardExtract003vuForm";
+import { RadiationDoseSheetForm } from "./components/documents/forms/RadiationDoseSheetForm";
 import { EmptyState } from "./components/EmptyState";
 import { showToast } from "./components/GlobalToast";
 import {
@@ -4260,6 +4266,24 @@ export function DocumentsView(props: DocumentsViewProps) {
 								</div>
 							</details>
 						</article>
+					{selectedDocumentKind === "dental_medical_card_043u" ? (
+						<DentalMedicalCard043uForm />
+					) : null}
+
+					{selectedDocumentKind === "orthodontic_medical_card_043_1u" ? (
+						<OrthodonticCard043_1uForm />
+					) : null}
+
+					{selectedDocumentKind === "daily_dentist_diary_037u" ? (
+						<DailyDentistWorkSheet037uForm />
+					) : null}
+
+					{selectedDocumentKind === "summary_dentist_statement_039u" ? (
+						<SummaryWorkStatement039uForm />
+					) : null}
+
+					{selectedDocumentKind === "radiation_dose_sheet" ? (
+						<RadiationDoseSheetForm />
 					) : null}
 
 					{selectedDocumentKind === "medical_record_extract" ? (
