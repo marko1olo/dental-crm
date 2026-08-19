@@ -1275,3 +1275,68 @@
 	color: var(--odontogram-ink-muted);
 	font-weight: 500;
 }
+
+/* ==========================================================================
+   CLASSIC GOST ODONTOGRAM 043/U TABLE STYLES
+   ========================================================================== */
+
+.gost-odontogram-container {
+	background-color: var(--odontogram-paper, #ffffff);
+	border-color: var(--odontogram-border, #cbd5e1);
+	color: var(--odontogram-ink, #0f172a);
+}
+
+.gost-table-wrapper {
+	scrollbar-width: thin;
+	scrollbar-color: var(--odontogram-border-strong, #94a3b8) transparent;
+}
+
+.gost-table {
+	background-color: var(--odontogram-paper, #ffffff);
+	border: 2px solid var(--odontogram-border-strong, #94a3b8);
+	border-collapse: separate;
+	border-spacing: 0;
+}
+
+.gost-table th,
+.gost-table td {
+	border-color: var(--odontogram-border-subtle, #e2e8f0);
+}
+
+.gost-cell {
+	background-color: var(--odontogram-paper, #ffffff);
+	cursor: pointer;
+	outline: none;
+}
+
+.gost-cell:focus-visible {
+	outline: 2px solid #6366f1;
+	outline-offset: -2px;
+}
+
+.gost-mobility-cell {
+	user-select: none;
+}
+
+.gost-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 1;
+	letter-spacing: 0.02em;
+}
+
+/* High Contrast Theme Overrides */
+[data-theme="contrast"] .gost-table {
+	border: 2px solid #000000;
+}
+
+[data-theme="contrast"] .gost-table th,
+[data-theme="contrast"] .gost-table td {
+	border-color: #000000;
+}
+
+[data-theme="contrast"] .gost-cell:focus-visible {
+	outline: 3px solid #000000;
+}
+
