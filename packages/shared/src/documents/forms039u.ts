@@ -27,7 +27,7 @@ export const OFFICIAL_UET_STANDARDS_804N: readonly UetProcedureStandard[] = [
 	{ code: "A06.07.001", serviceName: "Прицельная внутриротовая радиовизиография", category: "anesthesia_diagnostics", uetValue: 0.40, uetDoctor: 0.40 },
 
 	// Терапия (кариес, пломбы)
-	{ code: "A16.07.002.001", serviceName: "Наложение пломбы из композита (I, V класс по Блэку, 1 поверхность)", category: "therapy", uetValue: 1.50, uetDoctor: 1.50 },
+	{ code: "A16.07.002.001", serviceName: "Наложение пломбы из композита (I, V класс по Блэку, 1 поверхность)", category: "therapy", uetValue: 1.00, uetDoctor: 1.00 },
 	{ code: "A16.07.002.002", serviceName: "Наложение пломбы из композита (II, III класс по Блэку, 2 поверхности)", category: "therapy", uetValue: 1.50 },
 	{ code: "A16.07.002.003", serviceName: "Наложение пломбы / реставрация (IV класс, 3+ поверхности)", category: "therapy", uetValue: 2.25 },
 	{ code: "A16.07.002.004", serviceName: "Эстетическое восстановление анатомической формы зуба (виниринг/наращивание)", category: "therapy", uetValue: 3.00 },

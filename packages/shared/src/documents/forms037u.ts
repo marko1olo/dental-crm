@@ -85,15 +85,15 @@ export function calculateDaily037uTotals(
 	let childrenUet = 0;
 
 	for (const r of records) {
-		const isChild = r.isChildUnder18 ?? r.patientCategory === "child_under_14" ?? false;
-		const isAdol = r.patientCategory === "adolescent_15_17" ?? false;
+		const isChild = Boolean((r as any).isChildUnder18) || r.patientCategory === "child_under_14";
+		const isAdol = r.patientCategory === "adolescent_15_17";
 		if (isChild) children += 1;
 		else if (isAdol) adolescents += 1;
 		else adults += 1;
 
 		if (r.isRuralResident) ruralCount += 1;
 
-		const isPrim = r.isPrimaryVisit ?? r.visitPurpose === "preventive" ?? false;
+		const isPrim = Boolean((r as any).isPrimaryVisit) || r.visitPurpose === "preventive";
 		if (isPrim) primary += 1;
 		else repeat += 1;
 

@@ -194,7 +194,13 @@ export const dmftIndexSchema = z.object({
 export type DmftIndex = z.infer<typeof dmftIndexSchema>;
 
 /** Калькулятор индекса КПУ по зубной формуле */
-export function calculateDmftFromOdontogram(teeth: readonly FdiToothRecord[]): DmftIndex {
+export function calculateDmftFromOdontogram(
+	teethInput: readonly any[] | Record<number | string, any>,
+): DmftIndex & { dmftTotal: number; intensityLevelLabel: string } {
+	const teeth = Array.isArray(teethInput)
+		? teethInput
+		: Object.values(teethInput ?? {});
+
 	let decayed = 0;
 	let filled = 0;
 	let missing = 0;
@@ -205,7 +211,11 @@ export function calculateDmftFromOdontogram(teeth: readonly FdiToothRecord[]): D
 	let deciduousFilled = 0;
 	let deciduousExtracted = 0;
 
-	const decayedCodes: ToothClinicalStatusCode[] = [
+	const decayedCodes = [
+		"C",
+		"P",
+		"Pt",
+		"F_C",
 		"caries_initial",
 		"caries_superficial",
 		"caries_media",
@@ -218,34 +228,47 @@ export function calculateDmftFromOdontogram(teeth: readonly FdiToothRecord[]): D
 		"periodontitis_chronic",
 		"periodontitis_radicular_cyst",
 		"filled_secondary_caries",
-		"root_remnant",
 		"fracture",
 	];
 
-	const filledCodes: ToothClinicalStatusCode[] = [
+	const filledCodes = [
+		"F",
+		"In",
 		"filled_satisfactory",
 		"filled_defective",
 		"inlay_onlay",
 	];
 
-	const missingCodes: ToothClinicalStatusCode[] = ["extracted_absent"];
+	const missingCodes = [
+		"X",
+		"R",
+		"root_remnant",
+		"extracted_absent",
+	];
 
 	for (const tooth of teeth) {
-		const isDeciduous = tooth.toothNumber >= 51 && tooth.toothNumber <= 85;
-		const surfCount = Math.max(1, tooth.surfaces.length);
+		const num = Number(tooth.toothNumber);
+		const isDeciduous = num >= 51 && num <= 85;
+		const cond = tooth.condition ?? tooth.statusCode ?? "H";
+		const surfaces = tooth.surfaces
+			? Array.isArray(tooth.surfaces)
+				? tooth.surfaces
+				: Object.keys(tooth.surfaces)
+			: [];
+		const surfCount = Math.max(1, surfaces.length);
 
 		if (isDeciduous) {
-			if (decayedCodes.includes(tooth.statusCode)) deciduousDecayed += 1;
-			else if (filledCodes.includes(tooth.statusCode)) deciduousFilled += 1;
-			else if (missingCodes.includes(tooth.statusCode)) deciduousExtracted += 1;
+			if (decayedCodes.includes(cond)) deciduousDecayed += 1;
+			else if (filledCodes.includes(cond)) deciduousFilled += 1;
+			else if (missingCodes.includes(cond)) deciduousExtracted += 1;
 		} else {
-			if (decayedCodes.includes(tooth.statusCode)) {
+			if (decayedCodes.includes(cond)) {
 				decayed += 1;
 				decayedSurfaces += surfCount;
-			} else if (filledCodes.includes(tooth.statusCode)) {
+			} else if (filledCodes.includes(cond)) {
 				filled += 1;
 				filledSurfaces += surfCount;
-			} else if (missingCodes.includes(tooth.statusCode)) {
+			} else if (missingCodes.includes(cond)) {
 				missing += 1;
 			}
 		}
@@ -256,17 +279,28 @@ export function calculateDmftFromOdontogram(teeth: readonly FdiToothRecord[]): D
 	const totalDft = deciduousDecayed + deciduousFilled + deciduousExtracted;
 
 	let intensityLevel: DmftIndex["intensityLevel"] = "medium";
-	if (totalDmft <= 1.5) intensityLevel = "very_low";
-	else if (totalDmft <= 6.2) intensityLevel = "low";
-	else if (totalDmft <= 12.7) intensityLevel = "medium";
-	else if (totalDmft <= 16.2) intensityLevel = "high";
-	else intensityLevel = "very_high";
+	let intensityLevelLabel = "Средний (3.5–4.9)";
+	if (totalDmft <= 1.5) {
+		intensityLevel = "very_low";
+		intensityLevelLabel = "Очень низкий (0–1.5)";
+	} else if (totalDmft <= 4.9) {
+		intensityLevel = totalDmft <= 3.4 ? "low" : "medium";
+		intensityLevelLabel =
+			totalDmft <= 3.4 ? "Низкий (1.6–3.4)" : "Средний (3.5–4.9)";
+	} else if (totalDmft <= 8.0) {
+		intensityLevel = "high";
+		intensityLevelLabel = "Высокий (5–8)";
+	} else {
+		intensityLevel = "very_high";
+		intensityLevelLabel = "Очень высокий (> 8.0)";
+	}
 
 	return {
 		decayed,
 		filled,
 		missing,
 		totalDmft,
+		dmftTotal: totalDmft,
 		decayedSurfaces,
 		filledSurfaces,
 		totalDmfs,
@@ -275,6 +309,7 @@ export function calculateDmftFromOdontogram(teeth: readonly FdiToothRecord[]): D
 		deciduousExtracted,
 		totalDft,
 		intensityLevel,
+		intensityLevelLabel,
 	};
 }
 
