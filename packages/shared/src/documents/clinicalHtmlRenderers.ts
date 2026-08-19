@@ -89,6 +89,7 @@ export const CLINICAL_DOCUMENT_PRINT_STYLES = `
     margin-top: 10px;
     margin-bottom: 4px;
     background: #f1f5f9;
+    color: #0f172a;
     padding: 2px 6px;
     border-left: 3px solid #0284c7;
   }
@@ -105,6 +106,7 @@ export const CLINICAL_DOCUMENT_PRINT_STYLES = `
   }
   table.data-table th {
     background: #e2e8f0;
+    color: #0f172a;
     font-weight: bold;
     text-align: center;
   }
@@ -138,8 +140,42 @@ export const CLINICAL_DOCUMENT_PRINT_STYLES = `
   .badge-green { background: #d1fae5; color: #065f46; }
   .badge-yellow { background: #fef3c7; color: #92400e; }
   .badge-red { background: #fee2e2; color: #991b1b; }
+  [data-theme="dark"] body,
+  .dark body {
+    color: #f1f5f9;
+    background: #0f172a;
+  }
+  [data-theme="dark"] .section-title,
+  .dark .section-title {
+    background: #1e293b;
+    color: #38bdf8;
+    border-left: 3px solid #38bdf8;
+  }
+  [data-theme="dark"] table.data-table th,
+  .dark table.data-table th {
+    background: #1e293b;
+    color: #f1f5f9;
+    border-color: #475569;
+  }
+  [data-theme="dark"] table.data-table td,
+  .dark table.data-table td {
+    border-color: #475569;
+  }
+  [data-theme="dark"] .header-grid,
+  .dark .header-grid {
+    border-bottom-color: #64748b;
+  }
+  [data-theme="dark"] .sig-line,
+  .dark .sig-line {
+    border-bottom-color: #64748b;
+  }
   @media print {
-    body { font-size: 9.5pt; }
+    body { font-size: 9.5pt; color: #000 !important; background: #fff !important; }
+    .section-title { background: #f1f5f9 !important; color: #0f172a !important; }
+    table.data-table th { background: #e2e8f0 !important; color: #0f172a !important; }
+    table.data-table td, table.data-table th { border-color: #333 !important; }
+    .header-grid { border-bottom-color: #000 !important; }
+    .sig-line { border-bottom-color: #000 !important; }
     .no-print { display: none; }
     .page-break-after { page-break-after: always; }
   }
