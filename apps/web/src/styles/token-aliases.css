@@ -161,6 +161,8 @@
      (#0ea5e9) и тёмной (#38bdf8) теме и уходит в тёплый в ночной, то есть
      оттенок сохраняется там, где он был, а не заменяется бирюзой. */
 	--primary: var(--brand-500);
+	--brand-primary: var(--brand-500);
+	--paper-subtle: var(--paper-soft);
 
 	/* --text-muted: 13 вхождений, из них 9 — «второстепенный текст на поверхности
      темы» (main.css x6, shadow-analyst.css x2, contrast-fixes.css x1).
