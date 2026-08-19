@@ -81,6 +81,7 @@ import { registerScheduleRoutes } from "./routes/schedule.js";
 import { registerSettingsRoutes } from "./routes/settings.js";
 import { registerSmartImportRoutes } from "./routes/smartImports.js";
 import { registerSpeechRoutes } from "./routes/speech.js";
+import { registerSanpinRoutes } from "./routes/sanpin.js";
 import { registerSterilizationRoutes } from "./routes/sterilization.js";
 import { registerSystemRoutes } from "./routes/system.js";
 import {
@@ -652,6 +653,7 @@ export async function createDenteApiApp(
      модуля. Маршруты внутри объявлены абсолютными путями (/api/max/...,
      /api/whatsapp/...), поэтому префикс не нужен и адреса не меняются. */
 	await app.register(registerMaxRoutes);
+	await registerSanpinRoutes(app);
 	await registerSterilizationRoutes(app);
 	await registerVkRoutes(app);
 	await registerWaitlistRoutes(app);
