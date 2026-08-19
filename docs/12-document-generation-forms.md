@@ -21,7 +21,11 @@ Patient and visit forms:
 - warranty/service memo for completed dental work and follow-up conditions;
 - outpatient medical card 025/у for ambulatory care, mapped as a dedicated structured DENTE payload from signed visit records;
 - dental medical card 043/у for the dental outpatient chart, mapped as a dedicated structured DENTE payload with required clinical tooth/segment rows from the visit record;
-- medical record extract;
+- orthodontic medical card 043-1/у for orthodontic care with facial anthropometry, cephalometry, and dental indices;
+- daily dentist diary 037/у-88 for daily patient and UET tracking;
+- summary dentist statement 039/у-88 for monthly and quarterly work volume and UET consolidation;
+- radiation dose sheet for SanPiN 2.6.1.1192-03 patient radiation passport and cumulative dose tracking;
+- medical record extract (003-В/у);
 
 - medical record copy/release request;
 - medical document release receipt for paper/PDF/DICOM handoff;

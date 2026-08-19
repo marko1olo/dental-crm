@@ -76,7 +76,7 @@ export const createPsoCleaningLogDtoSchema = z.object({
 	operatorId: z.string().uuid().optional().nullable(),
 	notes: z.string().trim().max(500).optional().nullable(),
 });
-export type CreatePsoCleaningLogDto = z.infer<typeof createPsoCleaningLogDtoSchema>;
+export type CreatePsoCleaningLogDto = z.input<typeof createPsoCleaningLogDtoSchema>;
 
 // ─── 2. Журнал контроля работы стерилизаторов (Форма № 257/у) ─────────────────
 
@@ -152,7 +152,7 @@ export const createSterilizationLogDtoSchema = z.object({
 	operatorId: z.string().uuid().optional().nullable(),
 	notes: z.string().trim().max(500).optional().nullable(),
 });
-export type CreateSterilizationLogDto = z.infer<typeof createSterilizationLogDtoSchema>;
+export type CreateSterilizationLogDto = z.input<typeof createSterilizationLogDtoSchema>;
 
 // ─── 3. Журнал работы бактерицидных облучателей и рециркуляторов ──────────────
 
@@ -217,7 +217,7 @@ export const createBactericidalEquipmentDtoSchema = z.object({
 	isCommissioned: z.boolean().default(true),
 	notes: z.string().trim().max(500).optional().nullable(),
 });
-export type CreateBactericidalEquipmentDto = z.infer<typeof createBactericidalEquipmentDtoSchema>;
+export type CreateBactericidalEquipmentDto = z.input<typeof createBactericidalEquipmentDtoSchema>;
 
 export const bactericidalLogEntrySchema = z.object({
 	id: z.string().uuid(),
@@ -249,7 +249,7 @@ export const createBactericidalLogEntryDtoSchema = z.object({
 	operatorId: z.string().uuid().optional().nullable(),
 	notes: z.string().trim().max(500).optional().nullable(),
 });
-export type CreateBactericidalLogEntryDto = z.infer<typeof createBactericidalLogEntryDtoSchema>;
+export type CreateBactericidalLogEntryDto = z.input<typeof createBactericidalLogEntryDtoSchema>;
 
 // ─── 4. Журнал генеральных уборок и текущей дезинфекции ──────────────────────
 
@@ -314,7 +314,7 @@ export const createGeneralCleaningLogDtoSchema = z.object({
 	status: cleaningStatusSchema.default("completed"),
 	notes: z.string().trim().max(500).optional().nullable(),
 });
-export type CreateGeneralCleaningLogDto = z.infer<typeof createGeneralCleaningLogDtoSchema>;
+export type CreateGeneralCleaningLogDto = z.input<typeof createGeneralCleaningLogDtoSchema>;
 
 // ─── 5. Журнал медицинских отходов классов А, Б, В, Г (СанПиН 2.1.3684-21) ────
 
@@ -390,7 +390,7 @@ export const createMedicalWasteLogDtoSchema = z.object({
 	responsibleStaffId: z.string().uuid().optional().nullable(),
 	notes: z.string().trim().max(500).optional().nullable(),
 });
-export type CreateMedicalWasteLogDto = z.infer<typeof createMedicalWasteLogDtoSchema>;
+export type CreateMedicalWasteLogDto = z.input<typeof createMedicalWasteLogDtoSchema>;
 
 // ─── 6. Журнал аварийных ситуаций (Аптечка «Анти-ВИЧ» / Постконтакт) ─────────
 
@@ -456,7 +456,7 @@ export const createEmergencyBiohazardLogDtoSchema = z.object({
 	responsibleDoctorId: z.string().uuid().optional().nullable(),
 	notes: z.string().trim().max(500).optional().nullable(),
 });
-export type CreateEmergencyBiohazardLogDto = z.infer<typeof createEmergencyBiohazardLogDtoSchema>;
+export type CreateEmergencyBiohazardLogDto = z.input<typeof createEmergencyBiohazardLogDtoSchema>;
 
 // ─── 7. Журнал температурного режима и влажности (Приказ 706н) ─────────────────
 
@@ -504,7 +504,7 @@ export const createTemperatureHumidityEquipmentDtoSchema = z.object({
 	targetHumidityMaxPercent: z.number().min(0).max(100).optional().nullable(),
 	isActive: z.boolean().default(true),
 });
-export type CreateTemperatureHumidityEquipmentDto = z.infer<typeof createTemperatureHumidityEquipmentDtoSchema>;
+export type CreateTemperatureHumidityEquipmentDto = z.input<typeof createTemperatureHumidityEquipmentDtoSchema>;
 
 export const temperatureHumidityLogSchema = z.object({
 	id: z.string().uuid(),
@@ -537,7 +537,7 @@ export const createTemperatureHumidityLogDtoSchema = z.object({
 	operatorId: z.string().uuid().optional().nullable(),
 	notes: z.string().trim().max(500).optional().nullable(),
 });
-export type CreateTemperatureHumidityLogDto = z.infer<typeof createTemperatureHumidityLogDtoSchema>;
+export type CreateTemperatureHumidityLogDto = z.input<typeof createTemperatureHumidityLogDtoSchema>;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // REGULATORY CALCULATION & VERIFICATION ENGINE (SanPiNEngine)

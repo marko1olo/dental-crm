@@ -5373,7 +5373,8 @@ export const documentPayloadSchema = z
 		outpatientMedicalCard025u:
 			outpatientMedicalCard025uPayloadSchema.optional(),
 		dentalMedicalCard043u: dentalMedicalCard043uPayloadSchema.optional(),
-		orthodonticCard043_1u: dentalMedicalCard043uPayloadSchema.optional(),
+		fullForm043u: fullForm043uPayloadSchema.optional(),
+		orthodonticCard043_1u: orthodonticCard043_1uPayloadSchema.optional(),
 		dailyDentistDiary037u: dailyDentistDiary037uPayloadSchema.optional(),
 		summaryDentistStatement039u:
 			summaryDentistStatement039uPayloadSchema.optional(),

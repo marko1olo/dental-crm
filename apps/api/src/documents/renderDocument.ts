@@ -11,6 +11,7 @@ import {
 	kopecksToNumericString,
 	legacyTaxDeductionCertificateMaxYear,
 	legacyTaxDeductionCertificateMinYear,
+	taxDeductionCertificateMinYear,
 	type MedicalInterventionRefusalPayload,
 	type MedicalRecordCopyRequestPayload,
 	type MedicalRecordExtractPayload,
