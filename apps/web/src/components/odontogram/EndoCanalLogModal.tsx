@@ -560,7 +560,7 @@ export function EndoCanalLogModal({
 
 	const toothAnatomicalName = getToothAnatomicalNameRu(toothNumber);
 
-	return createPortal(
+	const modalContent = (
 		<div
 			className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 md:p-6 bg-slate-950/80 backdrop-blur-sm overflow-y-auto"
 			role="dialog"
@@ -897,7 +897,10 @@ export function EndoCanalLogModal({
 					</div>
 				</footer>
 			</div>
-		</div>,
-		document.body,
+		</div>
 	);
+
+	return typeof document !== "undefined"
+		? createPortal(modalContent, document.body)
+		: modalContent;
 }

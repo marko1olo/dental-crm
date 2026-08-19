@@ -313,16 +313,23 @@ export const InsuranceContractsPanel: React.FC = () => {
 					}
 				</div>
 			) : contracts.length === 0 ? (
-				<div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-12 text-center text-slate-500 dark:text-slate-400">
+				<div
+					className="rounded-2xl p-12 text-center border"
+					style={{
+						borderColor: "var(--line)",
+						background: "var(--paper-soft)",
+						color: "var(--muted)",
+					}}
+				>
 					<ShieldCheck
 						size={40}
 						strokeWidth={1}
 						className="opacity-40 mb-3 mx-auto"
 					/>
-					<p className="m-0 text-base">
+					<p className="m-0 text-base font-semibold" style={{ color: "var(--ink)" }}>
 						{INSURANCE_CONTRACTS_PANEL_SUBJECT.emptyTitle}
 					</p>
-					<p className="mt-1.5 mb-0 text-xs text-slate-400">
+					<p className="mt-1.5 mb-0 text-xs" style={{ color: "var(--muted)" }}>
 						{INSURANCE_CONTRACTS_PANEL_SUBJECT.emptyHint}
 					</p>
 				</div>
@@ -331,7 +338,12 @@ export const InsuranceContractsPanel: React.FC = () => {
 					{contracts.map((contract) => (
 						<div
 							key={contract.id}
-							className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col gap-4 shadow-sm"
+							className="rounded-2xl p-5 flex flex-col gap-4 border"
+							style={{
+								borderColor: "var(--line)",
+								background: "var(--surface)",
+								color: "var(--ink)",
+							}}
 						>
 							<div className="flex justify-between items-start flex-wrap gap-3">
 								<div>

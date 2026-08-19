@@ -129,7 +129,7 @@ export function usePatientResource<T>(
 			cancelled = true;
 			controller.abort();
 		};
-	}, [patientId]);
+	}, [patientId, _reloadToken]);
 
 	const reload = useCallback(() => setReloadToken((token) => token + 1), []);
 

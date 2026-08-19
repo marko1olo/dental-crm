@@ -1,5 +1,6 @@
 import { ExternalLink } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { money } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { actionFailureToast } from "../../lib/panelStateText";
@@ -223,7 +224,7 @@ export function SberbankTerminalPaymentModal({
 
 	if (!isOpen) return null;
 
-	return (
+	const modalContent = (
 		<div
 			className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50"
 			role="dialog"
@@ -334,4 +335,8 @@ export function SberbankTerminalPaymentModal({
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined"
+		? createPortal(modalContent, document.body)
+		: modalContent;
 }

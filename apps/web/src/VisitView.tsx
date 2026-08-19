@@ -2578,6 +2578,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
           ═══════════════════════════════════════════════════════════════ */}
 
 			{selectedToothForMenu &&
+				typeof document !== "undefined" &&
 				(() => {
 					const { code } = selectedToothForMenu;
 					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -2960,8 +2961,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 												className="_ccm-btn"
 												data-color="pink"
 												style={{
-													borderColor: "#ec4899",
-													backgroundColor: "#fdf2f8",
+													borderColor: "var(--teal, var(--line))",
+													backgroundColor: "var(--surface-muted, var(--paper))",
+													color: "var(--ink)",
 													fontWeight: "bold",
 												}}
 												onClick={() => {

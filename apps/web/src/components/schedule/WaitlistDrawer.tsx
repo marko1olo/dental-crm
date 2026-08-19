@@ -374,7 +374,7 @@ export function WaitlistDrawer(props: Props) {
 	 * (OdontogramModule, TreatmentEstimator, Omnibar, VisitDiaryEditor).
 	 */
 	if (isMinimized) {
-		return createPortal(
+		const minimizedContent = (
 			<div className="fixed bottom-4 right-4 z-50">
 				<button
 					type="button"
@@ -386,12 +386,14 @@ export function WaitlistDrawer(props: Props) {
 						Лист ожидания (Свернут)
 					</span>
 				</button>
-			</div>,
-			document.body,
+			</div>
 		);
+		return typeof document !== "undefined"
+			? createPortal(minimizedContent, document.body)
+			: minimizedContent;
 	}
 
-	return createPortal(
+	const drawerContent = (
 		<div
 			className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm"
 			data-testid="waitlist-drawer"
@@ -666,7 +668,10 @@ export function WaitlistDrawer(props: Props) {
 					setIsQuickFillOpen(false);
 				}}
 			/>
-		</div>,
-		document.body,
+		</div>
 	);
+
+	return typeof document !== "undefined"
+		? createPortal(drawerContent, document.body)
+		: drawerContent;
 }

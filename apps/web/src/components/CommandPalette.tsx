@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { matchesPatientSearch } from "../utils/patientSearchUtils";
 import "./CommandPalette.css";
 
@@ -146,7 +147,7 @@ export function CommandPalette({
 
 	if (!isOpen) return null;
 
-	return (
+	const paletteContent = (
 		<div
 			className="cmd-palette-backdrop"
 			role="dialog"
@@ -221,4 +222,8 @@ export function CommandPalette({
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined"
+		? createPortal(paletteContent, document.body)
+		: paletteContent;
 }

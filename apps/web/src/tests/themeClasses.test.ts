@@ -26,20 +26,40 @@ describe("разрешение темы", () => {
 		assert.equal(resolved.colorScheme, "dark");
 	});
 
-	test("тёмная тема", () => {
-		const resolved = resolveTheme("dark", false);
-		assert.equal(resolved.theme, "dark");
-		assert.equal(resolved.darkClass, true);
-		assert.equal(resolved.lightClass, false);
-		assert.equal(resolved.colorScheme, "dark");
+	test("тёмные темы (dark, night, ocean, emerald, cyber_xray) получают darkClass и colorScheme dark", () => {
+		const darkThemes = [
+			"dark",
+			"night",
+			"ocean",
+			"emerald",
+			"cyber_xray",
+		] as const;
+		for (const mode of darkThemes) {
+			const resolved = resolveTheme(mode, false);
+			assert.equal(resolved.theme, mode);
+			assert.equal(resolved.darkClass, true, `${mode} должен иметь darkClass=true`);
+			assert.equal(resolved.lightClass, false, `${mode} не должен иметь lightClass=true`);
+			assert.equal(resolved.colorScheme, "dark", `${mode} должен иметь colorScheme=dark`);
+		}
 	});
 
-	test("светлая тема не получает класс dark ни при каких системных настройках", () => {
-		const resolved = resolveTheme("light", true);
-		assert.equal(resolved.theme, "light");
-		assert.equal(resolved.darkClass, false);
-		assert.equal(resolved.lightClass, true);
-		assert.equal(resolved.colorScheme, "light");
+	test("светлые темы (light, calm_teal, contrast, sakura, warm_sand) получают lightClass и colorScheme light", () => {
+		const lightThemes = [
+			"light",
+			"calm_teal",
+			"contrast",
+			"sakura",
+			"warm_sand",
+		] as const;
+		for (const mode of lightThemes) {
+			for (const prefersDark of [true, false]) {
+				const resolved = resolveTheme(mode, prefersDark);
+				assert.equal(resolved.theme, mode);
+				assert.equal(resolved.darkClass, false, `${mode} не должен иметь darkClass`);
+				assert.equal(resolved.lightClass, true, `${mode} должен иметь lightClass`);
+				assert.equal(resolved.colorScheme, "light", `${mode} должен иметь colorScheme=light`);
+			}
+		}
 	});
 
 	test("авто следует системной настройке", () => {
@@ -47,17 +67,25 @@ describe("разрешение темы", () => {
 		assert.equal(resolveTheme("auto", false).theme, "light");
 		assert.equal(resolveTheme("auto", true).darkClass, true);
 		assert.equal(resolveTheme("auto", false).lightClass, true);
+		assert.equal(resolveTheme("auto", true).colorScheme, "dark");
+		assert.equal(resolveTheme("auto", false).colorScheme, "light");
 	});
 
-	test("класс dark и класс light никогда не стоят одновременно", () => {
-		for (const mode of [
+	test("класс dark и класс light никогда не стоят одновременно для всех 10 тем", () => {
+		const allModes = [
 			"light",
 			"dark",
 			"night",
 			"calm_teal",
 			"contrast",
+			"sakura",
+			"ocean",
+			"emerald",
+			"cyber_xray",
+			"warm_sand",
 			"auto",
-		] as const) {
+		] as const;
+		for (const mode of allModes) {
 			for (const prefersDark of [true, false]) {
 				const resolved = resolveTheme(mode, prefersDark);
 				assert.ok(
@@ -67,20 +95,10 @@ describe("разрешение темы", () => {
 			}
 		}
 	});
-
-	test("темы calm_teal и contrast получают lightClass и colorScheme light", () => {
-		for (const mode of ["calm_teal", "contrast"] as const) {
-			const resolved = resolveTheme(mode, false);
-			assert.equal(resolved.theme, mode);
-			assert.equal(resolved.darkClass, false);
-			assert.equal(resolved.lightClass, true);
-			assert.equal(resolved.colorScheme, "light");
-		}
-	});
 });
 
 describe("вариант Tailwind dark:", () => {
-	test("объявлен через data-theme и покрывает ночную тему", () => {
+	test("объявлен через data-theme и покрывает все тёмные темы", () => {
 		const source = readFileSync(
 			path.join(webSrc, "styles/tailwind.css"),
 			"utf8",
@@ -88,14 +106,18 @@ describe("вариант Tailwind dark:", () => {
 		const variantMatch = source.match(/@custom-variant dark[\s\S]*?\);/);
 		assert.ok(variantMatch, "объявление варианта dark: не найдено");
 		const variant = variantMatch[0];
-		// Ночная тема обязана попадать в вариант: она тёмная.
-		assert.ok(
-			variant.includes('[data-theme="night"]'),
-			"вариант dark: не учитывает ночную тему — плашки Tailwind останутся светлыми на тёмном фоне",
-		);
-		assert.ok(
-			variant.includes('[data-theme="dark"]'),
-			"вариант dark: не учитывает тёмную тему",
-		);
+		// Все тёмные темы обязаны попадать в вариант
+		for (const darkTheme of [
+			"dark",
+			"night",
+			"ocean",
+			"emerald",
+			"cyber_xray",
+		]) {
+			assert.ok(
+				variant.includes(`[data-theme="${darkTheme}"]`),
+				`вариант dark: не учитывает тему ${darkTheme} — плашки Tailwind останутся светлыми на тёмном фоне`,
+			);
+		}
 	});
 });

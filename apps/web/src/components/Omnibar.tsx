@@ -108,6 +108,15 @@ export function Omnibar() {
 			},
 		},
 		{
+			id: "action-waitlist-quickfill",
+			title: "Лист ожидания и быстрая запись (Автозаполнение)",
+			icon: <Calendar />,
+			category: "Быстрые действия",
+			action: () => {
+				setCurrentView("schedule");
+			},
+		},
+		{
 			id: "action-start-shift",
 			title: "Начать смену (Владелец)",
 			icon: <CheckCircle2 />,
@@ -225,8 +234,9 @@ export function Omnibar() {
 					</span>
 				</button>
 			</WorkspaceActionsSlot>
-			{createPortal(
-				<AnimatePresence>
+			{typeof document !== "undefined" &&
+				createPortal(
+					<AnimatePresence>
 					{isOmnibarOpen && (
 						<div className="fixed inset-0 z-[9999] flex items-start justify-center pt-[15vh] px-4 pointer-events-auto">
 							{/* Backdrop */}

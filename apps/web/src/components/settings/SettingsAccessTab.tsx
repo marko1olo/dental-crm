@@ -229,14 +229,25 @@ export function SettingsAccessTab({
 				</form>
 
 				{inviteLink && (
-					<div className="mt-4 p-3 bg-sky-50 dark:bg-sky-950/40 border border-dashed border-sky-300 dark:border-sky-700 rounded-lg flex items-center justify-between">
-						<span className="text-sky-700 dark:text-sky-300 font-mono text-xs break-all">
+					<div
+						className="mt-4 p-3 rounded-lg border flex items-center justify-between"
+						style={{
+							borderColor: "var(--teal-ring, var(--line-strong))",
+							background: "var(--teal-surface, var(--paper-soft))",
+							color: "var(--ink)",
+						}}
+					>
+						<span
+							className="font-mono text-xs break-all"
+							style={{ color: "var(--teal-dark, var(--teal))" }}
+						>
 							{inviteLink}
 						</span>
 						<button
 							type="button"
 							onClick={handleCopy}
-							className="ml-3 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-slate-700 dark:text-slate-200 text-xs font-medium cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-1.5 shrink-0"
+							className="secondary-button ml-3 shrink-0"
+							style={{ minHeight: "32px", fontSize: "12px" }}
 						>
 							{copied ? (
 								<>

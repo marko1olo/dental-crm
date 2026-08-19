@@ -14,6 +14,8 @@
  * Спрашивать здесь обязательно. Материал со склада и правило списания удаляются
  * насовсем, а правило ещё и молча перестаёт списывать расходники с приёмов.
  */
+import { createPortal } from "react-dom";
+
 type InventoryConfirmDialogProps = {
 	title: string;
 	message: string;
@@ -29,7 +31,7 @@ export function InventoryConfirmDialog({
 	onConfirm,
 	onCancel,
 }: InventoryConfirmDialogProps) {
-	return (
+	const dialogContent = (
 		<button
 			type="button"
 			className="inventory-confirm-backdrop"
@@ -74,4 +76,8 @@ export function InventoryConfirmDialog({
 			</div>
 		</button>
 	);
+
+	return typeof document !== "undefined"
+		? createPortal(dialogContent, document.body)
+		: dialogContent;
 }

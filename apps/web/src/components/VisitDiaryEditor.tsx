@@ -1315,6 +1315,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 				</details>
 			)}
 			{showScanner &&
+				typeof document !== "undefined" &&
 				createPortal(
 					<div className="vde-043-scanner-overlay">
 						<div className="vde-043-scanner">

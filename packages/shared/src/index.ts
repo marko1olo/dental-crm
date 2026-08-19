@@ -4,6 +4,7 @@ export * from "./money.js";
 export * from "./utils/mdlpDataMatrix.js";
 export * from "./sanpin.js";
 export * from "./legal/legalContractsAndConsents.js";
+export * from "./documents/index.js";
 
 import {
 	moneyRubSchema,
@@ -94,10 +95,14 @@ export const documentKindSchema = z.enum([
 	"post_visit_recommendations",
 	"outpatient_medical_card_025u",
 	"dental_medical_card_043u",
+	"orthodontic_medical_card_043_1u",
+	"daily_dentist_diary_037u",
+	"summary_dentist_statement_039u",
 	"medical_record_extract",
 	"medical_record_copy_request",
 	"medical_document_release_receipt",
 	"xray_cbct_referral",
+	"radiation_dose_sheet",
 	"lab_work_order",
 	"visit_attendance_certificate",
 	"warranty_service_memo",

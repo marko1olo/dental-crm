@@ -1,6 +1,7 @@
 import { formatKopecksRu, parseKopecks } from "@dental/shared";
 import { AlertTriangle, Calculator, FileText, Sparkles, User } from "lucide-react";
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { useAppLogic } from "../../useAppLogic";
 import { logger } from "../../utils/logger";
@@ -79,7 +80,7 @@ export function NdflCalculatorModal({
 		}
 	};
 
-	return (
+	const modalContent = (
 		<div className="modal-overlay fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
 			<div
 				className="modal-content w-full max-w-lg p-6 rounded-3xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 shadow-2xl bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#0f172a)] dark:text-slate-100 space-y-4"
@@ -209,4 +210,8 @@ export function NdflCalculatorModal({
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined"
+		? createPortal(modalContent, document.body)
+		: modalContent;
 }

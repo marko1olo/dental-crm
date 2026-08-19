@@ -1,6 +1,7 @@
 import { CheckCircle2, Lock, ShieldCheck } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { type CertificateInfo, signatureService } from "../../lib/cryptopro";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
@@ -339,9 +340,11 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 				<span>Подписать и закрыть</span>
 			</button>
 
-			{showPinDialog && (
-				<div
-					className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+			{showPinDialog &&
+				typeof document !== "undefined" &&
+				createPortal(
+					<div
+						className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
 					role="dialog"
 					aria-modal="true"
 					aria-labelledby="crypto-signer-modal-title"
@@ -592,7 +595,8 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 							</button>
 						</div>
 					</div>
-				</div>
+				</div>,
+				document.body,
 			)}
 		</>
 	);

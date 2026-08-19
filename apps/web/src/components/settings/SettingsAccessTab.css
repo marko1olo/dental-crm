@@ -266,5 +266,5 @@
 	font-size: 12px;
 	color: var(--muted);
 	padding-top: 12px;
-	border-top: 1px dashed var(--line);
+	border-top: 1px solid var(--line);
 }

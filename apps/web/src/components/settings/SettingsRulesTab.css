@@ -152,8 +152,8 @@
 	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 	gap: 16px;
 	padding: 16px;
-	background: rgba(13, 148, 136, 0.03);
-	border: 1px dashed rgba(13, 148, 136, 0.3);
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
 	border-radius: 12px;
 }
 

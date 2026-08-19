@@ -1,5 +1,3 @@
-import { showToast } from "./components/GlobalToast";
-import { actionFailureToast } from "./lib/panelStateText";
 import {
 	safeLocalStorageRemoveItem,
 	safeLocalStorageSetItem,
@@ -102,13 +100,6 @@ export async function browserIndexedDbWritable(): Promise<boolean> {
 		window.indexedDB.deleteDatabase("test-dente-db-support");
 		idbWorks = true;
 	} catch (_e) {
-		showToast(
-			actionFailureToast(
-				"Ошибка выполнения операции",
-				(_e as { status?: number })?.status ?? null,
-			),
-			"error",
-		);
 		idbWorks = false;
 	}
 	return idbWorks;

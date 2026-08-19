@@ -411,7 +411,7 @@
 	justify-content: center;
 	gap: 6px;
 	height: 38px;
-	border: 1px dashed var(--line);
+	border: 1px solid var(--line);
 	border-radius: 6px;
 	background: transparent;
 	color: var(--teal);

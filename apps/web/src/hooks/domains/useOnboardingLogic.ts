@@ -3,6 +3,7 @@ import { useSettingsStore } from "../../store/settingsStore";
 import { type OnboardingStep, type UiPreferences } from "@dental/shared";
 import { type AppView } from "../../utils/routeUtils";
 import { loadOnboardingDismissalState, onboardingSteps } from "../../AppHelpers";
+import { logger } from "../../utils/logger";
 export interface OnboardingLogicProps {
     clinicProfileDraft: any;
     dashboard: any;

@@ -1437,7 +1437,9 @@ export function WaitlistQuickFillModal({
 		</div>
 	);
 
-	return modalContent;
+	return typeof document !== "undefined"
+		? createPortal(modalContent, document.body)
+		: modalContent;
 }
 
 export default WaitlistQuickFillModal;

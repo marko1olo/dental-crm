@@ -972,6 +972,7 @@ export const OdontogramModule = ({
 
 				{/* Radial Menu via Portal — avoids backdrop-filter stack */}
 				{menuConfig &&
+					typeof document !== "undefined" &&
 					createPortal(
 						<>
 							{/* Backdrop */}

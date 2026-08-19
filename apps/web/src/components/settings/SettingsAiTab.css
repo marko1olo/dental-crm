@@ -72,7 +72,7 @@
 	flex-direction: column;
 	gap: 4px;
 	padding-right: 16px;
-	border-right: 1px dashed var(--line-strong);
+	border-right: 1px solid var(--line);
 }
 
 .ai-gateway-status-pill:last-child {

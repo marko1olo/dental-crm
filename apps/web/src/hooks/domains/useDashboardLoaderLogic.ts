@@ -59,31 +59,27 @@ export function useDashboardLoaderLogic({
 				setAccessUnlockRequired(false);
 				setAccessUnlockMessage("");
 			} catch (err) {
-				showToast(
-					actionFailureToast(
-						"Не удалось загрузить данные клиники. Проверьте связь с сервером и повторите — введённые данные не потеряны.",
-						(err as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
 				if (isStaleResponse()) return;
-				// БЫЛО: любая ошибка загрузки (обрыв сети, 401, 500) подменяла реальные
-				// данные клиники ВЫМЫШЛЕННЫМИ: «Демо Клиника DENTE» и пациент
-				// «Смирнов Алексей Петрович» с id "pat-1", который тут же выбирался
-				// активным. Врач мог диктовать приём в карту несуществующего человека.
-				// Кроме того, catch никогда не пробрасывал ошибку дальше, поэтому
-				// все .catch() у вызывающих (в том числе принудительный релогин при 401)
-				// были мёртвым кодом, и истёкшая сессия не приводила к повторному входу.
 				logger.error("[Dente] Не удалось загрузить данные клиники:", err);
+				const status = (err as { status?: number })?.status ?? null;
 				const isAuthError =
-					err instanceof Error &&
-					/401|403|Требуется авторизация|Сессия истекла/i.test(err.message);
+					status === 401 ||
+					status === 403 ||
+					(err instanceof Error &&
+						/401|403|Требуется авторизация|Сессия истекла/i.test(err.message));
 				if (isAuthError) {
 					setAccessUnlockRequired(true);
 					setAccessUnlockMessage(
 						"Сессия истекла. Войдите в кабинет клиники заново.",
 					);
 				} else {
+					showToast(
+						actionFailureToast(
+							"Не удалось загрузить данные клиники. Проверьте связь с сервером и повторите — введённые данные не потеряны.",
+							status,
+						),
+						"error",
+					);
 					setError(
 						"Не удалось загрузить данные клиники. Проверьте связь с сервером и повторите — введённые данные не потеряны.",
 					);

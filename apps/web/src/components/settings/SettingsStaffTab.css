@@ -247,9 +247,9 @@
 	justify-content: center;
 	padding: 48px;
 	color: var(--muted);
-	background: rgba(0, 0, 0, 0.02);
+	background: var(--paper-soft);
 	border-radius: 12px;
-	border: 1px dashed var(--line);
+	border: 1px solid var(--line);
 }
 
 /* Forms */
@@ -437,5 +437,5 @@
 	display: flex;
 	justify-content: flex-end;
 	padding-top: 12px;
-	border-top: 1px dashed var(--line);
+	border-top: 1px solid var(--line);
 }

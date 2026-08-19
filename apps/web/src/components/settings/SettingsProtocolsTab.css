@@ -73,8 +73,8 @@
 }
 
 .protocol-token-row-soft span {
-	background: transparent;
-	border: 1px dashed var(--line);
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
 	color: var(--muted);
 }
 

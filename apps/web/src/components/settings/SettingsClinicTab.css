@@ -196,7 +196,7 @@
 	background: var(--paper-soft);
 	padding: 20px;
 	border-radius: 12px;
-	border: 1px dashed var(--line-strong);
+	border: 1px solid var(--line);
 }
 
 .chair-quick-create-row {

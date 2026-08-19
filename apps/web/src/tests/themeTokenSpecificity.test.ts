@@ -232,6 +232,31 @@ describe("token-aliases.css: палитру решает data-theme, а не к�
 		assert.equal(winningValue(rules, "--srf-chip-soft", state), "#f4f4f5");
 	});
 
+	test("тема sakura получает свои значения", () => {
+		const state: RootState = { theme: "sakura", classes: ["light"] };
+		assert.equal(winningValue(rules, "--srf-chip-soft", state), "#fce7f3");
+	});
+
+	test("тема ocean получает свои значения", () => {
+		const state: RootState = { theme: "ocean", classes: ["dark"] };
+		assert.equal(winningValue(rules, "--srf-chip-soft", state), "#0f2447");
+	});
+
+	test("тема emerald получает свои значения", () => {
+		const state: RootState = { theme: "emerald", classes: ["dark"] };
+		assert.equal(winningValue(rules, "--srf-chip-soft", state), "#065f46");
+	});
+
+	test("тема cyber_xray получает свои значения", () => {
+		const state: RootState = { theme: "cyber_xray", classes: ["dark"] };
+		assert.equal(winningValue(rules, "--srf-chip-soft", state), "#0d1a3a");
+	});
+
+	test("тема warm_sand получает свои значения", () => {
+		const state: RootState = { theme: "warm_sand", classes: ["light"] };
+		assert.equal(winningValue(rules, "--srf-chip-soft", state), "#fef3c7");
+	});
+
 	test("первый кадр: класс dark без атрибута остаётся тёмным", () => {
 		// index.html:2 отдаёт <html class="dark"> без data-theme, и до эффекта
 		// ThemeController main.css в этом же состоянии даёт тёмные --ink и --paper.
@@ -240,34 +265,50 @@ describe("token-aliases.css: палитру решает data-theme, а не к�
 		assert.equal(winningValue(rules, "--srf-chip-soft", state), "#16211f");
 	});
 
-	test("все шесть токенов имеют значение в каждой из пяти тем", () => {
-		for (const theme of [
+	test("все шесть токенов имеют значение в каждой из 10 тем", () => {
+		const allThemes = [
 			"light",
 			"dark",
 			"night",
 			"calm_teal",
 			"contrast",
-		] as const) {
+			"sakura",
+			"ocean",
+			"emerald",
+			"cyber_xray",
+			"warm_sand",
+		] as const;
+		for (const theme of allThemes) {
+			const isDark =
+				theme === "dark" ||
+				theme === "night" ||
+				theme === "ocean" ||
+				theme === "emerald" ||
+				theme === "cyber_xray";
 			for (const token of SURFACE_TOKENS) {
 				const value = winningValue(rules, token, {
 					theme,
-					classes: [
-						theme === "dark" || theme === "night" ? "dark" : "light",
-					],
+					classes: [isDark ? "dark" : "light"],
 				});
 				assert.ok(value, `${token} не имеет значения в теме ${theme}`);
 			}
 		}
 	});
 
-	test("посторонний класс не меняет ни один из шести токенов ни в одной теме", () => {
-		for (const theme of [
+	test("посторонний класс не меняет ни один из шести токенов ни в одной из 10 тем", () => {
+		const allThemes = [
 			"light",
 			"dark",
 			"night",
 			"calm_teal",
 			"contrast",
-		] as const) {
+			"sakura",
+			"ocean",
+			"emerald",
+			"cyber_xray",
+			"warm_sand",
+		] as const;
+		for (const theme of allThemes) {
 			for (const token of SURFACE_TOKENS) {
 				const clean = winningValue(rules, token, { theme, classes: [] });
 				for (const stray of ["dark", "light"]) {
