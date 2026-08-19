@@ -36,9 +36,14 @@ import {
 	type TreatmentPlanAcceptancePayload,
 	type TreatmentPlanItem,
 	type TreatmentPlanPayload,
-	taxDeductionCertificateMinYear,
 	type VisitAttendanceCertificatePayload,
 	type WarrantyServiceMemoPayload,
+	renderForm043uHtml,
+	renderForm043_1uHtml,
+	renderForm037uHtml,
+	renderForm039uHtml,
+	renderForm003vuHtml,
+	renderRadiationDoseSheetHtml,
 } from "@dental/shared";
 /*
  * Итог строки лечения считается в ОДНОМ месте на весь сервер —
@@ -4744,6 +4749,9 @@ function dentalMedicalCard043u(
 	document: GeneratedDocument,
 	patient: Patient,
 ): string {
+	if (document.payload?.fullForm043u) {
+		return renderForm043uHtml(document.payload.fullForm043u);
+	}
 	const payload = document.payload?.dentalMedicalCard043u;
 	const title = "Медицинская карта стоматологического больного (форма 043/у)";
 	if (!payload) {
@@ -4823,6 +4831,44 @@ function dentalMedicalCard043u(
 	return `<section><h2>${escapeHtml(title)}</h2>${doctor}${body}${toothSection}</section>`;
 }
 
+function orthodonticMedicalCard043_1u(
+	document: GeneratedDocument,
+	patient: Patient,
+): string {
+	const payload = document.payload?.orthodonticCard043_1u;
+	if (payload) {
+		return renderForm043_1uHtml(payload);
+	}
+	return `<section><h2>Медицинская карта ортодонтического пациента (форма 043-1/у)</h2><p>Пациент: ${escapeHtml(patient.fullName)}</p><p>Данные ортодонтической карты не заполнены.</p></section>`;
+}
+
+function dailyDentistDiary037u(document: GeneratedDocument): string {
+	const payload = document.payload?.dailyDentistDiary037u;
+	if (payload) {
+		return renderForm037uHtml(payload);
+	}
+	return `<section><h2>Листок ежедневного учета работы врача-стоматолога (форма 037/у-88)</h2><p>Данные ежедневного учета не заполнены.</p></section>`;
+}
+
+function summaryDentistStatement039u(document: GeneratedDocument): string {
+	const payload = document.payload?.summaryDentistStatement039u;
+	if (payload) {
+		return renderForm039uHtml(payload);
+	}
+	return `<section><h2>Сводная ведомость учета работы врача-стоматолога (форма 039/у-88)</h2><p>Данные сводной ведомости не заполнены.</p></section>`;
+}
+
+function radiationDoseSheet(
+	document: GeneratedDocument,
+	patient: Patient,
+): string {
+	const payload = document.payload?.radiationDoseSheet;
+	if (payload) {
+		return renderRadiationDoseSheetHtml(payload);
+	}
+	return `<section><h2>Лист учета дозовых нагрузок при рентгенологических исследованиях</h2><p>Пациент: ${escapeHtml(patient.fullName)}</p><p>Данные лучевых нагрузок не заполнены.</p></section>`;
+}
+
 export function renderDocumentHtml(
 	document: GeneratedDocument,
 	patient: Patient,
@@ -4857,9 +4903,17 @@ export function renderDocumentHtml(
 		payment_receipt: paymentReceipt(document, context),
 		installment_payment_schedule: installmentPaymentSchedule(document, context),
 		post_visit_recommendations: postVisitRecommendations(document),
-		medical_record_extract: medicalRecordExtract(document, patient),
+		medical_record_extract: document.payload?.medicalCardExtract003vu
+			? renderForm003vuHtml(document.payload.medicalCardExtract003vu)
+			: medicalRecordExtract(document, patient),
 		outpatient_medical_card_025u: outpatientMedicalCard025u(document, patient),
 		dental_medical_card_043u: dentalMedicalCard043u(document, patient),
+		orthodontic_medical_card_043_1u: orthodonticMedicalCard043_1u(
+			document,
+			patient,
+		),
+		daily_dentist_diary_037u: dailyDentistDiary037u(document),
+		summary_dentist_statement_039u: summaryDentistStatement039u(document),
 		medical_record_copy_request: structuredMedicalRecordCopyRequest(
 			document,
 			patient,
@@ -4869,6 +4923,7 @@ export function renderDocumentHtml(
 			patient,
 		),
 		xray_cbct_referral: xrayCbctReferral(document),
+		radiation_dose_sheet: radiationDoseSheet(document, patient),
 		lab_work_order: labWorkOrder(document),
 		visit_attendance_certificate: visitAttendanceCertificate(document, patient),
 		warranty_service_memo: warrantyServiceMemo(document),
