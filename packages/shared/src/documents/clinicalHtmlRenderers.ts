@@ -22,25 +22,34 @@ import type { SummaryDentistStatement039uPayload } from "./forms039u.js";
 import type { MedicalCardExtract003vuPayload } from "./forms003vu.js";
 import type { RadiationDoseSheetPayload } from "./radiationDoseSheet.js";
 
-/** Общие CSS стили для печати медицинских документов на листах А4 */
+/** Общие CSS стили для печати медицинских документов на листах А4 по ГОСТ Р 7.0.97-2016 */
 export const CLINICAL_DOCUMENT_PRINT_STYLES = `
 <style>
   @page {
-    size: A4;
-    margin: 15mm 15mm 15mm 15mm;
+    size: A4 portrait;
+    margin: 15mm 10mm 15mm 20mm;
+    @bottom-right {
+      content: "Стр. " counter(page);
+      font-family: "PT Astra Sans", "Arial", sans-serif;
+      font-size: 8pt;
+      color: #64748b;
+    }
   }
+  *, *::before, *::after { box-sizing: border-box; }
   body {
-    font-family: "Times New Roman", Times, serif, Arial;
-    font-size: 10pt;
-    line-height: 1.25;
-    color: #000;
-    background: #fff;
+    font-family: "PT Astra Serif", "Times New Roman", "PT Astra Sans", Arial, serif;
+    font-size: 9.5pt;
+    line-height: 1.28;
+    color: #0f172a;
+    background: #ffffff;
     margin: 0;
     padding: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
   .doc-container {
     width: 100%;
-    max-width: 190mm;
+    max-width: 180mm;
     margin: 0 auto;
   }
   .header-grid {
@@ -48,135 +57,254 @@ export const CLINICAL_DOCUMENT_PRINT_STYLES = `
     justify-content: space-between;
     align-items: flex-start;
     margin-bottom: 8px;
-    border-bottom: 1.5px solid #000;
+    border-bottom: 2px solid #0f172a;
     padding-bottom: 6px;
   }
   .clinic-info {
-    width: 60%;
-    font-size: 8.5pt;
-    line-height: 1.2;
+    width: 58%;
+    font-family: "PT Astra Sans", Arial, sans-serif;
+    font-size: 7.5pt;
+    line-height: 1.25;
+    color: #334155;
   }
   .clinic-title {
-    font-weight: bold;
-    font-size: 10pt;
+    font-weight: 800;
+    font-size: 11pt;
     text-transform: uppercase;
+    color: #0f172a;
     margin-bottom: 2px;
+    letter-spacing: 0.02em;
   }
   .doc-requisites {
-    width: 38%;
+    width: 40%;
     text-align: right;
+    font-family: "PT Astra Sans", Arial, sans-serif;
+    font-size: 7.5pt;
+    line-height: 1.25;
+    color: #334155;
+  }
+  .form-badge {
+    display: inline-block;
+    font-weight: 800;
     font-size: 8.5pt;
-    line-height: 1.2;
+    text-transform: uppercase;
+    color: #0f172a;
+    border: 1pt solid #0f172a;
+    padding: 1pt 5pt;
+    margin-bottom: 2pt;
+    background: #f8fafc;
   }
   .doc-title-block {
     text-align: center;
-    margin: 12px 0 10px 0;
+    margin: 10px 0 8px 0;
   }
   .doc-main-title {
+    font-family: "PT Astra Sans", Arial, sans-serif;
     font-size: 12pt;
-    font-weight: bold;
+    font-weight: 800;
     text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #0f172a;
     margin: 0;
   }
   .doc-sub-title {
-    font-size: 9.5pt;
+    font-size: 9pt;
     margin: 2px 0 0 0;
     font-style: italic;
+    color: #475569;
   }
   .section-title {
-    font-weight: bold;
-    font-size: 10.5pt;
+    font-family: "PT Astra Sans", Arial, sans-serif;
+    font-weight: 700;
+    font-size: 9.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
     margin-top: 10px;
     margin-bottom: 4px;
     background: #f1f5f9;
     color: #0f172a;
-    padding: 2px 6px;
-    border-left: 3px solid #0284c7;
+    padding: 3px 6px;
+    border-left: 3.5px solid #0284c7;
+    page-break-after: avoid;
+    break-after: avoid;
   }
   table.data-table {
     width: 100%;
     border-collapse: collapse;
-    margin: 6px 0 10px 0;
-    font-size: 9pt;
+    margin: 4px 0 8px 0;
+    font-size: 8.5pt;
+    line-height: 1.25;
   }
   table.data-table th, table.data-table td {
-    border: 1px solid #333;
-    padding: 3px 5px;
+    border: 0.5pt solid #cbd5e1;
+    padding: 3.5pt 5pt;
     vertical-align: top;
   }
   table.data-table th {
-    background: #e2e8f0;
+    background: #f1f5f9;
     color: #0f172a;
-    font-weight: bold;
+    font-family: "PT Astra Sans", Arial, sans-serif;
+    font-weight: 700;
     text-align: center;
+    font-size: 8pt;
+  }
+  table.data-table tr:nth-child(even) td {
+    background: #f8fafc;
   }
   .center { text-align: center; }
-  .right { text-align: right; }
+  .right {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-family: "JetBrains Mono", "Consolas", "Arial", monospace;
+  }
   .bold { font-weight: bold; }
   .signature-row {
     display: flex;
     justify-content: space-between;
-    margin-top: 24px;
+    margin-top: 18px;
     page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .sig-box {
+    width: 48%;
   }
   .sig-line {
-    border-bottom: 1px solid #000;
-    width: 220px;
+    border-bottom: 0.75pt solid #0f172a;
+    width: 100%;
     height: 18px;
     margin-bottom: 2px;
   }
   .sig-caption {
-    font-size: 8pt;
-    color: #475569;
+    font-family: "PT Astra Sans", Arial, sans-serif;
+    font-size: 7pt;
+    color: #64748b;
     text-align: center;
+  }
+  .stamp-seal {
+    display: inline-block;
+    width: 38px;
+    height: 38px;
+    border: 1px dashed #94a3b8;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 38px;
+    font-size: 7.5pt;
+    color: #94a3b8;
+    font-weight: 700;
+    float: right;
+    margin-top: -12px;
   }
   .badge {
     display: inline-block;
     padding: 1px 5px;
     border-radius: 3px;
-    font-size: 8.5pt;
+    font-size: 8pt;
     font-weight: bold;
   }
   .badge-green { background: #d1fae5; color: #065f46; }
   .badge-yellow { background: #fef3c7; color: #92400e; }
   .badge-red { background: #fee2e2; color: #991b1b; }
+  .ukep-stamp {
+    border: 1.5pt solid #003f88;
+    background: #f0f7ff;
+    padding: 5pt 7pt;
+    margin: 8pt 0;
+    font-family: "PT Astra Sans", Arial, sans-serif;
+    font-size: 7.5pt;
+    line-height: 1.25;
+    color: #002b66;
+    border-radius: 3pt;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .ukep-header {
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #003f88;
+    margin-bottom: 2pt;
+    border-bottom: 0.5pt solid rgba(0,63,136,0.25);
+    padding-bottom: 2pt;
+  }
   [data-theme="dark"] body,
   .dark body {
     color: #f1f5f9;
     background: #0f172a;
   }
+  [data-theme="dark"] .clinic-info,
+  .dark .clinic-info {
+    color: #94a3b8;
+  }
+  [data-theme="dark"] .clinic-title,
+  .dark .clinic-title {
+    color: #f8fafc;
+  }
+  [data-theme="dark"] .doc-requisites,
+  .dark .doc-requisites {
+    color: #94a3b8;
+  }
+  [data-theme="dark"] .form-badge,
+  .dark .form-badge {
+    color: #38bdf8;
+    border-color: #38bdf8;
+    background: #1e293b;
+  }
+  [data-theme="dark"] .doc-main-title,
+  .dark .doc-main-title {
+    color: #f8fafc;
+  }
+  [data-theme="dark"] .doc-sub-title,
+  .dark .doc-sub-title {
+    color: #94a3b8;
+  }
   [data-theme="dark"] .section-title,
   .dark .section-title {
     background: #1e293b;
     color: #38bdf8;
-    border-left: 3px solid #38bdf8;
+    border-left-color: #38bdf8;
   }
   [data-theme="dark"] table.data-table th,
   .dark table.data-table th {
     background: #1e293b;
-    color: #f1f5f9;
-    border-color: #475569;
+    color: #38bdf8;
+    border-color: #334155;
   }
   [data-theme="dark"] table.data-table td,
   .dark table.data-table td {
-    border-color: #475569;
+    border-color: #334155;
+  }
+  [data-theme="dark"] table.data-table tr:nth-child(even) td,
+  .dark table.data-table tr:nth-child(even) td {
+    background: #1e293b;
   }
   [data-theme="dark"] .header-grid,
   .dark .header-grid {
-    border-bottom-color: #64748b;
+    border-bottom-color: #38bdf8;
   }
   [data-theme="dark"] .sig-line,
   .dark .sig-line {
     border-bottom-color: #64748b;
   }
+  [data-theme="dark"] .ukep-stamp,
+  .dark .ukep-stamp {
+    background: #0f172a;
+    border-color: #38bdf8;
+    color: #e0f2fe;
+  }
+  [data-theme="dark"] .ukep-header,
+  .dark .ukep-header {
+    color: #38bdf8;
+    border-bottom-color: #38bdf8;
+  }
   @media print {
     body { font-size: 9.5pt; color: #000 !important; background: #fff !important; }
-    .section-title { background: #f1f5f9 !important; color: #0f172a !important; }
-    table.data-table th { background: #e2e8f0 !important; color: #0f172a !important; }
-    table.data-table td, table.data-table th { border-color: #333 !important; }
+    .section-title { background: #f1f5f9 !important; color: #0f172a !important; border-left-color: #0f172a !important; }
+    table.data-table th { background: #f1f5f9 !important; color: #0f172a !important; }
+    table.data-table td, table.data-table th { border-color: #000 !important; }
+    table.data-table tr:nth-child(even) td { background: transparent !important; }
     .header-grid { border-bottom-color: #000 !important; }
     .sig-line { border-bottom-color: #000 !important; }
-    .no-print { display: none; }
+    .form-badge { border-color: #000 !important; color: #000 !important; background: #fff !important; }
+    .no-print { display: none !important; }
     .page-break-after { page-break-after: always; }
   }
 </style>

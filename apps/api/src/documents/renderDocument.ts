@@ -822,40 +822,201 @@ function baseDocument(
 	context: DocumentRenderContext,
 ) {
 	const clinicProfile = context.clinicProfile;
+	const clinicName = clinicDisplayName(clinicProfile);
+	const inn = clinicProfile?.inn ? `ИНН: ${clinicProfile.inn}` : "";
+	const ogrn = clinicProfile?.ogrn ? `ОГРН: ${clinicProfile.ogrn}` : "";
+	const license = clinicLicenseLine(clinicProfile) ?? "Лицензия на осуществление медицинской деятельности";
+	const docNum = document.id.slice(0, 8).toUpperCase();
+	const dateStr = issuedDate(document);
+
 	return `<!doctype html>
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
   <title>${escapeHtml(title)}</title>
   <style>
-    @page { margin: 18mm 16mm; }
-    body { color: #211f1c; font: 14px/1.5 Arial, sans-serif; margin: 40px; }
-    h1 { font-size: 22px; margin: 10px 0 18px; }
-    h2 { font-size: 16px; margin: 24px 0 8px; }
-    h3 { font-size: 14px; margin: 18px 0 6px; }
-    p { margin: 8px 0; }
-    table { border-collapse: collapse; margin: 16px 0; width: 100%; }
-    td, th { border: 1px solid #bfb7ad; padding: 8px; text-align: left; vertical-align: top; }
-    th { background: #f4f0ea; width: 34%; }
-    ul { margin: 8px 0 14px 22px; padding: 0; }
-    li { margin: 4px 0; }
-    .meta { color: #5f574f; margin-bottom: 18px; }
-    .document-status-banner { border: 2px solid #a34f32; color: #a34f32; display: inline-block; font-weight: 700; padding: 4px 8px; }
+    @page {
+      size: A4 portrait;
+      margin: 15mm 10mm 15mm 20mm;
+      @bottom-right {
+        content: "Стр. " counter(page);
+        font-family: "PT Astra Sans", "Arial", sans-serif;
+        font-size: 8pt;
+        color: #64748b;
+      }
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: "PT Astra Serif", "Times New Roman", "PT Astra Sans", Arial, serif;
+      font-size: 9.5pt;
+      line-height: 1.28;
+      color: #0f172a;
+      background: #ffffff;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .doc-container {
+      width: 100%;
+      max-width: 180mm;
+      margin: 0 auto;
+    }
+    .header-grid {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+      border-bottom: 2px solid #0f172a;
+      padding-bottom: 6px;
+    }
+    .clinic-info {
+      width: 58%;
+      font-family: "PT Astra Sans", Arial, sans-serif;
+      font-size: 7.5pt;
+      line-height: 1.25;
+      color: #334155;
+    }
+    .clinic-title {
+      font-weight: 800;
+      font-size: 11pt;
+      text-transform: uppercase;
+      color: #0f172a;
+      margin-bottom: 2px;
+      letter-spacing: 0.02em;
+    }
+    .doc-requisites {
+      width: 40%;
+      text-align: right;
+      font-family: "PT Astra Sans", Arial, sans-serif;
+      font-size: 7.5pt;
+      line-height: 1.25;
+      color: #334155;
+    }
+    .form-badge {
+      display: inline-block;
+      font-weight: 800;
+      font-size: 8.5pt;
+      text-transform: uppercase;
+      color: #0f172a;
+      border: 1pt solid #0f172a;
+      padding: 1pt 5pt;
+      margin-bottom: 2pt;
+      background: #f8fafc;
+    }
+    h1 {
+      font-family: "PT Astra Sans", Arial, sans-serif;
+      font-size: 12pt;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: #0f172a;
+      margin: 10px 0 8px;
+      text-align: center;
+    }
+    h2 {
+      font-family: "PT Astra Sans", Arial, sans-serif;
+      font-size: 9.5pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin: 10px 0 4px;
+      background: #f1f5f9;
+      color: #0f172a;
+      padding: 3px 6px;
+      border-left: 3.5px solid #0284c7;
+      page-break-after: avoid;
+      break-after: avoid;
+    }
+    h3 { font-size: 9pt; font-weight: 700; margin: 8px 0 4px; }
+    p { margin: 4px 0; }
+    table {
+      border-collapse: collapse;
+      margin: 4px 0 8px;
+      width: 100%;
+      font-size: 8.5pt;
+      line-height: 1.25;
+    }
+    td, th {
+      border: 0.5pt solid #cbd5e1;
+      padding: 3.5pt 5pt;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #f1f5f9;
+      color: #0f172a;
+      font-family: "PT Astra Sans", Arial, sans-serif;
+      font-weight: 700;
+    }
+    ul { margin: 4px 0 8px 18px; padding: 0; }
+    li { margin: 2px 0; }
+    .meta {
+      background: #f8fafc;
+      border: 0.5pt solid #cbd5e1;
+      padding: 6px 8px;
+      margin-bottom: 10px;
+      font-size: 8.5pt;
+      border-radius: 3px;
+    }
+    .document-status-banner {
+      border: 2px solid #a34f32;
+      color: #a34f32;
+      display: inline-block;
+      font-weight: 700;
+      padding: 2px 6px;
+      font-size: 8pt;
+      margin-bottom: 6px;
+    }
     .status-issued { border-color: #2f7340; color: #2f7340; }
     .status-voided { border-color: #5f574f; color: #5f574f; text-decoration: line-through; }
-    .notice { background: #fff8e6; border: 1px solid #e7c56f; border-radius: 6px; padding: 10px 12px; }
+    .notice {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 4px;
+      padding: 6px 8px;
+      margin: 6px 0;
+      font-size: 8.5pt;
+    }
     .check-list { list-style: none; margin-left: 0; }
-    .check-list li { align-items: baseline; display: flex; gap: 8px; }
-    .check-list span { color: #5f574f; font-weight: 700; }
-    .signatures { display: grid; gap: 32px; grid-template-columns: 1fr 1fr; margin-top: 48px; }
-    .small { color: #5f574f; font-size: 12px; }
+    .check-list li { align-items: baseline; display: flex; gap: 6px; }
+    .check-list span { color: #334155; font-weight: 700; }
+    .signatures {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: 1fr 1fr;
+      margin-top: 24px;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .small { color: #64748b; font-size: 8pt; }
     @media print {
-      body { margin: 0; }
+      body { font-size: 9.5pt; color: #000 !important; background: #fff !important; }
+      h2 { background: #f1f5f9 !important; color: #0f172a !important; border-left-color: #0f172a !important; }
+      table th { background: #f1f5f9 !important; color: #0f172a !important; }
+      td, th { border-color: #000 !important; }
+      .header-grid { border-bottom-color: #000 !important; }
       .document-status-banner { color: #000; border-color: #000; }
     }
   </style>
 </head>
 <body>
+<div class="doc-container">
+  <div class="header-grid">
+    <div class="clinic-info">
+      <div class="clinic-title">${escapeHtml(clinicName)}</div>
+      <div>${escapeHtml(clinicProfile?.address ?? "")}</div>
+      <div>${escapeHtml([inn, ogrn].filter(Boolean).join(" | "))}</div>
+      <div>${escapeHtml(license)}</div>
+    </div>
+    <div class="doc-requisites">
+      <div class="form-badge">DENTE CLINICAL CRM</div>
+      <div>Документ №: <strong>${escapeHtml(docNum)}</strong></div>
+      <div>Дата составления: <strong>${escapeHtml(dateStr)}</strong></div>
+      <div>Статус: <strong>${escapeHtml(documentStatusLabels[document.status])}</strong></div>
+    </div>
+  </div>
+
   ${documentStatusBanner(document)}
   <h1>${escapeHtml(title)}</h1>
   <div class="meta">
@@ -874,6 +1035,7 @@ function baseDocument(
   ${issueSignatureAttestationBlock(document)}
   ${releaseJournalBlock(document)}
   ${body}
+</div>
 </body>
 </html>`;
 }
@@ -4795,42 +4957,10 @@ function dentalMedicalCard043u(
 					: ""
 			}</p>`
 		: "";
-	const toothRows = Array.isArray(payload.clinicalToothRows)
-		? payload.clinicalToothRows
-				.map((row) => {
-					const surfaces = Array.isArray(row.surfaces)
-						? row.surfaces
-								.filter(
-									(part) => typeof part === "string" && part.trim().length > 0,
-								)
-								.join(", ")
-						: typeof row.surfaces === "string"
-							? row.surfaces
-							: "";
-					const parts = [
-						row.toothOrArea,
-						surfaces,
-						row.status,
-						row.diagnosisOrFinding,
-						row.indication,
-						row.plannedAction,
-					]
-						.filter(
-							(part) => typeof part === "string" && part.trim().length > 0,
-						)
-						.map((part) => String(part).trim());
-					return parts.length
-						? `<li>${escapeHtml(parts.join(" — "))}</li>`
-						: "";
-				})
-				.filter(Boolean)
-				.join("")
+	const toothSection = Array.isArray(payload.clinicalToothRows) && payload.clinicalToothRows.length
+		? `<h2>Клиническая детализация по зубам</h2>${clinicalToothRowsTable(payload.clinicalToothRows)}`
 		: "";
-
-	const toothSection = toothRows
-		? `<p><strong>Клинические строки по зубам:</strong></p><ul>${toothRows}</ul>`
-		: "";
-	return `<section><h2>${escapeHtml(title)}</h2>${doctor}${body}${toothSection}</section>`;
+	return `<section><h2>${escapeHtml(title)}</h2><p class="small">Учетная форма N 043/у</p>${doctor}${body}${toothSection}</section>`;
 }
 
 function orthodonticMedicalCard043_1u(
