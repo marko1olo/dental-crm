@@ -10,11 +10,11 @@ export interface SummaryWorkStatement039uFormProps {
 
 export const SummaryWorkStatement039uForm: React.FC<SummaryWorkStatement039uFormProps> = React.memo(
 	function SummaryWorkStatement039uForm({ initialPayload, onChange, disabled }) {
-		const [periodLabel, setPeriodLabel] = useState(initialPayload?.periodLabel ?? "Август 2026");
-		const [workDays, setWorkDays] = useState(initialPayload?.actualWorkDaysCount ?? 21);
-		const [totalVisits, setTotalVisits] = useState(initialPayload?.visits?.totalVisits ?? 126);
-		const [therapeuticUet, setTherapeuticUet] = useState(initialPayload?.uetBreakdown?.therapeuticUet ?? 245.5);
-		const [surgicalUet, setSurgicalUet] = useState(initialPayload?.uetBreakdown?.surgicalUet ?? 62.0);
+		const [periodLabel, setPeriodLabel] = useState(initialPayload?.reportingPeriodMonthYear ?? "Август 2026");
+		const [workDays, setWorkDays] = useState(initialPayload?.workingDaysCount ?? 21);
+		const [totalVisits, setTotalVisits] = useState(initialPayload?.consolidatedMetrics?.visitsTotal ?? 126);
+		const [therapeuticUet, setTherapeuticUet] = useState(initialPayload?.uetBreakdown?.uetTherapy ?? 245.5);
+		const [surgicalUet, setSurgicalUet] = useState(initialPayload?.uetBreakdown?.uetSurgery ?? 62.0);
 
 		const totalUet = therapeuticUet + surgicalUet;
 

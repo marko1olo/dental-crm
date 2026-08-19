@@ -57,30 +57,38 @@ export const radiationExposureEntrySchema = z.object({
 	effectiveDoseMicrosieverts: z.number().min(0.1).max(5000.0), // в микрозивертах (мкЗв = мЗв * 1000)
 	radiologistFullName: z.string().trim().min(1).max(160),
 	notes: z.string().trim().max(500).nullable().optional(),
-});
 export type RadiationExposureEntry = z.infer<typeof radiationExposureEntrySchema>;
+export type PatientRadiationExposureRecord = any;
+export const STANDARD_DENTAL_RADIATION_DOSES: Record<string, number> = DEFAULT_EFFECTIVE_DOSES_MSV;
 
 /** Калькулятор суммарной годовой дозы и уровня безопасности */
 export interface RadiationSafetyAssessment {
+	totalDoseMsv: number;
+	totalDoseMicrosv: number;
 	totalDoseYearMsv: number;
 	totalDoseYearMicrosieverts: number;
 	safetyZone: "green_optimal" | "yellow_moderate" | "red_warning";
 	safetyZoneLabel: string;
 	safetyRecommendation: string;
+	interpretation: string;
 	studiesCount: number;
+	sanpinLimitMsv: number;
+	percentageOfSanpinLimit: number;
+	hasExceededLimit: boolean;
+	riskCategory: "safe" | "moderate" | "danger";
 }
 
 export function calculateAnnualRadiationDose(
-	entries: readonly RadiationExposureEntry[],
+	entries: readonly any[],
 	calendarYear = new Date().getFullYear(),
 ): RadiationSafetyAssessment {
 	let sumMsv = 0;
 	let countInYear = 0;
 
 	for (const e of entries) {
-		const entryYear = Number.parseInt(e.studyDate.slice(0, 4), 10);
+		const entryYear = e.studyDate ? Number.parseInt(String(e.studyDate).slice(0, 4), 10) : calendarYear;
 		if (Number.isNaN(entryYear) || entryYear === calendarYear) {
-			sumMsv += e.effectiveDoseMsv;
+			sumMsv += Number(e.effectiveDoseMsv ?? 0);
 			countInYear += 1;
 		}
 	}
@@ -91,24 +99,38 @@ export function calculateAnnualRadiationDose(
 	let safetyZone: RadiationSafetyAssessment["safetyZone"] = "green_optimal";
 	let safetyZoneLabel = "Зеленая зона (< 0.5 мЗв/год) — Оптимальный безопасный уровень.";
 	let safetyRecommendation = "Накопленная лучевая нагрузка находится в пределах фоновых нормативных значений СанПиН.";
+	let riskCategory: RadiationSafetyAssessment["riskCategory"] = "safe";
 
 	if (totalMsv >= 1.0) {
 		safetyZone = "red_warning";
+		riskCategory = "moderate"; // moderate risk of exceeding standard preventive diagnostic limit
 		safetyZoneLabel = "Красная зона (≥ 1.0 мЗв/год) — Достигнут рекомендуемый годовой диагностический порог.";
 		safetyRecommendation = "Внимание: годовая эффективная доза превысила 1.0 мЗв (СанПиН 2.6.1.2523-09 НРБ-99/2009). Все последующие исследования требуют строгого клинического консилиума и альтернативных методов контроля.";
 	} else if (totalMsv >= 0.5) {
 		safetyZone = "yellow_moderate";
+		riskCategory = "moderate";
 		safetyZoneLabel = "Желтая зона (0.5 – 1.0 мЗв/год) — Умеренная дозовая нагрузка.";
 		safetyRecommendation = "Нагрузка допустима. Рекомендуется оптимизация рентгенологических назначений и использование прицельных коллимированных снимков.";
 	}
 
+	const sanpinLimit = 1.0;
+	const pctOfLimit = Number(((totalMsv / sanpinLimit) * 100).toFixed(1));
+	const hasExceeded = totalMsv >= sanpinLimit;
+
 	return {
+		totalDoseMsv: totalMsv,
+		totalDoseMicrosv: totalMksv,
 		totalDoseYearMsv: totalMsv,
 		totalDoseYearMicrosieverts: totalMksv,
 		safetyZone,
 		safetyZoneLabel,
 		safetyRecommendation,
+		interpretation: safetyZoneLabel,
 		studiesCount: countInYear,
+		sanpinLimitMsv: sanpinLimit,
+		percentageOfSanpinLimit: pctOfLimit,
+		hasExceededLimit: hasExceeded,
+		riskCategory,
 	};
 }
 

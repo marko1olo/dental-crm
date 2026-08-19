@@ -2424,6 +2424,7 @@ function procedureSpecificConsentPacket(document: GeneratedDocument) {
 		> = {
 			local_anesthesia: "местная анестезия",
 			therapy_endo_restoration: "терапия, эндодонтия или реставрация",
+			sedation: "седация (ЗАКС / внутривенная)",
 			surgery_extraction: "хирургия или удаление зуба",
 			implantation_bone_graft:
 				"имплантация, костная пластика или синус-лифтинг",
