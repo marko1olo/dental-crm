@@ -33,6 +33,7 @@ import {
 	type ImagingViewerWindowPreset,
 	type ImportSourceKind,
 	type InstallmentPaymentStatus,
+	type OdontogramViewMode,
 	type Patient,
 	type PatientIntakePregnancyStatus,
 	type PaymentMethod,
@@ -3358,6 +3359,16 @@ export function isBooleanPreference(value: unknown): value is boolean {
 	return typeof value === "boolean";
 }
 
+export function isOdontogramViewModePreference(
+	value: unknown,
+): value is OdontogramViewMode {
+	return (
+		value === "anatomical_svg" ||
+		value === "compact_clinical" ||
+		value === "classic_gost"
+	);
+}
+
 export function isTaxDocumentYearPreference(value: unknown): value is number {
 	if (!Number.isInteger(value)) return false;
 	const year = value as number;
@@ -3830,6 +3841,12 @@ export function normalizeUiPreferencesPayload(
 			"odontogramUseSurfaces",
 			defaultUiPreferences.odontogramUseSurfaces,
 			isBooleanPreference,
+		),
+		odontogramViewMode: pickUiPreference(
+			source,
+			"odontogramViewMode",
+			defaultUiPreferences.odontogramViewMode,
+			isOdontogramViewModePreference,
 		),
 		recognitionKind: pickUiPreference(
 			source,

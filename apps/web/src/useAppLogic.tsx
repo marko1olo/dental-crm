@@ -742,8 +742,12 @@ export function useAppLogic(): any {
 	const uiPreferences = { soundNotificationsMuted };
 
 	const clinicalVisitLogic = useClinicalVisitLogic();
-	const { odontogramUseSurfaces, setOdontogramUseSurfaces } =
-		clinicalVisitLogic;
+	const {
+		odontogramUseSurfaces,
+		setOdontogramUseSurfaces,
+		odontogramViewMode,
+		setOdontogramViewMode,
+	} = clinicalVisitLogic;
 
 	const {
 		onboardingDismissed,
@@ -2035,6 +2039,7 @@ export function useAppLogic(): any {
 			pricelistSourceKind,
 			usePricelistAi,
 			odontogramUseSurfaces,
+			odontogramViewMode,
 			recognitionKind,
 			recognitionTarget,
 			importSourceKind,
@@ -2572,6 +2577,9 @@ export function useAppLogic(): any {
 		setPricelistSourceKind(preferences.pricelistSourceKind);
 		setUsePricelistAi(preferences.usePricelistAi);
 		setOdontogramUseSurfaces(preferences.odontogramUseSurfaces ?? false);
+		if (preferences.odontogramViewMode) {
+			setOdontogramViewMode(preferences.odontogramViewMode);
+		}
 		setRecognitionKind(preferences.recognitionKind);
 		setRecognitionTarget(preferences.recognitionTarget);
 		setImportSourceKind(preferences.importSourceKind);

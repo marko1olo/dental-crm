@@ -23,6 +23,7 @@ import {
 	type ToothData,
 	type ToothState,
 } from "./ToothChart";
+import { OdontogramViewContainer } from "./OdontogramViewContainer";
 import { ToothHistoryChronicle } from "./ToothHistoryChronicle";
 import {
 	type EndoToothClinicalData,
@@ -962,11 +963,14 @@ export const OdontogramModule = ({
 						onRetry={() => setTeethReloadToken((token) => token + 1)}
 					/>
 				)}
-				<ToothChart
+				<OdontogramViewContainer
 					teethData={teethData}
 					pediatricMode={isPediatricMode}
 					selectedTeeth={selectedTeeth}
 					onToothClick={handleToothClick}
+					onQuickStateChange={(targets, state) => {
+						void updateToothState(targets, state);
+					}}
 					useSurfaces={odontogramUseSurfaces}
 				/>
 

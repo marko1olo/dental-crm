@@ -13,6 +13,7 @@ import {
 	type ImagingStudyKind,
 	type ImportSourceKind,
 	type InstallmentPaymentStatus,
+	type OdontogramViewMode,
 	type PaymentMethod,
 	type PostVisitCareTopic,
 	type PricelistSourceKind,
@@ -183,6 +184,16 @@ export function isStringUnionValue<T extends string>(
 
 export function isBooleanPreference(value: unknown): value is boolean {
 	return typeof value === "boolean";
+}
+
+export function isOdontogramViewModePreference(
+	value: unknown,
+): value is OdontogramViewMode {
+	return (
+		value === "anatomical_svg" ||
+		value === "compact_clinical" ||
+		value === "classic_gost"
+	);
 }
 
 export function isBoundedPreferenceString(value: unknown): value is string {
@@ -959,6 +970,12 @@ export function normalizeUiPreferencesPayload(
 			"odontogramUseSurfaces",
 			defaultUiPreferences.odontogramUseSurfaces,
 			isBooleanPreference,
+		),
+		odontogramViewMode: pickUiPreference(
+			source,
+			"odontogramViewMode",
+			defaultUiPreferences.odontogramViewMode,
+			isOdontogramViewModePreference,
 		),
 		recognitionKind: pickUiPreference(
 			source,

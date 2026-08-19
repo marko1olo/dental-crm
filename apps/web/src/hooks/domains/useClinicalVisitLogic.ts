@@ -5,7 +5,12 @@ import { useDocumentStore } from "../../store/documentStore";
 
 export function useClinicalVisitLogic() {
 	// 1. Odontogram Surface option (from useAppStore)
-	const { odontogramUseSurfaces, setOdontogramUseSurfaces } = useAppStore();
+	const {
+		odontogramUseSurfaces,
+		setOdontogramUseSurfaces,
+		odontogramViewMode,
+		setOdontogramViewMode,
+	} = useAppStore();
 
 	// 2. Treatment Plan, Acceptance, Record Extract, Post Visit Care Plan (from useDocumentStore)
 	const {
@@ -192,6 +197,8 @@ export function useClinicalVisitLogic() {
 		// Odontogram Surface Option
 		odontogramUseSurfaces,
 		setOdontogramUseSurfaces,
+		odontogramViewMode,
+		setOdontogramViewMode,
 		toggleClinicalRule,
 
 		// Treatment Plan & Clinical Tooth Rows

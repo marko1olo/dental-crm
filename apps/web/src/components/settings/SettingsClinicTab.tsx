@@ -2,10 +2,16 @@ import type {
 	Chair,
 	ClinicMode,
 	DentalSpecialty,
+	OdontogramViewMode,
 	RoleQueue,
 	StaffMember,
 	StaffRole,
 } from "@dental/shared";
+import { useAppStore } from "../../store/appStore";
+import {
+	loadUiPreferences,
+	saveUiPreferences,
+} from "../../utils/preferencesUtils";
 import {
 	CalendarDays,
 	ExternalLink,
@@ -58,6 +64,31 @@ const clinicPublicLookupSuggestionSourceLabels: Record<string, string> = {
 	dadata: "Сервис реквизитов",
 	manual_public_targets: "Из введенных реквизитов",
 };
+
+const ODONTOGRAM_VIEW_MODE_OPTIONS: ReadonlyArray<{
+	value: OdontogramViewMode;
+	label: string;
+	detail: string;
+}> = [
+	{
+		value: "anatomical_svg",
+		label: "3D Анатомический (векторная визуализация зубов и корней)",
+		detail:
+			"Высокодетализированная анатомическая визуализация коронок, корней, каналов и периапикальных изменений",
+	},
+	{
+		value: "compact_clinical",
+		label: "Клинический 5-поверхностный (компактная схема FDI с гранями)",
+		detail:
+			"Компактная схема для быстрого клинического ввода поражённых поверхностей (V, L/P, M, D, O)",
+	},
+	{
+		value: "classic_gost",
+		label: "Классический ГОСТ 043/у (официальная табличная форма Минздрава)",
+		detail:
+			"Табличная форма медицинской карты 043/у с расчётом индекса КПУ / DMFT и символами C, P, Pt, Pl, K, I",
+	},
+];
 
 /** Что реально ушло на сервер. Уведомление обязано перечислить именно это. */
 type IssuedCredential = "email" | "password" | "pin";
@@ -478,6 +509,14 @@ export function SettingsClinicTab({
 	) ||
 		typedUiLanguageOptions[0] || { detail: "" };
 
+	const odontogramViewMode = useAppStore((state) => state.odontogramViewMode);
+	const setOdontogramViewMode = useAppStore(
+		(state) => state.setOdontogramViewMode,
+	);
+	const selectedOdontogramOption =
+		ODONTOGRAM_VIEW_MODE_OPTIONS.find((o) => o.value === odontogramViewMode) ||
+		ODONTOGRAM_VIEW_MODE_OPTIONS[0];
+
 	const typedClinicPublicLookupSuggestions =
 		clinicPublicLookup?.suggestions ?? [];
 	const typedClinicPublicLookupTargets =
@@ -895,6 +934,31 @@ export function SettingsClinicTab({
 							</select>
 							<small className="field-note">
 								{selectedUiLanguageOption.detail}
+							</small>
+						</label>
+						<label>
+							Вид зубной формулы по умолчанию
+							<select
+								value={odontogramViewMode}
+								onChange={(event: SelectChangeEvent) => {
+									const newMode = event.target.value as OdontogramViewMode;
+									setOdontogramViewMode(newMode);
+									const current = loadUiPreferences();
+									saveUiPreferences({ ...current, odontogramViewMode: newMode });
+									showToast(
+										`Режим зубной формулы изменён на «${ODONTOGRAM_VIEW_MODE_OPTIONS.find((o) => o.value === newMode)?.label || newMode}»`,
+										"info",
+									);
+								}}
+							>
+								{ODONTOGRAM_VIEW_MODE_OPTIONS.map((option) => (
+									<option key={option.value} value={option.value}>
+										{option.label}
+									</option>
+								))}
+							</select>
+							<small className="field-note">
+								{selectedOdontogramOption?.detail || "Режим отображения формулы по умолчанию"}
 							</small>
 						</label>
 						<label>

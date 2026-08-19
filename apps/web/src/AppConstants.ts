@@ -25,6 +25,7 @@ import type {
 	ImagingViewerSessionState,
 	ImportSourceKind,
 	InstallmentPaymentStatus,
+	OdontogramViewMode,
 	MigrationLocalSourceDiscoveryResponse,
 	PatientAdministrativeProfile,
 	PatientIntakePregnancyStatus,
@@ -150,6 +151,7 @@ export const defaultUiPreferences: UiPreferences = {
 	pricelistSourceKind: "spreadsheet_copy",
 	usePricelistAi: false,
 	odontogramUseSurfaces: false,
+	odontogramViewMode: "anatomical_svg",
 	recognitionKind: "voice_transcription",
 	recognitionTarget: "visit_note",
 	importSourceKind: "csv_text",
@@ -200,6 +202,7 @@ export type UiPreferences = {
 	pricelistSourceKind: PricelistSourceKind;
 	usePricelistAi: boolean;
 	odontogramUseSurfaces: boolean;
+	odontogramViewMode: OdontogramViewMode;
 	recognitionKind: AiJobKind;
 	recognitionTarget: AiRecognitionTarget;
 	importSourceKind: ImportSourceKind;

@@ -96,6 +96,8 @@ export interface UiPreferencesLogicProps {
 	setUsePricelistAi: any;
 	odontogramUseSurfaces: any;
 	setOdontogramUseSurfaces: any;
+	odontogramViewMode: any;
+	setOdontogramViewMode: any;
 	recognitionKind: any;
 	setRecognitionKind: any;
 	recognitionTarget: any;
@@ -230,6 +232,8 @@ export function useUiPreferencesLogic(props: UiPreferencesLogicProps) {
 		setUsePricelistAi,
 		odontogramUseSurfaces,
 		setOdontogramUseSurfaces,
+		odontogramViewMode,
+		setOdontogramViewMode,
 		recognitionKind,
 		setRecognitionKind,
 		recognitionTarget,
@@ -321,6 +325,7 @@ export function useUiPreferencesLogic(props: UiPreferencesLogicProps) {
 			pricelistSourceKind,
 			usePricelistAi,
 			odontogramUseSurfaces,
+			odontogramViewMode,
 			recognitionKind,
 			recognitionTarget,
 			importSourceKind,
@@ -711,6 +716,9 @@ export function useUiPreferencesLogic(props: UiPreferencesLogicProps) {
 		pricelistLogic.setPricelistSourceKind(preferences.pricelistSourceKind);
 		pricelistLogic.setUsePricelistAi(preferences.usePricelistAi);
 		setOdontogramUseSurfaces(preferences.odontogramUseSurfaces ?? false);
+		if (preferences.odontogramViewMode) {
+			setOdontogramViewMode(preferences.odontogramViewMode);
+		}
 		setRecognitionKind(preferences.recognitionKind);
 		setRecognitionTarget(preferences.recognitionTarget);
 		setImportSourceKind(preferences.importSourceKind);

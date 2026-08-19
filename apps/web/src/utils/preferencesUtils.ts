@@ -12,6 +12,7 @@ import type {
 	ImagingSourceKind,
 	ImagingStudyKind,
 	ImportSourceKind,
+	OdontogramViewMode,
 	OnboardingStep,
 	PaymentMethod,
 	PostVisitCareTopic,
@@ -23,6 +24,7 @@ import type {
 	TaxDeductionApplicationForm,
 	UiLanguage,
 } from "@dental/shared";
+export type { OdontogramViewMode };
 import {
 	safeLocalStorageGetItem,
 	safeLocalStorageSetItem,
@@ -66,6 +68,7 @@ export type UiPreferences = {
 	pricelistSourceKind: PricelistSourceKind;
 	usePricelistAi: boolean;
 	odontogramUseSurfaces: boolean;
+	odontogramViewMode: "anatomical_svg" | "compact_clinical" | "classic_gost";
 	recognitionKind: AiJobKind;
 	recognitionTarget: AiRecognitionTarget;
 	importSourceKind: ImportSourceKind;
@@ -121,6 +124,7 @@ export const defaultUiPreferences: UiPreferences = {
 	pricelistSourceKind: "spreadsheet_copy",
 	usePricelistAi: false,
 	odontogramUseSurfaces: false,
+	odontogramViewMode: "anatomical_svg",
 	recognitionKind: "voice_transcription",
 	recognitionTarget: "visit_note",
 	importSourceKind: "csv_text",

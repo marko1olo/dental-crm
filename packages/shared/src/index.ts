@@ -10800,8 +10800,20 @@ export const uiPreferencesSchema = z.object({
 	onboardingStep: onboardingStepSchema.default("intro"),
 	onboardingDraftMode: z.boolean().default(false),
 	odontogramUseSurfaces: z.boolean().default(false),
+	odontogramViewMode: z
+		.enum(["anatomical_svg", "compact_clinical", "classic_gost"])
+		.default("anatomical_svg"),
 	savedAt: z.string().default(""),
 });
+export type OdontogramViewMode =
+	| "anatomical_svg"
+	| "compact_clinical"
+	| "classic_gost";
+export const odontogramViewModeSchema = z.enum([
+	"anatomical_svg",
+	"compact_clinical",
+	"classic_gost",
+]);
 export type UiPreferences = z.infer<typeof uiPreferencesSchema>;
 
 export const uiPreferencesInputSchema = uiPreferencesSchema

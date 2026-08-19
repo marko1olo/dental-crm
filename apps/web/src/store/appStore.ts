@@ -1,4 +1,4 @@
-import type { Dashboard } from "@dental/shared";
+import type { Dashboard, OdontogramViewMode } from "@dental/shared";
 import { create } from "zustand";
 import {
 	defaultUiPreferences,
@@ -275,6 +275,10 @@ interface AppStore {
 	setOdontogramUseSurfaces: (
 		val: boolean | ((prev: boolean) => boolean),
 	) => void;
+	odontogramViewMode: OdontogramViewMode;
+	setOdontogramViewMode: (
+		val: OdontogramViewMode | ((prev: OdontogramViewMode) => OdontogramViewMode),
+	) => void;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	speechGatewayStatus: any;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -451,6 +455,14 @@ export const useAppStore = create<AppStore>((set) => ({
 		set((state) => ({
 			odontogramUseSurfaces:
 				typeof val === "function" ? val(state.odontogramUseSurfaces) : val,
+		})),
+	odontogramViewMode:
+		(loadUiPreferences() ?? defaultUiPreferences).odontogramViewMode ??
+		"anatomical_svg",
+	setOdontogramViewMode: (val) =>
+		set((state) => ({
+			odontogramViewMode:
+				typeof val === "function" ? val(state.odontogramViewMode) : val,
 		})),
 	isOmnibarOpen: false,
 	setOmnibarOpen: (val) => set({ isOmnibarOpen: val }),
