@@ -1,5 +1,7 @@
 /**
- * CDA R2 recordTarget / patientRole (flat addr/telecom NI — no org recursion).
+ * CDA R2 recordTarget / patientRole.
+ * Strict element sequence conforming to POCD_MT000040.PatientRole:
+ * id* -> addr* -> telecom* -> patient -> providerOrganization?
  */
 
 import type { CdaContext } from "./util.js";
@@ -47,13 +49,6 @@ export function generateCdaPatient(ctx: CdaContext): string {
 	<recordTarget>
 		<patientRole>
 			${idsXml}
-			<!--
-				DEFECT #98: patientRole addr + telecom (HL7 CDA R2 / EGISZ SEMD).
-				Real patient contact is wired from the chart (patients.phone/email +
-				administrativeProfile residential/registration address). We emit the
-				real <addr>/<telecom> when present and nullFlavor="NI" only when the
-				chart has no contact data (we never invent an address/phone).
-			-->
 			${patientAddrXml(ctx)}
 			${patientTelecomXml(ctx)}
 			<patient>
@@ -63,10 +58,6 @@ export function generateCdaPatient(ctx: CdaContext): string {
 				</name>
 				${genderXml}
 				${birthXml}
-				<!--
-					DEFECT #97: patient/languageCommunication (preferred language).
-					languageCode ru-RU + preferenceInd true (primary).
-				-->
 				<languageCommunication>
 					<languageCode code="ru-RU"/>
 					<preferenceInd value="true"/>

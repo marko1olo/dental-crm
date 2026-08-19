@@ -1,7 +1,7 @@
 /**
  * CDA R2 author-side participations + encounter linkage.
  * All organization shells are FLAT (id -> name -> telecom -> addr).
- * NEVER emit asOrganizationPartOf / wholeOrganization / asEmployee recursion.
+ * Conforms to HL7 CDA R2 and Minzdrav EGISZ REMD specifications.
  */
 
 import type { CdaContext } from "./util.js";
@@ -19,6 +19,74 @@ import {
 	orgIdXml,
 } from "./util.js";
 
+function legalAuthenticatorXml(ctx: CdaContext): string {
+	const { params, legalAuthTime } = ctx;
+	const auth = params.legalAuthenticator;
+	const clinicName = escapeXml(params.clinicName);
+
+	if (auth && (auth.name || auth.snils || auth.positionCode || auth.position)) {
+		const authSnils = auth.snils ? auth.snils.trim() : "";
+		const authIdXml = authSnils
+			? `<id root="${EGISZ_OIDS.SNILS}" extension="${escapeXml(authSnils)}"/>`
+			: `<id nullFlavor="NI"/>`;
+
+		const posCode = auth.positionCode ? auth.positionCode.trim() : "4";
+		const posName = auth.position ? auth.position.trim() : "главный врач";
+		const codeXml = `<code code="${escapeXml(posCode)}" codeSystem="${EGISZ_OIDS.MEDICAL_POSITIONS}" codeSystemName="Должности медицинских работников" displayName="${escapeXml(posName)}"/>`;
+
+		const authName = auth.name || params.doctorName;
+		const middleGiven = authName.middle
+			? `\n\t\t\t\t\t<given>${escapeXml(authName.middle)}</given>`
+			: "";
+		const nameXml = `<name>
+					<family>${escapeXml(authName.last)}</family>
+					<given>${escapeXml(authName.first)}</given>${middleGiven}
+				</name>`;
+
+		return `
+	<legalAuthenticator>
+		<time value="${legalAuthTime}"/>
+		<signatureCode code="S"/>
+		<assignedEntity>
+			${authIdXml}
+			${codeXml}
+			${clinicAddrXml(ctx)}
+			${clinicTelecomXml(ctx)}
+			<assignedPerson>
+				${nameXml}
+			</assignedPerson>
+			<representedOrganization>
+				${orgIdXml(ctx)}
+				<name>${clinicName}</name>
+				${clinicTelecomXml(ctx)}
+				${clinicAddrXml(ctx)}
+			</representedOrganization>
+		</assignedEntity>
+	</legalAuthenticator>`;
+	}
+
+	return `
+	<legalAuthenticator>
+		<time value="${legalAuthTime}"/>
+		<signatureCode code="S"/>
+		<assignedEntity>
+			${doctorIdXml(ctx)}
+			${doctorCodeXml(ctx)}
+			${clinicAddrXml(ctx)}
+			${doctorTelecomXml(ctx)}
+			<assignedPerson>
+				${doctorNameXml(ctx)}
+			</assignedPerson>
+			<representedOrganization>
+				${orgIdXml(ctx)}
+				<name>${clinicName}</name>
+				${clinicTelecomXml(ctx)}
+				${clinicAddrXml(ctx)}
+			</representedOrganization>
+		</assignedEntity>
+	</legalAuthenticator>`;
+}
+
 export function generateCdaAuthorAndCustodian(ctx: CdaContext): string {
 	const {
 		params,
@@ -34,12 +102,7 @@ export function generateCdaAuthorAndCustodian(ctx: CdaContext): string {
 		: `<id nullFlavor="NI"/>`;
 
 	const signatureCode = `<signatureCode code="S"/>`;
-
 	const ambCode = `<code code="AMB" codeSystem="${EGISZ_OIDS.MEDICAL_CARE_TYPE}" codeSystemName="Виды медицинской помощи" displayName="Амбулаторная помощь"/>`;
-
-	const _loincExam = `<code code="74208-1" codeSystem="${EGISZ_OIDS.LOINC}" codeSystemName="LOINC" displayName="Протокол стоматологического осмотра"/>`;
-
-	const _assignedEntity = flatAssignedEntity(ctx);
 	const clinicName = escapeXml(params.clinicName);
 	const middleGiven = params.doctorName.middle
 		? `\n\t\t\t\t\t\t\t<given>${escapeXml(params.doctorName.middle)}</given>`
@@ -82,26 +145,7 @@ export function generateCdaAuthorAndCustodian(ctx: CdaContext): string {
 			</receivedOrganization>
 		</intendedRecipient>
 	</informationRecipient>
-
-	<legalAuthenticator>
-		<time value="${effectiveTime}"/>
-		${signatureCode}
-		<assignedEntity>
-			${doctorIdXml(ctx)}
-			${doctorCodeXml(ctx)}
-			${clinicAddrXml(ctx)}
-			${doctorTelecomXml(ctx)}
-			<assignedPerson>
-				${doctorNameXml(ctx)}
-			</assignedPerson>
-			<representedOrganization>
-				${orgIdXml(ctx)}
-				<name>${clinicName}</name>
-				${clinicTelecomXml(ctx)}
-				${clinicAddrXml(ctx)}
-			</representedOrganization>
-		</assignedEntity>
-	</legalAuthenticator>
+${legalAuthenticatorXml(ctx)}
 
 	<authenticator>
 		<time value="${effectiveTime}"/>

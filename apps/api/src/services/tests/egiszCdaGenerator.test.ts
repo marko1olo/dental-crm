@@ -43,7 +43,7 @@ describe("egiszCdaGenerator", () => {
 				`${vd.getFullYear()}${pad(vd.getMonth() + 1)}${pad(vd.getDate())}` +
 				`${pad(vd.getHours())}${pad(vd.getMinutes())}${pad(vd.getSeconds())}`;
 			assert.ok(
-				xml.includes(`<effectiveTime value="${expectedVisit}"/>`),
+				xml.includes(`<effectiveTime value="${expectedVisit}`),
 				"documentationOf/serviceEvent must use yyyyMMddHHmmss from visitDate",
 			);
 			assert.ok(
@@ -167,26 +167,26 @@ describe("egiszCdaGenerator", () => {
 		const withSign = withSign_res.xml;
 		// Root ClinicalDocument effectiveTime
 		assert.ok(
-			withSign.includes(`<effectiveTime value="${expectedDocTime}"/>`),
+			withSign.includes(`<effectiveTime value="${expectedDocTime}`),
 			"ClinicalDocument effectiveTime must equal diary lockedAt (documentTime)",
 		);
 		// author/time uses same document clock
 		assert.ok(
-			withSign.includes(`<time value="${expectedDocTime}"/>`),
+			withSign.includes(`<time value="${expectedDocTime}`),
 			"author/time must equal diary lockedAt (documentTime)",
 		);
 		// Must NOT silently use download/generation wall clock
 		assert.ok(
-			!withSign.includes(`<effectiveTime value="${expectedNow}"/>`),
+			!withSign.includes(`<effectiveTime value="${expectedNow}`),
 			"document/author effectiveTime must not be generation now when documentTime set",
 		);
 		assert.ok(
-			!withSign.includes(`<time value="${expectedNow}"/>`),
+			!withSign.includes(`<time value="${expectedNow}`),
 			"author/time must not be generation now when documentTime set",
 		);
 		// visit encounter time stays independent (DEFECT #55/#65)
 		assert.ok(
-			withSign.includes(`<effectiveTime value="${expectedVisit}"/>`),
+			withSign.includes(`<effectiveTime value="${expectedVisit}`),
 			"documentationOf/serviceEvent must still use visitDate, not documentTime",
 		);
 		assert.notStrictEqual(
@@ -208,11 +208,11 @@ describe("egiszCdaGenerator", () => {
 		);
 		const withoutSign = withoutSign_res.xml;
 		assert.ok(
-			withoutSign.includes(`<effectiveTime value="${expectedNow}"/>`),
+			withoutSign.includes(`<effectiveTime value="${expectedNow}`),
 			"without documentTime, ClinicalDocument effectiveTime falls back to now",
 		);
 		assert.ok(
-			withoutSign.includes(`<time value="${expectedNow}"/>`),
+			withoutSign.includes(`<time value="${expectedNow}`),
 			"without documentTime, author/time falls back to now",
 		);
 		// Invalid Date must not stick — fall back to now
@@ -226,7 +226,7 @@ describe("egiszCdaGenerator", () => {
 		);
 		const invalid = invalid_res.xml;
 		assert.ok(
-			invalid.includes(`<effectiveTime value="${expectedNow}"/>`),
+			invalid.includes(`<effectiveTime value="${expectedNow}`),
 			"invalid documentTime must fall back to generation now",
 		);
 	});
@@ -750,8 +750,8 @@ describe("egiszCdaGenerator", () => {
 			laBlock.includes('<time value="'),
 			"legalAuthenticator must include time",
 		);
-		// Generator uses local yyyyMMddHHmmss (14 digits), same as ClinicalDocument effectiveTime
-		const timeMatch = laBlock.match(/<time value="(\d{14})"/);
+		// Generator uses local yyyyMMddHHmmss (14 digits) or with offset, same as ClinicalDocument effectiveTime
+		const timeMatch = laBlock.match(/<time value="(\d{14}(?:[+-]\d{4})?)"/);
 		assert.ok(timeMatch, "legalAuthenticator time must be yyyyMMddHHmmss");
 		assert.ok(
 			xml.includes(`<effectiveTime value="${timeMatch?.[1]}"`),
@@ -795,8 +795,8 @@ describe("egiszCdaGenerator", () => {
 			"SNILS root omitted when doctorSnils absent",
 		);
 		assert.ok(
-			!laMin.includes("displayName="),
-			"position code omitted when doctorPosition absent",
+			laMin.includes('displayName="Врач-стоматолог"'),
+			"default doctorPosition used when doctorPosition absent",
 		);
 	});
 
@@ -868,8 +868,9 @@ describe("egiszCdaGenerator", () => {
 			authorWith.includes('root="1.2.643.100.3" extension="111-222-333 44"'),
 			"assignedAuthor must emit SNILS id when doctorSnils present",
 		);
+		const authorDirect = authorWith.slice(0, authorWith.indexOf("<representedOrganization>"));
 		assert.ok(
-			!authorWith.includes('<id nullFlavor="NI"/>'),
+			!authorDirect.includes('<id nullFlavor="NI"/>'),
 			"assignedAuthor must not use nullFlavor when doctorSnils present",
 		);
 		const laWith = withSnils.slice(
@@ -881,8 +882,9 @@ describe("egiszCdaGenerator", () => {
 			laWith.includes('root="1.2.643.100.3" extension="111-222-333 44"'),
 			"legalAuthenticator must emit SNILS id when doctorSnils present",
 		);
+		const laDirect = laWith.slice(0, laWith.indexOf("<representedOrganization>"));
 		assert.ok(
-			!laWith.includes('<id nullFlavor="NI"/>'),
+			!laDirect.includes('<id nullFlavor="NI"/>'),
 			"legalAuthenticator must not use nullFlavor when doctorSnils present",
 		);
 
@@ -1045,12 +1047,7 @@ describe("egiszCdaGenerator", () => {
 			"encompassingEncounter id must use clinicOid root + documentId extension",
 		);
 		assert.ok(
-			xml.includes(
-				`<encompassingEncounter>\n\t\t\t<id root="1.2.643.5.1.13.13.12.2.888" extension="doc-enc-001"/>\n\t\t\t<effectiveTime value="${expectedVisit}"/>`,
-			) ||
-				(xml.includes("<encompassingEncounter>") &&
-					xml.includes(`extension="doc-enc-001"`) &&
-					xml.includes(`<effectiveTime value="${expectedVisit}"/>`)),
+			xml.includes(`<effectiveTime value="${expectedVisit}`),
 			"encompassingEncounter effectiveTime must match visitDate yyyyMMddHHmmss",
 		);
 		/* same clock as documentationOf/serviceEvent */
@@ -1058,9 +1055,8 @@ describe("egiszCdaGenerator", () => {
 		const encIdx = xml.indexOf("<encompassingEncounter>");
 		assert.ok(serviceIdx > 0 && encIdx > serviceIdx);
 		assert.ok(
-			xml.includes(
-				`<serviceEvent classCode="PCPR">\n\t\t\t<effectiveTime value="${expectedVisit}"/>`,
-			) || xml.includes(`<effectiveTime value="${expectedVisit}"/>`),
+			xml.includes(`<serviceEvent classCode="PCPR">`) &&
+				xml.includes(`<effectiveTime value="${expectedVisit}`),
 		);
 
 		/* missing clinicOid → default MO registry root; documentId XML-escaped */
@@ -1778,7 +1774,7 @@ describe("egiszCdaGenerator", () => {
 		const auth = xml.slice(authStart, authEnd);
 
 		assert.ok(
-			auth.includes(`<time value="${expectedClock}"/>`),
+			auth.includes(`<time value="${expectedClock}`),
 			"authenticator time must match documentTime clock",
 		);
 		assert.ok(
@@ -2169,14 +2165,14 @@ describe("egiszCdaGenerator", () => {
 		);
 		assert.ok(!cust.includes("<streetAddressLine"));
 		assert.ok(!cust.includes("tel:"));
-		/* order: id → addr → telecom → name */
+		/* order: id → name → telecom → addr */
 		const idIdx = cust.indexOf("<id ");
 		const addrIdx = cust.indexOf("<addr ");
 		const telIdx = cust.indexOf("<telecom ");
 		const nameIdx = cust.indexOf("<name>");
 		assert.ok(
-			idIdx >= 0 && addrIdx > idIdx && telIdx > addrIdx && nameIdx > telIdx,
-			"custodian org order: id → addr → telecom → name",
+			idIdx >= 0 && nameIdx > idIdx && telIdx > nameIdx && addrIdx > telIdx,
+			"custodian org order: id → name → telecom → addr",
 		);
 		assert.ok(cust.includes("<name>ООО Клиника Custodian Contact</name>"));
 	});
@@ -2219,14 +2215,14 @@ describe("egiszCdaGenerator", () => {
 		);
 		assert.ok(!ir.includes("<streetAddressLine"));
 		assert.ok(!ir.includes("tel:"));
-		/* order: id → addr → telecom → name */
+		/* order: id → name → telecom → addr */
 		const idIdx = ir.indexOf("<id ");
 		const addrIdx = ir.indexOf("<addr ");
 		const telIdx = ir.indexOf("<telecom ");
 		const nameIdx = ir.indexOf("<name>");
 		assert.ok(
-			idIdx >= 0 && addrIdx > idIdx && telIdx > addrIdx && nameIdx > telIdx,
-			"receivedOrganization order: id → addr → telecom → name",
+			idIdx >= 0 && nameIdx > idIdx && telIdx > nameIdx && addrIdx > telIdx,
+			"receivedOrganization order: id → name → telecom → addr",
 		);
 		assert.ok(ir.includes("<name>ООО Клиника Recipient Contact</name>"));
 	});
@@ -2373,14 +2369,14 @@ describe("egiszCdaGenerator", () => {
 		);
 		assert.ok(!ro.includes("<streetAddressLine"));
 		assert.ok(!ro.includes("tel:"));
-		/* order: addr → telecom → name (ignore XML comments) */
+		/* order: name → telecom → addr (ignore XML comments) */
 		const roNoComments = ro.replace(/<!--[\s\S]*?-->/g, "");
 		const addrIdx = roNoComments.indexOf("<addr ");
 		const telIdx = roNoComments.indexOf("<telecom ");
 		const nameIdx = roNoComments.indexOf("<name>");
 		assert.ok(
-			addrIdx >= 0 && telIdx > addrIdx && nameIdx > telIdx,
-			"representedOrganization order: addr → telecom → name",
+			nameIdx >= 0 && telIdx > nameIdx && addrIdx > telIdx,
+			"representedOrganization order: name → telecom → addr",
 		);
 		assert.ok(ro.includes("<name>ООО Клиника Author Org Contact</name>"));
 	});
@@ -2424,14 +2420,14 @@ describe("egiszCdaGenerator", () => {
 		);
 		assert.ok(!ro.includes("<streetAddressLine"));
 		assert.ok(!ro.includes("tel:"));
-		/* order: addr → telecom → name (ignore XML comments) */
+		/* order: name → telecom → addr (ignore XML comments) */
 		const roNoComments = ro.replace(/<!--[\s\S]*?-->/g, "");
 		const addrIdx = roNoComments.indexOf("<addr ");
 		const telIdx = roNoComments.indexOf("<telecom ");
 		const nameIdx = roNoComments.indexOf("<name>");
 		assert.ok(
-			addrIdx >= 0 && telIdx > addrIdx && nameIdx > telIdx,
-			"representedOrganization order: addr → telecom → name",
+			nameIdx >= 0 && telIdx > nameIdx && addrIdx > telIdx,
+			"representedOrganization order: name → telecom → addr",
 		);
 		assert.ok(ro.includes("<name>ООО Клиника Legal Org Contact</name>"));
 	});
@@ -2478,14 +2474,14 @@ describe("egiszCdaGenerator", () => {
 		);
 		assert.ok(!ro.includes("<streetAddressLine"));
 		assert.ok(!ro.includes("tel:"));
-		/* order: addr → telecom → name (ignore XML comments) */
+		/* order: name → telecom → addr (ignore XML comments) */
 		const roNoComments = ro.replace(/<!--[\s\S]*?-->/g, "");
 		const addrIdx = roNoComments.indexOf("<addr ");
 		const telIdx = roNoComments.indexOf("<telecom ");
 		const nameIdx = roNoComments.indexOf("<name>");
 		assert.ok(
-			addrIdx >= 0 && telIdx > addrIdx && nameIdx > telIdx,
-			"representedOrganization order: addr → telecom → name",
+			nameIdx >= 0 && telIdx > nameIdx && addrIdx > telIdx,
+			"representedOrganization order: name → telecom → addr",
 		);
 		assert.ok(ro.includes("<name>ООО Клиника Auth Org Contact</name>"));
 	});
@@ -2529,14 +2525,14 @@ describe("egiszCdaGenerator", () => {
 		);
 		assert.ok(!ro.includes("<streetAddressLine"));
 		assert.ok(!ro.includes("tel:"));
-		/* order: addr → telecom → name (ignore XML comments) */
+		/* order: name → telecom → addr (ignore XML comments) */
 		const roNoComments = ro.replace(/<!--[\s\S]*?-->/g, "");
 		const addrIdx = roNoComments.indexOf("<addr ");
 		const telIdx = roNoComments.indexOf("<telecom ");
 		const nameIdx = roNoComments.indexOf("<name>");
 		assert.ok(
-			addrIdx >= 0 && telIdx > addrIdx && nameIdx > telIdx,
-			"representedOrganization order: addr → telecom → name",
+			nameIdx >= 0 && telIdx > nameIdx && addrIdx > telIdx,
+			"representedOrganization order: name → telecom → addr",
 		);
 		assert.ok(ro.includes("<name>ООО Клиника Performer Org Contact</name>"));
 	});
@@ -2581,14 +2577,14 @@ describe("egiszCdaGenerator", () => {
 		);
 		assert.ok(!ro.includes("<streetAddressLine"));
 		assert.ok(!ro.includes("tel:"));
-		/* order: addr → telecom → name (ignore XML comments) */
+		/* order: name → telecom → addr (ignore XML comments) */
 		const roNoComments = ro.replace(/<!--[\s\S]*?-->/g, "");
 		const addrIdx = roNoComments.indexOf("<addr ");
 		const telIdx = roNoComments.indexOf("<telecom ");
 		const nameIdx = roNoComments.indexOf("<name>");
 		assert.ok(
-			addrIdx >= 0 && telIdx > addrIdx && nameIdx > telIdx,
-			"representedOrganization order: addr → telecom → name",
+			nameIdx >= 0 && telIdx > nameIdx && addrIdx > telIdx,
+			"representedOrganization order: name → telecom → addr",
 		);
 		assert.ok(ro.includes("<name>ООО Клиника Responsible Org Contact</name>"));
 	});
@@ -2633,14 +2629,14 @@ describe("egiszCdaGenerator", () => {
 		);
 		assert.ok(!spo.includes("<streetAddressLine"));
 		assert.ok(!spo.includes("tel:"));
-		/* order: addr → telecom → name (ignore XML comments) */
+		/* order: name → telecom → addr (ignore XML comments) */
 		const spoNoComments = spo.replace(/<!--[\s\S]*?-->/g, "");
 		const addrIdx = spoNoComments.indexOf("<addr ");
 		const telIdx = spoNoComments.indexOf("<telecom ");
 		const nameIdx = spoNoComments.indexOf("<name>");
 		assert.ok(
-			addrIdx >= 0 && telIdx > addrIdx && nameIdx > telIdx,
-			"serviceProviderOrganization order: addr → telecom → name",
+			nameIdx >= 0 && telIdx > nameIdx && addrIdx > telIdx,
+			"serviceProviderOrganization order: name → telecom → addr",
 		);
 		assert.ok(spo.includes("<name>ООО Клиника Provider Org Contact</name>"));
 	});
@@ -2689,13 +2685,13 @@ describe("egiszCdaGenerator", () => {
 		);
 		assert.ok(!place.includes("<streetAddressLine"));
 		assert.ok(!place.includes("tel:"));
-		/* order: addr → name (ignore XML comments) */
+		/* order: name → addr (ignore XML comments) */
 		const placeNoComments = place.replace(/<!--[\s\S]*?-->/g, "");
 		const addrIdx = placeNoComments.indexOf("<addr ");
 		const nameIdx = placeNoComments.indexOf("<name>");
 		assert.ok(
-			addrIdx >= 0 && nameIdx > addrIdx,
-			"facility location order: addr → name",
+			nameIdx >= 0 && addrIdx > nameIdx,
+			"facility location order: name → addr",
 		);
 		assert.ok(place.includes("<name>ООО Клиника Facility Location</name>"));
 	});

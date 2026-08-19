@@ -6,7 +6,7 @@
 
 import type { EgiszCdaParams } from "./schema.js";
 
-/** Escape free-text for CDA XML text/attribute nodes (DEFECT #49). */
+/** Escape free-text for CDA XML text/attribute nodes. */
 export function escapeXml(value: string): string {
 	return value
 		.replace(/&/g, "&\u0061mp;")
@@ -51,15 +51,202 @@ export const EGISZ_OIDS = {
 	OGRN_LEGAL: "1.2.643.100.1",
 	OGRN_IP: "1.2.643.100.5",
 	INN: "1.2.643.100.4",
+	SEMD_TEMPLATE_DENTAL_108: "1.2.643.5.1.13.13.11.108",
 	SEMD_TEMPLATE_CONSULTATION: "1.2.643.5.1.13.13.11.1527",
+	DOC_TYPE_NSI: "1.2.643.5.1.13.13.11.1522",
 	GENDER: "1.2.643.5.1.13.13.11.1040",
 	MEDICAL_CARE_TYPE: "1.2.643.5.1.13.13.11.1461",
 	MEDICAL_POSITIONS: "1.2.643.5.1.13.13.11.1002",
 	ICD10: "1.2.643.5.1.13.13.11.1005",
+	ORDER_804N: "1.2.643.5.1.13.13.11.1070",
 	DENTAL_TOOTH: "1.2.643.5.1.13.13.11.1466",
 	CONFIDENTIALITY: "2.16.840.1.113883.5.25",
 	LOINC: "2.16.840.1.113883.6.1",
+	// Mandatory Sections LOINC codes
+	LOINC_ANAMNESIS: "10164-2",
+	LOINC_DENTAL_STATUS: "29545-1",
+	LOINC_DIAGNOSIS_SECTION: "29548-5",
+	LOINC_DIAGNOSIS_OBSERVATION: "29308-4",
+	LOINC_SERVICES_RENDERED: "47519-4",
+	LOINC_RECOMMENDATIONS: "18776-5",
+	LOINC_COMPLICATIONS: "55109-3",
+	LOINC_COMORBIDITIES: "11348-0",
+	LOINC_MEDICAL_DEVICE: "46264-8",
 } as const;
+
+/**
+ * Valid FDI ISO 3950 Tooth Numbers.
+ * Adult quadrants: 11..18, 21..28, 31..38, 41..48.
+ * Deciduous (child) quadrants: 51..55, 61..65, 71..75, 81..85.
+ */
+export const VALID_ADULT_TOOTH_NUMBERS = [
+	11, 12, 13, 14, 15, 16, 17, 18,
+	21, 22, 23, 24, 25, 26, 27, 28,
+	31, 32, 33, 34, 35, 36, 37, 38,
+	41, 42, 43, 44, 45, 46, 47, 48,
+] as const;
+
+export const VALID_CHILD_TOOTH_NUMBERS = [
+	51, 52, 53, 54, 55,
+	61, 62, 63, 64, 65,
+	71, 72, 73, 74, 75,
+	81, 82, 83, 84, 85,
+] as const;
+
+export const ALL_VALID_FDI_TOOTH_NUMBERS = [
+	...VALID_ADULT_TOOTH_NUMBERS,
+	...VALID_CHILD_TOOTH_NUMBERS,
+] as const;
+
+export function isValidFdiToothNumber(tooth: unknown): boolean {
+	if (tooth === undefined || tooth === null) return false;
+	const num = typeof tooth === "number" ? tooth : Number.parseInt(String(tooth).trim(), 10);
+	if (Number.isNaN(num)) return false;
+	return ALL_VALID_FDI_TOOTH_NUMBERS.includes(num as (typeof ALL_VALID_FDI_TOOTH_NUMBERS)[number]);
+}
+
+export function isAdultToothNumber(tooth: unknown): boolean {
+	const num = typeof tooth === "number" ? tooth : Number.parseInt(String(tooth).trim(), 10);
+	return VALID_ADULT_TOOTH_NUMBERS.includes(num as (typeof VALID_ADULT_TOOTH_NUMBERS)[number]);
+}
+
+export function isChildToothNumber(tooth: unknown): boolean {
+	const num = typeof tooth === "number" ? tooth : Number.parseInt(String(tooth).trim(), 10);
+	return VALID_CHILD_TOOTH_NUMBERS.includes(num as (typeof VALID_CHILD_TOOTH_NUMBERS)[number]);
+}
+
+export interface ToothSurfaceInfo {
+	code: string;
+	symbol: string;
+	displayName: string;
+}
+
+/**
+ * Normalizes FDI 5 anatomical surfaces:
+ * V/B - Vestibular / Buccal
+ * L/P - Lingual / Palatal
+ * O/I - Occlusal / Incisal
+ * M - Mesial
+ * D - Distal
+ * R - Root (optional)
+ */
+export function normalizeToothSurfaces(
+	surfaces?: string[] | string | null,
+): ToothSurfaceInfo[] {
+	if (!surfaces) return [];
+	const list: string[] = Array.isArray(surfaces)
+		? surfaces
+		: String(surfaces)
+				.split(/[,;\s/]+/)
+				.map((s) => s.trim())
+				.filter(Boolean);
+
+	const result: ToothSurfaceInfo[] = [];
+	const seen = new Set<string>();
+
+	for (const raw of list) {
+		const s = raw.trim().toUpperCase();
+		if (!s) continue;
+
+		if (s === "V" || s === "B" || s === "VESTIBULAR" || s === "BUCCAL" || s === "Щ" || s === "В" || s === "ЩЕЧНАЯ" || s === "ВЕСТИБУЛЯРНАЯ") {
+			if (!seen.has("V")) {
+				seen.add("V");
+				result.push({ code: "SURF_V", symbol: "V", displayName: "Вестибулярная (щечная)" });
+			}
+		} else if (s === "L" || s === "P" || s === "LINGUAL" || s === "PALATAL" || s === "Я" || s === "Н" || s === "ЯЗЫЧНАЯ" || s === "НЕБНАЯ") {
+			if (!seen.has("L")) {
+				seen.add("L");
+				result.push({ code: "SURF_L", symbol: "L", displayName: "Язычная (небная)" });
+			}
+		} else if (s === "O" || s === "I" || s === "OCCLUSAL" || s === "INCISAL" || s === "О" || s === "Р" || s === "ОККЛЮЗИОННАЯ" || s === "ЖЕВАТЕЛЬНАЯ" || s === "РЕЖУЩИЙ КРАЙ") {
+			if (!seen.has("O")) {
+				seen.add("O");
+				result.push({ code: "SURF_O", symbol: "O", displayName: "Окклюзионная (режущий край)" });
+			}
+		} else if (s === "M" || s === "MESIAL" || s === "М" || s === "МЕДИАЛЬНАЯ") {
+			if (!seen.has("M")) {
+				seen.add("M");
+				result.push({ code: "SURF_M", symbol: "M", displayName: "Медиальная" });
+			}
+		} else if (s === "D" || s === "DISTAL" || s === "Д" || s === "ДИСТАЛЬНАЯ") {
+			if (!seen.has("D")) {
+				seen.add("D");
+				result.push({ code: "SURF_D", symbol: "D", displayName: "Дистальная" });
+			}
+		} else if (s === "R" || s === "ROOT" || s === "RADIX" || s === "К" || s === "КОРЕНЬ") {
+			if (!seen.has("R")) {
+				seen.add("R");
+				result.push({ code: "SURF_ROOT", symbol: "R", displayName: "Корень" });
+			}
+		}
+	}
+
+	return result;
+}
+
+export interface DentalConditionInfo {
+	code: string;
+	displayName: string;
+	symbol: string;
+}
+
+/**
+ * Maps condition codes to standardized SEMD 108 condition descriptors.
+ */
+export function normalizeDentalCondition(
+	condition: string,
+	customCode?: string,
+	customName?: string,
+): DentalConditionInfo {
+	if (customCode && customName) {
+		return {
+			code: customCode,
+			displayName: customName,
+			symbol: condition || customCode,
+		};
+	}
+
+	const c = condition.trim().toUpperCase();
+	if (c === "C" || c === "CARIES" || c === "CARIES_MEDIA" || c === "КАРИЕС" || c === "КАРИЕС СРЕДНИЙ") {
+		return { code: "CARIES_MEDIA", displayName: "Кариес дентина (средний)", symbol: "C" };
+	}
+	if (c === "CARIES_SUPERFICIALIS" || c === "КАРИЕС ПОВЕРХНОСТНЫЙ") {
+		return { code: "CARIES_SUPERFICIALIS", displayName: "Кариес эмали (поверхностный)", symbol: "Cs" };
+	}
+	if (c === "CARIES_PROFUNDA" || c === "КАРИЕС ГЛУБОКИЙ") {
+		return { code: "CARIES_PROFUNDA", displayName: "Кариес глубокий", symbol: "Cp" };
+	}
+	if (c === "P" || c === "PULPITIS" || c === "ПУЛЬПИТ") {
+		return { code: "PULPITIS", displayName: "Пульпит", symbol: "P" };
+	}
+	if (c === "PT" || c === "PERIODONTITIS" || c === "ПЕРИОДОНТИТ") {
+		return { code: "PERIODONTITIS", displayName: "Периодонтит", symbol: "Pt" };
+	}
+	if (c === "PL" || c === "FILLING" || c === "ПЛОМБА") {
+		return { code: "FILLING", displayName: "Пломба", symbol: "Pl" };
+	}
+	if (c === "K" || c === "CROWN" || c === "КОРОНКА") {
+		return { code: "CROWN", displayName: "Искусственная коронка", symbol: "K" };
+	}
+	if (c === "A" || c === "R" || c === "ABSENT" || c === "EXTRACTED" || c === "ОТСУТСТВУЕТ" || c === "УДАЛЕН") {
+		return { code: "ABSENT", displayName: "Отсутствует (удален)", symbol: "A" };
+	}
+	if (c === "IM" || c === "IMPLANT" || c === "ИМПЛАНТАТ" || c === "ИМПЛАНТ") {
+		return { code: "IMPLANT", displayName: "Дентальный имплантат", symbol: "Im" };
+	}
+	if (c === "F" || c === "FRACTURE" || c === "ПЕРЕЛОМ") {
+		return { code: "FRACTURE", displayName: "Перелом зуба", symbol: "F" };
+	}
+	if (c === "INTACT" || c === "HEALTHY" || c === "ЗДОРОВ" || c === "ИНТАКТНЫЙ") {
+		return { code: "INTACT", displayName: "Здоровый (интактный)", symbol: "N" };
+	}
+
+	return {
+		code: customCode || condition,
+		displayName: customName || condition,
+		symbol: condition,
+	};
+}
 
 /** Resolved clocks and identity keys used by every CDA fragment. */
 export interface CdaContext {
@@ -74,6 +261,7 @@ export interface CdaContext {
 	docIdRoot: string;
 	clinicOidEscaped: string | null;
 	documentVersion: number;
+	legalAuthTime: string;
 }
 
 export function buildCdaContext(params: EgiszCdaParams): CdaContext {
@@ -129,6 +317,13 @@ export function buildCdaContext(params: EgiszCdaParams): CdaContext {
 		Math.floor(Number(params.documentVersion) || 1),
 	);
 
+	const legalAuthClock =
+		params.legalAuthenticator?.time instanceof Date &&
+		!Number.isNaN(params.legalAuthenticator.time.getTime())
+			? params.legalAuthenticator.time
+			: documentClock;
+	const legalAuthTime = formatHl7DateTime(legalAuthClock, true);
+
 	return {
 		params,
 		effectiveTime,
@@ -141,12 +336,12 @@ export function buildCdaContext(params: EgiszCdaParams): CdaContext {
 		docIdRoot,
 		clinicOidEscaped,
 		documentVersion,
+		legalAuthTime,
 	};
 }
 
 /**
  * Contact helpers: emit real XML text node if available, else nullFlavor NI.
- * We never invent an address/phone — if the DB has none, emit nullFlavor.
  */
 
 /** Build a CDA R2 <addr> node from a real free-text address. */
@@ -159,8 +354,6 @@ function addrXml(address?: string | null): string {
 
 /**
  * Build one or more CDA R2 <telecom> nodes from real contact values.
- * Phone strings become `tel:…`, email strings become `mailto:…`.
- * If none of the inputs resolve to a real value, emit a single nullFlavor.
  */
 function telecomXml(...values: Array<string | null | undefined>): string {
 	const parts: string[] = [];
@@ -184,27 +377,27 @@ function telecomXml(...values: Array<string | null | undefined>): string {
 
 /** Patient <addr>: chart residential/registration address, else nullFlavor. */
 export function patientAddrXml(ctx: CdaContext): string {
-	return addrXml(ctx.params.patientAddress);
+	return addrXml(ctx.params?.patientAddress);
 }
 
 /** Patient <telecom>: phone + email from patients table. */
 export function patientTelecomXml(ctx: CdaContext): string {
-	return telecomXml(ctx.params.patientPhone, ctx.params.patientEmail);
+	return telecomXml(ctx.params?.patientPhone, ctx.params?.patientEmail);
 }
 
-/** Doctor <telecom>: phone + email from users table (no doctor address column). */
+/** Doctor <telecom>: phone + email from users table. */
 export function doctorTelecomXml(ctx: CdaContext): string {
-	return telecomXml(ctx.params.doctorPhone, ctx.params.doctorEmail);
+	return telecomXml(ctx.params?.doctorPhone, ctx.params?.doctorEmail);
 }
 
 /** Clinic <addr>: clinics.address preferred, else organizations.legalAddress. */
 export function clinicAddrXml(ctx: CdaContext): string {
-	return addrXml(ctx.params.clinicAddress || ctx.params.clinicLegalAddress);
+	return addrXml(ctx.params?.clinicAddress || ctx.params?.clinicLegalAddress);
 }
 
 /** Clinic <telecom>: clinics.phone + organizations.email. */
 export function clinicTelecomXml(ctx: CdaContext): string {
-	return telecomXml(ctx.params.clinicPhone, ctx.params.clinicEmail);
+	return telecomXml(ctx.params?.clinicPhone, ctx.params?.clinicEmail);
 }
 
 /** Flat MO organization ids: real OID extension, OGRN, INN or nullFlavor NI. */
@@ -216,13 +409,13 @@ export function orgIdXml(ctx: CdaContext): string {
 		ids.push(`<id nullFlavor="NI"/>`);
 	}
 
-	const ogrn = ctx.params.clinicOgrn ? String(ctx.params.clinicOgrn).trim() : "";
+	const ogrn = ctx.params?.clinicOgrn ? String(ctx.params.clinicOgrn).trim() : "";
 	if (ogrn) {
 		const root = ogrn.length === 15 ? EGISZ_OIDS.OGRN_IP : EGISZ_OIDS.OGRN_LEGAL;
 		ids.push(`<id root="${root}" extension="${escapeXml(ogrn)}"/>`);
 	}
 
-	const inn = ctx.params.clinicInn ? String(ctx.params.clinicInn).trim() : "";
+	const inn = ctx.params?.clinicInn ? String(ctx.params.clinicInn).trim() : "";
 	if (inn) {
 		ids.push(`<id root="${EGISZ_OIDS.INN}" extension="${escapeXml(inn)}"/>`);
 	}
@@ -235,7 +428,7 @@ export function orgIdXml(ctx: CdaContext): string {
  * Strict sequence: id* -> name -> telecom* -> addr*
  */
 export function flatRepresentedOrganization(ctx: CdaContext): string {
-	const name = escapeXml(ctx.params.clinicName);
+	const name = escapeXml(ctx.params?.clinicName || "");
 	return `<representedOrganization>
 				${orgIdXml(ctx)}
 				<name>${name}</name>
@@ -246,7 +439,7 @@ export function flatRepresentedOrganization(ctx: CdaContext): string {
 
 /** Flat scopingOrganization shell (same fields, strict sequence). */
 export function flatScopingOrganization(ctx: CdaContext): string {
-	const name = escapeXml(ctx.params.clinicName);
+	const name = escapeXml(ctx.params?.clinicName || "");
 	return `<scopingOrganization>
 				${orgIdXml(ctx)}
 				<name>${name}</name>
@@ -257,7 +450,7 @@ export function flatScopingOrganization(ctx: CdaContext): string {
 
 /** Doctor SNILS id or nullFlavor NI. */
 export function doctorIdXml(ctx: CdaContext): string {
-	const snils = ctx.params.doctorSnils
+	const snils = ctx.params?.doctorSnils
 		? String(ctx.params.doctorSnils).trim()
 		: "";
 	return snils
@@ -267,8 +460,8 @@ export function doctorIdXml(ctx: CdaContext): string {
 
 /** Specialty code: NSI 1.2.643.5.1.13.13.11.1002 or NI + displayName. */
 export function doctorCodeXml(ctx: CdaContext): string {
-	const code = ctx.params.doctorPositionCode ? String(ctx.params.doctorPositionCode).trim() : "";
-	const pos = ctx.params.doctorPosition ? String(ctx.params.doctorPosition).trim() : "Врач-стоматолог";
+	const code = ctx.params?.doctorPositionCode ? String(ctx.params.doctorPositionCode).trim() : "";
+	const pos = ctx.params?.doctorPosition ? String(ctx.params.doctorPosition).trim() : "Врач-стоматолог";
 	if (code) {
 		return `<code code="${escapeXml(code)}" codeSystem="${EGISZ_OIDS.MEDICAL_POSITIONS}" codeSystemName="Должности медицинских и фармацевтических работников" displayName="${escapeXml(pos)}"/>`;
 	}
@@ -279,7 +472,7 @@ export function doctorCodeXml(ctx: CdaContext): string {
 
 /** Doctor PN name block. */
 export function doctorNameXml(ctx: CdaContext): string {
-	const n = ctx.params.doctorName;
+	const n = ctx.params?.doctorName || { first: "", last: "" };
 	const middle = n.middle
 		? `\n\t\t\t\t\t<given>${escapeXml(n.middle)}</given>`
 		: "";
