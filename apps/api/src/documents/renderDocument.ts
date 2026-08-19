@@ -33,8 +33,6 @@ import {
 	type TaxDeductionApplicationDeliveryChannel,
 	type TaxDeductionApplicationForm,
 	type TaxDeductionApplicationRelationship,
-	taxDeductionCertificateMinYear,
-	legacyTaxDeductionCertificateMinYear,
 	type TreatmentCostEstimatePayload,
 	type TreatmentPlanAcceptancePayload,
 	type TreatmentPlanItem,

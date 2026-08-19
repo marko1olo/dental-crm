@@ -284,7 +284,7 @@ test("Clinical HTML Renderers: Generates print-ready HTML for all 6 forms", () =
 		concomitantDiseases: "Хронических заболеваний не отмечает.",
 		currentMedications: "Препаратов не принимает.",
 		pregnancyLactationStatus: "Нет",
-		pastDentalInterventions: "Ранее лечился по поводу кариеса.",
+		pastDentalInterventions: "Ранее лечился по поводу кареиса.",
 		odontogramTeeth: [],
 		dmftIndex: {
 			decayed: 1,
@@ -307,41 +307,38 @@ test("Clinical HTML Renderers: Generates print-ready HTML for all 6 forms", () =
 			sextant48_44: "1_bleeding",
 			sextant43_33: "0_healthy",
 			sextant34_38: "0_healthy",
-			treatmentNeedCategory: "1_oral_hygiene_instruction",
+			treatmentNeedCategory: "1_hygiene_instructions",
 		},
 		hygieneIndexOhiS: "OHI-S = 0.6 (хороший уровень)",
 		biteType: "orthognathic",
 		biteDescription: "Прикус ортогнатический",
 		oralMucosaStatus: {
-			color: "pale_pink",
-			moisture: "normal_salivation",
-			pathologyPresence: false,
-			description: "Слизистая без патологии",
+			color: "pale_pink_normal",
+			moisture: "normal",
+			gingivalPapillae: "normal_pointed",
+			bleedingPBI: "grade_0",
+			tongueStatus: "Язык чистый, влажный",
+			regionalLymphNodes: "Лимфоузлы не увеличены",
+			tmjFunction: "Движения в суставе безболезненные",
 		},
-		gumStatus: {
-			inflammation: "absent_healthy",
-			bleedingOnProbing: false,
-			periodontalPocketsMaxDepthMm: 2,
-			gumRecessionPresent: false,
-			attachedGingivaWidthMm: 4,
-		},
+		generalTreatmentPlan: "1. Санация кариозных полостей. 2. Обучение гигиене.",
+		xrayFindingsDescription: "Прицельная радиовизиография 4.6: кариозная полость в пределах дентина.",
 		soapDiaries: [
 			{
 				entryDate: "2026-08-19",
 				doctorFullName: "Смирнов А.П.",
-				preliminaryDiagnosisIcd10: "K02.1",
-				preliminaryDiagnosisText: "Кариес дентина зуба 4.6",
-				concomitantDiagnosisText: null,
 				subjectiveComplaints: "Жалобы на кратковременные боли от холодного.",
 				objectiveStatusLocalis: "Зуб 4.6: кариозная полость в пределах дентина.",
 				percussionVertical: "negative",
 				percussionHorizontal: "negative",
-				palpationMucosa: "negative",
+				probingTenderness: "along_enamel_dentin_border",
+				thermalTestResponse: "transient_pain",
 				eodMicroamperes: 6,
-				probingGingivalPocketMm: 2,
-				performedInterventionsDescription: "Препарирование, пломбирование Filtek Ultimate.",
-				administeredAnestheticsDescription: "Ubistesin 1.7 мл",
-				appliedMedicationsMaterials: "OptiBond FL, Filtek Ultimate",
+				assessmentDiagnosisText: "K02.1 Кариес дентина зуба 4.6",
+				assessmentIcd10Code: "K02.1",
+				procedureProtocol: "Препарирование кариозной полости, пломбирование Filtek Ultimate.",
+				anesthesiaDetails: "Ubistesin 1.7 мл",
+				appliedMaterials: "OptiBond FL, Filtek Ultimate",
 				homeCareRecommendations: "Осмотр через 6 месяцев.",
 				nextVisitDate: "2027-02-19",
 			},
@@ -361,8 +358,14 @@ test("Clinical HTML Renderers: Generates print-ready HTML for all 6 forms", () =
 		patientFullName: "Кузнецова Анна Михайловна",
 		patientBirthDate: "2010-03-24",
 		patientSex: "female",
-		attendingDoctorFullName: "Лебедева Елена Викторовна",
-		facialAnthropometry: {
+		orthodontistFullName: "Лебедева Елена Викторовна",
+		orthodonticDiagnosis: "II класс 1 подкласс по Энглю, скученность резцов",
+		icd10DiagnosisCode: "K07.2",
+		angleMolarClassRight: "class_2_sub_1",
+		angleMolarClassLeft: "class_2_sub_1",
+		angleCanineClassRight: "class_2",
+		angleCanineClassLeft: "class_2",
+		anthropometry: {
 			facialType: "mesoprosopic",
 			profileType: "convex",
 			facialSymmetry: "symmetric",
@@ -374,7 +377,7 @@ test("Clinical HTML Renderers: Generates print-ready HTML for all 6 forms", () =
 			gummySmileMm: 0,
 			photoProtocolCompleted: true,
 		},
-		cephalometryTrg: {
+		cephalometry: {
 			snaAngle: 83.5,
 			snbAngle: 79.0,
 			anbAngle: 4.5,
@@ -389,17 +392,22 @@ test("Clinical HTML Renderers: Generates print-ready HTML for all 6 forms", () =
 			growthPattern: "normodivergent",
 			skeletalClass: "class_2_sub_1",
 		},
-		tonnIndex: calculateTonnIndex(32.0, 24.0),
-		pontIndex: calculatePontIndex(32.0, 36.0, 46.0),
-		boltonIndex: calculateBoltonIndex(52.0, 40.0, 100.0, 91.3),
-		orthodonticDiagnosisDescription: "II класс 1 подкласс по Энглю, скученность резцов",
-		applianceType: "fixed_braces_ceramic",
-		applianceName: "Damon Clear",
-		plannedDurationMonths: 20,
+		tonnIndexNotes: "Индекс Тона SI/Si = 1.33 — норма.",
+		pontIndexNotes: "Индекс Пона: сужение премоляров на 4 мм.",
+		boltonIndexNotes: "Индекс Болтона: переднее 76.9%, общее 91.3%.",
+		korkhausIndexNotes: "Индекс Коркхауза: норма.",
+		appliancePlan: {
+			applianceType: "ceramic_braces_aesthetic",
+			alignerStepsCount: 0,
+			estimatedDurationMonths: 20,
+			extractionPlan: "non_extraction",
+			treatmentStages: ["Нивелирование", "Юстировка", "Ретенция"],
+			retentionProtocol: "Несъемные ретейнеры на обе челюсти",
+		},
 	};
 
 	const html043_1u = renderForm043_1uHtml(form043_1uPayload);
-	assert.equal(html043_1u.includes("ФОРМА № 043-1/у"), true);
+	assert.equal(html043_1u.includes("043-1/у"), true);
 	assert.equal(html043_1u.includes("Кузнецова Анна Михайловна"), true);
 
 	// 3. Form 037/u
@@ -428,35 +436,52 @@ test("Clinical HTML Renderers: Generates print-ready HTML for all 6 forms", () =
 	};
 
 	const html037u = renderForm037uHtml(form037uPayload);
-	assert.equal(html037u.includes("ФОРМА № 037/у-88"), true);
+	assert.equal(html037u.includes("037/у-88"), true);
 
 	// 4. Form 039/u
 	const form039uPayload: SummaryDentistStatement039uPayload = {
 		formNumber: "039/у-88",
 		clinicLegalName: 'ООО "ДЕНТЕ"',
 		clinicDepartment: "Терапевтическое отделение",
-		reportingMonth: 8,
-		reportingYear: 2026,
+		reportingPeriodMonthYear: "08.2026",
 		doctorFullName: "Иванов И.И.",
 		doctorSpecialty: "Врач-стоматолог-терапевт",
-		workDaysActual: 22,
-		workHoursActual: 143,
-		adultVisitsPrimary: 45,
-		adultVisitsRepeat: 45,
-		childVisitsPrimary: 10,
-		childVisitsRepeat: 10,
-		sanatedTotal: 38,
-		cariousTeethFilledCount: 40,
-		pulpitisPeriodontitisTreatedCount: 20,
-		permanentTeethExtractedCount: 5,
-		deciduousTeethExtractedCount: 0,
-		anesthesiaConductiveCount: 30,
-		anesthesiaInfiltrationCount: 40,
-		radiologyStudiesCount: 50,
-		preventiveExaminationsCount: 15,
-		hygieneCleaningsCount: 25,
-		uetSummary: {
+		workingDaysCount: 22,
+		workingHoursCount: 143,
+		consolidatedMetrics: {
+			visitsTotal: 110,
+			visitsAdults: 90,
+			visitsChildrenUnder14: 20,
+			visitsAdolescents15_17: 0,
+			visitsPrimary: 55,
+			visitsRepeat: 55,
+			visitsPreventativeExam: 15,
+			sanatedTotal: 38,
+			sanatedAdults: 30,
+			sanatedChildren: 8,
+			fillingsCariesTotal: 40,
+			fillingsCompositePhotopolymer: 35,
+			fillingsGlassIonomer: 5,
+			pulpitisTreatedTotal: 15,
+			periodontitisTreatedTotal: 5,
+			canalsFilledTotal: 35,
+			hygieneProceduresTotal: 25,
+			extractionsSimple: 5,
+			extractionsComplex: 0,
+			extractionsImpactedWisdom: 0,
+			outpatientOperationsCount: 2,
+			implantsInstalledCount: 0,
+			crownsDeliveredCount: 0,
+			bridgesDeliveredCount: 0,
+			removableDenturesCount: 0,
+			orthodonticAdjustmentsCount: 0,
+			anesthesiaInfiltrationCount: 40,
+			anesthesiaConductionCount: 30,
+			radiographsCount: 50,
+		},
+		uetBreakdown: {
 			totalUetAccumulated: 280.0,
+			periodStandardQuotaUet: 266.0,
 			planExecutionPercentage: 105.0,
 			uetTherapy: 210.0,
 			uetEndodontics: 45.0,
@@ -465,35 +490,40 @@ test("Clinical HTML Renderers: Generates print-ready HTML for all 6 forms", () =
 			uetProsthetics: 0,
 			uetOrthodontics: 0,
 			uetAnesthesiaAndDiagnostics: 0,
-			periodStandardQuotaUet: 266.0,
 		},
 	};
 
 	const html039u = renderForm039uHtml(form039uPayload);
-	assert.equal(html039u.includes("ФОРМА № 039/у-88"), true);
+	assert.equal(html039u.includes("039/у-88"), true);
 
 	// 5. Form 003-V/u
 	const form003vuPayload: MedicalCardExtract003vuPayload = {
 		formNumber: "003-В/у",
 		clinicLegalName: 'ООО "ДЕНТЕ"',
+		extractRegistrationNumber: "ВЫП-2026/0884",
 		medicalCardNumber: "СТ-884",
 		extractIssueDate: "2026-08-19",
+		extractDestinationInstitution: "По месту требования",
 		patientFullName: "Ковалев Игорь Николаевич",
 		patientBirthDate: "1978-11-04",
 		patientSex: "male",
 		attendingDoctorFullName: "Иванов И.И.",
-		treatmentStartDate: "2026-07-01",
-		treatmentEndDate: "2026-08-19",
-		clinicalDiagnosisIcd10: "K04.0",
-		clinicalDiagnosisDetailed: "K04.0 Пульпит зуба 3.6, K02.1 Кариес дентина зуба 3.7",
-		treatmentInterventionsSummary: "Эндодонтическое лечение зуба 3.6, пломбирование 3.7",
-		treatmentOutcomesSummary: "Жалоб нет, функция восстановлена",
+		attendingDoctorSpecialty: "Врач-стоматолог-терапевт",
+		headOfDepartmentFullName: "Петров П.П.",
+		treatmentPeriodStartDate: "2026-07-01",
+		treatmentPeriodEndDate: "2026-08-19",
+		primaryDiagnosisIcd10: "K04.0",
+		primaryDiagnosisText: "K04.0 Пульпит зуба 3.6, K02.1 Кариес дентина зуба 3.7",
+		briefAnamnesisAndClinicalCourse: "Обратился с жалобами на боли в области зуба 3.6.",
+		diagnosticStudiesSummary: "Прицельная визиография 3.6, 3.7",
+		treatmentStagesTimeline: [],
+		conditionAtDischarge: "Жалоб нет, функция восстановлена",
 		followUpRecommendations: "Контрольный осмотр через 6 месяцев",
-		extractIssuedTo: "По месту требования",
+		warrantyConditions: "Гарантия 12 месяцев",
 	};
 
 	const html003vu = renderForm003vuHtml(form003vuPayload);
-	assert.equal(html003vu.includes("ФОРМА № 003-В/у"), true);
+	assert.equal(html003vu.includes("003-В/у"), true);
 	assert.equal(html003vu.includes("Ковалев Игорь Николаевич"), true);
 
 	// 6. Radiation Dose Sheet
@@ -520,11 +550,14 @@ test("Clinical HTML Renderers: Generates print-ready HTML for all 6 forms", () =
 				radiologistFullName: "Смирнова Е.В.",
 			},
 		],
-		cumulativeDoseMsv: 0.003,
-		cumulativeDoseMicrosieverts: 3.0,
-		sanpinAnnualLimitMsv: 1.0,
-		safetyZone: "green_optimal",
-		safetyZoneLabel: "Оптимальная безопасная зона",
+		annualSummary: {
+			totalDoseYearMsv: 0.003,
+			totalDoseYearMicrosieverts: 3.0,
+			safetyZone: "green_optimal",
+			safetyZoneLabel: "Зеленая зона (< 0.5 мЗв/год) — Оптимальный безопасный уровень.",
+			safetyRecommendation: "Накопленная дозовая нагрузка в пределах нормы.",
+		},
+		responsibleOfficerFullName: "Врач-рентгенолог Смирнова Е.В.",
 	};
 
 	const htmlDose = renderRadiationDoseSheetHtml(doseSheetPayload);

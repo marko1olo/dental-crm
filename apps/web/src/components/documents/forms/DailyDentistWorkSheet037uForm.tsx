@@ -15,39 +15,32 @@ export interface DailyDentistWorkSheet037uFormProps {
 export const DailyDentistWorkSheet037uForm: React.FC<DailyDentistWorkSheet037uFormProps> = React.memo(
 	function DailyDentistWorkSheet037uForm({ initialPayload, onChange, disabled }) {
 		const [workDate, setWorkDate] = useState(
-			initialPayload?.workDate ?? new Date().toISOString().slice(0, 10),
+			initialPayload?.shiftDate ?? new Date().toISOString().slice(0, 10),
 		);
 		const [doctorName, setDoctorName] = useState(
-			initialPayload?.doctor?.fullName ?? "Иванов Иван Иванович",
+			initialPayload?.doctorFullName ?? "Иванов Иван Иванович",
 		);
 		const [records, setRecords] = useState<DailyPatientRecord037u[]>(() => {
 			return (
-				initialPayload?.patientRecords ?? [
+				(initialPayload as any)?.patientRecords ?? [
 					{
-						entryNumber: 1,
+						sequenceNumber: 1,
 						patientFullName: "Смирнов Алексей Петрович",
-						birthYear: 1988,
-						isRuralResident: false,
-						isChildUnder18: false,
-						visitPurpose: "treatment",
+						patientAge: 38,
+						patientCategory: "adult",
+						medicalCardNumber: "043-00124",
+						isPrimaryVisit: true,
+						isSanatedInVisit: true,
 						diagnosisIcd10: "K02.1",
-						treatedTeethNumbers: [46],
-						proceduresPerformed: "Препарирование, медобработка, пломбирование светоотверждаемым композитом",
-						anesthesiaCount: 1,
-						fillingsCompositeCount: 1,
-						fillingsCementCount: 0,
-						endodonticsCanalsCount: 0,
-						extractionsSimpleCount: 0,
-						extractionsComplicatedCount: 0,
-						isSanated: true,
-						uetEarned: {
-							therapeuticUet: 2.5,
-							surgicalUet: 0,
-							orthopedicUet: 0,
-							orthodonticUet: 0,
-							childrenUet: 0,
-							totalUet: 2.5,
-						},
+						diagnosisText: "Средний кариес зуба 4.6",
+						performedProceduresSummary: "Препарирование, медобработка, пломбирование светоотверждаемым композитом",
+						uetCaries: 2.0,
+						uetPulpitisPeriodontitis: 0,
+						uetSurgeryExtractions: 0,
+						uetHygienePeriodontology: 0,
+						uetProstheticsOrthodontics: 0,
+						uetAnesthesia: 0.5,
+						totalUetForVisit: 2.5,
 					},
 				]
 			);
@@ -63,30 +56,23 @@ export const DailyDentistWorkSheet037uForm: React.FC<DailyDentistWorkSheet037uFo
 			setRecords((prev) => [
 				...prev,
 				{
-					entryNumber: prev.length + 1,
+					sequenceNumber: prev.length + 1,
 					patientFullName: "Новый Пациент",
-					birthYear: 1995,
-					isRuralResident: false,
-					isChildUnder18: false,
-					visitPurpose: "treatment",
+					patientAge: 30,
+					patientCategory: "adult",
+					medicalCardNumber: "043-00000",
+					isPrimaryVisit: true,
+					isSanatedInVisit: false,
 					diagnosisIcd10: "K02.0",
-					treatedTeethNumbers: [16],
-					proceduresPerformed: "Лечение кариеса эмали, фторирование",
-					anesthesiaCount: 0,
-					fillingsCompositeCount: 1,
-					fillingsCementCount: 0,
-					endodonticsCanalsCount: 0,
-					extractionsSimpleCount: 0,
-					extractionsComplicatedCount: 0,
-					isSanated: false,
-					uetEarned: {
-						therapeuticUet: 1.5,
-						surgicalUet: 0,
-						orthopedicUet: 0,
-						orthodonticUet: 0,
-						childrenUet: 0,
-						totalUet: 1.5,
-					},
+					diagnosisText: "Начальный кариес",
+					performedProceduresSummary: "Лечение кариеса эмали, фторирование",
+					uetCaries: 1.5,
+					uetPulpitisPeriodontitis: 0,
+					uetSurgeryExtractions: 0,
+					uetHygienePeriodontology: 0,
+					uetProstheticsOrthodontics: 0,
+					uetAnesthesia: 0,
+					totalUetForVisit: 1.5,
 				},
 			]);
 		};
@@ -121,12 +107,10 @@ export const DailyDentistWorkSheet037uForm: React.FC<DailyDentistWorkSheet037uFo
 					<div className="alert alert-success" style={{ marginBottom: "16px", padding: "10px" }}>
 						<div style={{ fontWeight: 700, marginBottom: "4px" }}>Итоги рабочей смены:</div>
 						<div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
-							<span>Всего пациентов: <strong>{totals.totalPatientsSeen}</strong></span>
-							<span>Первичных: <strong>{totals.primaryVisitsCount}</strong></span>
-							<span>Санировано: <strong>{totals.sanatedPatientsCount}</strong></span>
-							<span>Всего пломб: <strong>{totals.totalFillingsPlaced}</strong></span>
-							<span>Удалено зубов: <strong>{totals.totalTeethExtracted}</strong></span>
-							<span><strong>ИТОГО УЕТ: {totals.uetTotals.totalUet.toFixed(2)}</strong></span>
+							<span>Всего пациентов: <strong>{totals.totalPatientsCount}</strong></span>
+							<span>Первичных: <strong>{totals.totalPrimaryVisitsCount}</strong></span>
+							<span>Санировано: <strong>{totals.totalSanatedCount}</strong></span>
+							<span><strong>ИТОГО УЕТ: {totals.totalUetAccumulated.toFixed(2)}</strong></span>
 						</div>
 					</div>
 
@@ -149,16 +133,14 @@ export const DailyDentistWorkSheet037uForm: React.FC<DailyDentistWorkSheet037uFo
 									<th>№</th>
 									<th>ФИО пациента</th>
 									<th>Диагноз (МКБ-10)</th>
-									<th>Зубы</th>
 									<th>Процедура</th>
-									<th>Пломбы</th>
 									<th>УЕТ</th>
 								</tr>
 							</thead>
 							<tbody>
 								{records.map((r, idx) => (
 									<tr key={idx}>
-										<td>{r.entryNumber}</td>
+										<td>{r.sequenceNumber}</td>
 										<td>
 											<input
 												type="text"
@@ -190,11 +172,9 @@ export const DailyDentistWorkSheet037uForm: React.FC<DailyDentistWorkSheet037uFo
 												}}
 											/>
 										</td>
-										<td>{r.treatedTeethNumbers.join(", ")}</td>
-										<td>{r.proceduresPerformed}</td>
-										<td>{r.fillingsCompositeCount + r.fillingsCementCount}</td>
+										<td>{r.performedProceduresSummary}</td>
 										<td>
-											<strong>{r.uetEarned.totalUet.toFixed(1)}</strong>
+											<strong>{r.totalUetForVisit.toFixed(1)}</strong>
 										</td>
 									</tr>
 								))}

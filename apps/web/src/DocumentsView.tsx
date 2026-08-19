@@ -40,7 +40,9 @@ import { OrthodonticCard043_1uForm } from "./components/documents/forms/Orthodon
 import { DailyDentistWorkSheet037uForm } from "./components/documents/forms/DailyDentistWorkSheet037uForm";
 import { SummaryWorkStatement039uForm } from "./components/documents/forms/SummaryWorkStatement039uForm";
 import { MedicalCardExtract003vuForm } from "./components/documents/forms/MedicalCardExtract003vuForm";
+import { MinorLegalRepresentativeConsentForm } from "./components/documents/forms/MinorLegalRepresentativeConsentForm";
 import { RadiationDoseSheetForm } from "./components/documents/forms/RadiationDoseSheetForm";
+import { WarrantyServiceMemoForm } from "./components/documents/forms/WarrantyServiceMemoForm";
 import { EmptyState } from "./components/EmptyState";
 import { showToast } from "./components/GlobalToast";
 import {
@@ -502,24 +504,6 @@ export function DocumentsView(props: DocumentsViewProps) {
 		labTechnicianNotes,
 		labTeethOrArea,
 		labWorkType,
-		minorConsentAgeExplanation,
-		minorConsentAlternatives,
-		minorConsentAuthorityVerified,
-		minorConsentDiagnosisOrIndication,
-		minorConsentDoctorFullName,
-		minorConsentExplained,
-		minorConsentIdentityVerified,
-		minorConsentInterventionScope,
-		minorConsentPatientBirthDate,
-		minorConsentPatientFullName,
-		minorConsentRisks,
-		minorConsentSignedAt,
-		minorConsentStored,
-		minorRepresentativeAuthorityDocument,
-		minorRepresentativeFullName,
-		minorRepresentativeIdentityDocument,
-		minorRepresentativePhone,
-		minorRepresentativeRelationship,
 		outpatient025uCitizenship,
 		outpatient025uHealthStatusDisclosureContact,
 		outpatient025uInsurerName,
@@ -618,24 +602,6 @@ export function DocumentsView(props: DocumentsViewProps) {
 		setLabTechnicianNotes,
 		setLabTeethOrArea,
 		setLabWorkType,
-		setMinorConsentAgeExplanation,
-		setMinorConsentAlternatives,
-		setMinorConsentAuthorityVerified,
-		setMinorConsentDiagnosisOrIndication,
-		setMinorConsentDoctorFullName,
-		setMinorConsentExplained,
-		setMinorConsentIdentityVerified,
-		setMinorConsentInterventionScope,
-		setMinorConsentPatientBirthDate,
-		setMinorConsentPatientFullName,
-		setMinorConsentRisks,
-		setMinorConsentSignedAt,
-		setMinorConsentStored,
-		setMinorRepresentativeAuthorityDocument,
-		setMinorRepresentativeFullName,
-		setMinorRepresentativeIdentityDocument,
-		setMinorRepresentativePhone,
-		setMinorRepresentativeRelationship,
 		setOutpatient025uCitizenship,
 		setOutpatient025uHealthStatusDisclosureContact,
 		setOutpatient025uInsurerName,
@@ -731,21 +697,6 @@ export function DocumentsView(props: DocumentsViewProps) {
 		setTreatmentEstimateTotalRub,
 		setTreatmentEstimateTreatmentBasis,
 		setTreatmentEstimateValidUntil,
-		setWarrantyAftercareReceived,
-		setWarrantyCompletedAt,
-		setWarrantyControlVisitSchedule,
-		setWarrantyControlVisitsUnderstood,
-		setWarrantyDoctorFullName,
-		setWarrantyExcludedRiskFactors,
-		setWarrantyIssuedAt,
-		setWarrantyLinkedActOrContract,
-		setWarrantyMaterialsOrSystems,
-		setWarrantyPatientObligations,
-		setWarrantyPeriod,
-		setWarrantyPolicyApplied,
-		setWarrantyServiceOrWorkName,
-		setWarrantyTeethOrArea,
-		setWarrantyUrgentContactReasons,
 		setXrayArea,
 		setXrayClinicalQuestion,
 		setXrayDueDate,
@@ -791,21 +742,6 @@ export function DocumentsView(props: DocumentsViewProps) {
 		treatmentEstimateTotalRub,
 		treatmentEstimateTreatmentBasis,
 		treatmentEstimateValidUntil,
-		warrantyAftercareReceived,
-		warrantyCompletedAt,
-		warrantyControlVisitSchedule,
-		warrantyControlVisitsUnderstood,
-		warrantyDoctorFullName,
-		warrantyExcludedRiskFactors,
-		warrantyIssuedAt,
-		warrantyLinkedActOrContract,
-		warrantyMaterialsOrSystems,
-		warrantyPatientObligations,
-		warrantyPeriod,
-		warrantyPolicyApplied,
-		warrantyServiceOrWorkName,
-		warrantyTeethOrArea,
-		warrantyUrgentContactReasons,
 		xrayArea,
 		xrayClinicalQuestion,
 		xrayDueDate,
@@ -2353,447 +2289,23 @@ export function DocumentsView(props: DocumentsViewProps) {
 					) : null}
 
 					{selectedDocumentKind === "minor_legal_representative_consent" ? (
-						<article className="document-payload-card">
-							<div>
-								<h3>Согласие законного представителя</h3>
-								<p>
-									Проверка личности, полномочий и согласия на конкретное
-									вмешательство несовершеннолетнего.
-								</p>
-							</div>
-							<details
-								className="document-manual-override"
-								style={{
-									background: "var(--surface-100)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid var(--line)",
-									marginTop: "16px",
-								}}
-							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
-								>
-									✏️ Ручная корректировка полей (развернуть)
-								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
-								>
-									<div className="document-payload-row">
-										<label>
-											Представитель
-											<input
-												value={minorRepresentativeFullName}
-												onChange={(event) =>
-													setMinorRepresentativeFullName(event.target.value)
-												}
-												placeholder={
-													minorRepresentativeFullNameValue() ||
-													"ФИО законного представителя"
-												}
-											/>
-										</label>
-										<label>
-											Родство или статус
-											<input
-												value={minorRepresentativeRelationship}
-												onChange={(event) =>
-													setMinorRepresentativeRelationship(event.target.value)
-												}
-												placeholder={
-													minorRepresentativeRelationshipValue() ||
-													"мать, отец, опекун"
-												}
-											/>
-										</label>
-									</div>
-									<label>
-										Документ представителя
-										<input
-											value={minorRepresentativeIdentityDocument}
-											onChange={(event) =>
-												setMinorRepresentativeIdentityDocument(
-													event.target.value,
-												)
-											}
-											placeholder={
-												minorRepresentativeIdentityDocumentValue() ||
-												"паспорт или иной документ"
-											}
-										/>
-									</label>
-									<label>
-										Основание полномочий
-										<input
-											value={minorRepresentativeAuthorityDocument}
-											onChange={(event) =>
-												setMinorRepresentativeAuthorityDocument(
-													event.target.value,
-												)
-											}
-											placeholder="свидетельство о рождении, акт опеки, доверенность"
-										/>
-									</label>
-									<div className="document-payload-row">
-										<label>
-											Пациент
-											<input
-												value={minorConsentPatientFullName}
-												onChange={(event) =>
-													setMinorConsentPatientFullName(event.target.value)
-												}
-												placeholder={minorConsentPatientFullNameValue()}
-											/>
-										</label>
-										<label>
-											Дата рождения пациента
-											<input
-												value={minorConsentPatientBirthDate}
-												onChange={(event) =>
-													setMinorConsentPatientBirthDate(event.target.value)
-												}
-												placeholder={minorConsentPatientBirthDateValue()}
-											/>
-										</label>
-									</div>
-									<label>
-										Контакт представителя
-										<input
-											value={minorRepresentativePhone}
-											onChange={(event) =>
-												setMinorRepresentativePhone(event.target.value)
-											}
-											placeholder={
-												minorRepresentativePhoneValue() ||
-												"телефон представителя"
-											}
-										/>
-									</label>
-									<label>
-										Вмешательство
-										<textarea
-											value={minorConsentInterventionScope}
-											onChange={(event) =>
-												setMinorConsentInterventionScope(event.target.value)
-											}
-											placeholder={minorConsentInterventionScopeValue()}
-											rows={2}
-										/>
-									</label>
-									<label>
-										Диагноз или показание
-										<textarea
-											value={minorConsentDiagnosisOrIndication}
-											onChange={(event) =>
-												setMinorConsentDiagnosisOrIndication(event.target.value)
-											}
-											placeholder={minorConsentDiagnosisOrIndicationValue()}
-											rows={2}
-										/>
-									</label>
-									<label>
-										Риски
-										<textarea
-											value={minorConsentRisks}
-											onChange={(event) =>
-												setMinorConsentRisks(event.target.value)
-											}
-											rows={4}
-										/>
-									</label>
-									<label>
-										Альтернативы
-										<textarea
-											value={minorConsentAlternatives}
-											onChange={(event) =>
-												setMinorConsentAlternatives(event.target.value)
-											}
-											rows={4}
-										/>
-									</label>
-									<div className="document-payload-row">
-										<label>
-											Врач
-											<input
-												value={minorConsentDoctorFullName}
-												onChange={(event) =>
-													setMinorConsentDoctorFullName(event.target.value)
-												}
-												placeholder={activeDoctor?.fullName ?? "лечащий врач"}
-											/>
-										</label>
-										<label>
-											Подписано
-											<input
-												value={minorConsentSignedAt}
-												onChange={(event) =>
-													setMinorConsentSignedAt(event.target.value)
-												}
-											/>
-										</label>
-									</div>
-									<label className="document-payload-checkbox">
-										<input
-											checked={minorConsentIdentityVerified}
-											type="checkbox"
-											onChange={(event) =>
-												setMinorConsentIdentityVerified(event.target.checked)
-											}
-										/>
-										Личность представителя проверена
-									</label>
-									<label className="document-payload-checkbox">
-										<input
-											checked={minorConsentAuthorityVerified}
-											type="checkbox"
-											onChange={(event) =>
-												setMinorConsentAuthorityVerified(event.target.checked)
-											}
-										/>
-										Полномочия представителя подтверждены
-									</label>
-									<label className="document-payload-checkbox">
-										<input
-											checked={minorConsentExplained}
-											type="checkbox"
-											onChange={(event) =>
-												setMinorConsentExplained(event.target.checked)
-											}
-										/>
-										Риски, альтернативы и ожидаемый результат разъяснены
-									</label>
-									<label className="document-payload-checkbox">
-										<input
-											checked={minorConsentStored}
-											type="checkbox"
-											onChange={(event) =>
-												setMinorConsentStored(event.target.checked)
-											}
-										/>
-										Согласие будет храниться в медицинской документации
-									</label>
-									<label className="document-payload-checkbox">
-										<input
-											checked={minorConsentAgeExplanation}
-											type="checkbox"
-											onChange={(event) =>
-												setMinorConsentAgeExplanation(event.target.checked)
-											}
-										/>
-										Ребенку дано объяснение по возрасту и состоянию
-									</label>
-								</div>
-							</details>
-						</article>
+						<MinorLegalRepresentativeConsentForm
+							activeDoctorFullName={activeDoctor?.fullName}
+							minorRepresentativeNameValue={minorRepresentativeFullNameValue}
+							minorRepresentativePhoneValue={minorRepresentativePhoneValue}
+							minorConsentPatientFullNameValue={minorConsentPatientFullNameValue}
+							minorConsentPatientBirthDateValue={minorConsentPatientBirthDateValue}
+							minorConsentInterventionScopeValue={minorConsentInterventionScopeValue}
+							minorConsentDiagnosisOrIndicationValue={minorConsentDiagnosisOrIndicationValue}
+						/>
 					) : null}
 
 					{selectedDocumentKind === "warranty_service_memo" ? (
-						<article className="document-payload-card">
-							<div>
-								<h3>Гарантийная памятка</h3>
-								<p>
-									Условия контроля, гарантийный срок, обязанности пациента и
-									признаки для срочной связи.
-								</p>
-							</div>
-							<details
-								className="document-manual-override"
-								style={{
-									background: "var(--surface-100)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid var(--line)",
-									marginTop: "16px",
-								}}
-							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
-								>
-									✏️ Ручная корректировка полей (развернуть)
-								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
-								>
-									<label>
-										Работа или услуга
-										<textarea
-											value={warrantyServiceOrWorkName}
-											onChange={(event) =>
-												setWarrantyServiceOrWorkName(event.target.value)
-											}
-											placeholder={warrantyServiceOrWorkNameValue()}
-											rows={2}
-										/>
-									</label>
-									<div className="document-payload-row">
-										<label>
-											Дата завершения
-											<input
-												value={warrantyCompletedAt}
-												onChange={(event) =>
-													setWarrantyCompletedAt(event.target.value)
-												}
-												placeholder="дата финального этапа"
-											/>
-										</label>
-										<label>
-											Зубы или область
-											<input
-												value={warrantyTeethOrArea}
-												onChange={(event) =>
-													setWarrantyTeethOrArea(event.target.value)
-												}
-												placeholder={warrantyTeethOrAreaValue()}
-											/>
-										</label>
-									</div>
-									<label>
-										Материалы или системы
-										<textarea
-											value={warrantyMaterialsOrSystems}
-											onChange={(event) =>
-												setWarrantyMaterialsOrSystems(event.target.value)
-											}
-											placeholder="материал реставрации, конструкция, имплант-система"
-											rows={2}
-										/>
-									</label>
-									<label>
-										Гарантийный срок и условия
-										<textarea
-											value={warrantyPeriod}
-											onChange={(event) =>
-												setWarrantyPeriod(event.target.value)
-											}
-											rows={2}
-										/>
-									</label>
-									<label>
-										Контрольные визиты
-										<textarea
-											value={warrantyControlVisitSchedule}
-											onChange={(event) =>
-												setWarrantyControlVisitSchedule(event.target.value)
-											}
-											rows={2}
-										/>
-									</label>
-									<label>
-										Обязанности пациента
-										<textarea
-											value={warrantyPatientObligations}
-											onChange={(event) =>
-												setWarrantyPatientObligations(event.target.value)
-											}
-											rows={4}
-										/>
-									</label>
-									<label>
-										Требует отдельной оценки
-										<textarea
-											value={warrantyExcludedRiskFactors}
-											onChange={(event) =>
-												setWarrantyExcludedRiskFactors(event.target.value)
-											}
-											rows={4}
-										/>
-									</label>
-									<label>
-										Срочно связаться с клиникой
-										<textarea
-											value={warrantyUrgentContactReasons}
-											onChange={(event) =>
-												setWarrantyUrgentContactReasons(event.target.value)
-											}
-											rows={4}
-										/>
-									</label>
-									<label>
-										Связанный акт или договор
-										<input
-											value={warrantyLinkedActOrContract}
-											onChange={(event) =>
-												setWarrantyLinkedActOrContract(event.target.value)
-											}
-											placeholder={warrantyLinkedActOrContractValue()}
-										/>
-									</label>
-									<div className="document-payload-row">
-										<label>
-											Врач
-											<input
-												value={warrantyDoctorFullName}
-												onChange={(event) =>
-													setWarrantyDoctorFullName(event.target.value)
-												}
-												placeholder={activeDoctor?.fullName ?? "лечащий врач"}
-											/>
-										</label>
-										<label>
-											Выдано
-											<input
-												value={warrantyIssuedAt}
-												onChange={(event) =>
-													setWarrantyIssuedAt(event.target.value)
-												}
-											/>
-										</label>
-									</div>
-									<label className="document-payload-checkbox">
-										<input
-											checked={warrantyPolicyApplied}
-											type="checkbox"
-											onChange={(event) =>
-												setWarrantyPolicyApplied(event.target.checked)
-											}
-										/>
-										Применено локальное гарантийное положение клиники
-									</label>
-									<label className="document-payload-checkbox">
-										<input
-											checked={warrantyAftercareReceived}
-											type="checkbox"
-											onChange={(event) =>
-												setWarrantyAftercareReceived(event.target.checked)
-											}
-										/>
-										Пациент получил рекомендации после лечения
-									</label>
-									<label className="document-payload-checkbox">
-										<input
-											checked={warrantyControlVisitsUnderstood}
-											type="checkbox"
-											onChange={(event) =>
-												setWarrantyControlVisitsUnderstood(event.target.checked)
-											}
-										/>
-										Пациент понимает обязательность контрольных визитов
-									</label>
-								</div>
-							</details>
-						</article>
+						<WarrantyServiceMemoForm
+							activeDoctorFullName={activeDoctor?.fullName}
+							warrantyServiceOrWorkNameValue={warrantyServiceOrWorkNameValue}
+							warrantyTeethOrAreaValue={warrantyTeethOrAreaValue}
+						/>
 					) : null}
 
 					{selectedDocumentKind === "patient_intake_questionnaire" ? (
@@ -4286,6 +3798,10 @@ export function DocumentsView(props: DocumentsViewProps) {
 
 					{selectedDocumentKind === "radiation_dose_sheet" ? (
 						<RadiationDoseSheetForm />
+					) : null}
+
+					{selectedDocumentKind === "medical_record_extract" ? (
+						<MedicalCardExtract003vuForm />
 					) : null}
 
 					{selectedDocumentKind === "medical_record_extract" ? (

@@ -161,6 +161,11 @@ export const fdiToothRecordSchema = z.object({
 	customNotes: z.string().trim().max(500).nullable().optional(),
 });
 export type FdiToothRecord = z.infer<typeof fdiToothRecordSchema>;
+export type DentalConditionCode = ToothClinicalStatusCode;
+export type DentalSurfaceName = ToothSurface;
+export type ToothFormulaFdiState = Record<number, any>;
+export type PeriodontalCpitnSextantCode = any;
+export const DENTAL_CONDITION_LABELS: Record<string, string> = toothStatusCodeLabels;
 
 /** Список всех 32 постоянных зубов FDI */
 export const PERMANENT_FDI_TEETH = [

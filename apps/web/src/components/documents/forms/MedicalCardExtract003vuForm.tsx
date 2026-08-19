@@ -11,31 +11,33 @@ export interface MedicalCardExtract003vuFormProps {
 export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormProps> = React.memo(
 	function MedicalCardExtract003vuForm({ initialPayload, onChange, disabled }) {
 		const [admissionDiagnosis, setAdmissionDiagnosis] = useState(
-			initialPayload?.diagnosisOnAdmission ?? "K04.0 Начальный пульпит зуба 2.6",
+			(initialPayload as any)?.diagnosisOnAdmission ?? "K04.0 Начальный пульпит зуба 2.6",
 		);
 		const [clinicalDiagnosis, setClinicalDiagnosis] = useState(
-			initialPayload?.clinicalDiagnosisDetailed ?? "K04.0 Хронический фиброзный пульпит зуба 2.6",
+			initialPayload?.primaryDiagnosisText ?? "K04.0 Хронический фиброзный пульпит зуба 2.6",
 		);
 		const [recommendations, setRecommendations] = useState(
 			initialPayload?.followUpRecommendations ?? "Диспансерный осмотр через 6 месяцев, контрольная прицельная визиография зуба 2.6.",
 		);
 		const [stages, setStages] = useState<MedicalExtractTreatmentStage[]>(() => {
 			return (
-				initialPayload?.treatmentStages ?? [
+				initialPayload?.treatmentStagesTimeline ?? [
 					{
-						stageDate: "2026-08-10",
-						toothNumber: 26,
-						diagnosis: "K04.0 Пульпит",
-						interventionSummary: "Анестезия Ubistesin 1.7 мл, экстирпация пульпы, медикаментозная обработка 3 каналов, временная обтурация гидроксидом кальция",
+						treatmentDate: "2026-08-10",
+						toothOrAnatomicalArea: "26",
+						diagnosisIcd10: "K04.0",
+						diagnosisText: "Пульпит",
+						performedIntervention: "Анестезия Ubistesin 1.7 мл, экстирпация пульпы, медикаментозная обработка 3 каналов, временная обтурация гидроксидом кальция",
 						anesthesiaUsed: "Ubistesin 4% 1.7 мл",
-						treatingDoctorFullName: "Иванов И.И.",
+						attendingDoctorFullName: "Иванов И.И.",
 					},
 					{
-						stageDate: "2026-08-17",
-						toothNumber: 26,
-						diagnosis: "K04.0 Пульпит",
-						interventionSummary: "Постоянная обтурация корневых каналов методом латеральной компакции гуттаперчи с силером AH-Plus, реставрация коронковой части светоотверждаемым композитом",
-						treatingDoctorFullName: "Иванов И.И.",
+						treatmentDate: "2026-08-17",
+						toothOrAnatomicalArea: "26",
+						diagnosisIcd10: "K04.0",
+						diagnosisText: "Пульпит",
+						performedIntervention: "Постоянная обтурация корневых каналов методом латеральной компакции гуттаперчи с силером AH-Plus, реставрация коронковой части светоотверждаемым композитом",
+						attendingDoctorFullName: "Иванов И.И.",
 					},
 				]
 			);
@@ -46,11 +48,12 @@ export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormPr
 			setStages((prev) => [
 				...prev,
 				{
-					stageDate: new Date().toISOString().slice(0, 10),
-					toothNumber: 26,
-					diagnosis: clinicalDiagnosis,
-					interventionSummary: "Контрольный осмотр, коррекция окклюзионных контактов",
-					treatingDoctorFullName: "Иванов И.И.",
+					treatmentDate: new Date().toISOString().slice(0, 10),
+					toothOrAnatomicalArea: "26",
+					diagnosisIcd10: "K04.0",
+					diagnosisText: clinicalDiagnosis,
+					performedIntervention: "Контрольный осмотр, коррекция окклюзионных контактов",
+					attendingDoctorFullName: "Иванов И.И.",
 				},
 			]);
 		};
@@ -107,11 +110,11 @@ export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormPr
 							<tbody>
 								{stages.map((st, idx) => (
 									<tr key={idx}>
-										<td>{st.stageDate}</td>
-										<td>{st.toothNumber ?? "—"}</td>
-										<td>{st.diagnosis}</td>
-										<td>{st.interventionSummary}</td>
-										<td>{st.treatingDoctorFullName}</td>
+										<td>{st.treatmentDate}</td>
+										<td>{st.toothOrAnatomicalArea || "—"}</td>
+										<td>{st.diagnosisText || st.diagnosisIcd10}</td>
+										<td>{st.performedIntervention}</td>
+										<td>{st.attendingDoctorFullName}</td>
 									</tr>
 								))}
 							</tbody>
