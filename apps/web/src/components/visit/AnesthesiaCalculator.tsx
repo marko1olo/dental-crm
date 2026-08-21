@@ -3,15 +3,19 @@ import {
 	Activity,
 	AlertOctagon,
 	AlertTriangle,
+	Baby,
 	Check,
 	CheckCircle2,
 	ChevronDown,
 	ChevronUp,
 	Heart,
+	Info,
 	Minus,
 	Plus,
+	ShieldAlert,
 	ShieldCheck,
 	Syringe,
+	Wind,
 	Zap,
 } from "lucide-react";
 import {
@@ -19,6 +23,7 @@ import {
 	ANESTHESIA_METHODS,
 	type AnesthesiaDrugKey,
 	type AnesthesiaMethodKey,
+	type SomaticRiskProfile,
 	calculateAnesthesiaSafety,
 	formatAnesthesiaSoapText,
 } from "./anesthesiaCalculatorEngine";
@@ -27,6 +32,7 @@ import { showToast } from "../GlobalToast";
 export interface AnesthesiaCalculatorProps {
 	readonly defaultToothNumber?: number | string | undefined;
 	readonly defaultWeightKg?: number | undefined;
+	readonly initialSomaticProfile?: SomaticRiskProfile | undefined;
 	readonly onApplyToDiary?: ((anesthesiaSoapText: string) => void) | undefined;
 	readonly isLocked?: boolean | undefined;
 	readonly className?: string | undefined;
@@ -35,6 +41,7 @@ export interface AnesthesiaCalculatorProps {
 export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 	defaultToothNumber,
 	defaultWeightKg = 70,
+	initialSomaticProfile,
 	onApplyToDiary,
 	isLocked = false,
 	className = "",
@@ -54,13 +61,32 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 		return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 	});
 
+	// Соматические факторы риска
+	const [hasCardiovascularRisk, setHasCardiovascularRisk] = useState<boolean>(
+		Boolean(initialSomaticProfile?.hasCardiovascularRisk),
+	);
+	const [hasSulfiteOrAsthma, setHasSulfiteOrAsthma] = useState<boolean>(
+		Boolean(initialSomaticProfile?.hasSulfiteAllergy || initialSomaticProfile?.hasBronchialAsthma),
+	);
+	const [isPregnantOrLactating, setIsPregnantOrLactating] = useState<boolean>(
+		Boolean(initialSomaticProfile?.isPregnantOrLactating),
+	);
+
+	const somaticProfile: SomaticRiskProfile = useMemo(() => ({
+		hasCardiovascularRisk,
+		hasSulfiteAllergy: hasSulfiteOrAsthma,
+		hasBronchialAsthma: hasSulfiteOrAsthma,
+		isPregnantOrLactating,
+	}), [hasCardiovascularRisk, hasSulfiteOrAsthma, isPregnantOrLactating]);
+
 	const calc = useMemo(() => {
 		return calculateAnesthesiaSafety({
 			drugKey,
 			patientWeightKg,
 			carpulesCount,
+			somaticProfile,
 		});
-	}, [drugKey, patientWeightKg, carpulesCount]);
+	}, [drugKey, patientWeightKg, carpulesCount, somaticProfile]);
 
 	const soapText = useMemo(() => {
 		return formatAnesthesiaSoapText({
@@ -72,6 +98,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 			aspirationTestPassed,
 			reactionNormal,
 			...(anesthesiaTime.trim() ? { anesthesiaStartTime: anesthesiaTime.trim() } : {}),
+			somaticProfile,
 		});
 	}, [
 		methodKey,
@@ -82,6 +109,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 		aspirationTestPassed,
 		reactionNormal,
 		anesthesiaTime,
+		somaticProfile,
 	]);
 
 	const handleApply = () => {
@@ -95,14 +123,8 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 		}
 	};
 
-	const safetyBarColorClass =
-		calc.safetyLevel === "safe"
-			? "bg-emerald-500 text-emerald-700 dark:text-emerald-300"
-			: calc.safetyLevel === "caution"
-				? "bg-amber-500 text-amber-700 dark:text-amber-300"
-				: calc.safetyLevel === "warning"
-					? "bg-orange-500 text-orange-700 dark:text-orange-300"
-					: "bg-rose-600 text-rose-700 dark:text-rose-300";
+	const hasActiveSomaticRisks =
+		hasCardiovascularRisk || hasSulfiteOrAsthma || isPregnantOrLactating;
 
 	return (
 		<div
@@ -133,9 +155,14 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 							<span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20">
 								{calc.drug.commercialName} · {calc.totalVolumeMl} мл
 							</span>
+							{hasActiveSomaticRisks && (
+								<span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1">
+									<ShieldAlert size={10} /> Кросс-чек активен
+								</span>
+							)}
 						</h4>
 						<p className="text-xs text-[var(--muted)]">
-							Расчет дозировки по массе тела ({calc.patientWeightKg} кг) · СтАР / Приказ №804н
+							Расчет дозировки по массе тела ({calc.patientWeightKg} кг) · СтАР / Приказ №804н / Кардио-чек
 						</p>
 					</div>
 				</div>
@@ -147,7 +174,9 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 								? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
 								: calc.safetyLevel === "caution"
 									? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30"
-									: "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30"
+									: calc.safetyLevel === "warning"
+										? "bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/30"
+										: "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30"
 						}`}
 					>
 						<Activity size={13} />
@@ -167,6 +196,144 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 			{/* Expandable Body */}
 			{isExpanded && (
 				<div className="p-4 space-y-4 border-t border-[var(--border)] bg-[var(--paper)]">
+					{/* Somatic Risk Selection Bar */}
+					<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--border)] space-y-2">
+						<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider block">
+							0. Соматический статус и аллергоанамнез (Кросс-чек безопасности):
+						</span>
+						<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+							{/* Cardiorisk Toggle */}
+							<button
+								type="button"
+								onClick={() => setHasCardiovascularRisk((prev) => !prev)}
+								className={`min-h-[44px] px-3 py-2 rounded-xl text-left border text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
+									hasCardiovascularRisk
+										? "border-rose-500 bg-rose-500/10 text-rose-800 dark:text-rose-200 ring-1 ring-rose-500"
+										: "border-[var(--border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
+								}`}
+							>
+								<div className="flex items-center gap-2">
+									<Heart size={16} className={hasCardiovascularRisk ? "text-rose-500" : "text-[var(--muted)]"} />
+									<div>
+										<div className="font-bold">Гипертония / ССЗ</div>
+										<div className="text-[10px] text-[var(--muted)]">МКБ I10–I15 / ИБС</div>
+									</div>
+								</div>
+								<input
+									type="checkbox"
+									checked={hasCardiovascularRisk}
+									onChange={() => {}}
+									className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-[var(--border)] pointer-events-none"
+									tabIndex={-1}
+									aria-hidden="true"
+								/>
+							</button>
+
+							{/* Asthma / Sulfite Toggle */}
+							<button
+								type="button"
+								onClick={() => setHasSulfiteOrAsthma((prev) => !prev)}
+								className={`min-h-[44px] px-3 py-2 rounded-xl text-left border text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
+									hasSulfiteOrAsthma
+										? "border-purple-500 bg-purple-500/10 text-purple-800 dark:text-purple-200 ring-1 ring-purple-500"
+										: "border-[var(--border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
+								}`}
+							>
+								<div className="flex items-center gap-2">
+									<Wind size={16} className={hasSulfiteOrAsthma ? "text-purple-500" : "text-[var(--muted)]"} />
+									<div>
+										<div className="font-bold">Астма / Сульфиты</div>
+										<div className="text-[10px] text-[var(--muted)]">Риск бронхоспазма</div>
+									</div>
+								</div>
+								<input
+									type="checkbox"
+									checked={hasSulfiteOrAsthma}
+									onChange={() => {}}
+									className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-[var(--border)] pointer-events-none"
+									tabIndex={-1}
+									aria-hidden="true"
+								/>
+							</button>
+
+							{/* Pregnancy / Lactation Toggle */}
+							<button
+								type="button"
+								onClick={() => setIsPregnantOrLactating((prev) => !prev)}
+								className={`min-h-[44px] px-3 py-2 rounded-xl text-left border text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
+									isPregnantOrLactating
+										? "border-blue-500 bg-blue-500/10 text-blue-800 dark:text-blue-200 ring-1 ring-blue-500"
+										: "border-[var(--border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
+								}`}
+							>
+								<div className="flex items-center gap-2">
+									<Baby size={16} className={isPregnantOrLactating ? "text-blue-500" : "text-[var(--muted)]"} />
+									<div>
+										<div className="font-bold">Беременность / Лактация</div>
+										<div className="text-[10px] text-[var(--muted)]">Плод / маточный кровоток</div>
+									</div>
+								</div>
+								<input
+									type="checkbox"
+									checked={isPregnantOrLactating}
+									onChange={() => {}}
+									className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-[var(--border)] pointer-events-none"
+									tabIndex={-1}
+									aria-hidden="true"
+								/>
+							</button>
+						</div>
+					</div>
+
+					{/* Somatic Cross-Check Dynamic Alert & Recommendation Banner */}
+					{calc.somaticAlerts.length > 0 && (
+						<div className="space-y-2">
+							{calc.somaticAlerts.map((alert) => (
+								<div
+									key={alert.id}
+									className={`p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs transition-all ${
+										alert.severity === "danger"
+											? "bg-rose-500/10 text-rose-900 dark:text-rose-200 border-rose-500/30"
+											: alert.severity === "warning"
+												? "bg-orange-500/10 text-orange-900 dark:text-orange-200 border-orange-500/30"
+												: alert.severity === "caution"
+													? "bg-amber-500/10 text-amber-900 dark:text-amber-200 border-amber-500/30"
+													: "bg-emerald-500/10 text-emerald-900 dark:text-emerald-200 border-emerald-500/30"
+									}`}
+								>
+									<div className="flex items-start gap-2.5">
+										<div className="mt-0.5 shrink-0">
+											{alert.severity === "danger" ? (
+												<AlertOctagon size={18} className="text-rose-600 dark:text-rose-400" />
+											) : alert.severity === "warning" ? (
+												<AlertTriangle size={18} className="text-orange-600 dark:text-orange-400" />
+											) : alert.severity === "caution" ? (
+												<Info size={18} className="text-amber-600 dark:text-amber-400" />
+											) : (
+												<ShieldCheck size={18} className="text-emerald-600 dark:text-emerald-400" />
+											)}
+										</div>
+										<div>
+											<div className="font-bold">{alert.title}</div>
+											<div className="mt-0.5 opacity-90 leading-relaxed">{alert.message}</div>
+										</div>
+									</div>
+
+									{alert.recommendedDrugKey && alert.recommendedDrugKey !== drugKey && (
+										<button
+											type="button"
+											onClick={() => setDrugKey(alert.recommendedDrugKey!)}
+											className="min-h-[44px] px-3 py-2 rounded-xl font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:opacity-100 shrink-0 text-xs shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+										>
+											<Zap size={14} />
+											<span>{alert.recommendedAction ?? "Выбрать рекомендованный"}</span>
+										</button>
+									)}
+								</div>
+							))}
+						</div>
+					)}
+
 					{/* Drug Selection Chips */}
 					<div>
 						<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider block mb-2">
@@ -183,7 +350,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 										key={k}
 										type="button"
 										onClick={() => setDrugKey(k)}
-										className={`min-h-[48px] p-2.5 rounded-xl text-left border transition-all flex flex-col justify-between cursor-pointer ${
+										className={`min-h-[52px] p-2.5 rounded-xl text-left border transition-all flex flex-col justify-between cursor-pointer ${
 											isSelected
 												? "border-teal-500 bg-teal-500/10 shadow-sm ring-1 ring-teal-500"
 												: "border-[var(--border)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)]"
@@ -193,18 +360,26 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 											<span className="text-xs font-bold text-[var(--ink)]">
 												{d.commercialName}
 											</span>
-											{d.isAdrenalineFree && (
+											{d.isAdrenalineFree ? (
 												<span
 													className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold flex items-center gap-0.5"
-													title="Без адреналина — безопасно для сердца"
+													title="Без адреналина — безопасно для сердца и сульфит-аллергиков"
 												>
 													<Heart size={9} /> БЕЗ АДР.
 												</span>
-											)}
+											) : d.vasoconstrictorRatio === "1:200000" ? (
+												<span
+													className="text-[9px] px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-700 dark:text-teal-300 font-bold flex items-center gap-0.5"
+													title="1:200 000 — предпочтителен при беременности"
+												>
+													<Baby size={9} /> 1:200k
+												</span>
+											) : null}
 										</div>
-										<span className="text-[10px] text-[var(--muted)] line-clamp-1 mt-0.5">
-											{d.vasoconstrictor} · {d.mgPerCarpule} мг/карп.
-										</span>
+										<div className="flex items-center justify-between text-[10px] text-[var(--muted)] mt-1">
+											<span>{d.vasoconstrictor}</span>
+											<span>{d.mgPerCarpule} мг/карп.</span>
+										</div>
 									</button>
 								);
 							})}
@@ -285,7 +460,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 											onClick={() => setPatientWeightKg(w)}
 											className={`min-h-[38px] px-2.5 py-1 text-xs rounded-lg border font-mono font-medium transition-all ${
 												patientWeightKg === w
-													? "bg-teal-600 text-white border-teal-600 font-bold"
+													? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] border-[var(--teal)] font-bold"
 													: "bg-[var(--paper)] text-[var(--ink)] border-[var(--border)] hover:bg-[var(--paper-strong)]"
 											}`}
 										>
@@ -343,17 +518,26 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 									</button>
 								</div>
 								<span className="text-xs font-mono text-[var(--muted)]">
-									({calc.totalVolumeMl} мл / {calc.totalDoseMg} мг)
+									({calc.totalVolumeMl} мл / {calc.totalDoseMg} мг
+									{calc.totalEpinephrineMg > 0 ? ` / ${calc.totalEpinephrineMg} мг адр.` : ""}
+									)
 								</span>
 							</div>
 						</div>
 
-						{/* Visual Toxicity Progress Gauge */}
+						{/* Visual Toxicity & Epinephrine Progress Gauge */}
 						<div className="space-y-1 pt-1">
 							<div className="flex items-center justify-between text-xs">
-								<span className="text-[var(--muted)]">
-									Нагрузка анестетика: <strong>{calc.totalDoseMg} мг</strong> из макс. безоп.{" "}
-									<strong>{calc.maxSafeDoseMg} мг</strong> ({calc.maxSafeCarpules} карп.)
+								<span className="text-[var(--muted)] flex items-center gap-2">
+									<span>
+										Нагрузка анестетика: <strong>{calc.totalDoseMg} мг</strong> из макс. безоп.{" "}
+										<strong>{calc.maxSafeDoseMg} мг</strong> ({calc.maxSafeCarpules} карп.)
+									</span>
+									{calc.isCardioRestricted && (
+										<span className="px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-700 dark:text-rose-300 font-bold text-[10px]">
+											Кардио-лимит (макс. {calc.maxSafeCarpules} к.)
+										</span>
+									)}
 								</span>
 								<span className="font-mono font-bold text-[var(--ink)]">
 									{calc.safetyPercentage}%
@@ -439,7 +623,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 								type="button"
 								onClick={handleApply}
 								disabled={isLocked}
-								className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 active:from-teal-700 active:to-emerald-700 shadow-md shadow-teal-600/20 cursor-pointer transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+								className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:opacity-100 shadow-md shadow-teal-600/20 cursor-pointer transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
 								title="Внести протокол анестезии в план лечения дневника 043/у"
 							>
 								<Syringe size={15} />
@@ -452,3 +636,4 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 		</div>
 	);
 };
+

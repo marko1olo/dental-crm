@@ -25,6 +25,7 @@ import {
 	ANESTHESIA_QUICK_PRESETS,
 	appendRecommendationToSoap,
 	CLINICAL_FAST_PRESETS,
+	extractSomaticRiskProfileFromText,
 	mergeSoapDiaryState,
 	PATIENT_RECOMMENDATIONS,
 } from "../../lib/clinicalProtocols043";
@@ -39,8 +40,17 @@ import {
 } from "../VisitDiaryPhotoUpload";
 import { VisitDiaryTemplateSelector } from "../VisitDiaryTemplateSelector";
 import { AnesthesiaCalculator } from "./AnesthesiaCalculator";
+import {
+	generatePerio043DiaryText,
+	derivePeriodontalDiagnosis,
+} from "../odontogram/perio043Protocol";
+import {
+	generatePediatricCariogramDiaryText,
+} from "../odontogram/pediatricDentitionEngine";
+import { ALL_PERIO_TEETH } from "../odontogram/perioTypes";
 import { ClinicalQuickPresetsBar } from "./ClinicalQuickPresetsBar";
 import { CryptoProSigner } from "./CryptoProSigner";
+import { EgiszCdaExportModal } from "../egisz/EgiszCdaExportModal";
 import { PrescriptionModal } from "./PrescriptionModal";
 import { RadiologyReferralModal } from "./RadiologyReferralModal";
 import { realVisitFieldId } from "./visitIdentity";
@@ -134,6 +144,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 	const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
 	const [showRadiologyReferralModal, setShowRadiologyReferralModal] =
 		useState(false);
+	const [showEgiszModal, setShowEgiszModal] = useState(false);
 	const [activeTeeth, setActiveTeeth] = useState<
 		readonly {
 			toothNumber: number;
@@ -209,6 +220,64 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				: typeof printPatient?.chartNumber === "string"
 					? printPatient.chartNumber
 					: "";
+
+	const patientPassport =
+		typeof (printPatient as any)?.administrativeProfile?.identityDocument ===
+			"string" &&
+		(printPatient as any).administrativeProfile.identityDocument.trim()
+			? (printPatient as any).administrativeProfile.identityDocument.trim()
+			: typeof (printPatient as any)?.passport === "string" &&
+					(printPatient as any).passport.trim()
+				? (printPatient as any).passport.trim()
+				: typeof (printPatient as any)?.identityDocument === "string" &&
+						(printPatient as any).identityDocument.trim()
+					? (printPatient as any).identityDocument.trim()
+					: "";
+
+	const patientOms =
+		typeof (printPatient as any)?.administrativeProfile?.omsPolis ===
+			"string" &&
+		(printPatient as any).administrativeProfile.omsPolis.trim()
+			? (printPatient as any).administrativeProfile.omsPolis.trim()
+			: typeof (printPatient as any)?.administrativeProfile
+						?.insurancePolicyNumber === "string" &&
+					(printPatient as any).administrativeProfile.insurancePolicyNumber.trim()
+				? (
+						printPatient as any
+					).administrativeProfile.insurancePolicyNumber.trim()
+				: typeof (printPatient as any)?.omsPolis === "string" &&
+						(printPatient as any).omsPolis.trim()
+					? (printPatient as any).omsPolis.trim()
+					: typeof (printPatient as any)?.insurancePolicyNumber === "string" &&
+							(printPatient as any).insurancePolicyNumber.trim()
+						? (printPatient as any).insurancePolicyNumber.trim()
+						: "";
+
+	const patientSnils =
+		typeof (printPatient as any)?.administrativeProfile?.snils === "string" &&
+		(printPatient as any).administrativeProfile.snils.trim()
+			? (printPatient as any).administrativeProfile.snils.trim()
+			: typeof (printPatient as any)?.snils === "string" &&
+					(printPatient as any).snils.trim()
+				? (printPatient as any).snils.trim()
+				: "";
+
+	const patientPhone =
+		typeof (printPatient as any)?.phone === "string" &&
+		(printPatient as any).phone.trim()
+			? (printPatient as any).phone.trim()
+			: "";
+
+	const patientAddress =
+		typeof (printPatient as any)?.administrativeProfile?.registrationAddress ===
+			"string" &&
+		(printPatient as any).administrativeProfile.registrationAddress.trim()
+			? (printPatient as any).administrativeProfile.registrationAddress.trim()
+			: typeof (printPatient as any)?.address === "string" &&
+					(printPatient as any).address.trim()
+				? (printPatient as any).address.trim()
+				: "";
+
 	const printBlockedReason = diaryUnread
 		? "Печать недоступна, пока записи приёма не прочитаны"
 		: isRevising
@@ -302,6 +371,128 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 		e.target.style.height = `${e.target.scrollHeight}px`;
 	};
 
+	const handleInsertPerioStatus = () => {
+		const defaultPerioTeeth = ALL_PERIO_TEETH.map((toothNumber) => ({
+			toothNumber,
+			isMissing: activeTeeth.some(
+				(t) =>
+					t.toothNumber === toothNumber &&
+					(t.state === "Missing" || t.state === "Extracted"),
+			),
+			isImplant: activeTeeth.some(
+				(t) => t.toothNumber === toothNumber && t.state === "Implant",
+			),
+			mobility: 0 as const,
+			furcation: 0 as const,
+			distoBuccal: {
+				probingDepthMm: 2,
+				gingivalMarginMm: 0,
+				bleedingOnProbing: false,
+				plaque: false,
+				suppuration: false,
+				calculus: false,
+			},
+			midBuccal: {
+				probingDepthMm: 2,
+				gingivalMarginMm: 0,
+				bleedingOnProbing: false,
+				plaque: false,
+				suppuration: false,
+				calculus: false,
+			},
+			mesioBuccal: {
+				probingDepthMm: 2,
+				gingivalMarginMm: 0,
+				bleedingOnProbing: false,
+				plaque: false,
+				suppuration: false,
+				calculus: false,
+			},
+			distoLingual: {
+				probingDepthMm: 2,
+				gingivalMarginMm: 0,
+				bleedingOnProbing: false,
+				plaque: false,
+				suppuration: false,
+				calculus: false,
+			},
+			midLingual: {
+				probingDepthMm: 2,
+				gingivalMarginMm: 0,
+				bleedingOnProbing: false,
+				plaque: false,
+				suppuration: false,
+				calculus: false,
+			},
+			mesioLingual: {
+				probingDepthMm: 2,
+				gingivalMarginMm: 0,
+				bleedingOnProbing: false,
+				plaque: false,
+				suppuration: false,
+				calculus: false,
+			},
+		}));
+
+		const perioText = generatePerio043DiaryText(
+			defaultPerioTeeth,
+			undefined,
+			{ doctorName },
+		);
+		const perioDiag = derivePeriodontalDiagnosis(defaultPerioTeeth);
+
+		setDiary((prev) => ({
+			...prev,
+			diagnosisIcd10: prev.diagnosisIcd10 || perioDiag.icd10Code,
+			statusLocalis: prev.statusLocalis
+				? `${prev.statusLocalis}\n\n${perioText}`
+				: perioText,
+			treatmentDescription: prev.treatmentDescription
+				? `${prev.treatmentDescription}\n\n• Профессиональная гигиена полости рта (УЗ + AirFlow).\n• Пародонтальный скрининг PSR и контрольный осмотр через 6 месяцев.`
+				: "• Профессиональная гигиена полости рта (УЗ + AirFlow).\n• Пародонтальный скрининг PSR.\n• Контролируемая индивидуальная гигиена полости рта.",
+		}));
+
+		if (!diary.diagnosisIcd10 && perioDiag.icd10Code) {
+			setIcdSearch(perioDiag.icd10Code);
+		}
+		scheduleDebouncedSave();
+	};
+
+	const handleInsertPediatricStatus = () => {
+		const patientAgeYears = patientBirthDate
+			? Math.floor(
+					(Date.now() - new Date(patientBirthDate).getTime()) /
+						(365.25 * 24 * 3600 * 1000),
+				)
+			: 8;
+
+		const teethStatesMap = activeTeeth.reduce(
+			(acc, t) => ({ ...acc, [t.toothNumber]: t.state }),
+			{} as Record<number, string>,
+		);
+
+		const pediatricText = generatePediatricCariogramDiaryText({
+			patientAgeYears: Math.max(1, Math.min(18, patientAgeYears || 8)),
+			teethStates: teethStatesMap,
+		});
+
+		setDiary((prev) => ({
+			...prev,
+			diagnosisIcd10: prev.diagnosisIcd10 || "Z01.2",
+			statusLocalis: prev.statusLocalis
+				? `${prev.statusLocalis}\n\n${pediatricText}`
+				: pediatricText,
+			treatmentDescription: prev.treatmentDescription
+				? `${prev.treatmentDescription}\n\n• Комплексная детская профгигиена и ремотерапия (GC Tooth Mousse).\n• Неинвазивная герметизация фиссур постоянных моляров (16, 26, 36, 46).`
+				: "• Комплексная детская профгигиена и ремотерапия (GC Tooth Mousse).\n• Неинвазивная герметизация фиссур первых постоянных моляров (16, 26, 36, 46).\n• Обучение гигиене и подбор детской фторсодержащей пасты (1000 ppm F-).",
+		}));
+
+		if (!diary.diagnosisIcd10) {
+			setIcdSearch("Z01.2");
+		}
+		scheduleDebouncedSave();
+	};
+
 	const icdEntry = (ICD10_DICTIONARY ?? []).find(
 		(i) => i?.code === diary?.diagnosisIcd10,
 	);
@@ -344,6 +535,9 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						patientFullName !== "—" ||
 						patientBirthDate ||
 						patientCardNumber ||
+						patientPassport ||
+						patientOms ||
+						patientSnils ||
 						doctorName !== "—") && (
 						<div className="vde-043-doc-meta page-break-avoid">
 							{clinicName ? (
@@ -371,7 +565,32 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							) : null}
 							{patientCardNumber ? (
 								<div>
-									<strong>№ карты:</strong> {patientCardNumber}
+									<strong>№ медкарты:</strong> {patientCardNumber}
+								</div>
+							) : null}
+							{patientPassport ? (
+								<div>
+									<strong>Паспорт / Документ:</strong> {patientPassport}
+								</div>
+							) : null}
+							{patientOms ? (
+								<div>
+									<strong>Полис ОМС / ДМС:</strong> {patientOms}
+								</div>
+							) : null}
+							{patientSnils ? (
+								<div>
+									<strong>СНИЛС:</strong> {patientSnils}
+								</div>
+							) : null}
+							{patientPhone ? (
+								<div>
+									<strong>Телефон:</strong> {patientPhone}
+								</div>
+							) : null}
+							{patientAddress ? (
+								<div>
+									<strong>Адрес:</strong> {patientAddress}
 								</div>
 							) : null}
 							{doctorName !== "—" ? (
@@ -416,6 +635,36 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							<div className="vde-043-soap-block page-break-avoid">
 								<h4>O — Объективный статус (Status Localis)</h4>
 								<p>{diary.statusLocalis || "—"}</p>
+								{activeTeeth &&
+								activeTeeth.length > 0 &&
+								activeTeeth.some((t) => {
+									const s = (t.state || "").toLowerCase();
+									return s !== "healthy" && s !== "" && s !== "0";
+								}) ? (
+									<div className="vde-043-doc-teeth-formula">
+										<div className="vde-043-doc-teeth-title">
+											<strong>Зубная формула (отметки одонтограммы):</strong>
+										</div>
+										<div className="vde-043-doc-teeth-grid">
+											{activeTeeth
+												.filter((t) => {
+													const s = (t.state || "").toLowerCase();
+													return s !== "healthy" && s !== "" && s !== "0";
+												})
+												.map((t) => (
+													<span
+														key={t.toothNumber}
+														className="vde-043-doc-tooth-tag"
+													>
+														<strong>Зуб {t.toothNumber}:</strong> {t.state}
+														{t.surfaces && t.surfaces.length > 0
+															? ` (${t.surfaces.join(", ")})`
+															: ""}
+													</span>
+												))}
+										</div>
+									</div>
+								) : null}
 							</div>
 							<div className="vde-043-soap-block page-break-avoid">
 								<h4>A — Диагноз (Assessment)</h4>
@@ -578,6 +827,16 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					</button>
 					<button
 						type="button"
+						data-testid="open-egisz-semd-btn"
+						onClick={() => setShowEgiszModal(true)}
+						className="vde-043__btn"
+						title="Экспорт и валидация СЭМД ЕГИСЗ (HL7 CDA R2)"
+					>
+						<ShieldCheck className="w-4 h-4 text-emerald-600" />
+						СЭМД ЕГИСЗ
+					</button>
+					<button
+						type="button"
 						id="diary-print-btn"
 						data-testid="diary-print-043"
 						onClick={() => setShowPreview(true)}
@@ -651,6 +910,32 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						)}
 					</div>
 					<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 scrollbar-none overscroll-x-contain">
+						<button
+							type="button"
+							onClick={handleInsertPerioStatus}
+							className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 text-xs font-semibold transition-all shrink-0 shadow-xs touch-manipulation hover:border-emerald-500"
+							title="Вставить протокол пародонтологического обследования PSR и индексы 043/у (AAP/EFP 2018)"
+							data-testid="insert-perio-043-btn"
+						>
+							<span className="font-mono text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-700 dark:text-emerald-200 font-bold">
+								PSR
+							</span>
+							<Activity className="w-3.5 h-3.5 text-emerald-600" />
+							Пародонтологический статус (PSR + 043/у)
+						</button>
+						<button
+							type="button"
+							onClick={handleInsertPediatricStatus}
+							className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-800 dark:text-purple-300 border border-purple-500/30 text-xs font-semibold transition-all shrink-0 shadow-xs touch-manipulation hover:border-purple-500"
+							title="Вставить протокол сменного прикуса, физиологической резорбции корней и Кариограммы Bratthall"
+							data-testid="insert-pediatric-cariogram-btn"
+						>
+							<span className="font-mono text-[10px] px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-700 dark:text-purple-200 font-bold">
+								ДЕТИ
+							</span>
+							<Sparkles className="w-3.5 h-3.5 text-purple-600" />
+							Сменный прикус (резорбция + кариограмма)
+						</button>
 						{CLINICAL_FAST_PRESETS.map((preset) => (
 							<button
 								key={preset.id}
@@ -734,6 +1019,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							<AnesthesiaCalculator
 								isLocked={fieldsDisabled}
 								{...(diary.diagnosisTooth ? { defaultToothNumber: diary.diagnosisTooth } : {})}
+								initialSomaticProfile={extractSomaticRiskProfileFromText(diary.comorbidities)}
 								onApplyToDiary={(text) => {
 									applyAnesthesiaPreset(text);
 								}}
@@ -1402,6 +1688,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				onPrint={() => setShowPreview(true)}
 				onOpenPrescription={() => setShowPrescriptionModal(true)}
 				onOpenRadiologyReferral={() => setShowRadiologyReferralModal(true)}
+				onOpenEgiszExport={() => setShowEgiszModal(true)}
 			/>
 
 			{/* ── Prescription 107-1/u Modal ── */}
@@ -1440,6 +1727,33 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				doctorName={doctorName}
 				doctorSpecialty={doctorSpecialty}
 				clinicName={clinicName}
+			/>
+
+			{/* ── EGISZ SEMD CDA Export Modal ── */}
+			<EgiszCdaExportModal
+				isOpen={showEgiszModal}
+				onClose={() => setShowEgiszModal(false)}
+				visitId={realVisitFieldId(visitId) || "00000000-0000-0000-0000-000000000000"}
+				patientId={patientId || ""}
+				patientName={patientFullName}
+				patientSnils={(activePatient as any)?.administrativeProfile?.snils}
+				patientBirthDate={patientBirthDate}
+				patientGender={(activePatient as any)?.administrativeProfile?.gender || (activePatient as any)?.gender}
+				patientPolisOms={(activePatient as any)?.administrativeProfile?.omsPolis}
+				doctorName={doctorName}
+				doctorSnils={(activeDoctor as any)?.snils || (activeDoctor as any)?.uiPreferences?.snils}
+				doctorPosition={doctorSpecialty || "Врач-стоматолог"}
+				diagnosisText={icdEntry ? `${diary.diagnosisIcd10} ${icdEntry.label}` : diary.diagnosisIcd10}
+				icd10Code={diary.diagnosisIcd10}
+				diagnosisTooth={diary.diagnosisTooth}
+				anamnesis={diary.anamnesis}
+				objectiveStatus={diary.statusLocalis}
+				treatmentDescription={diary.treatmentDescription}
+				complications={diary.complications}
+				comorbidities={diary.comorbidities}
+				instrumentTrayBarcode={trayBarcode || undefined}
+				toothStates={activeTeeth.reduce((acc, t) => ({ ...acc, [t.toothNumber]: t.state }), {})}
+				documentVersion={revisionCount + 1}
 			/>
 
 			{/* ── Print Preview Modal ── */}

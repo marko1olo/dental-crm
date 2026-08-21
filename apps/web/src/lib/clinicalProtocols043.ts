@@ -751,57 +751,152 @@ export function appendRecommendationToSoap(
 	};
 }
 
+import type {
+	AnesthesiaDrugKey,
+	SomaticRiskProfile,
+} from "../components/visit/anesthesiaCalculatorEngine";
+import { checkAnesthesiaSomaticContraindications } from "../components/visit/anesthesiaCalculatorEngine";
+
 /** Пресет быстрого протоколирования анестезии */
 export interface AnesthesiaQuickPreset {
 	readonly id: string;
+	readonly drugKey?: AnesthesiaDrugKey;
 	readonly label: string;
 	readonly subLabel: string;
 	readonly volume: string;
 	readonly textToInsert: string;
+	readonly isAdrenalineFree?: boolean;
+	readonly containsSulfites?: boolean;
+	readonly cardioSafe?: boolean;
+	readonly pregnancyPreferred?: boolean;
 }
 
 /** 5 основных анестетиков в стоматологической практике */
 export const ANESTHESIA_QUICK_PRESETS: readonly AnesthesiaQuickPreset[] = [
 	{
 		id: "ultracain_ds",
+		drugKey: "ultracain_ds",
 		label: "Ультракаин Д-С",
 		subLabel: "1.7 мл · 1:200 000",
 		volume: "1.7 мл",
 		textToInsert:
 			"Анестезия: Ультракаин Д-С (Артикаин 4% с эпинефрином 1:200 000) 1.7 мл.",
+		isAdrenalineFree: false,
+		containsSulfites: true,
+		cardioSafe: false,
+		pregnancyPreferred: true,
 	},
 	{
 		id: "ultracain_ds_forte",
+		drugKey: "ultracain_ds_forte",
 		label: "Ультракаин Д-С Форте",
 		subLabel: "1.7 мл · 1:100 000",
 		volume: "1.7 мл",
 		textToInsert:
 			"Анестезия: Ультракаин Д-С Форте (Артикаин 4% с эпинефрином 1:100 000) 1.7 мл.",
+		isAdrenalineFree: false,
+		containsSulfites: true,
+		cardioSafe: false,
+		pregnancyPreferred: false,
 	},
 	{
 		id: "septanest",
+		drugKey: "septanest_100",
 		label: "Септанест",
 		subLabel: "1.7 мл · 1:100 000",
 		volume: "1.7 мл",
 		textToInsert:
 			"Анестезия: Септанест (Артикаин 4% с адреналином 1:100 000) 1.7 мл.",
+		isAdrenalineFree: false,
+		containsSulfites: true,
+		cardioSafe: false,
+		pregnancyPreferred: false,
 	},
 	{
 		id: "scandonest",
+		drugKey: "scandonest_3",
 		label: "Скандонест 3%",
 		subLabel: "1.7 мл · без адреналина",
 		volume: "1.7 мл",
 		textToInsert:
 			"Анестезия: Скандонест 3% (Мепивакаин 3% без адреналина/вазоконстриктора) 1.7 мл.",
+		isAdrenalineFree: true,
+		containsSulfites: false,
+		cardioSafe: true,
+		pregnancyPreferred: false,
 	},
 	{
 		id: "lidocaine",
+		drugKey: "lidocaine_2",
 		label: "Лидокаин 2%",
 		subLabel: "2.0 мл",
 		volume: "2.0 мл",
 		textToInsert: "Анестезия: Лидокаин 2% 2.0 мл.",
+		isAdrenalineFree: true,
+		containsSulfites: false,
+		cardioSafe: true,
+		pregnancyPreferred: false,
 	},
 ];
+
+/**
+ * Парсит соматический анамнез пациента (из текста сопутствующих заболеваний) в структурированный профиль риска.
+ */
+export function extractSomaticRiskProfileFromText(text?: string | null): SomaticRiskProfile {
+	const raw = (text ?? "").toLowerCase();
+	if (!raw.trim()) return {};
+
+	const hasCardio =
+		raw.includes("гипертон") ||
+		raw.includes("ибс") ||
+		raw.includes("аритми") ||
+		raw.includes("давлен") ||
+		raw.includes("сердеч") ||
+		raw.includes("i10") ||
+		raw.includes("i11") ||
+		raw.includes("i15") ||
+		raw.includes("стенокард") ||
+		raw.includes("инфаркт");
+
+	const hasSulfite =
+		raw.includes("сульфит") ||
+		raw.includes("дисульфит") ||
+		raw.includes("метабисульфит");
+
+	const hasAsthma =
+		raw.includes("астм") ||
+		raw.includes("бронхиальн") ||
+		raw.includes("j45");
+
+	const isPregnant =
+		raw.includes("беременн") ||
+		raw.includes("лактац") ||
+		raw.includes("кормлен") ||
+		raw.includes("гв") ||
+		raw.includes("триместр");
+
+	return {
+		hasCardiovascularRisk: hasCardio,
+		hasSulfiteAllergy: hasSulfite,
+		hasBronchialAsthma: hasAsthma,
+		isPregnantOrLactating: isPregnant,
+		...(text ? { customNotes: text } : {}),
+	};
+}
+
+/**
+ * Проверяет совместимость анестетика с соматическим статусом из дневника.
+ */
+export function checkSomaticAnesthesiaCompatibility(
+	comorbiditiesText: string | undefined,
+	drugKey: AnesthesiaDrugKey = "ultracain_ds",
+) {
+	const profile = extractSomaticRiskProfileFromText(comorbiditiesText);
+	return checkAnesthesiaSomaticContraindications({
+		drugKey,
+		somaticProfile: profile,
+	});
+}
 
 /**
  * Приоритетная оценка тяжести диагноза по МКБ-10 для выбора главного кода приёма.

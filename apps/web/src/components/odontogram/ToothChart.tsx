@@ -732,6 +732,7 @@ const ToothSVG = ({
 	boneLossType,
 	periapicalLesion,
 	isSelected,
+	selectedTeeth,
 	activeStamp,
 	onClick,
 	onQuickStateChange,
@@ -753,6 +754,7 @@ const ToothSVG = ({
 	boneLossType?: PeriodontalBoneLossPattern | undefined;
 	periapicalLesion?: boolean | undefined;
 	isSelected?: boolean | undefined;
+	selectedTeeth?: number[] | undefined;
 	activeStamp?: ToothState | null | undefined;
 	onClick: (e: React.MouseEvent, num: number, surface?: string) => void;
 	onQuickStateChange?: ((targets: number[], state: ToothState) => void) | undefined;
@@ -1399,7 +1401,7 @@ const ToothSVG = ({
 			{/* Hover Quick Action Micro-HUD (Clinical Russian Presets) when no global stamp is active */}
 			{!activeStamp && onQuickStateChange && (
 				<div
-					className={`tooth-hover-quick-hud absolute left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 group-hover/badge:opacity-100 transition-all duration-200 z-40 flex items-center gap-1 px-1.5 py-1 rounded-xl bg-slate-950/95 dark:bg-slate-900/95 border border-white/20 shadow-2xl backdrop-blur-md pointer-events-auto whitespace-nowrap ${
+					className={`tooth-hover-quick-hud absolute left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 group-hover/badge:opacity-100 transition-all duration-200 z-40 flex items-center gap-1 px-1.5 py-1 rounded-xl bg-[var(--odontogram-paper)] border border-[var(--odontogram-border-strong)] shadow-2xl backdrop-blur-md pointer-events-auto whitespace-nowrap ${
 						isTop ? "bottom-full mb-1.5" : "top-full mt-1.5"
 					}`}
 					onClick={(e) => e.stopPropagation()}
@@ -1408,9 +1410,10 @@ const ToothSVG = ({
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
-							onQuickStateChange([number], "Caries");
+							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+							onQuickStateChange(targets, "Caries");
 						}}
-						className="px-1.5 py-0.5 rounded-md bg-red-500/20 hover:bg-red-500 text-red-300 hover:text-white border border-red-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105"
+						className="px-1.5 py-0.5 min-h-[32px] rounded-md bg-red-500/20 hover:bg-red-500 text-red-300 hover:text-white border border-red-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 touch-manipulation"
 						title="Кариес (Кар.)"
 					>
 						<span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
@@ -1420,9 +1423,10 @@ const ToothSVG = ({
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
-							onQuickStateChange([number], "Filled");
+							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+							onQuickStateChange(targets, "Filled");
 						}}
-						className="px-1.5 py-0.5 rounded-md bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-white border border-emerald-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105"
+						className="px-1.5 py-0.5 min-h-[32px] rounded-md bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-white border border-emerald-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 touch-manipulation"
 						title="Пломба (Пл.)"
 					>
 						<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
@@ -1432,9 +1436,10 @@ const ToothSVG = ({
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
-							onQuickStateChange([number], "Pulpitis");
+							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+							onQuickStateChange(targets, "Pulpitis");
 						}}
-						className="px-1.5 py-0.5 rounded-md bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white border border-rose-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105"
+						className="px-1.5 py-0.5 min-h-[32px] rounded-md bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white border border-rose-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 touch-manipulation"
 						title="Пульпит (Пульп.)"
 					>
 						<span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block" />
@@ -1444,9 +1449,10 @@ const ToothSVG = ({
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
-							onQuickStateChange([number], "Crown");
+							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+							onQuickStateChange(targets, "Crown");
 						}}
-						className="px-1.5 py-0.5 rounded-md bg-blue-500/20 hover:bg-blue-500 text-blue-300 hover:text-white border border-blue-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105"
+						className="px-1.5 py-0.5 min-h-[32px] rounded-md bg-blue-500/20 hover:bg-blue-500 text-blue-300 hover:text-white border border-blue-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 touch-manipulation"
 						title="Коронка (Кор.)"
 					>
 						<span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
@@ -1456,9 +1462,10 @@ const ToothSVG = ({
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
-							onQuickStateChange([number], "Missing");
+							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+							onQuickStateChange(targets, "Missing");
 						}}
-						className="px-1.5 py-0.5 rounded-md bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105"
+						className="px-1.5 py-0.5 min-h-[32px] rounded-md bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 touch-manipulation"
 						title="Удален (Удал.)"
 					>
 						<span className="w-1.5 h-1.5 rounded-full bg-rose-600 inline-block" />
@@ -1468,9 +1475,10 @@ const ToothSVG = ({
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
-							onQuickStateChange([number], "Healthy");
+							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+							onQuickStateChange(targets, "Healthy");
 						}}
-						className="px-1.5 py-0.5 rounded-md bg-teal-500/20 hover:bg-teal-500 text-teal-300 hover:text-white border border-teal-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105"
+						className="px-1.5 py-0.5 min-h-[32px] rounded-md bg-teal-500/20 hover:bg-teal-500 text-teal-300 hover:text-white border border-teal-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 touch-manipulation"
 						title="Здоров (Зд.)"
 					>
 						<span className="w-1.5 h-1.5 rounded-full bg-teal-400 inline-block" />
@@ -1503,7 +1511,8 @@ const ToothSVG = ({
 			aria-pressed={isSelected ? true : undefined}
 			onClick={(e) => {
 				if (activeStamp && onQuickStateChange) {
-					onQuickStateChange([number], activeStamp);
+					const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+					onQuickStateChange(targets, activeStamp);
 					return;
 				}
 				onClick(e, number);
@@ -1512,7 +1521,8 @@ const ToothSVG = ({
 				if (e.key === "Enter" || e.key === " ") {
 					e.preventDefault();
 					if (activeStamp && onQuickStateChange) {
-						onQuickStateChange([number], activeStamp);
+						const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+						onQuickStateChange(targets, activeStamp);
 						return;
 					}
 					onClick(e as unknown as React.MouseEvent, number);
@@ -1542,7 +1552,8 @@ const ToothSVG = ({
 				const quickState = getToothStateFromHotkey(e.key);
 				if (quickState && onQuickStateChange) {
 					e.preventDefault();
-					onQuickStateChange([number], quickState);
+					const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+					onQuickStateChange(targets, quickState);
 				}
 			}}
 		>
@@ -1596,12 +1607,12 @@ export const SurfaceSelector = ({
 					fill={
 						selected.includes("B") || selected.includes("V")
 							? "var(--teal, #0d9488)"
-							: "var(--paper-soft, #f8fafc)"
+							: "var(--odontogram-surface, var(--paper-soft, #f8fafc))"
 					}
 					stroke={
 						selected.includes("B") || selected.includes("V")
 							? "var(--teal-dark, #0f766e)"
-							: "var(--line-strong, #cbd5e1)"
+							: "var(--odontogram-border-strong, var(--line-strong, #cbd5e1))"
 					}
 					strokeWidth="2"
 					onClick={() => toggle("V")}
@@ -1619,7 +1630,7 @@ export const SurfaceSelector = ({
 					fill={
 						selected.includes("B") || selected.includes("V")
 							? "#ffffff"
-							: "var(--ink, #0f172a)"
+							: "var(--odontogram-ink, var(--ink, #0f172a))"
 					}
 					fontSize="12"
 					fontWeight="bold"
@@ -1637,12 +1648,12 @@ export const SurfaceSelector = ({
 					fill={
 						selected.includes("L") || selected.includes("P")
 							? "var(--teal, #0d9488)"
-							: "var(--paper-soft, #f8fafc)"
+							: "var(--odontogram-surface, var(--paper-soft, #f8fafc))"
 					}
 					stroke={
 						selected.includes("L") || selected.includes("P")
 							? "var(--teal-dark, #0f766e)"
-							: "var(--line-strong, #cbd5e1)"
+							: "var(--odontogram-border-strong, var(--line-strong, #cbd5e1))"
 					}
 					strokeWidth="2"
 					onClick={() => toggle("L")}
@@ -1660,7 +1671,7 @@ export const SurfaceSelector = ({
 					fill={
 						selected.includes("L") || selected.includes("P")
 							? "#ffffff"
-							: "var(--ink, #0f172a)"
+							: "var(--odontogram-ink, var(--ink, #0f172a))"
 					}
 					fontSize="12"
 					fontWeight="bold"
@@ -1678,12 +1689,12 @@ export const SurfaceSelector = ({
 					fill={
 						selected.includes("M")
 							? "var(--teal, #0d9488)"
-							: "var(--paper-soft, #f8fafc)"
+							: "var(--odontogram-surface, var(--paper-soft, #f8fafc))"
 					}
 					stroke={
 						selected.includes("M")
 							? "var(--teal-dark, #0f766e)"
-							: "var(--line-strong, #cbd5e1)"
+							: "var(--odontogram-border-strong, var(--line-strong, #cbd5e1))"
 					}
 					strokeWidth="2"
 					onClick={() => toggle("M")}
@@ -1699,7 +1710,7 @@ export const SurfaceSelector = ({
 					x="12"
 					y="54"
 					fill={
-						selected.includes("M") ? "#ffffff" : "var(--ink, #0f172a)"
+						selected.includes("M") ? "#ffffff" : "var(--odontogram-ink, var(--ink, #0f172a))"
 					}
 					fontSize="12"
 					fontWeight="bold"
@@ -1717,12 +1728,12 @@ export const SurfaceSelector = ({
 					fill={
 						selected.includes("D")
 							? "var(--teal, #0d9488)"
-							: "var(--paper-soft, #f8fafc)"
+							: "var(--odontogram-surface, var(--paper-soft, #f8fafc))"
 					}
 					stroke={
 						selected.includes("D")
 							? "var(--teal-dark, #0f766e)"
-							: "var(--line-strong, #cbd5e1)"
+							: "var(--odontogram-border-strong, var(--line-strong, #cbd5e1))"
 					}
 					strokeWidth="2"
 					onClick={() => toggle("D")}
@@ -1738,7 +1749,7 @@ export const SurfaceSelector = ({
 					x="88"
 					y="54"
 					fill={
-						selected.includes("D") ? "#ffffff" : "var(--ink, #0f172a)"
+						selected.includes("D") ? "#ffffff" : "var(--odontogram-ink, var(--ink, #0f172a))"
 					}
 					fontSize="12"
 					fontWeight="bold"
@@ -1756,12 +1767,12 @@ export const SurfaceSelector = ({
 					fill={
 						selected.includes("O")
 							? "var(--teal, #0d9488)"
-							: "var(--paper-soft, #f8fafc)"
+							: "var(--odontogram-surface, var(--paper-soft, #f8fafc))"
 					}
 					stroke={
 						selected.includes("O")
 							? "var(--teal-dark, #0f766e)"
-							: "var(--line-strong, #cbd5e1)"
+							: "var(--odontogram-border-strong, var(--line-strong, #cbd5e1))"
 					}
 					strokeWidth="2"
 					onClick={() => toggle("O")}
@@ -1777,7 +1788,7 @@ export const SurfaceSelector = ({
 					x="50"
 					y="54"
 					fill={
-						selected.includes("O") ? "#ffffff" : "var(--ink, #0f172a)"
+						selected.includes("O") ? "#ffffff" : "var(--odontogram-ink, var(--ink, #0f172a))"
 					}
 					fontSize="12"
 					fontWeight="bold"
@@ -1885,6 +1896,53 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 		return () => observer.disconnect();
 	}, []);
 
+	// High-speed keyboard triggers: instant 1-key assigning without opening sub-menus
+	useEffect(() => {
+		const handleGlobalKeyDown = (e: KeyboardEvent) => {
+			const target = e.target as HTMLElement | null;
+			if (
+				target instanceof HTMLInputElement ||
+				target instanceof HTMLTextAreaElement ||
+				target?.isContentEditable
+			) {
+				return;
+			}
+
+			if (selectedTeeth.length > 0 && onQuickStateChange) {
+				const quickState = getToothStateFromHotkey(e.key);
+				if (quickState) {
+					e.preventDefault();
+					onQuickStateChange(selectedTeeth, quickState);
+					return;
+				}
+			}
+
+			const firstTooth = selectedTeeth[0];
+			if (selectedTeeth.length === 1 && firstTooth !== undefined) {
+				const dirMap: Record<string, "left" | "right" | "up" | "down" | "home" | "end"> = {
+					ArrowLeft: "left",
+					ArrowRight: "right",
+					ArrowUp: "up",
+					ArrowDown: "down",
+					Home: "home",
+					End: "end",
+				};
+				const navDir = dirMap[e.key];
+				if (navDir) {
+					e.preventDefault();
+					const nextTooth = getNextFocusedTooth(firstTooth, navDir, pediatricMode);
+					const nextEl = document.querySelector<HTMLButtonElement>(`[data-tooth-id="${nextTooth}"]`);
+					nextEl?.focus();
+				}
+			}
+		};
+
+		window.addEventListener("keydown", handleGlobalKeyDown);
+		return () => {
+			window.removeEventListener("keydown", handleGlobalKeyDown);
+		};
+	}, [selectedTeeth, onQuickStateChange, pediatricMode]);
+
 	const handleToothClick = (
 		e: React.MouseEvent,
 		num: number,
@@ -1967,6 +2025,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 										showPeriapicalHalos={showPeriapicalHalos}
 										showPeriodontalBoneLoss={showPeriodontalBoneLoss}
 										isSelected={selectedTeeth.includes(num)}
+										selectedTeeth={selectedTeeth}
 										activeStamp={activeStamp}
 										onClick={handleToothClick}
 										onQuickStateChange={onQuickStateChange}
@@ -2004,6 +2063,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 										showPeriapicalHalos={showPeriapicalHalos}
 										showPeriodontalBoneLoss={showPeriodontalBoneLoss}
 										isSelected={selectedTeeth.includes(num)}
+										selectedTeeth={selectedTeeth}
 										activeStamp={activeStamp}
 										onClick={handleToothClick}
 										onQuickStateChange={onQuickStateChange}
@@ -2047,6 +2107,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 										showPeriapicalHalos={showPeriapicalHalos}
 										showPeriodontalBoneLoss={showPeriodontalBoneLoss}
 										isSelected={selectedTeeth.includes(num)}
+										selectedTeeth={selectedTeeth}
 										activeStamp={activeStamp}
 										onClick={handleToothClick}
 										onQuickStateChange={onQuickStateChange}
@@ -2084,6 +2145,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 										showPeriapicalHalos={showPeriapicalHalos}
 										showPeriodontalBoneLoss={showPeriodontalBoneLoss}
 										isSelected={selectedTeeth.includes(num)}
+										selectedTeeth={selectedTeeth}
 										activeStamp={activeStamp}
 										onClick={handleToothClick}
 										onQuickStateChange={onQuickStateChange}
