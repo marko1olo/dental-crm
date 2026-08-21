@@ -228,9 +228,11 @@ export interface ToothExchangeStatus {
 
 export interface EruptionTimelineAnalysis {
 	readonly ageYears: number;
+	readonly dentalAgeYears: number;
 	readonly stageCategory: DentitionStageCategory;
 	readonly stageNameRu: string;
 	readonly stageDescriptionRu: string;
+	readonly expectedExchangeDescriptionRu: string;
 	readonly expectedUpperArchTeeth: readonly number[];
 	readonly expectedLowerArchTeeth: readonly number[];
 	readonly toothStatuses: readonly ToothExchangeStatus[];
@@ -457,9 +459,16 @@ export function calculateEruptionTimelineByAge(ageYears: number): EruptionTimeli
 
 	return {
 		ageYears: clampedAge,
+		dentalAgeYears: clampedAge,
 		stageCategory,
 		stageNameRu,
 		stageDescriptionRu,
+		expectedExchangeDescriptionRu:
+			activeExfoliatingTeeth.length > 0
+				? `Активная смена молочных зубов: ${activeExfoliatingTeeth.join(", ")}`
+				: activelyEruptingPermanentTeeth.length > 0
+					? `Прорезывание постоянных зубов: ${activelyEruptingPermanentTeeth.join(", ")}`
+					: "Период относительной стабильности окклюзии",
 		expectedUpperArchTeeth: expectedUpper,
 		expectedLowerArchTeeth: expectedLower,
 		toothStatuses,
@@ -696,4 +705,89 @@ export function calculateCariogramRisk(rawInput: Partial<CariogramInput>): Cario
 		dominantRiskFactorRu,
 		preventiveProgram,
 	};
+}
+
+export interface PediatricDiaryTextOptions {
+	readonly patientAgeYears?: number;
+	readonly teethStates?: Record<number, string>;
+	readonly resorptionStages?: Record<number, ResorptionStagePercent>;
+	readonly cariogramInput?: Partial<CariogramInput>;
+	readonly customNotes?: string;
+}
+
+/**
+ * Generates a structured clinical diary text for pediatric patients (Форма 043/у — Детский протокол).
+ * Includes primary teeth resorption stages, mixed dentition analysis, Cariogram risk score, and preventive plan.
+ */
+export function generatePediatricCariogramDiaryText(
+	options?: PediatricDiaryTextOptions,
+): string {
+	const age = options?.patientAgeYears ?? 8;
+	const timeline = calculateEruptionTimelineByAge(age);
+	const cariogram = calculateCariogramRisk(options?.cariogramInput ?? {});
+	const resorption = options?.resorptionStages ?? {};
+	const teethStates = options?.teethStates ?? {};
+
+	const lines: string[] = [];
+	lines.push("ПРОТОКОЛ ДЕТСКОГО СТОМАТОЛОГИЧЕСКОГО ОСМОТРА (ФОРМА 043/у)");
+	lines.push("────────────────────────────────────────────────────────────");
+	lines.push("1. Зубной возраст и фаза сменного прикуса:");
+	lines.push(`   • Хронологический возраст: ${age} лет (расчетный зубной возраст: ${timeline.dentalAgeYears} лет)`);
+	lines.push(`   • Фаза прикуса: ${timeline.stageNameRu} (${timeline.stageDescriptionRu})`);
+	lines.push(`   • Ожидаемая сменяемость зубов: ${timeline.expectedExchangeDescriptionRu}`);
+	lines.push("");
+
+	// 2. Статус резорбции корней временных зубов (FDI)
+	lines.push("2. Физиологическая резорбция корней временных зубов (FDI):");
+	const resorptionEntries = Object.entries(resorption)
+		.map(([num, stage]) => ({ tooth: Number(num), stage }))
+		.filter((e) => isPrimaryTooth(e.tooth));
+
+	if (resorptionEntries.length > 0) {
+		const formattedResorption = resorptionEntries
+			.map((e) => {
+				const successor = PRIMARY_TO_PERMANENT_SUCCESSOR_MAP[e.tooth];
+				const stageDef = RESORPTION_STAGE_DEFINITIONS[e.stage]?.nameRu ?? `${e.stage}%`;
+				const succStr = successor ? ` (зачаток постоянного зуба #${successor})` : "";
+				return `   • Зуб #${e.tooth}: резорбция ${e.stage}% — ${stageDef}${succStr}`;
+			})
+			.join("\n");
+		lines.push(formattedResorption);
+	} else {
+		const primaryTeethActive = ALL_PRIMARY_TEETH.filter(
+			(t) => teethStates[t] && teethStates[t] !== "Missing" && teethStates[t] !== "Extracted"
+		);
+		if (primaryTeethActive.length > 0) {
+			lines.push(`   • Временные зубы в полости рта: ${primaryTeethActive.join(", ")}`);
+			lines.push("   • Резорбция корней соответствует возрастной физиологической норме.");
+		} else {
+			lines.push("   • Резорбция корней временных зубов протекает физиологически согласно хронологическому возрасту.");
+		}
+	}
+	lines.push("");
+
+	// 3. Кариограмма Bratthall и многофакторный кариесогенный профиль
+	lines.push("3. Оценка риска кариеса по Кариограмме (Prof. D. Bratthall / ВОЗ):");
+	lines.push(`   • Шанс избежать кариеса (зеленый сектор): ${cariogram.chanceOfAvoidingCariesPercent}%`);
+	lines.push(`   • Категория риска: ${cariogram.riskCategoryNameRu}`);
+	lines.push(`   • Характеристика: ${cariogram.riskCategoryDescriptionRu}`);
+	lines.push(`   • Доминирующий фактор риска: ${cariogram.dominantRiskFactorRu}`);
+	lines.push(`   • Секторы риска: Диета ${cariogram.sectors.dietSectorPercent}% | Бактерии ${cariogram.sectors.bacteriaSectorPercent}% | Восприимчивость ${cariogram.sectors.susceptibilitySectorPercent}% | Анамнез ${cariogram.sectors.circumstancesSectorPercent}%`);
+	lines.push("");
+
+	// 4. Индивидуализированный план профилактики и ремотерапии
+	lines.push("4. Индивидуализированная программа детской профилактики и ремотерапии:");
+	lines.push(`   • ${cariogram.preventiveProgram.professionalHygieneRu}`);
+	lines.push(`   • ${cariogram.preventiveProgram.fluorideVarnishProtocolRu}`);
+	lines.push(`   • ${cariogram.preventiveProgram.fissureSealingIndicationRu}`);
+	lines.push(`   • ${cariogram.preventiveProgram.homeCareProtocolRu}`);
+	lines.push(`   • ${cariogram.preventiveProgram.dietaryGuidanceRu}`);
+	lines.push(`   • Диспансерный осмотр: через ${cariogram.preventiveProgram.hygieneRecallIntervalMonths} месяца(ев).`);
+
+	if (options?.customNotes) {
+		lines.push("");
+		lines.push(`Особые отметки: ${options.customNotes}`);
+	}
+
+	return lines.join("\n");
 }

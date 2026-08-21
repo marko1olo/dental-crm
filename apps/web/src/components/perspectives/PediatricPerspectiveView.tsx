@@ -40,12 +40,23 @@ import {
 	type ToothData,
 	type ToothState,
 } from "../odontogram/ToothChart";
+import { PediatricCariogramTab } from "../odontogram/PediatricCariogramTab";
+import { PediatricResorptionTab } from "../odontogram/PediatricResorptionTab";
+import { PediatricTimelineTab } from "../odontogram/PediatricTimelineTab";
+import {
+	calculateCariogramRisk,
+	generateCariogramPieChartSlices,
+	calculateEruptionTimelineByAge,
+	DEFAULT_CARIOGRAM_INPUT,
+	type CariogramInput,
+	type ResorptionStagePercent,
+} from "../odontogram/pediatricDentitionEngine";
 import "../odontogram/odontogram.css";
 
 const MILK_TOOTH_SHORT_CODES: Record<ToothState, { code: string; dotColor: string }> = {
 	Healthy: { code: "Зд", dotColor: "#10b981" },
 	Caries: { code: "К", dotColor: "#ef4444" },
-	Pulpitis: { code: "П", dotColor: "#a855f7" },
+	Pulpitis: { code: "П", dotColor: "#dc2626" },
 	Periodontitis: { code: "Пер", dotColor: "#f97316" },
 	Filled: { code: "Пл", dotColor: "#10b981" },
 	Crown: { code: "Кр", dotColor: "#3b82f6" },
@@ -74,9 +85,9 @@ const PEDIATRIC_STATUS_OPTIONS: ReadonlyArray<{
 		state: "Pulpitis",
 		label: "Пульпотомия / Пульпит",
 		shortCode: "П",
-		colorClass: "bg-purple-500/15 text-purple-800 dark:text-purple-300 hover:bg-purple-500/25",
-		borderClass: "border-purple-500/40",
-		badgeClass: "bg-purple-600 text-white",
+		colorClass: "bg-rose-500/15 text-rose-800 dark:text-rose-300 hover:bg-rose-500/25",
+		borderClass: "border-rose-500/40",
+		badgeClass: "bg-rose-600 text-white",
 	},
 	{
 		state: "Periodontitis",
@@ -189,6 +200,16 @@ export function PediatricPerspectiveView() {
 
 	// View mode: SVG anatomical arc vs 56px touch tiles
 	const [viewMode, setViewMode] = useState<"svg" | "tiles">("svg");
+	const [activePediatricTab, setActivePediatricTab] = useState<
+		"chart" | "cariogram" | "resorption" | "timeline"
+	>("chart");
+	const [cariogramInput, setCariogramInput] = useState<CariogramInput>(DEFAULT_CARIOGRAM_INPUT);
+	const [selectedResorptionStage, setSelectedResorptionStage] = useState<ResorptionStagePercent>(0);
+	const [selectedAge, setSelectedAge] = useState<number>(7.0);
+
+	const cariogramResult = useMemo(() => calculateCariogramRisk(cariogramInput), [cariogramInput]);
+	const cariogramSlices = useMemo(() => generateCariogramPieChartSlices(cariogramResult.sectors), [cariogramResult]);
+	const timelineAnalysis = useMemo(() => calculateEruptionTimelineByAge(selectedAge), [selectedAge]);
 
 	const [selectedTooth, setSelectedTooth] = useState<number>(54);
 	const [toothStates, setToothStates] = useState<Record<number, ToothState>>({});
@@ -451,215 +472,300 @@ export function PediatricPerspectiveView() {
 				</div>
 			</header>
 
-			{/* Main Grid: Pediatric Formula (Left) + Parent Link & Templates (Right) */}
 			<main className="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-5 flex-1">
-				{/* Left: Pediatric Tooth Chart & 1-Tap Status */}
+				{/* Left: Pediatric Tooth Chart & Clinical Tabs */}
 				<section className="lg:col-span-7 bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
 					<div>
-						{/* View Mode Toggle & Header */}
-						<div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
-							<div className="flex items-center gap-2">
-								<Smile size={22} className="text-pink-600 dark:text-pink-400 shrink-0" />
-								<h2 className="text-lg font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 m-0">
-									Формула молочных зубов (FDI)
-								</h2>
-								{isLoadingTeeth && (
-									<span className="text-xs text-pink-600 dark:text-pink-400 flex items-center gap-1">
-										<Loader2 size={14} className="animate-spin" /> Загрузка...
-									</span>
-								)}
-							</div>
-
-							{/* View Mode Switcher: [🦷 Анатомическая дуга (SVG) | 🔲 Крупные плитки (56px)] */}
-							<div
-								role="group"
-								aria-label="Режим отображения детской формулы"
-								className="inline-flex p-1 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 shadow-inner"
+						{/* Sub-tabs for Pediatric Clinical Modules */}
+						<div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1" role="tablist">
+							<button
+								type="button"
+								role="tab"
+								aria-selected={activePediatricTab === "chart"}
+								onClick={() => setActivePediatricTab("chart")}
+								className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+									activePediatricTab === "chart"
+										? "bg-pink-600 text-white shadow-sm"
+										: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-pink-50 dark:hover:bg-pink-950/30"
+								}`}
 							>
-								<button
-									type="button"
-									onClick={() => setViewMode("svg")}
-									aria-pressed={viewMode === "svg"}
-									className={`min-h-[40px] px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-										viewMode === "svg"
-											? "bg-pink-600 text-white shadow-md shadow-pink-600/30"
-											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-pink-600 dark:hover:text-pink-300"
-									}`}
-								>
-									<span>🦷 Анатомическая дуга (SVG)</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => setViewMode("tiles")}
-									aria-pressed={viewMode === "tiles"}
-									className={`min-h-[40px] px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-										viewMode === "tiles"
-											? "bg-pink-600 text-white shadow-md shadow-pink-600/30"
-											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-pink-600 dark:hover:text-pink-300"
-									}`}
-								>
-									<span>🔲 Крупные плитки (56px)</span>
-								</button>
-							</div>
+								<span>🦷 Формула</span>
+							</button>
+							<button
+								type="button"
+								role="tab"
+								aria-selected={activePediatricTab === "cariogram"}
+								onClick={() => setActivePediatricTab("cariogram")}
+								className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+									activePediatricTab === "cariogram"
+										? "bg-pink-600 text-white shadow-sm"
+										: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-pink-50 dark:hover:bg-pink-950/30"
+								}`}
+							>
+								<span>🍰 Cariogram (Риск)</span>
+							</button>
+							<button
+								type="button"
+								role="tab"
+								aria-selected={activePediatricTab === "resorption"}
+								onClick={() => setActivePediatricTab("resorption")}
+								className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+									activePediatricTab === "resorption"
+										? "bg-pink-600 text-white shadow-sm"
+										: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-pink-50 dark:hover:bg-pink-950/30"
+								}`}
+							>
+								<span>📉 Резорбция корней</span>
+							</button>
+							<button
+								type="button"
+								role="tab"
+								aria-selected={activePediatricTab === "timeline"}
+								onClick={() => setActivePediatricTab("timeline")}
+								className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+									activePediatricTab === "timeline"
+										? "bg-pink-600 text-white shadow-sm"
+										: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-pink-50 dark:hover:bg-pink-950/30"
+								}`}
+							>
+								<span>⏳ Сроки смены</span>
+							</button>
 						</div>
 
-						{/* Rendering Branch: Anatomical SVG Arc vs Touch Tiles Matrix */}
-						{viewMode === "svg" ? (
-							<div className="w-full overflow-x-auto pb-2">
-								<ToothChart
-									teethData={teethData}
-									pediatricMode={!isMixedDentition}
-									mixedDentition={isMixedDentition}
-									topTeeth={upperMilkTeeth}
-									bottomTeeth={lowerMilkTeeth}
-									selectedTeeth={[selectedTooth]}
-									onToothClick={handleToothClickFromChart}
-									useSurfaces={true}
-									hideHeader={true}
-									className="border-0 shadow-none p-0 bg-transparent"
-								/>
-							</div>
-						) : (
-							<div className="space-y-4">
-								{/* Upper Milk Arch (55–65) */}
-								<div>
-									<div className="text-xs font-bold text-[var(--muted,#64748b)] dark:text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
-										<span>Верхняя челюсть (55–51 | 61–65)</span>
-										{isMixedDentition && <span className="text-purple-700 dark:text-purple-300 font-bold">+ моляры 16, 26</span>}
-									</div>
-									<div
-										className={`grid gap-2 overflow-x-auto pb-1 ${
-											isMixedDentition ? "grid-cols-6 sm:grid-cols-12" : "grid-cols-5 sm:grid-cols-10"
-										}`}
-									>
-										{upperMilkTeeth.map((tNum) => {
-											const isSelected = selectedTooth === tNum;
-											const state = toothStates[tNum] || "Healthy";
-											const meta = MILK_TOOTH_SHORT_CODES[state] || { code: "Зд", dotColor: "#10b981" };
-											const surfaces = toothSurfaces[tNum];
-											return (
-												<button
-													key={tNum}
-													type="button"
-													onClick={() => setSelectedTooth(tNum)}
-													className={`min-h-[58px] min-w-[44px] p-1 rounded-2xl flex flex-col items-center justify-center font-black transition-all border cursor-pointer active:scale-95 whitespace-nowrap ${
-														isSelected
-															? "bg-pink-600 text-white border-pink-700 shadow-lg shadow-pink-600/30 scale-105 z-10"
-															: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 border-[var(--line,#cbd5e1)] dark:border-slate-700"
-													}`}
-												>
-													<span className="text-xs sm:text-sm md:text-base font-black whitespace-nowrap leading-tight">{tNum}</span>
-													<span
-														className={`flex items-center justify-center gap-1 mt-0.5 text-[10px] font-bold px-0.5 rounded-sm whitespace-nowrap leading-none ${
-															isSelected ? "text-pink-100" : "text-[var(--ink,#0f172a)] dark:text-slate-300"
-														}`}
-													>
-														<span
-															className="w-1.5 h-1.5 rounded-full shrink-0"
-															style={{ backgroundColor: meta.dotColor }}
-														/>
-														<span className="whitespace-nowrap">{meta.code}</span>
-													</span>
-													{surfaces && surfaces.length > 0 && (
-														<span className="text-[8px] leading-tight text-pink-300 dark:text-pink-200 mt-0.5 truncate max-w-full">
-															{surfaces.join("")}
-														</span>
-													)}
-												</button>
-											);
-										})}
-									</div>
-								</div>
-
-								{/* Lower Milk Arch (85–75) */}
-								<div>
-									<div className="text-xs font-bold text-[var(--muted,#64748b)] dark:text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
-										<span>Нижняя челюсть (85–81 | 71–75)</span>
-										{isMixedDentition && <span className="text-purple-700 dark:text-purple-300 font-bold">+ моляры 46, 36</span>}
-									</div>
-									<div
-										className={`grid gap-2 overflow-x-auto pb-1 ${
-											isMixedDentition ? "grid-cols-6 sm:grid-cols-12" : "grid-cols-5 sm:grid-cols-10"
-										}`}
-									>
-										{lowerMilkTeeth.map((tNum) => {
-											const isSelected = selectedTooth === tNum;
-											const state = toothStates[tNum] || "Healthy";
-											const meta = MILK_TOOTH_SHORT_CODES[state] || { code: "Зд", dotColor: "#10b981" };
-											const surfaces = toothSurfaces[tNum];
-											return (
-												<button
-													key={tNum}
-													type="button"
-													onClick={() => setSelectedTooth(tNum)}
-													className={`min-h-[58px] min-w-[44px] p-1 rounded-2xl flex flex-col items-center justify-center font-black transition-all border cursor-pointer active:scale-95 whitespace-nowrap ${
-														isSelected
-															? "bg-pink-600 text-white border-pink-700 shadow-lg shadow-pink-600/30 scale-105 z-10"
-															: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 border-[var(--line,#cbd5e1)] dark:border-slate-700"
-													}`}
-												>
-													<span className="text-xs sm:text-sm md:text-base font-black whitespace-nowrap leading-tight">{tNum}</span>
-													<span
-														className={`flex items-center justify-center gap-1 mt-0.5 text-[10px] font-bold px-0.5 rounded-sm whitespace-nowrap leading-none ${
-															isSelected ? "text-pink-100" : "text-[var(--ink,#0f172a)] dark:text-slate-300"
-														}`}
-													>
-														<span
-															className="w-1.5 h-1.5 rounded-full shrink-0"
-															style={{ backgroundColor: meta.dotColor }}
-														/>
-														<span className="whitespace-nowrap">{meta.code}</span>
-													</span>
-													{surfaces && surfaces.length > 0 && (
-														<span className="text-[8px] leading-tight text-pink-300 dark:text-pink-200 mt-0.5 truncate max-w-full">
-															{surfaces.join("")}
-														</span>
-													)}
-												</button>
-											);
-										})}
-									</div>
-								</div>
-							</div>
+						{activePediatricTab === "cariogram" && (
+							<PediatricCariogramTab
+								cariogramInput={cariogramInput}
+								onCariogramInputChange={setCariogramInput}
+								cariogramResult={cariogramResult}
+								pieSlices={cariogramSlices}
+							/>
 						)}
-					</div>
 
-					{/* 1-Tap Pediatric Tooth Status Bar */}
-					<div className="mt-6 pt-4 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">
-						<div className="text-sm font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 mb-3 flex items-center justify-between flex-wrap gap-2">
-							<span className="flex items-center gap-2">
-								<span>Быстрое присвоение статуса для зуба #{selectedTooth}:</span>
-								<span className="text-xs px-2 py-0.5 rounded bg-pink-50 dark:bg-pink-950/60 text-pink-800 dark:text-pink-300 border border-pink-500/30">
-									{TOOTH_STATE_LABELS[selectedToothState] || selectedToothState}
-								</span>
-							</span>
-							{isSavingTooth && (
-								<span className="text-pink-600 dark:text-pink-400 text-xs flex items-center gap-1">
-									<Loader2 size={14} className="animate-spin" /> Сохранение...
-								</span>
-							)}
-						</div>
-						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2">
-							{PEDIATRIC_STATUS_OPTIONS.map((opt) => {
-								const isActive = selectedToothState === opt.state;
-								return (
-									<button
-										key={opt.state}
-										type="button"
-										disabled={isSavingTooth}
-										onClick={() => void handleToothStatusSelect(opt.state)}
-										className={`min-h-[58px] p-2 rounded-xl font-bold text-xs border flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer shadow-sm ${opt.colorClass} ${opt.borderClass} ${
-											isActive ? "ring-2 ring-pink-500 ring-offset-1 font-black" : ""
-										}`}
+						{activePediatricTab === "resorption" && (
+							<PediatricResorptionTab
+								selectedPrimaryTooth={selectedTooth}
+								onSelectPrimaryTooth={setSelectedTooth}
+								selectedResorptionStage={selectedResorptionStage}
+								onSelectResorptionStage={setSelectedResorptionStage}
+							/>
+						)}
+
+						{activePediatricTab === "timeline" && (
+							<PediatricTimelineTab
+								selectedAge={selectedAge}
+								onAgeChange={setSelectedAge}
+								timelineAnalysis={timelineAnalysis}
+							/>
+						)}
+
+						{activePediatricTab === "chart" && (
+							<>
+								{/* View Mode Toggle & Header */}
+								<div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
+									<div className="flex items-center gap-2">
+										<Smile size={22} className="text-pink-600 dark:text-pink-400 shrink-0" />
+										<h2 className="text-lg font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 m-0">
+											Формула молочных зубов (FDI)
+										</h2>
+										{isLoadingTeeth && (
+											<span className="text-xs text-pink-600 dark:text-pink-400 flex items-center gap-1">
+												<Loader2 size={14} className="animate-spin" /> Загрузка...
+											</span>
+										)}
+									</div>
+
+									{/* View Mode Switcher: [🦷 Анатомическая дуга (SVG) | 🔲 Крупные плитки (56px)] */}
+									<div
+										role="group"
+										aria-label="Режим отображения детской формулы"
+										className="inline-flex p-1 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 shadow-inner"
 									>
-										<span className="text-center leading-tight line-clamp-1">{opt.label}</span>
-										<span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${opt.badgeClass}`}>
-											{opt.shortCode}
+										<button
+											type="button"
+											onClick={() => setViewMode("svg")}
+											aria-pressed={viewMode === "svg"}
+											className={`min-h-[40px] px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+												viewMode === "svg"
+													? "bg-pink-600 text-white shadow-md shadow-pink-600/30"
+													: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-pink-600 dark:hover:text-pink-300"
+											}`}
+										>
+											<span>🦷 Анатомическая дуга (SVG)</span>
+										</button>
+										<button
+											type="button"
+											onClick={() => setViewMode("tiles")}
+											aria-pressed={viewMode === "tiles"}
+											className={`min-h-[40px] px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+												viewMode === "tiles"
+													? "bg-pink-600 text-white shadow-md shadow-pink-600/30"
+													: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-pink-600 dark:hover:text-pink-300"
+											}`}
+										>
+											<span>🔲 Крупные плитки (56px)</span>
+										</button>
+									</div>
+								</div>
+
+								{/* Rendering Branch: Anatomical SVG Arc vs Touch Tiles Matrix */}
+								{viewMode === "svg" ? (
+									<div className="w-full overflow-x-auto pb-2">
+										<ToothChart
+											teethData={teethData}
+											pediatricMode={!isMixedDentition}
+											mixedDentition={isMixedDentition}
+											topTeeth={upperMilkTeeth}
+											bottomTeeth={lowerMilkTeeth}
+											selectedTeeth={[selectedTooth]}
+											onToothClick={handleToothClickFromChart}
+											useSurfaces={true}
+											hideHeader={true}
+											className="border-0 shadow-none p-0 bg-transparent"
+										/>
+									</div>
+								) : (
+									<div className="space-y-4">
+										{/* Upper Milk Arch (55–65) */}
+										<div>
+											<div className="text-xs font-bold text-[var(--muted,#64748b)] dark:text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+												<span>Верхняя челюсть (55–51 | 61–65)</span>
+												{isMixedDentition && <span className="text-purple-700 dark:text-purple-300 font-bold">+ моляры 16, 26</span>}
+											</div>
+											<div
+												className={`grid gap-2 overflow-x-auto pb-1 ${
+													isMixedDentition ? "grid-cols-6 sm:grid-cols-12" : "grid-cols-5 sm:grid-cols-10"
+												}`}
+											>
+												{upperMilkTeeth.map((tNum) => {
+													const isSelected = selectedTooth === tNum;
+													const state = toothStates[tNum] || "Healthy";
+													const meta = MILK_TOOTH_SHORT_CODES[state] || { code: "Зд", dotColor: "#10b981" };
+													const surfaces = toothSurfaces[tNum];
+													return (
+														<button
+															key={tNum}
+															type="button"
+															onClick={() => setSelectedTooth(tNum)}
+															className={`min-h-[58px] min-w-[44px] p-1 rounded-2xl flex flex-col items-center justify-center font-black transition-all border cursor-pointer active:scale-95 whitespace-nowrap ${
+																isSelected
+																	? "bg-pink-600 text-white border-pink-700 shadow-lg shadow-pink-600/30 scale-105 z-10"
+																	: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 border-[var(--line,#cbd5e1)] dark:border-slate-700"
+															}`}
+														>
+															<span className="text-xs sm:text-sm md:text-base font-black whitespace-nowrap leading-tight">{tNum}</span>
+															<span
+																className={`flex items-center justify-center gap-1 mt-0.5 text-[10px] font-bold px-0.5 rounded-sm whitespace-nowrap leading-none ${
+																	isSelected ? "text-pink-100" : "text-[var(--ink,#0f172a)] dark:text-slate-300"
+																}`}
+															>
+																<span
+																	className="w-1.5 h-1.5 rounded-full shrink-0"
+																	style={{ backgroundColor: meta.dotColor }}
+																/>
+																<span className="whitespace-nowrap">{meta.code}</span>
+															</span>
+															{surfaces && surfaces.length > 0 && (
+																<span className="text-[8px] leading-tight text-pink-300 dark:text-pink-200 mt-0.5 truncate max-w-full">
+																	{surfaces.join("")}
+																</span>
+															)}
+														</button>
+													);
+												})}
+											</div>
+										</div>
+
+										{/* Lower Milk Arch (85–75) */}
+										<div>
+											<div className="text-xs font-bold text-[var(--muted,#64748b)] dark:text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+												<span>Нижняя челюсть (85–81 | 71–75)</span>
+												{isMixedDentition && <span className="text-purple-700 dark:text-purple-300 font-bold">+ моляры 46, 36</span>}
+											</div>
+											<div
+												className={`grid gap-2 overflow-x-auto pb-1 ${
+													isMixedDentition ? "grid-cols-6 sm:grid-cols-12" : "grid-cols-5 sm:grid-cols-10"
+												}`}
+											>
+												{lowerMilkTeeth.map((tNum) => {
+													const isSelected = selectedTooth === tNum;
+													const state = toothStates[tNum] || "Healthy";
+													const meta = MILK_TOOTH_SHORT_CODES[state] || { code: "Зд", dotColor: "#10b981" };
+													const surfaces = toothSurfaces[tNum];
+													return (
+														<button
+															key={tNum}
+															type="button"
+															onClick={() => setSelectedTooth(tNum)}
+															className={`min-h-[58px] min-w-[44px] p-1 rounded-2xl flex flex-col items-center justify-center font-black transition-all border cursor-pointer active:scale-95 whitespace-nowrap ${
+																isSelected
+																	? "bg-pink-600 text-white border-pink-700 shadow-lg shadow-pink-600/30 scale-105 z-10"
+																	: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 border-[var(--line,#cbd5e1)] dark:border-slate-700"
+															}`}
+														>
+															<span className="text-xs sm:text-sm md:text-base font-black whitespace-nowrap leading-tight">{tNum}</span>
+															<span
+																className={`flex items-center justify-center gap-1 mt-0.5 text-[10px] font-bold px-0.5 rounded-sm whitespace-nowrap leading-none ${
+																	isSelected ? "text-pink-100" : "text-[var(--ink,#0f172a)] dark:text-slate-300"
+																}`}
+															>
+																<span
+																	className="w-1.5 h-1.5 rounded-full shrink-0"
+																	style={{ backgroundColor: meta.dotColor }}
+																/>
+																<span className="whitespace-nowrap">{meta.code}</span>
+															</span>
+															{surfaces && surfaces.length > 0 && (
+																<span className="text-[8px] leading-tight text-pink-300 dark:text-pink-200 mt-0.5 truncate max-w-full">
+																	{surfaces.join("")}
+																</span>
+															)}
+														</button>
+													);
+												})}
+											</div>
+										</div>
+									</div>
+								)}
+
+								{/* 1-Tap Pediatric Tooth Status Bar */}
+								<div className="mt-6 pt-4 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">
+									<div className="text-sm font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 mb-3 flex items-center justify-between flex-wrap gap-2">
+										<span className="flex items-center gap-2">
+											<span>Быстрое присвоение статуса для зуба #{selectedTooth}:</span>
+											<span className="text-xs px-2 py-0.5 rounded bg-pink-50 dark:bg-pink-950/60 text-pink-800 dark:text-pink-300 border border-pink-500/30">
+												{TOOTH_STATE_LABELS[selectedToothState] || selectedToothState}
+											</span>
 										</span>
-									</button>
-								);
-							})}
-						</div>
+										{isSavingTooth && (
+											<span className="text-pink-600 dark:text-pink-400 text-xs flex items-center gap-1">
+												<Loader2 size={14} className="animate-spin" /> Сохранение...
+											</span>
+										)}
+									</div>
+									<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2">
+										{PEDIATRIC_STATUS_OPTIONS.map((opt) => {
+											const isActive = selectedToothState === opt.state;
+											return (
+												<button
+													key={opt.state}
+													type="button"
+													disabled={isSavingTooth}
+													onClick={() => void handleToothStatusSelect(opt.state)}
+													className={`min-h-[58px] p-2 rounded-xl font-bold text-xs border flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer shadow-sm ${opt.colorClass} ${opt.borderClass} ${
+														isActive ? "ring-2 ring-pink-500 ring-offset-1 font-black" : ""
+													}`}
+												>
+													<span className="text-center leading-tight line-clamp-1">{opt.label}</span>
+													<span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${opt.badgeClass}`}>
+														{opt.shortCode}
+													</span>
+												</button>
+											);
+										})}
+									</div>
+								</div>
+							</>
+						)}
 					</div>
 				</section>
 
