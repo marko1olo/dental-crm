@@ -1,9 +1,12 @@
 import type { Appointment, Dashboard, TreatmentPlanItem } from "@dental/shared";
-import { Calendar, CheckCircle2, Clock, FileText, Stethoscope } from "lucide-react";
+import { Calendar, CheckCircle2, Clock, FileSpreadsheet, FileText, Shield, Stethoscope } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { money } from "../../utils/financeUtils";
 import { PatientJourneyTimeline } from "../PatientJourneyTimeline";
+import { DmsGuaranteeLetterModal } from "../insurance/DmsGuaranteeLetterModal";
+import { DmsRegistryExportModal } from "../insurance/DmsRegistryExportModal";
+import { PatientAllergySafetyBanner } from "./PatientAllergySafetyBanner";
 
 export interface PatientWorkspaceViewProps {
 	patientId: string;
@@ -237,11 +240,21 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 				[onOpenPlan],
 			);
 
+			const [isDmsLetterOpen, setIsDmsLetterOpen] = useState(false);
+			const [isDmsRegistryOpen, setIsDmsRegistryOpen] = useState(false);
+
 			return (
 				<div
 					data-testid="patient-workspace-view"
 					className="patient-workspace-view flex flex-col gap-4 rounded-2xl bg-[var(--paper,#ffffff)] dark:bg-slate-900 p-4 md:p-6 text-[var(--ink,#1e293b)] dark:text-slate-100 border border-[var(--line,#e2e8f0)] dark:border-slate-800 shadow-sm"
 				>
+					{/* Clinical Safety & Allergy Red-Flag Emergency Banner */}
+					<PatientAllergySafetyBanner
+						patientId={patientId}
+						patientName={patientName}
+						showModalButton={true}
+					/>
+
 					<div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line,#e2e8f0)] pb-4 dark:border-slate-800">
 						<div className="flex items-center gap-2">
 							<span className="text-base md:text-lg font-black text-[var(--ink,#1e293b)] dark:text-white">
@@ -253,6 +266,24 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 						</div>
 
 						<div className="flex items-center gap-1.5 flex-wrap">
+							<button
+								type="button"
+								className="min-h-[44px] px-3 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer border border-sky-500/30 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900/50"
+								onClick={() => setIsDmsLetterOpen(true)}
+								title="Гарантийное письмо ДМС"
+							>
+								<Shield className="w-3.5 h-3.5 inline mr-1.5" />
+								Полис / ГП ДМС
+							</button>
+							<button
+								type="button"
+								className="min-h-[44px] px-3 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer border border-teal-500/30 bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50"
+								onClick={() => setIsDmsRegistryOpen(true)}
+								title="Экспорт реестра услуг ДМС"
+							>
+								<FileSpreadsheet className="w-3.5 h-3.5 inline mr-1.5" />
+								Реестр ДМС
+							</button>
 							<button
 								type="button"
 								className={`min-h-[44px] px-3.5 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer border ${
@@ -353,6 +384,22 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 							)}
 						</div>
 					)}
+
+					{/* DMS Guarantee Letter Modal */}
+					<DmsGuaranteeLetterModal
+						isOpen={isDmsLetterOpen}
+						onClose={() => setIsDmsLetterOpen(false)}
+						patient={{
+							id: patientId,
+							fullName: patientName || "",
+						}}
+					/>
+
+					{/* DMS Registry Export Modal */}
+					<DmsRegistryExportModal
+						isOpen={isDmsRegistryOpen}
+						onClose={() => setIsDmsRegistryOpen(false)}
+					/>
 				</div>
 			);
 		},

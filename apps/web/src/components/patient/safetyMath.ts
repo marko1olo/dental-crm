@@ -498,7 +498,7 @@ export function evaluatePatientSafetyFlags(
 			description: customDetails ? `${item.fullDescription} Примечание: ${customDetails}` : item.fullDescription,
 			forbiddenProcedures: item.forbiddenProcedures,
 			mandatoryPrecautions: item.mandatoryPrecautions,
-			recommendedAnesthesiaNotes: item.recommendedAnesthesiaNotes,
+			recommendedAnesthesiaNotes: item.recommendedAnesthesiaNotes ?? undefined,
 			source: "structured_profile",
 		});
 
@@ -724,7 +724,7 @@ export function parseSafetyProfileFromText(text?: string | null | undefined): Pa
 		hasHiv: hasHiv,
 		hasPenicillinAllergy: hasPenicillin,
 		hasLatexAllergy: hasLatex,
-		customChronicNotes: text !== null && text !== undefined ? text : undefined,
+		customChronicNotes: text ? text : undefined,
 	};
 }
 

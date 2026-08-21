@@ -309,11 +309,11 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 					<PatientAnamnesisModal
 						isOpen={isModalOpen}
 						onClose={() => setIsModalOpen(false)}
-						patientId={patientId}
-						patientName={patientName}
+						patientId={patientId ?? undefined}
+						patientName={patientName ?? undefined}
 						initialProfile={effectiveProfile}
 						onSaveProfile={handleSaveModalProfile}
-						onSyncToEmkDiary={onSyncToEmkDiary}
+						onSyncToEmkDiary={onSyncToEmkDiary ?? undefined}
 					/>
 				</>
 			);

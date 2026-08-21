@@ -1,0 +1,385 @@
+/**
+ * insurance.css — Стили модуля ДМС (Добровольное медицинское страхование),
+ * гарантийных писем, реестров и актов сдачи-приемки.
+ *
+ * Инварианты:
+ * 1. Vanilla CSS с поддержкой системных токенов (Light & Dark mode).
+ * 2. Touch targets >= 44x44px для интерактивных элементов (кнопки, селекторы, чекбоксы).
+ * 3. Адаптивная верстка (мобильная и десктопная).
+ * 4. Стили печати (@media print) для документов и двустороннего акта.
+ */
+
+.dms-modal-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: rgba(15, 23, 42, 0.65);
+	backdrop-filter: blur(6px);
+	padding: 16px;
+	overflow-y: auto;
+	box-sizing: border-box;
+}
+
+.dms-modal-window {
+	width: 100%;
+	max-width: 960px;
+	max-height: 90vh;
+	display: flex;
+	flex-direction: column;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 20px;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+	overflow: hidden;
+	box-sizing: border-box;
+}
+
+.dms-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 18px 24px;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	background: var(--surface, #f8fafc);
+}
+
+.dms-modal-title {
+	font-size: 1.15rem;
+	font-weight: 700;
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.dms-modal-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 20px 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	box-sizing: border-box;
+}
+
+.dms-modal-footer {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 12px;
+	padding: 16px 24px;
+	border-top: 1px solid var(--line, #e2e8f0);
+	background: var(--surface, #f8fafc);
+}
+
+/* Touch Targets >= 44px */
+.dms-btn {
+	min-height: 44px;
+	min-width: 44px;
+	padding: 10px 18px;
+	border-radius: 12px;
+	font-size: 0.875rem;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	cursor: pointer;
+	transition: all 0.15s ease-in-out;
+	border: 1px solid transparent;
+	box-sizing: border-box;
+	user-select: none;
+}
+
+.dms-btn:active {
+	transform: scale(0.98);
+}
+
+.dms-btn-primary {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+}
+
+.dms-btn-primary:hover {
+	background: var(--teal-dark, #0f766e);
+}
+
+.dms-btn-secondary {
+	background: var(--surface, #f1f5f9);
+	color: var(--ink, #0f172a);
+	border-color: var(--line, #cbd5e1);
+}
+
+.dms-btn-secondary:hover {
+	background: var(--paper-soft, #e2e8f0);
+}
+
+.dms-btn-success {
+	background: var(--ok-fg, #15803d);
+	color: #ffffff;
+	box-shadow: 0 4px 12px rgba(21, 128, 61, 0.25);
+}
+
+.dms-btn-success:hover {
+	opacity: 0.9;
+}
+
+.dms-btn-danger {
+	background: var(--bad-fg, #b91c1c);
+	color: #ffffff;
+}
+
+.dms-btn-danger:hover {
+	opacity: 0.9;
+}
+
+.dms-btn-icon {
+	padding: 10px;
+	border-radius: 10px;
+}
+
+/* Формы и поля ввода */
+.dms-field-group {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.dms-label {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+}
+
+.dms-input,
+.dms-select,
+.dms-textarea {
+	min-height: 44px;
+	padding: 10px 14px;
+	border-radius: 12px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 0.875rem;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+.dms-input:focus,
+.dms-select:focus,
+.dms-textarea:focus {
+	outline: none;
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 3px var(--teal-glow, rgba(13, 148, 136, 0.2));
+}
+
+.dms-grid-2 {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 16px;
+}
+
+.dms-grid-3 {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 16px;
+}
+
+@media (max-width: 768px) {
+	.dms-grid-2,
+	.dms-grid-3 {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* Карточки и панели */
+.dms-card {
+	padding: 16px;
+	border-radius: 14px;
+	background: var(--surface, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+.dms-card-title {
+	font-size: 0.9375rem;
+	font-weight: 700;
+	margin: 0 0 12px 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+/* Чекбоксы и бейджи исключений */
+.dms-checkbox-pill {
+	min-height: 44px;
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	padding: 8px 14px;
+	border-radius: 12px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	cursor: pointer;
+	user-select: none;
+	transition: all 0.15s ease;
+}
+
+.dms-checkbox-pill.active {
+	border-color: var(--bad-fg, #ef4444);
+	background: var(--bad-bg, rgba(239, 68, 68, 0.08));
+	color: var(--bad-fg, #ef4444);
+}
+
+.dms-checkbox-pill input[type="checkbox"] {
+	width: 18px;
+	height: 18px;
+	accent-color: var(--bad-fg, #ef4444);
+}
+
+/* Номенклатурный список 804н */
+.dms-service-item {
+	min-height: 52px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 14px;
+	border-radius: 12px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	margin-bottom: 8px;
+	transition: background-color 0.15s ease;
+}
+
+.dms-service-item:hover {
+	background: var(--surface, #f8fafc);
+}
+
+.dms-service-item.selected {
+	border-color: var(--teal, #0d9488);
+	background: var(--teal-surface, rgba(13, 148, 136, 0.08));
+}
+
+/* Бейджи статусов */
+.dms-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	border-radius: 20px;
+	font-size: 0.75rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.dms-badge-active {
+	background: var(--ok-bg, #ecfdf5);
+	color: var(--ok-fg, #059669);
+	border: 1px solid var(--ok-fg, rgba(5, 150, 105, 0.3));
+}
+
+.dms-badge-exhausted {
+	background: var(--warn-bg, #fffbeb);
+	color: var(--warn-fg, #d97706);
+	border: 1px solid var(--warn-fg, rgba(217, 119, 6, 0.3));
+}
+
+.dms-badge-expired {
+	background: var(--bad-bg, #fef2f2);
+	color: var(--bad-fg, #dc2626);
+	border: 1px solid var(--bad-fg, rgba(220, 38, 38, 0.3));
+}
+
+/* Таблица реестра оказанных услуг */
+.dms-table-container {
+	border-radius: 14px;
+	border: 1px solid var(--line, #e2e8f0);
+	overflow-x: auto;
+	background: var(--paper, #ffffff);
+}
+
+.dms-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8125rem;
+	text-align: left;
+}
+
+.dms-table th {
+	padding: 12px 14px;
+	background: var(--surface, #f8fafc);
+	font-weight: 700;
+	color: var(--muted, #64748b);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	white-space: nowrap;
+}
+
+.dms-table td {
+	padding: 12px 14px;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	vertical-align: middle;
+}
+
+.dms-table tr:last-child td {
+	border-bottom: none;
+}
+
+.dms-table-totals {
+	background: var(--surface, #f8fafc);
+	font-weight: 700;
+}
+
+/* Статистические плашки сводки */
+.dms-stats-row {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 12px;
+}
+
+@media (max-width: 900px) {
+	.dms-stats-row {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+.dms-stat-card {
+	padding: 14px;
+	border-radius: 12px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.dms-stat-value {
+	font-size: 1.25rem;
+	font-weight: 800;
+	color: var(--ink, #0f172a);
+}
+
+.dms-stat-label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+}
+
+/* Стили печати для документов */
+@media print {
+	.dms-modal-backdrop,
+	.dms-modal-header,
+	.dms-modal-footer,
+	.no-print {
+		display: none !important;
+	}
+	body {
+		background: #ffffff !important;
+		color: #000000 !important;
+	}
+}
