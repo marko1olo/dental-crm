@@ -260,57 +260,57 @@ export function CallAudioPlayer({
 			/>
 
 			{/* Top Bar: Playback Controls & Waveform Info */}
-			<div className="flex items-center justify-between gap-2">
+			<div className="flex flex-wrap items-center justify-between gap-2">
 				<div className="flex items-center gap-2">
 					<button
 						type="button"
 						onClick={togglePlay}
-						className="w-8 h-8 rounded-lg bg-teal-600 hover:bg-teal-500 active:scale-95 text-white flex items-center justify-center transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+						className="min-h-[44px] min-w-[44px] w-11 h-11 rounded-xl bg-teal-600 hover:bg-teal-500 active:scale-95 text-white flex items-center justify-center transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
 						title={isPlaying ? "Пауза" : "Воспроизвести запись"}
 						aria-label={isPlaying ? "Пауза" : "Воспроизвести запись"}
 					>
-						{isPlaying ? <Pause size={14} /> : <Play size={14} className="ml-0.5" />}
+						{isPlaying ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
 					</button>
 
 					{/* Skip -10s */}
 					<button
 						type="button"
 						onClick={() => handleSkip(-10)}
-						className="p-1 rounded-md text-slate-400 hover:text-slate-200 transition-colors"
+						className="min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 inline-flex items-center justify-center transition-colors"
 						title="Назад на 10 сек"
 						aria-label="Назад на 10 секунд"
 					>
-						<RotateCcw size={13} />
+						<RotateCcw size={16} />
 					</button>
 
 					{/* Skip +10s */}
 					<button
 						type="button"
 						onClick={() => handleSkip(10)}
-						className="p-1 rounded-md text-slate-400 hover:text-slate-200 transition-colors"
+						className="min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 inline-flex items-center justify-center transition-colors"
 						title="Вперед на 10 сек"
 						aria-label="Вперед на 10 секунд"
 					>
-						<RotateCw size={13} />
+						<RotateCw size={16} />
 					</button>
 
-					<span className="font-mono text-[11px] text-slate-300 font-semibold">
+					<span className="font-mono text-xs text-slate-300 font-semibold pl-1">
 						{formatDurationTimer(currentTime)} / {formatDurationTimer(audioDuration)}
 					</span>
 				</div>
 
 				<div className="flex items-center gap-1.5">
-					{/* Speed Toggle Pills (1x, 1.25x, 1.5x, 2x) */}
-					<div className="flex items-center bg-slate-900/90 rounded-lg p-0.5 border border-slate-800">
+					{/* Speed Toggle Pills (1x, 1.25x, 1.5x, 2x) with touch-targets >= 44x44px */}
+					<div className="flex items-center bg-slate-900/90 rounded-xl p-1 border border-slate-800 gap-1">
 						{speeds.map((s) => (
 							<button
 								key={s}
 								type="button"
 								onClick={() => setPlaybackSpeed(s)}
-								className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all ${
+								className={`min-h-[44px] min-w-[44px] px-2 py-1 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center ${
 									playbackSpeed === s
 										? "bg-teal-600 text-white shadow-xs"
-										: "text-slate-400 hover:text-slate-200"
+										: "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
 								}`}
 								title={`Скорость ${s}x`}
 							>
@@ -323,14 +323,14 @@ export function CallAudioPlayer({
 					<button
 						type="button"
 						onClick={toggleMute}
-						className="p-1.5 rounded-md text-slate-400 hover:text-slate-200 transition-all"
+						className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 inline-flex items-center justify-center transition-all"
 						title={isMuted ? "Включить звук" : "Выключить звук"}
 						aria-label={isMuted ? "Включить звук" : "Выключить звук"}
 					>
 						{isMuted ? (
-							<VolumeX size={14} className="text-rose-400" />
+							<VolumeX size={18} className="text-rose-400" />
 						) : (
-							<Volume2 size={14} />
+							<Volume2 size={18} />
 						)}
 					</button>
 				</div>
@@ -1069,44 +1069,44 @@ export function IncomingCallPopup() {
 				</div>
 			</div>
 
-			{/* Quick Actions Action Bar */}
-			<div className="flex items-center gap-2 pt-1">
-				{/* Reject Call Button */}
+			{/* Quick Actions Action Bar with prominent >= 48x48px Answer/Hangup/Accept buttons */}
+			<div className="flex items-center gap-2.5 pt-1.5">
+				{/* Reject Call Button (Hangup >= 48x48px) */}
 				<button
 					type="button"
 					onClick={handleReject}
-					className="px-3.5 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 active:scale-[0.98] border border-rose-200 dark:border-rose-800/50 text-rose-700 dark:text-rose-300 hover:text-rose-900 dark:hover:text-rose-100 text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-rose-500"
+					className="px-4 py-3 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 active:scale-[0.98] border border-rose-200 dark:border-rose-800/50 text-rose-700 dark:text-rose-300 hover:text-rose-900 dark:hover:text-rose-100 text-sm font-bold transition-all inline-flex items-center justify-center gap-2 min-h-[48px] min-w-[48px] focus:outline-none focus:ring-2 focus:ring-rose-500"
 					aria-label="Отклонить входящий звонок"
 				>
-					<PhoneOff size={15} />
+					<PhoneOff size={18} />
 					<span>Отклонить</span>
 				</button>
 
-				{/* Answer / WebRTC Call Button (if ringing) */}
+				{/* Answer / WebRTC Call Button (Answer >= 48x48px if ringing) */}
 				{!isCallAnswered && (
 					<button
 						type="button"
 						onClick={handleAnswerCall}
-						className="px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 min-h-[44px] shadow-md shadow-emerald-950/30 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+						className="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white text-sm font-bold transition-all inline-flex items-center justify-center gap-2 min-h-[48px] min-w-[48px] shadow-lg shadow-emerald-950/30 focus:outline-none focus:ring-2 focus:ring-emerald-400"
 						aria-label="Ответить на звонок"
 					>
-						<PhoneCall size={15} />
+						<PhoneCall size={18} className="animate-pulse" />
 						<span>Ответить</span>
 					</button>
 				)}
 
-				{/* Accept / Open Card Button */}
+				{/* Accept / Open Card Button (>= 48px) */}
 				<button
 					type="button"
 					onClick={handleOpenCard}
-					className="flex-1 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 active:scale-[0.98] text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 min-h-[44px] shadow-lg shadow-teal-950/50 focus:outline-none focus:ring-2 focus:ring-teal-400"
+					className="flex-1 px-5 py-3 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 active:scale-[0.98] text-white text-sm font-bold transition-all inline-flex items-center justify-center gap-2 min-h-[48px] shadow-lg shadow-teal-950/40 focus:outline-none focus:ring-2 focus:ring-teal-400"
 					aria-label={
 						isKnownPatient
 							? "Принять звонок и открыть карту пациента"
 							: "Принять звонок и зарегистрировать пациента"
 					}
 				>
-					<UserCheck size={15} />
+					<UserCheck size={18} />
 					<span>{isKnownPatient ? "Открыть карту" : "Создать пациента"}</span>
 				</button>
 			</div>

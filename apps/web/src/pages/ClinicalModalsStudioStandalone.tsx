@@ -30,6 +30,8 @@ import { PatientNotificationCenter } from "../components/notifications/PatientNo
 import { TelephonyFloatingWidget } from "../components/telephony/TelephonyFloatingWidget";
 import { TreatmentPlanCompletedActPrint } from "../components/treatment-plans/TreatmentPlanCompletedActPrint";
 import { FiscalReceipt54FzModal } from "../components/finance/FiscalReceipt54FzModal";
+import { CashShiftWidget } from "../components/finance/CashShiftWidget";
+import { SanpinRegisters } from "../components/sanpin/SanpinRegisters";
 import { PediatricMixedDentitionModal } from "../components/odontogram/PediatricMixedDentitionModal";
 import type { CompletedWorksActAndWriteOffData, TreatmentPlanItem } from "../components/treatment-plans/types";
 import type { DiaryState } from "../components/useVisitDiaryLogic";
@@ -525,7 +527,23 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					</div>
 				</div>
 
-				{/* 11. Softphone Floating Widget */}
+				{/* 11. 54-FZ Cash Shift Management & Accounting Widget */}
+				<div className="space-y-3">
+					<h2 className="text-sm font-bold uppercase tracking-wider text-[var(--ink)]">
+						Управление кассовой сменой ККТ 54-ФЗ
+					</h2>
+					<CashShiftWidget />
+				</div>
+
+				{/* 12. SanPiN 3.3686-21 Sterilization Registers & Nurse Stamp */}
+				<div className="space-y-3">
+					<h2 className="text-sm font-bold uppercase tracking-wider text-[var(--ink)]">
+						Журналы СанПиН и стерилизационные режимы ЦСО
+					</h2>
+					<SanpinRegisters />
+				</div>
+
+				{/* 13. Softphone Floating Widget */}
 				<TelephonyFloatingWidget />
 			</main>
 

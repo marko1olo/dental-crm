@@ -1,8 +1,13 @@
 import {
 	Activity,
 	ArrowRight,
+	Award,
+	Coins,
 	PlusCircle,
 	ShieldCheck,
+	Sparkles,
+	User,
+	UserCheck,
 	Users,
 	Wallet,
 } from "lucide-react";
@@ -364,32 +369,23 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	const balanceVal = Number.isFinite(parsedBalance) ? parsedBalance : 0;
 	const animatedBalance = useCountUp(balanceVal, 1000);
 
+	const [targetPatientId, setTargetPatientId] = useState<string>(patientId);
+
+	useEffect(() => {
+		setTargetPatientId(patientId);
+	}, [patientId]);
+
 	/*
 	 * ЗА КОГО СПИСЫВАЮТ — ИМЕНЕМ, А НЕ ТОЛЬКО НАЗВАНИЕМ СЕМЬИ.
 	 *
-	 * БЫЛО: панель показывала название семьи, баланс и число членов — и больше
-	 * ничего. Списание же уходит на КОНКРЕТНОГО пациента (patientId в теле запроса
-	 * /family/pay), а панель при переходе к другому человеку не размонтируется:
-	 * меняется только patientId. Для двух членов ОДНОЙ семьи — мать и ребёнок —
-	 * экран после переключения выглядит буква в букву одинаково: та же семья, тот
-	 * же баланс, то же число членов. Единственное, что изменилось, — кому запишут
-	 * оплату, и этого на экране не было видно вовсе. Администратор, отвлёкшийся на
-	 * телефонный звонок, списывал лечение ребёнка на мать: деньги уходили с того же
-	 * семейного счёта, но в журнале платежей и в долге закрывался НЕ ТОТ человек, и
-	 * второй продолжал числиться должником.
-	 *
-	 * Имя берём из уже полученного списка членов группы: маршрут находит семью
-	 * ИМЕННО по этому пациенту (patients.family_group_id) и возвращает всех членов
-	 * организации, поэтому выбранный пациент в списке есть всегда. Новых полей API
-	 * и новых свойств компонента для этого не нужно.
-	 *
-	 * Если имя всё же не нашлось (список пуст или пациент уже переведён в другую
-	 * семью, а ответ ещё старый) — молчим, а не пишем «неизвестно»: подпись «за
-	 * кого платим» с неверным или пустым именем хуже отсутствия подписи.
+	 * Имя берём из уже полученного списка членов группы по выбранному targetPatientId
+	 * (по умолчанию текущий пациент, но кассир может переключить на любого члена семьи).
 	 */
-	const payerName = (family?.members ?? [])
-		.find((member) => member.id === patientId)
-		?.fullName?.trim();
+	const payerName =
+		(family?.members ?? []).find((member) => member.id === targetPatientId)
+			?.fullName?.trim() ||
+		(family?.members ?? []).find((member) => member.id === patientId)
+			?.fullName?.trim();
 
 	/*
 	 * Разбор набранного. null означает «набрано не число» — это НЕ ноль: нулём
@@ -409,18 +405,6 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	 * Долг приходит с копейками (billingSummary.totalDueRub), а списание с
 	 * семейного счёта сервер принимает только целым числом рублей: familyPaymentSchema
 	 * требует z.number().int() (routes/finance_family.ts). Поэтому целое.
-	 *
-	 * ВНИЗ, А НЕ ПО ПРАВИЛАМ ОКРУГЛЕНИЯ. БЫЛО Math.round: долг 1 500,50 ₽
-	 * превращался в кнопку «Долг: 1 501 ₽», и одно нажатие списывало с семейного
-	 * счёта на 50 копеек БОЛЬШЕ, чем человек должен. Программа не имеет права
-	 * брать с пациента деньги, которых он не задолжал, даже полтинник: у семьи
-	 * образуется переплата, которую никто не заметит и не вернёт. Math.floor
-	 * оставляет копейки непогашенными — их видно в остатке долга, и это чинится
-	 * обычной оплатой.
-	 * ДОЛГ (сервер): сама колонка payments.amount_rub копейки уже умеет —
-	 * numeric(12,2) после миграции 0131, — а вот баланс семьи и схема списания
-	 * остались целыми. Пока так, долг вида «1 500,50 ₽» этой кнопкой не закрыть:
-	 * остаток 0,50 ₽ не гасится.
 	 */
 	const debtSuggestionRub = Math.floor(
 		Number.isFinite(remainingDebtRub) ? Math.max(0, remainingDebtRub) : 0,
@@ -428,11 +412,6 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 
 	/*
 	 * Почему кнопка «Списать с баланса» погасла.
-	 *
-	 * БЫЛО: кнопка просто не нажималась — при сумме больше баланса и при дробной
-	 * сумме. Проверки с понятными словами лежат внутри handlePay, но до них дело
-	 * не доходит: отключённая кнопка не даёт кликнуть, и подсказка не появляется
-	 * никогда. Для администратора это неотличимо от «программа сломалась».
 	 */
 	const payBlockReason = amountInvalid
 		? "Впишите сумму цифрами, копейки после запятой: 1500,50"
@@ -444,14 +423,6 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 
 	/*
 	 * То же самое для пополнения.
-	 *
-	 * Работу оборвало исчерпанием лимита ровно здесь: разметка поля пополнения уже
-	 * ссылалась на topupBlockReason, а самой причины ещё не было — сборка не
-	 * проходила. Дописано ведущим по образцу списания выше.
-	 *
-	 * Отличие от списания одно и оно по делу: сверять с балансом нечего — счёт
-	 * пополняют, а не тратят. Остаётся проверка записи и запрет копеек, потому что
-	 * сервер принимает пополнение целыми рублями тем же familyTopupSchema.
 	 */
 	const topupBlockReason = topupInvalid
 		? "Впишите сумму цифрами, копейки после запятой: 1500,50"
@@ -460,19 +431,11 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			: null;
 
 	const handlePay = async () => {
-		// БЫЛО: только `if (!family) return`. Отключение кнопки через isPaying
-		// происходит после ре-рендера, поэтому два быстрых клика в одном кадре
-		// успевали отправить два запроса.
 		if (!family || isPaying) return;
 		if (amount <= 0) {
 			showToast("Введите сумму", "error");
 			return;
 		}
-		// Схема списания требует целое число рублей (familyPaymentSchema,
-		// routes/finance_family.ts), дробное сервер отклоняет с 400. Сама колонка
-		// payments.amount_rub копейки уже умеет — ограничение в схеме и в балансе
-		// семьи. Без этой проверки оператор видел невнятную ошибку схемы вместо
-		// понятного текста.
 		if (!Number.isInteger(amount)) {
 			showToast("Сумма списания указывается целыми рублями", "error");
 			return;
@@ -481,18 +444,10 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			showToast("Недостаточно средств на семейном балансе", "error");
 			return;
 		}
-		// БЫЛО: списание уходило вообще без ключа идемпотентности, хотя
-		// пополнение строкой ниже его уже отправляло. Сценарий потери денег:
-		// оператор нажал «Списать», сервер списал, ответ не дошёл (обрыв связи),
-		// интерфейс показал «Сетевая ошибка», оператор нажал повторно — семья
-		// заплатила дважды за одно лечение. Серверная защита по паре
-		// (organizationId, clientMutationId) есть, но без ключа не срабатывает.
-		// Подпись — ровно те поля тела запроса, которые двигают деньги: другой
-		// пациент, другая семья или другая сумма означают другую операцию.
 		const mutationId = familyMutationId(
 			payMutationRef,
 			"family-pay",
-			familyPayRequestKey(patientId, family.id, amount),
+			familyPayRequestKey(targetPatientId, family.id, amount),
 		);
 
 		setIsPaying(true);
@@ -503,7 +458,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
-					patientId,
+					patientId: targetPatientId,
 					familyGroupId: family.id,
 					amountRub: amount,
 					clientMutationId: mutationId,
@@ -526,16 +481,6 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			}
 			// Списание прошло — следующее получит новый ключ.
 			payMutationRef.current = null;
-			/*
-			 * ПОВТОР НАЗЫВАЕТСЯ ПОВТОРОМ, А НЕ НОВЫМ СПИСАНИЕМ.
-			 *
-			 * БЫЛО: `duplicate` из ответа не читался вовсе, и повтор после потерянного
-			 * ответа рапортовал «Оплата списана» — то есть о СЕГОДНЯШНЕМ списании,
-			 * которого в этот раз не было. Администратор, не понявший, прошла ли первая
-			 * попытка, получал подтверждение и не мог отличить одно списание от двух.
-			 * Сервер отвечает `duplicate: true`, когда узнал ключ и денег НЕ тронул, —
-			 * это и говорим словами: деньги ушли раньше, второй раз не ушли.
-			 */
 			const payResult = (await res.json().catch(() => null)) as {
 				duplicate?: boolean;
 			} | null;
@@ -545,21 +490,10 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 					: "Оплата списана с семейного кошелька",
 				"success",
 			);
-			// Поле суммы обнуляется, иначе после успешного списания в нём
-			// остаётся та же сумма и кнопка снова активна — приглашение
-			// случайно списать второй раз.
 			setAmountInput("");
 			if (onPaymentSuccess) onPaymentSuccess();
-			// Баланс приходит и по вебсокету, но перечитываем на случай, если
-			// сообщение не дошло.
 			void loadFamily();
 		} catch (e) {
-			// БЫЛО: «Сетевая ошибка» — жаргон без действия, и вдобавок неправда о
-			// деньгах. Запрос оборвался, значит НЕ известно, успел ли сервер списать:
-			// утверждать «не прошло» здесь нельзя. Поэтому сказано ровно то, что
-			// известно — ответ не получен, — и предложено повторить: повтор уходит с
-			// тем же ключом идемпотентности (payMutationIdRef не сбрасывается в этой
-			// ветке), поэтому второго списания не будет.
 			logger.error("[family wallet] списание не получило ответа сервера:", e);
 			showToast(
 				actionFailureToast(
@@ -579,8 +513,6 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			showToast("Введите сумму пополнения целыми рублями", "error");
 			return;
 		}
-		// Способ входит в подпись наравне с суммой: он попадает в журнал платежей и
-		// в сверку кассы, поэтому «те же 5 000 ₽, но картой» — другая операция.
 		const mutationId = familyMutationId(
 			topupMutationRef,
 			"family-topup",
@@ -598,11 +530,6 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 					patientId,
 					familyGroupId: family.id,
 					amountRub: topupAmount,
-					// БЫЛО: способ не отправлялся вовсе, а сервер подставляет «cash»
-					// по умолчанию (familyTopupSchema, routes/finance_family.ts). Семья
-					// вносила аванс картой, в журнал платежей попадали наличные — и
-					// вечером наличных в ящике оказывалось меньше, чем в отчёте, ровно
-					// на сумму такого пополнения. Причину сверки было не найти.
 					method: topupMethod,
 					clientMutationId: mutationId,
 				}),
@@ -621,13 +548,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 				);
 				return;
 			}
-			// Зачисление прошло — следующее пополнение получит новый ключ.
 			topupMutationRef.current = null;
-			// Повтор не выдаём за новое зачисление: сервер вернул `duplicate: true`,
-			// значит баланс он в этот раз не менял. Иначе семья, внёсшая аванс дважды
-			// по одной непрошедшей попытке, увидела бы два подтверждения на один взнос.
-			// Сумма — через общий money(): своё toLocaleString печатало «1 500,5 ₽»
-			// вместо «1 500,50 ₽», а полтинник в такой записи читается как пять копеек.
 			const topupResult = (await res.json().catch((err) => {
 				logger.error("[Dente]", err);
 				showToast(
@@ -650,9 +571,6 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			setTopupInput("");
 			void loadFamily();
 		} catch (e) {
-			// То же, что у списания: оборванный запрос не говорит, зачислены деньги
-			// или нет. Повтор безопасен по тому же ключу идемпотентности
-			// (topupMutationIdRef в этой ветке не сбрасывается).
 			logger.error("[family wallet] пополнение не получило ответа сервера:", e);
 			showToast(
 				actionFailureToast(
@@ -673,9 +591,6 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 				Загрузка семейного кошелька...
 			</div>
 		);
-	// Отказ показываем текстом и с кнопкой «Повторить». Оформление берём у
-	// общего PanelLoadFailure, чтобы на экране не появилось второго языка
-	// ошибок: тот же вид уже у виджетов карточки пациента.
 	if (loadFailure)
 		return (
 			<PanelLoadFailure
@@ -686,8 +601,6 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 				}}
 			/>
 		);
-	// 404 от сервера или пациент не выбран: семьи нет, панель не нужна. Это
-	// единственный случай, когда пустое место — правда.
 	if (!family) return null;
 
 	return (
@@ -707,10 +620,6 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 					</p>
 				</div>
 				<div className="family-wallet-balance-container">
-					{/* Сумма — только через общий money(). Своя запись с жёстко двумя
-					    знаками дописывала «,00» круглым суммам, тогда как рядом на экране
-					    финансов те же деньги печатаются как «1 500 ₽»: две разные записи
-					    одной суммы на одном экране читаются как расхождение в данных. */}
 					<div className="family-wallet-balance">{money(animatedBalance)}</div>
 					<p className="family-wallet-balance-label">
 						<ShieldCheck size={12} />
@@ -719,6 +628,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 				</div>
 			</div>
 
+			{/* Списание с семейного баланса */}
 			<div className="family-wallet-actions">
 				<div className="family-wallet-input-group">
 					<label
@@ -727,17 +637,11 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 					>
 						Сумма списания (₽)
 					</label>
-					{/* За кого платят — рядом с полем суммы, а не в заголовке панели: сюда
-					    смотрят, когда набирают сумму и нажимают «Списать». */}
 					{payerName && (
 						<p className="family-wallet-payer">
 							Оплата за: <strong>{payerName}</strong>
 						</p>
 					)}
-					{/* type="text" с inputMode="decimal", а не type="number": числовое
-					    поле стирало всё набранное на русской запятой, а на телефоне
-					    inputMode всё равно поднимает цифровую клавиатуру. Разбор — общим
-					    normalizeRubAmountInput, как в форме приёма оплаты. */}
 					<input
 						id="family-withdraw-amount"
 						type="text"
@@ -746,8 +650,6 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 						className="family-wallet-input"
 						value={amountInput}
 						onChange={(e) => setAmountInput(e.target.value)}
-						/* БЫЛО: подсказка «0.00» обещала копейки, которые сервер
-						   отклоняет: списание проходит только целыми рублями. */
 						placeholder="0"
 						disabled={isPaying}
 						aria-invalid={payBlockReason ? true : undefined}
@@ -755,9 +657,6 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 							payBlockReason ? "family-withdraw-hint" : undefined
 						}
 					/>
-					{/* Долг подставляется ТОЛЬКО нажатием, а не сам. Кнопка нужна,
-					    чтобы администратору не приходилось переписывать сумму глазами
-					    из сводки выше — самая частая причина ошибки на рубль. */}
 					{debtSuggestionRub > 0 && (
 						<div className="quick-chips-row">
 							<button
@@ -793,9 +692,106 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 				</p>
 			)}
 
-			{/* Пополнение. БЫЛО: интерфейса и эндпоинта пополнения не существовало,
-			    баланс мог только уменьшаться — поэтому он всегда оставался нулевым,
-			    и любая оплата с семейного счёта отклонялась как «недостаточно средств». */}
+			{/* Бонусные баллы & Быстрый выбор суммы */}
+			<div className="family-bonus-section">
+				<div className="family-bonus-header">
+					<h4 className="family-bonus-title">
+						<Sparkles size={16} className="text-amber-500" />
+						Бонусные баллы & Быстрое списание
+					</h4>
+					<span className="text-xs font-semibold text-[var(--muted,#64748b)]">
+						Баланс:{" "}
+						<strong className="text-[var(--ink,#0f172a)]">
+							{money(balanceVal)}
+						</strong>
+					</span>
+				</div>
+				<div
+					className="family-bonus-chips-row"
+					role="toolbar"
+					aria-label="Быстрый выбор суммы списания"
+				>
+					{[500, 1000, 2000, 5000].map((bonusVal) => (
+						<button
+							key={bonusVal}
+							type="button"
+							className={`family-bonus-chip ${amount === bonusVal ? "active" : ""}`}
+							onClick={() => setAmountInput(String(bonusVal))}
+							disabled={isPaying}
+						>
+							<Coins size={14} className="text-amber-500 shrink-0" />
+							<span>{bonusVal.toLocaleString("ru-RU")} бонусов</span>
+						</button>
+					))}
+					{balanceVal > 0 && (
+						<button
+							type="button"
+							className={`family-bonus-chip ${amount === Math.floor(balanceVal) ? "active" : ""}`}
+							onClick={() => setAmountInput(String(Math.floor(balanceVal)))}
+							disabled={isPaying}
+						>
+							<Award size={14} className="text-teal-500 shrink-0" />
+							<span>Весь баланс ({money(balanceVal)})</span>
+						</button>
+					)}
+				</div>
+			</div>
+
+			{/* Список членов семейной группы и перевод */}
+			{(family.members ?? []).length > 0 && (
+				<div className="family-members-section">
+					<h4 className="family-members-title">
+						<Users size={16} />
+						Члены семьи и доступные счета ({(family.members ?? []).length} чел.)
+					</h4>
+					<div className="family-members-grid">
+						{(family.members ?? []).map((member) => {
+							const isCurrent = member.id === targetPatientId;
+							const isSelf = member.id === patientId;
+							return (
+								<div
+									key={member.id}
+									className={`family-member-card ${isCurrent ? "is-current" : ""}`}
+								>
+									<div className="family-member-card-header">
+										<div className="family-member-avatar">
+											{isCurrent ? (
+												<UserCheck size={20} />
+											) : (
+												<User size={20} />
+											)}
+										</div>
+										<div className="family-member-info">
+											<h5
+												className="family-member-name"
+												title={member.fullName}
+											>
+												{member.fullName || "Без имени"}
+											</h5>
+											<p className="family-member-phone">
+												{member.phone || "—"}
+											</p>
+											<span className="family-member-badge">
+												{isSelf ? "Текущий пациент" : "Член семьи"}
+											</span>
+										</div>
+									</div>
+									<button
+										type="button"
+										onClick={() => setTargetPatientId(member.id)}
+										className={`family-member-transfer-btn ${isCurrent ? "active" : ""}`}
+										disabled={isPaying}
+									>
+										{isCurrent ? "Выбран для оплаты" : "Выбрать для списания"}
+									</button>
+								</div>
+							);
+						})}
+					</div>
+				</div>
+			)}
+
+			{/* Пополнение семейного кошелька */}
 			<div className="family-wallet-actions">
 				<div className="family-wallet-input-group">
 					<label
@@ -819,9 +815,6 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 							topupBlockReason ? "family-topup-hint" : undefined
 						}
 					/>
-					{/* Чем внесли аванс. БЫЛО: способ не спрашивали и не отправляли, а
-					    сервер записывал в журнал наличные. Вечером наличных в ящике
-					    не хватало ровно на сумму пополнения картой. */}
 					<div
 						role="toolbar"
 						className="quick-chips-row"
@@ -853,27 +846,6 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 					</button>
 				</div>
 			</div>
-			{/*
-			 * ПОЧЕМУ «ПОПОЛНИТЬ» НЕ НАЖИМАЕТСЯ — ТЕПЕРЬ НАПИСАНО.
-			 *
-			 * БЫЛО: причина считалась (topupBlockReason), поле помечалось как ошибочное
-			 * и ссылалось на подсказку `aria-describedby="family-topup-hint"` — а самой
-			 * подсказки в разметке не существовало. Ссылка вела в пустоту, текст не
-			 * показывался нигде, и переменная работала только на два атрибута.
-			 *
-			 * Что видел администратор. Вносит аванс, набирает сумму так, как программа
-			 * её прочитать не может, — «тысяча», «1.500.50», цифры с русской «о»
-			 * вместо нуля. Разбор даёт «не число», сумма считается нулём, кнопка
-			 * «Пополнить» гаснет — и НИ ОДНОГО слова о том, что не так. Кнопка,
-			 * которая ничего не делает и молчит: человек с деньгами в руках стоит у
-			 * стойки, а касса выглядит сломанной. Для незрячего хуже: поле объявлялось
-			 * ошибочным со ссылкой на несуществующее описание, то есть «здесь ошибка» —
-			 * и тишина.
-			 *
-			 * Ставится там же, где подсказка списания, — под всей строкой, а не внутри
-			 * группы поля: рядом с полем уже стоят кнопки способа оплаты, и текст между
-			 * ними и полем разорвал бы их связку.
-			 */}
 			{topupBlockReason && (
 				<p className="family-wallet-hint" id="family-topup-hint" role="status">
 					{topupBlockReason}

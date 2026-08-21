@@ -238,3 +238,268 @@
 :is([data-theme="dark"], [data-theme="night"], .dark) .family-wallet-hint {
 	color: var(--warn-fg, #fde68a);
 }
+
+/* Члены семейной группы */
+.family-members-section {
+	margin-top: 1.25rem;
+	padding-top: 1rem;
+	border-top: 1px solid var(--line, #e2e8f0);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-members-section {
+	border-color: var(--line, #1e293b);
+}
+
+.family-members-title {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 0.875rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--muted, #64748b);
+	margin-bottom: 0.75rem;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-members-title {
+	color: var(--muted, #94a3b8);
+}
+
+.family-members-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+	gap: 0.75rem;
+}
+
+.family-member-card {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	background-color: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #cbd5e1);
+	border-radius: 0.75rem;
+	padding: 0.875rem;
+	transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+	gap: 0.75rem;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-member-card {
+	background-color: var(--paper, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+.family-member-card.is-current {
+	border-color: var(--teal, #0d9488);
+	background-color: var(--teal-soft, rgba(13, 148, 136, 0.08));
+	box-shadow: 0 0 0 1px var(--teal, #0d9488);
+}
+
+.family-member-card-header {
+	display: flex;
+	align-items: center;
+	gap: 0.625rem;
+}
+
+.family-member-avatar {
+	width: 44px;
+	height: 44px;
+	border-radius: 0.625rem;
+	background-color: var(--teal-soft, rgba(13, 148, 136, 0.15));
+	color: var(--teal, #0d9488);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.family-member-info {
+	flex: 1;
+	min-width: 0;
+}
+
+.family-member-name {
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	margin: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-member-name {
+	color: var(--ink, #ffffff);
+}
+
+.family-member-phone {
+	font-size: 0.75rem;
+	line-height: 1rem;
+	color: var(--muted, #64748b);
+	margin: 0.125rem 0 0;
+	font-family: ui-monospace, monospace;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-member-phone {
+	color: var(--muted, #94a3b8);
+}
+
+.family-member-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	font-size: 0.6875rem;
+	font-weight: 700;
+	padding: 0.125rem 0.5rem;
+	border-radius: 9999px;
+	background-color: var(--teal-soft, rgba(13, 148, 136, 0.15));
+	color: var(--teal-dark, #0f766e);
+	margin-top: 0.25rem;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-member-badge {
+	color: var(--teal, #2dd4bf);
+}
+
+.family-member-transfer-btn {
+	min-height: 44px;
+	min-width: 44px;
+	width: 100%;
+	padding: 0.5rem 0.875rem;
+	border-radius: 0.5rem;
+	border: 1px solid var(--line, #cbd5e1);
+	background-color: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 0.8125rem;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	cursor: pointer;
+	transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-member-transfer-btn {
+	background-color: var(--paper-soft, #0f172a);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f1f5f9);
+}
+
+.family-member-transfer-btn:hover:not(:disabled) {
+	border-color: var(--teal, #0d9488);
+	color: var(--teal, #0d9488);
+	background-color: var(--teal-soft, rgba(13, 148, 136, 0.08));
+}
+
+.family-member-transfer-btn.active {
+	background-color: var(--teal, #0d9488);
+	border-color: var(--teal, #0d9488);
+	color: #ffffff;
+}
+
+/* Бонусные баллы и быстрые чипсы списания */
+.family-bonus-section {
+	margin-top: 1rem;
+	padding: 0.875rem;
+	background-color: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #cbd5e1);
+	border-radius: 0.75rem;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-bonus-section {
+	background-color: var(--paper, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+.family-bonus-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 0.625rem;
+}
+
+.family-bonus-title {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	margin: 0;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-bonus-title {
+	color: var(--ink, #f1f5f9);
+}
+
+.family-bonus-chips-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
+.family-bonus-chip {
+	min-height: 44px;
+	min-width: 44px;
+	padding: 0.5rem 1rem;
+	border-radius: 0.5rem;
+	border: 1px solid var(--line, #cbd5e1);
+	background-color: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 0.8125rem;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	cursor: pointer;
+	transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+	box-shadow: var(--shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-bonus-chip {
+	background-color: var(--paper-soft, #0f172a);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f1f5f9);
+}
+
+.family-bonus-chip:hover:not(:disabled) {
+	border-color: var(--teal, #0d9488);
+	color: var(--teal, #0d9488);
+	transform: translateY(-1px);
+}
+
+.family-bonus-chip:active:not(:disabled) {
+	transform: translateY(0);
+}
+
+.family-bonus-chip.active {
+	background-color: var(--teal, #0d9488);
+	border-color: var(--teal, #0d9488);
+	color: #ffffff;
+}
+
+/* Оверрайд touch targets для quick-chip внутри панели семейного кошелька */
+.family-wallet-panel .quick-chip,
+.family-wallet-panel .quick-chip--sm {
+	min-height: 44px;
+	min-width: 44px;
+	padding: 0.5rem 1rem;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	border-radius: 0.5rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	box-sizing: border-box;
+}
+
+.family-wallet-panel .family-wallet-btn {
+	min-height: 48px;
+	font-size: 0.875rem;
+	font-weight: 700;
+	padding: 0 1.5rem;
+}

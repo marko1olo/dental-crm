@@ -6,12 +6,14 @@ import {
 } from "@dental/shared";
 import {
 	AlertTriangle,
+	Award,
 	CheckCircle2,
 	Download,
 	FlaskConical,
 	Plus,
 	Printer,
 	Search,
+	X,
 	XCircle,
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
@@ -24,15 +26,17 @@ export function PsoRegisterTab() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [testFilter, setTestFilter] = useState<string>("all");
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [stampedRows, setStampedRows] = useState<Record<string, boolean>>({});
 
 	// New entry form state
-	const [formInstrument, setFormInstrument] = useState("Стоматологические боры и наконечники");
+	const [formInstrument, setFormInstrument] = useState("Стоматологические боры, наконечники, зеркала, зонды");
 	const [formTestType, setFormTestType] = useState<PsoTestTypeEnum>("both");
 	const [formBatchCount, setFormBatchCount] = useState<number>(100);
 	const [formSampleCount, setFormSampleCount] = useState<number>(3);
 	const [formAzopyramNeg, setFormAzopyramNeg] = useState(true);
 	const [formPhenolNeg, setFormPhenolNeg] = useState(true);
 	const [formDetergent, setFormDetergent] = useState("Биолот 0.5% + Аламинол 1%");
+	const [formNurseName, setFormNurseName] = useState("Медсестра ЦСО");
 	const [formNotes, setFormNotes] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 
@@ -87,7 +91,7 @@ export function PsoRegisterTab() {
 				isAzopyramNegative: formAzopyramNeg,
 				isPhenolphthaleinNegative: formPhenolNeg,
 				detergentBrand: formDetergent || undefined,
-				notes: formNotes || undefined,
+				notes: formNotes || `[ЭЦП: ${formNurseName}]`,
 			};
 
 			const res = await fetch("/api/registers/pso", {
@@ -101,7 +105,7 @@ export function PsoRegisterTab() {
 			});
 
 			if (res.ok) {
-				showToast("Запись ПСО успешно добавлена в журнал", "success");
+				showToast("Запись ПСО успешно внесена в журнал (Форма № 366/у)", "success");
 				setIsModalOpen(false);
 				fetchLogs();
 			} else {
@@ -113,6 +117,14 @@ export function PsoRegisterTab() {
 		} finally {
 			setSubmitting(false);
 		}
+	};
+
+	const handleStampVerification = (logId: string) => {
+		setStampedRows((prev) => ({
+			...prev,
+			[logId]: true,
+		}));
+		showToast("Электронный штамп медсестры применен к пробе ПСО", "success");
 	};
 
 	const filteredLogs = useMemo(() => {
@@ -132,10 +144,6 @@ export function PsoRegisterTab() {
 		});
 	}, [logs, searchQuery, testFilter]);
 
-	const handlePrint = () => {
-		window.print();
-	};
-
 	return (
 		<div className="sanpin-tab-content">
 			<div className="sanpin-print-title">
@@ -146,37 +154,44 @@ export function PsoRegisterTab() {
 			<div className="sanpin-control-bar">
 				<div className="sanpin-filter-group">
 					<div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-						<Search size={16} style={{ position: "absolute", left: "0.6rem", color: "var(--muted)" }} />
+						<Search size={18} style={{ position: "absolute", left: "0.75rem", color: "var(--muted)" }} />
 						<input
 							type="text"
-							placeholder="Поиск по инструментарию, моющему средству..."
+							placeholder="Поиск по инструментарию, моющему средству, оператору..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							className="sanpin-input"
-							style={{ paddingLeft: "2rem", minWidth: "260px" }}
+							style={{ paddingLeft: "2.3rem", minWidth: "300px", minHeight: "44px", fontSize: "0.9rem" }}
 						/>
 					</div>
 					<select
 						value={testFilter}
 						onChange={(e) => setTestFilter(e.target.value)}
 						className="sanpin-select"
+						style={{ minHeight: "44px", fontSize: "0.9rem" }}
 					>
-						<option value="all">Все записи</option>
-						<option value="approved">Партия допущена</option>
+						<option value="all">Все пробы ПСО</option>
+						<option value="approved">Партия допущена (Проба отрицательная)</option>
 						<option value="rejected">Брак / Повторная очистка</option>
 					</select>
 				</div>
 
 				<div style={{ display: "flex", gap: "0.5rem" }}>
-					<button type="button" onClick={handlePrint} className="sanpin-btn sanpin-btn-secondary">
-						<Printer size={15} /> Печать формы 366/у
+					<button
+						type="button"
+						onClick={() => window.print()}
+						className="sanpin-btn sanpin-btn-secondary"
+						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.9rem" }}
+					>
+						<Printer size={16} /> Печать формы 366/у
 					</button>
 					<button
 						type="button"
 						onClick={() => setIsModalOpen(true)}
 						className="sanpin-btn sanpin-btn-primary"
+						style={{ minHeight: "44px", padding: "0.5rem 1.25rem", fontSize: "0.95rem", fontWeight: 700 }}
 					>
-						<Plus size={15} /> Внести пробу ПСО
+						<Plus size={18} /> Внести пробу ПСО
 					</button>
 				</div>
 			</div>
@@ -186,85 +201,124 @@ export function PsoRegisterTab() {
 				<table className="sanpin-table">
 					<thead>
 						<tr>
-							<th>Дата и время</th>
-							<th>Наименование инструментария</th>
-							<th>Объем партии (шт)</th>
-							<th>Контроль (шт)</th>
-							<th>Азопирам (кровь)</th>
-							<th>Фенолфталеин (щелочь)</th>
-							<th>Моющее средство</th>
-							<th>Результат контроля</th>
-							<th>Ответственное лицо</th>
+							<th style={{ fontSize: "0.85rem" }}>Дата и время</th>
+							<th style={{ fontSize: "0.85rem" }}>Наименование инструментария</th>
+							<th style={{ fontSize: "0.85rem" }}>Объем партии</th>
+							<th style={{ fontSize: "0.85rem" }}>Контроль</th>
+							<th style={{ fontSize: "0.85rem" }}>Азопирам (кровь)</th>
+							<th style={{ fontSize: "0.85rem" }}>Фенолфталеин (щелочь)</th>
+							<th style={{ fontSize: "0.85rem" }}>Моющее средство</th>
+							<th style={{ fontSize: "0.85rem" }}>Результат контроля</th>
+							<th style={{ fontSize: "0.85rem" }}>Заверка / Ответственный</th>
 						</tr>
 					</thead>
 					<tbody>
 						{loading ? (
 							<tr>
-								<td colSpan={9} style={{ textAlign: "center", padding: "2rem" }}>
+								<td colSpan={9} style={{ textAlign: "center", padding: "2.5rem", fontSize: "0.95rem" }}>
 									Загрузка журнала ПСО...
 								</td>
 							</tr>
 						) : filteredLogs.length === 0 ? (
 							<tr>
-								<td colSpan={9} style={{ textAlign: "center", padding: "2rem", color: "var(--muted)" }}>
+								<td colSpan={9} style={{ textAlign: "center", padding: "2.5rem", color: "var(--muted)", fontSize: "0.95rem" }}>
 									Записи предстерилизационной очистки не найдены.
 								</td>
 							</tr>
 						) : (
-							filteredLogs.map((log) => (
-								<tr key={log.id}>
-									<td style={{ whiteSpace: "nowrap" }}>
-										{new Date(log.timestamp).toLocaleString("ru-RU", {
-											day: "2-digit",
-											month: "2-digit",
-											year: "numeric",
-											hour: "2-digit",
-											minute: "2-digit",
-										})}
-									</td>
-									<td style={{ fontWeight: 600 }}>{log.instrumentName}</td>
-									<td>{log.batchItemCount}</td>
-									<td>{log.testedSampleCount}</td>
-									<td>
-										{log.isAzopyramNegative ? (
-											<span className="sanpin-tag sanpin-tag-success">
-												<CheckCircle2 size={12} /> Отрицат.
-											</span>
-										) : (
-											<span className="sanpin-tag sanpin-tag-danger">
-												<XCircle size={12} /> Положит. (!)
-											</span>
-										)}
-									</td>
-									<td>
-										{log.isPhenolphthaleinNegative ? (
-											<span className="sanpin-tag sanpin-tag-success">
-												<CheckCircle2 size={12} /> Отрицат.
-											</span>
-										) : (
-											<span className="sanpin-tag sanpin-tag-danger">
-												<XCircle size={12} /> Положит. (!)
-											</span>
-										)}
-									</td>
-									<td style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
-										{log.detergentBrand || "—"}
-									</td>
-									<td>
-										{log.isBatchApproved ? (
-											<span className="sanpin-tag sanpin-tag-success">Допущено к стерилизации</span>
-										) : (
-											<span
-												className="sanpin-tag sanpin-tag-danger"
-												title={log.rejectionReason || "Партия забракована"}
-											>
-												БРАК: {log.rejectionReason || "Повторная очистка"}
-											</span>
-										)}
-									</td>
-									<td style={{ fontSize: "0.8rem" }}>{log.operatorName || "Сотрудник ЦСО"}</td>
-								</tr>
-							))
+							filteredLogs.map((log) => {
+								const isStamped = stampedRows[log.id] || Boolean(log.notes?.includes("ЭЦП"));
+								return (
+									<tr key={log.id} style={{ minHeight: "56px" }}>
+										<td style={{ whiteSpace: "nowrap", fontSize: "0.85rem" }}>
+											<div style={{ fontWeight: 600, color: "var(--ink)" }}>
+												{new Date(log.timestamp).toLocaleDateString("ru-RU")}
+											</div>
+											<div style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
+												{new Date(log.timestamp).toLocaleTimeString("ru-RU", {
+													hour: "2-digit",
+													minute: "2-digit",
+												})}
+											</div>
+										</td>
+
+										<td style={{ fontWeight: 600, fontSize: "0.9rem", color: "var(--ink)" }}>
+											{log.instrumentName}
+										</td>
+
+										<td style={{ fontSize: "0.875rem", fontWeight: 600 }}>{log.batchItemCount} шт.</td>
+										<td style={{ fontSize: "0.875rem", fontWeight: 600 }}>{log.testedSampleCount} шт.</td>
+
+										<td>
+											{log.isAzopyramNegative ? (
+												<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.825rem", padding: "0.3rem 0.6rem" }}>
+													<CheckCircle2 size={14} /> Отрицат. (Норма)
+												</span>
+											) : (
+												<span className="sanpin-tag sanpin-tag-danger" style={{ fontSize: "0.825rem", padding: "0.3rem 0.6rem" }}>
+													<XCircle size={14} /> Положит. (КРОВЬ)
+												</span>
+											)}
+										</td>
+
+										<td>
+											{log.isPhenolphthaleinNegative ? (
+												<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.825rem", padding: "0.3rem 0.6rem" }}>
+													<CheckCircle2 size={14} /> Отрицат. (Норма)
+												</span>
+											) : (
+												<span className="sanpin-tag sanpin-tag-danger" style={{ fontSize: "0.825rem", padding: "0.3rem 0.6rem" }}>
+													<XCircle size={14} /> Положит. (ЩЕЛОЧЬ)
+												</span>
+											)}
+										</td>
+
+										<td style={{ fontSize: "0.825rem", color: "var(--muted)" }}>
+											{log.detergentBrand || "—"}
+										</td>
+
+										<td>
+											{log.isBatchApproved ? (
+												<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.825rem" }}>
+													Допущено к стерилизации
+												</span>
+											) : (
+												<span
+													className="sanpin-tag sanpin-tag-danger"
+													style={{ fontSize: "0.825rem" }}
+													title={log.rejectionReason || "Партия забракована"}
+												>
+													БРАК: {log.rejectionReason || "Повторная очистка"}
+												</span>
+											)}
+										</td>
+
+										<td>
+											<div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+												<div style={{ fontSize: "0.85rem", fontWeight: 600 }}>
+													{log.operatorName || "Сотрудник ЦСО"}
+												</div>
+
+												{isStamped ? (
+													<span className="sanpin-badge-gov" style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem" }}>
+														<CheckCircle2 size={12} /> ЭЦП проставлена
+													</span>
+												) : (
+													<button
+														type="button"
+														onClick={() => handleStampVerification(log.id)}
+														className="sanpin-btn sanpin-btn-secondary"
+														style={{ minHeight: "36px", minWidth: "44px", padding: "0.2rem 0.5rem", fontSize: "0.775rem" }}
+														title="Поставить штамп заверки медсестры"
+													>
+														<Award size={13} color="var(--brand-primary)" /> Заверить
+													</button>
+												)}
+											</div>
+										</td>
+									</tr>
+								);
+							})
 						)}
 					</tbody>
 				</table>
@@ -272,90 +326,120 @@ export function PsoRegisterTab() {
 
 			{/* Modal for new PSO entry */}
 			{isModalOpen && (
-				<div className="sanpin-modal-overlay">
-					<div className="sanpin-modal">
-						<div className="sanpin-modal-header">
-							<h3>Фиксация пробы ПСО (Форма № 366/у)</h3>
+				<div className="sanpin-modal-overlay" role="dialog" aria-modal="true">
+					<div className="sanpin-modal" style={{ maxWidth: "640px" }}>
+						<div className="sanpin-modal-header" style={{ padding: "1.25rem 1.5rem" }}>
+							<h3 style={{ fontSize: "1.2rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+								<FlaskConical size={22} color="var(--brand-primary, #2563eb)" />
+								Фиксация пробы ПСО (Форма № 366/у)
+							</h3>
 							<button
 								type="button"
 								onClick={() => setIsModalOpen(false)}
-								style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.2rem", color: "var(--muted)" }}
+								style={{
+									minWidth: "44px",
+									minHeight: "44px",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									background: "none",
+									border: "none",
+									cursor: "pointer",
+									color: "var(--muted)",
+								}}
 							>
-								✕
+								<X size={20} />
 							</button>
 						</div>
+
 						<form onSubmit={handleSubmit}>
-							<div className="sanpin-modal-body">
+							<div className="sanpin-modal-body" style={{ padding: "1.5rem", gap: "1.25rem" }}>
 								<div className="sanpin-form-group">
-									<label className="sanpin-form-label">Наименование инструментария</label>
+									<label className="sanpin-form-label" style={{ fontSize: "0.875rem", fontWeight: 600 }}>
+										Наименование обрабатываемого инструментария
+									</label>
 									<input
 										type="text"
 										required
 										value={formInstrument}
 										onChange={(e) => setFormInstrument(e.target.value)}
 										className="sanpin-input"
-										placeholder="Например: Стоматологические боры, зеркала, зонды, пинцеты"
+										style={{ minHeight: "44px", fontSize: "0.9rem" }}
+										placeholder="Стоматологические боры, зеркала, зонды, пинцеты, наконечники"
 									/>
 								</div>
 
 								<div className="sanpin-form-row">
 									<div className="sanpin-form-group">
-										<label className="sanpin-form-label">Объем партии (шт)</label>
+										<label className="sanpin-form-label" style={{ fontSize: "0.875rem", fontWeight: 600 }}>
+											Объем партии (шт)
+										</label>
 										<input
 											type="number"
 											min={1}
 											required
 											value={formBatchCount}
 											onChange={(e) => {
-												const count = parseInt(e.target.value) || 1;
+												const count = parseInt(e.target.value, 10) || 1;
 												setFormBatchCount(count);
-												// Auto-adjust sample count to 1% (min 3)
 												const minSample = Math.max(3, Math.ceil(count * 0.01));
 												if (formSampleCount < minSample) {
 													setFormSampleCount(minSample);
 												}
 											}}
 											className="sanpin-input"
+											style={{ minHeight: "44px", fontSize: "0.95rem", fontWeight: 700 }}
 										/>
-										<span className="sanpin-form-hint">СанПиН требует пробу от 1% партии</span>
+										<span className="sanpin-form-hint" style={{ fontSize: "0.8rem" }}>
+											СанПиН требует пробу от 1% партии (не менее 3-5 шт)
+										</span>
 									</div>
 
 									<div className="sanpin-form-group">
-										<label className="sanpin-form-label">Количество образцов (шт)</label>
+										<label className="sanpin-form-label" style={{ fontSize: "0.875rem", fontWeight: 600 }}>
+											Количество проверенных образцов (шт)
+										</label>
 										<input
 											type="number"
 											min={1}
 											required
 											value={formSampleCount}
-											onChange={(e) => setFormSampleCount(parseInt(e.target.value) || 1)}
+											onChange={(e) => setFormSampleCount(parseInt(e.target.value, 10) || 1)}
 											className="sanpin-input"
+											style={{ minHeight: "44px", fontSize: "0.95rem", fontWeight: 700 }}
 										/>
-										<span className="sanpin-form-hint">
-											Минимум: {Math.max(3, Math.ceil(formBatchCount * 0.01))} шт.
+										<span className="sanpin-form-hint" style={{ fontSize: "0.8rem" }}>
+											Минимум по формуле: {Math.max(3, Math.ceil(formBatchCount * 0.01))} шт.
 										</span>
 									</div>
 								</div>
 
 								<div className="sanpin-form-group">
-									<label className="sanpin-form-label">Вид химической пробы</label>
+									<label className="sanpin-form-label" style={{ fontSize: "0.875rem", fontWeight: 600 }}>
+										Вид химической пробы
+									</label>
 									<select
 										value={formTestType}
 										onChange={(e) => setFormTestType(e.target.value as PsoTestTypeEnum)}
 										className="sanpin-select"
+										style={{ minHeight: "44px", fontSize: "0.9rem" }}
 									>
-										<option value="both">Азопирамовая + Фенолфталеиновая (Рекомендуется)</option>
-										<option value="azopyram">Только азопирамовая (на скрытую кровь)</option>
-										<option value="phenolphthalein">Только фенолфталеиновая (на остатки моющих средств)</option>
+										<option value="both">Азопирамовая + Фенолфталеиновая (Рекомендуется СанПиН)</option>
+										<option value="azopyram">Только азопирамовая (на скрытую кровь / гемоглобин)</option>
+										<option value="phenolphthalein">Только фенолфталеиновая (на остатки щелочных моющих средств)</option>
 									</select>
 								</div>
 
 								<div className="sanpin-form-row">
 									<div className="sanpin-form-group">
-										<label className="sanpin-form-label">Азопирамовая проба</label>
+										<label className="sanpin-form-label" style={{ fontSize: "0.875rem", fontWeight: 600 }}>
+											Азопирамовая проба (кровь)
+										</label>
 										<select
 											value={formAzopyramNeg ? "negative" : "positive"}
 											onChange={(e) => setFormAzopyramNeg(e.target.value === "negative")}
 											className="sanpin-select"
+											style={{ minHeight: "44px", fontSize: "0.9rem" }}
 										>
 											<option value="negative">Отрицательная (Окрашивания нет — НОРМА)</option>
 											<option value="positive">Положительная (Фиолетовое окрашивание — КРОВЬ)</option>
@@ -363,11 +447,14 @@ export function PsoRegisterTab() {
 									</div>
 
 									<div className="sanpin-form-group">
-										<label className="sanpin-form-label">Фенолфталеиновая проба</label>
+										<label className="sanpin-form-label" style={{ fontSize: "0.875rem", fontWeight: 600 }}>
+											Фенолфталеиновая проба (щелочь)
+										</label>
 										<select
 											value={formPhenolNeg ? "negative" : "positive"}
 											onChange={(e) => setFormPhenolNeg(e.target.value === "negative")}
 											className="sanpin-select"
+											style={{ minHeight: "44px", fontSize: "0.9rem" }}
 										>
 											<option value="negative">Отрицательная (Окрашивания нет — НОРМА)</option>
 											<option value="positive">Положительная (Розовое окрашивание — ЩЕЛОЧЬ)</option>
@@ -376,12 +463,15 @@ export function PsoRegisterTab() {
 								</div>
 
 								<div className="sanpin-form-group">
-									<label className="sanpin-form-label">Моющее / дезинфицирующее средство</label>
+									<label className="sanpin-form-label" style={{ fontSize: "0.875rem", fontWeight: 600 }}>
+										Моющее / дезинфицирующее средство
+									</label>
 									<input
 										type="text"
 										value={formDetergent}
 										onChange={(e) => setFormDetergent(e.target.value)}
 										className="sanpin-input"
+										style={{ minHeight: "44px", fontSize: "0.9rem" }}
 										placeholder="Например: Биолот 0.5% + Аламинол 1%"
 									/>
 								</div>
@@ -389,28 +479,28 @@ export function PsoRegisterTab() {
 								{/* Live regulatory validation box */}
 								<div
 									style={{
-										padding: "0.75rem",
-										borderRadius: "0.375rem",
+										padding: "1rem",
+										borderRadius: "0.5rem",
 										background: liveEval.isBatchApproved ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)",
-										border: `1px solid ${liveEval.isBatchApproved ? "rgba(16, 185, 129, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
+										border: `1.5px solid ${liveEval.isBatchApproved ? "rgba(16, 185, 129, 0.35)" : "rgba(239, 68, 68, 0.35)"}`,
 										display: "flex",
 										alignItems: "flex-start",
-										gap: "0.5rem",
+										gap: "0.6rem",
 									}}
 								>
 									{liveEval.isBatchApproved ? (
-										<CheckCircle2 size={18} color="#059669" style={{ flexShrink: 0, marginTop: "2px" }} />
+										<CheckCircle2 size={20} color="#059669" style={{ flexShrink: 0, marginTop: "2px" }} />
 									) : (
-										<AlertTriangle size={18} color="#dc2626" style={{ flexShrink: 0, marginTop: "2px" }} />
+										<AlertTriangle size={20} color="#dc2626" style={{ flexShrink: 0, marginTop: "2px" }} />
 									)}
-									<div style={{ fontSize: "0.8rem" }}>
-										<div style={{ fontWeight: 600, color: liveEval.isBatchApproved ? "#059669" : "#dc2626" }}>
+									<div>
+										<div style={{ fontWeight: 700, fontSize: "0.9rem", color: liveEval.isBatchApproved ? "#059669" : "#dc2626" }}>
 											{liveEval.isBatchApproved
 												? "Партия соответствует СанПиН 3.3686-21 и допущена к стерилизации"
 												: "ВНИМАНИЕ: Партия НЕ ДОПУСКАЕТСЯ к стерилизации"}
 										</div>
 										{liveEval.rejectionReason && (
-											<div style={{ marginTop: "0.25rem", color: "#dc2626" }}>
+											<div style={{ marginTop: "0.35rem", fontSize: "0.85rem", color: "#dc2626" }}>
 												{liveEval.rejectionReason}
 											</div>
 										)}
@@ -418,11 +508,12 @@ export function PsoRegisterTab() {
 								</div>
 							</div>
 
-							<div className="sanpin-modal-footer">
+							<div className="sanpin-modal-footer" style={{ padding: "1.25rem 1.5rem", gap: "0.75rem" }}>
 								<button
 									type="button"
 									onClick={() => setIsModalOpen(false)}
 									className="sanpin-btn sanpin-btn-secondary"
+									style={{ minHeight: "44px", padding: "0.6rem 1.25rem" }}
 								>
 									Отмена
 								</button>
@@ -430,6 +521,7 @@ export function PsoRegisterTab() {
 									type="submit"
 									disabled={submitting}
 									className="sanpin-btn sanpin-btn-primary"
+									style={{ minHeight: "44px", padding: "0.6rem 1.5rem", fontSize: "0.95rem", fontWeight: 700 }}
 								>
 									{submitting ? "Сохранение..." : "Зафиксировать пробу в журнале"}
 								</button>

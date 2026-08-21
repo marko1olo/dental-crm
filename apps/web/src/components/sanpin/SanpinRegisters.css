@@ -48,12 +48,12 @@
 .sanpin-badge-gov {
 	display: inline-flex;
 	align-items: center;
-	gap: 0.35rem;
-	font-size: 0.75rem;
+	gap: 0.4rem;
+	font-size: 0.85rem;
 	font-weight: 600;
 	background: rgba(16, 185, 129, 0.12);
 	color: #059669;
-	padding: 0.25rem 0.6rem;
+	padding: 0.35rem 0.75rem;
 	border-radius: 9999px;
 	border: 1px solid rgba(16, 185, 129, 0.3);
 }
@@ -86,6 +86,18 @@
 	gap: 0.35rem;
 	position: relative;
 	overflow: hidden;
+	transition: all 0.15s ease;
+}
+
+.sanpin-kpi-card:hover {
+	border-color: var(--brand-primary, #2563eb);
+	transform: translateY(-1px);
+}
+
+.sanpin-kpi-card.active-kpi {
+	border-color: var(--brand-primary, #2563eb);
+	box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+	background: rgba(37, 99, 235, 0.05);
 }
 
 [data-theme="dark"] .sanpin-kpi-card {
@@ -93,10 +105,10 @@
 }
 
 .sanpin-kpi-label {
-	font-size: 0.75rem;
+	font-size: 0.8rem;
 	text-transform: uppercase;
-	font-weight: 600;
-	letter-spacing: 0.05em;
+	font-weight: 700;
+	letter-spacing: 0.04em;
 	color: var(--muted, #64748b);
 }
 
@@ -112,7 +124,7 @@
 }
 
 .sanpin-kpi-subtext {
-	font-size: 0.75rem;
+	font-size: 0.8rem;
 	color: var(--muted, #64748b);
 }
 
@@ -134,8 +146,8 @@
 	display: flex;
 	align-items: center;
 	gap: 0.5rem;
-	padding: 0.6rem 0.9rem;
-	font-size: 0.85rem;
+	padding: 0.65rem 1rem;
+	font-size: 0.9rem;
 	font-weight: 500;
 	border-radius: 0.375rem;
 	border: none;
@@ -143,6 +155,7 @@
 	color: var(--muted, #64748b);
 	cursor: pointer;
 	white-space: nowrap;
+	min-height: 44px;
 	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -154,13 +167,13 @@
 .sanpin-tab-btn.active {
 	background: var(--brand-primary, #2563eb);
 	color: #ffffff;
-	font-weight: 600;
+	font-weight: 700;
 	box-shadow: 0 1px 3px rgba(37, 99, 235, 0.3);
 }
 
 .sanpin-tab-pill {
-	font-size: 0.7rem;
-	padding: 0.1rem 0.4rem;
+	font-size: 0.8rem;
+	padding: 0.15rem 0.5rem;
 	border-radius: 9999px;
 	background: rgba(0, 0, 0, 0.15);
 	color: inherit;
@@ -186,7 +199,7 @@
 	justify-content: space-between;
 	align-items: center;
 	gap: 0.75rem;
-	padding: 0.75rem 1rem;
+	padding: 0.85rem 1.1rem;
 	background: var(--paper-subtle, #f8fafc);
 	border: 1px solid var(--glass-border, rgba(148, 163, 184, 0.15));
 	border-radius: 0.5rem;
@@ -204,13 +217,14 @@
 }
 
 .sanpin-input, .sanpin-select {
-	padding: 0.45rem 0.75rem;
+	padding: 0.55rem 0.85rem;
 	border-radius: 0.375rem;
 	border: 1px solid var(--glass-border, #cbd5e1);
 	background: var(--paper, #ffffff);
 	color: var(--ink, #0f172a);
-	font-size: 0.85rem;
+	font-size: 0.9rem;
 	outline: none;
+	min-height: 44px;
 	transition: border-color 0.15s ease;
 }
 
@@ -228,13 +242,15 @@
 .sanpin-btn {
 	display: inline-flex;
 	align-items: center;
-	gap: 0.4rem;
-	padding: 0.5rem 0.9rem;
-	font-size: 0.85rem;
-	font-weight: 500;
+	justify-content: center;
+	gap: 0.45rem;
+	padding: 0.55rem 1rem;
+	font-size: 0.9rem;
+	font-weight: 600;
 	border-radius: 0.375rem;
 	border: 1px solid transparent;
 	cursor: pointer;
+	min-height: 44px;
 	transition: all 0.15s ease;
 }
 
@@ -294,17 +310,18 @@
 .sanpin-table {
 	width: 100%;
 	border-collapse: collapse;
-	font-size: 0.825rem;
+	font-size: 0.875rem;
 	text-align: left;
 }
 
 .sanpin-table th {
 	background: var(--paper-subtle, #f8fafc);
 	color: var(--muted, #475569);
-	font-weight: 600;
-	padding: 0.65rem 0.85rem;
+	font-weight: 700;
+	padding: 0.75rem 1rem;
 	border-bottom: 1px solid var(--glass-border, #e2e8f0);
 	white-space: nowrap;
+	font-size: 0.85rem;
 }
 
 [data-theme="dark"] .sanpin-table th {
@@ -314,7 +331,7 @@
 }
 
 .sanpin-table td {
-	padding: 0.65rem 0.85rem;
+	padding: 0.75rem 1rem;
 	border-bottom: 1px solid var(--glass-border, #f1f5f9);
 	color: var(--ink, #1e293b);
 	vertical-align: middle;
@@ -326,7 +343,7 @@
 }
 
 .sanpin-table tr:hover td {
-	background: rgba(241, 245, 249, 0.6);
+	background: rgba(241, 245, 249, 0.7);
 }
 
 [data-theme="dark"] .sanpin-table tr:hover td {
@@ -337,11 +354,11 @@
 .sanpin-tag {
 	display: inline-flex;
 	align-items: center;
-	gap: 0.25rem;
-	padding: 0.2rem 0.5rem;
-	border-radius: 0.25rem;
-	font-size: 0.75rem;
-	font-weight: 600;
+	gap: 0.35rem;
+	padding: 0.3rem 0.6rem;
+	border-radius: 0.375rem;
+	font-size: 0.825rem;
+	font-weight: 700;
 }
 
 .sanpin-tag-success {
@@ -388,7 +405,7 @@
 .sanpin-modal-overlay {
 	position: fixed;
 	inset: 0;
-	background: rgba(0, 0, 0, 0.5);
+	background: rgba(0, 0, 0, 0.55);
 	backdrop-filter: blur(2px);
 	display: flex;
 	align-items: center;
@@ -399,9 +416,9 @@
 
 .sanpin-modal {
 	background: var(--paper, #ffffff);
-	border-radius: 0.5rem;
+	border-radius: 0.75rem;
 	border: 1px solid var(--glass-border, #cbd5e1);
-	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25);
 	width: 100%;
 	max-width: 600px;
 	max-height: 90vh;
@@ -413,14 +430,14 @@
 [data-theme="dark"] .sanpin-modal {
 	background: #0f172a;
 	border-color: #334155;
-	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
 }
 
 .sanpin-modal-header {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 1rem 1.25rem;
+	padding: 1.1rem 1.4rem;
 	border-bottom: 1px solid var(--glass-border, #e2e8f0);
 }
 
@@ -430,31 +447,31 @@
 
 .sanpin-modal-header h3 {
 	margin: 0;
-	font-size: 1.125rem;
-	font-weight: 600;
+	font-size: 1.2rem;
+	font-weight: 700;
 }
 
 .sanpin-modal-body {
-	padding: 1.25rem;
+	padding: 1.4rem;
 	display: flex;
 	flex-direction: column;
-	gap: 1rem;
+	gap: 1.1rem;
 }
 
 .sanpin-form-row {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
-	gap: 0.75rem;
+	gap: 0.85rem;
 }
 
 .sanpin-form-group {
 	display: flex;
 	flex-direction: column;
-	gap: 0.35rem;
+	gap: 0.4rem;
 }
 
 .sanpin-form-label {
-	font-size: 0.8rem;
+	font-size: 0.85rem;
 	font-weight: 600;
 	color: var(--muted, #475569);
 }
@@ -464,15 +481,15 @@
 }
 
 .sanpin-form-hint {
-	font-size: 0.725rem;
+	font-size: 0.8rem;
 	color: var(--muted, #64748b);
 }
 
 .sanpin-modal-footer {
 	display: flex;
 	justify-content: flex-end;
-	gap: 0.5rem;
-	padding: 1rem 1.25rem;
+	gap: 0.75rem;
+	padding: 1.1rem 1.4rem;
 	border-top: 1px solid var(--glass-border, #e2e8f0);
 	background: var(--paper-subtle, #f8fafc);
 }
@@ -536,7 +553,7 @@
 	.sanpin-table th, .sanpin-table td {
 		border: 1px solid #000000 !important;
 		color: #000000 !important;
-		padding: 4px 6px !important;
+		padding: 6px 8px !important;
 		font-size: 10pt !important;
 	}
 	.sanpin-print-title {

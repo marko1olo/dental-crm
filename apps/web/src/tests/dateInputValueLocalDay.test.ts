@@ -38,6 +38,7 @@ const PINNED = Date.parse("2026-07-29T22:00:00Z");
 describe("день для поля ввода date считается в поясе клиники", () => {
 	it("Москва получает 30 июля, когда по UTC ещё 29-е", (t) => {
 		t.mock.timers.enable({ apis: ["Date"], now: PINNED });
+		t.after(() => t.mock.timers.reset());
 		assert.equal(
 			new Date().toISOString().slice(0, 10),
 			"2026-07-29",
@@ -48,27 +49,32 @@ describe("день для поля ввода date считается в поя�
 
 	it("Самара — пояс по умолчанию в схеме клиник — тоже 30 июля", (t) => {
 		t.mock.timers.enable({ apis: ["Date"], now: PINNED });
+		t.after(() => t.mock.timers.reset());
 		assert.equal(todayDateInputValue("Europe/Samara"), "2026-07-30");
 	});
 
 	it("Камчатка получает 30 июля: там уже десять утра", (t) => {
 		t.mock.timers.enable({ apis: ["Date"], now: PINNED });
+		t.after(() => t.mock.timers.reset());
 		assert.equal(todayDateInputValue("Asia/Kamchatka"), "2026-07-30");
 	});
 
 	it("пояс, где действительно 29-е, получает 29-е — расчёт не сдвигает всё вперёд", (t) => {
 		t.mock.timers.enable({ apis: ["Date"], now: PINNED });
+		t.after(() => t.mock.timers.reset());
 		assert.equal(todayDateInputValue("America/New_York"), "2026-07-29");
 		assert.equal(todayDateInputValue("UTC"), "2026-07-29");
 	});
 
 	it("неизвестный пояс не роняет поле и не отдаёт пустоту", (t) => {
 		t.mock.timers.enable({ apis: ["Date"], now: PINNED });
+		t.after(() => t.mock.timers.reset());
 		assert.match(todayDateInputValue("Марс/Олимп"), /^\d{4}-\d{2}-\d{2}$/);
 	});
 
 	it("без пояса берётся местный день машины, а не день по UTC", (t) => {
 		t.mock.timers.enable({ apis: ["Date"], now: PINNED });
+		t.after(() => t.mock.timers.reset());
 		const now = new Date();
 		const pad = (value: number) => String(value).padStart(2, "0");
 		const localDay = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
@@ -79,6 +85,7 @@ describe("день для поля ввода date считается в поя�
 describe("сдвиг на сутки считается календарно", () => {
 	it("срок оплаты через 7 дней от дня клиники, а не от дня по UTC", (t) => {
 		t.mock.timers.enable({ apis: ["Date"], now: PINNED });
+		t.after(() => t.mock.timers.reset());
 		// 30 июля в Москве + 7 = 6 августа. От дня по UTC (29-е) вышло бы 5-е.
 		assert.equal(dateInputValuePlusDays(7, "Europe/Moscow"), "2026-08-06");
 	});
