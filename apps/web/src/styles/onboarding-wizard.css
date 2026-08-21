@@ -9,8 +9,7 @@
    !important }`. В тёмной теме фон становился тёмным, а текст
    оставался почти чёрным из инлайна: заголовок «Быстрая
    настройка CRM Dente» имел контраст 1.00 — то есть был
-   полностью невидим. Проверено в браузере: color rgb(17,24,39)
-   на фоне rgb(16,26,25).
+   полностью невидим.
 
    Здесь всё оформление вынесено в классы на токенах, поэтому
    обе темы получаются из одного набора правил.
@@ -38,30 +37,29 @@
 	padding: clamp(16px, 4vw, 40px) clamp(12px, 3vw, 20px);
 }
 
-/* dente-redesign.css задаёт `.workspace, .dnt-content { max-width: 1560px
-   !important; width: 100% !important; padding: … !important; margin: 0 auto
-   !important }`. Объявление с !important по одному классу бьёт любой
-   селектор без !important, поэтому ограничивать ширину через .workspace
-   бессмысленно — карточка растягивалась на 1400px вместо 820px.
-   Ограничение ставится на саму карточку: там !important-конкурентов нет,
-   и в общий счёт войны каскада мы ничего не добавляем. */
-.onboarding-shell.onboarding-wizard {
-	display: grid;
+/* Модальная панель мастера первого запуска — чистый изолированный контейнер без вложенных секций-рамок */
+.onboarding-modal-card {
+	background: var(--paper-strong, var(--paper));
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+	display: flex;
+	flex-direction: column;
 	gap: 0;
 	margin: auto;
-	max-width: 820px;
-	padding: clamp(18px, 4vw, 32px);
+	max-width: 760px;
+	padding: clamp(24px, 4vw, 40px);
 	width: 100%;
 }
 
-.onboarding-wizard .onboarding-head {
+.onboarding-modal-card .onboarding-head {
 	border-bottom: 1px solid var(--line);
 	display: block;
 	margin-bottom: 24px;
 	padding-bottom: 20px;
 }
 
-.onboarding-wizard .onboarding-head .eyebrow {
+.onboarding-modal-card .onboarding-head .eyebrow {
 	color: var(--teal-dark);
 	font-size: 12px;
 	font-weight: 600;
@@ -70,7 +68,7 @@
 	text-transform: uppercase;
 }
 
-.onboarding-wizard .onboarding-head h2 {
+.onboarding-modal-card .onboarding-head h2 {
 	color: var(--ink);
 	font-size: clamp(19px, 4vw, 24px);
 	font-weight: 700;
@@ -78,7 +76,7 @@
 }
 
 /* ---------- Полоса шагов ---------- */
-.onboarding-wizard .wizard-step-list {
+.onboarding-modal-card .wizard-step-list {
 	display: grid;
 	gap: 12px;
 	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -124,7 +122,7 @@
 }
 
 /* ---------- Панель шага ---------- */
-.onboarding-wizard .onboarding-panel {
+.onboarding-modal-card .onboarding-panel {
 	background: transparent;
 	border: 0;
 	display: flex;
@@ -133,14 +131,14 @@
 	padding: 0;
 }
 
-.onboarding-wizard .onboarding-panel h3 {
+.onboarding-modal-card .onboarding-panel h3 {
 	color: var(--ink);
 	font-size: clamp(17px, 3.5vw, 20px);
 	font-weight: 600;
 	margin: 0 0 8px;
 }
 
-.onboarding-wizard .onboarding-panel p {
+.onboarding-modal-card .onboarding-panel p {
 	color: var(--ink-2, var(--muted));
 	margin: 0;
 }
@@ -148,30 +146,38 @@
 /* ---------- Выбор режима запуска ---------- */
 .wizard-mode-grid {
 	display: grid;
-	gap: 20px;
-	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 16px;
+	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
 .wizard-mode-card {
 	align-items: flex-start;
 	background: var(--paper-soft);
-	border: 2px solid var(--line-strong);
+	border: 1px solid var(--line);
 	border-radius: 12px;
 	cursor: pointer;
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
+	gap: 8px;
 	padding: 20px;
 	text-align: left;
 	transition:
-		transform var(--transition-fast, 0.15s ease),
+		border-color var(--transition-fast, 0.15s ease),
+		background-color var(--transition-fast, 0.15s ease),
 		box-shadow var(--transition-fast, 0.15s ease),
-		border-color var(--transition-fast, 0.15s ease);
+		transform var(--transition-fast, 0.15s ease);
 }
 
 .wizard-mode-card:hover:not(:disabled) {
-	box-shadow: var(--shadow-2);
+	background: var(--teal-surface, var(--paper-soft));
+	border-color: var(--teal);
+	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
 	transform: translateY(-2px);
+}
+
+.wizard-mode-card:focus-visible {
+	outline: 2px solid var(--teal);
+	outline-offset: 2px;
 }
 
 .wizard-mode-card:disabled {
@@ -179,40 +185,24 @@
 	opacity: 0.6;
 }
 
-.wizard-mode-card--demo {
-	background: var(--info-bg, var(--paper-soft));
-	border-color: var(--info-fg, var(--line-strong));
-}
-
-.wizard-mode-card--clean {
-	background: var(--ok-bg, var(--paper-soft));
-	border-color: var(--ok-fg, var(--line-strong));
-}
-
 .wizard-mode-icon {
 	font-size: 28px;
 	line-height: 1;
-	margin-bottom: 6px;
+	margin-bottom: 2px;
 }
 
-.wizard-mode-card--demo .wizard-mode-title {
-	color: var(--info-fg, var(--ink));
-}
-
-.wizard-mode-card--clean .wizard-mode-title {
-	color: var(--ok-fg, var(--ink));
-}
-
-/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 .wizard-mode-title {
+	color: var(--ink);
 	font-size: 16px;
 	font-weight: 600;
 }
 
-/* Описание читается на цветной подложке в обеих темах: берём основной
-   цвет текста, а не осветлённый акцент. */
+.wizard-mode-card:hover:not(:disabled) .wizard-mode-title {
+	color: var(--teal-dark, var(--ink));
+}
+
 .wizard-mode-note {
-	color: var(--ink);
+	color: var(--ink-2, var(--muted));
 	font-size: 13px;
 	line-height: 1.45;
 }
@@ -301,7 +291,7 @@
 }
 
 /* ---------- Кнопки ---------- */
-.onboarding-wizard .onboarding-actions {
+.onboarding-modal-card .onboarding-actions {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 12px;
@@ -309,7 +299,7 @@
 	margin-top: 24px;
 }
 
-.onboarding-wizard .onboarding-actions button {
+.onboarding-modal-card .onboarding-actions button {
 	border-radius: 8px;
 	font-weight: 600;
 	min-height: 44px;
@@ -317,10 +307,10 @@
 }
 
 @media (max-width: 560px) {
-	.onboarding-wizard .onboarding-actions {
+	.onboarding-modal-card .onboarding-actions {
 		justify-content: stretch;
 	}
-	.onboarding-wizard .onboarding-actions button {
+	.onboarding-modal-card .onboarding-actions button {
 		flex: 1 1 140px;
 	}
 }

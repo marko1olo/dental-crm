@@ -1372,16 +1372,12 @@ export function App() {
 	);
 	if (!onboardingDismissed && !isLocalOnboardingDismissed) {
 		return (
-			<main className="app-shell onboarding-fullscreen">
-				<section
-					className="workspace onboarding-only-workspace"
-					id="workspace-content"
+			<main className="onboarding-fullscreen">
+				<div
+					className="onboarding-modal-card"
+					aria-label="Первичная настройка клиники"
 				>
-					<section
-						className="onboarding-shell onboarding-wizard"
-						aria-label="Первичная настройка клиники"
-					>
-						{/* Onboarding Header */}
+					{/* Onboarding Header */}
 						<div className="onboarding-head">
 							<div>
 								<p className="eyebrow">Первый запуск</p>
@@ -1770,8 +1766,7 @@ export function App() {
 								</button>
 							) : null}
 						</div>
-					</section>
-				</section>
+				</div>
 			</main>
 		);
 	}

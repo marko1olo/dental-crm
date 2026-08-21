@@ -75,7 +75,7 @@ describe("ChairsiderPerspectiveView — Sidebar Purity & Quick Actions", () => {
 			"Кнопка 'Скопировать в дневник 043/у' должна присутствовать",
 		);
 		assert.ok(
-			html.includes("Скопировать в дневник 043/у"),
+			html.includes("Скопировать в дневник"),
 			"Текст кнопки копирования SOAP должен присутствовать",
 		);
 		assert.ok(html.includes("SOAP"), "Бейдж SOAP должен присутствовать");
@@ -86,7 +86,7 @@ describe("ChairsiderPerspectiveView — Sidebar Purity & Quick Actions", () => {
 			"Кнопка 'Журнал корневых каналов' должна присутствовать",
 		);
 		assert.ok(
-			html.includes("Журнал корневых каналов (Эндо 043/у)"),
+			html.includes("Журнал корневых каналов"),
 			"Текст кнопки журнала корневых каналов должен присутствовать",
 		);
 		assert.ok(html.includes("Эндо 043/у"), "Бейдж Эндо 043/у должен присутствовать");
@@ -97,7 +97,7 @@ describe("ChairsiderPerspectiveView — Sidebar Purity & Quick Actions", () => {
 			"Кнопка 'Наряд в лабораторию' должна присутствовать",
 		);
 		assert.ok(
-			html.includes("Наряд в лабораторию (ЗТЛ CAD/CAM)"),
+			html.includes("Наряд в лабораторию"),
 			"Текст кнопки наряда в ЗТЛ должен присутствовать",
 		);
 		assert.ok(html.includes("CAD/CAM"), "Бейдж CAD/CAM должен присутствовать");
@@ -108,12 +108,12 @@ describe("ChairsiderPerspectiveView — Sidebar Purity & Quick Actions", () => {
 			"Кнопка запуска 3D DICOM / КТ должна присутствовать",
 		);
 		assert.ok(
-			html.includes("3D КТ и Рентген"),
+			html.includes("3D КТ и Рентген-снимок"),
 			"Заголовок 3D КТ и Рентген должен присутствовать",
 		);
 		assert.ok(
-			html.includes("Открыть снимок 3D DICOM"),
-			"Кнопка 'Открыть снимок 3D DICOM' должна присутствовать",
+			html.includes("3D DICOM"),
+			"Бейдж 3D DICOM должен присутствовать",
 		);
 
 		// 5. Hands-free Голосовая диктовка
@@ -136,8 +136,8 @@ describe("ChairsiderPerspectiveView — Sidebar Purity & Quick Actions", () => {
 			"Кнопки поверхностей имеют минимальный размер >= 44x44px",
 		);
 
-		// Главные кнопки сайдбара имеют высоту >= 44px (52px, 56px)
-		assert.ok(html.includes("min-h-[52px]"), "Кнопки Эндо и ЗТЛ имеют min-h-[52px] >= 44px");
+		// Главные кнопки сайдбара имеют высоту >= 44px (74px, 56px)
+		assert.ok(html.includes("min-h-[74px]"), "Кнопки Эндо и ЗТЛ имеют min-h-[74px] >= 44px");
 		assert.ok(html.includes("min-h-[56px]"), "Кнопка КТ и верхняя панель имеют min-h-[56px] >= 44px");
 
 		// Кнопка возврата к стандартному столу

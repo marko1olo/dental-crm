@@ -1882,7 +1882,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 			if (!Number.isFinite(naturalWidth) || naturalWidth <= 0) return;
 
 			const next = Math.min(
-				1.25,
+				1.75,
 				Math.max(MIN_ARCH_SCALE, available / naturalWidth),
 			);
 			if (Math.abs(applied - next) < 0.005) return;

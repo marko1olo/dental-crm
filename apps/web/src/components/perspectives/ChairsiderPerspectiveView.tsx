@@ -34,6 +34,7 @@ import { PeriodontalChartModule } from "../odontogram/PeriodontalChartModule";
 import { EndoCanalLogModal, type EndoToothClinicalData } from "../odontogram/EndoCanalLogModal";
 import { DentalLabOrderModal } from "../lab/DentalLabOrderModal";
 import { EgiszCdaExportModal } from "../egisz/EgiszCdaExportModal";
+import { RadialToothMenu } from "../odontogram/RadialToothMenu";
 import "../odontogram/odontogram.css";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 
@@ -174,6 +175,10 @@ export function ChairsiderPerspectiveView() {
 	const [isEndoModalOpen, setIsEndoModalOpen] = useState(false);
 	const [isLabModalOpen, setIsLabModalOpen] = useState(false);
 	const [isEgiszModalOpen, setIsEgiszModalOpen] = useState(false);
+	const [radialMenuState, setRadialMenuState] = useState<{
+		toothNumber: number;
+		anchorRect: { x: number; y: number; width: number; height: number };
+	} | null>(null);
 
 	// Adult teeth arrays for FDI
 	const upperJawTeeth = useMemo(() => [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28], []);
@@ -336,8 +341,53 @@ export function ChairsiderPerspectiveView() {
 		}
 	};
 
-	const handleToothClickFromChart = (num: number, _rect: DOMRect, surface?: string) => {
+	const handleBatchToothStatus = async (targets: number[], state: ToothState) => {
+		if (!activePatient?.id || targets.length === 0) return;
+		setIsSavingTooth(true);
+		const prevMap = { ...toothStates };
+		setToothStates((prev) => {
+			const next = { ...prev };
+			for (const num of targets) next[num] = state;
+			return next;
+		});
+		try {
+			const res = await fetch(`/api/patients/${activePatient.id}/tooth-states/batch`, {
+				method: "POST",
+				headers: auth.denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({
+					toothNumbers: targets,
+					state,
+				}),
+			});
+			if (!res.ok) {
+				setToothStates(prevMap);
+				showToast("Не удалось сохранить статус зубов в БД", "error");
+			} else {
+				showToast(`Зубы [${targets.join(", ")}]: статус «${TOOTH_STATE_LABELS[state] || state}»`, "success");
+			}
+		} catch (err) {
+			setToothStates(prevMap);
+			logger.error("[ChairsiderPerspective] Batch save error", err);
+		} finally {
+			setIsSavingTooth(false);
+		}
+	};
+
+	const handleToothClickFromChart = (num: number, rect?: DOMRect, surface?: string) => {
 		setSelectedTooth(num);
+		if (rect) {
+			setRadialMenuState({
+				toothNumber: num,
+				anchorRect: {
+					x: rect.x,
+					y: rect.y,
+					width: rect.width,
+					height: rect.height,
+				},
+			});
+		}
 		if (surface) {
 			toggleSurface(surface);
 		}
@@ -368,7 +418,13 @@ export function ChairsiderPerspectiveView() {
 
 	const selectedToothState = toothStates[selectedTooth] || "Healthy";
 	const selectedToothMeta = TOOTH_SHORT_CODES[selectedToothState] || { code: "Зд", dotColor: "#10b981" };
-	const selectedToothName = getToothAnatomicalNameRu(selectedTooth);
+	const cleanToothTitle = useMemo(() => {
+		if (!selectedTooth) return "";
+		const raw = getToothAnatomicalNameRu(selectedTooth);
+		const match = raw.match(/^\d+\s*\((.*)\)$/);
+		const desc = match ? match[1] : raw;
+		return `#${selectedTooth} (${desc})`;
+	}, [selectedTooth]);
 
 	return (
 		<div
@@ -449,10 +505,10 @@ export function ChairsiderPerspectiveView() {
 				</div>
 			</header>
 
-			{/* Main High-Ergonomics Touch Matrix */}
-			<main className="grid grid-cols-1 lg:grid-cols-12 gap-4 mt-4 flex-1">
-				{/* Left: Odontogram Canvas / Matrix */}
-				<section className="lg:col-span-8 bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl p-4 md:p-6 flex flex-col justify-between shadow-sm">
+			{/* Main High-Ergonomics Vertical Clinical Workflow */}
+			<main className="flex flex-col gap-6 mt-4 flex-1 w-full max-w-full">
+				{/* Top Block: Full-Width Dental Arch / Odontogram */}
+				<section className="w-full bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl p-4 md:p-6 shadow-sm flex flex-col justify-between">
 					<div>
 						{/* View Mode Toggle & Header */}
 						<div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
@@ -484,7 +540,7 @@ export function ChairsiderPerspectiveView() {
 											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-300"
 									}`}
 								>
-									<span>🦷 <span className="hidden sm:inline">Анатомическая </span>дуга</span>
+									<span>🦷 <span className="hidden sm:inline">Анатомическая </span>Дуга</span>
 								</button>
 								<button
 									type="button"
@@ -496,7 +552,7 @@ export function ChairsiderPerspectiveView() {
 											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-300"
 									}`}
 								>
-									<span>🔲 Плитки<span className="hidden sm:inline"> (56px)</span></span>
+									<span>🔲 Плитки</span>
 								</button>
 								<button
 									type="button"
@@ -508,7 +564,7 @@ export function ChairsiderPerspectiveView() {
 											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-300"
 									}`}
 								>
-									<span>📊 <span className="hidden sm:inline">Пародонто</span>грамма</span>
+									<span>📊 <span className="sm:hidden">Пародонт</span><span className="hidden sm:inline">Пародонтограмма</span></span>
 								</button>
 							</div>
 						</div>
@@ -527,6 +583,7 @@ export function ChairsiderPerspectiveView() {
 									teethData={teethData}
 									selectedTeeth={[selectedTooth]}
 									onToothClick={handleToothClickFromChart}
+									onQuickStateChange={handleBatchToothStatus}
 									useSurfaces={true}
 									hideHeader={true}
 									className="border-0 shadow-none p-0 bg-transparent"
@@ -536,11 +593,11 @@ export function ChairsiderPerspectiveView() {
 							<div className="space-y-4">
 								{/* Upper Arch */}
 								<div>
-									<div className="text-xs font-bold text-[var(--muted,#64748b)] dark:text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+									<div className="text-xs font-bold text-[var(--muted,#64748b)] dark:text-slate-400 uppercase tracking-wider mb-2.5 flex items-center justify-between">
 										<span>Верхняя челюсть (18–28)</span>
-										<span className="text-[11px] font-normal">Тач-кнопки ≥56px</span>
+										<span className="text-xs font-bold text-teal-700 dark:text-teal-300">Крупные тач-плитки 64–76px</span>
 									</div>
-									<div className="grid grid-cols-8 sm:grid-cols-16 gap-1.5 md:gap-2 overflow-x-auto pb-1">
+									<div className="grid grid-cols-8 sm:grid-cols-16 gap-2 md:gap-2.5 overflow-x-auto pb-2">
 										{upperJawTeeth.map((tNum) => {
 											const isSelected = selectedTooth === tNum;
 											const toothState = toothStates[tNum] || "Healthy";
@@ -551,26 +608,26 @@ export function ChairsiderPerspectiveView() {
 													key={tNum}
 													type="button"
 													onClick={() => setSelectedTooth(tNum)}
-													className={`min-h-[56px] min-w-[44px] md:min-h-[64px] p-1 rounded-xl flex flex-col items-center justify-center font-black transition-all border cursor-pointer active:scale-95 whitespace-nowrap ${
+													className={`min-h-[64px] min-w-[48px] md:min-h-[76px] md:min-w-[60px] p-1.5 rounded-xl flex flex-col items-center justify-center font-black transition-all border cursor-pointer active:scale-95 whitespace-nowrap shadow-xs ${
 														isSelected
 															? "bg-teal-600 text-white border-teal-700 shadow-lg shadow-teal-600/30 scale-105 z-10"
 															: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 border-[var(--line,#cbd5e1)] dark:border-slate-700"
 													}`}
 												>
-													<span className="text-xs sm:text-sm md:text-base font-black whitespace-nowrap leading-tight">{tNum}</span>
+													<span className="text-sm sm:text-base md:text-lg font-black whitespace-nowrap leading-tight">{tNum}</span>
 													<span
-														className={`flex items-center justify-center gap-1 mt-0.5 text-[10px] font-bold px-0.5 rounded-sm whitespace-nowrap leading-none ${
+														className={`flex items-center justify-center gap-1 mt-0.5 text-[11px] font-bold px-1 rounded-sm whitespace-nowrap leading-none ${
 															isSelected ? "text-teal-100" : "text-[var(--ink,#0f172a)] dark:text-slate-300"
 														}`}
 													>
 														<span
-															className="w-1.5 h-1.5 rounded-full shrink-0"
+															className="w-2 h-2 rounded-full shrink-0"
 															style={{ backgroundColor: meta.dotColor }}
 														/>
 														<span className="whitespace-nowrap">{meta.code}</span>
 													</span>
 													{surfaces && surfaces.length > 0 && (
-														<span className="text-[8px] leading-tight text-teal-300 dark:text-teal-200 mt-0.5 truncate max-w-full">
+														<span className="text-[9px] font-bold leading-tight text-teal-300 dark:text-teal-200 mt-0.5 truncate max-w-full">
 															{surfaces.join("")}
 														</span>
 													)}
@@ -582,10 +639,10 @@ export function ChairsiderPerspectiveView() {
 
 								{/* Lower Arch */}
 								<div>
-									<div className="text-xs font-bold text-[var(--muted,#64748b)] dark:text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+									<div className="text-xs font-bold text-[var(--muted,#64748b)] dark:text-slate-400 uppercase tracking-wider mb-2.5 flex items-center justify-between">
 										<span>Нижняя челюсть (48–38)</span>
 									</div>
-									<div className="grid grid-cols-8 sm:grid-cols-16 gap-1.5 md:gap-2 overflow-x-auto pb-1">
+									<div className="grid grid-cols-8 sm:grid-cols-16 gap-2 md:gap-2.5 overflow-x-auto pb-2">
 										{lowerJawTeeth.map((tNum) => {
 											const isSelected = selectedTooth === tNum;
 											const toothState = toothStates[tNum] || "Healthy";
@@ -596,26 +653,26 @@ export function ChairsiderPerspectiveView() {
 													key={tNum}
 													type="button"
 													onClick={() => setSelectedTooth(tNum)}
-													className={`min-h-[56px] min-w-[44px] md:min-h-[64px] p-1 rounded-xl flex flex-col items-center justify-center font-black transition-all border cursor-pointer active:scale-95 whitespace-nowrap ${
+													className={`min-h-[64px] min-w-[48px] md:min-h-[76px] md:min-w-[60px] p-1.5 rounded-xl flex flex-col items-center justify-center font-black transition-all border cursor-pointer active:scale-95 whitespace-nowrap shadow-xs ${
 														isSelected
 															? "bg-teal-600 text-white border-teal-700 shadow-lg shadow-teal-600/30 scale-105 z-10"
 															: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 border-[var(--line,#cbd5e1)] dark:border-slate-700"
 													}`}
 												>
-													<span className="text-xs sm:text-sm md:text-base font-black whitespace-nowrap leading-tight">{tNum}</span>
+													<span className="text-sm sm:text-base md:text-lg font-black whitespace-nowrap leading-tight">{tNum}</span>
 													<span
-														className={`flex items-center justify-center gap-1 mt-0.5 text-[10px] font-bold px-0.5 rounded-sm whitespace-nowrap leading-none ${
+														className={`flex items-center justify-center gap-1 mt-0.5 text-[11px] font-bold px-1 rounded-sm whitespace-nowrap leading-none ${
 															isSelected ? "text-teal-100" : "text-[var(--ink,#0f172a)] dark:text-slate-300"
 														}`}
 													>
 														<span
-															className="w-1.5 h-1.5 rounded-full shrink-0"
+															className="w-2 h-2 rounded-full shrink-0"
 															style={{ backgroundColor: meta.dotColor }}
 														/>
 														<span className="whitespace-nowrap">{meta.code}</span>
 													</span>
 													{surfaces && surfaces.length > 0 && (
-														<span className="text-[8px] leading-tight text-teal-300 dark:text-teal-200 mt-0.5 truncate max-w-full">
+														<span className="text-[9px] font-bold leading-tight text-teal-300 dark:text-teal-200 mt-0.5 truncate max-w-full">
 															{surfaces.join("")}
 														</span>
 													)}
@@ -634,7 +691,7 @@ export function ChairsiderPerspectiveView() {
 							<div className="text-sm font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 mb-3 flex items-center justify-between flex-wrap gap-2">
 								<span className="flex items-center gap-2">
 									<span>Быстрое присвоение статуса для зуба #{selectedTooth}:</span>
-									<span className="text-xs px-2 py-0.5 rounded bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border border-teal-500/30">
+									<span className="text-xs px-2 py-0.5 rounded bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border border-teal-500/30 font-bold">
 										{TOOTH_STATE_LABELS[selectedToothState] || selectedToothState}
 									</span>
 								</span>
@@ -644,7 +701,7 @@ export function ChairsiderPerspectiveView() {
 									</span>
 								)}
 							</div>
-							<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2">
+							<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2.5">
 								{CHAIRSIDE_TOOTH_STATUS_OPTIONS.map((opt) => {
 									const isActive = selectedToothState === opt.state;
 									return (
@@ -653,12 +710,12 @@ export function ChairsiderPerspectiveView() {
 											type="button"
 											disabled={isSavingTooth}
 											onClick={() => void handleToothStatusSelect(opt.state)}
-											className={`min-h-[58px] p-2 rounded-xl font-bold text-xs border flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer shadow-sm ${opt.colorClass} ${opt.borderClass} ${
-												isActive ? "ring-2 ring-teal-500 ring-offset-1 font-black" : ""
+											className={`min-h-[62px] p-2.5 rounded-xl font-bold text-xs border flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-sm ${opt.colorClass} ${opt.borderClass} ${
+												isActive ? "ring-2 ring-teal-500 ring-offset-1 font-black shadow-md" : ""
 											}`}
 										>
-											<span className="whitespace-nowrap">{opt.label}</span>
-											<span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${opt.badgeClass}`}>
+											<span className="whitespace-nowrap font-bold">{opt.label}</span>
+											<span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${opt.badgeClass}`}>
 												{opt.shortCode}
 											</span>
 										</button>
@@ -669,216 +726,208 @@ export function ChairsiderPerspectiveView() {
 					)}
 				</section>
 
-				{/* Right: Selected Tooth Inspector, Surfaces, CT Launcher & Dictation */}
-				<section className="lg:col-span-4 flex flex-col gap-4">
-					{/* Selected Tooth Detailed Inspector */}
-					<div className="bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl p-5 shadow-sm">
-						<div className="flex items-center justify-between pb-3 mb-3 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
+				{/* Bottom Block: Clinical Visit & Documentation Flow (Блок приёма 043/у) */}
+				<section className="w-full bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl p-4 md:p-6 shadow-sm flex flex-col gap-5">
+					{/* Header of Visit Block: Selected tooth info, 043/u protocol header */}
+					<div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
+						<div className="flex items-center gap-2.5">
+							<span className="text-2xl">📋</span>
 							<div>
-								<div className="text-xs uppercase tracking-wider text-teal-700 dark:text-teal-300 font-black">
-									Инспектор зуба FDI
-								</div>
-								<h3 className="text-lg font-black text-[var(--ink,#0f172a)] dark:text-white m-0">
-									Зуб #{selectedTooth}
+								<h3 className="text-base md:text-lg font-black text-[var(--ink,#0f172a)] dark:text-white m-0">
+									Клинический приём и документация (Форма 043/у)
 								</h3>
-							</div>
-							<div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 border border-[var(--line,#cbd5e1)] dark:border-slate-700 text-xs font-bold">
-								<span
-									className="w-2.5 h-2.5 rounded-full"
-									style={{ backgroundColor: selectedToothMeta.dotColor }}
-								/>
-								<span>{TOOTH_STATE_LABELS[selectedToothState] || selectedToothState}</span>
+								<div className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 mt-0.5">
+									Выбранный зуб: <span className="font-bold text-[var(--ink,#0f172a)] dark:text-slate-200">{cleanToothTitle}</span> · Статус: <span className="font-bold text-teal-700 dark:text-teal-300">{TOOTH_STATE_LABELS[selectedToothState] || selectedToothState}</span>
+								</div>
 							</div>
 						</div>
 
-						<p className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 mb-4 leading-relaxed">
-							{selectedToothName}
-						</p>
+						{/* Optional Surfaces Chips */}
+						<div className="flex items-center gap-1.5 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 p-1.5 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700">
+							<span className="text-[11px] font-bold text-[var(--muted,#64748b)] dark:text-slate-400 px-1">
+								Поверхности:
+							</span>
+							{(["V", "L", "M", "D", "O"] as const).map((surf) => {
+								const isSurfActive = currentSurfaces.includes(surf);
+								return (
+									<button
+										key={surf}
+										type="button"
+										data-testid={`chairsider-surface-btn-${surf}`}
+										onClick={() => toggleSurface(surf)}
+										className={`min-h-[44px] min-w-[44px] px-3 py-2 rounded-lg text-xs font-bold transition-all border cursor-pointer flex items-center justify-center ${
+											isSurfActive
+												? "bg-teal-600 text-white border-teal-700 shadow-xs"
+												: "bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-600 hover:bg-teal-50 dark:hover:bg-slate-600"
+										}`}
+									>
+										{surf}
+									</button>
+								);
+							})}
+							{currentSurfaces.length > 0 && (
+								<button
+									type="button"
+									data-testid="chairsider-surface-reset-btn"
+									onClick={() => handleSurfaceChange([])}
+									className="min-h-[44px] px-2.5 py-1.5 rounded-lg text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer flex items-center justify-center"
+								>
+									Сброс
+								</button>
+							)}
+						</div>
+					</div>
 
-						{/* Quick 1-Tap Actions */}
-						<div className="flex flex-col gap-2.5 mb-4">
-							<button
-								type="button"
-								data-testid="chairsider-copy-soap-btn"
-								onClick={() => {
-									const soap = generateSoapFromOdontogramFinding({
-										toothNumber: selectedTooth,
-										state: selectedToothState,
-										surfaces: currentSurfaces,
-									});
-									const clipText = `Зуб ${selectedTooth} (${selectedToothName}): ${soap.diagnosisIcd10Label}.\n${soap.statusLocalis}\n${soap.treatmentDescription}`;
-									navigator.clipboard?.writeText?.(clipText);
-									showToast(`Протокол для зуба #${selectedTooth} скопирован для Формы 043/у`, "success");
-								}}
-								className="min-h-[46px] w-full p-2.5 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-800 dark:text-teal-300 font-bold flex items-center justify-between border border-teal-500/30 active:scale-98 transition-all text-xs cursor-pointer shadow-xs"
-								title="Скопировать клинический протокол Формы 043/у в дневник"
-							>
-								<span className="flex items-center gap-2">
+					{/* Quick 1-Tap Action Toolbar for Visit */}
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+						{/* 1. Copy SOAP to 043/u */}
+						<button
+							type="button"
+							data-testid="chairsider-copy-soap-btn"
+							onClick={() => {
+								const soap = generateSoapFromOdontogramFinding({
+									toothNumber: selectedTooth,
+									state: selectedToothState,
+									surfaces: currentSurfaces,
+								});
+								const clipText = `Зуб ${selectedTooth} (${cleanToothTitle}): ${soap.diagnosisIcd10Label}.\n${soap.statusLocalis}\n${soap.treatmentDescription}`;
+								navigator.clipboard?.writeText?.(clipText);
+								showToast(`Протокол для зуба #${selectedTooth} скопирован для Формы 043/у`, "success");
+							}}
+							className="min-h-[74px] p-3 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-900 dark:text-teal-200 font-bold flex flex-col justify-between items-stretch border border-teal-500/30 active:scale-98 transition-all cursor-pointer shadow-xs"
+							title="Скопировать клинический протокол Формы 043/у в дневник"
+						>
+							<div className="flex items-center justify-between w-full gap-2">
+								<span className="flex items-center gap-1.5 font-bold text-xs text-teal-800 dark:text-teal-300">
 									<Sparkles size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
-									<span>Скопировать в дневник 043/у</span>
+									<span>Форма 043/у</span>
 								</span>
-								<span className="text-[10px] px-2 py-0.5 rounded bg-teal-600 text-white font-bold">
+								<span className="text-[10px] px-1.5 py-0.5 rounded bg-teal-600 text-white font-black shrink-0">
 									SOAP
 								</span>
-							</button>
+							</div>
+							<span className="text-[11px] font-semibold text-[var(--muted,#64748b)] dark:text-slate-400 text-left mt-1">
+								Скопировать в дневник
+							</span>
+						</button>
 
-							{/* Optional Surfaces Toggle (compact pill buttons >=44px touch target) */}
-							<div className="p-2.5 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800/80 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700">
-								<div className="text-[11px] font-bold text-[var(--muted,#64748b)] dark:text-slate-400 mb-1.5 flex items-center justify-between">
-									<span>Поверхности (опционально):</span>
-									<span className="text-teal-700 dark:text-teal-300 font-bold">
-										{currentSurfaces.length > 0 ? currentSurfaces.join(", ") : "Вся коронка"}
-									</span>
+						{/* 2. Endo Canal Log */}
+						<button
+							type="button"
+							data-testid="chairsider-endo-canal-log-btn"
+							onClick={() => setIsEndoModalOpen(true)}
+							className="min-h-[74px] p-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-900 dark:text-rose-200 font-bold flex flex-col justify-between items-stretch border border-rose-500/30 active:scale-98 transition-all cursor-pointer shadow-xs"
+							title="Открыть журнал корневых каналов (Форма 043/у)"
+						>
+							<div className="flex items-center justify-between w-full gap-2">
+								<span className="flex items-center gap-1.5 font-bold text-xs text-rose-800 dark:text-rose-300">
+									<span className="text-sm shrink-0">📋</span>
+									<span>Эндодонтия</span>
+								</span>
+								<span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-600 text-white font-black shrink-0">
+									Эндо 043/у
+								</span>
+							</div>
+							<span className="text-[11px] font-semibold text-[var(--muted,#64748b)] dark:text-slate-400 text-left mt-1">
+								Журнал корневых каналов
+							</span>
+						</button>
+
+						{/* 3. Dental Lab Order */}
+						<button
+							type="button"
+							data-testid="chairsider-lab-order-btn"
+							onClick={() => setIsLabModalOpen(true)}
+							className="min-h-[74px] p-3 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-900 dark:text-indigo-200 font-bold flex flex-col justify-between items-stretch border border-indigo-500/30 active:scale-98 transition-all cursor-pointer shadow-xs"
+							title="Оформить цифровой наряд в зуботехническую лабораторию"
+						>
+							<div className="flex items-center justify-between w-full gap-2">
+								<span className="flex items-center gap-1.5 font-bold text-xs text-indigo-800 dark:text-indigo-300">
+									<span className="text-sm shrink-0">🦷</span>
+									<span>Зуботехника</span>
+								</span>
+								<span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-600 text-white font-black shrink-0">
+									CAD/CAM
+								</span>
+							</div>
+							<span className="text-[11px] font-semibold text-[var(--muted,#64748b)] dark:text-slate-400 text-left mt-1">
+								Наряд в лабораторию (ЗТЛ)
+							</span>
+						</button>
+
+						{/* 4. 3D CT & X-Ray */}
+						<button
+							type="button"
+							data-testid="chairsider-launch-ct-btn"
+							onClick={handleLaunchCT}
+							className="min-h-[74px] p-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-900 dark:text-blue-200 font-bold flex flex-col justify-between items-stretch border border-blue-500/30 active:scale-98 transition-all cursor-pointer shadow-xs"
+							title="Открыть 3D КТ / КЛКТ / Рентген в DICOM просмотрщике"
+						>
+							<div className="flex items-center justify-between w-full gap-2">
+								<span className="flex items-center gap-1.5 font-bold text-xs text-blue-800 dark:text-blue-300">
+									<Scan size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
+									<span>Томография / Рентген</span>
+								</span>
+								<span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-600 text-white font-black shrink-0">
+									3D DICOM
+								</span>
+							</div>
+							<span className="text-[11px] font-semibold text-[var(--muted,#64748b)] dark:text-slate-400 text-left mt-1">
+								3D КТ и Рентген-снимок
+							</span>
+						</button>
+					</div>
+
+					{/* Hands-Free Voice Dictation & Quick Procedures in Visit Flow */}
+					<div className="grid grid-cols-1 lg:grid-cols-12 gap-4 pt-2 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">
+						{/* Voice Dictation & Notes (7 cols) */}
+						<div className="lg:col-span-7 flex flex-col gap-3">
+							<div className="flex items-center justify-between">
+								<div className="flex items-center gap-2">
+									<Mic size={20} className="text-teal-600 dark:text-teal-400 shrink-0" />
+									<h4 className="text-sm font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 m-0">
+										Голосовая диктовка и дневник приёма
+									</h4>
 								</div>
-								<div className="flex flex-wrap items-center gap-1.5">
-									{(["V", "L", "M", "D", "O"] as const).map((surf) => {
-										const isSurfActive = currentSurfaces.includes(surf);
-										return (
+								<span className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 font-medium">Hands-free</span>
+							</div>
+							<div className="flex items-start gap-3">
+								<SmartMicrophoneButton
+									context="visit"
+									onResult={handleVoiceResult}
+									className="w-16 h-16 rounded-full bg-teal-600 hover:bg-teal-500 text-white shadow-lg shadow-teal-600/30 flex items-center justify-center cursor-pointer active:scale-95 transition-transform shrink-0"
+								/>
+								<div className="flex-1 flex flex-col gap-2">
+									<textarea
+										value={voiceNotes}
+										onChange={(e) => setVoiceNotes(e.target.value)}
+										placeholder="Нажмите микрофон или введите текст клинического протокола (жалобы, объективно, диагноз, лечение)..."
+										className="w-full min-h-[90px] p-3 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 border border-[var(--line,#cbd5e1)] dark:border-slate-700 text-xs text-[var(--ink,#0f172a)] dark:text-slate-200 outline-none focus:border-teal-500 resize-y"
+									/>
+									{voiceNotes && (
+										<div className="flex justify-end">
 											<button
-												key={surf}
 												type="button"
-												data-testid={`chairsider-surface-btn-${surf}`}
-												onClick={() => toggleSurface(surf)}
-												className={`min-h-[44px] min-w-[44px] px-3 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer flex items-center justify-center ${
-													isSurfActive
-														? "bg-teal-600 text-white border-teal-700 shadow-xs"
-														: "bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-600 hover:bg-teal-50 dark:hover:bg-slate-600"
-												}`}
+												onClick={() => {
+													navigator.clipboard?.writeText?.(voiceNotes);
+													showToast("Текст протокола скопирован в буфер", "success");
+												}}
+												className="text-xs px-3 py-1.5 rounded-lg bg-teal-600 text-white font-bold hover:bg-teal-500 cursor-pointer"
 											>
-												{surf}
+												Скопировать текст
 											</button>
-										);
-									})}
-									{currentSurfaces.length > 0 && (
-										<button
-											type="button"
-											data-testid="chairsider-surface-reset-btn"
-											onClick={() => handleSurfaceChange([])}
-											className="min-h-[44px] px-3 py-2 rounded-xl text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer flex items-center justify-center"
-										>
-											Сброс
-										</button>
+										</div>
 									)}
 								</div>
 							</div>
 						</div>
 
-						{/* Endo Canal Log Quick Access */}
-						<div className="pt-2 border-t border-[var(--line,#e2e8f0)] dark:border-slate-700">
-							<button
-								type="button"
-								data-testid="chairsider-endo-canal-log-btn"
-								onClick={() => setIsEndoModalOpen(true)}
-								className={`min-h-[52px] w-full p-3 rounded-xl border-2 font-black flex items-center justify-between transition-all active:scale-98 cursor-pointer shadow-sm ${
-									selectedToothState === "Pulpitis" || selectedToothState === "Periodontitis"
-										? "bg-rose-600/15 hover:bg-rose-600/25 dark:bg-rose-950/70 dark:hover:bg-rose-900/80 text-rose-900 dark:text-rose-200 border-rose-500/60"
-										: "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700"
-								}`}
-							>
-								<span className="flex items-center gap-2.5">
-									<span className="text-xl">📋</span>
-									<span className="flex flex-col text-left">
-										<span className="text-xs font-black">Журнал корневых каналов (Эндо 043/у)</span>
-										<span className="text-[10px] font-semibold text-rose-700 dark:text-rose-300">
-											MB1, MB2, DB, P · Апекслокатор · MAF
-										</span>
-									</span>
-								</span>
-								<span className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-rose-600 to-rose-700 text-white text-xs font-black shadow-sm">
-									Эндо 043/у
-								</span>
-							</button>
-						</div>
-
-						{/* Dental Lab Work Order Quick Access */}
-						<div className="pt-2 border-t border-[var(--line,#e2e8f0)] dark:border-slate-700">
-							<button
-								type="button"
-								data-testid="chairsider-lab-order-btn"
-								onClick={() => setIsLabModalOpen(true)}
-								className="min-h-[52px] w-full p-3 rounded-xl bg-teal-600/15 hover:bg-teal-600/25 dark:bg-teal-950/70 dark:hover:bg-teal-900/80 text-teal-900 dark:text-teal-200 border-2 border-teal-500/60 font-black flex items-center justify-between transition-all active:scale-98 cursor-pointer shadow-sm"
-							>
-								<span className="flex items-center gap-2.5">
-									<span className="text-xl">🦷</span>
-									<span className="flex flex-col text-left">
-										<span className="text-xs font-black">Наряд в лабораторию (ЗТЛ CAD/CAM)</span>
-										<span className="text-[10px] font-semibold text-teal-700 dark:text-teal-300">
-											Коронка · Винир · VITA · Себестоимость
-										</span>
-									</span>
-								</span>
-								<span className="px-2.5 py-1 rounded-lg bg-teal-600 text-white text-xs font-black shadow-sm">
-									CAD/CAM
-								</span>
-							</button>
-						</div>
-					</div>
-
-					{/* Single-Tap CT / 3D Launcher */}
-					<div className="bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
-						<div className="flex items-center justify-between mb-3">
-							<div className="flex items-center gap-2">
-								<Scan size={24} className="text-teal-600 dark:text-teal-400 shrink-0" />
-								<h3 className="text-base font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 m-0">3D КТ и Рентген</h3>
+						{/* Quick Procedures Checklist (5 cols) */}
+						<div className="lg:col-span-5 flex flex-col gap-2">
+							<div className="text-xs font-bold text-[var(--muted,#64748b)] dark:text-slate-400 uppercase tracking-wider mb-1">
+								Протокол манипуляций в 1 клик
 							</div>
-							<span className="text-xs bg-teal-50 dark:bg-teal-950/70 text-teal-800 dark:text-teal-300 px-2.5 py-0.5 rounded-full font-semibold border border-teal-500/30">
-								Мгновенный запуск
-							</span>
-						</div>
-
-						<p className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 mb-4 leading-relaxed">
-							Прямой вывод томограммы и прицельных снимков пациента на рабочий экран у кресла.
-						</p>
-
-						<button
-							type="button"
-							data-testid="chairsider-launch-ct-btn"
-							onClick={handleLaunchCT}
-							className="min-h-[56px] w-full bg-teal-600 hover:bg-teal-500 active:scale-98 text-white font-bold rounded-xl flex items-center justify-center gap-3 text-base shadow-lg shadow-teal-600/20 border border-teal-500/40 cursor-pointer transition-all"
-						>
-							<Play size={20} />
-							<span>Открыть снимок 3D DICOM</span>
-						</button>
-					</div>
-
-					{/* Hands-Free Voice Dictation Module */}
-					<div className="bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl p-5 shadow-sm flex-1 flex flex-col justify-between">
-						<div>
-							<div className="flex items-center justify-between mb-3 pb-2 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
-								<div className="flex items-center gap-2">
-									<Mic size={22} className="text-teal-600 dark:text-teal-400 shrink-0" />
-									<h3 className="text-base font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 m-0">Голосовая диктовка</h3>
-								</div>
-								<span className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 font-medium">Hands-free</span>
-							</div>
-
-							<div className="flex items-center gap-4 my-3">
-								<div className="relative shrink-0">
-									<SmartMicrophoneButton
-										context="visit"
-										onResult={handleVoiceResult}
-										className="w-16 h-16 rounded-full bg-teal-600 hover:bg-teal-500 text-white shadow-xl shadow-teal-600/30 flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
-									/>
-								</div>
-								<div className="flex-1 text-xs text-[var(--ink,#0f172a)] dark:text-slate-200 leading-relaxed">
-									Нажмите микрофон и диктуйте формулу или протокол лечения без касания клавиатуры.
-								</div>
-							</div>
-
-							{voiceNotes && (
-								<div className="mt-3 p-3 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 border border-[var(--line,#cbd5e1)] dark:border-slate-700 rounded-xl text-xs text-[var(--ink,#0f172a)] dark:text-slate-200 leading-relaxed max-h-28 overflow-y-auto">
-									<div className="font-bold text-teal-700 dark:text-teal-300 mb-1">Распознанный текст:</div>
-									{voiceNotes}
-								</div>
-							)}
-						</div>
-
-						{/* Quick Procedure Checklist */}
-						<div className="mt-4 pt-3 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">
-							<div className="text-xs font-bold text-[var(--muted,#64748b)] dark:text-slate-400 uppercase tracking-wider mb-2">
-								Протокол визита в 1 клик
-							</div>
-							<div className="grid grid-cols-1 gap-2">
+							<div className="grid grid-cols-1 gap-1.5 max-h-[160px] overflow-y-auto pr-1">
 								{QUICK_PROCEDURE_TEMPLATES.map((proc) => {
 									const isApplied = appliedProcedures.includes(proc.id);
 									return (
@@ -886,20 +935,20 @@ export function ChairsiderPerspectiveView() {
 											key={proc.id}
 											type="button"
 											onClick={() => toggleProcedure(proc.id)}
-											className={`min-h-[56px] px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-all border cursor-pointer active:scale-98 ${
+											className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-all border cursor-pointer active:scale-98 ${
 												isApplied
-													? "bg-teal-50 dark:bg-teal-950/70 text-teal-800 dark:text-teal-200 border-teal-500/70 shadow-sm"
+													? "bg-teal-50 dark:bg-teal-950/70 text-teal-800 dark:text-teal-200 border-teal-500/70 shadow-xs"
 													: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700"
 											}`}
 										>
-											<span className="flex items-center gap-2">
-												<span className="text-sm">{proc.icon}</span>
-												<span className="leading-tight">{proc.label}</span>
+											<span className="flex items-center gap-2 truncate">
+												<span className="text-sm shrink-0">{proc.icon}</span>
+												<span className="leading-tight truncate">{proc.label}</span>
 											</span>
 											{isApplied ? (
-												<Check size={18} className="text-teal-600 dark:text-teal-400 shrink-0 ml-2" />
+												<Check size={16} className="text-teal-600 dark:text-teal-400 shrink-0 ml-1.5" />
 											) : (
-												<Plus size={18} className="text-[var(--muted,#64748b)] dark:text-slate-400 shrink-0 ml-2" />
+												<Plus size={16} className="text-[var(--muted,#64748b)] dark:text-slate-400 shrink-0 ml-1.5" />
 											)}
 										</button>
 									);
@@ -992,6 +1041,24 @@ export function ChairsiderPerspectiveView() {
 					return found ? `${found.label} (зуб ${selectedTooth})` : p;
 				}).join("; ")}
 			/>
+
+			{/* Floating 1-Tap Radial Tooth Context Menu on Arch Click */}
+			{radialMenuState && (
+				<RadialToothMenu
+					toothNumber={radialMenuState.toothNumber}
+					anchorRect={radialMenuState.anchorRect}
+					currentState={toothStates[radialMenuState.toothNumber] || "Healthy"}
+					onSelectState={(state) => {
+						void handleToothStatusSelect(state);
+						setRadialMenuState(null);
+					}}
+					onOpenEndo={() => {
+						setIsEndoModalOpen(true);
+						setRadialMenuState(null);
+					}}
+					onClose={() => setRadialMenuState(null)}
+				/>
+			)}
 		</div>
 	);
 }
