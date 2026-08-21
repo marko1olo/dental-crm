@@ -1,5 +1,5 @@
 import { isValidFdiToothNumber } from "@dental/shared";
-import { Activity, Calculator, History, Mic, Stethoscope } from "lucide-react";
+import { Activity, Calculator, History, Mic, Sparkles, Stethoscope } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
@@ -31,7 +31,10 @@ import {
 	type EndoToothClinicalData,
 	EndoCanalLogModal,
 } from "./EndoCanalLogModal";
+import { PediatricMixedDentitionModal } from "./PediatricMixedDentitionModal";
+import { PeriodontalChartModule } from "./PeriodontalChartModule";
 import { TreatmentEstimator } from "./TreatmentEstimator";
+import { TreatmentPlanModule } from "../treatment-plans/TreatmentPlanModule";
 import { VoiceDictationOverlay } from "./VoiceDictationOverlay";
 import "./odontogram.css";
 import { usePerspectiveStore } from "../../store/perspectiveStore";
@@ -65,7 +68,7 @@ const TOOTH_STATE_ACTIONS: ReadonlyArray<{
 		state: "Pulpitis",
 		label: "Пульпит",
 		className:
-			"bg-purple-500/10 text-purple-400 border-purple-500/20 hover:bg-purple-500/20",
+			"bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20",
 	},
 	{
 		state: "Periodontitis",
@@ -343,8 +346,10 @@ export const OdontogramModule = ({
 	const [isPediatricMode, setIsPediatricMode] = useState(
 		pediatricMode ?? perspective === "pediatric",
 	);
+	const [isPediatricModalOpen, setIsPediatricModalOpen] = useState(false);
 	const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
 	const [isEstimatorOpen, setIsEstimatorOpen] = useState(false);
+	const [isPerioOpen, setIsPerioOpen] = useState(false);
 	const [selectedTeeth, setSelectedTeeth] = useState<number[]>([]);
 	const [activeSurfaces, setActiveSurfaces] = useState<string[]>([]);
 	const [isVoiceOpen, setIsVoiceOpen] = useState(false);
@@ -886,6 +891,15 @@ export const OdontogramModule = ({
 							/>
 							<span className="text-xs sm:text-sm font-medium whitespace-nowrap">Детский прикус</span>
 						</label>
+						<button
+							type="button"
+							onClick={() => setIsPediatricModalOpen(true)}
+							className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 rounded-lg transition-colors shrink-0 cursor-pointer select-none"
+							title="Сменный прикус: сроки прорезывания, стадии резорбции корней и Кариограмма Браттхолла"
+						>
+							<Sparkles className="w-3.5 h-3.5" />
+							<span className="whitespace-nowrap">Сменный прикус / Кариограмма</span>
+						</button>
 						<label
 							className={`flex items-center gap-2 cursor-pointer select-none transition-colors ${
 								isMultiSelectMode ? "text-indigo-600 dark:text-indigo-400 font-semibold" : ""
@@ -906,6 +920,20 @@ export const OdontogramModule = ({
 					</div>
 
 					<div className="flex flex-wrap items-center gap-2">
+						<button
+							type="button"
+							onClick={() => setIsPerioOpen((prev) => !prev)}
+							className={`flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg border transition-all shrink-0 cursor-pointer select-none ${
+								isPerioOpen
+									? "bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-500/40 shadow-xs"
+									: "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20 hover:bg-teal-500/20"
+							}`}
+							title="Открыть / скрыть пародонтологическую карту PSR / 6 точек зондирования"
+						>
+							<Activity className="w-4 h-4" />
+							<span className="whitespace-nowrap">{isPerioOpen ? "Скрыть пародонтограмму" : "Пародонтограмма"}</span>
+						</button>
+
 						<button
 							type="button"
 							onClick={() => setIsEstimatorOpen((prev) => !prev)}
@@ -1120,7 +1148,7 @@ export const OdontogramModule = ({
 										setEndoTooth(menuConfig.toothNumber);
 										setMenuConfig(null);
 									}}
-									className="col-span-2 flex items-center justify-center p-3 rounded-xl border transition-all duration-200 font-medium tracking-wide text-xs bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20 hover:bg-purple-500/20"
+									className="col-span-2 flex items-center justify-center p-3 rounded-xl border transition-all duration-200 font-medium tracking-wide text-xs bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/20"
 								>
 									<Activity className="w-4 h-4 inline mr-2" /> Журнал каналов (Эндо)
 								</button>
@@ -1208,8 +1236,16 @@ export const OdontogramModule = ({
 
 			{/* Collapsible Full-width Treatment Planning Section below Odontogram */}
 			{isEstimatorOpen && (
-				<div className="w-full flex flex-col gap-4 mt-2 animate-in fade-in duration-200">
+				<div className="w-full flex flex-col gap-6 mt-2 animate-in fade-in duration-200">
 					<TreatmentEstimator patientId={patientId} currentTeeth={teethData} />
+					<TreatmentPlanModule patientId={patientId} teethData={teethData} />
+				</div>
+			)}
+
+			{/* Collapsible Periodontal Examination Module below Odontogram */}
+			{isPerioOpen && (
+				<div className="w-full flex flex-col gap-4 mt-2 animate-in fade-in duration-200">
+					<PeriodontalChartModule patientId={patientId} />
 				</div>
 			)}
 
@@ -1288,6 +1324,21 @@ export const OdontogramModule = ({
 							12000,
 						);
 					}
+				}}
+			/>
+
+			<PediatricMixedDentitionModal
+				isOpen={isPediatricModalOpen}
+				onClose={() => setIsPediatricModalOpen(false)}
+				teethData={teethData}
+				onUpdateToothResorption={(toothNumber, resorptionStage) => {
+					setTeethData((prev) =>
+						prev.map((t) =>
+							t.toothNumber === toothNumber
+								? { ...t, resorptionStage }
+								: t,
+						),
+					);
 				}}
 			/>
 		</div>
