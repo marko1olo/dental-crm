@@ -22,6 +22,8 @@ import type { DailyDentistDiary037uPayload } from "./forms037u.js";
 import type { SummaryDentistStatement039uPayload } from "./forms039u.js";
 import type { MedicalCardExtract003vuPayload } from "./forms003vu.js";
 import type { RadiationDoseSheetPayload } from "./radiationDoseSheet.js";
+import type { Form107_1uPayload } from "./forms107_1u.js";
+import type { RadiologyReferralPayload } from "./formsRadiologyReferral.js";
 
 /** Общие CSS стили для печати медицинских документов на листах А4 по ГОСТ Р 7.0.97-2016 */
 export const CLINICAL_DOCUMENT_PRINT_STYLES = `
@@ -1109,7 +1111,7 @@ export function renderForm037uHtml(payload: DailyDentistDiary037uPayload | any):
     </tbody>
     <tfoot>
       <tr class="total-row">
-        <td colspan="2" class="center">ИТОГО:</td>
+        <td colspan="2" class="center">ИТОГО ЗА СМЕНУ:</td>
         <td class="left"><strong>${totalPatients} чел.</strong></td>
         <td class="center">${totalAdults} взр. / ${totalChildren + totalAdol} дет.</td>
         <td class="center">—</td>
@@ -1987,3 +1989,287 @@ export function renderRadiationDoseSheetHtml(payload: RadiationDoseSheetPayload 
 </body>
 </html>`;
 }
+
+/** 7. Рендерер Рецептурного бланка № 107-1/у (Приказ Минздрава России от 24.11.2021 N 1094н) */
+export function renderForm107_1uHtml(payload: Form107_1uPayload | any): string {
+	const clinicName = payload.clinicLegalName || payload.organization?.fullName || "Стоматологическая клиника";
+	const clinicAddress = payload.clinicAddress || payload.organization?.address || "—";
+	const clinicPhone = payload.clinicPhone || payload.organization?.phone || "—";
+	const clinicOgrn = payload.clinicOgrn || payload.organization?.ogrn || "—";
+	const clinicInn = payload.clinicInn || payload.organization?.inn || "—";
+	const recNum = payload.prescriptionSeriesNumber || "—";
+	const recDate = payload.prescriptionDate || new Date().toISOString().slice(0, 10);
+	const patientName = payload.patientFullName || payload.patient?.fullName || "—";
+	const patientBirth = payload.patientBirthDate || payload.patient?.birthDate || "—";
+	const patientAge = payload.patientAgeYears != null ? `${payload.patientAgeYears} лет` : "—";
+	const cardNum = payload.medicalCardNumber || payload.patient?.medicalCardNumber || "—";
+	const doctorName = payload.doctorFullName || "Врач-стоматолог";
+	const validity = payload.validityDays || "60";
+	const items: any[] = payload.items || [];
+
+	const itemsHtml = items.map((item, idx) => `
+    <div style="margin-bottom:12px; font-family:'Times New Roman', serif; font-size:10pt; line-height:1.35;">
+      <div style="font-weight:bold; font-style:italic; font-size:10.5pt;">${idx + 1}. ${escapeHtml(item.latinName || item.latinRp || "Rp.:")}</div>
+      <div style="margin-left:24px; font-style:italic;">${escapeHtml(item.dispenseLatin || "D.t.d.")}</div>
+      <div style="margin-left:24px; font-weight:normal; margin-top:2px;">${escapeHtml(item.signaRussian || item.signaRu || "S. По назначению врача.")}</div>
+      ${item.tradeName ? `<div style="margin-left:24px; font-size:8pt; color:#64748b; font-family:'PT Astra Sans', Arial, sans-serif;">(Торговое наименование: <strong>${escapeHtml(item.tradeName)}</strong>, форма: ${escapeHtml(item.form || "")})</div>` : ""}
+    </div>
+  `).join("");
+
+	return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Рецептурный бланк 107-1/у № ${escapeHtml(recNum)}</title>
+${CLINICAL_DOCUMENT_PRINT_STYLES}
+<style>
+  .recipe-container {
+    max-width: 148mm;
+    margin: 0 auto;
+    border: 1.5pt solid #0f172a;
+    padding: 10mm 8mm;
+    background: #ffffff;
+    box-sizing: border-box;
+  }
+  .recipe-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1.5pt solid #0f172a;
+    padding-bottom: 6px;
+    margin-bottom: 8px;
+  }
+  .stamp-box {
+    width: 52%;
+    font-size: 7.5pt;
+    line-height: 1.2;
+    border: 1px dashed #64748b;
+    padding: 4px 6px;
+  }
+  .form-title-box {
+    width: 45%;
+    text-align: right;
+    font-size: 7pt;
+    line-height: 1.2;
+    color: #334155;
+  }
+</style>
+</head>
+<body>
+<div class="recipe-container">
+  <div class="recipe-header">
+    <div class="stamp-box">
+      <div style="font-weight:bold; font-size:8pt; text-transform:uppercase;">${escapeHtml(clinicName)}</div>
+      <div>Адрес: ${escapeHtml(clinicAddress)}</div>
+      <div>Тел: ${escapeHtml(clinicPhone)}</div>
+      <div>ОГРН: ${escapeHtml(clinicOgrn)} | ИНН: ${escapeHtml(clinicInn)}</div>
+      <div style="font-size:6.5pt; color:#64748b; margin-top:2px;">(Штамп медицинской организации)</div>
+    </div>
+    <div class="form-title-box">
+      <div>Министерство здравоохранения РФ</div>
+      <div>Медицинская документация</div>
+      <div style="font-weight:bold; font-size:8pt; color:#0f172a;">Форма бланка № 107-1/у</div>
+      <div>Утв. приказом Минздрава России</div>
+      <div>от 24.11.2021 г. № 1094н</div>
+    </div>
+  </div>
+
+  <div style="text-align:center; margin:8px 0;">
+    <div style="font-size:12pt; font-weight:800; letter-spacing:0.08em; text-transform:uppercase;">РЕЦЕПТ</div>
+    <div style="font-size:8pt; color:#475569;">Серия и номер: <strong>${escapeHtml(recNum)}</strong> от <strong>${escapeHtml(recDate)}</strong></div>
+    <div style="font-size:7.5pt; color:#64748b; margin-top:2px;">(взрослый, детский — нужное подчеркнуть)</div>
+  </div>
+
+  <div style="font-size:8.5pt; line-height:1.45; border-bottom:1px solid #cbd5e1; padding-bottom:6px; margin-bottom:8px;">
+    <div>Ф.И.О. пациента: <strong>${escapeHtml(patientName)}</strong></div>
+    <div style="display:flex; justify-content:space-between;">
+      <span>Дата рождения: <strong>${escapeHtml(patientBirth)}</strong> ${payload.patientAgeYears != null ? `(Возраст: <strong>${patientAge}</strong>)` : ""}</span>
+      <span>№ медкарты: <strong>${escapeHtml(cardNum)}</strong></span>
+    </div>
+    <div>Ф.И.О. лечащего врача: <strong>${escapeHtml(doctorName)}</strong></div>
+    ${payload.diagnosisIcd10Code ? `<div style="font-size:7.5pt; color:#64748b;">Диагноз (МКБ-10): <strong>${escapeHtml(payload.diagnosisIcd10Code)}</strong></div>` : ""}
+  </div>
+
+  <div style="min-height:55mm; padding:4px 0;">
+    ${itemsHtml}
+  </div>
+
+  <div style="border-top:1.5pt solid #0f172a; padding-top:6px; font-size:7.5pt; line-height:1.3;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+      <div>
+        <strong>Срок действия рецепта:</strong>
+        <span style="${validity === "15" ? "text-decoration:underline; font-weight:bold;" : ""}">15 дней</span> /
+        <span style="${validity === "60" ? "text-decoration:underline; font-weight:bold; color:#0284c7;" : "font-weight:bold;"}">60 дней (2 месяца)</span> /
+        <span style="${validity === "365" ? "text-decoration:underline; font-weight:bold;" : ""}">до 1 года</span>
+      </div>
+      <div style="font-size:7pt; color:#64748b;">(нужное подчеркнуть)</div>
+    </div>
+
+    ${payload.isChronicSpecialCare ? `
+      <div style="border:1px solid #cbd5e1; background:#f8fafc; padding:3px 5px; margin-bottom:6px; font-size:7pt;">
+        ✔ <strong>По специальному назначению</strong> (периодичность отпуска: ${escapeHtml(payload.chronicPeriodicity || "ежемесячно")})
+      </div>
+    ` : ""}
+
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:12px;">
+      <div style="width:50%;">
+        <div style="font-size:7pt; color:#64748b; margin-bottom:15px;">Подпись и личная печать врача:</div>
+        <div style="border-bottom:1px solid #0f172a; width:90%; height:1px;"></div>
+        <div style="font-size:7.5pt; margin-top:2px;">/ ${escapeHtml(doctorName)} /</div>
+      </div>
+      <div style="width:40%; text-align:center;">
+        <div style="width:60px; height:60px; border:1.5px dashed #94a3b8; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto; font-size:8pt; color:#64748b; font-weight:bold;">
+          М.П.
+        </div>
+        <div style="font-size:6.5pt; color:#64748b; margin-top:2px;">Печать медицинской организации «Для рецептов»</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>`;
+}
+
+/** 8. Рендерер Направления на рентгенологическое исследование (КЛКТ / ОПТГ / ТРГ / Визио) */
+export function renderRadiologyReferralHtml(payload: RadiologyReferralPayload | any): string {
+	const clinicName = payload.clinicLegalName || payload.organization?.fullName || "Стоматологическая клиника";
+	const clinicAddress = payload.clinicAddress || payload.organization?.address || "—";
+	const clinicPhone = payload.clinicPhone || payload.organization?.phone || "—";
+	const refNum = payload.referralNumber || "—";
+	const refDate = payload.referralDate || new Date().toISOString().slice(0, 10);
+	const patientName = payload.patientFullName || payload.patient?.fullName || "—";
+	const patientBirth = payload.patientBirthDate || payload.patient?.birthDate || "—";
+	const patientPhone = payload.patientPhone || payload.patient?.phone || "—";
+	const cardNum = payload.medicalCardNumber || payload.patient?.medicalCardNumber || "—";
+	const doctorName = payload.doctorFullName || "Врач-стоматолог";
+	const doctorSpecialty = payload.doctorSpecialty || "Врач-стоматолог";
+	const icdCode = payload.diagnosisIcd10Code || "K02.1";
+	const diagnosisText = payload.diagnosisDetailed || icdCode;
+	const studyType = payload.studyType || "cbct_jaw_8x8";
+	const studyGoal = payload.studyGoal || "endodontics";
+	const targetTeeth = payload.targetTeethFdi || "";
+	const area = payload.anatomicalArea || "Челюстно-лицевая область";
+	const justification = payload.clinicalJustification || "Диагностика и контроль лечения.";
+
+	// Генерация ячеек зубной формулы FDI для визуальной отметки
+	const upperTeeth = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
+	const lowerTeeth = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38];
+	const targetTeethArray = targetTeeth.split(/[,;\s]+/).map((t: string) => Number.parseInt(t.trim(), 10));
+
+	const upperCells = upperTeeth.map((num, i) => {
+		const isTarget = targetTeethArray.includes(num);
+		return `<td style="width:6.25%; text-align:center; font-weight:bold; font-size:8pt; ${isTarget ? "background:#bae6fd; color:#0369a1; border:1.5pt solid #0284c7;" : "background:#ffffff;"} ${i === 7 ? "border-right:2px solid #0f172a;" : ""}">${num}</td>`;
+	}).join("");
+
+	const lowerCells = lowerTeeth.map((num, i) => {
+		const isTarget = targetTeethArray.includes(num);
+		return `<td style="width:6.25%; text-align:center; font-weight:bold; font-size:8pt; ${isTarget ? "background:#bae6fd; color:#0369a1; border:1.5pt solid #0284c7;" : "background:#ffffff;"} ${i === 7 ? "border-right:2px solid #0f172a;" : ""}">${num}</td>`;
+	}).join("");
+
+	return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Направление на рентген-исследование № ${escapeHtml(refNum)}</title>
+${CLINICAL_DOCUMENT_PRINT_STYLES}
+</head>
+<body>
+<div class="doc-container">
+  <div class="header-grid">
+    <div class="clinic-info">
+      <div class="clinic-title">${escapeHtml(clinicName)}</div>
+      <div>Адрес: ${escapeHtml(clinicAddress)} | Тел: ${escapeHtml(clinicPhone)}</div>
+      <div style="font-size:7pt; color:#64748b; margin-top:2px;">Направляющая медицинская организация</div>
+    </div>
+    <div class="doc-requisites">
+      <div style="font-weight:800; font-size:9.5pt; text-transform:uppercase; color:#0f172a;">НАПРАВЛЕНИЕ</div>
+      <div style="font-size:8pt; font-weight:bold; color:#0284c7;">на рентгенологическое исследование</div>
+      <div style="font-size:7.5pt; color:#64748b;">№ ${escapeHtml(refNum)} от ${escapeHtml(refDate)}</div>
+    </div>
+  </div>
+
+  <table class="data-table" style="margin-bottom:6px;">
+    <tbody>
+      <tr>
+        <td style="width:25%; font-weight:bold; background:#f1f5f9;">Пациент (Ф.И.О.):</td>
+        <td style="width:45%; font-weight:bold; font-size:9.5pt;">${escapeHtml(patientName)}</td>
+        <td style="width:15%; font-weight:bold; background:#f1f5f9;">Дата рожд.:</td>
+        <td style="width:15%;">${escapeHtml(patientBirth)}</td>
+      </tr>
+      <tr>
+        <td style="font-weight:bold; background:#f1f5f9;">Номер медкарты:</td>
+        <td><strong>${escapeHtml(cardNum)}</strong></td>
+        <td style="font-weight:bold; background:#f1f5f9;">Телефон:</td>
+        <td>${escapeHtml(patientPhone)}</td>
+      </tr>
+      <tr>
+        <td style="font-weight:bold; background:#f1f5f9;">Лечащий врач:</td>
+        <td colspan="3"><strong>${escapeHtml(doctorName)}</strong> (${escapeHtml(doctorSpecialty)})</td>
+      </tr>
+      <tr>
+        <td style="font-weight:bold; background:#f1f5f9;">Диагноз (МКБ-10):</td>
+        <td colspan="3"><span style="color:#0369a1; font-weight:bold;">${escapeHtml(icdCode)}</span> — ${escapeHtml(diagnosisText)}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="border:1.5px solid #0284c7; border-radius:4px; padding:6px 8px; margin:6px 0; background:#f0f9ff;">
+    <div style="font-weight:bold; font-size:8.5pt; color:#0369a1; text-transform:uppercase; margin-bottom:4px;">
+      1. Требуемый вид исследования:
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; font-size:8pt;">
+      <div><span style="font-weight:bold; color:${studyType.startsWith("cbct") ? "#0284c7" : "#64748b"};">[${studyType.startsWith("cbct") ? "✔" : " "}]</span> <strong>Компьютерная томография (КЛКТ 3D)</strong></div>
+      <div><span style="font-weight:bold; color:${studyType === "optg_digital_panoramic" ? "#0284c7" : "#64748b"};">[${studyType === "optg_digital_panoramic" ? "✔" : " "}]</span> <strong>Ортопантомограмма (ОПТГ цифровая)</strong></div>
+      <div><span style="font-weight:bold; color:${studyType.startsWith("trg") ? "#0284c7" : "#64748b"};">[${studyType.startsWith("trg") ? "✔" : " "}]</span> <strong>Телерентгенограмма (ТРГ боковая/прямая)</strong></div>
+      <div><span style="font-weight:bold; color:${studyType === "intraoral_radiovisiography" ? "#0284c7" : "#64748b"};">[${studyType === "intraoral_radiovisiography" ? "✔" : " "}]</span> <strong>Прицельная радиовизиография</strong></div>
+    </div>
+    <div style="margin-top:4px; font-size:8pt; border-top:1px dashed #bae6fd; padding-top:3px;">
+      Параметры области: <strong>${escapeHtml(area)}</strong>
+    </div>
+  </div>
+
+  <div style="margin:6px 0;">
+    <div style="font-weight:bold; font-size:8pt; text-transform:uppercase; color:#0f172a; margin-bottom:2px;">
+      2. Область исследования / Зубная формула (FDI):
+    </div>
+    <table class="data-table-dense" style="margin:2px 0;">
+      <thead>
+        <tr><th colspan="8" style="border-right:2px solid #0f172a;">Верхняя справа (18–11)</th><th colspan="8">Верхняя слева (21–28)</th></tr>
+      </thead>
+      <tbody>
+        <tr>${upperCells}</tr>
+        <tr style="border-top:2px solid #0f172a;">${lowerCells}</tr>
+      </tbody>
+      <tfoot>
+        <tr><th colspan="8" style="border-right:2px solid #0f172a;">Нижняя справа (48–41)</th><th colspan="8">Нижняя слева (31–38)</th></tr>
+      </tfoot>
+    </table>
+    ${targetTeeth ? `<div style="font-size:7.5pt; color:#0369a1; font-weight:bold;">Отмеченные целевые зубы: ${escapeHtml(targetTeeth)}</div>` : ""}
+  </div>
+
+  <div style="border:1px solid #cbd5e1; border-radius:4px; padding:6px 8px; margin:6px 0; background:#f8fafc; font-size:8pt; line-height:1.35;">
+    <div><strong>3. Клиническая цель и задача исследования:</strong></div>
+    <div style="color:#0f172a; margin-top:2px;">${escapeHtml(justification)}</div>
+  </div>
+
+  <div style="border:1px solid #cbd5e1; border-radius:4px; padding:4px 6px; margin:6px 0; font-size:7.5pt; color:#475569; display:flex; justify-content:space-between;">
+    <span>[${payload.isPregnancyExcluded ? "✔" : " "}] Беременность исключена</span>
+    <span>[${payload.hasMetallicArtifacts ? "✔" : " "}] Металлоконструкции / коронки</span>
+    <span>Принцип ALARA / СанПиН 2.6.1.1192-03 соблюдён</span>
+  </div>
+
+  <div class="signature-row" style="margin-top:14px;">
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div class="sig-caption">Направивший врач: <strong>${escapeHtml(doctorName)}</strong> <span class="stamp-seal">М.П.</span></div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div class="sig-caption">Врач-рентгенолог / Рентгенолаборант: _________________</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>`;
+}
+

@@ -7,7 +7,23 @@ import {
 	TOOTH_STATE_LABELS,
 	type ToothVisualProps,
 } from "./ToothChart";
-import { getToothConfig, getToothPath } from "../../utils/math/toothGeometry";
+import {
+	type AnatomicalSurfaceKey,
+	type CanalObturationMaterial,
+	type FurcationGrade,
+	getAnatomicalToothGeometry,
+	getFurcationMarkerSvg,
+	getGingivalRecessionPath,
+	getPeriodontalBoneLevelPath,
+	type PeriodontalBoneLossPattern,
+	type PostCoreType,
+	type RestorativeMaterialKey,
+} from "./anatomicalToothGeometries";
+import {
+	getNextFocusedTooth,
+	getToothStateFromHotkey,
+} from "./ClassicGostOdontogram";
+import "./odontogram.css";
 
 export interface AnatomicalSvgOdontogramProps {
 	teethData: ToothData[];
@@ -17,9 +33,14 @@ export interface AnatomicalSvgOdontogramProps {
 	bottomTeeth?: number[] | undefined;
 	selectedTeeth?: number[] | undefined;
 	onToothClick: (num: number, rect: DOMRect, surface?: string | undefined) => void;
+	onQuickStateChange?: ((targets: number[], state: ToothState) => void) | undefined;
 	useSurfaces?: boolean | undefined;
 	hideHeader?: boolean | undefined;
 	hideLegend?: boolean | undefined;
+	showWisdomTeeth?: boolean | undefined;
+	showPulpAndCanals?: boolean | undefined;
+	showPeriapicalHalos?: boolean | undefined;
+	showPeriodontalBoneLoss?: boolean | undefined;
 	className?: string | undefined;
 }
 
@@ -42,14 +63,17 @@ function scaleCssPx(value: string, factor: number): string {
 	return `${parsed * factor}px`;
 }
 
-const getAnatomicalToothColors = (state: ToothState): ToothVisualProps => {
+const getAnatomicalToothColors = (
+	state: ToothState,
+	material?: RestorativeMaterialKey,
+): ToothVisualProps => {
 	switch (state) {
 		case "Healthy":
 			return {
 				fill: "url(#dente-enamel-healthy)",
 				crownFill: "url(#dente-enamel-healthy)",
 				rootFill: "url(#dente-root-dentin)",
-				stroke: "var(--tooth-root-stroke, #94a3b8)",
+				stroke: "var(--tooth-root-stroke, #64748b)",
 				opacity: "1",
 				badgeColor: "#10b981",
 				badgeBg: "rgba(16, 185, 129, 0.12)",
@@ -89,9 +113,45 @@ const getAnatomicalToothColors = (state: ToothState): ToothVisualProps => {
 				badgeText: "#c2410c",
 			};
 		case "Filled":
+			if (material === "amalgam") {
+				return {
+					fill: "url(#amalgam-metal-gradient)",
+					crownFill: "url(#amalgam-metal-gradient)",
+					rootFill: "url(#dente-root-dentin)",
+					stroke: "#334155",
+					opacity: "1",
+					badgeColor: "#64748b",
+					badgeBg: "rgba(100, 116, 139, 0.15)",
+					badgeText: "#475569",
+				};
+			}
+			if (material === "ceramic_emax") {
+				return {
+					fill: "url(#ceramic-emax-gradient)",
+					crownFill: "url(#ceramic-emax-gradient)",
+					rootFill: "url(#dente-root-dentin)",
+					stroke: "#0284c7",
+					opacity: "1",
+					badgeColor: "#38bdf8",
+					badgeBg: "rgba(56, 189, 248, 0.15)",
+					badgeText: "#0284c7",
+				};
+			}
+			if (material === "gold") {
+				return {
+					fill: "url(#gold-crown-gradient)",
+					crownFill: "url(#gold-crown-gradient)",
+					rootFill: "url(#dente-root-dentin)",
+					stroke: "#b45309",
+					opacity: "1",
+					badgeColor: "#f59e0b",
+					badgeBg: "rgba(245, 158, 11, 0.15)",
+					badgeText: "#b45309",
+				};
+			}
 			return {
-				fill: "url(#dente-filled-grad)",
-				crownFill: "url(#dente-filled-grad)",
+				fill: "url(#composite-fill-gradient)",
+				crownFill: "url(#composite-fill-gradient)",
 				rootFill: "url(#dente-root-dentin)",
 				stroke: "#0f766e",
 				opacity: "1",
@@ -100,11 +160,49 @@ const getAnatomicalToothColors = (state: ToothState): ToothVisualProps => {
 				badgeText: "#0f766e",
 			};
 		case "Crown":
+			if (material === "gold") {
+				return {
+					fill: "url(#gold-crown-gradient)",
+					crownFill: "url(#gold-crown-gradient)",
+					rootFill: "url(#dente-root-dentin)",
+					stroke: "#b45309",
+					opacity: "1",
+					badgeColor: "#f59e0b",
+					badgeBg: "rgba(245, 158, 11, 0.15)",
+					badgeText: "#b45309",
+				};
+			}
+			if (material === "pfm_crown") {
+				return {
+					fill: "url(#pfm-crown-gradient)",
+					crownFill: "url(#pfm-crown-gradient)",
+					rootFill: "url(#dente-root-dentin)",
+					stroke: "#1e3a8a",
+					collarFill: "url(#pfm-metal-collar)",
+					opacity: "1",
+					badgeColor: "#2563eb",
+					badgeBg: "rgba(37, 99, 235, 0.15)",
+					badgeText: "#1d4ed8",
+				};
+			}
+			if (material === "ceramic_emax") {
+				return {
+					fill: "url(#ceramic-emax-gradient)",
+					crownFill: "url(#ceramic-emax-gradient)",
+					rootFill: "url(#dente-root-dentin)",
+					stroke: "#0284c7",
+					opacity: "1",
+					badgeColor: "#38bdf8",
+					badgeBg: "rgba(56, 189, 248, 0.15)",
+					badgeText: "#0284c7",
+				};
+			}
 			return {
-				fill: "url(#dente-crown-zirconia)",
-				crownFill: "url(#dente-crown-zirconia)",
+				fill: "url(#zirconia-crown-gradient)",
+				crownFill: "url(#zirconia-crown-gradient)",
 				rootFill: "url(#dente-root-dentin)",
 				stroke: "#1d4ed8",
+				collarFill: "url(#dente-cervical-collar)",
 				opacity: "1",
 				badgeColor: "#3b82f6",
 				badgeBg: "rgba(59, 130, 246, 0.15)",
@@ -112,20 +210,20 @@ const getAnatomicalToothColors = (state: ToothState): ToothVisualProps => {
 			};
 		case "Implant":
 			return {
-				fill: "url(#dente-implant-gold)",
-				crownFill: "url(#dente-implant-gold)",
-				rootFill: "url(#dente-implant-titanium)",
-				stroke: "#b45309",
+				fill: "url(#gold-crown-gradient)",
+				crownFill: "url(#zirconia-crown-gradient)",
+				rootFill: "url(#titanium-implant-gradient)",
+				stroke: "#334155",
 				opacity: "1",
-				badgeColor: "#f59e0b",
-				badgeBg: "rgba(245, 158, 11, 0.15)",
-				badgeText: "#b45309",
+				badgeColor: "#64748b",
+				badgeBg: "rgba(100, 116, 139, 0.15)",
+				badgeText: "#334155",
 			};
 		case "Planned_Implant":
 			return {
-				fill: "url(#dente-implant-gold)",
-				crownFill: "url(#dente-implant-gold)",
-				rootFill: "url(#dente-implant-titanium)",
+				fill: "url(#gold-crown-gradient)",
+				crownFill: "url(#zirconia-crown-gradient)",
+				rootFill: "url(#titanium-implant-gradient)",
 				stroke: "#6366f1",
 				opacity: "1",
 				isPulsing: true,
@@ -135,11 +233,11 @@ const getAnatomicalToothColors = (state: ToothState): ToothVisualProps => {
 			};
 		case "Missing":
 			return {
-				fill: "var(--odontogram-surface)",
+				fill: "transparent",
 				crownFill: "none",
 				rootFill: "none",
 				stroke: "var(--tooth-root-stroke, #94a3b8)",
-				opacity: "0.28",
+				opacity: "0.12",
 				isMissing: true,
 				badgeColor: "#94a3b8",
 				badgeBg: "rgba(148, 163, 184, 0.15)",
@@ -163,26 +261,59 @@ const AnatomicalToothSVG = ({
 	number,
 	state,
 	scale,
+	material,
+	canalObturation,
+	hasPost,
+	postType,
+	boneLossLevel,
+	boneLossType,
+	furcation,
+	mobility,
+	gingivalRecession,
+	bopSites,
+	suppurationSites,
+	periapicalLesion,
 	isSelected,
 	onClick,
+	onQuickStateChange,
+	pediatricMode,
 	surfaces,
 	useSurfaces,
+	showPulpAndCanals,
+	showPeriapicalHalos = true,
+	showPeriodontalBoneLoss = true,
 }: {
 	number: number;
 	state: ToothState;
 	scale: number;
-	isSelected?: boolean;
+	material?: RestorativeMaterialKey | undefined;
+	canalObturation?: CanalObturationMaterial | undefined;
+	hasPost?: boolean | undefined;
+	postType?: PostCoreType | undefined;
+	boneLossLevel?: number | undefined;
+	boneLossType?: PeriodontalBoneLossPattern | undefined;
+	furcation?: FurcationGrade | undefined;
+	mobility?: 0 | 1 | 2 | 3 | undefined;
+	gingivalRecession?: number | undefined;
+	bopSites?: string[] | undefined;
+	suppurationSites?: string[] | undefined;
+	periapicalLesion?: boolean | undefined;
+	isSelected?: boolean | undefined;
 	onClick: (e: React.MouseEvent, num: number, surface?: string) => void;
+	onQuickStateChange?: ((targets: number[], state: ToothState) => void) | undefined;
+	pediatricMode?: boolean | undefined;
 	surfaces?: string[] | undefined;
 	useSurfaces?: boolean | undefined;
+	showPulpAndCanals?: boolean | undefined;
+	showPeriapicalHalos?: boolean | undefined;
+	showPeriodontalBoneLoss?: boolean | undefined;
 }) => {
 	const isTop = number < 30 || (number >= 51 && number <= 65);
-	const geom = getToothPath(number);
-	const cfg = getToothConfig(number);
-	const colors = getAnatomicalToothColors(state);
+	const geom = getAnatomicalToothGeometry(number);
+	const colors = getAnatomicalToothColors(state, material);
 
-	const scaledWidth = scaleCssPx(cfg.width, scale);
-	const scaledHeight = scaleCssPx(cfg.height, scale);
+	const scaledWidth = scaleCssPx(`${geom.standardWidthPx}px`, scale);
+	const scaledHeight = scaleCssPx(`${geom.standardHeightPx}px`, scale);
 
 	const isRightSide =
 		(number >= 21 && number <= 28) ||
@@ -191,12 +322,37 @@ const AnatomicalToothSVG = ({
 		(number >= 71 && number <= 75);
 	const transform = `scaleX(${isRightSide ? -1 : 1})`;
 
+	const isPeriodontitis = state === "Periodontitis" || periapicalLesion;
+	const isEndoTreated = state === "Filled" || canalObturation !== undefined;
+	const effectiveObturation: CanalObturationMaterial =
+		canalObturation ?? (state === "Filled" ? "gutta_percha" : "unfilled");
+
+	const boneLossInfo =
+		showPeriodontalBoneLoss && (boneLossLevel !== undefined && boneLossLevel > 0)
+			? getPeriodontalBoneLevelPath(number, boneLossLevel, boneLossType ?? "horizontal")
+			: null;
+
+	const furcationMarkers =
+		furcation && furcation > 0 && geom.periodontal?.furcationSites
+			? geom.periodontal.furcationSites
+					.map((site) => ({
+						site,
+						marker: getFurcationMarkerSvg(furcation, site.position.x, site.position.y, isTop),
+					}))
+					.filter((item): item is { site: typeof item.site; marker: NonNullable<typeof item.marker> } => item.marker !== null)
+			: [];
+
+	const recessionPath =
+		gingivalRecession && gingivalRecession > 0
+			? getGingivalRecessionPath(number, gingivalRecession)
+			: null;
+
 	const renderImplant = () => (
 		<svg
 			width={scaledWidth}
 			height={scaledHeight}
 			style={{ transform }}
-			viewBox={`${cfg.viewX} 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
+			viewBox={`${geom.viewBox.x} ${geom.viewBox.y} ${geom.viewBox.width} ${geom.viewBox.height}`}
 			preserveAspectRatio="none"
 			className={`tooth-svg-element ${
 				colors.isPulsing ? "animate-pulse stroke-[2.5px]" : ""
@@ -206,60 +362,84 @@ const AnatomicalToothSVG = ({
 			<g className="tooth-group-implant">
 				{isTop ? (
 					<g className="implant-upper-fixture">
+						{/* Tapered Titanium SLA Fixture */}
 						<path
 							d="M 28 85 L 34 25 Q 50 12 66 25 L 72 85 Z"
-							fill="url(#dente-implant-titanium)"
-							stroke="#475569"
+							fill="url(#titanium-implant-gradient)"
+							stroke="#334155"
 							strokeWidth="1.8"
 							strokeLinejoin="round"
 						/>
-						<line x1="36" y1="32" x2="64" y2="32" stroke="#f1f5f9" strokeWidth="1.5" />
-						<line x1="36" y1="33.5" x2="64" y2="33.5" stroke="#1e293b" strokeWidth="1.2" />
-						<line x1="34" y1="44" x2="66" y2="44" stroke="#f1f5f9" strokeWidth="1.5" />
-						<line x1="34" y1="45.5" x2="66" y2="45.5" stroke="#1e293b" strokeWidth="1.2" />
-						<line x1="32" y1="56" x2="68" y2="56" stroke="#f1f5f9" strokeWidth="1.5" />
-						<line x1="32" y1="57.5" x2="68" y2="57.5" stroke="#1e293b" strokeWidth="1.2" />
-						<line x1="30" y1="68" x2="70" y2="68" stroke="#f1f5f9" strokeWidth="1.5" />
-						<line x1="30" y1="69.5" x2="70" y2="69.5" stroke="#1e293b" strokeWidth="1.2" />
-						<line x1="29" y1="78" x2="71" y2="78" stroke="#f1f5f9" strokeWidth="1.5" />
-						<line x1="29" y1="79.5" x2="71" y2="79.5" stroke="#1e293b" strokeWidth="1.2" />
+						{/* Crestal Micro-grooves */}
+						<rect x="29" y="80" width="42" height="4" fill="url(#implant-microgrooves-pattern)" />
 						<line x1="28.5" y1="82" x2="71.5" y2="82" stroke="#94a3b8" strokeWidth="1" strokeDasharray="2 2" />
-						<path d="M 48 14 L 50 28 L 52 14" stroke="#334155" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-						<rect x="27" y="83" width="46" height="6" rx="2" fill="url(#dente-implant-gold)" stroke="#b45309" strokeWidth="1.2" />
+
+						{/* Self-Tapping Helical Thread Ridges */}
+						<line x1="36" y1="31" x2="64" y2="33" stroke="#f1f5f9" strokeWidth="1.5" />
+						<line x1="36" y1="32.5" x2="64" y2="34.5" stroke="#1e293b" strokeWidth="1.2" />
+						<line x1="34" y1="43" x2="66" y2="45" stroke="#f1f5f9" strokeWidth="1.5" />
+						<line x1="34" y1="44.5" x2="66" y2="46.5" stroke="#1e293b" strokeWidth="1.2" />
+						<line x1="32" y1="55" x2="68" y2="57" stroke="#f1f5f9" strokeWidth="1.5" />
+						<line x1="32" y1="56.5" x2="68" y2="58.5" stroke="#1e293b" strokeWidth="1.2" />
+						<line x1="30" y1="67" x2="70" y2="69" stroke="#f1f5f9" strokeWidth="1.5" />
+						<line x1="30" y1="68.5" x2="70" y2="70.5" stroke="#1e293b" strokeWidth="1.2" />
+						<line x1="29" y1="77" x2="71" y2="79" stroke="#f1f5f9" strokeWidth="1.5" />
+						<line x1="29" y1="78.5" x2="71" y2="80.5" stroke="#1e293b" strokeWidth="1.2" />
+
+						{/* Apical Vent Cutting Flute Slot */}
+						<path d="M 46 14 L 50 28 L 54 14" stroke="#1e293b" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+
+						{/* Internal Hex Connector */}
+						<polygon points="44,83 56,83 60,86 56,89 44,89 40,86" fill="url(#implant-hex-gradient)" stroke="#475569" strokeWidth="0.8" />
+						{/* Gold/TiN Transgingival Abutment Collar */}
+						<rect x="27" y="83" width="46" height="6" rx="2" fill="url(#gold-crown-gradient)" stroke="#b45309" strokeWidth="1.2" />
 					</g>
 				) : (
 					<g className="implant-lower-fixture">
+						{/* Tapered Titanium SLA Fixture */}
 						<path
 							d="M 28 75 L 34 135 Q 50 148 66 135 L 72 75 Z"
-							fill="url(#dente-implant-titanium)"
-							stroke="#475569"
+							fill="url(#titanium-implant-gradient)"
+							stroke="#334155"
 							strokeWidth="1.8"
 							strokeLinejoin="round"
 						/>
-						<line x1="29" y1="82" x2="71" y2="82" stroke="#f1f5f9" strokeWidth="1.5" />
-						<line x1="29" y1="83.5" x2="71" y2="83.5" stroke="#1e293b" strokeWidth="1.2" />
-						<line x1="30" y1="94" x2="70" y2="94" stroke="#f1f5f9" strokeWidth="1.5" />
-						<line x1="30" y1="95.5" x2="70" y2="95.5" stroke="#1e293b" strokeWidth="1.2" />
-						<line x1="32" y1="106" x2="68" y2="106" stroke="#f1f5f9" strokeWidth="1.5" />
-						<line x1="32" y1="107.5" x2="68" y2="107.5" stroke="#1e293b" strokeWidth="1.2" />
-						<line x1="34" y1="118" x2="66" y2="118" stroke="#f1f5f9" strokeWidth="1.5" />
-						<line x1="34" y1="119.5" x2="66" y2="119.5" stroke="#1e293b" strokeWidth="1.2" />
-						<line x1="36" y1="130" x2="64" y2="130" stroke="#f1f5f9" strokeWidth="1.5" />
-						<line x1="36" y1="131.5" x2="64" y2="131.5" stroke="#1e293b" strokeWidth="1.2" />
+						{/* Crestal Micro-grooves */}
+						<rect x="29" y="76" width="42" height="4" fill="url(#implant-microgrooves-pattern)" />
 						<line x1="28.5" y1="78" x2="71.5" y2="78" stroke="#94a3b8" strokeWidth="1" strokeDasharray="2 2" />
-						<path d="M 48 146 L 50 132 L 52 146" stroke="#334155" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-						<rect x="27" y="71" width="46" height="6" rx="2" fill="url(#dente-implant-gold)" stroke="#b45309" strokeWidth="1.2" />
+
+						{/* Self-Tapping Helical Thread Ridges */}
+						<line x1="29" y1="81" x2="71" y2="83" stroke="#f1f5f9" strokeWidth="1.5" />
+						<line x1="29" y1="82.5" x2="71" y2="84.5" stroke="#1e293b" strokeWidth="1.2" />
+						<line x1="30" y1="93" x2="70" y2="95" stroke="#f1f5f9" strokeWidth="1.5" />
+						<line x1="30" y1="94.5" x2="70" y2="96.5" stroke="#1e293b" strokeWidth="1.2" />
+						<line x1="32" y1="105" x2="68" y2="107" stroke="#f1f5f9" strokeWidth="1.5" />
+						<line x1="32" y1="106.5" x2="68" y2="108.5" stroke="#1e293b" strokeWidth="1.2" />
+						<line x1="34" y1="117" x2="66" y2="119" stroke="#f1f5f9" strokeWidth="1.5" />
+						<line x1="34" y1="118.5" x2="66" y2="120.5" stroke="#1e293b" strokeWidth="1.2" />
+						<line x1="36" y1="129" x2="64" y2="131" stroke="#f1f5f9" strokeWidth="1.5" />
+						<line x1="36" y1="130.5" x2="64" y2="132.5" stroke="#1e293b" strokeWidth="1.2" />
+
+						{/* Apical Vent Cutting Flute Slot */}
+						<path d="M 46 146 L 50 132 L 54 146" stroke="#1e293b" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+
+						{/* Internal Hex Connector */}
+						<polygon points="44,71 56,71 60,68 56,65 44,65 40,68" fill="url(#implant-hex-gradient)" stroke="#475569" strokeWidth="0.8" />
+						{/* Gold/TiN Transgingival Abutment Collar */}
+						<rect x="27" y="71" width="46" height="6" rx="2" fill="url(#gold-crown-gradient)" stroke="#b45309" strokeWidth="1.2" />
 					</g>
 				)}
 
+				{/* Restorative Crown on Abutment */}
 				<path
-					d={geom.crown}
+					d={geom.crownPath}
 					fill={colors.crownFill}
 					stroke={colors.stroke}
 					strokeWidth="2.2"
 					strokeLinejoin="round"
 				/>
 
+				{/* Planned Surgical Trajectory Guideline */}
 				{state === "Planned_Implant" && (
 					<line
 						x1="50"
@@ -281,7 +461,7 @@ const AnatomicalToothSVG = ({
 			width={scaledWidth}
 			height={scaledHeight}
 			style={{ transform }}
-			viewBox={`${cfg.viewX} 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
+			viewBox={`${geom.viewBox.x} ${geom.viewBox.y} ${geom.viewBox.width} ${geom.viewBox.height}`}
 			preserveAspectRatio="none"
 			className={`tooth-svg-element ${
 				colors.isPulsing ? "animate-pulse stroke-[2.5px]" : ""
@@ -289,17 +469,20 @@ const AnatomicalToothSVG = ({
 		>
 			<title>{`Схема зуба ${number}`}</title>
 			<g className="tooth-group-standard">
-				{state === "Periodontitis" &&
-					geom.apex?.map((pt, idx) => (
-						<g key={`halo-${idx}`} className="periapical-halo-group">
-							<circle cx={pt.x} cy={pt.y} r="14" fill="url(#dente-periapical-halo)" />
-							<circle cx={pt.x} cy={pt.y} r="7" fill="#ea580c" opacity="0.6" />
-							<circle cx={pt.x} cy={pt.y} r="3" fill="#ffedd5" opacity="0.85" />
+				{/* Periapical Inflammatory Granuloma / Cyst Halo at Root Apex */}
+				{showPeriapicalHalos &&
+					isPeriodontitis &&
+					geom.apexHalos?.map((pt, idx) => (
+						<g key={`halo-${idx}`} className="periapical-halo-group" filter="url(#periapical-feather-blur)">
+							<circle cx={pt.x} cy={pt.y} r="15" fill="url(#periapical-lesion-gradient)" />
+							<circle cx={pt.x} cy={pt.y} r="7.5" fill="#ea580c" opacity="0.75" />
+							<circle cx={pt.x} cy={pt.y} r="3" fill="#fef08a" opacity="0.9" />
 						</g>
 					))}
 
+				{/* Anatomical Multi-Root Profile (3 roots upper molars, 2 roots lower molars) */}
 				<path
-					d={geom.root}
+					d={geom.rootPath}
 					fill={colors.rootFill}
 					stroke={colors.isMissing ? "var(--tooth-root-stroke, #94a3b8)" : "var(--tooth-root-stroke, #64748b)"}
 					strokeWidth={colors.isMissing ? "1.4" : "1.8"}
@@ -308,8 +491,53 @@ const AnatomicalToothSVG = ({
 					className="tooth-root-path"
 				/>
 
+				{/* Periodontal Bone Loss Resorption Area & Crest Line */}
+				{boneLossInfo && (
+					<g className="periodontal-bone-loss-layer">
+						<path d={boneLossInfo.resorptionArea} fill="url(#bone-loss-hatch)" opacity="0.85" />
+						<path
+							d={boneLossInfo.boneLine}
+							fill="none"
+							stroke="#ef4444"
+							strokeWidth="1.6"
+							strokeDasharray="3 2"
+							strokeLinecap="round"
+						/>
+					</g>
+				)}
+
+				{/* Gingival Margin Recession Line */}
+				{recessionPath && (
+					<g className="gingival-recession-layer">
+						<path
+							d={recessionPath}
+							fill="none"
+							stroke="#f59e0b"
+							strokeWidth="1.8"
+							strokeDasharray="3 2"
+							strokeLinecap="round"
+						/>
+					</g>
+				)}
+
+				{/* Furcation Involvement Markers at Multi-Root Sites */}
+				{furcationMarkers.map(({ site, marker }) => (
+					<g key={`furcation-${site.id}`} className="furcation-marker-layer">
+						<title>{marker.labelRu}</title>
+						<path
+							d={marker.path}
+							fill={marker.fill}
+							stroke={marker.stroke}
+							strokeWidth={marker.strokeWidth}
+							strokeLinejoin="round"
+							strokeLinecap="round"
+						/>
+					</g>
+				))}
+
+				{/* Crown Anatomical Contour */}
 				<path
-					d={geom.crown}
+					d={geom.crownPath}
 					fill={colors.crownFill}
 					fillOpacity={colors.opacity}
 					stroke={colors.stroke}
@@ -319,9 +547,94 @@ const AnatomicalToothSVG = ({
 					className="tooth-crown-path"
 				/>
 
-				{!colors.isMissing && (
+				{/* 1. Photopolymer Composite Resin Multi-layer Stipple & Specular Sheen */}
+				{state === "Filled" && (material === "composite" || !material) && (
+					<g pointerEvents="none" className="composite-material-layer">
+						<path
+							d={geom.crownPath}
+							fill="url(#composite-resin-pattern)"
+							opacity="0.38"
+						/>
+						<path
+							d={isTop ? "M 28 132 Q 50 144 72 132" : "M 28 32 Q 50 20 72 32"}
+							fill="none"
+							stroke="rgba(255, 255, 255, 0.75)"
+							strokeWidth="1.5"
+							strokeLinecap="round"
+							opacity="0.85"
+						/>
+					</g>
+				)}
+
+				{/* 2. Silver Amalgam Burnished Texture & Dark Silver Oxide Edge */}
+				{state === "Filled" && material === "amalgam" && (
+					<g pointerEvents="none" className="amalgam-material-layer">
+						<path
+							d={geom.crownPath}
+							fill="url(#amalgam-burnish-pattern)"
+							opacity="0.5"
+						/>
+						<path
+							d={geom.crownPath}
+							fill="none"
+							stroke="#0f172a"
+							strokeWidth="1.2"
+							opacity="0.7"
+						/>
+					</g>
+				)}
+
+				{/* 3. Ceramic IPS E.max Translucent Porcelain Glaze Reflection */}
+				{(state === "Filled" || state === "Crown") && material === "ceramic_emax" && (
 					<path
-						d={isTop ? "M 25 85 Q 50 82 75 85" : "M 25 75 Q 50 78 75 75"}
+						d={geom.crownPath}
+						fill="url(#ceramic-glaze-specular)"
+						opacity="0.45"
+						pointerEvents="none"
+						className="ceramic-glaze-layer"
+					/>
+				)}
+
+				{/* 4. Monolithic Zirconia & PFM Cusp Highlights & Cervical Collar Ring */}
+				{state === "Crown" && (
+					<g className="crown-restoration-accents">
+						{material === "zirconia" && (
+							<path
+								d={isTop ? "M 30 134 Q 50 146 70 134" : "M 30 30 Q 50 18 70 30"}
+								fill="none"
+								stroke="rgba(255, 255, 255, 0.85)"
+								strokeWidth="1.6"
+								strokeLinecap="round"
+								opacity="0.9"
+							/>
+						)}
+						<path
+							d={isTop ? "M 20 96 Q 50 92 80 96 Q 50 100 20 96" : "M 20 64 Q 50 68 80 64 Q 50 60 20 64"}
+							fill={colors.collarFill ?? "url(#dente-cervical-collar)"}
+							stroke="#334155"
+							strokeWidth="1.2"
+						/>
+					</g>
+				)}
+
+				{/* 5. Cast Gold 24K Specular Golden Metallic Highlight & Marginal Burnish Line */}
+				{(state === "Filled" || state === "Crown") && material === "gold" && (
+					<path
+						d={isTop ? "M 26 138 Q 50 148 74 138" : "M 26 26 Q 50 16 74 26"}
+						fill="none"
+						stroke="#fef08a"
+						strokeWidth="1.6"
+						strokeLinecap="round"
+						opacity="0.9"
+						pointerEvents="none"
+						className="gold-marginal-burnish-layer"
+					/>
+				)}
+
+				{/* Cementoenamel Junction / Cervical Margin Accent */}
+				{!colors.isMissing && geom.cejPath && (
+					<path
+						d={geom.cejPath}
 						fill="none"
 						stroke="rgba(100, 116, 139, 0.4)"
 						strokeWidth="1"
@@ -329,31 +642,78 @@ const AnatomicalToothSVG = ({
 					/>
 				)}
 
-				{geom.canals && state === "Pulpitis" && (
-					<g filter="url(#dente-glow-purple)">
-						<path
-							d={geom.canals}
-							fill="none"
-							stroke="url(#dente-pulp-canal-neon)"
-							strokeWidth="3.2"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							opacity="0.95"
-						/>
-						<path
-							d={geom.canals}
-							fill="none"
-							stroke="#ffffff"
-							strokeWidth="1.2"
-							strokeLinecap="round"
-							opacity="0.9"
-						/>
+				{/* Bleeding on Probing (BOP) Red Dots Overlay */}
+				{bopSites && bopSites.length > 0 && (
+					<g className="perio-bop-dots-layer">
+						{bopSites.map((siteKey, idx) => {
+							const cx = siteKey.includes("M") ? 32 : siteKey.includes("D") ? 68 : 50;
+							const cy = isTop ? 94 : 66;
+							return (
+								<circle
+									key={`bop-${idx}`}
+									cx={cx}
+									cy={cy}
+									r="3"
+									fill="#e11d48"
+									className="animate-pulse"
+								/>
+							);
+						})}
 					</g>
 				)}
 
-				{geom.core && state === "Pulpitis" && (
+				{/* Suppuration Pus Droplets Overlay */}
+				{suppurationSites && suppurationSites.length > 0 && (
+					<g className="perio-sup-dots-layer">
+						{suppurationSites.map((siteKey, idx) => {
+							const cx = siteKey.includes("M") ? 36 : siteKey.includes("D") ? 64 : 50;
+							const cy = isTop ? 98 : 62;
+							return (
+								<circle
+									key={`sup-${idx}`}
+									cx={cx}
+									cy={cy}
+									r="2.5"
+									fill="#f59e0b"
+									stroke="#b45309"
+									strokeWidth="0.8"
+								/>
+							);
+						})}
+					</g>
+				)}
+
+				{/* Pulp Chamber & Root Canals for Pulpitis / Diagnostics */}
+				{geom.canals.length > 0 && (state === "Pulpitis" || showPulpAndCanals) && (
+					<g filter="url(#dente-glow-purple)">
+						{geom.canals.map((c) => (
+							<g key={c.id}>
+								<path
+									d={c.path}
+									fill="none"
+									stroke="url(#dente-pulp-canal-neon)"
+									strokeWidth="3.2"
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									opacity="0.95"
+								/>
+								<path
+									d={c.path}
+									fill="none"
+									stroke="#ffffff"
+									strokeWidth="1.2"
+									strokeLinecap="round"
+									opacity="0.9"
+								/>
+							</g>
+						))}
+					</g>
+				)}
+
+				{/* Pulp Chamber Core for Pulpitis */}
+				{geom.pulpChamberPath && (state === "Pulpitis" || showPulpAndCanals) && (
 					<path
-						d={geom.core}
+						d={geom.pulpChamberPath}
 						fill="#c084fc"
 						stroke="#7e22ce"
 						strokeWidth="1.5"
@@ -361,37 +721,107 @@ const AnatomicalToothSVG = ({
 					/>
 				)}
 
-				{geom.canals && state === "Filled" && (
-					<g>
-						<path
-							d={geom.canals}
-							fill="none"
-							stroke="#0d9488"
-							strokeWidth="2.8"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							opacity="0.9"
-						/>
-						<path
-							d={geom.canals}
-							fill="none"
-							stroke="#a7f3d0"
-							strokeWidth="1.2"
-							strokeLinecap="round"
-							opacity="0.85"
-						/>
+				{/* Root Canal Obturation / Post-and-Core */}
+				{geom.canals.length > 0 && isEndoTreated && (
+					<g className="root-canal-obturation-layer">
+						{/* Fiber Glass Post */}
+						{hasPost && postType === "fiber" ? (
+							<g filter="url(#dente-glow-indigo)">
+								{geom.canals.map((c) => (
+									<g key={c.id}>
+										<path
+											d={c.path}
+											fill="none"
+											stroke="url(#fiber-post-gradient)"
+											strokeWidth="3.8"
+											strokeLinecap="round"
+											strokeLinejoin="round"
+										/>
+										<path
+											d={c.path}
+											fill="none"
+											stroke="#ffffff"
+											strokeWidth="1.4"
+											strokeLinecap="round"
+											opacity="0.95"
+										/>
+									</g>
+								))}
+							</g>
+						) : hasPost && (postType === "cast_core" || postType === "titanium") ? (
+							/* Cast Core Metal Post */
+							<g filter="url(#dente-metallic-specular)">
+								{geom.canals.map((c) => (
+									<path
+										key={c.id}
+										d={c.path}
+										fill="none"
+										stroke="url(#cast-core-post-gradient)"
+										strokeWidth="4.2"
+										strokeLinecap="round"
+										strokeLinejoin="round"
+									/>
+								))}
+								<polygon
+									points={isTop ? "40,96 60,96 56,116 44,116" : "40,64 60,64 56,44 44,44"}
+									fill="url(#cast-core-post-gradient)"
+									stroke="#334155"
+									strokeWidth="1.2"
+								/>
+							</g>
+						) : (
+							/* Standard Endodontic Obturation (Gutta-percha / Bioceramic) with Apical Delta Seal */
+							<g>
+								{geom.canals.map((c) => (
+									<g key={c.id}>
+										<path
+											d={c.path}
+											fill="none"
+											stroke={
+												effectiveObturation === "bioceramic"
+													? "url(#bioceramic-canal-gradient)"
+													: effectiveObturation === "calcium_hydroxide"
+														? "#eab308"
+														: "url(#gutta-percha-gradient)"
+											}
+											strokeWidth="3.2"
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											opacity="0.95"
+										/>
+										<path
+											d={c.path}
+											fill="none"
+											stroke={
+												effectiveObturation === "bioceramic"
+													? "#ccfbf1"
+													: effectiveObturation === "calcium_hydroxide"
+														? "#fef9c3"
+														: "#fecdd3"
+											}
+											strokeWidth="1.2"
+											strokeLinecap="round"
+											opacity="0.9"
+										/>
+										{/* Apical delta seal dot for gutta-percha */}
+										{effectiveObturation === "gutta_percha" && (
+											<circle
+												cx={c.apex.x}
+												cy={c.apex.y}
+												r="2.2"
+												fill="#be123c"
+												stroke="#881337"
+												strokeWidth="0.6"
+											/>
+										)}
+									</g>
+								))}
+							</g>
+						)}
 					</g>
 				)}
 
-				{state === "Crown" && (
-					<path
-						d={isTop ? "M 22 85 Q 50 82 78 85 Q 50 88 22 85" : "M 22 75 Q 50 78 78 75 Q 50 72 22 75"}
-						fill="url(#dente-cervical-collar)"
-						stroke="#334155"
-						strokeWidth="1.2"
-					/>
-				)}
-
+				{/* Natural Enamel Specular Highlight Sheen */}
 				{!colors.isMissing && state !== "Crown" && (
 					<path
 						d={isTop ? "M 32 135 Q 50 145 68 135" : "M 32 30 Q 50 20 68 30"}
@@ -403,9 +833,10 @@ const AnatomicalToothSVG = ({
 					/>
 				)}
 
-				{geom.fissures && state !== "Crown" && !colors.isMissing && (
+				{/* Occlusal Fissures */}
+				{geom.fissurePath && state !== "Crown" && !colors.isMissing && (
 					<path
-						d={geom.fissures}
+						d={geom.fissurePath}
 						fill="none"
 						stroke={state === "Caries" ? "#7f1d1d" : "rgba(15, 23, 42, 0.35)"}
 						strokeWidth="1"
@@ -413,237 +844,335 @@ const AnatomicalToothSVG = ({
 					/>
 				)}
 
+				{/* Missing Tooth Ghost Diagonal X */}
 				{colors.isMissing && (
-					<g opacity="0.65">
+					<g className="missing-tooth-cross" opacity="0.95">
 						<line
-							x1={cfg.viewX + 8}
-							y1="35"
-							x2={cfg.viewX + cfg.viewWidth - 8}
-							y2="115"
-							stroke="var(--odontogram-ink-muted, #64748b)"
-							strokeWidth="2.4"
+							x1={geom.viewBox.x + 6}
+							y1={geom.viewBox.y + 8}
+							x2={geom.viewBox.x + geom.viewBox.width - 6}
+							y2={geom.viewBox.y + geom.viewBox.height - 8}
+							stroke="#ef4444"
+							strokeWidth="3.2"
 							strokeLinecap="round"
 						/>
 						<line
-							x1={cfg.viewX + cfg.viewWidth - 8}
-							y1="35"
-							x2={cfg.viewX + 8}
-							y2="115"
-							stroke="var(--odontogram-ink-muted, #64748b)"
-							strokeWidth="2.4"
+							x1={geom.viewBox.x + geom.viewBox.width - 6}
+							y1={geom.viewBox.y + 8}
+							x2={geom.viewBox.x + 6}
+							y2={geom.viewBox.y + geom.viewBox.height - 8}
+							stroke="#ef4444"
+							strokeWidth="3.2"
 							strokeLinecap="round"
 						/>
 					</g>
 				)}
 
+				{/* 5-Surface Interactive Polygons directly mapped on the Anatomical Crown */}
 				{useSurfaces && (
-					<g
-						transform={`translate(${cfg.viewX + cfg.viewWidth / 2 - 12}, ${isTop ? 95 : 35})`}
-						stroke="rgba(255,255,255,0.7)"
-						strokeWidth="0.5"
-						className="tooth-surface-interactive-group"
-					>
-						{/* O */}
-						<g
-							role="tab"
-							tabIndex={0}
-							aria-label={`Поверхность O зуба ${number}`}
-							style={{ cursor: "pointer" }}
-							onClick={(e) => {
-								e.stopPropagation();
-								onClick(e as unknown as React.MouseEvent, number, "O");
-							}}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" || e.key === " ") {
-									e.preventDefault();
-									e.stopPropagation();
-									onClick(e as unknown as React.MouseEvent, number, "O");
-								}
-							}}
-						>
-							<polygon
-								points="8,8 16,8 16,16 8,16"
-								fill={
-									surfaces?.includes("O")
-										? state === "Filled"
-											? "#10b981"
-											: "#ef4444"
-										: "transparent"
-								}
-								style={{ transition: "fill 0.2s" }}
-							/>
-						</g>
-
-						{/* V */}
-						<g
-							role="tab"
-							tabIndex={0}
-							aria-label={`Поверхность V зуба ${number}`}
-							style={{ cursor: "pointer" }}
-							onClick={(e) => {
-								e.stopPropagation();
-								onClick(e as unknown as React.MouseEvent, number, "V");
-							}}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" || e.key === " ") {
-									e.preventDefault();
-									e.stopPropagation();
-									onClick(e as unknown as React.MouseEvent, number, "V");
-								}
-							}}
-						>
-							<polygon
-								points="0,0 24,0 16,8 8,8"
-								fill={
-									surfaces?.includes("V") || surfaces?.includes("B")
-										? state === "Filled"
-											? "#10b981"
-											: "#ef4444"
-										: "transparent"
-								}
-								style={{ transition: "fill 0.2s" }}
-							/>
-						</g>
-
-						{/* L/P */}
-						<g
-							role="tab"
-							tabIndex={0}
-							aria-label={`Поверхность ${isTop ? "P" : "L"} зуба ${number}`}
-							style={{ cursor: "pointer" }}
-							onClick={(e) => {
-								e.stopPropagation();
-								onClick(
-									e as unknown as React.MouseEvent,
-									number,
-									isTop ? "P" : "L",
-								);
-							}}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" || e.key === " ") {
-									e.preventDefault();
-									e.stopPropagation();
-									onClick(
-										e as unknown as React.MouseEvent,
-										number,
-										isTop ? "P" : "L",
-									);
-								}
-							}}
-						>
-							<polygon
-								points="8,16 16,16 24,24 0,24"
-								fill={
-									surfaces?.includes("L") || surfaces?.includes("P")
-										? state === "Filled"
-											? "#10b981"
-											: "#ef4444"
-										: "transparent"
-								}
-								style={{ transition: "fill 0.2s" }}
-							/>
-						</g>
-
-						{/* D */}
-						<g
-							role="tab"
-							tabIndex={0}
-							aria-label={`Поверхность D зуба ${number}`}
-							style={{ cursor: "pointer" }}
-							onClick={(e) => {
-								e.stopPropagation();
-								onClick(e as unknown as React.MouseEvent, number, "D");
-							}}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" || e.key === " ") {
-									e.preventDefault();
-									e.stopPropagation();
-									onClick(e as unknown as React.MouseEvent, number, "D");
-								}
-							}}
-						>
-							<polygon
-								points="0,0 8,8 8,16 0,24"
-								fill={
-									surfaces?.includes("D")
-										? state === "Filled"
-											? "#10b981"
-											: "#ef4444"
-										: "transparent"
-								}
-								style={{ transition: "fill 0.2s" }}
-							/>
-						</g>
-
-						{/* M */}
-						<g
-							role="tab"
-							tabIndex={0}
-							aria-label={`Поверхность M зуба ${number}`}
-							style={{ cursor: "pointer" }}
-							onClick={(e) => {
-								e.stopPropagation();
-								onClick(e as unknown as React.MouseEvent, number, "M");
-							}}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" || e.key === " ") {
-									e.preventDefault();
-									e.stopPropagation();
-									onClick(e as unknown as React.MouseEvent, number, "M");
-								}
-							}}
-						>
-							<polygon
-								points="24,0 24,24 16,16 16,8"
-								fill={
-									surfaces?.includes("M")
-										? state === "Filled"
-											? "#10b981"
-											: "#ef4444"
-										: "transparent"
-								}
-								style={{ transition: "fill 0.2s" }}
-							/>
-						</g>
+					<g className="tooth-surface-interactive-group">
+						{(["O", "V", isTop ? "P" : "L", "M", "D"] as const).map((surfKey) => {
+							const geomKey = surfKey === "P" ? "L" : surfKey;
+							const surfPath = geom.surfaces[geomKey as AnatomicalSurfaceKey];
+							if (!surfPath) return null;
+							const isHighlighted =
+								surfaces?.includes(surfKey) ||
+								(surfKey === "L" && surfaces?.includes("P")) ||
+								(surfKey === "V" && surfaces?.includes("B"));
+							return (
+								<path
+									key={surfKey}
+									d={surfPath}
+									role="tab"
+									tabIndex={0}
+									aria-label={`Поверхность ${surfKey} зуба ${number}`}
+									fill={
+										isHighlighted
+											? state === "Filled"
+												? "#10b981"
+												: "#ef4444"
+											: "transparent"
+									}
+									stroke="rgba(255, 255, 255, 0.4)"
+									strokeWidth="0.8"
+									style={{ cursor: "pointer", transition: "fill 0.2s" }}
+									onClick={(e) => {
+										e.stopPropagation();
+										onClick(e, number, surfKey);
+									}}
+									onKeyDown={(e) => {
+										if (e.key === "Enter" || e.key === " ") {
+											e.preventDefault();
+											e.stopPropagation();
+											onClick(e as unknown as React.MouseEvent, number, surfKey);
+										}
+									}}
+								/>
+							);
+						})}
 					</g>
 				)}
 			</g>
 		</svg>
 	);
 
+	return state === "Implant" || state === "Planned_Implant"
+		? renderImplant()
+		: renderStandard();
+};
+
+export interface ToothWrapperProps {
+	tooth: ToothData;
+	isSelected: boolean;
+	activeStamp?: ToothState | null | undefined;
+	onClick: (
+		e: React.MouseEvent,
+		num: number,
+		surface?: string,
+	) => void;
+	onQuickStateChange?: ((targets: number[], state: ToothState) => void) | undefined;
+	useSurfaces?: boolean | undefined;
+	isTop: boolean;
+	scale?: number | undefined;
+	pediatricMode?: boolean | undefined;
+	showPulpAndCanals?: boolean | undefined;
+	showPeriapicalHalos?: boolean | undefined;
+	showPeriodontalBoneLoss?: boolean | undefined;
+}
+
+const ToothWrapper: React.FC<ToothWrapperProps> = ({
+	tooth,
+	isSelected,
+	activeStamp,
+	onClick,
+	onQuickStateChange,
+	useSurfaces,
+	isTop,
+	scale = 1,
+	pediatricMode,
+	showPulpAndCanals,
+	showPeriapicalHalos = true,
+	showPeriodontalBoneLoss = true,
+}) => {
+	const {
+		toothNumber: number,
+		state,
+		surfaces,
+		material,
+		canalObturation,
+		hasPost,
+		postType,
+		boneLossLevel,
+		boneLossType,
+		furcationGrade,
+		furcation: directFurcation,
+		mobility,
+		gingivalRecession,
+		bopSites,
+		suppurationSites,
+		periapicalLesion,
+	} = tooth;
+
+	const furcation = furcationGrade ?? directFurcation;
+	const colors = getAnatomicalToothColors(state, material);
+
 	const renderNumberBadge = () => (
-		<span
-			className={`tooth-number-badge ${isSelected ? "selected" : ""}`}
-			style={{ fontSize: scale < 0.85 ? "10px" : undefined }}
-		>
+		<div className="relative flex flex-col items-center group/badge">
+			{/* Hover Quick Action Micro-HUD (Clinical Russian Presets) when no global stamp is active */}
+			{!activeStamp && onQuickStateChange && (
+				<div
+					className={`tooth-hover-quick-hud absolute left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 group-hover/badge:opacity-100 transition-all duration-200 z-40 flex items-center gap-1 px-1.5 py-1 rounded-xl bg-slate-950/95 dark:bg-slate-900/95 border border-white/20 shadow-2xl backdrop-blur-md pointer-events-auto whitespace-nowrap ${
+						isTop ? "bottom-full mb-1.5" : "top-full mt-1.5"
+					}`}
+					onClick={(e) => e.stopPropagation()}
+				>
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							onQuickStateChange([number], "Caries");
+						}}
+						className="px-1.5 py-0.5 rounded-md bg-red-500/20 hover:bg-red-500 text-red-300 hover:text-white border border-red-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105"
+						title="Кариес (Кар.)"
+					>
+						<span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
+						<span>Кар.</span>
+					</button>
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							onQuickStateChange([number], "Filled");
+						}}
+						className="px-1.5 py-0.5 rounded-md bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-white border border-emerald-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105"
+						title="Пломба (Пл.)"
+					>
+						<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+						<span>Пл.</span>
+					</button>
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							onQuickStateChange([number], "Pulpitis");
+						}}
+						className="px-1.5 py-0.5 rounded-md bg-purple-500/20 hover:bg-purple-500 text-purple-300 hover:text-white border border-purple-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105"
+						title="Пульпит (Пульп.)"
+					>
+						<span className="w-1.5 h-1.5 rounded-full bg-purple-500 inline-block" />
+						<span>Пульп.</span>
+					</button>
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							onQuickStateChange([number], "Crown");
+						}}
+						className="px-1.5 py-0.5 rounded-md bg-blue-500/20 hover:bg-blue-500 text-blue-300 hover:text-white border border-blue-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105"
+						title="Коронка (Кор.)"
+					>
+						<span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
+						<span>Кор.</span>
+					</button>
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							onQuickStateChange([number], "Missing");
+						}}
+						className="px-1.5 py-0.5 rounded-md bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105"
+						title="Удален (Удал.)"
+					>
+						<span className="w-1.5 h-1.5 rounded-full bg-rose-600 inline-block" />
+						<span>Удал.</span>
+					</button>
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							onQuickStateChange([number], "Healthy");
+						}}
+						className="px-1.5 py-0.5 rounded-md bg-teal-500/20 hover:bg-teal-500 text-teal-300 hover:text-white border border-teal-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105"
+						title="Здоров (Зд.)"
+					>
+						<span className="w-1.5 h-1.5 rounded-full bg-teal-400 inline-block" />
+						<span>Зд.</span>
+					</button>
+				</div>
+			)}
+
 			<span
-				className="tooth-status-dot"
-				style={{ backgroundColor: colors.badgeColor }}
-			/>
-			<span className="tooth-number-text">{number}</span>
-		</span>
+				className={`tooth-number-badge ${isSelected ? "selected" : ""}`}
+				style={{ fontSize: scale < 0.85 ? "10px" : undefined }}
+			>
+				<span
+					className="tooth-status-dot"
+					style={{ backgroundColor: colors.badgeColor }}
+				/>
+				<span className="tooth-number-text">{number}</span>
+				{mobility !== undefined && mobility > 0 && (
+					<span
+						className="ml-0.5 px-1 py-0.2 rounded text-[8px] font-black bg-indigo-600 text-white shadow-2xs leading-none"
+						title={`Подвижность по Миллеру: ${mobility} ст.`}
+					>
+						M{mobility}
+					</span>
+				)}
+				{furcation !== undefined && furcation > 0 && (
+					<span
+						className={`ml-0.5 px-1 py-0.2 rounded text-[8px] font-black text-white shadow-2xs leading-none ${
+							furcation >= 3 ? "bg-rose-600" : "bg-amber-500"
+						}`}
+						title={`Поражение фуркации: ${furcation} ст.`}
+					>
+						F{furcation}
+					</span>
+				)}
+			</span>
+		</div>
 	);
 
 	return (
 		<button
 			type="button"
-			className={`tooth-svg-wrapper ${isTop ? "top" : "bottom"} ${
+			className={`tooth-svg-wrapper group ${isTop ? "top" : "bottom"} ${
 				isSelected ? "selected ring-2 ring-indigo-500/70" : ""
 			}`}
 			data-tooth-id={number}
 			aria-label={`Зуб ${number}, ${TOOTH_STATE_LABELS[state]}`}
 			aria-pressed={isSelected ? true : undefined}
-			onClick={(e) => onClick(e, number)}
+			onClick={(e) => {
+				if (activeStamp && onQuickStateChange) {
+					onQuickStateChange([number], activeStamp);
+					return;
+				}
+				onClick(e, number);
+			}}
 			onKeyDown={(e) => {
-				if (e.key !== "Enter" && e.key !== " ") return;
-				e.preventDefault();
-				onClick(e as unknown as React.MouseEvent, number);
+				if (e.key === "Enter" || e.key === " ") {
+					e.preventDefault();
+					if (activeStamp && onQuickStateChange) {
+						onQuickStateChange([number], activeStamp);
+						return;
+					}
+					onClick(e as unknown as React.MouseEvent, number);
+					return;
+				}
+
+				if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "Home" || e.key === "End") {
+					e.preventDefault();
+					const dirMap: Record<string, "left" | "right" | "up" | "down" | "home" | "end"> = {
+						ArrowLeft: "left",
+						ArrowRight: "right",
+						ArrowUp: "up",
+						ArrowDown: "down",
+						Home: "home",
+						End: "end",
+					};
+					const navDir = dirMap[e.key];
+					if (navDir) {
+						const nextTooth = getNextFocusedTooth(number, navDir, pediatricMode);
+						const nextEl = document.querySelector<HTMLButtonElement>(`[data-tooth-id="${nextTooth}"]`);
+						nextEl?.focus();
+					}
+					return;
+				}
+
+				// 1-Click fast keys (К, П, Е, Ф, Ц, И, 0, З)
+				const quickState = getToothStateFromHotkey(e.key);
+				if (quickState && onQuickStateChange) {
+					e.preventDefault();
+					onQuickStateChange([number], quickState);
+				}
 			}}
 		>
 			{isTop && renderNumberBadge()}
-			{state === "Implant" || state === "Planned_Implant"
-				? renderImplant()
-				: renderStandard()}
+			<AnatomicalToothSVG
+				number={number}
+				state={state}
+				scale={scale}
+				material={material}
+				canalObturation={canalObturation}
+				hasPost={hasPost}
+				postType={postType}
+				boneLossLevel={boneLossLevel}
+				boneLossType={boneLossType}
+				furcation={furcation}
+				mobility={mobility}
+				gingivalRecession={gingivalRecession}
+				bopSites={bopSites}
+				suppurationSites={suppurationSites}
+				periapicalLesion={periapicalLesion}
+				isSelected={isSelected}
+				onClick={onClick}
+				onQuickStateChange={onQuickStateChange}
+				pediatricMode={pediatricMode}
+				surfaces={surfaces}
+				useSurfaces={useSurfaces}
+				showPulpAndCanals={showPulpAndCanals}
+				showPeriapicalHalos={showPeriapicalHalos}
+				showPeriodontalBoneLoss={showPeriodontalBoneLoss}
+			/>
 			{!isTop && renderNumberBadge()}
 		</button>
 	);
@@ -668,6 +1197,26 @@ function splitArchAtMidline(teeth: number[]): { left: number[]; right: number[] 
 	};
 }
 
+export interface AnatomicalSvgOdontogramProps {
+	teethData: ToothData[];
+	pediatricMode?: boolean | undefined;
+	mixedDentition?: boolean | undefined;
+	topTeeth?: number[] | undefined;
+	bottomTeeth?: number[] | undefined;
+	selectedTeeth?: number[] | undefined;
+	activeStamp?: ToothState | null | undefined;
+	onToothClick: (num: number, rect: DOMRect, surface?: string | undefined) => void;
+	onQuickStateChange?: ((targets: number[], state: ToothState) => void) | undefined;
+	useSurfaces?: boolean | undefined;
+	hideHeader?: boolean | undefined;
+	hideLegend?: boolean | undefined;
+	showWisdomTeeth?: boolean | undefined;
+	showPulpAndCanals?: boolean | undefined;
+	showPeriapicalHalos?: boolean | undefined;
+	showPeriodontalBoneLoss?: boolean | undefined;
+	className?: string | undefined;
+}
+
 export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = ({
 	teethData = [],
 	pediatricMode,
@@ -675,10 +1224,16 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 	topTeeth: customTopTeeth,
 	bottomTeeth: customBottomTeeth,
 	selectedTeeth = [],
+	activeStamp = null,
 	onToothClick,
+	onQuickStateChange,
 	useSurfaces,
 	hideHeader = false,
 	hideLegend = false,
+	showWisdomTeeth = true,
+	showPulpAndCanals = false,
+	showPeriapicalHalos = true,
+	showPeriodontalBoneLoss = true,
 	className = "",
 }) => {
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -686,20 +1241,24 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 	const [archScale, setArchScale] = useState(1);
 	const appliedArchScaleRef = useRef(1);
 
-	const topTeethList =
+	const rawTopTeethList =
 		customTopTeeth ??
 		(mixedDentition
 			? MIXED_TOP_TEETH
 			: pediatricMode
 				? PEDIATRIC_TOP_TEETH
 				: TOP_TEETH);
-	const bottomTeethList =
+	const rawBottomTeethList =
 		customBottomTeeth ??
 		(mixedDentition
 			? MIXED_BOTTOM_TEETH
 			: pediatricMode
 				? PEDIATRIC_BOTTOM_TEETH
 				: BOTTOM_TEETH);
+
+	const isWisdom = (n: number) => n === 18 || n === 28 || n === 38 || n === 48;
+	const topTeethList = showWisdomTeeth ? rawTopTeethList : rawTopTeethList.filter((n) => !isWisdom(n));
+	const bottomTeethList = showWisdomTeeth ? rawBottomTeethList : rawBottomTeethList.filter((n) => !isWisdom(n));
 
 	useEffect(() => {
 		const element = archContainerRef.current;
@@ -717,7 +1276,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 			if (!Number.isFinite(naturalWidth) || naturalWidth <= 0) return;
 
 			const next = Math.min(
-				1,
+				1.25,
 				Math.max(MIN_ARCH_SCALE, available / naturalWidth),
 			);
 			if (Math.abs(applied - next) < 0.005) return;
@@ -729,7 +1288,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 		const observer = new ResizeObserver(recalculate);
 		observer.observe(element);
 		return () => observer.disconnect();
-	}, []);
+	}, [topTeethList, bottomTeethList]);
 
 	const handleToothClick = (
 		e: React.MouseEvent,
@@ -744,48 +1303,37 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 	const bottomSplit = splitArchAtMidline(bottomTeethList);
 
 	return (
-		<div className={`tooth-chart-container ${className}`.trim()} ref={containerRef}>
+		<div className={`tooth-chart-container anatomical-svg-mode ${className}`.trim()} ref={containerRef}>
 			<DenteToothSvgDefs />
 
-			{!hideHeader && (
-				<div className="tooth-chart-header">
-					<h2 className="tooth-chart-title">
-						<Sparkles size={18} className="text-indigo-600 dark:text-indigo-400" />
-						<span>3D Анатомическая формула (FDI)</span>
-						{pediatricMode && (
-							<span className="text-xs px-2 py-0.5 rounded-full bg-pink-100 dark:bg-pink-950/70 text-pink-700 dark:text-pink-300 font-bold border border-pink-300 dark:border-pink-800">
-								Детская
-							</span>
-						)}
-					</h2>
-					{!hideLegend && (
-						<div className="tooth-chart-legend">
-							<span className="tooth-chart-legend-item">
-								<span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm" /> Кариес
-							</span>
-							<span className="tooth-chart-legend-item">
-								<span className="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-sm" /> Пульпит
-							</span>
-							<span className="tooth-chart-legend-item">
-								<span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm" /> Периодонтит
-							</span>
-							<span className="tooth-chart-legend-item">
-								<span className="w-2.5 h-2.5 rounded-full bg-teal-500 shadow-sm" /> Пломба
-							</span>
-							<span className="tooth-chart-legend-item">
-								<span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm" /> Коронка
-							</span>
-							<span className="tooth-chart-legend-item">
-								<span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm" /> Имплант
-							</span>
-							<span className="tooth-chart-legend-item">
-								<span className="w-2.5 h-2.5 rounded-full bg-indigo-400 border border-indigo-500" /> План
-							</span>
-							<span className="tooth-chart-legend-item">
-								<span className="w-2.5 h-2.5 rounded-full bg-slate-400 opacity-50" /> Отсутствует
-							</span>
-						</div>
-					)}
+			{!hideLegend && (
+				<div className="tooth-chart-legend-row">
+					<div className="tooth-chart-legend">
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm" /> Кариес
+						</span>
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-sm" /> Пульпит
+						</span>
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm" /> Периодонтит
+						</span>
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-teal-500 shadow-sm" /> Пломба
+						</span>
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm" /> Коронка
+						</span>
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm" /> Имплант
+						</span>
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-indigo-400 border border-indigo-500" /> План
+						</span>
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-slate-400 opacity-50" /> Отсутствует
+						</span>
+					</div>
 				</div>
 			)}
 
@@ -802,17 +1350,25 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 					<div className="teeth-row top-row">
 						<div className="tooth-quadrant-group top-left-quad">
 							{topSplit.left.map((num) => {
-								const tData = (teethData ?? []).find((t) => t.toothNumber === num);
+								const tData: ToothData = (teethData ?? []).find((t) => t.toothNumber === num) ?? {
+									toothNumber: num,
+									state: "Healthy",
+								};
 								return (
-									<AnatomicalToothSVG
+									<ToothWrapper
 										key={num}
-										number={num}
+										tooth={tData}
 										scale={archScale}
-										state={tData ? tData.state : "Healthy"}
-										surfaces={tData?.surfaces}
-										useSurfaces={useSurfaces}
+										isTop={true}
 										isSelected={selectedTeeth.includes(num)}
+										activeStamp={activeStamp}
 										onClick={handleToothClick}
+										onQuickStateChange={onQuickStateChange}
+										useSurfaces={useSurfaces}
+										showPulpAndCanals={showPulpAndCanals}
+										showPeriapicalHalos={showPeriapicalHalos}
+										showPeriodontalBoneLoss={showPeriodontalBoneLoss}
+										pediatricMode={pediatricMode}
 									/>
 								);
 							})}
@@ -824,17 +1380,25 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 
 						<div className="tooth-quadrant-group top-right-quad">
 							{topSplit.right.map((num) => {
-								const tData = (teethData ?? []).find((t) => t.toothNumber === num);
+								const tData: ToothData = (teethData ?? []).find((t) => t.toothNumber === num) ?? {
+									toothNumber: num,
+									state: "Healthy",
+								};
 								return (
-									<AnatomicalToothSVG
+									<ToothWrapper
 										key={num}
-										number={num}
+										tooth={tData}
 										scale={archScale}
-										state={tData ? tData.state : "Healthy"}
-										surfaces={tData?.surfaces}
-										useSurfaces={useSurfaces}
+										isTop={true}
 										isSelected={selectedTeeth.includes(num)}
+										activeStamp={activeStamp}
 										onClick={handleToothClick}
+										onQuickStateChange={onQuickStateChange}
+										useSurfaces={useSurfaces}
+										showPulpAndCanals={showPulpAndCanals}
+										showPeriapicalHalos={showPeriapicalHalos}
+										showPeriodontalBoneLoss={showPeriodontalBoneLoss}
+										pediatricMode={pediatricMode}
 									/>
 								);
 							})}
@@ -852,17 +1416,25 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 					<div className="teeth-row bottom-row">
 						<div className="tooth-quadrant-group bottom-left-quad">
 							{bottomSplit.left.map((num) => {
-								const tData = (teethData ?? []).find((t) => t.toothNumber === num);
+								const tData: ToothData = (teethData ?? []).find((t) => t.toothNumber === num) ?? {
+									toothNumber: num,
+									state: "Healthy",
+								};
 								return (
-									<AnatomicalToothSVG
+									<ToothWrapper
 										key={num}
-										number={num}
+										tooth={tData}
 										scale={archScale}
-										state={tData ? tData.state : "Healthy"}
-										surfaces={tData?.surfaces}
-										useSurfaces={useSurfaces}
+										isTop={false}
 										isSelected={selectedTeeth.includes(num)}
+										activeStamp={activeStamp}
 										onClick={handleToothClick}
+										onQuickStateChange={onQuickStateChange}
+										useSurfaces={useSurfaces}
+										showPulpAndCanals={showPulpAndCanals}
+										showPeriapicalHalos={showPeriapicalHalos}
+										showPeriodontalBoneLoss={showPeriodontalBoneLoss}
+										pediatricMode={pediatricMode}
 									/>
 								);
 							})}
@@ -874,17 +1446,25 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 
 						<div className="tooth-quadrant-group bottom-right-quad">
 							{bottomSplit.right.map((num) => {
-								const tData = (teethData ?? []).find((t) => t.toothNumber === num);
+								const tData: ToothData = (teethData ?? []).find((t) => t.toothNumber === num) ?? {
+									toothNumber: num,
+									state: "Healthy",
+								};
 								return (
-									<AnatomicalToothSVG
+									<ToothWrapper
 										key={num}
-										number={num}
+										tooth={tData}
 										scale={archScale}
-										state={tData ? tData.state : "Healthy"}
-										surfaces={tData?.surfaces}
-										useSurfaces={useSurfaces}
+										isTop={false}
 										isSelected={selectedTeeth.includes(num)}
+										activeStamp={activeStamp}
 										onClick={handleToothClick}
+										onQuickStateChange={onQuickStateChange}
+										useSurfaces={useSurfaces}
+										showPulpAndCanals={showPulpAndCanals}
+										showPeriapicalHalos={showPeriapicalHalos}
+										showPeriodontalBoneLoss={showPeriodontalBoneLoss}
+										pediatricMode={pediatricMode}
 									/>
 								);
 							})}

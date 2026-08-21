@@ -1,21 +1,23 @@
-:root {
-	--odontogram-paper: var(--paper);
-	--odontogram-surface: var(--paper-soft);
-	--odontogram-surface-hover: var(--paper-strong);
-	--odontogram-border: var(--line);
-	--odontogram-border-subtle: var(--line);
-	--odontogram-border-strong: var(--line-strong);
-	--odontogram-ink: var(--ink);
-	--odontogram-ink-muted: var(--muted);
+:root,
+[data-theme="light"],
+.light {
+	--odontogram-paper: var(--paper, #ffffff);
+	--odontogram-surface: var(--paper-soft, #f8fafc);
+	--odontogram-surface-hover: var(--paper-strong, #f1f5f9);
+	--odontogram-border: var(--line, #cbd5e1);
+	--odontogram-border-subtle: var(--line, #e2e8f0);
+	--odontogram-border-strong: var(--line-strong, #94a3b8);
+	--odontogram-ink: var(--ink, #0f172a);
+	--odontogram-ink-muted: var(--muted, #64748b);
 	--odontogram-ink-subtle: var(--ink-muted, #475569);
-	--tooth-root-fill: var(--paper-soft, #f8fafc);
-	--tooth-root-stroke: var(--line-strong, #cbd5e1);
-	--tooth-crown-fill: var(--paper, #ffffff);
-	--tooth-badge-bg: var(--paper-soft, #f1f5f9);
-	--tooth-badge-border: var(--line, #e2e8f0);
+	--tooth-root-fill: #f1ede4;
+	--tooth-root-stroke: #64748b;
+	--tooth-crown-fill: #ffffff;
+	--tooth-badge-bg: #f8fafc;
+	--tooth-badge-border: #cbd5e1;
 }
 
-:is([data-theme="dark"], .dark) {
+:is([data-theme="dark"], html.dark:not([data-theme="light"]):not(.light), body.dark:not([data-theme="light"]):not(.light)) {
 	--odontogram-paper: var(--paper, #0f172a);
 	--odontogram-surface: var(--paper-soft, #020617);
 	--odontogram-surface-hover: var(--paper-strong, #1e293b);
@@ -25,11 +27,11 @@
 	--odontogram-ink: var(--ink, #f8fafc);
 	--odontogram-ink-muted: var(--muted, #94a3b8);
 	--odontogram-ink-subtle: var(--muted, #94a3b8);
-	--tooth-root-fill: var(--paper-soft, #1e293b);
-	--tooth-root-stroke: var(--line-strong, #475569);
-	--tooth-crown-fill: var(--paper-strong, #334155);
-	--tooth-badge-bg: rgba(30, 41, 59, 0.9);
-	--tooth-badge-border: rgba(71, 85, 105, 0.6);
+	--tooth-root-fill: #1e293b;
+	--tooth-root-stroke: #64748b;
+	--tooth-crown-fill: #334155;
+	--tooth-badge-bg: rgba(30, 41, 59, 0.95);
+	--tooth-badge-border: rgba(100, 116, 139, 0.6);
 }
 
 [data-theme="night"],
@@ -58,8 +60,8 @@
 	--odontogram-border-subtle: rgba(0, 240, 255, 0.18);
 	--odontogram-border-strong: rgba(0, 240, 255, 0.55);
 	--odontogram-ink: #e0f2fe;
-	--odontogram-ink-muted: #00f0ff;
-	--odontogram-ink-subtle: #38bdf8;
+	--odontogram-ink-muted: #38bdf8;
+	--odontogram-ink-subtle: #00f0ff;
 	--tooth-root-fill: #0a1532;
 	--tooth-root-stroke: #0284c7;
 	--tooth-crown-fill: #0d1a3a;
@@ -126,7 +128,7 @@
 	--odontogram-border-subtle: #fef08a;
 	--odontogram-border-strong: #f59e0b;
 	--odontogram-ink: #451a03;
-	--odontogram-ink-muted: #b45309;
+	--odontogram-ink-muted: #92400e;
 	--odontogram-ink-subtle: #78350f;
 	--tooth-root-fill: #fef3c7;
 	--tooth-root-stroke: #f59e0b;
@@ -143,7 +145,7 @@
 	--odontogram-border-subtle: #ccfbf1;
 	--odontogram-border-strong: #5eead4;
 	--odontogram-ink: #134e4a;
-	--odontogram-ink-muted: #0d9488;
+	--odontogram-ink-muted: #0f766e;
 	--odontogram-ink-subtle: #115e59;
 	--tooth-root-fill: #e6fffa;
 	--tooth-root-stroke: #5eead4;
@@ -206,12 +208,11 @@
 	display: flex;
 	flex-direction: column;
 	min-width: 0;
-	padding: 24px;
-	background-color: var(--odontogram-surface);
-	backdrop-filter: blur(16px);
-	border: 1px solid var(--odontogram-border);
-	border-radius: 16px;
-	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+	width: 100%;
+	padding: 4px 0;
+	background: transparent;
+	border: none;
+	box-shadow: none;
 	position: relative;
 }
 
@@ -221,8 +222,9 @@
 		padding: 12px 8px;
 	}
 	.tooth-chart-container {
-		padding: 12px 8px;
-		border-radius: 12px;
+		padding: 4px 0;
+		border: none;
+		box-shadow: none;
 	}
 	.tooth-chart-header {
 		padding: 0 4px;
@@ -244,7 +246,7 @@
 	align-items: center;
 	flex-wrap: wrap;
 	gap: 12px;
-	margin-bottom: 24px;
+	margin-bottom: 12px;
 	padding: 0 8px;
 }
 
@@ -257,18 +259,28 @@
 	gap: 10px;
 }
 
+.tooth-chart-legend-row {
+	display: flex;
+	width: 100%;
+	justify-content: center;
+	align-items: center;
+	margin-bottom: 12px;
+	padding: 0 4px;
+}
+
 .tooth-chart-legend {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 8px 14px;
-	font-size: 12px;
+	justify-content: center;
+	align-items: center;
+	gap: 6px 12px;
+	font-size: 11px;
 	font-weight: 600;
 	color: var(--odontogram-ink-muted);
-	background-color: var(--odontogram-surface-hover);
-	padding: 8px 12px;
-	border-radius: 12px;
+	background-color: var(--odontogram-surface);
+	padding: 4px 14px;
+	border-radius: 9999px;
 	border: 1px solid var(--odontogram-border-subtle);
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .tooth-chart-legend-item {
@@ -284,6 +296,20 @@
 	margin: 0 auto;
 	overflow-x: auto;
 	padding: 16px 0;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: thin;
+}
+
+@media (min-width: 1440px) {
+	.tooth-chart-arch-container {
+		overflow-x: auto;
+		display: flex;
+		justify-content: center;
+	}
+	.tooth-chart-arch-wrapper {
+		width: 100%;
+		max-width: 1550px;
+	}
 }
 
 .tooth-chart-arch-wrapper {
@@ -295,8 +321,10 @@
 
 .tooth-quadrant-group {
 	display: flex;
+	flex-direction: row;
 	align-items: center;
-	gap: 3px;
+	flex-wrap: nowrap;
+	gap: 4px;
 	flex-shrink: 0;
 }
 
@@ -329,8 +357,9 @@
 	align-items: center;
 	justify-content: center;
 	cursor: pointer;
-	padding: 4px 1px;
-	min-width: 0;
+	padding: 4px 2px;
+	min-width: 28px;
+	min-height: 48px;
 	border-radius: 10px;
 	transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
 		box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
@@ -340,6 +369,15 @@
 	background: transparent;
 	border: none;
 	outline: none;
+}
+
+.tooth-svg-wrapper::before {
+	content: "";
+	position: absolute;
+	inset: -4px -2px;
+	min-height: 44px;
+	min-width: 44px;
+	pointer-events: auto;
 }
 
 .tooth-svg-wrapper:hover {
@@ -359,20 +397,21 @@
 }
 
 .tooth-svg-element {
-	filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
-	transition: filter 0.2s ease;
+	filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.12));
+	transition: filter 0.2s ease, transform 0.2s ease;
 }
 
 .tooth-svg-wrapper:hover .tooth-svg-element {
-	filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+	filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.22));
 }
 
 .tooth-number-badge {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	gap: 3px;
-	padding: 1.5px 5px;
+	gap: 4px;
+	padding: 2.5px 7px;
+	min-width: 24px;
 	border-radius: 8px;
 	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 	font-size: 11px;
@@ -381,7 +420,7 @@
 	color: var(--odontogram-ink);
 	background-color: var(--tooth-badge-bg);
 	border: 1px solid var(--tooth-badge-border);
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 	transition: all 0.2s ease;
 }
 
@@ -420,6 +459,30 @@
 	animation: pulsePeriapical 1.8s ease-in-out infinite alternate;
 }
 
+/* Restorative Material Shader Layers & Micro-textures */
+.composite-material-layer,
+.amalgam-material-layer,
+.ceramic-glaze-layer,
+.crown-restoration-accents,
+.gold-marginal-burnish-layer,
+.root-canal-obturation-layer,
+.gingival-recession-line {
+	pointer-events: none;
+}
+
+.periodontal-furcation-markers {
+	pointer-events: auto;
+}
+
+.furcation-marker-group {
+	cursor: help;
+	transition: transform 0.15s ease;
+}
+
+.furcation-marker-group:hover {
+	transform: scale(1.25);
+}
+
 .odontogram-treatment-area {
 	width: 100%;
 	display: flex;
@@ -441,6 +504,22 @@
 	box-shadow:
 		inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
 		0 25px 50px -12px rgba(0, 0, 0, 0.4);
+}
+
+.radial-item-btn {
+	width: max-content !important;
+	white-space: nowrap !important;
+	display: inline-flex !important;
+	flex-direction: row !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 6px !important;
+	padding: 7px 13px !important;
+	border-radius: 9999px !important;
+	min-height: 38px !important;
+	border: 1px solid rgba(255, 255, 255, 0.25) !important;
+	z-index: 30;
+	user-select: none;
 }
 
 .tooth-radial-menu::after {
@@ -930,11 +1009,12 @@
 
 .teeth-row {
 	display: flex;
-	justify-content: center;
+	flex-direction: row;
 	align-items: center;
+	justify-content: center;
+	flex-wrap: nowrap;
 	gap: 6px;
-	width: max-content;
-	margin: 0 auto;
+	width: 100%;
 }
 
 .teeth-row.top-row {
@@ -1024,7 +1104,7 @@
 }
 
 .estimator-title svg {
-	color: #10b981;
+	color: var(--teal, #10b981);
 }
 
 .estimator-actions {
@@ -1036,8 +1116,8 @@
 .badge-signed {
 	font-size: 11px;
 	font-weight: 700;
-	color: #10b981;
-	background-color: rgba(16, 185, 129, 0.1);
+	color: var(--ok-fg, #10b981);
+	background-color: var(--ok-bg, rgba(16, 185, 129, 0.1));
 	padding: 4px 8px;
 	border-radius: 6px;
 	letter-spacing: 0.05em;
@@ -1068,9 +1148,9 @@
 	align-items: center;
 	gap: 8px;
 	padding: 8px 16px;
-	background-color: #10b981;
-	border: 1px solid #059669;
-	color: #ffffff;
+	background-color: var(--teal-fill, var(--teal));
+	border: 1px solid var(--teal-dark, #059669);
+	color: var(--on-teal, #ffffff);
 	border-radius: 8px;
 	font-size: 14px;
 	font-weight: 500;
@@ -1079,8 +1159,8 @@
 }
 
 .btn-save:hover {
-	background-color: #059669;
-	box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+	background-color: var(--teal-dark, #059669);
+	box-shadow: 0 4px 12px var(--teal-glow, rgba(16, 185, 129, 0.25));
 }
 
 .btn-save:disabled {
@@ -1215,8 +1295,8 @@
 }
 
 .btn-remove-item:hover {
-	background-color: rgba(239, 68, 68, 0.1);
-	color: #ef4444;
+	background-color: var(--bad-bg, rgba(239, 68, 68, 0.1));
+	color: var(--bad-fg, #ef4444);
 }
 
 .plan-item-footer {
@@ -1240,13 +1320,13 @@
 }
 
 .select-phase:focus {
-	border-color: #10b981;
+	border-color: var(--teal, #10b981);
 }
 
 .plan-item-total-price {
 	font-size: 14px;
 	font-weight: 700;
-	color: #10b981;
+	color: var(--ok-fg, #10b981);
 }
 
 .estimator-footer {
