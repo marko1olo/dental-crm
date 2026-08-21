@@ -5,6 +5,7 @@ import {
 	Clock,
 	FileText,
 	Lock,
+	Palette,
 	Pill,
 	Plus,
 	Printer,
@@ -19,6 +20,8 @@ import {
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { DocumentCustomizerModal } from "../documents/DocumentCustomizerModal";
+import { PremiumDocumentPrintSheet } from "../documents/PremiumDocumentPrintSheet";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import {
@@ -54,7 +57,10 @@ import { EgiszCdaExportModal } from "../egisz/EgiszCdaExportModal";
 import { PrescriptionModal } from "./PrescriptionModal";
 import { RadiologyReferralModal } from "./RadiologyReferralModal";
 import { realVisitFieldId } from "./visitIdentity";
-import { VisitSummaryModal } from "./VisitSummaryModal";
+import {
+	type RadiologySnapshotItem,
+	VisitSummaryModal,
+} from "./VisitSummaryModal";
 import "../../styles/visit-diary-043.css";
 
 export interface VisitDiarySectionProps {
@@ -145,6 +151,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 	const [showRadiologyReferralModal, setShowRadiologyReferralModal] =
 		useState(false);
 	const [showEgiszModal, setShowEgiszModal] = useState(false);
+	const [showBrandingCustomizer, setShowBrandingCustomizer] = useState(false);
 	const [activeTeeth, setActiveTeeth] = useState<
 		readonly {
 			toothNumber: number;
@@ -174,6 +181,64 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 			cancelled = true;
 		};
 	}, [patientId, teethData]);
+
+	const [radiologySnapshots, setRadiologySnapshots] = useState<
+		readonly RadiologySnapshotItem[]
+	>([]);
+
+	useEffect(() => {
+		if (!patientId) return;
+		let cancelled = false;
+		fetch(`/api/xray/scans?patientId=${encodeURIComponent(patientId)}`, {
+			headers: denteAdminSecretRequestHeaders(),
+		})
+			.then((r) => (r.ok ? r.json() : null))
+			.then((data) => {
+				if (!cancelled && Array.isArray(data)) {
+					const mapped: RadiologySnapshotItem[] = data
+						.map((s: Record<string, unknown>) => {
+							const imgUri =
+								typeof s.imageDataUri === "string"
+									? s.imageDataUri
+									: typeof s.imageBase64 === "string"
+										? s.imageBase64
+										: "";
+							const thumbUri =
+								typeof s.thumbnailDataUri === "string"
+									? s.thumbnailDataUri
+									: imgUri;
+							return {
+								id: typeof s.id === "string" ? s.id : undefined,
+								imageDataUri: imgUri,
+								thumbnailDataUri: thumbUri,
+								title:
+									typeof s.aiSummary === "string"
+										? s.aiSummary
+										: typeof s.originalFilename === "string"
+											? s.originalFilename
+											: "Рентгенологический снимок",
+								kind: typeof s.kind === "string" ? s.kind : undefined,
+								toothCode:
+									typeof s.toothCode === "string" ? s.toothCode : undefined,
+								capturedAt:
+									typeof s.capturedAt === "string"
+										? s.capturedAt
+										: typeof s.createdAt === "string"
+											? s.createdAt
+											: undefined,
+								radiologicalFinding:
+									typeof s.aiReport === "string" ? s.aiReport : undefined,
+							};
+						})
+						.filter((item) => Boolean(item.imageDataUri));
+					setRadiologySnapshots(mapped);
+				}
+			})
+			.catch(() => {});
+		return () => {
+			cancelled = true;
+		};
+	}, [patientId]);
 
 	const handlePrintPhotosChange = useCallback(
 		(photos: readonly DiaryPrintPhoto[]) => {
@@ -506,250 +571,70 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 			aria-label="Медицинская карта Форма 043/у"
 		>
 			<div className="vde-043-print-sheet print-content">
-				<div className="vde-043-print-toolbar no-print">
-					<h3>
+				<div className="vde-043-print-toolbar no-print flex items-center justify-between gap-2 p-3 bg-[var(--paper-soft)] border-b border-[var(--line)]">
+					<div className="flex items-center gap-2">
 						<Printer className="w-5 h-5 text-[var(--teal)]" />
-						Медицинская карта (Форма 043/у)
-					</h3>
-					<button
-						type="button"
-						onClick={() => setShowPreview(false)}
-						className="vde-043__btn vde-043__btn--ghost"
-						data-testid="form-043-close"
-					>
-						<X className="w-4 h-4" /> Закрыть
-					</button>
+						<h3 className="text-sm font-bold m-0">
+							Печатная форма 043/у (Приказ МЗ РФ № 834н)
+						</h3>
+					</div>
+					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							onClick={() => setShowBrandingCustomizer(true)}
+							className="vde-043__btn text-xs"
+							title="Настроить оформление бланка, цвета и реквизиты"
+						>
+							<Palette className="w-4 h-4 text-amber-500" />
+							<span>Настроить бланк</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => window.print()}
+							disabled={printBlocked}
+							title={printBlockedReason}
+							className="vde-043__btn vde-043__btn--primary text-xs font-bold"
+							data-testid="form-043-print"
+						>
+							<Printer className="w-4 h-4" /> Напечатать (Ctrl+P)
+						</button>
+						<button
+							type="button"
+							onClick={() => setShowPreview(false)}
+							className="vde-043__btn vde-043__btn--ghost text-xs"
+							data-testid="form-043-close"
+						>
+							<X className="w-4 h-4" /> Закрыть
+						</button>
+					</div>
 				</div>
 
 				<div className="vde-043-print-body" id="print-043">
-					<div className="vde-043-doc-header page-break-avoid">
-						<h1>Медицинская карта стоматологического больного</h1>
-						<p className="vde-043-doc-sub">
-							Форма № 043/у (Приказ МЗ РФ № 834н)
-						</p>
-					</div>
-
-					{(clinicName ||
-						clinicAddress ||
-						clinicInn ||
-						patientFullName !== "—" ||
-						patientBirthDate ||
-						patientCardNumber ||
-						patientPassport ||
-						patientOms ||
-						patientSnils ||
-						doctorName !== "—") && (
-						<div className="vde-043-doc-meta page-break-avoid">
-							{clinicName ? (
-								<div>
-									<strong>Клиника:</strong> {clinicName}
-								</div>
-							) : null}
-							{clinicAddress ? (
-								<div>
-									<strong>Адрес:</strong> {clinicAddress}
-								</div>
-							) : null}
-							{clinicInn ? (
-								<div>
-									<strong>ИНН:</strong> {clinicInn}
-								</div>
-							) : null}
-							<div>
-								<strong>Пациент:</strong> {patientFullName}
-							</div>
-							{patientBirthDate ? (
-								<div>
-									<strong>Дата рождения:</strong> {patientBirthDate}
-								</div>
-							) : null}
-							{patientCardNumber ? (
-								<div>
-									<strong>№ медкарты:</strong> {patientCardNumber}
-								</div>
-							) : null}
-							{patientPassport ? (
-								<div>
-									<strong>Паспорт / Документ:</strong> {patientPassport}
-								</div>
-							) : null}
-							{patientOms ? (
-								<div>
-									<strong>Полис ОМС / ДМС:</strong> {patientOms}
-								</div>
-							) : null}
-							{patientSnils ? (
-								<div>
-									<strong>СНИЛС:</strong> {patientSnils}
-								</div>
-							) : null}
-							{patientPhone ? (
-								<div>
-									<strong>Телефон:</strong> {patientPhone}
-								</div>
-							) : null}
-							{patientAddress ? (
-								<div>
-									<strong>Адрес:</strong> {patientAddress}
-								</div>
-							) : null}
-							{doctorName !== "—" ? (
-								<div>
-									<strong>Врач:</strong> {doctorName}
-									{doctorSpecialty ? ` (${doctorSpecialty})` : ""}
-								</div>
-							) : null}
-						</div>
-					)}
-
-					{isLocked && diaryHash && hasCryptoSignature && !isRevising && (
-						<div
-							className="vde-043-ecp page-break-avoid"
-							data-testid="form-043-ecp"
-						>
-							<strong>ЭЦП (SHA-256):</strong> {diaryHash}
-							<br />
-							<strong>Подписан:</strong>{" "}
-							{lockedAt ? new Date(lockedAt).toLocaleString("ru-RU") : "—"}
-							{revisionCount > 0 && (
-								<span className="vde-043-ecp-rev">
-									⚠ Ревизий: {revisionCount}
-								</span>
-							)}
-						</div>
-					)}
-
-					{diaryUnread ? (
-						<div className="vde-043-soap-block page-break-avoid">
-							<p>
-								{loadStateText?.title ?? "Записи приёма не загружены"}
-								{loadStateText?.hint ? ` ${loadStateText.hint}` : ""}
-							</p>
-						</div>
-					) : (
-						<div>
-							<div className="vde-043-soap-block page-break-avoid">
-								<h4>S — Жалобы и анамнез (Subjective)</h4>
-								<p>{diary.anamnesis || "—"}</p>
-							</div>
-							<div className="vde-043-soap-block page-break-avoid">
-								<h4>O — Объективный статус (Status Localis)</h4>
-								<p>{diary.statusLocalis || "—"}</p>
-								{activeTeeth &&
-								activeTeeth.length > 0 &&
-								activeTeeth.some((t) => {
-									const s = (t.state || "").toLowerCase();
-									return s !== "healthy" && s !== "" && s !== "0";
-								}) ? (
-									<div className="vde-043-doc-teeth-formula">
-										<div className="vde-043-doc-teeth-title">
-											<strong>Зубная формула (отметки одонтограммы):</strong>
-										</div>
-										<div className="vde-043-doc-teeth-grid">
-											{activeTeeth
-												.filter((t) => {
-													const s = (t.state || "").toLowerCase();
-													return s !== "healthy" && s !== "" && s !== "0";
-												})
-												.map((t) => (
-													<span
-														key={t.toothNumber}
-														className="vde-043-doc-tooth-tag"
-													>
-														<strong>Зуб {t.toothNumber}:</strong> {t.state}
-														{t.surfaces && t.surfaces.length > 0
-															? ` (${t.surfaces.join(", ")})`
-															: ""}
-													</span>
-												))}
-										</div>
-									</div>
-								) : null}
-							</div>
-							<div className="vde-043-soap-block page-break-avoid">
-								<h4>A — Диагноз (Assessment)</h4>
-								<p>
-									<strong>МКБ-10:</strong> {diary.diagnosisIcd10 || "—"}{" "}
-									{icdEntry ? `(${icdEntry.label})` : ""}
-									{diary.diagnosisTooth
-										? ` | Зуб по FDI: ${diary.diagnosisTooth}`
-										: ""}
-								</p>
-							</div>
-							<div className="vde-043-soap-block page-break-avoid">
-								<h4>P — Лечение и план (Plan)</h4>
-								<p>{diary.treatmentDescription || "—"}</p>
-							</div>
-							{(diary.complications || diary.comorbidities) && (
-								<div className="vde-043-soap-block page-break-avoid">
-									<h4>Осложнения и сопутствующие</h4>
-									{diary.complications ? (
-										<p>Осложнения: {diary.complications}</p>
-									) : null}
-									{diary.comorbidities ? (
-										<p>Сопутствующие: {diary.comorbidities}</p>
-									) : null}
-								</div>
-							)}
-							{trayBarcode ? (
-								<div className="vde-043-soap-block page-break-avoid">
-									<h4>Инструментальный лоток</h4>
-									<p>Штрихкод: {trayBarcode}</p>
-								</div>
-							) : null}
-							{printPhotos.length > 0 ? (
-								<div
-									className="vde-043-soap-block vde-043-print-photos page-break-avoid"
-									data-testid="form-043-photos"
-								>
-									<h4>Вложения (фотографии лечения)</h4>
-									<div className="vde-043-print-photos__grid">
-										{(printPhotos ?? []).map((ph) => (
-											<figure
-												key={ph.id}
-												className="vde-043-print-photos__item"
-											>
-												<img src={ph.objectUrl} alt={ph.name} />
-												<figcaption>{ph.name}</figcaption>
-											</figure>
-										))}
-									</div>
-								</div>
-							) : null}
-						</div>
-					)}
-
-					<div className="vde-043-sign-row page-break-avoid">
-						<div>Подпись врача: ___________________</div>
-						<div>
-							Дата:{" "}
-							{lockedAt
-								? new Date(lockedAt).toLocaleDateString("ru-RU")
-								: lastSavedAt
-									? lastSavedAt.toLocaleDateString("ru-RU")
-									: "—"}
-						</div>
-					</div>
-				</div>
-
-				<div className="vde-043-print-footer no-print">
-					<button
-						type="button"
-						onClick={() => setShowPreview(false)}
-						className="vde-043__btn"
-					>
-						Закрыть
-					</button>
-					<button
-						type="button"
-						onClick={() => window.print()}
-						disabled={printBlocked}
-						title={printBlockedReason}
-						className="vde-043__btn vde-043__btn--primary"
-						data-testid="form-043-print"
-					>
-						<Printer className="w-4 h-4" /> Напечатать
-					</button>
+					<PremiumDocumentPrintSheet
+						documentTitle="МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА"
+						documentSubtitle="Форма № 043/у (Утверждена Приказом Минздрава России № 834н)"
+						patient={{
+							fullName: patientFullName !== "—" ? patientFullName : null,
+							birthDate: patientBirthDate || null,
+							medicalCardNumber: patientCardNumber || null,
+							passport: patientPassport || null,
+							omsPolis: patientOms || null,
+							snils: patientSnils || null,
+							phone: patientPhone || null,
+							address: patientAddress || null,
+						}}
+						doctorName={doctorName !== "—" ? doctorName : null}
+						doctorSpecialty={doctorSpecialty || null}
+						visitDate={lastSavedAt || new Date()}
+						diary={diary}
+						icd10Label={icdEntry ? icdEntry.label : null}
+						teethData={activeTeeth as any}
+						radiologySnapshots={radiologySnapshots}
+						diaryHash={diaryHash}
+						hasCryptoSignature={hasCryptoSignature}
+						lockedAt={lockedAt}
+						revisionCount={revisionCount}
+					/>
 				</div>
 			</div>
 		</div>
@@ -834,6 +719,16 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					>
 						<ShieldCheck className="w-4 h-4 text-emerald-600" />
 						СЭМД ЕГИСЗ
+					</button>
+					<button
+						type="button"
+						data-testid="open-branding-customizer-btn"
+						onClick={() => setShowBrandingCustomizer(true)}
+						className="vde-043__btn"
+						title="Настроить фирменный бланк клиники, цвета, логотип и реквизиты"
+					>
+						<Palette className="w-4 h-4 text-amber-500" />
+						Бланк и стиль
 					</button>
 					<button
 						type="button"
@@ -1685,6 +1580,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				hasCryptoSignature={hasCryptoSignature}
 				isLocked={isLocked}
 				teethData={activeTeeth}
+				radiologySnapshots={radiologySnapshots}
 				onPrint={() => setShowPreview(true)}
 				onOpenPrescription={() => setShowPrescriptionModal(true)}
 				onOpenRadiologyReferral={() => setShowRadiologyReferralModal(true)}

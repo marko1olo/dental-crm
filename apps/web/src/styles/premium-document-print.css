@@ -1,0 +1,429 @@
+/**
+ * Премиальные стили генерации и печати документов DENTE Dental CRM.
+ * Поддерживает кастомизацию бланков, цветовую палитру (Navy, Teal, Burgundy, Slate, Gold),
+ * шрифты (Sans, Serif, Mono), печать A4 с 0% обрезки полей, QR-код верификации и гербовые рамки.
+ */
+
+:root {
+	--doc-primary: #0f766e;
+	--doc-primary-dark: #134e4a;
+	--doc-soft-bg: #f0fdfa;
+	--doc-border: #cbd5e1;
+	--doc-accent-border: #99f6e4;
+	--doc-ink: #0f172a;
+	--doc-muted: #475569;
+	--doc-paper: #ffffff;
+}
+
+/* ── Brand Color Palettes ── */
+.doc-palette-medical_navy {
+	--doc-primary: #1e3a8a;
+	--doc-primary-dark: #172554;
+	--doc-soft-bg: #eff6ff;
+	--doc-accent-border: #93c5fd;
+}
+
+.doc-palette-deep_teal {
+	--doc-primary: #0f766e;
+	--doc-primary-dark: #134e4a;
+	--doc-soft-bg: #f0fdfa;
+	--doc-accent-border: #99f6e4;
+}
+
+.doc-palette-royal_burgundy {
+	--doc-primary: #831843;
+	--doc-primary-dark: #701a75;
+	--doc-soft-bg: #fdf2f8;
+	--doc-accent-border: #fbcfe8;
+}
+
+.doc-palette-pure_slate {
+	--doc-primary: #0f172a;
+	--doc-primary-dark: #020617;
+	--doc-soft-bg: #f8fafc;
+	--doc-accent-border: #cbd5e1;
+}
+
+.doc-palette-gold_luxury {
+	--doc-primary: #b45309;
+	--doc-primary-dark: #78350f;
+	--doc-soft-bg: #fffbeb;
+	--doc-accent-border: #fde68a;
+}
+
+/* ── Font Families ── */
+.doc-font-sans {
+	font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+}
+
+.doc-font-serif {
+	font-family: "PT Serif", "Merriweather", "Georgia", "Times New Roman", serif;
+}
+
+.doc-font-mono {
+	font-family: "JetBrains Mono", "SF Mono", "Consolas", monospace;
+}
+
+/* ── Document Container on Screen ── */
+.premium-doc-sheet {
+	width: 100%;
+	max-width: 210mm;
+	min-height: 297mm;
+	margin: 0 auto;
+	padding: 16mm 18mm;
+	background: var(--doc-paper);
+	color: var(--doc-ink);
+	box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+	box-sizing: border-box;
+	position: relative;
+	overflow: hidden;
+}
+
+.doc-density-compact .premium-doc-sheet {
+	padding: 10mm 12mm;
+	font-size: 0.85rem;
+}
+
+.doc-density-comfortable .premium-doc-sheet {
+	padding: 16mm 18mm;
+	font-size: 0.95rem;
+}
+
+.doc-density-formal .premium-doc-sheet {
+	padding: 20mm 20mm;
+	font-size: 0.9rem;
+}
+
+/* ── Header Styles ── */
+.doc-header-modern-split {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 1.5rem;
+	padding-bottom: 1rem;
+	border-bottom: 2px solid var(--doc-primary);
+	margin-bottom: 1.25rem;
+}
+
+.doc-header-classic-centered {
+	text-align: center;
+	padding-bottom: 1rem;
+	border-bottom: 2px solid var(--doc-primary);
+	margin-bottom: 1.25rem;
+}
+
+.doc-header-minimal-clean {
+	padding-bottom: 0.75rem;
+	border-bottom: 1px solid var(--doc-border);
+	margin-bottom: 1rem;
+}
+
+.doc-brand-title {
+	font-size: 1.25rem;
+	font-weight: 800;
+	color: var(--doc-primary);
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+}
+
+.doc-brand-slogan {
+	font-size: 0.75rem;
+	color: var(--doc-muted);
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	margin-top: 0.2rem;
+}
+
+.doc-clinic-meta {
+	font-size: 0.75rem;
+	color: var(--doc-muted);
+	line-height: 1.4;
+}
+
+/* ── Official Document Title ── */
+.doc-official-title-box {
+	text-align: center;
+	margin: 1rem 0 1.25rem;
+}
+
+.doc-official-title-box h1 {
+	font-size: 1.15rem;
+	font-weight: 900;
+	text-transform: uppercase;
+	color: var(--doc-primary-dark);
+	margin: 0;
+	letter-spacing: 0.02em;
+}
+
+.doc-official-title-box .doc-form-sub {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--doc-muted);
+	margin-top: 0.25rem;
+}
+
+/* ── Patient & Visit Grid Table ── */
+.doc-meta-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-bottom: 1.25rem;
+	font-size: 0.825rem;
+	border: 1px solid var(--doc-border);
+	background: var(--doc-soft-bg);
+	border-radius: 6px;
+	overflow: hidden;
+}
+
+.doc-meta-table td {
+	padding: 0.4rem 0.6rem;
+	border: 1px solid var(--doc-border);
+	vertical-align: top;
+}
+
+.doc-meta-table .doc-label {
+	font-weight: 700;
+	color: var(--doc-primary-dark);
+	width: 25%;
+	background: rgba(255, 255, 255, 0.6);
+}
+
+.doc-meta-table .doc-val {
+	color: var(--doc-ink);
+	font-weight: 500;
+}
+
+/* ── SOAP & Clinical Blocks ── */
+.doc-soap-section {
+	margin-bottom: 1rem;
+	page-break-inside: avoid;
+	break-inside: avoid;
+}
+
+.doc-soap-heading {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.35rem 0.6rem;
+	background: var(--doc-soft-bg);
+	border-left: 4px solid var(--doc-primary);
+	font-size: 0.85rem;
+	font-weight: 800;
+	color: var(--doc-primary-dark);
+	margin-bottom: 0.35rem;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.doc-soap-text {
+	padding: 0.25rem 0.6rem 0.5rem;
+	font-size: 0.85rem;
+	line-height: 1.5;
+	color: var(--doc-ink);
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+/* ── Embedded Dental Odontogram Diagram ── */
+.doc-odontogram-box {
+	margin: 1rem 0;
+	padding: 0.75rem;
+	border: 1px dashed var(--doc-border);
+	border-radius: 8px;
+	background: #ffffff;
+	page-break-inside: avoid;
+	break-inside: avoid;
+}
+
+.doc-teeth-formula-grid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem;
+	margin-top: 0.5rem;
+}
+
+.doc-tooth-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0.2rem 0.5rem;
+	border-radius: 4px;
+	border: 1px solid var(--doc-border);
+	background: #ffffff;
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+
+.doc-tooth-pill strong {
+	color: var(--doc-primary);
+}
+
+/* ── High-DPI Radiology Thumbnails ── */
+.doc-radiology-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+	gap: 0.75rem;
+	margin: 0.75rem 0;
+	page-break-inside: avoid;
+	break-inside: avoid;
+}
+
+.doc-radiology-card {
+	border: 1px solid var(--doc-border);
+	border-radius: 6px;
+	padding: 0.4rem;
+	background: #ffffff;
+}
+
+.doc-radiology-card img {
+	width: 100%;
+	height: 110px;
+	object-fit: cover;
+	border-radius: 4px;
+	border: 1px solid #e2e8f0;
+	display: block;
+}
+
+.doc-radiology-meta {
+	font-size: 0.7rem;
+	margin-top: 0.3rem;
+	color: var(--doc-muted);
+}
+
+.doc-radiology-meta strong {
+	color: var(--doc-primary-dark);
+}
+
+/* ── Signatures & Stamp Zone ── */
+.doc-sign-zone {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 2rem;
+	margin-top: 2rem;
+	padding-top: 1.5rem;
+	border-top: 1px solid var(--doc-border);
+	page-break-inside: avoid;
+	break-inside: avoid;
+}
+
+.doc-signature-block {
+	flex: 1;
+	min-width: 0;
+}
+
+.doc-sign-line {
+	height: 1px;
+	background: #94a3b8;
+	margin-top: 2.5rem;
+	position: relative;
+}
+
+.doc-sign-hint {
+	font-size: 0.65rem;
+	color: var(--doc-muted);
+	text-align: center;
+	margin-top: 0.2rem;
+}
+
+.doc-stamp-box {
+	width: 80px;
+	height: 80px;
+	border: 1.5px dashed var(--doc-border);
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--doc-muted);
+	text-transform: uppercase;
+	margin: 0 auto;
+}
+
+/* ── Verification QR Stamp ── */
+.doc-qr-stamp {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.5rem 0.75rem;
+	border: 1px solid var(--doc-accent-border);
+	background: var(--doc-soft-bg);
+	border-radius: 6px;
+	max-width: 280px;
+}
+
+.doc-qr-meta {
+	font-size: 0.65rem;
+	color: var(--doc-muted);
+	line-height: 1.3;
+}
+
+.doc-qr-meta strong {
+	color: var(--doc-primary-dark);
+}
+
+/* ── Footer Disclaimer ── */
+.doc-footer-disclaimer {
+	margin-top: 1.5rem;
+	padding-top: 0.5rem;
+	border-top: 1px solid var(--doc-border);
+	font-size: 0.7rem;
+	color: var(--doc-muted);
+	line-height: 1.4;
+	text-align: justify;
+}
+
+/* ── Print Specific Rules ── */
+@media print {
+	@page {
+		size: A4 portrait;
+		margin: 10mm 12mm;
+	}
+
+	body > *:not(.print-layer) {
+		display: none !important;
+	}
+
+	html,
+	body {
+		background: #ffffff !important;
+		color: #000000 !important;
+		color-scheme: light !important;
+		height: auto !important;
+		overflow: visible !important;
+		margin: 0 !important;
+		padding: 0 !important;
+	}
+
+	.print-layer {
+		display: block !important;
+		position: absolute !important;
+		left: 0 !important;
+		top: 0 !important;
+		width: 100% !important;
+		background: #ffffff !important;
+		color: #000000 !important;
+		padding: 0 !important;
+		box-shadow: none !important;
+	}
+
+	.premium-doc-sheet {
+		box-shadow: none !important;
+		max-width: none !important;
+		width: 100% !important;
+		padding: 0 !important;
+		margin: 0 !important;
+		min-height: auto !important;
+	}
+
+	.no-print {
+		display: none !important;
+	}
+
+	/* Ensure background colors and borders print faithfully */
+	* {
+		-webkit-print-color-adjust: exact !important;
+		print-color-adjust: exact !important;
+	}
+}

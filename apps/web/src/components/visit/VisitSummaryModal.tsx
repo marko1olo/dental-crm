@@ -5,19 +5,55 @@ import {
 	Clock,
 	FileText,
 	Lock,
+	Palette,
 	Pill,
 	Printer,
 	Scan,
 	ShieldCheck,
+	Sparkles,
 	Stethoscope,
 	User,
 	X,
+	ZoomIn,
 } from "lucide-react";
 import type React from "react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { getIcdColor, ICD10_DICTIONARY } from "../../lib/icd10";
 import type { DiaryState } from "../useVisitDiaryLogic";
+import { DocumentCustomizerModal } from "../documents/DocumentCustomizerModal";
+import { PremiumDocumentPrintSheet } from "../documents/PremiumDocumentPrintSheet";
+
+export interface RadiologySnapshotItem {
+	id?: string | undefined;
+	imageDataUri: string;
+	thumbnailDataUri?: string | null | undefined;
+	title?: string | null | undefined;
+	kind?: string | null | undefined;
+	toothCode?: string | null | undefined;
+	capturedAt?: string | null | undefined;
+	exposureTimeSec?: number | null | undefined;
+	exposureParameters?:
+		| {
+				exposureTimeSec?: number | null | undefined;
+				mAs?: number | null | undefined;
+				kVp?: number | null | undefined;
+				sensorType?: string | null | undefined;
+		  }
+		| null
+		| undefined;
+	radiologicalFinding?: string | null | undefined;
+	protocolText?: string | null | undefined;
+	boneDensity?:
+		| {
+				classification: string;
+				averageHU: number;
+		  }
+		| null
+		| undefined;
+	nerveDistanceMm?: number | null | undefined;
+	clinicalNote?: string | null | undefined;
+}
 
 export interface VisitSummaryModalProps {
 	isOpen: boolean;
@@ -61,6 +97,7 @@ export interface VisitSummaryModalProps {
 		state: string;
 		surfaces?: readonly string[] | null;
 	}[];
+	radiologySnapshots?: readonly RadiologySnapshotItem[];
 	onPrint?: () => void;
 	onOpenPrescription?: () => void;
 	onOpenRadiologyReferral?: () => void;
@@ -91,19 +128,32 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 	hasCryptoSignature,
 	isLocked,
 	teethData = [],
+	radiologySnapshots = [],
 	onPrint,
 	onOpenPrescription,
 	onOpenRadiologyReferral,
 	onOpenEgiszExport,
 }) => {
+	const [zoomImage, setZoomImage] = useState<{
+		url: string;
+		title?: string;
+	} | null>(null);
+	const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
+
 	useEffect(() => {
 		if (!isOpen) return;
 		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === "Escape") onClose();
+			if (e.key === "Escape") {
+				if (zoomImage) {
+					setZoomImage(null);
+				} else {
+					onClose();
+				}
+			}
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isOpen, onClose]);
+	}, [isOpen, onClose, zoomImage]);
 
 	if (!isOpen || typeof document === "undefined") return null;
 
@@ -410,6 +460,122 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 						)}
 					</div>
 
+					{/* Radiology & 3D Visiograph Snapshots */}
+					{radiologySnapshots && radiologySnapshots.length > 0 && (
+						<div
+							className="space-y-3 p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] page-break-avoid"
+							data-testid="summary-radiology-section"
+						>
+							<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-2">
+								<h4 className="text-xs font-bold uppercase tracking-wider text-[var(--teal)] flex items-center gap-1.5">
+									<Scan className="w-4 h-4" />
+									<span>Рентгенологическое обследование и 3D-снапшоты (Форма № 043/у)</span>
+								</h4>
+								<span className="text-[11px] font-semibold text-[var(--muted)]">
+									{radiologySnapshots.length}{" "}
+									{radiologySnapshots.length === 1
+										? "снимок"
+										: radiologySnapshots.length < 5
+											? "снимка"
+											: "снимков"}
+								</span>
+							</div>
+
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+								{radiologySnapshots.map((snap, idx) => (
+									<div
+										key={snap.id || idx}
+										className="flex flex-col sm:flex-row gap-3 p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs overflow-hidden page-break-avoid"
+										data-testid={`radiology-snapshot-card-${idx}`}
+									>
+										<div className="relative w-full sm:w-28 h-28 shrink-0 rounded-lg overflow-hidden border border-[var(--line)] bg-black flex items-center justify-center group">
+											<img
+												src={snap.thumbnailDataUri || snap.imageDataUri}
+												alt={snap.title || `Снимок зуба ${snap.toothCode || "043/у"}`}
+												className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200"
+												style={{ printColorAdjust: "exact", WebkitPrintColorAdjust: "exact" }}
+											/>
+											<button
+												type="button"
+												onClick={() =>
+													setZoomImage({
+														url: snap.imageDataUri,
+														title: snap.toothCode
+															? `Снимок зуба FDI № ${snap.toothCode}`
+															: snap.title || "Рентгенологический снимок",
+													})
+												}
+												className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity no-print"
+												title="Увеличить снимок"
+												aria-label="Увеличить снимок"
+											>
+												<ZoomIn className="w-5 h-5" />
+											</button>
+										</div>
+
+										<div className="flex-1 flex flex-col justify-between gap-1.5 min-w-0">
+											<div>
+												<div className="flex items-center justify-between gap-1">
+													<span className="font-bold text-[var(--ink)] truncate">
+														{snap.toothCode
+															? `Зуб FDI № ${snap.toothCode}`
+															: snap.title || "3D Снимок 043/у"}
+													</span>
+													{snap.boneDensity && (
+														<span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 whitespace-nowrap">
+															{snap.boneDensity.classification} ({Math.round(snap.boneDensity.averageHU)} HU)
+														</span>
+													)}
+												</div>
+
+												<div className="text-[11px] text-[var(--muted)] flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
+													{snap.capturedAt && (
+														<span className="flex items-center gap-1">
+															<Clock className="w-3 h-3" />
+															{new Date(snap.capturedAt).toLocaleString("ru-RU")}
+														</span>
+													)}
+													{snap.exposureTimeSec !== undefined && snap.exposureTimeSec !== null && (
+														<span>
+															⏱ {snap.exposureTimeSec.toFixed(2)} с
+															{snap.exposureParameters?.kVp ? ` (${snap.exposureParameters.kVp} кВ)` : ""}
+														</span>
+													)}
+												</div>
+
+												{snap.radiologicalFinding && (
+													<p className="text-[11px] text-[var(--ink)] mt-1 line-clamp-2 leading-relaxed">
+														{snap.radiologicalFinding}
+													</p>
+												)}
+											</div>
+
+											{snap.nerveDistanceMm !== undefined && snap.nerveDistanceMm !== null && (
+												<div
+													className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold w-fit ${
+														snap.nerveDistanceMm < 2.0
+															? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/30"
+															: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+													}`}
+												>
+													{snap.nerveDistanceMm < 2.0 ? (
+														<>
+															<AlertTriangle className="w-3 h-3" /> Опасная зона ({snap.nerveDistanceMm.toFixed(1)} мм)
+														</>
+													) : (
+														<>
+															<CheckCircle2 className="w-3 h-3" /> Канал: {snap.nerveDistanceMm.toFixed(1)} мм
+														</>
+													)}
+												</div>
+											)}
+										</div>
+									</div>
+								))}
+							</div>
+						</div>
+					)}
+
 					{/* Legal Status Stamp */}
 					{isLocked && diaryHash ? (
 						<div className="flex items-center gap-3 p-4 rounded-xl border border-[var(--teal)] bg-[var(--teal-surface)] text-xs text-[var(--ink)]">
@@ -434,7 +600,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 				</div>
 
 				{/* Modal Footer */}
-				<div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-[var(--line)] bg-[var(--paper-soft)]">
+				<div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-[var(--line)] bg-[var(--paper-soft)] no-print">
 					<button
 						type="button"
 						onClick={onClose}
@@ -443,6 +609,16 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 						Закрыть
 					</button>
 					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							onClick={() => setIsCustomizerOpen(true)}
+							className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl border border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-teal-300 text-sm font-semibold hover:bg-teal-500/20 transition-colors"
+							title="Настроить фирменный бланк клиники, цвета, логотип и реквизиты"
+							data-testid="summary-customize-branding-btn"
+						>
+							<Palette className="w-4 h-4" />
+							<span>Настроить бланк</span>
+						</button>
 						{onOpenPrescription ? (
 							<button
 								type="button"
@@ -485,22 +661,79 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 								СЭМД ЕГИСЗ
 							</button>
 						) : null}
-						{onPrint ? (
-							<button
-								type="button"
-								onClick={() => {
+						<button
+							type="button"
+							onClick={() => {
+								if (onPrint) {
 									onClose();
 									onPrint();
-								}}
-								className="inline-flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] rounded-xl bg-[var(--teal)] text-[var(--on-teal,white)] text-sm font-semibold hover:bg-[var(--teal-dark)] transition-colors"
-							>
-								<Printer className="w-4 h-4" />
-								Печать Формы 043/у
-							</button>
-						) : null}
+								} else {
+									window.print();
+								}
+							}}
+							className="inline-flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] rounded-xl bg-[var(--teal)] text-[var(--on-teal,white)] text-sm font-semibold hover:bg-[var(--teal-dark)] transition-colors"
+							data-testid="summary-print-btn"
+						>
+							<Printer className="w-4 h-4" />
+							Печать Формы 043/у
+						</button>
 					</div>
 				</div>
 			</div>
+
+			{/* Document Customizer Drawer Modal */}
+			<DocumentCustomizerModal
+				isOpen={isCustomizerOpen}
+				onClose={() => setIsCustomizerOpen(false)}
+				samplePatient={{
+					fullName: patientName !== "—" ? patientName : undefined,
+					birthDate: patientBirth || undefined,
+					medicalCardNumber: patientCard || undefined,
+					passport: patientPassport || undefined,
+					omsPolis: patientOms || undefined,
+					snils: patientSnils || undefined,
+					phone: typeof patient?.phone === "string" ? patient.phone : undefined,
+				}}
+				sampleDoctorName={doctorName !== "—" ? (doctorName ?? undefined) : undefined}
+				sampleDoctorSpecialty={doctorSpecialty ?? undefined}
+			/>
+
+			{/* Zoom Lightbox Modal */}
+			{zoomImage && (
+				<div
+					className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150 no-print"
+					role="dialog"
+					aria-modal="true"
+					aria-label="Просмотр снимка"
+					onClick={() => setZoomImage(null)}
+				>
+					<div
+						className="relative max-w-4xl max-h-[90vh] bg-neutral-900 border border-neutral-700 rounded-2xl overflow-hidden shadow-2xl flex flex-col"
+						onClick={(e) => e.stopPropagation()}
+					>
+						<div className="flex items-center justify-between px-4 py-3 border-b border-neutral-800 bg-neutral-950 text-white">
+							<span className="text-sm font-bold truncate">
+								{zoomImage.title || "Рентгенологический снимок (Высокое разрешение)"}
+							</span>
+							<button
+								type="button"
+								onClick={() => setZoomImage(null)}
+								className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
+								aria-label="Закрыть просмотр снимка"
+							>
+								<X className="w-5 h-5" />
+							</button>
+						</div>
+						<div className="flex-1 overflow-auto p-2 bg-black flex items-center justify-center">
+							<img
+								src={zoomImage.url}
+								alt={zoomImage.title || "Снимок"}
+								className="max-w-full max-h-[75vh] object-contain rounded"
+							/>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>,
 		document.body,
 	);
