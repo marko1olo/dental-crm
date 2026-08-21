@@ -1,4 +1,4 @@
-import { Check, Download, FileCode, ScanLine, ShieldCheck } from "lucide-react";
+import { Check, Download, FileCode, Pill, ScanLine, ShieldCheck } from "lucide-react";
 import React from "react";
 import { visitDraftQualityLabels } from "../../AppConstants";
 import {
@@ -18,6 +18,7 @@ import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 import { CompletedServicesChecklist } from "./CompletedServicesChecklist";
 import { EgiszMultipleDiagnosesWidget } from "./EgiszMultipleDiagnosesWidget";
 import { EgiszCdaExportModal } from "../egisz/EgiszCdaExportModal";
+import { PrescriptionModal } from "./PrescriptionModal";
 import { VisitFlowProgress } from "./VisitFlowProgress";
 import {
 	forgetVisitFlowResultOwner,
@@ -93,6 +94,7 @@ export function VisitEmkTab() {
 	 * выносить незачем: держим его здесь.
 	 */
 	const [activeEmkTab, setActiveEmkTab] = React.useState<string>("all");
+	const [isPrescriptionModalOpen, setIsPrescriptionModalOpen] = React.useState<boolean>(false);
 
 	const noteForm = visitNoteForm;
 	/*
@@ -731,7 +733,16 @@ export function VisitEmkTab() {
 							Экспорт готового медицинского документа в формате CDA R2 XML
 						</p>
 					</div>
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2 flex-wrap">
+						<button
+							className="secondary-button flex items-center gap-1.5 text-xs py-1.5 px-3"
+							type="button"
+							onClick={() => setIsPrescriptionModalOpen(true)}
+							data-testid="btn-open-prescription-modal"
+						>
+							<Pill className="w-3.5 h-3.5 text-rose-500" />
+							Рецепт (Форма 107-1/у)
+						</button>
 						<button
 							className="primary-button flex items-center gap-2 text-xs py-1.5 px-3 bg-teal-600 hover:bg-teal-500 text-white rounded-lg shadow-sm"
 							type="button"
@@ -753,6 +764,28 @@ export function VisitEmkTab() {
 						</button>
 					</div>
 				</div>
+
+				{/* Модальное окно рецептурного бланка 107-1/у */}
+				<PrescriptionModal
+					isOpen={isPrescriptionModalOpen}
+					onClose={() => setIsPrescriptionModalOpen(false)}
+					patient={activePatient}
+					diary={{
+						anamnesis: visitNoteForm?.anamnesis || "",
+						statusLocalis: visitNoteForm?.objectiveStatus || "",
+						diagnosisIcd10:
+							(typeof visitNoteForm?.diagnosis === "string"
+								? visitNoteForm.diagnosis.match(/[A-Z]\d{2}(?:\.\d+)?/i)?.[0]
+								: undefined) || "K02.1",
+						diagnosisTooth: "",
+						treatmentDescription: visitNoteForm?.treatmentPlan || "",
+						complications: "",
+						comorbidities: "",
+					}}
+					doctorName={appLogic?.auth?.currentUser?.name || "Лечащий врач стоматолог"}
+					doctorSpecialty="Стоматолог-терапевт"
+					clinicName={dashboard?.clinicSettings?.profile?.brandName || "Клиника ДЕНТЕ"}
+				/>
 
 				{/* Модальное окно валидатора и экспорта СЭМД ЕГИСЗ */}
 				<EgiszCdaExportModal

@@ -137,3 +137,80 @@ export interface CashierInvoiceExportData {
 	readonly notes?: string;
 	readonly createdAtIso: string;
 }
+
+export type MaterialUnitOfMeasure =
+	| "г"
+	| "мл"
+	| "шт."
+	| "карп."
+	| "компл."
+	| "порц."
+	| "упак.";
+
+export interface ProcedureMaterialNorm {
+	readonly id: string;
+	readonly materialName: string;
+	readonly sku?: string;
+	readonly category: string;
+	readonly quantityPerProcedure: number;
+	readonly unitOfMeasure: MaterialUnitOfMeasure;
+	readonly defaultUnitCostRub: number;
+	readonly mandatory: boolean;
+	readonly lotTrackingRequired?: boolean;
+}
+
+export interface PlanStageMaterialRequirement {
+	readonly id: string;
+	readonly materialName: string;
+	readonly order804nCode: string;
+	readonly procedureName: string;
+	readonly toothNumber?: number;
+	readonly quantityRequired: number;
+	readonly unitOfMeasure: MaterialUnitOfMeasure;
+	readonly unitCostRub: number;
+	readonly unitCostKopecks: Kopecks;
+	readonly totalCostRub: number;
+	readonly totalCostKopecks: Kopecks;
+	readonly inventoryItemId?: string;
+	readonly inStockQuantity?: number;
+	readonly isDeficit: boolean;
+	readonly deficitQuantity: number;
+}
+
+export interface StageMaterialCostSummary {
+	readonly stageNumber: number;
+	readonly stageTitle: string;
+	readonly items: readonly PlanStageMaterialRequirement[];
+	readonly totalMaterialsCostKopecks: Kopecks;
+	readonly totalMaterialsCostRub: number;
+	readonly serviceRevenueKopecks: Kopecks;
+	readonly serviceRevenueRub: number;
+	readonly grossMarginKopecks: Kopecks;
+	readonly grossMarginRub: number;
+	readonly marginPercent: number;
+	readonly hasDeficit: boolean;
+	readonly deficitCount: number;
+}
+
+export interface CompletedWorksActAndWriteOffData {
+	readonly actNumber: string;
+	readonly actDate: string;
+	readonly contractNumber: string;
+	readonly patientId: string;
+	readonly patientName: string;
+	readonly doctorFullName: string;
+	readonly clinicName: string;
+	readonly stageNumber: number;
+	readonly stageTitle: string;
+	readonly completedProcedures: readonly TreatmentPlanItem[];
+	readonly writtenOffMaterials: readonly PlanStageMaterialRequirement[];
+	readonly totalServiceRub: number;
+	readonly totalServiceKopecks: Kopecks;
+	readonly totalMaterialCostRub: number;
+	readonly totalMaterialCostKopecks: Kopecks;
+	readonly marginRub: number;
+	readonly marginPercent: number;
+	readonly status: "draft" | "signed" | "executed";
+	readonly createdAtIso: string;
+	readonly executedAtIso?: string;
+}

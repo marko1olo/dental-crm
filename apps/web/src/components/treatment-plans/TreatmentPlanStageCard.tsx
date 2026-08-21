@@ -1,39 +1,52 @@
-/**
- * TreatmentPlanStageCard.tsx — интерактивная карточка клинического этапа плана лечения (Этапы I, II, III).
- */
-
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
 	Activity,
+	AlertTriangle,
 	CheckCircle2,
 	ChevronDown,
 	ChevronUp,
 	Clock,
+	Coins,
 	FileText,
 	Layers,
+	Package,
 	Shield,
 	Sparkles,
 	Stethoscope,
+	TrendingUp,
 	UserCheck,
 } from "lucide-react";
+import {
+	type InventoryItemLookup,
+	calculateStageMaterialRequirements,
+} from "./treatmentPlanMaterialEngine";
 import type { TreatmentPlanStage } from "./types";
 
 interface TreatmentPlanStageCardProps {
 	readonly stage: TreatmentPlanStage;
 	readonly defaultExpanded?: boolean;
+	readonly inventoryItems?: readonly InventoryItemLookup[] | undefined;
 	readonly onUpdateItemQuantity?: (itemId: string, newQty: number) => void;
 	readonly onRemoveItem?: (itemId: string) => void;
+	readonly onExecuteWriteOffStage?: (stage: TreatmentPlanStage) => void;
 	readonly className?: string;
 }
 
 export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 	stage,
 	defaultExpanded = true,
+	inventoryItems,
 	onUpdateItemQuantity,
 	onRemoveItem,
+	onExecuteWriteOffStage,
 	className = "",
 }) => {
 	const [isExpanded, setIsExpanded] = useState<boolean>(defaultExpanded);
+	const [showMaterials, setShowMaterials] = useState<boolean>(false);
+
+	const materialSummary = useMemo(() => {
+		return calculateStageMaterialRequirements(stage, inventoryItems);
+	}, [stage, inventoryItems]);
 
 	const stageColorMap = {
 		1: {
@@ -99,6 +112,11 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 							>
 								{stage.items.length} {stage.items.length === 1 ? "процедура" : "процедур"}
 							</span>
+							{materialSummary.hasDeficit && (
+								<span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/30 flex items-center gap-1">
+									<AlertTriangle size={11} /> Дефицит ТМЦ ({materialSummary.deficitCount})
+								</span>
+							)}
 						</div>
 						<p className="text-xs text-[var(--muted,#64748b)] truncate max-w-xl">
 							{stage.subtitle}
@@ -188,15 +206,135 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 						)}
 					</div>
 
-					{/* Stage Subtotal Footer */}
-					<div className="flex items-center justify-between pt-2 text-xs font-semibold text-[var(--muted,#64748b)] border-t border-[var(--border,#cbd5e1)]">
-						<span>Итого за этап:</span>
-						<span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-							{stage.totalRub.toLocaleString("ru-RU")} ₽
-						</span>
+					{/* Materials & Profitability Expandable Section */}
+					<div className="rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] overflow-hidden">
+						<button
+							type="button"
+							onClick={() => setShowMaterials((prev) => !prev)}
+							className="w-full flex items-center justify-between p-3 text-xs font-bold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition-colors cursor-pointer"
+						>
+							<div className="flex items-center gap-2">
+								<Package size={15} className="text-teal-600 dark:text-teal-400" />
+								<span>
+									Нормы расхода ТМЦ и себестоимость этапа ({materialSummary.items.length} поз.)
+								</span>
+							</div>
+
+							<div className="flex items-center gap-3">
+								<span className="font-mono text-slate-500">
+									Себестоимость:{" "}
+									<strong className="text-slate-800 dark:text-slate-200">
+										{materialSummary.totalMaterialsCostRub.toLocaleString("ru-RU")} ₽
+									</strong>
+								</span>
+								<span className="font-mono text-emerald-600 dark:text-emerald-400">
+									Маржа: <strong>{materialSummary.marginPercent}%</strong>
+								</span>
+								{showMaterials ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+							</div>
+						</button>
+
+						{showMaterials && (
+							<div className="p-3 border-t border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] space-y-3 text-xs">
+								<div className="overflow-x-auto">
+									<table className="w-full border-collapse text-[11px]">
+										<thead>
+											<tr className="border-b border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] text-left">
+												<th className="pb-1 font-semibold">Материал (Норма 804н)</th>
+												<th className="pb-1 font-semibold text-center">Расход</th>
+												<th className="pb-1 font-semibold text-right">Уч. цена</th>
+												<th className="pb-1 font-semibold text-right">Сумма</th>
+												<th className="pb-1 font-semibold text-center">Склад</th>
+											</tr>
+										</thead>
+										<tbody className="divide-y divide-[var(--border,#cbd5e1)]">
+											{materialSummary.items.map((mat) => (
+												<tr key={mat.id} className="text-[var(--ink,#0f172a)]">
+													<td className="py-1.5 pr-2">
+														<span className="font-medium">{mat.materialName}</span>
+														<span className="block text-[9px] text-[var(--muted,#64748b)]">
+															{mat.procedureName} {mat.toothNumber ? `(№${mat.toothNumber})` : ""}
+														</span>
+													</td>
+													<td className="py-1.5 text-center font-mono font-bold">
+														{mat.quantityRequired} {mat.unitOfMeasure}
+													</td>
+													<td className="py-1.5 text-right font-mono text-[var(--muted,#64748b)]">
+														{mat.unitCostRub.toLocaleString("ru-RU")} ₽
+													</td>
+													<td className="py-1.5 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
+														{mat.totalCostRub.toLocaleString("ru-RU")} ₽
+													</td>
+													<td className="py-1.5 text-center font-mono">
+														{mat.inStockQuantity !== undefined ? (
+															mat.isDeficit ? (
+																<span className="text-rose-600 font-bold">
+																	Дефицит ({mat.inStockQuantity} в наличии)
+																</span>
+															) : (
+																<span className="text-emerald-600 dark:text-emerald-400">
+																	{mat.inStockQuantity} {mat.unitOfMeasure}
+																</span>
+															)
+														) : (
+															<span className="text-slate-400">—</span>
+														)}
+													</td>
+												</tr>
+											))}
+										</tbody>
+									</table>
+								</div>
+
+								{/* Margins breakdown */}
+								<div className="flex items-center justify-between p-2.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[11px]">
+									<div>
+										<span className="text-[var(--muted,#64748b)]">Выручка за этап: </span>
+										<strong className="font-mono text-[var(--ink,#0f172a)]">
+											{materialSummary.serviceRevenueRub.toLocaleString("ru-RU")} ₽
+										</strong>
+									</div>
+									<div>
+										<span className="text-[var(--muted,#64748b)]">Себестоимость ТМЦ: </span>
+										<strong className="font-mono text-slate-700 dark:text-slate-300">
+											{materialSummary.totalMaterialsCostRub.toLocaleString("ru-RU")} ₽
+										</strong>
+									</div>
+									<div className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+										<TrendingUp size={13} />
+										<span>
+											Валовая маржа: {materialSummary.grossMarginRub.toLocaleString("ru-RU")} ₽ ({materialSummary.marginPercent}%)
+										</span>
+									</div>
+								</div>
+							</div>
+						)}
+					</div>
+
+					{/* Stage Subtotal & Action Footer */}
+					<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 text-xs font-semibold text-[var(--muted,#64748b)] border-t border-[var(--border,#cbd5e1)]">
+						<div className="flex items-center gap-2">
+							<span>Итого за этап:</span>
+							<span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+								{stage.totalRub.toLocaleString("ru-RU")} ₽
+							</span>
+						</div>
+
+						{onExecuteWriteOffStage && stage.items.length > 0 && (
+							<button
+								type="button"
+								onClick={() => onExecuteWriteOffStage(stage)}
+								className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 cursor-pointer transition-colors"
+								title="Сформировать Акт выполненных работ и провести списание ТМЦ со склада"
+							>
+								<Package size={13} />
+								<span>Акт и списание ТМЦ</span>
+							</button>
+						)}
 					</div>
 				</div>
 			)}
 		</div>
 	);
 };
+

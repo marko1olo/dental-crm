@@ -1,11 +1,13 @@
-import { Activity } from "lucide-react";
+import { Activity, Scan } from "lucide-react";
 import React, { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { usePatientStore } from "../../store/patientStore";
+import { EMPTY_DIARY } from "../useVisitDiaryLogic";
 import { VisiographAnalyzer } from "../imaging/VisiographAnalyzer";
 import { CephalometricAnalysisModal } from "../orthodontics/CephalometricAnalysisModal";
 import { LabOrdersPanel } from "../schedule/LabOrdersPanel";
+import { RadiologyReferralModal } from "./RadiologyReferralModal";
 import { imagingWriteTarget, realVisitFieldId } from "./visitIdentity";
 
 /*
@@ -45,6 +47,7 @@ export function VisitDiagnosticsTab(props?: {
 	const activePatient = props?.activePatient ?? ctx?.activePatient;
 	const workspaceFlags = useWorkspaceProfile();
 	const [isCephModalOpen, setIsCephModalOpen] = useState<boolean>(false);
+	const [isRadiologyModalOpen, setIsRadiologyModalOpen] = useState<boolean>(false);
 
 	const selectedPatientId = usePatientStore((state) => state.selectedPatientId);
 	const setSelectedPatientId = usePatientStore(
@@ -218,6 +221,19 @@ export function VisitDiagnosticsTab(props?: {
 				)
 			) : null}
 
+			{/* Diagnostics Actions Bar */}
+			<div className="flex items-center gap-2 flex-wrap">
+				<button
+					type="button"
+					onClick={() => setIsRadiologyModalOpen(true)}
+					className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-teal-600 hover:bg-teal-500 text-white cursor-pointer transition-colors shadow-sm"
+					data-testid="btn-open-radiology-referral-modal"
+				>
+					<Scan size={14} />
+					<span>Направление на КЛКТ / ОПТГ / ТРГ</span>
+				</button>
+			</div>
+
 			{/* Orthodontic Cephalometric Modal */}
 			<CephalometricAnalysisModal
 				isOpen={isCephModalOpen}
@@ -231,6 +247,16 @@ export function VisitDiagnosticsTab(props?: {
 						ctx.appendToTranscript(`\n\n${text}`);
 					}
 				}}
+			/>
+
+			{/* Dental Radiology Referral Printable Modal */}
+			<RadiologyReferralModal
+				isOpen={isRadiologyModalOpen}
+				onClose={() => setIsRadiologyModalOpen(false)}
+				patient={activePatient}
+				diary={EMPTY_DIARY}
+				doctorName={ctx?.auth?.currentUser?.name || "Лечащий врач стоматолог"}
+				clinicName={dashboard?.clinicSettings?.profile?.brandName || "Клиника ДЕНТЕ"}
 			/>
 		</div>
 	);

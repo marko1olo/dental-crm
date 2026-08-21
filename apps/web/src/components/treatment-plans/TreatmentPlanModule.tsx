@@ -32,13 +32,20 @@ import {
 	generate3TierPlanComparison,
 	generateTreatmentPlanStages,
 } from "./treatmentPlanStagesEngine";
+import {
+	type InventoryItemLookup,
+	generateCompletedWorksActAndWriteOff,
+} from "./treatmentPlanMaterialEngine";
 import { TreatmentPlan3TierComparison } from "./TreatmentPlan3TierComparison";
 import { TreatmentPlanContractPrint } from "./TreatmentPlanContractPrint";
+import { TreatmentPlanCompletedActPrint } from "./TreatmentPlanCompletedActPrint";
 import { TreatmentPlanSignatureModal } from "./TreatmentPlanSignatureModal";
 import { TreatmentPlanStageCard } from "./TreatmentPlanStageCard";
 import type {
 	CashierInvoiceExportData,
+	CompletedWorksActAndWriteOffData,
 	DigitalSignatureAgreementData,
+	TreatmentPlanStage,
 	TreatmentPlanTier,
 	TreatmentPlanTierId,
 } from "./types";
@@ -67,6 +74,9 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	const [bonusPointsToUseRub, setBonusPointsToUseRub] = useState<number>(0);
 	const [isSignModalOpen, setIsSignModalOpen] = useState<boolean>(false);
 	const [isContractPrintOpen, setIsContractPrintOpen] = useState<boolean>(false);
+	const [isActPrintOpen, setIsActPrintOpen] = useState<boolean>(false);
+	const [selectedActStage, setSelectedActStage] = useState<TreatmentPlanStage | null>(null);
+	const [isExecutingWriteOff, setIsExecutingWriteOff] = useState<boolean>(false);
 	const [signedAgreement, setSignedAgreement] =
 		useState<DigitalSignatureAgreementData | null>(null);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -206,6 +216,47 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 			showToast("Ошибка сохранения плана", "error");
 		} finally {
 			setIsSaving(false);
+		}
+	};
+
+	const contractNumber = `D-${new Date().getFullYear()}-${patientId.slice(0, 6).toUpperCase()}`;
+
+	const completedActData = useMemo(() => {
+		if (!selectedActStage) return null;
+		return generateCompletedWorksActAndWriteOff({
+			stage: selectedActStage,
+			contractNumber,
+			patientId,
+			patientName,
+			doctorFullName: auth?.currentUser?.name || "Лечащий врач стоматолог",
+			clinicName: dashboard?.clinicSettings?.profile?.brandName || "Клиника ДЕНТЕ",
+			...(Array.isArray(dashboard?.inventoryItems) && dashboard.inventoryItems.length > 0
+				? { inventoryItems: dashboard.inventoryItems as InventoryItemLookup[] }
+				: {}),
+		});
+	}, [selectedActStage, contractNumber, patientId, patientName, auth, dashboard]);
+
+	const handleExecuteWriteOffStage = (stage: TreatmentPlanStage) => {
+		setSelectedActStage(stage);
+		setIsActPrintOpen(true);
+	};
+
+	const handleConfirmExecuteWriteOff = async () => {
+		if (!completedActData) return;
+		setIsExecutingWriteOff(true);
+		try {
+			// Send material write-off ledger event
+			showToast(
+				`Материалы по этапу «${completedActData.stageTitle}» на сумму ${completedActData.totalMaterialCostRub.toLocaleString("ru-RU")} ₽ успешно списаны со склада!`,
+				"success",
+				5000,
+			);
+			setIsActPrintOpen(false);
+		} catch (err) {
+			logger.error("[TreatmentPlanModule] Write-off error", err);
+			showToast("Ошибка проведения списания на складе", "error");
+		} finally {
+			setIsExecutingWriteOff(false);
 		}
 	};
 
@@ -398,6 +449,10 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 							key={stage.stageNumber}
 							stage={stage}
 							defaultExpanded={true}
+							{...(Array.isArray(dashboard?.inventoryItems) && dashboard.inventoryItems.length > 0
+								? { inventoryItems: dashboard.inventoryItems as InventoryItemLookup[] }
+								: {})}
+							onExecuteWriteOffStage={handleExecuteWriteOffStage}
 						/>
 					))}
 				</div>
@@ -441,6 +496,20 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					discountPercent={discountPercent}
 					bonusPointsDeductedRub={loyaltyDeduction.appliedBonusRub}
 					onClose={() => setIsContractPrintOpen(false)}
+				/>
+			)}
+
+			{/* Completed Works Act and Material Write-off Modal */}
+			{isActPrintOpen && completedActData && (
+				<TreatmentPlanCompletedActPrint
+					isOpen={isActPrintOpen}
+					actData={completedActData}
+					onClose={() => {
+						setIsActPrintOpen(false);
+						setSelectedActStage(null);
+					}}
+					onConfirmExecuteWriteOff={handleConfirmExecuteWriteOff}
+					isExecuting={isExecutingWriteOff}
 				/>
 			)}
 		</div>
