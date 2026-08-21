@@ -81,6 +81,13 @@ Use these exclusively. Blind terminal navigation is banned.
 - Money and legal documents are exact to the kopeck.
 - A migration is complete only as `.sql` + journal + snapshot, proven against a clean database.
 
+**8c. CLINICAL & DENTAL UX INVARIANTS (THE ZERO-BLOAT & TOUCH-FIRST LAW)**:
+- **Large Anatomical Scale (Анти-мелочь):** Teeth are primary clinical objects. Height must be $\ge 140\text{--}160\text{px}$. Micro-fonts ($\le 11\text{px}$) on buttons and pills are banned. Primary action text is $\ge 13\text{--}14\text{px}$ bold.
+- **1-Click Popups & Zero Surface Bloat:** Fast 1-tap diagnosis selection (Кариес, Пульпит, Пломба, Коронка, Удален, Здоров). Giant 5-surface selector diagrams must never block the screen by default.
+- **Touch-First Over Hotkeys:** Clinicians work in gloves and on touchscreens. Rely on prominent interactive touch targets ($\ge 44\times 44\text{ px}$), not obscure keyboard shortcuts.
+- **Vertical Clinical Workspace:** Odontogram spans full width on top; Form 043/u diary and protocols sit cleanly below. Never squeeze the dental arch horizontally with bulky sidebars.
+- **No Card-in-Card Nesting:** Modals and screens are clean, monolithic panels. No cards inside cards or nested boxes.
+
 **9. WORKSPACE HYGIENE & GIT (THE NATIVE-FIRST LAW)**
 - **ZERO CRUTCH SCRIPTS:** You are ABSOLUTELY FORBIDDEN from creating Python, Bash, Node, or PowerShell wrapper scripts (`_patch_*.py`, `_wire_*.py`, `test.py`, `temp.js`, etc.) in the project root to edit, append, test, or generate code.
 - You MUST edit source files natively using `replace_file_content`. Any attempt to write a script to edit another file will result in termination.
