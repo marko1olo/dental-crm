@@ -224,11 +224,11 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="absolute -top-2 -right-2 min-w-[32px] min-h-[32px] flex items-center justify-center p-1.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white shadow-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-rose-400 pointer-events-auto"
+						className="absolute -top-3 -right-3 min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center p-2 rounded-full bg-rose-600 hover:bg-rose-500 text-white shadow-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-rose-400 pointer-events-auto"
 						title="Закрыть (Esc)"
 						aria-label="Закрыть меню"
 					>
-						<X size={14} />
+						<X size={16} />
 					</button>
 				</div>
 
@@ -261,14 +261,14 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 									alignItems: "center",
 									justifyContent: "center",
 									gap: "6px",
-									padding: "7px 14px",
+									padding: "8px 16px",
 									borderRadius: "9999px",
 									border: "1px solid rgba(255, 255, 255, 0.25)",
 									boxShadow: isCurrent
 										? "0 0 0 2px #ffffff, 0 12px 28px -4px rgba(0, 0, 0, 0.6)"
 										: "0 6px 18px -2px rgba(0, 0, 0, 0.4)",
 								}}
-								className={`radial-item-btn pointer-events-auto min-h-[40px] text-xs font-bold text-white cursor-pointer transition-all duration-200 hover:scale-110 active:scale-95 focus:outline-none ${
+								className={`radial-item-btn pointer-events-auto min-h-[44px] min-w-[44px] text-xs font-bold text-white cursor-pointer transition-all duration-200 hover:scale-110 active:scale-95 focus:outline-none ${
 									isCurrent
 										? "scale-105 font-black ring-2 ring-white"
 										: "opacity-95 hover:opacity-100"
@@ -309,7 +309,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 									gap: "6px",
 									background: "transparent",
 								}}
-								className="min-h-[38px] text-xs font-bold text-rose-600 dark:text-rose-300 hover:bg-rose-500/15 px-3 py-1.5 rounded-lg transition-colors cursor-pointer border-0"
+								className="min-h-[44px] min-w-[44px] text-xs font-bold text-rose-600 dark:text-rose-300 hover:bg-rose-500/15 px-3.5 py-2 rounded-lg transition-colors cursor-pointer border-0"
 							>
 								<Wrench size={14} />
 								<span>Каналы</span>
@@ -328,7 +328,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 									gap: "6px",
 									background: "transparent",
 								}}
-								className="min-h-[38px] text-xs font-bold text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/15 px-3 py-1.5 rounded-lg transition-colors cursor-pointer border-0"
+								className="min-h-[44px] min-w-[44px] text-xs font-bold text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/15 px-3.5 py-2 rounded-lg transition-colors cursor-pointer border-0"
 							>
 								<Coins size={14} />
 								<span>В смету</span>

@@ -150,16 +150,16 @@
 }
 
 .vde-043__btn--primary {
-	background: var(--teal, #0d9488);
-	border-color: var(--teal, #0d9488);
-	color: #fff;
+	background: var(--teal-fill, var(--teal, #0d9488));
+	border-color: var(--teal-dark, #0f766e);
+	color: var(--on-teal, #fff);
 	font-weight: 600;
 }
 
 .vde-043__btn--primary:hover:not(:disabled) {
 	background: var(--teal-dark, #0f766e);
 	border-color: var(--teal-dark, #0f766e);
-	color: #fff;
+	color: var(--on-teal, #fff);
 }
 
 .vde-043__btn--ghost {
@@ -306,18 +306,26 @@
 }
 
 [data-theme="dark"] .vde-043__letter--s,
+[data-theme="night"] .vde-043__letter--s,
+[data-theme="cyber_xray"] .vde-043__letter--s,
 html.dark .vde-043__letter--s {
 	color: #60a5fa;
 }
 [data-theme="dark"] .vde-043__letter--o,
+[data-theme="night"] .vde-043__letter--o,
+[data-theme="cyber_xray"] .vde-043__letter--o,
 html.dark .vde-043__letter--o {
 	color: #a78bfa;
 }
 [data-theme="dark"] .vde-043__letter--a,
+[data-theme="night"] .vde-043__letter--a,
+[data-theme="cyber_xray"] .vde-043__letter--a,
 html.dark .vde-043__letter--a {
 	color: #fbbf24;
 }
 [data-theme="dark"] .vde-043__letter--p,
+[data-theme="night"] .vde-043__letter--p,
+[data-theme="cyber_xray"] .vde-043__letter--p,
 html.dark .vde-043__letter--p {
 	color: var(--teal);
 }
@@ -815,6 +823,37 @@ html.dark .vde-043__letter--p {
 	white-space: pre-wrap;
 }
 
+#print-043 .vde-043-doc-teeth-formula {
+	margin-top: 0.5rem;
+	padding: 0.5rem 0.65rem;
+	border: 1px dashed var(--line);
+	border-radius: 0.35rem;
+	background: var(--paper-soft);
+}
+
+#print-043 .vde-043-doc-teeth-title {
+	font-size: 0.75rem;
+	color: var(--muted);
+	margin-bottom: 0.35rem;
+}
+
+#print-043 .vde-043-doc-teeth-grid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem;
+}
+
+#print-043 .vde-043-doc-tooth-tag {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.15rem 0.45rem;
+	border: 1px solid var(--line);
+	border-radius: 0.25rem;
+	font-size: 0.75rem;
+	background: var(--paper);
+	color: var(--ink);
+}
+
 #print-043 .vde-043-sign-row {
 	display: flex;
 	flex-wrap: wrap;
@@ -856,66 +895,85 @@ html.dark .vde-043__letter--p {
 	}
 }
 
-/* Print: force paper white / black ink */
+/* Print: force paper white / black ink without dark bleed across all 10 themes */
 @media print {
 	body > *:not(.print-layer) {
-		display: none;
+		display: none !important;
 	}
 	html,
 	body {
-		background: white;
-		height: auto;
-		overflow: visible;
+		background: #ffffff !important;
+		color: #000000 !important;
+		color-scheme: light !important;
+		height: auto !important;
+		overflow: visible !important;
 	}
 	.print-layer {
-		display: block;
-		position: absolute;
-		left: 0;
-		top: 0;
-		width: 100%;
-		background: white;
-		color: black;
-		padding: 0;
-		backdrop-filter: none;
+		display: block !important;
+		position: absolute !important;
+		left: 0 !important;
+		top: 0 !important;
+		width: 100% !important;
+		background: #ffffff !important;
+		color: #000000 !important;
+		padding: 0 !important;
+		backdrop-filter: none !important;
 	}
 	.no-print {
-		display: none;
+		display: none !important;
 	}
 	.print-content,
 	.vde-043-print-sheet {
-		box-shadow: none;
-		max-height: none;
-		overflow: visible;
-		border-radius: 0;
-		border: none;
-		background: white;
-		color: black;
+		box-shadow: none !important;
+		max-height: none !important;
+		overflow: visible !important;
+		border-radius: 0 !important;
+		border: none !important;
+		background: #ffffff !important;
+		color: #000000 !important;
 	}
 	#print-043 {
-		overflow: visible;
-		padding: 0;
+		overflow: visible !important;
+		padding: 0 !important;
+		background: #ffffff !important;
+		color: #000000 !important;
 	}
 	#print-043 .vde-043-doc-header {
-		border-bottom-color: #000;
+		border-bottom: 2px solid #000000 !important;
 	}
 	#print-043 .vde-043-doc-header h1,
+	#print-043 .vde-043-doc-header .vde-043-doc-sub,
 	#print-043 .vde-043-soap-block h4,
 	#print-043 .vde-043-soap-block p,
 	#print-043 .vde-043-sign-row,
 	#print-043 .vde-043-doc-meta,
+	#print-043 .vde-043-doc-meta strong,
+	#print-043 .vde-043-doc-teeth-formula,
+	#print-043 .vde-043-doc-teeth-title,
+	#print-043 .vde-043-doc-tooth-tag,
 	#print-043 .vde-043-ecp {
-		color: #000;
-		background: transparent;
+		color: #000000 !important;
+		background: transparent !important;
 	}
 	#print-043 .vde-043-doc-meta {
-		border-color: #ccc;
+		border: 1px solid #cbd5e1 !important;
+		background: #f8fafc !important;
+	}
+	#print-043 .vde-043-doc-teeth-formula {
+		border: 1px dashed #94a3b8 !important;
+		background: #f8fafc !important;
+	}
+	#print-043 .vde-043-doc-tooth-tag {
+		border: 1px solid #cbd5e1 !important;
+		background: #ffffff !important;
 	}
 	#print-043 .vde-043-ecp {
-		border-color: #86efac;
-		background: #f0fdf4;
+		border: 1px solid #86efac !important;
+		background: #f0fdf4 !important;
 	}
 	.page-break-avoid {
-		page-break-inside: avoid;
+		page-break-inside: avoid !important;
+		break-inside: avoid !important;
 	}
 }
 

@@ -360,7 +360,7 @@
 	justify-content: center;
 	cursor: pointer;
 	padding: 4px 2px;
-	min-width: 28px;
+	min-width: 44px;
 	min-height: 48px;
 	border-radius: 10px;
 	transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
@@ -376,9 +376,13 @@
 .tooth-svg-wrapper::before {
 	content: "";
 	position: absolute;
-	inset: -4px -2px;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
 	min-height: 44px;
 	min-width: 44px;
+	width: 100%;
+	height: 100%;
 	pointer-events: auto;
 }
 
@@ -541,12 +545,14 @@
 	align-items: center !important;
 	justify-content: center !important;
 	gap: 6px !important;
-	padding: 7px 13px !important;
+	padding: 8px 16px !important;
 	border-radius: 9999px !important;
-	min-height: 38px !important;
+	min-height: 44px !important;
+	min-width: 44px !important;
 	border: 1px solid rgba(255, 255, 255, 0.25) !important;
 	z-index: 30;
 	user-select: none;
+	touch-action: manipulation;
 }
 
 .tooth-radial-menu::after {
@@ -1475,9 +1481,9 @@
 	align-items: center;
 	justify-content: center;
 	gap: 4px;
-	min-height: 38px;
+	min-height: 44px;
 	min-width: 44px;
-	padding: 6px 10px;
+	padding: 6px 12px;
 	border-radius: 8px;
 	font-weight: 700;
 	font-size: 13px;
@@ -1496,6 +1502,19 @@
 
 .gost-keypad-btn:hover {
 	background: var(--odontogram-surface-hover, #f1f5f9);
+}
+
+/* Hover Quick Action Micro-HUD 10-Theme Calibration */
+.tooth-hover-quick-hud {
+	background-color: var(--odontogram-paper);
+	border: 1px solid var(--odontogram-border-strong);
+	color: var(--odontogram-ink);
+	box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.4);
+}
+
+.tooth-hover-quick-hud button {
+	min-height: 32px;
+	touch-action: manipulation;
 }
 
 /* High Contrast Theme Overrides */

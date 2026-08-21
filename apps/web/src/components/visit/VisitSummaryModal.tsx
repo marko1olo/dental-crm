@@ -33,6 +33,21 @@ export interface VisitSummaryModalProps {
 		cardNumber?: string | null;
 		medicalCardNumber?: string | null;
 		chartNumber?: string | null;
+		phone?: string | null;
+		address?: string | null;
+		administrativeProfile?: {
+			identityDocument?: string | null;
+			insurancePolicyNumber?: string | null;
+			omsPolis?: string | null;
+			snils?: string | null;
+			registrationAddress?: string | null;
+			residentialAddress?: string | null;
+		} | null;
+		identityDocument?: string | null;
+		passport?: string | null;
+		insurancePolicyNumber?: string | null;
+		omsPolis?: string | null;
+		snils?: string | null;
 	} | null;
 	diary: DiaryState;
 	doctorName?: string | null;
@@ -49,6 +64,7 @@ export interface VisitSummaryModalProps {
 	onPrint?: () => void;
 	onOpenPrescription?: () => void;
 	onOpenRadiologyReferral?: () => void;
+	onOpenEgiszExport?: () => void;
 }
 
 function formatPatientFullName(
@@ -78,6 +94,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 	onPrint,
 	onOpenPrescription,
 	onOpenRadiologyReferral,
+	onOpenEgiszExport,
 }) => {
 	useEffect(() => {
 		if (!isOpen) return;
@@ -106,6 +123,40 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 				: typeof patient?.chartNumber === "string" && patient.chartNumber
 					? patient.chartNumber
 					: "";
+
+	const patientPassport =
+		typeof patient?.administrativeProfile?.identityDocument === "string" &&
+		patient.administrativeProfile.identityDocument.trim()
+			? patient.administrativeProfile.identityDocument.trim()
+			: typeof patient?.passport === "string" && patient.passport.trim()
+				? patient.passport.trim()
+				: typeof patient?.identityDocument === "string" &&
+						patient.identityDocument.trim()
+					? patient.identityDocument.trim()
+					: "";
+
+	const patientOms =
+		typeof patient?.administrativeProfile?.omsPolis === "string" &&
+		patient.administrativeProfile.omsPolis.trim()
+			? patient.administrativeProfile.omsPolis.trim()
+			: typeof patient?.administrativeProfile?.insurancePolicyNumber ===
+						"string" &&
+					patient.administrativeProfile.insurancePolicyNumber.trim()
+				? patient.administrativeProfile.insurancePolicyNumber.trim()
+				: typeof patient?.omsPolis === "string" && patient.omsPolis.trim()
+					? patient.omsPolis.trim()
+					: typeof patient?.insurancePolicyNumber === "string" &&
+							patient.insurancePolicyNumber.trim()
+						? patient.insurancePolicyNumber.trim()
+						: "";
+
+	const patientSnils =
+		typeof patient?.administrativeProfile?.snils === "string" &&
+		patient.administrativeProfile.snils.trim()
+			? patient.administrativeProfile.snils.trim()
+			: typeof patient?.snils === "string" && patient.snils.trim()
+				? patient.snils.trim()
+				: "";
 
 	const icdEntry = (ICD10_DICTIONARY ?? []).find(
 		(i) => i?.code === diary.diagnosisIcd10,
@@ -167,20 +218,42 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs">
 						<div className="space-y-1">
 							<div className="flex items-center gap-1.5 text-[var(--muted)] font-medium">
-								<User className="w-3.5 h-3.5" /> Пациент:
+								<User className="w-3.5 h-3.5 text-[var(--teal)]" /> Пациент:
 							</div>
 							<div className="font-semibold text-sm text-[var(--ink)]">
 								{patientName}
 							</div>
-							{patientBirth ? (
-								<div className="text-[var(--muted)]">
-									Дата рождения: {patientBirth}
-								</div>
-							) : null}
+							<div className="grid grid-cols-1 gap-1 text-[var(--muted)] pt-0.5">
+								{patientBirth ? (
+									<div>
+										<span className="font-medium text-[var(--ink)]">Дата рождения:</span> {patientBirth}
+									</div>
+								) : null}
+								{patientCard ? (
+									<div>
+										<span className="font-medium text-[var(--ink)]">№ медкарты:</span> {patientCard}
+									</div>
+								) : null}
+								{patientPassport ? (
+									<div>
+										<span className="font-medium text-[var(--ink)]">Паспорт:</span> {patientPassport}
+									</div>
+								) : null}
+								{patientOms ? (
+									<div>
+										<span className="font-medium text-[var(--ink)]">Полис ОМС/ДМС:</span> {patientOms}
+									</div>
+								) : null}
+								{patientSnils ? (
+									<div>
+										<span className="font-medium text-[var(--ink)]">СНИЛС:</span> {patientSnils}
+									</div>
+								) : null}
+							</div>
 						</div>
 						<div className="space-y-1">
 							<div className="flex items-center gap-1.5 text-[var(--muted)] font-medium">
-								<Stethoscope className="w-3.5 h-3.5" /> Лечащий врач:
+								<Stethoscope className="w-3.5 h-3.5 text-[var(--teal)]" /> Лечащий врач:
 							</div>
 							<div className="font-semibold text-sm text-[var(--ink)]">
 								{doctorName || "—"}
@@ -192,6 +265,35 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 							) : null}
 						</div>
 					</div>
+
+					{/* Clinical Protocols Badges */}
+					{(diary.statusLocalis?.includes("ПРОТОКОЛ ПАРОДОНТОЛОГИЧЕСКОГО") ||
+						diary.diagnosisIcd10?.startsWith("K05") ||
+						diary.statusLocalis?.includes("ПРОТОКОЛ ДЕТСКОГО") ||
+						diary.statusLocalis?.includes("Кариограмм")) && (
+						<div className="flex flex-wrap gap-2 p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]">
+							{(diary.statusLocalis?.includes("ПРОТОКОЛ ПАРОДОНТОЛОГИЧЕСКОГО") ||
+								diary.diagnosisIcd10?.startsWith("K05")) && (
+								<span
+									className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-semibold"
+									data-testid="summary-badge-perio"
+								>
+									<Activity className="w-3.5 h-3.5 text-emerald-600" />
+									Пародонтологический протокол (PSR + AAP/EFP 2018)
+								</span>
+							)}
+							{(diary.statusLocalis?.includes("ПРОТОКОЛ ДЕТСКОГО") ||
+								diary.statusLocalis?.includes("Кариограмм")) && (
+								<span
+									className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/30 text-xs font-semibold"
+									data-testid="summary-badge-pediatric"
+								>
+									<span className="text-xs">🧒</span>
+									Сменный прикус & Кариограмма Bratthall
+								</span>
+							)}
+						</div>
+					)}
 
 					{/* Odontogram Abnormalities Summary */}
 					{abnormalTeeth.length > 0 && (
@@ -367,6 +469,20 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 							>
 								<Scan className="w-4 h-4" />
 								Направление КЛКТ/ОПТГ
+							</button>
+						) : null}
+						{onOpenEgiszExport ? (
+							<button
+								type="button"
+								onClick={() => {
+									onClose();
+									onOpenEgiszExport();
+								}}
+								className="inline-flex items-center justify-center gap-2 px-3.5 py-2 min-h-[44px] rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm font-semibold hover:bg-emerald-500/20 transition-colors"
+								data-testid="summary-egisz-btn"
+							>
+								<ShieldCheck className="w-4 h-4" />
+								СЭМД ЕГИСЗ
 							</button>
 						) : null}
 						{onPrint ? (

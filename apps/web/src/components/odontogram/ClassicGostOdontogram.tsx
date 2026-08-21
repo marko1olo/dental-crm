@@ -269,6 +269,7 @@ export function getToothStateFromHotkey(
 		case "к":
 		case "k":
 		case "c":
+		case "r":
 			return "Caries";
 		case "п":
 		case "p":
