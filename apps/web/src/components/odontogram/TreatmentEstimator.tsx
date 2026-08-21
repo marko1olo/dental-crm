@@ -30,9 +30,7 @@ import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast.js";
 import { PanelLoadFailure } from "../PanelLoadFailure";
 import { SignaturePad } from "../SignaturePad";
-// ToothState отсюда больше не импортируется: это ТИП (ToothChart.tsx:6), а стоял
-// он в списке значений и не использовался ни разу — во время сборки такой импорт
-// просят у модуля, который его не отдаёт.
+import { TreatmentPlanModule } from "../treatment-plans/TreatmentPlanModule";
 import type { ToothData } from "./ToothChart";
 import {
 	type EstimatorContract,
@@ -183,6 +181,10 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 		(patient as any)?.insuranceContractId ||
 		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		(patient?.administrativeProfile as any)?.insuranceContractId;
+
+	const [plannerTab, setPlannerTab] = useState<"comprehensive_804n" | "manual_lines">(
+		"comprehensive_804n",
+	);
 
 	useEffect(() => {
 		if (!insuranceContractId) {
@@ -545,14 +547,40 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 
 	return (
 		<div className="flex flex-col h-full bg-zinc-50/40 dark:bg-zinc-950/40 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl shadow-xl overflow-hidden text-slate-900 dark:text-zinc-100">
-			<div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-100/30 dark:bg-zinc-900/30">
-				<h2 className="flex items-center gap-2 text-lg font-bold">
-					<FileText
-						size={18}
-						className="text-indigo-500 dark:text-indigo-400"
-					/>
-					План лечения
-				</h2>
+			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-6 py-4 border-b border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-100/30 dark:bg-zinc-900/30">
+				<div className="flex flex-wrap items-center gap-3">
+					<h2 className="flex items-center gap-2 text-lg font-bold">
+						<FileText
+							size={18}
+							className="text-indigo-500 dark:text-indigo-400"
+						/>
+						План лечения
+					</h2>
+					<div className="flex items-center gap-1 bg-zinc-200/60 dark:bg-zinc-800/60 p-1 rounded-xl text-xs font-bold">
+						<button
+							type="button"
+							onClick={() => setPlannerTab("comprehensive_804n")}
+							className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+								plannerTab === "comprehensive_804n"
+									? "bg-teal-600 text-white shadow-xs"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+							}`}
+						>
+							3 Варианта (Приказ 804н)
+						</button>
+						<button
+							type="button"
+							onClick={() => setPlannerTab("manual_lines")}
+							className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+								plannerTab === "manual_lines"
+									? "bg-teal-600 text-white shadow-xs"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+							}`}
+						>
+							Построчная смета
+						</button>
+					</div>
+				</div>
 				<div className="flex gap-2">
 					{signatureUrl && (
 						<span className="px-3 py-1 text-xs font-bold text-emerald-700 bg-emerald-100/50 dark:bg-emerald-500/20 dark:text-emerald-400 rounded-full border border-emerald-200/50 dark:border-emerald-500/30 flex items-center">
@@ -588,6 +616,14 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 			</div>
 
 			<div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+				{plannerTab === "comprehensive_804n" ? (
+					<TreatmentPlanModule
+						patientId={patientId}
+						patientName={patient?.fullName || "Пациент"}
+						teethData={currentTeeth}
+					/>
+				) : (
+					<>
 				{/* Отказ чтения — первое, что видно, и он не отменяет уже подобранных
 				    позиций: подбор идёт от зубной формулы и остаётся на экране. */}
 				{planLoad.phase === "failed" && (
@@ -855,43 +891,41 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 						</div>
 					);
 				})}
+					</>
+				)}
 			</div>
 
 			{/* Итог складывается целыми копейками (packages/shared/utils/money.ts).
 			    Строка без цены не считается нулём: она делает итог НЕПОЛНЫМ, и об
 			    этом сказано рядом с суммой, а не спрятано. Молча просуммировать
 			    известное и выдать это за итог — то же самое, что выдумать цену. */}
-			<div className="flex flex-wrap justify-between items-center gap-x-4 gap-y-1 px-6 py-4 border-t border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-100/30 dark:bg-zinc-900/30">
-				<div className="text-sm font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
-					{totals.incompleteRows > 0
-						? "Итого, без непосчитанного:"
-						: "Итого по плану:"}
+			{plannerTab === "manual_lines" && (
+				<div className="flex flex-wrap justify-between items-center gap-x-4 gap-y-1 px-6 py-4 border-t border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-100/30 dark:bg-zinc-900/30">
+					<div className="text-sm font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
+						{totals.incompleteRows > 0
+							? "Итого, без непосчитанного:"
+							: "Итого по плану:"}
+					</div>
+					<div className="flex flex-col items-end min-w-0">
+						{totals.pricedRows === 0 && totals.incompleteRows > 0 ? (
+							<div className="text-xl font-bold text-amber-700 dark:text-amber-300">
+								Считать пока нечего
+							</div>
+						) : (
+							<div className="text-xl font-bold text-slate-900 dark:text-zinc-100 flex items-baseline gap-1">
+								{rub(totals.payableKopecks)}
+							</div>
+						)}
+						{totals.incompleteRows > 0 && (
+							<div className="text-xs font-semibold text-amber-700 dark:text-amber-300 text-right break-words">
+								{totals.pricedRows === 0
+									? "Ни у одной строки плана нет цены из вашего прайса"
+									: "Итог неполный: в плане есть лечение без цены из прайса"}
+							</div>
+						)}
+					</div>
 				</div>
-				<div className="flex flex-col items-end min-w-0">
-					{/*
-					  Ни одной посчитанной строки — суммы НЕТ, и ноль вместо неё не
-					  печатается. Складывать было нечего, а «Итого: 0 ₽» под планом из
-					  четырёх процедур читается как «лечение бесплатное». На пустом
-					  прайсе это состояние и работает, то есть оно не редкое.
-					*/}
-					{totals.pricedRows === 0 && totals.incompleteRows > 0 ? (
-						<div className="text-xl font-bold text-amber-700 dark:text-amber-300">
-							Считать пока нечего
-						</div>
-					) : (
-						<div className="text-xl font-bold text-slate-900 dark:text-zinc-100 flex items-baseline gap-1">
-							{rub(totals.payableKopecks)}
-						</div>
-					)}
-					{totals.incompleteRows > 0 && (
-						<div className="text-xs font-semibold text-amber-700 dark:text-amber-300 text-right break-words">
-							{totals.pricedRows === 0
-								? "Ни у одной строки плана нет цены из вашего прайса"
-								: "Итог неполный: в плане есть лечение без цены из прайса"}
-						</div>
-					)}
-				</div>
-			</div>
+			)}
 
 			{showSignModal &&
 				typeof window !== "undefined" &&
