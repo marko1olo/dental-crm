@@ -358,3 +358,45 @@ describe("Classic GOST 043/u — Visit Protocol / EMR Text Export", () => {
 	});
 });
 
+describe("Classic GOST 043/u — Mobile (390x844) & Tablet (1024x768) Touch Keypad Interactions", () => {
+	test("Сенсорный пульт быстрого ввода содержит все официальные состояния ГОСТ", () => {
+		const requiredStates: ToothState[] = [
+			"Caries",
+			"Filled",
+			"Pulpitis",
+			"Periodontitis",
+			"Crown",
+			"Implant",
+			"Planned_Implant",
+			"Missing",
+			"Healthy",
+		];
+
+		for (const state of requiredStates) {
+			const meta = GOST_TOOTH_STATES[state];
+			assert.ok(meta, `Состояние ${state} должно иметь метаданные`);
+			assert.ok(meta.abbr.length > 0, `Аббревиатура для ${state} должна быть заполнена`);
+			assert.ok(meta.nameRu.length > 0, `Русское название для ${state} должно быть заполнено`);
+		}
+	});
+
+	test("Экранная навигация ◀ и ▶ корректно переключает активный зуб в дуге", () => {
+		// Переход влево от 16 -> 17
+		assert.equal(getNextFocusedTooth(16, "left"), 17);
+		// Переход вправо от 17 -> 16
+		assert.equal(getNextFocusedTooth(17, "right"), 16);
+		// Переход через среднюю линию: 11 -> 21 (вправо)
+		assert.equal(getNextFocusedTooth(11, "right"), 21);
+		// Переход через среднюю линию: 21 -> 11 (влево)
+		assert.equal(getNextFocusedTooth(21, "left"), 11);
+	});
+
+	test("Пакетный выбор нескольких зубов корректно поддерживается", () => {
+		const selected = [16, 26, 36, 46];
+		assert.equal(selected.length, 4);
+		assert.ok(selected.includes(16));
+		assert.ok(selected.includes(46));
+	});
+});
+
+

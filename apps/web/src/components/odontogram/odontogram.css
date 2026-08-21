@@ -1406,6 +1406,71 @@
 	letter-spacing: 0.02em;
 }
 
+.gost-scroll-container {
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	overscroll-behavior-x: contain;
+	scroll-behavior: smooth;
+	scrollbar-width: thin;
+	scrollbar-color: var(--odontogram-border-strong, #94a3b8) transparent;
+	padding-bottom: 4px;
+}
+
+.gost-cell-tooth {
+	flex-shrink: 0 !important;
+	min-width: 48px;
+	min-height: 56px;
+	touch-action: manipulation;
+}
+
+@media (min-width: 640px) {
+	.gost-cell-tooth {
+		min-width: 52px;
+		min-height: 60px;
+	}
+}
+
+/* Touch On-Screen Keypad for Tablets & Mobile Screens */
+.gost-touch-keypad {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 12px;
+	background: var(--odontogram-surface, #f8fafc);
+	border: 1px solid var(--odontogram-border-subtle, #e2e8f0);
+	border-radius: 12px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.gost-keypad-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	min-height: 38px;
+	min-width: 44px;
+	padding: 6px 10px;
+	border-radius: 8px;
+	font-weight: 700;
+	font-size: 13px;
+	cursor: pointer;
+	user-select: none;
+	touch-action: manipulation;
+	transition: all 0.15s ease;
+	border: 1px solid var(--odontogram-border-subtle, #cbd5e1);
+	background: var(--odontogram-paper, #ffffff);
+	color: var(--odontogram-ink, #0f172a);
+}
+
+.gost-keypad-btn:active {
+	transform: scale(0.95);
+}
+
+.gost-keypad-btn:hover {
+	background: var(--odontogram-surface-hover, #f1f5f9);
+}
+
 /* High Contrast Theme Overrides */
 [data-theme="contrast"] .gost-table {
 	border: 2px solid #000000;
@@ -1418,5 +1483,16 @@
 
 [data-theme="contrast"] .gost-cell:focus-visible {
 	outline: 3px solid #000000;
+}
+
+[data-theme="contrast"] .gost-touch-keypad {
+	border: 2px solid #000000;
+	background: #ffffff;
+}
+
+[data-theme="contrast"] .gost-keypad-btn {
+	border: 2px solid #000000;
+	color: #000000;
+	background: #ffffff;
 }
 
