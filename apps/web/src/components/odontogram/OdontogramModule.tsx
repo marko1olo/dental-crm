@@ -36,6 +36,10 @@ import { PeriodontalChartModule } from "./PeriodontalChartModule";
 import { TreatmentEstimator } from "./TreatmentEstimator";
 import { TreatmentPlanModule } from "../treatment-plans/TreatmentPlanModule";
 import { VoiceDictationOverlay } from "./VoiceDictationOverlay";
+import {
+	getToothAnatomicalNameRu,
+	generateSoapFromOdontogramFinding,
+} from "../../lib/clinicalProtocols043";
 import "./odontogram.css";
 import { usePerspectiveStore } from "../../store/perspectiveStore";
 import { logger } from "../../utils/logger";
@@ -1011,6 +1015,181 @@ export const OdontogramModule = ({
 					useSurfaces={odontogramUseSurfaces}
 					onOpenVoiceDictation={() => setIsVoiceOpen(true)}
 				/>
+
+				{/* Persistent Clinical Tooth Inspector for Active Selection */}
+				{selectedTeeth.length === 1 && selectedTeeth[0] !== undefined && (() => {
+					const activeNum: number = selectedTeeth[0] as number;
+					const activeTooth = teethData.find((t) => t.toothNumber === activeNum);
+					const activeState: ToothState = activeTooth?.state || "Healthy";
+					const anatomicalName = getToothAnatomicalNameRu(activeNum);
+					return (
+						<div
+							className="mt-4 p-4 md:p-5 rounded-2xl bg-[var(--odontogram-surface,#f8fafc)] border border-[var(--odontogram-border,#cbd5e1)] shadow-sm flex flex-col gap-4"
+							data-testid="odontogram-tooth-inspector"
+						>
+							<div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[var(--odontogram-border-subtle,#e2e8f0)]">
+								<div className="flex items-center gap-2.5">
+									<div className="w-9 h-9 rounded-xl bg-teal-500/15 text-teal-700 dark:text-teal-300 font-black text-base flex items-center justify-center border border-teal-500/30">
+										#{activeNum}
+									</div>
+									<div>
+										<h4 className="text-sm md:text-base font-bold text-[var(--odontogram-ink,#0f172a)] m-0">
+											{anatomicalName}
+										</h4>
+										<span className="text-xs text-[var(--odontogram-ink-muted,#64748b)]">
+											Текущий статус: <strong className="text-[var(--odontogram-ink,#0f172a)]">{TOOTH_STATE_LABELS[activeState] || activeState}</strong>
+										</span>
+									</div>
+								</div>
+								<div className="flex items-center gap-2 flex-wrap">
+									<button
+										type="button"
+										onClick={() => setHistoryTooth(activeNum)}
+										className="min-h-[40px] px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 text-xs font-bold border border-indigo-500/25 flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+										title="Открыть историю прошлых приемов и лечения по этому зубу"
+									>
+										<History size={15} />
+										<span>История зуба</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => setEndoTooth(activeNum)}
+										className="min-h-[40px] px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-bold border border-rose-500/25 flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+										title="Открыть протокол корневых каналов (длина, MAF, конусность, силер)"
+									>
+										<Activity size={15} />
+										<span>Журнал каналов (Эндо)</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											const soap = generateSoapFromOdontogramFinding({
+												toothNumber: activeNum,
+												state: activeState,
+												surfaces: activeSurfaces,
+											});
+											const clipText = `Зуб ${activeNum} (${anatomicalName}): ${soap.diagnosisIcd10Label}.\n${soap.statusLocalis}\n${soap.treatmentDescription}`;
+											navigator.clipboard?.writeText?.(clipText);
+											showToast(`Протокол для зуба #${activeNum} скопирован для Формы 043/у`, "success");
+										}}
+										className="min-h-[40px] px-3 py-1.5 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 text-xs font-bold border border-teal-500/25 flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+										title="Скопировать клинический протокол Формы 043/у в буфер обмена"
+									>
+										<Sparkles size={15} />
+										<span>Скопировать в дневник</span>
+									</button>
+								</div>
+							</div>
+
+							{/* 1-Tap Tooth Status Assignment */}
+							<div>
+								<div className="text-xs font-bold text-[var(--odontogram-ink-muted,#64748b)] uppercase tracking-wider mb-2">
+									Быстрое присвоение статуса:
+								</div>
+								<div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+									{TOOTH_STATE_ACTIONS.map((action) => {
+										const isCurrent = activeState === action.state;
+										return (
+											<button
+												key={action.state}
+												type="button"
+												onClick={() => void updateToothState([activeNum], action.state)}
+												className={`min-h-[44px] p-2 rounded-xl border flex flex-col items-center justify-center font-bold text-xs transition-all cursor-pointer active:scale-95 ${action.className} ${
+													isCurrent ? "ring-2 ring-indigo-500 ring-offset-1 font-black shadow-sm" : ""
+												}`}
+											>
+												<span className="leading-tight text-center">{action.label}</span>
+											</button>
+										);
+									})}
+								</div>
+							</div>
+
+							{/* Surface Selector for 1 Tooth */}
+							<div className="pt-2 border-t border-[var(--odontogram-border-subtle,#e2e8f0)]">
+								<div className="text-xs font-bold text-[var(--odontogram-ink-muted,#64748b)] uppercase tracking-wider mb-2 flex items-center justify-between">
+									<span>Поверхности поражения / пломбы:</span>
+									<span className="text-xs text-indigo-600 dark:text-indigo-400">
+										{activeSurfaces.length > 0 ? activeSurfaces.join(", ") : "Вся коронка / не выбрано"}
+									</span>
+								</div>
+								<div className="flex items-center gap-2 flex-wrap">
+									{[
+										{ key: "V", label: "V (Вестибулярная / Щечная)" },
+										{ key: "L", label: "L (Язычная / Нёбная)" },
+										{ key: "M", label: "M (Медиальная)" },
+										{ key: "D", label: "D (Дистальная)" },
+										{ key: "O", label: "O (Жевательная / Окклюзионная)" },
+										{ key: "C", label: "C (Пришеечная)" },
+									].map((surf) => {
+										const isSel = activeSurfaces.includes(surf.key);
+										return (
+											<button
+												key={surf.key}
+												type="button"
+												onClick={() => {
+													const next = isSel
+														? activeSurfaces.filter((s) => s !== surf.key)
+														: [...activeSurfaces, surf.key];
+													setActiveSurfaces(next);
+													setTeethData((prev) =>
+														prev.map((t) => {
+															if (t.toothNumber !== activeNum) return t;
+															const copy: ToothData = { ...t };
+															if (next.length > 0) copy.surfaces = next;
+															else delete copy.surfaces;
+															return copy;
+														}),
+													);
+												}}
+												className={`min-h-[40px] px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer active:scale-95 ${
+													isSel
+														? "bg-teal-600 text-white border-teal-700 shadow-sm"
+														: "bg-[var(--odontogram-paper,#ffffff)] text-[var(--odontogram-ink,#0f172a)] border-[var(--odontogram-border,#cbd5e1)] hover:bg-[var(--odontogram-surface-hover,#f1f5f9)]"
+												}`}
+											>
+												{surf.label}
+											</button>
+										);
+									})}
+									<button
+										type="button"
+										onClick={() => {
+											const all = ["V", "L", "M", "D", "O"];
+											setActiveSurfaces(all);
+											setTeethData((prev) =>
+												prev.map((t) => {
+													if (t.toothNumber !== activeNum) return t;
+													return { ...t, surfaces: all };
+												}),
+											);
+										}}
+										className="min-h-[40px] px-3 py-1.5 rounded-xl border border-[var(--odontogram-border,#cbd5e1)] bg-[var(--odontogram-paper,#ffffff)] hover:bg-[var(--odontogram-surface-hover,#f1f5f9)] text-xs font-bold text-[var(--odontogram-ink,#0f172a)] cursor-pointer"
+									>
+										Все поверхности
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											setActiveSurfaces([]);
+											setTeethData((prev) =>
+												prev.map((t) => {
+													if (t.toothNumber !== activeNum) return t;
+													const copy: ToothData = { ...t };
+													delete copy.surfaces;
+													return copy;
+												}),
+											);
+										}}
+										className="min-h-[40px] px-3 py-1.5 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-xs font-bold text-red-600 dark:text-red-400 cursor-pointer"
+									>
+										Сброс
+									</button>
+								</div>
+							</div>
+						</div>
+					);
+				})()}
 
 				{/* Radial Menu via Portal — avoids backdrop-filter stack */}
 				{menuConfig &&

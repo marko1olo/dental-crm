@@ -50,7 +50,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 	const items: RadialMenuItem[] = [
 		{
 			id: "caries",
-			label: "Кариес (К)",
+			label: "Кариес",
 			shortLabel: "Кариес",
 			state: "Caries",
 			icon: <Zap size={14} className="text-amber-200" />,
@@ -60,7 +60,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 		},
 		{
 			id: "pulpitis",
-			label: "Пульпит (Ф)",
+			label: "Пульпит",
 			shortLabel: "Пульпит",
 			state: "Pulpitis",
 			icon: <Flame size={14} className="text-rose-200" />,
@@ -70,7 +70,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 		},
 		{
 			id: "periodontitis",
-			label: "Периодонтит (Е)",
+			label: "Периодонтит",
 			shortLabel: "Периодонтит",
 			state: "Periodontitis",
 			icon: <Flame size={14} className="text-orange-200" />,
@@ -80,7 +80,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 		},
 		{
 			id: "filled",
-			label: "Пломба (П)",
+			label: "Пломба",
 			shortLabel: "Пломба",
 			state: "Filled",
 			icon: <Wrench size={14} className="text-teal-200" />,
@@ -90,7 +90,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 		},
 		{
 			id: "crown",
-			label: "Коронка (Ц)",
+			label: "Коронка",
 			shortLabel: "Коронка",
 			state: "Crown",
 			icon: <Crown size={14} className="text-blue-200" />,
@@ -100,7 +100,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 		},
 		{
 			id: "implant",
-			label: "Имплантат (И)",
+			label: "Имплантат",
 			shortLabel: "Имплант",
 			state: "Implant",
 			icon: <Hammer size={14} className="text-cyan-200" />,
@@ -110,7 +110,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 		},
 		{
 			id: "missing",
-			label: "Удалить зуб (0)",
+			label: "Зуб отсутствует / Удален",
 			shortLabel: "Удален",
 			state: "Missing",
 			icon: <Trash2 size={14} className="text-rose-200" />,
@@ -120,7 +120,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 		},
 		{
 			id: "healthy",
-			label: "Здоров (З)",
+			label: "Здоров",
 			shortLabel: "Здоров",
 			state: "Healthy",
 			icon: <Sparkles size={14} className="text-emerald-200" />,
@@ -273,14 +273,11 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 										? "scale-105 font-black ring-2 ring-white"
 										: "opacity-95 hover:opacity-100"
 								}`}
-								title={`${item.label} [Горячая клавиша: ${item.hotkey}]`}
+								title={item.label}
 								data-testid={`radial-btn-${item.id}`}
 							>
 								<span className="shrink-0 flex items-center justify-center">{item.icon}</span>
 								<span className="whitespace-nowrap font-extrabold text-[12px] tracking-tight">{item.shortLabel}</span>
-								<span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/40 font-mono text-white font-black leading-none shrink-0">
-									{item.hotkey}
-								</span>
 							</button>
 						);
 					})}
