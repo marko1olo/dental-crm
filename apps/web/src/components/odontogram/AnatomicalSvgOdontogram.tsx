@@ -8,6 +8,7 @@ import {
 	type ToothVisualProps,
 } from "./ToothChart";
 import {
+	ANATOMICAL_SURFACE_LABELS_RU,
 	type AnatomicalSurfaceKey,
 	type CanalObturationMaterial,
 	type FurcationGrade,
@@ -16,6 +17,8 @@ import {
 	getGingivalRecessionPath,
 	getPeriodontalBoneLevelPath,
 	getPhysiologicalRootResorptionGeometry,
+	getSurfaceShading,
+	isSurfaceActive,
 	type PeriodontalBoneLossPattern,
 	type PostCoreType,
 	type RestorativeMaterialKey,
@@ -358,6 +361,16 @@ const AnatomicalToothSVG = ({
 			? getGingivalRecessionPath(number, gingivalRecession)
 			: null;
 
+	const hasActiveSurfaces =
+		Boolean(surfaces && surfaces.length > 0) &&
+		state !== "Crown" &&
+		state !== "Missing" &&
+		state !== "Implant" &&
+		state !== "Planned_Implant";
+
+	const surfaceKeys: readonly AnatomicalSurfaceKey[] = ["O", "V", "L", "M", "D", "C"];
+	const surfaceShading = getSurfaceShading(state, material);
+
 	const renderImplant = () => (
 		<svg
 			width={scaledWidth}
@@ -579,17 +592,50 @@ const AnatomicalToothSVG = ({
 				{/* Crown Anatomical Contour */}
 				<path
 					d={geom.crownPath}
-					fill={colors.crownFill}
-					fillOpacity={colors.opacity}
-					stroke={colors.stroke}
+					fill={hasActiveSurfaces ? "url(#dente-enamel-healthy)" : colors.crownFill}
+					fillOpacity={hasActiveSurfaces ? "1" : colors.opacity}
+					stroke={colors.isMissing ? "var(--tooth-root-stroke, #94a3b8)" : colors.stroke}
 					strokeWidth={colors.isMissing ? "1.4" : "2.2"}
 					strokeDasharray={colors.isMissing ? "4 3" : undefined}
 					strokeLinejoin="round"
-					className="tooth-crown-path"
+					className={hasActiveSurfaces ? "tooth-crown-base-enamel" : "tooth-crown-path"}
 				/>
 
+				{/* Surface-Specific Shading Overlays (Highlights only active surfaces, keeps natural enamel visible) */}
+				{hasActiveSurfaces && (
+					<g className="tooth-active-surfaces-layer">
+						{surfaceKeys.map((sKey) => {
+							if (!isSurfaceActive(sKey, surfaces)) return null;
+							const sPath = geom.surfaces[sKey];
+							if (!sPath) return null;
+							return (
+								<g key={`surf-overlay-${sKey}`} className={`active-surface-group surface-${sKey.toLowerCase()}`}>
+									<path
+										d={sPath}
+										fill={surfaceShading.fill}
+										fillOpacity={surfaceShading.opacity}
+										stroke={surfaceShading.stroke}
+										strokeWidth={surfaceShading.strokeWidth}
+										strokeLinejoin="round"
+										className="active-surface-path"
+									/>
+									{surfaceShading.pattern && (
+										<path
+											d={sPath}
+											fill={surfaceShading.pattern}
+											opacity="0.42"
+											pointerEvents="none"
+											className="active-surface-pattern"
+										/>
+									)}
+								</g>
+							);
+						})}
+					</g>
+				)}
+
 				{/* 1. Photopolymer Composite Resin Multi-layer Stipple & Specular Sheen */}
-				{state === "Filled" && (material === "composite" || !material) && (
+				{!hasActiveSurfaces && state === "Filled" && (material === "composite" || !material) && (
 					<g pointerEvents="none" className="composite-material-layer">
 						<path
 							d={geom.crownPath}
@@ -608,7 +654,7 @@ const AnatomicalToothSVG = ({
 				)}
 
 				{/* 2. Silver Amalgam Burnished Texture & Dark Silver Oxide Edge */}
-				{state === "Filled" && material === "amalgam" && (
+				{!hasActiveSurfaces && state === "Filled" && material === "amalgam" && (
 					<g pointerEvents="none" className="amalgam-material-layer">
 						<path
 							d={geom.crownPath}
@@ -626,7 +672,7 @@ const AnatomicalToothSVG = ({
 				)}
 
 				{/* 3. Ceramic IPS E.max Translucent Porcelain Glaze Reflection */}
-				{(state === "Filled" || state === "Crown") && material === "ceramic_emax" && (
+				{!hasActiveSurfaces && (state === "Filled" || state === "Crown") && material === "ceramic_emax" && (
 					<path
 						d={geom.crownPath}
 						fill="url(#ceramic-glaze-specular)"
@@ -659,7 +705,7 @@ const AnatomicalToothSVG = ({
 				)}
 
 				{/* 5. Cast Gold 24K Specular Golden Metallic Highlight & Marginal Burnish Line */}
-				{(state === "Filled" || state === "Crown") && material === "gold" && (
+				{!hasActiveSurfaces && (state === "Filled" || state === "Crown") && material === "gold" && (
 					<path
 						d={isTop ? "M 26 138 Q 50 148 74 138" : "M 26 26 Q 50 16 74 26"}
 						fill="none"
@@ -880,9 +926,15 @@ const AnatomicalToothSVG = ({
 					<path
 						d={geom.fissurePath}
 						fill="none"
-						stroke={state === "Caries" ? "#7f1d1d" : "rgba(15, 23, 42, 0.35)"}
+						stroke={
+							state === "Caries" && (!hasActiveSurfaces || isSurfaceActive("O", surfaces))
+								? "#7f1d1d"
+								: "rgba(15, 23, 42, 0.35)"
+						}
 						strokeWidth="1"
 						strokeLinecap="round"
+						pointerEvents="none"
+						className="occlusal-fissures-path"
 					/>
 				)}
 
@@ -910,34 +962,38 @@ const AnatomicalToothSVG = ({
 					</g>
 				)}
 
-				{/* 5-Surface Interactive Polygons directly mapped on the Anatomical Crown */}
+				{/* 6-Surface Interactive Polygons directly mapped on the Anatomical Crown */}
 				{useSurfaces && (
 					<g className="tooth-surface-interactive-group">
-						{(["O", "V", isTop ? "P" : "L", "M", "D"] as const).map((surfKey) => {
+						{(["O", "V", isTop ? "P" : "L", "M", "D", "C"] as const).map((surfKey) => {
 							const geomKey = surfKey === "P" ? "L" : surfKey;
 							const surfPath = geom.surfaces[geomKey as AnatomicalSurfaceKey];
 							if (!surfPath) return null;
-							const isHighlighted =
-								surfaces?.includes(surfKey) ||
-								(surfKey === "L" && surfaces?.includes("P")) ||
-								(surfKey === "V" && surfaces?.includes("B"));
+							const isHighlighted = isSurfaceActive(geomKey as AnatomicalSurfaceKey, surfaces);
+							const labelInfo = ANATOMICAL_SURFACE_LABELS_RU[geomKey as AnatomicalSurfaceKey];
 							return (
 								<path
 									key={surfKey}
 									d={surfPath}
 									role="tab"
 									tabIndex={0}
-									aria-label={`Поверхность ${surfKey} зуба ${number}`}
+									aria-label={`${labelInfo?.nameRu ?? `Поверхность ${surfKey}`} зуба ${number}`}
 									fill={
 										isHighlighted
 											? state === "Filled"
 												? "#10b981"
-												: "#ef4444"
+												: state === "Healthy"
+													? "#3b82f6"
+													: "#ef4444"
 											: "transparent"
 									}
-									stroke="rgba(255, 255, 255, 0.4)"
+									fillOpacity={isHighlighted ? 0.65 : 0}
+									stroke={isHighlighted ? "rgba(255, 255, 255, 0.85)" : "rgba(255, 255, 255, 0.3)"}
 									strokeWidth="0.8"
-									style={{ cursor: "pointer", transition: "fill 0.2s" }}
+									className={`tooth-surface-target surface-${geomKey.toLowerCase()} ${
+										isHighlighted ? "surface-active" : ""
+									}`}
+									style={{ cursor: "pointer", transition: "fill 0.2s, fill-opacity 0.2s, stroke 0.2s" }}
 									onClick={(e) => {
 										e.stopPropagation();
 										onClick(e, number, surfKey);
@@ -949,7 +1005,9 @@ const AnatomicalToothSVG = ({
 											onClick(e as unknown as React.MouseEvent, number, surfKey);
 										}
 									}}
-								/>
+								>
+									<title>{`${labelInfo?.nameRu ?? surfKey} — Зуб ${number}`}</title>
+								</path>
 							);
 						})}
 					</g>
@@ -1061,10 +1119,10 @@ const ToothWrapper: React.FC<ToothWrapperProps> = ({
 							e.stopPropagation();
 							onQuickStateChange([number], "Pulpitis");
 						}}
-						className="px-1.5 py-0.5 rounded-md bg-purple-500/20 hover:bg-purple-500 text-purple-300 hover:text-white border border-purple-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105"
+						className="px-1.5 py-0.5 rounded-md bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white border border-rose-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105"
 						title="Пульпит (Пульп.)"
 					>
-						<span className="w-1.5 h-1.5 rounded-full bg-purple-500 inline-block" />
+						<span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block" />
 						<span>Пульп.</span>
 					</button>
 					<button
@@ -1368,7 +1426,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 							<span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm" /> Кариес
 						</span>
 						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-sm" /> Пульпит
+							<span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm" /> Пульпит
 						</span>
 						<span className="tooth-chart-legend-item">
 							<span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm" /> Периодонтит

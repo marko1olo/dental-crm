@@ -25,7 +25,9 @@ export type ToothMorphologyGroup =
 	| "primary_molar_1"
 	| "primary_molar_2";
 
-export type AnatomicalSurfaceKey = "O" | "V" | "L" | "M" | "D";
+import type { ToothState } from "./ToothChart";
+
+export type AnatomicalSurfaceKey = "O" | "V" | "L" | "M" | "D" | "C";
 
 export type CanalObturationMaterial =
 	| "gutta_percha"
@@ -421,6 +423,189 @@ export const RESTORATIVE_MATERIALS: Record<
 		badgeColor: "#64748b",
 	},
 };
+
+/**
+ * Русскоязычные клинические названия и описания анатомических поверхностей коронки зуба.
+ */
+export const ANATOMICAL_SURFACE_LABELS_RU: Record<
+	AnatomicalSurfaceKey,
+	{
+		readonly nameRu: string;
+		readonly shortRu: string;
+		readonly descriptionRu: string;
+	}
+> = {
+	O: {
+		nameRu: "Окклюзионная (жевательная) / режущий край",
+		shortRu: "Оккл.",
+		descriptionRu: "Жевательная или режущая поверхность коронки зуба (I класс по Блэку)",
+	},
+	V: {
+		nameRu: "Вестибулярная (щечная / губная)",
+		shortRu: "Вестиб.",
+		descriptionRu: "Наружная щечная или губная поверхность коронки",
+	},
+	L: {
+		nameRu: "Язычная / нёбная (оральная)",
+		shortRu: "Язычн./Нёбн.",
+		descriptionRu: "Внутренняя язычная или нёбная поверхность коронки",
+	},
+	M: {
+		nameRu: "Медиальная (мезиальная / передняя контактная)",
+		shortRu: "Медиал.",
+		descriptionRu: "Передняя апроксимальная контактная поверхность (II, III, IV класс по Блэку)",
+	},
+	D: {
+		nameRu: "Дистальная (задняя контактная)",
+		shortRu: "Дистал.",
+		descriptionRu: "Задняя апроксимальная контактная поверхность (II, III, IV класс по Блэку)",
+	},
+	C: {
+		nameRu: "Пришеечная (цервикальная / десневая треть)",
+		shortRu: "Пришееч.",
+		descriptionRu: "Пришеечная область коронки зуба у границы эмаль-цемент (V класс по Блэку)",
+	},
+};
+
+/**
+ * Нормализация ключа поверхности зуба из произвольной строки (O, V, B, L, P, M, D, C и их русскоязычные аналоги).
+ */
+export function normalizeSurfaceKey(surface: string): AnatomicalSurfaceKey | null {
+	const s = surface.trim().toUpperCase();
+	if (["O", "OCC", "OCCLUSAL", "I", "INCISAL", "О", "ОККЛ", "РЕЖ", "РЕЖУЩИЙ"].includes(s)) return "O";
+	if (["V", "B", "BUCCAL", "VESTIBULAR", "В", "Щ", "ВЕСТ", "ЩЕЧ", "ЩЕЧНАЯ", "ГУБНАЯ"].includes(s)) return "V";
+	if (["L", "P", "LINGUAL", "PALATAL", "Я", "Н", "ЯЗ", "НЕБ", "НЁБ", "ЯЗЫЧНАЯ", "НЕБНАЯ", "НЁБНАЯ"].includes(s)) return "L";
+	if (["M", "MESIAL", "М", "МЕД", "МЕЗ", "МЕДИАЛЬНАЯ", "МЕЗИАЛЬНАЯ"].includes(s)) return "M";
+	if (["D", "DISTAL", "Д", "ДИСТ", "ДИСТАЛЬНАЯ"].includes(s)) return "D";
+	if (["C", "CERVICAL", "П", "ПРИШ", "ЦЕРВ", "ПРИШЕЕЧНАЯ", "ЦЕРВИКАЛЬНАЯ"].includes(s)) return "C";
+	return null;
+}
+
+/**
+ * Проверяет, активна ли заданная анатомическая поверхность в списке поверхностей зуба.
+ * Поддерживает как индивидуальные ключи (O, V, L, M, D, C), так и составные клинические аббревиатуры (MOD, MO, DO, Class V).
+ */
+export function isSurfaceActive(
+	surfKey: AnatomicalSurfaceKey,
+	activeSurfaces?: readonly string[] | string | undefined,
+): boolean {
+	if (!activeSurfaces) return false;
+	const normalized = normalizeAnatomicalSurfaces(activeSurfaces);
+	return normalized.includes(surfKey);
+}
+
+export interface SurfaceShadingProperties {
+	readonly fill: string;
+	readonly stroke: string;
+	readonly pattern?: string | undefined;
+	readonly opacity: number;
+	readonly strokeWidth: number;
+}
+
+/**
+ * Получить параметры шейдинга и текстурирования для отдельной поверхности коронки.
+ */
+export function getSurfaceShading(
+	state: ToothState,
+	material?: RestorativeMaterialKey | undefined,
+): SurfaceShadingProperties {
+	switch (state) {
+		case "Caries":
+			return {
+				fill: "url(#dente-caries-grad)",
+				stroke: "#991b1b",
+				opacity: 0.95,
+				strokeWidth: 1.2,
+			};
+		case "Pulpitis":
+			return {
+				fill: "url(#dente-pulpitis-grad)",
+				stroke: "#991b1b",
+				opacity: 0.95,
+				strokeWidth: 1.2,
+			};
+		case "Periodontitis":
+			return {
+				fill: "url(#dente-periodontitis-grad)",
+				stroke: "#c2410c",
+				opacity: 0.95,
+				strokeWidth: 1.2,
+			};
+		case "Filled":
+			if (material === "amalgam") {
+				return {
+					fill: "url(#amalgam-metal-gradient)",
+					stroke: "#334155",
+					pattern: "url(#amalgam-burnish-pattern)",
+					opacity: 0.95,
+					strokeWidth: 1.2,
+				};
+			}
+			if (material === "ceramic_emax") {
+				return {
+					fill: "url(#ceramic-emax-gradient)",
+					stroke: "#0284c7",
+					pattern: "url(#ceramic-glaze-specular)",
+					opacity: 0.95,
+					strokeWidth: 1.2,
+				};
+			}
+			if (material === "gold") {
+				return {
+					fill: "url(#gold-crown-gradient)",
+					stroke: "#b45309",
+					opacity: 0.95,
+					strokeWidth: 1.2,
+				};
+			}
+			return {
+				fill: "url(#composite-fill-gradient)",
+				stroke: "#0f766e",
+				pattern: "url(#composite-resin-pattern)",
+				opacity: 0.95,
+				strokeWidth: 1.2,
+			};
+		case "Crown":
+			if (material === "gold") {
+				return {
+					fill: "url(#gold-crown-gradient)",
+					stroke: "#b45309",
+					opacity: 1,
+					strokeWidth: 1.4,
+				};
+			}
+			if (material === "pfm_crown") {
+				return {
+					fill: "url(#pfm-crown-gradient)",
+					stroke: "#1e3a8a",
+					opacity: 1,
+					strokeWidth: 1.4,
+				};
+			}
+			if (material === "ceramic_emax") {
+				return {
+					fill: "url(#ceramic-emax-gradient)",
+					stroke: "#0284c7",
+					opacity: 1,
+					strokeWidth: 1.4,
+				};
+			}
+			return {
+				fill: "url(#zirconia-crown-gradient)",
+				stroke: "#1d4ed8",
+				opacity: 1,
+				strokeWidth: 1.4,
+			};
+		case "Healthy":
+		default:
+			return {
+				fill: "url(#dente-enamel-healthy)",
+				stroke: "var(--tooth-root-stroke, #64748b)",
+				opacity: 1,
+				strokeWidth: 1.0,
+			};
+	}
+}
 
 /**
  * Описания и цвета материалов корневых каналов.
@@ -939,6 +1124,7 @@ const UPPER_MOLAR_GEOMETRY: AnatomicalTemplateData = {
 		L: "M 34 142 Q 50 146 66 142 L 76 148 C 66 153, 34 153, 24 148 Z",
 		M: "M 16 96 L 30 122 L 34 142 L 24 148 C 10 138, 10 110, 16 96 Z",
 		D: "M 84 96 C 90 110, 90 138, 76 148 L 66 142 L 70 122 Z",
+		C: "M 16 96 Q 50 92 84 96 L 78 108 Q 50 104 22 108 Z",
 	},
 	viewBox: { x: 0, y: 0, width: 100, height: 160 },
 	standardWidthPx: 80,
@@ -995,6 +1181,7 @@ const UPPER_PREMOLAR_GEOMETRY: AnatomicalTemplateData = {
 		L: "M 38 138 Q 50 142 62 138 L 68 146 C 58 150, 42 150, 32 146 Z",
 		M: "M 22 96 L 34 122 L 38 138 L 32 146 C 16 136, 16 108, 22 96 Z",
 		D: "M 78 96 C 84 108, 84 136, 68 146 L 62 138 L 66 122 Z",
+		C: "M 22 96 Q 50 92 78 96 L 74 108 Q 50 104 26 108 Z",
 	},
 	viewBox: { x: 10, y: 0, width: 80, height: 160 },
 	standardWidthPx: 64,
@@ -1033,6 +1220,7 @@ const UPPER_CANINE_GEOMETRY: AnatomicalTemplateData = {
 		L: "M 38 124 L 50 154 L 62 124 Q 50 136 38 124 Z",
 		M: "M 26 96 L 38 124 L 50 154 C 28 138, 22 114, 26 96 Z",
 		D: "M 74 96 C 78 114, 72 138, 50 154 L 62 124 Z",
+		C: "M 26 96 Q 50 92 74 96 L 68 108 Q 50 104 32 108 Z",
 	},
 	viewBox: { x: 12, y: 0, width: 76, height: 160 },
 	standardWidthPx: 60,
@@ -1071,6 +1259,7 @@ const UPPER_INCISOR_GEOMETRY: AnatomicalTemplateData = {
 		L: "M 32 136 L 68 136 L 60 148 L 40 148 Z",
 		M: "M 26 96 L 32 136 L 24 150 C 18 136, 20 110, 26 96 Z",
 		D: "M 74 96 C 80 110, 82 136, 76 150 L 68 136 Z",
+		C: "M 26 96 Q 50 92 74 96 L 68 108 Q 50 104 32 108 Z",
 	},
 	viewBox: { x: 12, y: 0, width: 76, height: 160 },
 	standardWidthPx: 58,
@@ -1140,6 +1329,7 @@ const LOWER_MOLAR_GEOMETRY: AnatomicalTemplateData = {
 		L: "M 34 18 Q 50 14 66 18 L 76 12 C 66 7, 34 7, 24 12 Z",
 		M: "M 16 64 L 30 38 L 34 18 L 24 12 C 10 22, 10 50, 16 64 Z",
 		D: "M 84 64 C 90 50, 90 22, 76 12 L 66 18 L 70 38 Z",
+		C: "M 16 64 Q 50 68 84 64 L 78 52 Q 50 56 22 52 Z",
 	},
 	viewBox: { x: 0, y: 0, width: 100, height: 160 },
 	standardWidthPx: 80,
@@ -1178,6 +1368,7 @@ const LOWER_PREMOLAR_GEOMETRY: AnatomicalTemplateData = {
 		L: "M 40 20 Q 50 16 60 20 L 66 12 C 56 8, 44 8, 34 12 Z",
 		M: "M 24 64 L 36 38 L 40 20 L 34 12 C 18 22, 18 52, 24 64 Z",
 		D: "M 76 64 C 82 52, 82 22, 66 12 L 60 20 L 64 38 Z",
+		C: "M 24 64 Q 50 68 76 64 L 70 52 Q 50 56 30 52 Z",
 	},
 	viewBox: { x: 10, y: 0, width: 80, height: 160 },
 	standardWidthPx: 64,
@@ -1215,6 +1406,7 @@ const LOWER_CANINE_GEOMETRY: AnatomicalTemplateData = {
 		L: "M 38 38 L 50 8 L 62 38 Q 50 24 38 38 Z",
 		M: "M 26 64 L 38 38 L 50 8 C 28 22, 22 46, 26 64 Z",
 		D: "M 74 64 C 78 46, 72 22, 50 8 L 62 38 Z",
+		C: "M 26 64 Q 50 68 74 64 L 68 52 Q 50 56 32 52 Z",
 	},
 	viewBox: { x: 12, y: 0, width: 76, height: 160 },
 	standardWidthPx: 60,
@@ -1253,6 +1445,7 @@ const LOWER_INCISOR_GEOMETRY: AnatomicalTemplateData = {
 		L: "M 32 24 L 68 24 L 60 14 L 40 14 Z",
 		M: "M 28 64 L 32 24 L 26 12 C 20 24, 22 50, 28 64 Z",
 		D: "M 72 64 C 78 50, 80 24, 74 12 L 68 24 Z",
+		C: "M 28 64 Q 50 68 72 64 L 68 52 Q 50 56 32 52 Z",
 	},
 	viewBox: { x: 12, y: 0, width: 76, height: 160 },
 	standardWidthPx: 54,
@@ -1317,6 +1510,7 @@ const PEDIATRIC_UPPER_MOLAR_GEOMETRY: AnatomicalTemplateData = {
 		L: "M 36 130 Q 50 134 64 130 L 72 138 C 64 142, 36 142, 28 138 Z",
 		M: "M 18 84 L 32 110 L 36 130 L 28 138 C 12 128, 12 96, 18 84 Z",
 		D: "M 82 84 C 88 96, 88 128, 72 138 L 64 130 L 68 110 Z",
+		C: "M 18 84 Q 50 80 82 84 L 76 96 Q 50 92 24 96 Z",
 	},
 	viewBox: { x: 0, y: 0, width: 100, height: 160 },
 	standardWidthPx: 72,
@@ -1373,6 +1567,7 @@ const PEDIATRIC_LOWER_MOLAR_GEOMETRY: AnatomicalTemplateData = {
 		L: "M 36 30 Q 50 26 64 30 L 72 22 C 64 18, 36 18, 28 22 Z",
 		M: "M 18 76 L 32 50 L 36 30 L 28 22 C 12 32, 12 64, 18 76 Z",
 		D: "M 82 76 C 88 64, 88 32, 72 22 L 64 30 L 68 50 Z",
+		C: "M 18 76 Q 50 80 82 76 L 76 64 Q 50 68 24 64 Z",
 	},
 	viewBox: { x: 0, y: 0, width: 100, height: 160 },
 	standardWidthPx: 72,
@@ -1560,3 +1755,69 @@ export const MIXED_UPPER_TEETH = [
 export const MIXED_LOWER_TEETH = [
 	46, 85, 84, 83, 82, 81, 71, 72, 73, 74, 75, 36,
 ] as const;
+
+/**
+ * Русские названия анатомических поверхностей коронки зуба.
+ */
+export const ANATOMICAL_SURFACE_NAMES_RU: Record<AnatomicalSurfaceKey, string> = {
+	O: "Окклюзионная / Режущий край (O/I)",
+	V: "Вестибулярная / Щечная (V/B)",
+	L: "Язычная / Нёбная (L/P)",
+	M: "Медиальная (M)",
+	D: "Дистальная (D)",
+	C: "Пришеечная / V класс (C/G)",
+};
+
+/**
+ * Нормализует список поверхностей зуба (MOD, MO, DO, Class V, B, P, V, L, M, D, O, C)
+ * в массив стандартизированных ключей AnatomicalSurfaceKey ('O' | 'V' | 'L' | 'M' | 'D' | 'C').
+ */
+export function normalizeAnatomicalSurfaces(
+	surfaces?: readonly string[] | string | null,
+): AnatomicalSurfaceKey[] {
+	if (!surfaces) return [];
+	const rawList = Array.isArray(surfaces) ? surfaces : [surfaces];
+	const set = new Set<AnatomicalSurfaceKey>();
+
+	for (const item of rawList) {
+		if (typeof item !== "string") continue;
+		const upper = item.trim().toUpperCase();
+		if (!upper) continue;
+
+		// 1. Прямое сопоставление клинического термина или одиночной аббревиатуры
+		const directKey = normalizeSurfaceKey(upper);
+		if (directKey) {
+			set.add(directKey);
+			continue;
+		}
+
+		// 2. Вариации V класса по Блэку и десневой трети
+		if (
+			upper === "CLASS V" ||
+			upper === "CLASS_V" ||
+			upper === "CLASSV" ||
+			upper.startsWith("КЛАСС V") ||
+			upper.startsWith("V КЛАСС") ||
+			upper === "V_CERVICAL" ||
+			upper === "GINGIVAL" ||
+			upper === "ШЕЙКА"
+		) {
+			set.add("C");
+			continue;
+		}
+
+		// 3. Составные мультиповерхностные аббревиатуры (MOD, MO, DO, OVD, M+D, etc.)
+		const cleanChars = upper.replace(/[^A-ZА-ЯЁ0-9]/g, "");
+		for (const char of cleanChars) {
+			if (char === "M" || char === "М") set.add("M");
+			else if (char === "O" || char === "О" || char === "I" || char === "И") set.add("O");
+			else if (char === "D" || char === "Д") set.add("D");
+			else if (char === "V" || char === "В" || char === "B" || char === "Щ") set.add("V");
+			else if (char === "L" || char === "Л" || char === "P" || char === "Я" || char === "Н") set.add("L");
+			else if (char === "C" || char === "С" || char === "G") set.add("C");
+		}
+	}
+
+	return Array.from(set);
+}
+

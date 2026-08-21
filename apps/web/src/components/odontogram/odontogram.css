@@ -471,8 +471,25 @@
 .gingival-recession-line,
 .pediatric-root-resorption-layer,
 .resorption-hatch-area,
-.resorption-boundary-line {
+.resorption-boundary-line,
+.tooth-active-surfaces-layer,
+.active-surface-pattern {
 	pointer-events: none;
+}
+
+.active-surface-path {
+	transition: fill 0.2s ease, stroke 0.2s ease;
+}
+
+.tooth-surface-target {
+	transition: fill 0.2s ease, fill-opacity 0.2s ease, stroke 0.2s ease;
+}
+
+.tooth-surface-target:hover {
+	fill: var(--odontogram-surface-hover, rgba(56, 189, 248, 0.35));
+	fill-opacity: 0.45;
+	stroke: var(--teal, #14b8a6);
+	stroke-width: 1.2px;
 }
 
 .resorption-boundary-line {

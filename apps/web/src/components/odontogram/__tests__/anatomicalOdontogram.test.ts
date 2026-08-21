@@ -3,20 +3,29 @@ import test, { describe } from "node:test";
 import {
 	ADULT_LOWER_TEETH,
 	ADULT_UPPER_TEETH,
+	ANATOMICAL_SURFACE_LABELS_RU,
+	type AnatomicalSurfaceKey,
 	CANAL_OBTURATIONS,
 	getAnatomicalGroup,
 	getAnatomicalToothGeometry,
 	getGingivalRecessionPath,
 	getPeriodontalBoneLevelPath,
+	getPhysiologicalRootResorptionGeometry,
+	getSurfaceShading,
 	ICDAS_CLASSIFICATIONS,
 	type IcdasCode,
 	isMaxillaryArch,
 	isPatientLeftSide,
+	isSurfaceActive,
 	MIXED_LOWER_TEETH,
 	MIXED_UPPER_TEETH,
+	normalizeAnatomicalSurfaces,
+	normalizeSurfaceKey,
 	PEDIATRIC_LOWER_TEETH,
 	PEDIATRIC_UPPER_TEETH,
 	RESTORATIVE_MATERIALS,
+	ROOT_RESORPTION_STAGES,
+	type RootResorptionStage,
 } from "../anatomicalToothGeometries";
 
 describe("Anatomical Tooth Geometries & SVG Morphology Suite", () => {
@@ -33,12 +42,13 @@ describe("Anatomical Tooth Geometries & SVG Morphology Suite", () => {
 			assert.ok(geom.cejPath.length > 5, `Зуб ${toothNum} должен иметь границу эмаль-цемент (CEJ)`);
 			assert.ok(geom.touchTargetMinPx >= 44, `Touch-target зуба ${toothNum} обязан быть >= 44px`);
 
-			// Проверка 5 поверхностей
+			// Проверка 6 поверхностей
 			assert.ok(geom.surfaces.O, `Зуб ${toothNum} обязан иметь окклюзионную/режущую поверхность (O)`);
 			assert.ok(geom.surfaces.V, `Зуб ${toothNum} обязан иметь вестибулярную поверхность (V)`);
 			assert.ok(geom.surfaces.L, `Зуб ${toothNum} обязан иметь язычную/нёбную поверхность (L)`);
 			assert.ok(geom.surfaces.M, `Зуб ${toothNum} обязан иметь медиальную поверхность (M)`);
 			assert.ok(geom.surfaces.D, `Зуб ${toothNum} обязан иметь дистальную поверхность (D)`);
+			assert.ok(geom.surfaces.C, `Зуб ${toothNum} обязан иметь пришеечную поверхность (C)`);
 
 			// Проверка корневых каналов и апексов
 			assert.ok(geom.canals.length >= 1, `Зуб ${toothNum} должен иметь как минимум 1 корневой канал`);
@@ -64,12 +74,13 @@ describe("Anatomical Tooth Geometries & SVG Morphology Suite", () => {
 			assert.ok(geom.rootPath.length > 10, `Молочный зуб ${toothNum} должен иметь контур корня`);
 			assert.ok(geom.touchTargetMinPx >= 44, `Touch-target молочного зуба ${toothNum} обязан быть >= 44px`);
 
-			// Проверка 5 поверхностей
+			// Проверка 6 поверхностей
 			assert.ok(geom.surfaces.O);
 			assert.ok(geom.surfaces.V);
 			assert.ok(geom.surfaces.L);
 			assert.ok(geom.surfaces.M);
 			assert.ok(geom.surfaces.D);
+			assert.ok(geom.surfaces.C);
 		}
 	});
 
@@ -284,6 +295,300 @@ describe("Anatomical Tooth Geometries & SVG Morphology Suite", () => {
 		assert.equal(isPatientLeftSide(46), false);
 		assert.equal(isPatientLeftSide(55), false);
 		assert.equal(isPatientLeftSide(85), false);
+	});
+
+	test("Физиологическая резорбция корней молочных зубов (стадии 0%, 25%, 50%, 75%, 100%)", () => {
+		// 1. Проверка словаря стадий резорбции
+		const stages: RootResorptionStage[] = [0, 25, 50, 75, 100];
+		for (const st of stages) {
+			const info = ROOT_RESORPTION_STAGES[st];
+			assert.ok(info, `Стадия ${st}% должна быть объявлена`);
+			assert.equal(info.stage, st);
+			assert.equal(info.percent, st);
+			assert.ok(info.nameRu.length > 5);
+			assert.ok(info.descriptionRu.length > 10);
+			assert.ok(info.badgeColor.startsWith("#"));
+			assert.ok(info.badgeBg.startsWith("rgba"));
+		}
+
+		// Прогрессия прозрачности
+		assert.equal(ROOT_RESORPTION_STAGES[0].rootOpacity, 1.0);
+		assert.equal(ROOT_RESORPTION_STAGES[25].rootOpacity, 0.9);
+		assert.equal(ROOT_RESORPTION_STAGES[50].rootOpacity, 0.65);
+		assert.equal(ROOT_RESORPTION_STAGES[75].rootOpacity, 0.35);
+		assert.equal(ROOT_RESORPTION_STAGES[100].rootOpacity, 0.0);
+
+		// Проверка штриховки (активна на 50% и 75%)
+		assert.equal(ROOT_RESORPTION_STAGES[0].showHatch, false);
+		assert.equal(ROOT_RESORPTION_STAGES[25].showHatch, false);
+		assert.equal(ROOT_RESORPTION_STAGES[50].showHatch, true);
+		assert.equal(ROOT_RESORPTION_STAGES[75].showHatch, true);
+		assert.equal(ROOT_RESORPTION_STAGES[100].showHatch, false);
+
+		// 2. Верхний молочный моляр (55)
+		const m55_0 = getPhysiologicalRootResorptionGeometry(55, 0);
+		assert.equal(m55_0.isResorbed, false);
+		assert.equal(m55_0.opacity, 1.0);
+		assert.ok(m55_0.rootPath.length > 20);
+		assert.equal(m55_0.showCanals, true);
+		assert.equal(m55_0.canals.length, 3);
+
+		const m55_25 = getPhysiologicalRootResorptionGeometry(55, 25);
+		assert.equal(m55_25.isResorbed, true);
+		assert.equal(m55_25.opacity, 0.9);
+		assert.ok(m55_25.resorptionLinePath?.startsWith("M"));
+		assert.equal(m55_25.showCanals, true);
+
+		const m55_50 = getPhysiologicalRootResorptionGeometry(55, 50);
+		assert.equal(m55_50.isResorbed, true);
+		assert.equal(m55_50.opacity, 0.65);
+		assert.ok(m55_50.resorptionLinePath?.startsWith("M"));
+		assert.ok(m55_50.resorptionHatchAreaPath?.startsWith("M"));
+		assert.equal(m55_50.showCanals, true);
+
+		const m55_75 = getPhysiologicalRootResorptionGeometry(55, 75);
+		assert.equal(m55_75.isResorbed, true);
+		assert.equal(m55_75.opacity, 0.35);
+		assert.ok(m55_75.resorptionLinePath?.startsWith("M"));
+		assert.ok(m55_75.resorptionHatchAreaPath?.startsWith("M"));
+		assert.equal(m55_75.showCanals, false);
+
+		const m55_100 = getPhysiologicalRootResorptionGeometry(55, 100);
+		assert.equal(m55_100.isResorbed, true);
+		assert.equal(m55_100.opacity, 0);
+		assert.equal(m55_100.rootPath, "");
+		assert.equal(m55_100.showCanals, false);
+		assert.equal(m55_100.canals.length, 0);
+
+		// 3. Нижний молочный моляр (84)
+		const m84_50 = getPhysiologicalRootResorptionGeometry(84, 50);
+		assert.equal(m84_50.isResorbed, true);
+		assert.equal(m84_50.opacity, 0.65);
+		assert.ok(m84_50.resorptionLinePath?.startsWith("M"));
+		assert.ok(m84_50.resorptionHatchAreaPath?.startsWith("M"));
+		assert.equal(m84_50.showCanals, true);
+		assert.equal(m84_50.canals.length, 2);
+
+		// 4. Молочные резцы и клыки (51, 71)
+		const i51_25 = getPhysiologicalRootResorptionGeometry(51, 25);
+		assert.equal(i51_25.isResorbed, true);
+		assert.equal(i51_25.opacity, 0.9);
+		assert.ok(i51_25.resorptionLinePath?.startsWith("M"));
+
+		const i71_100 = getPhysiologicalRootResorptionGeometry(71, 100);
+		assert.equal(i71_100.isResorbed, true);
+		assert.equal(i71_100.rootPath, "");
+
+		// 5. Постоянный зуб (16) не подвергается физиологической резорбции
+		const adult16 = getPhysiologicalRootResorptionGeometry(16, 50);
+		assert.equal(adult16.isResorbed, false);
+		assert.equal(adult16.opacity, 1.0);
+		assert.ok(adult16.rootPath.length > 20);
+	});
+
+	test("Клинический справочник поверхностей ANATOMICAL_SURFACE_LABELS_RU содержит все 6 анатомических зон", () => {
+		const surfaces: AnatomicalSurfaceKey[] = ["O", "V", "L", "M", "D", "C"];
+		for (const s of surfaces) {
+			const info = ANATOMICAL_SURFACE_LABELS_RU[s];
+			assert.ok(info, `Поверхность ${s} должна быть зарегистрирована в словаре`);
+			assert.ok(info.nameRu.length > 5, `Название поверхности ${s} должно быть полным`);
+			assert.ok(info.shortRu.length > 1, `Краткое обозначение поверхности ${s} должно быть задано`);
+			assert.ok(info.descriptionRu.length > 10, `Клиническое описание поверхности ${s} должно содержать подробности`);
+		}
+	});
+
+	test("normalizeSurfaceKey корректно нормализует международные и русскоязычные обозначения поверхностей", () => {
+		// Окклюзионная / режущая
+		assert.equal(normalizeSurfaceKey("O"), "O");
+		assert.equal(normalizeSurfaceKey("Occ"), "O");
+		assert.equal(normalizeSurfaceKey("Occlusal"), "O");
+		assert.equal(normalizeSurfaceKey("I"), "O");
+		assert.equal(normalizeSurfaceKey("Incisal"), "O");
+		assert.equal(normalizeSurfaceKey("О"), "O");
+		assert.equal(normalizeSurfaceKey("оккл"), "O");
+		assert.equal(normalizeSurfaceKey("Режущий"), "O");
+
+		// Вестибулярная / щечная
+		assert.equal(normalizeSurfaceKey("V"), "V");
+		assert.equal(normalizeSurfaceKey("B"), "V");
+		assert.equal(normalizeSurfaceKey("buccal"), "V");
+		assert.equal(normalizeSurfaceKey("vestibular"), "V");
+		assert.equal(normalizeSurfaceKey("В"), "V");
+		assert.equal(normalizeSurfaceKey("Щ"), "V");
+		assert.equal(normalizeSurfaceKey("вест"), "V");
+		assert.equal(normalizeSurfaceKey("щечная"), "V");
+
+		// Язычная / нёбная
+		assert.equal(normalizeSurfaceKey("L"), "L");
+		assert.equal(normalizeSurfaceKey("P"), "L");
+		assert.equal(normalizeSurfaceKey("lingual"), "L");
+		assert.equal(normalizeSurfaceKey("palatal"), "L");
+		assert.equal(normalizeSurfaceKey("Я"), "L");
+		assert.equal(normalizeSurfaceKey("Н"), "L");
+		assert.equal(normalizeSurfaceKey("яз"), "L");
+		assert.equal(normalizeSurfaceKey("нёбная"), "L");
+
+		// Медиальная / мезиальная
+		assert.equal(normalizeSurfaceKey("M"), "M");
+		assert.equal(normalizeSurfaceKey("mesial"), "M");
+		assert.equal(normalizeSurfaceKey("М"), "M");
+		assert.equal(normalizeSurfaceKey("мед"), "M");
+		assert.equal(normalizeSurfaceKey("мезиальная"), "M");
+
+		// Дистальная
+		assert.equal(normalizeSurfaceKey("D"), "D");
+		assert.equal(normalizeSurfaceKey("distal"), "D");
+		assert.equal(normalizeSurfaceKey("Д"), "D");
+		assert.equal(normalizeSurfaceKey("дист"), "D");
+		assert.equal(normalizeSurfaceKey("дистальная"), "D");
+
+		// Пришеечная (цервикальная)
+		assert.equal(normalizeSurfaceKey("C"), "C");
+		assert.equal(normalizeSurfaceKey("cervical"), "C");
+		assert.equal(normalizeSurfaceKey("П"), "C");
+		assert.equal(normalizeSurfaceKey("приш"), "C");
+		assert.equal(normalizeSurfaceKey("церв"), "C");
+		assert.equal(normalizeSurfaceKey("пришеечная"), "C");
+
+		// Неизвестный ключ
+		assert.equal(normalizeSurfaceKey("UNKNOWN_SURFACE"), null);
+	});
+
+	test("isSurfaceActive точно определяет активность поверхностей при любых клинических алиасах", () => {
+		const activeSurfaces = ["M", "O", "C"];
+		assert.equal(isSurfaceActive("M", activeSurfaces), true);
+		assert.equal(isSurfaceActive("O", activeSurfaces), true);
+		assert.equal(isSurfaceActive("C", activeSurfaces), true);
+		assert.equal(isSurfaceActive("D", activeSurfaces), false);
+		assert.equal(isSurfaceActive("V", activeSurfaces), false);
+		assert.equal(isSurfaceActive("L", activeSurfaces), false);
+
+		// Проверка алиасов
+		assert.equal(isSurfaceActive("V", ["B"]), true);
+		assert.equal(isSurfaceActive("L", ["P"]), true);
+		assert.equal(isSurfaceActive("L", ["palatal"]), true);
+		assert.equal(isSurfaceActive("O", ["Occ"]), true);
+		assert.equal(isSurfaceActive("C", ["Приш"]), true);
+
+		// Пустой или undefined список
+		assert.equal(isSurfaceActive("O", []), false);
+		assert.equal(isSurfaceActive("O", undefined), false);
+	});
+
+	test("getSurfaceShading возвращает правильные SVG-шейдеры, паттерны и цвета", () => {
+		// Кариес
+		const cariesShading = getSurfaceShading("Caries");
+		assert.equal(cariesShading.fill, "url(#dente-caries-grad)");
+		assert.equal(cariesShading.stroke, "#991b1b");
+		assert.equal(cariesShading.opacity, 0.95);
+
+		// Пломба: композитная смола (Composite Resin)
+		const compShading = getSurfaceShading("Filled", "composite");
+		assert.equal(compShading.fill, "url(#composite-fill-gradient)");
+		assert.equal(compShading.pattern, "url(#composite-resin-pattern)");
+		assert.equal(compShading.stroke, "#0f766e");
+
+		// Пломба: амальгама (Amalgam)
+		const amalgamShading = getSurfaceShading("Filled", "amalgam");
+		assert.equal(amalgamShading.fill, "url(#amalgam-metal-gradient)");
+		assert.equal(amalgamShading.pattern, "url(#amalgam-burnish-pattern)");
+		assert.equal(amalgamShading.stroke, "#334155");
+
+		// Пломба/вкладка: IPS E.max Ceramic
+		const emaxShading = getSurfaceShading("Filled", "ceramic_emax");
+		assert.equal(emaxShading.fill, "url(#ceramic-emax-gradient)");
+		assert.equal(emaxShading.pattern, "url(#ceramic-glaze-specular)");
+		assert.equal(emaxShading.stroke, "#0284c7");
+
+		// Золотая реставрация
+		const goldShading = getSurfaceShading("Filled", "gold");
+		assert.equal(goldShading.fill, "url(#gold-crown-gradient)");
+		assert.equal(goldShading.stroke, "#b45309");
+
+		// Искусственная коронка (Zirconia, PFM, Gold)
+		const zircShading = getSurfaceShading("Crown", "zirconia");
+		assert.equal(zircShading.fill, "url(#zirconia-crown-gradient)");
+		assert.equal(zircShading.opacity, 1);
+
+		const pfmShading = getSurfaceShading("Crown", "pfm_crown");
+		assert.equal(pfmShading.fill, "url(#pfm-crown-gradient)");
+
+		// Здоровая эмаль
+		const healthyShading = getSurfaceShading("Healthy");
+		assert.equal(healthyShading.fill, "url(#dente-enamel-healthy)");
+	});
+
+	test("normalizeAnatomicalSurfaces корректно преобразует MOD / MO / DO / Class V и списки поверхностей", () => {
+		// 1. Составные строковые аббревиатуры
+		const modSurfaces = normalizeAnatomicalSurfaces("MOD");
+		assert.ok(modSurfaces.includes("M"));
+		assert.ok(modSurfaces.includes("O"));
+		assert.ok(modSurfaces.includes("D"));
+		assert.equal(modSurfaces.length, 3);
+
+		const moSurfaces = normalizeAnatomicalSurfaces("MO");
+		assert.ok(moSurfaces.includes("M"));
+		assert.ok(moSurfaces.includes("O"));
+		assert.equal(moSurfaces.length, 2);
+
+		const doSurfaces = normalizeAnatomicalSurfaces("DO");
+		assert.ok(doSurfaces.includes("D"));
+		assert.ok(doSurfaces.includes("O"));
+		assert.equal(doSurfaces.length, 2);
+
+		const classVSurfaces = normalizeAnatomicalSurfaces("Class V");
+		assert.ok(classVSurfaces.includes("C"));
+		assert.equal(classVSurfaces.length, 1);
+
+		const classVAlt = normalizeAnatomicalSurfaces("Class_V");
+		assert.ok(classVAlt.includes("C"));
+
+		const cervicalSurfaces = normalizeAnatomicalSurfaces("Cervical");
+		assert.ok(cervicalSurfaces.includes("C"));
+
+		// 2. Массивы отдельных символов и алиасов
+		const mixedArray = normalizeAnatomicalSurfaces(["M", "O", "B", "P", "C"]);
+		assert.ok(mixedArray.includes("M"));
+		assert.ok(mixedArray.includes("O"));
+		assert.ok(mixedArray.includes("V")); // B -> V
+		assert.ok(mixedArray.includes("L")); // P -> L
+		assert.ok(mixedArray.includes("C"));
+
+		// 3. Кириллическая запись
+		const cyrillicMod = normalizeAnatomicalSurfaces("МОД");
+		assert.ok(cyrillicMod.includes("M"));
+		assert.ok(cyrillicMod.includes("O"));
+		assert.ok(cyrillicMod.includes("D"));
+
+		// 4. Пустые значения
+		assert.deepEqual(normalizeAnatomicalSurfaces([]), []);
+		assert.deepEqual(normalizeAnatomicalSurfaces(null), []);
+		assert.deepEqual(normalizeAnatomicalSurfaces(undefined), []);
+	});
+
+	test("isSurfaceActive с составными аббревиатурами MOD, MO, DO, Class V", () => {
+		// MOD активен для M, O, D, но не для V, L, C
+		assert.equal(isSurfaceActive("M", ["MOD"]), true);
+		assert.equal(isSurfaceActive("O", ["MOD"]), true);
+		assert.equal(isSurfaceActive("D", ["MOD"]), true);
+		assert.equal(isSurfaceActive("V", ["MOD"]), false);
+		assert.equal(isSurfaceActive("L", ["MOD"]), false);
+		assert.equal(isSurfaceActive("C", ["MOD"]), false);
+
+		// MO активен для M и O
+		assert.equal(isSurfaceActive("M", ["MO"]), true);
+		assert.equal(isSurfaceActive("O", ["MO"]), true);
+		assert.equal(isSurfaceActive("D", ["MO"]), false);
+
+		// DO активен для D и O
+		assert.equal(isSurfaceActive("D", ["DO"]), true);
+		assert.equal(isSurfaceActive("O", ["DO"]), true);
+		assert.equal(isSurfaceActive("M", ["DO"]), false);
+
+		// Class V активен для C
+		assert.equal(isSurfaceActive("C", ["Class V"]), true);
+		assert.equal(isSurfaceActive("O", ["Class V"]), false);
+		assert.equal(isSurfaceActive("M", ["Class V"]), false);
 	});
 });
 
