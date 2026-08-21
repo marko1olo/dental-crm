@@ -806,7 +806,7 @@ export function VisitEmkTab() {
 					anamnesis={noteForm?.anamnesis || noteForm?.complaint}
 					objectiveStatus={noteForm?.objectiveStatus}
 					treatmentDescription={noteForm?.treatmentPlan}
-					instrumentTrayBarcode={linkedBarcode || trayBarcode || undefined}
+					{...(linkedBarcode || trayBarcode ? { instrumentTrayBarcode: linkedBarcode || trayBarcode } : {})}
 				/>
 
 				<div className="mb-3">

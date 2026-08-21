@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import type { ToothData } from "./ToothChart";
 import { showToast } from "../GlobalToast";
+import { FiscalReceipt54FzModal } from "../finance/FiscalReceipt54FzModal";
+import type { TreatmentPlanItem } from "../treatment-plans/types";
 import "./odontogram.css";
 
 export interface LiveInvoiceItem {
@@ -119,6 +121,7 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 	const [discountPercent, setDiscountPercent] = useState<number>(0);
 	const [customDiscountRub, setCustomDiscountRub] = useState<number>(0);
 	const [isDiscountCustom, setIsDiscountCustom] = useState<boolean>(false);
+	const [isFiscalModalOpen, setIsFiscalModalOpen] = useState<boolean>(false);
 
 	// Auto-compute treatment items based on affected teeth
 	const baseItems = useMemo(() => {
@@ -471,27 +474,38 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 					</div>
 				</div>
 
-				{/* 3 Main Action Buttons */}
-				<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+				{/* 4 Main Action Buttons */}
+				<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
 					{/* Create Cashier Invoice */}
 					<button
 						type="button"
 						onClick={handleCreateInvoice}
-						className="min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-600/20 cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-95"
+						className="min-h-[44px] flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-600/20 cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-95"
 						title="Создать официальный счет на оплату в кассу"
 					>
-						<Receipt size={15} />
+						<Receipt size={14} />
 						<span>В кассу</span>
+					</button>
+
+					{/* 54-FZ Fiscal Receipt */}
+					<button
+						type="button"
+						onClick={() => setIsFiscalModalOpen(true)}
+						className="min-h-[44px] flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 shadow-md shadow-teal-600/20 cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-95"
+						title="Принять оплату (карты, СБП, наличные) и пробить фискальный чек 54-ФЗ"
+					>
+						<ShieldCheck size={14} />
+						<span>Чек 54-ФЗ</span>
 					</button>
 
 					{/* Export to Comprehensive Plan */}
 					<button
 						type="button"
 						onClick={handleExportToPlan}
-						className="min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 shadow-md shadow-teal-600/20 cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-teal-500 active:scale-95"
+						className="min-h-[44px] flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 shadow-md shadow-teal-600/20 cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-teal-500 active:scale-95"
 						title="Перенести услуги сметы в комплексный план лечения пациента"
 					>
-						<Zap size={15} />
+						<Zap size={14} />
 						<span>В план</span>
 					</button>
 
@@ -499,14 +513,43 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 					<button
 						type="button"
 						onClick={handlePrint}
-						className="min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-95"
+						className="min-h-[44px] flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-95"
 						title="Распечатать смету или сохранить в PDF"
 					>
-						<Printer size={15} />
+						<Printer size={14} />
 						<span>Печать</span>
 					</button>
 				</div>
 			</div>
+
+			{/* 54-FZ Fiscal Receipt Modal */}
+			{isFiscalModalOpen && (
+				<FiscalReceipt54FzModal
+					isOpen={isFiscalModalOpen}
+					items={baseItems.map((it, idx) => ({
+						id: `live-inv-${idx}-${it.toothNumber}`,
+						toothNumber: it.toothNumber,
+						code804n: it.code,
+						name: it.title,
+						category: it.category,
+						unitPriceRub: it.price,
+						priceRub: it.price * it.quantity - (it.discountRub || 0),
+						quantity: it.quantity,
+						discountRub: it.discountRub || 0,
+						phase: 1,
+						stageKind: "stage_1_therapy" as const,
+					}))}
+					patientId={patientId || "patient-001"}
+					patientName={patientName}
+					onClose={() => setIsFiscalModalOpen(false)}
+					onReceiptFiscalized={(receiptNum) => {
+						showToast(
+							`Чек №${receiptNum} на сумму ${netTotalPrice.toLocaleString("ru-RU")} ₽ успешно пробит`,
+							"success",
+						);
+					}}
+				/>
+			)}
 		</aside>
 	);
 };

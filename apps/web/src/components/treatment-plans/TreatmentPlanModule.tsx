@@ -41,6 +41,7 @@ import { TreatmentPlanContractPrint } from "./TreatmentPlanContractPrint";
 import { TreatmentPlanCompletedActPrint } from "./TreatmentPlanCompletedActPrint";
 import { TreatmentPlanSignatureModal } from "./TreatmentPlanSignatureModal";
 import { TreatmentPlanStageCard } from "./TreatmentPlanStageCard";
+import { FiscalReceipt54FzModal } from "../finance/FiscalReceipt54FzModal";
 import type {
 	CashierInvoiceExportData,
 	CompletedWorksActAndWriteOffData,
@@ -75,6 +76,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	const [isSignModalOpen, setIsSignModalOpen] = useState<boolean>(false);
 	const [isContractPrintOpen, setIsContractPrintOpen] = useState<boolean>(false);
 	const [isActPrintOpen, setIsActPrintOpen] = useState<boolean>(false);
+	const [isFiscalModalOpen, setIsFiscalModalOpen] = useState<boolean>(false);
 	const [selectedActStage, setSelectedActStage] = useState<TreatmentPlanStage | null>(null);
 	const [isExecutingWriteOff, setIsExecutingWriteOff] = useState<boolean>(false);
 	const [signedAgreement, setSignedAgreement] =
@@ -348,11 +350,22 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					<button
 						type="button"
 						onClick={handleExportCashier}
-						className="min-h-[40px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-600/20 cursor-pointer transition-all"
+						className="min-h-[40px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] shadow-xs cursor-pointer transition-colors"
 						title="Сформировать счет на оплату в кассу"
 					>
 						<Receipt size={15} />
-						<span>Создать счет в кассу</span>
+						<span>Счет в кассу</span>
+					</button>
+
+					{/* 54-FZ Fiscal Receipt & Split Payment Modal */}
+					<button
+						type="button"
+						onClick={() => setIsFiscalModalOpen(true)}
+						className="min-h-[40px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-600/20 cursor-pointer transition-all"
+						title="Принять оплату (карты, СБП QR, наличные) и пробить фискальный чек 54-ФЗ"
+					>
+						<ShieldCheck size={15} />
+						<span>Чек 54-ФЗ / Оплата</span>
 					</button>
 
 					{/* Save to DB */}
@@ -510,6 +523,24 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					}}
 					onConfirmExecuteWriteOff={handleConfirmExecuteWriteOff}
 					isExecuting={isExecutingWriteOff}
+				/>
+			)}
+
+			{/* 54-FZ Fiscal Receipt & Split Payment Modal */}
+			{isFiscalModalOpen && (
+				<FiscalReceipt54FzModal
+					isOpen={isFiscalModalOpen}
+					items={currentTier.stages.flatMap((s) => s.items)}
+					patientId={patientId}
+					patientName={patientName}
+					patientPhone={dashboard?.activePatient?.phone || "+7 (999) 000-00-00"}
+					patientDepositRub={Math.round((dashboard?.activePatient?.balanceKopecks || 0) / 100)}
+					cashierFullName={auth?.currentUser?.name || "Кассир-администратор"}
+					clinicName={dashboard?.clinicSettings?.profile?.brandName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
+					onClose={() => setIsFiscalModalOpen(false)}
+					onReceiptFiscalized={(receiptNum) => {
+						showToast(`Чек №${receiptNum} сохранен в истории оплат`, "success");
+					}}
 				/>
 			)}
 		</div>
