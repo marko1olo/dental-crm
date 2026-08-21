@@ -3,13 +3,20 @@ import { describe, test } from "node:test";
 import type { Appointment, InsuranceContract, Patient, PatientInsight, StaffMember } from "@dental/shared";
 import {
 	calculatePatientFinancialStatus,
+	formatDurationTimer,
 	formatPatientInitials,
 	formatPhoneDisplay,
+	generateAppointmentConfirmationMessage,
+	generateSmsConfirmationUrl,
+	generateTelegramConfirmationUrl,
+	generateWaveformBars,
+	generateWhatsAppConfirmationUrl,
 	getAvatarColor,
 	type IncomingCallPayload,
 	normalizePhoneDigits,
 	resolvePatientFromPhone,
 	resolvePatientLastVisit,
+	resolvePatientUpcomingAppointment,
 	useTelephonyStore,
 } from "../../../store/telephonyStore.js";
 
@@ -181,6 +188,23 @@ describe("1. Phone Normalization & Presentation Formatters", () => {
 		assert.ok(color1.text.startsWith("#"));
 		assert.ok(color1.border.startsWith("#"));
 	});
+
+	test("formatDurationTimer formats duration seconds into MM:SS and HH:MM:SS", () => {
+		assert.equal(formatDurationTimer(0), "00:00");
+		assert.equal(formatDurationTimer(5), "00:05");
+		assert.equal(formatDurationTimer(65), "01:05");
+		assert.equal(formatDurationTimer(3665), "01:01:05");
+	});
+
+	test("generateWaveformBars produces deterministic amplitude values within [0.15, 1.0]", () => {
+		const bars1 = generateWaveformBars("test-seed-123", 32);
+		const bars2 = generateWaveformBars("test-seed-123", 32);
+		assert.equal(bars1.length, 32);
+		assert.deepEqual(bars1, bars2);
+		for (const amp of bars1) {
+			assert.ok(amp >= 0.15 && amp <= 1.0, `Amplitude ${amp} must be in [0.15, 1.0]`);
+		}
+	});
 });
 
 describe("2. Patient Search & Phone Matching", () => {
@@ -280,6 +304,8 @@ describe("5. Telephony Store Lifecycle & State Transitions", () => {
 	test("store initializes with default state", () => {
 		const state = useTelephonyStore.getState();
 		assert.equal(state.isSimulatorOpen, false);
+		assert.equal(state.playbackSpeed, 1);
+		assert.equal(state.volumeLevel, 0.8);
 	});
 
 	test("triggerIncomingCall sets activeCall and updates history", () => {
@@ -303,6 +329,13 @@ describe("5. Telephony Store Lifecycle & State Transitions", () => {
 
 		assert.ok(state.callHistory.length > 0);
 		assert.equal(state.callHistory[0]?.phone, "+79161234567");
+	});
+
+	test("answerCall transitions active call status to answered", () => {
+		useTelephonyStore.getState().answerCall();
+		const state = useTelephonyStore.getState();
+		assert.equal(state.activeCall?.status, "answered");
+		assert.equal(state.callHistory[0]?.status, "answered");
 	});
 
 	test("acceptCall marks call as answered and clears activeCall", () => {
@@ -344,6 +377,23 @@ describe("5. Telephony Store Lifecycle & State Transitions", () => {
 		const state = useTelephonyStore.getState();
 		assert.equal(state.activeCall, null);
 		assert.equal(state.callHistory[0]?.actionTaken, "dismissed");
+	});
+
+	test("playback speed cycling supports 1x -> 1.25x -> 1.5x -> 2x -> 1x", () => {
+		useTelephonyStore.getState().setPlaybackSpeed(1);
+		assert.equal(useTelephonyStore.getState().playbackSpeed, 1);
+
+		useTelephonyStore.getState().cyclePlaybackSpeed();
+		assert.equal(useTelephonyStore.getState().playbackSpeed, 1.25);
+
+		useTelephonyStore.getState().cyclePlaybackSpeed();
+		assert.equal(useTelephonyStore.getState().playbackSpeed, 1.5);
+
+		useTelephonyStore.getState().cyclePlaybackSpeed();
+		assert.equal(useTelephonyStore.getState().playbackSpeed, 2);
+
+		useTelephonyStore.getState().cyclePlaybackSpeed();
+		assert.equal(useTelephonyStore.getState().playbackSpeed, 1);
 	});
 
 	test("toggleMute toggles mute state", () => {

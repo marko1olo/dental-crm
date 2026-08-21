@@ -484,47 +484,47 @@ export function ChairsiderPerspectiveView() {
 								)}
 							</div>
 
-							{/* View Mode Switcher: [🦷 Анатомическая дуга (SVG) | 🔲 Крупные плитки (56px) | 📊 Пародонтограмма] */}
+							{/* View Mode Switcher: [🦷 Анатомическая дуга | 🔲 Крупные плитки (56px) | 📊 Пародонтограмма] */}
 							<div
 								role="group"
 								aria-label="Режим отображения формулы"
-								className="inline-flex p-1 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 shadow-inner flex-wrap gap-1"
+								className="grid grid-cols-3 sm:inline-flex p-1 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 shadow-inner gap-1 w-full sm:w-auto"
 							>
 								<button
 									type="button"
 									onClick={() => setViewMode("svg")}
 									aria-pressed={viewMode === "svg"}
-									className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+									className={`min-h-[44px] px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
 										viewMode === "svg"
 											? "bg-teal-600 text-white shadow-md shadow-teal-600/30"
 											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-300"
 									}`}
 								>
-									<span>🦷 Анатомическая дуга</span>
+									<span>🦷 <span className="hidden sm:inline">Анатомическая </span>дуга</span>
 								</button>
 								<button
 									type="button"
 									onClick={() => setViewMode("tiles")}
 									aria-pressed={viewMode === "tiles"}
-									className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+									className={`min-h-[44px] px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
 										viewMode === "tiles"
 											? "bg-teal-600 text-white shadow-md shadow-teal-600/30"
 											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-300"
 									}`}
 								>
-									<span>🔲 Плитки (56px)</span>
+									<span>🔲 Плитки<span className="hidden sm:inline"> (56px)</span></span>
 								</button>
 								<button
 									type="button"
 									onClick={() => setViewMode("perio")}
 									aria-pressed={viewMode === "perio"}
-									className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+									className={`min-h-[44px] px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
 										viewMode === "perio"
 											? "bg-teal-600 text-white shadow-md shadow-teal-600/30"
 											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-300"
 									}`}
 								>
-									<span>📊 Пародонтограмма</span>
+									<span>📊 <span className="hidden sm:inline">Пародонто</span>грамма</span>
 								</button>
 							</div>
 						</div>

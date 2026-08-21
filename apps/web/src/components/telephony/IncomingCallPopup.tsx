@@ -5,29 +5,36 @@ import {
 	CalendarCheck,
 	CalendarPlus,
 	Check,
-	CheckCircle2,
+	Clock,
 	Copy,
 	CreditCard,
 	FileText,
 	Forward,
 	Gauge,
 	MessageSquare,
+	Mic,
+	MicOff,
 	Pause,
 	Phone,
 	PhoneCall,
+	PhoneForwarded,
 	PhoneIncoming,
 	PhoneOff,
 	Play,
+	RotateCcw,
+	RotateCw,
 	Send,
 	Shield,
 	ShieldAlert,
 	Sliders,
+	Sparkles,
 	Stethoscope,
 	User,
 	UserCheck,
 	Volume2,
 	VolumeX,
 	X,
+	Zap,
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -39,10 +46,12 @@ import { usePatientStore } from "../../store/patientStore";
 import { useScheduleStore } from "../../store/scheduleStore";
 import {
 	calculatePatientFinancialStatus,
+	formatDurationTimer,
 	formatPatientInitials,
 	formatPhoneDisplay,
 	generateAppointmentConfirmationMessage,
 	generateSmsConfirmationUrl,
+	generateWaveformBars,
 	generateWhatsAppConfirmationUrl,
 	getAvatarColor,
 	openWhatsAppChat,
@@ -134,16 +143,20 @@ function playRingtoneChime(audioCtx: AudioContext, volumeLevel = 0.8) {
 }
 
 /**
- * Call Audio Recording Player with Volume Normalization and Speed Toggles (1x, 1.25x, 1.5x)
+ * Call Audio Recording Player with Volume Normalization, Speed Toggles (1.0x, 1.25x, 1.5x, 2.0x)
+ * and interactive Waveform Scrubbing.
  */
 export function CallAudioPlayer({
 	recordingUrl,
 	durationSeconds = 45,
+	seed,
 }: {
 	recordingUrl: string;
 	durationSeconds?: number;
+	seed?: string;
 }) {
 	const playbackSpeed = useTelephonyStore((s) => s.playbackSpeed);
+	const setPlaybackSpeed = useTelephonyStore((s) => s.setPlaybackSpeed);
 	const cyclePlaybackSpeed = useTelephonyStore((s) => s.cyclePlaybackSpeed);
 	const isMuted = useTelephonyStore((s) => s.isMuted);
 	const toggleMute = useTelephonyStore((s) => s.toggleMute);
@@ -153,7 +166,13 @@ export function CallAudioPlayer({
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [currentTime, setCurrentTime] = useState(0);
 	const [audioDuration, setAudioDuration] = useState(durationSeconds);
+	const [hoverTime, setHoverTime] = useState<number | null>(null);
 	const audioRef = useRef<HTMLAudioElement | null>(null);
+	const waveformRef = useRef<HTMLDivElement | null>(null);
+
+	const waveformBars = useMemo(() => {
+		return generateWaveformBars(seed || recordingUrl, 44);
+	}, [seed, recordingUrl]);
 
 	useEffect(() => {
 		if (audioRef.current) {
@@ -187,31 +206,49 @@ export function CallAudioPlayer({
 	const handleTimeUpdate = () => {
 		if (audioRef.current) {
 			setCurrentTime(audioRef.current.currentTime);
-			if (
-				audioRef.current.duration &&
-				!Number.isNaN(audioRef.current.duration)
-			) {
+			if (audioRef.current.duration && !Number.isNaN(audioRef.current.duration)) {
 				setAudioDuration(audioRef.current.duration);
 			}
 		}
 	};
 
-	const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const newTime = Number(e.target.value);
-		setCurrentTime(newTime);
+	const handleSkip = (deltaSeconds: number) => {
+		if (!audioRef.current) return;
+		const nextTime = Math.max(0, Math.min(audioDuration, currentTime + deltaSeconds));
+		audioRef.current.currentTime = nextTime;
+		setCurrentTime(nextTime);
+	};
+
+	const handleWaveformClick = (e: React.MouseEvent<HTMLDivElement>) => {
+		if (!waveformRef.current) return;
+		const rect = waveformRef.current.getBoundingClientRect();
+		const clickX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+		const progress = clickX / rect.width;
+		const targetTime = progress * (audioDuration || 1);
+
+		setCurrentTime(targetTime);
 		if (audioRef.current) {
-			audioRef.current.currentTime = newTime;
+			audioRef.current.currentTime = targetTime;
 		}
 	};
 
-	const formatSec = (sec: number) => {
-		const m = Math.floor(sec / 60);
-		const s = Math.floor(sec % 60);
-		return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+	const handleWaveformMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+		if (!waveformRef.current) return;
+		const rect = waveformRef.current.getBoundingClientRect();
+		const hoverX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+		const progress = hoverX / rect.width;
+		setHoverTime(progress * (audioDuration || 1));
 	};
 
+	const handleWaveformMouseLeave = () => {
+		setHoverTime(null);
+	};
+
+	const progressPct = audioDuration > 0 ? (currentTime / audioDuration) * 100 : 0;
+	const speeds: PlaybackSpeed[] = [1, 1.25, 1.5, 2];
+
 	return (
-		<div className="p-2.5 rounded-xl bg-slate-950/40 border border-teal-500/20 text-xs flex flex-col gap-2">
+		<div className="p-3 rounded-xl bg-slate-950/60 dark:bg-slate-950/80 border border-teal-500/20 text-xs flex flex-col gap-2.5 shadow-sm">
 			<audio
 				ref={audioRef}
 				src={recordingUrl}
@@ -221,64 +258,132 @@ export function CallAudioPlayer({
 					// Fallback for simulation links
 				}}
 			/>
+
+			{/* Top Bar: Playback Controls & Waveform Info */}
 			<div className="flex items-center justify-between gap-2">
 				<div className="flex items-center gap-2">
 					<button
 						type="button"
 						onClick={togglePlay}
-						className="w-7 h-7 rounded-lg bg-teal-600 hover:bg-teal-500 text-white flex items-center justify-center transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+						className="w-8 h-8 rounded-lg bg-teal-600 hover:bg-teal-500 active:scale-95 text-white flex items-center justify-center transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
 						title={isPlaying ? "Пауза" : "Воспроизвести запись"}
 						aria-label={isPlaying ? "Пауза" : "Воспроизвести запись"}
 					>
-						{isPlaying ? <Pause size={13} /> : <Play size={13} className="ml-0.5" />}
+						{isPlaying ? <Pause size={14} /> : <Play size={14} className="ml-0.5" />}
 					</button>
 
-					<span className="font-mono text-[11px] text-slate-300">
-						{formatSec(currentTime)} / {formatSec(audioDuration)}
+					{/* Skip -10s */}
+					<button
+						type="button"
+						onClick={() => handleSkip(-10)}
+						className="p-1 rounded-md text-slate-400 hover:text-slate-200 transition-colors"
+						title="Назад на 10 сек"
+						aria-label="Назад на 10 секунд"
+					>
+						<RotateCcw size={13} />
+					</button>
+
+					{/* Skip +10s */}
+					<button
+						type="button"
+						onClick={() => handleSkip(10)}
+						className="p-1 rounded-md text-slate-400 hover:text-slate-200 transition-colors"
+						title="Вперед на 10 сек"
+						aria-label="Вперед на 10 секунд"
+					>
+						<RotateCw size={13} />
+					</button>
+
+					<span className="font-mono text-[11px] text-slate-300 font-semibold">
+						{formatDurationTimer(currentTime)} / {formatDurationTimer(audioDuration)}
 					</span>
 				</div>
 
 				<div className="flex items-center gap-1.5">
-					{/* Speed Toggle (1x -> 1.25x -> 1.5x) */}
-					<button
-						type="button"
-						onClick={cyclePlaybackSpeed}
-						className="px-1.5 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-[10px] font-bold text-teal-300 border border-slate-700 transition-all flex items-center gap-0.5"
-						title="Скорость воспроизведения"
-						aria-label={`Скорость воспроизведения: ${playbackSpeed}x`}
-					>
-						<Gauge size={10} />
-						<span>{playbackSpeed}x</span>
-					</button>
+					{/* Speed Toggle Pills (1x, 1.25x, 1.5x, 2x) */}
+					<div className="flex items-center bg-slate-900/90 rounded-lg p-0.5 border border-slate-800">
+						{speeds.map((s) => (
+							<button
+								key={s}
+								type="button"
+								onClick={() => setPlaybackSpeed(s)}
+								className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all ${
+									playbackSpeed === s
+										? "bg-teal-600 text-white shadow-xs"
+										: "text-slate-400 hover:text-slate-200"
+								}`}
+								title={`Скорость ${s}x`}
+							>
+								{s}x
+							</button>
+						))}
+					</div>
 
 					{/* Mute toggle */}
 					<button
 						type="button"
 						onClick={toggleMute}
-						className="p-1 rounded-md text-slate-400 hover:text-slate-200 transition-all"
+						className="p-1.5 rounded-md text-slate-400 hover:text-slate-200 transition-all"
 						title={isMuted ? "Включить звук" : "Выключить звук"}
 						aria-label={isMuted ? "Включить звук" : "Выключить звук"}
 					>
 						{isMuted ? (
-							<VolumeX size={13} className="text-rose-400" />
+							<VolumeX size={14} className="text-rose-400" />
 						) : (
-							<Volume2 size={13} />
+							<Volume2 size={14} />
 						)}
 					</button>
 				</div>
 			</div>
 
-			{/* Audio Progress Scrubber */}
-			<input
-				type="range"
-				min={0}
-				max={audioDuration || 1}
-				step={0.5}
-				value={currentTime}
-				onChange={handleSeek}
-				className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-teal-500 focus:outline-none"
-				aria-label="Перемотка аудиозаписи"
-			/>
+			{/* Interactive Audio Waveform Scrubber */}
+			<div className="relative flex flex-col gap-1">
+				<div
+					ref={waveformRef}
+					onClick={handleWaveformClick}
+					onMouseMove={handleWaveformMouseMove}
+					onMouseLeave={handleWaveformMouseLeave}
+					className="h-9 w-full flex items-center justify-between gap-[2px] px-1 py-1 rounded-lg bg-slate-900/80 hover:bg-slate-900 border border-slate-800 cursor-pointer relative overflow-hidden transition-colors"
+					role="slider"
+					aria-valuemin={0}
+					aria-valuemax={audioDuration}
+					aria-valuenow={currentTime}
+					aria-label="Интерактивная волновая форма аудиозаписи"
+				>
+					{/* Waveform Bars */}
+					{waveformBars.map((amp, idx) => {
+						const barProgress = (idx / waveformBars.length) * 100;
+						const isPast = barProgress <= progressPct;
+						const barHeight = Math.max(4, Math.round(amp * 28));
+
+						return (
+							<div
+								// biome-ignore lint/suspicious/noArrayIndexKey: fixed count bars
+								key={idx}
+								style={{ height: `${barHeight}px` }}
+								className={`flex-1 rounded-full transition-colors ${
+									isPast
+										? "bg-teal-400 shadow-[0_0_4px_rgba(45,212,191,0.5)]"
+										: "bg-slate-700/70 hover:bg-slate-600"
+								}`}
+							/>
+						);
+					})}
+
+					{/* Current Playhead Indicator */}
+					<div
+						className="absolute top-0 bottom-0 w-[2px] bg-emerald-400 pointer-events-none transition-all shadow-[0_0_6px_rgba(52,211,153,0.8)]"
+						style={{ left: `${progressPct}%` }}
+					/>
+				</div>
+
+				{/* Hover time tooltip */}
+				{hoverTime !== null && (
+					<div className="text-[10px] text-teal-300 font-mono self-end">
+						Перемотка: {formatDurationTimer(hoverTime)}
+					</div>
+				)}
+			</div>
 		</div>
 	);
 }
@@ -286,6 +391,7 @@ export function CallAudioPlayer({
 export function IncomingCallPopup() {
 	const activeCall = useTelephonyStore((s) => s.activeCall);
 	const triggerIncomingCall = useTelephonyStore((s) => s.triggerIncomingCall);
+	const answerCall = useTelephonyStore((s) => s.answerCall);
 	const acceptCall = useTelephonyStore((s) => s.acceptCall);
 	const rejectCall = useTelephonyStore((s) => s.rejectCall);
 	const dismissCall = useTelephonyStore((s) => s.dismissCall);
@@ -300,22 +406,35 @@ export function IncomingCallPopup() {
 	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
 	const setNewPatientPhone = usePatientStore((s) => s.setNewPatientPhone);
 	const setCurrentView = useAppStore((s) => s.setCurrentView);
-	const setNewAppointmentDraft = useScheduleStore(
-		(s) => s.setNewAppointmentDraft,
-	);
+	const setNewAppointmentDraft = useScheduleStore((s) => s.setNewAppointmentDraft);
 
 	const { lastMessage } = useWebsocket(resolveTelephonyWsUrl());
 	const audioCtxRef = useRef<AudioContext | null>(null);
 
 	const [whatsappSent, setWhatsappSent] = useState(false);
 	const [smsCopied, setSmsCopied] = useState(false);
+	const [elapsedSeconds, setElapsedSeconds] = useState(0);
+	const [isExpanded, setIsExpanded] = useState(true);
+
+	// Live Call Duration Timer (ticks every second while activeCall exists)
+	useEffect(() => {
+		if (!activeCall) {
+			setElapsedSeconds(0);
+			return;
+		}
+
+		const startTime = activeCall.callStartedAt ?? Date.now();
+		const interval = setInterval(() => {
+			const seconds = Math.max(0, Math.floor((Date.now() - startTime) / 1000));
+			setElapsedSeconds(seconds);
+		}, 1000);
+
+		return () => clearInterval(interval);
+	}, [activeCall]);
 
 	// Sync WebSocket Incoming Call Event to Telephony Store
 	useEffect(() => {
-		if (
-			lastMessage?.type === "TELEPHONY_INCOMING_CALL" &&
-			lastMessage.payload
-		) {
+		if (lastMessage?.type === "TELEPHONY_INCOMING_CALL" && lastMessage.payload) {
 			const p = lastMessage.payload;
 			triggerIncomingCall({
 				phone: p.phone || "",
@@ -326,13 +445,14 @@ export function IncomingCallPopup() {
 				timestamp: p.timestamp || new Date().toISOString(),
 				status: "ringing",
 				recordingUrl: p.recordingUrl,
+				callStartedAt: Date.now(),
 			});
 		}
 	}, [lastMessage, triggerIncomingCall]);
 
 	// Ringtone playback loop while active call is ringing
 	useEffect(() => {
-		if (!activeCall || isMuted) return;
+		if (!activeCall || activeCall.status === "answered" || isMuted) return;
 
 		let intervalId: ReturnType<typeof setInterval> | null = null;
 		try {
@@ -365,13 +485,13 @@ export function IncomingCallPopup() {
 		};
 	}, [activeCall, isMuted, volumeLevel]);
 
-	// Auto-dismiss call after 40 seconds if unhandled
+	// Auto-dismiss call after 45 seconds if unhandled and still ringing
 	useEffect(() => {
-		if (!activeCall) return;
+		if (!activeCall || activeCall.status === "answered") return;
 
 		const timer = setTimeout(() => {
 			dismissCall();
-		}, 40000);
+		}, 45000);
 
 		return () => clearTimeout(timer);
 	}, [activeCall, dismissCall]);
@@ -395,9 +515,8 @@ export function IncomingCallPopup() {
 	const patientInsight = useMemo(() => {
 		if (!resolvedPatient || !dashboard?.patientInsights) return null;
 		return (
-			dashboard.patientInsights.find(
-				(pi) => pi.patientId === resolvedPatient.id,
-			) || null
+			dashboard.patientInsights.find((pi) => pi.patientId === resolvedPatient.id) ||
+			null
 		);
 	}, [resolvedPatient, dashboard?.patientInsights]);
 
@@ -439,8 +558,7 @@ export function IncomingCallPopup() {
 
 	if (!activeCall) return null;
 
-	const callerName =
-		resolvedPatient?.fullName || activeCall.patientName || "Неизвестный номер";
+	const callerName = resolvedPatient?.fullName || activeCall.patientName || "Неизвестный номер";
 	const formattedPhone = formatPhoneDisplay(activeCall.phone);
 	const initials = formatPatientInitials(callerName);
 	const avatarColors = getAvatarColor(callerName);
@@ -464,6 +582,8 @@ export function IncomingCallPopup() {
 					: activeCall.provider === "zadarma"
 						? "Zadarma PBX"
 						: "IP-Телефония";
+
+	const isCallAnswered = activeCall.status === "answered";
 
 	// 1-Click WhatsApp Confirmation Trigger
 	const handleSendWhatsAppConfirmation = () => {
@@ -515,21 +635,40 @@ export function IncomingCallPopup() {
 			setNewPatientPhone(activeCall.phone);
 			setCurrentView("patients");
 			acceptCall();
-			showToast(
-				`Регистрация нового пациента с номером ${formattedPhone}`,
-				"info",
-			);
+			showToast(`Регистрация нового пациента с номером ${formattedPhone}`, "info");
 		}
 	};
 
-	const handleBookToday = () => {
-		const todayIso =
-			dashboard?.todayIso || new Date().toISOString().split("T")[0]!;
+	// Touch-First 1-Click Quick Booking Flow
+	const handleQuickBook = (slotType: "today_urgent" | "today_standard" | "tomorrow") => {
+		const todayIso = dashboard?.todayIso || new Date().toISOString().split("T")[0]!;
 		const defaultDoctorId =
-			dashboard?.clinicSettings?.staff?.find((s) => s.role === "doctor")?.id ||
-			"";
-		const defaultChairId =
-			dashboard?.clinicSettings?.chairs?.[0]?.id || "";
+			dashboard?.clinicSettings?.staff?.find((s) => s.role === "doctor")?.id || "";
+		const defaultChairId = dashboard?.clinicSettings?.chairs?.[0]?.id || "";
+
+		let targetDate = todayIso;
+		let startTime = "10:00:00";
+		let endTime = "10:30:00";
+		let reason = "Первичный звонок";
+
+		if (slotType === "today_urgent") {
+			targetDate = todayIso;
+			startTime = "10:00:00";
+			endTime = "10:30:00";
+			reason = "Острая боль / Экстренный приём";
+		} else if (slotType === "today_standard") {
+			targetDate = todayIso;
+			startTime = "14:30:00";
+			endTime = "15:00:00";
+			reason = "Первичная консультация и диагностика";
+		} else if (slotType === "tomorrow") {
+			const d = new Date(todayIso);
+			d.setDate(d.getDate() + 1);
+			targetDate = d.toISOString().split("T")[0]!;
+			startTime = "11:00:00";
+			endTime = "11:30:00";
+			reason = "Плановый визит по звонку";
+		}
 
 		if (resolvedPatient) {
 			setSelectedPatientId(resolvedPatient.id);
@@ -538,15 +677,15 @@ export function IncomingCallPopup() {
 				doctorUserId: defaultDoctorId,
 				assistantUserId: "",
 				chairId: defaultChairId,
-				startsAt: `${todayIso}T10:00:00`,
-				endsAt: `${todayIso}T10:30:00`,
+				startsAt: `${targetDate}T${startTime}`,
+				endsAt: `${targetDate}T${endTime}`,
 				status: "planned",
-				reason: "Первичный звонок / Острая запись",
+				reason,
 				comment: `Запись по входящему звонку (${formattedPhone})`,
 			});
 			setCurrentView("schedule");
 			acceptCall();
-			showToast(`Запись пациента ${resolvedPatient.fullName} на сегодня`, "info");
+			showToast(`Создана запись: ${resolvedPatient.fullName} (${reason})`, "info");
 		} else {
 			setNewPatientPhone(activeCall.phone);
 			setNewAppointmentDraft({
@@ -554,16 +693,21 @@ export function IncomingCallPopup() {
 				doctorUserId: defaultDoctorId,
 				assistantUserId: "",
 				chairId: defaultChairId,
-				startsAt: `${todayIso}T10:00:00`,
-				endsAt: `${todayIso}T10:30:00`,
+				startsAt: `${targetDate}T${startTime}`,
+				endsAt: `${targetDate}T${endTime}`,
 				status: "planned",
-				reason: "Первичный звонок",
+				reason,
 				comment: `Новый пациент с телефона ${formattedPhone}`,
 			});
 			setCurrentView("schedule");
 			acceptCall();
-			showToast(`Новая запись на сегодня (${formattedPhone})`, "info");
+			showToast(`Новая запись: ${formattedPhone} (${reason})`, "info");
 		}
+	};
+
+	const handleAnswerCall = () => {
+		answerCall();
+		showToast(`Вызов принят (${formattedPhone})`, "success");
 	};
 
 	const handleReject = () => {
@@ -575,28 +719,54 @@ export function IncomingCallPopup() {
 
 	return createPortal(
 		<div
-			className="fixed bottom-6 right-6 left-4 sm:left-auto w-auto sm:w-[440px] max-w-[calc(100vw-32px)] z-[999999] flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xl p-4 sm:p-5 backdrop-blur-xl animate-slide-in"
+			className="fixed bottom-6 right-6 left-4 sm:left-auto w-auto sm:w-[460px] max-w-[calc(100vw-32px)] z-[999999] flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xl p-4 sm:p-5 backdrop-blur-xl animate-slide-in"
 			style={{
 				boxShadow:
-					"0 20px 40px -15px rgba(0,0,0,0.3), 0 0 20px 2px rgba(15,118,110,0.15)",
+					"0 20px 40px -15px rgba(0,0,0,0.3), 0 0 20px 2px rgba(15,118,110,0.18)",
 			}}
 			role="dialog"
 			aria-labelledby="incoming-call-title"
 			aria-modal="false"
 			data-testid="incoming-call-popup"
 		>
-			{/* Top Bar: Provider Tag, Pulse Indicator & Controls */}
-			<div className="flex items-center justify-between pb-2 border-b border-[var(--line,rgba(255,255,255,0.08))]">
+			{/* Top Bar: WebRTC / SIP Status, Live Duration Timer & Controls */}
+			<div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800/80">
 				<div className="flex items-center gap-2">
 					<span className="relative flex h-3 w-3">
-						<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-						<span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+						<span
+							className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+								isCallAnswered ? "bg-emerald-400" : "bg-teal-400"
+							}`}
+						/>
+						<span
+							className={`relative inline-flex rounded-full h-3 w-3 ${
+								isCallAnswered ? "bg-emerald-500" : "bg-teal-500"
+							}`}
+						/>
 					</span>
-					<div className="flex items-center gap-1.5 text-emerald-400 font-bold text-xs uppercase tracking-wider">
-						<PhoneIncoming size={15} className="animate-pulse" />
-						<span id="incoming-call-title">Входящий звонок</span>
+
+					<div
+						className={`flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider ${
+							isCallAnswered ? "text-emerald-500 dark:text-emerald-400" : "text-teal-600 dark:text-teal-400"
+						}`}
+					>
+						{isCallAnswered ? (
+							<PhoneCall size={14} className="animate-pulse" />
+						) : (
+							<PhoneIncoming size={14} className="animate-pulse" />
+						)}
+						<span id="incoming-call-title">
+							{isCallAnswered ? "Разговор (WebRTC)" : "Входящий (SIP)"}
+						</span>
 					</div>
-					<span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[var(--paper-soft,rgba(255,255,255,0.06))] text-[var(--muted,#94a3b8)] border border-[var(--line,rgba(255,255,255,0.1))]">
+
+					{/* Live Duration Timer */}
+					<span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 flex items-center gap-1">
+						<Clock size={10} className="text-teal-500" />
+						<span>{formatDurationTimer(elapsedSeconds)}</span>
+					</span>
+
+					<span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hidden sm:inline">
 						{providerLabel}
 					</span>
 				</div>
@@ -606,7 +776,7 @@ export function IncomingCallPopup() {
 					<button
 						type="button"
 						onClick={toggleMute}
-						className="text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] hover:bg-[var(--paper-soft,rgba(255,255,255,0.1))] transition-colors rounded-lg p-1.5 min-h-[32px] min-w-[32px] inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0f766e)]"
+						className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors rounded-lg p-1.5 min-h-[32px] min-w-[32px] inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-teal-500"
 						title={isMuted ? "Включить звонок" : "Отключить звук"}
 						aria-label={isMuted ? "Включить звонок" : "Отключить звук"}
 					>
@@ -621,7 +791,7 @@ export function IncomingCallPopup() {
 					<button
 						type="button"
 						onClick={openSimulator}
-						className="text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] hover:bg-[var(--paper-soft,rgba(255,255,255,0.1))] transition-colors rounded-lg p-1.5 min-h-[32px] min-w-[32px] inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0f766e)]"
+						className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors rounded-lg p-1.5 min-h-[32px] min-w-[32px] inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-teal-500"
 						title="Открыть симулятор телефонии"
 						aria-label="Симулятор SIP телефонии"
 					>
@@ -632,7 +802,7 @@ export function IncomingCallPopup() {
 					<button
 						type="button"
 						onClick={dismissCall}
-						className="text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] hover:bg-[var(--paper-soft,rgba(255,255,255,0.1))] transition-colors rounded-lg p-1.5 min-h-[32px] min-w-[32px] inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0f766e)]"
+						className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors rounded-lg p-1.5 min-h-[32px] min-w-[32px] inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-teal-500"
 						aria-label="Свернуть уведомление"
 					>
 						<X size={16} />
@@ -660,7 +830,7 @@ export function IncomingCallPopup() {
 
 				{/* Identity Info */}
 				<div className="flex-1 min-w-0">
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2 flex-wrap">
 						<h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 leading-tight">
 							{callerName}
 						</h3>
@@ -680,8 +850,8 @@ export function IncomingCallPopup() {
 							</span>
 						)}
 					</div>
-					<div className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 mt-0.5">
-						<Phone size={13} className="text-emerald-600 dark:text-emerald-400" />
+					<div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 mt-0.5">
+						<Phone size={13} className="text-teal-600 dark:text-teal-400" />
 						<span>{formattedPhone}</span>
 					</div>
 				</div>
@@ -689,10 +859,10 @@ export function IncomingCallPopup() {
 
 			{/* 1-Click Upcoming Appointment Confirmation Card */}
 			{upcomingAppointment && (
-				<div className="p-3 rounded-xl bg-gradient-to-r from-teal-950/40 to-emerald-950/30 border border-teal-500/30 flex flex-col gap-2">
+				<div className="p-3 rounded-xl bg-gradient-to-r from-teal-950/30 to-emerald-950/20 dark:from-teal-950/40 dark:to-emerald-950/30 border border-teal-500/30 flex flex-col gap-2 shadow-xs">
 					<div className="flex items-center justify-between text-xs">
-						<div className="flex items-center gap-1.5 font-bold text-teal-300">
-							<CalendarCheck size={14} className="text-teal-400" />
+						<div className="flex items-center gap-1.5 font-bold text-teal-700 dark:text-teal-300">
+							<CalendarCheck size={14} className="text-teal-500 dark:text-teal-400" />
 							<span>
 								{upcomingAppointment.isToday
 									? "Запись сегодня"
@@ -704,7 +874,7 @@ export function IncomingCallPopup() {
 							</span>
 						</div>
 						{upcomingAppointment.doctorName && (
-							<span className="text-[11px] text-slate-400 truncate max-w-[140px]">
+							<span className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[140px]">
 								{upcomingAppointment.doctorName}
 							</span>
 						)}
@@ -726,26 +896,27 @@ export function IncomingCallPopup() {
 						<button
 							type="button"
 							onClick={handleCopySmsConfirmation}
-							className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-all inline-flex items-center justify-center gap-1"
+							className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-300 dark:border-slate-700 transition-all inline-flex items-center justify-center gap-1"
 							title="Скопировать текст SMS-подтверждения"
 						>
-							{smsCopied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+							{smsCopied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
 							<span>{smsCopied ? "Скопировано" : "SMS"}</span>
 						</button>
 					</div>
 				</div>
 			)}
 
-			{/* Softphone Audio Recording Playback (if recordingUrl present) */}
+			{/* Softphone Audio Recording Playback with Waveform Scrubbing (if recordingUrl present) */}
 			{activeCall.recordingUrl && (
 				<CallAudioPlayer
 					recordingUrl={activeCall.recordingUrl}
 					durationSeconds={activeCall.durationSeconds || 45}
+					seed={activeCall.callId || activeCall.phone}
 				/>
 			)}
 
 			{/* Clinical & Financial Summary Panel */}
-			<div className="grid grid-cols-2 gap-2 bg-slate-100/80 dark:bg-slate-800/70 rounded-xl p-3 border border-slate-200 dark:border-slate-700/60 text-xs">
+			<div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-800/70 rounded-xl p-3 border border-slate-200 dark:border-slate-700/60 text-xs">
 				{/* Financial Balance */}
 				<div className="flex flex-col gap-0.5">
 					<span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
@@ -793,9 +964,7 @@ export function IncomingCallPopup() {
 							className="text-teal-600 dark:text-teal-400 mt-0.5 flex-shrink-0"
 						/>
 						<div>
-							<span className="text-slate-500 dark:text-slate-400">
-								Последний визит:{" "}
-							</span>
+							<span className="text-slate-500 dark:text-slate-400">Последний визит: </span>
 							<strong className="text-slate-900 dark:text-slate-100 font-semibold">
 								{lastVisitSummary.formattedLastVisit}
 							</strong>
@@ -804,7 +973,10 @@ export function IncomingCallPopup() {
 
 					{lastVisitSummary.doctorName && (
 						<div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 truncate">
-							<Stethoscope size={12} className="text-teal-600 dark:text-teal-400 flex-shrink-0" />
+							<Stethoscope
+								size={12}
+								className="text-teal-600 dark:text-teal-400 flex-shrink-0"
+							/>
 							<span className="truncate">{lastVisitSummary.doctorName}</span>
 						</div>
 					)}
@@ -814,45 +986,87 @@ export function IncomingCallPopup() {
 			{/* Smart Telephony Script & Clinical Warnings */}
 			<div className="space-y-1.5 text-xs">
 				{!isKnownPatient && (
-					<div className="flex items-center gap-2 bg-amber-950/30 border border-amber-800/40 text-amber-200 px-2.5 py-1.5 rounded-lg font-medium">
-						<AlertTriangle size={14} className="text-amber-400 flex-shrink-0" />
+					<div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 text-amber-900 dark:text-amber-200 px-2.5 py-1.5 rounded-lg font-medium">
+						<AlertTriangle size={14} className="text-amber-500 flex-shrink-0" />
 						<span>
-							Новое обращение! Уточните причину и предложите первичную
-							диагностику.
+							Новое обращение! Уточните причину и предложите первичную диагностику.
 						</span>
 					</div>
 				)}
 
 				{hasDebt && (
-					<div className="flex items-center gap-2 bg-rose-950/30 border border-rose-800/40 text-rose-200 px-2.5 py-1.5 rounded-lg font-medium">
-						<AlertCircle size={14} className="text-rose-400 flex-shrink-0" />
+					<div className="flex items-center gap-2 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/40 text-rose-900 dark:text-rose-200 px-2.5 py-1.5 rounded-lg font-medium">
+						<AlertCircle size={14} className="text-rose-500 flex-shrink-0" />
 						<span>
-							Внимание: у пациента задолженность {financialSummary.formattedDebt}
-							. Согласуйте погашение.
+							Внимание: у пациента задолженность {financialSummary.formattedDebt}.
+							Согласуйте погашение.
 						</span>
 					</div>
 				)}
 
 				{isHighRisk && (
-					<div className="flex items-center gap-2 bg-rose-950/20 border border-rose-700/30 text-rose-300 px-2.5 py-1.5 rounded-lg font-medium">
-						<ShieldAlert size={14} className="text-rose-400 flex-shrink-0" />
-						<span>
-							Риск неявки (No-Show). Подтвердите запись и время дважды!
-						</span>
+					<div className="flex items-center gap-2 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-700/30 text-rose-900 dark:text-rose-300 px-2.5 py-1.5 rounded-lg font-medium">
+						<ShieldAlert size={14} className="text-rose-500 flex-shrink-0" />
+						<span>Риск неявки (No-Show). Подтвердите запись и время дважды!</span>
 					</div>
 				)}
 
 				{hasNotes && (
-					<div className="flex items-start gap-2 bg-[var(--paper-soft,rgba(255,255,255,0.04))] border border-[var(--line,rgba(255,255,255,0.06))] px-2.5 py-1.5 rounded-lg text-[var(--muted,#94a3b8)] italic">
+					<div className="flex items-start gap-2 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 px-2.5 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 italic">
 						<FileText
 							size={13}
-							className="mt-0.5 text-[var(--teal,#0f766e)] flex-shrink-0 not-italic"
+							className="mt-0.5 text-teal-600 dark:text-teal-400 flex-shrink-0 not-italic"
 						/>
-						<span className="line-clamp-2">
-							«{resolvedPatient?.notes}»
-						</span>
+						<span className="line-clamp-2">«{resolvedPatient?.notes}»</span>
 					</div>
 				)}
+			</div>
+
+			{/* Touch-First 1-Click Booking Flow Presets */}
+			<div className="space-y-1.5">
+				<div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+					<span className="flex items-center gap-1">
+						<Zap size={11} className="text-amber-500" />
+						Быстрая запись в 1 касание:
+					</span>
+				</div>
+				<div className="grid grid-cols-3 gap-1.5">
+					<button
+						type="button"
+						onClick={() => handleQuickBook("today_urgent")}
+						className="px-2 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-900/40 border border-amber-200 dark:border-amber-800/50 text-amber-900 dark:text-amber-200 text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight shadow-xs active:scale-95"
+						title="Записать сегодня на 10:00 (Острая боль)"
+					>
+						<span>⚡ Сегодня 10:00</span>
+						<span className="text-[9px] font-normal text-amber-700 dark:text-amber-300">
+							Острая боль
+						</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => handleQuickBook("today_standard")}
+						className="px-2 py-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/30 dark:hover:bg-teal-900/40 border border-teal-200 dark:border-teal-800/50 text-teal-900 dark:text-teal-200 text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight shadow-xs active:scale-95"
+						title="Записать сегодня на 14:30 (Консультация)"
+					>
+						<span>📅 Сегодня 14:30</span>
+						<span className="text-[9px] font-normal text-teal-700 dark:text-teal-300">
+							Консультация
+						</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => handleQuickBook("tomorrow")}
+						className="px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight shadow-xs active:scale-95"
+						title="Записать завтра на 11:00 (Плановый визит)"
+					>
+						<span>🗓️ Завтра 11:00</span>
+						<span className="text-[9px] font-normal text-slate-500 dark:text-slate-400">
+							Плановый
+						</span>
+					</button>
+				</div>
 			</div>
 
 			{/* Quick Actions Action Bar */}
@@ -861,39 +1075,39 @@ export function IncomingCallPopup() {
 				<button
 					type="button"
 					onClick={handleReject}
-					className="px-3.5 py-2.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 active:scale-[0.98] border border-rose-800/50 text-rose-300 hover:text-rose-100 text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 min-h-[40px] focus:outline-none focus:ring-2 focus:ring-rose-500"
+					className="px-3.5 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 active:scale-[0.98] border border-rose-200 dark:border-rose-800/50 text-rose-700 dark:text-rose-300 hover:text-rose-900 dark:hover:text-rose-100 text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-rose-500"
 					aria-label="Отклонить входящий звонок"
 				>
 					<PhoneOff size={15} />
 					<span>Отклонить</span>
 				</button>
 
-				{/* Book Today Button */}
-				<button
-					type="button"
-					onClick={handleBookToday}
-					className="flex-1 px-3 py-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--line,#334155)] active:scale-[0.98] border border-[var(--line,#475569)] text-[var(--ink,#f8fafc)] text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 min-h-[40px] shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0f766e)]"
-					aria-label="Записать пациента на сегодня"
-				>
-					<CalendarPlus size={15} className="text-teal-400" />
-					<span>Записать на сегодня</span>
-				</button>
+				{/* Answer / WebRTC Call Button (if ringing) */}
+				{!isCallAnswered && (
+					<button
+						type="button"
+						onClick={handleAnswerCall}
+						className="px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 min-h-[44px] shadow-md shadow-emerald-950/30 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+						aria-label="Ответить на звонок"
+					>
+						<PhoneCall size={15} />
+						<span>Ответить</span>
+					</button>
+				)}
 
 				{/* Accept / Open Card Button */}
 				<button
 					type="button"
 					onClick={handleOpenCard}
-					className="flex-1 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 active:scale-[0.98] text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 min-h-[40px] shadow-lg shadow-teal-950/50 focus:outline-none focus:ring-2 focus:ring-teal-400"
+					className="flex-1 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 active:scale-[0.98] text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 min-h-[44px] shadow-lg shadow-teal-950/50 focus:outline-none focus:ring-2 focus:ring-teal-400"
 					aria-label={
 						isKnownPatient
 							? "Принять звонок и открыть карту пациента"
 							: "Принять звонок и зарегистрировать пациента"
 					}
 				>
-					<PhoneCall size={15} />
-					<span>
-						{isKnownPatient ? "Открыть карту" : "Принять / Создать"}
-					</span>
+					<UserCheck size={15} />
+					<span>{isKnownPatient ? "Открыть карту" : "Создать пациента"}</span>
 				</button>
 			</div>
 		</div>,
