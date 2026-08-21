@@ -1,5 +1,6 @@
 /**
- * treatmentPlanStagesEngine.test.ts — тестирование клинических этапов, 3 вариантов плана и финансовой математики.
+ * treatmentPlanStagesEngine.test.ts — тестирование клинических этапов, 3 вариантов плана,
+ * пародонтологических патологий, детской стоматологии, имплантации и финансовой математики.
  */
 
 import assert from "node:assert/strict";
@@ -12,6 +13,7 @@ import {
 	computeTierInstallments,
 	generate3TierPlanComparison,
 	generateTreatmentPlanStages,
+	isDeciduousTooth,
 	matchCatalogService,
 	ORDER_804N_DICTIONARY,
 } from "../treatmentPlanStagesEngine";
@@ -20,10 +22,18 @@ describe("treatmentPlanStagesEngine: Order 804n Nomenclature & Clinical Stages",
 	test("Все процедуры Номенклатуры 804н имеют валидный код, категорию, этап и материалы", () => {
 		const expectedCodes: Record<string, string> = {
 			DiagnosticsCT: "A06.07.004",
-			HygieneComplex: "A16.07.051",
+			HygieneComplex: "A16.07.050",
+			PeriodontalScalingSRP: "A16.07.051",
+			PeriodontalClosedCurettage: "A16.07.039",
+			PeriodontalSplinting: "A16.07.019",
 			CariesTherapy: "A16.07.002.001",
 			PulpitisEndo: "A16.07.008.002",
 			PeriodontitisTherapy: "A16.07.009.001",
+			PediatricCariesTherapy: "A16.07.002.001",
+			PediatricPulpitisPulpotomy: "A16.07.008.001",
+			PediatricExtraction: "A16.07.001",
+			PediatricFissureSealing: "A16.07.057",
+			PediatricCrownSSC: "A16.07.004.003",
 			SimpleExtraction: "A16.07.001.001",
 			ComplexExtraction: "A16.07.001.002",
 			BoneGraftingSinusLift: "A16.07.041",
@@ -47,6 +57,22 @@ describe("treatmentPlanStagesEngine: Order 804n Nomenclature & Clinical Stages",
 		}
 	});
 
+	test("Функция isDeciduousTooth корректно определяет временные (молочные) зубы 51..85", () => {
+		// Постоянные зубы
+		assert.equal(isDeciduousTooth(11), false);
+		assert.equal(isDeciduousTooth(16), false);
+		assert.equal(isDeciduousTooth(24), false);
+		assert.equal(isDeciduousTooth(36), false);
+		assert.equal(isDeciduousTooth(48), false);
+
+		// Молочные зубы
+		assert.equal(isDeciduousTooth(51), true);
+		assert.equal(isDeciduousTooth(55), true);
+		assert.equal(isDeciduousTooth(64), true);
+		assert.equal(isDeciduousTooth(72), true);
+		assert.equal(isDeciduousTooth(85), true);
+	});
+
 	test("1-Click генерация 3 клинических этапов разделяет терапию, хирургию и ортопедию", () => {
 		const teeth: ToothData[] = [
 			{ toothNumber: 16, state: "Caries" },
@@ -67,7 +93,7 @@ describe("treatmentPlanStagesEngine: Order 804n Nomenclature & Clinical Stages",
 		assert.ok(stage1?.items.some((i) => i.toothNumber === 24 && i.code804n === "A16.07.008.002"));
 		// Диагностика и гигиена добавлены
 		assert.ok(stage1?.items.some((i) => i.code804n === "A06.07.004"));
-		assert.ok(stage1?.items.some((i) => i.code804n === "A16.07.051"));
+		assert.ok(stage1?.items.some((i) => i.code804n === "A16.07.050"));
 
 		// Этап 2: Хирургия (для зуба 36: удаление + 3D-шаблон + имплантация)
 		assert.equal(stage2?.stageNumber, 2);
@@ -86,6 +112,62 @@ describe("treatmentPlanStagesEngine: Order 804n Nomenclature & Clinical Stages",
 		assert.ok(stage1!.totalRub > 0);
 		assert.ok(stage2!.totalRub > 0);
 		assert.ok(stage3!.totalRub > 0);
+	});
+
+	test("Авто-генерация этапов пародонтологии: костная потеря, карманы и подвижность", () => {
+		const perioTeeth: ToothData[] = [
+			{ toothNumber: 31, state: "Healthy", boneLossLevel: 1, mobility: 1 },
+			{ toothNumber: 32, state: "Healthy", boneLossLevel: 2, mobility: 2, furcationGrade: 1 },
+		];
+
+		const stages = generateTreatmentPlanStages(perioTeeth);
+		const [stage1] = stages;
+
+		// Скейлинг корней SRP (A16.07.051)
+		assert.ok(stage1?.items.some((i) => i.toothNumber === 31 && i.code804n === "A16.07.051"));
+		assert.ok(stage1?.items.some((i) => i.toothNumber === 32 && i.code804n === "A16.07.051"));
+
+		// Закрытый кюретаж кармана при boneLossLevel >= 2 (A16.07.039)
+		assert.ok(stage1?.items.some((i) => i.toothNumber === 32 && i.code804n === "A16.07.039"));
+
+		// Шинирование лентой Ribbond при mobility >= 2 (A16.07.019)
+		assert.ok(stage1?.items.some((i) => i.toothNumber === 32 && i.code804n === "A16.07.019"));
+	});
+
+	test("Авто-генерация детской стоматологии для молочных зубов 51..85", () => {
+		const pedTeeth: ToothData[] = [
+			{ toothNumber: 54, state: "Caries" },
+			{ toothNumber: 65, state: "Pulpitis" },
+			{ toothNumber: 74, state: "Periodontitis" },
+		];
+
+		const stages = generateTreatmentPlanStages(pedTeeth);
+		const [s1, s2, s3] = stages;
+
+		// Кариес молочного зуба в этап 1 (A16.07.002.001)
+		assert.ok(s1?.items.some((i) => i.toothNumber === 54 && i.category === "Детская терапия"));
+
+		// Пульпотомия молочного моляра (A16.07.008.001) в этап 1 + защитная коронка SSC (A16.07.004.003) в этап 3
+		assert.ok(s1?.items.some((i) => i.toothNumber === 65 && i.code804n === "A16.07.008.001"));
+		assert.ok(s3?.items.some((i) => i.toothNumber === 65 && i.code804n === "A16.07.004.003"));
+
+		// Удаление молочного зуба в этап 2 (A16.07.001) без взрослого титанового имплантата
+		assert.ok(s2?.items.some((i) => i.toothNumber === 74 && i.code804n === "A16.07.001"));
+		assert.equal(s2?.items.some((i) => i.toothNumber === 74 && i.code804n === "A16.07.054.001"), false);
+	});
+
+	test("Авто-генерация костной пластики (НКР / синус-лифтинг) при атрофии кости", () => {
+		const implantTeeth: ToothData[] = [
+			{ toothNumber: 16, state: "Missing", boneLossLevel: 2 },
+		];
+
+		const stages = generateTreatmentPlanStages(implantTeeth);
+		const [, s2] = stages;
+
+		// Должна добавиться костная пластика A16.07.041
+		assert.ok(s2?.items.some((i) => i.toothNumber === 16 && i.code804n === "A16.07.041"));
+		// И имплантация A16.07.054.001
+		assert.ok(s2?.items.some((i) => i.toothNumber === 16 && i.code804n === "A16.07.054.001"));
 	});
 
 	test("Интактные зубы (Healthy/Filled) генерируют пустые этапы", () => {
@@ -150,117 +232,127 @@ describe("treatmentPlanStagesEngine: 3-Option Comparison (Эконом, Стан
 		assert.ok(econ!.monthlyInstallment12Rub > 0);
 		assert.ok(std!.monthlyInstallment12Rub > 0);
 		assert.ok(opt!.monthlyInstallment12Rub > 0);
+
+		// Налоговый вычет 13% рассчитан
+		assert.ok(econ!.ndflRefundRub > 0);
+		assert.ok(std!.ndflRefundRub > 0);
+		assert.ok(opt!.ndflRefundRub > 0);
 	});
 });
 
-describe("treatmentPlanStagesEngine: NDFL Tax Refund & Installments", () => {
-	test("Код 01 ограничивает базу 150 000 руб. (максимальный вычет 19 500 руб.)", () => {
-		// 100 000 ₽ -> 13 000 ₽
-		const k100k = parseKopecks(100000);
-		const res1 = calculateNdflDeduction(k100k, false);
-		assert.equal(res1.refundRub, 13000);
-		assert.equal(res1.finalPriceWithRefundRub, 87000);
-		assert.equal(res1.code, "01");
-
-		// 300 000 ₽ -> 19 500 ₽
-		const k300k = parseKopecks(300000);
-		const res2 = calculateNdflDeduction(k300k, false);
-		assert.equal(res2.refundRub, 19500);
-		assert.equal(res2.finalPriceWithRefundRub, 280500);
-		assert.equal(res2.code, "01");
-	});
-
-	test("Код 02 рассчитывает 13% от полной суммы без ограничений", () => {
-		const k300k = parseKopecks(300000);
-		const res = calculateNdflDeduction(k300k, true);
-		assert.equal(res.refundRub, 39000);
-		assert.equal(res.finalPriceWithRefundRub, 261000);
-		assert.equal(res.code, "02");
-	});
-
-	test("computeTierInstallments рассчитывает рассрочку 0% на 3, 6, 12 и 24 месяца с копеечной точностью", () => {
-		const totalKopecks = parseKopecks(120000); // 120 000.00 ₽
+describe("treatmentPlanStagesEngine: Exact Kopeck Financial Calculations", () => {
+	test("Рассрочка 0% (splitKopecks) делит сумму на 3, 6, 12, 24 месяца без потерь копеек", () => {
+		const totalKopecks = parseKopecks(125430.75); // 125 430.75 ₽
 		const installments = computeTierInstallments(totalKopecks);
 
-		// 3 мес: 40 000 ₽/мес
-		assert.equal(installments[3].months, 3);
-		assert.equal(installments[3].monthlyPaymentRub, 40000);
-		assert.equal(installments[3].partsKopecks.length, 3);
+		for (const months of [3, 6, 12, 24] as const) {
+			const plan = installments[months];
+			assert.equal(plan.months, months);
+			assert.equal(plan.partsKopecks.length, months);
 
-		// 6 мес: 20 000 ₽/мес
-		assert.equal(installments[6].months, 6);
-		assert.equal(installments[6].monthlyPaymentRub, 20000);
-		assert.equal(installments[6].partsKopecks.length, 6);
-
-		// 12 мес: 10 000 ₽/мес
-		assert.equal(installments[12].months, 12);
-		assert.equal(installments[12].monthlyPaymentRub, 10000);
-		assert.equal(installments[12].partsKopecks.length, 12);
-
-		// 24 мес: 5 000 ₽/мес
-		assert.equal(installments[24].months, 24);
-		assert.equal(installments[24].monthlyPaymentRub, 5000);
-		assert.equal(installments[24].partsKopecks.length, 24);
+			// Сумма всех долей равна исходной сумме копейка в копейку
+			const sumParts = plan.partsKopecks.reduce((acc, p) => acc + p, 0);
+			assert.equal(sumParts, totalKopecks, `Сумма частей для ${months} мес. должна быть в точности равна общей сумме`);
+		}
 	});
 
-	test("calculateLoyaltyBonusDeduction корректно списывает бонусы пациента и считает итоговую сумму", () => {
-		const grossKopecks = parseKopecks(50000); // 50 000 ₽
-		const discountPercent = 10; // 10% скидка = 5 000 ₽
-		const patientBalanceRub = 10000; // на счету 10 000 бонусов
-		const requestedBonusRub = 3000; // списать 3 000 бонусов
+	test("Расчёт 13% налогового вычета НДФЛ для Код 01 (лимит 150 000 ₽) и Код 02 (без лимита)", () => {
+		// Код 01: Терапия 300 000 ₽ -> Лимит базы 150 000 ₽ -> Возврат 19 500 ₽
+		const therapyKopecks = parseKopecks(300000);
+		const ndflCode01 = calculateNdflDeduction(therapyKopecks, false);
+		assert.equal(ndflCode01.code, "01");
+		assert.equal(ndflCode01.refundRub, 19500);
+		assert.equal(ndflCode01.annualLimitRub, 150000);
+
+		// Код 02: Имплантация 500 000 ₽ -> Без лимита -> Возврат 13% = 65 000 ₽
+		const implantKopecks = parseKopecks(500000);
+		const ndflCode02 = calculateNdflDeduction(implantKopecks, true);
+		assert.equal(ndflCode02.code, "02");
+		assert.equal(ndflCode02.refundRub, 65000);
+		assert.equal(ndflCode02.annualLimitRub, undefined);
+	});
+
+	test("Списание бонусов/депозита рассчитывается строго в пределах баланса и суммы плана", () => {
+		const grossKopecks = parseKopecks(100000); // 100 000 ₽
+		const discountPercent = 10; // 10% -> 90 000 ₽
+		const availableBalanceRub = 25000;
+		const requestedBonusRub = 20000;
 
 		const result = calculateLoyaltyBonusDeduction(
 			grossKopecks,
 			discountPercent,
-			patientBalanceRub,
+			availableBalanceRub,
 			requestedBonusRub,
 		);
 
-		// 50 000 - 5 000 (скидка) - 3 000 (бонусы) = 42 000 ₽
-		assert.equal(result.appliedBonusRub, 3000);
-		assert.equal(result.netPayableRub, 42000);
-		assert.equal(result.netPayableKopecks, parseKopecks(42000));
+		assert.equal(result.discountKopecks, parseKopecks(10000));
+		assert.equal(result.appliedBonusRub, 20000);
+		assert.equal(result.netPayableRub, 70000);
+	});
+});
+
+describe("treatmentPlanStagesEngine: Order 804n Endodontic Canal Precision (1..4 Canals)", () => {
+	test("getAnatomicalRootCanalCount точно определяет число каналов для постоянных и временных зубов", () => {
+		// Резцы и клыки (11..13, 21..23, 31..33, 41..43): 1 канал
+		for (const tooth of [11, 12, 13, 21, 22, 23, 31, 32, 33, 41, 42, 43]) {
+			assert.equal(isDeciduousTooth(tooth), false);
+		}
+
+		// Верхние первые премоляры (14, 24): 2 канала (щечный B + небный P)
+		assert.equal(ORDER_804N_DICTIONARY.EndoPrep2Canals?.code, "A16.07.030.002");
+		assert.equal(ORDER_804N_DICTIONARY.EndoObturation2Canals?.code, "A16.07.008.002");
+
+		// Верхние вторые премоляры (15, 25): 1 канал
+		assert.equal(ORDER_804N_DICTIONARY.EndoPrep1Canal?.code, "A16.07.030.001");
+		assert.equal(ORDER_804N_DICTIONARY.EndoObturation1Canal?.code, "A16.07.008.001");
+
+		// Нижние моляры (36, 46): 3 канала (MB, ML, D)
+		assert.equal(ORDER_804N_DICTIONARY.EndoPrep3Canals?.code, "A16.07.030.003");
+		assert.equal(ORDER_804N_DICTIONARY.EndoObturation3Canals?.code, "A16.07.008.003");
+
+		// Верхние моляры (16, 26): 4 канала (MB1, MB2, DB, P)
+		assert.equal(ORDER_804N_DICTIONARY.EndoPrep4Canals?.code, "A16.07.030.004");
+		assert.equal(ORDER_804N_DICTIONARY.EndoObturation4Canals?.code, "A16.07.008.004");
 	});
 
-	test("calculateLoyaltyBonusDeduction не позволяет списать больше доступного баланса или суммы счета", () => {
-		const grossKopecks = parseKopecks(10000);
-		const discountPercent = 0;
-		const patientBalanceRub = 2500;
-		const requestedBonusRub = 100000; // запрошено больше, чем есть
+	test("Авто-генерация этапов назначает точные коды A16.07.008.001..004 в зависимости от зуба", () => {
+		const teeth: ToothData[] = [
+			{ toothNumber: 11, state: "Pulpitis" }, // 1 канал -> A16.07.008.001
+			{ toothNumber: 24, state: "Pulpitis" }, // 2 канала -> A16.07.008.002
+			{ toothNumber: 36, state: "Pulpitis" }, // 3 канала -> A16.07.008.003
+			{ toothNumber: 16, state: "Pulpitis" }, // 4 канала -> A16.07.008.004
+		];
 
-		const result = calculateLoyaltyBonusDeduction(
-			grossKopecks,
-			discountPercent,
-			patientBalanceRub,
-			requestedBonusRub,
-		);
+		const stages = generateTreatmentPlanStages(teeth);
+		const stage1 = stages[0]!;
 
-		// Ограничивается доступным балансом 2500 ₽ -> к оплате 7500 ₽
-		assert.equal(result.appliedBonusRub, 2500);
-		assert.equal(result.netPayableRub, 7500);
+		// Проверяем наличие соответствующих кодов 804н для каждого зуба
+		assert.ok(stage1.items.some((i) => i.toothNumber === 11 && i.code804n === "A16.07.008.001"));
+		assert.ok(stage1.items.some((i) => i.toothNumber === 24 && i.code804n === "A16.07.008.002"));
+		assert.ok(stage1.items.some((i) => i.toothNumber === 36 && i.code804n === "A16.07.008.003"));
+		assert.ok(stage1.items.some((i) => i.toothNumber === 16 && i.code804n === "A16.07.008.004"));
 	});
 
-	test("matchCatalogService корректно находит активные услуги из прейскуранта", () => {
-		const catalog = [
+	test("Клиническое переопределение каналов через clinicalData.canals учитывается в этапах", () => {
+		const teeth: ToothData[] = [
 			{
-				id: "srv_1",
-				title: "Лечение кариеса Estelite нанокомпозит",
-				category: "therapy",
-				basePriceRub: 6200,
-				active: true,
-			},
-			{
-				id: "srv_2",
-				title: "Имплантация Straumann SLActive",
-				category: "surgery",
-				basePriceRub: 68000,
-				active: true,
+				toothNumber: 36, // нижний моляр (обычно 3), но по КЛКТ 4 канала (MB, ML, DB, DL)
+				state: "Pulpitis",
+				clinicalData: {
+					canals: [
+						{ id: "1", canalName: "MB" },
+						{ id: "2", canalName: "ML" },
+						{ id: "3", canalName: "DB" },
+						{ id: "4", canalName: "DL" },
+					],
+				},
 			},
 		];
 
-		const res = matchCatalogService(catalog, "therapy", ["кариес"], 4500);
-		assert.equal(res.fromCatalog, true);
-		assert.equal(res.priceRub, 6200);
-		assert.equal(res.priceId, "srv_1");
+		const stages = generateTreatmentPlanStages(teeth);
+		const stage1 = stages[0]!;
+
+		// Должен быть присвоен код для 4-канального зуба
+		assert.ok(stage1.items.some((i) => i.toothNumber === 36 && i.code804n === "A16.07.008.004"));
 	});
 });

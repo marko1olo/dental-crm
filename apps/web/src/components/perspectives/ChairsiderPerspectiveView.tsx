@@ -56,7 +56,7 @@ import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 const TOOTH_SHORT_CODES: Record<ToothState, { code: string; dotColor: string }> = {
 	Healthy: { code: "Зд", dotColor: "#10b981" },
 	Caries: { code: "К", dotColor: "#ef4444" },
-	Pulpitis: { code: "П", dotColor: "#a855f7" },
+	Pulpitis: { code: "П", dotColor: "#dc2626" },
 	Periodontitis: { code: "Пер", dotColor: "#f97316" },
 	Filled: { code: "Пл", dotColor: "#10b981" },
 	Crown: { code: "Кр", dotColor: "#3b82f6" },
@@ -85,9 +85,9 @@ const CHAIRSIDE_TOOTH_STATUS_OPTIONS: ReadonlyArray<{
 		state: "Pulpitis",
 		label: "Пульпит",
 		shortCode: "П",
-		colorClass: "bg-purple-500/15 text-purple-800 dark:text-purple-300 hover:bg-purple-500/25",
-		borderClass: "border-purple-500/40",
-		badgeClass: "bg-purple-600 text-white",
+		colorClass: "bg-rose-500/15 text-rose-800 dark:text-rose-300 hover:bg-rose-500/25",
+		borderClass: "border-rose-500/40",
+		badgeClass: "bg-rose-600 text-white",
 	},
 	{
 		state: "Periodontitis",
@@ -772,7 +772,7 @@ export function ChairsiderPerspectiveView() {
 								onClick={() => setIsEndoModalOpen(true)}
 								className={`min-h-[52px] w-full p-3 rounded-xl border-2 font-black flex items-center justify-between transition-all active:scale-98 cursor-pointer shadow-sm ${
 									selectedToothState === "Pulpitis" || selectedToothState === "Periodontitis"
-										? "bg-purple-600/15 hover:bg-purple-600/25 dark:bg-purple-950/70 dark:hover:bg-purple-900/80 text-purple-900 dark:text-purple-200 border-purple-500/60"
+										? "bg-rose-600/15 hover:bg-rose-600/25 dark:bg-rose-950/70 dark:hover:bg-rose-900/80 text-rose-900 dark:text-rose-200 border-rose-500/60"
 										: "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700"
 								}`}
 							>
@@ -780,12 +780,12 @@ export function ChairsiderPerspectiveView() {
 									<span className="text-xl">📋</span>
 									<span className="flex flex-col text-left">
 										<span className="text-xs font-black">Журнал корневых каналов</span>
-										<span className="text-[10px] font-semibold text-purple-700 dark:text-purple-300">
+										<span className="text-[10px] font-semibold text-rose-700 dark:text-rose-300">
 											MB1, MB2, DB, P · Апекслокатор · MAF
 										</span>
 									</span>
 								</span>
-								<span className="px-2.5 py-1 rounded-lg bg-purple-600 text-white text-xs font-black shadow-sm">
+								<span className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-rose-600 to-rose-700 text-white text-xs font-black shadow-sm">
 									Эндо 043/у
 								</span>
 							</button>
