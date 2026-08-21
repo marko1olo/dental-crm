@@ -118,180 +118,6 @@ const TOOTH_STATE_ACTIONS: ReadonlyArray<{
 	},
 ];
 
-const SurfaceSelector = ({
-	selected,
-	onChange,
-}: {
-	selected: string[];
-	onChange: (newSelected: string[]) => void;
-}) => {
-	const toggle = (surface: string) => {
-		if (selected.includes(surface)) {
-			onChange(selected.filter((s) => s !== surface));
-		} else {
-			onChange([...selected, surface]);
-		}
-	};
-
-	return (
-		<div className="flex justify-center mb-4">
-			<svg
-				width="100"
-				height="100"
-				viewBox="0 0 100 100"
-				className="drop-shadow-md cursor-pointer group"
-				role="img"
-				aria-label="Поверхности зуба"
-			>
-				<title>Поверхности зуба</title>
-				{/* Top (B/V) */}
-				<polygon
-					role="tab"
-					tabIndex={0}
-					points="0,0 100,0 70,30 30,30"
-					fill={selected.includes("B") ? "var(--teal, #0d9488)" : "var(--paper-soft, #f8fafc)"}
-					stroke={selected.includes("B") ? "var(--teal-dark, #0f766e)" : "var(--line-strong, #cbd5e1)"}
-					strokeWidth="2"
-					onClick={() => toggle("B")}
-					onKeyDown={(e) => {
-						if (e.key === "Enter" || e.key === " ") {
-							e.preventDefault();
-							toggle("B");
-						}
-					}}
-					className="hover:opacity-90 transition-colors duration-200"
-				/>
-				<text
-					x="50"
-					y="18"
-					fill={selected.includes("B") ? "#ffffff" : "var(--ink, #0f172a)"}
-					fontSize="12"
-					fontWeight="bold"
-					textAnchor="middle"
-					pointerEvents="none"
-				>
-					B
-				</text>
-
-				{/* Bottom (L/P) */}
-				<polygon
-					role="tab"
-					tabIndex={0}
-					points="30,70 70,70 100,100 0,100"
-					fill={selected.includes("L") ? "var(--teal, #0d9488)" : "var(--paper-soft, #f8fafc)"}
-					stroke={selected.includes("L") ? "var(--teal-dark, #0f766e)" : "var(--line-strong, #cbd5e1)"}
-					strokeWidth="2"
-					onClick={() => toggle("L")}
-					onKeyDown={(e) => {
-						if (e.key === "Enter" || e.key === " ") {
-							e.preventDefault();
-							toggle("L");
-						}
-					}}
-					className="hover:opacity-90 transition-colors duration-200"
-				/>
-				<text
-					x="50"
-					y="90"
-					fill={selected.includes("L") ? "#ffffff" : "var(--ink, #0f172a)"}
-					fontSize="12"
-					fontWeight="bold"
-					textAnchor="middle"
-					pointerEvents="none"
-				>
-					L
-				</text>
-
-				{/* Left (M) */}
-				<polygon
-					role="tab"
-					tabIndex={0}
-					points="0,0 30,30 30,70 0,100"
-					fill={selected.includes("M") ? "var(--teal, #0d9488)" : "var(--paper-soft, #f8fafc)"}
-					stroke={selected.includes("M") ? "var(--teal-dark, #0f766e)" : "var(--line-strong, #cbd5e1)"}
-					strokeWidth="2"
-					onClick={() => toggle("M")}
-					onKeyDown={(e) => {
-						if (e.key === "Enter" || e.key === " ") {
-							e.preventDefault();
-							toggle("M");
-						}
-					}}
-					className="hover:opacity-90 transition-colors duration-200"
-				/>
-				<text
-					x="12"
-					y="54"
-					fill={selected.includes("M") ? "#ffffff" : "var(--ink, #0f172a)"}
-					fontSize="12"
-					fontWeight="bold"
-					textAnchor="middle"
-					pointerEvents="none"
-				>
-					M
-				</text>
-
-				{/* Right (D) */}
-				<polygon
-					role="tab"
-					tabIndex={0}
-					points="100,0 70,30 70,70 100,100"
-					fill={selected.includes("D") ? "var(--teal, #0d9488)" : "var(--paper-soft, #f8fafc)"}
-					stroke={selected.includes("D") ? "var(--teal-dark, #0f766e)" : "var(--line-strong, #cbd5e1)"}
-					strokeWidth="2"
-					onClick={() => toggle("D")}
-					onKeyDown={(e) => {
-						if (e.key === "Enter" || e.key === " ") {
-							e.preventDefault();
-							toggle("D");
-						}
-					}}
-					className="hover:opacity-90 transition-colors duration-200"
-				/>
-				<text
-					x="88"
-					y="54"
-					fill={selected.includes("D") ? "#ffffff" : "var(--ink, #0f172a)"}
-					fontSize="12"
-					fontWeight="bold"
-					textAnchor="middle"
-					pointerEvents="none"
-				>
-					D
-				</text>
-
-				{/* Center (O) */}
-				<polygon
-					role="tab"
-					tabIndex={0}
-					points="30,30 70,30 70,70 30,70"
-					fill={selected.includes("O") ? "var(--teal, #0d9488)" : "var(--paper-soft, #f8fafc)"}
-					stroke={selected.includes("O") ? "var(--teal-dark, #0f766e)" : "var(--line-strong, #cbd5e1)"}
-					strokeWidth="2"
-					onClick={() => toggle("O")}
-					onKeyDown={(e) => {
-						if (e.key === "Enter" || e.key === " ") {
-							e.preventDefault();
-							toggle("O");
-						}
-					}}
-					className="hover:opacity-90 transition-colors duration-200"
-				/>
-				<text
-					x="50"
-					y="54"
-					fill={selected.includes("O") ? "#ffffff" : "var(--ink, #0f172a)"}
-					fontSize="12"
-					fontWeight="bold"
-					textAnchor="middle"
-					pointerEvents="none"
-				>
-					O
-				</text>
-			</svg>
-		</div>
-	);
-};
 
 /**
  * Как называется содержимое схемы в трёх её состояниях.
@@ -1016,182 +842,7 @@ export const OdontogramModule = ({
 					onOpenVoiceDictation={() => setIsVoiceOpen(true)}
 				/>
 
-				{/* Persistent Clinical Tooth Inspector for Active Selection */}
-				{selectedTeeth.length === 1 && selectedTeeth[0] !== undefined && (() => {
-					const activeNum: number = selectedTeeth[0] as number;
-					const activeTooth = teethData.find((t) => t.toothNumber === activeNum);
-					const activeState: ToothState = activeTooth?.state || "Healthy";
-					const anatomicalName = getToothAnatomicalNameRu(activeNum);
-					return (
-						<div
-							className="mt-4 p-4 md:p-5 rounded-2xl bg-[var(--odontogram-surface,#f8fafc)] border border-[var(--odontogram-border,#cbd5e1)] shadow-sm flex flex-col gap-4"
-							data-testid="odontogram-tooth-inspector"
-						>
-							<div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[var(--odontogram-border-subtle,#e2e8f0)]">
-								<div className="flex items-center gap-2.5">
-									<div className="w-9 h-9 rounded-xl bg-teal-500/15 text-teal-700 dark:text-teal-300 font-black text-base flex items-center justify-center border border-teal-500/30">
-										#{activeNum}
-									</div>
-									<div>
-										<h4 className="text-sm md:text-base font-bold text-[var(--odontogram-ink,#0f172a)] m-0">
-											{anatomicalName}
-										</h4>
-										<span className="text-xs text-[var(--odontogram-ink-muted,#64748b)]">
-											Текущий статус: <strong className="text-[var(--odontogram-ink,#0f172a)]">{TOOTH_STATE_LABELS[activeState] || activeState}</strong>
-										</span>
-									</div>
-								</div>
-								<div className="flex items-center gap-2 flex-wrap">
-									<button
-										type="button"
-										onClick={() => setHistoryTooth(activeNum)}
-										className="min-h-[40px] px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 text-xs font-bold border border-indigo-500/25 flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
-										title="Открыть историю прошлых приемов и лечения по этому зубу"
-									>
-										<History size={15} />
-										<span>История зуба</span>
-									</button>
-									<button
-										type="button"
-										onClick={() => setEndoTooth(activeNum)}
-										className="min-h-[40px] px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-bold border border-rose-500/25 flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
-										title="Открыть протокол корневых каналов (длина, MAF, конусность, силер)"
-									>
-										<Activity size={15} />
-										<span>Журнал каналов (Эндо)</span>
-									</button>
-									<button
-										type="button"
-										onClick={() => {
-											const soap = generateSoapFromOdontogramFinding({
-												toothNumber: activeNum,
-												state: activeState,
-												surfaces: activeSurfaces,
-											});
-											const clipText = `Зуб ${activeNum} (${anatomicalName}): ${soap.diagnosisIcd10Label}.\n${soap.statusLocalis}\n${soap.treatmentDescription}`;
-											navigator.clipboard?.writeText?.(clipText);
-											showToast(`Протокол для зуба #${activeNum} скопирован для Формы 043/у`, "success");
-										}}
-										className="min-h-[40px] px-3 py-1.5 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 text-xs font-bold border border-teal-500/25 flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
-										title="Скопировать клинический протокол Формы 043/у в буфер обмена"
-									>
-										<Sparkles size={15} />
-										<span>Скопировать в дневник</span>
-									</button>
-								</div>
-							</div>
-
-							{/* 1-Tap Tooth Status Assignment */}
-							<div>
-								<div className="text-xs font-bold text-[var(--odontogram-ink-muted,#64748b)] uppercase tracking-wider mb-2">
-									Быстрое присвоение статуса:
-								</div>
-								<div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
-									{TOOTH_STATE_ACTIONS.map((action) => {
-										const isCurrent = activeState === action.state;
-										return (
-											<button
-												key={action.state}
-												type="button"
-												onClick={() => void updateToothState([activeNum], action.state)}
-												className={`min-h-[44px] p-2 rounded-xl border flex flex-col items-center justify-center font-bold text-xs transition-all cursor-pointer active:scale-95 ${action.className} ${
-													isCurrent ? "ring-2 ring-indigo-500 ring-offset-1 font-black shadow-sm" : ""
-												}`}
-											>
-												<span className="leading-tight text-center">{action.label}</span>
-											</button>
-										);
-									})}
-								</div>
-							</div>
-
-							{/* Surface Selector for 1 Tooth */}
-							<div className="pt-2 border-t border-[var(--odontogram-border-subtle,#e2e8f0)]">
-								<div className="text-xs font-bold text-[var(--odontogram-ink-muted,#64748b)] uppercase tracking-wider mb-2 flex items-center justify-between">
-									<span>Поверхности поражения / пломбы:</span>
-									<span className="text-xs text-indigo-600 dark:text-indigo-400">
-										{activeSurfaces.length > 0 ? activeSurfaces.join(", ") : "Вся коронка / не выбрано"}
-									</span>
-								</div>
-								<div className="flex items-center gap-2 flex-wrap">
-									{[
-										{ key: "V", label: "V (Вестибулярная / Щечная)" },
-										{ key: "L", label: "L (Язычная / Нёбная)" },
-										{ key: "M", label: "M (Медиальная)" },
-										{ key: "D", label: "D (Дистальная)" },
-										{ key: "O", label: "O (Жевательная / Окклюзионная)" },
-										{ key: "C", label: "C (Пришеечная)" },
-									].map((surf) => {
-										const isSel = activeSurfaces.includes(surf.key);
-										return (
-											<button
-												key={surf.key}
-												type="button"
-												onClick={() => {
-													const next = isSel
-														? activeSurfaces.filter((s) => s !== surf.key)
-														: [...activeSurfaces, surf.key];
-													setActiveSurfaces(next);
-													setTeethData((prev) =>
-														prev.map((t) => {
-															if (t.toothNumber !== activeNum) return t;
-															const copy: ToothData = { ...t };
-															if (next.length > 0) copy.surfaces = next;
-															else delete copy.surfaces;
-															return copy;
-														}),
-													);
-												}}
-												className={`min-h-[40px] px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer active:scale-95 ${
-													isSel
-														? "bg-teal-600 text-white border-teal-700 shadow-sm"
-														: "bg-[var(--odontogram-paper,#ffffff)] text-[var(--odontogram-ink,#0f172a)] border-[var(--odontogram-border,#cbd5e1)] hover:bg-[var(--odontogram-surface-hover,#f1f5f9)]"
-												}`}
-											>
-												{surf.label}
-											</button>
-										);
-									})}
-									<button
-										type="button"
-										onClick={() => {
-											const all = ["V", "L", "M", "D", "O"];
-											setActiveSurfaces(all);
-											setTeethData((prev) =>
-												prev.map((t) => {
-													if (t.toothNumber !== activeNum) return t;
-													return { ...t, surfaces: all };
-												}),
-											);
-										}}
-										className="min-h-[40px] px-3 py-1.5 rounded-xl border border-[var(--odontogram-border,#cbd5e1)] bg-[var(--odontogram-paper,#ffffff)] hover:bg-[var(--odontogram-surface-hover,#f1f5f9)] text-xs font-bold text-[var(--odontogram-ink,#0f172a)] cursor-pointer"
-									>
-										Все поверхности
-									</button>
-									<button
-										type="button"
-										onClick={() => {
-											setActiveSurfaces([]);
-											setTeethData((prev) =>
-												prev.map((t) => {
-													if (t.toothNumber !== activeNum) return t;
-													const copy: ToothData = { ...t };
-													delete copy.surfaces;
-													return copy;
-												}),
-											);
-										}}
-										className="min-h-[40px] px-3 py-1.5 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-xs font-bold text-red-600 dark:text-red-400 cursor-pointer"
-									>
-										Сброс
-									</button>
-								</div>
-							</div>
-						</div>
-					);
-				})()}
-
-				{/* Radial Menu via Portal — avoids backdrop-filter stack */}
+				{/* Floating Tooth Action Popup anchored directly to the clicked tooth */}
 				{menuConfig &&
 					typeof document !== "undefined" &&
 					createPortal(
@@ -1277,46 +928,41 @@ export const OdontogramModule = ({
 									</svg>
 								)}
 
-								<div className="col-span-2 text-center mb-2 text-sm font-black text-[var(--odontogram-ink,#0f172a)] dark:text-zinc-100">
-									{selectedTeeth.length > 1
-										? `Выбрано: ${selectedTeeth.length} зубов`
-										: `Зуб ${menuConfig.toothNumber}`}
-								</div>
-								{selectedTeeth.length === 1 && (
-									<div className="col-span-2 mb-2">
-										<SurfaceSelector
-											selected={activeSurfaces}
-											onChange={setActiveSurfaces}
-										/>
+								<div className="col-span-2 text-center mb-2">
+									<div className="text-sm font-black text-[var(--odontogram-ink,#0f172a)] dark:text-zinc-100">
+										{selectedTeeth.length > 1
+											? `Выбрано: ${selectedTeeth.length} зубов`
+											: `Зуб #${menuConfig.toothNumber}`}
 									</div>
-								)}
-								{/* Список состояний вынесен в TOOTH_STATE_ACTIONS: раньше здесь
-								    были восемь почти одинаковых блоков JSX, и два состояния из
-								    восьми в набор просто не попали — «Пломба» и «Имплантат в
-								    плане». Оба поддерживаются схемой API (перечисление
-								    toothStateValues в routes/odontogram.ts), у обоих есть цвета
-								    и отрисовка (для пломбы рисуются каналы), но выставить их
-								    из интерфейса было нельзя. Пломба — самая частая запись в
-								    зубной формуле. */}
+									{selectedTeeth.length === 1 && (
+										<div className="text-[11px] text-[var(--odontogram-ink-muted,#64748b)]">
+											{getToothAnatomicalNameRu(menuConfig.toothNumber)}
+										</div>
+									)}
+								</div>
+
+								{/* 1-Tap Tooth Status Assignment */}
 								{TOOTH_STATE_ACTIONS.map((action) => (
 									<button
 										key={action.state}
 										type="button"
-										onClick={() =>
-											updateToothState(selectedTeeth, action.state)
-										}
-										className={`flex items-center justify-center p-3 rounded-xl border transition-all duration-200 font-medium tracking-wide text-xs ${action.className}`}
+										onClick={() => {
+											void updateToothState(selectedTeeth, action.state);
+											setMenuConfig(null);
+										}}
+										className={`flex items-center justify-center p-2.5 rounded-xl border transition-all duration-200 font-bold text-xs cursor-pointer select-none active:scale-95 ${action.className}`}
 									>
 										{action.label}
 									</button>
 								))}
+
 								<button
 									type="button"
 									onClick={() => {
 										setHistoryTooth(menuConfig.toothNumber);
 										setMenuConfig(null);
 									}}
-									className="col-span-2 flex items-center justify-center p-3 rounded-xl border transition-all duration-200 font-medium tracking-wide text-xs bg-indigo-500/10 text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/20"
+									className="col-span-2 flex items-center justify-center p-2.5 rounded-xl border transition-all duration-200 font-bold text-xs bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/25 hover:bg-indigo-500/20 cursor-pointer"
 								>
 									<History className="w-4 h-4 inline mr-2" /> История зуба
 								</button>
@@ -1327,9 +973,29 @@ export const OdontogramModule = ({
 										setEndoTooth(menuConfig.toothNumber);
 										setMenuConfig(null);
 									}}
-									className="col-span-2 flex items-center justify-center p-3 rounded-xl border transition-all duration-200 font-medium tracking-wide text-xs bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/20"
+									className="col-span-2 flex items-center justify-center p-2.5 rounded-xl border transition-all duration-200 font-bold text-xs bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/25 hover:bg-rose-500/20 cursor-pointer"
 								>
 									<Activity className="w-4 h-4 inline mr-2" /> Журнал каналов (Эндо)
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										const num = menuConfig.toothNumber;
+										const currentTooth = teethData.find((t) => t.toothNumber === num);
+										const st: ToothState = currentTooth?.state || "Healthy";
+										const anatomicalName = getToothAnatomicalNameRu(num);
+										const soap = generateSoapFromOdontogramFinding({
+											toothNumber: num,
+											state: st,
+										});
+										const clipText = `Зуб ${num} (${anatomicalName}): ${soap.diagnosisIcd10Label}.\n${soap.statusLocalis}\n${soap.treatmentDescription}`;
+										navigator.clipboard?.writeText?.(clipText);
+										showToast(`Протокол для зуба #${num} скопирован для Формы 043/у`, "success");
+										setMenuConfig(null);
+									}}
+									className="col-span-2 flex items-center justify-center p-2.5 rounded-xl border transition-all duration-200 font-bold text-xs bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/25 hover:bg-teal-500/20 cursor-pointer"
+								>
+									<Sparkles className="w-4 h-4 inline mr-2" /> Вставить в дневник 043/у
 								</button>
 							</div>
 						</>,

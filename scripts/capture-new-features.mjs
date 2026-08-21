@@ -111,6 +111,17 @@ async function main() {
   await page.goto(APP_BASE, { waitUntil: "domcontentloaded" });
   await new Promise((r) => setTimeout(r, 3000));
 
+  // Click tooth 16 to trigger the floating popup
+  await page.evaluate(() => {
+    const tooth16 = document.querySelector('[data-tooth="16"]') || 
+                    document.querySelector('[data-tooth-number="16"]') || 
+                    Array.from(document.querySelectorAll('button')).find(b => b.textContent?.trim() === '16');
+    if (tooth16) {
+      tooth16.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    }
+  });
+  await new Promise((r) => setTimeout(r, 1000));
+
   await page.screenshot({
     path: path.join(OUT_DIR, "01_real_crm_chairsider_dark_pc.png"),
     fullPage: false,
@@ -125,6 +136,18 @@ async function main() {
     document.body.className = "light";
   });
   await new Promise((r) => setTimeout(r, 600));
+
+  // Click tooth 26 in light mode
+  await page.evaluate(() => {
+    const tooth26 = document.querySelector('[data-tooth="26"]') || 
+                    document.querySelector('[data-tooth-number="26"]') || 
+                    Array.from(document.querySelectorAll('button')).find(b => b.textContent?.trim() === '26');
+    if (tooth26) {
+      tooth26.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    }
+  });
+  await new Promise((r) => setTimeout(r, 800));
+
   await page.screenshot({
     path: path.join(OUT_DIR, "02_real_crm_chairsider_light_pc.png"),
     fullPage: false,

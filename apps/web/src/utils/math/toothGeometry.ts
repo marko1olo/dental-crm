@@ -428,6 +428,93 @@ export function buildCtPlanningGeometrySummary(input: {
 	};
 }
 
+export type FurcationGrade = 0 | 1 | 2 | 3 | 4;
+
+export interface FurcationSiteGeometry {
+	readonly id: string;
+	readonly nameRu: string;
+	readonly position: { readonly x: number; readonly y: number };
+	readonly type:
+		| "bifurcation"
+		| "trifurcation_buccal"
+		| "trifurcation_mesial"
+		| "trifurcation_distal";
+}
+
+export interface PeriodontalBoneCrestLines {
+	readonly normal: string;
+	readonly mild: string;
+	readonly moderate: string;
+	readonly severe: string;
+}
+
+export interface FurcationMarkerSvg {
+	readonly path: string;
+	readonly fill: string;
+	readonly stroke: string;
+	readonly strokeWidth: number;
+	readonly labelRu: string;
+}
+
+/**
+ * Generate SVG marker path and styling for furcation involvement (Grade I..IV).
+ */
+export function getFurcationMarkerSvg(
+	grade: FurcationGrade,
+	x: number,
+	y: number,
+	isTop: boolean,
+	size = 7,
+): FurcationMarkerSvg | null {
+	if (grade <= 0) return null;
+
+	const tipY = isTop ? y - size : y + size;
+	const baseY = isTop ? y + size * 0.5 : y - size * 0.5;
+	const leftX = x - size * 0.9;
+	const rightX = x + size * 0.9;
+
+	switch (grade) {
+		case 1:
+			// Grade I: Incipient involvement — open chevron / triangle pointing toward apex
+			return {
+				path: `M ${leftX} ${baseY} L ${x} ${tipY} L ${rightX} ${baseY}`,
+				fill: "none",
+				stroke: "#f59e0b",
+				strokeWidth: 1.8,
+				labelRu: "Фуркация I ст. (начальная, зонд < 3 мм)",
+			};
+		case 2:
+			// Grade II: Cul-de-sac / partial involvement — outline triangle
+			return {
+				path: `M ${leftX} ${baseY} L ${x} ${tipY} L ${rightX} ${baseY} Z`,
+				fill: "rgba(245, 158, 11, 0.25)",
+				stroke: "#f59e0b",
+				strokeWidth: 2,
+				labelRu: "Фуркация II ст. (частичная/тупиковая, зонд > 3 мм)",
+			};
+		case 3:
+			// Grade III: Through-and-through penetration — solid filled warning triangle
+			return {
+				path: `M ${leftX} ${baseY} L ${x} ${tipY} L ${rightX} ${baseY} Z`,
+				fill: "#ef4444",
+				stroke: "#991b1b",
+				strokeWidth: 2,
+				labelRu: "Фуркация III ст. (сквозной дефект бифуркации)",
+			};
+		case 4:
+			// Grade IV: Through-and-through with gingival recession — filled diamond with alert stroke
+			return {
+				path: `M ${x} ${y - size} L ${x + size} ${y} L ${x} ${y + size} L ${x - size} ${y} Z`,
+				fill: "#dc2626",
+				stroke: "#7f1d1d",
+				strokeWidth: 2.2,
+				labelRu: "Фуркация IV ст. (сквозная с обнажением рецессией)",
+			};
+		default:
+			return null;
+	}
+}
+
 export type ToothGeometryType = {
 	root: string;
 	crown: string;
@@ -435,246 +522,440 @@ export type ToothGeometryType = {
 	fissures?: string;
 	core?: string;
 	apex?: { x: number; y: number }[];
+	furcations?: FurcationSiteGeometry[];
+	boneCrest?: PeriodontalBoneCrestLines;
+	touchTargetMinPx?: number;
 	surfaces: {
 		V: string;
 		O: string;
 		M: string;
 		D: string;
-		[key: string]: string;
+		L?: string;
+		P?: string;
+		[key: string]: string | undefined;
 	};
 };
 
 export const TOOTH_GEOMETRY = {
 	UPPER_CENTRAL_INCISOR: {
-		root: "M35 85 C33 60, 35 25, 50 5 C65 25, 67 60, 65 85 Z",
+		root: "M 35 85 C 33 60, 36 28, 50 8 C 64 28, 67 60, 65 85 Z",
 		crown:
-			"M35 85 C30 95, 22 125, 32 145 C40 148, 60 148, 68 145 C72 125, 75 95, 65 85 Q50 82 35 85",
-		canals: "M50 120 C 52 90, 48 50, 50 15",
-		apex: [{ x: 50, y: 5 }],
-		core: "M42 85 L44 115 Q50 120 56 115 L58 85 Z",
+			"M 35 85 C 28 96, 22 122, 30 144 C 32 147, 48 147, 50 146 C 52 147, 68 147, 70 144 C 78 122, 72 96, 65 85 Q 50 81 35 85 Z",
+		canals: "M 50 118 C 50 90, 50 45, 50 10",
+		apex: [{ x: 50, y: 8 }],
+		core: "M 42 85 L 44 115 Q 50 120 56 115 L 58 85 Z",
+		boneCrest: {
+			normal: "M 22 76 Q 50 72 78 76",
+			mild: "M 22 66 Q 50 62 78 66",
+			moderate: "M 22 52 Q 50 48 78 52",
+			severe: "M 22 34 Q 50 30 78 34",
+		},
+		touchTargetMinPx: 44,
 		surfaces: {
-			V: "M35 85 C40 90, 60 90, 65 85 L68 115 Q50 120 32 115 Z",
-			O: "M32 115 Q50 120 68 115 L68 145 C60 148, 40 148, 32 145 Z",
-			M: "M35 85 C30 95, 28 125, 32 145 L42 145 L42 85 Z",
-			D: "M65 85 C70 95, 72 125, 68 145 L58 145 L58 85 Z",
+			V: "M 35 85 C 40 88, 60 88, 65 85 L 66 130 C 50 133, 40 133, 34 130 Z",
+			O: "M 30 144 C 32 147, 68 147, 70 144 L 66 130 C 50 133, 40 133, 34 130 Z",
+			M: "M 35 85 C 28 96, 22 122, 30 144 L 34 130 L 35 85 Z",
+			D: "M 65 85 C 72 96, 78 122, 70 144 L 66 130 L 65 85 Z",
+			L: "M 34 130 C 40 133, 50 133, 66 130 L 70 144 C 58 147, 42 147, 30 144 Z",
 		},
 	},
 
 	UPPER_LATERAL_INCISOR: {
-		root: "M38 85 C36 60, 40 30, 50 10 C60 30, 64 60, 62 85 Z",
+		root: "M 38 85 C 36 60, 39 30, 50 12 C 58 30, 64 60, 62 85 Z",
 		crown:
-			"M38 85 C34 95, 35 120, 40 135 C45 138, 55 138, 60 135 C65 120, 66 95, 62 85 Q50 82 38 85",
-		fissures: "M50 129 L50 135",
-		core: "M42 85 L44 115 Q50 120 56 115 L58 85 Z",
-		canals: "M50 120 C 51 90, 49 40, 52 15",
-		apex: [{ x: 50, y: 10 }],
+			"M 38 85 C 32 96, 28 120, 36 142 C 40 145, 60 145, 64 142 C 72 120, 68 96, 62 85 Q 50 81 38 85 Z",
+		fissures: "M 50 129 L 50 138",
+		core: "M 42 85 L 44 115 Q 50 120 56 115 L 58 85 Z",
+		canals: "M 50 118 C 50 88, 48 45, 50 14",
+		apex: [{ x: 50, y: 12 }],
+		boneCrest: {
+			normal: "M 24 76 Q 50 72 76 76",
+			mild: "M 24 66 Q 50 62 76 66",
+			moderate: "M 24 52 Q 50 48 76 52",
+			severe: "M 24 34 Q 50 30 76 34",
+		},
+		touchTargetMinPx: 44,
 		surfaces: {
-			V: "M38 85 C42 90, 58 90, 62 85 L62 105 Q50 110 38 105 Z",
-			O: "M38 105 Q50 110 62 105 L60 135 C55 138, 45 138, 40 135 Z",
-			M: "M38 85 C34 95, 35 120, 40 135 L45 135 L45 85 Z",
-			D: "M62 85 C66 95, 65 120, 60 135 L55 135 L55 85 Z",
+			V: "M 38 85 C 42 88, 58 88, 62 85 L 62 110 Q 50 114 38 110 Z",
+			O: "M 38 110 Q 50 114 62 110 L 64 142 C 60 145, 40 145, 36 142 Z",
+			M: "M 38 85 C 32 96, 28 120, 36 142 L 42 142 L 42 85 Z",
+			D: "M 62 85 C 68 96, 72 120, 64 142 L 58 142 L 58 85 Z",
+			L: "M 38 110 L 62 110 L 60 138 L 40 138 Z",
 		},
 	},
 
 	UPPER_CANINE: {
-		root: "M35 85 C33 50, 38 30, 45 2 C60 15, 67 50, 65 85 Z",
-		crown: "M35 85 C30 105, 15 125, 53 148 C65 135, 90 115, 65 85 Q50 80 35 85",
-		core: "M42 85 L44 115 Q50 120 56 115 L58 85 Z",
-		canals: "M50 125 C 53 90, 47 40, 50 5",
-		apex: [{ x: 45, y: 2 }],
+		root: "M 33 85 C 30 55, 36 28, 50 4 C 64 28, 70 55, 67 85 Z",
+		crown:
+			"M 33 85 C 26 100, 16 122, 50 148 C 84 122, 74 100, 67 85 Q 50 80 33 85 Z",
+		core: "M 42 85 L 44 115 Q 50 120 56 115 L 58 85 Z",
+		canals: "M 50 122 C 50 85, 50 40, 50 6",
+		apex: [{ x: 50, y: 4 }],
+		boneCrest: {
+			normal: "M 22 76 Q 50 71 78 76",
+			mild: "M 22 65 Q 50 60 78 65",
+			moderate: "M 22 50 Q 50 45 78 50",
+			severe: "M 22 30 Q 50 25 78 30",
+		},
+		touchTargetMinPx: 44,
 		surfaces: {
-			V: "M35 85 C40 90, 60 90, 65 85 L65 115 Q50 120 35 115 Z",
-			O: "M35 115 Q50 120 65 115 L50 148 Z",
-			M: "M35 85 C30 105, 35 125, 50 148 C45 125, 40 105, 35 85 Z",
-			D: "M65 85 C70 105, 65 125, 50 148 C55 125, 60 105, 65 85 Z",
+			V: "M 33 85 C 38 88, 62 88, 67 85 L 63 114 Q 50 118 37 114 Z",
+			O: "M 37 114 Q 50 118 63 114 L 50 148 Z",
+			M: "M 33 85 C 26 100, 16 122, 50 148 L 37 114 Z",
+			D: "M 67 85 C 74 100, 84 122, 50 148 L 63 114 Z",
+			L: "M 37 114 L 50 148 L 63 114 Q 50 128 37 114 Z",
 		},
 	},
 
 	UPPER_PREMOLAR: {
-		root: "M32 85 C30 60, 35 25, 43 19 C50 32, 50 32, 52 15 C65 25, 70 60, 68 85 Z",
+		root: "M 32 84 C 28 66, 28 42, 36 20 C 42 34, 46 48, 50 56 C 54 48, 58 34, 64 20 C 72 42, 72 66, 68 84 Z",
 		crown:
-			"M33 85 C25 100, 8 135, 40 142 Q50 138 68 142 C79 135, 75 100, 68 85 Q50 82 32 85",
-		canals: "M50 115 Q 45 70 42 20 M50 115 Q 55 70 58 20",
-		core: "M38 85 L40 110 Q50 115 60 110 L62 85 Z",
+			"M 32 84 C 22 98, 16 130, 42 142 Q 50 137, 58 142 C 84 130, 78 98, 68 84 Q 50 80 32 84 Z",
+		canals: "M 42 92 C 38 72, 36 44, 36 20 M 58 92 C 62 72, 64 44, 64 20",
+		core: "M 38 85 L 40 110 Q 50 115 60 110 L 62 85 Z",
 		apex: [
-			{ x: 43, y: 19 },
-			{ x: 52, y: 15 },
+			{ x: 36, y: 20 },
+			{ x: 64, y: 20 },
 		],
+		furcations: [
+			{
+				id: "B_P_Furcation",
+				nameRu: "Бифуркация верхнего премоляра",
+				position: { x: 50, y: 56 },
+				type: "bifurcation",
+			},
+		],
+		boneCrest: {
+			normal: "M 20 76 Q 50 71 80 76",
+			mild: "M 20 66 Q 50 62 80 66",
+			moderate: "M 20 54 Q 50 50 80 54",
+			severe: "M 20 36 Q 50 32 80 36",
+		},
+		touchTargetMinPx: 44,
 		surfaces: {
-			V: "M32 85 C35 90, 65 90, 68 85 L68 110 Q50 115 32 110 Z",
-			O: "M32 110 Q50 115 68 110 L68 142 C50 138, 40 142, 32 142 Z",
-			M: "M33 85 C15 100, 8 135, 40 142 C30 130, 30 100, 33 85 Z",
-			D: "M68 85 C75 100, 79 135, 60 142 C65 130, 65 100, 68 85 Z",
+			V: "M 32 84 C 36 88, 64 88, 68 84 L 64 112 Q 50 116 36 112 Z",
+			O: "M 36 112 Q 50 116 64 112 L 58 142 Q 50 137, 42 142 Z",
+			M: "M 32 84 C 22 98, 16 130, 42 142 L 36 112 Z",
+			D: "M 68 84 C 78 98, 84 130, 58 142 L 64 112 Z",
+			L: "M 36 112 L 64 112 L 60 134 Q 50 138 40 134 Z",
 		},
 	},
 
 	UPPER_MOLAR: {
-		root: "M45 50 C 45 25, 45 20, 50 6 C 55 2, 67 10, 58 45 Q 50 65 42 46 M20 85 C 20 60, 18 65, 25 10 C 29 5, 40 25, 42 45 Q 50 65 58 45 C 60 25, 68 5, 79 4 C 82 25, 80 80, 92 85 Z",
+		root: "M 16 85 C 12 66, 16 40, 24 20 C 30 28, 34 46, 36 58 C 42 42, 46 22, 50 10 C 54 22, 58 42, 64 58 C 66 46, 70 28, 76 24 C 84 40, 88 66, 84 85 Z",
 		crown:
-			"M20 85 C 13 105, 3 135, 38 139 C 45 139, 50 139, 50 125 C 50 135, 55 136, 62 137 C 100 135, 88 105, 92 85 Z",
+			"M 16 85 C 10 98, 8 132, 25 142 C 34 148, 48 145, 50 138 C 52 145, 66 148, 75 142 C 92 132, 90 98, 84 85 Q 50 81 16 85 Z",
 		canals:
-			"M50 110 C 30 100, 40 60, 30 5 M50 110 C 60 100, 70 60, 70 15 M50 110 C 50 80, 55 50, 50 10",
+			"M 36 94 C 32 78, 24 50, 24 20 M 50 94 C 50 72, 50 38, 50 10 M 64 94 C 68 78, 76 50, 76 24",
 		apex: [
-			{ x: 50, y: 6 },
-			{ x: 25, y: 10 },
-			{ x: 79, y: 4 },
+			{ x: 24, y: 20 },
+			{ x: 50, y: 10 },
+			{ x: 76, y: 24 },
 		],
-		core: "M30 85 L35 110 Q55 115 75 110 L80 85 Z",
-		fissures: "M50 115 L50 125",
+		furcations: [
+			{
+				id: "MB_DB_Buccal",
+				nameRu: "Щечная трифуркация",
+				position: { x: 50, y: 58 },
+				type: "trifurcation_buccal",
+			},
+			{
+				id: "MB_P_Mesial",
+				nameRu: "Медиально-нёбная фуркация",
+				position: { x: 36, y: 60 },
+				type: "trifurcation_mesial",
+			},
+			{
+				id: "DB_P_Distal",
+				nameRu: "Дистально-нёбная фуркация",
+				position: { x: 64, y: 60 },
+				type: "trifurcation_distal",
+			},
+		],
+		boneCrest: {
+			normal: "M 12 76 Q 50 72 88 76",
+			mild: "M 12 68 Q 50 64 88 68",
+			moderate: "M 12 56 Q 50 52 88 56",
+			severe: "M 12 40 Q 50 36 88 40",
+		},
+		touchTargetMinPx: 44,
+		core: "M 30 85 L 35 110 Q 55 115 75 110 L 80 85 Z",
+		fissures: "M 28 126 Q 50 134 72 126 M 50 110 L 50 136 M 36 112 Q 50 118 64 112",
 		surfaces: {
-			V: "M20 85 C30 90, 80 90, 92 85 L92 110 Q50 115 20 110 Z",
-			O: "M20 110 Q50 115 92 110 L62 137 C50 125, 38 139, 20 130 Z",
-			M: "M20 85 C13 105, 3 135, 38 139 C30 125, 25 105, 20 85 Z",
-			D: "M92 85 C88 105, 100 135, 62 137 C75 125, 85 105, 92 85 Z",
+			V: "M 16 85 C 32 82, 68 82, 84 85 L 70 112 Q 50 118 30 112 Z",
+			O: "M 30 112 Q 50 118 70 112 L 66 134 Q 50 138 34 134 Z",
+			M: "M 16 85 L 30 112 L 34 134 L 25 142 C 10 132, 10 98, 16 85 Z",
+			D: "M 84 85 C 90 98, 90 132, 75 142 L 66 134 L 70 112 Z",
+			L: "M 34 134 Q 50 138 66 134 L 75 142 C 66 148, 34 148, 25 142 Z",
 		},
 	},
 
 	LOWER_INCISOR: {
-		root: "M40 75 C38 100, 42 135, 50 145 C58 135, 62 100, 60 75 Z",
+		root: "M 28 76 C 28 98, 38 124, 50 148 C 62 124, 72 98, 72 76 Z",
 		crown:
-			"M40 75 C36 60, 36 35, 40 25 C45 22, 55 22, 60 25 C64 35, 64 60, 60 75 Q50 78 40 75",
-		fissures: "M45 23 L45 30 M55 30 L55 23",
-		canals: "M50 55 C 51 80, 49 110, 50 140",
-		core: "M44 75 L46 45 Q50 40 54 45 L56 75 Z",
-		apex: [{ x: 50, y: 145 }],
+			"M 28 76 C 22 62, 20 28, 26 16 C 38 14, 62 14, 74 16 C 80 28, 78 62, 72 76 Q 50 80 28 76 Z",
+		fissures: "M 34 20 L 66 20",
+		canals: "M 50 70 C 50 92, 50 122, 50 148",
+		core: "M 44 75 L 46 45 Q 50 40 54 45 L 56 75 Z",
+		apex: [{ x: 50, y: 148 }],
+		boneCrest: {
+			normal: "M 24 84 Q 50 88 76 84",
+			mild: "M 24 94 Q 50 98 76 94",
+			moderate: "M 24 108 Q 50 112 76 108",
+			severe: "M 24 126 Q 50 130 76 126",
+		},
+		touchTargetMinPx: 44,
 		surfaces: {
-			V: "M40 75 C42 70, 58 70, 60 75 L60 55 Q50 50 40 55 Z",
-			O: "M40 55 Q50 50 60 55 L60 25 C55 22, 45 22, 40 25 Z",
-			M: "M40 75 C36 60, 36 35, 40 25 C40 45, 40 65, 40 75 Z",
-			D: "M60 75 C64 60, 64 35, 60 25 C60 45, 60 65, 60 75 Z",
+			V: "M 28 76 C 38 79, 62 79, 72 76 L 68 32 L 32 32 Z",
+			O: "M 32 32 L 68 32 L 74 16 L 26 16 Z",
+			M: "M 28 76 L 32 32 L 26 16 C 20 32, 22 62, 28 76 Z",
+			D: "M 72 76 C 78 62, 80 32, 74 16 L 68 32 Z",
+			L: "M 32 32 L 68 32 L 60 18 L 40 18 Z",
 		},
 	},
 
 	LOWER_CANINE: {
-		root: "M35 72 C33 100, 40 140, 50 150 C60 140, 67 100, 65 72 Z",
-		crown: "M35 72 C30 55, 35 30, 50 12 C65 30, 70 55, 65 72 Q50 75 35 72",
-		canals: "M50 55 C 52 80, 48 110, 50 145",
-		core: "M44 75 L46 45 Q50 40 54 45 L56 75 Z",
-		apex: [{ x: 50, y: 150 }],
+		root: "M 26 76 C 24 98, 36 126, 50 152 C 64 126, 76 98, 74 76 Z",
+		crown:
+			"M 26 76 C 20 62, 18 34, 50 12 C 82 34, 80 62, 74 76 Q 50 80 26 76 Z",
+		canals: "M 50 70 C 50 94, 50 126, 50 152",
+		core: "M 44 75 L 46 45 Q 50 40 54 45 L 56 75 Z",
+		apex: [{ x: 50, y: 152 }],
+		boneCrest: {
+			normal: "M 22 84 Q 50 89 78 84",
+			mild: "M 22 95 Q 50 100 78 95",
+			moderate: "M 22 110 Q 50 115 78 110",
+			severe: "M 22 130 Q 50 135 78 130",
+		},
+		touchTargetMinPx: 44,
 		surfaces: {
-			V: "M35 72 C40 68, 60 68, 65 72 L65 45 Q50 40 35 45 Z",
-			O: "M35 45 Q50 40 65 45 L50 12 Z",
-			M: "M35 72 C30 55, 35 30, 50 12 C45 35, 40 55, 35 72 Z",
-			D: "M65 72 C70 55, 65 30, 50 12 C55 35, 60 55, 65 72 Z",
+			V: "M 26 76 C 38 79, 62 79, 74 76 L 62 46 Q 50 42 38 46 Z",
+			O: "M 38 46 Q 50 42 62 46 L 50 12 Z",
+			M: "M 26 76 L 38 46 L 50 12 C 28 28, 22 56, 26 76 Z",
+			D: "M 74 76 C 78 56, 72 28, 50 12 L 62 46 Z",
+			L: "M 38 46 L 50 12 L 62 46 Q 50 32 38 46 Z",
 		},
 	},
 
 	LOWER_PREMOLAR: {
-		root: "M32 75 C30 100, 35 140, 50 145 C65 140, 70 100, 68 75 Z",
+		root: "M 24 75 C 24 96, 36 124, 50 146 C 64 124, 76 96, 76 75 Z",
 		crown:
-			"M32 75 C25 60, 28 35, 40 28 Q50 32 60 28 C72 35, 75 60, 68 75 Q50 78 32 75",
-		canals: "M50 55 C 52 80, 48 110, 50 140",
-		core: "M38 75 L40 50 Q50 45 60 50 L62 75 Z",
-		apex: [{ x: 50, y: 145 }],
+			"M 24 75 C 18 63, 18 29, 34 17 C 44 13, 56 13, 66 17 C 82 29, 82 63, 76 75 Q 50 79 24 75 Z",
+		canals: "M 50 68 C 50 90, 50 120, 50 146",
+		core: "M 38 75 L 40 50 Q 50 45 60 50 L 62 75 Z",
+		apex: [{ x: 50, y: 146 }],
+		boneCrest: {
+			normal: "M 20 84 Q 50 88 80 84",
+			mild: "M 20 94 Q 50 98 80 94",
+			moderate: "M 20 108 Q 50 112 80 108",
+			severe: "M 20 126 Q 50 130 80 126",
+		},
+		touchTargetMinPx: 44,
 		surfaces: {
-			V: "M32 75 C35 70, 65 70, 68 75 L68 50 Q50 45 32 50 Z",
-			O: "M32 50 Q50 45 68 50 L60 28 C50 32, 40 28, 32 35 Z",
-			M: "M32 75 C25 60, 28 35, 40 28 C35 45, 35 60, 32 75 Z",
-			D: "M68 75 C75 60, 72 35, 60 28 C65 45, 65 60, 68 75 Z",
+			V: "M 24 75 C 36 78, 64 78, 76 75 L 64 48 Q 50 44 36 48 Z",
+			O: "M 36 48 Q 50 44 64 48 L 60 28 Q 50 24 40 28 Z",
+			M: "M 24 75 L 36 48 L 40 28 L 34 17 C 18 29, 18 63, 24 75 Z",
+			D: "M 76 75 C 82 63, 82 29, 66 17 L 60 28 L 64 48 Z",
+			L: "M 40 28 Q 50 24 60 28 L 66 17 C 56 13, 44 13, 34 17 Z",
 		},
 	},
 
 	LOWER_MOLAR: {
-		root: "M15 80 C8 110, 19 135, 20 145 C33 145, 35 125, 38 115 Q49 85 52 100 C55 105, 62 145, 70 150 C80 145, 85 110, 85 80 Z",
+		root: "M 16 75 C 12 95, 18 122, 26 146 C 34 134, 42 118, 50 102 C 58 118, 66 134, 74 144 C 82 122, 88 95, 84 75 Z",
 		crown:
-			"M15 80 C5 40, 15 35, 30 25 C40 20, 48 23, 50 30 C52 23, 60 20, 70 23 C85 35, 95 30, 85 80 Q50 85 15 80",
-		fissures: "M50 30 L50 40 M50 55 L50 80",
-		core: "M25 80 L30 55 Q50 50 70 55 L75 80 Z",
-		canals: "M50 60 Q 25 70 30 140 M50 60 Q 75 70 70 145",
+			"M 16 75 C 10 62, 8 28, 25 18 C 34 12, 48 15, 50 22 C 52 15, 66 12, 75 18 C 92 28, 90 62, 84 75 Q 50 79 16 75 Z",
+		fissures: "M 28 34 Q 50 26 72 34 M 50 50 L 50 24 M 36 48 Q 50 42 64 48",
+		core: "M 25 80 L 30 55 Q 50 50 70 55 L 75 80 Z",
+		canals:
+			"M 36 66 C 32 86, 25 116, 26 146 M 64 66 C 66 86, 74 116, 74 144",
 		apex: [
-			{ x: 20, y: 145 },
-			{ x: 80, y: 145 },
+			{ x: 26, y: 146 },
+			{ x: 74, y: 144 },
 		],
+		furcations: [
+			{
+				id: "M_D_Bifurcation_Buccal",
+				nameRu: "Щечная бифуркация нижнего моляра",
+				position: { x: 50, y: 102 },
+				type: "bifurcation",
+			},
+			{
+				id: "M_D_Bifurcation_Lingual",
+				nameRu: "Язычная бифуркация нижнего моляра",
+				position: { x: 50, y: 104 },
+				type: "bifurcation",
+			},
+		],
+		boneCrest: {
+			normal: "M 12 84 Q 50 88 88 84",
+			mild: "M 12 92 Q 50 96 88 92",
+			moderate: "M 12 104 Q 50 108 88 104",
+			severe: "M 12 122 Q 50 126 88 122",
+		},
+		touchTargetMinPx: 44,
 		surfaces: {
-			V: "M15 80 C20 75, 80 75, 85 80 L85 55 Q50 50 15 55 Z",
-			O: "M15 55 Q50 50 85 55 L70 23 C50 30, 30 25, 15 40 Z",
-			M: "M15 80 C5 40, 15 35, 30 25 C25 45, 20 60, 15 80 Z",
-			D: "M85 80 C95 30, 85 35, 70 23 C75 45, 80 60, 85 80 Z",
+			V: "M 16 75 C 32 78, 68 78, 84 75 L 70 48 Q 50 42 30 48 Z",
+			O: "M 30 48 Q 50 42 70 48 L 66 26 Q 50 22 34 26 Z",
+			M: "M 16 75 L 30 48 L 34 26 L 25 18 C 10 28, 10 62, 16 75 Z",
+			D: "M 84 75 C 90 62, 90 28, 75 18 L 66 26 L 70 48 Z",
+			L: "M 34 26 Q 50 22 66 26 L 75 18 C 66 12, 34 12, 25 18 Z",
 		},
 	},
 
 	PEDIATRIC_UPPER_INCISOR: {
-		root: "M35 85 C33 75, 42 55, 50 45 C58 55, 67 75, 65 85 Z",
+		root: "M 35 85 C 33 72, 42 50, 50 36 C 58 50, 67 72, 65 85 Z",
 		crown:
-			"M35 85 C30 95, 22 125, 32 145 C40 148, 60 148, 68 145 C72 125, 75 95, 65 85 Q50 82 35 85",
-		canals: "M50 120 C 51 90, 49 70, 50 50",
-		apex: [{ x: 50, y: 45 }],
+			"M 35 85 C 30 95, 22 125, 32 145 C 40 148, 60 148, 68 145 C 72 125, 75 95, 65 85 Q 50 82 35 85 Z",
+		canals: "M 50 120 C 50 90, 50 65, 50 40",
+		apex: [{ x: 50, y: 36 }],
+		boneCrest: {
+			normal: "M 24 78 Q 50 74 76 78",
+			mild: "M 24 68 Q 50 64 76 68",
+			moderate: "M 24 56 Q 50 52 76 56",
+			severe: "M 24 44 Q 50 40 76 44",
+		},
+		touchTargetMinPx: 44,
 		surfaces: {
-			V: "M35 85 C40 90, 60 90, 65 85 L68 115 Q50 120 32 115 Z",
-			O: "M32 115 Q50 120 68 115 L68 145 C60 148, 40 148, 32 145 Z",
-			M: "M35 85 C30 95, 28 125, 32 145 L42 145 L42 85 Z",
-			D: "M65 85 C70 95, 72 125, 68 145 L58 145 L58 85 Z",
+			V: "M 35 85 C 40 90, 60 90, 65 85 L 68 115 Q 50 120 32 115 Z",
+			O: "M 32 115 Q 50 120 68 115 L 68 145 C 60 148, 40 148, 32 145 Z",
+			M: "M 35 85 C 30 95, 28 125, 32 145 L 42 145 L 42 85 Z",
+			D: "M 65 85 C 70 95, 72 125, 68 145 L 58 145 L 58 85 Z",
+			L: "M 32 115 L 68 115 L 64 140 L 36 140 Z",
 		},
 	},
+
 	PEDIATRIC_UPPER_CANINE: {
-		root: "M35 85 C33 70, 42 50, 50 40 C58 50, 67 70, 65 85 Z",
-		crown: "M35 85 C30 105, 15 125, 53 148 C65 135, 90 115, 65 85 Q50 80 35 85",
-		canals: "M50 125 C 51 90, 49 60, 50 45",
-		apex: [{ x: 50, y: 40 }],
+		root: "M 35 85 C 33 68, 42 46, 50 32 C 58 46, 67 68, 65 85 Z",
+		crown:
+			"M 35 85 C 30 105, 15 125, 53 148 C 65 135, 90 115, 65 85 Q 50 80 35 85 Z",
+		canals: "M 50 125 C 50 90, 50 60, 50 36",
+		apex: [{ x: 50, y: 32 }],
+		boneCrest: {
+			normal: "M 24 78 Q 50 74 76 78",
+			mild: "M 24 68 Q 50 64 76 68",
+			moderate: "M 24 54 Q 50 50 76 54",
+			severe: "M 24 40 Q 50 36 76 40",
+		},
+		touchTargetMinPx: 44,
 		surfaces: {
-			V: "M35 85 C40 90, 60 90, 65 85 L65 115 Q50 120 35 115 Z",
-			O: "M35 115 Q50 120 65 115 L50 148 Z",
-			M: "M35 85 C30 105, 35 125, 50 148 C45 125, 40 105, 35 85 Z",
-			D: "M65 85 C70 105, 65 125, 50 148 C55 125, 60 105, 65 85 Z",
+			V: "M 35 85 C 40 90, 60 90, 65 85 L 65 115 Q 50 120 35 115 Z",
+			O: "M 35 115 Q 50 120 65 115 L 50 148 Z",
+			M: "M 35 85 C 30 105, 35 125, 50 148 C 45 125, 40 105, 35 85 Z",
+			D: "M 65 85 C 70 105, 65 125, 50 148 C 55 125, 60 105, 65 85 Z",
+			L: "M 35 115 L 65 115 L 50 148 Z",
 		},
 	},
+
 	PEDIATRIC_UPPER_MOLAR: {
-		root: "M45 65 C 45 50, 48 45, 50 40 C 52 45, 55 50, 58 65 Q 50 75 42 66 M20 85 C 20 70, 25 50, 30 45 C 35 55, 40 70, 42 85 M79 85 C 80 70, 75 50, 70 45 C 65 55, 60 70, 58 85 Z",
+		root: "M 18 84 C 10 64, 10 38, 16 18 C 24 30, 32 48, 36 66 C 42 48, 46 28, 50 14 C 54 28, 58 48, 64 66 C 68 48, 76 30, 84 18 C 90 38, 90 64, 82 84 Z",
 		crown:
-			"M20 85 C 13 105, 3 135, 38 139 C 45 139, 50 139, 50 125 C 50 135, 55 136, 62 137 C 100 135, 88 105, 92 85 Z",
+			"M 18 84 C 12 96, 10 128, 28 138 C 36 142, 48 140, 50 134 C 52 140, 64 142, 72 138 C 90 128, 88 96, 82 84 Q 50 80 18 84 Z",
 		canals:
-			"M50 110 C 40 90, 35 70, 30 50 M50 110 C 60 90, 65 70, 70 50 M50 110 C 50 90, 50 70, 50 45",
+			"M 36 92 C 30 70, 20 44, 16 18 M 50 92 C 50 70, 50 38, 50 14 M 64 92 C 70 70, 80 44, 84 18",
 		apex: [
-			{ x: 50, y: 40 },
-			{ x: 30, y: 45 },
-			{ x: 70, y: 45 },
+			{ x: 16, y: 18 },
+			{ x: 50, y: 14 },
+			{ x: 84, y: 18 },
 		],
+		furcations: [
+			{
+				id: "Pediatric_Trifurcation",
+				nameRu: "Дивергирующая трифуркация молочного моляра",
+				position: { x: 50, y: 66 },
+				type: "trifurcation_buccal",
+			},
+		],
+		boneCrest: {
+			normal: "M 14 76 Q 50 72 86 76",
+			mild: "M 14 66 Q 50 62 86 66",
+			moderate: "M 14 54 Q 50 50 86 54",
+			severe: "M 14 38 Q 50 34 86 38",
+		},
+		touchTargetMinPx: 44,
 		surfaces: {
-			V: "M20 85 C30 90, 80 90, 92 85 L92 110 Q50 115 20 110 Z",
-			O: "M20 110 Q50 115 92 110 L62 137 C50 125, 38 139, 20 130 Z",
-			M: "M20 85 C13 105, 3 135, 38 139 C30 125, 25 105, 20 85 Z",
-			D: "M92 85 C88 105, 100 135, 62 137 C75 125, 85 105, 92 85 Z",
+			V: "M 18 84 C 32 81, 68 81, 82 84 L 68 110 Q 50 116 32 110 Z",
+			O: "M 32 110 Q 50 116 68 110 L 64 130 Q 50 134 36 130 Z",
+			M: "M 18 84 L 32 110 L 36 130 L 28 138 C 12 128, 12 96, 18 84 Z",
+			D: "M 82 84 C 88 96, 88 128, 72 138 L 64 130 L 68 110 Z",
+			L: "M 36 130 Q 50 134 64 130 L 72 138 C 64 142, 36 142, 28 138 Z",
 		},
 	},
+
 	PEDIATRIC_LOWER_INCISOR: {
-		root: "M40 75 C38 90, 42 110, 50 120 C58 110, 62 90, 60 75 Z",
+		root: "M 40 75 C 38 90, 42 110, 50 125 C 58 110, 62 90, 60 75 Z",
 		crown:
-			"M40 75 C36 60, 36 35, 40 25 C45 22, 55 22, 60 25 C64 35, 64 60, 60 75 Q50 78 40 75",
-		canals: "M50 55 C 51 75, 49 95, 50 115",
-		apex: [{ x: 50, y: 120 }],
+			"M 40 75 C 36 60, 36 35, 40 25 C 45 22, 55 22, 60 25 C 64 35, 64 60, 60 75 Q 50 78 40 75 Z",
+		canals: "M 50 55 C 50 75, 50 95, 50 120",
+		apex: [{ x: 50, y: 125 }],
+		boneCrest: {
+			normal: "M 28 82 Q 50 86 72 82",
+			mild: "M 28 92 Q 50 96 72 92",
+			moderate: "M 28 104 Q 50 108 72 104",
+			severe: "M 28 116 Q 50 120 72 116",
+		},
+		touchTargetMinPx: 44,
 		surfaces: {
-			V: "M40 75 C42 70, 58 70, 60 75 L60 55 Q50 50 40 55 Z",
-			O: "M40 55 Q50 50 60 55 L60 25 C55 22, 45 22, 40 25 Z",
-			M: "M40 75 C36 60, 36 35, 40 25 C40 45, 40 65, 40 75 Z",
-			D: "M60 75 C64 60, 64 35, 60 25 C60 45, 60 65, 60 75 Z",
+			V: "M 40 75 C 42 70, 58 70, 60 75 L 60 55 Q 50 50 40 55 Z",
+			O: "M 40 55 Q 50 50 60 55 L 60 25 C 55 22, 45 22, 40 25 Z",
+			M: "M 40 75 C 36 60, 36 35, 40 25 C 40 45, 40 65, 40 75 Z",
+			D: "M 60 75 C 64 60, 64 35, 60 25 C 60 45, 60 65, 60 75 Z",
+			L: "M 40 55 L 60 55 L 56 30 L 44 30 Z",
 		},
 	},
+
 	PEDIATRIC_LOWER_CANINE: {
-		root: "M35 72 C33 90, 40 110, 50 120 C60 110, 67 90, 65 72 Z",
-		crown: "M35 72 C30 55, 35 30, 50 12 C65 30, 70 55, 65 72 Q50 75 35 72",
-		canals: "M50 55 C 52 75, 48 95, 50 115",
-		apex: [{ x: 50, y: 120 }],
+		root: "M 35 72 C 33 90, 40 110, 50 128 C 60 110, 67 90, 65 72 Z",
+		crown:
+			"M 35 72 C 30 55, 35 30, 50 12 C 65 30, 70 55, 65 72 Q 50 75 35 72 Z",
+		canals: "M 50 55 C 50 75, 50 98, 50 124",
+		apex: [{ x: 50, y: 128 }],
+		boneCrest: {
+			normal: "M 26 80 Q 50 85 74 80",
+			mild: "M 26 90 Q 50 95 74 90",
+			moderate: "M 26 104 Q 50 109 74 104",
+			severe: "M 26 118 Q 50 123 74 118",
+		},
+		touchTargetMinPx: 44,
 		surfaces: {
-			V: "M35 72 C40 68, 60 68, 65 72 L65 45 Q50 40 35 45 Z",
-			O: "M35 45 Q50 40 65 45 L50 12 Z",
-			M: "M35 72 C30 55, 35 30, 50 12 C45 35, 40 55, 35 72 Z",
-			D: "M65 72 C70 55, 65 30, 50 12 C55 35, 60 55, 65 72 Z",
+			V: "M 35 72 C 40 68, 60 68, 65 72 L 65 45 Q 50 40 35 45 Z",
+			O: "M 35 45 Q 50 40 65 45 L 50 12 Z",
+			M: "M 35 72 C 30 55, 35 30, 50 12 C 45 35, 40 55, 35 72 Z",
+			D: "M 65 72 C 70 55, 65 30, 50 12 C 55 35, 60 55, 65 72 Z",
+			L: "M 35 45 L 65 45 L 50 12 Z",
 		},
 	},
+
 	PEDIATRIC_LOWER_MOLAR: {
-		root: "M15 80 C15 100, 25 115, 30 120 C35 115, 35 100, 38 90 Q49 85 52 100 C55 100, 60 115, 70 120 C80 115, 85 100, 85 80 Z",
+		root: "M 18 76 C 10 96, 10 122, 16 142 C 26 130, 36 110, 50 90 C 64 110, 74 130, 84 142 C 90 122, 90 96, 82 76 Z",
 		crown:
-			"M15 80 C5 40, 15 35, 30 25 C40 20, 48 23, 50 30 C52 23, 60 20, 70 23 C85 35, 95 30, 85 80 Q50 85 15 80",
-		canals: "M50 60 Q 30 80 30 115 M50 60 Q 70 80 70 115",
+			"M 18 76 C 12 64, 10 32, 28 22 C 36 18, 48 20, 50 26 C 52 20, 64 18, 72 22 C 90 32, 88 64, 82 76 Q 50 80 18 76 Z",
+		canals:
+			"M 36 68 C 28 88, 20 116, 16 142 M 64 68 C 72 88, 80 116, 84 142",
 		apex: [
-			{ x: 30, y: 120 },
-			{ x: 70, y: 120 },
+			{ x: 16, y: 142 },
+			{ x: 84, y: 142 },
 		],
+		furcations: [
+			{
+				id: "Pediatric_Bifurcation",
+				nameRu: "Дивергирующая бифуркация нижнего молочного моляра",
+				position: { x: 50, y: 90 },
+				type: "bifurcation",
+			},
+		],
+		boneCrest: {
+			normal: "M 14 84 Q 50 88 86 84",
+			mild: "M 14 94 Q 50 98 86 94",
+			moderate: "M 14 106 Q 50 110 86 106",
+			severe: "M 14 122 Q 50 126 86 122",
+		},
+		touchTargetMinPx: 44,
 		surfaces: {
-			V: "M15 80 C20 75, 80 75, 85 80 L85 55 Q50 50 15 55 Z",
-			O: "M15 55 Q50 50 85 55 L70 23 C50 30, 30 25, 15 40 Z",
-			M: "M15 80 C5 40, 15 35, 30 25 C25 45, 20 60, 15 80 Z",
-			D: "M85 80 C95 30, 85 35, 70 23 C75 45, 80 60, 85 80 Z",
+			V: "M 18 76 C 32 79, 68 79, 82 76 L 68 50 Q 50 44 32 50 Z",
+			O: "M 32 50 Q 50 44 68 50 L 64 30 Q 50 26 36 30 Z",
+			M: "M 18 76 L 32 50 L 36 30 L 28 22 C 12 32, 12 64, 18 76 Z",
+			D: "M 82 76 C 88 64, 88 32, 72 22 L 64 30 L 68 50 Z",
+			L: "M 36 30 Q 50 26 64 30 L 72 22 C 64 18, 36 18, 28 22 Z",
 		},
 	},
 } satisfies Record<string, ToothGeometryType>;
@@ -720,14 +1001,15 @@ export const getToothPath = (toothId: number): ToothGeometryType => {
 export const getToothConfig = (toothId: number) => {
 	const num = toothId % 10;
 	const quadrant = Math.floor(toothId / 10);
-	// Proportional widths scaled to exactly 96px height based on viewBox aspect ratios
+	// Proportional widths scaled to exactly 96px height with sterile touch targets >= 44px
 	if (num <= 2)
 		return {
-			width: "38px",
+			width: "44px",
 			height: "96px",
 			viewX: 20,
 			viewWidth: 60,
 			viewHeight: 150,
+			touchTargetMinPx: 44,
 		};
 	if (num === 3)
 		return {
@@ -736,14 +1018,16 @@ export const getToothConfig = (toothId: number) => {
 			viewX: 15,
 			viewWidth: 75,
 			viewHeight: 150,
+			touchTargetMinPx: 44,
 		};
 	if (num <= 5 && quadrant < 5)
 		return {
-			width: "48px",
+			width: "50px",
 			height: "96px",
 			viewX: 12.5,
 			viewWidth: 75,
 			viewHeight: 150,
+			touchTargetMinPx: 44,
 		};
 	return {
 		width: "64px",
@@ -751,6 +1035,7 @@ export const getToothConfig = (toothId: number) => {
 		viewX: 0,
 		viewWidth: 100,
 		viewHeight: 150,
+		touchTargetMinPx: 44,
 	};
 };
 

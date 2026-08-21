@@ -1,46 +1,30 @@
-import { isValidFdiToothNumber } from "@dental/shared";
-import { AnimatePresence, motion } from "framer-motion";
 import {
-	Activity,
 	AlertCircle,
 	ArrowLeft,
-	Camera,
 	Check,
-	CheckCircle2,
-	ChevronRight,
-	Eye,
 	FileCode,
-	FileText,
-	Heart,
-	Layers,
 	Loader2,
 	Mic,
-	MicOff,
 	Play,
 	Plus,
-	RotateCcw,
 	Scan,
-	Shield,
 	Sparkles,
 	Stethoscope,
-	Volume2,
-	X,
-	Zap,
 } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols043";
+import {
+	getToothAnatomicalNameRu,
+	generateSoapFromOdontogramFinding,
+} from "../../lib/clinicalProtocols043";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { useAppStore } from "../../store/appStore";
 import { useImagingStore } from "../../store/imagingStore";
 import { usePatientStore } from "../../store/patientStore";
 import { usePerspectiveStore } from "../../store/perspectiveStore";
-import { useScheduleStore } from "../../store/scheduleStore";
-import { useVisitStore } from "../../store/visitStore";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 import {
-	SurfaceSelector,
 	TOOTH_STATE_LABELS,
 	ToothChart,
 	type ToothData,
@@ -711,56 +695,71 @@ export function ChairsiderPerspectiveView() {
 							{selectedToothName}
 						</p>
 
-						{/* Surface Selector Matrix */}
-						<div className="p-3 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800/80 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 mb-4">
-							<div className="text-xs font-bold text-[var(--ink,#0f172a)] dark:text-slate-200 mb-2 flex items-center justify-between">
-								<span>Поверхности поражения / пломбы:</span>
-								<span className="text-[11px] text-teal-700 dark:text-teal-300 font-mono font-bold">
-									{currentSurfaces.length > 0 ? currentSurfaces.join(", ") : "Вся коронка"}
+						{/* Quick 1-Tap Actions */}
+						<div className="flex flex-col gap-2.5 mb-4">
+							<button
+								type="button"
+								data-testid="chairsider-copy-soap-btn"
+								onClick={() => {
+									const soap = generateSoapFromOdontogramFinding({
+										toothNumber: selectedTooth,
+										state: selectedToothState,
+										surfaces: currentSurfaces,
+									});
+									const clipText = `Зуб ${selectedTooth} (${selectedToothName}): ${soap.diagnosisIcd10Label}.\n${soap.statusLocalis}\n${soap.treatmentDescription}`;
+									navigator.clipboard?.writeText?.(clipText);
+									showToast(`Протокол для зуба #${selectedTooth} скопирован для Формы 043/у`, "success");
+								}}
+								className="min-h-[46px] w-full p-2.5 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-800 dark:text-teal-300 font-bold flex items-center justify-between border border-teal-500/30 active:scale-98 transition-all text-xs cursor-pointer shadow-xs"
+								title="Скопировать клинический протокол Формы 043/у в дневник"
+							>
+								<span className="flex items-center gap-2">
+									<Sparkles size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+									<span>Скопировать в дневник 043/у</span>
 								</span>
-							</div>
+								<span className="text-[10px] px-2 py-0.5 rounded bg-teal-600 text-white font-bold">
+									SOAP
+								</span>
+							</button>
 
-							<div className="flex items-center justify-center my-2">
-								<SurfaceSelector
-									selected={currentSurfaces}
-									onChange={handleSurfaceChange}
-									size={96}
-								/>
-							</div>
-
-							{/* Quick Surface Toggle Badges */}
-							<div className="flex flex-wrap items-center justify-center gap-1.5 mt-2 pt-2 border-t border-[var(--line,#e2e8f0)] dark:border-slate-700">
-								{(["V", "L", "M", "D", "O"] as const).map((surf) => {
-									const isSurfActive = currentSurfaces.includes(surf);
-									return (
+							{/* Optional Surfaces Toggle (compact pill buttons >=44px touch target) */}
+							<div className="p-2.5 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800/80 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700">
+								<div className="text-[11px] font-bold text-[var(--muted,#64748b)] dark:text-slate-400 mb-1.5 flex items-center justify-between">
+									<span>Поверхности (опционально):</span>
+									<span className="text-teal-700 dark:text-teal-300 font-bold">
+										{currentSurfaces.length > 0 ? currentSurfaces.join(", ") : "Вся коронка"}
+									</span>
+								</div>
+								<div className="flex flex-wrap items-center gap-1.5">
+									{(["V", "L", "M", "D", "O"] as const).map((surf) => {
+										const isSurfActive = currentSurfaces.includes(surf);
+										return (
+											<button
+												key={surf}
+												type="button"
+												data-testid={`chairsider-surface-btn-${surf}`}
+												onClick={() => toggleSurface(surf)}
+												className={`min-h-[44px] min-w-[44px] px-3 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer flex items-center justify-center ${
+													isSurfActive
+														? "bg-teal-600 text-white border-teal-700 shadow-xs"
+														: "bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-600 hover:bg-teal-50 dark:hover:bg-slate-600"
+												}`}
+											>
+												{surf}
+											</button>
+										);
+									})}
+									{currentSurfaces.length > 0 && (
 										<button
-											key={surf}
 											type="button"
-											onClick={() => toggleSurface(surf)}
-											className={`min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
-												isSurfActive
-													? "bg-teal-600 text-white border-teal-700 shadow-sm"
-													: "bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-600 hover:bg-teal-50 dark:hover:bg-slate-600"
-											}`}
+											data-testid="chairsider-surface-reset-btn"
+											onClick={() => handleSurfaceChange([])}
+											className="min-h-[44px] px-3 py-2 rounded-xl text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer flex items-center justify-center"
 										>
-											{surf}
+											Сброс
 										</button>
-									);
-								})}
-								<button
-									type="button"
-									onClick={() => handleSurfaceChange(["V", "L", "M", "D", "O"])}
-									className="min-h-[44px] min-w-[44px] px-3 py-1 rounded-lg text-xs font-semibold bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-600 hover:bg-slate-100 cursor-pointer"
-								>
-									Все
-								</button>
-								<button
-									type="button"
-									onClick={() => handleSurfaceChange([])}
-									className="min-h-[44px] min-w-[44px] px-3 py-1 rounded-lg text-xs font-semibold bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-red-600 dark:text-red-400 border border-[var(--line,#cbd5e1)] dark:border-slate-600 hover:bg-red-50 cursor-pointer"
-								>
-									Сброс
-								</button>
+									)}
+								</div>
 							</div>
 						</div>
 
@@ -779,7 +778,7 @@ export function ChairsiderPerspectiveView() {
 								<span className="flex items-center gap-2.5">
 									<span className="text-xl">📋</span>
 									<span className="flex flex-col text-left">
-										<span className="text-xs font-black">Журнал корневых каналов</span>
+										<span className="text-xs font-black">Журнал корневых каналов (Эндо 043/у)</span>
 										<span className="text-[10px] font-semibold text-rose-700 dark:text-rose-300">
 											MB1, MB2, DB, P · Апекслокатор · MAF
 										</span>
@@ -802,7 +801,7 @@ export function ChairsiderPerspectiveView() {
 								<span className="flex items-center gap-2.5">
 									<span className="text-xl">🦷</span>
 									<span className="flex flex-col text-left">
-										<span className="text-xs font-black">Наряд в лабораторию (ЗТЛ)</span>
+										<span className="text-xs font-black">Наряд в лабораторию (ЗТЛ CAD/CAM)</span>
 										<span className="text-[10px] font-semibold text-teal-700 dark:text-teal-300">
 											Коронка · Винир · VITA · Себестоимость
 										</span>
@@ -833,6 +832,7 @@ export function ChairsiderPerspectiveView() {
 
 						<button
 							type="button"
+							data-testid="chairsider-launch-ct-btn"
 							onClick={handleLaunchCT}
 							className="min-h-[56px] w-full bg-teal-600 hover:bg-teal-500 active:scale-98 text-white font-bold rounded-xl flex items-center justify-center gap-3 text-base shadow-lg shadow-teal-600/20 border border-teal-500/40 cursor-pointer transition-all"
 						>

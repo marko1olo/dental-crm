@@ -143,11 +143,16 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 		[setStoreMode, onViewModeChange],
 	);
 
-	// Intercept tooth click: in Fast Extract mode -> instant Missing, else open Radial Menu
+	// Intercept tooth click: in Fast Extract mode -> instant Missing, else call onToothClick or fallback to radial
 	const handleToothClickIntercept = useCallback(
 		(num: number, rect: DOMRect, surface?: string) => {
 			if (isFastExtractMode) {
 				onQuickStateChange?.([num], "Missing");
+				return;
+			}
+
+			if (onToothClick) {
+				onToothClick(num, rect, surface);
 				return;
 			}
 
@@ -162,8 +167,6 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 				},
 				currentState: currentTooth?.state,
 			});
-
-			onToothClick(num, rect, surface);
 		},
 		[isFastExtractMode, onQuickStateChange, teethData, onToothClick],
 	);
