@@ -33,11 +33,11 @@ test("ToothChart Geometry — handles adult and pediatric FDI teeth", () => {
 
 test("ToothChart Geometry — tooth configs provide scalable bounding dimensions", () => {
 	const cfg11 = getToothConfig(11);
-	assert.equal(cfg11.height, "96px");
+	assert.equal(cfg11.height, "150px");
 	assert.ok(Number.parseInt(cfg11.width) > 0);
 
 	const cfg55 = getToothConfig(55);
-	assert.equal(cfg55.height, "96px");
+	assert.equal(cfg55.height, "150px");
 	assert.ok(Number.parseInt(cfg55.width) > 0);
 });
 

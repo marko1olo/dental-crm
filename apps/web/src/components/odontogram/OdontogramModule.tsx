@@ -711,27 +711,27 @@ export const OdontogramModule = ({
 				ref={containerRef}
 			>
 				<div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-zinc-100/60 dark:bg-zinc-900/60 border-b border-zinc-200/60 dark:border-zinc-800/60 rounded-t-xl">
-					<div className="flex flex-wrap items-center gap-3 sm:gap-4">
-						<label className="flex items-center gap-2 cursor-pointer select-none">
+					<div className="flex flex-wrap items-center gap-2 sm:gap-4 min-w-0">
+						<label className="flex items-center gap-2 cursor-pointer select-none min-w-0">
 							<input
 								type="checkbox"
 								checked={isPediatricMode}
 								onChange={(e) => setIsPediatricMode(e.target.checked)}
-								className="accent-indigo-500 rounded cursor-pointer"
+								className="accent-indigo-500 rounded cursor-pointer shrink-0"
 							/>
-							<span className="text-xs sm:text-sm font-medium whitespace-nowrap">Детский прикус</span>
+							<span className="text-xs sm:text-sm font-medium whitespace-nowrap min-w-0">Детский прикус</span>
 						</label>
 						<button
 							type="button"
 							onClick={() => setIsPediatricModalOpen(true)}
-							className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 rounded-lg transition-colors shrink-0 cursor-pointer select-none"
+							className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 rounded-lg transition-colors shrink-0 cursor-pointer select-none min-w-0"
 							title="Сменный прикус: сроки прорезывания, стадии резорбции корней и Кариограмма Браттхолла"
 						>
-							<Sparkles className="w-3.5 h-3.5" />
-							<span className="whitespace-nowrap">Сменный прикус / Кариограмма</span>
+							<Sparkles className="w-3.5 h-3.5 shrink-0" />
+							<span className="whitespace-nowrap min-w-0">Сменный прикус / Кариограмма</span>
 						</button>
 						<label
-							className={`flex items-center gap-2 cursor-pointer select-none transition-colors ${
+							className={`flex items-center gap-2 cursor-pointer select-none transition-colors min-w-0 ${
 								isMultiSelectMode ? "text-indigo-600 dark:text-indigo-400 font-semibold" : ""
 							}`}
 						>
@@ -743,49 +743,49 @@ export const OdontogramModule = ({
 									if (!e.target.checked && selectedTeeth.length === 0)
 										setMenuConfig(null);
 								}}
-								className="accent-indigo-500 rounded cursor-pointer"
+								className="accent-indigo-500 rounded cursor-pointer shrink-0"
 							/>
-							<span className="text-xs sm:text-sm font-medium whitespace-nowrap">Групповой выбор (Shift)</span>
+							<span className="text-xs sm:text-sm font-medium whitespace-nowrap min-w-0">Групповой выбор (Shift)</span>
 						</label>
 					</div>
 
-					<div className="flex flex-wrap items-center gap-2">
+					<div className="flex flex-wrap items-center gap-2 min-w-0">
 						<button
 							type="button"
 							onClick={() => setIsPerioOpen((prev) => !prev)}
-							className={`flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg border transition-all shrink-0 cursor-pointer select-none ${
+							className={`flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg border transition-all shrink-0 cursor-pointer select-none min-w-0 ${
 								isPerioOpen
 									? "bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-500/40 shadow-xs"
 									: "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20 hover:bg-teal-500/20"
 							}`}
 							title="Открыть / скрыть пародонтологическую карту PSR / 6 точек зондирования"
 						>
-							<Activity className="w-4 h-4" />
-							<span className="whitespace-nowrap">{isPerioOpen ? "Скрыть пародонтограмму" : "Пародонтограмма"}</span>
+							<Activity className="w-4 h-4 shrink-0" />
+							<span className="whitespace-nowrap min-w-0">{isPerioOpen ? "Скрыть пародонтограмму" : "Пародонтограмма"}</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={() => setIsEstimatorOpen((prev) => !prev)}
-							className={`flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg border transition-all shrink-0 cursor-pointer select-none ${
+							className={`flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg border transition-all shrink-0 cursor-pointer select-none min-w-0 ${
 								isEstimatorOpen
 									? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40 shadow-xs"
 									: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
 							}`}
 							title="Открыть / скрыть смету и расчет плана лечения"
 						>
-							<Calculator className="w-4 h-4" />
-							<span className="whitespace-nowrap">{isEstimatorOpen ? "Скрыть смету" : "Смета лечения"}</span>
+							<Calculator className="w-4 h-4 shrink-0" />
+							<span className="whitespace-nowrap min-w-0">{isEstimatorOpen ? "Скрыть смету" : "Смета лечения"}</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={loadDiagnocatReport}
 							disabled={diagnocatLoading}
-							className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 rounded-lg transition-colors shrink-0 cursor-pointer select-none"
+							className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 rounded-lg transition-colors shrink-0 cursor-pointer select-none min-w-0"
 						>
-							<Stethoscope className="w-4 h-4" />
-							<span className="whitespace-nowrap">{diagnocatLoading ? "Загрузка..." : "Diagnocat Анализ"}</span>
+							<Stethoscope className="w-4 h-4 shrink-0" />
+							<span className="whitespace-nowrap min-w-0">{diagnocatLoading ? "Загрузка..." : "Diagnocat Анализ"}</span>
 						</button>
 					</div>
 				</div>
@@ -950,9 +950,9 @@ export const OdontogramModule = ({
 											void updateToothState(selectedTeeth, action.state);
 											setMenuConfig(null);
 										}}
-										className={`flex items-center justify-center p-2.5 rounded-xl border transition-all duration-200 font-bold text-xs cursor-pointer select-none active:scale-95 ${action.className}`}
+										className={`flex items-center justify-center p-2.5 rounded-xl border transition-all duration-200 font-bold text-xs cursor-pointer select-none active:scale-95 text-center leading-tight break-words min-w-0 ${action.className}`}
 									>
-										{action.label}
+										<span className="min-w-0 break-words text-center leading-tight">{action.label}</span>
 									</button>
 								))}
 
@@ -962,9 +962,10 @@ export const OdontogramModule = ({
 										setHistoryTooth(menuConfig.toothNumber);
 										setMenuConfig(null);
 									}}
-									className="col-span-2 flex items-center justify-center p-2.5 rounded-xl border transition-all duration-200 font-bold text-xs bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/25 hover:bg-indigo-500/20 cursor-pointer"
+									className="col-span-2 flex items-center justify-center p-2.5 rounded-xl border transition-all duration-200 font-bold text-xs bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/25 hover:bg-indigo-500/20 cursor-pointer min-w-0 text-center leading-tight"
 								>
-									<History className="w-4 h-4 inline mr-2" /> История зуба
+									<History className="w-4 h-4 inline mr-2 shrink-0" />
+									<span className="min-w-0 break-words">История зуба</span>
 								</button>
 								<button
 									type="button"
@@ -973,9 +974,10 @@ export const OdontogramModule = ({
 										setEndoTooth(menuConfig.toothNumber);
 										setMenuConfig(null);
 									}}
-									className="col-span-2 flex items-center justify-center p-2.5 rounded-xl border transition-all duration-200 font-bold text-xs bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/25 hover:bg-rose-500/20 cursor-pointer"
+									className="col-span-2 flex items-center justify-center p-2.5 rounded-xl border transition-all duration-200 font-bold text-xs bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/25 hover:bg-rose-500/20 cursor-pointer min-w-0 text-center leading-tight"
 								>
-									<Activity className="w-4 h-4 inline mr-2" /> Журнал каналов (Эндо)
+									<Activity className="w-4 h-4 inline mr-2 shrink-0" />
+									<span className="min-w-0 break-words">Журнал каналов (Эндо)</span>
 								</button>
 								<button
 									type="button"
@@ -993,9 +995,10 @@ export const OdontogramModule = ({
 										showToast(`Протокол для зуба #${num} скопирован для Формы 043/у`, "success");
 										setMenuConfig(null);
 									}}
-									className="col-span-2 flex items-center justify-center p-2.5 rounded-xl border transition-all duration-200 font-bold text-xs bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/25 hover:bg-teal-500/20 cursor-pointer"
+									className="col-span-2 flex items-center justify-center p-2.5 rounded-xl border transition-all duration-200 font-bold text-xs bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/25 hover:bg-teal-500/20 cursor-pointer min-w-0 text-center leading-tight"
 								>
-									<Sparkles className="w-4 h-4 inline mr-2" /> Вставить в дневник 043/у
+									<Sparkles className="w-4 h-4 inline mr-2 shrink-0" />
+									<span className="min-w-0 break-words">Вставить в дневник 043/у</span>
 								</button>
 							</div>
 						</>,

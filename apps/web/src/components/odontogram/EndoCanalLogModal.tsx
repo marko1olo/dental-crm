@@ -616,17 +616,17 @@ export function EndoCanalLogModal({
 							<button
 								type="button"
 								onClick={handleResetToDefaults}
-								className="min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center gap-1.5 transition-all cursor-pointer"
+								className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center gap-2 transition-all cursor-pointer"
 								title="Сбросить каналы к анатомическому стандарту FDI для этого зуба"
 							>
-								<RotateCcw size={14} />
+								<RotateCcw size={15} />
 								<span>Анатомический стандарт FDI</span>
 							</button>
 
 							<button
 								type="button"
 								onClick={handleAddCanal}
-								className="min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1.5 shadow-md shadow-rose-600/20 transition-all cursor-pointer"
+								className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-2 shadow-md shadow-rose-600/20 transition-all cursor-pointer"
 							>
 								<Plus size={16} />
 								<span>Добавить канал</span>
@@ -638,24 +638,22 @@ export function EndoCanalLogModal({
 					<div className="border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm bg-[var(--paper,#ffffff)] dark:bg-slate-900/60">
 						<div className="overflow-x-auto">
 							<table className="w-full text-left border-collapse text-xs">
-								<thead>
-									<tr className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/80 border-b border-[var(--line,#e2e8f0)] dark:border-slate-700 text-slate-600 dark:text-slate-300 font-black uppercase tracking-wider text-[11px]">
-										<th className="py-3 px-3.5 min-w-[130px]">Канал</th>
-										<th className="py-3 px-3.5 min-w-[180px]">Ориентир (Репер)</th>
-										<th className="py-3 px-3.5 min-w-[120px]">
-											WL (Длина, мм)
-										</th>
-										<th className="py-3 px-3.5 min-w-[150px]">Мастер-файл (MAF)</th>
-										<th className="py-3 px-3.5 min-w-[130px]">Конусность</th>
-										<th className="py-3 px-3.5 min-w-[210px]">Метод обтурации</th>
-										<th className="py-3 px-2 text-center w-12" aria-label="Действия" />
+								<thead className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/80 text-[var(--muted,#64748b)] text-xs font-bold border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
+									<tr>
+										<th className="py-3 px-3">Канал</th>
+										<th className="py-3 px-3">Реперный ориентир</th>
+										<th className="py-3 px-3">Длина (WL)</th>
+										<th className="py-3 px-3">MAF (ISO)</th>
+										<th className="py-3 px-3">Конусность</th>
+										<th className="py-3 px-3">Метод обтурации</th>
+										<th className="py-3 px-2 text-center w-12" />
 									</tr>
 								</thead>
-								<tbody className="divide-y divide-[var(--line,#e2e8f0)] dark:divide-slate-800">
+								<tbody className="divide-y divide-[var(--line,#e2e8f0)] dark:divide-slate-800/60">
 									{canals.map((c, index) => (
 										<tr
 											key={c.id}
-											className="hover:bg-rose-50/40 dark:hover:bg-rose-950/20 transition-colors"
+											className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
 										>
 											{/* Canal Name */}
 											<td className="py-2.5 px-3">
@@ -666,7 +664,7 @@ export function EndoCanalLogModal({
 													onChange={(e) =>
 														handleCanalChange(c.id, "canalName", e.target.value)
 													}
-													className="w-full min-h-[38px] px-2.5 py-1.5 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white font-bold text-xs focus:ring-2 focus:ring-rose-500 outline-none"
+													className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white font-bold text-xs focus:ring-2 focus:ring-rose-500 outline-none"
 												/>
 											</td>
 
@@ -682,7 +680,7 @@ export function EndoCanalLogModal({
 															e.target.value,
 														)
 													}
-													className="w-full min-h-[38px] px-2.5 py-1.5 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:ring-2 focus:ring-rose-500 outline-none"
+													className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:ring-2 focus:ring-rose-500 outline-none"
 												>
 													{REFERENCE_POINT_OPTIONS.map((opt) => (
 														<option key={opt} value={opt}>
@@ -709,7 +707,7 @@ export function EndoCanalLogModal({
 																Number.parseFloat(e.target.value) || e.target.value,
 															)
 														}
-														className="w-full min-h-[38px] pl-2.5 pr-8 py-1.5 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white font-mono font-bold text-xs focus:ring-2 focus:ring-rose-500 outline-none"
+														className="w-full min-h-[44px] pl-3 pr-8 py-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white font-mono font-bold text-xs focus:ring-2 focus:ring-rose-500 outline-none"
 													/>
 													<span className="absolute right-2 text-[10px] text-rose-700 dark:text-rose-300 font-bold pointer-events-none">
 														мм
@@ -729,7 +727,7 @@ export function EndoCanalLogModal({
 															e.target.value,
 														)
 													}
-													className="w-full min-h-[38px] px-2.5 py-1.5 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:ring-2 focus:ring-rose-500 outline-none font-semibold"
+													className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:ring-2 focus:ring-rose-500 outline-none font-semibold"
 												>
 													{MAF_ISO_OPTIONS.map((opt) => (
 														<option key={opt} value={opt}>
@@ -747,7 +745,7 @@ export function EndoCanalLogModal({
 													onChange={(e) =>
 														handleCanalChange(c.id, "taper", e.target.value)
 													}
-													className="w-full min-h-[38px] px-2.5 py-1.5 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:ring-2 focus:ring-rose-500 outline-none"
+													className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:ring-2 focus:ring-rose-500 outline-none"
 												>
 													{TAPER_OPTIONS.map((opt) => (
 														<option key={opt} value={opt}>
@@ -769,7 +767,7 @@ export function EndoCanalLogModal({
 															e.target.value,
 														)
 													}
-													className="w-full min-h-[38px] px-2.5 py-1.5 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:ring-2 focus:ring-rose-500 outline-none font-medium"
+													className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:ring-2 focus:ring-rose-500 outline-none font-medium"
 												>
 													{OBTURATION_TECHNIQUE_OPTIONS.map((opt) => (
 														<option key={opt} value={opt}>
@@ -784,7 +782,7 @@ export function EndoCanalLogModal({
 												<button
 													type="button"
 													onClick={() => handleRemoveCanal(c.id)}
-													className="min-h-[36px] min-w-[36px] rounded-lg text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center transition-colors cursor-pointer"
+													className="min-h-[44px] min-w-[44px] rounded-xl text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center transition-colors cursor-pointer"
 													title={`Удалить канал ${c.canalName}`}
 												>
 													<Trash2 size={16} />

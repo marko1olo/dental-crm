@@ -1396,28 +1396,37 @@ const ToothSVG = ({
 		</svg>
 	);
 
-	const renderNumberBadge = () => (
-		<div className="relative flex flex-col items-center group/badge">
-			{/* Hover Quick Action Micro-HUD (Clinical Russian Presets) when no global stamp is active */}
-			{!activeStamp && onQuickStateChange && (
-				<div
-					className={`tooth-hover-quick-hud absolute left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 group-hover/badge:opacity-100 transition-all duration-200 z-40 flex items-center gap-1 px-1.5 py-1 rounded-xl bg-[var(--odontogram-paper)] border border-[var(--odontogram-border-strong)] shadow-2xl backdrop-blur-md pointer-events-auto whitespace-nowrap ${
-						isTop ? "bottom-full mb-1.5" : "top-full mt-1.5"
-					}`}
-					onClick={(e) => e.stopPropagation()}
-				>
-					<button
+	const renderNumberBadge = () => {
+		const isLeftMolar = (number >= 16 && number <= 18) || (number >= 46 && number <= 48) || (number >= 54 && number <= 55) || (number >= 84 && number <= 85);
+		const isRightMolar = (number >= 26 && number <= 28) || (number >= 36 && number <= 38) || (number >= 64 && number <= 65) || (number >= 74 && number <= 75);
+		const hudAlignClass = isLeftMolar
+			? "left-0"
+			: isRightMolar
+			? "right-0"
+			: "left-1/2 -translate-x-1/2";
+
+		return (
+			<div className="relative flex flex-col items-center group/badge">
+				{/* Hover Quick Action Micro-HUD (Clinical Russian Presets) when no global stamp is active */}
+				{!activeStamp && onQuickStateChange && (
+					<div
+						className={`tooth-hover-quick-hud absolute ${hudAlignClass} opacity-0 group-hover:opacity-100 group-hover/badge:opacity-100 transition-all duration-200 z-40 flex items-center gap-1.5 px-2 py-1.5 rounded-2xl bg-[var(--odontogram-paper)]/95 border border-[var(--odontogram-border-strong)] shadow-2xl backdrop-blur-xl pointer-events-auto whitespace-nowrap ${
+							isTop ? "bottom-full mb-2" : "top-full mt-2"
+						}`}
+						onClick={(e) => e.stopPropagation()}
+					>
+						<button
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Caries");
 						}}
-						className="px-1.5 py-0.5 min-h-[32px] rounded-md bg-red-500/20 hover:bg-red-500 text-red-300 hover:text-white border border-red-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 touch-manipulation"
-						title="Кариес (Кар.)"
+						className="px-2.5 py-1 min-h-[34px] rounded-lg bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
+						title="Кариес"
 					>
-						<span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
-						<span>Кар.</span>
+						<span className="w-2 h-2 rounded-full bg-amber-500 inline-block shadow-xs" />
+						<span>Кариес</span>
 					</button>
 					<button
 						type="button"
@@ -1426,11 +1435,11 @@ const ToothSVG = ({
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Filled");
 						}}
-						className="px-1.5 py-0.5 min-h-[32px] rounded-md bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-white border border-emerald-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 touch-manipulation"
-						title="Пломба (Пл.)"
+						className="px-2.5 py-1 min-h-[34px] rounded-lg bg-emerald-500/15 hover:bg-emerald-500 text-emerald-800 dark:text-emerald-300 hover:text-white border border-emerald-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
+						title="Пломба"
 					>
-						<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-						<span>Пл.</span>
+						<span className="w-2 h-2 rounded-full bg-emerald-500 inline-block shadow-xs" />
+						<span>Пломба</span>
 					</button>
 					<button
 						type="button"
@@ -1439,11 +1448,11 @@ const ToothSVG = ({
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Pulpitis");
 						}}
-						className="px-1.5 py-0.5 min-h-[32px] rounded-md bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white border border-rose-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 touch-manipulation"
-						title="Пульпит (Пульп.)"
+						className="px-2.5 py-1 min-h-[34px] rounded-lg bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
+						title="Пульпит"
 					>
-						<span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block" />
-						<span>Пульп.</span>
+						<span className="w-2 h-2 rounded-full bg-rose-500 inline-block shadow-xs" />
+						<span>Пульпит</span>
 					</button>
 					<button
 						type="button"
@@ -1452,11 +1461,11 @@ const ToothSVG = ({
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Crown");
 						}}
-						className="px-1.5 py-0.5 min-h-[32px] rounded-md bg-blue-500/20 hover:bg-blue-500 text-blue-300 hover:text-white border border-blue-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 touch-manipulation"
-						title="Коронка (Кор.)"
+						className="px-2.5 py-1 min-h-[34px] rounded-lg bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
+						title="Коронка"
 					>
-						<span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
-						<span>Кор.</span>
+						<span className="w-2 h-2 rounded-full bg-blue-500 inline-block shadow-xs" />
+						<span>Коронка</span>
 					</button>
 					<button
 						type="button"
@@ -1465,11 +1474,11 @@ const ToothSVG = ({
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Missing");
 						}}
-						className="px-1.5 py-0.5 min-h-[32px] rounded-md bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 touch-manipulation"
-						title="Удален (Удал.)"
+						className="px-2.5 py-1 min-h-[34px] rounded-lg bg-red-600/15 hover:bg-red-600 text-red-800 dark:text-red-300 hover:text-white border border-red-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
+						title="Удален"
 					>
-						<span className="w-1.5 h-1.5 rounded-full bg-rose-600 inline-block" />
-						<span>Удал.</span>
+						<span className="w-2 h-2 rounded-full bg-red-600 inline-block shadow-xs" />
+						<span>Удален</span>
 					</button>
 					<button
 						type="button"
@@ -1478,11 +1487,11 @@ const ToothSVG = ({
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Healthy");
 						}}
-						className="px-1.5 py-0.5 min-h-[32px] rounded-md bg-teal-500/20 hover:bg-teal-500 text-teal-300 hover:text-white border border-teal-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 touch-manipulation"
-						title="Здоров (Зд.)"
+						className="px-2.5 py-1 min-h-[34px] rounded-lg bg-teal-500/15 hover:bg-teal-500 text-teal-800 dark:text-teal-300 hover:text-white border border-teal-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
+						title="Здоров"
 					>
-						<span className="w-1.5 h-1.5 rounded-full bg-teal-400 inline-block" />
-						<span>Зд.</span>
+						<span className="w-2 h-2 rounded-full bg-teal-400 inline-block shadow-xs" />
+						<span>Здоров</span>
 					</button>
 				</div>
 			)}
@@ -1499,6 +1508,7 @@ const ToothSVG = ({
 			</span>
 		</div>
 	);
+};
 
 	return (
 		<button

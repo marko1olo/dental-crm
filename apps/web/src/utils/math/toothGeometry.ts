@@ -1001,11 +1001,11 @@ export const getToothPath = (toothId: number): ToothGeometryType => {
 export const getToothConfig = (toothId: number) => {
 	const num = toothId % 10;
 	const quadrant = Math.floor(toothId / 10);
-	// Proportional widths scaled to exactly 96px height with sterile touch targets >= 44px
+	// Scaled dimensions with sterile touch targets >= 44px
 	if (num <= 2)
 		return {
-			width: "44px",
-			height: "96px",
+			width: "66px",
+			height: "150px",
 			viewX: 20,
 			viewWidth: 60,
 			viewHeight: 150,
@@ -1013,8 +1013,8 @@ export const getToothConfig = (toothId: number) => {
 		};
 	if (num === 3)
 		return {
-			width: "48px",
-			height: "96px",
+			width: "74px",
+			height: "150px",
 			viewX: 15,
 			viewWidth: 75,
 			viewHeight: 150,
@@ -1022,16 +1022,16 @@ export const getToothConfig = (toothId: number) => {
 		};
 	if (num <= 5 && quadrant < 5)
 		return {
-			width: "50px",
-			height: "96px",
+			width: "78px",
+			height: "150px",
 			viewX: 12.5,
 			viewWidth: 75,
 			viewHeight: 150,
 			touchTargetMinPx: 44,
 		};
 	return {
-		width: "64px",
-		height: "96px",
+		width: "98px",
+		height: "150px",
 		viewX: 0,
 		viewWidth: 100,
 		viewHeight: 150,

@@ -108,7 +108,7 @@ const CHAIRSIDE_TOOTH_STATUS_OPTIONS: ReadonlyArray<{
 	},
 	{
 		state: "Planned_Implant",
-		label: "Имплант (План)",
+		label: "План импл.",
 		shortCode: "ПлИ",
 		colorClass: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/25",
 		borderClass: "border-indigo-500/40",
@@ -534,37 +534,40 @@ export function ChairsiderPerspectiveView() {
 									type="button"
 									onClick={() => setViewMode("svg")}
 									aria-pressed={viewMode === "svg"}
-									className={`min-h-[44px] px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+									className={`min-h-[44px] px-1.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 transition-all cursor-pointer ${
 										viewMode === "svg"
 											? "bg-teal-600 text-white shadow-md shadow-teal-600/30"
 											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-300"
 									}`}
 								>
-									<span>🦷 <span className="hidden sm:inline">Анатомическая </span>Дуга</span>
+									<span className="text-base sm:text-sm">🦷</span>
+									<span><span className="hidden sm:inline">Анатомическая </span>Дуга</span>
 								</button>
 								<button
 									type="button"
 									onClick={() => setViewMode("tiles")}
 									aria-pressed={viewMode === "tiles"}
-									className={`min-h-[44px] px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+									className={`min-h-[44px] px-1.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 transition-all cursor-pointer ${
 										viewMode === "tiles"
 											? "bg-teal-600 text-white shadow-md shadow-teal-600/30"
 											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-300"
 									}`}
 								>
-									<span>🔲 Плитки</span>
+									<span className="text-base sm:text-sm">🔲</span>
+									<span>Плитки</span>
 								</button>
 								<button
 									type="button"
 									onClick={() => setViewMode("perio")}
 									aria-pressed={viewMode === "perio"}
-									className={`min-h-[44px] px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+									className={`min-h-[44px] px-1.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 transition-all cursor-pointer ${
 										viewMode === "perio"
 											? "bg-teal-600 text-white shadow-md shadow-teal-600/30"
 											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-300"
 									}`}
 								>
-									<span>📊 <span className="sm:hidden">Пародонт</span><span className="hidden sm:inline">Пародонтограмма</span></span>
+									<span className="text-base sm:text-sm">📊</span>
+									<span><span className="sm:hidden">Перио</span><span className="hidden sm:inline">Пародонтограмма</span></span>
 								</button>
 							</div>
 						</div>
@@ -701,7 +704,7 @@ export function ChairsiderPerspectiveView() {
 									</span>
 								)}
 							</div>
-							<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2.5">
+							<div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2">
 								{CHAIRSIDE_TOOTH_STATUS_OPTIONS.map((opt) => {
 									const isActive = selectedToothState === opt.state;
 									return (
@@ -710,12 +713,15 @@ export function ChairsiderPerspectiveView() {
 											type="button"
 											disabled={isSavingTooth}
 											onClick={() => void handleToothStatusSelect(opt.state)}
-											className={`min-h-[62px] p-2.5 rounded-xl font-bold text-xs border flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-sm ${opt.colorClass} ${opt.borderClass} ${
+											className={`min-h-[64px] p-2 rounded-xl font-bold border flex flex-col items-center justify-between gap-1 transition-all active:scale-95 cursor-pointer shadow-xs min-w-0 w-full overflow-hidden ${opt.colorClass} ${opt.borderClass} ${
 												isActive ? "ring-2 ring-teal-500 ring-offset-1 font-black shadow-md" : ""
 											}`}
+											title={`${opt.label} (${opt.shortCode})`}
 										>
-											<span className="whitespace-nowrap font-bold">{opt.label}</span>
-											<span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${opt.badgeClass}`}>
+											<span className="font-bold text-[11px] sm:text-xs text-center leading-tight truncate max-w-full px-0.5">
+												{opt.label}
+											</span>
+											<span className={`text-[10px] px-2 py-0.5 rounded-full font-black shrink-0 ${opt.badgeClass}`}>
 												{opt.shortCode}
 											</span>
 										</button>

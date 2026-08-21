@@ -751,12 +751,12 @@ export function PediatricPerspectiveView() {
 													type="button"
 													disabled={isSavingTooth}
 													onClick={() => void handleToothStatusSelect(opt.state)}
-													className={`min-h-[58px] p-2 rounded-xl font-bold text-xs border flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer shadow-sm ${opt.colorClass} ${opt.borderClass} ${
+													className={`min-h-[58px] p-2 rounded-xl font-bold text-xs border flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer shadow-sm min-w-0 ${opt.colorClass} ${opt.borderClass} ${
 														isActive ? "ring-2 ring-pink-500 ring-offset-1 font-black" : ""
 													}`}
 												>
-													<span className="text-center leading-tight line-clamp-1">{opt.label}</span>
-													<span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${opt.badgeClass}`}>
+													<span className="text-center leading-tight line-clamp-1 min-w-0">{opt.label}</span>
+													<span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black shrink-0 ${opt.badgeClass}`}>
 														{opt.shortCode}
 													</span>
 												</button>

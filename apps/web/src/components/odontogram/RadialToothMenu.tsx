@@ -53,7 +53,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 			label: "Кариес",
 			shortLabel: "Кариес",
 			state: "Caries",
-			icon: <Zap size={14} className="text-amber-200" />,
+			icon: <Zap size={16} className="text-amber-200" />,
 			color: "from-amber-500 to-red-600",
 			bgGradient: "linear-gradient(135deg, #f59e0b 0%, #dc2626 100%)",
 			hotkey: "К",
@@ -63,7 +63,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 			label: "Пульпит",
 			shortLabel: "Пульпит",
 			state: "Pulpitis",
-			icon: <Flame size={14} className="text-rose-200" />,
+			icon: <Flame size={16} className="text-rose-200" />,
 			color: "from-rose-600 to-red-800",
 			bgGradient: "linear-gradient(135deg, #ef4444 0%, #991b1b 100%)",
 			hotkey: "Ф",
@@ -73,7 +73,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 			label: "Периодонтит",
 			shortLabel: "Периодонтит",
 			state: "Periodontitis",
-			icon: <Flame size={14} className="text-orange-200" />,
+			icon: <Flame size={16} className="text-orange-200" />,
 			color: "from-orange-500 to-rose-600",
 			bgGradient: "linear-gradient(135deg, #ea580c 0%, #e11d48 100%)",
 			hotkey: "Е",
@@ -83,7 +83,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 			label: "Пломба",
 			shortLabel: "Пломба",
 			state: "Filled",
-			icon: <Wrench size={14} className="text-teal-200" />,
+			icon: <Wrench size={16} className="text-teal-200" />,
 			color: "from-teal-500 to-emerald-700",
 			bgGradient: "linear-gradient(135deg, #0d9488 0%, #047857 100%)",
 			hotkey: "П",
@@ -93,7 +93,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 			label: "Коронка",
 			shortLabel: "Коронка",
 			state: "Crown",
-			icon: <Crown size={14} className="text-blue-200" />,
+			icon: <Crown size={16} className="text-blue-200" />,
 			color: "from-blue-600 to-indigo-800",
 			bgGradient: "linear-gradient(135deg, #2563eb 0%, #3730a3 100%)",
 			hotkey: "Ц",
@@ -103,7 +103,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 			label: "Имплантат",
 			shortLabel: "Имплант",
 			state: "Implant",
-			icon: <Hammer size={14} className="text-cyan-200" />,
+			icon: <Hammer size={16} className="text-cyan-200" />,
 			color: "from-cyan-500 to-blue-600",
 			bgGradient: "linear-gradient(135deg, #06b6d4 0%, #1d4ed8 100%)",
 			hotkey: "И",
@@ -113,7 +113,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 			label: "Зуб отсутствует / Удален",
 			shortLabel: "Удален",
 			state: "Missing",
-			icon: <Trash2 size={14} className="text-rose-200" />,
+			icon: <Trash2 size={16} className="text-rose-200" />,
 			color: "from-rose-600 to-red-800",
 			bgGradient: "linear-gradient(135deg, #e11d48 0%, #991b1b 100%)",
 			hotkey: "0",
@@ -123,7 +123,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 			label: "Здоров",
 			shortLabel: "Здоров",
 			state: "Healthy",
-			icon: <Sparkles size={14} className="text-emerald-200" />,
+			icon: <Sparkles size={16} className="text-emerald-200" />,
 			color: "from-emerald-600 to-teal-700",
 			bgGradient: "linear-gradient(135deg, #059669 0%, #0f766e 100%)",
 			hotkey: "З",
@@ -173,16 +173,16 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 	const vh = typeof window !== "undefined" ? window.innerHeight : 800;
 
 	// Clamp menu center to prevent edge clipping while staying true to the tooth position
-	const minMarginX = 90;
-	const minMarginTop = 90;
-	const minMarginBottom = 110;
+	const radius = Math.min(170, Math.max(125, Math.floor((vw - 90) / 2)));
+	const minMarginX = Math.min(240, vw / 2);
+	const minMarginTop = 240;
+	const minMarginBottom = 250;
 	const centerX = Math.max(minMarginX, Math.min(rawCenterX, vw - minMarginX));
 	const centerY = Math.max(minMarginTop, Math.min(rawCenterY, vh - minMarginBottom));
-	const radius = 145; // Pixel radius for 8 non-overlapping items
 
 	const content = (
 		<div
-			className="radial-tooth-menu-overlay fixed inset-0 z-[9999] pointer-events-auto bg-black/45 backdrop-blur-[3px] animate-fadeIn"
+			className="radial-tooth-menu-overlay fixed inset-0 z-[9999] pointer-events-auto bg-black/55 backdrop-blur-[4px] animate-fadeIn"
 			data-testid="radial-tooth-menu-overlay"
 		>
 			<div
@@ -191,8 +191,8 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 				style={{
 					left: `${centerX}px`,
 					top: `${centerY}px`,
-					width: "420px",
-					height: "420px",
+					width: "480px",
+					height: "480px",
 					transform: "translate(-50%, -50%)",
 				}}
 				role="dialog"
@@ -200,10 +200,10 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 			>
 				{/* Background Glass Disc - centered at container origin */}
 				<div
-					className="absolute rounded-full bg-[var(--odontogram-paper)]/90 backdrop-blur-2xl border border-[var(--odontogram-border)] shadow-2xl pointer-events-none"
+					className="absolute rounded-full bg-[var(--odontogram-paper)]/92 backdrop-blur-2xl border border-[var(--odontogram-border)] shadow-2xl pointer-events-none"
 					style={{
-						width: `${(radius + 40) * 2}px`,
-						height: `${(radius + 40) * 2}px`,
+						width: `${(radius + 45) * 2}px`,
+						height: `${(radius + 45) * 2}px`,
 						left: "50%",
 						top: "50%",
 						transform: "translate(-50%, -50%)",
@@ -212,23 +212,23 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 
 				{/* Center Tooth Hub - centered at container origin */}
 				<div
-					className="absolute flex flex-col items-center justify-center w-20 h-20 rounded-full bg-[var(--odontogram-surface)] border-2 border-indigo-500 shadow-2xl text-[var(--odontogram-ink)] z-20 pointer-events-auto"
+					className="absolute flex flex-col items-center justify-center w-24 h-24 rounded-full bg-[var(--odontogram-surface)] border-2 border-teal-500 shadow-2xl text-[var(--odontogram-ink)] z-20 pointer-events-auto"
 					style={{
 						left: "50%",
 						top: "50%",
 						transform: "translate(-50%, -50%)",
 					}}
 				>
-					<span className="text-[10px] uppercase font-extrabold text-indigo-500 dark:text-indigo-300 tracking-wider">Зуб</span>
-					<span className="text-2xl font-black leading-none text-[var(--odontogram-ink)]">{toothNumber}</span>
+					<span className="text-[11px] uppercase font-black text-teal-600 dark:text-teal-400 tracking-wider">Зуб</span>
+					<span className="text-3xl font-black leading-none text-[var(--odontogram-ink)]">{toothNumber}</span>
 					<button
 						type="button"
 						onClick={onClose}
-						className="absolute -top-3 -right-3 min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center p-2 rounded-full bg-rose-600 hover:bg-rose-500 text-white shadow-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-rose-400 pointer-events-auto"
+						className="absolute -top-2.5 -right-2.5 min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center p-2 rounded-full bg-rose-600 hover:bg-rose-500 text-white shadow-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-rose-400 pointer-events-auto"
 						title="Закрыть (Esc)"
 						aria-label="Закрыть меню"
 					>
-						<X size={16} />
+						<X size={18} />
 					</button>
 				</div>
 
@@ -260,15 +260,15 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 									display: "inline-flex",
 									alignItems: "center",
 									justifyContent: "center",
-									gap: "6px",
-									padding: "8px 16px",
+									gap: "8px",
+									padding: "10px 18px",
 									borderRadius: "9999px",
-									border: "1px solid rgba(255, 255, 255, 0.25)",
+									border: "1.5px solid rgba(255, 255, 255, 0.3)",
 									boxShadow: isCurrent
-										? "0 0 0 2px #ffffff, 0 12px 28px -4px rgba(0, 0, 0, 0.6)"
-										: "0 6px 18px -2px rgba(0, 0, 0, 0.4)",
+										? "0 0 0 2.5px #ffffff, 0 14px 32px -4px rgba(0, 0, 0, 0.65)"
+										: "0 8px 22px -3px rgba(0, 0, 0, 0.45)",
 								}}
-								className={`radial-item-btn pointer-events-auto min-h-[44px] min-w-[44px] text-xs font-bold text-white cursor-pointer transition-all duration-200 hover:scale-110 active:scale-95 focus:outline-none ${
+								className={`radial-item-btn pointer-events-auto min-h-[46px] min-w-[46px] text-xs font-bold text-white cursor-pointer transition-all duration-200 hover:scale-108 active:scale-95 focus:outline-none ${
 									isCurrent
 										? "scale-105 font-black ring-2 ring-white"
 										: "opacity-95 hover:opacity-100"
@@ -277,7 +277,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 								data-testid={`radial-btn-${item.id}`}
 							>
 								<span className="shrink-0 flex items-center justify-center">{item.icon}</span>
-								<span className="whitespace-nowrap font-extrabold text-[12px] tracking-tight">{item.shortLabel}</span>
+								<span className="whitespace-nowrap font-black text-[13px] sm:text-[14px] tracking-tight">{item.shortLabel}</span>
 							</button>
 						);
 					})}
@@ -286,10 +286,10 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 				{/* Quick Action Footer Controls - centered below the radial disc */}
 				{Boolean(onOpenEndo || onAddToInvoice) && (
 					<div
-						className="absolute flex items-center gap-2 pointer-events-auto bg-[var(--odontogram-paper)] backdrop-blur-md px-3 py-1.5 rounded-full border border-[var(--odontogram-border)] shadow-2xl z-20"
+						className="absolute flex items-center gap-3 pointer-events-auto bg-[var(--odontogram-paper)] backdrop-blur-xl px-4 py-2 rounded-full border border-[var(--odontogram-border)] shadow-2xl z-20"
 						style={{
 							left: "50%",
-							top: `calc(50% + ${radius + 48}px)`,
+							top: `calc(50% + ${radius + 52}px)`,
 							transform: "translate(-50%, 0)",
 						}}
 					>
@@ -303,13 +303,13 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 								style={{
 									display: "inline-flex",
 									alignItems: "center",
-									gap: "6px",
+									gap: "8px",
 									background: "transparent",
 								}}
-								className="min-h-[44px] min-w-[44px] text-xs font-bold text-rose-600 dark:text-rose-300 hover:bg-rose-500/15 px-3.5 py-2 rounded-lg transition-colors cursor-pointer border-0"
+								className="min-h-[44px] min-w-[44px] text-sm font-black text-rose-600 dark:text-rose-300 hover:bg-rose-500/15 px-4 py-2 rounded-xl transition-colors cursor-pointer border-0"
 							>
-								<Wrench size={14} />
-								<span>Каналы</span>
+								<Wrench size={16} />
+								<span>Журнал каналов</span>
 							</button>
 						)}
 						{onAddToInvoice && (
@@ -322,12 +322,12 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 								style={{
 									display: "inline-flex",
 									alignItems: "center",
-									gap: "6px",
+									gap: "8px",
 									background: "transparent",
 								}}
-								className="min-h-[44px] min-w-[44px] text-xs font-bold text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/15 px-3.5 py-2 rounded-lg transition-colors cursor-pointer border-0"
+								className="min-h-[44px] min-w-[44px] text-sm font-black text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/15 px-4 py-2 rounded-xl transition-colors cursor-pointer border-0"
 							>
-								<Coins size={14} />
+								<Coins size={16} />
 								<span>В смету</span>
 							</button>
 						)}

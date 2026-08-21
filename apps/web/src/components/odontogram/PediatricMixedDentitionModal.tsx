@@ -701,7 +701,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													dietContents: Number(e.target.value),
 												})
 											}
-											className="w-full p-2 text-xs rounded-xl bg-[var(--odontogram-paper,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] text-[var(--odontogram-ink,#0f172a)] font-semibold cursor-pointer"
+											className="w-full min-h-[44px] px-3 py-2 text-xs rounded-xl bg-[var(--odontogram-paper,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] text-[var(--odontogram-ink,#0f172a)] font-semibold cursor-pointer"
 										>
 											<option value={0}>0 — Очень низкое (без сахара)</option>
 											<option value={1}>1 — Умеренное (стандартное)</option>
@@ -723,7 +723,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													dietFrequency: Number(e.target.value),
 												})
 											}
-											className="w-full p-2 text-xs rounded-xl bg-[var(--odontogram-paper,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] text-[var(--odontogram-ink,#0f172a)] font-semibold cursor-pointer"
+											className="w-full min-h-[44px] px-3 py-2 text-xs rounded-xl bg-[var(--odontogram-paper,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] text-[var(--odontogram-ink,#0f172a)] font-semibold cursor-pointer"
 										>
 											<option value={0}>0 — ≤3 раз в день (без перекусов)</option>
 											<option value={1}>1 — 4–5 раз в день (норма)</option>
@@ -745,7 +745,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													plaqueAmount: Number(e.target.value),
 												})
 											}
-											className="w-full p-2 text-xs rounded-xl bg-[var(--odontogram-paper,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] text-[var(--odontogram-ink,#0f172a)] font-semibold cursor-pointer"
+											className="w-full min-h-[44px] px-3 py-2 text-xs rounded-xl bg-[var(--odontogram-paper,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] text-[var(--odontogram-ink,#0f172a)] font-semibold cursor-pointer"
 										>
 											<option value={0}>0 — Отличная гигиена (налета нет)</option>
 											<option value={1}>1 — Удовлетворительная (пришеечный налет)</option>
@@ -767,7 +767,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													streptococcusMutans: Number(e.target.value),
 												})
 											}
-											className="w-full p-2 text-xs rounded-xl bg-[var(--odontogram-paper,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] text-[var(--odontogram-ink,#0f172a)] font-semibold cursor-pointer"
+											className="w-full min-h-[44px] px-3 py-2 text-xs rounded-xl bg-[var(--odontogram-paper,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] text-[var(--odontogram-ink,#0f172a)] font-semibold cursor-pointer"
 										>
 											<option value={0}>0 — Класс 0 (&lt;10⁴ КОЕ/мл)</option>
 											<option value={1}>1 — Класс 1 (10⁴–10⁵ КОЕ/мл)</option>
@@ -789,7 +789,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													fluorideProgram: Number(e.target.value),
 												})
 											}
-											className="w-full p-2 text-xs rounded-xl bg-[var(--odontogram-paper,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] text-[var(--odontogram-ink,#0f172a)] font-semibold cursor-pointer"
+											className="w-full min-h-[44px] px-3 py-2 text-xs rounded-xl bg-[var(--odontogram-paper,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] text-[var(--odontogram-ink,#0f172a)] font-semibold cursor-pointer"
 										>
 											<option value={0}>0 — Оптимальное (паста 1450ppm + лак)</option>
 											<option value={1}>1 — Стандартная фтор-паста 1000ppm</option>
@@ -811,7 +811,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													salivaSecretionRate: Number(e.target.value),
 												})
 											}
-											className="w-full p-2 text-xs rounded-xl bg-[var(--odontogram-paper,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] text-[var(--odontogram-ink,#0f172a)] font-semibold cursor-pointer"
+											className="w-full min-h-[44px] px-3 py-2 text-xs rounded-xl bg-[var(--odontogram-paper,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] text-[var(--odontogram-ink,#0f172a)] font-semibold cursor-pointer"
 										>
 											<option value={0}>0 — Норма (&gt;1.2 мл/мин)</option>
 											<option value={1}>1 — Сниженная (0.9–1.2 мл/мин)</option>
@@ -833,7 +833,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													pastCariesExperience: Number(e.target.value),
 												})
 											}
-											className="w-full p-2 text-xs rounded-xl bg-[var(--odontogram-paper,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] text-[var(--odontogram-ink,#0f172a)] font-semibold cursor-pointer"
+											className="w-full min-h-[44px] px-3 py-2 text-xs rounded-xl bg-[var(--odontogram-paper,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] text-[var(--odontogram-ink,#0f172a)] font-semibold cursor-pointer"
 										>
 											<option value={0}>0 — Нет новых полостей за последний год</option>
 											<option value={1}>1 — 1–2 новые кариозные полости</option>
@@ -855,7 +855,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													systemicDiseases: Number(e.target.value),
 												})
 											}
-											className="w-full p-2 text-xs rounded-xl bg-[var(--odontogram-paper,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] text-[var(--odontogram-ink,#0f172a)] font-semibold cursor-pointer"
+											className="w-full min-h-[44px] px-3 py-2 text-xs rounded-xl bg-[var(--odontogram-paper,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] text-[var(--odontogram-ink,#0f172a)] font-semibold cursor-pointer"
 										>
 											<option value={0}>0 — Здоров (нет отягощающих факторов)</option>
 											<option value={1}>1 — Компенсированные соматические патологии</option>
@@ -876,7 +876,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 													clinicalJudgment: Number(e.target.value),
 												})
 											}
-											className="w-full p-2 text-xs rounded-xl bg-[var(--odontogram-paper,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] text-[var(--odontogram-ink,#0f172a)] font-semibold cursor-pointer"
+											className="w-full min-h-[44px] px-3 py-2 text-xs rounded-xl bg-[var(--odontogram-paper,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] text-[var(--odontogram-ink,#0f172a)] font-semibold cursor-pointer"
 										>
 											<option value={0}>0 — Благоприятное (лучше тестов)</option>
 											<option value={1}>1 — Стандартное (соответствует тестам)</option>

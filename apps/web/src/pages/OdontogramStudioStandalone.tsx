@@ -440,11 +440,11 @@ export const OdontogramStudioStandalone: React.FC = () => {
 				</div>
 
 				{/* Center Mode Switcher Tabs */}
-				<div className="flex items-center p-1 bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] rounded-xl shadow-inner gap-1 max-w-full overflow-x-auto scrollbar-none order-last lg:order-none w-full lg:w-auto justify-start sm:justify-center">
+				<div className="flex items-center p-1 bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] rounded-xl shadow-inner gap-1 max-w-full overflow-x-auto scrollbar-none order-last lg:order-none w-full lg:w-auto justify-start sm:justify-center min-w-0">
 					<button
 						type="button"
 						onClick={() => setViewMode("anatomical_svg")}
-						className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 min-h-[38px] ${
+						className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 min-h-[38px] min-w-0 ${
 							viewMode === "anatomical_svg"
 								? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-md"
 								: "bg-transparent text-[var(--odontogram-ink-muted)] hover:text-[var(--odontogram-ink)] hover:bg-[var(--odontogram-surface-hover)]"
@@ -452,14 +452,14 @@ export const OdontogramStudioStandalone: React.FC = () => {
 						title="3D Векторная анатомическая проекция коронок и корней"
 					>
 						<Sparkles size={14} className="shrink-0" />
-						<span className="hidden sm:inline">3D Анатомический</span>
-						<span className="sm:hidden">3D Схема</span>
+						<span className="hidden sm:inline min-w-0">3D Анатомический</span>
+						<span className="sm:hidden min-w-0">3D Схема</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setViewMode("compact_clinical")}
-						className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 min-h-[38px] ${
+						className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 min-h-[38px] min-w-0 ${
 							viewMode === "compact_clinical"
 								? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-md"
 								: "bg-transparent text-[var(--odontogram-ink-muted)] hover:text-[var(--odontogram-ink)] hover:bg-[var(--odontogram-surface-hover)]"
@@ -467,14 +467,14 @@ export const OdontogramStudioStandalone: React.FC = () => {
 						title="Клиническая 5-поверхностная полигональная схема"
 					>
 						<Zap size={14} className="shrink-0" />
-						<span className="hidden sm:inline">5-Поверхностный</span>
-						<span className="sm:hidden">5-Поверхн.</span>
+						<span className="hidden sm:inline min-w-0">5-Поверхностный</span>
+						<span className="sm:hidden min-w-0">5-Поверхн.</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setViewMode("classic_gost")}
-						className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 min-h-[38px] ${
+						className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 min-h-[38px] min-w-0 ${
 							viewMode === "classic_gost"
 								? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-md"
 								: "bg-transparent text-[var(--odontogram-ink-muted)] hover:text-[var(--odontogram-ink)] hover:bg-[var(--odontogram-surface-hover)]"
@@ -482,7 +482,7 @@ export const OdontogramStudioStandalone: React.FC = () => {
 						title="Сетка Минздрава России ГОСТ 043/у с КПУ-индексами"
 					>
 						<FileText size={14} className="shrink-0" />
-						<span>ГОСТ 043/у</span>
+						<span className="min-w-0">ГОСТ 043/у</span>
 					</button>
 				</div>
 
@@ -527,54 +527,54 @@ export const OdontogramStudioStandalone: React.FC = () => {
 			{/* Fast Action Sub-Toolbar 1: Layers & Batch Presets */}
 			<div className="w-full px-4 sm:px-6 py-2 bg-[var(--odontogram-paper)] border-b border-[var(--odontogram-border-subtle)] flex flex-wrap items-center justify-between gap-2 text-xs transition-colors duration-200">
 				{/* Layer Toggles & 1-Click Fast Presets */}
-				<div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5 max-w-full shrink-0">
+				<div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5 max-w-full shrink-0 min-w-0">
 					<span className="text-[var(--odontogram-ink-muted)] font-medium mr-0.5 hidden sm:inline whitespace-nowrap">Пресеты:</span>
 
 					<button
 						type="button"
 						onClick={handleDeleteAllWisdom}
-						className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 font-semibold transition-all cursor-pointer min-h-[34px] shrink-0"
+						className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 font-semibold transition-all cursor-pointer min-h-[34px] shrink-0 min-w-0"
 						title="Удалить все 4 зуба мудрости (18, 28, 38, 48) в 1 клик"
 					>
-						<Trash2 size={13} className="text-rose-500" />
-						<span className="whitespace-nowrap">Удалить 8-ки</span>
+						<Trash2 size={13} className="text-rose-500 shrink-0" />
+						<span className="whitespace-nowrap min-w-0">Удалить 8-ки</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={handleDeleteMaxilla}
-						className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[var(--odontogram-surface)] hover:bg-rose-500/15 text-[var(--odontogram-ink)] hover:text-rose-600 border border-[var(--odontogram-border)] font-semibold transition-all cursor-pointer min-h-[34px] shrink-0"
+						className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[var(--odontogram-surface)] hover:bg-rose-500/15 text-[var(--odontogram-ink)] hover:text-rose-600 border border-[var(--odontogram-border)] font-semibold transition-all cursor-pointer min-h-[34px] shrink-0 min-w-0"
 						title="Удалить все зубы верхней челюсти (18–28)"
 					>
-						<span className="whitespace-nowrap">В/Ч (0)</span>
+						<span className="whitespace-nowrap min-w-0">В/Ч (0)</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={handleDeleteMandible}
-						className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[var(--odontogram-surface)] hover:bg-rose-500/15 text-[var(--odontogram-ink)] hover:text-rose-600 border border-[var(--odontogram-border)] font-semibold transition-all cursor-pointer min-h-[34px] shrink-0"
+						className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[var(--odontogram-surface)] hover:bg-rose-500/15 text-[var(--odontogram-ink)] hover:text-rose-600 border border-[var(--odontogram-border)] font-semibold transition-all cursor-pointer min-h-[34px] shrink-0 min-w-0"
 						title="Удалить все зубы нижней челюсти (48–38)"
 					>
-						<span className="whitespace-nowrap">Н/Ч (0)</span>
+						<span className="whitespace-nowrap min-w-0">Н/Ч (0)</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={handleFullEdentulism}
-						className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-600/10 hover:bg-red-600/20 text-red-700 dark:text-red-300 border border-red-500/40 font-semibold transition-all cursor-pointer min-h-[34px] shrink-0"
+						className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-600/10 hover:bg-red-600/20 text-red-700 dark:text-red-300 border border-red-500/40 font-semibold transition-all cursor-pointer min-h-[34px] shrink-0 min-w-0"
 						title="Полная адентия: все зубы отсутствуют (под съёмный протез / All-on-4)"
 					>
-						<span className="whitespace-nowrap">Адентия (Все 0)</span>
+						<span className="whitespace-nowrap min-w-0">Адентия (Все 0)</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={handleResetAllHealthy}
-						className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-semibold transition-all cursor-pointer min-h-[34px] shrink-0"
+						className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-semibold transition-all cursor-pointer min-h-[34px] shrink-0 min-w-0"
 						title="Восстановить все зубы как здоровые (интактные)"
 					>
-						<Sparkles size={13} className="text-emerald-500" />
-						<span className="whitespace-nowrap">Все здоровы</span>
+						<Sparkles size={13} className="text-emerald-500 shrink-0" />
+						<span className="whitespace-nowrap min-w-0">Все здоровы</span>
 					</button>
 
 					<div className="h-4 w-[1px] bg-[var(--odontogram-border)] mx-1 shrink-0" />
@@ -582,53 +582,53 @@ export const OdontogramStudioStandalone: React.FC = () => {
 					<button
 						type="button"
 						onClick={() => setShowWisdom(!showWisdom)}
-						className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border font-semibold transition-all cursor-pointer min-h-[34px] shrink-0 ${
+						className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border font-semibold transition-all cursor-pointer min-h-[34px] shrink-0 min-w-0 ${
 							showWisdom
 								? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/40"
 								: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink-muted)] border-[var(--odontogram-border)] hover:text-[var(--odontogram-ink)]"
 						}`}
 						title="Показать / скрыть зубы мудрости (18, 28, 38, 48)"
 					>
-						{showWisdom ? <Eye size={13} /> : <EyeOff size={13} />}
-						<span className="whitespace-nowrap">8-ки</span>
+						{showWisdom ? <Eye size={13} className="shrink-0" /> : <EyeOff size={13} className="shrink-0" />}
+						<span className="whitespace-nowrap min-w-0">8-ки</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setShowCanals(!showCanals)}
-						className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border font-semibold transition-all cursor-pointer min-h-[34px] shrink-0 ${
+						className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border font-semibold transition-all cursor-pointer min-h-[34px] shrink-0 min-w-0 ${
 							showCanals
 								? "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/40"
 								: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink-muted)] border-[var(--odontogram-border)] hover:text-[var(--odontogram-ink)]"
 						}`}
 						title="Просмотр эндодонтических корневых каналов и пульпарной камеры"
 					>
-						<Activity size={13} />
-						<span className="whitespace-nowrap">Каналы</span>
+						<Activity size={13} className="shrink-0" />
+						<span className="whitespace-nowrap min-w-0">Каналы</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={handleTogglePediatric}
-						className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border font-semibold transition-all cursor-pointer min-h-[34px] shrink-0 ${
+						className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border font-semibold transition-all cursor-pointer min-h-[34px] shrink-0 min-w-0 ${
 							pediatricMode
 								? "bg-pink-500/15 text-pink-700 dark:text-pink-300 border-pink-500/40 font-bold"
 								: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink-muted)] border-[var(--odontogram-border)] hover:text-[var(--odontogram-ink)]"
 						}`}
 						title="Переключить на детский молочный прикус (51–85)"
 					>
-						<User size={13} />
-						<span className="whitespace-nowrap">Детский</span>
+						<User size={13} className="shrink-0" />
+						<span className="whitespace-nowrap min-w-0">Детский</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setIsVoiceOpen(true)}
-						className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-violet-600/15 hover:bg-violet-600/25 text-violet-700 dark:text-violet-300 border border-violet-500/40 font-semibold transition-all cursor-pointer min-h-[34px] shrink-0"
+						className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-violet-600/15 hover:bg-violet-600/25 text-violet-700 dark:text-violet-300 border border-violet-500/40 font-semibold transition-all cursor-pointer min-h-[34px] shrink-0 min-w-0"
 						title="Голосовая диктовка зубной формулы по стандартам МЗ РФ"
 					>
-						<Mic size={13} className="text-violet-500" />
-						<span className="whitespace-nowrap">Диктовка</span>
+						<Mic size={13} className="text-violet-500 shrink-0" />
+						<span className="whitespace-nowrap min-w-0">Диктовка</span>
 					</button>
 				</div>
 
@@ -785,12 +785,12 @@ export const OdontogramStudioStandalone: React.FC = () => {
 						onClick={() => setActiveStamp(activeStamp === "Pulpitis" ? null : "Pulpitis")}
 						className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold transition-all cursor-pointer min-h-[34px] ${
 							activeStamp === "Pulpitis"
-								? "bg-purple-600 text-white ring-2 ring-purple-400 shadow-md scale-105"
-								: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-purple-500/50"
+								? "bg-rose-600 text-white ring-2 ring-rose-400 shadow-md scale-105"
+								: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-rose-500/50"
 						}`}
 						title="Кисть: Пульпит — кликайте по зубам для быстрой установки"
 					>
-						<span className="w-2.5 h-2.5 rounded-full bg-purple-600 shadow-sm" />
+						<span className="w-2.5 h-2.5 rounded-full bg-rose-600 shadow-sm" />
 						<span>Пульпит</span>
 					</button>
 

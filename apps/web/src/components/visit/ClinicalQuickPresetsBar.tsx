@@ -207,7 +207,7 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 				</div>
 			</div>
 
-			<div className="flex flex-wrap gap-1.5">
+			<div className="flex flex-wrap gap-1.5 min-w-0">
 				{CLINICAL_PRESETS.map((preset) => {
 					const categoryBadgeColor =
 						preset.category === "therapy"
@@ -224,17 +224,17 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 							type="button"
 							onClick={() => handlePresetClick(preset)}
 							disabled={isLocked}
-							className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center gap-2 cursor-pointer shadow-xs active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${categoryBadgeColor}`}
+							className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center gap-2 cursor-pointer shadow-xs active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-w-0 ${categoryBadgeColor}`}
 							title={`${preset.title} · МКБ-10: ${preset.icd10}`}
 							data-testid={`quick-preset-${preset.id}`}
 						>
-							{preset.category === "therapy" && <Stethoscope size={14} />}
-							{preset.category === "surgery" && <Bone size={14} />}
-							{preset.category === "orthopedics" && <Crown size={14} />}
-							{preset.category === "hygiene" && <Sparkles size={14} />}
+							{preset.category === "therapy" && <Stethoscope size={14} className="shrink-0" />}
+							{preset.category === "surgery" && <Bone size={14} className="shrink-0" />}
+							{preset.category === "orthopedics" && <Crown size={14} className="shrink-0" />}
+							{preset.category === "hygiene" && <Sparkles size={14} className="shrink-0" />}
 
-							<span className="font-bold">{preset.shortBadge}</span>
-							<span className="text-[10px] font-mono px-1 py-0.5 rounded bg-[var(--paper)] text-[var(--muted)] border border-[var(--border)]">
+							<span className="font-bold min-w-0">{preset.shortBadge}</span>
+							<span className="text-[10px] font-mono px-1 py-0.5 rounded bg-[var(--paper)] text-[var(--muted)] border border-[var(--border)] shrink-0">
 								{preset.icd10}
 							</span>
 						</button>

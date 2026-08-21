@@ -1509,11 +1509,13 @@
 	background-color: var(--odontogram-paper);
 	border: 1px solid var(--odontogram-border-strong);
 	color: var(--odontogram-ink);
-	box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.4);
+	box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.45);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
 }
 
 .tooth-hover-quick-hud button {
-	min-height: 32px;
+	min-height: 34px;
 	touch-action: manipulation;
 }
 
