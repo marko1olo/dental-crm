@@ -145,6 +145,8 @@ export type MaterialUnitOfMeasure =
 	| "карп."
 	| "компл."
 	| "порц."
+	| "см"
+	| "мм"
 	| "упак.";
 
 export interface ProcedureMaterialNorm {

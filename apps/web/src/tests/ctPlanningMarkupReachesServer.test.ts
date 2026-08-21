@@ -442,7 +442,7 @@ describe("разметка планирования имплантации ух�
 	 */
 	test("просмотрщик КЛКТ действительно сохраняет и читает разметку", () => {
 		const viewer = withoutComments(
-			readWeb(path.join("components", "dicom", "Cornerstone3DViewer.tsx")),
+			readWeb(path.join("components", "visiograph", "Cornerstone3DViewer.tsx")),
 		);
 
 		assert.match(

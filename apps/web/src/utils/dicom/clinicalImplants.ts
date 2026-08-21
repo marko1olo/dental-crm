@@ -308,7 +308,6 @@ export function calculateImplantClearance(
 		nerveId: targetNerveId,
 	};
 }
-
 /**
  * Returns true if an implant is dangerously close to any nerve canal.
  * @param implant The virtual implant to check
@@ -322,4 +321,47 @@ export function checkImplantCollision(
 	const res = calculateImplantClearance(implant);
 	if (!res) return false;
 	return res.clearanceMm < thresholdDistance;
+}
+
+/** Порог опасного сближения имплантата с нижнечелюстным каналом в мм (< 2.0 мм) */
+export const MANDIBULAR_NERVE_DANGER_THRESHOLD_MM = 2.0;
+
+export interface MinimalImplantDataForProtocol {
+	fdiCode?: string | number;
+	diameter?: number;
+	length?: number;
+	distanceToNerve: number;
+	boneDensity?: {
+		averageHU?: number;
+		classification?: string;
+		drillingAdvice?: string;
+	};
+}
+
+/**
+ * Русский протокол по последнему импланту для ЭМК (Форма 043/у).
+ */
+export function implantProtocolLog(implant: MinimalImplantDataForProtocol): string {
+	const isDanger = implant.distanceToNerve < MANDIBULAR_NERVE_DANGER_THRESHOLD_MM;
+	const nerveStatusText = isDanger
+		? `ВНИМАНИЕ: дистанция до нижнечелюстного канала ${implant.distanceToNerve.toFixed(1)} мм (< 2.0 мм) — опасная зона риска травматизации сосудисто-нервного пучка!`
+		: `Дистанция до нижнечелюстного канала ${implant.distanceToNerve.toFixed(1)} мм (безопасный коридор ≥ 2.0 мм).`;
+
+	const lines = [
+		`--- ПРОТОКОЛ 3D-ИМПЛАНТАЦИИ (КЛКТ/DICOM) ---`,
+		`Позиция зуба (FDI): № ${implant.fdiCode ?? "N/A"}`,
+		`Размеры имплантата: Ø ${implant.diameter?.toFixed(1) ?? "4.0"} мм × L ${implant.length?.toFixed(1) ?? "10.0"} мм`,
+		`Анатомическая безопасность: ${nerveStatusText}`,
+	];
+
+	if (implant.boneDensity) {
+		lines.push(
+			`Плотность кости (Misch): ${implant.boneDensity.classification ?? "D2"} (${Math.round(implant.boneDensity.averageHU ?? 950)} HU)`,
+		);
+		if (implant.boneDensity.drillingAdvice) {
+			lines.push(`Рекомендации протокола сверления: ${implant.boneDensity.drillingAdvice}`);
+		}
+	}
+
+	return lines.join("\n");
 }

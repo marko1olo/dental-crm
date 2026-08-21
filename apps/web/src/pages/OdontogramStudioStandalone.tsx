@@ -83,7 +83,7 @@ export const OdontogramStudioStandalone: React.FC = () => {
 	const [teethData, setTeethData] = useState<ToothData[]>(() => createDefaultTeeth(false));
 	const [pediatricMode, setPediatricMode] = useState<boolean>(false);
 	const [showWisdom, setShowWisdom] = useState<boolean>(true);
-	const [showCanals, setShowCanals] = useState<boolean>(true);
+	const [showCanals, setShowCanals] = useState<boolean>(false);
 	const [quickExtractMode, setQuickExtractMode] = useState<boolean>(false);
 	const [isInvoiceOpen, setIsInvoiceOpen] = useState<boolean>(false);
 	const [isVoiceOpen, setIsVoiceOpen] = useState<boolean>(false);
@@ -413,7 +413,10 @@ export const OdontogramStudioStandalone: React.FC = () => {
 	}, [radialMenu, teethData]);
 
 	return (
-		<div className="min-h-screen w-full bg-[var(--canvas,var(--paper-soft))] text-[var(--ink)] flex flex-col font-sans select-none overflow-x-hidden transition-colors duration-200">
+		<div
+			className="min-h-screen w-full bg-[var(--canvas,var(--paper-soft))] text-[var(--ink)] flex flex-col font-sans select-none overflow-x-hidden transition-colors duration-200"
+			data-testid="odontogram-studio-container"
+		>
 			{/* Top Bar Header */}
 			<header className="w-full px-4 sm:px-6 py-3.5 bg-[var(--paper-strong,var(--paper))] backdrop-blur-xl border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-3 sticky top-0 z-40 shadow-xs transition-colors duration-200">
 				{/* Logo & Title */}

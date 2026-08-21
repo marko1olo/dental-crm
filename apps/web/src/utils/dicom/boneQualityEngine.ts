@@ -47,11 +47,61 @@ export interface DrillProtocol {
 /**
  * Classify bone density per Misch classification from averaged HU
  */
+export type ExtendedMischClass = MischClass | "D5";
+
 export function classifyMisch(avgHU: number): MischClass {
 	if (avgHU > 1250) return "D1";
 	if (avgHU >= 850) return "D2";
 	if (avgHU >= 350) return "D3";
 	return "D4";
+}
+
+/**
+ * Классификация плотности кости по Мишу с поддержкой D5 (<150 HU).
+ */
+export function classifyExtendedBoneDensity(hu: number): {
+	mischClass: ExtendedMischClass;
+	label: string;
+	drillingRecommendation: string;
+} {
+	if (hu > 1250) {
+		return {
+			mischClass: "D1",
+			label: "D1 (>1250 HU) — Плотная кортикальная кость",
+			drillingRecommendation:
+				"Обязательна кортикальная фреза (Cortical Tap), низкие обороты (400–600 RPM) с обильным охлаждением. Высокий риск перегрева/остеонекроза!",
+		};
+	}
+	if (hu >= 850) {
+		return {
+			mischClass: "D2",
+			label: "D2 (850–1250 HU) — Пористая кортикальная и плотная губчатая",
+			drillingRecommendation:
+				"Стандартный хирургический протокол (800–1000 RPM). Идеальная первичная стабильность.",
+		};
+	}
+	if (hu >= 350) {
+		return {
+			mischClass: "D3",
+			label: "D3 (350–850 HU) — Тонкая кортикальная и мелкая губчатая",
+			drillingRecommendation:
+				"Стандартный протокол с финишным профильным сверлом (1000 RPM). Хороший прогноз остеоинтеграции.",
+		};
+	}
+	if (hu >= 150) {
+		return {
+			mischClass: "D4",
+			label: "D4 (150–350 HU) — Мягкая губчатая кость",
+			drillingRecommendation:
+				"Недопрепарирование (Under-drilling) на 1.0–1.5 мм меньше диаметра имплантата для компрессии кости и набора торка.",
+		};
+	}
+	return {
+		mischClass: "D5",
+		label: "D5 (<150 HU) — Сверхмягкая / резорбированная кость",
+		drillingRecommendation:
+			"Критическое недопрепарирование (Under-drilling) на 1.5–2.0 мм, костная конденсация остеотомами или бикортикальная фиксация.",
+	};
 }
 
 /**

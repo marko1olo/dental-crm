@@ -871,7 +871,7 @@ const UPPER_MOLAR_GEOMETRY: AnatomicalTemplateData = {
 		"M 16 96 C 11 72, 14 38, 22 14 C 28 22, 34 46, 36 66 C 42 46, 46 22, 50 6 C 54 22, 58 46, 64 66 C 66 46, 72 22, 78 18 C 86 38, 89 72, 84 96 Z",
 	cej: "M 16 96 Q 50 92 84 96",
 	fissures: "M 28 132 Q 50 140 72 132 M 50 118 L 50 142 M 36 122 Q 50 126 64 122",
-	pulpChamber: "M 32 102 C 32 96, 68 96, 68 102 C 68 114, 32 114, 32 102 Z",
+	pulpChamber: "M 28 126 C 26 116, 32 102, 36 96 C 42 90, 58 90, 64 96 C 68 102, 74 116, 72 126 C 66 130, 56 122, 50 126 C 44 122, 34 130, 28 126 Z",
 	canals: [
 		{
 			id: "MB1",
@@ -954,7 +954,7 @@ const UPPER_PREMOLAR_GEOMETRY: AnatomicalTemplateData = {
 		"M 22 96 C 19 74, 24 44, 34 10 C 40 26, 46 46, 50 62 C 54 46, 60 26, 66 10 C 76 44, 81 74, 78 96 Z",
 	cej: "M 22 96 Q 50 92 78 96",
 	fissures: "M 34 130 Q 50 134 66 130 M 50 120 L 50 140",
-	pulpChamber: "M 36 100 C 36 96, 64 96, 64 100 C 64 110, 36 110, 36 100 Z",
+	pulpChamber: "M 36 122 C 34 114, 38 102, 42 96 C 46 92, 54 92, 58 96 C 62 102, 66 114, 64 122 C 58 126, 54 118, 50 122 C 46 118, 42 126, 36 122 Z",
 	canals: [
 		{
 			id: "B",
@@ -1009,12 +1009,12 @@ const UPPER_CANINE_GEOMETRY: AnatomicalTemplateData = {
 	root: "M 26 96 C 23 72, 34 32, 50 4 C 66 32, 77 72, 74 96 Z",
 	cej: "M 26 96 Q 50 92 74 96",
 	fissures: "M 50 120 L 50 150",
-	pulpChamber: "M 40 100 C 40 96, 60 96, 60 100 C 60 110, 40 110, 40 100 Z",
+	pulpChamber: "M 42 124 C 40 114, 42 100, 46 72 C 48 40, 49 14, 50 4 C 51 14, 52 40, 54 72 C 58 100, 60 114, 58 124 C 54 132, 46 132, 42 124 Z",
 	canals: [
 		{
 			id: "Main",
 			nameRu: "Основной корневой канал",
-			path: "M 50 102 C 50 72, 50 36, 50 4",
+			path: "M 50 120 C 50 88, 50 44, 50 4",
 			apex: { x: 50, y: 4 },
 			defaultLengthMm: 26.0,
 		},
@@ -1047,12 +1047,12 @@ const UPPER_INCISOR_GEOMETRY: AnatomicalTemplateData = {
 	root: "M 26 96 C 25 70, 36 36, 50 8 C 64 36, 75 70, 74 96 Z",
 	cej: "M 26 96 Q 50 92 74 96",
 	fissures: "M 34 146 L 66 146",
-	pulpChamber: "M 42 100 C 42 96, 58 96, 58 100 C 58 108, 42 108, 42 100 Z",
+	pulpChamber: "M 40 122 C 38 114, 40 100, 46 72 C 48 44, 49 20, 50 8 C 51 20, 52 44, 54 72 C 60 100, 62 114, 60 122 C 56 126, 44 126, 40 122 Z",
 	canals: [
 		{
 			id: "Main",
 			nameRu: "Центральный канал",
-			path: "M 50 102 C 50 74, 50 40, 50 8",
+			path: "M 50 120 C 50 88, 50 44, 50 8",
 			apex: { x: 50, y: 8 },
 			defaultLengthMm: 22.5,
 		},
@@ -1086,7 +1086,7 @@ const LOWER_MOLAR_GEOMETRY: AnatomicalTemplateData = {
 		"M 16 64 C 11 88, 14 124, 22 154 C 28 142, 38 120, 50 96 C 62 120, 72 142, 78 150 C 86 124, 89 88, 84 64 Z",
 	cej: "M 16 64 Q 50 68 84 64",
 	fissures: "M 28 28 Q 50 20 72 28 M 50 42 L 50 18 M 36 38 Q 50 32 64 38",
-	pulpChamber: "M 32 58 C 32 64, 68 64, 68 58 C 68 48, 32 48, 32 58 Z",
+	pulpChamber: "M 28 34 C 26 44, 32 58, 36 64 C 42 70, 58 70, 64 64 C 68 58, 74 44, 72 34 C 66 30, 56 38, 50 34 C 44 38, 34 30, 28 34 Z",
 	canals: [
 		{
 			id: "MB",
@@ -1154,12 +1154,12 @@ const LOWER_PREMOLAR_GEOMETRY: AnatomicalTemplateData = {
 	root: "M 24 64 C 23 88, 35 124, 50 154 C 65 124, 77 88, 76 64 Z",
 	cej: "M 24 64 Q 50 68 76 64",
 	fissures: "M 36 30 Q 50 26 64 30 M 50 40 L 50 20",
-	pulpChamber: "M 38 60 C 38 64, 62 64, 62 60 C 62 50, 38 50, 38 60 Z",
+	pulpChamber: "M 42 36 C 40 46, 42 60, 46 88 C 48 116, 49 140, 50 154 C 51 140, 52 116, 54 88 C 58 60, 60 46, 58 36 C 54 28, 46 28, 42 36 Z",
 	canals: [
 		{
 			id: "Main",
 			nameRu: "Основной корневой канал",
-			path: "M 50 58 C 50 86, 50 122, 50 154",
+			path: "M 50 40 C 50 72, 50 116, 50 154",
 			apex: { x: 50, y: 154 },
 			defaultLengthMm: 22.0,
 		},
@@ -1191,12 +1191,12 @@ const LOWER_CANINE_GEOMETRY: AnatomicalTemplateData = {
 	root: "M 26 64 C 23 88, 34 126, 50 156 C 66 126, 77 88, 74 64 Z",
 	cej: "M 26 64 Q 50 68 74 64",
 	fissures: "M 50 42 L 50 12",
-	pulpChamber: "M 40 60 C 40 64, 60 64, 60 60 C 60 50, 40 50, 40 60 Z",
+	pulpChamber: "M 42 36 C 40 46, 42 60, 46 88 C 48 120, 49 146, 50 156 C 51 146, 52 120, 54 88 C 58 60, 60 46, 58 36 C 54 28, 46 28, 42 36 Z",
 	canals: [
 		{
 			id: "Main",
 			nameRu: "Основной канал клыка",
-			path: "M 50 58 C 50 88, 50 124, 50 156",
+			path: "M 50 40 C 50 72, 50 118, 50 156",
 			apex: { x: 50, y: 156 },
 			defaultLengthMm: 25.5,
 		},
@@ -1229,12 +1229,12 @@ const LOWER_INCISOR_GEOMETRY: AnatomicalTemplateData = {
 	root: "M 28 64 C 27 88, 38 122, 50 152 C 62 122, 73 88, 72 64 Z",
 	cej: "M 28 64 Q 50 68 72 64",
 	fissures: "M 34 16 L 66 16",
-	pulpChamber: "M 42 60 C 42 64, 58 64, 58 60 C 58 52, 42 52, 42 60 Z",
+	pulpChamber: "M 42 38 C 40 46, 42 60, 46 88 C 48 116, 49 140, 50 152 C 51 140, 52 116, 54 88 C 58 60, 60 46, 58 38 C 54 32, 46 32, 42 38 Z",
 	canals: [
 		{
 			id: "Main",
 			nameRu: "Центральный канал",
-			path: "M 50 58 C 50 86, 50 120, 50 152",
+			path: "M 50 40 C 50 72, 50 114, 50 152",
 			apex: { x: 50, y: 152 },
 			defaultLengthMm: 20.5,
 		},
@@ -1268,7 +1268,7 @@ const PEDIATRIC_UPPER_MOLAR_GEOMETRY: AnatomicalTemplateData = {
 		"M 18 84 C 10 64, 10 38, 16 18 C 24 30, 32 48, 36 66 C 42 48, 46 28, 50 14 C 54 28, 58 48, 64 66 C 68 48, 76 30, 84 18 C 90 38, 90 64, 82 84 Z",
 	cej: "M 18 84 Q 50 80 82 84",
 	fissures: "M 30 124 Q 50 130 70 124 M 50 110 L 50 132",
-	pulpChamber: "M 34 90 C 34 86, 66 86, 66 90 C 66 100, 34 100, 34 90 Z",
+	pulpChamber: "M 30 114 C 28 104, 32 94, 38 86 C 44 82, 56 82, 62 86 C 68 94, 72 104, 70 114 C 64 118, 36 118, 30 114 Z",
 	canals: [
 		{
 			id: "MB",
@@ -1332,7 +1332,7 @@ const PEDIATRIC_LOWER_MOLAR_GEOMETRY: AnatomicalTemplateData = {
 		"M 18 76 C 10 96, 10 122, 16 142 C 26 130, 36 110, 50 90 C 64 110, 74 130, 84 142 C 90 122, 90 96, 82 76 Z",
 	cej: "M 18 76 Q 50 80 82 76",
 	fissures: "M 30 36 Q 50 30 70 36 M 50 50 L 50 28",
-	pulpChamber: "M 34 70 C 34 74, 66 74, 66 70 C 66 60, 34 60, 34 70 Z",
+	pulpChamber: "M 30 46 C 28 56, 32 66, 38 74 C 44 78, 56 78, 62 74 C 68 66, 72 56, 70 46 C 64 42, 36 42, 30 46 Z",
 	canals: [
 		{
 			id: "M",

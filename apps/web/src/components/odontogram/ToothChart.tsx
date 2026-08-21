@@ -178,11 +178,11 @@ const getToothColors = (
 				fill: "url(#dente-pulpitis-grad)",
 				crownFill: "url(#dente-pulpitis-grad)",
 				rootFill: "url(#dente-root-dentin)",
-				stroke: "#7e22ce",
+				stroke: "#991b1b",
 				opacity: "1",
-				badgeColor: "#a855f7",
-				badgeBg: "rgba(168, 85, 247, 0.15)",
-				badgeText: "#7e22ce",
+				badgeColor: "#ef4444",
+				badgeBg: "rgba(239, 68, 68, 0.15)",
+				badgeText: "#991b1b",
 			};
 		case "Periodontitis":
 			return {
@@ -597,18 +597,31 @@ export const DenteToothSvgDefs: React.FC = () => (
 				<stop offset="100%" stopColor="#991b1b" stopOpacity="1" />
 			</radialGradient>
 
-			<linearGradient id="dente-pulpitis-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-				<stop offset="0%" stopColor="#d8b4fe" stopOpacity="1" />
-				<stop offset="35%" stopColor="#c084fc" stopOpacity="1" />
-				<stop offset="75%" stopColor="#9333ea" stopOpacity="1" />
-				<stop offset="100%" stopColor="#6b21a8" stopOpacity="1" />
+			{/* Natural Living Pulp Gradient (Vital Vascular Soft Tissue) */}
+			<linearGradient id="dente-pulp-vital-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+				<stop offset="0%" stopColor="#fda4af" stopOpacity="0.95" />
+				<stop offset="35%" stopColor="#fb7185" stopOpacity="0.95" />
+				<stop offset="75%" stopColor="#f43f5e" stopOpacity="0.92" />
+				<stop offset="100%" stopColor="#e11d48" stopOpacity="0.9" />
 			</linearGradient>
 
-			<linearGradient id="dente-pulp-canal-neon" x1="0%" y1="0%" x2="0%" y2="100%">
-				<stop offset="0%" stopColor="#f472b6" />
-				<stop offset="50%" stopColor="#c084fc" />
-				<stop offset="100%" stopColor="#a855f7" />
+			{/* Natural Living Root Canal Lumen Gradient */}
+			<linearGradient id="dente-pulp-canal-vital" x1="0%" y1="0%" x2="0%" y2="100%">
+				<stop offset="0%" stopColor="#ffe4e6" />
+				<stop offset="40%" stopColor="#fda4af" />
+				<stop offset="80%" stopColor="#fb7185" />
+				<stop offset="100%" stopColor="#f43f5e" />
 			</linearGradient>
+
+			{/* Pulpitis Inflammation Gradient (Hyperemic Deep Crimson / Ruby) */}
+			<linearGradient id="dente-pulpitis-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+				<stop offset="0%" stopColor="#f87171" stopOpacity="1" />
+				<stop offset="30%" stopColor="#ef4444" stopOpacity="1" />
+				<stop offset="70%" stopColor="#dc2626" stopOpacity="1" />
+				<stop offset="100%" stopColor="#991b1b" stopOpacity="1" />
+			</linearGradient>
+
+			<linearGradient id="dente-pulp-canal-neon" href="#dente-pulp-canal-vital" />
 
 			<linearGradient id="dente-periodontitis-grad" x1="0%" y1="0%" x2="100%" y2="100%">
 				<stop offset="0%" stopColor="#fdba74" stopOpacity="1" />
@@ -970,12 +983,12 @@ const ToothSVG = ({
 
 				{/* Pulp Chamber & Root Canals for Pulpitis / Diagnostics */}
 				{geom.canals && (state === "Pulpitis" || showPulpAndCanals) && (
-					<g filter="url(#dente-glow-purple)">
+					<g className="anatomical-canals-layer">
 						<path
 							d={geom.canals}
 							fill="none"
-							stroke="url(#dente-pulp-canal-neon)"
-							strokeWidth="3.2"
+							stroke={state === "Pulpitis" ? "url(#dente-pulpitis-grad)" : "url(#dente-pulp-canal-vital)"}
+							strokeWidth="3.0"
 							strokeLinecap="round"
 							strokeLinejoin="round"
 							opacity="0.95"
@@ -983,8 +996,8 @@ const ToothSVG = ({
 						<path
 							d={geom.canals}
 							fill="none"
-							stroke="#ffffff"
-							strokeWidth="1.2"
+							stroke={state === "Pulpitis" ? "#fecaca" : "#fff1f2"}
+							strokeWidth="1.0"
 							strokeLinecap="round"
 							opacity="0.9"
 						/>
@@ -995,10 +1008,10 @@ const ToothSVG = ({
 				{geom.core && (state === "Pulpitis" || showPulpAndCanals) && (
 					<path
 						d={geom.core}
-						fill="#c084fc"
-						stroke="#7e22ce"
-						strokeWidth="1.5"
-						opacity="0.8"
+						fill={state === "Pulpitis" ? "url(#dente-pulpitis-grad)" : "url(#dente-pulp-vital-grad)"}
+						stroke={state === "Pulpitis" ? "#991b1b" : "#e11d48"}
+						strokeWidth="1.2"
+						opacity={state === "Pulpitis" ? "0.95" : "0.85"}
 					/>
 				)}
 

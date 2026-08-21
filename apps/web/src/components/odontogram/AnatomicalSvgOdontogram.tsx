@@ -98,11 +98,11 @@ const getAnatomicalToothColors = (
 				fill: "url(#dente-pulpitis-grad)",
 				crownFill: "url(#dente-pulpitis-grad)",
 				rootFill: "url(#dente-root-dentin)",
-				stroke: "#7e22ce",
+				stroke: "#991b1b",
 				opacity: "1",
-				badgeColor: "#a855f7",
-				badgeBg: "rgba(168, 85, 247, 0.15)",
-				badgeText: "#7e22ce",
+				badgeColor: "#ef4444",
+				badgeBg: "rgba(239, 68, 68, 0.15)",
+				badgeText: "#991b1b",
 			};
 		case "Periodontitis":
 			return {
@@ -726,39 +726,40 @@ const AnatomicalToothSVG = ({
 
 				{/* Pulp Chamber & Root Canals for Pulpitis / Diagnostics */}
 				{resorptionGeom.showCanals && effectiveCanals.length > 0 && (state === "Pulpitis" || showPulpAndCanals) && (
-					<g filter="url(#dente-glow-purple)">
+					<g className="anatomical-canals-layer">
 						{effectiveCanals.map((c) => (
 							<g key={c.id}>
 								<path
 									d={c.path}
 									fill="none"
-									stroke="url(#dente-pulp-canal-neon)"
-									strokeWidth="3.2"
+									stroke={state === "Pulpitis" ? "url(#dente-pulpitis-grad)" : "url(#dente-pulp-canal-vital)"}
+									strokeWidth="2.8"
 									strokeLinecap="round"
 									strokeLinejoin="round"
-									opacity="0.95"
+									opacity="0.92"
 								/>
 								<path
 									d={c.path}
 									fill="none"
-									stroke="#ffffff"
-									strokeWidth="1.2"
+									stroke={state === "Pulpitis" ? "#fecaca" : "#fff1f2"}
+									strokeWidth="1.0"
 									strokeLinecap="round"
-									opacity="0.9"
+									opacity="0.85"
 								/>
 							</g>
 						))}
 					</g>
 				)}
 
-				{/* Pulp Chamber Core for Pulpitis */}
+				{/* Anatomical Pulp Cavity (Chamber + Coronal Horns) */}
 				{geom.pulpChamberPath && (state === "Pulpitis" || showPulpAndCanals) && (
 					<path
 						d={geom.pulpChamberPath}
-						fill="#c084fc"
-						stroke="#7e22ce"
-						strokeWidth="1.5"
-						opacity="0.8"
+						fill={state === "Pulpitis" ? "url(#dente-pulpitis-grad)" : "url(#dente-pulp-vital-grad)"}
+						stroke={state === "Pulpitis" ? "#991b1b" : "#e11d48"}
+						strokeWidth="1.2"
+						opacity={state === "Pulpitis" ? "0.95" : "0.85"}
+						className="anatomical-pulp-chamber"
 					/>
 				)}
 
