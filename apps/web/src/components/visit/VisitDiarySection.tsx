@@ -1213,12 +1213,12 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 											);
 											scheduleDebouncedSave();
 										}}
-										className="inline-flex items-center gap-1 px-2.5 py-1 min-h-[30px] rounded-md bg-[var(--paper)] hover:bg-teal-500/10 border border-[var(--line)] hover:border-teal-500/30 text-xs font-medium text-[var(--ink)] transition-colors"
+										className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl bg-[var(--paper)] hover:bg-teal-500/10 border border-[var(--line)] hover:border-teal-500/30 text-xs font-semibold text-[var(--ink)] transition-colors shadow-xs touch-manipulation min-w-0 cursor-pointer"
 										title={rec.text}
 										data-testid={`rec-btn-${rec.id}`}
 									>
-										<Plus className="w-2.5 h-2.5 text-teal-500" />
-										{rec.label}
+										<Plus className="w-3 h-3 text-teal-500 shrink-0" />
+										<span>{rec.label}</span>
 									</button>
 								))}
 							</div>
