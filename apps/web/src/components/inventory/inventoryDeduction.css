@@ -1,0 +1,647 @@
+/* inventoryDeduction.css — Стили для модального окна списания расходников по техкартам */
+
+.inventory-deduction-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	background: rgba(2, 6, 23, 0.7);
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	border: none;
+	cursor: default;
+}
+
+.inventory-deduction-modal {
+	background: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line-strong);
+	border-radius: 20px;
+	width: 100%;
+	max-width: 980px;
+	max-height: 92vh;
+	display: flex;
+	flex-direction: column;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+	overflow: hidden;
+	animation: inventory-modal-pop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes inventory-modal-pop {
+	from {
+		opacity: 0;
+		transform: scale(0.96) translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1) translateY(0);
+	}
+}
+
+/* Header */
+.inventory-deduction-header {
+	padding: 20px 24px;
+	background: var(--paper-strong);
+	border-bottom: 1px solid var(--line);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+}
+
+.inventory-deduction-title-wrap {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.inventory-deduction-icon-badge {
+	width: 48px;
+	height: 48px;
+	border-radius: 14px;
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.inventory-deduction-title {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--ink);
+	line-height: 1.25;
+}
+
+.inventory-deduction-subtitle {
+	margin: 4px 0 0 0;
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--muted);
+}
+
+.inventory-deduction-close-btn {
+	min-width: 48px;
+	min-height: 48px;
+	width: 48px;
+	height: 48px;
+	border-radius: 12px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--muted);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+.inventory-deduction-close-btn:hover {
+	background: var(--paper-soft);
+	color: var(--ink);
+}
+
+/* Tech Maps Quick Bar */
+.inventory-tech-maps-bar {
+	padding: 14px 24px;
+	background: var(--paper-soft);
+	border-bottom: 1px solid var(--line);
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.inventory-tech-maps-label {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--muted);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.inventory-tech-maps-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.inventory-tech-map-chip {
+	min-height: 48px;
+	padding: 0 16px;
+	border-radius: 12px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 14px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.inventory-tech-map-chip:hover {
+	border-color: var(--teal);
+	background: var(--teal-soft);
+}
+
+.inventory-tech-map-chip.active {
+	background: var(--teal);
+	color: #ffffff;
+	border-color: var(--teal-dark);
+	box-shadow: 0 2px 8px var(--teal-glow);
+}
+
+/* Search and Category Filter Toolbar */
+.inventory-filter-toolbar {
+	padding: 12px 24px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	border-bottom: 1px solid var(--line);
+	background: var(--paper);
+	flex-wrap: wrap;
+}
+
+.inventory-search-wrap {
+	position: relative;
+	flex: 1;
+	min-width: 240px;
+}
+
+.inventory-search-icon {
+	position: absolute;
+	left: 14px;
+	top: 50%;
+	transform: translateY(-50%);
+	color: var(--muted);
+	pointer-events: none;
+}
+
+.inventory-search-input {
+	width: 100%;
+	height: 48px;
+	padding: 0 16px 0 44px;
+	border-radius: 12px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	font-size: 14px;
+	font-weight: 500;
+	box-sizing: border-box;
+	transition: border-color 0.15s ease;
+}
+
+.inventory-search-input:focus {
+	outline: none;
+	border-color: var(--teal);
+	box-shadow: 0 0 0 3px var(--teal-soft);
+}
+
+.inventory-category-tabs {
+	display: flex;
+	gap: 6px;
+	overflow-x: auto;
+	padding-bottom: 2px;
+}
+
+.inventory-category-tab {
+	min-height: 48px;
+	padding: 0 14px;
+	border-radius: 10px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--muted);
+	font-size: 13px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+}
+
+.inventory-category-tab:hover {
+	color: var(--ink);
+	background: var(--paper);
+}
+
+.inventory-category-tab.active {
+	background: var(--ink);
+	color: var(--paper);
+	border-color: var(--ink);
+}
+
+/* Material List Scrollable Area */
+.inventory-materials-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+/* Material Row Card */
+.inventory-material-card {
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.inventory-material-card:hover {
+	border-color: var(--line-strong);
+}
+
+.inventory-material-card.has-deficit {
+	border-color: var(--rust);
+	background: var(--rust-soft);
+}
+
+.inventory-material-card.has-warning {
+	border-color: var(--amber);
+	background: var(--amber-soft);
+}
+
+.inventory-material-main-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.inventory-material-info {
+	flex: 1;
+	min-width: 220px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.inventory-material-name-wrap {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.inventory-material-name {
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--ink);
+	line-height: 1.3;
+}
+
+.inventory-category-badge {
+	padding: 4px 8px;
+	border-radius: 6px;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.2px;
+}
+
+.inventory-material-meta {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--muted);
+	flex-wrap: wrap;
+}
+
+.inventory-stock-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 2px 8px;
+	border-radius: 6px;
+	font-weight: 600;
+}
+
+.inventory-stock-pill.stock-ok {
+	background: rgba(16, 185, 129, 0.12);
+	color: #059669;
+}
+
+.inventory-stock-pill.stock-warning {
+	background: var(--amber-soft);
+	color: var(--amber);
+}
+
+.inventory-stock-pill.stock-critical {
+	background: var(--rust-soft);
+	color: var(--rust);
+	font-weight: 700;
+}
+
+/* Stepper Controls */
+.inventory-stepper-container {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.inventory-stepper-group {
+	display: flex;
+	align-items: center;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	overflow: hidden;
+}
+
+.inventory-stepper-btn {
+	min-width: 48px;
+	min-height: 48px;
+	width: 48px;
+	height: 48px;
+	border: none;
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 18px;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+.inventory-stepper-btn:hover:not(:disabled) {
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+}
+
+.inventory-stepper-btn:disabled {
+	opacity: 0.35;
+	cursor: not-allowed;
+}
+
+.inventory-stepper-input {
+	width: 72px;
+	height: 48px;
+	border: none;
+	background: transparent;
+	color: var(--ink);
+	font-size: 16px;
+	font-weight: 700;
+	text-align: center;
+	padding: 0 4px;
+	box-sizing: border-box;
+}
+
+.inventory-stepper-input:focus {
+	outline: none;
+	background: var(--paper-soft);
+}
+
+/* Quick Increment Chips */
+.inventory-quick-chips {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.inventory-quick-chip {
+	min-width: 48px;
+	min-height: 48px;
+	padding: 0 10px;
+	border-radius: 10px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.inventory-quick-chip:hover {
+	border-color: var(--teal);
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+}
+
+/* Cost and Remove */
+.inventory-material-cost-wrap {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 2px;
+	min-width: 120px;
+}
+
+.inventory-material-cost-val {
+	font-size: 16px;
+	font-weight: 800;
+	color: var(--ink);
+}
+
+.inventory-material-unit-price {
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--muted);
+}
+
+.inventory-remove-line-btn {
+	min-width: 48px;
+	min-height: 48px;
+	width: 48px;
+	height: 48px;
+	border-radius: 10px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--muted);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.inventory-remove-line-btn:hover {
+	border-color: var(--rust);
+	background: var(--rust-soft);
+	color: var(--rust);
+}
+
+/* Low Stock Alert Message Banner */
+.inventory-alert-banner {
+	padding: 8px 12px;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.inventory-alert-banner.alert-critical {
+	background: var(--rust-soft);
+	color: var(--rust);
+	border: 1px solid var(--rust);
+}
+
+.inventory-alert-banner.alert-warning {
+	background: var(--amber-soft);
+	color: var(--amber);
+	border: 1px solid var(--amber);
+}
+
+/* Add custom material bar */
+.inventory-add-custom-bar {
+	padding: 14px 24px;
+	background: var(--paper-soft);
+	border-top: 1px solid var(--line);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.inventory-add-select {
+	flex: 1;
+	min-width: 260px;
+	height: 48px;
+	padding: 0 14px;
+	border-radius: 12px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.inventory-add-btn {
+	min-height: 48px;
+	padding: 0 20px;
+	border-radius: 12px;
+	border: 1px solid var(--teal-dark);
+	background: var(--teal);
+	color: #ffffff;
+	font-size: 14px;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+	transition: background 0.15s ease;
+}
+
+.inventory-add-btn:hover {
+	background: var(--teal-dark);
+}
+
+/* Footer & Summary */
+.inventory-deduction-footer {
+	padding: 18px 24px;
+	background: var(--paper-strong);
+	border-top: 1px solid var(--line-strong);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.inventory-footer-summary {
+	display: flex;
+	align-items: center;
+	gap: 20px;
+	flex-wrap: wrap;
+}
+
+.inventory-footer-metric {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.inventory-footer-metric-label {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--muted);
+	text-transform: uppercase;
+	letter-spacing: 0.4px;
+}
+
+.inventory-footer-metric-val {
+	font-size: 18px;
+	font-weight: 800;
+	color: var(--ink);
+}
+
+.inventory-footer-metric-val.highlight-cost {
+	color: var(--teal-dark);
+	font-size: 22px;
+}
+
+.inventory-footer-actions {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.inventory-cancel-btn {
+	min-height: 48px;
+	padding: 0 22px;
+	border-radius: 12px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 14px;
+	font-weight: 700;
+	cursor: pointer;
+	transition: background 0.15s ease;
+}
+
+.inventory-cancel-btn:hover {
+	background: var(--paper-soft);
+}
+
+.inventory-confirm-deduct-btn {
+	min-height: 48px;
+	padding: 0 24px;
+	border-radius: 12px;
+	border: none;
+	background: var(--teal);
+	color: #ffffff;
+	font-size: 15px;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	cursor: pointer;
+	box-shadow: 0 4px 14px var(--teal-glow);
+	transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.inventory-confirm-deduct-btn:hover:not(:disabled) {
+	background: var(--teal-dark);
+	transform: translateY(-1px);
+}
+
+.inventory-confirm-deduct-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	box-shadow: none;
+}

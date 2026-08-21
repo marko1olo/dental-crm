@@ -10,9 +10,10 @@ import {
 	TrendingUp,
 	X,
 } from "lucide-react";
-import type React from "react";
+import React, { useState } from "react";
 import { money } from "../AppHelpers";
 import { InventoryConfirmDialog } from "./inventory/InventoryConfirmDialog";
+import { ProcedureMaterialDeductionModal } from "./inventory/ProcedureMaterialDeductionModal";
 import { useInventoryLogic } from "./inventory/useInventoryLogic";
 
 /**
@@ -151,6 +152,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 		lowStockCount,
 		totalItems,
 	} = inventory;
+
+	const [isDeductionModalOpen, setIsDeductionModalOpen] = useState(false);
 
 	/*
 	 * ЭТО ЗНАЧЕНИЯ CSS, А НЕ ИМЕНА КЛАССОВ.
@@ -811,13 +814,35 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								}}
 							/>
 						</div>
-						<button
-							type="button"
-							className="primary-button"
-							onClick={openAddModal}
-						>
-							<Plus size={18} /> Добавить позицию
-						</button>
+						<div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+							<button
+								type="button"
+								className="secondary-button"
+								onClick={() => setIsDeductionModalOpen(true)}
+								style={{
+									display: "inline-flex",
+									alignItems: "center",
+									gap: 8,
+									padding: "10px 16px",
+									borderRadius: 8,
+									border: `1px solid ${borderColor}`,
+									background: paperSoftBg,
+									color: "var(--ink)",
+									fontWeight: 600,
+									fontSize: 14,
+									cursor: "pointer",
+								}}
+							>
+								<Package size={18} /> Списание по техкартам
+							</button>
+							<button
+								type="button"
+								className="primary-button"
+								onClick={openAddModal}
+							>
+								<Plus size={18} /> Добавить позицию
+							</button>
+						</div>
 					</div>
 
 					{/* TABLE */}
@@ -1882,6 +1907,16 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 					onCancel={() => setConfirmDialog(null)}
 				/>
 			) : null}
+
+			<ProcedureMaterialDeductionModal
+				isOpen={isDeductionModalOpen}
+				onClose={() => setIsDeductionModalOpen(false)}
+				warehouseItems={items}
+				onConfirmDeduction={async () => {
+					setIsDeductionModalOpen(false);
+					fetchItems();
+				}}
+			/>
 		</div>
 	);
 };
