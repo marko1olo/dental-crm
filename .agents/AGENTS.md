@@ -87,6 +87,10 @@ Use these exclusively. Blind terminal navigation is banned.
 - **Touch-First Over Hotkeys:** Clinicians work in gloves and on touchscreens. Rely on prominent interactive touch targets ($\ge 44\times 44\text{ px}$), not obscure keyboard shortcuts.
 - **Vertical Clinical Workspace:** Odontogram spans full width on top; Form 043/u diary and protocols sit cleanly below. Never squeeze the dental arch horizontally with bulky sidebars.
 - **No Card-in-Card Nesting:** Modals and screens are clean, monolithic panels. No cards inside cards or nested boxes.
+- **Premium Documents Typography:** Outpatient records (043/u), informed consents, completed treatment acts, and bills must render in magazine-grade print typography with live field customization.
+- **Interactive State Visual Audit:** Screenshots must audit open Hover HUDs, open radial context menus, and modals. Check for long Russian text overflow (`min-w-0`, `truncate`, `break-words`).
+- **Anatomical Color & Geometry Fidelity:** No neon/fantasy colors (pulp is anatomically red `#ef4444`). Root canals in incisors/canines (11–43) must run continuously to the root apex.
+- **Ban on Intermediate Idle Stalls:** Never stop turns with messages like "Waiting for build...". Run through to empirical proof.
 
 **9. WORKSPACE HYGIENE & GIT (THE NATIVE-FIRST LAW)**
 - **ZERO CRUTCH SCRIPTS:** You are ABSOLUTELY FORBIDDEN from creating Python, Bash, Node, or PowerShell wrapper scripts (`_patch_*.py`, `_wire_*.py`, `test.py`, `temp.js`, etc.) in the project root to edit, append, test, or generate code.
