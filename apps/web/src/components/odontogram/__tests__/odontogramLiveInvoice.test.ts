@@ -249,5 +249,43 @@ describe("OdontogramLiveInvoice — Order 804n Nomenclature & Endodontic Anatomi
 		const items = calculateLiveInvoiceItems(healthyTeeth);
 		assert.equal(items.length, 0, "Для интактных и санированных зубов смета пуста");
 	});
+
+	test("getEndoPreparationProcedure и getEndoObturationProcedure корректно зажимают (clamp) каналы в диапазон 1..4", () => {
+		// Ниже 1 зажимается в 1
+		const prep0 = getEndoPreparationProcedure(0);
+		assert.equal(prep0.code, "A16.07.030.001");
+		const obt0 = getEndoObturationProcedure(-2);
+		assert.equal(obt0.code, "A16.07.008.001");
+
+		// Выше 4 зажимается в 4
+		const prep5 = getEndoPreparationProcedure(5);
+		assert.equal(prep5.code, "A16.07.030.004");
+		const obt6 = getEndoObturationProcedure(10);
+		assert.equal(obt6.code, "A16.07.008.004");
+
+		// Дробные значения округляются
+		const prep2_8 = getEndoPreparationProcedure(2.8);
+		assert.equal(prep2_8.code, "A16.07.030.003");
+	});
+
+	test("Формирование комплексной сметы с пародонтологией, костной пластикой и имплантацией", () => {
+		const complexTeeth: ToothData[] = [
+			{ toothNumber: 16, state: "Missing", boneLossLevel: 2 }, // Удаление + Костная пластика A16.07.041 + Протезирование на имплантате A16.07.006
+			{ toothNumber: 21, state: "Caries" }, // Кариес A16.07.002.001
+			{ toothNumber: 31, state: "Healthy", boneLossLevel: 1, mobility: 2 }, // Пародонтология: SRP A16.07.051 + Шинирование A16.07.019
+		];
+
+		const items = calculateLiveInvoiceItems(complexTeeth);
+		assert.ok(items.length >= 4);
+
+		// Проверяем наличие костной пластики A16.07.041
+		assert.ok(items.some((i) => i.toothNumber === 16 && i.code === "A16.07.041"));
+		// Проверяем протезирование на имплантате A16.07.006
+		assert.ok(items.some((i) => i.toothNumber === 16 && i.code === "A16.07.006"));
+		// Проверяем кариес
+		assert.ok(items.some((i) => i.toothNumber === 21 && i.code === "A16.07.002.001"));
+		// Проверяем шинирование
+		assert.ok(items.some((i) => i.toothNumber === 31 && i.code === "A16.07.019"));
+	});
 });
 

@@ -317,6 +317,57 @@ export function getAnatomicalRootCanalCount(
 }
 
 /**
+ * Проверка, является ли зуб анатомически многокорневым (моляры 16..18, 26..28, 36..38, 46..48, верхние первые премоляры 14, 24, молочные моляры)
+ */
+export function isMultiRootedTooth(toothNumber: number): boolean {
+	return getAnatomicalRootCanalCount(toothNumber) >= 2;
+}
+
+export interface EndodonticCompositeCalculation {
+	toothNumber: number;
+	isMultiRooted: boolean;
+	canalsCount: number;
+	prepProcedure: { code: string; title: string; price: number; category: string };
+	obturationProcedure: { code: string; title: string; price: number; category: string };
+	medicationProcedure?: { code: string; title: string; price: number; category: string } | undefined;
+	totalCompositePrice: number;
+}
+
+/**
+ * Вычисляет композитную стоимость эндодонтического лечения зуба
+ * (инструментальная обработка A16.07.030 + обтурация A16.07.008 + опционально Ca(OH)2 A16.07.091)
+ * для многокорневых (16, 17, 26, 27, 36, 37, 46, 47) и однокорневых зубов.
+ */
+export function calculateEndodonticCompositePrice(
+	toothNumber: number,
+	state: "Pulpitis" | "Periodontitis" | string,
+	clinicalCanalsCount?: number,
+): EndodonticCompositeCalculation {
+	const canalsCount = getAnatomicalRootCanalCount(toothNumber, clinicalCanalsCount);
+	const prepProcedure = getEndoPreparationProcedure(canalsCount);
+	const obturationProcedure = getEndoObturationProcedure(canalsCount);
+	const isPeriodontitis = state === "Periodontitis";
+	const medicationProcedure = isPeriodontitis
+		? ORDER_804N_PROCEDURES.EndoMedicationCaOH2
+		: undefined;
+
+	const totalCompositePrice =
+		prepProcedure.price +
+		obturationProcedure.price +
+		(medicationProcedure ? medicationProcedure.price : 0);
+
+	return {
+		toothNumber,
+		isMultiRooted: canalsCount >= 2,
+		canalsCount,
+		prepProcedure,
+		obturationProcedure,
+		medicationProcedure,
+		totalCompositePrice,
+	};
+}
+
+/**
  * Получить услугу инструментальной и медикаментозной обработки каналов (A16.07.030.001..004)
  */
 export function getEndoPreparationProcedure(canalsCount: number): {
