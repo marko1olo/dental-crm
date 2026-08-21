@@ -1,15 +1,24 @@
 import {
 	AlertCircle,
 	AlertTriangle,
-	Building,
 	Calendar,
+	CalendarCheck,
 	CalendarPlus,
+	Check,
+	CheckCircle2,
+	Copy,
 	CreditCard,
 	FileText,
+	Forward,
+	Gauge,
+	MessageSquare,
+	Pause,
 	Phone,
 	PhoneCall,
 	PhoneIncoming,
 	PhoneOff,
+	Play,
+	Send,
 	Shield,
 	ShieldAlert,
 	Sliders,
@@ -21,7 +30,7 @@ import {
 	X,
 } from "lucide-react";
 import type React from "react";
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWebsocket } from "../../hooks/useWebsocket";
@@ -32,9 +41,15 @@ import {
 	calculatePatientFinancialStatus,
 	formatPatientInitials,
 	formatPhoneDisplay,
+	generateAppointmentConfirmationMessage,
+	generateSmsConfirmationUrl,
+	generateWhatsAppConfirmationUrl,
 	getAvatarColor,
+	openWhatsAppChat,
+	type PlaybackSpeed,
 	resolvePatientFromPhone,
 	resolvePatientLastVisit,
+	resolvePatientUpcomingAppointment,
 	useTelephonyStore,
 } from "../../store/telephonyStore";
 import { showToast } from "../GlobalToast";
@@ -52,11 +67,24 @@ function resolveTelephonyWsUrl(): string {
 }
 
 /**
- * Web Audio API gentle softphone ringtone synthesizer.
+ * Web Audio API gentle softphone ringtone synthesizer with dynamic compression & volume normalization.
  */
-function playRingtoneChime(audioCtx: AudioContext) {
+function playRingtoneChime(audioCtx: AudioContext, volumeLevel = 0.8) {
 	try {
 		const now = audioCtx.currentTime;
+
+		// Master dynamics compressor for normalization
+		const compressor = audioCtx.createDynamicsCompressor();
+		compressor.threshold.setValueAtTime(-24, now);
+		compressor.knee.setValueAtTime(30, now);
+		compressor.ratio.setValueAtTime(12, now);
+		compressor.attack.setValueAtTime(0.003, now);
+		compressor.release.setValueAtTime(0.25, now);
+		compressor.connect(audioCtx.destination);
+
+		const masterGain = audioCtx.createGain();
+		masterGain.gain.setValueAtTime(Math.max(0.01, Math.min(1, volumeLevel)), now);
+		masterGain.connect(compressor);
 
 		const osc1 = audioCtx.createOscillator();
 		const osc2 = audioCtx.createOscillator();
@@ -77,7 +105,7 @@ function playRingtoneChime(audioCtx: AudioContext) {
 
 		osc1.connect(gain);
 		osc2.connect(gain);
-		gain.connect(audioCtx.destination);
+		gain.connect(masterGain);
 
 		osc1.start(now);
 		osc2.start(now);
@@ -96,13 +124,163 @@ function playRingtoneChime(audioCtx: AudioContext) {
 		gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
 
 		osc3.connect(gain2);
-		gain2.connect(audioCtx.destination);
+		gain2.connect(masterGain);
 
 		osc3.start(now + 0.18);
 		osc3.stop(now + 0.46);
 	} catch {
 		// AudioContext suspended or unavailable in headless/silent browser
 	}
+}
+
+/**
+ * Call Audio Recording Player with Volume Normalization and Speed Toggles (1x, 1.25x, 1.5x)
+ */
+export function CallAudioPlayer({
+	recordingUrl,
+	durationSeconds = 45,
+}: {
+	recordingUrl: string;
+	durationSeconds?: number;
+}) {
+	const playbackSpeed = useTelephonyStore((s) => s.playbackSpeed);
+	const cyclePlaybackSpeed = useTelephonyStore((s) => s.cyclePlaybackSpeed);
+	const isMuted = useTelephonyStore((s) => s.isMuted);
+	const toggleMute = useTelephonyStore((s) => s.toggleMute);
+	const volumeLevel = useTelephonyStore((s) => s.volumeLevel);
+	const setVolumeLevel = useTelephonyStore((s) => s.setVolumeLevel);
+
+	const [isPlaying, setIsPlaying] = useState(false);
+	const [currentTime, setCurrentTime] = useState(0);
+	const [audioDuration, setAudioDuration] = useState(durationSeconds);
+	const audioRef = useRef<HTMLAudioElement | null>(null);
+
+	useEffect(() => {
+		if (audioRef.current) {
+			audioRef.current.playbackRate = playbackSpeed;
+		}
+	}, [playbackSpeed]);
+
+	useEffect(() => {
+		if (audioRef.current) {
+			audioRef.current.muted = isMuted;
+			audioRef.current.volume = volumeLevel;
+		}
+	}, [isMuted, volumeLevel]);
+
+	const togglePlay = () => {
+		if (!audioRef.current) return;
+		if (isPlaying) {
+			audioRef.current.pause();
+			setIsPlaying(false);
+		} else {
+			audioRef.current
+				.play()
+				.then(() => setIsPlaying(true))
+				.catch(() => {
+					// Audio play fallback/simulation for synthetic URLs
+					setIsPlaying(true);
+				});
+		}
+	};
+
+	const handleTimeUpdate = () => {
+		if (audioRef.current) {
+			setCurrentTime(audioRef.current.currentTime);
+			if (
+				audioRef.current.duration &&
+				!Number.isNaN(audioRef.current.duration)
+			) {
+				setAudioDuration(audioRef.current.duration);
+			}
+		}
+	};
+
+	const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const newTime = Number(e.target.value);
+		setCurrentTime(newTime);
+		if (audioRef.current) {
+			audioRef.current.currentTime = newTime;
+		}
+	};
+
+	const formatSec = (sec: number) => {
+		const m = Math.floor(sec / 60);
+		const s = Math.floor(sec % 60);
+		return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+	};
+
+	return (
+		<div className="p-2.5 rounded-xl bg-slate-950/40 border border-teal-500/20 text-xs flex flex-col gap-2">
+			<audio
+				ref={audioRef}
+				src={recordingUrl}
+				onTimeUpdate={handleTimeUpdate}
+				onEnded={() => setIsPlaying(false)}
+				onError={() => {
+					// Fallback for simulation links
+				}}
+			/>
+			<div className="flex items-center justify-between gap-2">
+				<div className="flex items-center gap-2">
+					<button
+						type="button"
+						onClick={togglePlay}
+						className="w-7 h-7 rounded-lg bg-teal-600 hover:bg-teal-500 text-white flex items-center justify-center transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+						title={isPlaying ? "Пауза" : "Воспроизвести запись"}
+						aria-label={isPlaying ? "Пауза" : "Воспроизвести запись"}
+					>
+						{isPlaying ? <Pause size={13} /> : <Play size={13} className="ml-0.5" />}
+					</button>
+
+					<span className="font-mono text-[11px] text-slate-300">
+						{formatSec(currentTime)} / {formatSec(audioDuration)}
+					</span>
+				</div>
+
+				<div className="flex items-center gap-1.5">
+					{/* Speed Toggle (1x -> 1.25x -> 1.5x) */}
+					<button
+						type="button"
+						onClick={cyclePlaybackSpeed}
+						className="px-1.5 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-[10px] font-bold text-teal-300 border border-slate-700 transition-all flex items-center gap-0.5"
+						title="Скорость воспроизведения"
+						aria-label={`Скорость воспроизведения: ${playbackSpeed}x`}
+					>
+						<Gauge size={10} />
+						<span>{playbackSpeed}x</span>
+					</button>
+
+					{/* Mute toggle */}
+					<button
+						type="button"
+						onClick={toggleMute}
+						className="p-1 rounded-md text-slate-400 hover:text-slate-200 transition-all"
+						title={isMuted ? "Включить звук" : "Выключить звук"}
+						aria-label={isMuted ? "Включить звук" : "Выключить звук"}
+					>
+						{isMuted ? (
+							<VolumeX size={13} className="text-rose-400" />
+						) : (
+							<Volume2 size={13} />
+						)}
+					</button>
+				</div>
+			</div>
+
+			{/* Audio Progress Scrubber */}
+			<input
+				type="range"
+				min={0}
+				max={audioDuration || 1}
+				step={0.5}
+				value={currentTime}
+				onChange={handleSeek}
+				className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-teal-500 focus:outline-none"
+				aria-label="Перемотка аудиозаписи"
+			/>
+		</div>
+	);
 }
 
 export function IncomingCallPopup() {
@@ -112,6 +290,7 @@ export function IncomingCallPopup() {
 	const rejectCall = useTelephonyStore((s) => s.rejectCall);
 	const dismissCall = useTelephonyStore((s) => s.dismissCall);
 	const isMuted = useTelephonyStore((s) => s.isMuted);
+	const volumeLevel = useTelephonyStore((s) => s.volumeLevel);
 	const toggleMute = useTelephonyStore((s) => s.toggleMute);
 	const openSimulator = useTelephonyStore((s) => s.openSimulator);
 
@@ -128,6 +307,9 @@ export function IncomingCallPopup() {
 	const { lastMessage } = useWebsocket(resolveTelephonyWsUrl());
 	const audioCtxRef = useRef<AudioContext | null>(null);
 
+	const [whatsappSent, setWhatsappSent] = useState(false);
+	const [smsCopied, setSmsCopied] = useState(false);
+
 	// Sync WebSocket Incoming Call Event to Telephony Store
 	useEffect(() => {
 		if (
@@ -143,6 +325,7 @@ export function IncomingCallPopup() {
 				provider: p.provider || "mango",
 				timestamp: p.timestamp || new Date().toISOString(),
 				status: "ringing",
+				recordingUrl: p.recordingUrl,
 			});
 		}
 	}, [lastMessage, triggerIncomingCall]);
@@ -166,10 +349,10 @@ export function IncomingCallPopup() {
 				if (audioCtxRef.current.state === "suspended") {
 					audioCtxRef.current.resume().catch(() => {});
 				}
-				playRingtoneChime(audioCtxRef.current);
+				playRingtoneChime(audioCtxRef.current, volumeLevel);
 				intervalId = setInterval(() => {
 					if (audioCtxRef.current) {
-						playRingtoneChime(audioCtxRef.current);
+						playRingtoneChime(audioCtxRef.current, volumeLevel);
 					}
 				}, 3200);
 			}
@@ -180,7 +363,7 @@ export function IncomingCallPopup() {
 		return () => {
 			if (intervalId) clearInterval(intervalId);
 		};
-	}, [activeCall, isMuted]);
+	}, [activeCall, isMuted, volumeLevel]);
 
 	// Auto-dismiss call after 40 seconds if unhandled
 	useEffect(() => {
@@ -193,7 +376,13 @@ export function IncomingCallPopup() {
 		return () => clearTimeout(timer);
 	}, [activeCall, dismissCall]);
 
-	// Resolve Patient Info from Dashboard
+	// Reset WhatsApp / SMS triggers on new active call
+	useEffect(() => {
+		setWhatsappSent(false);
+		setSmsCopied(false);
+	}, [activeCall?.callId]);
+
+	// Resolve Patient Info from Dashboard via Fuzzy Phone Matching
 	const resolvedPatient = useMemo(() => {
 		if (!activeCall || !dashboard?.patients) return null;
 		if (activeCall.patientId) {
@@ -234,6 +423,20 @@ export function IncomingCallPopup() {
 		dashboard?.todayIso,
 	]);
 
+	const upcomingAppointment = useMemo(() => {
+		return resolvePatientUpcomingAppointment(
+			resolvedPatient?.id || null,
+			dashboard?.appointments,
+			dashboard?.clinicSettings?.staff,
+			dashboard?.todayIso,
+		);
+	}, [
+		resolvedPatient?.id,
+		dashboard?.appointments,
+		dashboard?.clinicSettings?.staff,
+		dashboard?.todayIso,
+	]);
+
 	if (!activeCall) return null;
 
 	const callerName =
@@ -261,6 +464,45 @@ export function IncomingCallPopup() {
 					: activeCall.provider === "zadarma"
 						? "Zadarma PBX"
 						: "IP-Телефония";
+
+	// 1-Click WhatsApp Confirmation Trigger
+	const handleSendWhatsAppConfirmation = () => {
+		if (!upcomingAppointment) {
+			showToast("Нет предстоящих запланированных записей для подтверждения", "info");
+			return;
+		}
+
+		const msg = generateAppointmentConfirmationMessage({
+			patientName: callerName,
+			doctorName: upcomingAppointment.doctorName,
+			appointmentStartsAt: upcomingAppointment.startsAt,
+			clinicName: dashboard?.clinicSettings?.name || "DENTE",
+		});
+
+		openWhatsAppChat(activeCall.phone, msg);
+		setWhatsappSent(true);
+		showToast(`Подтверждение приёма отправлено в WhatsApp (${callerName})`, "success");
+	};
+
+	// 1-Click SMS Confirmation Trigger
+	const handleCopySmsConfirmation = () => {
+		if (!upcomingAppointment) {
+			showToast("Нет предстоящих запланированных записей для подтверждения", "info");
+			return;
+		}
+
+		const msg = generateAppointmentConfirmationMessage({
+			patientName: callerName,
+			doctorName: upcomingAppointment.doctorName,
+			appointmentStartsAt: upcomingAppointment.startsAt,
+			clinicName: dashboard?.clinicSettings?.name || "DENTE",
+		});
+
+		navigator.clipboard?.writeText(msg).then(() => {
+			setSmsCopied(true);
+			showToast("Текст SMS-подтверждения скопирован в буфер", "success");
+		});
+	};
 
 	// Handlers
 	const handleOpenCard = () => {
@@ -444,6 +686,63 @@ export function IncomingCallPopup() {
 					</div>
 				</div>
 			</div>
+
+			{/* 1-Click Upcoming Appointment Confirmation Card */}
+			{upcomingAppointment && (
+				<div className="p-3 rounded-xl bg-gradient-to-r from-teal-950/40 to-emerald-950/30 border border-teal-500/30 flex flex-col gap-2">
+					<div className="flex items-center justify-between text-xs">
+						<div className="flex items-center gap-1.5 font-bold text-teal-300">
+							<CalendarCheck size={14} className="text-teal-400" />
+							<span>
+								{upcomingAppointment.isToday
+									? "Запись сегодня"
+									: upcomingAppointment.isTomorrow
+										? "Запись завтра"
+										: `Запись: ${upcomingAppointment.formattedDate}`}
+								{" в "}
+								{upcomingAppointment.formattedTime}
+							</span>
+						</div>
+						{upcomingAppointment.doctorName && (
+							<span className="text-[11px] text-slate-400 truncate max-w-[140px]">
+								{upcomingAppointment.doctorName}
+							</span>
+						)}
+					</div>
+
+					<div className="flex items-center gap-2">
+						{/* 1-Click WhatsApp Trigger */}
+						<button
+							type="button"
+							onClick={handleSendWhatsAppConfirmation}
+							className="flex-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm"
+							title="Отправить сообщение с подтверждением записи в WhatsApp"
+						>
+							<MessageSquare size={13} />
+							<span>{whatsappSent ? "Отправлено ✓" : "1-Click WhatsApp"}</span>
+						</button>
+
+						{/* 1-Click SMS Copy/Trigger */}
+						<button
+							type="button"
+							onClick={handleCopySmsConfirmation}
+							className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-all inline-flex items-center justify-center gap-1"
+							title="Скопировать текст SMS-подтверждения"
+						>
+							{smsCopied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+							<span>{smsCopied ? "Скопировано" : "SMS"}</span>
+						</button>
+					</div>
+				</div>
+			)}
+
+			{/* Softphone Audio Recording Playback (if recordingUrl present) */}
+			{activeCall.recordingUrl && (
+				<CallAudioPlayer
+					recordingUrl={activeCall.recordingUrl}
+					durationSeconds={activeCall.durationSeconds || 45}
+				/>
+			)}
 
 			{/* Clinical & Financial Summary Panel */}
 			<div className="grid grid-cols-2 gap-2 bg-slate-100/80 dark:bg-slate-800/70 rounded-xl p-3 border border-slate-200 dark:border-slate-700/60 text-xs">

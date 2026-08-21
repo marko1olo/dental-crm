@@ -47,6 +47,92 @@ export type RestorativeMaterialKey =
 
 export type PostCoreType = "fiber" | "cast_core" | "titanium";
 
+/**
+ * Стадии физиологической резорбции корней временных (молочных) зубов.
+ * 0% — полный интактный корень
+ * 25% — I степень: сглаживание и резорбция апикальной трети
+ * 50% — II степень: резорбция до средней трети, полупрозрачность и штриховка
+ * 75% — III степень: сохранена только пришеечная треть
+ * 100% — IV степень: полная резорбция / эксфолиация (корень отсутствует)
+ */
+export type RootResorptionStage = 0 | 25 | 50 | 75 | 100;
+
+export interface RootResorptionDetail {
+	readonly stage: RootResorptionStage;
+	readonly percent: number;
+	readonly nameRu: string;
+	readonly descriptionRu: string;
+	readonly rootOpacity: number;
+	readonly showHatch: boolean;
+	readonly badgeColor: string;
+	readonly badgeBg: string;
+}
+
+export const ROOT_RESORPTION_STAGES: Record<RootResorptionStage, RootResorptionDetail> = {
+	0: {
+		stage: 0,
+		percent: 0,
+		nameRu: "Интактный корень (0%)",
+		descriptionRu: "Корень полностью сформирован, физиологическая резорбция отсутствует",
+		rootOpacity: 1.0,
+		showHatch: false,
+		badgeColor: "#10b981",
+		badgeBg: "rgba(16, 185, 129, 0.12)",
+	},
+	25: {
+		stage: 25,
+		percent: 25,
+		nameRu: "I стадия: Апикальная резорбция (25%)",
+		descriptionRu: "Сглаживание и укорочение апикальной трети корня",
+		rootOpacity: 0.9,
+		showHatch: false,
+		badgeColor: "#0284c7",
+		badgeBg: "rgba(2, 132, 199, 0.15)",
+	},
+	50: {
+		stage: 50,
+		percent: 50,
+		nameRu: "II стадия: Средняя резорбция (50%)",
+		descriptionRu: "Резорбция половины длины корня, полупрозрачность и резорбтивная штриховка",
+		rootOpacity: 0.65,
+		showHatch: true,
+		badgeColor: "#f59e0b",
+		badgeBg: "rgba(245, 158, 11, 0.15)",
+	},
+	75: {
+		stage: 75,
+		percent: 75,
+		nameRu: "III стадия: Пришеечная резорбция (75%)",
+		descriptionRu: "Сохранена только пришеечная треть корня перед выпадением",
+		rootOpacity: 0.35,
+		showHatch: true,
+		badgeColor: "#ea580c",
+		badgeBg: "rgba(234, 88, 12, 0.18)",
+	},
+	100: {
+		stage: 100,
+		percent: 100,
+		nameRu: "IV стадия: Полная резорбция / Эксфолиация (100%)",
+		descriptionRu: "Корень полностью резорбирован, коронка удерживается в мягких тканях (эксфолиация)",
+		rootOpacity: 0.0,
+		showHatch: false,
+		badgeColor: "#e11d48",
+		badgeBg: "rgba(225, 29, 72, 0.2)",
+	},
+};
+
+export interface PhysiologicalResorptionGeometry {
+	readonly stage: RootResorptionStage;
+	readonly isResorbed: boolean;
+	readonly rootPath: string;
+	readonly resorptionLinePath?: string | undefined;
+	readonly resorptionHatchAreaPath?: string | undefined;
+	readonly opacity: number;
+	readonly showCanals: boolean;
+	readonly canals: readonly CanalDefinition[];
+	readonly stageInfo: RootResorptionDetail;
+}
+
 export type FurcationGrade = 0 | 1 | 2 | 3 | 4;
 
 export interface FurcationSite {
@@ -514,6 +600,261 @@ export function getFurcationMarkerSvg(
 			};
 		default:
 			return null;
+	}
+}
+
+/**
+ * Расчет физиологической резорбции корней молочных зубов (0%, 25%, 50%, 75%, 100%).
+ * 25% — сглаживание апикальной части, укорочение апикальной трети
+ * 50% — резорбция до средней трети, полупрозрачность и штриховка
+ * 75% — сохранена только пришеечная часть корня
+ * 100% — полное исчезновение корня (эксфолиация перед прорезыванием постоянного зуба)
+ */
+export function getPhysiologicalRootResorptionGeometry(
+	fdiNumber: number,
+	stage: RootResorptionStage = 0,
+): PhysiologicalResorptionGeometry {
+	const quadrant = Math.floor(fdiNumber / 10);
+	const isPediatric = quadrant >= 5 && quadrant <= 8;
+	const isTop = quadrant === 5 || quadrant === 6;
+	const pos = fdiNumber % 10;
+	const isMolar = pos === 4 || pos === 5;
+	const stageInfo = ROOT_RESORPTION_STAGES[stage] ?? ROOT_RESORPTION_STAGES[0];
+
+	if (!isPediatric || stage === 0) {
+		const fullGeom = getAnatomicalToothGeometry(fdiNumber);
+		return {
+			stage,
+			isResorbed: false,
+			rootPath: fullGeom.rootPath,
+			opacity: 1.0,
+			showCanals: true,
+			canals: fullGeom.canals,
+			stageInfo,
+		};
+	}
+
+	if (stage === 100) {
+		return {
+			stage: 100,
+			isResorbed: true,
+			rootPath: "",
+			opacity: 0,
+			showCanals: false,
+			canals: [],
+			stageInfo,
+		};
+	}
+
+	if (isTop) {
+		if (isMolar) {
+			// Верхние молочные моляры (54, 55, 64, 65)
+			if (stage === 25) {
+				return {
+					stage: 25,
+					isResorbed: true,
+					rootPath:
+						"M 18 84 C 12 66, 12 48, 18 32 Q 26 32 30 42 C 34 52, 36 62, 38 68 C 42 54, 46 40, 50 28 Q 54 40, 58 54 C 60 62, 62 52, 66 42 Q 70 32 78 32 C 84 48, 84 66, 82 84 Z",
+					resorptionLinePath: "M 18 32 Q 50 24 78 32",
+					resorptionHatchAreaPath:
+						"M 18 32 C 10 48, 10 64, 18 84 Q 50 80 82 84 C 90 64, 90 48, 78 32 Q 50 24 18 32 Z",
+					opacity: 0.9,
+					showCanals: true,
+					canals: [
+						{ id: "MB", nameRu: "MB (25% резорбция)", path: "M 36 92 C 30 76, 24 58, 20 36", apex: { x: 20, y: 36 }, defaultLengthMm: 12.0 },
+						{ id: "P", nameRu: "P (25% резорбция)", path: "M 50 92 C 50 76, 50 54, 50 32", apex: { x: 50, y: 32 }, defaultLengthMm: 13.0 },
+						{ id: "DB", nameRu: "DB (25% резорбция)", path: "M 64 92 C 70 76, 76 58, 80 36", apex: { x: 80, y: 36 }, defaultLengthMm: 12.0 },
+					],
+					stageInfo,
+				};
+			}
+			if (stage === 50) {
+				return {
+					stage: 50,
+					isResorbed: true,
+					rootPath:
+						"M 18 84 C 14 72, 16 60, 24 50 Q 36 50 42 64 C 44 58, 46 54, 50 46 Q 54 54, 56 64 C 62 50, 74 50, 76 50 C 82 60, 84 72, 82 84 Z",
+					resorptionLinePath: "M 24 50 Q 50 42 76 50",
+					resorptionHatchAreaPath:
+						"M 24 50 C 18 64, 18 74, 18 84 Q 50 80 82 84 C 82 74, 82 64, 76 50 Q 50 42 24 50 Z",
+					opacity: 0.65,
+					showCanals: true,
+					canals: [
+						{ id: "MB", nameRu: "MB (50% резорбция)", path: "M 36 92 C 32 80, 28 66, 26 52", apex: { x: 26, y: 52 }, defaultLengthMm: 8.0 },
+						{ id: "P", nameRu: "P (50% резорбция)", path: "M 50 92 C 50 80, 50 68, 50 48", apex: { x: 50, y: 48 }, defaultLengthMm: 8.5 },
+						{ id: "DB", nameRu: "DB (50% резорбция)", path: "M 64 92 C 68 80, 72 66, 74 52", apex: { x: 74, y: 52 }, defaultLengthMm: 8.0 },
+					],
+					stageInfo,
+				};
+			}
+			// 75%
+			return {
+				stage: 75,
+				isResorbed: true,
+				rootPath:
+					"M 18 84 C 18 78, 22 68, 30 68 Q 50 64 70 68 C 78 68, 82 78, 82 84 Z",
+				resorptionLinePath: "M 30 68 Q 50 64 70 68",
+				resorptionHatchAreaPath:
+					"M 30 68 C 22 78, 18 78, 18 84 Q 50 80 82 84 C 82 78, 78 78, 70 68 Q 50 64 30 68 Z",
+				opacity: 0.35,
+				showCanals: false,
+				canals: [],
+				stageInfo,
+			};
+		}
+		// Верхние молочные резцы и клыки (51, 52, 53, 61, 62, 63)
+		if (stage === 25) {
+			return {
+				stage: 25,
+				isResorbed: true,
+				rootPath:
+					"M 26 84 C 28 66, 36 44, 44 28 Q 50 24 56 28 C 64 44, 72 66, 74 84 Z",
+				resorptionLinePath: "M 44 28 Q 50 24 56 28",
+				resorptionHatchAreaPath:
+					"M 44 28 C 36 44, 28 66, 26 84 Q 50 80 74 84 C 72 66, 64 44, 56 28 Q 50 24 44 28 Z",
+				opacity: 0.9,
+				showCanals: true,
+				canals: [
+					{ id: "Main", nameRu: "Канал (25% резорбция)", path: "M 50 88 C 50 68, 50 48, 50 28", apex: { x: 50, y: 28 }, defaultLengthMm: 14.0 },
+				],
+				stageInfo,
+			};
+		}
+		if (stage === 50) {
+			return {
+				stage: 50,
+				isResorbed: true,
+				rootPath:
+					"M 26 84 C 30 70, 36 58, 42 48 Q 50 44 58 48 C 64 58, 70 70, 74 84 Z",
+				resorptionLinePath: "M 42 48 Q 50 44 58 48",
+				resorptionHatchAreaPath:
+					"M 42 48 C 36 58, 30 70, 26 84 Q 50 80 74 84 C 70 70, 64 58, 58 48 Q 50 44 42 48 Z",
+				opacity: 0.65,
+				showCanals: true,
+				canals: [
+					{ id: "Main", nameRu: "Канал (50% резорбция)", path: "M 50 88 C 50 74, 50 62, 50 48", apex: { x: 50, y: 48 }, defaultLengthMm: 9.5 },
+				],
+				stageInfo,
+			};
+		}
+		// 75%
+		return {
+			stage: 75,
+			isResorbed: true,
+			rootPath:
+				"M 26 84 C 28 76, 36 68, 42 66 Q 50 64 58 66 C 64 68, 72 76, 74 84 Z",
+			resorptionLinePath: "M 42 66 Q 50 64 58 66",
+			resorptionHatchAreaPath:
+				"M 42 66 C 36 68, 28 76, 26 84 Q 50 80 74 84 C 72 76, 64 68, 58 66 Q 50 64 42 66 Z",
+			opacity: 0.35,
+			showCanals: false,
+			canals: [],
+			stageInfo,
+		};
+	} else {
+		// Нижняя челюсть (71..75, 81..85)
+		if (isMolar) {
+			// Нижние молочные моляры (74, 75, 84, 85)
+			if (stage === 25) {
+				return {
+					stage: 25,
+					isResorbed: true,
+					rootPath:
+						"M 18 76 C 12 94, 12 112, 18 126 Q 26 126 30 116 C 36 104, 42 96, 50 88 C 58 96, 64 104, 70 116 Q 74 126 82 126 C 88 112, 88 94, 82 76 Z",
+					resorptionLinePath: "M 18 126 Q 50 134 82 126",
+					resorptionHatchAreaPath:
+						"M 18 76 C 10 96, 10 112, 18 126 Q 50 134 82 126 C 90 112, 90 96, 82 76 Z",
+					opacity: 0.9,
+					showCanals: true,
+					canals: [
+						{ id: "M", nameRu: "M (25% резорбция)", path: "M 36 68 C 28 84, 22 104, 20 124", apex: { x: 20, y: 124 }, defaultLengthMm: 12.0 },
+						{ id: "D", nameRu: "D (25% резорбция)", path: "M 64 68 C 72 84, 78 104, 80 124", apex: { x: 80, y: 124 }, defaultLengthMm: 12.0 },
+					],
+					stageInfo,
+				};
+			}
+			if (stage === 50) {
+				return {
+					stage: 50,
+					isResorbed: true,
+					rootPath:
+						"M 18 76 C 14 88, 16 98, 24 108 Q 36 108 42 96 C 44 100, 46 104, 50 112 C 54 104, 56 100, 58 96 Q 64 108 76 108 C 84 98, 86 88, 82 76 Z",
+					resorptionLinePath: "M 24 108 Q 50 116 76 108",
+					resorptionHatchAreaPath:
+						"M 18 76 C 16 88, 18 98, 24 108 Q 50 116 76 108 C 82 98, 84 88, 82 76 Z",
+					opacity: 0.65,
+					showCanals: true,
+					canals: [
+						{ id: "M", nameRu: "M (50% резорбция)", path: "M 36 68 C 30 80, 26 94, 26 106", apex: { x: 26, y: 106 }, defaultLengthMm: 8.0 },
+						{ id: "D", nameRu: "D (50% резорбция)", path: "M 64 68 C 70 80, 74 94, 74 106", apex: { x: 74, y: 106 }, defaultLengthMm: 8.0 },
+					],
+					stageInfo,
+				};
+			}
+			// 75%
+			return {
+				stage: 75,
+				isResorbed: true,
+				rootPath:
+					"M 18 76 C 18 82, 22 92, 30 92 Q 50 96 70 92 C 78 92, 82 82, 82 76 Z",
+				resorptionLinePath: "M 30 92 Q 50 96 70 92",
+				resorptionHatchAreaPath:
+					"M 18 76 C 18 82, 22 92, 30 92 Q 50 96 70 92 C 78 92, 82 82, 82 76 Z",
+				opacity: 0.35,
+				showCanals: false,
+				canals: [],
+				stageInfo,
+			};
+		}
+		// Нижние молочные резцы и клыки (71, 72, 73, 81, 82, 83)
+		if (stage === 25) {
+			return {
+				stage: 25,
+				isResorbed: true,
+				rootPath:
+					"M 28 64 C 30 84, 36 108, 44 130 Q 50 134 56 130 C 64 108, 70 84, 72 64 Z",
+				resorptionLinePath: "M 44 130 Q 50 134 56 130",
+				resorptionHatchAreaPath:
+					"M 28 64 C 28 86, 36 108, 44 130 Q 50 134 56 130 C 64 108, 72 86, 72 64 Z",
+				opacity: 0.9,
+				showCanals: true,
+				canals: [
+					{ id: "Main", nameRu: "Канал (25% резорбция)", path: "M 50 68 C 50 88, 50 108, 50 128", apex: { x: 50, y: 128 }, defaultLengthMm: 12.5 },
+				],
+				stageInfo,
+			};
+		}
+		if (stage === 50) {
+			return {
+				stage: 50,
+				isResorbed: true,
+				rootPath:
+					"M 28 64 C 30 78, 36 94, 42 108 Q 50 112 58 108 C 64 94, 70 78, 72 64 Z",
+				resorptionLinePath: "M 42 108 Q 50 112 58 108",
+				resorptionHatchAreaPath:
+					"M 28 64 C 30 78, 36 94, 42 108 Q 50 112 58 108 C 64 94, 70 78, 72 64 Z",
+				opacity: 0.65,
+				showCanals: true,
+				canals: [
+					{ id: "Main", nameRu: "Канал (50% резорбция)", path: "M 50 68 C 50 82, 50 96, 50 106", apex: { x: 50, y: 106 }, defaultLengthMm: 8.5 },
+				],
+				stageInfo,
+			};
+		}
+		// 75%
+		return {
+			stage: 75,
+			isResorbed: true,
+			rootPath:
+				"M 28 64 C 30 72, 36 78, 42 84 Q 50 88 58 84 C 64 78, 70 72, 72 64 Z",
+			resorptionLinePath: "M 42 84 Q 50 88 58 84",
+			resorptionHatchAreaPath:
+				"M 28 64 C 30 72, 36 78, 42 84 Q 50 88 58 84 C 64 78, 70 72, 72 64 Z",
+			opacity: 0.35,
+			showCanals: false,
+			canals: [],
+			stageInfo,
+		};
 	}
 }
 

@@ -5,8 +5,10 @@ import type {
 	ScheduleSuggestion,
 } from "@dental/shared";
 import type { ChangeEvent } from "react";
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { showToast } from "../GlobalToast";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
+import { AppointmentQuickActions } from "./AppointmentQuickActions";
 import { WaitlistMatchesBlock } from "./WaitlistMatchesBlock";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
@@ -46,7 +48,7 @@ export type AppointmentCardProps = {
 	 * Копирует снимок приёма в серверный буфер расписания (schedule_clipboard_items)
 	 * и открывает панель «Буфер». Вставка создаёт новый приём на выбранное время.
 	 */
-	copyAppointmentToBuffer?: (appointment: Appointment) => void;
+	copyAppointmentToBuffer?: ((appointment: Appointment) => void) | undefined;
 
 	closeAppointmentEditor: (appointmentId: string) => void;
 	updateAppointmentScheduleDraft: (
@@ -116,6 +118,9 @@ export function AppointmentCard(props: AppointmentCardProps) {
 	const appointmentSaveMissingId = `appointment-save-missing-${appointment?.id ?? ""}`;
 	const appointmentEditorId = `appointment-editor-${appointment?.id ?? ""}`;
 	const appointmentHandoffNoteId = `appointment-handoff-note-${appointment?.id ?? ""}`;
+	const appointmentPatient = (dashboard?.patients ?? []).find(
+		(p) => p?.id === appointment?.patientId,
+	);
 	const appointmentPatientName =
 		typeof patientName === "function"
 			? patientName(dashboard?.patients ?? [], appointment?.patientId ?? null)
@@ -159,6 +164,83 @@ export function AppointmentCard(props: AppointmentCardProps) {
 
 	const canSave = appointmentReadyToSave && !collision.hasCollision;
 
+	const [isQuickStatusUpdating, setIsQuickStatusUpdating] = useState(false);
+
+	const handleQuickStatusChange = useCallback(
+		async (newStatus: Appointment["status"], noteAppend?: string) => {
+			if (
+				appointmentHasOpenVisit &&
+				activeVisitLockedAppointmentStatuses?.has(newStatus)
+			) {
+				showToast(
+					"Статус приема заблокирован: по этому приему открыт активный визит",
+					"error",
+				);
+				return;
+			}
+			const normalized = normalizedAppointmentStatus(newStatus);
+			updateAppointmentScheduleDraft(appointment.id, "status", normalized);
+			if (noteAppend) {
+				const currentComment = String(
+					appointmentDraft?.comment || appointment.comment || "",
+				).trim();
+				const updatedComment = currentComment
+					? `${currentComment}; ${noteAppend}`
+					: noteAppend;
+				updateAppointmentScheduleDraft(appointment.id, "comment", updatedComment);
+			}
+			setIsQuickStatusUpdating(true);
+			try {
+				const success = await saveAppointmentSchedule(appointment.id);
+				if (success) {
+					const label = appointmentLabels?.[normalized] ?? normalized;
+					showToast(
+						`«${appointmentPatientName}» — статус «${label}»`,
+						"success",
+						3000,
+					);
+				}
+			} finally {
+				setIsQuickStatusUpdating(false);
+			}
+		},
+		[
+			appointment.id,
+			appointment.comment,
+			appointmentDraft?.comment,
+			appointmentHasOpenVisit,
+			activeVisitLockedAppointmentStatuses,
+			normalizedAppointmentStatus,
+			updateAppointmentScheduleDraft,
+			saveAppointmentSchedule,
+			appointmentPatientName,
+			appointmentLabels,
+		],
+	);
+
+	const handleCardKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
+		const targetTag = (e.target as HTMLElement).tagName.toLowerCase();
+		if (targetTag === "input" || targetTag === "textarea" || targetTag === "select") {
+			return;
+		}
+
+		if (e.key === "Enter" && !appointmentEditing) {
+			e.preventDefault();
+			openAppointmentEditor(appointment);
+		} else if ((e.key === "r" || e.key === "R" || e.key === "к" || e.key === "К") && !e.ctrlKey && !e.metaKey) {
+			e.preventDefault();
+			repeatAppointment(appointment);
+		} else if (
+			(e.key === "b" || e.key === "B" || e.key === "и" || e.key === "И") &&
+			!e.ctrlKey &&
+			!e.metaKey &&
+			copyAppointmentToBuffer
+		) {
+			e.preventDefault();
+			copyAppointmentToBuffer(appointment);
+		}
+	};
+
 	return (
 		<div className="timeline-node" key={appointment.id}>
 			<div className="timeline-line"></div>
@@ -168,8 +250,11 @@ export function AppointmentCard(props: AppointmentCardProps) {
 				<p style={{ display: "none" }}>{appointment.reason}</p>
 				<article
 					data-testid="appointment-card"
+					data-appointment-id={appointment.id}
+					tabIndex={0}
+					onKeyDown={handleCardKeyDown}
 					aria-label={`Карточка приема: ${appointmentPatientName}, ${formatTime(appointment.startsAt)} - ${formatTime(appointment.endsAt)}`}
-					className={`appointment-card mode-fit-card glass-panel rounded-xl p-4 mb-3 shadow-sm ${readiness ? `readiness-${readiness.state}` : ""}`}
+					className={`appointment-card mode-fit-card glass-panel rounded-xl p-4 mb-3 shadow-sm transition-all focus:ring-2 focus:ring-teal-500 focus:outline-none ${readiness ? `readiness-${readiness.state}` : ""}`}
 					style={{
 						display: "flex",
 						flexDirection: "column",
@@ -298,6 +383,22 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							<WaitlistMatchesBlock appointmentId={appointment.id} compact />
 						</div>
 					) : null}
+
+					{/* Быстрые действия по статусу приёма */}
+					<AppointmentQuickActions
+						appointmentId={appointment.id}
+						currentStatus={appointment.status}
+						patientName={appointmentPatientName}
+						patientPhone={appointmentPatient?.phone}
+						doctorName={appointmentDoctor?.fullName}
+						startsAt={appointment.startsAt}
+						appointmentHasOpenVisit={appointmentHasOpenVisit}
+						activeVisitLockedAppointmentStatuses={
+							activeVisitLockedAppointmentStatuses
+						}
+						onStatusChange={handleQuickStatusChange}
+						disabled={isQuickStatusUpdating}
+					/>
 
 					<div className="appointment-card-footer flex flex-wrap justify-end gap-2 mt-2 pt-2 border-t border-[var(--line)]">
 						<button

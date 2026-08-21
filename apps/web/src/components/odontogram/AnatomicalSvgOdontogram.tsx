@@ -15,9 +15,12 @@ import {
 	getFurcationMarkerSvg,
 	getGingivalRecessionPath,
 	getPeriodontalBoneLevelPath,
+	getPhysiologicalRootResorptionGeometry,
 	type PeriodontalBoneLossPattern,
 	type PostCoreType,
 	type RestorativeMaterialKey,
+	type RootResorptionStage,
+	ROOT_RESORPTION_STAGES,
 } from "./anatomicalToothGeometries";
 import {
 	getNextFocusedTooth,
@@ -273,6 +276,8 @@ const AnatomicalToothSVG = ({
 	bopSites,
 	suppurationSites,
 	periapicalLesion,
+	rootResorptionStage,
+	rootResorption,
 	isSelected,
 	onClick,
 	onQuickStateChange,
@@ -298,6 +303,8 @@ const AnatomicalToothSVG = ({
 	bopSites?: string[] | undefined;
 	suppurationSites?: string[] | undefined;
 	periapicalLesion?: boolean | undefined;
+	rootResorptionStage?: RootResorptionStage | undefined;
+	rootResorption?: RootResorptionStage | undefined;
 	isSelected?: boolean | undefined;
 	onClick: (e: React.MouseEvent, num: number, surface?: string) => void;
 	onQuickStateChange?: ((targets: number[], state: ToothState) => void) | undefined;
@@ -326,6 +333,10 @@ const AnatomicalToothSVG = ({
 	const isEndoTreated = state === "Filled" || canalObturation !== undefined;
 	const effectiveObturation: CanalObturationMaterial =
 		canalObturation ?? (state === "Filled" ? "gutta_percha" : "unfilled");
+
+	const effectiveResorption: RootResorptionStage = rootResorptionStage ?? rootResorption ?? 0;
+	const resorptionGeom = getPhysiologicalRootResorptionGeometry(number, effectiveResorption);
+	const effectiveCanals = resorptionGeom.canals;
 
 	const boneLossInfo =
 		showPeriodontalBoneLoss && (boneLossLevel !== undefined && boneLossLevel > 0)
@@ -480,16 +491,46 @@ const AnatomicalToothSVG = ({
 						</g>
 					))}
 
-				{/* Anatomical Multi-Root Profile (3 roots upper molars, 2 roots lower molars) */}
-				<path
-					d={geom.rootPath}
-					fill={colors.rootFill}
-					stroke={colors.isMissing ? "var(--tooth-root-stroke, #94a3b8)" : "var(--tooth-root-stroke, #64748b)"}
-					strokeWidth={colors.isMissing ? "1.4" : "1.8"}
-					strokeDasharray={colors.isMissing ? "4 3" : undefined}
-					strokeLinejoin="round"
-					className="tooth-root-path"
-				/>
+				{/* Anatomical Multi-Root Profile with Physiological Resorption Support */}
+				{resorptionGeom.rootPath && (
+					<g
+						className="pediatric-root-resorption-layer"
+						style={{ opacity: resorptionGeom.opacity }}
+					>
+						<path
+							d={resorptionGeom.rootPath}
+							fill={colors.rootFill}
+							stroke={colors.isMissing ? "var(--tooth-root-stroke, #94a3b8)" : "var(--tooth-root-stroke, #64748b)"}
+							strokeWidth={colors.isMissing ? "1.4" : "1.8"}
+							strokeDasharray={colors.isMissing ? "4 3" : undefined}
+							strokeLinejoin="round"
+							className="tooth-root-path"
+						/>
+					</g>
+				)}
+
+				{/* Physiological Root Resorption Hatch Zone (50% and 75% stages) */}
+				{resorptionGeom.resorptionHatchAreaPath && (
+					<path
+						d={resorptionGeom.resorptionHatchAreaPath}
+						fill="url(#resorption-hatch-pattern)"
+						opacity="0.85"
+						className="resorption-hatch-area"
+					/>
+				)}
+
+				{/* Physiological Root Resorption Boundary Line (25%, 50%, 75% stages) */}
+				{resorptionGeom.resorptionLinePath && (
+					<path
+						d={resorptionGeom.resorptionLinePath}
+						fill="none"
+						stroke="var(--odontogram-border-strong, #64748b)"
+						strokeWidth="1.8"
+						strokeDasharray="2.5 2"
+						strokeLinecap="round"
+						className="resorption-boundary-line"
+					/>
+				)}
 
 				{/* Periodontal Bone Loss Resorption Area & Crest Line */}
 				{boneLossInfo && (
@@ -684,9 +725,9 @@ const AnatomicalToothSVG = ({
 				)}
 
 				{/* Pulp Chamber & Root Canals for Pulpitis / Diagnostics */}
-				{geom.canals.length > 0 && (state === "Pulpitis" || showPulpAndCanals) && (
+				{resorptionGeom.showCanals && effectiveCanals.length > 0 && (state === "Pulpitis" || showPulpAndCanals) && (
 					<g filter="url(#dente-glow-purple)">
-						{geom.canals.map((c) => (
+						{effectiveCanals.map((c) => (
 							<g key={c.id}>
 								<path
 									d={c.path}
@@ -722,12 +763,12 @@ const AnatomicalToothSVG = ({
 				)}
 
 				{/* Root Canal Obturation / Post-and-Core */}
-				{geom.canals.length > 0 && isEndoTreated && (
+				{resorptionGeom.showCanals && effectiveCanals.length > 0 && isEndoTreated && (
 					<g className="root-canal-obturation-layer">
 						{/* Fiber Glass Post */}
 						{hasPost && postType === "fiber" ? (
 							<g filter="url(#dente-glow-indigo)">
-								{geom.canals.map((c) => (
+								{effectiveCanals.map((c) => (
 									<g key={c.id}>
 										<path
 											d={c.path}
@@ -751,7 +792,7 @@ const AnatomicalToothSVG = ({
 						) : hasPost && (postType === "cast_core" || postType === "titanium") ? (
 							/* Cast Core Metal Post */
 							<g filter="url(#dente-metallic-specular)">
-								{geom.canals.map((c) => (
+								{effectiveCanals.map((c) => (
 									<path
 										key={c.id}
 										d={c.path}
@@ -772,7 +813,7 @@ const AnatomicalToothSVG = ({
 						) : (
 							/* Standard Endodontic Obturation (Gutta-percha / Bioceramic) with Apical Delta Seal */
 							<g>
-								{geom.canals.map((c) => (
+								{effectiveCanals.map((c) => (
 									<g key={c.id}>
 										<path
 											d={c.path}
@@ -971,9 +1012,12 @@ const ToothWrapper: React.FC<ToothWrapperProps> = ({
 		bopSites,
 		suppurationSites,
 		periapicalLesion,
+		rootResorptionStage,
+		rootResorption,
 	} = tooth;
 
 	const furcation = furcationGrade ?? directFurcation;
+	const effectiveResorption = rootResorptionStage ?? rootResorption ?? 0;
 	const colors = getAnatomicalToothColors(state, material);
 
 	const renderNumberBadge = () => (
@@ -1088,6 +1132,15 @@ const ToothWrapper: React.FC<ToothWrapperProps> = ({
 						F{furcation}
 					</span>
 				)}
+				{effectiveResorption > 0 && (
+					<span
+						className="ml-0.5 px-1 py-0.2 rounded text-[8px] font-black text-white shadow-2xs leading-none"
+						style={{ backgroundColor: ROOT_RESORPTION_STAGES[effectiveResorption]?.badgeColor ?? "#f59e0b" }}
+						title={`Физиологическая резорбция корня: ${ROOT_RESORPTION_STAGES[effectiveResorption]?.nameRu ?? `${effectiveResorption}%`}`}
+					>
+						R{effectiveResorption}%
+					</span>
+				)}
 			</span>
 		</div>
 	);
@@ -1163,6 +1216,7 @@ const ToothWrapper: React.FC<ToothWrapperProps> = ({
 				bopSites={bopSites}
 				suppurationSites={suppurationSites}
 				periapicalLesion={periapicalLesion}
+				rootResorptionStage={effectiveResorption}
 				isSelected={isSelected}
 				onClick={onClick}
 				onQuickStateChange={onQuickStateChange}

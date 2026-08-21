@@ -413,14 +413,14 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="px-4 py-2 text-xs font-semibold rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-colors"
+							className="px-4 py-2 text-xs font-semibold rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] whitespace-nowrap shrink-0 transition-colors"
 						>
 							Закрыть
 						</button>
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="inline-flex items-center gap-2 px-5 py-2 text-xs font-bold rounded-xl bg-teal-600 hover:bg-teal-500 text-white shadow-md transition-colors"
+							className="inline-flex items-center gap-2 px-5 py-2 text-xs font-bold rounded-xl bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-md hover:opacity-90 transition-opacity"
 							data-testid="print-radiology-referral-btn"
 						>
 							<Printer className="w-4 h-4" />

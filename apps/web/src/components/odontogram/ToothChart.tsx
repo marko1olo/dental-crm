@@ -49,6 +49,8 @@ import {
 	type PeriodontalBoneLossPattern,
 	type PostCoreType,
 	type RestorativeMaterialKey,
+	type RootResorptionStage,
+	ROOT_RESORPTION_STAGES,
 } from "./anatomicalToothGeometries";
 
 export interface ToothData {
@@ -63,6 +65,8 @@ export interface ToothData {
 	boneLossType?: PeriodontalBoneLossPattern;
 	furcationGrade?: FurcationGrade;
 	furcation?: FurcationGrade;
+	rootResorptionStage?: RootResorptionStage;
+	rootResorption?: RootResorptionStage;
 	mobility?: 0 | 1 | 2 | 3;
 	gingivalRecession?: number;
 	bopSites?: string[];
@@ -641,6 +645,21 @@ export const DenteToothSvgDefs: React.FC = () => (
 			<pattern id="bone-loss-hatch" width="4" height="4" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
 				<line x1="0" y1="0" x2="0" y2="4" stroke="rgba(239, 68, 68, 0.4)" strokeWidth="1" />
 			</pattern>
+
+			{/* Primary Tooth Physiological Root Resorption Hatch Pattern (100% Theme Safe) */}
+			<pattern id="resorption-hatch-pattern" width="5" height="5" patternTransform="rotate(35 0 0)" patternUnits="userSpaceOnUse">
+				<line x1="0" y1="0" x2="0" y2="5" stroke="var(--odontogram-border-strong, #94a3b8)" strokeWidth="1" strokeDasharray="1.5 1.5" opacity="0.6" />
+			</pattern>
+			<pattern id="dente-resorption-hatch" href="#resorption-hatch-pattern" />
+
+			{/* Primary Tooth Root Resorption Soft Transition Gradient */}
+			<linearGradient id="resorption-fade-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+				<stop offset="0%" stopColor="var(--tooth-root-fill, #f1ede4)" stopOpacity="1" />
+				<stop offset="60%" stopColor="var(--tooth-root-fill, #f1ede4)" stopOpacity="0.8" />
+				<stop offset="85%" stopColor="var(--tooth-root-fill, #f1ede4)" stopOpacity="0.3" />
+				<stop offset="100%" stopColor="var(--tooth-root-fill, #f1ede4)" stopOpacity="0" />
+			</linearGradient>
+			<linearGradient id="dente-resorption-fade" href="#resorption-fade-gradient" />
 
 			{/* FILTERS */}
 			{/* Periapical Lesion Soft Feathered Blur Filter */}

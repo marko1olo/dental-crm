@@ -9,6 +9,7 @@ import {
 	CreditCard,
 	Globe,
 	History,
+	MessageSquare,
 	Phone,
 	PhoneCall,
 	PhoneForwarded,
@@ -52,6 +53,7 @@ export function TelephonySimulatorModal() {
 	const ctx = useAppLogicContext();
 	const dashboard = ctx?.dashboard;
 
+	const [channelMode, setChannelMode] = useState<"call" | "sms">("call");
 	const [provider, setProvider] = useState<TelephonyProvider>("mango");
 	const [callEvent, setCallEvent] = useState<TelephonyCallStatus>("ringing");
 	const [callerPhone, setCallerPhone] = useState("+7 (916) 450-20-30");
@@ -64,6 +66,10 @@ export function TelephonySimulatorModal() {
 		() => `mango-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
 	);
 	const [durationSeconds, setDurationSeconds] = useState(45);
+	const [includeRecording, setIncludeRecording] = useState(true);
+	const [smsMessage, setSmsMessage] = useState(
+		"Здравствуйте, хочу записаться на приём к стоматологу на завтра.",
+	);
 	const [activeTab, setActiveTab] = useState<"builder" | "payload" | "history">(
 		"builder",
 	);
@@ -192,6 +198,26 @@ export function TelephonySimulatorModal() {
 			? `+${cleanTarget}`
 			: `+7${cleanTarget}`;
 
+		if (channelMode === "sms") {
+			return {
+				from: e164Caller,
+				to: e164Target,
+				message: smsMessage,
+				sms_id: `sms-${callId}`,
+				timestamp: Math.floor(Date.now() / 1000),
+			};
+		}
+
+		const sampleRecUrl = includeRecording
+			? provider === "mango"
+				? `https://records.mango-office.ru/${callId}.mp3`
+				: provider === "uis"
+					? `https://uis.app/recordings/${callId}.wav`
+					: provider === "asterisk"
+						? `https://pbx.clinic.local/monitor/${callId}.wav`
+						: `https://api.zadarma.com/v1/record/${callId}`
+			: undefined;
+
 		if (provider === "mango") {
 			return {
 				event:
@@ -208,10 +234,7 @@ export function TelephonySimulatorModal() {
 				call_start: Math.floor(Date.now() / 1000),
 				duration: callEvent === "ended" ? durationSeconds : 0,
 				talk_time: callEvent === "ended" ? durationSeconds : 0,
-				link:
-					callEvent === "ended"
-						? `https://records.mango-office.ru/${callId}.mp3`
-						: undefined,
+				link: callEvent === "ended" ? sampleRecUrl : undefined,
 			};
 		}
 
@@ -230,10 +253,7 @@ export function TelephonySimulatorModal() {
 				called_number: e164Target,
 				timestamp: Math.floor(Date.now() / 1000),
 				duration_seconds: callEvent === "ended" ? durationSeconds : 0,
-				recording_url:
-					callEvent === "ended"
-						? `https://uis.app/recordings/${callId}.wav`
-						: undefined,
+				recording_url: callEvent === "ended" ? sampleRecUrl : undefined,
 			};
 		}
 
@@ -252,10 +272,7 @@ export function TelephonySimulatorModal() {
 				to: e164Target,
 				billsec: callEvent === "ended" ? durationSeconds : 0,
 				timestamp: Math.floor(Date.now() / 1000),
-				record_url:
-					callEvent === "ended"
-						? `https://pbx.clinic.local/monitor/${callId}.wav`
-						: undefined,
+				record_url: callEvent === "ended" ? sampleRecUrl : undefined,
 			};
 		}
 
@@ -272,13 +289,20 @@ export function TelephonySimulatorModal() {
 			call_id: callId,
 			call_start: Math.floor(Date.now() / 1000),
 			duration: callEvent === "ended" ? durationSeconds : 0,
-			is_recorded: callEvent === "ended" ? 1 : 0,
-			link:
-				callEvent === "ended"
-					? `https://api.zadarma.com/v1/record/${callId}`
-					: undefined,
+			is_recorded: callEvent === "ended" && includeRecording ? 1 : 0,
+			link: callEvent === "ended" ? sampleRecUrl : undefined,
 		};
-	}, [provider, callEvent, callerPhone, targetDid, callId, durationSeconds]);
+	}, [
+		channelMode,
+		provider,
+		callEvent,
+		callerPhone,
+		targetDid,
+		callId,
+		durationSeconds,
+		includeRecording,
+		smsMessage,
+	]);
 
 	// Simulate call locally inside Telephony Store
 	const handleSimulateLocal = () => {
@@ -289,6 +313,16 @@ export function TelephonySimulatorModal() {
 				? `+7${cleanCaller.slice(1)}`
 				: `+7${cleanCaller}`;
 
+		const sampleRecUrl = includeRecording
+			? provider === "mango"
+				? `https://records.mango-office.ru/${callId}.mp3`
+				: provider === "uis"
+					? `https://uis.app/recordings/${callId}.wav`
+					: provider === "asterisk"
+						? `https://pbx.clinic.local/monitor/${callId}.wav`
+						: `https://api.zadarma.com/v1/record/${callId}`
+			: undefined;
+
 		triggerIncomingCall({
 			phone: e164Caller,
 			patientId: selectedPatientId,
@@ -298,6 +332,8 @@ export function TelephonySimulatorModal() {
 			timestamp: new Date().toISOString(),
 			status: callEvent,
 			clinicPhone: targetDid,
+			recordingUrl: sampleRecUrl,
+			durationSeconds: durationSeconds,
 		});
 
 		showToast(
@@ -311,7 +347,12 @@ export function TelephonySimulatorModal() {
 	const handleSendWebhook = async () => {
 		setIsSendingWebhook(true);
 		try {
-			const res = await fetch("/api/telephony/webhook", {
+			const endpoint =
+				channelMode === "sms"
+					? "/api/telephony/sms/webhook"
+					: "/api/telephony/webhook";
+
+			const res = await fetch(endpoint, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -334,7 +375,7 @@ export function TelephonySimulatorModal() {
 				// Fallback to local trigger so user sees the UI popup immediately even if server webhook auth is strict
 				handleSimulateLocal();
 			}
-		} catch (err) {
+		} catch (_err) {
 			showToast(
 				"Сервер недоступен онлайн. Вызов симулирован в клиенте локально.",
 				"info",
@@ -455,6 +496,34 @@ export function TelephonySimulatorModal() {
 				<div className="p-6 overflow-y-auto space-y-5 flex-1">
 					{activeTab === "builder" && (
 						<>
+							{/* Channel Mode Toggle: Voice Call vs Inbound SMS */}
+							<div className="flex items-center gap-2 p-1 rounded-xl bg-slate-900 border border-[var(--line,#334155)]">
+								<button
+									type="button"
+									onClick={() => setChannelMode("call")}
+									className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+										channelMode === "call"
+											? "bg-teal-600 text-white shadow"
+											: "text-slate-400 hover:text-slate-200"
+									}`}
+								>
+									<PhoneCall size={14} />
+									<span>Голосовой звонок (PBX Webhook)</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => setChannelMode("sms")}
+									className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+										channelMode === "sms"
+											? "bg-teal-600 text-white shadow"
+											: "text-slate-400 hover:text-slate-200"
+									}`}
+								>
+									<MessageSquare size={14} />
+									<span>Входящее SMS (SMS Webhook)</span>
+								</button>
+							</div>
+
 							{/* Quick Scenarios */}
 							<div>
 								<label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted,#94a3b8)] mb-2 flex items-center gap-1.5">
@@ -555,33 +624,48 @@ export function TelephonySimulatorModal() {
 									</div>
 								</div>
 
-								<div>
-									<label className="block text-xs font-semibold text-[var(--muted,#94a3b8)] mb-1.5">
-										Событие вызова (PBX Event):
-									</label>
-									<div className="grid grid-cols-3 gap-2">
-										{(
-											[
-												{ id: "ringing", label: "Звонит (Ringing)" },
-												{ id: "answered", label: "Отвечен" },
-												{ id: "ended", label: "Завершён" },
-											] as const
-										).map((ev) => (
-											<button
-												key={ev.id}
-												type="button"
-												onClick={() => setCallEvent(ev.id)}
-												className={`px-2 py-2 rounded-xl text-xs font-bold transition-all border text-center ${
-													callEvent === ev.id
-														? "bg-emerald-500/10 border-emerald-500 text-emerald-400"
-														: "bg-[var(--paper-soft,#1e293b)] border-[var(--line,#334155)] text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)]"
-												}`}
-											>
-												{ev.label}
-											</button>
-										))}
+								{channelMode === "call" ? (
+									<div>
+										<label className="block text-xs font-semibold text-[var(--muted,#94a3b8)] mb-1.5">
+											Событие вызова (PBX Event):
+										</label>
+										<div className="grid grid-cols-3 gap-2">
+											{(
+												[
+													{ id: "ringing", label: "Звонит (Ringing)" },
+													{ id: "answered", label: "Отвечен" },
+													{ id: "ended", label: "Завершён" },
+												] as const
+											).map((ev) => (
+												<button
+													key={ev.id}
+													type="button"
+													onClick={() => setCallEvent(ev.id)}
+													className={`px-2 py-2 rounded-xl text-xs font-bold transition-all border text-center ${
+														callEvent === ev.id
+															? "bg-emerald-500/10 border-emerald-500 text-emerald-400"
+															: "bg-[var(--paper-soft,#1e293b)] border-[var(--line,#334155)] text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)]"
+													}`}
+												>
+													{ev.label}
+												</button>
+											))}
+										</div>
 									</div>
-								</div>
+								) : (
+									<div>
+										<label className="block text-xs font-semibold text-[var(--muted,#94a3b8)] mb-1.5">
+											Текст SMS сообщения:
+										</label>
+										<textarea
+											value={smsMessage}
+											onChange={(e) => setSmsMessage(e.target.value)}
+											rows={2}
+											className="w-full px-3 py-2 rounded-xl bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] text-[var(--ink,#f8fafc)] text-xs focus:outline-none focus:ring-2 focus:ring-teal-500"
+											placeholder="Текст сообщения..."
+										/>
+									</div>
+								)}
 							</div>
 
 							{/* Patient Selection & Phone Configuration */}
@@ -671,6 +755,20 @@ export function TelephonySimulatorModal() {
 										/>
 									</div>
 								</div>
+
+								{channelMode === "call" && (
+									<div className="flex items-center gap-4 pt-1">
+										<label className="flex items-center gap-2 text-xs font-medium text-[var(--ink,#f8fafc)] cursor-pointer">
+											<input
+												type="checkbox"
+												checked={includeRecording}
+												onChange={(e) => setIncludeRecording(e.target.checked)}
+												className="rounded border-slate-700 text-teal-500 focus:ring-teal-500"
+											/>
+											<span>Прикрепить URL аудиозаписи звонка (Softphone Player)</span>
+										</label>
+									</div>
+								)}
 							</div>
 						</>
 					)}
@@ -680,7 +778,12 @@ export function TelephonySimulatorModal() {
 							<div className="flex items-center justify-between">
 								<span className="text-xs text-[var(--muted,#94a3b8)]">
 									Сформированный JSON вебхука для эндпоинта{" "}
-									<code>/api/telephony/webhook</code>:
+									<code>
+										{channelMode === "sms"
+											? "/api/telephony/sms/webhook"
+											: "/api/telephony/webhook"}
+									</code>
+									:
 								</span>
 								<button
 									type="button"

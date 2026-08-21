@@ -5,12 +5,18 @@ import {
 	Check,
 	CheckCircle2,
 	Clock,
+	MessageSquare,
 	PhoneCall,
 	UserCheck,
 	UserX,
 	XCircle,
 } from "lucide-react";
 import React, { useCallback } from "react";
+
+import {
+	generateAppointmentConfirmationMessage,
+	openWhatsAppChat,
+} from "../../store/telephonyStore";
 
 export type QuickActionStatus =
 	| "confirmed"
@@ -25,12 +31,16 @@ export interface AppointmentQuickActionsProps {
 	appointmentId: string;
 	currentStatus: Appointment["status"];
 	patientName: string;
+	patientPhone?: string | null | undefined;
+	doctorName?: string | null | undefined;
+	startsAt?: string | undefined;
 	appointmentHasOpenVisit?: boolean;
 	activeVisitLockedAppointmentStatuses?: Set<Appointment["status"]>;
 	onStatusChange: (
 		status: Appointment["status"],
 		noteAppend?: string,
 	) => Promise<void> | void;
+	onWhatsAppConfirm?: (() => void) | undefined;
 	disabled?: boolean;
 	compact?: boolean;
 	showLabels?: boolean;
@@ -40,9 +50,13 @@ export function AppointmentQuickActions({
 	appointmentId,
 	currentStatus,
 	patientName,
+	patientPhone,
+	doctorName,
+	startsAt,
 	appointmentHasOpenVisit = false,
 	activeVisitLockedAppointmentStatuses,
 	onStatusChange,
+	onWhatsAppConfirm,
 	disabled = false,
 	compact = false,
 	showLabels = true,
@@ -205,6 +219,31 @@ export function AppointmentQuickActions({
 					</button>
 				);
 			})}
+
+			{/* 1-Click WhatsApp confirmation trigger */}
+			{patientPhone && startsAt && currentStatus !== "confirmed" && (
+				<button
+					type="button"
+					onClick={(e) => {
+						e.stopPropagation();
+						const text = generateAppointmentConfirmationMessage({
+							patientName,
+							doctorName: doctorName ?? null,
+							appointmentStartsAt: startsAt,
+						});
+						openWhatsAppChat(patientPhone, text);
+						if (onWhatsAppConfirm) {
+							onWhatsAppConfirm();
+						}
+					}}
+					className="quick-action-pill min-h-[44px] sm:min-h-[36px] px-2 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer"
+					title={`Отправить подтверждение записи в WhatsApp (${patientName})`}
+					aria-label={`WhatsApp подтверждение: ${patientName}`}
+				>
+					<MessageSquare size={13} className="shrink-0 text-emerald-500" />
+					{showLabels && !compact && <span>WhatsApp</span>}
+				</button>
+			)}
 		</div>
 	);
 }

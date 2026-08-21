@@ -141,7 +141,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
 				{/* Header */}
 				<div className="flex items-center justify-between px-6 py-4 border-b border-[var(--line)] bg-[var(--paper-soft)]">
 					<div className="flex items-center gap-3">
-						<div className="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-500">
+						<div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[var(--teal-surface)] border border-[var(--line)] text-[var(--teal)]">
 							<Pill className="w-5 h-5" />
 						</div>
 						<div>
@@ -172,7 +172,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
 								<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
 									Выбор препаратов (максимум 3 на бланк):
 								</span>
-								<span className="text-xs font-semibold text-blue-500">
+								<span className="text-xs font-semibold text-[var(--teal)]">
 									Выбрано: {selectedDrugIds.length} / 3
 								</span>
 							</div>
@@ -187,8 +187,8 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
 											onClick={() => toggleDrug(drug.id)}
 											className={`flex items-start justify-between p-3 rounded-xl border text-left transition-all ${
 												isSelected
-													? "bg-blue-500/10 border-blue-500/40 text-[var(--ink)] shadow-sm"
-													: "bg-[var(--paper-soft)] border-[var(--line)] hover:border-blue-500/30 text-[var(--muted)] hover:text-[var(--ink)]"
+													? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--ink)] shadow-sm"
+													: "bg-[var(--paper-soft)] border-[var(--line)] hover:border-[var(--teal)] text-[var(--muted)] hover:text-[var(--ink)]"
 											}`}
 											data-testid={`drug-item-${drug.id}`}
 										>
@@ -201,7 +201,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
 														{drug.categoryLabel}
 													</span>
 												</div>
-												<span className="text-[11px] font-mono italic text-blue-600 dark:text-blue-400">
+												<span className="text-[11px] font-mono italic text-[var(--teal)]">
 													{drug.latinRp}
 												</span>
 												<span className="text-[11px] text-[var(--muted)] line-clamp-1">
@@ -211,7 +211,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
 											<div
 												className={`flex items-center justify-center w-5 h-5 rounded-md shrink-0 mt-0.5 border ${
 													isSelected
-														? "bg-blue-500 border-blue-500 text-white"
+														? "bg-[var(--teal-fill,var(--teal))] border-[var(--teal)] text-[var(--on-teal,#ffffff)]"
 														: "border-[var(--line)]"
 												}`}
 											>
@@ -314,14 +314,14 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="px-4 py-2 text-xs font-semibold rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-colors"
+							className="px-4 py-2 text-xs font-semibold rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] whitespace-nowrap shrink-0 transition-colors"
 						>
 							Закрыть
 						</button>
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="inline-flex items-center gap-2 px-5 py-2 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-md transition-colors"
+							className="inline-flex items-center gap-2 px-5 py-2 text-xs font-bold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:opacity-90 text-[var(--on-teal,#ffffff)] shadow-md transition-opacity"
 							data-testid="print-prescription-btn"
 						>
 							<Printer className="w-4 h-4" />

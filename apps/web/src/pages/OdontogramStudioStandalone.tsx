@@ -703,109 +703,92 @@ export const OdontogramStudioStandalone: React.FC = () => {
 							Сброс ({selectedTeeth.length})
 						</button>
 					)}
-
-					<div className="flex items-center gap-2 bg-[var(--odontogram-surface)] px-2.5 py-1 rounded-lg border border-[var(--odontogram-border)] font-mono text-[11px] shadow-xs shrink-0 ml-1">
-						<span className="text-[var(--odontogram-ink-muted)] font-sans font-bold">КПУ:</span>
-						<div className="flex items-center gap-1.5">
-							<span className="text-red-500 font-bold">К={kpu.k}</span>
-							<span className="text-teal-600 dark:text-teal-400 font-bold">П={kpu.p}</span>
-							<span className="text-[var(--odontogram-ink-muted)] font-bold">У={kpu.u}</span>
-							<span className="text-cyan-600 dark:text-cyan-400 font-black">Σ={kpu.total}</span>
-						</div>
-					</div>
 				</div>
-			</div>
 
-			{/* Fast Action Sub-Toolbar 2: Штамп-Кисть (Quick Stamp Brush Mode) */}
-			<div className="w-full px-4 sm:px-6 py-2 bg-[var(--odontogram-surface)] border-b border-[var(--odontogram-border)] flex items-center justify-between gap-2 text-xs overflow-x-auto scrollbar-none transition-colors duration-200">
-				<div className="flex items-center gap-1.5 shrink-0">
-					<div className="flex items-center gap-1 font-bold text-[var(--odontogram-ink)] mr-1 whitespace-nowrap">
-						<Paintbrush size={14} className={activeStamp ? "text-amber-500 animate-bounce" : "text-[var(--odontogram-ink-muted)]"} />
-						<span>Штамп-кисть:</span>
-					</div>
-
+				{/* 2. Rapid Stamps (Кисти быстрых состояний) */}
+				<div className="flex items-center gap-1.5 flex-wrap">
 					<button
 						type="button"
 						onClick={() => setActiveStamp(activeStamp === "Filled" ? null : "Filled")}
-						className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer min-h-[30px] ${
+						className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold transition-all cursor-pointer min-h-[34px] ${
 							activeStamp === "Filled"
 								? "bg-emerald-500 text-slate-950 ring-2 ring-emerald-400 shadow-md scale-105"
 								: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-emerald-500/50"
 						}`}
-						title="Кисть: Пломба (П) — кликайте по зубам для быстрой установки"
+						title="Кисть: Пломба — кликайте по зубам для быстрой установки"
 					>
 						<span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm" />
-						<span>Пломба (П)</span>
+						<span>Пломба</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setActiveStamp(activeStamp === "Caries" ? null : "Caries")}
-						className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer min-h-[30px] ${
+						className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold transition-all cursor-pointer min-h-[34px] ${
 							activeStamp === "Caries"
 								? "bg-red-500 text-white ring-2 ring-red-400 shadow-md scale-105"
 								: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-red-500/50"
 						}`}
-						title="Кисть: Кариес (К) — кликайте по зубам для быстрой установки"
+						title="Кисть: Кариес — кликайте по зубам для быстрой установки"
 					>
 						<span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm" />
-						<span>Кариес (К)</span>
+						<span>Кариес</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setActiveStamp(activeStamp === "Missing" ? null : "Missing")}
-						className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer min-h-[30px] ${
+						className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold transition-all cursor-pointer min-h-[34px] ${
 							activeStamp === "Missing"
 								? "bg-rose-600 text-white ring-2 ring-rose-400 shadow-md scale-105"
 								: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-rose-500/50"
 						}`}
-						title="Кисть: Удален (0) — кликайте по зубам для быстрой установки"
+						title="Кисть: Удален — кликайте по зубам для быстрой установки"
 					>
 						<span className="w-2.5 h-2.5 rounded-full bg-rose-600 shadow-sm" />
-						<span>Удален (0)</span>
+						<span>Удален</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setActiveStamp(activeStamp === "Crown" ? null : "Crown")}
-						className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer min-h-[30px] ${
+						className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold transition-all cursor-pointer min-h-[34px] ${
 							activeStamp === "Crown"
-								? "bg-blue-500 text-white ring-2 ring-blue-400 shadow-md scale-105"
-								: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-blue-500/50"
+								? "bg-indigo-600 text-white ring-2 ring-indigo-400 shadow-md scale-105"
+								: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-indigo-500/50"
 						}`}
-						title="Кисть: Коронка (Ц) — кликайте по зубам для быстрой установки"
+						title="Кисть: Коронка — кликайте по зубам для быстрой установки"
 					>
-						<span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm" />
-						<span>Коронка (Ц)</span>
+						<span className="w-2.5 h-2.5 rounded-full bg-indigo-600 shadow-sm" />
+						<span>Коронка</span>
 					</button>
 
 					<button
 						type="button"
-						onClick={() => setActiveStamp(activeStamp === "Implant" ? null : "Implant")}
-						className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer min-h-[30px] ${
-							activeStamp === "Implant"
+						onClick={() => setActiveStamp(activeStamp === "Planned_Implant" ? null : "Planned_Implant")}
+						className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold transition-all cursor-pointer min-h-[34px] ${
+							activeStamp === "Planned_Implant"
 								? "bg-cyan-500 text-slate-950 ring-2 ring-cyan-400 shadow-md scale-105"
 								: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-cyan-500/50"
 						}`}
-						title="Кисть: Имплант (И) — кликайте по зубам для быстрой установки"
+						title="Кисть: Имплантат — кликайте по зубам для быстрой установки"
 					>
 						<span className="w-2.5 h-2.5 rounded-full bg-cyan-500 shadow-sm" />
-						<span>Имплант (И)</span>
+						<span>Имплантат</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setActiveStamp(activeStamp === "Pulpitis" ? null : "Pulpitis")}
-						className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-bold transition-all cursor-pointer min-h-[30px] ${
+						className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold transition-all cursor-pointer min-h-[34px] ${
 							activeStamp === "Pulpitis"
-								? "bg-purple-500 text-white ring-2 ring-purple-400 shadow-md scale-105"
+								? "bg-purple-600 text-white ring-2 ring-purple-400 shadow-md scale-105"
 								: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] hover:border-purple-500/50"
 						}`}
-						title="Кисть: Пульпит (Ф) — кликайте по зубам для быстрой установки"
+						title="Кисть: Пульпит — кликайте по зубам для быстрой установки"
 					>
-						<span className="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-sm" />
-						<span>Пульпит (Ф)</span>
+						<span className="w-2.5 h-2.5 rounded-full bg-purple-600 shadow-sm" />
+						<span>Пульпит</span>
 					</button>
 
 					<button
@@ -977,10 +960,10 @@ export const OdontogramStudioStandalone: React.FC = () => {
 				}}
 			/>
 
-			{/* Footer Help & Hotkeys Bar */}
-			<footer className="w-full px-6 py-3 bg-[var(--odontogram-paper)] border-t border-[var(--odontogram-border-subtle)] flex flex-wrap items-center justify-between gap-4 text-xs text-[var(--odontogram-ink-muted)] transition-colors duration-200">
-				<div className="flex items-center gap-3 flex-wrap">
-					<span className="font-semibold text-[var(--odontogram-ink)]">Быстрые клавиши:</span>
+			{/* Footer Help & Standards Bar */}
+			<footer className="w-full px-4 sm:px-6 py-3 bg-[var(--odontogram-paper)] border-t border-[var(--odontogram-border-subtle)] flex flex-wrap items-center justify-between gap-4 text-xs text-[var(--odontogram-ink-muted)] transition-colors duration-200">
+				<div className="hidden md:flex items-center gap-2.5 flex-wrap">
+					<span className="font-semibold text-[var(--odontogram-ink)]">Горячие клавиши:</span>
 					<span className="px-2 py-0.5 rounded bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] text-[var(--odontogram-ink)] font-mono">
 						←↑→↓ / Tab
 					</span>

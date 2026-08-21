@@ -5,6 +5,7 @@ export * from "./utils/mdlpDataMatrix.js";
 export * from "./sanpin.js";
 export * from "./legal/legalContractsAndConsents.js";
 export * from "./documents/index.js";
+export * from "./pediatricDentition.js";
 
 import {
 	dailyDentistDiary037uPayloadSchema,

@@ -468,8 +468,16 @@
 .crown-restoration-accents,
 .gold-marginal-burnish-layer,
 .root-canal-obturation-layer,
-.gingival-recession-line {
+.gingival-recession-line,
+.pediatric-root-resorption-layer,
+.resorption-hatch-area,
+.resorption-boundary-line {
 	pointer-events: none;
+}
+
+.resorption-boundary-line {
+	stroke: var(--odontogram-border-strong, #64748b);
+	stroke-dasharray: 2.5 2;
 }
 
 .periodontal-furcation-markers {
