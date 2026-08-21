@@ -1,8 +1,10 @@
-import { Award, FileText } from "lucide-react";
+import { Award, Check, Copy, FileText } from "lucide-react";
 import type React from "react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols043";
+import { showToast } from "../GlobalToast";
 import type { ToothData, ToothState } from "./ToothChart";
+import "./odontogram.css";
 
 export type GostToothAbbreviation =
 	| "К"
@@ -261,7 +263,8 @@ export function getToothStateFromHotkey(
 		}
 	}
 
-	// Single key mappings
+	// Single key mappings:
+	// 1-Click fast keys: К (Caries), П (Filled), Е (Periodontitis), Ф (Pulpitis), Ц (Crown), И (Implant), 0 (Missing), З (Healthy)
 	switch (k) {
 		case "к":
 		case "k":
@@ -269,12 +272,17 @@ export function getToothStateFromHotkey(
 			return "Caries";
 		case "п":
 		case "p":
+		case "g":
 		case "f":
 			return "Filled";
+		case "ф":
 		case "u":
 		case "г":
+		case "a":
 			return "Pulpitis";
+		case "е":
 		case "e":
+		case "t":
 		case "у":
 			return "Periodontitis";
 		case "w":
@@ -406,6 +414,52 @@ export function calculateDmft(teethData: ToothData[]): DmftCalculationResult {
 	};
 }
 
+/**
+ * Экспорт зубной формулы по ГОСТ 043/у в структурированный текстовый протокол визита / дневник приёма.
+ */
+export function formatOdontogramTo043ProtocolText(
+	teethData: ToothData[],
+	pediatricMode = false,
+): string {
+	const map = new Map<number, ToothData>();
+	for (const t of teethData) {
+		map.set(t.toothNumber, t);
+	}
+
+	const formatToothStr = (num: number) => {
+		const t = map.get(num);
+		const abbr = getGostAbbreviation(t?.state);
+		const surfs =
+			t?.surfaces && t.surfaces.length > 0 ? `(${t.surfaces.join("")})` : "";
+		return `${num}:${abbr}${surfs}`;
+	};
+
+	const dmft = calculateDmft(teethData);
+
+	if (pediatricMode) {
+		const topPed = UPPER_TEETH_PEDIATRIC.map(formatToothStr).join(" ");
+		const bottomPed = LOWER_TEETH_PEDIATRIC.map(formatToothStr).join(" ");
+		return [
+			"Зубная формула 043/у (Молочный прикус):",
+			`Верх: ${topPed}`,
+			`Низ:  ${bottomPed}`,
+			`Индекс кпу = ${dmft.pediatricKpu.total} (к:${dmft.pediatricKpu.k}, п:${dmft.pediatricKpu.p}, у:${dmft.pediatricKpu.u})`,
+		].join("\n");
+	}
+
+	const topQ1 = UPPER_TEETH_ADULT.slice(0, 8).map(formatToothStr).join(" ");
+	const topQ2 = UPPER_TEETH_ADULT.slice(8, 16).map(formatToothStr).join(" ");
+	const bottomQ4 = LOWER_TEETH_ADULT.slice(0, 8).map(formatToothStr).join(" ");
+	const bottomQ3 = LOWER_TEETH_ADULT.slice(8, 16).map(formatToothStr).join(" ");
+
+	return [
+		"Зубная формула (Форма 043/у):",
+		`Верхняя челюсть: ${topQ1} | ${topQ2}`,
+		`Нижняя челюсть:  ${bottomQ4} | ${bottomQ3}`,
+		`Индекс КПУ = ${dmft.dmftTotal} (К:${dmft.decayed}, П:${dmft.filled}, У:${dmft.missing}) — ${dmft.severityLabel}`,
+	].join("\n");
+}
+
 export interface ClassicGostOdontogramProps {
 	teethData: ToothData[];
 	pediatricMode?: boolean | undefined;
@@ -414,6 +468,7 @@ export interface ClassicGostOdontogramProps {
 	bottomTeeth?: number[] | undefined;
 	selectedTeeth?: number[] | undefined;
 	onToothClick: (num: number, rect: DOMRect, surface?: string) => void;
+	onQuickStateChange?: ((targets: number[], state: ToothState) => void) | undefined;
 	useSurfaces?: boolean | undefined;
 	hideHeader?: boolean | undefined;
 	hideLegend?: boolean | undefined;
@@ -428,6 +483,7 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 	bottomTeeth: customBottomTeeth,
 	selectedTeeth = [],
 	onToothClick,
+	onQuickStateChange,
 	useSurfaces = true,
 	hideHeader = false,
 	hideLegend = false,
@@ -468,6 +524,27 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 		[teethData],
 	);
 
+	const [isCopied, setIsCopied] = useState(false);
+
+	const handleCopyProtocolText = () => {
+		const text = formatOdontogramTo043ProtocolText(teethData, pediatricMode);
+		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+			navigator.clipboard.writeText(text).then(
+				() => {
+					setIsCopied(true);
+					showToast(
+						"Формула 043/у скопирована для протокола визита",
+						"success",
+					);
+					setTimeout(() => setIsCopied(false), 2000);
+				},
+				() => {
+					showToast("Не удалось скопировать в буфер обмена", "error");
+				},
+			);
+		}
+	};
+
 	const renderToothCell = (toothNumber: number, isUpper: boolean) => {
 		const tooth = toothStateMap.get(toothNumber);
 		const state: ToothState = tooth ? tooth.state : "Healthy";
@@ -500,22 +577,55 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 						e.preventDefault();
 						const rect = e.currentTarget.getBoundingClientRect();
 						onToothClick(toothNumber, rect);
+						return;
+					}
+
+					// Arrow key navigation across dental arches
+					const navKeys: Record<string, "left" | "right" | "up" | "down" | "home" | "end"> = {
+						ArrowLeft: "left",
+						ArrowRight: "right",
+						ArrowUp: "up",
+						ArrowDown: "down",
+						Home: "home",
+						End: "end",
+					};
+
+					const dir = navKeys[e.key];
+					if (dir) {
+						e.preventDefault();
+						const nextTooth = getNextFocusedTooth(
+							toothNumber,
+							dir,
+							pediatricMode,
+						);
+						const nextEl = document.querySelector<HTMLButtonElement>(
+							`[data-tooth-id="${nextTooth}"]`,
+						);
+						nextEl?.focus();
+						return;
+					}
+
+					// 1-Click fast keys (К, П, Е, Ф, Ц, И, 0, З)
+					const quickState = getToothStateFromHotkey(e.key);
+					if (quickState && onQuickStateChange) {
+						e.preventDefault();
+						onQuickStateChange([toothNumber], quickState);
 					}
 				}}
-				className={`relative flex flex-col items-center justify-between min-w-[44px] sm:min-w-[50px] p-1.5 sm:p-2 rounded-lg border transition-all duration-150 select-none text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/50 ${
+				className={`relative flex flex-col items-center justify-between min-w-[44px] sm:min-w-[50px] min-h-[56px] p-1.5 sm:p-2 rounded-xl border transition-all duration-150 select-none text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/50 ${
 					isSelected
-						? "bg-indigo-50 dark:bg-indigo-950/60 border-indigo-500 shadow-md ring-2 ring-indigo-500/40"
-						: "bg-white dark:bg-zinc-900/70 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 border-zinc-200 dark:border-zinc-800"
+						? "bg-indigo-500/15 border-indigo-500 shadow-md ring-2 ring-indigo-500/40"
+						: "bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] border-[var(--odontogram-border-subtle)] shadow-xs"
 				}`}
 			>
 				{/* FDI Tooth Number */}
-				<span className="text-[11px] sm:text-xs font-black tracking-tight text-zinc-900 dark:text-zinc-100">
+				<span className="text-[11px] sm:text-xs font-black tracking-tight text-[var(--odontogram-ink)] font-mono">
 					{toothNumber}
 				</span>
 
 				{/* GOST Code Badge */}
 				<span
-					className={`my-1 inline-flex items-center justify-center min-w-[26px] sm:min-w-[30px] h-[22px] sm:h-[24px] px-1 rounded font-black text-xs sm:text-sm border transition-colors ${gost.badgeBg} ${gost.badgeText} ${gost.badgeBorder}`}
+					className={`my-1 inline-flex items-center justify-center min-w-[28px] sm:min-w-[32px] h-[24px] sm:h-[26px] px-1.5 rounded font-black text-xs sm:text-sm border transition-colors shadow-xs ${gost.badgeBg} ${gost.badgeText} ${gost.badgeBorder}`}
 				>
 					{gost.abbr}
 				</span>
@@ -524,14 +634,14 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 				<div className="flex flex-wrap items-center justify-center gap-0.5 min-h-[14px]">
 					{useSurfaces && surfaces && surfaces.length > 0 ? (
 						<span
-							className="text-[9px] sm:text-[10px] font-bold px-1 py-0.2 rounded bg-teal-500/20 text-teal-800 dark:text-teal-200 border border-teal-500/30"
+							className="text-[9px] sm:text-[10px] font-bold px-1 py-0.2 rounded bg-teal-500/20 text-teal-800 dark:text-teal-200 border border-teal-500/30 font-mono"
 							title={`Поверхности: ${surfaces.join(", ")}`}
 						>
 							{surfaces.join("")}
 						</span>
 					) : hasCanals ? (
 						<span
-							className="text-[9px] sm:text-[10px] font-bold px-1 py-0.2 rounded bg-purple-500/20 text-purple-700 dark:text-purple-300"
+							className="text-[9px] sm:text-[10px] font-bold px-1 py-0.2 rounded bg-purple-500/20 text-purple-700 dark:text-purple-300 font-mono"
 							title="Заполнены корневые каналы"
 						>
 							{
@@ -541,7 +651,7 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 							к
 						</span>
 					) : (
-						<span className="text-[9px] text-zinc-400 dark:text-zinc-600">
+						<span className="text-[9px] text-[var(--odontogram-ink-muted)]">
 							{isUpper ? "в/ч" : "н/ч"}
 						</span>
 					)}
@@ -552,17 +662,17 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 
 	return (
 		<div
-			className={`flex flex-col gap-4 w-full p-4 sm:p-5 bg-white dark:bg-zinc-950/60 backdrop-blur-md rounded-2xl border border-zinc-200/80 dark:border-zinc-800 shadow-xl text-zinc-900 dark:text-zinc-100 ${className}`.trim()}
+			className={`flex flex-col gap-4 w-full p-4 sm:p-5 bg-[var(--odontogram-paper)] backdrop-blur-md rounded-2xl border border-[var(--odontogram-border)] shadow-xl text-[var(--odontogram-ink)] ${className}`.trim()}
 		>
 			{!hideHeader && (
-				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-200/60 dark:border-zinc-800/80">
+				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--odontogram-border-subtle)]">
 					<div className="flex items-center gap-2.5">
 						<div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20">
 							<FileText size={18} />
 						</div>
 						<div>
 							<div className="flex items-center gap-2">
-								<h2 className="text-base font-bold tracking-tight">
+								<h2 className="text-base font-bold tracking-tight text-[var(--odontogram-ink)]">
 									Зубная формула (ГОСТ / Форма 043/у)
 								</h2>
 								{pediatricMode && (
@@ -571,31 +681,47 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 									</span>
 								)}
 							</div>
-							<p className="text-xs text-zinc-500 dark:text-zinc-400">
+							<p className="text-xs text-[var(--odontogram-ink-muted)]">
 								Официальная медицинская карта стоматологического
 								больного (Приказ МЗ РФ №834н)
 							</p>
 						</div>
 					</div>
 
-					{/* DMFT / КПУ Index Score Card */}
-					<div className="flex items-center gap-3 px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs">
-						<Award size={16} className="text-amber-500 shrink-0" />
-						<div className="flex items-center gap-2">
-							<span className="font-semibold text-zinc-600 dark:text-zinc-400">
-								Индекс КПУ:
-							</span>
-							<strong className="font-black text-sm text-zinc-900 dark:text-zinc-100">
-								{dmftStats.dmftTotal}
-							</strong>
-							<span className="text-[11px] text-zinc-500 dark:text-zinc-400">
-								(К={dmftStats.decayed}, П={dmftStats.filled}, У=
-								{dmftStats.missing})
+					{/* Actions: Export to Form 043 Protocol & DMFT Score Card */}
+					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							onClick={handleCopyProtocolText}
+							title="Скопировать формулу 043/у в текстовый протокол визита / дневник"
+							className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--odontogram-surface)] hover:bg-[var(--odontogram-surface-hover)] border border-[var(--odontogram-border-subtle)] text-[var(--odontogram-ink)] shadow-xs transition-colors cursor-pointer"
+						>
+							{isCopied ? (
+								<Check size={14} className="text-emerald-500" />
+							) : (
+								<Copy size={14} className="text-[var(--odontogram-ink-muted)]" />
+							)}
+							<span>{isCopied ? "Скопировано!" : "В протокол 043/у"}</span>
+						</button>
+
+						<div className="flex items-center gap-3 px-3 py-1.5 rounded-xl bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)] text-xs">
+							<Award size={16} className="text-amber-500 shrink-0" />
+							<div className="flex items-center gap-2">
+								<span className="font-semibold text-[var(--odontogram-ink-muted)]">
+									Индекс КПУ:
+								</span>
+								<strong className="font-black text-sm text-[var(--odontogram-ink)]">
+									{dmftStats.dmftTotal}
+								</strong>
+								<span className="text-[11px] text-[var(--odontogram-ink-muted)]">
+									(К={dmftStats.decayed}, П={dmftStats.filled}, У=
+									{dmftStats.missing})
+								</span>
+							</div>
+							<span className="ml-1 hidden md:inline-block font-bold text-[11px] text-[var(--odontogram-ink-muted)]">
+								· {dmftStats.severityLabel}
 							</span>
 						</div>
-						<span className="ml-1 hidden md:inline-block font-bold text-[11px] text-zinc-600 dark:text-zinc-400">
-							· {dmftStats.severityLabel}
-						</span>
 					</div>
 				</div>
 			)}
@@ -605,16 +731,16 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 				<div className="min-w-max flex flex-col gap-3 mx-auto">
 					{/* UPPER JAW (Maxilla / Верхняя челюсть) */}
 					<div className="flex flex-col gap-1.5">
-						<div className="flex items-center justify-between text-xs font-bold text-zinc-500 dark:text-zinc-400 px-1">
+						<div className="flex items-center justify-between text-xs font-bold text-[var(--odontogram-ink-muted)] px-1">
 							<span>Правая сторона (18 → 11)</span>
-							<span className="font-extrabold text-zinc-700 dark:text-zinc-300">
+							<span className="font-extrabold text-[var(--odontogram-ink)]">
 								Верхняя челюсть (Maxilla)
 							</span>
 							<span>Левая сторона (21 → 28)</span>
 						</div>
 						<div className="flex items-center gap-2">
 							{/* Quadrant 1 */}
-							<div className="flex items-center gap-1 bg-zinc-100/40 dark:bg-zinc-900/40 p-1.5 rounded-xl border border-zinc-200/50 dark:border-zinc-800/50">
+							<div className="flex items-center gap-1 bg-[var(--odontogram-surface)] p-1.5 rounded-xl border border-[var(--odontogram-border-subtle)]">
 								{topQ1.map((num) => renderToothCell(num, true))}
 							</div>
 
@@ -625,7 +751,7 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 							/>
 
 							{/* Quadrant 2 */}
-							<div className="flex items-center gap-1 bg-zinc-100/40 dark:bg-zinc-900/40 p-1.5 rounded-xl border border-zinc-200/50 dark:border-zinc-800/50">
+							<div className="flex items-center gap-1 bg-[var(--odontogram-surface)] p-1.5 rounded-xl border border-[var(--odontogram-border-subtle)]">
 								{topQ2.map((num) => renderToothCell(num, true))}
 							</div>
 						</div>
@@ -633,18 +759,18 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 
 					{/* Occlusal Plane Cross Divider */}
 					<div className="flex items-center gap-3 my-1">
-						<div className="h-[1.5px] flex-1 bg-gradient-to-r from-transparent via-zinc-300 dark:via-zinc-700 to-transparent" />
-						<span className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+						<div className="h-[1.5px] flex-1 bg-gradient-to-r from-transparent via-[var(--odontogram-border-strong)] to-transparent" />
+						<span className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--odontogram-ink-muted)]">
 							Окклюзионная плоскость
 						</span>
-						<div className="h-[1.5px] flex-1 bg-gradient-to-r from-transparent via-zinc-300 dark:via-zinc-700 to-transparent" />
+						<div className="h-[1.5px] flex-1 bg-gradient-to-r from-transparent via-[var(--odontogram-border-strong)] to-transparent" />
 					</div>
 
 					{/* LOWER JAW (Mandible / Нижняя челюсть) */}
 					<div className="flex flex-col gap-1.5">
 						<div className="flex items-center gap-2">
 							{/* Quadrant 4 */}
-							<div className="flex items-center gap-1 bg-zinc-100/40 dark:bg-zinc-900/40 p-1.5 rounded-xl border border-zinc-200/50 dark:border-zinc-800/50">
+							<div className="flex items-center gap-1 bg-[var(--odontogram-surface)] p-1.5 rounded-xl border border-[var(--odontogram-border-subtle)]">
 								{bottomQ4.map((num) =>
 									renderToothCell(num, false),
 								)}
@@ -657,15 +783,15 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 							/>
 
 							{/* Quadrant 3 */}
-							<div className="flex items-center gap-1 bg-zinc-100/40 dark:bg-zinc-900/40 p-1.5 rounded-xl border border-zinc-200/50 dark:border-zinc-800/50">
+							<div className="flex items-center gap-1 bg-[var(--odontogram-surface)] p-1.5 rounded-xl border border-[var(--odontogram-border-subtle)]">
 								{bottomQ3.map((num) =>
 									renderToothCell(num, false),
 								)}
 							</div>
 						</div>
-						<div className="flex items-center justify-between text-xs font-bold text-zinc-500 dark:text-zinc-400 px-1">
+						<div className="flex items-center justify-between text-xs font-bold text-[var(--odontogram-ink-muted)] px-1">
 							<span>Правая сторона (48 → 41)</span>
-							<span className="font-extrabold text-zinc-700 dark:text-zinc-300">
+							<span className="font-extrabold text-[var(--odontogram-ink)]">
 								Нижняя челюсть (Mandible)
 							</span>
 							<span>Левая сторона (31 → 38)</span>
@@ -675,26 +801,26 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 			</div>
 
 			{!hideLegend && (
-				<div className="flex flex-wrap items-center justify-center gap-2 pt-2 border-t border-zinc-200/60 dark:border-zinc-800/80 text-[11px]">
-					<span className="font-semibold text-zinc-500 dark:text-zinc-400 mr-1">
+				<div className="flex flex-wrap items-center justify-center gap-2 pt-2 border-t border-[var(--odontogram-border-subtle)] text-[11px]">
+					<span className="font-semibold text-[var(--odontogram-ink-muted)] mr-1">
 						Обозначения:
 					</span>
 					{Object.entries(GOST_TOOTH_STATES).map(
 						([stateKey, meta]) => (
 							<span
 								key={stateKey}
-								className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800"
+								className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)]"
 							>
 								<strong
 									className={`font-black ${meta.colorClass}`}
 								>
 									{meta.abbr}
 								</strong>
-								<span className="text-zinc-600 dark:text-zinc-400">
+								<span className="text-[var(--odontogram-ink)] font-medium">
 									{meta.nameRu}
 								</span>
 							</span>
-						),
+						)
 					)}
 				</div>
 			)}

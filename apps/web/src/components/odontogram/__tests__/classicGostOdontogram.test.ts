@@ -4,6 +4,7 @@ import {
 	ALL_ADULT_TEETH,
 	ALL_PEDIATRIC_TEETH,
 	calculateDmft,
+	formatOdontogramTo043ProtocolText,
 	getGostAbbreviation,
 	getNextFocusedTooth,
 	getToothStateFromHotkey,
@@ -163,43 +164,51 @@ describe("Classic GOST 043/u — Excel-Speed Keyboard Navigation Engine", () => 
 });
 
 describe("Classic GOST 043/u — Single-Key & Sequence Hotkey Parser", () => {
-	test("Распознавание одиночных русских и английских горячих клавиш", () => {
-		// Кариес (К / k / c)
+	test("Распознавание одиночных русских и английских горячих клавиш (1-Click Scheme)", () => {
+		// 1-Click Fast Keys: К (Caries), П (Filled), Е (Periodontitis), Ф (Pulpitis), Ц (Crown), И (Implant), 0 (Missing), З (Healthy)
 		assert.equal(getToothStateFromHotkey("к"), "Caries");
 		assert.equal(getToothStateFromHotkey("К"), "Caries");
 		assert.equal(getToothStateFromHotkey("k"), "Caries");
 		assert.equal(getToothStateFromHotkey("c"), "Caries");
 
-		// Пломба (П / p / f)
 		assert.equal(getToothStateFromHotkey("п"), "Filled");
+		assert.equal(getToothStateFromHotkey("П"), "Filled");
 		assert.equal(getToothStateFromHotkey("p"), "Filled");
+		assert.equal(getToothStateFromHotkey("g"), "Filled");
 		assert.equal(getToothStateFromHotkey("f"), "Filled");
 
-		// Пульпит (u / г)
+		assert.equal(getToothStateFromHotkey("ф"), "Pulpitis");
+		assert.equal(getToothStateFromHotkey("Ф"), "Pulpitis");
 		assert.equal(getToothStateFromHotkey("u"), "Pulpitis");
 		assert.equal(getToothStateFromHotkey("г"), "Pulpitis");
+		assert.equal(getToothStateFromHotkey("a"), "Pulpitis");
 
-		// Периодонтит (e / у)
+		assert.equal(getToothStateFromHotkey("е"), "Periodontitis");
+		assert.equal(getToothStateFromHotkey("Е"), "Periodontitis");
 		assert.equal(getToothStateFromHotkey("e"), "Periodontitis");
+		assert.equal(getToothStateFromHotkey("t"), "Periodontitis");
 		assert.equal(getToothStateFromHotkey("у"), "Periodontitis");
 
-		// Коронка (w / ц)
-		assert.equal(getToothStateFromHotkey("w"), "Crown");
 		assert.equal(getToothStateFromHotkey("ц"), "Crown");
+		assert.equal(getToothStateFromHotkey("Ц"), "Crown");
+		assert.equal(getToothStateFromHotkey("w"), "Crown");
 
-		// Имплантат (и / i / b)
 		assert.equal(getToothStateFromHotkey("и"), "Implant");
+		assert.equal(getToothStateFromHotkey("И"), "Implant");
 		assert.equal(getToothStateFromHotkey("i"), "Implant");
 		assert.equal(getToothStateFromHotkey("b"), "Implant");
 
-		// Отсутствует (0 / m / ь / o / о)
 		assert.equal(getToothStateFromHotkey("0"), "Missing");
 		assert.equal(getToothStateFromHotkey("m"), "Missing");
 		assert.equal(getToothStateFromHotkey("ь"), "Missing");
+		assert.equal(getToothStateFromHotkey("o"), "Missing");
+		assert.equal(getToothStateFromHotkey("о"), "Missing");
 
-		// Здоров (з / h / р / z)
 		assert.equal(getToothStateFromHotkey("з"), "Healthy");
+		assert.equal(getToothStateFromHotkey("З"), "Healthy");
 		assert.equal(getToothStateFromHotkey("h"), "Healthy");
+		assert.equal(getToothStateFromHotkey("р"), "Healthy");
+		assert.equal(getToothStateFromHotkey("z"), "Healthy");
 	});
 
 	test("Распознавание двухбуквенных последовательностей (Пт, Кр, Ип, Pt)", () => {
@@ -308,3 +317,44 @@ describe("Classic GOST 043/u — DMFT / КПУ Calculator ($КПУ = К + П + �
 		assert.equal(result.pediatricKpu.total, 4);
 	});
 });
+
+describe("Classic GOST 043/u — Visit Protocol / EMR Text Export", () => {
+	test("Экспорт постоянного прикуса формирует структурированный протокол 043/у с КПУ", () => {
+		const sampleTeeth: ToothData[] = [
+			{ toothNumber: 16, state: "Caries", surfaces: ["M", "O", "D"] },
+			{ toothNumber: 15, state: "Pulpitis" },
+			{ toothNumber: 21, state: "Filled", surfaces: ["V"] },
+			{ toothNumber: 18, state: "Missing" },
+			{ toothNumber: 48, state: "Missing" },
+		];
+
+		const text = formatOdontogramTo043ProtocolText(sampleTeeth, false);
+
+		assert.ok(text.includes("Зубная формула (Форма 043/у):"));
+		assert.ok(text.includes("16:К(MOD)"));
+		assert.ok(text.includes("15:Пт"));
+		assert.ok(text.includes("21:П(V)"));
+		assert.ok(text.includes("18:0"));
+		assert.ok(text.includes("48:0"));
+		assert.ok(text.includes("Индекс КПУ = 5"));
+		assert.ok(text.includes("К:2, П:1, У:2"));
+	});
+
+	test("Экспорт молочного прикуса формирует протокол с детским индексом кпу", () => {
+		const pedTeeth: ToothData[] = [
+			{ toothNumber: 55, state: "Caries", surfaces: ["O"] },
+			{ toothNumber: 65, state: "Filled" },
+			{ toothNumber: 75, state: "Missing" },
+		];
+
+		const text = formatOdontogramTo043ProtocolText(pedTeeth, true);
+
+		assert.ok(text.includes("Зубная формула 043/у (Молочный прикус):"));
+		assert.ok(text.includes("55:К(O)"));
+		assert.ok(text.includes("65:П"));
+		assert.ok(text.includes("75:0"));
+		assert.ok(text.includes("Индекс кпу = 3"));
+		assert.ok(text.includes("к:1, п:1, у:1"));
+	});
+});
+
