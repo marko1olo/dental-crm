@@ -1,0 +1,1006 @@
+import type { Appointment, Dashboard, Patient } from "@dental/shared";
+import {
+	AlertTriangle,
+	Calendar,
+	Check,
+	Clock,
+	Plus,
+	Search,
+	Sparkles,
+	User,
+	UserPlus,
+	X,
+} from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { actionFailureToast } from "../../lib/panelStateText";
+import { logger } from "../../utils/logger";
+import { fetchWithHandling } from "../../utils/networkUtils";
+import {
+	matchesPatientSearch,
+	normalizeCyrillicText,
+	normalizePhoneToNational,
+} from "../../utils/patientSearchUtils";
+import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
+import { showToast } from "../GlobalToast";
+
+export interface QuickBookingSlotInfo {
+	dateKey?: string | undefined;
+	startTime?: string | undefined;
+	startsAt?: string | undefined;
+	endsAt?: string | undefined;
+	doctorUserId?: string | null | undefined;
+	chairId?: string | null | undefined;
+	durationMinutes?: number | undefined;
+}
+
+export interface QuickBookingDrawerProps {
+	isOpen: boolean;
+	onClose: () => void;
+	initialSlot?: QuickBookingSlotInfo | null | undefined;
+	dashboard?: Dashboard | undefined;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+	auth?: any;
+	onAppointmentCreated?: ((appointment: Appointment) => void) | undefined;
+	loadDashboard?: (() => Promise<void>) | undefined;
+	setDashboard?: ((dashboard: Dashboard) => void) | undefined;
+	toDateTimeLocalValue?:
+		| ((value: string, timeZone?: string | null) => string)
+		| undefined;
+	fromDateTimeLocalValue?:
+		| ((value: string, timeZone?: string | null) => string)
+		| undefined;
+}
+
+const COMMON_REASONS = [
+	"Первичный",
+	"Осмотр",
+	"Кариес",
+	"Пульпит",
+	"Профгигиена",
+	"Консультация",
+	"Удаление",
+	"Коронка",
+	"Имплантация",
+	"Острая боль",
+];
+
+const COMMON_DURATIONS = [15, 30, 45, 60, 90, 120];
+
+export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
+	const {
+		isOpen,
+		onClose,
+		initialSlot,
+		dashboard,
+		auth,
+		onAppointmentCreated,
+		loadDashboard,
+		setDashboard,
+		toDateTimeLocalValue,
+		fromDateTimeLocalValue,
+	} = props;
+
+	const timezone = dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow";
+
+	const toLocal = useCallback(
+		(iso: string) => {
+			if (typeof toDateTimeLocalValue === "function") {
+				return toDateTimeLocalValue(iso, timezone);
+			}
+			const parsed = new Date(iso);
+			if (Number.isNaN(parsed.getTime())) return "";
+			return parsed.toISOString().slice(0, 16);
+		},
+		[toDateTimeLocalValue, timezone],
+	);
+
+	const fromLocal = useCallback(
+		(local: string) => {
+			if (typeof fromDateTimeLocalValue === "function") {
+				return fromDateTimeLocalValue(local, timezone);
+			}
+			const parsed = new Date(local);
+			if (Number.isNaN(parsed.getTime())) return new Date().toISOString();
+			return parsed.toISOString();
+		},
+		[fromDateTimeLocalValue, timezone],
+	);
+
+	// Form states
+	const [patientId, setPatientId] = useState<string>("");
+	const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+	const [doctorUserId, setDoctorUserId] = useState<string>("");
+	const [assistantUserId, setAssistantUserId] = useState<string>("");
+	const [chairId, setChairId] = useState<string>("");
+	const [startsAtLocal, setStartsAtLocal] = useState<string>("");
+	const [durationMinutes, setDurationMinutes] = useState<number>(30);
+	const [reason, setReason] = useState<string>("Осмотр");
+	const [comment, setComment] = useState<string>("");
+	const [status, setStatus] = useState<Appointment["status"]>("planned");
+
+	// Typeahead patient search
+	const [searchQuery, setSearchQuery] = useState<string>("");
+	const [isTypeaheadOpen, setIsTypeaheadOpen] = useState<boolean>(false);
+	const [highlightedIndex, setHighlightedIndex] = useState<number>(0);
+	const searchInputRef = useRef<HTMLInputElement>(null);
+
+	// Inline new patient creation
+	const [showInlineNewPatient, setShowInlineNewPatient] = useState<boolean>(false);
+	const [newPatientFullName, setNewPatientFullName] = useState<string>("");
+	const [newPatientPhone, setNewPatientPhone] = useState<string>("");
+	const [newPatientBirthDate, setNewPatientBirthDate] = useState<string>("");
+	const [isCreatingPatient, setIsCreatingPatient] = useState<boolean>(false);
+
+	// Submission state
+	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+	const [submitError, setSubmitError] = useState<string | null>(null);
+
+	const staff = dashboard?.clinicSettings?.staff ?? [];
+	const doctors = useMemo(
+		() => staff.filter((m) => m.active && (m.role === "doctor" || m.role === "owner")),
+		[staff],
+	);
+	const assistants = useMemo(
+		() => staff.filter((m) => m.active && m.role === "assistant"),
+		[staff],
+	);
+	const chairs = useMemo(
+		() => (dashboard?.clinicSettings?.chairs ?? []).filter((c) => c.active),
+		[dashboard?.clinicSettings?.chairs],
+	);
+	const isSoloDoctor = dashboard?.clinicSettings?.profile?.mode === "solo_doctor";
+	const patients = useMemo(() => dashboard?.patients ?? [], [dashboard?.patients]);
+
+	// Initialize fields on open
+	useEffect(() => {
+		if (!isOpen) return;
+
+		// Compute initial start time
+		let initialStartIso = new Date().toISOString();
+		let initialDuration = initialSlot?.durationMinutes || 30;
+
+		if (initialSlot?.startsAt) {
+			initialStartIso = initialSlot.startsAt;
+		} else if (initialSlot?.dateKey && initialSlot?.startTime) {
+			initialStartIso = `${initialSlot.dateKey}T${initialSlot.startTime}:00.000Z`;
+		} else if (initialSlot?.dateKey) {
+			const now = new Date();
+			const hours = String(now.getHours()).padStart(2, "0");
+			const mins = now.getMinutes() < 30 ? "00" : "30";
+			initialStartIso = `${initialSlot.dateKey}T${hours}:${mins}:00.000Z`;
+		}
+
+		if (initialSlot?.endsAt && initialSlot?.startsAt) {
+			const sMs = Date.parse(initialSlot.startsAt);
+			const eMs = Date.parse(initialSlot.endsAt);
+			if (eMs > sMs) {
+				initialDuration = Math.round((eMs - sMs) / 60_000);
+			}
+		}
+
+		setStartsAtLocal(toLocal(initialStartIso));
+		setDurationMinutes(initialDuration);
+
+		// Doctor prefill
+		const defaultDocId =
+			initialSlot?.doctorUserId ||
+			(doctors.length === 1 ? doctors[0]?.id : "") ||
+			doctors[0]?.id ||
+			"";
+		setDoctorUserId(defaultDocId);
+
+		// Chair prefill
+		const defaultChairId =
+			initialSlot?.chairId ||
+			(chairs.length === 1 ? chairs[0]?.id : "") ||
+			chairs[0]?.id ||
+			"";
+		setChairId(defaultChairId);
+
+		// Assistant prefill
+		setAssistantUserId(isSoloDoctor ? "" : (assistants[0]?.id ?? ""));
+
+		// Reset patient and status
+		setPatientId("");
+		setSelectedPatient(null);
+		setSearchQuery("");
+		setIsTypeaheadOpen(false);
+		setShowInlineNewPatient(false);
+		setNewPatientFullName("");
+		setNewPatientPhone("");
+		setNewPatientBirthDate("");
+		setReason("Осмотр");
+		setComment("");
+		setStatus("planned");
+		setSubmitError(null);
+		setIsSubmitting(false);
+
+		// Focus search input next frame
+		setTimeout(() => {
+			searchInputRef.current?.focus();
+		}, 100);
+	}, [
+		isOpen,
+		initialSlot,
+		toLocal,
+		doctors,
+		chairs,
+		assistants,
+		isSoloDoctor,
+	]);
+
+	// Filtered patients for typeahead
+	const filteredPatients = useMemo(() => {
+		const q = searchQuery.trim();
+		if (!q) {
+			return patients.filter((p) => p.status === "active").slice(0, 8);
+		}
+
+		// 1. Matches by standard search (name + phone)
+		const matching = patients.filter((p) => {
+			if (p.status !== "active") return false;
+			if (matchesPatientSearch(p, q)) return true;
+
+			// 2. Additional birthdate matching
+			if (p.birthDate) {
+				const cleanQuery = q.replace(/[^0-9.]/g, "");
+				if (cleanQuery.length >= 2 && p.birthDate.includes(cleanQuery)) {
+					return true;
+				}
+				// Formatted DD.MM.YYYY matching
+				const [year, month, day] = p.birthDate.split("-");
+				if (day && month && year) {
+					const formatted = `${day}.${month}.${year}`;
+					if (formatted.includes(cleanQuery)) return true;
+				}
+			}
+			return false;
+		});
+
+		return matching.slice(0, 10);
+	}, [patients, searchQuery]);
+
+	// Recalculate endsAt based on startsAtLocal and durationMinutes
+	const endsAtLocal = useMemo(() => {
+		if (!startsAtLocal) return "";
+		const startMs = Date.parse(fromLocal(startsAtLocal));
+		if (Number.isNaN(startMs)) return "";
+		const endIso = new Date(startMs + durationMinutes * 60_000).toISOString();
+		return toLocal(endIso);
+	}, [startsAtLocal, durationMinutes, fromLocal, toLocal]);
+
+	// Collision checking
+	const appointmentDraftForCollision = useMemo(() => {
+		return {
+			startsAt: startsAtLocal ? fromLocal(startsAtLocal) : "",
+			endsAt: endsAtLocal ? fromLocal(endsAtLocal) : "",
+			doctorUserId: doctorUserId || null,
+			chairId: chairId || null,
+			assistantUserId: assistantUserId || null,
+			patientId: patientId || null,
+			status,
+			reason,
+			comment,
+		};
+	}, [
+		startsAtLocal,
+		endsAtLocal,
+		doctorUserId,
+		chairId,
+		assistantUserId,
+		patientId,
+		status,
+		reason,
+		comment,
+		fromLocal,
+	]);
+
+	const collision = useMemo(() => {
+		if (!startsAtLocal || !endsAtLocal) {
+			return { hasCollision: false, message: null };
+		}
+		return checkAppointmentResourceCollision(
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+			appointmentDraftForCollision as any,
+			dashboard?.appointments,
+			{
+				staff: dashboard?.clinicSettings?.staff ?? [],
+				chairs: dashboard?.clinicSettings?.chairs ?? [],
+				patients: dashboard?.patients ?? [],
+				formatTimeFn: (iso) => toLocal(iso).slice(11, 16),
+			},
+		);
+	}, [
+		appointmentDraftForCollision,
+		dashboard?.appointments,
+		dashboard?.clinicSettings?.staff,
+		dashboard?.clinicSettings?.chairs,
+		dashboard?.patients,
+		startsAtLocal,
+		endsAtLocal,
+		toLocal,
+	]);
+
+	const selectPatient = (patient: Patient) => {
+		setSelectedPatient(patient);
+		setPatientId(patient.id);
+		setSearchQuery(patient.fullName);
+		setIsTypeaheadOpen(false);
+		setShowInlineNewPatient(false);
+	};
+
+	const handleCreateInlinePatient = async (e: React.FormEvent) => {
+		e.preventDefault();
+		const fullName = newPatientFullName.trim();
+		if (!fullName) {
+			showToast("Укажите ФИО пациента", "error");
+			return;
+		}
+
+		setIsCreatingPatient(true);
+		try {
+			const headers =
+				typeof auth?.denteClinicalMutationHeaders === "function"
+					? auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" })
+					: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
+
+			const res = await fetchWithHandling("/api/patients", {
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					fullName,
+					phone: newPatientPhone.trim() || null,
+					birthDate: newPatientBirthDate.trim() || null,
+				}),
+			});
+
+			if (!res.ok) {
+				showToast("Не удалось создать пациента", "error");
+				return;
+			}
+
+			const createdPatient = (await res.json()) as Patient;
+			if (createdPatient?.id) {
+				// Update in local dashboard if setDashboard available
+				if (typeof setDashboard === "function" && dashboard) {
+					setDashboard({
+						...dashboard,
+						patients: [
+							createdPatient,
+							...(dashboard.patients ?? []).filter((p) => p.id !== createdPatient.id),
+						],
+					});
+				}
+				selectPatient(createdPatient);
+				showToast(`Пациент «${createdPatient.fullName}» создан и выбран!`, "success", 4000);
+			}
+		} catch (err) {
+			logger.error("Failed to create inline patient", err);
+			showToast(
+				actionFailureToast("Ошибка создания пациента", (err as { status?: number })?.status ?? null),
+				"error",
+			);
+		} finally {
+			setIsCreatingPatient(false);
+		}
+	};
+
+	const handleSubmitBooking = async (e?: React.FormEvent) => {
+		if (e) e.preventDefault();
+		if (isSubmitting) return;
+
+		if (!patientId) {
+			setSubmitError("Выберите или создайте пациента");
+			showToast("Выберите пациента перед сохранением записи", "error");
+			searchInputRef.current?.focus();
+			return;
+		}
+
+		if (!doctorUserId) {
+			setSubmitError("Выберите врача для приема");
+			showToast("Выберите врача", "error");
+			return;
+		}
+
+		if (!chairId) {
+			setSubmitError("Выберите кресло / кабинет");
+			showToast("Выберите кресло", "error");
+			return;
+		}
+
+		if (!startsAtLocal || !endsAtLocal) {
+			setSubmitError("Укажите время начала и окончания");
+			showToast("Проверьте дату и время", "error");
+			return;
+		}
+
+		const startsAtIso = fromLocal(startsAtLocal);
+		const endsAtIso = fromLocal(endsAtLocal);
+
+		if (Date.parse(endsAtIso) <= Date.parse(startsAtIso)) {
+			setSubmitError("Время окончания должно быть позже времени начала");
+			showToast("Некорректная длительность приема", "error");
+			return;
+		}
+
+		setIsSubmitting(true);
+		setSubmitError(null);
+
+		try {
+			const mutationHeaders =
+				typeof auth?.scheduleMutationHeaders === "function"
+					? auth.scheduleMutationHeaders({ "Content-Type": "application/json" })
+					: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
+
+			const payload = {
+				patientId,
+				doctorUserId,
+				assistantUserId: assistantUserId || null,
+				chairId,
+				startsAt: startsAtIso,
+				endsAt: endsAtIso,
+				status,
+				reason: reason.trim() || null,
+				comment: comment.trim() || null,
+				clientMutationId: `quick-booking-${Date.now()}`,
+			};
+
+			const res = await fetchWithHandling("/api/appointments", {
+				method: "POST",
+				headers: mutationHeaders,
+				body: JSON.stringify(payload),
+			});
+
+			if (!res.ok) {
+				const errBody = await res.json().catch(() => null);
+				const msg =
+					errBody?.message ||
+					(res.status === 409
+						? "Конфликт времени: выбранный врач или кресло уже заняты"
+						: "Ошибка сервера при создании записи");
+				setSubmitError(msg);
+				showToast(msg, "error");
+				return;
+			}
+
+			const nextDashboard = (await res.json()) as Dashboard;
+			if (nextDashboard && typeof nextDashboard === "object" && typeof setDashboard === "function") {
+				setDashboard(nextDashboard);
+			}
+
+			if (typeof loadDashboard === "function") {
+				void loadDashboard();
+			}
+
+			const patientName = selectedPatient?.fullName || "Пациент";
+			const timeLabel = startsAtLocal.slice(11, 16);
+			showToast(`Запись для «${patientName}» создана на ${timeLabel}!`, "success", 5000);
+
+			if (typeof onAppointmentCreated === "function" && nextDashboard?.appointments) {
+				const created = nextDashboard.appointments.find(
+					(a) => a.patientId === patientId && a.startsAt === startsAtIso,
+				);
+				if (created) onAppointmentCreated(created);
+			}
+
+			onClose();
+		} catch (err) {
+			logger.error("Quick booking submission failed", err);
+			const msg = "Не удалось связаться с сервером клиники. Повторите попытку.";
+			setSubmitError(msg);
+			showToast(msg, "error");
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
+
+	// Keyboard handler for drawer (Escape to close, Ctrl+Enter to submit)
+	const handleKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === "Escape") {
+			e.stopPropagation();
+			onClose();
+		} else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+			e.preventDefault();
+			void handleSubmitBooking();
+		}
+	};
+
+	if (!isOpen) return null;
+
+	const drawerElement = (
+		<div
+			className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm transition-opacity"
+			data-testid="quick-booking-drawer"
+			onKeyDown={handleKeyDown}
+			role="dialog"
+			aria-modal="true"
+			aria-label="Быстрая запись на прием"
+		>
+			{/* Backdrop button */}
+			<button
+				type="button"
+				className="absolute inset-0 cursor-default"
+				onClick={onClose}
+				aria-label="Закрыть быструю запись"
+			/>
+
+			{/* Drawer Surface */}
+			<div className="relative w-full max-w-lg h-full bg-[var(--paper)] border-l border-[var(--line)] shadow-2xl flex flex-col z-10 text-[var(--ink)] overflow-hidden animate-slide-in">
+				{/* Header */}
+				<div className="p-5 border-b border-[var(--line)] flex items-center justify-between bg-[var(--paper-soft)]">
+					<div className="flex items-center gap-3">
+						<div className="p-2 rounded-xl bg-teal-500/10 text-[var(--teal)] border border-teal-500/20">
+							<Sparkles size={20} />
+						</div>
+						<div>
+							<h3 className="text-base font-bold tracking-tight text-[var(--ink)] m-0">
+								Быстрая запись на прием
+							</h3>
+							<p className="text-xs text-[var(--muted)] m-0 mt-0.5">
+								{startsAtLocal ? `${startsAtLocal.slice(0, 10)} в ${startsAtLocal.slice(11, 16)}` : "1-клик бронирование"} · {durationMinutes} мин
+							</p>
+						</div>
+					</div>
+					<button
+						type="button"
+						onClick={onClose}
+						className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] transition-colors"
+						aria-label="Закрыть"
+					>
+						<X size={20} />
+					</button>
+				</div>
+
+				{/* Body Content */}
+				<div className="flex-1 overflow-y-auto p-5 space-y-5">
+					{/* Collision alert if any */}
+					{collision.hasCollision && (
+						<div
+							className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-2"
+							role="alert"
+						>
+							<AlertTriangle size={16} className="shrink-0 text-rose-600 dark:text-rose-400" />
+							<span>⛔ {collision.message}</span>
+						</div>
+					)}
+
+					{/* 1. Patient Selection & Typeahead */}
+					<div className="space-y-2">
+						<div className="flex justify-between items-center">
+							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+								<User size={14} className="text-[var(--teal)]" />
+								<span>Пациент *</span>
+							</label>
+							{!showInlineNewPatient && (
+								<button
+									type="button"
+									onClick={() => {
+										setShowInlineNewPatient(true);
+										setNewPatientFullName(
+											/^[а-яёa-z\s]+$/i.test(searchQuery) ? searchQuery : "",
+										);
+										setNewPatientPhone(
+											/^[0-9+()-\s]+$/.test(searchQuery) ? searchQuery : "",
+										);
+									}}
+									className="text-xs font-bold text-[var(--teal)] hover:underline flex items-center gap-1 min-h-[36px] px-2"
+								>
+									<UserPlus size={14} />
+									<span>+ Новый пациент</span>
+								</button>
+							)}
+						</div>
+
+						{/* Selected Patient Card */}
+						{selectedPatient ? (
+							<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line-strong)] flex items-center justify-between">
+								<div className="flex items-center gap-3">
+									<div className="w-9 h-9 rounded-full bg-[var(--teal-surface)] text-[var(--teal-dark)] font-bold text-sm flex items-center justify-center border border-[var(--teal)]/30">
+										{selectedPatient.fullName.slice(0, 2).toUpperCase()}
+									</div>
+									<div>
+										<h4 className="text-sm font-bold text-[var(--ink)] m-0 leading-snug">
+											{selectedPatient.fullName}
+										</h4>
+										<div className="text-xs text-[var(--muted)] flex gap-2 mt-0.5">
+											{selectedPatient.phone && <span>{selectedPatient.phone}</span>}
+											{selectedPatient.birthDate && <span>д.р. {selectedPatient.birthDate}</span>}
+										</div>
+									</div>
+								</div>
+								<button
+									type="button"
+									onClick={() => {
+										setSelectedPatient(null);
+										setPatientId("");
+										setSearchQuery("");
+										setTimeout(() => searchInputRef.current?.focus(), 50);
+									}}
+									className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-xs text-[var(--muted)] hover:text-rose-600 rounded-lg hover:bg-[var(--paper)] transition-colors"
+									title="Выбрать другого пациента"
+									aria-label="Сменить пациента"
+								>
+									<X size={16} />
+								</button>
+							</div>
+						) : (
+							/* Typeahead Search Input */
+							<div className="relative">
+								<div className="relative">
+									<Search
+										size={16}
+										className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none"
+									/>
+									<input
+										ref={searchInputRef}
+										type="text"
+										value={searchQuery}
+										placeholder="Поиск по ФИО, телефону или дате рождения…"
+										onChange={(e) => {
+											setSearchQuery(e.target.value);
+											setIsTypeaheadOpen(true);
+											setHighlightedIndex(0);
+										}}
+										onFocus={() => setIsTypeaheadOpen(true)}
+										onKeyDown={(e) => {
+											if (e.key === "ArrowDown") {
+												e.preventDefault();
+												setHighlightedIndex((prev) =>
+													prev < filteredPatients.length - 1 ? prev + 1 : 0,
+												);
+											} else if (e.key === "ArrowUp") {
+												e.preventDefault();
+												setHighlightedIndex((prev) =>
+													prev > 0 ? prev - 1 : filteredPatients.length - 1,
+												);
+											} else if (e.key === "Enter" && filteredPatients[highlightedIndex]) {
+												e.preventDefault();
+												const picked = filteredPatients[highlightedIndex];
+												if (picked) selectPatient(picked);
+											} else if (e.key === "Escape") {
+												setIsTypeaheadOpen(false);
+											}
+										}}
+										className="w-full pl-10 pr-4 py-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] focus:border-transparent transition-all"
+										aria-autocomplete="list"
+										aria-expanded={isTypeaheadOpen}
+									/>
+								</div>
+
+								{/* Dropdown Suggestions */}
+								{isTypeaheadOpen && (
+									<div
+										className="absolute top-full left-0 right-0 mt-1.5 max-h-60 overflow-y-auto rounded-xl bg-[var(--paper)] border border-[var(--line-strong)] shadow-2xl z-30 divide-y divide-[var(--line)]"
+										role="listbox"
+									>
+										{filteredPatients.length > 0 ? (
+											filteredPatients.map((p, idx) => (
+												<button
+													key={p.id}
+													type="button"
+													onClick={() => selectPatient(p)}
+													className={`w-full p-3 text-left flex items-center justify-between hover:bg-[var(--paper-soft)] transition-colors min-h-[44px] cursor-pointer ${
+														idx === highlightedIndex ? "bg-[var(--paper-soft)] ring-1 ring-inset ring-[var(--teal)]" : ""
+													}`}
+													role="option"
+													aria-selected={idx === highlightedIndex}
+												>
+													<div>
+														<div className="text-sm font-semibold text-[var(--ink)]">
+															{p.fullName}
+														</div>
+														<div className="text-xs text-[var(--muted)] flex gap-2 mt-0.5">
+															{p.phone && <span>{p.phone}</span>}
+															{p.birthDate && <span>д.р. {p.birthDate}</span>}
+														</div>
+													</div>
+													<Check size={14} className="text-[var(--teal)] opacity-0 group-hover:opacity-100" />
+												</button>
+											))
+										) : (
+											<div className="p-4 text-center text-xs text-[var(--muted)]">
+												<span>Пациент не найден в базе.</span>
+												<button
+													type="button"
+													onClick={() => {
+														setShowInlineNewPatient(true);
+														setIsTypeaheadOpen(false);
+														setNewPatientFullName(
+															/^[а-яёa-z\s]+$/i.test(searchQuery) ? searchQuery : "",
+														);
+														setNewPatientPhone(
+															/^[0-9+()-\s]+$/.test(searchQuery) ? searchQuery : "",
+														);
+													}}
+													className="block mx-auto mt-2 text-xs font-bold text-[var(--teal)] hover:underline min-h-[36px]"
+												>
+													+ Создать «{searchQuery || "Нового пациента"}»
+												</button>
+											</div>
+										)}
+									</div>
+								)}
+							</div>
+						)}
+
+						{/* Inline New Patient Form */}
+						{showInlineNewPatient && (
+							<form
+								onSubmit={handleCreateInlinePatient}
+								className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--teal)]/40 space-y-3 mt-2"
+							>
+								<div className="flex justify-between items-center">
+									<h4 className="text-xs font-bold uppercase tracking-wider text-[var(--teal)] flex items-center gap-1.5 m-0">
+										<UserPlus size={14} />
+										<span>Создание нового пациента</span>
+									</h4>
+									<button
+										type="button"
+										onClick={() => setShowInlineNewPatient(false)}
+										className="text-xs text-[var(--muted)] hover:text-[var(--ink)]"
+									>
+										Отмена
+									</button>
+								</div>
+								<div className="space-y-2">
+									<div>
+										<label className="text-[11px] font-semibold text-[var(--muted)] block mb-1">
+											ФИО пациента *
+										</label>
+										<input
+											type="text"
+											required
+											value={newPatientFullName}
+											onChange={(e) => setNewPatientFullName(e.target.value)}
+											placeholder="Иванов Иван Иванович"
+											className="w-full p-2 min-h-[44px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+										/>
+									</div>
+									<div className="grid grid-cols-2 gap-2">
+										<div>
+											<label className="text-[11px] font-semibold text-[var(--muted)] block mb-1">
+												Телефон
+											</label>
+											<input
+												type="tel"
+												value={newPatientPhone}
+												onChange={(e) => setNewPatientPhone(e.target.value)}
+												placeholder="+7 999 123-45-67"
+												className="w-full p-2 min-h-[44px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+											/>
+										</div>
+										<div>
+											<label className="text-[11px] font-semibold text-[var(--muted)] block mb-1">
+												Дата рождения
+											</label>
+											<input
+												type="date"
+												value={newPatientBirthDate}
+												onChange={(e) => setNewPatientBirthDate(e.target.value)}
+												className="w-full p-2 min-h-[44px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+											/>
+										</div>
+									</div>
+								</div>
+								<button
+									type="submit"
+									disabled={isCreatingPatient || !newPatientFullName.trim()}
+									className="w-full min-h-[44px] py-2 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+								>
+									<Check size={14} />
+									<span>
+										{isCreatingPatient ? "Создаю пациента…" : "Создать и выбрать"}
+									</span>
+								</button>
+							</form>
+						)}
+					</div>
+
+					{/* 2. Date, Time & Duration Section */}
+					<div className="space-y-3 p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
+						<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+							<Clock size={14} className="text-[var(--teal)]" />
+							<span>Время и длительность *</span>
+						</label>
+
+						<div className="grid grid-cols-2 gap-3">
+							<div>
+								<span className="text-[11px] font-semibold text-[var(--muted)] block mb-1">
+									Начало
+								</span>
+								<input
+									type="datetime-local"
+									value={startsAtLocal}
+									onChange={(e) => setStartsAtLocal(e.target.value)}
+									className="w-full p-2.5 min-h-[44px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+								/>
+							</div>
+							<div>
+								<span className="text-[11px] font-semibold text-[var(--muted)] block mb-1">
+									Окончание (+{durationMinutes}м)
+								</span>
+								<input
+									type="datetime-local"
+									value={endsAtLocal}
+									onChange={(e) => {
+										const newEndLocal = e.target.value;
+										const sMs = Date.parse(fromLocal(startsAtLocal));
+										const eMs = Date.parse(fromLocal(newEndLocal));
+										if (eMs > sMs) {
+											setDurationMinutes(Math.round((eMs - sMs) / 60_000));
+										}
+									}}
+									className="w-full p-2.5 min-h-[44px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+								/>
+							</div>
+						</div>
+
+						{/* Fast Duration Chips */}
+						<div>
+							<span className="text-[11px] font-semibold text-[var(--muted)] block mb-1.5">
+								Быстрый выбор длительности:
+							</span>
+							<div className="flex flex-wrap gap-1.5">
+								{COMMON_DURATIONS.map((mins) => (
+									<button
+										key={mins}
+										type="button"
+										onClick={() => setDurationMinutes(mins)}
+										className={`min-h-[44px] sm:min-h-[36px] px-3 rounded-lg text-xs font-bold transition-all ${
+											durationMinutes === mins
+												? "bg-[var(--teal-dark)] text-white shadow-sm ring-1 ring-[var(--teal)]"
+												: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
+										}`}
+									>
+										{mins} мин
+									</button>
+								))}
+							</div>
+						</div>
+					</div>
+
+					{/* 3. Doctor, Assistant & Chair Selection */}
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+						<div>
+							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
+								Врач *
+							</label>
+							<select
+								value={doctorUserId}
+								onChange={(e) => setDoctorUserId(e.target.value)}
+								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+								required
+							>
+								<option value="">-- Выберите врача --</option>
+								{doctors.map((d) => (
+									<option key={d.id} value={d.id}>
+										{d.fullName}
+									</option>
+								))}
+							</select>
+						</div>
+
+						<div>
+							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
+								Кресло / Кабинет *
+							</label>
+							<select
+								value={chairId}
+								onChange={(e) => setChairId(e.target.value)}
+								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+								required
+							>
+								<option value="">-- Выберите кресло --</option>
+								{chairs.map((c) => (
+									<option key={c.id} value={c.id}>
+										{c.name}
+									</option>
+								))}
+							</select>
+						</div>
+
+						{!isSoloDoctor && (
+							<div className="sm:col-span-2">
+								<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
+									Ассистент
+								</label>
+								<select
+									value={assistantUserId}
+									onChange={(e) => setAssistantUserId(e.target.value)}
+									className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+								>
+									<option value="">-- Без ассистента --</option>
+									{assistants.map((a) => (
+										<option key={a.id} value={a.id}>
+											{a.fullName}
+										</option>
+									))}
+								</select>
+							</div>
+						)}
+					</div>
+
+					{/* 4. Reason & Comment */}
+					<div className="space-y-3">
+						<div>
+							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
+								Повод обращения / Услуга
+							</label>
+							<input
+								type="text"
+								value={reason}
+								onChange={(e) => setReason(e.target.value)}
+								placeholder="Например: Осмотр, Кариес, Консультация"
+								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+							/>
+							<div className="flex flex-wrap gap-1.5 mt-2">
+								{COMMON_REASONS.map((r) => (
+									<button
+										key={r}
+										type="button"
+										onClick={() => {
+											const cur = reason.trim();
+											setReason(cur ? `${cur}, ${r.toLowerCase()}` : r);
+										}}
+										className="min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] transition-colors cursor-pointer"
+									>
+										+ {r}
+									</button>
+								))}
+							</div>
+						</div>
+
+						<div>
+							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
+								Комментарий для врача / регистратуры
+							</label>
+							<textarea
+								value={comment}
+								onChange={(e) => setComment(e.target.value)}
+								placeholder="Дополнительные пожелания или примечания…"
+								rows={2}
+								className="w-full p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+							/>
+						</div>
+					</div>
+
+					{/* Submit Error banner if any */}
+					{submitError && (
+						<div
+							className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-semibold"
+							role="alert"
+						>
+							⚠ {submitError}
+						</div>
+					)}
+				</div>
+
+				{/* Footer Actions */}
+				<div className="p-4 border-t border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between gap-3">
+					<button
+						type="button"
+						onClick={onClose}
+						disabled={isSubmitting}
+						className="min-h-[44px] px-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-semibold transition-colors disabled:opacity-50"
+					>
+						Отмена (Esc)
+					</button>
+
+					<button
+						type="button"
+						onClick={() => void handleSubmitBooking()}
+						disabled={isSubmitting || !patientId || !doctorUserId || !chairId}
+						className="flex-1 min-h-[44px] px-5 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+					>
+						<Plus size={16} />
+						<span>{isSubmitting ? "Сохраняю запись…" : "Создать запись (Ctrl+Enter)"}</span>
+					</button>
+				</div>
+			</div>
+		</div>
+	);
+
+	return typeof document !== "undefined" ? createPortal(drawerElement, document.body) : drawerElement;
+}
