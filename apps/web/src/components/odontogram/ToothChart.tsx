@@ -692,7 +692,7 @@ export const DenteToothSvgDefs: React.FC = () => (
 			</filter>
 
 			{/* Glow Filters */}
-			<filter id="dente-glow-purple" x="-30%" y="-30%" width="160%" height="160%">
+			<filter id="dente-glow-crimson" x="-30%" y="-30%" width="160%" height="160%">
 				<feGaussianBlur stdDeviation="2.5" result="blur" />
 				<feComposite in="SourceGraphic" in2="blur" operator="over" />
 			</filter>
@@ -1434,10 +1434,10 @@ const ToothSVG = ({
 							e.stopPropagation();
 							onQuickStateChange([number], "Pulpitis");
 						}}
-						className="px-1.5 py-0.5 rounded-md bg-purple-500/20 hover:bg-purple-500 text-purple-300 hover:text-white border border-purple-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105"
+						className="px-1.5 py-0.5 rounded-md bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white border border-rose-500/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105"
 						title="Пульпит (Пульп.)"
 					>
-						<span className="w-1.5 h-1.5 rounded-full bg-purple-500 inline-block" />
+						<span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block" />
 						<span>Пульп.</span>
 					</button>
 					<button
@@ -1909,7 +1909,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 							<span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm" /> Кариес
 						</span>
 						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-sm" /> Пульпит
+							<span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm" /> Пульпит
 						</span>
 						<span className="tooth-chart-legend-item">
 							<span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm" /> Периодонтит

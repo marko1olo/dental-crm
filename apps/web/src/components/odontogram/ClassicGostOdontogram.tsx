@@ -82,10 +82,10 @@ export const GOST_TOOTH_STATES: Record<ToothState, GostStateDescriptor> = {
 		abbr: "Пт",
 		nameRu: "Пульпит",
 		descriptionRu: "Воспаление пульпы зуба (P)",
-		colorClass: "text-purple-700 dark:text-purple-300",
-		badgeBg: "bg-purple-500/15 dark:bg-purple-950/50",
-		badgeText: "text-purple-700 dark:text-purple-300",
-		badgeBorder: "border-purple-500/40",
+		colorClass: "text-rose-700 dark:text-rose-300",
+		badgeBg: "bg-rose-500/15 dark:bg-rose-950/50",
+		badgeText: "text-rose-700 dark:text-rose-300",
+		badgeBorder: "border-rose-500/40",
 	},
 	Periodontitis: {
 		abbr: "Pt",
@@ -641,7 +641,7 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 						</span>
 					) : hasCanals ? (
 						<span
-							className="text-[9px] sm:text-[10px] font-bold px-1 py-0.2 rounded bg-purple-500/20 text-purple-700 dark:text-purple-300 font-mono"
+							className="text-[9px] sm:text-[10px] font-bold px-1 py-0.2 rounded bg-rose-500/20 text-rose-700 dark:text-rose-300 font-mono"
 							title="Заполнены корневые каналы"
 						>
 							{

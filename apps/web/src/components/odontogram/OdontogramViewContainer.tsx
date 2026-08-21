@@ -185,6 +185,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 		bottomTeeth,
 		selectedTeeth,
 		onToothClick: handleToothClickIntercept,
+		onQuickStateChange,
 		useSurfaces,
 		hideHeader,
 		hideLegend,
@@ -273,7 +274,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 								onClick={() => setShowPulpAndCanals((prev) => !prev)}
 								className={`min-h-[40px] flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap border transition-all cursor-pointer ${
 									showPulpAndCanals
-										? "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-400/40 shadow-xs"
+										? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-400/40 shadow-xs"
 										: "bg-[var(--odontogram-surface-hover,#f1f5f9)] text-[var(--odontogram-ink-muted,#64748b)] border-[var(--odontogram-border-subtle,#e2e8f0)] opacity-80"
 								}`}
 								title="Рентген-прозрачность эмали для просмотра корневых каналов и пульпы"

@@ -63,9 +63,9 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 			label: "Пульпит (Ф)",
 			shortLabel: "Пульпит",
 			state: "Pulpitis",
-			icon: <Flame size={14} className="text-purple-200" />,
-			color: "from-purple-600 to-indigo-700",
-			bgGradient: "linear-gradient(135deg, #9333ea 0%, #4338ca 100%)",
+			icon: <Flame size={14} className="text-rose-200" />,
+			color: "from-rose-600 to-red-800",
+			bgGradient: "linear-gradient(135deg, #ef4444 0%, #991b1b 100%)",
 			hotkey: "Ф",
 		},
 		{
@@ -309,7 +309,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 									gap: "6px",
 									background: "transparent",
 								}}
-								className="min-h-[38px] text-xs font-bold text-purple-600 dark:text-purple-300 hover:bg-purple-500/15 px-3 py-1.5 rounded-lg transition-colors cursor-pointer border-0"
+								className="min-h-[38px] text-xs font-bold text-rose-600 dark:text-rose-300 hover:bg-rose-500/15 px-3 py-1.5 rounded-lg transition-colors cursor-pointer border-0"
 							>
 								<Wrench size={14} />
 								<span>Каналы</span>
