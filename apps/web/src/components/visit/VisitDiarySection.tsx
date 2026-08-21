@@ -650,13 +650,13 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							</button>
 						)}
 					</div>
-					<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 scrollbar-none">
+					<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 scrollbar-none overscroll-x-contain">
 						{CLINICAL_FAST_PRESETS.map((preset) => (
 							<button
 								key={preset.id}
 								type="button"
 								onClick={() => applyClinicalPreset(preset.id)}
-								className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[38px] rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-xs font-medium text-[var(--ink)] hover:border-[var(--teal)] transition-all shrink-0 shadow-xs"
+								className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-xs font-medium text-[var(--ink)] hover:border-[var(--teal)] transition-all shrink-0 shadow-xs touch-manipulation"
 								title={preset.description}
 								data-testid={`preset-btn-${preset.id}`}
 							>
@@ -707,13 +707,13 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							<Syringe className="w-3.5 h-3.5 text-blue-500" />
 							Анестезия:
 						</span>
-						<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 sm:pb-0 scrollbar-none flex-1">
+						<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 sm:pb-0 scrollbar-none flex-1 overscroll-x-contain">
 							{ANESTHESIA_QUICK_PRESETS.map((ane) => (
 								<button
 									key={ane.id}
 									type="button"
 									onClick={() => applyAnesthesiaPreset(ane.textToInsert)}
-									className="inline-flex items-center gap-1 px-2.5 py-1.5 min-h-[36px] rounded-lg bg-[var(--paper)] hover:bg-blue-500/10 border border-[var(--line)] hover:border-blue-500/30 text-xs font-medium text-[var(--ink)] transition-colors shrink-0"
+									className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-lg bg-[var(--paper)] hover:bg-blue-500/10 border border-[var(--line)] hover:border-blue-500/30 text-xs font-medium text-[var(--ink)] transition-colors shrink-0 touch-manipulation"
 									title={ane.textToInsert}
 									data-testid={`anesthesia-btn-${ane.id}`}
 								>

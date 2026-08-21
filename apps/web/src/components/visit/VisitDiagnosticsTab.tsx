@@ -109,7 +109,7 @@ export function VisitDiagnosticsTab(props?: {
 					type="button"
 					onClick={() => setIsCephModalOpen(true)}
 					data-testid="open-visit-ceph-modal-btn"
-					className="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shrink-0 shadow-md shadow-teal-600/20 active:scale-95 transition-all cursor-pointer border border-teal-500/30"
+					className="px-4 py-2.5 min-h-[44px] rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shrink-0 shadow-md shadow-teal-600/20 active:scale-95 transition-all cursor-pointer border border-teal-500/30 touch-manipulation"
 				>
 					<Activity size={15} />
 					<span>Открыть анализ ТРГ</span>
@@ -137,7 +137,7 @@ export function VisitDiagnosticsTab(props?: {
 						onClick={() =>
 							visitPatientId && setSelectedPatientId(visitPatientId)
 						}
-						className="mt-3 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-colors"
+						className="mt-3 px-4 py-2 min-h-[44px] inline-flex items-center justify-center rounded-lg text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-colors touch-manipulation"
 					>
 						Писать в карту {visitPatientName ?? "пациента приёма"}
 					</button>
@@ -161,7 +161,7 @@ export function VisitDiagnosticsTab(props?: {
 						onClick={() =>
 							visitPatientId && setSelectedPatientId(visitPatientId)
 						}
-						className="mt-3 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white transition-colors"
+						className="mt-3 px-4 py-2 min-h-[44px] inline-flex items-center justify-center rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white transition-colors touch-manipulation"
 					>
 						Открыть карту {visitPatientName ?? "пациента приёма"}
 					</button>
@@ -226,7 +226,7 @@ export function VisitDiagnosticsTab(props?: {
 				<button
 					type="button"
 					onClick={() => setIsRadiologyModalOpen(true)}
-					className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-teal-600 hover:bg-teal-500 text-white cursor-pointer transition-colors shadow-sm"
+					className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] text-xs font-semibold rounded-lg bg-teal-600 hover:bg-teal-500 text-white cursor-pointer transition-colors shadow-sm touch-manipulation"
 					data-testid="btn-open-radiology-referral-modal"
 				>
 					<Scan size={14} />
