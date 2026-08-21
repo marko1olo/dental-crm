@@ -63,7 +63,7 @@ describe("Cephalometric Math & Vector Geometry Engine", () => {
 		assert.equal(proj.y, 0);
 	});
 
-	it("calculates full cephalometric analysis for default clinical preset (Steiner / Tweed)", () => {
+	it("calculates full cephalometric analysis for default clinical preset (Steiner, Tweed, Downs, Jacobson)", () => {
 		const result = calculateCephalometrics(DEFAULT_CEPH_LANDMARKS_PRESET);
 
 		assert.equal(result.isComplete, true);
@@ -77,15 +77,36 @@ describe("Cephalometric Math & Vector Geometry Engine", () => {
 		const u1Sn = result.measurements.find((m) => m.id === "U1-SN");
 		const l1Mp = result.measurements.find((m) => m.id === "L1-MP");
 		const wits = result.measurements.find((m) => m.id === "Wits");
+		const facialAngle = result.measurements.find((m) => m.id === "Downs-FA");
+		const convexity = result.measurements.find((m) => m.id === "Downs-Conv");
+		const abPlane = result.measurements.find((m) => m.id === "Downs-AB");
+		const yAxis = result.measurements.find((m) => m.id === "Downs-YAxis");
+		const cantOp = result.measurements.find((m) => m.id === "Downs-CantOP");
+		const nlMl = result.measurements.find((m) => m.id === "NL-ML");
 
+		// Steiner
 		assert.ok(sna && sna.value !== null);
 		assert.ok(snb && snb.value !== null);
 		assert.ok(anb && anb.value !== null);
-		assert.ok(fma && fma.value !== null);
 		assert.ok(snGogn && snGogn.value !== null);
 		assert.ok(u1Sn && u1Sn.value !== null);
+
+		// Tweed
+		assert.ok(fma && fma.value !== null);
 		assert.ok(l1Mp && l1Mp.value !== null);
+
+		// Jacobson Wits
 		assert.ok(wits && wits.value !== null);
+
+		// Downs
+		assert.ok(facialAngle && facialAngle.value !== null);
+		assert.ok(convexity && convexity.value !== null);
+		assert.ok(abPlane && abPlane.value !== null);
+		assert.ok(yAxis && yAxis.value !== null);
+		assert.ok(cantOp && cantOp.value !== null);
+
+		// Ricketts
+		assert.ok(nlMl && nlMl.value !== null);
 
 		// Verify that ANB = SNA - SNB
 		assert.equal(
@@ -101,10 +122,11 @@ describe("Cephalometric Math & Vector Geometry Engine", () => {
 		assert.ok(result.diagnosis.summaryRu.length > 0);
 		assert.ok(result.diagnosis.protocol043Text.includes("Форма 043/у"));
 		assert.ok(result.diagnosis.protocol043Text.includes("Steiner"));
+		assert.ok(result.diagnosis.protocol043Text.includes("Downs"));
+		assert.ok(result.diagnosis.protocol043Text.includes("Tweed"));
 	});
 
 	it("identifies Skeletal Class II malocclusion (ANB > 4°)", () => {
-		// Create a synthetic Class II landmark geometry: Point A anteriorly displaced
 		const class2Landmarks: LandmarkMap = {
 			...DEFAULT_CEPH_LANDMARKS_PRESET,
 			A: { x: 495, y: 342 }, // displaced forward
@@ -120,7 +142,6 @@ describe("Cephalometric Math & Vector Geometry Engine", () => {
 	});
 
 	it("identifies Skeletal Class III malocclusion (ANB < 0°)", () => {
-		// Create a synthetic Class III landmark geometry: Point B anteriorly displaced (mandibular prognathism)
 		const class3Landmarks: LandmarkMap = {
 			...DEFAULT_CEPH_LANDMARKS_PRESET,
 			A: { x: 440, y: 342 },
@@ -136,7 +157,6 @@ describe("Cephalometric Math & Vector Geometry Engine", () => {
 	});
 
 	it("identifies Hyperdivergent / Dolichofacial growth pattern (High angle)", () => {
-		// Steep mandibular plane
 		const highAngleLandmarks: LandmarkMap = {
 			...DEFAULT_CEPH_LANDMARKS_PRESET,
 			Go: { x: 230, y: 380 },
@@ -151,7 +171,6 @@ describe("Cephalometric Math & Vector Geometry Engine", () => {
 	});
 
 	it("identifies Incisor Proclination and Retroclination correctly", () => {
-		// Flared upper incisor (proclination)
 		const proUpperLandmarks: LandmarkMap = {
 			...DEFAULT_CEPH_LANDMARKS_PRESET,
 			U1a: { x: 430, y: 325 },
@@ -164,7 +183,6 @@ describe("Cephalometric Math & Vector Geometry Engine", () => {
 		assert.ok(u1Sn.value > 106);
 		assert.equal(resPro.diagnosis.upperIncisorInclination, "Proclination");
 
-		// Retruded upper incisor
 		const retroUpperLandmarks: LandmarkMap = {
 			...DEFAULT_CEPH_LANDMARKS_PRESET,
 			U1a: { x: 455, y: 325 },
@@ -191,11 +209,13 @@ describe("Cephalometric Math & Vector Geometry Engine", () => {
 		}
 	});
 
-	it("contains all 14 mandatory orthodontic landmark definitions", () => {
-		assert.equal(CEPHALOMETRIC_LANDMARKS.length, 14);
+	it("contains all 16 mandatory orthodontic landmark definitions including Orbitale and Porion", () => {
+		assert.equal(CEPHALOMETRIC_LANDMARKS.length, 16);
 		const keys = CEPHALOMETRIC_LANDMARKS.map((l) => l.key);
 		assert.ok(keys.includes("S"));
 		assert.ok(keys.includes("N"));
+		assert.ok(keys.includes("Or"));
+		assert.ok(keys.includes("Po"));
 		assert.ok(keys.includes("A"));
 		assert.ok(keys.includes("B"));
 		assert.ok(keys.includes("Pog"));

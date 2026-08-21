@@ -4,7 +4,9 @@
  * Implements standard orthodontic analysis systems:
  * - Steiner Analysis (SNA, SNB, ANB, U1-SN, L1-MP, Interincisal angle, Wits)
  * - Tweed Analysis (FMA, IMPA, FMIA)
- * - Ricketts & Bjork-Jarabak Craniofacial Metrics
+ * - Downs Cephalometric Analysis (Facial Angle, Angle of Convexity, A-B Plane, Y-Axis, Cant of OP)
+ * - Jacobson Wits Appraisal
+ * - Ricketts & Bjork-Jarabak Craniofacial Metrics (NL-ML)
  * - Form 043/y (Форма 043/у Приказ МЗ РФ 834н) structured orthodontic protocol generator
  */
 
@@ -16,20 +18,20 @@ export interface Point2D {
 export type LandmarkKey =
 	| "S" // Sella (Турецкое седло)
 	| "N" // Nasion (Назион)
+	| "Or" // Orbitale (Орбитале)
+	| "Po" // Porion (Порион)
+	| "ANS" // Anterior Nasal Spine (ПНС / Передняя носовая ость)
+	| "PNS" // Posterior Nasal Spine (ЗНС / Задняя носовая ость)
 	| "A" // Subspinale / Point A (Точка А)
 	| "B" // Supramentale / Point B (Точка В)
 	| "Pog" // Pogonion (Погонион)
 	| "Gn" // Gnathion (Гнатион)
 	| "Me" // Menton (Ментон)
 	| "Go" // Gonion (Гонион)
-	| "ANS" // Anterior Nasal Spine (ПНС / Передняя носовая ость)
-	| "PNS" // Posterior Nasal Spine (ЗНС / Задняя носовая ость)
 	| "U1t" // Upper Incisor Tip (Режущий край 1.1/2.1)
 	| "U1a" // Upper Incisor Apex (Верхушка корня 1.1/2.1)
 	| "L1t" // Lower Incisor Tip (Режущий край 4.1/3.1)
-	| "L1a" // Lower Incisor Apex (Верхушка корня 4.1/3.1)
-	| "Or" // Orbitale (Орбитале) - optional for Frankfort
-	| "Po"; // Porion (Порион) - optional for Frankfort
+	| "L1a"; // Lower Incisor Apex (Верхушка корня 4.1/3.1)
 
 export interface LandmarkDefinition {
 	key: LandmarkKey;
@@ -59,6 +61,24 @@ export const CEPHALOMETRIC_LANDMARKS: LandmarkDefinition[] = [
 		anatomicalDescription: "Самая передняя точка лобно-носового шва",
 		category: "cranial",
 		color: "#06b6d4",
+	},
+	{
+		key: "Or",
+		code: "Or",
+		nameRu: "Orbitale (Орбитале)",
+		latinName: "Orbitale",
+		anatomicalDescription: "Самая нижняя точка нижнего края глазницы (Франкфуртская горизонталь)",
+		category: "cranial",
+		color: "#0284c7", // light blue
+	},
+	{
+		key: "Po",
+		code: "Po",
+		nameRu: "Porion (Порион)",
+		latinName: "Porion",
+		anatomicalDescription: "Самая верхняя точка наружного слухового прохода (Франкфуртская горизонталь)",
+		category: "cranial",
+		color: "#0284c7",
 	},
 	{
 		key: "ANS",
@@ -185,7 +205,7 @@ export interface CephalometricMeasurement {
 	normText: string;
 	status: "normal" | "increased" | "decreased" | "pending";
 	clinicalInterpretation: string;
-	method: "Steiner" | "Tweed" | "Ricketts" | "Jacobson";
+	method: "Steiner" | "Tweed" | "Ricketts" | "Jacobson" | "Downs";
 }
 
 export interface CephalometricDiagnosis {
@@ -202,6 +222,7 @@ export interface CephalometricDiagnosis {
 	lowerIncisorInclination: "Normal" | "Proclination" | "Retroclination" | "Undefined";
 	lowerIncisorInclinationRu: string;
 	witsRelationshipRu: string;
+	downsConvexityRu: string;
 	summaryRu: string;
 	protocol043Text: string;
 }
@@ -305,6 +326,8 @@ export function projectPointOntoLine(p: Point2D, a: Point2D, b: Point2D): Point2
 export const DEFAULT_CEPH_LANDMARKS_PRESET: LandmarkMap = {
 	S: { x: 280, y: 190 }, // Sella
 	N: { x: 440, y: 155 }, // Nasion
+	Or: { x: 415, y: 230 }, // Orbitale
+	Po: { x: 245, y: 245 }, // Porion
 	ANS: { x: 475, y: 310 }, // Anterior Nasal Spine
 	PNS: { x: 305, y: 325 }, // Posterior Nasal Spine
 	A: { x: 462, y: 342 }, // Point A
@@ -317,8 +340,6 @@ export const DEFAULT_CEPH_LANDMARKS_PRESET: LandmarkMap = {
 	U1a: { x: 438, y: 325 }, // Upper Incisor Apex
 	L1t: { x: 458, y: 400 }, // Lower Incisor Tip
 	L1a: { x: 425, y: 495 }, // Lower Incisor Apex
-	Or: { x: 415, y: 230 }, // Orbitale
-	Po: { x: 245, y: 245 }, // Porion
 };
 
 // ─── Core Cephalometric Calculator ────────────────────────────────────────────
@@ -329,6 +350,8 @@ export function calculateCephalometrics(
 ): CephalometricAnalysisResult {
 	const S = landmarks.S;
 	const N = landmarks.N;
+	const Or = landmarks.Or;
+	const Po = landmarks.Po;
 	const A = landmarks.A;
 	const B = landmarks.B;
 	const Pog = landmarks.Pog;
@@ -343,6 +366,11 @@ export function calculateCephalometrics(
 	const L1a = landmarks.L1a;
 
 	const measurements: CephalometricMeasurement[] = [];
+
+	// Frankfort Horizontal Plane (Po -> Or)
+	const hasFrankfort = Boolean(Po && Or);
+	const fhStart: Point2D | null = hasFrankfort ? Po! : (S && N ? S : null);
+	const fhEnd: Point2D | null = hasFrankfort ? Or! : (S && N ? N : null);
 
 	// 1. SNA Angle (Steiner) - Norm: 82° ± 2°
 	let snaVal: number | null = null;
@@ -447,15 +475,17 @@ export function calculateCephalometrics(
 	let witsVal: number | null = null;
 	let witsStatus: CephalometricMeasurement["status"] = "pending";
 	let witsInterp = "Требуется установка точек A, B, U1, L1";
+	let opAnt: Point2D | null = null;
+	let opPost: Point2D | null = null;
 	if (A && B && (U1t || ANS) && (L1t || Me)) {
 		// Define occlusal plane: from midpoint of incisors (or ANS/PNS bisector)
-		const opAnt: Point2D = U1t && L1t
+		opAnt = U1t && L1t
 			? { x: (U1t.x + L1t.x) / 2, y: (U1t.y + L1t.y) / 2 }
 			: ANS && Me
 				? { x: (ANS.x + Me.x) / 2, y: (ANS.y + Me.y) / 2 }
 				: { x: (A.x + B.x) / 2 + 50, y: (A.y + B.y) / 2 };
 
-		const opPost: Point2D = PNS && Go
+		opPost = PNS && Go
 			? { x: (PNS.x + Go.x) / 2, y: (PNS.y + Go.y) / 2 }
 			: { x: opAnt.x - 150, y: opAnt.y - 10 };
 
@@ -499,7 +529,116 @@ export function calculateCephalometrics(
 		method: "Jacobson",
 	});
 
-	// 5. SN-GoGn Angle (Steiner) - Norm: 32° ± 3°
+	// 5. Facial Angle (Downs - N-Pog to Frankfort Horizontal) - Norm: 87.8° ± 3.6° (84° to 91°)
+	let facialAngleVal: number | null = null;
+	let facialAngleStatus: CephalometricMeasurement["status"] = "pending";
+	let facialAngleInterp = "Требуется установка точек N, Pog, Po, Or";
+	if (N && Pog && fhStart && fhEnd) {
+		const rawAngle = angleBetweenLines(fhStart, fhEnd, N, Pog);
+		facialAngleVal = Number(rawAngle.toFixed(1));
+		if (facialAngleVal > 91.4) {
+			facialAngleStatus = "increased";
+			facialAngleInterp = "Скелетная прогнатия нижней челюсти / выступающий подбородок (Downs)";
+		} else if (facialAngleVal < 84.2) {
+			facialAngleStatus = "decreased";
+			facialAngleInterp = "Скелетная ретрогнатия нижней челюсти / скошенный подбородок (Downs)";
+		} else {
+			facialAngleStatus = "normal";
+			facialAngleInterp = "Нормальное сагиттальное положение подбородочного симфиза (Downs)";
+		}
+	}
+	measurements.push({
+		id: "Downs-FA",
+		name: "Лицевой угол (Downs / N-Pog to FH)",
+		symbol: "Facial Angle",
+		category: "sagittal",
+		value: facialAngleVal,
+		unit: "°",
+		normMin: 84,
+		normMax: 91,
+		normMean: 87.8,
+		normText: "87.8° ± 3.6°",
+		status: facialAngleStatus,
+		clinicalInterpretation: facialAngleInterp,
+		method: "Downs",
+	});
+
+	// 6. Angle of Convexity (Downs - N-A-Pog) - Norm: 0° ± 5° (-5° to +5°)
+	let convexityVal: number | null = null;
+	let convexityStatus: CephalometricMeasurement["status"] = "pending";
+	let convexityInterp = "Требуется установка точек N, A, Pog";
+	if (N && A && Pog) {
+		const rawAngle = angle3Points(N, A, Pog);
+		const projA_NPog = projectPointOntoLine(A, N, Pog);
+		// If Point A is anterior to N-Pog line (x > projA.x in standard ceph)
+		const isAnterior = A.x >= projA_NPog.x;
+		const deviation = 180 - rawAngle;
+		convexityVal = Number((isAnterior ? deviation : -deviation).toFixed(1));
+
+		if (convexityVal > 5.0) {
+			convexityStatus = "increased";
+			convexityInterp = "Выпуклый профиль лица (Скелетный класс II / Downs)";
+		} else if (convexityVal < -5.0) {
+			convexityStatus = "decreased";
+			convexityInterp = "Вогнутый профиль лица (Скелетный класс III / Downs)";
+		} else {
+			convexityStatus = "normal";
+			convexityInterp = "Прямой гармоничный профиль лица (Норма / Downs)";
+		}
+	}
+	measurements.push({
+		id: "Downs-Conv",
+		name: "Угол выпуклости профиля (Downs / N-A-Pog)",
+		symbol: "Convexity",
+		category: "sagittal",
+		value: convexityVal,
+		unit: "°",
+		normMin: -5,
+		normMax: 5,
+		normMean: 0,
+		normText: "0° ± 5°",
+		status: convexityStatus,
+		clinicalInterpretation: convexityInterp,
+		method: "Downs",
+	});
+
+	// 7. A-B Plane Angle (Downs - N-Pog to A-B) - Norm: -4.6° ± 3.2° (-8° to 0°)
+	let abPlaneVal: number | null = null;
+	let abPlaneStatus: CephalometricMeasurement["status"] = "pending";
+	let abPlaneInterp = "Требуется установка точек N, Pog, A, B";
+	if (N && Pog && A && B) {
+		const rawAngle = angleBetweenLines(N, Pog, A, B);
+		// Sign: B posterior to A gives negative angle in Class I/II
+		const isBPosterior = B.x < A.x;
+		abPlaneVal = Number((isBPosterior ? -rawAngle : rawAngle).toFixed(1));
+		if (abPlaneVal < -8.0) {
+			abPlaneStatus = "decreased";
+			abPlaneInterp = "Скелетный класс II (базис B смещен дистально относительно A / Downs)";
+		} else if (abPlaneVal > 0.0) {
+			abPlaneStatus = "increased";
+			abPlaneInterp = "Скелетный класс III (базис B смещен мезиально относительно A / Downs)";
+		} else {
+			abPlaneStatus = "normal";
+			abPlaneInterp = "Гармоничное соотношение базисов к лицевой плоскости (Downs)";
+		}
+	}
+	measurements.push({
+		id: "Downs-AB",
+		name: "Угол плоскости A-B (Downs / AB to N-Pog)",
+		symbol: "A-B Angle",
+		category: "sagittal",
+		value: abPlaneVal,
+		unit: "°",
+		normMin: -8,
+		normMax: 0,
+		normMean: -4.6,
+		normText: "-4.6° ± 3.2°",
+		status: abPlaneStatus,
+		clinicalInterpretation: abPlaneInterp,
+		method: "Downs",
+	});
+
+	// 8. SN-GoGn Angle (Steiner) - Norm: 32° ± 3°
 	let snGognVal: number | null = null;
 	let snGognStatus: CephalometricMeasurement["status"] = "pending";
 	let snGognInterp = "Требуется установка точек S, N, Go, Gn/Me";
@@ -535,15 +674,15 @@ export function calculateCephalometrics(
 		method: "Steiner",
 	});
 
-	// 6. FMA Angle (Tweed - Frankfort Mandibular Plane Angle) - Norm: 25° ± 3°
+	// 9. FMA Angle (Tweed - Frankfort Mandibular Plane Angle) - Norm: 25° ± 3°
 	let fmaVal: number | null = null;
 	let fmaStatus: CephalometricMeasurement["status"] = "pending";
 	let fmaInterp = "Требуется установка плоскостей";
 	if (Go && (Me || Gn)) {
 		const antMand = Me ?? Gn;
 		if (antMand) {
-			if (landmarks.Po && landmarks.Or) {
-				fmaVal = Number(angleBetweenLines(landmarks.Po, landmarks.Or, Go, antMand).toFixed(1));
+			if (hasFrankfort && Po && Or) {
+				fmaVal = Number(angleBetweenLines(Po, Or, Go, antMand).toFixed(1));
 			} else if (S && N) {
 				// Approximation when FH is estimated from SN (FH is roughly 7° to SN)
 				const rawAngle = angleBetweenLines(S, N, Go, antMand);
@@ -579,7 +718,78 @@ export function calculateCephalometrics(
 		method: "Tweed",
 	});
 
-	// 7. U1-SN Angle (Steiner - Upper Incisor to SN) - Norm: 104° ± 2°
+	// 10. Y-Axis Angle (Downs - S-Gn to Frankfort Horizontal) - Norm: 59.4° ± 3.8° (56° to 63°)
+	let yAxisVal: number | null = null;
+	let yAxisStatus: CephalometricMeasurement["status"] = "pending";
+	let yAxisInterp = "Требуется установка точек S, Gn/Me, Po, Or";
+	if (S && (Gn || Me) && fhStart && fhEnd) {
+		const antMand = Gn ?? Me;
+		if (antMand) {
+			const rawAngle = angleBetweenLines(fhStart, fhEnd, S, antMand);
+			yAxisVal = Number(rawAngle.toFixed(1));
+			if (yAxisVal > 63.2) {
+				yAxisStatus = "increased";
+				yAxisInterp = "Увеличен — вертикальный вектор роста лица / дорсо-каудальная ротация (Downs)";
+			} else if (yAxisVal < 55.6) {
+				yAxisStatus = "decreased";
+				yAxisInterp = "Уменьшен — горизонтальный вектор роста лица / вентро-краниальная ротация (Downs)";
+			} else {
+				yAxisStatus = "normal";
+				yAxisInterp = "Сбалансированный нейтральный вектор роста лицевого скелета (Downs)";
+			}
+		}
+	}
+	measurements.push({
+		id: "Downs-YAxis",
+		name: "Y-ось роста (Downs / S-Gn to FH)",
+		symbol: "Y-Axis",
+		category: "vertical",
+		value: yAxisVal,
+		unit: "°",
+		normMin: 56,
+		normMax: 63,
+		normMean: 59.4,
+		normText: "59.4° ± 3.8°",
+		status: yAxisStatus,
+		clinicalInterpretation: yAxisInterp,
+		method: "Downs",
+	});
+
+	// 11. Cant of Occlusal Plane (Downs - OP to FH) - Norm: 9.3° ± 3.8° (6° to 13°)
+	let cantOpVal: number | null = null;
+	let cantOpStatus: CephalometricMeasurement["status"] = "pending";
+	let cantOpInterp = "Требуется построение окклюзионной плоскости и FH";
+	if (opAnt && opPost && fhStart && fhEnd) {
+		const rawAngle = angleBetweenLines(fhStart, fhEnd, opPost, opAnt);
+		cantOpVal = Number(rawAngle.toFixed(1));
+		if (cantOpVal > 13.1) {
+			cantOpStatus = "increased";
+			cantOpInterp = "Крутой наклон окклюзионной плоскости (склонность к открытому прикусу / Downs)";
+		} else if (cantOpVal < 5.5) {
+			cantOpStatus = "decreased";
+			cantOpInterp = "Пологий наклон окклюзионной плоскости (склонность к глубокому прикусу / Downs)";
+		} else {
+			cantOpStatus = "normal";
+			cantOpInterp = "Нормальный угол наклона окклюзионной плоскости (Downs)";
+		}
+	}
+	measurements.push({
+		id: "Downs-CantOP",
+		name: "Наклон окклюзионной плоскости (Downs / OP to FH)",
+		symbol: "Cant of OP",
+		category: "vertical",
+		value: cantOpVal,
+		unit: "°",
+		normMin: 6,
+		normMax: 13,
+		normMean: 9.3,
+		normText: "9.3° ± 3.8°",
+		status: cantOpStatus,
+		clinicalInterpretation: cantOpInterp,
+		method: "Downs",
+	});
+
+	// 12. U1-SN Angle (Steiner - Upper Incisor to SN) - Norm: 104° ± 2°
 	let u1SnVal: number | null = null;
 	let u1SnStatus: CephalometricMeasurement["status"] = "pending";
 	let u1SnInterp = "Требуется установка S, N, U1t, U1a";
@@ -615,7 +825,7 @@ export function calculateCephalometrics(
 		method: "Steiner",
 	});
 
-	// 8. L1-MP / IMPA (Tweed / Steiner - Lower Incisor to Mandibular Plane) - Norm: 90° ± 3°
+	// 13. L1-MP / IMPA (Tweed / Steiner - Lower Incisor to Mandibular Plane) - Norm: 90° ± 3°
 	let l1MpVal: number | null = null;
 	let l1MpStatus: CephalometricMeasurement["status"] = "pending";
 	let l1MpInterp = "Требуется установка Go, Me/Gn, L1t, L1a";
@@ -653,7 +863,7 @@ export function calculateCephalometrics(
 		method: "Tweed",
 	});
 
-	// 9. Interincisal Angle (U1-L1) - Norm: 131° ± 5° (126° - 136°)
+	// 14. Interincisal Angle (U1-L1) - Norm: 131° ± 5° (126° - 136°)
 	let u1L1Val: number | null = null;
 	let u1L1Status: CephalometricMeasurement["status"] = "pending";
 	let u1L1Interp = "Требуется установка U1 и L1";
@@ -686,7 +896,7 @@ export function calculateCephalometrics(
 		method: "Steiner",
 	});
 
-	// 10. Maxillary-Mandibular Plane Angle (ANS-PNS to Go-Me) - Norm: 25° ± 4°
+	// 15. Maxillary-Mandibular Plane Angle (ANS-PNS to Go-Me) - Norm: 25° ± 4°
 	let mmAngleVal: number | null = null;
 	let mmStatus: CephalometricMeasurement["status"] = "pending";
 	let mmInterp = "Требуется установка ANS, PNS, Go, Me";
@@ -774,9 +984,9 @@ export function calculateCephalometrics(
 
 	const growthPattern = snGognVal === null
 		? "Undefined"
-		: snGognVal > 35 || (fmaVal !== null && fmaVal > 28)
+		: snGognVal > 35 || (fmaVal !== null && fmaVal > 28) || (yAxisVal !== null && yAxisVal > 63.2)
 			? "Dolichofacial (Hyperdivergent)"
-			: snGognVal < 29 || (fmaVal !== null && fmaVal < 22)
+			: snGognVal < 29 || (fmaVal !== null && fmaVal < 22) || (yAxisVal !== null && yAxisVal < 55.6)
 				? "Brachyfacial (Hypodivergent)"
 				: "Mesofacial";
 
@@ -828,37 +1038,50 @@ export function calculateCephalometrics(
 				? `Wits = ${witsVal} мм (Скелетный класс III)`
 				: `Wits = ${witsVal >= 0 ? "+" : ""}${witsVal} мм (Скелетный класс I)`;
 
+	const downsConvexityRu = convexityVal === null
+		? "Выпуклость профиля не оценена"
+		: convexityVal > 5
+			? `Выпуклый профиль (+${convexityVal}° по Downs)`
+			: convexityVal < -5
+				? `Вогнутый профиль (${convexityVal}° по Downs)`
+				: `Прямой профиль (${convexityVal >= 0 ? "+" : ""}${convexityVal}° по Downs)`;
+
 	const summaryRu = skeletalClass === "Undefined"
 		? "Для построения ортодонтического заключения расставьте все анатомические реперные точки на снимке ТРГ."
-		: `${skeletalClassRu}. ${maxillaryPositionRu}, ${mandibularPositionRu}. ${growthPatternRu}. Положение резцов: верхние — ${upperIncisorInclinationRu.toLowerCase()}, нижние — ${lowerIncisorInclinationRu.toLowerCase()}. ${witsRelationshipRu}.`;
+		: `${skeletalClassRu}. ${maxillaryPositionRu}, ${mandibularPositionRu}. ${growthPatternRu}. Положение резцов: верхние — ${upperIncisorInclinationRu.toLowerCase()}, нижние — ${lowerIncisorInclinationRu.toLowerCase()}. ${witsRelationshipRu}. ${downsConvexityRu}.`;
 
 	// ── Generation of Structured Form 043/y Text ──────────────────────────────
 
 	const dateStr = new Date().toLocaleDateString("ru-RU");
 	const protocol043Text = `ПРОТОКОЛ ТЕЛЕРЕНТГЕНОГРАФИЧЕСКОГО (ТРГ) ИССЛЕДОВАНИЯ В БОКОВОЙ ПРОЕКЦИИ
-(Форма 043/у · Приказ МЗ РФ №834н · Анализ по Steiner, Tweed, Ricketts)
+(Форма 043/у · Приказ МЗ РФ №834н · Анализ по Steiner, Tweed, Downs, Jacobson, Ricketts)
 Дата расчета: ${dateStr}
 
-1. Сагиттальные скелетные взаимоотношения:
+1. Сагиттальные скелетные взаимоотношения (Steiner, Downs, Jacobson):
 • Угол SNA: ${snaVal !== null ? `${snaVal}° (Норма 82°±2°)` : "—"} — ${snaInterp}
 • Угол SNB: ${snbVal !== null ? `${snbVal}° (Норма 80°±2°)` : "—"} — ${snbInterp}
 • Угол ANB: ${anbVal !== null ? `${anbVal}° (Норма 2°±2°)` : "—"} — ${anbInterp}
-• Wits-число: ${witsVal !== null ? `${witsVal >= 0 ? "+" : ""}${witsVal} мм (Норма 0±1 мм)` : "—"} — ${witsInterp}
+• Лицевой угол (Downs / N-Pog to FH): ${facialAngleVal !== null ? `${facialAngleVal}° (Норма 87.8°±3.6°)` : "—"} — ${facialAngleInterp}
+• Угол выпуклости (Downs / N-A-Pog): ${convexityVal !== null ? `${convexityVal >= 0 ? "+" : ""}${convexityVal}° (Норма 0°±5°)` : "—"} — ${convexityInterp}
+• Угол плоскости A-B (Downs): ${abPlaneVal !== null ? `${abPlaneVal}° (Норма -4.6°±3.2°)` : "—"} — ${abPlaneInterp}
+• Wits-число (Jacobson): ${witsVal !== null ? `${witsVal >= 0 ? "+" : ""}${witsVal} мм (Норма 0±1 мм)` : "—"} — ${witsInterp}
 
-2. Вертикальные параметры и тип лицевого роста:
+2. Вертикальные параметры и тип лицевого роста (Tweed, Steiner, Downs, Ricketts):
 • Угол SN-GoGn: ${snGognVal !== null ? `${snGognVal}° (Норма 32°±3°)` : "—"} — ${snGognInterp}
 • Угол FMA (Tweed): ${fmaVal !== null ? `${fmaVal}° (Норма 25°±3°)` : "—"} — ${fmaInterp}
-• Межбазисный угол NL-ML: ${mmAngleVal !== null ? `${mmAngleVal}° (Норма 25°±4°)` : "—"} — ${mmInterp}
+• Y-ось роста (Downs / S-Gn to FH): ${yAxisVal !== null ? `${yAxisVal}° (Норма 59.4°±3.8°)` : "—"} — ${yAxisInterp}
+• Наклон окклюзионной плоскости (Downs / Cant of OP): ${cantOpVal !== null ? `${cantOpVal}° (Норма 9.3°±3.8°)` : "—"} — ${cantOpInterp}
+• Межбазисный угол NL-ML (Ricketts): ${mmAngleVal !== null ? `${mmAngleVal}° (Норма 25°±4°)` : "—"} — ${mmInterp}
 • Тип роста: ${growthPatternRu}
 
-3. Дентальные характеристики и наклон резцов:
+3. Дентальные характеристики и наклон резцов (Steiner, Tweed):
 • Инклинация верхних резцов (U1-SN): ${u1SnVal !== null ? `${u1SnVal}° (Норма 104°±2°)` : "—"} — ${u1SnInterp}
 • Наклон нижних резцов (L1-MP / IMPA): ${l1MpVal !== null ? `${l1MpVal}° (Норма 90°±3°)` : "—"} — ${l1MpInterp}
 • Межрезцовый угол (U1-L1): ${u1L1Val !== null ? `${u1L1Val}° (Норма 131°±5°)` : "—"} — ${u1L1Interp}
 
 ЗАКЛЮЧЕНИЕ ЦЕФАЛОМЕТРИИ (ТРГ):
 ${summaryRu}
-Рекомендована ортодонтическая коррекция с учетом индивидуального вектора роста лицевого скелета и торка резцовой группы.`;
+Рекомендована ортодонтическая коррекция с учетом индивидуального вектора роста лицевого скелета, торка резцовой группы и скелетного профиля.`;
 
 	const placedCount = CEPHALOMETRIC_LANDMARKS.filter(
 		(l) => landmarks[l.key] !== undefined,
@@ -882,6 +1105,7 @@ ${summaryRu}
 			lowerIncisorInclination,
 			lowerIncisorInclinationRu,
 			witsRelationshipRu,
+			downsConvexityRu,
 			summaryRu,
 			protocol043Text,
 		},

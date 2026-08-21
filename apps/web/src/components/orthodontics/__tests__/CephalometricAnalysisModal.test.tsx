@@ -20,7 +20,7 @@ describe("CephalometricAnalysisModal Component (ТРГ боковая)", () => {
 		assert.equal(html, "");
 	});
 
-	it("renders full modal structure, title and patient name when isOpen is true", () => {
+	it("renders full modal structure, title, patient name, and Steiner / Tweed / Downs / Ricketts badge when isOpen is true", () => {
 		const html = renderToStaticMarkup(
 			createElement(CephalometricAnalysisModal, {
 				isOpen: true,
@@ -42,8 +42,8 @@ describe("CephalometricAnalysisModal Component (ТРГ боковая)", () => {
 			"Contains modal title",
 		);
 		assert.ok(
-			html.includes("Steiner / Tweed / Ricketts"),
-			"Contains analysis systems badge",
+			html.includes("Steiner / Tweed / Downs / Ricketts"),
+			"Contains comprehensive analysis systems badge",
 		);
 		assert.ok(
 			html.includes("Иванова Мария Сергеевна"),
@@ -85,7 +85,7 @@ describe("CephalometricAnalysisModal Component (ТРГ боковая)", () => {
 		);
 	});
 
-	it("renders all 14 mandatory orthodontic landmarks in the checklist", () => {
+	it("renders all 16 mandatory orthodontic landmarks in the checklist with touch targets", () => {
 		const html = renderToStaticMarkup(
 			createElement(CephalometricAnalysisModal, {
 				isOpen: true,
@@ -93,7 +93,7 @@ describe("CephalometricAnalysisModal Component (ТРГ боковая)", () => {
 			}),
 		);
 
-		// Check landmark names in Russian
+		// Check all 16 landmark names in Russian
 		for (const lm of CEPHALOMETRIC_LANDMARKS) {
 			assert.ok(
 				html.includes(lm.nameRu),
@@ -102,7 +102,7 @@ describe("CephalometricAnalysisModal Component (ТРГ боковая)", () => {
 		}
 	});
 
-	it("renders CephalometricCanvas with vector lateral cephalogram and SVG overlay", () => {
+	it("renders CephalometricCanvas with vector lateral cephalogram, touch hit areas and SVG overlays", () => {
 		const html = renderToStaticMarkup(
 			createElement(CephalometricCanvas, {
 				landmarks: DEFAULT_CEPH_LANDMARKS_PRESET,
@@ -131,14 +131,17 @@ describe("CephalometricAnalysisModal Component (ТРГ боковая)", () => {
 			"Renders anatomical lateral ceph vector model",
 		);
 
-		// Sella, Nasion, Incisors handles in SVG
+		// Sella, Nasion, Incisors, Orbitale, Porion handles in SVG
 		assert.ok(html.includes('class="landmark-handle cursor-pointer"'));
+		assert.ok(html.includes('class="touch-hit-area"'));
 		assert.ok(html.includes('class="polygon-layer"'));
-		assert.ok(html.includes('class="planes-layer opacity-70"'));
+		assert.ok(html.includes('class="planes-layer opacity-75"'));
 
-		// Toolbars
+		// Toolbars with >= 44x44px controls
 		assert.ok(html.includes("Установите точку:"));
 		assert.ok(html.includes("Sella (Седло)"));
 		assert.ok(html.includes("100%"));
+		assert.ok(html.includes('aria-label="Приблизить масштаб"'));
+		assert.ok(html.includes('aria-label="Отдалить масштаб"'));
 	});
 });

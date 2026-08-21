@@ -7,9 +7,8 @@ import {
 	CalendarPlus,
 	Check,
 	CheckCircle2,
-	ChevronLeft,
-	ChevronRight,
 	Clock,
+	Code,
 	Copy,
 	Download,
 	ExternalLink,
@@ -19,6 +18,7 @@ import {
 	Printer,
 	RotateCcw,
 	Scissors,
+	Send,
 	ShieldCheck,
 	Smile,
 	Sparkles,
@@ -29,7 +29,17 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
-import "./PublicOnlineBookingWidget.css";
+import {
+	BookingAnyDoctorCard,
+	BookingDoctorCard,
+	type BookingDoctorData,
+} from "./BookingDoctorCard";
+import {
+	BookingSlotPicker,
+	type BookingSlotItem,
+	type CalendarDayItem,
+} from "./BookingSlotPicker";
+import "./bookingWidget.css";
 
 // ============================================================================
 // Types & Contracts
@@ -61,25 +71,7 @@ export interface ServiceCategory {
 	popularServices: PopularService[];
 }
 
-export interface BookingDoctorData {
-	id: string;
-	fullName: string;
-	specialties: string[];
-	experienceYears: number;
-	rating: number;
-	reviewsCount: number;
-	avatarUrl?: string;
-	categoryIds: string[];
-	bio?: string;
-}
-
-export interface BookingSlotItem {
-	time: string; // "09:30"
-	startsAt: string; // ISO string
-	endsAt: string; // ISO string
-	period: "morning" | "afternoon" | "evening";
-	availableDoctorIds?: string[];
-}
+export type { BookingDoctorData, BookingSlotItem };
 
 export interface BookingConfirmationData {
 	referenceNumber: string;
@@ -104,8 +96,10 @@ export interface PublicOnlineBookingWidgetProps {
 	readonly title?: string;
 	/** Optional subtitle override */
 	readonly subtitle?: string;
-	/** Theme mode: light, dark, or auto */
-	readonly theme?: "light" | "dark" | "auto";
+	/** Theme mode: light, dark, night, calm_teal, auto */
+	readonly theme?: "light" | "dark" | "night" | "calm_teal" | "contrast" | "auto";
+	/** Embed mode: standalone, iframe, modal, or telegram */
+	readonly embedMode?: "standalone" | "iframe" | "modal" | "telegram";
 	/** Custom branches override */
 	readonly customBranches?: ClinicBranch[];
 	/** Custom categories override */
@@ -508,16 +502,16 @@ export function generateYandexCalendarUrl(event: {
 export function resolveCategoryIcon(iconName: string) {
 	switch (iconName) {
 		case "Stethoscope":
-			return <Stethoscope size={20} />;
+			return <Stethoscope size={22} />;
 		case "Sparkles":
-			return <Sparkles size={20} />;
+			return <Sparkles size={22} />;
 		case "Scissors":
-			return <Scissors size={20} />;
+			return <Scissors size={22} />;
 		case "Smile":
-			return <Smile size={20} />;
+			return <Smile size={22} />;
 		case "Activity":
 		default:
-			return <Activity size={20} />;
+			return <Activity size={22} />;
 	}
 }
 
@@ -564,7 +558,6 @@ export function generateMockSlotsForDate(
 			start.getTime() + (slotDurationMinutes || 30) * 60_000,
 		);
 
-		// Determine period
 		const period = h < 12 ? "morning" : h < 16 ? "afternoon" : "evening";
 
 		slots.push({
@@ -578,6 +571,26 @@ export function generateMockSlotsForDate(
 	return slots;
 }
 
+export function generateEmbedSnippet(options: {
+	clinicId?: string | null;
+	primaryColor?: string;
+	theme?: string;
+}): string {
+	const clinic = options.clinicId || "DEMO_CLINIC_ID";
+	const color = options.primaryColor || "#0d9488";
+	const theme = options.theme || "auto";
+
+	return `<!-- DENTE Online Booking Widget Embed -->
+<div id="dente-booking-container" data-clinic-id="${clinic}"></div>
+<script 
+  src="https://crm.dente.ru/widget/booking.js" 
+  data-clinic-id="${clinic}" 
+  data-primary-color="${color}" 
+  data-theme="${theme}" 
+  async>
+</script>`;
+}
+
 // ============================================================================
 // Main Component
 // ============================================================================
@@ -589,6 +602,7 @@ export const PublicOnlineBookingWidget: React.FC<
 	title = "Онлайн-запись в клинику DENTE",
 	subtitle = "Выберите услугу, врача и удобное время за 2 минуты",
 	theme = "auto",
+	embedMode,
 	customBranches = DEFAULT_BRANCHES,
 	customCategories = DEFAULT_SERVICE_CATEGORIES,
 	customDoctors = DEFAULT_DOCTORS,
@@ -603,6 +617,31 @@ export const PublicOnlineBookingWidget: React.FC<
 	className = "",
 }) => {
 	const widgetInstanceId = useId();
+
+	// Detect Telegram Mini App Context
+	const isTelegramContext = useMemo(() => {
+		if (embedMode === "telegram") return true;
+		if (typeof window === "undefined") return false;
+		const searchParams = new URLSearchParams(window.location.search);
+		const source = searchParams.get("source");
+		const isTgParam =
+			source === "tg" || source === "telegram" || searchParams.get("tg") === "1";
+		const hasTgObject = Boolean(
+			(window as unknown as { Telegram?: { WebApp?: unknown } })?.Telegram
+				?.WebApp,
+		);
+		return isTgParam || hasTgObject;
+	}, [embedMode]);
+
+	// Resolved Embed Mode
+	const effectiveEmbedMode = useMemo(() => {
+		if (embedMode) return embedMode;
+		if (isTelegramContext) return "telegram";
+		if (typeof window !== "undefined" && window.self !== window.top) {
+			return "iframe";
+		}
+		return "standalone";
+	}, [embedMode, isTelegramContext]);
 
 	// Step State (1 to 5)
 	const [step, setStep] = useState<number>(initialStep);
@@ -654,6 +693,80 @@ export const PublicOnlineBookingWidget: React.FC<
 	const [confirmationData, setConfirmationData] =
 		useState<BookingConfirmationData | null>(null);
 	const [copiedTicket, setCopiedTicket] = useState(false);
+	const [showEmbedModal, setShowEmbedModal] = useState(false);
+	const [copiedSnippet, setCopiedSnippet] = useState(false);
+
+	// Initialize Telegram WebApp hooks and pre-fill user info
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const tg = (
+			window as unknown as {
+				Telegram?: {
+					WebApp?: {
+						ready?: () => void;
+						expand?: () => void;
+						initDataUnsafe?: {
+							user?: {
+								first_name?: string;
+								last_name?: string;
+								username?: string;
+								phone_number?: string;
+							};
+						};
+						MainButton?: {
+							setText?: (text: string) => void;
+							show?: () => void;
+							hide?: () => void;
+							onClick?: (cb: () => void) => void;
+							offClick?: (cb: () => void) => void;
+						};
+						BackButton?: {
+							show?: () => void;
+							hide?: () => void;
+							onClick?: (cb: () => void) => void;
+							offClick?: (cb: () => void) => void;
+						};
+					};
+				};
+			}
+		)?.Telegram?.WebApp;
+
+		if (tg) {
+			tg.ready?.();
+			tg.expand?.();
+
+			// Pre-fill user data if available
+			const user = tg.initDataUnsafe?.user;
+			if (user && !patientName) {
+				const full = [user.first_name, user.last_name].filter(Boolean).join(" ");
+				if (full) setPatientName(full);
+			}
+			if (user?.phone_number && !patientPhone) {
+				setPatientPhone(formatRussianPhone(user.phone_number));
+			}
+		}
+	}, [patientName, patientPhone]);
+
+	// Post height resize message to parent iframe when step or slots change
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		if (effectiveEmbedMode === "iframe" && window.parent) {
+			const notifyResize = () => {
+				const docHeight = document.body.scrollHeight || 600;
+				window.parent.postMessage(
+					{
+						type: "DENTE_BOOKING_RESIZE",
+						height: docHeight,
+						step,
+					},
+					"*",
+				);
+			};
+			notifyResize();
+			const timer = setTimeout(notifyResize, 150);
+			return () => clearTimeout(timer);
+		}
+	}, [step, effectiveEmbedMode, slots]);
 
 	// Active datasets
 	const selectedBranch: ClinicBranch = useMemo(
@@ -740,7 +853,6 @@ export const PublicOnlineBookingWidget: React.FC<
 						});
 						setSlots(mapped);
 					} else {
-						// Fallback slots for smooth UX
 						setSlots(generateMockSlotsForDate(selectedDate));
 					}
 				})
@@ -753,7 +865,6 @@ export const PublicOnlineBookingWidget: React.FC<
 					if (!isCancelled) setSlotsLoading(false);
 				});
 		} else {
-			// Mock slot generation
 			const generated = generateMockSlotsForDate(selectedDate);
 			setSlots(generated);
 			setSlotsLoading(false);
@@ -812,7 +923,7 @@ export const PublicOnlineBookingWidget: React.FC<
 	};
 
 	// Calendar calculation helpers
-	const calendarDays = useMemo(() => {
+	const calendarDays: CalendarDayItem[] = useMemo(() => {
 		const year = calendarMonth.getFullYear();
 		const month = calendarMonth.getMonth();
 
@@ -820,20 +931,11 @@ export const PublicOnlineBookingWidget: React.FC<
 		const lastDayOfMonth = new Date(year, month + 1, 0);
 
 		const daysInMonth = lastDayOfMonth.getDate();
-		// Convert Sunday (0) to 6, Monday (1) to 0
 		let startDayIndex = firstDayOfMonth.getDay() - 1;
 		if (startDayIndex === -1) startDayIndex = 6;
 
-		const daysArray: {
-			dayNumber: number;
-			dateStr: string;
-			isCurrentMonth: boolean;
-			isPast: boolean;
-			isToday: boolean;
-			isSelected: boolean;
-		}[] = [];
+		const daysArray: CalendarDayItem[] = [];
 
-		// Blank/Previous month padding
 		const prevMonthLastDay = new Date(year, month, 0).getDate();
 		for (let i = startDayIndex - 1; i >= 0; i--) {
 			const dayNum = prevMonthLastDay - i;
@@ -850,7 +952,6 @@ export const PublicOnlineBookingWidget: React.FC<
 			});
 		}
 
-		// Current month days
 		for (let d = 1; d <= daysInMonth; d++) {
 			const dStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 			const isToday = dStr === todayDateStr;
@@ -969,8 +1070,35 @@ export const PublicOnlineBookingWidget: React.FC<
 				}
 			} catch (err) {
 				console.warn(
-					"[DENTE Online Booking] API submit failed, falling back to instant confirmation:",
+					"[DENTE Online Booking] API submit fallback to instant confirmation:",
 					err,
+				);
+			}
+		}
+
+		// Trigger Telegram Haptic Feedback if available
+		if (typeof window !== "undefined") {
+			const tg = (
+				window as unknown as {
+					Telegram?: {
+						WebApp?: {
+							HapticFeedback?: {
+								notificationOccurred?: (type: string) => void;
+							};
+						};
+					};
+				}
+			)?.Telegram?.WebApp;
+			tg?.HapticFeedback?.notificationOccurred?.("success");
+
+			// Post success message to parent iframe if embedded
+			if (window.parent) {
+				window.parent.postMessage(
+					{
+						type: "DENTE_BOOKING_SUCCESS",
+						booking: finalConfirmation,
+					},
+					"*",
 				);
 			}
 		}
@@ -990,6 +1118,17 @@ export const PublicOnlineBookingWidget: React.FC<
 		setTimeout(() => setCopiedTicket(false), 2000);
 	};
 
+	// Copy HTML embed code
+	const handleCopyEmbedSnippet = () => {
+		const snippet = generateEmbedSnippet({
+			clinicId: organizationId,
+			theme,
+		});
+		navigator.clipboard?.writeText(snippet);
+		setCopiedSnippet(true);
+		setTimeout(() => setCopiedSnippet(false), 2000);
+	};
+
 	// Download .ICS calendar file
 	const handleDownloadIcs = () => {
 		if (!confirmationData) return;
@@ -1007,7 +1146,10 @@ export const PublicOnlineBookingWidget: React.FC<
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement("a");
 		link.href = url;
-		link.setAttribute("download", `dente-booking-${confirmationData.referenceNumber}.ics`);
+		link.setAttribute(
+			"download",
+			`dente-booking-${confirmationData.referenceNumber}.ics`,
+		);
 		document.body.appendChild(link);
 		link.click();
 		document.body.removeChild(link);
@@ -1033,16 +1175,23 @@ export const PublicOnlineBookingWidget: React.FC<
 		<div
 			className={`dente-booking-widget ${className}`}
 			data-theme={theme}
+			data-embed={effectiveEmbedMode}
 			id={`dente-booking-${widgetInstanceId}`}
 		>
 			{/* Top Header */}
 			<header className="dbw-header">
 				<div className="dbw-header-clinic">
-					<Building2 size={16} />
+					<Building2 size={18} />
 					<span>Стоматологический центр DENTE</span>
 				</div>
 				<h2 className="dbw-header-title">{title}</h2>
 				<p className="dbw-header-subtitle">{subtitle}</p>
+				{isTelegramContext && (
+					<div className="dbw-tg-badge">
+						<Send size={12} />
+						<span>Telegram Mini App</span>
+					</div>
+				)}
 			</header>
 
 			{/* Progress Indicator */}
@@ -1113,7 +1262,7 @@ export const PublicOnlineBookingWidget: React.FC<
 					<section aria-labelledby="step1-heading">
 						{/* Branch selection */}
 						<h3 id="step1-heading" className="dbw-section-heading">
-							<MapPin size={18} /> Выберите филиал клиники
+							<MapPin size={20} /> Выберите филиал клиники
 						</h3>
 						<div className="dbw-branches-grid">
 							{customBranches.map((branch) => (
@@ -1123,16 +1272,17 @@ export const PublicOnlineBookingWidget: React.FC<
 									className={`dbw-branch-card ${selectedBranchId === branch.id ? "selected" : ""}`}
 									onClick={() => setSelectedBranchId(branch.id)}
 								>
-									<div className="dbw-branch-name">
+									<div className="dbw-branch-name min-w-0 break-words">
 										<span>{branch.name}</span>
 										{selectedBranchId === branch.id && (
-											<CheckCircle2 size={18} className="text-blue-600" />
+											<CheckCircle2 size={18} className="text-teal-600 dark:text-teal-400 flex-shrink-0 ml-2" />
 										)}
 									</div>
-									<div className="dbw-branch-address">
-										<MapPin size={14} /> {branch.address}
+									<div className="dbw-branch-address min-w-0 break-words">
+										<MapPin size={14} className="flex-shrink-0" />
+										<span>{branch.address}</span>
 									</div>
-									<div className="text-xs text-slate-500 mt-1">
+									<div className="dbw-branch-hours min-w-0 break-words">
 										{branch.workHours}
 									</div>
 								</button>
@@ -1141,7 +1291,7 @@ export const PublicOnlineBookingWidget: React.FC<
 
 						{/* Service Category selection */}
 						<h3 className="dbw-section-heading">
-							<Stethoscope size={18} /> Направление стоматологии
+							<Stethoscope size={20} /> Направление стоматологии
 						</h3>
 						<p className="dbw-section-subheading">
 							Выберите профиль лечения для подбора ведущего специалиста
@@ -1161,8 +1311,10 @@ export const PublicOnlineBookingWidget: React.FC<
 									<div className="dbw-category-icon">
 										{resolveCategoryIcon(category.iconName)}
 									</div>
-									<div className="dbw-category-title">{category.title}</div>
-									<div className="dbw-category-desc">
+									<div className="dbw-category-title min-w-0 break-words">
+										{category.title}
+									</div>
+									<div className="dbw-category-desc min-w-0 break-words">
 										{category.description}
 									</div>
 								</button>
@@ -1171,7 +1323,7 @@ export const PublicOnlineBookingWidget: React.FC<
 
 						{/* Popular services for chosen category */}
 						<div>
-							<div className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+							<div className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-2">
 								Популярные услуги направления «{selectedCategory.title}»:
 							</div>
 							<div className="dbw-services-list">
@@ -1182,15 +1334,15 @@ export const PublicOnlineBookingWidget: React.FC<
 										className={`dbw-service-item ${selectedServiceId === service.id ? "selected" : ""}`}
 										onClick={() => setSelectedServiceId(service.id)}
 									>
-										<div className="dbw-service-info">
-											<span className="dbw-service-title">
+										<div className="dbw-service-info min-w-0">
+											<span className="dbw-service-title min-w-0 break-words">
 												{service.title}
 											</span>
 											<span className="dbw-service-duration">
-												<Clock size={12} /> {service.durationMinutes} мин
+												<Clock size={14} /> {service.durationMinutes} мин
 											</span>
 										</div>
-										<div className="dbw-service-price">
+										<div className="dbw-service-price min-w-0 break-words">
 											{service.priceFormatted}
 										</div>
 									</button>
@@ -1199,7 +1351,7 @@ export const PublicOnlineBookingWidget: React.FC<
 						</div>
 
 						<footer className="dbw-actions-footer">
-							<div className="text-xs text-slate-500">
+							<div className="text-xs font-semibold text-slate-500">
 								Шаг 1 из 4: Выбор филиала и услуги
 							</div>
 							<button
@@ -1208,7 +1360,7 @@ export const PublicOnlineBookingWidget: React.FC<
 								onClick={() => handleStepChange(2)}
 							>
 								<span>Выбрать врача</span>
-								<ChevronRight size={18} />
+								<CheckCircle2 size={18} />
 							</button>
 						</footer>
 					</section>
@@ -1219,84 +1371,34 @@ export const PublicOnlineBookingWidget: React.FC<
 				{/* ================================================================ */}
 				{step === 2 && (
 					<section aria-labelledby="step2-heading">
-						<div className="flex items-center justify-between mb-4">
+						<div className="flex items-center justify-between mb-4 flex-wrap gap-2">
 							<div>
 								<h3 id="step2-heading" className="dbw-section-heading">
-									<User size={18} /> Лечащий врач
+									<User size={20} /> Лечащий врач
 								</h3>
 								<p className="dbw-section-subheading">
 									Специалисты по направлению «{selectedCategory.title}»
 								</p>
 							</div>
-							<div className="text-xs px-2.5 py-1 rounded bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-medium">
+							<div className="text-xs px-3 py-1.5 rounded-full bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300 font-bold">
 								{filteredDoctors.length} врача доступно
 							</div>
 						</div>
 
-						{/* Doctor cards list */}
+						{/* Doctor cards list using modular BookingDoctorCard */}
 						<div className="dbw-doctors-list">
-							{/* Option: Any Doctor */}
-							<button
-								type="button"
-								className={`dbw-doctor-card ${selectedDoctorId === null ? "selected" : ""}`}
-								onClick={() => setSelectedDoctorId(null)}
-							>
-								<div className="dbw-doctor-main">
-									<div className="dbw-doctor-avatar">
-										<Sparkles size={24} />
-									</div>
-									<div className="dbw-doctor-meta">
-										<div className="dbw-doctor-name">
-											Любой свободный специалист
-										</div>
-										<div className="dbw-doctor-specialties">
-											Самая быстрая запись на ближайшее удобное время
-										</div>
-										<div className="dbw-doctor-badges">
-											<span className="dbw-badge-rating">
-												<Star size={12} fill="#b45309" /> Рекомендуем
-											</span>
-										</div>
-									</div>
-								</div>
-								<ChevronRight size={20} className="text-slate-400" />
-							</button>
+							<BookingAnyDoctorCard
+								isSelected={selectedDoctorId === null}
+								onSelect={() => setSelectedDoctorId(null)}
+							/>
 
 							{filteredDoctors.map((doc) => (
-								<button
-									type="button"
+								<BookingDoctorCard
 									key={doc.id}
-									className={`dbw-doctor-card ${selectedDoctorId === doc.id ? "selected" : ""}`}
-									onClick={() => setSelectedDoctorId(doc.id)}
-								>
-									<div className="dbw-doctor-main">
-										<div className="dbw-doctor-avatar">
-											{doc.avatarUrl ? (
-												<img src={doc.avatarUrl} alt={doc.fullName} />
-											) : (
-												<span>{doc.fullName.replace("Д-р ", "")[0]}</span>
-											)}
-										</div>
-										<div className="dbw-doctor-meta">
-											<div className="dbw-doctor-name">{doc.fullName}</div>
-											<div className="dbw-doctor-specialties">
-												{doc.specialties.join(" • ")}
-											</div>
-											<div className="dbw-doctor-badges">
-												<span className="dbw-badge-rating">
-													<Star size={12} fill="#b45309" /> {doc.rating.toFixed(2)}
-												</span>
-												<span className="dbw-badge-exp">
-													Стаж {doc.experienceYears} лет
-												</span>
-												<span className="text-xs text-slate-400">
-													({doc.reviewsCount} отзывов)
-												</span>
-											</div>
-										</div>
-									</div>
-									<ChevronRight size={20} className="text-slate-400" />
-								</button>
+									doctor={doc}
+									isSelected={selectedDoctorId === doc.id}
+									onSelect={(d) => setSelectedDoctorId(d.id)}
+								/>
 							))}
 						</div>
 
@@ -1306,7 +1408,7 @@ export const PublicOnlineBookingWidget: React.FC<
 								className="dbw-btn-back"
 								onClick={() => handleStepChange(1)}
 							>
-								<ArrowLeft size={16} />
+								<ArrowLeft size={18} />
 								<span>Назад</span>
 							</button>
 
@@ -1316,177 +1418,51 @@ export const PublicOnlineBookingWidget: React.FC<
 								onClick={() => handleStepChange(3)}
 							>
 								<span>Выбрать дату и время</span>
-								<ChevronRight size={18} />
+								<CheckCircle2 size={18} />
 							</button>
 						</footer>
 					</section>
 				)}
 
 				{/* ================================================================ */}
-				{/* STEP 3: Date & Slot Picker                                       */}
+				{/* STEP 3: Date & Slot Picker (Using modular BookingSlotPicker)      */}
 				{/* ================================================================ */}
 				{step === 3 && (
 					<section aria-labelledby="step3-heading">
 						<h3 id="step3-heading" className="dbw-section-heading">
-							<Calendar size={18} /> Выберите дату и время приёма
+							<Calendar size={20} /> Выберите дату и время приёма
 						</h3>
 
 						{/* Doctor & Service Summary Pill */}
-						<div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 mb-4 text-sm">
-							<div className="flex items-center gap-2">
-								<UserCheck size={16} className="text-blue-600" />
-								<span className="font-semibold">{selectedDoctor.fullName}</span>
+						<div className="flex items-center justify-between p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 mb-4 text-sm flex-wrap gap-2">
+							<div className="flex items-center gap-2 min-w-0">
+								<UserCheck size={18} className="text-teal-600 dark:text-teal-400 flex-shrink-0" />
+								<span className="font-bold text-slate-900 dark:text-slate-100 min-w-0 break-words">
+									{selectedDoctor.fullName}
+								</span>
 							</div>
-							<span className="text-xs text-slate-500 font-medium">
+							<span className="text-xs font-semibold text-slate-600 dark:text-slate-300 min-w-0 break-words">
 								{selectedService?.title || selectedCategory.title}
 							</span>
 						</div>
 
-						{/* Interactive Calendar */}
-						<div className="dbw-calendar-container">
-							<div className="dbw-calendar-header">
-								<button
-									type="button"
-									className="dbw-calendar-nav-btn"
-									onClick={handlePrevMonth}
-									aria-label="Предыдущий месяц"
-								>
-									<ChevronLeft size={18} />
-								</button>
-								<div className="dbw-calendar-month-label">{monthLabel}</div>
-								<button
-									type="button"
-									className="dbw-calendar-nav-btn"
-									onClick={handleNextMonth}
-									aria-label="Следующий месяц"
-								>
-									<ChevronRight size={18} />
-								</button>
-							</div>
-
-							<div className="dbw-calendar-weekdays">
-								<span className="dbw-calendar-weekday">Пн</span>
-								<span className="dbw-calendar-weekday">Вт</span>
-								<span className="dbw-calendar-weekday">Ср</span>
-								<span className="dbw-calendar-weekday">Чт</span>
-								<span className="dbw-calendar-weekday">Пт</span>
-								<span className="dbw-calendar-weekday">Сб</span>
-								<span className="dbw-calendar-weekday">Вс</span>
-							</div>
-
-							<div className="dbw-calendar-days-grid">
-								{calendarDays.map((dayObj) => (
-									<button
-										type="button"
-										key={dayObj.dateStr}
-										className={`dbw-calendar-day-btn ${dayObj.isSelected ? "selected" : ""} ${dayObj.isToday ? "today" : ""}`}
-										disabled={dayObj.isPast || !dayObj.isCurrentMonth}
-										onClick={() => {
-											setSelectedDate(dayObj.dateStr);
-											setSelectedSlot(null);
-										}}
-									>
-										<span>{dayObj.dayNumber}</span>
-										{!dayObj.isPast && dayObj.isCurrentMonth && (
-											<span className="dbw-day-slot-dot" />
-										)}
-									</button>
-								))}
-							</div>
-						</div>
-
-						{/* Available Time Slots */}
-						<div className="dbw-slots-section">
-							<div className="flex items-center justify-between mb-2">
-								<span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-									Свободное время на {formatRussianDate(selectedDate)}
-								</span>
-								<span className="text-xs text-slate-500">
-									Длительность: 30-45 мин
-								</span>
-							</div>
-
-							{slotsLoading ? (
-								<div className="text-center py-6 text-slate-400 text-sm">
-									Загрузка свободных слотов…
-								</div>
-							) : slots.length === 0 ? (
-								<div className="text-center py-6 border border-dashed rounded-lg border-slate-300 dark:border-slate-700 text-slate-500 text-sm">
-									На выбранную дату свободных мест нет. Выберите другую дату.
-								</div>
-							) : (
-								<div>
-									{/* Morning */}
-									{slots.some((s) => s.period === "morning") && (
-										<div>
-											<div className="dbw-slots-period-label">
-												☀️ Утро (до 12:00)
-											</div>
-											<div className="dbw-slots-grid">
-												{slots
-													.filter((s) => s.period === "morning")
-													.map((slot) => (
-														<button
-															type="button"
-															key={slot.time}
-															className={`dbw-slot-btn ${selectedSlot?.time === slot.time ? "selected" : ""}`}
-															onClick={() => setSelectedSlot(slot)}
-														>
-															{slot.time}
-														</button>
-													))}
-											</div>
-										</div>
-									)}
-
-									{/* Afternoon */}
-									{slots.some((s) => s.period === "afternoon") && (
-										<div>
-											<div className="dbw-slots-period-label">
-												🌤️ День (12:00 - 16:00)
-											</div>
-											<div className="dbw-slots-grid">
-												{slots
-													.filter((s) => s.period === "afternoon")
-													.map((slot) => (
-														<button
-															type="button"
-															key={slot.time}
-															className={`dbw-slot-btn ${selectedSlot?.time === slot.time ? "selected" : ""}`}
-															onClick={() => setSelectedSlot(slot)}
-														>
-															{slot.time}
-														</button>
-													))}
-											</div>
-										</div>
-									)}
-
-									{/* Evening */}
-									{slots.some((s) => s.period === "evening") && (
-										<div>
-											<div className="dbw-slots-period-label">
-												🌙 Вечер (после 16:00)
-											</div>
-											<div className="dbw-slots-grid">
-												{slots
-													.filter((s) => s.period === "evening")
-													.map((slot) => (
-														<button
-															type="button"
-															key={slot.time}
-															className={`dbw-slot-btn ${selectedSlot?.time === slot.time ? "selected" : ""}`}
-															onClick={() => setSelectedSlot(slot)}
-														>
-															{slot.time}
-														</button>
-													))}
-											</div>
-										</div>
-									)}
-								</div>
-							)}
-						</div>
+						{/* Interactive Slot & Date Picker */}
+						<BookingSlotPicker
+							selectedDate={selectedDate}
+							onSelectDate={(date) => {
+								setSelectedDate(date);
+								setSelectedSlot(null);
+							}}
+							calendarMonth={calendarMonth}
+							onPrevMonth={handlePrevMonth}
+							onNextMonth={handleNextMonth}
+							calendarDays={calendarDays}
+							monthLabel={monthLabel}
+							slots={slots}
+							selectedSlot={selectedSlot}
+							onSelectSlot={(slot) => setSelectedSlot(slot)}
+							slotsLoading={slotsLoading}
+						/>
 
 						<footer className="dbw-actions-footer">
 							<button
@@ -1494,7 +1470,7 @@ export const PublicOnlineBookingWidget: React.FC<
 								className="dbw-btn-back"
 								onClick={() => handleStepChange(2)}
 							>
-								<ArrowLeft size={16} />
+								<ArrowLeft size={18} />
 								<span>Назад</span>
 							</button>
 
@@ -1505,7 +1481,7 @@ export const PublicOnlineBookingWidget: React.FC<
 								onClick={() => handleStepChange(4)}
 							>
 								<span>Перейти к контактам</span>
-								<ChevronRight size={18} />
+								<CheckCircle2 size={18} />
 							</button>
 						</footer>
 					</section>
@@ -1517,15 +1493,15 @@ export const PublicOnlineBookingWidget: React.FC<
 				{step === 4 && (
 					<form onSubmit={handleFinalSubmit} aria-labelledby="step4-heading">
 						<h3 id="step4-heading" className="dbw-section-heading">
-							<User size={18} /> Ваши контактные данные
+							<User size={20} /> Ваши контактные данные
 						</h3>
 
 						{/* Booking quick recap */}
-						<div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 text-xs text-blue-900 dark:text-blue-200 mb-4 flex flex-col gap-1">
-							<div className="font-semibold text-sm">
+						<div className="p-3.5 rounded-lg bg-teal-50 dark:bg-teal-950/70 border border-teal-200 dark:border-teal-900 text-teal-900 dark:text-teal-200 mb-4 flex flex-col gap-1.5">
+							<div className="font-bold text-sm min-w-0 break-words">
 								{selectedBranch.name} • {selectedCategory.title}
 							</div>
-							<div>
+							<div className="text-xs font-semibold min-w-0 break-words">
 								{selectedDoctor.fullName} — {formatRussianDate(selectedDate)} в{" "}
 								{selectedSlot?.time || "10:00"}
 							</div>
@@ -1535,7 +1511,7 @@ export const PublicOnlineBookingWidget: React.FC<
 							{/* Full Name */}
 							<div className="dbw-form-group">
 								<label htmlFor="patient-name-input" className="dbw-label">
-									<User size={16} /> ФИО пациента *
+									<User size={18} /> ФИО пациента *
 								</label>
 								<input
 									id="patient-name-input"
@@ -1551,7 +1527,7 @@ export const PublicOnlineBookingWidget: React.FC<
 							{/* Phone */}
 							<div className="dbw-form-group">
 								<label htmlFor="patient-phone-input" className="dbw-label">
-									<Phone size={16} /> Номер мобильного телефона *
+									<Phone size={18} /> Номер мобильного телефона *
 								</label>
 								<input
 									id="patient-phone-input"
@@ -1567,7 +1543,7 @@ export const PublicOnlineBookingWidget: React.FC<
 							{/* Comment */}
 							<div className="dbw-form-group">
 								<label htmlFor="patient-comment-input" className="dbw-label">
-									<MessageSquare size={16} /> Пожелания / Что вас беспокоит?
+									<MessageSquare size={18} /> Пожелания / Что вас беспокоит?
 								</label>
 								<textarea
 									id="patient-comment-input"
@@ -1584,19 +1560,19 @@ export const PublicOnlineBookingWidget: React.FC<
 							<div className="dbw-sms-block">
 								<div className="dbw-sms-header">
 									<div className="dbw-sms-title">
-										<ShieldCheck size={18} />
+										<ShieldCheck size={20} />
 										<span>Подтверждение номера телефона</span>
 									</div>
 									{isSmsVerified && (
-										<span className="text-xs text-green-600 dark:text-green-400 font-semibold flex items-center gap-1">
-											<CheckCircle2 size={14} /> Подтвержден
+										<span className="text-xs text-green-600 dark:text-green-400 font-bold flex items-center gap-1">
+											<CheckCircle2 size={16} /> Подтвержден
 										</span>
 									)}
 								</div>
 
 								{!smsCodeSent && !isSmsVerified ? (
-									<div className="flex items-center justify-between gap-4">
-										<span className="text-xs text-slate-600 dark:text-slate-300">
+									<div className="flex items-center justify-between gap-4 flex-wrap">
+										<span className="text-xs font-medium text-slate-700 dark:text-slate-300">
 											Отправим бесплатное СМС с 4-значным проверочным кодом
 										</span>
 										<button
@@ -1612,7 +1588,7 @@ export const PublicOnlineBookingWidget: React.FC<
 									<div className="flex flex-col gap-3">
 										<div className="dbw-sms-sim-badge">
 											<span>📲 Демо-СМС отправлено: Код подтверждения</span>
-											<strong className="text-blue-700 dark:text-blue-300 font-mono text-sm ml-1">
+											<strong className="text-teal-700 dark:text-teal-300 font-mono text-sm ml-1">
 												{simulatedSmsCode}
 											</strong>
 										</div>
@@ -1638,7 +1614,7 @@ export const PublicOnlineBookingWidget: React.FC<
 
 											<button
 												type="button"
-												className="text-xs text-blue-600 dark:text-blue-400 underline hover:no-underline"
+												className="text-xs font-bold text-teal-600 dark:text-teal-400 underline hover:no-underline"
 												onClick={() => {
 													setEnteredSmsCode(simulatedSmsCode);
 													setIsSmsVerified(true);
@@ -1650,14 +1626,14 @@ export const PublicOnlineBookingWidget: React.FC<
 										</div>
 
 										{smsResendCountdown > 0 ? (
-											<div className="text-xs text-slate-400">
+											<div className="text-xs text-slate-400 font-medium">
 												Повторный код можно запросить через{" "}
 												{smsResendCountdown} сек.
 											</div>
 										) : (
 											<button
 												type="button"
-												className="text-xs text-slate-500 underline text-left"
+												className="text-xs text-slate-500 underline text-left font-medium"
 												onClick={handleSendSmsCode}
 											>
 												Отправить код ещё раз
@@ -1667,26 +1643,26 @@ export const PublicOnlineBookingWidget: React.FC<
 								) : null}
 
 								{smsError && (
-									<div className="text-xs text-red-600 flex items-center gap-1">
-										<AlertCircle size={14} /> {smsError}
+									<div className="text-xs font-bold text-red-600 dark:text-red-400 flex items-center gap-1">
+										<AlertCircle size={16} /> {smsError}
 									</div>
 								)}
 							</div>
 						)}
 
 						{/* Privacy Policy Checkbox */}
-						<div className="flex items-start gap-2 my-4">
+						<div className="flex items-start gap-3 my-4">
 							<input
 								id="privacy-checkbox"
 								type="checkbox"
 								required
 								checked={hasAgreedToPrivacy}
 								onChange={(e) => setHasAgreedToPrivacy(e.target.checked)}
-								className="mt-1"
+								className="mt-1 w-5 h-5 cursor-pointer"
 							/>
 							<label
 								htmlFor="privacy-checkbox"
-								className="text-xs text-slate-500 leading-snug cursor-pointer"
+								className="text-xs font-medium text-slate-600 dark:text-slate-300 leading-snug cursor-pointer"
 							>
 								Я согласен на обработку персональных данных и подтверждаю
 								ознакомление с политикой конфиденциальности клиники DENTE
@@ -1696,9 +1672,9 @@ export const PublicOnlineBookingWidget: React.FC<
 						{submitError && (
 							<div
 								role="alert"
-								className="p-3 mb-4 rounded-lg bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300 flex items-center gap-2"
+								className="p-3.5 mb-4 rounded-lg bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900 text-xs font-bold text-red-700 dark:text-red-300 flex items-center gap-2"
 							>
-								<AlertCircle size={16} /> {submitError}
+								<AlertCircle size={18} /> {submitError}
 							</div>
 						)}
 
@@ -1708,7 +1684,7 @@ export const PublicOnlineBookingWidget: React.FC<
 								className="dbw-btn-back"
 								onClick={() => handleStepChange(3)}
 							>
-								<ArrowLeft size={16} />
+								<ArrowLeft size={18} />
 								<span>Назад</span>
 							</button>
 
@@ -1723,7 +1699,7 @@ export const PublicOnlineBookingWidget: React.FC<
 									!hasAgreedToPrivacy
 								}
 							>
-								<CheckCircle2 size={18} />
+								<CheckCircle2 size={20} />
 								<span>{isSubmitting ? "Оформление..." : "Подтвердить запись"}</span>
 							</button>
 						</footer>
@@ -1739,14 +1715,14 @@ export const PublicOnlineBookingWidget: React.FC<
 						aria-labelledby="confirmation-heading"
 					>
 						<div className="dbw-success-badge-icon">
-							<CheckCircle2 size={40} />
+							<CheckCircle2 size={44} />
 						</div>
 
-						<h3 id="confirmation-heading" className="dbw-confirmation-title">
+						<h3 id="confirmation-heading" className="dbw-confirmation-title min-w-0 break-words">
 							Запись успешно оформлена!
 						</h3>
 
-						<p className="text-sm text-slate-500 max-w-md">
+						<p className="text-sm font-medium text-slate-600 dark:text-slate-300 max-w-md min-w-0 break-words">
 							Мы забронировали время и ждём вас в клинике. Детали визита и номер
 							электронного талона:
 						</p>
@@ -1760,20 +1736,21 @@ export const PublicOnlineBookingWidget: React.FC<
 							<button
 								type="button"
 								onClick={handleCopyTicket}
-								className="text-slate-400 hover:text-blue-600 ml-1"
+								className="text-slate-400 hover:text-teal-600 ml-1 p-1 rounded transition-colors"
 								title="Скопировать номер талона"
+								aria-label="Скопировать номер талона"
 							>
-								{copiedTicket ? <Check size={14} /> : <Copy size={14} />}
+								{copiedTicket ? <Check size={18} className="text-green-600" /> : <Copy size={18} />}
 							</button>
 						</div>
 
 						{/* Details Box */}
 						<div className="dbw-confirmation-details-box">
 							<div className="dbw-detail-row">
-								<Calendar size={18} className="dbw-detail-icon" />
-								<div>
+								<Calendar size={20} className="dbw-detail-icon" />
+								<div className="min-w-0">
 									<div className="dbw-detail-label">Дата и время приёма</div>
-									<div className="dbw-detail-value">
+									<div className="dbw-detail-value min-w-0 break-words">
 										{formatRussianDate(
 											confirmationData?.date || selectedDate,
 										)}{" "}
@@ -1783,10 +1760,10 @@ export const PublicOnlineBookingWidget: React.FC<
 							</div>
 
 							<div className="dbw-detail-row">
-								<User size={18} className="dbw-detail-icon" />
-								<div>
+								<User size={20} className="dbw-detail-icon" />
+								<div className="min-w-0">
 									<div className="dbw-detail-label">Лечащий специалист</div>
-									<div className="dbw-detail-value">
+									<div className="dbw-detail-value min-w-0 break-words">
 										{confirmationData?.doctor.fullName ||
 											selectedDoctor.fullName}
 									</div>
@@ -1794,10 +1771,10 @@ export const PublicOnlineBookingWidget: React.FC<
 							</div>
 
 							<div className="dbw-detail-row">
-								<Stethoscope size={18} className="dbw-detail-icon" />
-								<div>
+								<Stethoscope size={20} className="dbw-detail-icon" />
+								<div className="min-w-0">
 									<div className="dbw-detail-label">Направление / Услуга</div>
-									<div className="dbw-detail-value">
+									<div className="dbw-detail-value min-w-0 break-words">
 										{confirmationData?.service?.title ||
 											confirmationData?.category.title ||
 											selectedService?.title ||
@@ -1807,10 +1784,10 @@ export const PublicOnlineBookingWidget: React.FC<
 							</div>
 
 							<div className="dbw-detail-row">
-								<MapPin size={18} className="dbw-detail-icon" />
-								<div>
+								<MapPin size={20} className="dbw-detail-icon" />
+								<div className="min-w-0">
 									<div className="dbw-detail-label">Адрес филиала</div>
-									<div className="dbw-detail-value">
+									<div className="dbw-detail-value min-w-0 break-words">
 										{confirmationData?.branch.name || selectedBranch.name} —{" "}
 										{confirmationData?.branch.address ||
 											selectedBranch.address}
@@ -1819,10 +1796,10 @@ export const PublicOnlineBookingWidget: React.FC<
 							</div>
 
 							<div className="dbw-detail-row">
-								<Phone size={18} className="dbw-detail-icon" />
-								<div>
+								<Phone size={20} className="dbw-detail-icon" />
+								<div className="min-w-0">
 									<div className="dbw-detail-label">Пациент и телефон</div>
-									<div className="dbw-detail-value">
+									<div className="dbw-detail-value min-w-0 break-words">
 										{confirmationData?.patientName || patientName || "Пациент"}{" "}
 										({confirmationData?.patientPhone || patientPhone || "+7 (999) 000-00-00"})
 									</div>
@@ -1832,7 +1809,7 @@ export const PublicOnlineBookingWidget: React.FC<
 
 						{/* Calendar & Export Actions */}
 						<div className="w-full">
-							<div className="text-xs font-semibold text-slate-500 mb-2 text-left">
+							<div className="text-xs font-bold text-slate-600 dark:text-slate-300 mb-2 text-left">
 								Добавить напоминание в календарь:
 							</div>
 
@@ -1842,7 +1819,7 @@ export const PublicOnlineBookingWidget: React.FC<
 									className="dbw-export-btn primary"
 									onClick={handleDownloadIcs}
 								>
-									<Download size={14} />
+									<Download size={16} />
 									<span>Скачать .ICS файл</span>
 								</button>
 
@@ -1866,9 +1843,9 @@ export const PublicOnlineBookingWidget: React.FC<
 									rel="noreferrer"
 									className="dbw-export-btn"
 								>
-									<CalendarPlus size={14} />
+									<CalendarPlus size={16} />
 									<span>Google Календарь</span>
-									<ExternalLink size={12} className="opacity-60" />
+									<ExternalLink size={14} className="opacity-60" />
 								</a>
 
 								<a
@@ -1891,30 +1868,64 @@ export const PublicOnlineBookingWidget: React.FC<
 									rel="noreferrer"
 									className="dbw-export-btn"
 								>
-									<CalendarPlus size={14} />
+									<CalendarPlus size={16} />
 									<span>Яндекс Календарь</span>
-									<ExternalLink size={12} className="opacity-60" />
+									<ExternalLink size={14} className="opacity-60" />
 								</a>
 							</div>
 						</div>
 
-						{/* Additional Actions */}
-						<div className="flex items-center justify-between w-full pt-4 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500">
+						{/* Embed Code Snippet Generator Accordion */}
+						<div className="w-full">
 							<button
 								type="button"
-								className="flex items-center gap-1 hover:text-slate-900 dark:hover:text-slate-100"
+								className="text-xs font-bold text-teal-600 dark:text-teal-400 flex items-center gap-1.5 hover:underline"
+								onClick={() => setShowEmbedModal((prev) => !prev)}
+							>
+								<Code size={14} />
+								<span>{showEmbedModal ? "Скрыть код виджета для сайта" : "Получить HTML-код для вставки на сайт"}</span>
+							</button>
+
+							{showEmbedModal && (
+								<div className="dbw-embed-snippet-box">
+									<div className="text-xs font-bold mb-1.5 text-slate-700 dark:text-slate-200">
+										Код для вставки (Tilda, WordPress, Bitrix, HTML):
+									</div>
+									<pre className="dbw-embed-code">
+										{generateEmbedSnippet({
+											clinicId: organizationId,
+											theme,
+										})}
+									</pre>
+									<button
+										type="button"
+										className="mt-2 text-xs font-bold px-3 py-1.5 rounded bg-teal-600 text-white flex items-center gap-1.5"
+										onClick={handleCopyEmbedSnippet}
+									>
+										{copiedSnippet ? <Check size={14} /> : <Copy size={14} />}
+										<span>{copiedSnippet ? "Скопировано!" : "Скопировать код"}</span>
+									</button>
+								</div>
+							)}
+						</div>
+
+						{/* Additional Actions */}
+						<div className="flex items-center justify-between w-full pt-4 border-t border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 flex-wrap gap-2">
+							<button
+								type="button"
+								className="flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-slate-100 p-2"
 								onClick={() => window.print()}
 							>
-								<Printer size={14} />
+								<Printer size={16} />
 								<span>Распечатать талон</span>
 							</button>
 
 							<button
 								type="button"
-								className="flex items-center gap-1 text-blue-600 hover:underline font-semibold"
+								className="flex items-center gap-1.5 text-teal-600 dark:text-teal-400 hover:underline p-2"
 								onClick={handleResetBooking}
 							>
-								<RotateCcw size={14} />
+								<RotateCcw size={16} />
 								<span>Записаться ещё раз</span>
 							</button>
 						</div>

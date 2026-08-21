@@ -3,6 +3,11 @@ import { describe, it } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
+	BookingAnyDoctorCard,
+	BookingDoctorCard,
+} from "../BookingDoctorCard";
+import { BookingSlotPicker } from "../BookingSlotPicker";
+import {
 	DEFAULT_BRANCHES,
 	DEFAULT_DOCTORS,
 	DEFAULT_SERVICE_CATEGORIES,
@@ -11,6 +16,7 @@ import {
 	formatRussianDate,
 	formatRussianPhone,
 	generateBookingReference,
+	generateEmbedSnippet,
 	generateGoogleCalendarUrl,
 	generateIcsCalendarContent,
 	generateMockSlotsForDate,
@@ -139,7 +145,7 @@ describe("PublicOnlineBookingWidget Component & Embeddable Flow", () => {
 		assert.ok(html.includes(">Сб<"), "Contains Saturday header");
 		assert.ok(html.includes(">Вс<"), "Contains Sunday header");
 
-		// Time slot periods
+		// Time slot periods & chips
 		assert.ok(html.includes("Утро"), "Contains Morning slots section");
 		assert.ok(html.includes("День"), "Contains Afternoon slots section");
 		assert.ok(html.includes("Вечер"), "Contains Evening slots section");
@@ -205,10 +211,17 @@ describe("PublicOnlineBookingWidget Component & Embeddable Flow", () => {
 			}),
 		);
 
-		// If rendered initially on step 5 without submission data, renders step or handles smoothly
 		assert.ok(
 			html.includes("dente-booking-widget"),
 			"Renders widget wrapper",
+		);
+		assert.ok(
+			html.includes("Запись успешно оформлена!"),
+			"Renders success title",
+		);
+		assert.ok(
+			html.includes("Получить HTML-код для вставки на сайт"),
+			"Contains Embed Code Snippet button",
 		);
 	});
 
@@ -248,6 +261,97 @@ describe("PublicOnlineBookingWidget Component & Embeddable Flow", () => {
 			html.includes("VIP Клиника на Набережной"),
 			"Renders custom branch",
 		);
+	});
+
+	it("supports embedMode telegram, iframe, and modal attributes", () => {
+		const tgHtml = renderToStaticMarkup(
+			createElement(PublicOnlineBookingWidget, {
+				embedMode: "telegram",
+			}),
+		);
+		assert.ok(
+			tgHtml.includes('data-embed="telegram"'),
+			"Sets data-embed=telegram attribute",
+		);
+		assert.ok(
+			tgHtml.includes("Telegram Mini App"),
+			"Renders TG Mini App header badge",
+		);
+
+		const iframeHtml = renderToStaticMarkup(
+			createElement(PublicOnlineBookingWidget, {
+				embedMode: "iframe",
+			}),
+		);
+		assert.ok(
+			iframeHtml.includes('data-embed="iframe"'),
+			"Sets data-embed=iframe attribute",
+		);
+	});
+});
+
+describe("Sub-components: BookingDoctorCard & BookingSlotPicker", () => {
+	it("renders BookingDoctorCard with doctor bio, rating, specialties and touch target", () => {
+		const doc = DEFAULT_DOCTORS[0]!;
+		const html = renderToStaticMarkup(
+			createElement(BookingDoctorCard, {
+				doctor: doc,
+				isSelected: true,
+				onSelect: () => {},
+			}),
+		);
+
+		assert.ok(html.includes("dbw-doctor-card selected"));
+		assert.ok(html.includes(doc.fullName));
+		assert.ok(html.includes(doc.bio || ""));
+		assert.ok(html.includes("Стаж 14 лет"));
+		assert.ok(html.includes("4.98"));
+	});
+
+	it("renders BookingAnyDoctorCard with quick selection prompt", () => {
+		const html = renderToStaticMarkup(
+			createElement(BookingAnyDoctorCard, {
+				isSelected: false,
+				onSelect: () => {},
+			}),
+		);
+
+		assert.ok(html.includes("Любой свободный специалист"));
+		assert.ok(html.includes("Самая быстрая запись"));
+	});
+
+	it("renders BookingSlotPicker with filter chips, calendar days and time slots", () => {
+		const mockSlots = generateMockSlotsForDate("2026-08-20");
+		const html = renderToStaticMarkup(
+			createElement(BookingSlotPicker, {
+				selectedDate: "2026-08-20",
+				onSelectDate: () => {},
+				calendarMonth: new Date(2026, 7, 1),
+				onPrevMonth: () => {},
+				onNextMonth: () => {},
+				calendarDays: [
+					{
+						dayNumber: 20,
+						dateStr: "2026-08-20",
+						isCurrentMonth: true,
+						isPast: false,
+						isToday: true,
+						isSelected: true,
+					},
+				],
+				monthLabel: "Август 2026",
+				slots: mockSlots,
+				selectedSlot: mockSlots[0] || null,
+				onSelectSlot: () => {},
+				slotsLoading: false,
+			}),
+		);
+
+		assert.ok(html.includes("dbw-slot-picker-root"));
+		assert.ok(html.includes("dbw-period-filter-chips"));
+		assert.ok(html.includes("09:00"));
+		assert.ok(html.includes("14:00"));
+		assert.ok(html.includes("18:00"));
 	});
 });
 
@@ -292,6 +396,17 @@ describe("PublicOnlineBookingWidget Utility Functions", () => {
 			ref.includes(String(new Date().getFullYear())),
 			"Includes current year",
 		);
+	});
+
+	it("generateEmbedSnippet produces valid HTML snippet for third-party websites", () => {
+		const snippet = generateEmbedSnippet({
+			clinicId: "clinic-123",
+			primaryColor: "#0d9488",
+			theme: "calm_teal",
+		});
+		assert.ok(snippet.includes("booking.js"), "Includes booking.js script URL");
+		assert.ok(snippet.includes('data-clinic-id="clinic-123"'), "Embeds clinic ID");
+		assert.ok(snippet.includes('data-primary-color="#0d9488"'), "Embeds primary color");
 	});
 
 	it("generateIcsCalendarContent produces valid RFC 5545 iCalendar content", () => {

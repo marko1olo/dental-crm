@@ -1,0 +1,1300 @@
+/* ==========================================================================
+   Public Online Booking Widget - DENTE Dental CRM
+   Modern, responsive, embeddable styling with Light/Dark/Night/Calm Teal/TG support
+   ========================================================================== */
+
+.dente-booking-widget {
+	--dbw-primary: #0d9488;
+	--dbw-primary-hover: #0f766e;
+	--dbw-primary-light: #ccfbf1;
+	--dbw-primary-glow: rgba(13, 148, 136, 0.25);
+	--dbw-success: #15803d;
+	--dbw-success-hover: #166534;
+	--dbw-success-light: #dcfce7;
+	--dbw-warning: #d97706;
+	--dbw-warning-light: #fef3c7;
+	--dbw-danger: #b91c1c;
+	--dbw-danger-light: #fee2e2;
+	--dbw-bg: #ffffff;
+	--dbw-surface: #f8fafc;
+	--dbw-surface-hover: #f1f5f9;
+	--dbw-border: #e2e8f0;
+	--dbw-border-hover: #cbd5e1;
+	--dbw-text-main: #111827;
+	--dbw-text-muted: #64748b;
+	--dbw-text-subtle: #94a3b8;
+	--dbw-radius-lg: 16px;
+	--dbw-radius-md: 12px;
+	--dbw-radius-sm: 8px;
+	--dbw-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.08);
+	--dbw-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+	--dbw-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+	--dbw-focus-ring: 0 0 0 3px rgba(13, 148, 136, 0.25);
+
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+	color: var(--dbw-text-main);
+	background: var(--dbw-bg);
+	border: 1px solid var(--dbw-border);
+	border-radius: var(--dbw-radius-lg);
+	box-shadow: var(--dbw-shadow-xl);
+	width: 100%;
+	max-width: 680px;
+	margin: 0 auto;
+	overflow: hidden;
+	box-sizing: border-box;
+	transition: background-color 0.2s ease, border-color 0.2s ease;
+	touch-action: manipulation;
+}
+
+/* ==========================================================================
+   Multi-Theme Overrides
+   ========================================================================== */
+
+/* Dark Mode */
+.dark .dente-booking-widget,
+.dente-booking-widget[data-theme="dark"],
+[data-theme="dark"] .dente-booking-widget {
+	--dbw-primary: #2dd4bf;
+	--dbw-primary-hover: #14b8a6;
+	--dbw-primary-light: rgba(45, 212, 191, 0.15);
+	--dbw-primary-glow: rgba(45, 212, 191, 0.3);
+	--dbw-success: #4ade80;
+	--dbw-success-hover: #22c55e;
+	--dbw-success-light: rgba(74, 222, 128, 0.15);
+	--dbw-bg: #0f172a;
+	--dbw-surface: #1e293b;
+	--dbw-surface-hover: #334155;
+	--dbw-border: #334155;
+	--dbw-border-hover: #475569;
+	--dbw-text-main: #f8fafc;
+	--dbw-text-muted: #94a3b8;
+	--dbw-text-subtle: #64748b;
+	--dbw-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6);
+	--dbw-focus-ring: 0 0 0 3px rgba(45, 212, 191, 0.35);
+}
+
+/* Night / OLED Mode */
+.dente-booking-widget[data-theme="night"],
+.dente-booking-widget[data-theme="oled"],
+[data-theme="night"] .dente-booking-widget {
+	--dbw-primary: #2dd4bf;
+	--dbw-primary-hover: #5eead4;
+	--dbw-primary-light: rgba(45, 212, 191, 0.18);
+	--dbw-primary-glow: rgba(45, 212, 191, 0.4);
+	--dbw-success: #4ade80;
+	--dbw-success-hover: #22c55e;
+	--dbw-success-light: rgba(74, 222, 128, 0.2);
+	--dbw-bg: #000000;
+	--dbw-surface: #121215;
+	--dbw-surface-hover: #27272a;
+	--dbw-border: #27272a;
+	--dbw-border-hover: #3f3f46;
+	--dbw-text-main: #ffffff;
+	--dbw-text-muted: #a1a1aa;
+	--dbw-text-subtle: #71717a;
+	--dbw-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.9);
+	--dbw-focus-ring: 0 0 0 3px rgba(45, 212, 191, 0.4);
+}
+
+/* Calm Teal Mode */
+.dente-booking-widget[data-theme="calm_teal"],
+.dente-booking-widget[data-theme="calm-teal"],
+[data-theme="calm_teal"] .dente-booking-widget,
+[data-theme="calm-teal"] .dente-booking-widget {
+	--dbw-primary: #0f766e;
+	--dbw-primary-hover: #115e59;
+	--dbw-primary-light: #ccfbf1;
+	--dbw-primary-glow: rgba(15, 118, 110, 0.25);
+	--dbw-success: #059669;
+	--dbw-success-hover: #047857;
+	--dbw-success-light: #d1fae5;
+	--dbw-bg: #ffffff;
+	--dbw-surface: #f0fdfa;
+	--dbw-surface-hover: #e6fffa;
+	--dbw-border: #99f6e4;
+	--dbw-border-hover: #5eead4;
+	--dbw-text-main: #134e4a;
+	--dbw-text-muted: #0f766e;
+	--dbw-text-subtle: #14b8a6;
+}
+
+/* Contrast Mode */
+.dente-booking-widget[data-theme="contrast"],
+[data-theme="contrast"] .dente-booking-widget {
+	--dbw-primary: #000000;
+	--dbw-primary-hover: #1e293b;
+	--dbw-primary-light: #e2e8f0;
+	--dbw-success: #000000;
+	--dbw-bg: #ffffff;
+	--dbw-surface: #ffffff;
+	--dbw-surface-hover: #f1f5f9;
+	--dbw-border: #000000;
+	--dbw-text-main: #000000;
+	--dbw-text-muted: #1e293b;
+}
+
+/* Telegram WebApp Embed Mode */
+.dente-booking-widget[data-embed="telegram"] {
+	border-radius: 0;
+	border: none;
+	box-shadow: none;
+	max-width: 100%;
+	background: var(--tg-theme-bg-color, var(--dbw-bg));
+	color: var(--tg-theme-text-color, var(--dbw-text-main));
+}
+
+.dente-booking-widget[data-embed="iframe"],
+.dente-booking-widget[data-embed="modal"] {
+	box-shadow: none;
+}
+
+/* ==========================================================================
+   Header & Progress Bar
+   ========================================================================== */
+
+.dbw-header {
+	background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+	color: #ffffff;
+	padding: 24px;
+	position: relative;
+}
+
+.dbw-header-clinic {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: rgba(255, 255, 255, 0.9);
+	margin-bottom: 6px;
+}
+
+.dbw-header-title {
+	font-size: 1.5rem;
+	font-weight: 800;
+	margin: 0;
+	line-height: 1.25;
+}
+
+.dbw-header-subtitle {
+	font-size: 0.9375rem;
+	font-weight: 500;
+	color: rgba(255, 255, 255, 0.85);
+	margin: 6px 0 0 0;
+}
+
+.dbw-tg-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	background: rgba(255, 255, 255, 0.2);
+	color: #ffffff;
+	padding: 4px 10px;
+	border-radius: 9999px;
+	font-size: 0.75rem;
+	font-weight: 700;
+	margin-top: 8px;
+}
+
+/* Step Progress Indicator */
+.dbw-progress-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 20px;
+	background: var(--dbw-surface);
+	border-bottom: 1px solid var(--dbw-border);
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
+.dbw-step-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: var(--dbw-text-muted);
+	white-space: nowrap;
+	cursor: pointer;
+	border: none;
+	background: transparent;
+	padding: 8px 4px;
+	min-height: 48px;
+	min-width: 48px;
+	border-radius: var(--dbw-radius-sm);
+	transition: all 0.2s ease;
+}
+
+.dbw-step-item:hover:not(:disabled) {
+	color: var(--dbw-text-main);
+}
+
+.dbw-step-item:disabled {
+	cursor: not-allowed;
+	opacity: 0.6;
+}
+
+.dbw-step-number {
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--dbw-border);
+	color: var(--dbw-text-muted);
+	font-size: 0.8125rem;
+	font-weight: 700;
+	transition: all 0.2s ease;
+}
+
+.dbw-step-item.active .dbw-step-number {
+	background: var(--dbw-primary);
+	color: #ffffff;
+	box-shadow: 0 0 0 3px var(--dbw-primary-light);
+}
+
+.dbw-step-item.completed .dbw-step-number {
+	background: var(--dbw-success);
+	color: #ffffff;
+}
+
+.dbw-step-item.active {
+	color: var(--dbw-primary);
+	font-weight: 700;
+}
+
+.dbw-step-divider {
+	flex: 1;
+	height: 2px;
+	background: var(--dbw-border);
+	margin: 0 8px;
+	min-width: 12px;
+}
+
+.dbw-step-divider.active {
+	background: var(--dbw-primary);
+}
+
+/* ==========================================================================
+   Content Area & Typography
+   ========================================================================== */
+
+.dbw-body {
+	padding: 24px;
+}
+
+.dbw-section-heading {
+	font-size: 1.1875rem;
+	font-weight: 700;
+	color: var(--dbw-text-main);
+	margin: 0 0 16px 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.dbw-section-subheading {
+	font-size: 0.9375rem;
+	color: var(--dbw-text-muted);
+	margin: -8px 0 16px 0;
+}
+
+/* Branch Selector Cards (Touch target >= 48px) */
+.dbw-branches-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+	gap: 12px;
+	margin-bottom: 20px;
+}
+
+.dbw-branch-card {
+	border: 1.5px solid var(--dbw-border);
+	background: var(--dbw-bg);
+	border-radius: var(--dbw-radius-md);
+	padding: 16px;
+	cursor: pointer;
+	text-align: left;
+	transition: all 0.2s ease;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-height: 56px;
+}
+
+.dbw-branch-card:hover {
+	border-color: var(--dbw-border-hover);
+	background: var(--dbw-surface-hover);
+}
+
+.dbw-branch-card.selected {
+	border-color: var(--dbw-primary);
+	background: var(--dbw-primary-light);
+	box-shadow: var(--dbw-shadow-sm);
+}
+
+.dbw-branch-name {
+	font-weight: 700;
+	font-size: 1rem;
+	color: var(--dbw-text-main);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.dbw-branch-address {
+	font-size: 0.875rem;
+	color: var(--dbw-text-muted);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	overflow-wrap: break-word;
+	word-break: break-word;
+}
+
+.dbw-branch-hours {
+	font-size: 0.8125rem;
+	color: var(--dbw-text-subtle);
+	margin-top: 2px;
+}
+
+/* Service Category Cards (Touch target >= 48px) */
+.dbw-categories-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+	gap: 12px;
+	margin-bottom: 20px;
+}
+
+.dbw-category-btn {
+	border: 1.5px solid var(--dbw-border);
+	background: var(--dbw-surface);
+	border-radius: var(--dbw-radius-md);
+	padding: 16px 14px;
+	cursor: pointer;
+	text-align: left;
+	transition: all 0.2s ease;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 10px;
+	min-height: 100px;
+}
+
+.dbw-category-btn:hover {
+	border-color: var(--dbw-border-hover);
+	background: var(--dbw-surface-hover);
+}
+
+.dbw-category-btn.selected {
+	border-color: var(--dbw-primary);
+	background: var(--dbw-primary-light);
+	box-shadow: var(--dbw-shadow-sm);
+}
+
+.dbw-category-icon {
+	width: 42px;
+	height: 42px;
+	border-radius: var(--dbw-radius-sm);
+	background: rgba(13, 148, 136, 0.12);
+	color: var(--dbw-primary);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.dbw-category-title {
+	font-size: 1rem;
+	font-weight: 700;
+	color: var(--dbw-text-main);
+	overflow-wrap: break-word;
+	word-break: break-word;
+}
+
+.dbw-category-desc {
+	font-size: 0.8125rem;
+	color: var(--dbw-text-muted);
+	line-height: 1.4;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+/* Services sub-list (Touch target >= 48px) */
+.dbw-services-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-bottom: 24px;
+}
+
+.dbw-service-item {
+	border: 1px solid var(--dbw-border);
+	background: var(--dbw-bg);
+	border-radius: var(--dbw-radius-md);
+	padding: 12px 16px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	min-height: 52px;
+	transition: all 0.2s ease;
+}
+
+.dbw-service-item:hover {
+	border-color: var(--dbw-border-hover);
+	background: var(--dbw-surface-hover);
+}
+
+.dbw-service-item.selected {
+	border-color: var(--dbw-primary);
+	background: var(--dbw-primary-light);
+}
+
+.dbw-service-info {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	min-width: 0;
+	flex: 1;
+}
+
+.dbw-service-title {
+	font-size: 0.9375rem;
+	font-weight: 600;
+	color: var(--dbw-text-main);
+	overflow-wrap: break-word;
+	word-break: break-word;
+}
+
+.dbw-service-duration {
+	font-size: 0.8125rem;
+	color: var(--dbw-text-muted);
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.dbw-service-price {
+	font-size: 1rem;
+	font-weight: 800;
+	color: var(--dbw-primary);
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Doctor Cards & Specialty Filters
+   ========================================================================== */
+
+.dbw-doctors-list {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	margin-bottom: 24px;
+}
+
+.dbw-doctor-card {
+	border: 1.5px solid var(--dbw-border);
+	background: var(--dbw-bg);
+	border-radius: var(--dbw-radius-md);
+	padding: 16px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	min-height: 64px;
+	transition: all 0.2s ease;
+	text-align: left;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.dbw-doctor-card:hover {
+	border-color: var(--dbw-border-hover);
+	background: var(--dbw-surface-hover);
+}
+
+.dbw-doctor-card.selected {
+	border-color: var(--dbw-primary);
+	background: var(--dbw-primary-light);
+}
+
+.dbw-doctor-main {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+	flex: 1;
+	min-width: 0;
+}
+
+.dbw-doctor-avatar {
+	width: 56px;
+	height: 56px;
+	border-radius: 50%;
+	background: var(--dbw-surface-hover);
+	color: var(--dbw-primary);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 800;
+	font-size: 1.25rem;
+	flex-shrink: 0;
+	border: 2px solid var(--dbw-border);
+	overflow: hidden;
+}
+
+.dbw-doctor-avatar img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.dbw-doctor-meta {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+	flex: 1;
+}
+
+.dbw-doctor-name {
+	font-size: 1rem;
+	font-weight: 700;
+	color: var(--dbw-text-main);
+	overflow-wrap: break-word;
+	word-break: break-word;
+}
+
+.dbw-doctor-specialties {
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: var(--dbw-text-muted);
+	overflow-wrap: break-word;
+	word-break: break-word;
+}
+
+.dbw-doctor-badges {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 4px;
+	flex-wrap: wrap;
+}
+
+.dbw-badge-rating {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	color: #b45309;
+	background: #fef3c7;
+	padding: 3px 8px;
+	border-radius: 4px;
+}
+
+.dbw-badge-exp {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--dbw-text-muted);
+	background: var(--dbw-surface-hover);
+	padding: 3px 8px;
+	border-radius: 4px;
+}
+
+.dbw-doctor-bio {
+	font-size: 0.8125rem;
+	line-height: 1.4;
+	color: var(--dbw-text-muted);
+	overflow-wrap: break-word;
+	word-break: break-word;
+}
+
+.dbw-doctor-chevron {
+	flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Calendar & Slots (Zero CLS Layout Stability)
+   ========================================================================== */
+
+.dbw-slot-picker-root {
+	width: 100%;
+}
+
+.dbw-calendar-container {
+	border: 1px solid var(--dbw-border);
+	border-radius: var(--dbw-radius-md);
+	background: var(--dbw-surface);
+	padding: 16px;
+	margin-bottom: 20px;
+	min-height: 310px; /* Reserve space to eliminate CLS */
+}
+
+.dbw-calendar-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 12px;
+}
+
+.dbw-calendar-month-label {
+	font-weight: 700;
+	font-size: 1.0625rem;
+	color: var(--dbw-text-main);
+	text-transform: capitalize;
+}
+
+.dbw-calendar-nav-btn {
+	width: 48px;
+	height: 48px;
+	border-radius: var(--dbw-radius-sm);
+	border: 1px solid var(--dbw-border);
+	background: var(--dbw-bg);
+	color: var(--dbw-text-main);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.dbw-calendar-nav-btn:hover:not(:disabled) {
+	background: var(--dbw-surface-hover);
+	border-color: var(--dbw-border-hover);
+}
+
+.dbw-calendar-nav-btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.dbw-calendar-weekdays {
+	display: grid;
+	grid-template-columns: repeat(7, 1fr);
+	gap: 4px;
+	margin-bottom: 6px;
+	text-align: center;
+}
+
+.dbw-calendar-weekday {
+	font-size: 0.8125rem;
+	font-weight: 700;
+	color: var(--dbw-text-subtle);
+	padding: 4px 0;
+}
+
+.dbw-calendar-days-grid {
+	display: grid;
+	grid-template-columns: repeat(7, 1fr);
+	gap: 6px;
+}
+
+.dbw-calendar-day-btn {
+	min-height: 48px;
+	border-radius: var(--dbw-radius-sm);
+	border: 1.5px solid transparent;
+	background: var(--dbw-bg);
+	color: var(--dbw-text-main);
+	font-size: 0.9375rem;
+	font-weight: 600;
+	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	position: relative;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.dbw-calendar-day-btn:hover:not(:disabled) {
+	background: var(--dbw-surface-hover);
+	border-color: var(--dbw-border);
+}
+
+.dbw-calendar-day-btn.selected {
+	background: var(--dbw-primary);
+	color: #ffffff;
+	font-weight: 800;
+	border-color: var(--dbw-primary);
+	box-shadow: 0 2px 4px rgba(13, 148, 136, 0.3);
+}
+
+.dbw-calendar-day-btn.today:not(.selected) {
+	border-color: var(--dbw-primary);
+	font-weight: 800;
+}
+
+.dbw-calendar-day-btn:disabled {
+	color: var(--dbw-text-subtle);
+	opacity: 0.35;
+	cursor: not-allowed;
+	background: transparent;
+}
+
+.dbw-calendar-day-btn .dbw-day-slot-dot {
+	width: 5px;
+	height: 5px;
+	border-radius: 50%;
+	background: var(--dbw-success);
+	position: absolute;
+	bottom: 4px;
+}
+
+.dbw-calendar-day-btn.selected .dbw-day-slot-dot {
+	background: #ffffff;
+}
+
+/* Period Filter Chips (Touch targets >= 48px) */
+.dbw-period-filter-chips {
+	display: flex;
+	gap: 8px;
+	overflow-x: auto;
+	padding-bottom: 8px;
+	margin-bottom: 16px;
+	-webkit-overflow-scrolling: touch;
+}
+
+.dbw-chip-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	border: 1px solid var(--dbw-border);
+	background: var(--dbw-surface);
+	color: var(--dbw-text-main);
+	border-radius: 9999px;
+	padding: 10px 16px;
+	font-size: 0.875rem;
+	font-weight: 600;
+	cursor: pointer;
+	white-space: nowrap;
+	min-height: 48px;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.dbw-chip-btn:hover:not(:disabled) {
+	border-color: var(--dbw-primary);
+	background: var(--dbw-surface-hover);
+}
+
+.dbw-chip-btn.active {
+	border-color: var(--dbw-primary);
+	background: var(--dbw-primary);
+	color: #ffffff;
+}
+
+.dbw-chip-btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+/* Time Slots (CLS = 0 with reserved height) */
+.dbw-slots-section {
+	min-height: 220px; /* Layout preservation */
+	margin-bottom: 24px;
+}
+
+.dbw-slots-loading-container,
+.dbw-slots-empty-container {
+	min-height: 200px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	border: 1px dashed var(--dbw-border);
+	border-radius: var(--dbw-radius-md);
+	padding: 24px;
+}
+
+.dbw-loading-spinner {
+	width: 32px;
+	height: 32px;
+	border: 3px solid var(--dbw-border);
+	border-top-color: var(--dbw-primary);
+	border-radius: 50%;
+	animation: dbw-spin 0.8s linear infinite;
+	margin-bottom: 12px;
+}
+
+@keyframes dbw-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.dbw-slot-group {
+	margin-bottom: 16px;
+}
+
+.dbw-slots-period-label {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--dbw-text-muted);
+	margin: 12px 0 8px 0;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.dbw-slots-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+	gap: 10px;
+}
+
+.dbw-slot-btn {
+	border: 1.5px solid var(--dbw-border);
+	background: var(--dbw-surface);
+	border-radius: var(--dbw-radius-sm);
+	padding: 12px 6px;
+	font-size: 0.9375rem;
+	font-weight: 700;
+	color: var(--dbw-text-main);
+	cursor: pointer;
+	text-align: center;
+	min-height: 48px;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.dbw-slot-btn:hover {
+	border-color: var(--dbw-primary);
+	background: var(--dbw-primary-light);
+	color: var(--dbw-primary);
+}
+
+.dbw-slot-btn.selected {
+	border-color: var(--dbw-primary);
+	background: var(--dbw-primary);
+	color: #ffffff;
+	box-shadow: 0 2px 4px rgba(13, 148, 136, 0.3);
+}
+
+/* ==========================================================================
+   Patient Form & Verification
+   ========================================================================== */
+
+.dbw-form-grid {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	margin-bottom: 20px;
+}
+
+.dbw-form-group {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.dbw-label {
+	font-size: 0.9375rem;
+	font-weight: 600;
+	color: var(--dbw-text-main);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.dbw-input,
+.dbw-textarea {
+	border: 1.5px solid var(--dbw-border);
+	background: var(--dbw-surface);
+	color: var(--dbw-text-main);
+	border-radius: var(--dbw-radius-sm);
+	padding: 12px 14px;
+	font-size: 1rem;
+	font-weight: 500;
+	outline: none;
+	min-height: 48px;
+	transition: all 0.2s ease;
+	box-sizing: border-box;
+}
+
+.dbw-input:focus,
+.dbw-textarea:focus {
+	border-color: var(--dbw-primary);
+	box-shadow: var(--dbw-focus-ring);
+	background: var(--dbw-bg);
+}
+
+.dbw-textarea {
+	min-height: 80px;
+	resize: vertical;
+}
+
+/* SMS Verification Block */
+.dbw-sms-block {
+	border: 1px dashed var(--dbw-primary);
+	background: var(--dbw-primary-light);
+	border-radius: var(--dbw-radius-md);
+	padding: 16px;
+	margin-bottom: 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.dbw-sms-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.dbw-sms-title {
+	font-size: 0.9375rem;
+	font-weight: 700;
+	color: var(--dbw-primary);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.dbw-sms-code-input-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.dbw-sms-code-input {
+	max-width: 140px;
+	min-height: 48px;
+	font-size: 1.25rem;
+	font-weight: 800;
+	letter-spacing: 4px;
+	text-align: center;
+	padding: 8px;
+	border-radius: var(--dbw-radius-sm);
+	border: 1.5px solid var(--dbw-border);
+	background: var(--dbw-bg);
+	color: var(--dbw-text-main);
+}
+
+.dbw-sms-sim-badge {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--dbw-primary);
+	background: rgba(13, 148, 136, 0.15);
+	padding: 6px 10px;
+	border-radius: 6px;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.dbw-sms-verify-btn {
+	background: var(--dbw-primary);
+	color: #ffffff;
+	border: none;
+	border-radius: var(--dbw-radius-sm);
+	padding: 12px 18px;
+	font-size: 0.9375rem;
+	font-weight: 700;
+	cursor: pointer;
+	min-height: 48px;
+	transition: background 0.15s ease;
+	touch-action: manipulation;
+}
+
+.dbw-sms-verify-btn:hover:not(:disabled) {
+	background: var(--dbw-primary-hover);
+}
+
+.dbw-sms-verify-btn:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Action Buttons Footer (Touch targets >= 48px)
+   ========================================================================== */
+
+.dbw-actions-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding-top: 16px;
+	border-top: 1px solid var(--dbw-border);
+}
+
+.dbw-btn-back {
+	border: 1px solid var(--dbw-border);
+	background: var(--dbw-surface);
+	color: var(--dbw-text-muted);
+	border-radius: var(--dbw-radius-sm);
+	padding: 12px 20px;
+	font-size: 0.9375rem;
+	font-weight: 600;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 48px;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.dbw-btn-back:hover {
+	background: var(--dbw-surface-hover);
+	color: var(--dbw-text-main);
+}
+
+.dbw-btn-next,
+.dbw-btn-confirm {
+	background: var(--dbw-primary);
+	color: #ffffff;
+	border: none;
+	border-radius: var(--dbw-radius-sm);
+	padding: 12px 24px;
+	font-size: 1rem;
+	font-weight: 700;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 48px;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.dbw-btn-next:hover:not(:disabled),
+.dbw-btn-confirm:hover:not(:disabled) {
+	background: var(--dbw-primary-hover);
+}
+
+.dbw-btn-next:disabled,
+.dbw-btn-confirm:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.dbw-btn-confirm {
+	background: var(--dbw-success);
+}
+
+.dbw-btn-confirm:hover:not(:disabled) {
+	background: var(--dbw-success-hover);
+}
+
+/* ==========================================================================
+   Step 5: Confirmation Success Screen & Ticket
+   ========================================================================== */
+
+.dbw-confirmation-card {
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 16px;
+	padding: 8px 0;
+}
+
+.dbw-success-badge-icon {
+	width: 68px;
+	height: 68px;
+	border-radius: 50%;
+	background: var(--dbw-success-light);
+	color: var(--dbw-success);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: -4px;
+}
+
+.dbw-confirmation-title {
+	font-size: 1.5rem;
+	font-weight: 800;
+	color: var(--dbw-text-main);
+	margin: 0;
+}
+
+.dbw-ticket-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	background: var(--dbw-surface);
+	border: 1px solid var(--dbw-border);
+	padding: 8px 20px;
+	border-radius: 9999px;
+	font-size: 1rem;
+	font-weight: 800;
+	font-family: monospace;
+	color: var(--dbw-primary);
+	min-height: 48px;
+}
+
+.dbw-confirmation-details-box {
+	width: 100%;
+	background: var(--dbw-surface);
+	border: 1px solid var(--dbw-border);
+	border-radius: var(--dbw-radius-md);
+	padding: 18px;
+	text-align: left;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	box-sizing: border-box;
+}
+
+.dbw-detail-row {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	font-size: 0.9375rem;
+	overflow-wrap: break-word;
+	word-break: break-word;
+}
+
+.dbw-detail-icon {
+	color: var(--dbw-primary);
+	flex-shrink: 0;
+	margin-top: 3px;
+}
+
+.dbw-detail-label {
+	color: var(--dbw-text-muted);
+	font-size: 0.8125rem;
+	font-weight: 600;
+}
+
+.dbw-detail-value {
+	color: var(--dbw-text-main);
+	font-weight: 700;
+	overflow-wrap: break-word;
+	word-break: break-word;
+}
+
+/* Calendar export options */
+.dbw-export-actions-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+	gap: 10px;
+	width: 100%;
+	margin-top: 8px;
+}
+
+.dbw-export-btn {
+	border: 1px solid var(--dbw-border);
+	background: var(--dbw-bg);
+	color: var(--dbw-text-main);
+	border-radius: var(--dbw-radius-sm);
+	padding: 12px 16px;
+	font-size: 0.875rem;
+	font-weight: 700;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	text-decoration: none;
+	min-height: 48px;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.dbw-export-btn:hover {
+	background: var(--dbw-surface-hover);
+	border-color: var(--dbw-border-hover);
+}
+
+.dbw-export-btn.primary {
+	background: var(--dbw-primary);
+	color: #ffffff;
+	border-color: var(--dbw-primary);
+}
+
+.dbw-export-btn.primary:hover {
+	background: var(--dbw-primary-hover);
+}
+
+/* Embed Snippet Generator Box */
+.dbw-embed-snippet-box {
+	background: var(--dbw-surface);
+	border: 1px solid var(--dbw-border);
+	border-radius: var(--dbw-radius-md);
+	padding: 14px;
+	margin-top: 16px;
+	width: 100%;
+	box-sizing: border-box;
+	text-align: left;
+}
+
+.dbw-embed-code {
+	font-family: monospace;
+	font-size: 0.8125rem;
+	background: var(--dbw-bg);
+	border: 1px solid var(--dbw-border);
+	border-radius: var(--dbw-radius-sm);
+	padding: 10px;
+	color: var(--dbw-text-main);
+	overflow-x: auto;
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+/* ==========================================================================
+   Responsive queries (Strict 390px Mobile Viewport & TG Mini App)
+   ========================================================================== */
+
+@media (max-width: 640px) {
+	.dente-booking-widget {
+		border-radius: 0;
+		border: none;
+		box-shadow: none;
+		max-width: 100%;
+	}
+
+	.dbw-header {
+		padding: 18px 14px;
+	}
+
+	.dbw-progress-bar {
+		padding: 10px 12px;
+	}
+
+	.dbw-body {
+		padding: 16px 12px;
+	}
+
+	.dbw-categories-grid {
+		grid-template-columns: repeat(2, 1fr);
+		gap: 8px;
+	}
+
+	.dbw-category-btn {
+		padding: 12px 10px;
+		min-height: 90px;
+	}
+
+	.dbw-branches-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.dbw-slots-grid {
+		grid-template-columns: repeat(3, 1fr);
+		gap: 8px;
+	}
+
+	.dbw-export-actions-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.dbw-calendar-days-grid {
+		gap: 4px;
+	}
+
+	.dbw-calendar-day-btn {
+		min-height: 44px;
+	}
+}

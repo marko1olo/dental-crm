@@ -1,0 +1,90 @@
+/**
+ * Cephalometric Analysis Modal & Canvas Styles (ТРГ боковая)
+ * Compliant with WCAG 2.1 touch target standards (>= 44x44px)
+ * Multi-theme tokens support (var(--paper), var(--ink), var(--line), var(--surface))
+ */
+
+.ceph-modal-container {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+.ceph-touch-button {
+	min-height: 44px;
+	min-width: 44px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	touch-action: manipulation;
+}
+
+.ceph-landmark-btn {
+	min-height: 48px;
+	touch-action: manipulation;
+	transition: all var(--transition-fast, 0.15s ease);
+}
+
+.ceph-landmark-btn:hover {
+	transform: translateY(-1px);
+}
+
+.ceph-hud-btn {
+	min-width: 44px;
+	min-height: 44px;
+	touch-action: manipulation;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	transition: background-color var(--transition-fast, 0.15s ease), color var(--transition-fast, 0.15s ease);
+}
+
+.ceph-canvas-viewport {
+	touch-action: none;
+	user-select: none;
+	-webkit-user-select: none;
+}
+
+.ceph-metric-card {
+	min-height: 48px;
+	transition: background-color var(--transition-fast, 0.15s ease), border-color var(--transition-fast, 0.15s ease);
+}
+
+/* High contrast radiograph canvas backdrop */
+.ceph-canvas-dark {
+	background: #020617;
+}
+
+/* Norm status badges */
+.ceph-badge-norm {
+	background-color: var(--badge-norm-bg, #ecfdf5);
+	color: var(--badge-norm-text, #065f46);
+	border: 1px solid var(--badge-norm-border, rgba(16, 185, 129, 0.3));
+}
+
+.dark .ceph-badge-norm {
+	background-color: rgba(6, 78, 59, 0.8);
+	color: #6ee7b7;
+	border-color: rgba(16, 185, 129, 0.4);
+}
+
+.ceph-badge-dev {
+	background-color: var(--badge-dev-bg, #fff1f2);
+	color: var(--badge-dev-text, #9f1239);
+	border: 1px solid var(--badge-dev-border, rgba(244, 63, 94, 0.3));
+}
+
+.dark .ceph-badge-dev {
+	background-color: rgba(136, 19, 55, 0.8);
+	color: #fda4af;
+	border-color: rgba(244, 63, 94, 0.4);
+}
+
+@media (max-width: 640px) {
+	.ceph-touch-button,
+	.ceph-hud-btn,
+	.ceph-landmark-btn {
+		min-height: 44px;
+		font-size: 13px;
+	}
+}

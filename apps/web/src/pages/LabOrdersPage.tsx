@@ -25,6 +25,7 @@ import {
 import { denteAdminSecretRequestHeaders, money } from "../AppHelpers";
 import { showToast } from "../components/GlobalToast";
 import { DentalLabOrderModal, type DentalLabOrderData } from "../components/lab/DentalLabOrderModal";
+import { LabTrackingDrawer } from "../components/lab/LabTrackingDrawer";
 import { useAppStore } from "../store/appStore";
 
 export function LabOrdersPage() {
@@ -40,6 +41,10 @@ export function LabOrdersPage() {
 	// Modal State
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [selectedOrderForEdit, setSelectedOrderForEdit] = useState<DentalLabOrderData | null>(null);
+
+	// Tracking Drawer State
+	const [isTrackingDrawerOpen, setIsTrackingDrawerOpen] = useState(false);
+	const [selectedOrderForTracking, setSelectedOrderForTracking] = useState<DentalLabOrderData | null>(null);
 
 	// Live status updates from store
 	const labOrderStatuses = useAppStore((state: any) => state.labOrderStatuses);
@@ -147,6 +152,16 @@ export function LabOrdersPage() {
 	const handleOpenEditOrder = (order: DentalLabOrderData) => {
 		setSelectedOrderForEdit(order);
 		setIsModalOpen(true);
+	};
+
+	const handleOpenTracking = (order: DentalLabOrderData) => {
+		setSelectedOrderForTracking(order);
+		setIsTrackingDrawerOpen(true);
+	};
+
+	const handleDrawerStageUpdate = async (orderId: string, newStage: string) => {
+		await handleStatusChange(orderId, newStage);
+		fetchOrders();
 	};
 
 	const getStatusBadge = (status?: string) => {
@@ -381,8 +396,16 @@ export function LabOrdersPage() {
 
 										<button
 											type="button"
+											onClick={() => handleOpenTracking(order)}
+											className="min-h-[36px] px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 font-bold text-xs border border-indigo-200 dark:border-indigo-800 transition-colors"
+										>
+											Трекинг
+										</button>
+
+										<button
+											type="button"
 											onClick={() => handleOpenEditOrder(order)}
-											className="px-3 py-1.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-bold text-xs border border-teal-200 dark:border-teal-800 transition-colors"
+											className="min-h-[36px] px-3 py-1.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-bold text-xs border border-teal-200 dark:border-teal-800 transition-colors"
 										>
 											Детали наряда
 										</button>
@@ -400,6 +423,14 @@ export function LabOrdersPage() {
 				onClose={() => setIsModalOpen(false)}
 				initialOrder={selectedOrderForEdit}
 				onOrderSaved={() => fetchOrders()}
+			/>
+
+			{/* Tracking Drawer Instance */}
+			<LabTrackingDrawer
+				isOpen={isTrackingDrawerOpen}
+				onClose={() => setIsTrackingDrawerOpen(false)}
+				order={selectedOrderForTracking}
+				onStageUpdate={handleDrawerStageUpdate}
 			/>
 		</div>
 	);

@@ -88,7 +88,7 @@ export function CephalometricCanvas({
 		setPan({ x: 0, y: 0 });
 	}, []);
 
-	// Convert client coordinates (mouse) to SVG viewBox coordinates
+	// Convert client coordinates (mouse/touch) to SVG viewBox coordinates
 	const getSvgCoordinates = useCallback(
 		(clientX: number, clientY: number): Point2D | null => {
 			if (!svgRef.current) return null;
@@ -214,6 +214,8 @@ export function CephalometricCanvas({
 
 	const S = landmarks.S;
 	const N = landmarks.N;
+	const Or = landmarks.Or;
+	const Po = landmarks.Po;
 	const A = landmarks.A;
 	const B = landmarks.B;
 	const Pog = landmarks.Pog;
@@ -256,12 +258,12 @@ export function CephalometricCanvas({
 			onMouseLeave={handleMouseUp}
 			style={{ cursor: isPanning ? "grabbing" : activeTargetKey ? "crosshair" : "default" }}
 		>
-			{/* Canvas Top Floating Toolbar */}
-			<div className="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
+			{/* Canvas Top Floating Toolbar with >= 44px Touch Targets */}
+			<div className="absolute top-3 left-3 right-3 z-30 flex items-center justify-between gap-2 flex-wrap pointer-events-none">
 				{/* Active Target Indicator Badge */}
-				<div className="pointer-events-auto flex items-center gap-2 bg-slate-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-slate-700/80 shadow-lg">
-					<Crosshair size={16} className="text-teal-400 animate-pulse" />
-					<div className="text-xs font-bold text-slate-100">
+				<div className="pointer-events-auto flex items-center gap-2.5 bg-slate-900/95 backdrop-blur-md px-4 py-2.5 rounded-xl border border-slate-700/80 shadow-xl min-h-[44px]">
+					<Crosshair size={18} className="text-teal-400 animate-pulse shrink-0" />
+					<div className="text-sm font-bold text-slate-100 min-w-0 break-words">
 						{activeTargetKey ? (
 							<span>
 								Установите точку:{" "}
@@ -270,54 +272,58 @@ export function CephalometricCanvas({
 								</span>
 							</span>
 						) : (
-							<span className="text-slate-300 font-normal">
-								Кликните точку в списке для установки или перетаскивайте ориентиры
+							<span className="text-slate-300 font-medium">
+								Выберите ориентир в списке или перетаскивайте точки на снимке
 							</span>
 						)}
 					</div>
 				</div>
 
-				{/* Zoom & View Controls */}
-				<div className="pointer-events-auto flex items-center gap-1.5 bg-slate-900/90 backdrop-blur-md p-1 rounded-xl border border-slate-700/80 shadow-lg">
+				{/* Zoom, View & Calibration Controls (Touch Targets >= 44x44px) */}
+				<div className="pointer-events-auto flex items-center gap-1.5 bg-slate-900/95 backdrop-blur-md p-1 rounded-xl border border-slate-700/80 shadow-xl min-h-[44px]">
 					<button
 						type="button"
 						onClick={() => setZoom((prev) => Math.min(3.5, Number((prev + 0.2).toFixed(1))))}
-						className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+						className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center text-slate-200 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
 						title="Приблизить (Масштаб +)"
+						aria-label="Приблизить масштаб"
 					>
-						<ZoomIn size={16} />
+						<ZoomIn size={18} />
 					</button>
-					<span className="text-xs font-mono font-bold text-slate-300 px-1 min-w-[40px] text-center">
+					<span className="text-sm font-mono font-bold text-slate-200 px-2 min-w-[48px] text-center">
 						{Math.round(zoom * 100)}%
 					</span>
 					<button
 						type="button"
 						onClick={() => setZoom((prev) => Math.max(0.4, Number((prev - 0.2).toFixed(1))))}
-						className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+						className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center text-slate-200 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
 						title="Отдалить (Масштаб -)"
+						aria-label="Отдалить масштаб"
 					>
-						<ZoomOut size={16} />
+						<ZoomOut size={18} />
 					</button>
-					<div className="w-[1px] h-5 bg-slate-700 mx-1" />
+					<div className="w-[1px] h-6 bg-slate-700 mx-1" />
 					<button
 						type="button"
 						onClick={handleResetView}
-						className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+						className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center text-slate-200 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
 						title="Сбросить масштаб и положение (100%)"
+						aria-label="Сбросить масштаб к 100%"
 					>
-						<RotateCcw size={15} />
+						<RotateCcw size={18} />
 					</button>
 					<button
 						type="button"
 						onClick={() => setIsCalibrating((prev) => !prev)}
-						className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
 							isCalibrating
-								? "bg-amber-600 text-white font-bold"
-								: "text-slate-300 hover:text-white hover:bg-slate-800"
+								? "bg-amber-600 text-white font-bold shadow-md shadow-amber-600/30"
+								: "text-slate-200 hover:text-white hover:bg-slate-800"
 						}`}
 						title="Калибровка масштаба (отметьте отрезок 10 мм)"
+						aria-label="Калибровка масштаба"
 					>
-						<Ruler size={16} />
+						<Ruler size={18} />
 					</button>
 				</div>
 			</div>
@@ -438,7 +444,7 @@ export function CephalometricCanvas({
 				>
 					{/* Planes and Guides */}
 					{showPlanes && (
-						<g className="planes-layer opacity-70">
+						<g className="planes-layer opacity-75">
 							{/* S-N Line (Cranial Base) */}
 							{S && N && (
 								<line
@@ -449,6 +455,19 @@ export function CephalometricCanvas({
 									stroke="#06b6d4"
 									strokeWidth="2.5"
 									strokeDasharray="6 3"
+								/>
+							)}
+
+							{/* Frankfort Horizontal Plane (Po - Or) */}
+							{Po && Or && (
+								<line
+									x1={Po.x - 30}
+									y1={Po.y}
+									x2={Or.x + 60}
+									y2={Or.y}
+									stroke="#0284c7"
+									strokeWidth="2"
+									strokeDasharray="5 2.5"
 								/>
 							)}
 
@@ -491,6 +510,19 @@ export function CephalometricCanvas({
 								/>
 							)}
 
+							{/* Downs Y-Axis Growth Line (S -> Gn) */}
+							{S && (Gn || Me) && (
+								<line
+									x1={S.x}
+									y1={S.y}
+									x2={(Gn ?? Me)!.x}
+									y2={(Gn ?? Me)!.y}
+									stroke="#eab308"
+									strokeWidth="1.5"
+									strokeDasharray="4 2"
+								/>
+							)}
+
 							{/* Wits Perpendicular Projection Drop Lines */}
 							{projA && A && (
 								<line
@@ -517,7 +549,7 @@ export function CephalometricCanvas({
 						</g>
 					)}
 
-					{/* Cephalometric Polygon Lines (Steiner / Tweed Polygon) */}
+					{/* Cephalometric Polygon Lines (Steiner / Tweed / Downs Polygon) */}
 					{showPolygon && (
 						<g className="polygon-layer">
 							{/* N-A Line */}
@@ -544,7 +576,7 @@ export function CephalometricCanvas({
 								/>
 							)}
 
-							{/* N-Pog Line (Facial Plane) */}
+							{/* N-Pog Line (Downs Facial Plane) */}
 							{N && Pog && (
 								<line
 									x1={N.x}
@@ -552,8 +584,34 @@ export function CephalometricCanvas({
 									x2={Pog.x}
 									y2={Pog.y}
 									stroke="#e2e8f0"
-									strokeWidth="1.5"
+									strokeWidth="1.8"
 									strokeDasharray="4 2"
+								/>
+							)}
+
+							{/* A-Pog Line (Downs Angle of Convexity segment) */}
+							{A && Pog && (
+								<line
+									x1={A.x}
+									y1={A.y}
+									x2={Pog.x}
+									y2={Pog.y}
+									stroke="#34d399"
+									strokeWidth="1.5"
+									strokeDasharray="3 3"
+								/>
+							)}
+
+							{/* A-B Line */}
+							{A && B && (
+								<line
+									x1={A.x}
+									y1={A.y}
+									x2={B.x}
+									y2={B.y}
+									stroke="#f43f5e"
+									strokeWidth="1.5"
+									strokeDasharray="3 2"
 								/>
 							)}
 
@@ -601,7 +659,7 @@ export function CephalometricCanvas({
 							key={idx}
 							cx={pt.x}
 							cy={pt.y}
-							r="5"
+							r="6"
 							fill="#f59e0b"
 							stroke="#ffffff"
 							strokeWidth="2"
@@ -618,7 +676,7 @@ export function CephalometricCanvas({
 						/>
 					)}
 
-					{/* Interactive Landmark Handles & Pins */}
+					{/* Interactive Landmark Handles & Touch Pins (Target Area >= 44x44px) */}
 					{CEPHALOMETRIC_LANDMARKS.map((lm) => {
 						const pt = landmarks[lm.key];
 						if (!pt) return null;
@@ -639,15 +697,24 @@ export function CephalometricCanvas({
 									onSelectTargetKey(lm.key);
 								}}
 							>
+								{/* Invisible Touch Hit Area Circle: Radius 22px = 44px touch diameter (WCAG 2.1) */}
+								<circle
+									cx={pt.x}
+									cy={pt.y}
+									r={22}
+									fill="transparent"
+									className="touch-hit-area"
+								/>
+
 								{/* Pulsing Target Glow for active / hovered point */}
 								{(isActive || isHovered || isDragging) && (
 									<circle
 										cx={pt.x}
 										cy={pt.y}
-										r={isDragging ? 18 : 14}
+										r={isDragging ? 20 : 16}
 										fill="none"
 										stroke={lm.color}
-										strokeWidth="2"
+										strokeWidth="2.5"
 										className="animate-ping opacity-75"
 									/>
 								)}
@@ -656,9 +723,9 @@ export function CephalometricCanvas({
 								<circle
 									cx={pt.x}
 									cy={pt.y}
-									r={isHovered || isDragging ? 9 : 7}
+									r={isHovered || isDragging ? 10 : 8}
 									fill={lm.color}
-									fillOpacity="0.25"
+									fillOpacity="0.3"
 									stroke={lm.color}
 									strokeWidth="2"
 								/>
@@ -667,22 +734,22 @@ export function CephalometricCanvas({
 								<circle
 									cx={pt.x}
 									cy={pt.y}
-									r={isHovered || isDragging ? 4.5 : 3.5}
+									r={isHovered || isDragging ? 5 : 4}
 									fill={lm.color}
 									stroke="#ffffff"
-									strokeWidth="1.5"
+									strokeWidth="2"
 								/>
 
-								{/* Landmark Text Label */}
+								{/* Landmark Text Label (High-Contrast >= 13px) */}
 								{showLabels && (
 									<text
-										x={pt.x + 9}
-										y={pt.y + 4}
+										x={pt.x + 11}
+										y={pt.y + 5}
 										fill="#ffffff"
-										fontSize={isHovered || isActive ? "13" : "11"}
+										fontSize={isHovered || isActive ? "14" : "13"}
 										fontWeight="bold"
-										className="pointer-events-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
-										style={{ textShadow: "0 1px 3px #000, 0 0 4px #000" }}
+										className="pointer-events-none select-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]"
+										style={{ textShadow: "0 1px 3px #000, 0 0 5px #000" }}
 									>
 										{lm.code}
 									</text>
@@ -695,27 +762,27 @@ export function CephalometricCanvas({
 
 			{/* Precision Magnifier Loupe (Zoom Window during point drag or hovering) */}
 			{(draggingKey || hoveredKey) && cursorImgPos && (
-				<div className="absolute bottom-4 right-4 z-40 w-32 h-32 rounded-full overflow-hidden border-2 border-teal-400 bg-slate-950 shadow-2xl pointer-events-none flex items-center justify-center">
+				<div className="absolute bottom-4 right-4 z-40 w-36 h-36 rounded-full overflow-hidden border-2 border-teal-400 bg-slate-950 shadow-2xl pointer-events-none flex items-center justify-center">
 					<div
 						className="relative w-full h-full"
 						style={{
-							transform: `scale(2.2) translate(${-cursorImgPos.x + 64}px, ${-cursorImgPos.y + 64}px)`,
+							transform: `scale(2.4) translate(${-cursorImgPos.x + 72}px, ${-cursorImgPos.y + 72}px)`,
 							transformOrigin: "top left",
 						}}
 					>
 						{/* Replicated vector crosshair in magnifier */}
 						<div
-							className="absolute w-2 h-2 rounded-full bg-teal-400 border border-white"
-							style={{ left: cursorImgPos.x - 4, top: cursorImgPos.y - 4 }}
+							className="absolute w-2.5 h-2.5 rounded-full bg-teal-400 border border-white"
+							style={{ left: cursorImgPos.x - 5, top: cursorImgPos.y - 5 }}
 						/>
 					</div>
 					{/* Fixed Center Crosshair */}
 					<div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-						<div className="w-full h-[1px] bg-teal-400/40" />
-						<div className="h-full w-[1px] bg-teal-400/40 absolute" />
-						<div className="w-3 h-3 rounded-full border border-teal-300" />
+						<div className="w-full h-[1px] bg-teal-400/50" />
+						<div className="h-full w-[1px] bg-teal-400/50 absolute" />
+						<div className="w-4 h-4 rounded-full border border-teal-300" />
 					</div>
-					<div className="absolute bottom-1 bg-slate-900/90 text-[10px] text-teal-300 px-2 py-0.5 rounded font-mono font-bold">
+					<div className="absolute bottom-1.5 bg-slate-900/95 text-xs text-teal-300 px-2.5 py-0.5 rounded-full font-mono font-bold border border-teal-500/40">
 						{draggingKey ?? hoveredKey} ({Math.round(cursorImgPos.x)}, {Math.round(cursorImgPos.y)})
 					</div>
 				</div>

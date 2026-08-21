@@ -5,13 +5,17 @@ import {
 	LAB_MATERIALS,
 	VITA_CLASSICAL_SHADES,
 	VITA_BLEACH_SHADES,
+	VITA_3D_MASTER_SHADES,
+	SHADE_SWATCH_MAP,
 	STUMP_NATURAL_DIE_SHADES,
 	OCCLUSAL_SCHEMES,
 	CONTACT_TIGHTNESS_OPTIONS,
 	SURFACE_TEXTURE_OPTIONS,
 	LAB_ORDER_STAGES,
+	calculateLabFinancialSplit,
 	generateBarcodeSvg,
 	generateQrCodeSvg,
+	formatGostOrderNumber,
 } from "../DentalLabOrderModal";
 
 describe("DentalLabOrderModal — Prosthetic Construction Types", () => {
@@ -28,11 +32,12 @@ describe("DentalLabOrderModal — Prosthetic Construction Types", () => {
 		assert.ok(typeIds.includes("endocrown"), "Должна быть эндокоронка");
 	});
 
-	test("Каждая конструкция имеет понятное русскоязычное название и иконку", () => {
+	test("Каждая конструкция имеет понятное русскоязычное название, описание, категорию и иконку", () => {
 		for (const item of CONSTRUCTION_TYPES) {
 			assert.ok(item.name.length > 0, "Имя конструкции не должно быть пустым");
 			assert.ok(item.desc.length > 0, "Описание конструкции не должно быть пустым");
 			assert.ok(item.icon.length > 0, "Иконка должна присутствовать");
+			assert.ok(item.category.length > 0, "Категория должна присутствовать");
 		}
 	});
 });
@@ -54,6 +59,7 @@ describe("DentalLabOrderModal — Dental Lab CAD/CAM Materials", () => {
 			assert.ok(mat.name.length > 0);
 			assert.ok(mat.desc.length > 0);
 			assert.ok(mat.tag.length > 0);
+			assert.ok(mat.category.length > 0);
 		}
 	});
 });
@@ -80,7 +86,25 @@ describe("DentalLabOrderModal — VITA Shade Spectrum & 3-Zone Stratification", 
 		assert.ok(VITA_BLEACH_SHADES.includes("0M3"));
 	});
 
-	test("Шкала культи IPS Natural Die Material содержит градации ND1–ND9", () => {
+	test("VITA 3D-Master содержит оттенки по группам светлоты 1..5 и хроматичности L/M/R", () => {
+		assert.ok(VITA_3D_MASTER_SHADES.length >= 26);
+		assert.ok(VITA_3D_MASTER_SHADES.includes("1M1"));
+		assert.ok(VITA_3D_MASTER_SHADES.includes("2M2"));
+		assert.ok(VITA_3D_MASTER_SHADES.includes("3L1.5"));
+		assert.ok(VITA_3D_MASTER_SHADES.includes("4R2.5"));
+		assert.ok(VITA_3D_MASTER_SHADES.includes("5M3"));
+	});
+
+	test("SHADE_SWATCH_MAP содержит цветовые образцы и границы для всех оттенков", () => {
+		for (const shade of VITA_CLASSICAL_SHADES) {
+			const swatch = SHADE_SWATCH_MAP[shade];
+			assert.ok(swatch, `Образец цвета для ${shade} должен существовать`);
+			assert.ok(swatch.bg.startsWith("#"), `Фон для ${shade} должен быть HEX цветом`);
+			assert.ok(swatch.border.startsWith("#"), `Граница для ${shade} должна быть HEX цветом`);
+		}
+	});
+
+	test("Шкала культи IPS Natural Die Material содержит градации ND1–ND9 с описаниями", () => {
 		assert.equal(STUMP_NATURAL_DIE_SHADES.length, 9);
 		const ids = STUMP_NATURAL_DIE_SHADES.map((s) => s.id);
 		assert.deepEqual(ids, ["ND1", "ND2", "ND3", "ND4", "ND5", "ND6", "ND7", "ND8", "ND9"]);
@@ -142,43 +166,38 @@ describe("DentalLabOrderModal — 7-Step Lab Manufacturing Stages Tracker", () =
 });
 
 describe("DentalLabOrderModal — Financial Split & Penny-Drift Invariant", () => {
-	test("Разделение расходов ЗТЛ 50/50 дает строго сбалансированную сумму копеек", () => {
+	test("calculateLabFinancialSplit 50/50 дает строго сбалансированную сумму копеек", () => {
 		const totalRub = 15450.55;
-		const totalKopecks = Math.round(totalRub * 100);
-		const doctorPct = 50;
+		const split = calculateLabFinancialSplit(totalRub, 50);
 
-		const doctorKopecks = Math.round((totalKopecks * doctorPct) / 100);
-		const clinicKopecks = totalKopecks - doctorKopecks;
-
-		assert.equal(doctorKopecks + clinicKopecks, totalKopecks);
-		assert.equal(totalKopecks, 1545055);
-		assert.equal(doctorKopecks, 772528);
-		assert.equal(clinicKopecks, 772527);
+		assert.equal(split.isBalanced, true);
+		assert.equal(split.totalKopecks, 1545055);
+		assert.equal(split.doctorKopecks, 772528);
+		assert.equal(split.clinicKopecks, 772527);
+		assert.equal(split.doctorAmountRub, 7725.28);
+		assert.equal(split.clinicAmountRub, 7725.27);
 	});
 
-	test("Разделение расходов ЗТЛ 70/30 на суммах с нечетными копейками сохраняет инвариант баланса", () => {
+	test("calculateLabFinancialSplit 70/30 на суммах с нечетными копейками сохраняет инвариант баланса", () => {
 		const totalRub = 23799.33;
-		const totalKopecks = Math.round(totalRub * 100);
-		const doctorPct = 30;
+		const split = calculateLabFinancialSplit(totalRub, 30);
 
-		const doctorKopecks = Math.round((totalKopecks * doctorPct) / 100);
-		const clinicKopecks = totalKopecks - doctorKopecks;
-
-		assert.equal(doctorKopecks + clinicKopecks, totalKopecks);
-		assert.equal(doctorKopecks, 713980);
-		assert.equal(clinicKopecks, 1665953);
+		assert.equal(split.isBalanced, true);
+		assert.equal(split.doctorKopecks, 713980);
+		assert.equal(split.clinicKopecks, 1665953);
+		assert.equal(split.doctorAmountRub, 7139.80);
+		assert.equal(split.clinicAmountRub, 16659.53);
 	});
 
-	test("Разделение 100% на клинику и 0% на врача не удерживает денег из зарплаты", () => {
+	test("calculateLabFinancialSplit 100% на клинику и 0% на врача не удерживает денег из зарплаты", () => {
 		const totalRub = 50000;
-		const totalKopecks = Math.round(totalRub * 100);
-		const doctorPct = 0;
+		const split = calculateLabFinancialSplit(totalRub, 0);
 
-		const doctorKopecks = Math.round((totalKopecks * doctorPct) / 100);
-		const clinicKopecks = totalKopecks - doctorKopecks;
-
-		assert.equal(doctorKopecks, 0);
-		assert.equal(clinicKopecks, totalKopecks);
+		assert.equal(split.isBalanced, true);
+		assert.equal(split.doctorKopecks, 0);
+		assert.equal(split.clinicKopecks, 5000000);
+		assert.equal(split.doctorAmountRub, 0);
+		assert.equal(split.clinicAmountRub, 50000);
 	});
 });
 
@@ -207,5 +226,11 @@ describe("DentalLabOrderModal — Printable Blank Vector Barcode & QR Code Engin
 		assert.ok(qrSvg.includes("viewBox=\"0 0 84 84\""), "Размер матрицы 21 * 4 = 84px");
 		assert.ok(qrSvg.includes("<rect"), "Должен содержать матричные пиксели");
 		assert.ok(qrSvg.includes("</svg>"), "Должен быть валидным закрытым SVG");
+	});
+
+	test("formatGostOrderNumber форматирует номер наряда по стандарту ЗТЛ-ГГММ-ТОКЕН", () => {
+		const date = new Date(2026, 7, 22);
+		const formatted = formatGostOrderNumber("ABCDEF123456", date);
+		assert.equal(formatted, "ЗТЛ-2608-ABCDEF");
 	});
 });
