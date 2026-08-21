@@ -18,6 +18,12 @@ import {
 	generatePerio043DiaryText,
 } from "../components/odontogram/perio043Protocol";
 import {
+	calculateBoneLossAgeRatio,
+	calculatePeriodontalRiskAssessment,
+	estimateBoneLossPercentFromTeeth,
+	generateComprehensivePerio043Text,
+} from "../components/odontogram/periodontalMath";
+import {
 	ALL_PERIO_TEETH,
 	FURCATION_GRADES,
 	generateFullMouthProbingSequence,
@@ -403,10 +409,106 @@ describe("Periodontal Probing, Furcation & Form 043/u Engine", () => {
 		assert.ok(protocolText.includes("2. Клинические индексы"));
 		assert.ok(protocolText.includes("FMBS (BOP):"));
 		assert.ok(protocolText.includes("Максимальная глубина карманов (PD): 6 мм"));
-		assert.ok(protocolText.includes("3. Клинический диагноз (МКБ-10):"));
+		assert.ok(protocolText.includes("Клинический диагноз (МКБ-10"));
 		assert.ok(protocolText.includes("K05.32"));
-		assert.ok(protocolText.includes("4. Рекомендованный план лечения"));
+		assert.ok(protocolText.includes("Рекомендованный план лечения"));
 		assert.ok(protocolText.includes("Scaling & Root Planing"));
 		assert.ok(protocolText.includes("Пациент направлен на закрытый кюретаж 1-го квадранта."));
+	});
+
+	it("16. Bone Loss / Age ratio (BL/Age) calculations and derivation according to AAP/EFP 2018", () => {
+		// 30% bone loss at age 60 -> 30 / 60 = 0.50 (Grade B / Moderate)
+		assert.equal(calculateBoneLossAgeRatio(30, 60), 0.5);
+
+		// 60% bone loss at age 35 -> 60 / 35 = 1.71 (Grade C / Rapid progression)
+		assert.equal(calculateBoneLossAgeRatio(60, 35), 1.71);
+
+		// 15% bone loss at age 75 -> 15 / 75 = 0.20 (Grade A / Slow progression)
+		assert.equal(calculateBoneLossAgeRatio(15, 75), 0.2);
+
+		// Deriving bone loss estimate from teeth CAL
+		const teeth: PerioToothRecord[] = ALL_PERIO_TEETH.map((num) => createTestTooth(num, 2, 0));
+		const t16 = teeth.find((t) => t.toothNumber === 16);
+		if (t16) {
+			t16.distoBuccal.probingDepthMm = 6;
+			t16.distoBuccal.gingivalMarginMm = 2; // CAL = 8mm -> ~67% bone loss
+		}
+		const estimatedLoss = estimateBoneLossPercentFromTeeth(teeth);
+		assert.equal(estimatedLoss, 67);
+	});
+
+	it("17. Lang & Tonetti (2003) PRA Spider Diagram evaluation across 6 vectors", () => {
+		const teeth: PerioToothRecord[] = ALL_PERIO_TEETH.map((num) => createTestTooth(num, 2, 0));
+
+		// Low risk baseline patient: non-smoker, no diabetes, age 45, healthy
+		const praLow = calculatePeriodontalRiskAssessment({
+			teeth,
+			patientAgeYears: 45,
+			smokingStatus: "non_smoker",
+			diabetesStatus: "none",
+		});
+		assert.equal(praLow.overallRisk, "low");
+		assert.equal(praLow.vectors.bop.riskLevel, "low");
+		assert.equal(praLow.vectors.deepPockets.riskLevel, "low");
+		assert.equal(praLow.vectors.environmentalSmoking.riskLevel, "low");
+		assert.equal(praLow.vectors.systemicDiabetes.riskLevel, "low");
+		assert.ok(praLow.radarPolygonCoordinates.length === 6);
+		assert.ok(praLow.radarPolygonPoints.length > 0);
+
+		// High risk patient: heavy smoker, uncontrolled diabetes, deep pockets, BOP > 25%
+		for (let i = 0; i < 20; i++) {
+			const t = teeth[i];
+			if (t) {
+				t.mesioBuccal.probingDepthMm = 6;
+				t.mesioBuccal.bleedingOnProbing = true;
+				t.midBuccal.bleedingOnProbing = true;
+				t.distoBuccal.probingDepthMm = 7;
+				t.distoBuccal.bleedingOnProbing = true;
+			}
+		}
+
+		const praHigh = calculatePeriodontalRiskAssessment({
+			teeth,
+			patientAgeYears: 40,
+			smokingStatus: "heavy",
+			diabetesStatus: "uncontrolled",
+		});
+
+		assert.equal(praHigh.overallRisk, "high");
+		assert.equal(praHigh.vectors.bop.riskLevel, "high");
+		assert.equal(praHigh.vectors.deepPockets.riskLevel, "high");
+		assert.equal(praHigh.vectors.environmentalSmoking.riskLevel, "high");
+		assert.equal(praHigh.vectors.systemicDiabetes.riskLevel, "high");
+		assert.ok(praHigh.highRiskVectorsCount >= 4);
+	});
+
+	it("18. Comprehensive Form 043/u text includes PRA spider analysis and individual risk profile", () => {
+		const teeth: PerioToothRecord[] = ALL_PERIO_TEETH.map((num) => createTestTooth(num, 2, 0));
+		const t16 = teeth.find((t) => t.toothNumber === 16);
+		if (t16) {
+			t16.mesioBuccal.probingDepthMm = 6;
+			t16.mesioBuccal.bleedingOnProbing = true;
+			t16.mesioBuccal.suppuration = true;
+			t16.furcation = 2;
+			t16.mobility = 1;
+		}
+
+		const fullProtocol = generateComprehensivePerio043Text(teeth, undefined, {
+			doctorName: "Д-р Петров А.В.",
+			patientAgeYears: 50,
+			smokingStatus: "light",
+			diabetesStatus: "controlled",
+			customNotes: "Направлен на ультразвуковой кюретаж и шинирование 16 зуба.",
+		});
+
+		assert.ok(fullProtocol.includes("Лечащий врач: Д-р Петров А.В."));
+		assert.ok(fullProtocol.includes("Оценка пародонтального риска (PRA Spider Diagram"));
+		assert.ok(fullProtocol.includes("BOP-вектор:"));
+		assert.ok(fullProtocol.includes("Карманы PPD ≥ 5 мм:"));
+		assert.ok(fullProtocol.includes("Костная потеря/Возраст (BL/Age):"));
+		assert.ok(fullProtocol.includes("Системный статус (Диабет):"));
+		assert.ok(fullProtocol.includes("Фактор среды (Курение):"));
+		assert.ok(fullProtocol.includes("Шинирование подвижных зубов"));
+		assert.ok(fullProtocol.includes("Направлен на ультразвуковой кюретаж"));
 	});
 });

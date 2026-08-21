@@ -1,0 +1,122 @@
+/* ==========================================================================
+   Periodontal Chart (Parodontogram) & PRA Spider Diagram Styles
+   Compliant with AAP/EFP 2018, WHO CPITN & Lang-Tonetti Risk Protocol
+   ========================================================================== */
+
+.perio-chart-module {
+	font-family: inherit;
+}
+
+/* Ensure touch targets meet the clinical >= 44x44px ergonomic floor */
+.perio-touch-target {
+	min-width: 44px;
+	min-height: 44px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	touch-action: manipulation;
+}
+
+/* PRA Radar / Spider Chart */
+.perio-radar-svg {
+	width: 100%;
+	max-width: 320px;
+	height: auto;
+	overflow: visible;
+	filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.06));
+}
+
+.perio-radar-axis-line {
+	stroke: rgba(148, 163, 184, 0.4);
+	stroke-width: 1;
+	stroke-dasharray: 2 2;
+}
+
+.perio-radar-ring-low {
+	fill: rgba(16, 185, 129, 0.08);
+	stroke: rgba(16, 185, 129, 0.35);
+	stroke-width: 1.5;
+}
+
+.perio-radar-ring-moderate {
+	fill: rgba(245, 158, 11, 0.08);
+	stroke: rgba(245, 158, 11, 0.35);
+	stroke-width: 1.5;
+}
+
+.perio-radar-ring-high {
+	fill: rgba(239, 68, 68, 0.06);
+	stroke: rgba(239, 68, 68, 0.35);
+	stroke-width: 1.5;
+}
+
+.perio-radar-polygon {
+	fill: rgba(13, 148, 136, 0.3);
+	stroke: #0d9488;
+	stroke-width: 2.5;
+	stroke-linejoin: round;
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.perio-radar-polygon.high-risk {
+	fill: rgba(225, 29, 72, 0.32);
+	stroke: #e11d48;
+}
+
+.perio-radar-polygon.moderate-risk {
+	fill: rgba(217, 119, 6, 0.32);
+	stroke: #d97706;
+}
+
+.perio-radar-point {
+	r: 4.5;
+	fill: #0d9488;
+	stroke: #ffffff;
+	stroke-width: 2;
+	transition: all 0.2s ease;
+}
+
+.perio-radar-point.high-risk {
+	fill: #e11d48;
+}
+
+.perio-radar-point.moderate-risk {
+	fill: #d97706;
+}
+
+.perio-radar-point:hover {
+	r: 6.5;
+}
+
+/* Clinical metrics text styling */
+.perio-summary-value {
+	font-size: 1.125rem; /* 18px */
+	line-height: 1.75rem;
+	font-weight: 900;
+}
+
+.perio-summary-label {
+	font-size: 0.8125rem; /* 13px */
+	font-weight: 700;
+	color: #475569;
+}
+
+:is([data-theme="dark"], .dark) .perio-summary-label {
+	color: #94a3b8;
+}
+
+/* Active Probing Pulse */
+@keyframes perio-active-pulse {
+	0%, 100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+	50% {
+		opacity: 0.75;
+		transform: scale(1.05);
+	}
+}
+
+.perio-site-active-marker {
+	animation: perio-active-pulse 2s infinite ease-in-out;
+}

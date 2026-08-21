@@ -5,13 +5,7 @@ import {
 } from "@dental/shared";
 import {
 	Activity,
-	AlertOctagon,
-	AlertTriangle,
-	Check,
-	Droplet,
 	Layers,
-	ShieldAlert,
-	Sparkles,
 } from "lucide-react";
 import {
 	FURCATION_GRADES,
@@ -48,41 +42,41 @@ export const PerioToothDetailCard: React.FC<PerioToothDetailCardProps> = ({
 				key={siteKey}
 				type="button"
 				onClick={() => onSiteSelect(siteKey)}
-				className={`min-h-[58px] p-2.5 rounded-xl border text-left transition-all cursor-pointer relative select-none ${
+				className={`min-h-[68px] p-2.5 rounded-xl border text-left transition-all cursor-pointer relative select-none ${
 					isSelected
-						? "bg-teal-500/15 border-teal-500 ring-2 ring-teal-500/40 shadow-xs"
+						? "bg-teal-500/15 border-teal-500 ring-2 ring-teal-500/50 shadow-xs"
 						: `${color.bgColor} ${color.borderColor} hover:border-slate-400 dark:hover:border-slate-600`
 				}`}
 				aria-label={`${label}, глубина ${site.probingDepthMm} мм, потеря CAL ${cal} мм`}
 			>
 				{/* Top Site Title & Badges */}
-				<div className="flex items-center justify-between gap-1 mb-1">
-					<span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-						{short} <span className="font-normal opacity-75 hidden sm:inline">({label})</span>
+				<div className="flex items-center justify-between gap-1 mb-1.5">
+					<span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+						{short} <span className="font-medium opacity-80 hidden sm:inline">({label})</span>
 					</span>
 
-					<div className="flex items-center gap-1">
+					<div className="flex items-center gap-1.5">
 						{site.bleedingOnProbing && (
 							<span
-								className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse shadow-xs"
-								title="Кровоточивость (BOP)"
+								className="w-3 h-3 rounded-full bg-rose-600 animate-pulse shadow-xs"
+								title="Кровоточивость при зондировании (BOP)"
 							/>
 						)}
 						{site.suppuration && (
 							<span
-								className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-xs"
-								title="Гноетечение (SUP)"
+								className="w-3 h-3 rounded-full bg-amber-500 shadow-xs"
+								title="Гноетечение из кармана (SUP)"
 							/>
 						)}
 						{site.plaque && (
 							<span
-								className="w-2 h-2 rounded-full bg-yellow-400"
-								title="Зубной налёт (PLQ)"
+								className="w-2.5 h-2.5 rounded-full bg-yellow-400"
+								title="Зубной налёт / биопленка (PLQ)"
 							/>
 						)}
 						{site.calculus && (
 							<span
-								className="w-2 h-2 rounded-full bg-stone-500"
+								className="w-2.5 h-2.5 rounded-full bg-stone-500"
 								title="Зубной камень (CALC)"
 							/>
 						)}
@@ -90,22 +84,22 @@ export const PerioToothDetailCard: React.FC<PerioToothDetailCardProps> = ({
 				</div>
 
 				{/* Values Row: PD, GM, CAL */}
-				<div className="grid grid-cols-3 gap-1 text-center bg-white/70 dark:bg-slate-900/60 p-1 rounded-md border border-slate-200/60 dark:border-slate-800/60">
+				<div className="grid grid-cols-3 gap-1 text-center bg-white/85 dark:bg-slate-900/80 p-1 rounded-lg border border-slate-200/80 dark:border-slate-800">
 					<div>
-						<span className="text-[9px] text-slate-500 dark:text-slate-400 block">PD</span>
-						<span className={`text-xs font-black ${color.textColor}`}>
+						<span className="text-xs font-bold text-slate-500 dark:text-slate-400 block">PD</span>
+						<span className={`text-sm font-black ${color.textColor}`}>
 							{site.probingDepthMm}
 						</span>
 					</div>
 					<div>
-						<span className="text-[9px] text-slate-500 dark:text-slate-400 block">GM</span>
-						<span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+						<span className="text-xs font-bold text-slate-500 dark:text-slate-400 block">GM</span>
+						<span className="text-sm font-bold text-slate-700 dark:text-slate-300">
 							{site.gingivalMarginMm > 0 ? `+${site.gingivalMarginMm}` : site.gingivalMarginMm}
 						</span>
 					</div>
 					<div>
-						<span className="text-[9px] text-slate-500 dark:text-slate-400 block">CAL</span>
-						<span className="text-xs font-black text-teal-700 dark:text-teal-400">
+						<span className="text-xs font-bold text-slate-500 dark:text-slate-400 block">CAL</span>
+						<span className="text-sm font-black text-teal-700 dark:text-teal-400">
 							{cal}
 						</span>
 					</div>
@@ -119,18 +113,18 @@ export const PerioToothDetailCard: React.FC<PerioToothDetailCardProps> = ({
 			{/* Header: Tooth Info & System States */}
 			<div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
 				<div className="flex items-center gap-3">
-					<div className="w-11 h-11 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 flex items-center justify-center text-teal-700 dark:text-teal-300 font-mono font-black text-lg">
-						{tooth.toothNumber}
+					<div className="w-12 h-12 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 flex items-center justify-center text-teal-700 dark:text-teal-300 font-mono font-black text-xl shadow-xs">
+						#{tooth.toothNumber}
 					</div>
 					<div>
-						<h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+						<h4 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
 							<span>Зуб #{tooth.toothNumber}</span>
-							<span className="text-xs font-normal text-slate-500 dark:text-slate-400">
+							<span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
 								{isUpper ? "Верхняя челюсть" : "Нижняя челюсть"}
 							</span>
 						</h4>
-						<div className="flex items-center gap-3 mt-1 text-xs">
-							<label className="inline-flex items-center gap-1.5 cursor-pointer text-slate-600 dark:text-slate-400">
+						<div className="flex items-center gap-4 mt-1">
+							<label className="min-h-[44px] inline-flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-300 select-none">
 								<input
 									type="checkbox"
 									checked={tooth.isMissing}
@@ -139,10 +133,10 @@ export const PerioToothDetailCard: React.FC<PerioToothDetailCardProps> = ({
 									}
 									className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-4 h-4 cursor-pointer"
 								/>
-								Отсутствует
+								<span>Отсутствует</span>
 							</label>
 
-							<label className="inline-flex items-center gap-1.5 cursor-pointer text-slate-600 dark:text-slate-400">
+							<label className="min-h-[44px] inline-flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-300 select-none">
 								<input
 									type="checkbox"
 									checked={tooth.isImplant}
@@ -151,19 +145,19 @@ export const PerioToothDetailCard: React.FC<PerioToothDetailCardProps> = ({
 									}
 									className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-4 h-4 cursor-pointer"
 								/>
-								Имплантат
+								<span>Имплантат</span>
 							</label>
 						</div>
 					</div>
 				</div>
 
-				{/* Furcation & Mobility Selectors (Tablet-Friendly >= 44px) */}
-				<div className="flex flex-wrap items-center gap-3">
-					{/* Tooth Mobility (Miller Grades 0..3) */}
-					<div className="flex items-center gap-1.5">
-						<span className="text-xs font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1">
-							<Activity className="w-3.5 h-3.5 text-indigo-500" />
-							Подвижность:
+				{/* Furcation & Mobility Selectors (Tablet-Friendly >= 44x44px) */}
+				<div className="flex flex-wrap items-center gap-4">
+					{/* Tooth Mobility (Miller / Entin Grades 0..3) */}
+					<div className="flex items-center gap-2">
+						<span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+							<Activity className="w-4 h-4 text-indigo-500" />
+							<span>Подвижность:</span>
 						</span>
 						<div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-0.5">
 							{([0, 1, 2, 3] as const).map((grade) => {
@@ -175,10 +169,10 @@ export const PerioToothDetailCard: React.FC<PerioToothDetailCardProps> = ({
 										key={grade}
 										type="button"
 										onClick={() => onUpdateTooth((t) => ({ ...t, mobility: grade }))}
-										className={`min-h-[38px] min-w-[38px] rounded-md text-xs font-extrabold transition-all cursor-pointer ${
+										className={`min-h-[44px] min-w-[44px] rounded-md text-sm font-black transition-all cursor-pointer ${
 											isSelected
 												? "bg-indigo-600 text-white shadow-xs"
-												: "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+												: "text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
 										}`}
 										title={detail.descriptionRu}
 									>
@@ -191,10 +185,10 @@ export const PerioToothDetailCard: React.FC<PerioToothDetailCardProps> = ({
 
 					{/* Furcation Involvement (Grades 0..4) on Multi-Rooted Teeth */}
 					{isMultiRooted && (
-						<div className="flex items-center gap-1.5">
-							<span className="text-xs font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1">
-								<Layers className="w-3.5 h-3.5 text-amber-500" />
-								Фуркация:
+						<div className="flex items-center gap-2">
+							<span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+								<Layers className="w-4 h-4 text-amber-500" />
+								<span>Фуркация:</span>
 							</span>
 							<div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-0.5">
 								{([0, 1, 2, 3, 4] as const).map((grade) => {
@@ -206,14 +200,14 @@ export const PerioToothDetailCard: React.FC<PerioToothDetailCardProps> = ({
 											key={grade}
 											type="button"
 											onClick={() => onUpdateTooth((t) => ({ ...t, furcation: grade }))}
-											className={`min-h-[38px] min-w-[38px] rounded-md text-xs font-extrabold transition-all cursor-pointer ${
+											className={`min-h-[44px] min-w-[44px] rounded-md text-sm font-black transition-all cursor-pointer ${
 												isSelected
 													? grade >= 3
 														? "bg-rose-600 text-white shadow-xs"
 														: grade >= 1
 															? "bg-amber-500 text-white shadow-xs"
 															: "bg-teal-600 text-white shadow-xs"
-													: "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+													: "text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
 											}`}
 											title={detail.descriptionRu}
 										>
@@ -228,16 +222,16 @@ export const PerioToothDetailCard: React.FC<PerioToothDetailCardProps> = ({
 			</div>
 
 			{/* 6 Sites Probing Grid (Vestibular & Lingual) */}
-			<div className="space-y-3">
+			<div className="space-y-4">
 				{/* 1. Buccal / Vestibular Aspect (DB, B, MB) */}
-				<div className="space-y-1.5">
+				<div className="space-y-2">
 					<div className="flex items-center justify-between text-xs font-bold text-sky-800 dark:text-sky-300 border-b border-sky-100 dark:border-sky-950 pb-1">
-						<span>Вестибулярно / щёчно (Buccal)</span>
-						<span className="text-[10px] font-normal text-slate-400">
-							Дистально → Центр → Медиально
+						<span>ВЕСТИБУЛЯРНО / ЩЁЧНО (Buccal)</span>
+						<span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+							Дистально (DB) → Центр (B) → Медиально (MB)
 						</span>
 					</div>
-					<div className="grid grid-cols-3 gap-2">
+					<div className="grid grid-cols-3 gap-2.5">
 						{renderSiteCard("distoBuccal", "Дистально", "DB")}
 						{renderSiteCard("midBuccal", "По центру", "B")}
 						{renderSiteCard("mesioBuccal", "Медиально", "MB")}
@@ -245,14 +239,14 @@ export const PerioToothDetailCard: React.FC<PerioToothDetailCardProps> = ({
 				</div>
 
 				{/* 2. Lingual / Palatal Aspect (DL, L, ML) */}
-				<div className="space-y-1.5 pt-1">
+				<div className="space-y-2 pt-1">
 					<div className="flex items-center justify-between text-xs font-bold text-indigo-800 dark:text-indigo-300 border-b border-indigo-100 dark:border-indigo-950 pb-1">
-						<span>Орально / язычно / нёбно (Lingual / Palatal)</span>
-						<span className="text-[10px] font-normal text-slate-400">
-							Дистально → Центр → Медиально
+						<span>ОРАЛЬНО / ЯЗЫЧНО / НЁБНО (Lingual / Palatal)</span>
+						<span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+							Дистально (DL) → Центр (L) → Медиально (ML)
 						</span>
 					</div>
-					<div className="grid grid-cols-3 gap-2">
+					<div className="grid grid-cols-3 gap-2.5">
 						{renderSiteCard("distoLingual", "Дистально", "DL")}
 						{renderSiteCard("midLingual", "По центру", "L")}
 						{renderSiteCard("mesioLingual", "Медиально", "ML")}
