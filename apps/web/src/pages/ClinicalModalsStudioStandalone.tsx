@@ -78,6 +78,9 @@ import { EgiszRemdXmlModal } from "../components/egisz/remdXml/EgiszRemdXmlModal
 import { LabWorkOrderModal } from "../components/lab/orders/LabWorkOrderModal";
 import { SanpinJournalsModal } from "../components/sanpin/journals/SanpinJournalsModal";
 import { ClinicalWriteoffModal } from "../components/inventory/writeoff/ClinicalWriteoffModal";
+import { DmsInsuranceManagerModal } from "../components/insurance/dmsManager/DmsInsuranceManagerModal";
+import { KraftPackageBarcodeModal } from "../components/sanpin/kraft/KraftPackageBarcodeModal";
+import { ServicePricelistManagerModal } from "../components/catalog/pricelist/ServicePricelistManagerModal";
 import { AnesthesiaQuickBar } from "../components/anesthesia/AnesthesiaQuickBar";
 import type { CompletedWorksActAndWriteOffData, TreatmentPlanItem } from "../components/treatment-plans/types";
 import type { DiaryState } from "../components/useVisitDiaryLogic";
@@ -303,6 +306,9 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isLabWorkOrderOpen, setIsLabWorkOrderOpen] = useState(false);
 	const [isClinicalWriteoffOpen, setIsClinicalWriteoffOpen] = useState(false);
 	const [isSanpinJournalsOpen, setIsSanpinJournalsOpen] = useState(false);
+	const [isDmsManagerOpen, setIsDmsManagerOpen] = useState(false);
+	const [isKraftBarcodeOpen, setIsKraftBarcodeOpen] = useState(false);
+	const [isServicePricelistOpen, setIsServicePricelistOpen] = useState(false);
 
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -1283,7 +1289,79 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</button>
 					</div>
 
-					{/* 38. Anesthesia QuickBar 1-Click Presets */}
+					{/* 38. DMS Insurance Case Manager & Pre-Auth Studio Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<ShieldCheck className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Согласование ДМС и реестры страховых
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								ДМС-2026: СОГАЗ, Ингосстрах, РЕСО, гарантийные письма, Pre-Auth, сплит-оплата и реестры услуг по № 804н.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsDmsManagerOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-dms-manager-modal-btn"
+						>
+							<ShieldCheck size={15} />
+							<span>Открыть ДМС-согласование</span>
+						</button>
+					</div>
+
+					{/* 39. SanPiN Kraft Package Barcode & Expiry Studio Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<QrCode className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Крафт-пакеты ЦСО и DataMatrix СанПиН
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Сроки стерильности (50/60/180 сут.), индикаторы 4-5 кл. Медтест/Винар, 2D DataMatrix и печать термоэтикеток 58x40.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsKraftBarcodeOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-kraft-barcode-modal-btn"
+						>
+							<QrCode size={15} />
+							<span>Открыть крафт-пакеты ЦСО</span>
+						</button>
+					</div>
+
+					{/* 40. Order 804n Service Catalog & Pricelist Matrix Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<FileText className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Номенклатура услуг № 804н и прайс-лист
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Номенклатурный справочник Минздрава 804н, ценовые категории (VIP/ДМС/Акция), маржинальность и экспорт CSV/A4.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsServicePricelistOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-service-pricelist-modal-btn"
+						>
+							<FileText size={15} />
+							<span>Открыть прайс-лист клиники</span>
+						</button>
+					</div>
+
+					{/* 41. Anesthesia QuickBar 1-Click Presets */}
 					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4 md:col-span-2 lg:col-span-3">
 						<div className="space-y-2">
 							<div className="flex items-center gap-2 text-[var(--teal)]">
@@ -1650,6 +1728,21 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				patientName={SAMPLE_PATIENT.fullName}
 				doctorFullName="Д-р Смирнов Алексей Петрович"
 				assistantFullName="Медсестра Петрова Е. С."
+			/>
+
+			<DmsInsuranceManagerModal
+				isOpen={isDmsManagerOpen}
+				onClose={() => setIsDmsManagerOpen(false)}
+			/>
+
+			<KraftPackageBarcodeModal
+				isOpen={isKraftBarcodeOpen}
+				onClose={() => setIsKraftBarcodeOpen(false)}
+			/>
+
+			<ServicePricelistManagerModal
+				isOpen={isServicePricelistOpen}
+				onClose={() => setIsServicePricelistOpen(false)}
 			/>
 		</div>
 	);

@@ -108,12 +108,6 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		reason:
 			"Плавающее окно 3D MPR (Multi-Planar Reconstruction) и криволинейной панорамной реконструкции (ОПТГ) по Catmull-Rom сплайну зубной дуги с интерактивным HU-метром плотности кости по Misch (D1–D5), срезами с шагом 1.0–2.0 мм и экспортом в амбулаторную карту 043/у.",
 	},
-	{
-		file: "components/insurance/dmsManager/DmsInsuranceManagerModal.tsx",
-		name: "DmsInsuranceManagerModal",
-		reason:
-			"Интерактивное модальное окно ДМС Case Manager & Pre-Authorization Studio для работы с договорами ДМС-2026, реестрами по Приказу Минздрава № 804н, проверкой лимитов гарантийных писем, сплит-расчетом сооплаты пациента и печатью актов сдачи-приемки.",
-	},
 	/*
 	 * ComparativePlannerDashboard УДАЛЁН, поэтому записи долга здесь больше нет — и
 	 * список заявленных долгов на этом пуст: несмонтированных компонентов в
