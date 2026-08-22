@@ -109,40 +109,10 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 			"Плавающее окно 3D MPR (Multi-Planar Reconstruction) и криволинейной панорамной реконструкции (ОПТГ) по Catmull-Rom сплайну зубной дуги с интерактивным HU-метром плотности кости по Misch (D1–D5), срезами с шагом 1.0–2.0 мм и экспортом в амбулаторную карту 043/у.",
 	},
 	{
-		file: "components/sanpin/autoclaveLog/AutoclaveLog257Modal.tsx",
-		name: "AutoclaveLog257Modal",
+		file: "components/finance/SberbankTerminalPaymentModal.tsx",
+		name: "SberbankTerminalPaymentModal",
 		reason:
-			"Модальная студия официального Журнала контроля работы стерилизаторов (Форма № 257/у по Приказу Минздрава СССР № 1030 и СанПиН 3.3686-21). Обеспечивает сквозную регистрацию циклов паровой и воздушной стерилизации, контроль 5 физических точек камеры, учет химических индикаторов 4-5 классов и печать официальных страниц журнала на бланках А4.",
-	},
-	{
-		file: "components/sanpin/autoclaveLog/AutoclaveNewCycleTab.tsx",
-		name: "AutoclaveNewCycleTab",
-		reason:
-			"Интерактивная панель 1-Click регистрации нового цикла стерилизации с нормативной калибровкой параметров СанПиН (134°C 5м, 121°C 20м, 180°C 60м, Бови-Дик) и проверкой статуса 5 контрольных точек.",
-	},
-	{
-		file: "components/sanpin/autoclaveLog/AutoclaveJournal257Tab.tsx",
-		name: "AutoclaveJournal257Tab",
-		reason:
-			"Реестр записей формы № 257/у с фильтрацией по аппаратам и статусам, формированием альбома А4 и экспортом в RFC 4180 CSV с UTF-8 BOM.",
-	},
-	{
-		file: "components/sanpin/autoclaveLog/AutoclaveChamberPointsTab.tsx",
-		name: "AutoclaveChamberPointsTab",
-		reason:
-			"Интерактивная 2D/3D визуализация 5 регламентных контрольных точек в камере автоклава с анализом термодинамических рисков скопления конденсата и воздуха.",
-	},
-	{
-		file: "components/sanpin/autoclaveLog/AutoclaveBioControlTab.tsx",
-		name: "AutoclaveBioControlTab",
-		reason:
-			"Журнал бактериологического спорового контроля (Geobacillus stearothermophilus) с контролем полугодовой периодичности по СанПиН 3.3686-21 п. 3642.",
-	},
-	{
-		file: "components/sanpin/autoclaveLog/AutoclaveAnalyticsTab.tsx",
-		name: "AutoclaveAnalyticsTab",
-		reason:
-			"Сводная аналитическая панель стерилизационного отделения ЦСО с расчетом процента брака, расхода крафт-пакетов и календарем планового ТО.",
+			"Резервный интерфейс оплаты через веб-шлюз Сбербанк Эквайринг (501 Not Implemented, до подключения прямых API-ключей банка). В приложении активна и смонтирована аппаратная POS-интеграция SberPosTerminalModal (протоколы Pilot-NT / Arcus-D).",
 	},
 	/*
 	 * ComparativePlannerDashboard УДАЛЁН, поэтому записи долга здесь больше нет — и
