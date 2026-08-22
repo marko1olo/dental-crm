@@ -1,0 +1,757 @@
+/* ==========================================================================
+   Patient Personal Portal & SMS/OTP Cabinet Styles
+   Touch-First, Multi-Theme (Light, Dark, Night, Calm Teal)
+   ========================================================================== */
+
+.patient-cabinet-backdrop {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(15, 23, 42, 0.75);
+	backdrop-filter: blur(6px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1050;
+	padding: 12px;
+	box-sizing: border-box;
+}
+
+.patient-cabinet-modal {
+	--pc-bg: var(--paper, #ffffff);
+	--pc-surface: var(--paper-strong, #f8fafc);
+	--pc-surface-hover: var(--surface-hover, #f1f5f9);
+	--pc-border: var(--border, #e2e8f0);
+	--pc-border-focus: var(--primary, #0d9488);
+	--pc-text-main: var(--ink, #0f172a);
+	--pc-text-muted: var(--muted, #64748b);
+	--pc-primary: var(--primary, #0d9488);
+	--pc-primary-hover: var(--primary-hover, #0f766e);
+	--pc-primary-light: var(--primary-light, rgba(13, 148, 136, 0.1));
+	--pc-success: var(--success, #10b981);
+	--pc-success-light: rgba(16, 185, 129, 0.12);
+	--pc-warning: var(--warning, #f59e0b);
+	--pc-warning-light: rgba(245, 158, 11, 0.12);
+	--pc-danger: var(--danger, #ef4444);
+	--pc-danger-light: rgba(239, 68, 68, 0.12);
+	--pc-radius-lg: 16px;
+	--pc-radius-md: 10px;
+	--pc-radius-sm: 6px;
+	--pc-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+	background: var(--pc-bg);
+	color: var(--pc-text-main);
+	border: 1px solid var(--pc-border);
+	border-radius: var(--pc-radius-lg);
+	box-shadow: var(--pc-shadow);
+	width: 100%;
+	max-width: 1120px;
+	height: 94vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-sizing: border-box;
+	font-family: inherit;
+}
+
+/* Multi-Theme Overrides */
+[data-theme="dark"] .patient-cabinet-modal,
+.dark .patient-cabinet-modal {
+	--pc-bg: #0f172a;
+	--pc-surface: #1e293b;
+	--pc-surface-hover: #334155;
+	--pc-border: #334155;
+	--pc-text-main: #f8fafc;
+	--pc-text-muted: #94a3b8;
+	--pc-primary: #2dd4bf;
+	--pc-primary-hover: #14b8a6;
+	--pc-primary-light: rgba(45, 212, 191, 0.15);
+	--pc-success: #34d399;
+	--pc-success-light: rgba(52, 211, 153, 0.15);
+	--pc-warning: #fbbf24;
+	--pc-warning-light: rgba(251, 191, 36, 0.15);
+	--pc-danger: #f87171;
+	--pc-danger-light: rgba(248, 113, 113, 0.15);
+}
+
+[data-theme="night"] .patient-cabinet-modal,
+[data-theme="oled"] .patient-cabinet-modal {
+	--pc-bg: #000000;
+	--pc-surface: #121215;
+	--pc-surface-hover: #27272a;
+	--pc-border: #27272a;
+	--pc-text-main: #ffffff;
+	--pc-text-muted: #a1a1aa;
+	--pc-primary: #2dd4bf;
+	--pc-primary-hover: #5eead4;
+	--pc-primary-light: rgba(45, 212, 191, 0.2);
+}
+
+[data-theme="calm_teal"] .patient-cabinet-modal,
+[data-theme="calm-teal"] .patient-cabinet-modal {
+	--pc-bg: #ffffff;
+	--pc-surface: #f0fdfa;
+	--pc-surface-hover: #ccfbf1;
+	--pc-border: #99f6e4;
+	--pc-text-main: #134e4a;
+	--pc-text-muted: #0f766e;
+	--pc-primary: #0f766e;
+	--pc-primary-hover: #115e59;
+	--pc-primary-light: rgba(15, 118, 110, 0.12);
+}
+
+/* Header */
+.pc-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 20px;
+	border-bottom: 1px solid var(--pc-border);
+	background: var(--pc-surface);
+	flex-shrink: 0;
+	gap: 12px;
+}
+
+.pc-header-user {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.pc-avatar {
+	width: 46px;
+	height: 46px;
+	min-width: 46px;
+	border-radius: 50%;
+	background: var(--pc-primary-light);
+	color: var(--pc-primary);
+	font-weight: 700;
+	font-size: 1.125rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: 2px solid var(--pc-primary);
+}
+
+.pc-header-title {
+	font-size: 1.125rem;
+	font-weight: 700;
+	margin: 0;
+	color: var(--pc-text-main);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.pc-header-subtitle {
+	font-size: 0.8125rem;
+	color: var(--pc-text-muted);
+	margin: 2px 0 0 0;
+}
+
+.pc-header-badges {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.pc-badge-bonus {
+	background: var(--pc-primary-light);
+	color: var(--pc-primary);
+	border: 1px solid var(--pc-primary);
+	border-radius: 20px;
+	padding: 4px 10px;
+	font-size: 0.75rem;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.pc-badge-tier {
+	background: var(--pc-warning-light);
+	color: var(--pc-warning);
+	border: 1px solid var(--pc-warning);
+	border-radius: 20px;
+	padding: 4px 10px;
+	font-size: 0.75rem;
+	font-weight: 700;
+}
+
+.pc-close-btn {
+	min-width: 44px;
+	min-height: 44px;
+	border-radius: var(--pc-radius-sm);
+	border: 1px solid var(--pc-border);
+	background: var(--pc-bg);
+	color: var(--pc-text-muted);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.pc-close-btn:hover {
+	background: var(--pc-surface-hover);
+	color: var(--pc-text-main);
+}
+
+/* Tab Navigation */
+.pc-nav-bar {
+	display: flex;
+	background: var(--pc-surface);
+	border-bottom: 1px solid var(--pc-border);
+	padding: 0 16px;
+	gap: 4px;
+	overflow-x: auto;
+	flex-shrink: 0;
+}
+
+.pc-tab-btn {
+	min-height: 48px;
+	min-width: 44px;
+	padding: 0 16px;
+	background: transparent;
+	border: none;
+	border-bottom: 2.5px solid transparent;
+	color: var(--pc-text-muted);
+	font-weight: 600;
+	font-size: 0.875rem;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+	touch-action: manipulation;
+}
+
+.pc-tab-btn:hover {
+	color: var(--pc-text-main);
+	background: var(--pc-surface-hover);
+}
+
+.pc-tab-btn.active {
+	color: var(--pc-primary);
+	border-bottom-color: var(--pc-primary);
+	background: var(--pc-primary-light);
+}
+
+.pc-tab-counter {
+	background: var(--pc-danger);
+	color: #ffffff;
+	font-size: 0.6875rem;
+	font-weight: 800;
+	border-radius: 10px;
+	padding: 1px 6px;
+	line-height: 1;
+}
+
+/* Modal Body */
+.pc-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+/* Cards & Layout */
+.pc-card {
+	background: var(--pc-surface);
+	border: 1px solid var(--pc-border);
+	border-radius: var(--pc-radius-md);
+	padding: 16px 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	transition: border-color 0.15s ease;
+}
+
+.pc-card-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.pc-card-title {
+	font-size: 0.9375rem;
+	font-weight: 700;
+	color: var(--pc-text-main);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+}
+
+/* Overview Summary Row */
+.pc-summary-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 12px;
+}
+
+.pc-metric-card {
+	background: var(--pc-bg);
+	border: 1px solid var(--pc-border);
+	border-radius: var(--pc-radius-sm);
+	padding: 14px;
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.pc-metric-icon {
+	width: 44px;
+	height: 44px;
+	min-width: 44px;
+	border-radius: 10px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 1.25rem;
+}
+
+.pc-metric-content {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.pc-metric-label {
+	font-size: 0.75rem;
+	color: var(--pc-text-muted);
+	font-weight: 500;
+}
+
+.pc-metric-value {
+	font-size: 1.125rem;
+	font-weight: 800;
+	color: var(--pc-text-main);
+}
+
+/* Alert Banner (e.g. Unpaid Bills or Pending Signatures) */
+.pc-alert-banner {
+	border-radius: var(--pc-radius-md);
+	padding: 14px 18px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 14px;
+	flex-wrap: wrap;
+}
+
+.pc-alert-banner.warning {
+	background: var(--pc-warning-light);
+	border: 1.5px solid var(--pc-warning);
+	color: var(--pc-text-main);
+}
+
+.pc-alert-banner.danger {
+	background: var(--pc-danger-light);
+	border: 1.5px solid var(--pc-danger);
+	color: var(--pc-text-main);
+}
+
+.pc-alert-banner.info {
+	background: var(--pc-primary-light);
+	border: 1.5px solid var(--pc-primary);
+	color: var(--pc-text-main);
+}
+
+/* Buttons */
+.pc-btn-primary {
+	min-height: 44px;
+	min-width: 44px;
+	background: var(--pc-primary);
+	color: #ffffff;
+	border: none;
+	border-radius: var(--pc-radius-sm);
+	padding: 10px 18px;
+	font-size: 0.875rem;
+	font-weight: 700;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.pc-btn-primary:hover {
+	background: var(--pc-primary-hover);
+}
+
+.pc-btn-outline {
+	min-height: 44px;
+	min-width: 44px;
+	background: transparent;
+	color: var(--pc-primary);
+	border: 1.5px solid var(--pc-primary);
+	border-radius: var(--pc-radius-sm);
+	padding: 8px 16px;
+	font-size: 0.875rem;
+	font-weight: 700;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.pc-btn-outline:hover {
+	background: var(--pc-primary-light);
+}
+
+.pc-btn-secondary {
+	min-height: 44px;
+	min-width: 44px;
+	background: var(--pc-surface);
+	color: var(--pc-text-main);
+	border: 1px solid var(--pc-border);
+	border-radius: var(--pc-radius-sm);
+	padding: 8px 14px;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.pc-btn-secondary:hover {
+	background: var(--pc-surface-hover);
+}
+
+/* Invoices List */
+.pc-invoices-grid {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.pc-invoice-card {
+	background: var(--pc-bg);
+	border: 1.5px solid var(--pc-border);
+	border-radius: var(--pc-radius-md);
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	transition: all 0.15s ease;
+}
+
+.pc-invoice-card.unpaid {
+	border-left: 5px solid var(--pc-warning);
+}
+
+.pc-invoice-card.paid {
+	border-left: 5px solid var(--pc-success);
+}
+
+.pc-invoice-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.pc-status-badge {
+	font-size: 0.75rem;
+	font-weight: 700;
+	padding: 4px 10px;
+	border-radius: 12px;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.pc-status-badge.paid {
+	background: var(--pc-success-light);
+	color: var(--pc-success);
+	border: 1px solid var(--pc-success);
+}
+
+.pc-status-badge.unpaid {
+	background: var(--pc-warning-light);
+	color: var(--pc-warning);
+	border: 1px solid var(--pc-warning);
+}
+
+.pc-invoice-items-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8125rem;
+	margin-top: 4px;
+}
+
+.pc-invoice-items-table th {
+	text-align: left;
+	color: var(--pc-text-muted);
+	padding: 6px 8px;
+	border-bottom: 1px solid var(--pc-border);
+	font-weight: 600;
+}
+
+.pc-invoice-items-table td {
+	padding: 8px;
+	border-bottom: 1px solid var(--pc-border);
+	color: var(--pc-text-main);
+}
+
+.pc-invoice-actions {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 10px;
+	flex-wrap: wrap;
+	padding-top: 8px;
+	border-top: 1px solid var(--pc-border);
+}
+
+/* SBP QR Modal Sheet Overlay */
+.pc-sheet-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.6);
+	backdrop-filter: blur(4px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1100;
+	padding: 16px;
+}
+
+.pc-sheet-window {
+	background: var(--pc-bg);
+	border: 1.5px solid var(--pc-border);
+	border-radius: var(--pc-radius-lg);
+	box-shadow: var(--pc-shadow);
+	width: 100%;
+	max-width: 480px;
+	max-height: 90vh;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 20px;
+}
+
+.pc-qr-container {
+	background: #ffffff;
+	padding: 16px;
+	border-radius: var(--pc-radius-md);
+	border: 2px solid var(--pc-primary);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0 auto;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.pc-bank-buttons-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 8px;
+}
+
+.pc-bank-btn {
+	min-height: 48px;
+	min-width: 44px;
+	border: 1px solid var(--pc-border);
+	background: var(--pc-surface);
+	color: var(--pc-text-main);
+	border-radius: var(--pc-radius-sm);
+	font-weight: 700;
+	font-size: 0.8125rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.pc-bank-btn:hover {
+	background: var(--pc-surface-hover);
+	border-color: var(--pc-border-focus);
+}
+
+/* SMS OTP Inputs */
+.pc-otp-container {
+	display: flex;
+	gap: 8px;
+	justify-content: center;
+	margin: 12px 0;
+}
+
+.pc-otp-digit {
+	width: 46px;
+	height: 52px;
+	min-width: 44px;
+	min-height: 44px;
+	border: 2px solid var(--pc-border);
+	border-radius: var(--pc-radius-sm);
+	background: var(--pc-bg);
+	color: var(--pc-text-main);
+	font-size: 1.5rem;
+	font-weight: 800;
+	text-align: center;
+	transition: all 0.15s ease;
+}
+
+.pc-otp-digit:focus {
+	outline: none;
+	border-color: var(--pc-primary);
+	box-shadow: 0 0 0 3px var(--pc-primary-light);
+}
+
+/* Treatment Plan Progress Bars */
+.pc-plan-stage-item {
+	background: var(--pc-bg);
+	border: 1px solid var(--pc-border);
+	border-radius: var(--pc-radius-sm);
+	padding: 12px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.pc-progress-bar-bg {
+	height: 10px;
+	background: rgba(148, 163, 184, 0.2);
+	border-radius: 5px;
+	overflow: hidden;
+}
+
+.pc-progress-bar-fill {
+	height: 100%;
+	background: var(--pc-primary);
+	border-radius: 5px;
+	transition: width 0.4s ease;
+}
+
+/* Warranty Passports */
+.pc-warranty-card {
+	background: var(--pc-bg);
+	border: 1.5px solid var(--pc-border);
+	border-radius: var(--pc-radius-md);
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.pc-warranty-countdown-badge {
+	padding: 6px 12px;
+	border-radius: 20px;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.pc-warranty-countdown-badge.normal {
+	background: var(--pc-primary-light);
+	color: var(--pc-primary);
+	border: 1px solid var(--pc-primary);
+}
+
+.pc-warranty-countdown-badge.urgent {
+	background: var(--pc-warning-light);
+	color: var(--pc-warning);
+	border: 1px solid var(--pc-warning);
+}
+
+.pc-warranty-countdown-badge.overdue {
+	background: var(--pc-danger-light);
+	color: var(--pc-danger);
+	border: 1px solid var(--pc-danger);
+}
+
+/* Statutory Consents (323-FZ) */
+.pc-consent-card {
+	background: var(--pc-bg);
+	border: 1.5px solid var(--pc-border);
+	border-radius: var(--pc-radius-md);
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.pc-audit-hash-badge {
+	background: var(--pc-surface);
+	border: 1px solid var(--pc-border);
+	border-radius: var(--pc-radius-sm);
+	padding: 8px 12px;
+	font-family: monospace;
+	font-size: 0.75rem;
+	color: var(--pc-text-muted);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	overflow-x: auto;
+}
+
+/* Appointments Cards */
+.pc-appointment-card {
+	background: var(--pc-bg);
+	border: 1.5px solid var(--pc-border);
+	border-radius: var(--pc-radius-md);
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+	.patient-cabinet-modal {
+		height: 98vh;
+		border-radius: 0;
+	}
+
+	.pc-header {
+		padding: 12px 14px;
+	}
+
+	.pc-body {
+		padding: 14px;
+	}
+
+	.pc-summary-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.pc-bank-buttons-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.pc-otp-digit {
+		width: 40px;
+		height: 48px;
+		font-size: 1.25rem;
+	}
+}
