@@ -1,0 +1,691 @@
+/**
+ * Russian Dental Emergency Rescue HUD & Anaphylaxis Protocol Stylesheet
+ * 100% Token Compliant, Multi-Theme (Dark/Light/Cyber/Emerald/Night), Touch-First (>=44-56px)
+ * WCAG 2.1 AAA Contrast & Ergonomics for High-Stress Resuscitation Contexts
+ */
+
+.emergency-modal-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.75);
+	backdrop-filter: blur(6px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 10000;
+	padding: 0.75rem;
+	box-sizing: border-box;
+}
+
+.emergency-modal-container {
+	background: var(--paper, #111827);
+	color: var(--ink, #f8fafc);
+	border: 2px solid var(--bad-line, var(--bad-fg));
+	border-radius: 14px;
+	width: 100%;
+	max-width: 1200px;
+	max-height: 94vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-shadow: 0 25px 60px rgba(239, 68, 68, 0.25), 0 10px 25px rgba(0, 0, 0, 0.5);
+	animation: emergencyPulseBorder 2.5s infinite ease-in-out;
+}
+
+@keyframes emergencyPulseBorder {
+	0%, 100% {
+		border-color: var(--bad-line, var(--bad-fg));
+		box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+	}
+	50% {
+		border-color: var(--bad-fg);
+		box-shadow: 0 0 35px rgba(239, 68, 68, 0.5);
+	}
+}
+
+/* Header */
+.emergency-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1rem 1.25rem;
+	background: var(--paper-strong, #1f2937);
+	border-bottom: 2px solid var(--line-strong, #374151);
+	gap: 1rem;
+	flex-wrap: wrap;
+}
+
+.emergency-header-title-area {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.emergency-header-title {
+	font-size: 1.25rem;
+	font-weight: 800;
+	color: var(--ink, #ffffff);
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	letter-spacing: -0.01em;
+}
+
+.emergency-header-badge {
+	font-size: 0.75rem;
+	font-weight: 700;
+	padding: 0.3rem 0.6rem;
+	border-radius: 6px;
+	background: var(--bad-bg, rgba(239, 68, 68, 0.2));
+	color: var(--bad-fg, #ef4444);
+	border: 1px solid var(--bad-line, var(--bad-fg));
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+}
+
+.emergency-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.emergency-call-112-btn {
+	background: var(--bad-fg, #ef4444);
+	color: #ffffff;
+	border: none;
+	border-radius: 8px;
+	padding: 0.65rem 1.25rem;
+	font-size: 0.95rem;
+	font-weight: 800;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	min-height: 44px;
+	box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+	transition: all 0.2s ease;
+	animation: emergencyPulseBtn 1.8s infinite ease-in-out;
+}
+
+@keyframes emergencyPulseBtn {
+	0%, 100% {
+		transform: scale(1);
+		box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+	}
+	50% {
+		transform: scale(1.03);
+		box-shadow: 0 6px 18px rgba(239, 68, 68, 0.7);
+	}
+}
+
+.emergency-call-112-btn:hover {
+	filter: brightness(1.1);
+}
+
+.emergency-close-btn {
+	background: transparent;
+	border: 1px solid var(--line, #4b5563);
+	color: var(--muted, #9ca3af);
+	border-radius: 8px;
+	padding: 0.5rem;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 44px;
+	min-height: 44px;
+	transition: all 0.15s ease;
+}
+
+.emergency-close-btn:hover {
+	color: var(--ink, #ffffff);
+	border-color: var(--ink, #ffffff);
+	background: var(--paper-soft, rgba(255, 255, 255, 0.08));
+}
+
+/* Scenario Selector Strip */
+.emergency-scenarios-strip {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+	gap: 0.5rem;
+	padding: 0.75rem 1.25rem;
+	background: var(--paper-soft, #1e293b);
+	border-bottom: 1px solid var(--line, #374151);
+	overflow-x: auto;
+}
+
+.emergency-scenario-card {
+	background: var(--paper-strong, #1f2937);
+	border: 2px solid var(--line, #374151);
+	border-radius: 8px;
+	padding: 0.65rem 0.85rem;
+	cursor: pointer;
+	text-align: left;
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+	transition: all 0.2s ease;
+	min-height: 56px;
+}
+
+.emergency-scenario-card:hover {
+	border-color: var(--brand-500, #3b82f6);
+	background: var(--paper, #111827);
+	transform: translateY(-1px);
+}
+
+.emergency-scenario-card.active {
+	border-color: var(--bad-line, var(--bad-fg));
+	background: var(--bad-bg, rgba(239, 68, 68, 0.12));
+	box-shadow: 0 0 0 1px var(--bad-line, var(--bad-fg));
+}
+
+.emergency-scenario-name {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--ink, #f8fafc);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.emergency-scenario-icd {
+	font-size: 0.7rem;
+	font-weight: 600;
+	padding: 0.15rem 0.4rem;
+	border-radius: 4px;
+	background: var(--line, #374151);
+	color: var(--muted, #cbd5e1);
+}
+
+.emergency-scenario-card.active .emergency-scenario-icd {
+	background: var(--bad-fg, #ef4444);
+	color: #ffffff;
+}
+
+.emergency-scenario-subtitle {
+	font-size: 0.75rem;
+	color: var(--muted, #94a3b8);
+	line-height: 1.25;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+/* Modal Body Grid */
+.emergency-modal-body {
+	display: grid;
+	grid-template-columns: 1.15fr 0.85fr;
+	gap: 1.25rem;
+	padding: 1.25rem;
+	overflow-y: auto;
+	flex: 1;
+}
+
+@media (max-width: 900px) {
+	.emergency-modal-body {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* Left Column: Clinical Steps & Dosages */
+.emergency-column-left,
+.emergency-column-right {
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+}
+
+/* Section Container */
+.emergency-section-box {
+	background: var(--paper-strong, #1f2937);
+	border: 1px solid var(--line, #374151);
+	border-radius: 10px;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.85rem;
+}
+
+.emergency-section-title {
+	font-size: 0.95rem;
+	font-weight: 700;
+	color: var(--ink, #f8fafc);
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin: 0;
+	padding-bottom: 0.5rem;
+	border-bottom: 1px solid var(--line, #374151);
+}
+
+/* Patient Quick Vitals Inputs */
+.emergency-vitals-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+	gap: 0.75rem;
+}
+
+.emergency-input-group {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.emergency-input-label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--muted, #94a3b8);
+}
+
+.emergency-input-field {
+	background: var(--paper, #111827);
+	color: var(--ink, #ffffff);
+	border: 1px solid var(--line, #4b5563);
+	border-radius: 6px;
+	padding: 0.5rem 0.65rem;
+	font-size: 0.9rem;
+	font-weight: 600;
+	min-height: 40px;
+	box-sizing: border-box;
+}
+
+.emergency-input-field:focus {
+	outline: none;
+	border-color: var(--brand-500, #3b82f6);
+	box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+}
+
+/* Real-Time Dosage Banner */
+.emergency-dosage-banner {
+	background: var(--bad-bg, rgba(239, 68, 68, 0.12));
+	border: 1px solid var(--bad-line, var(--bad-fg));
+	border-radius: 8px;
+	padding: 0.85rem 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.emergency-dosage-title {
+	font-size: 0.875rem;
+	font-weight: 800;
+	color: var(--bad-fg, #f87171);
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+.emergency-dosage-details {
+	font-size: 0.95rem;
+	font-weight: 700;
+	color: var(--ink, #ffffff);
+	line-height: 1.4;
+}
+
+.emergency-dosage-route {
+	font-size: 0.8rem;
+	font-weight: 600;
+	color: var(--muted, #cbd5e1);
+}
+
+/* Action Checklist */
+.emergency-checklist {
+	display: flex;
+	flex-direction: column;
+	gap: 0.65rem;
+}
+
+.emergency-step-item {
+	background: var(--paper, #111827);
+	border: 1px solid var(--line, #374151);
+	border-radius: 8px;
+	padding: 0.75rem 0.85rem;
+	display: flex;
+	align-items: flex-start;
+	gap: 0.75rem;
+	transition: all 0.2s ease;
+	cursor: pointer;
+}
+
+.emergency-step-item:hover {
+	border-color: var(--brand-500, #3b82f6);
+}
+
+.emergency-step-item.critical {
+	border-left: 4px solid var(--bad-fg, #ef4444);
+}
+
+.emergency-step-item.completed {
+	background: var(--ok-bg, rgba(16, 185, 129, 0.08));
+	border-color: var(--ok-line, var(--ok-fg));
+}
+
+.emergency-step-checkbox {
+	margin-top: 0.2rem;
+	width: 22px;
+	height: 22px;
+	min-width: 22px;
+	min-height: 22px;
+	accent-color: var(--ok-fg, #10b981);
+	cursor: pointer;
+}
+
+.emergency-step-content {
+	display: flex;
+	flex-direction: column;
+	gap: 0.3rem;
+	flex: 1;
+}
+
+.emergency-step-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+}
+
+.emergency-step-title {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--ink, #f8fafc);
+	line-height: 1.3;
+}
+
+.emergency-step-item.completed .emergency-step-title {
+	color: var(--ok-fg, #10b981);
+}
+
+.emergency-step-time-badge {
+	font-size: 0.7rem;
+	font-weight: 700;
+	padding: 0.15rem 0.45rem;
+	border-radius: 4px;
+	background: var(--ok-bg, rgba(16, 185, 129, 0.2));
+	color: var(--ok-fg, #10b981);
+	border: 1px solid var(--ok-line, var(--ok-fg));
+	white-space: nowrap;
+}
+
+.emergency-step-description {
+	font-size: 0.8rem;
+	color: var(--muted, #cbd5e1);
+	line-height: 1.35;
+}
+
+.emergency-step-dosage-hint {
+	font-size: 0.775rem;
+	font-weight: 700;
+	color: var(--warn-fg, #f59e0b);
+	background: var(--warn-bg, rgba(245, 158, 11, 0.1));
+	padding: 0.3rem 0.5rem;
+	border-radius: 4px;
+	border: 1px dashed var(--warn-line, var(--warn-fg));
+	margin-top: 0.25rem;
+}
+
+/* Right Column: Resuscitation Tools */
+
+/* Adrenaline Timer Box */
+.emergency-timer-box {
+	background: var(--paper-strong, #1f2937);
+	border: 2px solid var(--bad-line, var(--bad-fg));
+	border-radius: 10px;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.75rem;
+	text-align: center;
+}
+
+.emergency-timer-title {
+	font-size: 0.9rem;
+	font-weight: 700;
+	color: var(--bad-fg, #ef4444);
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+.emergency-timer-display {
+	font-family: monospace, ui-monospace, sans-serif;
+	font-size: 2.75rem;
+	font-weight: 900;
+	color: var(--ink, #ffffff);
+	letter-spacing: 0.05em;
+	padding: 0.25rem 1rem;
+	border-radius: 8px;
+	background: var(--paper, #111827);
+	border: 1px solid var(--line, #374151);
+	min-width: 160px;
+}
+
+.emergency-timer-display.due {
+	color: var(--bad-fg, #ef4444);
+	animation: emergencyFlashAlert 1s infinite alternate;
+	border-color: var(--bad-line, var(--bad-fg));
+}
+
+@keyframes emergencyFlashAlert {
+	0% {
+		background: var(--bad-bg, rgba(239, 68, 68, 0.3));
+		transform: scale(1);
+	}
+	100% {
+		background: var(--bad-bg, rgba(239, 68, 68, 0.6));
+		transform: scale(1.05);
+	}
+}
+
+.emergency-timer-buttons {
+	display: flex;
+	gap: 0.5rem;
+	width: 100%;
+}
+
+.emergency-timer-btn {
+	flex: 1;
+	background: var(--paper-soft, #374151);
+	color: var(--ink, #ffffff);
+	border: 1px solid var(--line, #4b5563);
+	border-radius: 6px;
+	padding: 0.55rem;
+	font-size: 0.8rem;
+	font-weight: 700;
+	cursor: pointer;
+	min-height: 44px;
+	transition: all 0.15s ease;
+}
+
+.emergency-timer-btn:hover {
+	background: var(--brand-500, #3b82f6);
+	border-color: var(--brand-500, #3b82f6);
+}
+
+.emergency-timer-btn.active {
+	background: var(--bad-fg, #ef4444);
+	border-color: var(--bad-fg, #ef4444);
+	color: #ffffff;
+}
+
+/* CPR Metronome Box */
+.emergency-cpr-box {
+	background: var(--paper-strong, #1f2937);
+	border: 1px solid var(--line, #374151);
+	border-radius: 10px;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.emergency-cpr-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.emergency-cpr-title {
+	font-size: 0.9rem;
+	font-weight: 700;
+	color: var(--ink, #f8fafc);
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+.emergency-cpr-visual {
+	display: flex;
+	align-items: center;
+	justify-content: space-around;
+	background: var(--paper, #111827);
+	border-radius: 8px;
+	padding: 0.85rem;
+	border: 1px solid var(--line, #374151);
+}
+
+.emergency-cpr-heart {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.35rem;
+}
+
+.emergency-cpr-heart-icon {
+	color: var(--bad-fg, #ef4444);
+	transition: transform 0.1s ease;
+}
+
+.emergency-cpr-heart-icon.beating {
+	transform: scale(1.35);
+}
+
+.emergency-cpr-count {
+	font-family: monospace, sans-serif;
+	font-size: 1.75rem;
+	font-weight: 900;
+	color: var(--ink, #ffffff);
+}
+
+.emergency-cpr-cycle-info {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	font-size: 0.8rem;
+	color: var(--muted, #cbd5e1);
+}
+
+.emergency-cpr-controls {
+	display: flex;
+	gap: 0.5rem;
+}
+
+.emergency-cpr-start-btn {
+	flex: 2;
+	background: var(--brand-500, #3b82f6);
+	color: #ffffff;
+	border: none;
+	border-radius: 6px;
+	padding: 0.6rem;
+	font-size: 0.875rem;
+	font-weight: 700;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.4rem;
+	min-height: 44px;
+}
+
+.emergency-cpr-start-btn.running {
+	background: var(--bad-fg, #ef4444);
+}
+
+.emergency-cpr-sound-btn {
+	flex: 1;
+	background: var(--paper-soft, #374151);
+	color: var(--ink, #ffffff);
+	border: 1px solid var(--line, #4b5563);
+	border-radius: 6px;
+	padding: 0.6rem;
+	font-size: 0.8rem;
+	font-weight: 600;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.35rem;
+	min-height: 44px;
+}
+
+/* Protocol Act & Form 043/u Preview Box */
+.emergency-protocol-box {
+	background: var(--paper-strong, #1f2937);
+	border: 1px solid var(--line, #374151);
+	border-radius: 10px;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.emergency-protocol-textarea {
+	background: var(--paper, #111827);
+	color: var(--ink, #f8fafc);
+	border: 1px solid var(--line, #4b5563);
+	border-radius: 6px;
+	padding: 0.75rem;
+	font-family: monospace, monospace;
+	font-size: 0.75rem;
+	line-height: 1.4;
+	resize: vertical;
+	min-height: 140px;
+	max-height: 250px;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.emergency-protocol-actions {
+	display: flex;
+	gap: 0.5rem;
+}
+
+.emergency-copy-act-btn {
+	flex: 1;
+	background: var(--ok-fg, #10b981);
+	color: #ffffff;
+	border: none;
+	border-radius: 6px;
+	padding: 0.6rem;
+	font-size: 0.825rem;
+	font-weight: 700;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.4rem;
+	min-height: 44px;
+}
+
+.emergency-copy-act-btn:hover {
+	filter: brightness(1.1);
+}
+
+.emergency-smp-info-banner {
+	background: var(--warn-bg, rgba(245, 158, 11, 0.12));
+	border: 1px solid var(--warn-line, var(--warn-fg));
+	border-radius: 6px;
+	padding: 0.65rem 0.85rem;
+	font-size: 0.75rem;
+	color: var(--ink, #f8fafc);
+	line-height: 1.35;
+}

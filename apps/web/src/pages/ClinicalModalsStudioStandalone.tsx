@@ -64,6 +64,7 @@ import { VoiceDictationAssistantModal } from "../components/voice/VoiceDictation
 import { InformedConsentModal as InformedConsent323FzModal } from "../components/consents/InformedConsentModal";
 import { AnesthesiaProtocolModal } from "../components/anesthesia/AnesthesiaProtocolModal";
 import { MedicalWasteJournalModal } from "../components/sanpin/waste/MedicalWasteJournalModal";
+import { EmergencyRescueModal } from "../components/emergency/EmergencyRescueModal";
 import { AnesthesiaQuickBar } from "../components/anesthesia/AnesthesiaQuickBar";
 import type { CompletedWorksActAndWriteOffData, TreatmentPlanItem } from "../components/treatment-plans/types";
 import type { DiaryState } from "../components/useVisitDiaryLogic";
@@ -278,6 +279,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isConsent323Open, setIsConsent323Open] = useState(false);
 	const [isAnesthesiaProtocolOpen, setIsAnesthesiaProtocolOpen] = useState(false);
 	const [isMedicalWasteOpen, setIsMedicalWasteOpen] = useState(false);
+	const [isEmergencyRescueOpen, setIsEmergencyRescueOpen] = useState(false);
 
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -970,7 +972,31 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</button>
 					</div>
 
-					{/* 27. Anesthesia QuickBar 1-Click Presets */}
+					{/* 27. Emergency Clinical Protocols & Anaphylaxis HUD Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--bad-fg,#ef4444)]">
+								<Activity className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Неотложная помощь & Анафилаксия (HUD)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Приказы МЗ РФ № 1079н/1144н/138н & ФАР: шок, LAST, таймер адреналина, метроном СЛР 30:2, расчет дозировок, акт 043/у.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsEmergencyRescueOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--bad-fg,#ef4444)] text-white hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-emergency-rescue-modal-btn"
+						>
+							<Activity size={15} />
+							<span>Открыть экстренный HUD</span>
+						</button>
+					</div>
+
+					{/* 28. Anesthesia QuickBar 1-Click Presets */}
 					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4 md:col-span-2 lg:col-span-3">
 						<div className="space-y-2">
 							<div className="flex items-center gap-2 text-[var(--teal)]">
@@ -1246,6 +1272,19 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 			<MedicalWasteJournalModal
 				isOpen={isMedicalWasteOpen}
 				onClose={() => setIsMedicalWasteOpen(false)}
+			/>
+
+			<EmergencyRescueModal
+				isOpen={isEmergencyRescueOpen}
+				onClose={() => setIsEmergencyRescueOpen(false)}
+				initialPatientName={SAMPLE_PATIENT.fullName}
+				initialPatientAgeYears={38}
+				initialPatientWeightKg={70}
+				clinicName="Стоматологическая клиника «ДЕНТЕ»"
+				clinicAddress="г. Москва, ул. Клиническая, д. 10, стр. 2"
+				cabinetNumber="1"
+				doctorFullName="Д-р Смирнов Алексей Петрович"
+				assistantFullName="Медсестра Петрова Е. С."
 			/>
 		</div>
 	);
