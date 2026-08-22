@@ -577,7 +577,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 							</div>
 
 							{activeForm === "107-1u" && (
-								<div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+								<div className="flex items-center gap-2 overflow-x-auto pb-2 pt-1 scrollbar-thin">
 									{[
 										{ id: "all", label: "Все" },
 										{ id: "nsaid", label: "НПВС" },
@@ -589,10 +589,10 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 											key={cat.id}
 											type="button"
 											onClick={() => setCategoryFilter(cat.id)}
-											className={`min-h-[44px] px-3 py-1 text-xs font-semibold rounded-lg border whitespace-nowrap transition-all ${
+											className={`min-h-[44px] px-3.5 py-1.5 text-xs font-bold rounded-xl border whitespace-nowrap shrink-0 transition-all ${
 												categoryFilter === cat.id
-													? "bg-[var(--teal-surface)] text-[var(--teal)] border-[var(--teal)]"
-													: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:border-[var(--teal)]"
+													? "bg-[var(--teal-surface)] text-[var(--teal)] border-[var(--teal)] shadow-xs"
+													: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:border-[var(--teal)] hover:text-[var(--ink)]"
 											}`}
 										>
 											{cat.label}
@@ -676,7 +676,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 							)}
 
 							{/* Drug Cards */}
-							<div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1">
+							<div className="flex flex-col gap-2 max-h-[340px] overflow-y-auto pr-1">
 								{filteredCatalog.map((drug) => {
 									const isSelected = selectedDrugIds.includes(drug.id);
 									return (
@@ -684,34 +684,34 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 											key={drug.id}
 											type="button"
 											onClick={() => toggleDrug(drug.id)}
-											className={`min-h-[44px] flex items-start justify-between p-3 rounded-xl border text-left transition-all ${
+											className={`min-h-[56px] w-full flex items-start justify-between p-3 rounded-xl border text-left overflow-hidden transition-all ${
 												isSelected
-													? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--ink)] shadow-sm ring-1 ring-[var(--teal)]"
+													? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--ink)] shadow-xs ring-1 ring-[var(--teal)]"
 													: "bg-[var(--paper-soft)] border-[var(--line)] hover:border-[var(--teal)] text-[var(--muted)] hover:text-[var(--ink)]"
 											}`}
 											data-testid={`drug-item-${drug.id}`}
 										>
-											<div className="flex flex-col gap-1 min-w-0 pr-2">
+											<div className="flex flex-col gap-1 min-w-0 pr-3 overflow-hidden">
 												<div className="flex items-center gap-2 flex-wrap">
 													<span className="text-xs font-bold text-[var(--ink)]">
 														{drug.tradeNameRu}
 													</span>
-													<span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] font-medium text-[var(--muted)]">
+													<span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] font-medium text-[var(--muted)] shrink-0">
 														{drug.categoryLabel}
 													</span>
 												</div>
-												<span className="text-[11px] font-mono italic font-semibold text-[var(--teal)]">
+												<span className="text-[11px] font-mono italic font-semibold text-[var(--teal)] truncate">
 													{drug.latinRp}
 												</span>
-												<span className="text-[11px] text-[var(--muted)] line-clamp-1">
+												<span className="text-[11px] text-[var(--muted)] leading-tight truncate">
 													{drug.signaRu}
 												</span>
 											</div>
 											<div
-												className={`flex items-center justify-center w-5 h-5 rounded-md shrink-0 mt-0.5 border ${
+												className={`flex items-center justify-center w-5 h-5 rounded-md shrink-0 mt-0.5 border transition-colors ${
 													isSelected
 														? "bg-[var(--teal-fill,var(--teal))] border-[var(--teal)] text-white"
-														: "border-[var(--line)]"
+														: "border-[var(--line)] bg-[var(--paper)]"
 												}`}
 											>
 												{isSelected && <Check className="w-3.5 h-3.5" />}

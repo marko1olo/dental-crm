@@ -437,85 +437,90 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 								</div>
 
 								{/* 5 Big Tactile Payment Method Tiles (Elevated to min-h-[56px] / >= 48px) */}
-								<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+								<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
 									<button
 										type="button"
 										onClick={() => selectSingleMethod("card")}
-										className={`min-h-[56px] p-3 rounded-2xl border-2 flex flex-col items-center justify-center gap-1 font-bold text-xs transition-all cursor-pointer select-none active:scale-95 ${
+										className={`min-h-[56px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer select-none active:scale-95 ${
 											cardAmount === totalSumRub && totalSumRub > 0
 												? "border-blue-600 bg-blue-500/15 text-blue-700 dark:text-blue-300 shadow-md ring-2 ring-blue-500/30"
 												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-blue-400 text-[var(--ink,#0f172a)]"
 										}`}
 									>
 										<CreditCard
-											size={18}
+											size={16}
 											className="text-blue-600 dark:text-blue-400 shrink-0"
 										/>
-										<span className="text-center">Карта (100%)</span>
+										<span className="text-xs font-bold whitespace-nowrap">Карта</span>
+										<span className="text-[10px] opacity-75 font-normal leading-none">(100%)</span>
 									</button>
 
 									<button
 										type="button"
 										onClick={() => selectSingleMethod("sbp")}
-										className={`min-h-[56px] p-3 rounded-2xl border-2 flex flex-col items-center justify-center gap-1 font-bold text-xs transition-all cursor-pointer select-none active:scale-95 ${
+										className={`min-h-[56px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer select-none active:scale-95 ${
 											sbpAmount === totalSumRub && totalSumRub > 0
 												? "border-teal-600 bg-teal-500/15 text-teal-700 dark:text-teal-300 shadow-md ring-2 ring-teal-500/30"
 												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-teal-400 text-[var(--ink,#0f172a)]"
 										}`}
 									>
 										<QrCode
-											size={18}
+											size={16}
 											className="text-teal-600 dark:text-teal-400 shrink-0"
 										/>
-										<span className="text-center">СБП QR (100%)</span>
+										<span className="text-xs font-bold whitespace-nowrap">СБП QR</span>
+										<span className="text-[10px] opacity-75 font-normal leading-none">(100%)</span>
 									</button>
 
 									<button
 										type="button"
 										onClick={() => selectSingleMethod("cash")}
-										className={`min-h-[56px] p-3 rounded-2xl border-2 flex flex-col items-center justify-center gap-1 font-bold text-xs transition-all cursor-pointer select-none active:scale-95 ${
+										className={`min-h-[56px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer select-none active:scale-95 ${
 											cashAmount === totalSumRub && totalSumRub > 0
 												? "border-emerald-600 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 shadow-md ring-2 ring-emerald-500/30"
 												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-emerald-400 text-[var(--ink,#0f172a)]"
 										}`}
 									>
 										<Banknote
-											size={18}
+											size={16}
 											className="text-emerald-600 dark:text-emerald-400 shrink-0"
 										/>
-										<span className="text-center">Наличные (100%)</span>
+										<span className="text-xs font-bold whitespace-nowrap">Наличные</span>
+										<span className="text-[10px] opacity-75 font-normal leading-none">(100%)</span>
 									</button>
 
 									<button
 										type="button"
 										onClick={() => selectSingleMethod("deposit")}
-										className={`min-h-[56px] p-3 rounded-2xl border-2 flex flex-col items-center justify-center gap-1 font-bold text-xs transition-all cursor-pointer select-none active:scale-95 ${
+										className={`min-h-[56px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer select-none active:scale-95 ${
 											depositAmount > 0
 												? "border-amber-600 bg-amber-500/15 text-amber-700 dark:text-amber-300 shadow-md ring-2 ring-amber-500/30"
 												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
 										}`}
 									>
 										<Coins
-											size={18}
+											size={16}
 											className="text-amber-600 dark:text-amber-400 shrink-0"
 										/>
-										<span className="text-center">Зачет аванса</span>
+										<span className="text-xs font-bold whitespace-nowrap">Зачет аванса</span>
+										<span className="text-[10px] opacity-75 font-normal leading-none">Депозит</span>
 									</button>
 
 									<button
 										type="button"
 										onClick={() => selectSingleMethod("certificate")}
-										className={`min-h-[56px] p-3 rounded-2xl border-2 flex flex-col items-center justify-center gap-1 font-bold text-xs transition-all cursor-pointer select-none active:scale-95 ${
+										className={`min-h-[56px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer select-none active:scale-95 ${
 											certificateAmount === totalSumRub && totalSumRub > 0
 												? "border-purple-600 bg-purple-500/15 text-purple-700 dark:text-purple-300 shadow-md ring-2 ring-purple-500/30"
 												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-purple-400 text-[var(--ink,#0f172a)]"
 										}`}
 									>
 										<Gift
-											size={18}
+											size={16}
 											className="text-purple-600 dark:text-purple-400 shrink-0"
 										/>
-										<span className="text-center">Сертификат</span>
+										<span className="text-xs font-bold whitespace-nowrap">Сертификат</span>
+										<span className="text-[10px] opacity-75 font-normal leading-none">(100%)</span>
 									</button>
 								</div>
 

@@ -1,0 +1,50 @@
+/**
+ * DENTE Dental CRM — Doctor Payroll Styles
+ * Strict Multi-Theme CSS Token Compliance
+ */
+
+.payroll-modal-overlay {
+	position: fixed;
+	inset: 0;
+	background-color: rgba(15, 23, 42, 0.75);
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 9999;
+	padding: 1rem;
+}
+
+.payroll-modal-container {
+	background-color: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 1.25rem;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+	width: 100%;
+	max-width: 64rem;
+	max-height: 90vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.payroll-kpi-badge {
+	background: linear-gradient(135deg, rgba(20, 184, 166, 0.15), rgba(14, 165, 233, 0.15));
+	border: 1px solid var(--teal, #0d9488);
+	color: var(--teal-ink, #0f766e);
+	font-weight: 700;
+	border-radius: 9999px;
+	padding: 0.25rem 0.75rem;
+	font-size: 0.75rem;
+}
+
+.payroll-stat-card {
+	background-color: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 0.875rem;
+	padding: 0.875rem 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}

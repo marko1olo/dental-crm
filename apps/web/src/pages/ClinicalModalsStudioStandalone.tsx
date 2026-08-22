@@ -1,7 +1,8 @@
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
 	Activity,
+	Calculator,
 	Calendar,
 	CheckCircle2,
 	Coins,
@@ -9,6 +10,7 @@ import {
 	Moon,
 	Pill,
 	Printer,
+	QrCode,
 	Receipt,
 	Scan,
 	Sparkles,
@@ -25,14 +27,14 @@ import {
 	RadiologyViewerModal,
 	type RadiologyStudy,
 } from "../components/radiology";
-import { WhatsAppChatPanel } from "../components/chat/WhatsAppChatPanel";
-import { PatientNotificationCenter } from "../components/notifications/PatientNotificationCenter";
-import { TelephonyFloatingWidget } from "../components/telephony/TelephonyFloatingWidget";
 import { TreatmentPlanCompletedActPrint } from "../components/treatment-plans/TreatmentPlanCompletedActPrint";
 import { FiscalReceipt54FzModal } from "../components/finance/FiscalReceipt54FzModal";
-import { CashShiftWidget } from "../components/finance/CashShiftWidget";
 import { SanpinRegisters } from "../components/sanpin/SanpinRegisters";
 import { PediatricMixedDentitionModal } from "../components/odontogram/PediatricMixedDentitionModal";
+import { DoctorPayrollModal } from "../components/finance/payroll/DoctorPayrollModal";
+import { FastCheckoutModal } from "../components/payments/checkout/FastCheckoutModal";
+import { MedicalPrescriptionModal } from "../components/prescriptions/generator/MedicalPrescriptionModal";
+import { CashShiftWidget } from "../components/finance/CashShiftWidget";
 import type { CompletedWorksActAndWriteOffData, TreatmentPlanItem } from "../components/treatment-plans/types";
 import type { DiaryState } from "../components/useVisitDiaryLogic";
 
@@ -227,6 +229,9 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isPediatricOpen, setIsPediatricOpen] = useState(false);
 	const [isConsentOpen, setIsConsentOpen] = useState(false);
 	const [isViewerOpen, setIsViewerOpen] = useState(false);
+	const [isPayrollOpen, setIsPayrollOpen] = useState(false);
+	const [isFastCheckoutOpen, setIsFastCheckoutOpen] = useState(false);
+	const [isMedicalPrescriptionOpen, setIsMedicalPrescriptionOpen] = useState(false);
 
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -243,10 +248,14 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 		document.documentElement.style.colorScheme = isDark ? "dark" : "light";
 	};
 
+	useEffect(() => {
+		handleThemeChange(activeTheme);
+	}, []);
+
 	return (
-		<div className="min-h-screen bg-[var(--bg)] text-[var(--ink)] flex flex-col font-sans selection:bg-teal-500/30 selection:text-teal-200">
+		<div className="min-h-screen bg-[var(--paper-soft,var(--paper,#0f172a))] text-[var(--ink,#f8fafc)] flex flex-col font-sans selection:bg-teal-500/30 selection:text-teal-200">
 			{/* Top Bar */}
-			<header className="sticky top-0 z-40 bg-[var(--paper)] border-b border-[var(--line)] px-4 sm:px-6 py-3.5 shadow-sm backdrop-blur-md flex flex-wrap items-center justify-between gap-4">
+			<header className="sticky top-0 z-40 bg-[var(--paper,#1e293b)] border-b border-[var(--line,rgba(204,251,241,0.15))] px-4 sm:px-6 py-3.5 shadow-sm backdrop-blur-md flex flex-wrap items-center justify-between gap-4">
 				<div className="flex items-center gap-3">
 					<div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-white shadow-md shadow-teal-500/20">
 						<Activity className="w-5 h-5" />
@@ -458,6 +467,78 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 							<span>Открыть визиограф</span>
 						</button>
 					</div>
+
+					{/* 8. Doctor & Staff Piece-Rate Payroll Trigger (Wave 11 / Task 35) */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Calculator className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Сдельная зарплата (Т-51)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Автоматический расчет процентов врачей, вычет лаборатории/материалов, KPI бонусы и удержание НДФЛ 13%.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsPayrollOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-payroll-modal-btn"
+						>
+							<Calculator size={15} />
+							<span>Открыть расчет зарплаты</span>
+						</button>
+					</div>
+
+					{/* 9. 1-Click Fast Checkout & SBP QR Trigger (Wave 11 / Task 36) */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<QrCode className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									1-Клик Оплата & СБП QR
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Мгновенный терминал оплаты, динамический QR НСПК, сплит-платежи и фискализация 54-ФЗ (ФФД 1.2).
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsFastCheckoutOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-fast-checkout-modal-btn"
+						>
+							<QrCode size={15} />
+							<span>Открыть 1-Клик Оплату</span>
+						</button>
+					</div>
+
+					{/* 10. Form 107-1/u Prescription Studio Trigger (Wave 11 / Task 37) */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Pill className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Рецептурный бланк (№ 107-1/у)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Каталог стоматологической фармакопеи РФ, латинская сигнатура (Rp / D.t.d), приказ № 1094н и печать А5.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsMedicalPrescriptionOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-med-prescription-modal-btn"
+						>
+							<Pill size={15} />
+							<span>Открыть студию рецептов</span>
+						</button>
+					</div>
 				</div>
 
 				{/* 8. Interactive Live Anesthesia Calculator Component */}
@@ -505,46 +586,21 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					/>
 				</div>
 
-				{/* 10. Interactive Communications & Notifications Suite */}
-				<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-					<div className="space-y-3">
-						<h2 className="text-sm font-bold uppercase tracking-wider text-[var(--ink)]">
-							Чат WhatsApp и шаблоны визитов
-						</h2>
-						<WhatsAppChatPanel
-							patientId="PAT-2026-0891"
-							patientName="Смирнова Екатерина Васильевна"
-							patientPhone="+7 (926) 555-12-34"
-							onClose={() => {}}
-						/>
-					</div>
-
-					<div className="space-y-3">
-						<h2 className="text-sm font-bold uppercase tracking-wider text-[var(--ink)]">
-							Центр уведомлений клиники
-						</h2>
-						<PatientNotificationCenter />
-					</div>
-				</div>
-
-				{/* 11. 54-FZ Cash Shift Management & Accounting Widget */}
+				{/* 10. SanPiN 3.3686-21 Sterilization Registers & Nurse Stamp */}
 				<div className="space-y-3">
-					<h2 className="text-sm font-bold uppercase tracking-wider text-[var(--ink)]">
-						Управление кассовой сменой ККТ 54-ФЗ
-					</h2>
-					<CashShiftWidget />
-				</div>
-
-				{/* 12. SanPiN 3.3686-21 Sterilization Registers & Nurse Stamp */}
-				<div className="space-y-3">
-					<h2 className="text-sm font-bold uppercase tracking-wider text-[var(--ink)]">
+					<h2 className="text-sm font-bold uppercase tracking-wider text-[var(--ink,#111827)]">
 						Журналы СанПиН и стерилизационные режимы ЦСО
 					</h2>
 					<SanpinRegisters />
 				</div>
 
-				{/* 13. Softphone Floating Widget */}
-				<TelephonyFloatingWidget />
+				{/* 11. 54-FZ Cash Shift Manager Widget */}
+				<div className="space-y-3">
+					<h2 className="text-sm font-bold uppercase tracking-wider text-[var(--ink,#111827)]">
+						Кассовая смена ККТ 54-ФЗ (X/Z-отчеты и сверка)
+					</h2>
+					<CashShiftWidget />
+				</div>
 			</main>
 
 			{/* Render Modals */}
@@ -602,6 +658,25 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				isOpen={isViewerOpen}
 				onClose={() => setIsViewerOpen(false)}
 				study={SAMPLE_STUDY}
+			/>
+
+			<DoctorPayrollModal
+				isOpen={isPayrollOpen}
+				onClose={() => setIsPayrollOpen(false)}
+				clinicName="ООО «Денте Стоматология»"
+			/>
+
+			<FastCheckoutModal
+				isOpen={isFastCheckoutOpen}
+				onClose={() => setIsFastCheckoutOpen(false)}
+				totalBillKop={1960000}
+				patientName="Смирнова Екатерина Васильевна"
+			/>
+
+			<MedicalPrescriptionModal
+				isOpen={isMedicalPrescriptionOpen}
+				onClose={() => setIsMedicalPrescriptionOpen(false)}
+				patientName="Смирнова Екатерина Васильевна"
 			/>
 		</div>
 	);
