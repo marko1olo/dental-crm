@@ -1,0 +1,280 @@
+/**
+ * ============================================================================
+ * MEDICAL WASTE DISPOSAL & DECONTAMINATION ACCOUNTING STYLESHEET
+ * 100% Token Compliant, Multi-Theme (Dark/Light), Touch-First (>=44-48px), Print A4
+ * ============================================================================
+ */
+
+.waste-modal-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(15, 23, 42, 0.65);
+	backdrop-filter: blur(6px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 9999;
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.waste-modal-container {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 16px;
+	width: 100%;
+	max-width: 1040px;
+	max-height: 92vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+	box-sizing: border-box;
+}
+
+.waste-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 24px;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-strong, #f8fafc);
+}
+
+.waste-header-title {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	font-size: 1.15rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+.waste-modal-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 20px 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	box-sizing: border-box;
+}
+
+.waste-modal-footer {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 12px;
+	padding: 16px 24px;
+	border-top: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-strong, #f8fafc);
+}
+
+/* Touch Targets >= 44-48px */
+.waste-btn {
+	min-height: 48px;
+	min-width: 48px;
+	padding: 10px 20px;
+	border-radius: 12px;
+	font-size: 0.875rem;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	cursor: pointer;
+	transition: all 0.15s ease-in-out;
+	border: 1px solid transparent;
+	box-sizing: border-box;
+	user-select: none;
+}
+
+.waste-btn:active {
+	transform: scale(0.98);
+}
+
+.waste-btn-primary {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+}
+
+.waste-btn-primary:hover {
+	background: var(--teal-dark, #0f766e);
+}
+
+.waste-btn-secondary {
+	background: var(--paper-soft, #f1f5f9);
+	color: var(--ink, #0f172a);
+	border-color: var(--line, #cbd5e1);
+}
+
+.waste-btn-secondary:hover {
+	background: var(--line, #e2e8f0);
+}
+
+.waste-btn-ghost {
+	background: transparent;
+	color: var(--muted, #64748b);
+}
+
+.waste-btn-ghost:hover {
+	color: var(--ink, #0f172a);
+	background: var(--paper-soft, #f1f5f9);
+}
+
+/* Карточки классов отходов СанПиН */
+.waste-class-card {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 14px 16px;
+	border-radius: 14px;
+	border: 2px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	cursor: pointer;
+	transition: all 0.2s ease;
+	user-select: none;
+}
+
+.waste-class-card:hover {
+	border-color: var(--teal, #0d9488);
+	background: var(--paper-soft, #f8fafc);
+}
+
+.waste-class-card.selected-class-a {
+	border-color: #64748b;
+	background: rgba(100, 116, 139, 0.08);
+}
+
+.waste-class-card.selected-class-b {
+	border-color: #f59e0b;
+	background: rgba(245, 158, 11, 0.1);
+}
+
+.waste-class-card.selected-class-g {
+	border-color: #334155;
+	background: rgba(15, 23, 42, 0.08);
+}
+
+/* Весовой калькулятор (Gauge Bar) */
+.waste-weight-display {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 12px;
+	padding: 16px;
+	border-radius: 14px;
+	background: var(--teal-surface, rgba(13, 148, 136, 0.06));
+	border: 1px solid var(--teal-glow, rgba(13, 148, 136, 0.2));
+}
+
+.waste-weight-metric {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	gap: 4px;
+}
+
+.waste-weight-val {
+	font-size: 1.5rem;
+	font-weight: 800;
+	color: var(--ink, #0f172a);
+}
+
+.waste-weight-net-val {
+	color: var(--teal-dark, #0f766e);
+	font-size: 1.75rem;
+	font-weight: 900;
+}
+
+.waste-weight-lbl {
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: var(--muted, #64748b);
+	letter-spacing: 0.03em;
+}
+
+/* Бейджи классов отходов */
+.waste-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	border-radius: 20px;
+	font-size: 0.75rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.waste-badge-class-a {
+	background: #f1f5f9;
+	color: #334155;
+	border: 1px solid #cbd5e1;
+}
+
+.waste-badge-class-b {
+	background: #fef3c7;
+	color: #92400e;
+	border: 1px solid #f59e0b;
+}
+
+.waste-badge-class-g {
+	background: #1e293b;
+	color: #f8fafc;
+	border: 1px solid #475569;
+}
+
+/* Таблица журнала отходов */
+.waste-table-wrapper {
+	border-radius: 12px;
+	border: 1px solid var(--line, #e2e8f0);
+	overflow-x: auto;
+	background: var(--paper, #ffffff);
+}
+
+.waste-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8125rem;
+	text-align: left;
+}
+
+.waste-table th {
+	padding: 10px 14px;
+	background: var(--paper-strong, #f8fafc);
+	font-weight: 700;
+	color: var(--muted, #64748b);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	white-space: nowrap;
+}
+
+.waste-table td {
+	padding: 10px 14px;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	vertical-align: middle;
+}
+
+.waste-table tr:last-child td {
+	border-bottom: none;
+}
+
+/* Стили печати для документов */
+@media print {
+	.waste-modal-overlay,
+	.waste-modal-header,
+	.waste-modal-footer,
+	.no-print {
+		display: none !important;
+	}
+	body {
+		background: #ffffff !important;
+		color: #000000 !important;
+	}
+}
