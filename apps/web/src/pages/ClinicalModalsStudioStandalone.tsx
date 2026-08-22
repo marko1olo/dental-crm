@@ -6,8 +6,12 @@ import {
 	Calendar,
 	CheckCircle2,
 	Coins,
+	Compass,
 	FileText,
+	FlaskConical,
+	Gauge,
 	Moon,
+	Palette,
 	Pill,
 	Printer,
 	QrCode,
@@ -35,6 +39,9 @@ import { DoctorPayrollModal } from "../components/finance/payroll/DoctorPayrollM
 import { FastCheckoutModal } from "../components/payments/checkout/FastCheckoutModal";
 import { MedicalPrescriptionModal } from "../components/prescriptions/generator/MedicalPrescriptionModal";
 import { CashShiftWidget } from "../components/finance/CashShiftWidget";
+import { CephalometricAnalysisModal } from "../components/orthodontics/CephalometricAnalysisModal";
+import { ImplantIsqProtocolModal } from "../components/implant/isq/ImplantIsqProtocolModal";
+import { DentalLabOrderModal } from "../components/lab/DentalLabOrderModal";
 import type { CompletedWorksActAndWriteOffData, TreatmentPlanItem } from "../components/treatment-plans/types";
 import type { DiaryState } from "../components/useVisitDiaryLogic";
 
@@ -232,6 +239,9 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isPayrollOpen, setIsPayrollOpen] = useState(false);
 	const [isFastCheckoutOpen, setIsFastCheckoutOpen] = useState(false);
 	const [isMedicalPrescriptionOpen, setIsMedicalPrescriptionOpen] = useState(false);
+	const [isCephOpen, setIsCephOpen] = useState(false);
+	const [isIsqOpen, setIsIsqOpen] = useState(false);
+	const [isLabOrderOpen, setIsLabOrderOpen] = useState(false);
 
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -539,6 +549,78 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 							<span>Открыть студию рецептов</span>
 						</button>
 					</div>
+
+					{/* 11. Cephalometric TRG Analysis Trigger (Wave 12 / Task 38) */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Compass className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									ТРГ боковая & Cephalometry
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Расчет углов Steiner (SNA, SNB, ANB), Tweed (FMA, IMPA), Wits appraisal и экспорт в форму 043/у.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsCephOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-ceph-modal-btn"
+						>
+							<Compass size={15} />
+							<span>Открыть анализ ТРГ</span>
+						</button>
+					</div>
+
+					{/* 12. Implant ISQ & RFA Osstell Stability Trigger (Wave 12 / Task 39) */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Gauge className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Стабильность имплантата (ISQ / RFA)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Протокол Osstell (ISQ 1–100), оценка первичной стабильности, 4-точечный замер и сроки нагрузки.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsIsqOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-isq-modal-btn"
+						>
+							<Gauge size={15} />
+							<span>Открыть протокол ISQ</span>
+						</button>
+					</div>
+
+					{/* 13. Dental Lab CAD/CAM Order & Shade Studio Trigger (Wave 12 / Task 40) */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<FlaskConical className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Заказ в лабораторию CAD/CAM
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Заказ-наряд на коронки/виниры, подбор оттенков VITA 3D-Master / культи (ND), окклюзия и трекинг.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsLabOrderOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-lab-order-modal-btn"
+						>
+							<FlaskConical size={15} />
+							<span>Открыть заказ-наряд CAD/CAM</span>
+						</button>
+					</div>
 				</div>
 
 				{/* 8. Interactive Live Anesthesia Calculator Component */}
@@ -677,6 +759,28 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				isOpen={isMedicalPrescriptionOpen}
 				onClose={() => setIsMedicalPrescriptionOpen(false)}
 				patientName="Смирнова Екатерина Васильевна"
+			/>
+
+			<CephalometricAnalysisModal
+				isOpen={isCephOpen}
+				onClose={() => setIsCephOpen(false)}
+				patientName="Смирнова Екатерина Васильевна"
+			/>
+
+			<ImplantIsqProtocolModal
+				isOpen={isIsqOpen}
+				onClose={() => setIsIsqOpen(false)}
+				initialToothNumber={36}
+				initialImplantSystem="Straumann BLX Roxolid SLActive"
+				surgeonName="Д-р Ковалев С. П. (Хирург-имплантолог)"
+			/>
+
+			<DentalLabOrderModal
+				isOpen={isLabOrderOpen}
+				onClose={() => setIsLabOrderOpen(false)}
+				patientName="Смирнова Екатерина Васильевна"
+				doctorName="Д-р Смирнов Алексей Петрович"
+				initialToothFdi="16"
 			/>
 		</div>
 	);
