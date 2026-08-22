@@ -6,6 +6,8 @@ export * from "./sanpin.js";
 export * from "./legal/legalContractsAndConsents.js";
 export * from "./documents/index.js";
 export * from "./pediatricDentition.js";
+export * from "./toothCanalsAndBilling804n.js";
+export * from "./emr/index.js";
 
 import {
 	dailyDentistDiary037uPayloadSchema,
