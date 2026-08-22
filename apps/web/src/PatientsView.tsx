@@ -3,7 +3,8 @@ import type {
 	Patient,
 	PatientAdministrativeProfile,
 } from "@dental/shared";
-import { ArrowRight, Plus, Search, ShieldCheck, UserCheck } from "lucide-react";
+import { ArrowRight, Gift, Plus, Search, ShieldCheck, UserCheck } from "lucide-react";
+import { LoyaltyProgramModal } from "./components/loyalty/program/LoyaltyProgramModal";
 import type {
 	ChangeEvent,
 	CSSProperties,
@@ -175,6 +176,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 		typeof parsePatientDictationLocal
 	> | null>(null);
 	const [showHints, setShowHints] = useState(false);
+	const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
 
 	const {
 		createPatient,
@@ -956,7 +958,10 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						style={{
 							marginTop: "16px",
 							display: "flex",
+							flexWrap: "wrap",
+							gap: "8px",
 							justifyContent: "flex-start",
+							alignItems: "center",
 						}}
 					>
 						<button
@@ -970,6 +975,22 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							disabled={!patientCoreReadyToSave}
 						>
 							<UserCheck aria-hidden="true" /> Сохранить данные
+						</button>
+						<button
+							type="button"
+							className="secondary-button"
+							onClick={() => setIsLoyaltyModalOpen(true)}
+							title="Программа лояльности и бонусы (54-ФЗ)"
+							data-testid="open-loyalty-program-modal-btn"
+							style={{
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "6px",
+								minHeight: "44px",
+							}}
+						>
+							<Gift size={16} aria-hidden="true" />
+							<span>Программа лояльности и бонусы (54-ФЗ)</span>
 						</button>
 					</div>
 					{patientCoreSaveGuidance ? (
@@ -1236,6 +1257,20 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 					<PatientDuplicateMergeQueuesWidget />
 				</div>
 			</div>
+
+			<LoyaltyProgramModal
+				isOpen={isLoyaltyModalOpen}
+				onClose={() => setIsLoyaltyModalOpen(false)}
+				{...(selectedPatient?.id ? { patientId: selectedPatient.id } : {})}
+				{...(selectedPatient?.fullName
+					? { patientName: selectedPatient.fullName }
+					: patientCoreDraft.fullName
+						? { patientName: patientCoreDraft.fullName }
+						: {})}
+				{...(selectedPatient?.id
+					? { medicalCardNumber: `043/у-${selectedPatient.id.slice(0, 8)}` }
+					: {})}
+			/>
 		</div>
 	);
 }

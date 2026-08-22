@@ -17,12 +17,22 @@ import {
 	type XrayCbctReferralPregnancyStatus,
 	type XrayCbctReferralStudyType,
 } from "@dental/shared";
-import { CheckCircle2, FileText } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { CheckCircle2, FileCode2, FileText, Shield } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { isoDateLabel } from "./AppHelpers";
 import { AnamnesisField } from "./components/documents/AnamnesisField";
 import { DocumentUkepSignButton } from "./components/documents/DocumentUkepSignButton";
 import { appendChipToText } from "./components/documents/documentChipText";
+import { FnsNdflXmlModal } from "./components/documents/ndflXml/FnsNdflXmlModal";
+import { EgiszRemdXmlModal } from "./components/egisz/remdXml/EgiszRemdXmlModal";
+import { MedicalReferral057Modal } from "./components/documents/referral057/MedicalReferral057Modal";
+import { SickLeaveElnModal } from "./components/documents/sickLeave/SickLeaveElnModal";
+import type { Egisz043uPayload } from "./components/egisz/remdXml/egiszRemdEngine";
+import {
+	DEFAULT_EGISZ_CLINIC_PRESET,
+	DEFAULT_EGISZ_DOCTOR_PRESET,
+	SAMPLE_043U_PATIENT_PRESET,
+} from "./components/egisz/remdXml/egiszRemdPresets";
 import { AnesthesiaConsentLogForm } from "./components/documents/forms/AnesthesiaConsentLogForm";
 import type { DocumentSelectOption } from "./components/documents/forms/documentFormTypes";
 import { InformedConsentForm } from "./components/documents/forms/InformedConsentForm";
@@ -442,6 +452,110 @@ export function DocumentsView(props: DocumentsViewProps) {
 	 * совпал с открытым, и оно требует перестройки отрисовки этого файла.
 	 */
 	const documentFormsPatientRef = useRef<string | null>(null);
+	const [isFnsNdflXmlOpen, setIsFnsNdflXmlOpen] = useState(false);
+	const [isEgiszRemdOpen, setIsEgiszRemdOpen] = useState(false);
+	const [isReferral057Open, setIsReferral057Open] = useState(false);
+	const [isSickLeaveElnOpen, setIsSickLeaveElnOpen] = useState(false);
+
+	const egiszInitialPayload: Partial<Egisz043uPayload> = useMemo(() => {
+		const payload: Record<string, any> = {
+			docTypeCode: "303",
+		};
+
+		if (clinicProfileDraft) {
+			payload.clinic = {
+				clinicName:
+					clinicProfileDraft.name ||
+					DEFAULT_EGISZ_CLINIC_PRESET.clinicName,
+				clinicOid:
+					clinicProfileDraft.oid ||
+					DEFAULT_EGISZ_CLINIC_PRESET.clinicOid,
+				clinicOgrn:
+					clinicProfileDraft.ogrn ||
+					DEFAULT_EGISZ_CLINIC_PRESET.clinicOgrn,
+				clinicInn:
+					clinicProfileDraft.inn ||
+					DEFAULT_EGISZ_CLINIC_PRESET.clinicInn,
+				clinicKpp:
+					clinicProfileDraft.kpp ||
+					DEFAULT_EGISZ_CLINIC_PRESET.clinicKpp,
+				clinicAddress:
+					clinicProfileDraft.legalAddress ||
+					clinicProfileDraft.actualAddress ||
+					DEFAULT_EGISZ_CLINIC_PRESET.clinicAddress,
+				clinicPhone:
+					clinicProfileDraft.phone ||
+					DEFAULT_EGISZ_CLINIC_PRESET.clinicPhone,
+				clinicEmail:
+					clinicProfileDraft.email ||
+					DEFAULT_EGISZ_CLINIC_PRESET.clinicEmail,
+			};
+		}
+
+		if (activeDoctor) {
+			payload.doctor = {
+				doctorFullName:
+					activeDoctor.fullName ||
+					DEFAULT_EGISZ_DOCTOR_PRESET.doctorFullName,
+				doctorSnils:
+					activeDoctor.snils ||
+					DEFAULT_EGISZ_DOCTOR_PRESET.doctorSnils,
+				doctorPosition:
+					activeDoctor.specialty ||
+					DEFAULT_EGISZ_DOCTOR_PRESET.doctorPosition,
+				doctorPositionCode: "71",
+				doctorPhone: activeDoctor.phone,
+				doctorEmail: activeDoctor.email,
+			};
+		}
+
+		if (activePatient) {
+			const patientBirthDate =
+				activePatient.birthDate ||
+				activePatient.birth_date ||
+				SAMPLE_043U_PATIENT_PRESET.patientBirthDate;
+
+			payload.patient = {
+				patientId: activePatient.id || "PAT-001",
+				cardNumber:
+					activePatient.card_number ||
+					activePatient.cardNumber ||
+					`КАРТА-${String(activePatient.id || "").slice(0, 6)}`,
+				patientFullName:
+					activePatient.fullName ||
+					activePatient.name ||
+					SAMPLE_043U_PATIENT_PRESET.patientFullName,
+				patientSnils:
+					activePatient.snils ||
+					SAMPLE_043U_PATIENT_PRESET.patientSnils,
+				patientBirthDate,
+				patientGender:
+					activePatient.gender === "female" || activePatient.gender === "2"
+						? "female"
+						: "male",
+				patientPolisOms:
+					activePatient.polisOms ||
+					activePatient.oms ||
+					SAMPLE_043U_PATIENT_PRESET.patientPolisOms,
+				patientPassport:
+					activePatient.passport ||
+					activePatient.administrativeProfile?.identityDocument ||
+					SAMPLE_043U_PATIENT_PRESET.patientPassport,
+				patientAddress:
+					activePatient.address ||
+					activePatient.administrativeProfile?.registrationAddress ||
+					SAMPLE_043U_PATIENT_PRESET.patientAddress,
+				patientPhone:
+					activePatient.phone ||
+					SAMPLE_043U_PATIENT_PRESET.patientPhone,
+				patientEmail:
+					activePatient.email ||
+					SAMPLE_043U_PATIENT_PRESET.patientEmail,
+			};
+		}
+
+		return payload;
+	}, [clinicProfileDraft, activeDoctor, activePatient]);
 	useEffect(() => {
 		const openedPatientId = activePatient?.id ?? null;
 		const previousPatientId = documentFormsPatientRef.current;
@@ -908,28 +1022,46 @@ export function DocumentsView(props: DocumentsViewProps) {
 		<div className="panel documents-panel" id="documents">
 			<div className="panel-heading">
 				<h2>Документы к закрытию</h2>
-				<button
-					className="text-button"
-					type="button"
-					disabled={!activeUsableDocuments?.[0]}
-					aria-describedby={
-						!activeUsableDocuments?.[0]
-							? latestDocumentOpenGuidanceId
-							: undefined
-					}
-					title={
-						!activeUsableDocuments?.[0]
-							? "Сначала создайте или выдайте документ"
-							: undefined
-					}
-					onClick={() => {
-						const docId = activeUsableDocuments?.[0]?.id;
-						if (!docId) return;
-						void openIssuedDocumentHtml(docId);
-					}}
-				>
-					Открыть последний
-				</button>
+				<div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+					<button
+						type="button"
+						className="secondary-button"
+						onClick={() => setIsReferral057Open(true)}
+						data-testid="open-referral-057-modal-btn"
+					>
+						Направление (Форма № 057/у-04)
+					</button>
+					<button
+						type="button"
+						className="secondary-button"
+						onClick={() => setIsSickLeaveElnOpen(true)}
+						data-testid="open-sick-leave-eln-modal-btn"
+					>
+						Больничный лист (ЭЛН Приказ № 1089н)
+					</button>
+					<button
+						className="text-button"
+						type="button"
+						disabled={!activeUsableDocuments?.[0]}
+						aria-describedby={
+							!activeUsableDocuments?.[0]
+								? latestDocumentOpenGuidanceId
+								: undefined
+						}
+						title={
+							!activeUsableDocuments?.[0]
+								? "Сначала создайте или выдайте документ"
+								: undefined
+						}
+						onClick={() => {
+							const docId = activeUsableDocuments?.[0]?.id;
+							if (!docId) return;
+							void openIssuedDocumentHtml(docId);
+						}}
+					>
+						Открыть последний
+					</button>
+				</div>
 			</div>
 			{!activeUsableDocuments?.[0] ? (
 				<p
@@ -966,6 +1098,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 						}}
 					/>
 					<span>КНД 1151156 с 2024 года; старая справка для 2021-2023</span>
+					<button
+						type="button"
+						className="primary-button"
+						style={{ marginLeft: "auto" }}
+						onClick={() => setIsFnsNdflXmlOpen(true)}
+						data-testid="open-fns-ndfl-xml-modal-btn"
+					>
+						Справка для ФНС (XML Приказ № ЕД-7-11/755@)
+					</button>
 				</label>
 				{typedTaxDocumentPayerOptions.length ? (
 					<label className="document-factory-tax-payer">
@@ -1018,6 +1159,13 @@ export function DocumentsView(props: DocumentsViewProps) {
 									onClick={() => setSelectedTaxPaymentIds([])}
 								>
 									Снять
+								</button>
+								<button
+									type="button"
+									className="primary-button"
+									onClick={() => setIsFnsNdflXmlOpen(true)}
+								>
+									Справка для ФНС (XML Приказ № ЕД-7-11/755@)
 								</button>
 							</div>
 						</div>
@@ -3293,16 +3441,28 @@ export function DocumentsView(props: DocumentsViewProps) {
 
 					{selectedDocumentKind === "outpatient_medical_card_025u" ? (
 						<article className="document-payload-card">
-							<div>
-								<h3>Медицинская карта 025/у</h3>
-								<p>
-									Официальная учетная форма по приказу Минздрава N 274н: только
-									карточка пациента, профиль клиники и подписанные записи.
-								</p>
-								<p className="document-payload-note">
-									Черновик этой карты сохраняется локально для выбранного
-									пациента и визита до изменения или выпуска документа.
-								</p>
+							<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px" }}>
+								<div>
+									<h3>Медицинская карта 025/у</h3>
+									<p>
+										Официальная учетная форма по приказу Минздрава N 274н: только
+										карточка пациента, профиль клиники и подписанные записи.
+									</p>
+									<p className="document-payload-note">
+										Черновик этой карты сохраняется локально для выбранного
+										пациента и визита до изменения или выпуска документа.
+									</p>
+								</div>
+								<button
+									type="button"
+									className="secondary-button"
+									onClick={() => setIsEgiszRemdOpen(true)}
+									data-testid="open-egisz-remd-modal-025u-btn"
+									style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+								>
+									<Shield size={16} />
+									Выгрузка СЭМД в ЕГИСЗ (РЭМД HL7 CDA R2)
+								</button>
 							</div>
 							<details
 								className="document-manual-override"
@@ -3781,7 +3941,57 @@ export function DocumentsView(props: DocumentsViewProps) {
 					) : null}
 
 					{selectedDocumentKind === "dental_medical_card_043u" ? (
-						<DentalMedicalCard043uForm />
+						<>
+							<DentalMedicalCard043uForm />
+							<article className="document-payload-card" style={{ marginTop: "16px" }}>
+								<div
+									style={{
+										display: "flex",
+										justifyContent: "space-between",
+										alignItems: "center",
+										flexWrap: "wrap",
+										gap: "12px",
+									}}
+								>
+									<div>
+										<h3
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: "8px",
+												margin: 0,
+											}}
+										>
+											<Shield size={18} style={{ color: "var(--teal, #0d9488)" }} />
+											Выгрузка СЭМД в ЕГИСЗ (РЭМД HL7 CDA R2)
+										</h3>
+										<p
+											style={{
+												margin: "4px 0 0 0",
+												fontSize: "13px",
+												color: "var(--muted, #64748b)",
+											}}
+										>
+											Генерация структурированного медицинского документа CDA R2 (СЭМД 303 / Форма 043/у), валидация OID, ЭЦП УКЭП (63-ФЗ XMLDSig) и отправка в РЭМД Минздрава РФ.
+										</p>
+									</div>
+									<button
+										type="button"
+										className="primary-button"
+										onClick={() => setIsEgiszRemdOpen(true)}
+										data-testid="open-egisz-remd-modal-btn"
+										style={{
+											display: "inline-flex",
+											alignItems: "center",
+											gap: "6px",
+										}}
+									>
+										<FileCode2 size={16} />
+										Выгрузка СЭМД в ЕГИСЗ (РЭМД HL7 CDA R2)
+									</button>
+								</div>
+							</article>
+						</>
 					) : null}
 
 					{selectedDocumentKind === "orthodontic_medical_card_043_1u" ? (
@@ -5523,9 +5733,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 								) : null}
 								{documentAuditFacts.taxXmlOfficialValidationNote ? (
 									<small>
-										{humanizeDocumentAuditText(
-											documentAuditFacts.taxXmlOfficialValidationNote,
-										)}
+										{humanizeDocumentAuditText(documentAuditFacts.taxXmlOfficialValidationNote)}
 									</small>
 								) : null}
 							</div>
@@ -5825,17 +6033,43 @@ export function DocumentsView(props: DocumentsViewProps) {
 										Скачать PDF
 									</button>
 								) : null}
-								{document.kind === "tax_deduction_certificate" &&
-								document.status === "issued" ? (
+								{document.kind === "tax_deduction_certificate" && document.status === "issued" ? (
+									<>
+										<button
+											className="doc-link font-medium text-teal-700 dark:text-teal-400 hover:underline"
+											type="button"
+											onClick={() => void downloadTaxDocumentXml(document.id)}
+											aria-describedby={documentLifecycleGuidanceId}
+											aria-label={`Скачать XML-файл справки НДФЛ в формате ФНС (КНД 1151156): ${documentActionContext}`}
+											title={`Черновой файл ФНС: ${documentActionContext}`}
+										>
+											Черновой файл ФНС
+										</button>
+										<button
+											className="doc-link font-medium text-teal-700 dark:text-teal-400 hover:underline"
+											type="button"
+											onClick={() => setIsFnsNdflXmlOpen(true)}
+											aria-describedby={documentLifecycleGuidanceId}
+											aria-label={`Справка для ФНС (XML Приказ № ЕД-7-11/755@): ${documentActionContext}`}
+											title={`Справка для ФНС (XML Приказ № ЕД-7-11/755@): ${documentActionContext}`}
+										>
+											Справка для ФНС (XML Приказ № ЕД-7-11/755@)
+										</button>
+									</>
+								) : null}
+								{document.kind === "dental_medical_card_043u" ||
+								document.kind === "outpatient_medical_card_025u" ||
+								document.kind === "orthodontic_medical_card_043_1u" ||
+								document.kind === "medical_record_extract" ? (
 									<button
 										className="doc-link font-medium text-teal-700 dark:text-teal-400 hover:underline"
 										type="button"
-										onClick={() => void downloadTaxDocumentXml(document.id)}
+										onClick={() => setIsEgiszRemdOpen(true)}
 										aria-describedby={documentLifecycleGuidanceId}
-										aria-label={`Скачать XML-файл справки НДФЛ в формате ФНС (КНД 1151156): ${documentActionContext}`}
-										title={`Скачать XML-файл справки НДФЛ в формате ФНС (КНД 1151156): ${documentActionContext}`}
+										aria-label={`Выгрузка СЭМД в ЕГИСЗ (РЭМД HL7 CDA R2): ${documentActionContext}`}
+										title={`Выгрузка СЭМД в ЕГИСЗ (РЭМД HL7 CDA R2): ${documentActionContext}`}
 									>
-										Справка НДФЛ в XML (ФНС)
+										Выгрузка СЭМД в ЕГИСЗ (РЭМД HL7 CDA R2)
 									</button>
 								) : null}
 								{document.status === "draft" ? (
@@ -5879,6 +6113,42 @@ export function DocumentsView(props: DocumentsViewProps) {
 					/>
 				) : null}
 			</div>
+
+			{isFnsNdflXmlOpen && (
+				<FnsNdflXmlModal
+					initialPatientId={activePatient?.id}
+					initialTaxYear={
+						typeof taxDocumentYear === "number" &&
+						(taxDocumentYear === 2023 ||
+							taxDocumentYear === 2024 ||
+							taxDocumentYear === 2025 ||
+							taxDocumentYear === 2026)
+							? taxDocumentYear
+							: 2025
+					}
+					onClose={() => setIsFnsNdflXmlOpen(false)}
+				/>
+			)}
+
+			{isEgiszRemdOpen && (
+				<EgiszRemdXmlModal
+					isOpen={isEgiszRemdOpen}
+					onClose={() => setIsEgiszRemdOpen(false)}
+					initialPayload={egiszInitialPayload}
+				/>
+			)}
+
+			<MedicalReferral057Modal
+				isOpen={isReferral057Open}
+				onClose={() => setIsReferral057Open(false)}
+				patient={{ fullName: activePatient?.fullName }}
+			/>
+
+			<SickLeaveElnModal
+				isOpen={isSickLeaveElnOpen}
+				onClose={() => setIsSickLeaveElnOpen(false)}
+				initialPatientName={activePatient?.fullName}
+			/>
 		</div>
 	);
 }

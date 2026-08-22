@@ -987,6 +987,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					setShowFreedSlotsPanel={setShowFreedSlotsPanel}
 					showClipboardPanel={showClipboardPanel}
 					setShowClipboardPanel={setShowClipboardPanel}
+					onOpenShiftRoster={() => setIsRosterModalOpen(true)}
 				/>
 			</div>
 			{showConfirmationsPanel && <DayConfirmationsPanel />}

@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import React, { type Dispatch, type ReactElement, type SetStateAction } from "react";
 
 export interface ScheduleSubNavTabsProps {
 	showShiftAnalytics: boolean;
@@ -13,6 +13,7 @@ export interface ScheduleSubNavTabsProps {
 	setShowFreedSlotsPanel: React.Dispatch<React.SetStateAction<boolean>>;
 	showClipboardPanel: boolean;
 	setShowClipboardPanel: React.Dispatch<React.SetStateAction<boolean>>;
+	onOpenShiftRoster?: () => void;
 }
 
 /**
@@ -33,6 +34,7 @@ export function ScheduleSubNavTabs({
 	setShowFreedSlotsPanel,
 	showClipboardPanel,
 	setShowClipboardPanel,
+	onOpenShiftRoster,
 }: ScheduleSubNavTabsProps): ReactElement {
 	return (
 		<div className="schedule-sub-nav-tabs flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none max-w-full w-full py-1 shrink-0">
@@ -49,6 +51,15 @@ export function ScheduleSubNavTabs({
 				onClick={() => setScheduleDateFilter(todayScheduleDate())}
 			>
 				Сегодня
+			</button>
+			<button
+				className="text-button shrink-0 whitespace-nowrap min-h-[44px] px-3 text-xs font-semibold"
+				type="button"
+				data-testid="open-shift-roster-modal-btn"
+				onClick={() => onOpenShiftRoster?.()}
+				title="Студия графиков сменности врачей, нормы ТК РФ ст. 350 и табель Т-13"
+			>
+				График смен (ТК РФ ст. 350 / Табель Т-13)
 			</button>
 			<button
 				className="text-button shrink-0 whitespace-nowrap min-h-[44px] px-3 text-xs font-semibold"

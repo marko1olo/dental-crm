@@ -1,11 +1,14 @@
 import type { Appointment, Dashboard, TreatmentPlanItem } from "@dental/shared";
-import { Calendar, CheckCircle2, Clock, FileSpreadsheet, FileText, Shield, Stethoscope } from "lucide-react";
+import { Calendar, CheckCircle2, Clock, FileSpreadsheet, FileText, Gift, Shield, Stethoscope } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { money } from "../../utils/financeUtils";
 import { PatientJourneyTimeline } from "../PatientJourneyTimeline";
 import { DmsGuaranteeLetterModal } from "../insurance/DmsGuaranteeLetterModal";
+import { DmsInsuranceManagerModal } from "../insurance/dmsManager/DmsInsuranceManagerModal";
 import { DmsRegistryExportModal } from "../insurance/DmsRegistryExportModal";
+import { LoyaltyProgramModal } from "../loyalty/program/LoyaltyProgramModal";
+
 import { PatientAllergySafetyBanner } from "./PatientAllergySafetyBanner";
 
 export interface PatientWorkspaceViewProps {
@@ -242,6 +245,8 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 
 			const [isDmsLetterOpen, setIsDmsLetterOpen] = useState(false);
 			const [isDmsRegistryOpen, setIsDmsRegistryOpen] = useState(false);
+			const [isDmsManagerOpen, setIsDmsManagerOpen] = useState(false);
+			const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
 
 			return (
 				<div
@@ -266,6 +271,28 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 						</div>
 
 						<div className="flex items-center gap-1.5 flex-wrap">
+							<button
+								type="button"
+								className="min-h-[44px] px-3 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
+								onClick={() => setIsLoyaltyModalOpen(true)}
+								title="Программа лояльности и бонусы (54-ФЗ)"
+								aria-label="Программа лояльности и бонусы (54-ФЗ)"
+								data-testid="open-loyalty-program-modal-btn"
+							>
+								<Gift className="w-3.5 h-3.5 inline mr-1.5" />
+								Программа лояльности и бонусы (54-ФЗ)
+							</button>
+							<button
+								type="button"
+								className="min-h-[44px] px-3 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer border border-sky-500/30 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900/50"
+								onClick={() => setIsDmsManagerOpen(true)}
+								title="Управление полисами ДМС и гарантийными письмами (СОГАЗ, Ингосстрах, РЕСО)"
+								aria-label="Управление полисами ДМС и гарантийными письмами (СОГАЗ, Ингосстрах, РЕСО)"
+								data-testid="patient-dms-manager-btn"
+							>
+								<Shield className="w-3.5 h-3.5 inline mr-1.5" />
+								Управление ДМС
+							</button>
 							<button
 								type="button"
 								className="min-h-[44px] px-3 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer border border-sky-500/30 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900/50"
@@ -399,6 +426,15 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 					<DmsRegistryExportModal
 						isOpen={isDmsRegistryOpen}
 						onClose={() => setIsDmsRegistryOpen(false)}
+					/>
+
+					{/* Loyalty & Gift Certificate Modal */}
+					<LoyaltyProgramModal
+						isOpen={isLoyaltyModalOpen}
+						onClose={() => setIsLoyaltyModalOpen(false)}
+						patientId={patientId}
+						patientName={patientName || undefined}
+						medicalCardNumber={`043/у-${patientId.slice(0, 8)}`}
 					/>
 				</div>
 			);
