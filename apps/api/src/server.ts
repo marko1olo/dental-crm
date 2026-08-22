@@ -76,6 +76,7 @@ import { registerPublicBookingRoutes } from "./routes/publicBooking.js";
 import { registerReferralRoutes } from "./routes/referrals.js";
 import { registerReportRoutes } from "./routes/reports.js";
 import { registerSberbankRoutes } from "./routes/sberbank.js";
+import { registerSberPosWebhookRoutes } from "./routes/payments/sberPosWebhookRoute.js";
 import { registerSbpQrRoutes } from "./routes/sbpQr.js";
 import { registerScheduleRoutes } from "./routes/schedule.js";
 import { registerSettingsRoutes } from "./routes/settings.js";
@@ -598,6 +599,7 @@ export async function createDenteApiApp(
 	await registerAiRoutes(app);
 	await registerBillingRoutes(app);
 	await registerSberbankRoutes(app);
+	await registerSberPosWebhookRoutes(app);
 	await registerClinicalRoutes(app);
 	await registerChatRoutes(app);
 	await registerCommunicationRoutes(app);
