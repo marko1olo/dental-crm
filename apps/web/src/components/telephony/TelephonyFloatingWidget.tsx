@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
@@ -386,26 +387,26 @@ export function TelephonyFloatingWidget({
 	const audioProgressPct =
 		audioDuration > 0 ? (audioCurrentTime / audioDuration) * 100 : 0;
 
-	return (
+	if (typeof document === "undefined") return null;
+
+	return createPortal(
 		<div
 			className={`dnt-telephony-floating ${className}`}
 			data-testid="telephony-floating-widget"
 		>
-			{/* Collapsed Floating Pill Launcher */}
+			{/* Collapsed Floating Launcher (48x48px on Mobile, Pill on Desktop) */}
 			{!isExpanded && (
 				<button
 					type="button"
 					onClick={() => setIsExpanded(true)}
-					className={`group flex items-center gap-3 px-4 py-3 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95 border min-h-[48px] ${
-						activeCall
-							? "bg-gradient-to-r from-teal-600 to-emerald-600 text-white border-teal-400 ring-4 ring-teal-500/30 animate-pulse"
-							: "bg-[var(--paper,#0f172a)] text-[var(--ink,#f8fafc)] border-[var(--line,#334155)] hover:border-teal-500"
+					className={`dnt-telephony-launcher ${
+						activeCall ? "dnt-telephony-launcher--active" : ""
 					}`}
 					title={activeCall ? "Активный вызов телефонии" : "Открыть софтфон телефонии"}
 					aria-label={activeCall ? "Активный вызов телефонии" : "Открыть софтфон телефонии"}
 				>
 					<div
-						className={`w-9 h-9 rounded-full flex items-center justify-center ${
+						className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
 							activeCall ? "bg-white/20 text-white" : "bg-teal-500/10 text-teal-400"
 						}`}
 					>
@@ -416,7 +417,7 @@ export function TelephonyFloatingWidget({
 						)}
 					</div>
 
-					<div className="flex flex-col text-left pr-1 min-w-0">
+					<div className="dnt-telephony-launcher-text pr-1">
 						<div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider">
 							<span>{activeCall ? "Телефония" : "Софтфон"}</span>
 							{activeCall && (
@@ -428,18 +429,14 @@ export function TelephonyFloatingWidget({
 						</span>
 					</div>
 
-					<ChevronUp size={16} className="opacity-70 group-hover:opacity-100 transition-opacity" />
+					<ChevronUp size={16} className="dnt-telephony-launcher-chevron opacity-70 group-hover:opacity-100 transition-opacity" />
 				</button>
 			)}
 
 			{/* Expanded Floating Softphone Card */}
 			{isExpanded && (
 				<div
-					className="w-full sm:w-[420px] max-w-[calc(100vw-24px)] bg-[var(--paper,#0f172a)] text-[var(--ink,#f8fafc)] rounded-2xl border border-[var(--line,#334155)] shadow-2xl flex flex-col overflow-hidden backdrop-blur-xl animate-fade-in"
-					style={{
-						boxShadow:
-							"0 24px 48px -12px rgba(0, 0, 0, 0.4), 0 0 24px 2px rgba(13, 148, 136, 0.2)",
-					}}
+					className="dnt-telephony-card"
 					role="region"
 					aria-label="Плавающий виджет софтфона телефонии"
 				>
@@ -481,7 +478,7 @@ export function TelephonyFloatingWidget({
 								title="Симулятор SIP телефонии"
 								aria-label="Симулятор SIP телефонии"
 							>
-								<Sliders size={15} />
+								<Sliders size={16} />
 							</button>
 
 							{/* Mute toggle */}
@@ -493,9 +490,9 @@ export function TelephonyFloatingWidget({
 								aria-label={isMuted ? "Включить звук звонка" : "Выключить звук звонка"}
 							>
 								{isMuted ? (
-									<VolumeX size={15} className="text-rose-400" />
+									<VolumeX size={16} className="text-rose-400" />
 								) : (
-									<Volume2 size={15} />
+									<Volume2 size={16} />
 								)}
 							</button>
 
@@ -513,49 +510,49 @@ export function TelephonyFloatingWidget({
 					</div>
 
 					{/* Navigation Tabs */}
-					<div className="flex items-center border-b border-[var(--line,#334155)] bg-[var(--paper,#0f172a)] text-xs font-bold">
+					<div className="flex items-center border-b border-[var(--line,#334155)] bg-[var(--paper-soft,#0f172a)] text-xs font-bold">
 						<button
 							type="button"
 							onClick={() => setActiveTab("call")}
-							className={`flex-1 py-2 text-center transition-colors border-b-2 inline-flex items-center justify-center gap-1.5 ${
+							className={`flex-1 min-h-[44px] py-2.5 text-center transition-colors border-b-2 inline-flex items-center justify-center gap-1.5 ${
 								activeTab === "call"
-									? "border-teal-500 text-teal-400 bg-teal-500/5"
+									? "border-teal-500 text-teal-400 bg-teal-500/10 font-bold"
 									: "border-transparent text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)]"
 							}`}
 						>
-							<PhoneIncoming size={13} />
+							<PhoneIncoming size={14} />
 							<span>{activeCall ? "Текущий вызов" : "Вызов"}</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={() => setActiveTab("dialer")}
-							className={`flex-1 py-2 text-center transition-colors border-b-2 inline-flex items-center justify-center gap-1.5 ${
+							className={`flex-1 min-h-[44px] py-2.5 text-center transition-colors border-b-2 inline-flex items-center justify-center gap-1.5 ${
 								activeTab === "dialer"
-									? "border-teal-500 text-teal-400 bg-teal-500/5"
+									? "border-teal-500 text-teal-400 bg-teal-500/10 font-bold"
 									: "border-transparent text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)]"
 							}`}
 						>
-							<PhoneOutgoing size={13} />
+							<PhoneOutgoing size={14} />
 							<span>Набор номера</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={() => setActiveTab("history")}
-							className={`flex-1 py-2 text-center transition-colors border-b-2 inline-flex items-center justify-center gap-1.5 ${
+							className={`flex-1 min-h-[44px] py-2.5 text-center transition-colors border-b-2 inline-flex items-center justify-center gap-1.5 ${
 								activeTab === "history"
-									? "border-teal-500 text-teal-400 bg-teal-500/5"
+									? "border-teal-500 text-teal-400 bg-teal-500/10 font-bold"
 									: "border-transparent text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)]"
 							}`}
 						>
-							<History size={13} />
+							<History size={14} />
 							<span>Журнал ({callHistory.length})</span>
 						</button>
 					</div>
 
 					{/* Tab Content */}
-					<div className="p-4 space-y-3.5 max-h-[70vh] overflow-y-auto">
+					<div className="p-4 space-y-3.5 max-h-[60vh] overflow-y-auto">
 						{/* TAB 1: CALL VIEW */}
 						{activeTab === "call" && (
 							<>
@@ -698,7 +695,7 @@ export function TelephonyFloatingWidget({
 												<div
 													ref={waveformRef}
 													onClick={handleWaveformClick}
-													className="h-8 w-full flex items-center justify-between gap-[2px] px-1 py-1 rounded-lg bg-slate-900 border border-slate-800 cursor-pointer relative overflow-hidden"
+													className="h-9 w-full flex items-center justify-between gap-[2px] px-1 py-1 rounded-lg bg-slate-900 border border-slate-800 cursor-pointer relative overflow-hidden"
 													role="slider"
 													aria-valuemin={0}
 													aria-valuemax={audioDuration}
@@ -867,7 +864,7 @@ export function TelephonyFloatingWidget({
 									)}
 								</div>
 
-								{/* Touch-Friendly Numeric Keypad (44px min touch target per key) */}
+								{/* Touch-Friendly Numeric Keypad (48px min touch target per key) */}
 								<div className="grid grid-cols-3 gap-2">
 									{[
 										{ d: "1", sub: "" },
@@ -956,21 +953,21 @@ export function TelephonyFloatingWidget({
 											</div>
 
 											<div className="flex items-center gap-1.5 flex-shrink-0">
-												{/* Quick Call Button */}
+												{/* Quick Call Button >= 44x44px */}
 												<button
 													type="button"
 													onClick={() => {
 														setDialNumber(item.phone);
 														setActiveTab("dialer");
 													}}
-													className="min-h-[36px] min-w-[36px] p-2 rounded-lg text-teal-400 hover:bg-teal-500/10 transition-colors inline-flex items-center justify-center"
+													className="min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-teal-400 hover:bg-teal-500/10 transition-colors inline-flex items-center justify-center"
 													title="Перезвонить"
 													aria-label={`Перезвонить ${item.phone}`}
 												>
-													<Phone size={13} />
+													<Phone size={14} />
 												</button>
 
-												{/* Quick WhatsApp Trigger */}
+												{/* Quick WhatsApp Trigger >= 44x44px */}
 												<button
 													type="button"
 													onClick={() => {
@@ -979,11 +976,11 @@ export function TelephonyFloatingWidget({
 															`Здравствуйте! Стоматология ${dashboard?.clinicSettings?.name || "DENTE"}.`,
 														);
 													}}
-													className="min-h-[36px] min-w-[36px] p-2 rounded-lg text-emerald-400 hover:bg-emerald-500/10 transition-colors inline-flex items-center justify-center"
+													className="min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-emerald-400 hover:bg-emerald-500/10 transition-colors inline-flex items-center justify-center"
 													title="WhatsApp"
 													aria-label={`Написать в WhatsApp ${item.phone}`}
 												>
-													<MessageSquare size={13} />
+													<MessageSquare size={14} />
 												</button>
 											</div>
 										</div>
@@ -994,6 +991,7 @@ export function TelephonyFloatingWidget({
 					</div>
 				</div>
 			)}
-		</div>
+		</div>,
+		document.body,
 	);
 }

@@ -773,40 +773,40 @@ export function IncomingCallPopup() {
 				</div>
 
 				<div className="flex items-center gap-1">
-					{/* Mute Ringtone Toggle */}
+					{/* Mute Ringtone Toggle >= 44x44px */}
 					<button
 						type="button"
 						onClick={toggleMute}
-						className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors rounded-lg p-1.5 min-h-[32px] min-w-[32px] inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-teal-500"
+						className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors rounded-lg p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-teal-500"
 						title={isMuted ? "Включить звонок" : "Отключить звук"}
 						aria-label={isMuted ? "Включить звонок" : "Отключить звук"}
 					>
 						{isMuted ? (
-							<VolumeX size={15} className="text-rose-400" />
+							<VolumeX size={17} className="text-rose-400" />
 						) : (
-							<Volume2 size={15} />
+							<Volume2 size={17} />
 						)}
 					</button>
 
-					{/* Simulator Modal Launcher */}
+					{/* Simulator Modal Launcher >= 44x44px */}
 					<button
 						type="button"
 						onClick={openSimulator}
-						className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors rounded-lg p-1.5 min-h-[32px] min-w-[32px] inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-teal-500"
+						className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors rounded-lg p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-teal-500"
 						title="Открыть симулятор телефонии"
 						aria-label="Симулятор SIP телефонии"
 					>
-						<Sliders size={15} />
+						<Sliders size={17} />
 					</button>
 
-					{/* Dismiss X */}
+					{/* Dismiss X >= 44x44px */}
 					<button
 						type="button"
 						onClick={dismissCall}
-						className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors rounded-lg p-1.5 min-h-[32px] min-w-[32px] inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-teal-500"
+						className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors rounded-lg p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-teal-500"
 						aria-label="Свернуть уведомление"
 					>
-						<X size={16} />
+						<X size={18} />
 					</button>
 				</div>
 			</div>
@@ -882,25 +882,25 @@ export function IncomingCallPopup() {
 					</div>
 
 					<div className="flex items-center gap-2">
-						{/* 1-Click WhatsApp Trigger */}
+						{/* 1-Click WhatsApp Trigger >= 44px */}
 						<button
 							type="button"
 							onClick={handleSendWhatsAppConfirmation}
-							className="flex-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm"
+							className="flex-1 min-h-[44px] px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm"
 							title="Отправить сообщение с подтверждением записи в WhatsApp"
 						>
-							<MessageSquare size={13} />
+							<MessageSquare size={14} />
 							<span>{whatsappSent ? "Отправлено ✓" : "1-Click WhatsApp"}</span>
 						</button>
 
-						{/* 1-Click SMS Copy/Trigger */}
+						{/* 1-Click SMS Copy/Trigger >= 44px */}
 						<button
 							type="button"
 							onClick={handleCopySmsConfirmation}
-							className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-300 dark:border-slate-700 transition-all inline-flex items-center justify-center gap-1"
+							className="min-h-[44px] px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-300 dark:border-slate-700 transition-all inline-flex items-center justify-center gap-1"
 							title="Скопировать текст SMS-подтверждения"
 						>
-							{smsCopied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
+							{smsCopied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
 							<span>{smsCopied ? "Скопировано" : "SMS"}</span>
 						</button>
 					</div>
@@ -1023,7 +1023,7 @@ export function IncomingCallPopup() {
 				)}
 			</div>
 
-			{/* Touch-First 1-Click Booking Flow Presets */}
+			{/* Touch-First 1-Click Booking Flow Presets (>=44px touch targets) */}
 			<div className="space-y-1.5">
 				<div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
 					<span className="flex items-center gap-1">
@@ -1035,7 +1035,7 @@ export function IncomingCallPopup() {
 					<button
 						type="button"
 						onClick={() => handleQuickBook("today_urgent")}
-						className="px-2 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-900/40 border border-amber-200 dark:border-amber-800/50 text-amber-900 dark:text-amber-200 text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight shadow-xs active:scale-95"
+						className="min-h-[44px] px-2 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-900/40 border border-amber-200 dark:border-amber-800/50 text-amber-900 dark:text-amber-200 text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight shadow-xs active:scale-95"
 						title="Записать сегодня на 10:00 (Острая боль)"
 					>
 						<span>⚡ Сегодня 10:00</span>
@@ -1047,7 +1047,7 @@ export function IncomingCallPopup() {
 					<button
 						type="button"
 						onClick={() => handleQuickBook("today_standard")}
-						className="px-2 py-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/30 dark:hover:bg-teal-900/40 border border-teal-200 dark:border-teal-800/50 text-teal-900 dark:text-teal-200 text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight shadow-xs active:scale-95"
+						className="min-h-[44px] px-2 py-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/30 dark:hover:bg-teal-900/40 border border-teal-200 dark:border-teal-800/50 text-teal-900 dark:text-teal-200 text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight shadow-xs active:scale-95"
 						title="Записать сегодня на 14:30 (Консультация)"
 					>
 						<span>📅 Сегодня 14:30</span>
@@ -1059,7 +1059,7 @@ export function IncomingCallPopup() {
 					<button
 						type="button"
 						onClick={() => handleQuickBook("tomorrow")}
-						className="px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight shadow-xs active:scale-95"
+						className="min-h-[44px] px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight shadow-xs active:scale-95"
 						title="Записать завтра на 11:00 (Плановый визит)"
 					>
 						<span>🗓️ Завтра 11:00</span>

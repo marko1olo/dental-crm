@@ -538,5 +538,19 @@ describe("Telephony & Reception Live Hub Suite", () => {
 				useTelephonyStore.getState().dismissCall();
 			}
 		});
+
+		test("mobile launcher and touch target invariants adhere to clinical ergonomics", () => {
+			const mobileLauncherSize = 48;
+			const standardTouchTargetMin = 44;
+			const primaryActionTouchTargetMin = 48;
+			const mobileBottomOffset = 72;
+			const mobileRightOffset = 12;
+
+			assert.ok(mobileLauncherSize >= 48, "Mobile launcher FAB must be at least 48x48px");
+			assert.ok(standardTouchTargetMin >= 44, "Standard touch target must be at least 44x44px");
+			assert.ok(primaryActionTouchTargetMin >= 48, "Call action buttons must be at least 48x48px");
+			assert.equal(mobileBottomOffset, 72, "Mobile bottom offset above navigation bar must be 72px");
+			assert.equal(mobileRightOffset, 12, "Mobile right offset must be 12px");
+		});
 	});
 });

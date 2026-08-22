@@ -1416,8 +1416,9 @@ button[data-tooth-state="missing"] {
 	[data-theme="night"] .workspace-role-switcher > summary {
 		color: var(--teal);
 	}
-	/* Recent patients dropdown on mobile — hide entirely from topbar */
-	.recent-patients-header-dropdown {
+	/* Recent patients dropdown and perspective switcher on mobile — hide entirely from topbar */
+	.recent-patients-header-dropdown,
+	.workspace-perspective-switcher {
 		display: none;
 	}
 	/* top-actions strip */

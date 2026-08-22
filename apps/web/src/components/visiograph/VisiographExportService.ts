@@ -76,6 +76,40 @@ export interface ClinicalSnapshotPayload {
 		| undefined;
 	contrast?: number | undefined;
 	brightness?: number | undefined;
+	gamma?: number | undefined;
+	sharpness?: number | undefined;
+	calibration?:
+		| {
+				scaleMmPerPx: number;
+				referenceType?: string | undefined;
+				referenceMm?: number | undefined;
+		  }
+		| undefined;
+	measurements?:
+		| {
+				rulers?:
+					| Array<{
+							label?: string | undefined;
+							lengthMm: number;
+					  }>
+					| undefined;
+				angles?:
+					| Array<{
+							label?: string | undefined;
+							angleDeg: number;
+							deviationFromVerticalDeg?: number | undefined;
+					  }>
+					| undefined;
+				lesions?:
+					| Array<{
+							areaMm2: number;
+							equivalentDiameterMm: number;
+							classificationLabel: string;
+							treatmentRecommendation?: string | undefined;
+					  }>
+					| undefined;
+		  }
+		| undefined;
 }
 
 export interface ClinicalExportOutcome {
@@ -327,11 +361,54 @@ export function buildForm043ProtocolText(
 		);
 	}
 
-	if (payload.contrast !== undefined || payload.brightness !== undefined) {
+	if (
+		payload.contrast !== undefined ||
+		payload.brightness !== undefined ||
+		payload.gamma !== undefined ||
+		payload.sharpness !== undefined
+	) {
 		const adj: string[] = [];
 		if (payload.brightness !== undefined) adj.push(`Яркость: ${payload.brightness}%`);
 		if (payload.contrast !== undefined) adj.push(`Контрастность: ${payload.contrast}%`);
+		if (payload.gamma !== undefined) adj.push(`Гамма: ${payload.gamma.toFixed(2)}`);
+		if (payload.sharpness !== undefined) adj.push(`Резкость (USM): ${payload.sharpness}%`);
 		lines.push(`Пользовательская коррекция: ${adj.join(", ")}`);
+	}
+
+	if (payload.calibration) {
+		const ref = payload.calibration.referenceType
+			? ` (${payload.calibration.referenceType}${payload.calibration.referenceMm ? ` ${payload.calibration.referenceMm} мм` : ""})`
+			: "";
+		lines.push(
+			`Калибровка масштаба: 1 px = ${payload.calibration.scaleMmPerPx.toFixed(4)} мм${ref}`,
+		);
+	}
+
+	if (payload.measurements) {
+		const { rulers = [], angles = [], lesions = [] } = payload.measurements;
+		if (rulers.length > 0) {
+			const rulerLines = rulers.map(
+				(r, i) => `${r.label || `L${i + 1}`}: ${r.lengthMm.toFixed(1)} мм`,
+			);
+			lines.push(`Линейные замеры: ${rulerLines.join(", ")}`);
+		}
+		if (angles.length > 0) {
+			const angleLines = angles.map(
+				(a, i) =>
+					`${a.label || `∠${i + 1}`}: ${a.angleDeg.toFixed(1)}°${a.deviationFromVerticalDeg !== undefined ? ` (наклон: ${a.deviationFromVerticalDeg.toFixed(1)}°)` : ""}`,
+			);
+			lines.push(`Угловые измерения: ${angleLines.join(", ")}`);
+		}
+		if (lesions.length > 0) {
+			for (let i = 0; i < lesions.length; i++) {
+				const les = lesions[i];
+				if (les) {
+					lines.push(
+						`Очаг деструкции #${i + 1}: ${les.classificationLabel} — площадь: ${les.areaMm2.toFixed(1)} мм² (экв. Ø: ${les.equivalentDiameterMm.toFixed(1)} мм)${les.treatmentRecommendation ? ` [Тактика: ${les.treatmentRecommendation}]` : ""}`,
+					);
+				}
+			}
+		}
 	}
 
 	if (payload.radiologicalFinding) {
