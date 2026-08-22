@@ -22,18 +22,18 @@
 .plan-comparator-modal {
 	--plan-bg: var(--paper, #ffffff);
 	--plan-surface: var(--paper-strong, #f8fafc);
-	--plan-surface-hover: var(--surface-hover, #f1f5f9);
-	--plan-border: var(--border, #e2e8f0);
-	--plan-border-focus: var(--primary, #0d9488);
+	--plan-surface-hover: var(--paper-soft, #f1f5f9);
+	--plan-border: var(--line, #e2e8f0);
+	--plan-border-focus: var(--brand-500, #0d9488);
 	--plan-text-main: var(--ink, #0f172a);
 	--plan-text-muted: var(--muted, #64748b);
-	--plan-primary: var(--primary, #0d9488);
-	--plan-primary-hover: var(--primary-hover, #0f766e);
-	--plan-primary-light: var(--primary-light, rgba(13, 148, 136, 0.1));
-	--plan-success: var(--success, #16a34a);
-	--plan-success-light: rgba(22, 163, 74, 0.1);
-	--plan-warning: var(--warning, #d97706);
-	--plan-warning-light: rgba(217, 119, 6, 0.1);
+	--plan-primary: var(--brand-500, #0d9488);
+	--plan-primary-hover: var(--brand-600, #0f766e);
+	--plan-primary-light: var(--paper-soft, rgba(13, 148, 136, 0.1));
+	--plan-success: var(--ok-fg, #16a34a);
+	--plan-success-light: var(--ok-bg, rgba(22, 163, 74, 0.1));
+	--plan-warning: var(--warn-fg, #d97706);
+	--plan-warning-light: var(--warn-bg, rgba(217, 119, 6, 0.1));
 	--plan-radius-lg: 16px;
 	--plan-radius-md: 10px;
 	--plan-radius-sm: 6px;

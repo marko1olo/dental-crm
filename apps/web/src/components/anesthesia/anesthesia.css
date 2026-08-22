@@ -56,7 +56,7 @@
 	padding: 0.25rem 0.5rem;
 	border-radius: 6px;
 	background: rgba(16, 185, 129, 0.12);
-	color: var(--ok, #10b981);
+	color: var(--ok-fg, #10b981);
 	border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
@@ -132,7 +132,7 @@
 
 .drug-epi-pill.no-epi {
 	background: rgba(16, 185, 129, 0.15);
-	color: var(--ok, #10b981);
+	color: var(--ok-fg, #10b981);
 	border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
@@ -163,7 +163,7 @@
 }
 
 .safety-meter-bar-fill.safe {
-	background: var(--ok, #10b981);
+	background: var(--ok-fg, #10b981);
 }
 
 .safety-meter-bar-fill.caution {
@@ -235,7 +235,7 @@
 
 .anesthesia-alert-box.safe {
 	background: rgba(16, 185, 129, 0.12);
-	color: var(--ok, #10b981);
+	color: var(--ok-fg, #10b981);
 	border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
@@ -285,9 +285,9 @@
 }
 
 .anesthesia-btn-ok {
-	background: var(--ok, #10b981);
+	background: var(--ok-fg, #10b981);
 	color: #ffffff;
-	border-color: var(--ok, #10b981);
+	border-color: var(--ok-fg, #10b981);
 }
 
 .anesthesia-btn-ok:hover {
