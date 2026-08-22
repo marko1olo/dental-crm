@@ -2,24 +2,33 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import {
 	Activity,
+	Boxes,
 	Calculator,
 	Calendar,
+	Camera,
 	CheckCircle2,
 	Coins,
 	Compass,
+	Eye,
 	FileText,
+	Flame,
 	FlaskConical,
 	Gauge,
+	Layers,
 	Moon,
 	Palette,
+	PhoneCall,
 	Pill,
 	Printer,
 	QrCode,
 	Receipt,
 	Scan,
+	ShieldCheck,
 	Sparkles,
 	Sun,
 	Syringe,
+	Truck,
+	User,
 } from "lucide-react";
 import type { Kopecks } from "@dental/shared";
 import { AnesthesiaCalculator } from "../components/visit/AnesthesiaCalculator";
@@ -42,6 +51,14 @@ import { CashShiftWidget } from "../components/finance/CashShiftWidget";
 import { CephalometricAnalysisModal } from "../components/orthodontics/CephalometricAnalysisModal";
 import { ImplantIsqProtocolModal } from "../components/implant/isq/ImplantIsqProtocolModal";
 import { DentalLabOrderModal } from "../components/lab/DentalLabOrderModal";
+import { ClinicalPhotoProtocolModal } from "../components/photography/ClinicalPhotoProtocolModal";
+import { PatientRecallManagerModal } from "../components/recalls/PatientRecallManagerModal";
+import { AutoclaveCycleModal } from "../components/sanpin/autoclave/AutoclaveCycleModal";
+import { InsurancePreAuthModal } from "../components/insurance/InsurancePreAuthModal";
+import { LabStlViewerModal } from "../components/lab3d/LabStlViewerModal";
+import { TreatmentPlanComparatorModal } from "../components/treatment-plans/comparator/TreatmentPlanComparatorModal";
+import { WarehouseTransferModal } from "../components/inventory/transfers/WarehouseTransferModal";
+import { PatientPortalTimelineModal } from "../components/portal/timeline/PatientPortalTimelineModal";
 import type { CompletedWorksActAndWriteOffData, TreatmentPlanItem } from "../components/treatment-plans/types";
 import type { DiaryState } from "../components/useVisitDiaryLogic";
 
@@ -242,6 +259,14 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isCephOpen, setIsCephOpen] = useState(false);
 	const [isIsqOpen, setIsIsqOpen] = useState(false);
 	const [isLabOrderOpen, setIsLabOrderOpen] = useState(false);
+	const [isPhotoProtocolOpen, setIsPhotoProtocolOpen] = useState(false);
+	const [isRecallOpen, setIsRecallOpen] = useState(false);
+	const [isAutoclaveOpen, setIsAutoclaveOpen] = useState(false);
+	const [isInsuranceOpen, setIsInsuranceOpen] = useState(false);
+	const [isLabStlOpen, setIsLabStlOpen] = useState(false);
+	const [isPlanComparatorOpen, setIsPlanComparatorOpen] = useState(false);
+	const [isTransferOpen, setIsTransferOpen] = useState(false);
+	const [isPortalOpen, setIsPortalOpen] = useState(false);
 
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -621,6 +646,198 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 							<span>Открыть заказ-наряд CAD/CAM</span>
 						</button>
 					</div>
+
+					{/* 14. Clinical Photo Protocol 12-shot Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Camera className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Фотопротокол (12 кадров) & До/После
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Внеротовые/внутриротовые ракурсы, сплит-слайдер До/После, VITA колориметрия и PDF-коллаж.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsPhotoProtocolOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-photo-protocol-modal-btn"
+						>
+							<Camera size={15} />
+							<span>Открыть фотопротокол</span>
+						</button>
+					</div>
+
+					{/* 15. Patient Recall & Clinical Prophylaxis Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<PhoneCall className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Диспансерный учет & Реколлы
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								6 риск-стратифицированных циклов, омниканальные шаблоны (WhatsApp / SMS) и скрипты обзвона.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsRecallOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-recall-modal-btn"
+						>
+							<PhoneCall size={15} />
+							<span>Открыть реколл-менеджер</span>
+						</button>
+					</div>
+
+					{/* 16. SanPiN Autoclave Class B & Form 257/u Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Flame className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Автоклав Class B & СанПиН 257/у
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Телеметрия давления/температуры, штрихкоды крафт-пакетов и журнал стерилизации 257/у.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsAutoclaveOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-autoclave-modal-btn"
+						>
+							<Flame size={15} />
+							<span>Открыть журнал автоклава</span>
+						</button>
+					</div>
+
+					{/* 17. DMS Insurance PreAuth & Co-Pay Split Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<ShieldCheck className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									ДМС Авторизация & Сооплата
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Проверка гарантийных писем, расчет сплита страховая/пациент и экспорт реестра оказанных услуг.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsInsuranceOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-insurance-modal-btn"
+						>
+							<ShieldCheck size={15} />
+							<span>Открыть ДМС-авторизацию</span>
+						</button>
+					</div>
+
+					{/* 18. 3D STL Prep Margin Line & Undercuts Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Eye className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									3D STL & Уступ препарирования
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								3D-просмотрщик STL коронок/культей, Margin Line, тепловая карта поднутрений и согласование ЗТЛ.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsLabStlOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-lab-stl-modal-btn"
+						>
+							<Eye size={15} />
+							<span>Открыть 3D STL просмотрщик</span>
+						</button>
+					</div>
+
+					{/* 19. 3-Tier Treatment Plan Comparator Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Layers className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Сравнение планов (3 уровня)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								VIP Straumann vs Оптимум Osstem vs Эконом, график платежей 30/40/30, рассрочка и буклет пациенту.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsPlanComparatorOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-plan-comparator-modal-btn"
+						>
+							<Layers size={15} />
+							<span>Открыть сравнение планов</span>
+						</button>
+					</div>
+
+					{/* 20. Inter-branch Warehouse Transfers Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Truck className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Перемещение ТМЦ (ТОРГ-13)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Межфилиальная логистика медикаментов и расходников, накладная ТОРГ-13 и акт расхождений ТОРГ-2.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsTransferOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-warehouse-transfer-modal-btn"
+						>
+							<Truck size={15} />
+							<span>Открыть перемещения ТМЦ</span>
+						</button>
+					</div>
+
+					{/* 21. Patient Mobile Portal Timeline Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<User className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Портал пациента & Вычет 13%
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Понятная карта зубов, таймлайн визитов с фото До/После и запрос справки для налогового вычета 13%.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsPortalOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-patient-portal-modal-btn"
+						>
+							<User size={15} />
+							<span>Открыть портал пациента</span>
+						</button>
+					</div>
 				</div>
 
 				{/* 8. Interactive Live Anesthesia Calculator Component */}
@@ -781,6 +998,62 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				patientName="Смирнова Екатерина Васильевна"
 				doctorName="Д-р Смирнов Алексей Петрович"
 				initialToothFdi="16"
+			/>
+
+			<ClinicalPhotoProtocolModal
+				isOpen={isPhotoProtocolOpen}
+				onClose={() => setIsPhotoProtocolOpen(false)}
+				patientName="Смирнова Екатерина Васильевна"
+				doctorName="Д-р Смирнов Алексей Петрович"
+				clinicName="ООО «Денте Стоматология»"
+			/>
+
+			<PatientRecallManagerModal
+				isOpen={isRecallOpen}
+				onClose={() => setIsRecallOpen(false)}
+				clinicName="ООО «Денте Стоматология»"
+			/>
+
+			<AutoclaveCycleModal
+				isOpen={isAutoclaveOpen}
+				onClose={() => setIsAutoclaveOpen(false)}
+				operatorName="Смирнова О. И. (Медицинская сестра ЦСО)"
+			/>
+
+			<InsurancePreAuthModal
+				isOpen={isInsuranceOpen}
+				onClose={() => setIsInsuranceOpen(false)}
+				patient={{
+					fullName: "Смирнова Екатерина Васильевна",
+					birthDate: "1988-06-14",
+					policyNumber: "7700-482910-2026",
+					insurerId: "sogaz",
+				}}
+			/>
+
+			<LabStlViewerModal
+				isOpen={isLabStlOpen}
+				onClose={() => setIsLabStlOpen(false)}
+				modelName="Crown_16_Anatomical.stl"
+				toothFdi="16"
+			/>
+
+			<TreatmentPlanComparatorModal
+				isOpen={isPlanComparatorOpen}
+				onClose={() => setIsPlanComparatorOpen(false)}
+				patientName="Смирнова Екатерина Васильевна"
+				doctorName="Д-р Смирнов Алексей Петрович"
+				clinicName="ООО «Денте Стоматология»"
+			/>
+
+			<WarehouseTransferModal
+				isOpen={isTransferOpen}
+				onClose={() => setIsTransferOpen(false)}
+			/>
+
+			<PatientPortalTimelineModal
+				isOpen={isPortalOpen}
+				onClose={() => setIsPortalOpen(false)}
 			/>
 		</div>
 	);

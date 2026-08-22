@@ -112,7 +112,40 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 	const [curatorPhone, setCuratorPhone] = useState<string>("8 (800) 333-08-88 доб. 142");
 
 	// 3. Таблица услуг для расчета
-	const [billableItems, setBillableItems] = useState<DmsBillableLineItem[]>([]);
+	const [billableItems, setBillableItems] = useState<DmsBillableLineItem[]>(() => [
+		{
+			id: "item-1",
+			serviceCode: "A16.07.002.001",
+			serviceName: "Восстановление зуба пломбой световой (кариес дентина)",
+			toothNumber: "16",
+			quantity: 1,
+			unitPriceKopecks: rublesToKopecks(4800),
+		},
+		{
+			id: "item-2",
+			serviceCode: "A16.07.030.001",
+			serviceName: "Инструментальная и медикаментозная обработка корневого канала",
+			toothNumber: "17",
+			quantity: 3,
+			unitPriceKopecks: rublesToKopecks(2200),
+		},
+		{
+			id: "item-3",
+			serviceCode: "A16.07.050",
+			serviceName: "Клиническое отбеливание зубов фотоактивируемое (Zoom)",
+			toothNumber: "11-21",
+			quantity: 1,
+			unitPriceKopecks: rublesToKopecks(18000),
+		},
+		{
+			id: "item-4",
+			serviceCode: "A16.07.006",
+			serviceName: "Установка дентального имплантата (Osstem TS III)",
+			toothNumber: "36",
+			quantity: 1,
+			unitPriceKopecks: rublesToKopecks(35000),
+		},
+	]);
 	const [newServiceCode, setNewServiceCode] = useState<string>("A16.07.002.001");
 	const [newServiceName, setNewServiceName] = useState<string>("Восстановление зуба пломбой (нанокомпозит)");
 	const [newToothNumber, setNewToothNumber] = useState<string>("16");
@@ -121,55 +154,17 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 
 	// Синхронизация при открытии
 	useEffect(() => {
-		if (isOpen) {
-			if (initialServices.length > 0) {
-				setBillableItems(
-					initialServices.map((s) => ({
-						id: s.id,
-						serviceCode: s.serviceCode,
-						serviceName: s.serviceName,
-						toothNumber: s.toothNumber,
-						quantity: s.quantity,
-						unitPriceKopecks: rublesToKopecks(s.unitPriceRubles),
-					})),
-				);
-			} else {
-				// Демо-набор услуг по умолчанию
-				setBillableItems([
-					{
-						id: "item-1",
-						serviceCode: "A16.07.002.001",
-						serviceName: "Восстановление зуба пломбой световой (кариес дентина)",
-						toothNumber: "16",
-						quantity: 1,
-						unitPriceKopecks: rublesToKopecks(4800),
-					},
-					{
-						id: "item-2",
-						serviceCode: "A16.07.030.001",
-						serviceName: "Инструментальная и медикаментозная обработка корневого канала",
-						toothNumber: "17",
-						quantity: 3,
-						unitPriceKopecks: rublesToKopecks(2200),
-					},
-					{
-						id: "item-3",
-						serviceCode: "A16.07.050",
-						serviceName: "Клиническое отбеливание зубов фотоактивируемое (Zoom)",
-						toothNumber: "11-21",
-						quantity: 1,
-						unitPriceKopecks: rublesToKopecks(18000),
-					},
-					{
-						id: "item-4",
-						serviceCode: "A16.07.006",
-						serviceName: "Установка дентального имплантата (Osstem TS III)",
-						toothNumber: "36",
-						quantity: 1,
-						unitPriceKopecks: rublesToKopecks(35000),
-					},
-				]);
-			}
+		if (isOpen && initialServices && initialServices.length > 0) {
+			setBillableItems(
+				initialServices.map((s) => ({
+					id: s.id,
+					serviceCode: s.serviceCode,
+					serviceName: s.serviceName,
+					toothNumber: s.toothNumber,
+					quantity: s.quantity,
+					unitPriceKopecks: rublesToKopecks(s.unitPriceRubles),
+				})),
+			);
 		}
 	}, [isOpen, initialServices]);
 

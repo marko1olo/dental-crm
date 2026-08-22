@@ -33,6 +33,8 @@ export interface ClinicalPhotoProtocolModalProps {
 	onSaveProtocol?: (slots: Record<string, PhotoSlotRecord>, presetId: string) => void;
 }
 
+const EMPTY_INITIAL_SLOTS: Record<string, PhotoSlotRecord> = {};
+
 export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProps> = ({
 	isOpen,
 	onClose,
@@ -40,12 +42,12 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 	patientCardNumber = 'К-8492',
 	doctorName = 'Д-р Смирнова Е. В.',
 	clinicName = 'DENTE CLINIC',
-	initialSlots = {},
+	initialSlots = EMPTY_INITIAL_SLOTS,
 	onSaveProtocol
 }) => {
 	// State
 	const [activePreset, setActivePreset] = useState<PhotoProtocolPreset>(STANDARD_12_SLOT_PROTOCOL);
-	const [slotsData, setSlotsData] = useState<Record<string, PhotoSlotRecord>>(initialSlots);
+	const [slotsData, setSlotsData] = useState<Record<string, PhotoSlotRecord>>(() => initialSlots || EMPTY_INITIAL_SLOTS);
 	const [activeViewMode, setActiveViewMode] = useState<'grid' | 'comparison' | 'export'>('grid');
 	const [selectedSlotForEdit, setSelectedSlotForEdit] = useState<string | null>(null);
 	const [dragOverSlotId, setDragOverSlotId] = useState<string | null>(null);
@@ -63,8 +65,6 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 			setSlotsData(initialSlots);
 		}
 	}, [initialSlots]);
-
-	if (!isOpen) return null;
 
 	const getSlotRecord = (slotId: string): PhotoSlotRecord => {
 		return slotsData[slotId] || { slotId };
@@ -132,6 +132,8 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 
 	const selectedSlotDef = selectedSlotForEdit ? getSlotDefinitionById(selectedSlotForEdit) : undefined;
 	const selectedSlotRec = selectedSlotForEdit ? getSlotRecord(selectedSlotForEdit) : undefined;
+
+	if (!isOpen) return null;
 
 	return (
 		<div className="photo-protocol-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="photo-protocol-title">

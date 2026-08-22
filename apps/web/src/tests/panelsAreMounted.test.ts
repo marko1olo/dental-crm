@@ -121,88 +121,10 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 			"Голосовой ассистент врача-стоматолога с распознаванием русской клинической терминологии, формулы зубов FDI (составные числительные, тинейджеры, анатомические ориентиры), диагнозов МКБ-10, статусов формулы, маршрутизацией по секциям SOAP и live VU-метром.",
 	},
 	{
-		file: "components/photography/ClinicalPhotoProtocolModal.tsx",
-		name: "ClinicalPhotoProtocolModal",
-		reason:
-			"Интерактивное модальное окно клинического фотопротокола на 12 кадров (6 внеротовых, 6 внутриротовых) с пресетами (12/8/6/3 кадра), touch-first dropzone, сплит-слайдером сравнения До/После, колориметрией VITA и экспортом презентаций.",
-	},
-	{
-		file: "components/photography/PhotoSlotCard.tsx",
-		name: "PhotoSlotCard",
-		reason:
-			"Интерактивная карточка слота фотопротокола с силуэтным ориентиром ракурса, индикаторами зеркал/ретракторов, калибровочными бейджами и drag-and-drop загрузкой.",
-	},
-	{
-		file: "components/photography/BeforeAfterComparisonView.tsx",
-		name: "BeforeAfterComparisonView",
-		reason:
-			"Компонент динамического визуального сравнения результатов лечения: интерактивный сплит-слайдер 0-100%, синхронизированный режим бок о бок и наложение с регулировкой прозрачности.",
-	},
-	{
-		file: "components/photography/PhotoCalibrationDrawer.tsx",
-		name: "PhotoCalibrationDrawer",
-		reason:
-			"Субмодальное окно калибровки и эстетического анализа снимка: вращение, зеркальное отражение для окклюзионных зеркал, сетки (Франкфуртская горизонталь, Риккетс, Золотое сечение) и пипетка VITA оттенков.",
-	},
-	{
-		file: "components/photography/PhotoCollageExportSheet.tsx",
-		name: "PhotoCollageExportSheet",
-		reason:
-			"Печатный и презентационный A4-коллаж фотопротокола с шапкой клиники, штампом пациента, датой, описанием ракурсов и поддержкой печати в PDF.",
-	},
-	{
 		file: "components/consents/InformedConsentModal.tsx",
 		name: "InformedConsentModal",
 		reason:
 			"Юридический модуль подписания информированных добровольных согласий (ИДС по ст. 20 323-ФЗ и 152-ФЗ) с библиотекой шаблонов (терапия, хирургия/имплантация, ортодонтия, ортопедия, гигиена, анестезия), сенсорным холстом Безье-подписи и SHA-256 хэшированием целостности документа.",
-	},
-	{
-		file: "components/recalls/PatientRecallManagerModal.tsx",
-		name: "PatientRecallManagerModal",
-		reason:
-			"Клинический модуль управления диспансерным учетом, плановыми осмотрами и профилактикой с 6 риск-стратифицированными циклами (высокий кариес, пародонтология, импланты, ортодонтия, гигиена), омниканальными шаблонами (WhatsApp, SMS, Telegram) и скриптами звонков с отработкой возражений.",
-	},
-	{
-		file: "components/sanpin/autoclave/AutoclaveCycleModal.tsx",
-		name: "AutoclaveCycleModal",
-		reason:
-			"Интерактивное модальное окно стерилизации Class B (СанПиН 3.3686-21) с мониторингом датчиков давления/температуры, формированием партий крафт-пакетов, печатью штрихкодов и электронным журналом Форма 257/у.",
-	},
-	{
-		file: "components/sanpin/autoclave/AutoclaveSensorGauge.tsx",
-		name: "AutoclaveSensorGauge",
-		reason:
-			"Визуальный HUD датчиков температуры (°C) и давления (бар) камеры автоклава с контролем допусков по ГОСТ ISO 17665 и прогрессом стерилизационной выдержки.",
-	},
-	{
-		file: "components/sanpin/autoclave/KraftPackBatchBuilder.tsx",
-		name: "KraftPackBatchBuilder",
-		reason:
-			"Генератор партий стерилизационных упаковок (термосварные, креп-бумага, бипак) с расчетом срока годности по СанПиН и созданием уникальных штрихкодов.",
-	},
-	{
-		file: "components/sanpin/autoclave/KraftBarcodeLabelSheet.tsx",
-		name: "KraftBarcodeLabelSheet",
-		reason:
-			"Печатный лист этикеток крафт-пакетов (термопечать 58x40 мм / А4) со штрихкодом СанПиН, датами стерилизации, сроком годности и УКЭП медсестры ЦСО.",
-	},
-	{
-		file: "components/sanpin/autoclave/SanpinJournal257View.tsx",
-		name: "SanpinJournal257View",
-		reason:
-			"Электронный журнал контроля работы стерилизаторов (Форма № 257/у) с фиксацией параметров цикла, результатов химических/биологических индикаторов и экспортом в печать.",
-	},
-	{
-		file: "components/insurance/InsurancePreAuthModal.tsx",
-		name: "InsurancePreAuthModal",
-		reason:
-			"Интерактивное модальное окно предварительной онлайн-авторизации ДМС, проверки гарантийных писем, расчета сооплаты (покрытие ДМС vs доплата пациентом) с копеечной точностью и экспортом реестра оказанных услуг в CSV/ЕГИСЗ.",
-	},
-	{
-		file: "components/lab3d/LabStlViewerModal.tsx",
-		name: "LabStlViewerModal",
-		reason:
-			"Интерактивный 3D-просмотрщик бинарных/ASCII STL моделей коронок и культей препарирования с WebGL Orbit Controls, анализом непрерывности уступа (Margin Line), тепловой картой поднутрений (Undercuts) и протоколом согласования лаборатория-клиника.",
 	},
 	{
 		file: "components/anesthesia/AnesthesiaProtocolModal.tsx",
@@ -217,29 +139,10 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 			"Технологический журнал учета, обеззараживания и передачи на утилизацию медицинских отходов классов А, Б и Г (СанПиН 2.1.3684-21) с весовым контролем, генератором бирок/пломб и официальным актом передачи спецавтотранспорту.",
 	},
 	{
-		file: "components/treatment-plans/comparator/TreatmentPlanComparatorModal.tsx",
-		name: "TreatmentPlanComparatorModal",
-		reason:
-			"Интерактивная студия 3-уровневого сравнения комплексных планов лечения (VIP Straumann vs Рекомендуемый Osstem vs Эконом) с финансовой разбивкой, графиками оплат 30/40/30, рассрочкой 0-0-12/24, расчетом вычета НДФЛ 13% и печатью буклета для пациента.",
-	},
-
-	{
 		file: "components/anesthesia/AnesthesiaQuickBar.tsx",
 		name: "AnesthesiaQuickBar",
 		reason:
 			"Виджет быстрой анестезии в 1 клик для работы врача в перчатках: мгновенный выбор ходовых пресетов (Ультракаин Д-С 1.7 мл, Форте, Скандонест без адреналина для ССЗ) с фоновой проверкой безопасности, списанием расходников и логированием в карту 043/у без лишних модальных окон.",
-	},
-	{
-		file: "components/inventory/transfers/WarehouseTransferModal.tsx",
-		name: "WarehouseTransferModal",
-		reason:
-			"Межфилиальное перемещение стоматологических материалов и медикаментов между филиалами и центральным складом с формированием накладной ТОРГ-13 (ОКУД 0330213) и акта расхождений ТОРГ-2.",
-	},
-	{
-		file: "components/portal/timeline/PatientPortalTimelineModal.tsx",
-		name: "PatientPortalTimelineModal",
-		reason:
-			"Личный кабинет пациента: 3D визуализация зубной формулы с понятными русскими статусами, хронологический таймлайн визитов с фотопротоколом До/После, прозрачный финансовый баланс и справка для вычета НДФЛ 13% в 1 клик.",
 	},
 	/*
 	 * ComparativePlannerDashboard УДАЛЁН, поэтому записи долга здесь больше нет — и
