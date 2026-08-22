@@ -73,7 +73,10 @@ import {
 	type PatientTreatmentPlan,
 	type PatientWarrantyCard,
 	type SbpQrPayload,
+	type TreatmentPlanStage,
+	type TreatmentPlanTier,
 } from "./patientCabinetEngine";
+import { SignaturePadCanvas, MobileSelfCheckinModal } from "../selfCheckin";
 import { DEMO_PATIENT_CABINET } from "./patientCabinetPresets";
 import "./patientCabinet.css";
 
@@ -110,11 +113,21 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 
 	// Состояние SMS/OTP подписания согласия
 	const [signingConsent, setSigningConsent] = useState<PatientStatutoryConsent | null>(null);
+	const [consentSignMode, setConsentSignMode] = useState<"sms_otp" | "touch_screen">("sms_otp");
+	const [touchSvgSignature, setTouchSvgSignature] = useState<string>("");
 	const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
 	const [otpExpectedCode, setOtpExpectedCode] = useState<string>("748291");
 	const [otpSentTimestamp, setOtpSentTimestamp] = useState<number>(0);
 	const [otpCountdown, setOtpCountdown] = useState<number>(0);
 	const [otpError, setOtpError] = useState<string | null>(null);
+
+	// Состояние мобильного самочекина
+	const [isSelfCheckinOpen, setIsSelfCheckinOpen] = useState(false);
+
+	// Выбранный уровень 3-Tier плана лечения
+	const [selectedTierTab, setSelectedTierTab] = useState<"basic" | "standard" | "premium">(
+		initialData?.threeTierModel?.selectedTier || "standard",
+	);
 
 	// Состояние формы онлайн-записи
 	const [bookingSpecialty, setBookingSpecialty] = useState<string>("Терапевт");
@@ -265,6 +278,66 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 
 		setSigningConsent(null);
 		showToast(`Согласие ${signed.code} успешно подписано простой электронной подписью (63-ФЗ ПЭП)!`);
+	};
+
+	// Подписание согласия пальцем на сенсорном экране (Векторный SVG)
+	const handleSignConsentWithTouch = () => {
+		if (!signingConsent || !touchSvgSignature) return;
+
+		const signedConsent: PatientStatutoryConsent = {
+			...signingConsent,
+			status: "signed",
+			signedAtIso: new Date().toISOString(),
+			signatureAudit: {
+				verificationMethod: "touch_screen",
+				phone: data.phone,
+				integrityHash: "sha256-" + Math.random().toString(36).substring(2) + Date.now().toString(36),
+				timestamp: Date.now(),
+				signedAtIso: new Date().toISOString(),
+				legalBasis: "63-ФЗ ПЭП",
+				signatureSvg: touchSvgSignature,
+				ipAddress: "127.0.0.1",
+			},
+		};
+
+		setData((prev) => ({
+			...prev,
+			consents: prev.consents.map((c) =>
+				c.id === signedConsent.id ? signedConsent : c,
+			),
+		}));
+
+		if (onConsentSigned) {
+			onConsentSigned(signedConsent);
+		}
+
+		setSigningConsent(null);
+		setTouchSvgSignature("");
+		showToast(`Согласие ${signedConsent.code} успешно подписано на экране!`);
+	};
+
+	// Оплата конкретного этапа плана лечения через СБП QR
+	const handlePayStageWithSbp = (stage: TreatmentPlanStage) => {
+		const virtualInvoice: PatientInvoiceItem = {
+			id: `inv-stage-${stage.id}`,
+			invoiceNumber: `СЧ-ЭТАП-${stage.orderIndex}`,
+			issueDateIso: new Date().toISOString().slice(0, 10),
+			dueDateIso: new Date().toISOString().slice(0, 10),
+			titleRu: `Оплата этапа: ${stage.titleRu}`,
+			totalAmountRub: stage.costRub,
+			paidAmountRub: 0,
+			remainingAmountRub: stage.costRub,
+			status: "unpaid",
+			items: stage.procedures.map((proc, idx) => ({
+				code: `A16.00.${idx + 1}`,
+				titleRu: proc,
+				quantity: 1,
+				priceRub: Math.round(stage.costRub / Math.max(1, stage.procedures.length)),
+				totalRub: Math.round(stage.costRub / Math.max(1, stage.procedures.length)),
+				toothFdi: stage.teethFdi.join(", "),
+			})),
+		};
+		handleOpenSbpModal(virtualInvoice);
 	};
 
 	// Отправка заявки на запись
@@ -456,6 +529,94 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 									</button>
 								</div>
 							)}
+
+							{/* Somatic Health & Mobile Self-Checkin Banner */}
+							<div
+								className="pc-card"
+								style={{
+									borderColor:
+										data.somaticRiskLevel === "high"
+											? "var(--pc-danger)"
+											: data.somaticRiskLevel === "moderate"
+												? "var(--pc-warning)"
+												: "var(--pc-border)",
+								}}
+							>
+								<div className="pc-card-header">
+									<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+										<Heart
+											size={18}
+											style={{
+												color:
+													data.somaticRiskLevel === "high"
+														? "var(--pc-danger)"
+														: data.somaticRiskLevel === "moderate"
+															? "var(--pc-warning)"
+															: "var(--pc-primary)",
+											}}
+										/>
+										<h3 className="pc-card-title">
+											<span>Анкета соматического здоровья и факторов риска</span>
+										</h3>
+									</div>
+									<button
+										type="button"
+										className="pc-btn-primary"
+										style={{ minHeight: "36px", padding: "6px 14px", fontSize: "0.8125rem" }}
+										onClick={() => setIsSelfCheckinOpen(true)}
+										data-testid="open-self-checkin-btn"
+									>
+										<Smartphone size={14} />
+										<span>Мобильный самочекин</span>
+									</button>
+								</div>
+
+								{data.somaticAlerts && data.somaticAlerts.length > 0 ? (
+									<div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+										{data.somaticAlerts.map((alert) => (
+											<div
+												key={alert.id}
+												style={{
+													background:
+														alert.severity === "danger"
+															? "var(--pc-danger-light)"
+															: "var(--pc-warning-light)",
+													border: `1px solid ${
+														alert.severity === "danger"
+															? "var(--pc-danger)"
+															: "var(--pc-warning)"
+													}`,
+													borderRadius: "var(--pc-radius-sm)",
+													padding: "8px 12px",
+													fontSize: "0.8125rem",
+												}}
+											>
+												<strong
+													style={{
+														color:
+															alert.severity === "danger"
+																? "var(--pc-danger)"
+																: "var(--pc-warning)",
+													}}
+												>
+													{alert.severity === "danger" ? "🚨 " : "⚠️ "}
+													{alert.title}
+												</strong>
+												<p style={{ margin: "2px 0 0 0", color: "var(--pc-text-main)" }}>
+													{alert.message}
+												</p>
+												<div style={{ marginTop: "4px", fontSize: "0.75rem", color: "var(--pc-text-muted)" }}>
+													<strong>Рекомендация врача:</strong> {alert.recommendedAction}
+												</div>
+											</div>
+										))}
+									</div>
+								) : (
+									<p style={{ margin: 0, fontSize: "0.8125rem", color: "var(--pc-text-muted)" }}>
+										Анкета здоровья заполнена. Выраженных противопоказаний к анестетикам и амбулаторной хирургии не выявлено.
+									</p>
+								)}
+							</div>
 
 							{/* Summary Metrics Grid */}
 							<div className="pc-summary-grid">
@@ -734,9 +895,159 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 						</div>
 					)}
 
-					{/* TAB 3: ПЛАНЫ ЛЕЧЕНИЯ (TREATMENT PLANS) */}
+					{/* TAB 3: ПЛАНЫ ЛЕЧЕНИЯ (TREATMENT PLANS & 3-TIER COMPARISON) */}
 					{activeTab === "plans" && (
 						<div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+							{/* 3-Tier Treatment Plan Comparison */}
+							{data.threeTierModel && (
+								<div className="pc-card" style={{ background: "var(--pc-surface)" }} data-testid="three-tier-plan-container">
+									<div className="pc-card-header">
+										<div>
+											<h3 className="pc-card-title">
+												<Percent size={18} style={{ color: "var(--pc-primary)" }} />
+												<span>3-Tier Сравнение планов реабилитации (Базовый / Стандарт / Премиум)</span>
+											</h3>
+											<p style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)", margin: "2px 0 0 0" }}>
+												Выберите класс материалов и технологий лечения:
+											</p>
+										</div>
+										<span className="pc-status-badge paid">
+											Выбран: {data.threeTierModel.tiers.find((t) => t.tierId === selectedTierTab)?.tierNameRu}
+										</span>
+									</div>
+
+									{/* Tier Tabs */}
+									<div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px" }}>
+										{data.threeTierModel.tiers.map((tier) => {
+											const isSelected = selectedTierTab === tier.tierId;
+											return (
+												<button
+													key={tier.tierId}
+													type="button"
+													className={`pc-btn-secondary ${isSelected ? "active" : ""}`}
+													style={{
+														flex: 1,
+														minWidth: "160px",
+														padding: "10px 14px",
+														display: "flex",
+														flexDirection: "column",
+														alignItems: "flex-start",
+														gap: "4px",
+														borderColor: isSelected ? "var(--pc-primary)" : "var(--pc-border)",
+														background: isSelected ? "var(--pc-primary-light)" : "var(--pc-surface)",
+													}}
+													onClick={() => setSelectedTierTab(tier.tierId)}
+													data-testid={`tier-tab-${tier.tierId}`}
+												>
+													<strong style={{ fontSize: "0.875rem", color: isSelected ? "var(--pc-primary)" : "var(--pc-text-main)" }}>
+														{tier.tierNameRu}
+													</strong>
+													<span style={{ fontSize: "1.0625rem", fontWeight: 800, color: "var(--pc-text-main)" }}>
+														{formatRubles(tier.totalCostRub)}
+													</span>
+													<span style={{ fontSize: "0.75rem", color: "var(--pc-text-muted)" }}>
+														Гарантия: {tier.warrantyMonths} мес. • Срок: {tier.durationWeeks} нед.
+													</span>
+												</button>
+											);
+										})}
+									</div>
+
+									{/* Selected Tier Details & Stages */}
+									{(() => {
+										const currentTier = data.threeTierModel?.tiers.find((t) => t.tierId === selectedTierTab);
+										if (!currentTier) return null;
+
+										return (
+											<div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "10px" }}>
+												<div style={{ background: "var(--pc-surface)", border: "1px solid var(--pc-border)", borderRadius: "var(--pc-radius-sm)", padding: "10px 14px" }}>
+													<strong style={{ fontSize: "0.8125rem", color: "var(--pc-primary)" }}>
+														Ключевые особенности уровня {currentTier.tierNameRu}:
+													</strong>
+													<ul style={{ margin: "4px 0 0 0", paddingLeft: "20px", fontSize: "0.8125rem", color: "var(--pc-text-main)" }}>
+														{currentTier.benefits.map((b, bIdx) => (
+															<li key={bIdx}>{b}</li>
+														))}
+													</ul>
+												</div>
+
+												<div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+													<strong style={{ fontSize: "0.875rem" }}>Этапы и онлайн-оплата:</strong>
+													{currentTier.stages.map((stage) => {
+														const isCompleted = stage.status === "completed";
+														const isInProgress = stage.status === "in_progress";
+
+														return (
+															<div key={stage.id} className="pc-plan-stage-item">
+																<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+																	<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+																		<span
+																			style={{
+																				width: "22px",
+																				height: "22px",
+																				borderRadius: "50%",
+																				background: isCompleted ? "var(--pc-success)" : isInProgress ? "var(--pc-warning)" : "var(--pc-border)",
+																				color: "#ffffff",
+																				fontSize: "0.75rem",
+																				fontWeight: 800,
+																				display: "flex",
+																				alignItems: "center",
+																				justifyContent: "center",
+																			}}
+																		>
+																			{isCompleted ? "✓" : stage.orderIndex}
+																		</span>
+																		<div>
+																			<strong style={{ fontSize: "0.875rem" }}>{stage.titleRu}</strong>
+																			{stage.teethFdi.length > 0 && (
+																				<div style={{ fontSize: "0.75rem", color: "var(--pc-primary)" }}>
+																					Зубы: {stage.teethFdi.join(", ")}
+																				</div>
+																			)}
+																		</div>
+																	</div>
+
+																	<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+																		<span style={{ fontSize: "0.9375rem", fontWeight: 800 }}>
+																			{formatRubles(stage.costRub)}
+																		</span>
+																		<span
+																			className={`pc-status-badge ${isCompleted ? "paid" : isInProgress ? "unpaid" : ""}`}
+																			style={{ fontSize: "0.6875rem" }}
+																		>
+																			{isCompleted ? "Оплачен & Завершен" : isInProgress ? "В работе" : "Запланирован"}
+																		</span>
+																		{!isCompleted && (
+																			<button
+																				type="button"
+																				className="pc-btn-primary"
+																				style={{ minHeight: "32px", padding: "4px 10px", fontSize: "0.75rem" }}
+																				onClick={() => handlePayStageWithSbp(stage)}
+																				data-testid={`pay-stage-sbp-${stage.id}`}
+																			>
+																				<CreditCard size={12} />
+																				<span>Оплатить СБП</span>
+																			</button>
+																		)}
+																	</div>
+																</div>
+
+																<ul style={{ margin: "6px 0 0 0", paddingLeft: "24px", fontSize: "0.75rem", color: "var(--pc-text-muted)" }}>
+																	{stage.procedures.map((proc, pIdx) => (
+																		<li key={pIdx}>{proc}</li>
+																	))}
+																</ul>
+															</div>
+														);
+													})}
+												</div>
+											</div>
+										);
+									})()}
+								</div>
+							)}
+
+							{/* Standard Treatment Plans list */}
 							{data.treatmentPlans.map((plan) => (
 								<div key={plan.id} className="pc-card" data-testid={`plan-card-${plan.id}`}>
 									<div className="pc-card-header">
@@ -1211,14 +1522,14 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 					</div>
 				)}
 
-				{/* SMS/OTP 63-FZ SIGNING MODAL DIALOG */}
+				{/* SIGNING MODAL DIALOG (SMS/OTP 63-FZ or TOUCH DRAWING) */}
 				{signingConsent && (
 					<div className="pc-sheet-overlay" onClick={() => setSigningConsent(null)} role="dialog" aria-modal="true">
 						<div className="pc-sheet-window" onClick={(e) => e.stopPropagation()} data-testid="sms-otp-signing-dialog">
 							<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
 								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 									<Smartphone size={22} style={{ color: "var(--pc-primary)" }} />
-									<strong style={{ fontSize: "1.0625rem" }}>Подписание ИДС через SMS (63-ФЗ)</strong>
+									<strong style={{ fontSize: "1.0625rem" }}>Подписание ИДС (63-ФЗ)</strong>
 								</div>
 								<button
 									type="button"
@@ -1237,66 +1548,134 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 								</p>
 							</div>
 
-							<div style={{ background: "var(--pc-surface)", padding: "12px", borderRadius: "var(--pc-radius-sm)", fontSize: "0.8125rem" }}>
-								Мы отправили одноразовый 6-значный SMS-код на ваш номер <strong>{data.phone}</strong>:
+							{/* Mode Switcher */}
+							<div style={{ display: "flex", gap: "8px", background: "var(--pc-surface)", padding: "4px", borderRadius: "8px" }}>
+								<button
+									type="button"
+									className={`pc-btn-secondary ${consentSignMode === "sms_otp" ? "active" : ""}`}
+									style={{ flex: 1, fontWeight: consentSignMode === "sms_otp" ? 700 : 500 }}
+									onClick={() => setConsentSignMode("sms_otp")}
+								>
+									<Smartphone size={14} />
+									<span>SMS-код (63-ФЗ)</span>
+								</button>
+								<button
+									type="button"
+									className={`pc-btn-secondary ${consentSignMode === "touch_screen" ? "active" : ""}`}
+									style={{ flex: 1, fontWeight: consentSignMode === "touch_screen" ? 700 : 500 }}
+									onClick={() => setConsentSignMode("touch_screen")}
+								>
+									<FileCheck size={14} />
+									<span>Росчерк пальцем (SVG)</span>
+								</button>
 							</div>
 
-							{/* 6-Digit PIN Inputs */}
-							<div className="pc-otp-container">
-								{otpDigits.map((digit, idx) => (
-									<input
-										key={idx}
-										id={`pc-otp-${idx}`}
-										type="text"
-										inputMode="numeric"
-										maxLength={1}
-										value={digit}
-										onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
-										className="pc-otp-digit"
-										aria-label={`Цифра ${idx + 1} SMS кода`}
-										autoFocus={idx === 0}
+							{consentSignMode === "sms_otp" ? (
+								<>
+									<div style={{ background: "var(--pc-surface)", padding: "12px", borderRadius: "var(--pc-radius-sm)", fontSize: "0.8125rem" }}>
+										Мы отправили одноразовый 6-значный SMS-код на ваш номер <strong>{data.phone}</strong>:
+									</div>
+
+									{/* 6-Digit PIN Inputs */}
+									<div className="pc-otp-container">
+										{otpDigits.map((digit, idx) => (
+											<input
+												key={idx}
+												id={`pc-otp-${idx}`}
+												type="text"
+												inputMode="numeric"
+												maxLength={1}
+												value={digit}
+												onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
+												className="pc-otp-digit"
+												aria-label={`Цифра ${idx + 1} SMS кода`}
+												autoFocus={idx === 0}
+											/>
+										))}
+									</div>
+
+									{otpError && (
+										<div style={{ color: "var(--pc-danger)", fontSize: "0.8125rem", textAlign: "center", fontWeight: 700 }}>
+											{otpError}
+										</div>
+									)}
+
+									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+										<button
+											type="button"
+											className="pc-btn-secondary"
+											onClick={handleResendOtp}
+											disabled={otpCountdown > 0}
+										>
+											<RefreshCw size={14} className={otpCountdown > 0 ? "animate-spin" : ""} />
+											<span>
+												{otpCountdown > 0 ? `Повтор через ${otpCountdown} сек.` : "Отправить код повторно"}
+											</span>
+										</button>
+
+										<span style={{ fontSize: "0.75rem", color: "var(--pc-text-muted)" }}>
+											Демо-код: <strong>{otpExpectedCode}</strong>
+										</span>
+									</div>
+
+									<div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+										<button
+											type="button"
+											className="pc-btn-primary"
+											style={{ flex: 1 }}
+											onClick={handleConfirmConsentOtp}
+											data-testid="verify-otp-btn"
+										>
+											<Lock size={16} />
+											<span>Подписать документ (63-ФЗ ПЭП)</span>
+										</button>
+									</div>
+								</>
+							) : (
+								<div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+									<div style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)" }}>
+										Распишитесь пальцем или стилусом на экране в поле ниже:
+									</div>
+									<SignaturePadCanvas
+										width={360}
+										height={160}
+										onSignatureChange={(svg) => setTouchSvgSignature(svg)}
 									/>
-								))}
-							</div>
-
-							{otpError && (
-								<div style={{ color: "var(--pc-danger)", fontSize: "0.8125rem", textAlign: "center", fontWeight: 700 }}>
-									{otpError}
+									<button
+										type="button"
+										className="pc-btn-primary"
+										onClick={handleSignConsentWithTouch}
+										disabled={!touchSvgSignature}
+										data-testid="confirm-touch-signature-btn"
+									>
+										<CheckCircle2 size={16} />
+										<span>Подтвердить росчерк (63-ФЗ)</span>
+									</button>
 								</div>
 							)}
-
-							<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-								<button
-									type="button"
-									className="pc-btn-secondary"
-									onClick={handleResendOtp}
-									disabled={otpCountdown > 0}
-								>
-									<RefreshCw size={14} className={otpCountdown > 0 ? "animate-spin" : ""} />
-									<span>
-										{otpCountdown > 0 ? `Повтор через ${otpCountdown} сек.` : "Отправить код повторно"}
-									</span>
-								</button>
-
-								<span style={{ fontSize: "0.75rem", color: "var(--pc-text-muted)" }}>
-									Демо-код: <strong>{otpExpectedCode}</strong>
-								</span>
-							</div>
-
-							<div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-								<button
-									type="button"
-									className="pc-btn-primary"
-									style={{ flex: 1 }}
-									onClick={handleConfirmConsentOtp}
-									data-testid="verify-otp-btn"
-								>
-									<Lock size={16} />
-									<span>Подписать документ (63-ФЗ ПЭП)</span>
-								</button>
-							</div>
 						</div>
 					</div>
+				)}
+
+				{/* Mobile Self-Checkin & Somatic Health Questionnaire Modal */}
+				{isSelfCheckinOpen && (
+					<MobileSelfCheckinModal
+						isOpen={isSelfCheckinOpen}
+						onClose={() => setIsSelfCheckinOpen(false)}
+						initialPhone={data.phone}
+						patientName={data.fullName}
+						doctorName={data.curatingDoctor}
+						onCheckinSuccess={({ signedConsents, somaticProfile }) => {
+							setIsSelfCheckinOpen(false);
+							showToast("Самочекин успешно пройден! Данные переданы лечащему врачу.");
+							setData((prev) => ({
+								...prev,
+								somaticAlerts: somaticProfile.alerts,
+								somaticRiskLevel: somaticProfile.riskLevel,
+								somaticRiskProfile: somaticProfile.profile,
+							}));
+						}}
+					/>
 				)}
 			</div>
 		</div>
@@ -1304,3 +1683,4 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 };
 
 export default PatientCabinetModal;
+

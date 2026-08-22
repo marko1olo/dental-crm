@@ -88,7 +88,7 @@ export interface SomaticHealthProfile {
 	hasBleedingDisorder: boolean;
 	hasDiabetes: boolean;
 	isPregnantOrLactating: boolean;
-	customNotes?: string;
+	customNotes?: string | undefined;
 }
 
 export const INITIAL_SOMATIC_QUESTIONNAIRE: SomaticQuestionnaireData = {

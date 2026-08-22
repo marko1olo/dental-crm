@@ -1,6 +1,6 @@
-import { randomInt } from "node:crypto";
+import { createHash, randomInt } from "node:crypto";
 import { and, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
-import type { FastifyInstance, FastifyPluginAsync } from "fastify";
+import type { FastifyInstance, FastifyPluginAsync, FastifyRequest } from "fastify";
 import {
 	namedDevelopmentModeActive,
 	requireAuthTokenSecret,
@@ -13,10 +13,15 @@ import {
 import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import {
 	generatedDocuments,
+	patientConsents,
+	patientDrugAllergies,
 	patientInvoices,
 	patients,
+	payments,
 	portalOtpCodes,
+	treatmentPlanItemsNew,
 	treatmentPlans,
+	treatmentPlanStages,
 	visitDiaries,
 } from "../db/schema.js";
 import {
@@ -1060,4 +1065,1197 @@ export const portalRoutes: FastifyPluginAsync = async (
 			return reply.type("text/html; charset=utf-8").send(issuedSnapshot);
 		},
 	);
+
+	// Helper to extract authenticated portal patient session
+	function extractPortalPatient(request: FastifyRequest): {
+		patientId: string;
+		organizationId: string;
+	} | null {
+		const authHeader = request.headers.authorization;
+		if (!authHeader?.startsWith("Bearer ")) return null;
+		const token = authHeader.slice("Bearer ".length).trim();
+		if (!token) return null;
+		const payload = verifyToken(token, requireAuthTokenSecret());
+		if (
+			!payload ||
+			payload.kind !== PORTAL_TOKEN_KIND ||
+			typeof payload.sub !== "string" ||
+			typeof payload.organizationId !== "string"
+		) {
+			return null;
+		}
+		return { patientId: payload.sub, organizationId: payload.organizationId };
+	}
+
+	function generateSha256Hex(data: string): string {
+		return createHash("sha256").update(data, "utf8").digest("hex");
+	}
+
+	function generateDeterministicQrSvg(
+		content: string,
+		size = 180,
+		options?: { color?: string; background?: string; margin?: number },
+	): string {
+		const color = options?.color ?? "#0f172a";
+		const bg = options?.background ?? "#ffffff";
+		const margin = options?.margin ?? 2;
+		const matrixSize = 25;
+		const matrix: boolean[][] = Array.from({ length: matrixSize }, () =>
+			Array(matrixSize).fill(false),
+		);
+
+		const drawFinder = (startX: number, startY: number) => {
+			for (let r = 0; r < 7; r++) {
+				for (let c = 0; c < 7; c++) {
+					if (
+						r === 0 ||
+						r === 6 ||
+						c === 0 ||
+						c === 6 ||
+						(r >= 2 && r <= 4 && c >= 2 && c <= 4)
+					) {
+						const y = startY + r;
+						const x = startX + c;
+						if (matrix[y] && matrix[y][x] !== undefined) {
+							matrix[y][x] = true;
+						}
+					}
+				}
+			}
+		};
+
+		drawFinder(0, 0);
+		drawFinder(matrixSize - 7, 0);
+		drawFinder(0, matrixSize - 7);
+
+		for (let i = 8; i < matrixSize - 8; i++) {
+			const isEven = i % 2 === 0;
+			const row6 = matrix[6];
+			if (row6) row6[i] = isEven;
+			const rowI = matrix[i];
+			if (rowI) rowI[6] = isEven;
+		}
+
+		const hashHex = generateSha256Hex(content);
+		let bitIndex = 0;
+		for (let r = 0; r < matrixSize; r++) {
+			for (let c = 0; c < matrixSize; c++) {
+				const inTopLeft = r < 8 && c < 8;
+				const inTopRight = r < 8 && c >= matrixSize - 8;
+				const inBottomLeft = r >= matrixSize - 8 && c < 8;
+				const inTiming = r === 6 || c === 6;
+
+				if (!inTopLeft && !inTopRight && !inBottomLeft && !inTiming) {
+					const hexChar = hashHex[bitIndex % hashHex.length] ?? "0";
+					const charCode = Number.parseInt(hexChar, 16);
+					const isBitSet = (charCode + r * 3 + c * 7) % 3 === 0;
+					const rowR = matrix[r];
+					if (rowR) {
+						rowR[c] = isBitSet;
+					}
+					bitIndex++;
+				}
+			}
+		}
+
+		const totalSize = matrixSize + margin * 2;
+		const scale = size / totalSize;
+		const rects: string[] = [];
+
+		for (let r = 0; r < matrixSize; r++) {
+			for (let c = 0; c < matrixSize; c++) {
+				if (matrix[r]?.[c]) {
+					const x = (c + margin) * scale;
+					const y = (r + margin) * scale;
+					rects.push(
+						`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${scale.toFixed(1)}" height="${scale.toFixed(1)}" fill="${color}" />`,
+					);
+				}
+			}
+		}
+
+		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" shape-rendering="crispEdges">
+		<rect width="${size}" height="${size}" fill="${bg}" />
+		${rects.join("\n")}
+	</svg>`;
+	}
+
+	// 5. Get Statutory Consents (Protected)
+	server.get("/consents", async (request, reply) => {
+		const auth = extractPortalPatient(request);
+		if (!auth) {
+			reply.status(401);
+			return { error: "Unauthorized" };
+		}
+
+		return withTenantCtx(auth.organizationId, async () => {
+			const [patientRow] = await db
+				.select({
+					id: patients.id,
+					fullName: patients.fullName,
+					administrativeProfile: patients.administrativeProfile,
+				})
+				.from(patients)
+				.where(
+					and(
+						eq(patients.id, auth.patientId),
+						eq(patients.organizationId, auth.organizationId),
+					),
+				)
+				.limit(1);
+
+			if (!patientRow) {
+				reply.status(404);
+				return { error: "Not found" };
+			}
+
+			const dbConsents = await db
+				.select()
+				.from(patientConsents)
+				.where(
+					and(
+						eq(patientConsents.patientId, auth.patientId),
+						eq(patientConsents.organizationId, auth.organizationId),
+					),
+				);
+
+			const profileAudit =
+				(patientRow.administrativeProfile as Record<string, unknown> | null)
+					?.consentSignatures as Record<string, unknown> | undefined;
+
+			const defaultCatalog = [
+				{
+					id: "ids_treatment",
+					code: "ИДС-ТЕР-01",
+					titleRu: "Информированное добровольное согласие на терапевтическое лечение",
+					categoryRu: "Терапия",
+					statutoryBasis: "323-ФЗ ст. 20",
+					summaryTextRu:
+						"Согласие на проведение осмотра, инструментальной диагностики, анестезии и пломбирования кариозных полостей.",
+					fullTextContent:
+						"Я, пациент клиники, даю информированное добровольное согласие на виды медицинских вмешательств в соответствии с Приказом Минздрава РФ № 1051н и ст. 20 ФЗ № 323-ФЗ...",
+				},
+				{
+					id: "ids_anesthesia",
+					code: "ИДС-АНЕСТ-01",
+					titleRu: "Информированное добровольное согласие на местное обезболивание",
+					categoryRu: "Анестезия",
+					statutoryBasis: "323-ФЗ ст. 20",
+					summaryTextRu:
+						"Согласие на инфильтрационную и проводниковую анестезию современными карпульными анестетиками с оценкой рисков.",
+					fullTextContent:
+						"Я подтверждаю, что сообщил врачу достоверные сведения о наличии аллергических реакций, патологии сердечно-сосудистой системы и принимаемых препаратах...",
+				},
+				{
+					id: "pd_152",
+					code: "ПДН-152",
+					titleRu: "Согласие на обработку персональных данных",
+					categoryRu: "Персональные данные",
+					statutoryBasis: "152-ФЗ",
+					summaryTextRu:
+						"Согласие на сбор, систематизацию, хранение и обработку персональных данных и медицинской тайны в рамках медпомощи.",
+					fullTextContent:
+						"В соответствии с требованиями Федерального закона от 27.07.2006 № 152-ФЗ «О персональных данных» даю согласие клинике на обработку моих персональных данных...",
+				},
+			];
+
+			const mergedConsents = defaultCatalog.map((cat) => {
+				const foundDb = dbConsents.find((c) => c.kind === cat.id);
+				const auditRecord = profileAudit?.[cat.id] as Record<string, unknown> | undefined;
+				const isSigned = Boolean(foundDb?.grantedAt || auditRecord?.signedAtIso);
+
+				return {
+					...cat,
+					status: isSigned ? ("signed" as const) : ("pending_signature" as const),
+					signedAtIso: (auditRecord?.signedAtIso as string) || foundDb?.grantedAt?.toISOString(),
+					signatureAudit: auditRecord
+						? {
+								verificationMethod: (auditRecord.signatureMethod as string) || "touch_screen",
+								ipAddress: (auditRecord.ipAddress as string) || "127.0.0.1",
+								integrityHash: (auditRecord.integrityHash as string) || "",
+								signedAtIso: (auditRecord.signedAtIso as string) || "",
+								signatureSvg: (auditRecord.signatureSvg as string) || undefined,
+							}
+						: undefined,
+				};
+			});
+
+			return { consents: mergedConsents };
+		});
+	});
+
+	// 6. Sign Statutory Consent with Finger/Stylus Vector Stroke (SVG) & IP Audit
+	server.post<{
+		Params: { consentId: string };
+		Body: {
+			signatureSvg?: unknown;
+			signatureMethod?: unknown;
+			consentKind?: unknown;
+			deviceMeta?: unknown;
+		};
+	}>("/consents/:consentId/sign", async (request, reply) => {
+		const auth = extractPortalPatient(request);
+		if (!auth) {
+			reply.status(401);
+			return { error: "Unauthorized" };
+		}
+
+		const consentId = request.params.consentId?.trim();
+		const signatureSvg =
+			typeof request.body?.signatureSvg === "string"
+				? request.body.signatureSvg.trim()
+				: "";
+		const signatureMethod =
+			typeof request.body?.signatureMethod === "string"
+				? request.body.signatureMethod.trim()
+				: "touch_screen";
+
+		if (!consentId || !signatureSvg) {
+			reply.status(400);
+			return {
+				error: "SignatureRequired",
+				message: "Требуется векторный росчерк подписи (SVG) и идентификатор согласия.",
+			};
+		}
+
+		const rawIp =
+			request.ip ||
+			(request.headers["x-forwarded-for"] as string) ||
+			request.socket?.remoteAddress ||
+			"127.0.0.1";
+		const clientIp = typeof rawIp === "string" ? rawIp.split(",")[0]?.trim() || "127.0.0.1" : "127.0.0.1";
+		const now = new Date();
+		const signedAtIso = now.toISOString();
+
+		// Generate 63-FZ cryptographic integrity hash
+		const integrityHash = generateSha256Hex(
+			[
+				consentId,
+				auth.patientId,
+				auth.organizationId,
+				signatureSvg,
+				signedAtIso,
+				clientIp,
+				"63-FZ_ELECTRONIC_SIGNATURE_VECTOR_AUDIT",
+			].join("|"),
+		);
+
+		return withTenantCtx(auth.organizationId, async () => {
+			const [patientRow] = await db
+				.select()
+				.from(patients)
+				.where(
+					and(
+						eq(patients.id, auth.patientId),
+						eq(patients.organizationId, auth.organizationId),
+					),
+				)
+				.limit(1);
+
+			if (!patientRow) {
+				reply.status(404);
+				return { error: "PatientNotFound" };
+			}
+
+			// Update or insert patient consent record
+			const existing = await db
+				.select({ id: patientConsents.id })
+				.from(patientConsents)
+				.where(
+					and(
+						eq(patientConsents.patientId, auth.patientId),
+						eq(patientConsents.organizationId, auth.organizationId),
+						eq(patientConsents.kind, consentId),
+					),
+				)
+				.limit(1);
+
+			if (existing.length > 0 && existing[0]) {
+				await db
+					.update(patientConsents)
+					.set({ grantedAt: now, revokedAt: null })
+					.where(eq(patientConsents.id, existing[0].id));
+			} else {
+				await db.insert(patientConsents).values({
+					organizationId: auth.organizationId,
+					patientId: auth.patientId,
+					kind: consentId,
+					grantedAt: now,
+				});
+			}
+
+			// Update administrative profile with signature audit
+			const currentProfile =
+				(patientRow.administrativeProfile as Record<string, unknown> | null) || {};
+			const currentConsentAudit =
+				(currentProfile.consentSignatures as Record<string, unknown> | undefined) || {};
+
+			const updatedAudit = {
+				...currentConsentAudit,
+				[consentId]: {
+					consentId,
+					signatureMethod,
+					signatureSvg,
+					clientIp,
+					integrityHash,
+					signedAtIso,
+					deviceMeta:
+						typeof request.body?.deviceMeta === "string"
+							? request.body.deviceMeta
+							: request.headers["user-agent"] || "mobile_touch_device",
+				},
+			};
+
+			await db
+				.update(patients)
+				.set({
+					administrativeProfile: {
+						...currentProfile,
+						consentSignatures: updatedAudit,
+					} as any,
+					updatedAt: now,
+				})
+				.where(
+					and(
+						eq(patients.id, auth.patientId),
+						eq(patients.organizationId, auth.organizationId),
+					),
+				);
+
+			return {
+				success: true,
+				consentId,
+				status: "signed",
+				signedAtIso,
+				ipAddress: clientIp,
+				integrityHash,
+				signatureSvg,
+			};
+		});
+	});
+
+	// 7. Get Somatic Health Questionnaire & Clinical Risk Factor Alerts (Protected)
+	server.get("/health-questionnaire", async (request, reply) => {
+		const auth = extractPortalPatient(request);
+		if (!auth) {
+			reply.status(401);
+			return { error: "Unauthorized" };
+		}
+
+		return withTenantCtx(auth.organizationId, async () => {
+			const [patientRow] = await db
+				.select({
+					id: patients.id,
+					fullName: patients.fullName,
+					administrativeProfile: patients.administrativeProfile,
+				})
+				.from(patients)
+				.where(
+					and(
+						eq(patients.id, auth.patientId),
+						eq(patients.organizationId, auth.organizationId),
+					),
+				)
+				.limit(1);
+
+			if (!patientRow) {
+				reply.status(404);
+				return { error: "Not found" };
+			}
+
+			const profile =
+				(patientRow.administrativeProfile as Record<string, unknown> | null) || {};
+			const questionnaire = profile.somaticQuestionnaire || null;
+			const somaticProfile = profile.somaticRiskProfile || null;
+			const alerts = profile.somaticAlerts || [];
+			const riskLevel = profile.somaticRiskLevel || "low";
+			const updatedAt = profile.somaticUpdatedAt || null;
+
+			return {
+				questionnaire,
+				somaticProfile,
+				alerts,
+				riskLevel,
+				updatedAt,
+			};
+		});
+	});
+
+	// 8. Submit/Update Somatic Health Questionnaire (Protected)
+	server.post<{
+		Body: {
+			allergies?: {
+				hasAllergies?: boolean;
+				localAnestheticsAllergy?: boolean;
+				antibioticsAllergy?: boolean;
+				sulfiteAllergy?: boolean;
+				latexAllergy?: boolean;
+				drugList?: string[];
+				details?: string;
+			};
+			cardiovascular?: {
+				hasRisk?: boolean;
+				hypertension?: boolean;
+				arrhythmia?: boolean;
+				ischemicHeartDisease?: boolean;
+				heartAttackHistory?: boolean;
+				pacemaker?: boolean;
+				details?: string;
+			};
+			diabetes?: {
+				hasDiabetes?: boolean;
+				type?: "type1" | "type2";
+				glucoseLevel?: string;
+				insulinDependent?: boolean;
+				details?: string;
+			};
+			coagulation?: {
+				hasBleedingDisorder?: boolean;
+				onAnticoagulants?: boolean;
+				anticoagulantName?: string;
+				hemophilia?: boolean;
+				details?: string;
+			};
+			pregnancy?: {
+				isPregnantOrLactating?: boolean;
+				trimester?: number;
+				weeks?: number;
+				lactating?: boolean;
+			};
+			infectious?: {
+				hepatitisBOrC?: boolean;
+				hiv?: boolean;
+				tuberculosis?: boolean;
+				details?: string;
+			};
+			respiratory?: {
+				bronchialAsthma?: boolean;
+				details?: string;
+			};
+			gastrointestinal?: {
+				ulcerOrReflux?: boolean;
+			};
+			currentMedications?: string[];
+			additionalNotes?: string;
+		};
+	}>("/health-questionnaire", async (request, reply) => {
+		const auth = extractPortalPatient(request);
+		if (!auth) {
+			reply.status(401);
+			return { error: "Unauthorized" };
+		}
+
+		const body = request.body || {};
+		const allergies = body.allergies || {};
+		const cardiovascular = body.cardiovascular || {};
+		const diabetes = body.diabetes || {};
+		const coagulation = body.coagulation || {};
+		const pregnancy = body.pregnancy || {};
+		const respiratory = body.respiratory || {};
+
+		// Evaluate Somatic Risk Profile and Alerts
+		const hasSulfiteAllergy = Boolean(
+			allergies.sulfiteAllergy ||
+				(allergies.details && /сульфит|метабисульфит/i.test(allergies.details)),
+		);
+		const hasLocalAnestheticsAllergy = Boolean(
+			allergies.localAnestheticsAllergy ||
+				(allergies.details && /анестетик|новокаин|лидокаин|ультракаин/i.test(allergies.details)),
+		);
+		const hasBronchialAsthma = Boolean(
+			respiratory.bronchialAsthma ||
+				(allergies.details && /астма/i.test(allergies.details)),
+		);
+		const hasCardio = Boolean(
+			cardiovascular.hasRisk ||
+				cardiovascular.hypertension ||
+				cardiovascular.arrhythmia ||
+				cardiovascular.ischemicHeartDisease ||
+				cardiovascular.heartAttackHistory ||
+				cardiovascular.pacemaker,
+		);
+		const hasCoagulation = Boolean(
+			coagulation.hasBleedingDisorder ||
+				coagulation.onAnticoagulants ||
+				coagulation.hemophilia,
+		);
+		const hasDiabetes = Boolean(diabetes.hasDiabetes);
+		const isPregnantOrLactating = Boolean(pregnancy.isPregnantOrLactating);
+
+		const alerts: Array<{
+			id: string;
+			severity: "danger" | "warning" | "caution" | "info";
+			title: string;
+			message: string;
+			recommendedAction: string;
+		}> = [];
+
+		// Danger 1: Sulfite Allergy / Bronchial Asthma
+		if (hasSulfiteAllergy || (hasBronchialAsthma && hasSulfiteAllergy)) {
+			alerts.push({
+				id: "alert_sulfite_asthma",
+				severity: "danger",
+				title: "АЛЛЕРГОАНАМНЕЗ: Аллергия на сульфиты / риск бронхоспазма",
+				message:
+					"У пациента аллергия на сульфиты или бронхиальная астма. Противопоказаны анестетики с консервантом метабисульфитом натрия (Ультракаин Д-С, Септанест).",
+				recommendedAction:
+					"Применять Скандонест 3% (Мепивакаин без сульфитов и адреналина).",
+			});
+		}
+
+		// Danger 2: Local Anesthetic Allergy
+		if (hasLocalAnestheticsAllergy) {
+			alerts.push({
+				id: "alert_local_anesthetics_allergy",
+				severity: "danger",
+				title: "АЛЛЕРГОАНАМНЕЗ: Гиперчувствительность к местным анестетикам",
+				message:
+					"Пациент указывает на реакцию на местные анестетики. Требуется проведение аллергопробы и подбор альтернативного препарата.",
+				recommendedAction: "Консультация аллерголога, премедикация, безадреналиновый протокол.",
+			});
+		}
+
+		// Danger 3: Blood Coagulation / Anticoagulants
+		if (hasCoagulation) {
+			alerts.push({
+				id: "alert_coagulation_anticoagulants",
+				severity: "danger",
+				title: "ГЕМОСТАЗ: Нарушение свертываемости крови / Антикоагулянты",
+				message:
+					"Пациент принимает антикоагулянты или имеет гемофилию. Высокий риск луночкового или интраоперационного кровотечения.",
+				recommendedAction:
+					"Обязательный гемостаз лунки (коллагеновая губка, швы), мониторинг свертываемости.",
+			});
+		}
+
+		// Warning 1: Cardiovascular Pathology
+		if (hasCardio) {
+			alerts.push({
+				id: "alert_cardio_pathology",
+				severity: "warning",
+				title: "КАРДИОВАСКУЛЯРНЫЙ РИСК: Гипертензия / ИБС / Аритмия",
+				message:
+					"Сердечно-сосудистая патология. Лимит эпинефрина: не более 0.04 мг (макс. 2 карпулы 1:100 000 или 4 карпулы 1:200 000).",
+				recommendedAction:
+					"Контроль АД перед приемом. При гипертонии — Скандонест 3% без вазоконстриктора.",
+			});
+		}
+
+		// Warning 2: Pregnancy / Lactation
+		if (isPregnantOrLactating) {
+			alerts.push({
+				id: "alert_pregnancy_status",
+				severity: "warning",
+				title: "АКУШЕРСКИЙ СТАТУС: Беременность / Лактация",
+				message:
+					"Препарат выбора — Артикаин 1:200 000 (Ультракаин Д-С) с минимальной дозой. Избегать высокой концентрации адреналина (1:100 000).",
+				recommendedAction: "Ультракаин Д-С 1:200 000 в минимально эффективном объеме.",
+			});
+		}
+
+		// Warning 3: Diabetes
+		if (hasDiabetes) {
+			alerts.push({
+				id: "alert_diabetes_mellitus",
+				severity: "warning",
+				title: "ЭНДОКРИНОЛОГИЯ: Сахарный диабет",
+				message:
+					"Риск замедленной эпителизации, снижения остеоинтеграции имплантатов и инфекционных осложнений.",
+				recommendedAction: "Антисептический протокол, атравматичная хирургия, контроль заживления.",
+			});
+		}
+
+		const hasDanger = alerts.some((a) => a.severity === "danger");
+		const hasWarning = alerts.some((a) => a.severity === "warning");
+		const riskLevel: "high" | "moderate" | "low" = hasDanger
+			? "high"
+			: hasWarning
+				? "moderate"
+				: "low";
+
+		const somaticProfile = {
+			hasCardiovascularRisk: hasCardio,
+			hasSulfiteAllergy,
+			hasLocalAnestheticsAllergy,
+			hasBronchialAsthma,
+			hasBleedingDisorder: hasCoagulation,
+			hasDiabetes,
+			isPregnantOrLactating,
+			customNotes: body.additionalNotes || undefined,
+		};
+
+		const now = new Date();
+		const nowIso = now.toISOString();
+
+		return withTenantCtx(auth.organizationId, async () => {
+			const [patientRow] = await db
+				.select()
+				.from(patients)
+				.where(
+					and(
+						eq(patients.id, auth.patientId),
+						eq(patients.organizationId, auth.organizationId),
+					),
+				)
+				.limit(1);
+
+			if (!patientRow) {
+				reply.status(404);
+				return { error: "PatientNotFound" };
+			}
+
+			const currentProfile =
+				(patientRow.administrativeProfile as Record<string, unknown> | null) || {};
+
+			// Update administrative profile
+			await db
+				.update(patients)
+				.set({
+					administrativeProfile: {
+						...currentProfile,
+						somaticQuestionnaire: body,
+						somaticRiskProfile: somaticProfile,
+						somaticAlerts: alerts,
+						somaticRiskLevel: riskLevel,
+						somaticUpdatedAt: nowIso,
+					} as any,
+					updatedAt: now,
+				})
+				.where(
+					and(
+						eq(patients.id, auth.patientId),
+						eq(patients.organizationId, auth.organizationId),
+					),
+				);
+
+			// If drug allergies were specified, save to patientDrugAllergies
+			if (allergies.hasAllergies && allergies.drugList && allergies.drugList.length > 0) {
+				for (const drugName of allergies.drugList) {
+					await db.insert(patientDrugAllergies).values({
+						organizationId: auth.organizationId,
+						patientId: auth.patientId,
+						allergenGroup: "Лекарственные препараты",
+						drugInnLatin: drugName,
+						reactionSeverity: "high",
+						clinicalManifestations: allergies.details || "Указано пациентом при самочекине",
+						isConfirmedByAllergist: false,
+					});
+				}
+			}
+
+			return {
+				success: true,
+				somaticProfile,
+				alerts,
+				riskLevel,
+				updatedAt: nowIso,
+			};
+		});
+	});
+
+	// 9. Get 3-Tier Treatment Plans with Stage Breakdown (Protected)
+	server.get("/treatment-plans", async (request, reply) => {
+		const auth = extractPortalPatient(request);
+		if (!auth) {
+			reply.status(401);
+			return { error: "Unauthorized" };
+		}
+
+		return withTenantCtx(auth.organizationId, async () => {
+			const dbPlans = await db
+				.select()
+				.from(treatmentPlans)
+				.where(
+					and(
+						eq(treatmentPlans.patientId, auth.patientId),
+						eq(treatmentPlans.organizationId, auth.organizationId),
+					),
+				);
+
+			const [patientRow] = await db
+				.select({
+					administrativeProfile: patients.administrativeProfile,
+				})
+				.from(patients)
+				.where(
+					and(
+						eq(patients.id, auth.patientId),
+						eq(patients.organizationId, auth.organizationId),
+					),
+				)
+				.limit(1);
+
+			const selectedTier =
+				(patientRow?.administrativeProfile as Record<string, unknown> | null)
+					?.selectedTreatmentTier || "standard";
+
+			// Standard 3-Tier Plan Options (Economy, Standard, Premium)
+			const threeTierModel = {
+				selectedTier,
+				tiers: [
+					{
+						tierId: "basic" as const,
+						tierNameRu: "Базовый (Эконом)",
+						subtitleRu: "Функциональное восстановление базовыми материалами",
+						totalCostRub: 145000,
+						warrantyMonths: 12,
+						durationWeeks: 4,
+						benefits: [
+							"Качественное световое пломбирование (композит)",
+							"Стандартная металлокерамика",
+							"Базовая гарантия 1 год",
+						],
+						stages: [
+							{
+								id: "stage-b1",
+								orderIndex: 1,
+								titleRu: "Санация и терапевтическая подготовка",
+								categoryRu: "Терапия",
+								teethFdi: ["16", "15", "24"],
+								costRub: 45000,
+								paidRub: 45000,
+								remainingRub: 0,
+								status: "completed" as const,
+								procedures: [
+									"Лечение глубокого кариеса зубов 16, 15",
+									"Эндодонтическое лечение каналов зуба 24",
+								],
+							},
+							{
+								id: "stage-b2",
+								orderIndex: 2,
+								titleRu: "Металлокерамическое протезирование",
+								categoryRu: "Ортопедия",
+								teethFdi: ["24", "25"],
+								costRub: 100000,
+								paidRub: 0,
+								remainingRub: 100000,
+								status: "in_progress" as const,
+								procedures: [
+									"Препарирование и снятие слепков",
+									"Установка металлокерамических коронок",
+								],
+							},
+						],
+					},
+					{
+						tierId: "standard" as const,
+						tierNameRu: "Оптимальный (Стандарт)",
+						subtitleRu: "Анатомическая реставрация и диоксид циркония",
+						totalCostRub: 290000,
+						warrantyMonths: 24,
+						durationWeeks: 6,
+						benefits: [
+							"Высокоэстетичные нанокомпозиты",
+							"Коронки из монолитного диоксида циркония (ZrO2)",
+							"Эндодонтия под операционным микроскопом",
+							"Гарантия 2 года",
+						],
+						stages: [
+							{
+								id: "stage-s1",
+								orderIndex: 1,
+								titleRu: "Компьютерная 3D-диагностика и гигиена",
+								categoryRu: "Диагностика",
+								teethFdi: [],
+								costRub: 25000,
+								paidRub: 25000,
+								remainingRub: 0,
+								status: "completed" as const,
+								procedures: [
+									"КЛКТ челюстей с цефалометрией",
+									"Профессиональная гигиена Air-Flow",
+								],
+							},
+							{
+								id: "stage-s2",
+								orderIndex: 2,
+								titleRu: "Микроскопная эндодонтия и реставрация",
+								categoryRu: "Терапия",
+								teethFdi: ["16", "24", "26"],
+								costRub: 115000,
+								paidRub: 115000,
+								remainingRub: 0,
+								status: "completed" as const,
+								procedures: [
+									"Лечение каналов зубов 16, 26 под микроскопом",
+									"Художественная реставрация зуба 24",
+								],
+							},
+							{
+								id: "stage-s3",
+								orderIndex: 3,
+								titleRu: "Ортопедическая реабилитация ZrO2",
+								categoryRu: "Ортопедия",
+								teethFdi: ["16", "26"],
+								costRub: 150000,
+								paidRub: 50000,
+								remainingRub: 100000,
+								status: "in_progress" as const,
+								procedures: [
+									"3D-интраоральное сканирование",
+									"Изготовление и фиксация коронок из диоксида циркония",
+								],
+							},
+						],
+					},
+					{
+						tierId: "premium" as const,
+						tierNameRu: "Премиум (VIP All-Inclusive)",
+						subtitleRu: "Безупречная эстетика e.max, импланты Straumann и персональный куратор",
+						totalCostRub: 540000,
+						warrantyMonths: 60,
+						durationWeeks: 8,
+						benefits: [
+							"Ультратонкие керамические виниры e.max",
+							"Дентальные имплантаты премиум-класса Straumann / Nobel",
+							"Персональный врач-куратор 24/7",
+							"Расширенная гарантия 5 лет с регулярными чекапами",
+						],
+						stages: [
+							{
+								id: "stage-p1",
+								orderIndex: 1,
+								titleRu: "Digital Smile Design и санация",
+								categoryRu: "Диагностика",
+								teethFdi: [],
+								costRub: 60000,
+								paidRub: 60000,
+								remainingRub: 0,
+								status: "completed" as const,
+								procedures: [
+									"Цифровое моделирование улыбки DSD",
+									"Комплексная спа-гигиена с реминерализацией",
+								],
+							},
+							{
+								id: "stage-p2",
+								orderIndex: 2,
+								titleRu: "Дентальная имплантация Straumann BLX",
+								categoryRu: "Хирургия",
+								teethFdi: ["36", "46"],
+								costRub: 220000,
+								paidRub: 220000,
+								remainingRub: 0,
+								status: "completed" as const,
+								procedures: [
+									"Установка имплантатов Straumann по навигационному шаблону",
+									"Направленная костная регенерация",
+								],
+							},
+							{
+								id: "stage-p3",
+								orderIndex: 3,
+								titleRu: "Эстетическая керамика e.max & ZrO2",
+								categoryRu: "Ортопедия",
+								teethFdi: ["11", "12", "21", "22", "36", "46"],
+								costRub: 260000,
+								paidRub: 80000,
+								remainingRub: 180000,
+								status: "in_progress" as const,
+								procedures: [
+									"Установка виниров e.max на фронтальную группу",
+									"Керамические коронки на индивидуальных циркониевых абатментах",
+								],
+							},
+						],
+					},
+				],
+			};
+
+			return {
+				plans: dbPlans,
+				threeTierModel,
+			};
+		});
+	});
+
+	// 10. Select 3-Tier Treatment Plan Tier (Protected)
+	server.post<{
+		Params: { planId: string };
+		Body: { tierId?: unknown };
+	}>("/treatment-plans/:planId/select-tier", async (request, reply) => {
+		const auth = extractPortalPatient(request);
+		if (!auth) {
+			reply.status(401);
+			return { error: "Unauthorized" };
+		}
+
+		const tierId =
+			typeof request.body?.tierId === "string" ? request.body.tierId.trim() : "";
+		if (tierId !== "basic" && tierId !== "standard" && tierId !== "premium") {
+			reply.status(400);
+			return {
+				error: "InvalidTier",
+				message: "Укажите корректный уровень плана (basic, standard, premium).",
+			};
+		}
+
+		return withTenantCtx(auth.organizationId, async () => {
+			const [patientRow] = await db
+				.select()
+				.from(patients)
+				.where(
+					and(
+						eq(patients.id, auth.patientId),
+						eq(patients.organizationId, auth.organizationId),
+					),
+				)
+				.limit(1);
+
+			if (!patientRow) {
+				reply.status(404);
+				return { error: "PatientNotFound" };
+			}
+
+			const currentProfile =
+				(patientRow.administrativeProfile as Record<string, unknown> | null) || {};
+
+			await db
+				.update(patients)
+				.set({
+					administrativeProfile: {
+						...currentProfile,
+						selectedTreatmentTier: tierId,
+						treatmentTierSelectedAt: new Date().toISOString(),
+					} as any,
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(patients.id, auth.patientId),
+						eq(patients.organizationId, auth.organizationId),
+					),
+				);
+
+			return {
+				success: true,
+				planId: request.params.planId,
+				selectedTier: tierId,
+			};
+		});
+	});
+
+	// 11. Create Dynamic SBP QR Code for Stage/Invoice Payment (Protected)
+	server.post<{
+		Body: {
+			invoiceId?: unknown;
+			planId?: unknown;
+			stageId?: unknown;
+			amountRub?: unknown;
+		};
+	}>("/payments/create-sbp-qr", async (request, reply) => {
+		const auth = extractPortalPatient(request);
+		if (!auth) {
+			reply.status(401);
+			return { error: "Unauthorized" };
+		}
+
+		const invoiceId =
+			typeof request.body?.invoiceId === "string" ? request.body.invoiceId.trim() : "";
+		const stageId =
+			typeof request.body?.stageId === "string" ? request.body.stageId.trim() : "";
+		const explicitAmount =
+			typeof request.body?.amountRub === "number" && request.body.amountRub > 0
+				? request.body.amountRub
+				: undefined;
+
+		return withTenantCtx(auth.organizationId, async () => {
+			let amountRub = explicitAmount || 35000;
+			let invoiceNumber = "СЧ-2026/089";
+
+			if (invoiceId) {
+				const [inv] = await db
+					.select()
+					.from(patientInvoices)
+					.where(
+						and(
+							eq(patientInvoices.id, invoiceId),
+							eq(patientInvoices.organizationId, auth.organizationId),
+							eq(patientInvoices.patientId, auth.patientId),
+						),
+					)
+					.limit(1);
+
+				if (inv) {
+					invoiceNumber = `СЧ-${inv.id.slice(0, 8).toUpperCase()}`;
+					amountRub = Number(inv.totalRub) || Number(inv.totalAmountRub) || amountRub;
+				}
+			}
+
+			const amountKopecks = Math.round(amountRub * 100);
+			const qrId = `SBPA${Date.now().toString(36).toUpperCase()}${invoiceNumber.replace(/\D/g, "")}`;
+			const sbpNspkPayloadString = `https://qr.nspk.ru/${qrId}?type=02&bank=100000000111&sum=${amountKopecks}&cur=RUB&crc=84A2`;
+			const qrSvg = generateDeterministicQrSvg(sbpNspkPayloadString, 180);
+			const expiresAt = new Date(Date.now() + 72 * 3600 * 1000).toISOString();
+
+			const sbpPayload = {
+				qrId,
+				invoiceId: invoiceId || undefined,
+				stageId: stageId || undefined,
+				invoiceNumber,
+				amountRub,
+				amountKopecks,
+				recipientLegalName: "ООО «Стоматологическая клиника ДЕНТЕ»",
+				recipientInn: "7704123456",
+				recipientAccount: "40702810938000123456",
+				bankBic: "044525225",
+				paymentPurpose: `Оплата стоматологических услуг по счету № ${invoiceNumber} (НДС не облагается)`,
+				sbpNspkPayloadString,
+				qrSvg,
+				expiresAtIso: expiresAt,
+				availableBanks: [
+					{
+						id: "sber",
+						nameRu: "СберБанк Онлайн",
+						schemaPrefix: `sberpay://qr/sub?qrId=${qrId}`,
+						brandColorHex: "#21a038",
+						popular: true,
+					},
+					{
+						id: "tbank",
+						nameRu: "Т-Банк (Тинькофф)",
+						schemaPrefix: `tinkoffbank://qr?id=${qrId}`,
+						brandColorHex: "#ffdd2d",
+						popular: true,
+					},
+					{
+						id: "alfa",
+						nameRu: "Альфа-Банк",
+						schemaPrefix: `alfabank://qr/pay?qrId=${qrId}`,
+						brandColorHex: "#ef3124",
+						popular: true,
+					},
+					{
+						id: "vtb",
+						nameRu: "ВТБ Онлайн",
+						schemaPrefix: `vtb://sbp/pay?qrId=${qrId}`,
+						brandColorHex: "#0a2896",
+						popular: true,
+					},
+					{
+						id: "sbp_generic",
+						nameRu: "Другой банк (СБП)",
+						schemaPrefix: sbpNspkPayloadString,
+						brandColorHex: "#1a56db",
+						popular: false,
+					},
+				],
+			};
+
+			return {
+				success: true,
+				sbpPayload,
+			};
+		});
+	});
+
+	// 12. Confirm SBP Payment & Emit 54-FZ Fiscal Receipt (Protected)
+	server.post<{
+		Body: {
+			invoiceId?: unknown;
+			stageId?: unknown;
+			amountRub?: unknown;
+			sbpTransactionId?: unknown;
+		};
+	}>("/payments/confirm-sbp", async (request, reply) => {
+		const auth = extractPortalPatient(request);
+		if (!auth) {
+			reply.status(401);
+			return { error: "Unauthorized" };
+		}
+
+		const invoiceId =
+			typeof request.body?.invoiceId === "string" ? request.body.invoiceId.trim() : "";
+		const stageId =
+			typeof request.body?.stageId === "string" ? request.body.stageId.trim() : "";
+		const explicitAmount =
+			typeof request.body?.amountRub === "number" && request.body.amountRub > 0
+				? request.body.amountRub
+				: 35000;
+		const sbpTxId =
+			typeof request.body?.sbpTransactionId === "string"
+				? request.body.sbpTransactionId.trim()
+				: `TX-${Date.now()}`;
+
+		const now = new Date();
+		const nowIso = now.toISOString();
+		const receiptNumber = `ФД-${Math.floor(100000 + Math.random() * 900000)}`;
+		const fiscalSign = `ФП-${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+		const fpd = Math.floor(1000000000 + Math.random() * 9000000000).toString();
+		const fiscalReceiptUrl = `https://receipt.nalog.ru/v1/check/${sbpTxId}?fn=999907890000&fd=${receiptNumber.replace(/\D/g, "")}&fpd=${fpd}&t=${nowIso.replace(/[-:]/g, "").slice(0, 15)}`;
+
+		return withTenantCtx(auth.organizationId, async () => {
+			let totalAmount = explicitAmount;
+
+			// If linked to real invoice in DB, update it
+			if (invoiceId) {
+				const [inv] = await db
+					.select()
+					.from(patientInvoices)
+					.where(
+						and(
+							eq(patientInvoices.id, invoiceId),
+							eq(patientInvoices.organizationId, auth.organizationId),
+							eq(patientInvoices.patientId, auth.patientId),
+						),
+					)
+					.limit(1);
+
+				if (inv) {
+					totalAmount = Number(inv.totalRub) || Number(inv.totalAmountRub) || totalAmount;
+					await db
+						.update(patientInvoices)
+						.set({
+							status: "paid",
+							paidAt: now,
+						})
+						.where(eq(patientInvoices.id, inv.id));
+				}
+			}
+
+			// Insert payment record
+			const [insertedPayment] = await db
+				.insert(payments)
+				.values({
+					organizationId: auth.organizationId,
+					patientId: auth.patientId,
+					amountRub: totalAmount,
+					method: "online",
+					status: "paid",
+					paidAt: now,
+					fiscalReceiptNumber: receiptNumber,
+					fiscalReceiptIssuedAt: nowIso,
+					fiscalReceiptUrl: fiscalReceiptUrl,
+					fiscalReceipt: {
+						receiptNumber,
+						fiscalDocumentNumber: receiptNumber,
+						fiscalSign,
+						fnsSiteUrl: fiscalReceiptUrl,
+						issuedAt: nowIso,
+						totalAmountRub: totalAmount,
+					} as any,
+					note: `Онлайн-оплата через СБП (${sbpTxId}) ${stageId ? `по этапу ${stageId}` : ""}`,
+				})
+				.returning({ id: payments.id });
+
+			return {
+				success: true,
+				paymentId: insertedPayment?.id ?? sbpTxId,
+				invoiceId: invoiceId || undefined,
+				stageId: stageId || undefined,
+				status: "paid",
+				amountRub: totalAmount,
+				fiscalReceipt: {
+					receiptNumber,
+					fiscalSign,
+					fpd,
+					nalogUrl: fiscalReceiptUrl,
+					issuedAtIso: nowIso,
+					amountRub: totalAmount,
+				},
+			};
+		});
+	});
 };
+

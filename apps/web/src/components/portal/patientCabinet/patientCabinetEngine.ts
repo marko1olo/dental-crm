@@ -137,13 +137,31 @@ export interface PatientWarrantyCard {
 }
 
 export interface ConsentSignatureAudit {
-	readonly verificationMethod: "sms_otp" | "tablet_stylus";
+	readonly verificationMethod: "sms_otp" | "tablet_stylus" | "touch_screen";
 	readonly phone: string;
 	readonly smsOtpCode?: string | undefined;
 	readonly integrityHash: string;
 	readonly timestamp: number;
 	readonly signedAtIso: string;
 	readonly legalBasis: "63-ФЗ ПЭП" | "323-ФЗ ст. 20";
+	readonly signatureSvg?: string | undefined;
+	readonly ipAddress?: string | undefined;
+}
+
+export interface TreatmentPlanTier {
+	readonly tierId: "basic" | "standard" | "premium";
+	readonly tierNameRu: string;
+	readonly subtitleRu: string;
+	readonly totalCostRub: number;
+	readonly warrantyMonths: number;
+	readonly durationWeeks: number;
+	readonly benefits: readonly string[];
+	readonly stages: readonly TreatmentPlanStage[];
+}
+
+export interface ThreeTierTreatmentPlanModel {
+	readonly selectedTier: "basic" | "standard" | "premium";
+	readonly tiers: readonly TreatmentPlanTier[];
 }
 
 export interface PatientStatutoryConsent {
@@ -180,6 +198,26 @@ export interface PatientPersonalCabinetData {
 	readonly treatmentPlans: readonly PatientTreatmentPlan[];
 	readonly warranties: readonly PatientWarrantyCard[];
 	readonly consents: readonly PatientStatutoryConsent[];
+	readonly threeTierModel?: ThreeTierTreatmentPlanModel | undefined;
+	readonly somaticRiskProfile?: {
+		readonly hasCardiovascularRisk: boolean;
+		readonly hasSulfiteAllergy: boolean;
+		readonly hasLocalAnestheticsAllergy: boolean;
+		readonly hasBronchialAsthma: boolean;
+		readonly hasBleedingDisorder: boolean;
+		readonly hasDiabetes: boolean;
+		readonly isPregnantOrLactating: boolean;
+		readonly customNotes?: string | undefined;
+	} | undefined;
+	readonly somaticAlerts?: ReadonlyArray<{
+		readonly id: string;
+		readonly severity: "danger" | "warning" | "caution" | "info";
+		readonly title: string;
+		readonly message: string;
+		readonly recommendedAction: string;
+		readonly category: string;
+	}> | undefined;
+	readonly somaticRiskLevel?: "high" | "moderate" | "low" | undefined;
 }
 
 export interface PatientCabinetSummary {
