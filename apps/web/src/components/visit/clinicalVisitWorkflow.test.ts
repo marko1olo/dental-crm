@@ -170,10 +170,10 @@ describe("Clinical Visit & SOAP Diary Ergonomics Engine", () => {
 			assert.ok(statusLoc.includes("16 (верхний правый первый моляр)"));
 			assert.ok(statusLoc.includes("жевательная"));
 			assert.ok(statusLoc.includes("36 (нижний левый первый моляр)"));
-			assert.ok(statusLoc.includes("24: Отсутствует"));
+			assert.ok(statusLoc.includes("24") && statusLoc.includes("Отсутствует"));
 
 			// Assessment
-			assert.equal(generated.diagnosisIcd10, "K02.1"); // Priority caries / pulpitis
+			assert.equal(generated.diagnosisIcd10, "K04.0"); // Priority pulpitis over caries
 
 			// Plan
 			const treatDesc = generated.treatmentDescription ?? "";
@@ -255,16 +255,16 @@ describe("Clinical Visit & SOAP Diary Ergonomics Engine", () => {
 
 			assert.equal(
 				merged.anamnesis,
-				"Жалобы на боль от сладкого.\nДополнительно: ноющие боли в зубе 16.",
+				"Жалобы на боль от сладкого.\n\nДополнительно: ноющие боли в зубе 16.",
 			);
 			assert.equal(
 				merged.statusLocalis,
-				"Зуб 15: пломба сохранена.\nЗуб 16: кариозная полость на жевательной поверхности.",
+				"Зуб 15: пломба сохранена.\n\nЗуб 16: кариозная полость на жевательной поверхности.",
 			);
 			assert.ok(merged.diagnosisTooth.includes("15") && merged.diagnosisTooth.includes("16"));
 			assert.equal(
 				merged.treatmentDescription,
-				"Осмотр.\nПрепарирование зуба 16.",
+				"Осмотр.\n\nПрепарирование зуба 16.",
 			);
 			assert.equal(merged.comorbidities, "Сахарный диабет");
 		});

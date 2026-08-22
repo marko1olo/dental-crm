@@ -73,6 +73,22 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 	const [smartParsedData, setSmartParsedData] =
 		useState<SmartParsedPayload | null>(null);
 	const [showHints, setShowHints] = useState(false);
+	const [patientSearchQuery, setPatientSearchQuery] = useState("");
+
+	const filteredPatients = useMemo(() => {
+		const list = (dashboard.patients ?? []).filter((p) => p.status === "active");
+		const q = patientSearchQuery.trim().toLowerCase();
+		if (!q) return list;
+		return list.filter((p) => {
+			const nameMatch = (p.fullName ?? "").toLowerCase().includes(q);
+			const phoneMatch = (p.phone ?? "").includes(q);
+			const birthMatch = (p.birthDate ?? "").includes(q);
+			const cardMatch = (p as unknown as { cardNumber?: string | null })?.cardNumber
+				? (p as unknown as { cardNumber?: string | null }).cardNumber!.toLowerCase().includes(q)
+				: false;
+			return nameMatch || phoneMatch || birthMatch || cardMatch;
+		});
+	}, [dashboard.patients, patientSearchQuery]);
 	/*
     Чего надиктованная фраза требует, а форма создания записи сделать не может.
     Раньше таких случаев не существовало на экране: их молча превращали в
@@ -575,7 +591,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 										? "new-appointment-create-missing-short"
 										: undefined
 							}
-							className="primary-button px-4 py-2 min-h-[44px] md:min-h-[36px] bg-[var(--teal-dark)] hover:bg-[var(--teal)] text-white rounded-lg flex items-center text-sm font-semibold disabled:opacity-50 cursor-pointer focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors"
+							className="primary-button px-4 py-2 min-h-[44px] bg-[var(--teal-dark)] hover:bg-[var(--teal)] text-white rounded-xl flex items-center text-sm font-semibold disabled:opacity-50 cursor-pointer focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors"
 						>
 							<Plus size={16} aria-hidden="true" className="mr-1.5" /> Создать
 							запись
@@ -663,9 +679,29 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
               поля формы записи срезаются справа на телефоне. */}
 					<div className="grid grid-cols-[repeat(auto-fit,minmax(min(300px,100%),1fr))] gap-6 mb-4">
 						<div>
-							<span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">
-								Пациент
-							</span>
+							<div className="flex items-center justify-between mb-1.5">
+								<span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+									Пациент (ФИО / Телефон / Д.Р.)
+								</span>
+								{(dashboard.patients ?? []).length > 6 && (
+									<span className="text-[11px] font-mono text-[var(--muted)]">
+										Найдено: {filteredPatients.length}
+									</span>
+								)}
+							</div>
+
+							{(dashboard.patients ?? []).length > 6 && (
+								<div className="mb-2">
+									<input
+										type="text"
+										value={patientSearchQuery}
+										onChange={(e) => setPatientSearchQuery(e.target.value)}
+										placeholder="Поиск пациента по имени, телефону (+7...) или году рождения..."
+										className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-none focus:border-teal-500"
+									/>
+								</div>
+							)}
+
 							{useManualSelects || (dashboard.patients ?? []).length > 20 ? (
 								<select
 									value={newAppointmentDraft.patientId || ""}
@@ -675,30 +711,32 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 									className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm outline-none"
 								>
 									<option value="">-- Выберите пациента --</option>
-									{(dashboard.patients ?? [])
-										.filter((p) => p.status === "active")
-										.map((p) => (
-											<option key={p.id} value={p.id}>
-												{p.fullName}
-											</option>
-										))}
+									{filteredPatients.map((p) => (
+										<option key={p.id} value={p.id}>
+											{p.fullName} {p.phone ? `(${p.phone})` : ""} {p.birthDate ? `· ${p.birthDate}` : ""}
+										</option>
+									))}
 								</select>
 							) : (
-								<div className="flex flex-wrap gap-1.5">
-									{(dashboard.patients ?? [])
-										.filter((patient) => patient.status === "active")
-										.map((patient) => (
-											<button
-												key={patient.id}
-												type="button"
-												className={`quick-chip ${newAppointmentDraft.patientId === patient.id ? "active" : ""}`}
-												onClick={() =>
-													updateNewAppointmentDraft("patientId", patient.id)
-												}
-											>
-												{patient.fullName}
-											</button>
-										))}
+								<div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
+									{filteredPatients.map((patient) => (
+										<button
+											key={patient.id}
+											type="button"
+											className={`quick-chip ${newAppointmentDraft.patientId === patient.id ? "active" : ""}`}
+											onClick={() =>
+												updateNewAppointmentDraft("patientId", patient.id)
+											}
+											title={`${patient.fullName}${patient.phone ? ` · Тел: ${patient.phone}` : ""}${patient.birthDate ? ` · Д.Р.: ${patient.birthDate}` : ""}`}
+										>
+											<span>{patient.fullName}</span>
+											{patient.phone && (
+												<span className="text-[10px] opacity-70 font-mono ml-1">
+													{patient.phone.slice(-4)}
+												</span>
+											)}
+										</button>
+									))}
 								</div>
 							)}
 							{blacklistStatus?.isBlocked ? (
@@ -936,7 +974,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
                 выше и вне этой формы: она свёрнута по умолчанию, и здесь отказ
                 был не виден. Второй копии тексту не нужно. */}
 						<button
-							className="secondary-button"
+							className="secondary-button min-h-[44px] px-4 py-2 text-xs font-semibold cursor-pointer"
 							type="button"
 							onClick={resetNewAppointmentDraft}
 							disabled={newAppointmentSaveState === "saving"}

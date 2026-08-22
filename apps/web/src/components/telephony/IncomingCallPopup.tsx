@@ -62,6 +62,7 @@ import {
 	useTelephonyStore,
 } from "../../store/telephonyStore";
 import { showToast } from "../GlobalToast";
+import "./telephonyFloatingWidget.css";
 
 function resolveTelephonyWsUrl(): string {
 	const configured = (
@@ -719,7 +720,7 @@ export function IncomingCallPopup() {
 
 	return createPortal(
 		<div
-			className="fixed bottom-6 right-6 left-4 sm:left-auto w-auto sm:w-[460px] max-w-[calc(100vw-32px)] z-[999999] flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xl p-4 sm:p-5 backdrop-blur-xl animate-slide-in"
+			className="dnt-incoming-call-popup fixed bottom-6 right-6 left-4 sm:left-auto w-auto sm:w-[460px] max-w-[calc(100vw-32px)] z-[999999] flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xl p-4 sm:p-5 backdrop-blur-xl animate-slide-in"
 			style={{
 				boxShadow:
 					"0 20px 40px -15px rgba(0,0,0,0.3), 0 0 20px 2px rgba(15,118,110,0.18)",

@@ -120,6 +120,11 @@ export async function register(app: FastifyInstance) {
 			...(await resolveDocumentRenderContext(orgId, existing.patientId)),
 			origin,
 		};
+		const chainBlockReason =
+			await documentIssueChainBlockReason(issueCandidate);
+		if (chainBlockReason) {
+			return reply.code(409).send(apiError(chainBlockReason));
+		}
 		const blockReason = documentIssueBlockReason(
 			issueCandidate,
 			patient,
@@ -127,11 +132,6 @@ export async function register(app: FastifyInstance) {
 		);
 		if (blockReason) {
 			return reply.code(409).send(apiError(blockReason));
-		}
-		const chainBlockReason =
-			await documentIssueChainBlockReason(issueCandidate);
-		if (chainBlockReason) {
-			return reply.code(409).send(apiError(chainBlockReason));
 		}
 
 		// Контроль суммарных возвратов именно в момент ВЫДАЧИ — здесь деньги реально
@@ -194,6 +194,7 @@ export async function register(app: FastifyInstance) {
 			patient,
 			taxPaymentSnapshot,
 			issuedAt,
+			renderContext?.clinicProfile,
 		);
 		const issuedDocumentCandidate = {
 			...issueCandidate,

@@ -1,9 +1,15 @@
 /**
  * TreatmentPlanContractPrint.tsx — Печатная форма Договора на оказание платных медицинских услуг
  * и комплексного плана лечения (Постановление Правительства РФ № 736, ст. 20 323-ФЗ, Приказ 804н).
+ * 
+ * Включает:
+ * - Полную спецификацию Номенклатуры 804н по этапам и зубам
+ * - Динамический верификационный QR-код для проверки подлинности сметы и акцепта пациентом
+ * - Отметку о соответствии клиническим рекомендациям СтАР
+ * - График платежей, рассрочку 0% и расчет 13% вычета НДФЛ
  */
 
-import React from "react";
+import React, { useMemo } from "react";
 import {
 	Calendar,
 	Check,
@@ -14,8 +20,10 @@ import {
 	Layers,
 	Percent,
 	Printer,
+	QrCode,
 	Shield,
 	ShieldCheck,
+	Sparkles,
 	X,
 } from "lucide-react";
 import type {
@@ -23,6 +31,8 @@ import type {
 	TreatmentPlanStage,
 	TreatmentPlanTier,
 } from "./types";
+import { TreatmentPlanQrCode } from "./qr/TreatmentPlanQrCode";
+import { generatePlanVerificationQrPayload } from "./qr/treatmentPlanQrEngine";
 
 export interface TreatmentPlanContractPrintProps {
 	readonly isOpen: boolean;
@@ -87,6 +97,34 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 		contractNumber ||
 		`D-${new Date().getFullYear()}-${patientId.slice(0, 6).toUpperCase()}`;
 
+	// Формирование проверочного QR payload
+	const qrPayload = useMemo(() => {
+		return generatePlanVerificationQrPayload({
+			planId: displayContractNumber,
+			planNumber: displayContractNumber,
+			patientId,
+			patientName,
+			doctorFullName,
+			totalAmountRub: finalTotalRub,
+			tierTitle: tier.title,
+			clinicName,
+			clinicInn,
+			clinicLicense,
+			agreedAtIso: signedAgreement?.agreedAtIso || new Date().toISOString(),
+		});
+	}, [
+		displayContractNumber,
+		patientId,
+		patientName,
+		doctorFullName,
+		finalTotalRub,
+		tier.title,
+		clinicName,
+		clinicInn,
+		clinicLicense,
+		signedAgreement,
+	]);
+
 	const handlePrint = () => {
 		window.print();
 	};
@@ -102,7 +140,7 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 					<div className="flex items-center gap-2">
 						<FileText className="text-teal-600 w-5 h-5" />
 						<span className="font-bold text-sm text-slate-800">
-							Печатная форма: Договор и Комплексный план лечения
+							Печатная форма: Договор, Комплексный план лечения и Смета с QR-кодом
 						</span>
 					</div>
 					<div className="flex items-center gap-2">
@@ -126,12 +164,17 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 
 				{/* Printable Document Body */}
 				<div className="p-8 sm:p-12 space-y-6 text-xs leading-relaxed print:p-0 print:space-y-4 print:text-[10pt]">
-					{/* Header */}
-					<div className="flex justify-between items-start border-b border-slate-200 pb-4">
-						<div className="space-y-1">
-							<h1 className="text-base sm:text-lg font-black tracking-tight text-slate-900 uppercase">
-								{clinicName}
-							</h1>
+					{/* Header with Clinic Info & Verification QR Code */}
+					<div className="flex justify-between items-start border-b border-slate-200 pb-4 gap-4">
+						<div className="space-y-1 flex-1">
+							<div className="flex items-center gap-2">
+								<h1 className="text-base sm:text-lg font-black tracking-tight text-slate-900 uppercase">
+									{clinicName}
+								</h1>
+								<span className="text-[9px] px-2 py-0.5 rounded bg-teal-100 text-teal-800 font-bold border border-teal-200">
+									СтАР & Приказ МЗ РФ № 804н
+								</span>
+							</div>
 							<p className="text-[11px] text-slate-500 max-w-md">
 								{clinicLegalName} · ИНН: {clinicInn} · ОГРН: {clinicOgrn}
 								<br />
@@ -140,16 +183,26 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 								Адрес: {clinicAddress}
 							</p>
 						</div>
-						<div className="text-right space-y-1">
-							<div className="inline-block px-3 py-1 bg-slate-100 rounded-lg font-mono font-bold text-slate-800">
-								ДОГОВОР № {displayContractNumber}
+
+						{/* Top Right Box: Contract Number & QR Code */}
+						<div className="flex items-center gap-3">
+							<div className="text-right space-y-1">
+								<div className="inline-block px-3 py-1 bg-slate-100 rounded-lg font-mono font-bold text-slate-800">
+									ДОГОВОР № {displayContractNumber}
+								</div>
+								<p className="text-[10px] text-slate-500">г. Москва · {todayRu} г.</p>
+								<div className="text-[9px] text-teal-700 font-semibold">
+									Онлайн-верификация сметы →
+								</div>
 							</div>
-							<p className="text-[11px] text-slate-500">г. Москва · {todayRu} г.</p>
+							<div className="p-1.5 rounded-xl bg-white border border-slate-300 shadow-xs shrink-0 text-center">
+								<TreatmentPlanQrCode value={qrPayload} size={64} />
+							</div>
 						</div>
 					</div>
 
 					{/* Document Title */}
-					<div className="text-center space-y-1 py-2">
+					<div className="text-center space-y-1 py-1">
 						<h2 className="text-sm sm:text-base font-extrabold uppercase text-slate-900">
 							Договор на оказание платных медицинских услуг и согласованный план лечения
 						</h2>
@@ -336,9 +389,9 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 						</p>
 					</div>
 
-					{/* Signatures & Consent Block */}
-					<div className="pt-4 border-t border-slate-300 grid grid-cols-1 sm:grid-cols-2 gap-6 text-[11px]">
-						<div className="space-y-3">
+					{/* Signatures & Verification QR Block */}
+					<div className="pt-4 border-t border-slate-300 grid grid-cols-1 sm:grid-cols-3 gap-4 text-[11px] items-center">
+						<div className="space-y-2">
 							<strong className="text-slate-900 block">От Исполнителя (Клиника):</strong>
 							<p className="text-slate-700">
 								Врач-стоматолог: {doctorFullName}<br />
@@ -346,25 +399,35 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 							</p>
 						</div>
 
-						<div className="space-y-3">
+						{/* Center QR verification badge */}
+						<div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 text-center space-y-1">
+							<div className="flex justify-center">
+								<TreatmentPlanQrCode value={qrPayload} size={84} />
+							</div>
+							<span className="text-[9px] text-slate-500 font-mono block">
+								QR-код согласования сметы
+							</span>
+						</div>
+
+						<div className="space-y-2">
 							<strong className="text-slate-900 block">Пациент (Заказчик):</strong>
 							{signedAgreement ? (
 								<div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 space-y-1">
 									<div className="flex items-center gap-1.5 text-emerald-800 font-bold text-[10px]">
 										<Check size={13} />
-										<span>ПОДПИСАНО ЭЛЕКТРОННОЙ ЦИФРОВОЙ ПОДПИСЬЮ</span>
+										<span>ПОДПИСАНО ЭЦП</span>
 									</div>
 									<img
 										src={signedAgreement.signatureBase64}
 										alt="Подпись пациента"
-										className="h-10 max-w-[160px] object-contain border-b border-slate-300 py-0.5"
+										className="h-9 max-w-[140px] object-contain border-b border-slate-300 py-0.5"
 									/>
 									<span className="text-[9px] text-slate-500 block font-mono">
-										Дата подписи: {new Date(signedAgreement.agreedAtIso).toLocaleString("ru-RU")}
+										{new Date(signedAgreement.agreedAtIso).toLocaleString("ru-RU")}
 									</span>
 								</div>
 							) : (
-								<p className="text-slate-700 pt-6 border-b border-slate-400 inline-block w-48 text-center text-slate-400">
+								<p className="text-slate-700 pt-6 border-b border-slate-400 inline-block w-full text-center text-slate-400">
 									Подпись пациента
 								</p>
 							)}
@@ -375,3 +438,5 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 		</div>
 	);
 };
+
+export default TreatmentPlanContractPrint;

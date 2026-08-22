@@ -154,5 +154,7 @@ describe("ScheduleTimeline", () => {
 		assert.ok(html.includes("Иванов Иван"), "должно быть ФИО пациента в карточке");
 		assert.ok(html.includes("data-testid=\"appointment-card\""), "должна быть карточка записи");
 		assert.ok(html.includes("Свободно"), "должен быть блок свободного окна");
+		assert.ok(html.includes("data-timeline-focusable=\"true\""), "элементы таймлайна должны иметь data-timeline-focusable=true для навигации стрелками");
+		assert.ok(html.includes("min-h-[44px]"), "свободные окна должны иметь min-h-[44px] touch target");
 	});
 });

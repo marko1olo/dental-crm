@@ -29,6 +29,7 @@ export {
 } from "./schema.js";
 
 export {
+	buildEgiszRemdSubmissionPackage,
 	canonicalizeCdaXml,
 	detachedSignatureSchema,
 	egiszRemdPackageSchema,

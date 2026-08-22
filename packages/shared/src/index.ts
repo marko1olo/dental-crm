@@ -9,6 +9,7 @@ export * from "./documents/index.js";
 export * from "./pediatricDentition.js";
 export * from "./toothCanalsAndBilling804n.js";
 export * from "./emr/index.js";
+export * from "./sync/index.js";
 
 import {
 	dailyDentistDiary037uPayloadSchema,
@@ -13731,7 +13732,7 @@ export class DentalInteractionMatrixEngine {
 	}
 }
 
-export * from "./fiscal/kopecksArithmetic";
+export * from "./fiscal/index.js";
 
 
 

@@ -10359,6 +10359,7 @@ function denteTelegramOutboxItemMatchesStatus(
 function buildAllDenteTelegramOutboxItems(
 	now: string,
 	runtimeScope?: DenteTelegramOutboxRuntimeScope,
+	state: DomainState = inMemoryDomainState,
 ): DenteTelegramOutboxItem[] {
 	const runtime = resolveDenteTelegramOutboxRuntimeScope(runtimeScope);
 	const organizationScope = runtime.settings.organizationId;
@@ -10437,6 +10438,7 @@ function buildAllDenteTelegramOutboxItems(
 function findDenteTelegramOutboxItem(
 	outboxItemId: string,
 	runtimeScope?: DenteTelegramOutboxRuntimeScope,
+	state: DomainState = inMemoryDomainState,
 ): DenteTelegramOutboxItem | null {
 	return (
 		buildAllDenteTelegramOutboxItems(
@@ -10449,6 +10451,7 @@ function findDenteTelegramOutboxItem(
 export function buildDenteTelegramOutbox(
 	input: number | BuildDenteTelegramOutboxOptions = 100,
 	runtimeScope?: DenteTelegramOutboxRuntimeScope,
+	state: DomainState = inMemoryDomainState,
 ): DenteTelegramOutboxResponse {
 	const options = normalizeDenteTelegramOutboxOptions(input);
 	const runtime = resolveDenteTelegramOutboxRuntimeScope(runtimeScope);

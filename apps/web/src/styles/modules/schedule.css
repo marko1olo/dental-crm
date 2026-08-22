@@ -207,7 +207,9 @@
 	width: 100%;
 	padding: 8px;
 	border-radius: 8px;
-	border: 1px solid var(--slate-300);
+	background: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
 }
 
 .quick-chip--sm {

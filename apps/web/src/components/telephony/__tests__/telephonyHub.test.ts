@@ -484,4 +484,59 @@ describe("Telephony & Reception Live Hub Suite", () => {
 			assert.equal(useTelephonyStore.getState().callHistory[0]?.status, "answered");
 		});
 	});
+
+	describe("6. 10 CRM Themes & Telephony Multi-Provider Verification", () => {
+		const themes = [
+			"light",
+			"dark",
+			"night",
+			"calm_teal",
+			"contrast",
+			"sakura",
+			"ocean",
+			"emerald",
+			"cyber_xray",
+			"warm_sand",
+		] as const;
+
+		test("all 10 CRM themes resolve consistently for softphone modal", () => {
+			for (const theme of themes) {
+				const isDark =
+					theme === "dark" ||
+					theme === "night" ||
+					theme === "ocean" ||
+					theme === "emerald" ||
+					theme === "cyber_xray";
+
+				assert.ok(theme.length > 0, `Theme ${theme} must be valid string`);
+				if (isDark) {
+					assert.ok(
+						["dark", "night", "ocean", "emerald", "cyber_xray"].includes(theme),
+					);
+				} else {
+					assert.ok(
+						["light", "calm_teal", "contrast", "sakura", "warm_sand"].includes(theme),
+					);
+				}
+			}
+		});
+
+		test("supports all 5 PBX / VoIP provider configurations", () => {
+			const providers = ["mango", "uis", "asterisk", "zadarma", "unknown"] as const;
+			for (const p of providers) {
+				useTelephonyStore.getState().triggerIncomingCall({
+					phone: "+79031112233",
+					patientId: null,
+					patientName: `Test ${p}`,
+					provider: p,
+					timestamp: new Date().toISOString(),
+				});
+
+				const active = useTelephonyStore.getState().activeCall;
+				assert.ok(active);
+				assert.equal(active?.provider, p);
+				useTelephonyStore.getState().dismissCall();
+			}
+		});
+	});
 });

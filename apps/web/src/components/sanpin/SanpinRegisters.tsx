@@ -42,6 +42,7 @@ import { MedicalWasteRegisterTab } from "./MedicalWasteRegisterTab";
 import { PsoRegisterTab } from "./PsoRegisterTab";
 import { TemperatureHumidityRegisterTab } from "./TemperatureHumidityRegisterTab";
 import { SanpinCycleModal } from "./SanpinCycleModal";
+import { SanpinJournalsModal } from "./journals/SanpinJournalsModal";
 import "./SanpinRegisters.css";
 
 export type SanpinRegisterTab =
@@ -58,6 +59,8 @@ export function SanpinRegisters() {
 	const [summary, setSummary] = useState<any>(null);
 	const [loadingSummary, setLoadingSummary] = useState(true);
 	const [isCycleModalOpen, setIsCycleModalOpen] = useState(false);
+	const [isSanpinJournalsModalOpen, setIsSanpinJournalsModalOpen] = useState(false);
+	const [sanpinJournalsTab, setSanpinJournalsTab] = useState<"pso" | "bactericidal" | "cleaning" | "disinfectants">("pso");
 	const [isNurseSignModalOpen, setIsNurseSignModalOpen] = useState(false);
 	const [nurseSignName, setNurseSignName] = useState("Медсестра ЦСО");
 	const [nurseSignPin, setNurseSignPin] = useState("");
@@ -112,6 +115,17 @@ export function SanpinRegisters() {
 		window.print();
 	};
 
+	const handleOpenSanpinJournals = (tab?: "pso" | "bactericidal" | "cleaning" | "disinfectants") => {
+		if (tab) {
+			setSanpinJournalsTab(tab);
+		} else if (activeTab === "bactericidal" || activeTab === "cleaning" || activeTab === "pso") {
+			setSanpinJournalsTab(activeTab);
+		} else {
+			setSanpinJournalsTab("pso");
+		}
+		setIsSanpinJournalsModalOpen(true);
+	};
+
 	return (
 		<div className="sanpin-container">
 			{/* Top Header */}
@@ -138,6 +152,24 @@ export function SanpinRegisters() {
 						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.9rem", fontWeight: 700 }}
 					>
 						<Plus size={16} /> + Новый цикл автоклава
+					</button>
+
+					<button
+						type="button"
+						onClick={() => handleOpenSanpinJournals()}
+						className="sanpin-btn sanpin-btn-secondary"
+						style={{
+							minHeight: "44px",
+							padding: "0.5rem 1rem",
+							fontSize: "0.9rem",
+							fontWeight: 600,
+							borderColor: "var(--brand-primary, #2563eb)",
+							color: "var(--brand-primary, #2563eb)",
+						}}
+						title="Журналы СанПиН 3.3686-21 (ПСО Азопирам, Бактерицидные лампы, Генеральные уборки)"
+						data-testid="open-sanpin-journals-modal-btn"
+					>
+						<FileSpreadsheet size={16} color="var(--brand-primary, #2563eb)" /> Журналы СанПиН 3.3686-21 (ПСО Азопирам, Бактерицидные лампы, Генеральные уборки)
 					</button>
 
 					<button
@@ -329,6 +361,13 @@ export function SanpinRegisters() {
 				isOpen={isCycleModalOpen}
 				onClose={() => setIsCycleModalOpen(false)}
 				onSuccess={fetchSummary}
+			/>
+
+			{/* SanPiN Disinfection & Sterilization Journals Studio Modal */}
+			<SanpinJournalsModal
+				isOpen={isSanpinJournalsModalOpen}
+				onClose={() => setIsSanpinJournalsModalOpen(false)}
+				initialTab={sanpinJournalsTab}
 			/>
 
 			{/* Electronic Nurse Signature Shift Stamp Modal */}

@@ -351,39 +351,41 @@ export function calculateTerminationRefund(
 			// Незавершенные этапы — авансы подлежат возврату за вычетом прямых расходов
 			uncompletedAdvance += stagePaid;
 
-			// Считаем прямые затраты клиники по незавершенному этапу
-			const labCost = stage.directExpensesKopecks.labKopecks;
-			const materialsCost = stage.directExpensesKopecks.materialsKopecks;
-			const otherCost = stage.directExpensesKopecks.otherKopecks;
+			// Считаем прямые затраты клиники по незавершенному этапу только если работы были начаты или внесен аванс
+			if (stage.status !== "draft" || stagePaid > 0) {
+				const labCost = stage.directExpensesKopecks.labKopecks;
+				const materialsCost = stage.directExpensesKopecks.materialsKopecks;
+				const otherCost = stage.directExpensesKopecks.otherKopecks;
 
-			if (labCost > 0) {
-				calculatedClinicExpenses += labCost;
-				itemizedExpenses.push({
-					title: `Лабораторные расходы CAD/CAM (Этап №${stage.stageNumber})`,
-					category: "lab_cadcam",
-					amountKopecks: labCost,
-					justificationRu: `Оплата фрезерования и моделирования в зуботехнической лаборатории по наряду этапа №${stage.stageNumber}`,
-				});
-			}
+				if (labCost > 0) {
+					calculatedClinicExpenses += labCost;
+					itemizedExpenses.push({
+						title: `Лабораторные расходы CAD/CAM (Этап №${stage.stageNumber})`,
+						category: "lab_cadcam",
+						amountKopecks: labCost,
+						justificationRu: `Оплата фрезерования и моделирования в зуботехнической лаборатории по наряду этапа №${stage.stageNumber}`,
+					});
+				}
 
-			if (materialsCost > 0) {
-				calculatedClinicExpenses += materialsCost;
-				itemizedExpenses.push({
-					title: `Расходные материалы и стерилизация (Этап №${stage.stageNumber})`,
-					category: "sterilization_materials",
-					amountKopecks: materialsCost,
-					justificationRu: `Списание индивидуальных стерильных наборов и боров по этапу №${stage.stageNumber}`,
-				});
-			}
+				if (materialsCost > 0) {
+					calculatedClinicExpenses += materialsCost;
+					itemizedExpenses.push({
+						title: `Расходные материалы и стерилизация (Этап №${stage.stageNumber})`,
+						category: "sterilization_materials",
+						amountKopecks: materialsCost,
+						justificationRu: `Списание индивидуальных стерильных наборов и боров по этапу №${stage.stageNumber}`,
+					});
+				}
 
-			if (otherCost > 0) {
-				calculatedClinicExpenses += otherCost;
-				itemizedExpenses.push({
-					title: `Имплантологические компоненты и диагностика (Этап №${stage.stageNumber})`,
-					category: "implant_hardware",
-					amountKopecks: otherCost,
-					justificationRu: `Закупка индивидуальных компонентов и хирургических шаблонов под этап №${stage.stageNumber}`,
-				});
+				if (otherCost > 0) {
+					calculatedClinicExpenses += otherCost;
+					itemizedExpenses.push({
+						title: `Имплантологические компоненты и диагностика (Этап №${stage.stageNumber})`,
+						category: "implant_hardware",
+						amountKopecks: otherCost,
+						justificationRu: `Закупка индивидуальных компонентов и хирургических шаблонов под этап №${stage.stageNumber}`,
+					});
+				}
 			}
 		}
 	}

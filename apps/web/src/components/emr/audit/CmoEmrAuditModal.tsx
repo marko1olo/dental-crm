@@ -5,7 +5,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
 	ShieldCheck,
 	CheckCircle2,
@@ -355,6 +355,24 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 			};
 		});
 	});
+
+	useEffect(() => {
+		if (isOpen && initialRecords && initialRecords.length > 0) {
+			setRecords(
+				initialRecords.map((rec: EmrAuditRecord) => {
+					const auditRes = runAutomatedEmrAudit(rec);
+					return {
+						...rec,
+						automatedCheckResults: auditRes.results,
+						automatedQualityScore: calculateQualityScore(auditRes.results, rec.cmoRemarks),
+					};
+				})
+			);
+			if (initialRecords[0]) {
+				setSelectedRecordId(initialRecords[0].id);
+			}
+		}
+	}, [initialRecords, isOpen]);
 
 	const [activeTab, setActiveTab] = useState<"queue" | "doctor_kpi" | "statutory_presets" | "protocol_preview">("queue");
 	const [selectedRecordId, setSelectedRecordId] = useState<string>(() => records[0]?.id || "");

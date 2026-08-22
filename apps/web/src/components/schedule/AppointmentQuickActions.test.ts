@@ -77,4 +77,38 @@ describe("AppointmentQuickActions", () => {
 
 		assert.ok(html.includes("Статус заблокирован"), "подсказка должна указывать на блокировку открытым визитом");
 	});
+
+	it("renders WhatsApp 1-click trigger button when patientPhone and startsAt are provided", () => {
+		const html = renderToString(
+			React.createElement(AppointmentQuickActions, {
+				appointmentId: "appt-wa",
+				currentStatus: "planned",
+				patientName: "Кузнецов Денис",
+				patientPhone: "+79998887766",
+				startsAt: "2026-08-21T15:00:00.000Z",
+				onStatusChange: () => {},
+			}),
+		);
+
+		assert.ok(html.includes("WhatsApp"), "должна присутствовать кнопка WhatsApp");
+		assert.ok(html.includes("Кузнецов Денис"), "aria-label должен содержать имя пациента");
+	});
+
+	it("enforces minimum 44px touch target on all action buttons", () => {
+		const html = renderToString(
+			React.createElement(AppointmentQuickActions, {
+				appointmentId: "appt-touch",
+				currentStatus: "planned",
+				patientName: "Васильев Олег",
+				patientPhone: "+79991112233",
+				startsAt: "2026-08-21T16:00:00.000Z",
+				onStatusChange: () => {},
+			}),
+		);
+
+		assert.ok(html.includes("min-h-[44px]"), "все кнопки быстрых действий должны иметь min-h-[44px]");
+		assert.ok(html.includes("Клавиша 1"), "кнопка Пришел должна содержать горячую клавишу 1");
+		assert.ok(html.includes("Клавиша 2"), "кнопка В кресле должна содержать горячую клавишу 2");
+		assert.ok(html.includes("Клавиша 3"), "кнопка Завершен должна содержать горячую клавишу 3");
+	});
 });

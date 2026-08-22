@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="128" fill="#0f172a"/>
+  <defs>
+    <linearGradient id="denteGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2dd4bf"/>
+      <stop offset="50%" stop-color="#0d9488"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+  </defs>
+  <!-- Stylized Modern Molar Tooth -->
+  <path d="M 256 90 C 190 90 140 130 140 190 C 140 240 160 290 180 370 C 190 410 215 422 230 380 C 242 345 250 305 256 305 C 262 305 270 345 282 380 C 297 422 322 410 332 370 C 352 290 372 240 372 190 C 372 130 322 90 256 90 Z" fill="url(#denteGrad)" />
+  <!-- Gloss highlight -->
+  <path d="M 200 130 C 230 115 282 115 312 130 C 290 150 222 150 200 130 Z" fill="#ffffff" opacity="0.35"/>
+</svg>

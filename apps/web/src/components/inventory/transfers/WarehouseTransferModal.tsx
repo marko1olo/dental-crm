@@ -66,6 +66,7 @@ export interface WarehouseTransferModalProps {
 	readonly onClose: () => void;
 	readonly initialDocument?: WarehouseTransferDocument | undefined;
 	readonly onDocumentSaved?: ((doc: WarehouseTransferDocument) => void) | undefined;
+	readonly onConfirmTransfer?: ((doc?: WarehouseTransferDocument) => void | Promise<void>) | undefined;
 	readonly onDiscrepancyActGenerated?: ((act: WarehouseDiscrepancyAct) => void) | undefined;
 }
 

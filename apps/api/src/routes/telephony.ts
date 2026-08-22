@@ -19,8 +19,10 @@ import {
 	crmLeads,
 	patients,
 } from "../db/schema.js";
+import { getRequestIdentity } from "../security/identity.js";
 import { verifyWebhookSecret } from "../security/webhookAuth.js";
 import { wsBroker } from "../services/websocketBroker.js";
+import { TelephonyGatewayService } from "../services/telephony/telephonyGatewayService.js";
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 
 const UUID_REGEX =
@@ -488,7 +490,13 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 				return tx
 					.select({ organizationId: clinics.organizationId })
 					.from(clinics)
-					.where(ilike(clinics.phone, `%${targetPhone.national10}%`))
+					.where(
+						or(
+							eq(clinics.phone, targetPhone.e164),
+							ilike(clinics.phone, `%${targetPhone.national10}%`),
+							sql`regexp_replace(coalesce(${clinics.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${targetPhone.national10}%`}`,
+						),
+					)
 					.limit(1);
 			});
 			const clinic = matchedClinic[0];
@@ -559,7 +567,7 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 					? Math.max(0, Number.parseInt(String(rawDuration), 10) || 0)
 					: 0;
 
-			// Match Patient within this tenant
+			// Match Patient within this tenant (primary phone, national suffix, formatted phone & legal representative)
 			const searchPatient = await db
 				.select()
 				.from(patients)
@@ -569,12 +577,26 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 						or(
 							eq(patients.phone, callerPhone.e164),
 							ilike(patients.phone, `%${callerPhone.national10}%`),
+							sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${callerPhone.national10}%`}`,
+							sql`regexp_replace(coalesce(${patients.administrativeProfile}->>'legalRepresentativePhone', ''), '[^0-9]', '', 'g') LIKE ${`%${callerPhone.national10}%`}`,
 						),
 					),
 				)
 				.limit(1);
 
 			let matchedPatient = searchPatient[0] || null;
+
+			// Detect provider from payload fingerprint
+			const detectedProvider =
+				data.vpbx_api_key || data.sign || rawEvent.includes("mango")
+					? "mango"
+					: data.call_session_id || data.from_number || data.notification_name
+						? "uis"
+						: data.CallerIdNum || data.uniqueid || data.CalledIdNum
+							? "asterisk"
+							: data.signature || data.caller_id
+								? "zadarma"
+								: "mango";
 
 			if (event === "ringing") {
 				let matchedLead: typeof crmLeads.$inferSelect | null = null;
@@ -590,6 +612,7 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 									or(
 										eq(crmLeads.phone, callerPhone.e164),
 										ilike(crmLeads.phone, `%${callerPhone.national10}%`),
+										sql`regexp_replace(coalesce(${crmLeads.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${callerPhone.national10}%`}`,
 									),
 								),
 							)
@@ -632,6 +655,7 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 						patientId: matchedPatient?.id || null,
 						patientName: patientDisplayName,
 						callId: callId || null,
+						provider: detectedProvider,
 						timestamp: new Date().toISOString(),
 					},
 				});
@@ -847,6 +871,8 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 						or(
 							eq(patients.phone, callerPhone.e164),
 							ilike(patients.phone, `%${callerPhone.national10}%`),
+							sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${callerPhone.national10}%`}`,
+							sql`regexp_replace(coalesce(${patients.administrativeProfile}->>'legalRepresentativePhone', ''), '[^0-9]', '', 'g') LIKE ${`%${callerPhone.national10}%`}`,
 						),
 					),
 				)
@@ -1080,5 +1106,134 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 				});
 			});
 		},
+	);
+
+	// --------------------------------------------------------------------------
+	// WebRTC SIP Credentials Provisioning (Local Asterisk / FreePBX)
+	// --------------------------------------------------------------------------
+	const handleSipCredentials = async (
+		request: FastifyRequest<{ Params: { organizationId?: string }; Body: { extension?: string; staffFullName?: string } }>,
+		reply: FastifyReply,
+	) => {
+		if (!(await requireClinicalReadAccess(request, reply, "provision sip credentials"))) {
+			return;
+		}
+		const orgId = await requireResolvedOrganizationId(request, reply, "provision sip credentials");
+		if (!orgId) return;
+
+		const body = (request.body || {}) as { extension?: string; staffFullName?: string };
+		const identity = getRequestIdentity(request);
+		const credentials = TelephonyGatewayService.generateWebRtcSipCredentials({
+			organizationId: orgId,
+			userId: identity.userId || "anonymous",
+			extension: body.extension,
+			staffFullName: body.staffFullName,
+		});
+
+		return reply.status(200).send({
+			success: true,
+			organizationId: orgId,
+			credentials,
+		});
+	};
+
+	server.post<{ Params: { organizationId: string }; Body: { extension?: string; staffFullName?: string } }>(
+		"/:organizationId/sip/credentials",
+		handleSipCredentials,
+	);
+	server.post<{ Params: { organizationId?: string }; Body: { extension?: string; staffFullName?: string } }>(
+		"/sip/credentials",
+		handleSipCredentials,
+	);
+
+	// --------------------------------------------------------------------------
+	// Telephony Gateway Health & Active Mode Status (Local vs Cloud Fallback)
+	// --------------------------------------------------------------------------
+	const handleSipStatus = async (
+		request: FastifyRequest<{ Params: { organizationId?: string } }>,
+		reply: FastifyReply,
+	) => {
+		if (!(await requireClinicalReadAccess(request, reply, "get telephony gateway status"))) {
+			return;
+		}
+		const orgId = await requireResolvedOrganizationId(request, reply, "get telephony gateway status");
+		if (!orgId) return;
+
+		const status = await TelephonyGatewayService.evaluateTelephonyGatewayStatus(orgId);
+		return reply.status(200).send({
+			success: true,
+			status,
+		});
+	};
+
+	server.get<{ Params: { organizationId: string } }>(
+		"/:organizationId/sip/status",
+		handleSipStatus,
+	);
+	server.get<{ Params: { organizationId?: string } }>(
+		"/sip/status",
+		handleSipStatus,
+	);
+
+	// --------------------------------------------------------------------------
+	// Seamless Failover Trigger (Toggle Local WebRTC SIP vs Cloud Webhooks)
+	// --------------------------------------------------------------------------
+	const handleSipFailover = async (
+		request: FastifyRequest<{ Params: { organizationId?: string }; Body: { forceCloudFallback?: boolean } }>,
+		reply: FastifyReply,
+	) => {
+		if (!(await requireClinicalReadAccess(request, reply, "set telephony failover"))) {
+			return;
+		}
+		const orgId = await requireResolvedOrganizationId(request, reply, "set telephony failover");
+		if (!orgId) return;
+
+		const body = (request.body || {}) as { forceCloudFallback?: boolean };
+		const force = Boolean(body.forceCloudFallback);
+
+		TelephonyGatewayService.setForcedFailover(orgId, force);
+		const status = await TelephonyGatewayService.evaluateTelephonyGatewayStatus(orgId);
+
+		return reply.status(200).send({
+			success: true,
+			failoverActive: force,
+			status,
+		});
+	};
+
+	server.post<{ Params: { organizationId: string }; Body: { forceCloudFallback?: boolean } }>(
+		"/:organizationId/sip/failover",
+		handleSipFailover,
+	);
+	server.post<{ Params: { organizationId?: string }; Body: { forceCloudFallback?: boolean } }>(
+		"/sip/failover",
+		handleSipFailover,
+	);
+
+	// --------------------------------------------------------------------------
+	// Asterisk AMI / ARI Event Bridge Ingestion
+	// --------------------------------------------------------------------------
+	const handleAsteriskAmiEvent = async (
+		request: FastifyRequest<{ Params: { organizationId?: string } }>,
+		reply: FastifyReply,
+	) => {
+		const orgId = request.params.organizationId || (await requireResolvedOrganizationId(request, reply, "asterisk ami event"));
+		if (!orgId) return;
+
+		const rawBody = (request.body || {}) as Record<string, unknown>;
+		const result = await withTenantCtx(orgId, async () => {
+			return await TelephonyGatewayService.processAsteriskAmiEvent(orgId, rawBody as any);
+		});
+
+		return reply.status(200).send(result);
+	};
+
+	server.post<{ Params: { organizationId: string } }>(
+		"/:organizationId/asterisk/ami-event",
+		handleAsteriskAmiEvent,
+	);
+	server.post<{ Params: { organizationId?: string } }>(
+		"/asterisk/ami-event",
+		handleAsteriskAmiEvent,
 	);
 };

@@ -7,7 +7,7 @@ import {
 import { Bot, CreditCard, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { money } from "./AppHelpers";
-import { SberbankTerminalPaymentModal } from "./components/finance/SberbankTerminalPaymentModal";
+import { SberPosTerminalModal } from "./components/payments/sberPos/SberPosTerminalModal";
 import { showToast } from "./components/GlobalToast";
 import { rubAmountForInput } from "./components/payments/cashDeskAmounts";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
@@ -740,7 +740,7 @@ export function PaymentCapture({
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const [smartParsedData, setSmartParsedData] = useState<any>(null);
 	const [showHints, setShowHints] = useState(false);
-	const [isSberbankModalOpen, setIsSberbankModalOpen] = useState(false);
+	const [isSberPosModalOpen, setIsSberPosModalOpen] = useState(false);
 
 	const handleSmartDictation = (text: string) => {
 		if (!text.trim()) return;
@@ -1141,25 +1141,43 @@ export function PaymentCapture({
 				<button
 					className="secondary-button"
 					type="button"
-					onClick={() => setIsSberbankModalOpen(true)}
+					onClick={() => setIsSberPosModalOpen(true)}
 					aria-describedby={
 						!paymentReadyToSubmit ? paymentMissingId : undefined
 					}
 					disabled={isSaving || !paymentReadyToSubmit || !patientId}
 				>
-					<CreditCard aria-hidden="true" /> Оплатить картой (Терминал Сбербанк)
+					<CreditCard aria-hidden="true" /> Оплата картой (Сбербанк POS / SberPay QR)
 				</button>
 			</div>
 			{patientId && (
-				<SberbankTerminalPaymentModal
-					isOpen={isSberbankModalOpen}
-					patientId={patientId}
-					amountInRubles={Number(normalizeRubAmountInput(amount) ?? 0)}
-					onClose={() => setIsSberbankModalOpen(false)}
-					onSuccess={() => {
-						setIsSberbankModalOpen(false);
+				<SberPosTerminalModal
+					isOpen={isSberPosModalOpen}
+					onClose={() => setIsSberPosModalOpen(false)}
+					totalBillKop={
+						Math.round(
+							Number(
+								normalizeRubAmountInput(amount) ??
+									(remainingDebt && remainingDebt > 0 ? remainingDebt : 0),
+							) * 100,
+						)
+					}
+					patientName={patientDefaults?.fullName || payerFullName || "Пациент"}
+					orderId={`CHK-2026-${patientId ? patientId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 6).toUpperCase() : "891"}`}
+					initialOperation={method === "online" ? "sberpay_qr" : "sale"}
+					onTransactionSuccess={(response) => {
+						setIsSberPosModalOpen(false);
 						onAmountChange("");
-						showToast("Оплата через терминал Сбербанка успешно зафиксирована", "success");
+						if (response.rrn) {
+							onFiscalFdChange(response.rrn);
+						}
+						if (response.authCode) {
+							onFiscalFpdChange(response.authCode);
+						}
+						showToast(
+							`Оплата ${(response.amountKop / 100).toLocaleString("ru-RU")} ₽ через терминал Сбербанка (${response.cardIssuer}) успешно зафиксирована. RRN: ${response.rrn}`,
+							"success",
+						);
 					}}
 				/>
 			)}

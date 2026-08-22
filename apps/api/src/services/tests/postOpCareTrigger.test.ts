@@ -1,56 +1,41 @@
 import assert from "node:assert";
-import { after, afterEach, describe, mock, test } from "node:test";
-import { db, pool } from "../../db/client.js";
-import { outgoingNotifications } from "../../db/schema.js";
+import { describe, test } from "node:test";
+import { db } from "../../db/client.js";
+import { organizations, patients } from "../../db/schema.js";
+import { fixtureUuid, purgeFixtureOrganizations, withFixtureTenant } from "../../tests/support/fixtureOrganizations.js";
 import { triggerPostOpCare } from "../postOpCareTrigger.js";
 
-/**
- * Настоящий параметр db.insert(outgoingNotifications).values() — строка вставки
- * в outgoing_notifications.
- *
- * Без него mock.fn(async () => {}) объявлял подменённую функцию вообще без
- * параметров, тип arguments выводился как пустой кортеж [], обращение к
- * arguments[0] не компилировалось, а args дальше считался undefined. Тип взят из
- * самой таблицы, поэтому расходиться со схемой он не может.
- */
-type OutgoingNotificationInsert = typeof outgoingNotifications.$inferInsert;
-
 describe("postOpCareTrigger", () => {
-	after(async () => {
-		// Раньше здесь звали client.close() — метод PGlite, которого в
-		// node-postgres нет, и файл не загружался целиком.
-		await pool.end();
-	});
+	test("triggerPostOpCare enqueues service message into outbox", async () => {
+		const orgId = fixtureUuid("postOpCare", 1);
+		const patientId = fixtureUuid("postOpCare", 2);
 
-	afterEach(() => {
-		mock.restoreAll();
-	});
+		try {
+			await purgeFixtureOrganizations([orgId]);
+			await withFixtureTenant(orgId, async () => {
+				await db.insert(organizations).values({
+					id: orgId,
+					name: "PostOp Clinic",
+				});
+				await db.insert(patients).values({
+					id: patientId,
+					organizationId: orgId,
+					fullName: "Пост-Операционный Пациент",
+					phone: "+79991112233",
+					birthDate: "1990-01-01",
+				});
 
-	test("triggerPostOpCare inserts correct notification", async () => {
-		const valuesMock = mock.fn(
-			async (_values: OutgoingNotificationInsert) => {},
-		);
-		mock.method(db, "insert", (schema) => {
-			assert.strictEqual(schema, outgoingNotifications);
-			return { values: valuesMock };
-		});
-
-		await triggerPostOpCare("org-123", "pat-456", "Extraction");
-
-		assert.strictEqual(valuesMock.mock.calls.length, 1);
-		const insertCall = valuesMock.mock.calls[0];
-		assert.ok(insertCall);
-		const args = insertCall.arguments[0];
-
-		assert.strictEqual(args.organizationId, "org-123");
-		assert.strictEqual(args.patientId, "pat-456");
-		assert.strictEqual(args.type, "PostOp_Care");
-		assert.strictEqual(args.status, "pending");
-		assert.deepStrictEqual(args.payload, {
-			patientId: "pat-456",
-			itemTitle: "Extraction",
-			alertMessage:
-				"Позвонить пациенту (ID: pat-456) - контроль самочувствия после: Extraction",
-		});
+				const result = await triggerPostOpCare(orgId, patientId, "Сложное удаление");
+				assert.strictEqual(result.ok, true);
+				if (result.ok) {
+					assert.ok(result.outboxId);
+					assert.strictEqual(result.duplicate, false);
+				}
+			});
+		} finally {
+			await purgeFixtureOrganizations([orgId]);
+		}
 	});
 });
+
+

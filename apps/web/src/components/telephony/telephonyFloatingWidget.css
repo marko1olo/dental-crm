@@ -1,3 +1,7 @@
+/* ============================================================
+   Telephony & Incoming Call Popup Multi-Theme & Mobile Styles
+   ============================================================ */
+
 .dnt-telephony-floating {
 	position: fixed;
 	bottom: 80px;
@@ -16,4 +20,150 @@
 		bottom: 20px;
 		right: 20px;
 	}
+}
+
+/* Incoming Call Popup Master Styling */
+.dnt-incoming-call-popup {
+	position: fixed;
+	bottom: 16px;
+	right: 16px;
+	left: 16px;
+	z-index: 999999;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	border-radius: 16px;
+	padding: 16px;
+	box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.35), 0 0 24px 2px rgba(15, 118, 110, 0.2);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+	animation: dnt-slide-in-up 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+	box-sizing: border-box;
+	border: 1px solid var(--line, rgba(226, 232, 240, 0.8));
+	background: var(--paper-strong, var(--paper, #ffffff));
+	color: var(--ink, #0f172a);
+}
+
+@media (min-width: 640px) {
+	.dnt-incoming-call-popup {
+		left: auto;
+		right: 24px;
+		bottom: 24px;
+		width: 460px;
+		max-width: calc(100vw - 48px);
+		padding: 20px;
+	}
+}
+
+/* Animations */
+@keyframes dnt-slide-in-up {
+	0% {
+		opacity: 0;
+		transform: translateY(24px) scale(0.96);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+@keyframes dnt-pulse-ring {
+	0% {
+		transform: scale(0.95);
+		box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.7);
+	}
+	70% {
+		transform: scale(1);
+		box-shadow: 0 0 0 10px rgba(20, 184, 166, 0);
+	}
+	100% {
+		transform: scale(0.95);
+		box-shadow: 0 0 0 0 rgba(20, 184, 166, 0);
+	}
+}
+
+/* Theme-Specific Overrides for 10 CRM Themes */
+
+/* 1. Dark Theme */
+[data-theme="dark"] .dnt-incoming-call-popup {
+	background: var(--paper-strong, #0f172a);
+	border-color: var(--line-strong, #1e293b);
+	color: var(--ink, #f8fafc);
+	box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.7), 0 0 20px 2px rgba(45, 212, 191, 0.15);
+}
+
+/* 2. Night Theme (Warm Dark) */
+[data-theme="night"] .dnt-incoming-call-popup {
+	background: var(--paper-strong, #181512);
+	border-color: var(--line-strong, #2d261e);
+	color: var(--ink, #f5efe6);
+	box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.75), 0 0 20px 2px rgba(217, 119, 6, 0.15);
+}
+
+/* 3. Ocean Theme */
+[data-theme="ocean"] .dnt-incoming-call-popup {
+	background: var(--paper-strong, #0a192f);
+	border-color: var(--line-strong, #172a45);
+	color: var(--ink, #e6f1ff);
+	box-shadow: 0 24px 48px -12px rgba(2, 12, 27, 0.8), 0 0 20px 2px rgba(56, 189, 248, 0.2);
+}
+
+/* 4. Emerald Theme */
+[data-theme="emerald"] .dnt-incoming-call-popup {
+	background: var(--paper-strong, #062016);
+	border-color: var(--line-strong, #0f3d2c);
+	color: var(--ink, #ecfdf5);
+	box-shadow: 0 24px 48px -12px rgba(2, 20, 14, 0.8), 0 0 20px 2px rgba(52, 211, 153, 0.2);
+}
+
+/* 5. Cyber X-Ray Theme */
+[data-theme="cyber_xray"] .dnt-incoming-call-popup {
+	background: var(--paper-strong, #030712);
+	border-color: var(--teal-dark, #0891b2);
+	color: var(--ink, #06b6d4);
+	box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.9), 0 0 24px 3px rgba(6, 182, 212, 0.3);
+}
+
+/* 6. High Contrast Theme */
+[data-theme="contrast"] .dnt-incoming-call-popup {
+	background: #000000;
+	border: 2px solid #ffffff;
+	color: #ffffff;
+	box-shadow: 0 0 0 2px #000000, 0 0 30px 4px rgba(255, 255, 255, 0.35);
+}
+
+[data-theme="contrast"] .dnt-incoming-call-popup button {
+	border-width: 2px;
+}
+
+/* 7. Calm Teal Theme */
+[data-theme="calm_teal"] .dnt-incoming-call-popup {
+	background: var(--paper-strong, #f0fdfa);
+	border-color: var(--line, #99f6e4);
+	color: var(--ink, #134e4a);
+	box-shadow: 0 20px 40px -15px rgba(15, 118, 110, 0.2);
+}
+
+/* 8. Sakura Theme */
+[data-theme="sakura"] .dnt-incoming-call-popup {
+	background: var(--paper-strong, #fdf2f8);
+	border-color: var(--line, #fbcfe8);
+	color: var(--ink, #831843);
+	box-shadow: 0 20px 40px -15px rgba(219, 39, 119, 0.2);
+}
+
+/* 9. Warm Sand Theme */
+[data-theme="warm_sand"] .dnt-incoming-call-popup {
+	background: var(--paper-strong, #fefce8);
+	border-color: var(--line, #fef08a);
+	color: var(--ink, #713f12);
+	box-shadow: 0 20px 40px -15px rgba(202, 138, 4, 0.2);
+}
+
+/* 10. Light Theme (Default) */
+[data-theme="light"] .dnt-incoming-call-popup {
+	background: var(--paper-strong, #ffffff);
+	border-color: var(--line, #e2e8f0);
+	color: var(--ink, #0f172a);
+	box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.15), 0 0 20px 2px rgba(15, 118, 110, 0.12);
 }

@@ -51,13 +51,13 @@ import "./loyaltyProgram.css";
 export interface LoyaltyProgramModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly clinicName?: string;
-	readonly patientId?: string;
-	readonly patientName?: string;
-	readonly medicalCardNumber?: string;
-	readonly initialPointsBalance?: number;
-	readonly initialLifetimeSpentKop?: number;
-	readonly currentInvoiceAmountKop?: number;
+	readonly clinicName?: string | undefined;
+	readonly patientId?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly medicalCardNumber?: string | undefined;
+	readonly initialPointsBalance?: number | undefined;
+	readonly initialLifetimeSpentKop?: number | undefined;
+	readonly currentInvoiceAmountKop?: number | undefined;
 	readonly onRedeemSuccess?: (
 		redeemedPointsRub: number,
 		fiscalSplit: Fiscal54FzSplitResult

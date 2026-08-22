@@ -30,6 +30,7 @@ import { type CertificateInfo, signatureService } from "../../lib/cryptopro";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
+import { isValidSnils, normalizeSnils } from "../../utils/snils";
 import {
 	type CdaExportData,
 	EGISZ_SEMD_DOC_TYPES,
@@ -71,12 +72,12 @@ export interface EgiszCdaExportModalProps {
 	anamnesis?: string;
 	objectiveStatus?: string;
 	treatmentDescription?: string;
-	complications?: string;
-	comorbidities?: string;
-	instrumentTrayBarcode?: string;
-	toothStates?: Record<number, string>;
-	toothSurfaces?: Record<number, string[]>;
-	procedures?: Array<{ code: string; name: string; tooth?: number | string }>;
+	complications?: string | undefined;
+	comorbidities?: string | undefined;
+	instrumentTrayBarcode?: string | undefined;
+	toothStates?: Record<number, string> | undefined;
+	toothSurfaces?: Record<number, string[]> | undefined;
+	procedures?: Array<{ code: string; name: string; tooth?: number | string }> | undefined;
 	initialDocType?: EgiszSemdDocTypeCode;
 	documentVersion?: number;
 	onSentSuccess?: (result: { logId?: string; transactionId?: string }) => void;
@@ -386,6 +387,17 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 	// 1-Click Export XML CDA
 	const handleExportXml = () => {
 		try {
+			if (validationReport.failedCount > 0) {
+				const failedRules = validationReport.rules
+					.filter((r) => r.status === "failed")
+					.map((r) => `• ${r.name}`)
+					.join("\n");
+				showToast(
+					`Внимание: документ содержит ${validationReport.failedCount} критических ошибок валидации ЕГИСЗ:\n${failedRules}`,
+					"warning",
+				);
+			}
+
 			const canonical = canonicalizeXml(generatedXml);
 			const blob = new Blob([canonical], { type: "application/xml;charset=utf-8" });
 			const url = URL.createObjectURL(blob);
@@ -421,6 +433,46 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 	// 1-Click Submit to REMD EGISZ Gateway
 	const handleSubmitToRemd = async () => {
 		if (isSending) return;
+
+		// 1. Проверка УКЭП подписи врача
+		if (!doctorSignatureBase64) {
+			showToast(
+				"Для отправки в РЭМД ЕГИСЗ необходимо подписать документ УКЭП врача на вкладке «Подписание ЭЦП»",
+				"warning",
+			);
+			setActiveTab("signature");
+			return;
+		}
+
+		// 2. Проверка СНИЛС пациента
+		const cleanPatientSnils = normalizeSnils(patientSnils);
+		if (!cleanPatientSnils || !isValidSnils(cleanPatientSnils)) {
+			showToast(
+				"У пациента в карточке должен быть указан валидный СНИЛС (11 цифр с контрольной суммой по алгоритму ПФР №192п)",
+				"error",
+			);
+			return;
+		}
+
+		// 3. Проверка СНИЛС врача
+		const cleanDoctorSnils = normalizeSnils(doctorSnils);
+		if (cleanDoctorSnils && !isValidSnils(cleanDoctorSnils)) {
+			showToast(
+				"СНИЛС врача имеет неверную контрольную сумму по алгоритму ПФР №192п",
+				"error",
+			);
+			return;
+		}
+
+		// 4. Проверка диагноза МКБ-10
+		if (!icd10Code || !/^[A-TV-Z]\d{2}(\.\d{1,4})?$/i.test(icd10Code.trim())) {
+			showToast(
+				"Для выгрузки в ЕГИСЗ необходим корректный код диагноза МКБ-10 (например, K02.1, K04.0)",
+				"error",
+			);
+			return;
+		}
+
 		setIsSending(true);
 		setSendError(null);
 		setSendSuccess(false);
@@ -438,17 +490,15 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 				documentVersion: documentVersion || 1,
 				xmlCanonicalPayload: canonical,
 				doctorSignature: {
-					signatureBase64:
-						doctorSignatureBase64 ||
-						"MIIBgQYJKoZIhvcNAQcCoIIBcjCCAW4CAQExDzANBglghkgBZQMEAgEFADALBgkqhkiG9w0BBwGg",
+					signatureBase64: doctorSignatureBase64,
 					certificateSerialNumber:
-						signatureCertInfo?.thumbprint || "4A8F9B2C10D4E567",
+						signatureCertInfo?.thumbprint || "GOST-R-3410-2012-DETACHED",
 					certificateSubject: formattedDoctorName,
 					signedAt: signedAt || new Date().toISOString(),
 					algorithmOid: "1.2.643.7.1.1.1.1",
 				},
 				metadata: {
-					patientSnils: (patientSnils || "12345678901").replace(/\D/g, ""),
+					patientSnils: cleanPatientSnils,
 					clinicOid: effectiveClinicOid,
 					clinicOgrn: effectiveClinicOgrn,
 					docTypeNsiCode: docDef.nsiCode,
@@ -565,7 +615,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 						type="button"
 						onClick={onClose}
 						data-testid="egisz-cda-modal-close-btn"
-						className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+						className="min-h-[44px] min-w-[44px] p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center cursor-pointer"
 						aria-label="Закрыть модальное окно"
 					>
 						<X size={20} />
@@ -587,7 +637,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 									type="button"
 									onClick={() => setSelectedDocType(code)}
 									data-testid={`doc-type-btn-${code}`}
-									className={`text-xs px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 border cursor-pointer ${
+									className={`min-h-[44px] text-xs px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 border cursor-pointer ${
 										isSelected
 											? "bg-teal-600 text-white border-teal-700 shadow-sm"
 											: "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750"
@@ -595,7 +645,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 								>
 									<span>Код {code}</span>
 									<span
-										className={`text-[10px] px-1.5 py-0.2 rounded-full font-normal ${
+										className={`text-xs px-2 py-0.5 rounded-full font-normal ${
 											isSelected
 												? "bg-teal-800 text-teal-100"
 												: "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
@@ -614,29 +664,29 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 							type="button"
 							onClick={() => setActiveTab("xml")}
 							data-testid="tab-xml"
-							className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+							className={`min-h-[44px] text-xs font-bold px-3.5 py-2 rounded-lg transition-colors flex items-center gap-2 cursor-pointer ${
 								activeTab === "xml"
 									? "bg-white dark:bg-slate-900 text-teal-700 dark:text-teal-300 shadow-sm"
 									: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
 							}`}
 						>
-							<FileCode size={14} />
+							<FileCode size={15} />
 							<span>XML CDA R2</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setActiveTab("validation")}
 							data-testid="tab-validation"
-							className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+							className={`min-h-[44px] text-xs font-bold px-3.5 py-2 rounded-lg transition-colors flex items-center gap-2 cursor-pointer ${
 								activeTab === "validation"
 									? "bg-white dark:bg-slate-900 text-teal-700 dark:text-teal-300 shadow-sm"
 									: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
 							}`}
 						>
-							<ShieldCheck size={14} />
+							<ShieldCheck size={15} />
 							<span>Валидация</span>
 							<span
-								className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+								className={`text-xs px-2 py-0.5 rounded-full font-bold ${
 									validationReport.isValid
 										? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300"
 										: "bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300"
@@ -649,13 +699,13 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 							type="button"
 							onClick={() => setActiveTab("signature")}
 							data-testid="tab-signature"
-							className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+							className={`min-h-[44px] text-xs font-bold px-3.5 py-2 rounded-lg transition-colors flex items-center gap-2 cursor-pointer ${
 								activeTab === "signature"
 									? "bg-white dark:bg-slate-900 text-teal-700 dark:text-teal-300 shadow-sm"
 									: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
 							}`}
 						>
-							<Key size={14} />
+							<Key size={15} />
 							<span>УКЭП ГОСТ</span>
 							{doctorSignatureBase64 ? (
 								<span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -675,7 +725,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 									<span className="font-semibold text-slate-800 dark:text-slate-200">
 										Разделы документа CDA R2:
 									</span>
-									<span className="text-[11px] text-slate-500">
+									<span className="text-xs text-slate-500">
 										(кликните по разделу для сворачивания/разворачивания)
 									</span>
 								</div>
@@ -683,12 +733,12 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 									<button
 										type="button"
 										onClick={handleCopyXml}
-										className="text-xs px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 text-slate-700 dark:text-slate-300 flex items-center gap-1.5"
+										className="min-h-[44px] text-xs px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 text-slate-700 dark:text-slate-300 flex items-center gap-2 cursor-pointer"
 									>
 										{copiedXml ? (
-											<Check size={13} className="text-emerald-500" />
+											<Check size={14} className="text-emerald-500" />
 										) : (
-											<Copy size={13} />
+											<Copy size={14} />
 										)}
 										<span>{copiedXml ? "Скопировано" : "Копировать XML"}</span>
 									</button>
@@ -702,7 +752,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 									<button
 										type="button"
 										onClick={() => toggleSection("header")}
-										className="w-full p-3 text-left font-bold text-xs flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60"
+										className="w-full min-h-[44px] p-3.5 text-left font-bold text-xs flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer"
 									>
 										<span className="flex items-center gap-2">
 											<span className="text-teal-600 dark:text-teal-400 font-mono">
@@ -1152,7 +1202,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 							<div className="mt-2">
 								<div className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center justify-between">
 									<span>Полный канонический XML-документ СЭМД:</span>
-									<span className="text-[11px] font-mono text-slate-500">
+									<span className="text-xs font-mono text-slate-500">
 										{generatedXml.length} байт UTF-8
 									</span>
 								</div>
@@ -1201,7 +1251,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 										<div className="text-2xl font-black font-mono">
 											{validationReport.scorePercent}%
 										</div>
-										<div className="text-[10px] uppercase tracking-wider font-bold">
+										<div className="text-xs uppercase tracking-wider font-bold">
 											Индекс соответствия
 										</div>
 									</div>
@@ -1245,7 +1295,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 															{rule.name}
 														</span>
 														<span
-															className={`text-[10px] px-2 py-0.2 rounded-full font-bold uppercase ${
+															className={`text-xs px-2.5 py-0.5 rounded-full font-bold uppercase ${
 																isPassed
 																	? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300"
 																	: isFailed
@@ -1264,7 +1314,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 														{rule.message}
 													</p>
 													{rule.details && (
-														<p className="text-[11px] text-slate-400 dark:text-slate-500 font-mono m-0 mt-1">
+														<p className="text-xs text-slate-400 dark:text-slate-500 font-mono m-0 mt-1">
 															{rule.details}
 														</p>
 													)}
@@ -1272,7 +1322,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 											</div>
 
 											{rule.xpathOrOid && (
-												<span className="hidden sm:inline-block text-[10px] font-mono text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded shrink-0 max-w-[200px] truncate">
+												<span className="hidden sm:inline-block text-xs font-mono text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded shrink-0 max-w-[200px] truncate">
 													{rule.xpathOrOid}
 												</span>
 											)}
@@ -1333,10 +1383,10 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 											type="button"
 											onClick={loadCertificates}
 											disabled={isLoadingCerts}
-											className="text-xs text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1"
+											className="min-h-[44px] text-xs text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1.5 cursor-pointer"
 										>
 											<RefreshCcw
-												size={12}
+												size={14}
 												className={isLoadingCerts ? "animate-spin" : ""}
 											/>
 											<span>Обновить список</span>
@@ -1349,7 +1399,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 										value={selectedCert}
 										onChange={(e) => setSelectedCert(e.target.value)}
 										disabled={isLoadingCerts || isSigning}
-										className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 focus:outline-none"
+										className="w-full min-h-[44px] bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 focus:outline-none cursor-pointer font-medium"
 									>
 										{isLoadingCerts ? (
 											<option>Чтение сертификатов из хранилища…</option>
@@ -1372,19 +1422,19 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 										<div className="text-slate-900 dark:text-white font-bold font-sans">
 											Владелец: {selectedCertInfo.name}
 										</div>
-										<div className="text-slate-600 dark:text-slate-400 text-[11px]">
+										<div className="text-slate-600 dark:text-slate-400 text-xs">
 											Издатель: {selectedCertInfo.issuer}
 										</div>
-										<div className="text-slate-600 dark:text-slate-400 text-[11px]">
+										<div className="text-slate-600 dark:text-slate-400 text-xs">
 											Алгоритм: ГОСТ Р 34.10-2012 (256 бит, OID 1.2.643.7.1.1.1.1)
 										</div>
-										<div className="text-slate-600 dark:text-slate-400 text-[11px]">
+										<div className="text-slate-600 dark:text-slate-400 text-xs">
 											Действителен: с{" "}
 											{new Date(selectedCertInfo.validFrom).toLocaleDateString("ru-RU")}{" "}
 											по{" "}
 											{new Date(selectedCertInfo.validTo).toLocaleDateString("ru-RU")}
 										</div>
-										<div className="text-slate-500 text-[10px] break-all">
+										<div className="text-slate-500 text-xs break-all">
 											Отпечаток (SHA-1): {selectedCertInfo.thumbprint}
 										</div>
 									</div>
@@ -1406,7 +1456,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 											onChange={(e) => setTokenPin(e.target.value)}
 											disabled={isSigning}
 											placeholder="Введите ПИН-код носителя"
-											className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 focus:outline-none"
+											className="w-full min-h-[44px] bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 focus:outline-none"
 										/>
 									</div>
 								)}
@@ -1416,7 +1466,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 									onClick={handleSignCda}
 									disabled={isSigning || !selectedCert}
 									data-testid="btn-sign-cda-ukep"
-									className="w-full py-2.5 px-4 bg-teal-600 hover:bg-teal-500 disabled:opacity-60 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-teal-500/20 flex items-center justify-center gap-2 cursor-pointer"
+									className="w-full min-h-[48px] py-3 px-4 bg-teal-600 hover:bg-teal-500 disabled:opacity-60 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-teal-500/20 flex items-center justify-center gap-2 cursor-pointer"
 								>
 									{isSigning ? (
 										<span>Наложение подписи КриптоПро…</span>
@@ -1444,7 +1494,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 							<CheckCircle2 size={20} className="text-emerald-500 shrink-0 mt-0.5" />
 							<div>
 								<div className="font-bold">Документ СЭМД успешно передан в РЭМД ЕГИСЗ</div>
-								<div className="mt-0.5 font-mono text-[11px]">
+								<div className="mt-0.5 font-mono text-xs">
 									Номер транзакции: {transactionId || "REMD-CONFIRMED"}
 								</div>
 							</div>
@@ -1471,7 +1521,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="px-4 py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-xl transition-colors"
+							className="min-h-[44px] px-5 py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-xl transition-colors cursor-pointer"
 						>
 							Закрыть
 						</button>
@@ -1483,7 +1533,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 							type="button"
 							onClick={handleExportXml}
 							data-testid="btn-export-cda-xml"
-							className="px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-900 dark:text-slate-100 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shadow-sm cursor-pointer"
+							className="min-h-[44px] px-5 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-900 dark:text-slate-100 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shadow-sm cursor-pointer"
 						>
 							<Download size={15} />
 							<span>Экспорт XML CDA</span>
@@ -1495,7 +1545,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 							onClick={handleSubmitToRemd}
 							disabled={isSending}
 							data-testid="btn-submit-egisz-remd"
-							className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 disabled:opacity-60 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-sky-600/20 flex items-center gap-2 cursor-pointer"
+							className="min-h-[44px] px-5 py-2.5 bg-sky-600 hover:bg-sky-500 disabled:opacity-60 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-sky-600/20 flex items-center gap-2 cursor-pointer"
 						>
 							{isSending ? (
 								<>

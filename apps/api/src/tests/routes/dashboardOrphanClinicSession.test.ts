@@ -197,7 +197,6 @@ after(async () => {
 				.where(eq(organizations.id, organizationId));
 		});
 	}
-	await pool.end();
 });
 
 describe("GET /api/dashboard: сессия несуществующей клиники", () => {

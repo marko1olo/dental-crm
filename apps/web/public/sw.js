@@ -23,9 +23,7 @@ function isForbiddenRuntimeResponse(url) {
 
 function isCacheableShellAsset(url) {
 	if (SHELL_ASSETS.includes(url.pathname)) return true;
-	return /^\/assets\/[-A-Za-z0-9_./]+(?:\.js|\.css|\.svg|\.png|\.webp|\.woff2?)$/.test(
-		url.pathname,
-	);
+	return /^\/assets\/[-A-Za-z0-9_./]+(?:\.js|\.css|\.svg|\.png|\.webp|\.woff2?)$/.test(url.pathname);
 }
 
 function isNetworkFirstShellAsset(url) {

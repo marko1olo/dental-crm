@@ -5,12 +5,16 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
+import { readRouteSourceSync } from "./lib/route-source.mjs";
 import { issueAttestation } from "./lib/documentIssueAttestation.mjs";
 
 const tempRoot = mkdtempSync(path.join(tmpdir(), "dental-tax-knd-xml-"));
 
 process.env.DENTAL_STATE_PERSISTENCE = "off";
 process.env.DENTAL_DOCUMENT_SNAPSHOT_DIR = path.join(tempRoot, "snapshots");
+process.env.NODE_ENV = "test";
+process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS = "true";
+process.env.DENTE_DEV_ALLOW_HEADER_ORG = "true";
 delete process.env.DENTE_FNS_TAX_OFFICE_CODE;
 delete process.env.FNS_TAX_OFFICE_CODE;
 
@@ -24,8 +28,12 @@ if (!existsSync(routePath) || !existsSync(sampleDataPath)) {
 const requireFromApi = createRequire(path.resolve("apps/api/package.json"));
 const Fastify = requireFromApi("fastify");
 const { registerDocumentRoutes } = await import(pathToFileURL(routePath).href);
-const { activeVisit, clinicProfile, documents, patients, payments } =
+const { activeVisit, inMemoryDomainState, documents, patients, payments } =
 	await import(pathToFileURL(sampleDataPath).href);
+const clinicProfile = inMemoryDomainState?.clinicProfile ?? {
+	inn: "7700000000",
+	signatoryName: "Иванов И.И.",
+};
 
 function assert(condition, message) {
 	if (!condition) throw new Error(message);
@@ -45,9 +53,8 @@ const appSource = [
 	readAppLogicSourceSync(),
 	readFileSync("apps/web/src/DocumentsView.tsx", "utf8"),
 ].join("\n");
-const documentRoutesSource = readFileSync(
+const documentRoutesSource = readRouteSourceSync(
 	"apps/api/src/routes/documents.ts",
-	"utf8",
 );
 const sampleDataSource = readFileSync("apps/api/src/sampleData.ts", "utf8");
 const taxXmlSource = readFileSync("apps/api/src/documents/taxXml.ts", "utf8");
@@ -202,7 +209,98 @@ assert(
 	"sample data store must persist immutable tax XML snapshots",
 );
 
+process.env.DENTE_CLINICAL_ADMIN_SECRET = "synthetic-clinical-secret";
+process.env.AUTH_TOKEN_SECRET = "synthetic-auth-token-secret-for-knd-smoke";
+
+const { signToken } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/utils/cryptoHelper.js")).href
+);
+const { authTokenSecret } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/security/authSecret.js")).href
+);
+const { db } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/db/client.js")).href
+);
+const schema = await import(
+	pathToFileURL(path.resolve("apps/api/dist/db/schema.js")).href
+);
+
+const { getDocumentById } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/db/documentQuery.js")).href
+);
+
+const { eq } = await import("drizzle-orm");
+
+await db
+	.insert(schema.organizations)
+	.values({
+		id: activeVisit.organizationId,
+		name: "Тестовая Клиника Дент",
+	})
+	.onConflictDoNothing();
+
+const patientFixture = patients.find((p) => p.id === activeVisit.patientId);
+if (patientFixture) {
+	await db
+		.insert(schema.patients)
+		.values({
+			id: patientFixture.id,
+			organizationId: activeVisit.organizationId,
+			fullName: patientFixture.fullName,
+			birthDate: patientFixture.birthDate,
+			phone: patientFixture.phone ?? "+79000000000",
+		})
+		.onConflictDoNothing();
+}
+
+await db
+	.delete(schema.generatedDocuments)
+	.where(eq(schema.generatedDocuments.patientId, activeVisit.patientId));
+await db
+	.delete(schema.payments)
+	.where(eq(schema.payments.patientId, activeVisit.patientId));
+
+async function insertPaymentFixture(p) {
+	if (!payments.includes(p)) {
+		payments.push(p);
+	}
+	await db
+		.insert(schema.payments)
+		.values({
+			id: p.id,
+			organizationId: activeVisit.organizationId,
+			patientId: p.patientId,
+			amountRub: p.amountRub,
+			method: p.method ?? "card",
+			status: p.status ?? "paid",
+			payerFullName: p.payerFullName,
+			payerInn: p.payerInn,
+			payerBirthDate: p.payerBirthDate,
+			payerIdentityDocument: p.payerIdentityDocument,
+			payerRelationship: p.payerRelationship,
+			taxDeductionCode: p.taxDeductionCode,
+			fiscalReceiptNumber: p.fiscalReceiptNumber,
+			fiscalReceiptIssuedAt: p.fiscalReceiptIssuedAt,
+			paidAt: p.paidAt ? new Date(p.paidAt) : new Date(),
+		})
+		.onConflictDoNothing();
+}
+
+for (const p of [...payments]) {
+	await insertPaymentFixture(p);
+}
+
+const clinicToken = signToken(
+	{ organizationId: activeVisit.organizationId ?? "org-default" },
+	authTokenSecret(),
+);
+
 const app = Fastify({ logger: false });
+app.addHook("onRequest", async (request) => {
+	request.headers["x-dente-admin-secret"] = "synthetic-clinical-secret";
+	request.headers["x-dente-clinic-token"] = clinicToken;
+	request.headers["x-organization-id"] = activeVisit.organizationId ?? "org-default";
+});
 
 try {
 	await registerDocumentRoutes(app);
@@ -231,7 +329,7 @@ try {
 	});
 	assert(
 		certificateCreateResponse.statusCode === 201,
-		`tax certificate create failed: ${certificateCreateResponse.statusCode}`,
+		`tax certificate create failed: ${certificateCreateResponse.statusCode} ${certificateCreateResponse.body}`,
 	);
 	const certificate = certificateCreateResponse.json();
 
@@ -252,6 +350,9 @@ try {
 	const missingApplicationIssueResponse = await app.inject({
 		method: "POST",
 		url: `/api/documents/${certificate.id}/issue`,
+		payload: issueAttestation({
+			signatureAttestation: { note: "test without application" },
+		}),
 	});
 	assert(
 		missingApplicationIssueResponse.statusCode === 409,
@@ -259,7 +360,7 @@ try {
 	);
 	assert(
 		documentErrorText(missingApplicationIssueResponse).includes("заявление"),
-		"tax certificate issue block must explain missing taxpayer application",
+		`tax certificate issue block must explain missing taxpayer application: ${documentErrorText(missingApplicationIssueResponse)}`,
 	);
 	assertNoMojibake(
 		missingApplicationIssueResponse.body,
@@ -278,7 +379,7 @@ try {
 		paidAt: "2026-05-23T09:00:00.000+04:00",
 		createdAt: "2026-05-23T09:00:00.000+04:00",
 	};
-	payments.push(tenDigitInnPayment);
+	await insertPaymentFixture(tenDigitInnPayment);
 	const tenDigitInnApplicationResponse = await app.inject({
 		method: "POST",
 		url: "/api/documents",
@@ -333,7 +434,7 @@ try {
 		paidAt: "2026-05-25T09:00:00.000+04:00",
 		createdAt: "2026-05-25T09:00:00.000+04:00",
 	};
-	payments.push(identityOnlyPayment);
+	await insertPaymentFixture(identityOnlyPayment);
 	const identityOnlyApplicationResponse = await app.inject({
 		method: "POST",
 		url: "/api/documents",
@@ -424,7 +525,7 @@ try {
 		paidAt: "2026-05-24T09:00:00.000+04:00",
 		createdAt: "2026-05-24T09:00:00.000+04:00",
 	};
-	payments.push(spousePayment);
+	await insertPaymentFixture(spousePayment);
 	const spouseApplicationResponse = await app.inject({
 		method: "POST",
 		url: "/api/documents",
@@ -488,6 +589,9 @@ try {
 	const spouseIssueResponse = await app.inject({
 		method: "POST",
 		url: `/api/documents/${spouseCertificateResponse.json().id}/issue`,
+		payload: issueAttestation({
+			signatureAttestation: { note: "test spouse issue" },
+		}),
 	});
 	assert(
 		spouseIssueResponse.statusCode === 409,
@@ -535,6 +639,11 @@ try {
 		preferredAppointmentNote: null,
 		dataProcessingBasisNote: null,
 	};
+	await db
+		.update(schema.patients)
+		.set({ administrativeProfile: activePatient.administrativeProfile })
+		.where(eq(schema.patients.id, activePatient.id));
+
 	const spouseIssueReadyResponse = await app.inject({
 		method: "POST",
 		url: `/api/documents/${spouseCertificateResponse.json().id}/issue`,
@@ -549,8 +658,9 @@ try {
 		spouseIssueReadyResponse.statusCode === 200,
 		`non-self KND certificate issue with patient tax identity failed: ${spouseIssueReadyResponse.statusCode} ${spouseIssueReadyResponse.body}`,
 	);
-	const spouseIssuedCertificate = documents.find(
-		(document) => document.id === spouseCertificateResponse.json().id,
+	const spouseIssuedCertificate = await getDocumentById(
+		activeVisit.organizationId,
+		spouseCertificateResponse.json().id,
 	);
 	assert(
 		spouseIssuedCertificate?.taxXmlSourceSnapshot?.patient.administrativeProfile
@@ -729,8 +839,9 @@ try {
 		certificateIssueResponse.statusCode === 200,
 		`tax certificate issue failed before XML export: ${certificateIssueResponse.statusCode}`,
 	);
-	const issuedCertificate = documents.find(
-		(document) => document.id === certificate.id,
+	const issuedCertificate = await getDocumentById(
+		activeVisit.organizationId,
+		certificate.id,
 	);
 	assert(
 		issuedCertificate?.taxPaymentSnapshot?.paymentIds.includes(taxPayment.id),
@@ -878,8 +989,9 @@ try {
 	);
 	assertNoMojibake(xml, "tax XML");
 
-	const xmlSnapshotDocument = documents.find(
-		(document) => document.id === certificate.id,
+	const xmlSnapshotDocument = await getDocumentById(
+		activeVisit.organizationId,
+		certificate.id,
 	);
 	assert(
 		xmlSnapshotDocument?.taxXmlSnapshot?.sha256,

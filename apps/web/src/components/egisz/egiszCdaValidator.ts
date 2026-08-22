@@ -466,10 +466,10 @@ export function validateCdaSemanticRules(
 		id: "RULE_DOCTOR_SNILS_FRMR",
 		name: "СНИЛС врача и должность в ФРМР",
 		category: "doctor",
-		status: isDocSnilsValid ? "passed" : docSnilsRaw.length === 11 ? "failed" : "warning",
+		status: isDocSnilsValid ? "passed" : "failed",
 		message: isDocSnilsValid
 			? `СНИЛС врача проверен по алгоритму ПФР №192п: ${formatSnils(docSnilsRaw)} (${data.doctorPosition || "Врач-стоматолог"})`
-			: "Не указан или некорректен СНИЛС врача (ФРМР отклонит подписание без контрольной суммы).",
+			: "Не указан или некорректен СНИЛС врача (ФРМР отклонит регистрацию СЭМД без валидной контрольной суммы СНИЛС).",
 		details: `Позиция NSI: ${data.doctorPositionCode || "15"}, СНИЛС: ${docSnilsRaw || "не задан"}`,
 		xpathOrOid: "ClinicalDocument/author/assignedAuthor/id[@root=\"1.2.643.100.3\"]",
 	});

@@ -107,6 +107,26 @@
      значениями в светлой и тёмной теме. */
 	--brand-400: var(--teal);
 	--glass-bg: var(--glass-panel);
+	--code-bg: var(--paper-strong);
+	--code-fg: var(--ink);
+	--primary-hover: var(--teal-dark);
+	--primary-muted: var(--teal-surface);
+	--primary-light: var(--teal-soft);
+	--ok: var(--ok-fg);
+	--success: var(--ok-fg);
+	--warning: var(--warn-fg);
+	--danger-fg: var(--bad-fg);
+	--rose: var(--bad-fg);
+	--rose-muted: var(--bad-bg);
+	--rose-line: var(--bad-fg);
+	--rose-text: var(--bad-fg);
+	--amber-muted: var(--warn-bg);
+	--emerald: var(--ok-fg);
+	--emerald-muted: var(--ok-bg);
+	--emerald-line: var(--ok-fg);
+	--emerald-text: var(--ok-fg);
+	--paper-muted: var(--paper-soft);
+	--teal-ink: var(--teal-dark);
 
 	/* ЧАСТЬ 1b — ИМЕНА С ЗАПАСОМ, КОТОРЫЕ ГЕЙТ ПРОЩАЛ, А ТЕМА НЕТ.
      Добавлено 28.07.2026 после замеров в живом браузере.
@@ -246,6 +266,7 @@
      В тёмной теме заливка остаётся --teal: там текст --on-teal
      (#04211c), и контраст около 9:1 уже достаточен. */
 	--teal-fill: var(--teal-dark);
+	--on-teal: #ffffff;
 	--srf-check-task: #faf7f1;
 	--srf-check-task-blocking: #fffaf0;
 	--srf-chip-soft: #f7fbf9;
@@ -268,6 +289,7 @@
 :root[data-theme="dark"],
 html.dark:not([data-theme]) {
 	--teal-fill: var(--teal);
+	--on-teal: #04211c;
 	--srf-check-task: #16201e;
 	--srf-check-task-blocking: #2a2113;
 	--srf-chip-soft: #16211f;
@@ -288,6 +310,7 @@ html.dark:not([data-theme]) {
 
 :root[data-theme="night"] {
 	--teal-fill: var(--teal);
+	--on-teal: #000000;
 	--srf-check-task: #121215;
 	--srf-check-task-blocking: #1f1608;
 	--srf-chip-soft: #121215;
@@ -304,6 +327,7 @@ html.dark:not([data-theme]) {
 
 :root[data-theme="calm_teal"] {
 	--teal-fill: var(--teal-dark);
+	--on-teal: #ffffff;
 	--srf-check-task: #f0fdfa;
 	--srf-check-task-blocking: #fffbeb;
 	--srf-chip-soft: #e6fffa;
@@ -320,6 +344,7 @@ html.dark:not([data-theme]) {
 
 :root[data-theme="contrast"] {
 	--teal-fill: #000000;
+	--on-teal: #ffffff;
 	--srf-check-task: #ffffff;
 	--srf-check-task-blocking: #ffffff;
 	--srf-chip-soft: #f4f4f5;
@@ -336,6 +361,7 @@ html.dark:not([data-theme]) {
 
 :root[data-theme="sakura"] {
 	--teal-fill: var(--teal-dark);
+	--on-teal: #ffffff;
 	--srf-check-task: #fff1f2;
 	--srf-check-task-blocking: #fffbeb;
 	--srf-chip-soft: #fce7f3;
@@ -352,6 +378,7 @@ html.dark:not([data-theme]) {
 
 :root[data-theme="ocean"] {
 	--teal-fill: var(--teal);
+	--on-teal: #050b17;
 	--srf-check-task: #0c1e3d;
 	--srf-check-task-blocking: #172554;
 	--srf-chip-soft: #0f2447;
@@ -368,6 +395,7 @@ html.dark:not([data-theme]) {
 
 :root[data-theme="emerald"] {
 	--teal-fill: var(--teal);
+	--on-teal: #01140b;
 	--srf-check-task: #064e3b;
 	--srf-check-task-blocking: #14532d;
 	--srf-chip-soft: #065f46;
@@ -384,6 +412,7 @@ html.dark:not([data-theme]) {
 
 :root[data-theme="cyber_xray"] {
 	--teal-fill: var(--teal);
+	--on-teal: #02040a;
 	--srf-check-task: #081026;
 	--srf-check-task-blocking: #1e1b4b;
 	--srf-chip-soft: #0d1a3a;
@@ -400,6 +429,7 @@ html.dark:not([data-theme]) {
 
 :root[data-theme="warm_sand"] {
 	--teal-fill: var(--teal-dark);
+	--on-teal: #ffffff;
 	--srf-check-task: #fefce8;
 	--srf-check-task-blocking: #fffbeb;
 	--srf-chip-soft: #fef3c7;
@@ -411,7 +441,7 @@ html.dark:not([data-theme]) {
 
 	--violet-50: #fefce8;
 	--violet-200: #fde68a;
-	--violet-700: #b45309;
+	--violet-700: #92400e;
 }
 
 

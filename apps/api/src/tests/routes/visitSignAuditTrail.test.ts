@@ -238,8 +238,7 @@ describe("подписание приёма оставляет след в audit
 
 	after(async () => {
 		await app?.close();
-process.env = originalEnv;
-		await pool.end();
+		process.env = originalEnv;
 	});
 
 	test("после подписания через маршрут в журнале появляется ровно одно событие приёма", async () => {

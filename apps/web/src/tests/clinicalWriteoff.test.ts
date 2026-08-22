@@ -35,7 +35,7 @@ import {
 	kopecksToRubles,
 	updateLineActualQuantity,
 	validateWriteoffDocument,
-} from "../components/inventory/writeoff";
+} from "../components/inventory/writeoff/index.js";
 
 describe("Order 804n Dental Service BOM Presets & Materials Catalog", () => {
 	it("Каталог содержит все ключевые стоматологические материалы", () => {

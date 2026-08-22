@@ -795,12 +795,12 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							<button
 								type="button"
 								onClick={() => populateFromOdontogram(activeTeeth)}
-								className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--teal-surface)] text-[var(--teal-dark)] hover:bg-[var(--teal-soft)] border border-[var(--teal)] text-xs font-semibold transition-colors shadow-xs"
+								className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl bg-[var(--teal-surface)] text-[var(--teal-dark)] hover:bg-[var(--teal-soft)] border border-[var(--teal)] text-xs font-semibold transition-colors shadow-xs touch-manipulation min-w-0 break-words"
 								title="Сформировать структурированный дневник SOAP из отметок на зубной формуле"
 								data-testid="populate-diary-from-odontogram-btn"
 							>
-								<span>🦷</span>
-								Заполнить дневник из формулы
+								<span className="shrink-0">🦷</span>
+								<span className="min-w-0 break-words">Заполнить дневник из формулы</span>
 							</button>
 						)}
 					</div>
@@ -808,7 +808,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						<button
 							type="button"
 							onClick={handleInsertPerioStatus}
-							className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 text-xs font-semibold transition-all shrink-0 shadow-xs touch-manipulation hover:border-emerald-500 min-w-0"
+							className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 text-xs font-semibold transition-all shrink-0 shadow-xs touch-manipulation hover:border-emerald-500 min-w-0 break-words"
 							title="Вставить протокол пародонтологического обследования PSR и индексы 043/у (AAP/EFP 2018)"
 							data-testid="insert-perio-043-btn"
 						>
@@ -816,12 +816,12 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 								PSR
 							</span>
 							<Activity className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-							<span className="min-w-0">Пародонтологический статус (PSR + 043/у)</span>
+							<span className="min-w-0 break-words">Пародонтологический статус (PSR + 043/у)</span>
 						</button>
 						<button
 							type="button"
 							onClick={handleInsertPediatricStatus}
-							className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-800 dark:text-purple-300 border border-purple-500/30 text-xs font-semibold transition-all shrink-0 shadow-xs touch-manipulation hover:border-purple-500 min-w-0"
+							className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-800 dark:text-purple-300 border border-purple-500/30 text-xs font-semibold transition-all shrink-0 shadow-xs touch-manipulation hover:border-purple-500 min-w-0 break-words"
 							title="Вставить протокол сменного прикуса, физиологической резорбции корней и Кариограммы Bratthall"
 							data-testid="insert-pediatric-cariogram-btn"
 						>
@@ -829,21 +829,21 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 								ДЕТИ
 							</span>
 							<Sparkles className="w-3.5 h-3.5 text-purple-600 shrink-0" />
-							<span className="min-w-0">Сменный прикус (резорбция + кариограмма)</span>
+							<span className="min-w-0 break-words">Сменный прикус (резорбция + кариограмма)</span>
 						</button>
 						{CLINICAL_FAST_PRESETS.map((preset) => (
 							<button
 								key={preset.id}
 								type="button"
 								onClick={() => applyClinicalPreset(preset.id)}
-								className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-xs font-medium text-[var(--ink)] hover:border-[var(--teal)] transition-all shrink-0 shadow-xs touch-manipulation min-w-0"
+								className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-xs font-medium text-[var(--ink)] hover:border-[var(--teal)] transition-all shrink-0 shadow-xs touch-manipulation min-w-0 break-words"
 								title={preset.description}
 								data-testid={`preset-btn-${preset.id}`}
 							>
 								<span className="font-mono text-[10px] px-1.5 py-0.5 rounded-md bg-[var(--teal-surface)] text-[var(--teal-dark)] font-bold shrink-0">
 									{preset.badge}
 								</span>
-								<span className="min-w-0">{preset.label}</span>
+								<span className="min-w-0 break-words">{preset.label}</span>
 							</button>
 						))}
 					</div>
@@ -893,12 +893,12 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 									key={ane.id}
 									type="button"
 									onClick={() => applyAnesthesiaPreset(ane.textToInsert)}
-									className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-lg bg-[var(--paper)] hover:bg-blue-500/10 border border-[var(--line)] hover:border-blue-500/30 text-xs font-medium text-[var(--ink)] transition-colors shrink-0 touch-manipulation min-w-0"
+									className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-lg bg-[var(--paper)] hover:bg-blue-500/10 border border-[var(--line)] hover:border-blue-500/30 text-xs font-medium text-[var(--ink)] transition-colors shrink-0 touch-manipulation min-w-0 break-words"
 									title={ane.textToInsert}
 									data-testid={`anesthesia-btn-${ane.id}`}
 								>
 									<Plus className="w-3 h-3 text-blue-500 shrink-0" />
-									<span className="min-w-0">{ane.label}</span>
+									<span className="min-w-0 break-words">{ane.label}</span>
 									<span className="text-[10px] text-[var(--muted)] shrink-0">
 										({ane.volume})
 									</span>
@@ -1041,12 +1041,12 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							</label>
 							{diary.diagnosisIcd10 ? (
 								<div
-									className={`vde-043__icd-chip ${getIcdColor(diary.diagnosisIcd10)}`}
+									className={`vde-043__icd-chip min-h-[44px] min-w-0 break-words ${getIcdColor(diary.diagnosisIcd10)}`}
 								>
-									<span className="vde-043__icd-code">
+									<span className="vde-043__icd-code shrink-0">
 										{diary.diagnosisIcd10}
 									</span>
-									<span className="flex-1 min-w-0 truncate">
+									<span className="flex-1 min-w-0 break-words">
 										{ICD10_DICTIONARY.find(
 											(i) => i.code === diary.diagnosisIcd10,
 										)?.label ?? "Диагноз выбран"}
@@ -1059,7 +1059,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 												setIcdSearch("");
 												scheduleDebouncedSave();
 											}}
-											className="vde-043__btn vde-043__btn--ghost vde-043__btn--icon"
+											className="vde-043__btn vde-043__btn--ghost vde-043__btn--icon shrink-0"
 											title="Сбросить диагноз"
 											aria-label="Сбросить диагноз МКБ-10"
 										>
@@ -1073,7 +1073,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 									<input
 										id="diary-icd-search"
 										disabled={fieldsDisabled}
-										className="vde-043__input vde-043__icd-input"
+										className="vde-043__input vde-043__icd-input min-h-[44px]"
 										value={icdSearch}
 										onChange={(e) => {
 											setIcdSearch(e.target.value);
@@ -1099,7 +1099,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 											{(filteredIcd ?? []).map((icd) => (
 												<div
 													key={icd.code}
-													className="vde-043__icd-opt"
+													className="vde-043__icd-opt min-h-[44px] min-w-0"
 													role="option"
 													aria-selected={false}
 													tabIndex={0}
@@ -1115,15 +1115,15 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 													}}
 												>
 													<span
-														className={`vde-043__icd-opt-code ${ICD_GROUP_COLORS[icd.group] ?? ""}`}
+														className={`vde-043__icd-opt-code shrink-0 ${ICD_GROUP_COLORS[icd.group] ?? ""}`}
 													>
 														{icd.code}
 													</span>
-													<div className="min-w-0">
-														<div className="vde-043__icd-opt-label">
+													<div className="flex-1 min-w-0 break-words">
+														<div className="vde-043__icd-opt-label break-words whitespace-normal">
 															{icd.label}
 														</div>
-														<div className="vde-043__icd-opt-group">
+														<div className="vde-043__icd-opt-group break-words">
 															{icd.group}
 														</div>
 													</div>
@@ -1213,12 +1213,12 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 											);
 											scheduleDebouncedSave();
 										}}
-										className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl bg-[var(--paper)] hover:bg-teal-500/10 border border-[var(--line)] hover:border-teal-500/30 text-xs font-semibold text-[var(--ink)] transition-colors shadow-xs touch-manipulation min-w-0 cursor-pointer"
+										className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl bg-[var(--paper)] hover:bg-teal-500/10 border border-[var(--line)] hover:border-teal-500/30 text-xs font-semibold text-[var(--ink)] transition-colors shadow-xs touch-manipulation min-w-0 break-words cursor-pointer"
 										title={rec.text}
 										data-testid={`rec-btn-${rec.id}`}
 									>
 										<Plus className="w-3 h-3 text-teal-500 shrink-0" />
-										<span>{rec.label}</span>
+										<span className="min-w-0 break-words">{rec.label}</span>
 									</button>
 								))}
 							</div>
@@ -1505,9 +1505,9 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 									{prevBits.length > 0 ? (
 										<ul className="vde-043__revision-prev">
 											{(prevBits ?? []).map((b) => (
-												<li key={b.label}>
+												<li key={b.label} className="min-w-0 break-words">
 													<strong>{b.label}:</strong>{" "}
-													<span className="vde-043__revision-prev-text">
+													<span className="vde-043__revision-prev-text min-w-0 break-words">
 														{b.text.length > 280
 															? `${b.text.slice(0, 280)}…`
 															: b.text}

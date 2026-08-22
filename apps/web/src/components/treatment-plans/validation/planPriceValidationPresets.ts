@@ -81,6 +81,7 @@ export interface TreatmentPlanValidationPayload {
 	readonly planTitle: string;
 	readonly patientId: string;
 	readonly patientName: string;
+	readonly patientChartNumber?: string | undefined;
 	readonly doctorId: string;
 	readonly doctorFullName: string;
 	readonly createdAtIso: string;

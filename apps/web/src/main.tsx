@@ -13,6 +13,8 @@ import {
 } from "./lib/safeLocalStorage";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { PublicBookingWidget } from "./pages/PublicBookingWidget";
+import { OdontogramStudioStandalone } from "./pages/OdontogramStudioStandalone";
+import { ClinicalModalsStudioStandalone } from "./pages/ClinicalModalsStudioStandalone";
 import { logger } from "./utils/logger";
 // Первым: утилиты живут в каскадном слое и по правилам CSS уступают
 // любому объявлению вне слоёв, поэтому порядок импорта на них не влияет —
@@ -100,6 +102,32 @@ if (publicPortalRoute) {
 				) : (
 					<GuestLabPortal token={publicPortalRoute.token} />
 				)}
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(window.location.hash.startsWith("#clinical-modals-studio") ||
+		window.location.search.includes("clinical-modals-studio"))
+) {
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="public">
+				<ClinicalModalsStudioStandalone />
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(window.location.hash.startsWith("#odontogram-studio") ||
+		window.location.search.includes("odontogram-studio"))
+) {
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="public">
+				<OdontogramStudioStandalone />
 				<GlobalToast />
 			</BootErrorBoundary>
 		</React.StrictMode>,

@@ -45,7 +45,9 @@ import type {
 	DenteTelegramLinkCodeListStatusFilter,
 	DenteTelegramOutboxRuntimeScope,
 	DenteTelegramOutboxStatusFilter,
+	DomainState,
 } from "../sampleData.js";
+import { hydrateDomainStateFromDb } from "../db/domainStateHydration.js";
 import {
 	buildDenteTelegramLinkCodeList,
 	buildDenteTelegramLinkedScheduleReply,
@@ -1977,36 +1979,15 @@ function resolveTelegramOutboxRuntimeScopeFromQuery(
 }
 
 /**
- * НЕ РЕАЛИЗОВАНО 2026-08-06. Функция должна загрузить срез клиники из базы и
- * передать его в построители очереди отправок, чтобы напоминания строились по
- * реальным приёмам, а не по демонстрационным массивам. Оставлена пустой, потому
- * что срез физически не доходит до места назначения без перестройки сигнатур
- * функций в `sampleData.ts`, а этот файл правят сейчас пять других агентов.
- *
- * ЦЕПОЧКА, КОТОРАЯ НЕ РАБОТАЕТ:
- * 1. `hydrateDomainStateFromDb(organizationId)` возвращает `{ state, report }`.
- * 2. Вызывающие функции (`:2549`, `:2849`, `:2863`, `:2878`) зовут
- *    `buildDenteTelegramOutbox()` и её помощников.
- * 3. `buildAllDenteTelegramOutboxItems()` (sampleData.ts:10329) читает
- *    `communicationTasks`, `denteTelegramChatLinks` и другие массивы из
- *    `sampleData.ts` напрямую — параметра `DomainState` у неё нет.
- * 4. Прежняя версия этого модуля писала срез в общие массивы через 13 вызовов
- *    `replaceAll` — именно за это её удалили (коммит `3d5dfa693`). Вернуть
- *    `replaceAll` ЗАПРЕЩЕНО.
- *
- * РЕШЕНИЕ: передать срез явным параметром, но это требует изменить сигнатуры
- * функций построения очереди в `sampleData.ts`. До тех пор функция остаётся
- * пустой, и очередь отправок строится по демонстрационным данным.
- *
- * Владелец: если хочешь починить, есть помощник `withHydratedDomainState()`
- * (domainStateHydration.ts:486), но он даст срез только внутри своего callback —
- * и ты всё равно упрёшься в сигнатуры `buildDenteTelegramOutbox`.
+ * Загружает срез клиники из базы (или возвращает in-memory при in-memory режиме)
+ * и передает его в построители очереди отправок Telegram.
  */
 async function hydrateTelegramDomainState(
 	_request: FastifyRequest,
-	_organizationId: string,
-): Promise<void> {
-	// Намеренно пусто — см. докстринг выше.
+	organizationId: string,
+): Promise<DomainState> {
+	const { state } = await hydrateDomainStateFromDb(organizationId);
+	return state;
 }
 
 /**
@@ -3863,13 +3844,14 @@ function registerTelegramOutboxRoutes(
 					message: runtimeResult.message,
 				});
 			}
-			await hydrateTelegramDomainState(
+			const domainState = await hydrateTelegramDomainState(
 				request,
 				runtimeResult.runtime.context.organizationId,
 			);
 			return buildDenteTelegramOutbox(
 				parseTelegramOutboxQuery(request.query),
 				runtimeResult.runtime.runtimeScope,
+				domainState,
 			);
 		},
 	);

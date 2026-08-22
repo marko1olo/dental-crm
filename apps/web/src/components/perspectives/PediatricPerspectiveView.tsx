@@ -483,10 +483,10 @@ export function PediatricPerspectiveView() {
 								role="tab"
 								aria-selected={activePediatricTab === "chart"}
 								onClick={() => setActivePediatricTab("chart")}
-								className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+								className={`min-h-[44px] px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
 									activePediatricTab === "chart"
 										? "bg-pink-600 text-white shadow-sm"
-										: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-pink-50 dark:hover:bg-pink-950/30"
+										: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-pink-50 dark:hover:bg-pink-950/30 border border-[var(--line,#cbd5e1)] dark:border-slate-700"
 								}`}
 							>
 								<span>🦷 Формула</span>
@@ -496,10 +496,10 @@ export function PediatricPerspectiveView() {
 								role="tab"
 								aria-selected={activePediatricTab === "cariogram"}
 								onClick={() => setActivePediatricTab("cariogram")}
-								className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+								className={`min-h-[44px] px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
 									activePediatricTab === "cariogram"
 										? "bg-pink-600 text-white shadow-sm"
-										: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-pink-50 dark:hover:bg-pink-950/30"
+										: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-pink-50 dark:hover:bg-pink-950/30 border border-[var(--line,#cbd5e1)] dark:border-slate-700"
 								}`}
 							>
 								<span>🍰 Cariogram (Риск)</span>
@@ -509,10 +509,10 @@ export function PediatricPerspectiveView() {
 								role="tab"
 								aria-selected={activePediatricTab === "resorption"}
 								onClick={() => setActivePediatricTab("resorption")}
-								className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+								className={`min-h-[44px] px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
 									activePediatricTab === "resorption"
 										? "bg-pink-600 text-white shadow-sm"
-										: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-pink-50 dark:hover:bg-pink-950/30"
+										: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-pink-50 dark:hover:bg-pink-950/30 border border-[var(--line,#cbd5e1)] dark:border-slate-700"
 								}`}
 							>
 								<span>📉 Резорбция корней</span>
@@ -522,10 +522,10 @@ export function PediatricPerspectiveView() {
 								role="tab"
 								aria-selected={activePediatricTab === "timeline"}
 								onClick={() => setActivePediatricTab("timeline")}
-								className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+								className={`min-h-[44px] px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
 									activePediatricTab === "timeline"
 										? "bg-pink-600 text-white shadow-sm"
-										: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-pink-50 dark:hover:bg-pink-950/30"
+										: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-pink-50 dark:hover:bg-pink-950/30 border border-[var(--line,#cbd5e1)] dark:border-slate-700"
 								}`}
 							>
 								<span>⏳ Сроки смены</span>
@@ -584,7 +584,7 @@ export function PediatricPerspectiveView() {
 											type="button"
 											onClick={() => setViewMode("svg")}
 											aria-pressed={viewMode === "svg"}
-											className={`min-h-[40px] px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+											className={`min-h-[44px] px-3.5 py-2 rounded-lg text-sm font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
 												viewMode === "svg"
 													? "bg-pink-600 text-white shadow-md shadow-pink-600/30"
 													: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-pink-600 dark:hover:text-pink-300"
@@ -596,7 +596,7 @@ export function PediatricPerspectiveView() {
 											type="button"
 											onClick={() => setViewMode("tiles")}
 											aria-pressed={viewMode === "tiles"}
-											className={`min-h-[40px] px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+											className={`min-h-[44px] px-3.5 py-2 rounded-lg text-sm font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
 												viewMode === "tiles"
 													? "bg-pink-600 text-white shadow-md shadow-pink-600/30"
 													: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-pink-600 dark:hover:text-pink-300"
@@ -609,7 +609,7 @@ export function PediatricPerspectiveView() {
 
 								{/* Rendering Branch: Anatomical SVG Arc vs Touch Tiles Matrix */}
 								{viewMode === "svg" ? (
-									<div className="w-full overflow-x-auto pb-2">
+									<div className="w-full overflow-x-auto pb-2 min-h-[420px] flex items-center justify-center">
 										<ToothChart
 											teethData={teethData}
 											pediatricMode={!isMixedDentition}
@@ -620,19 +620,19 @@ export function PediatricPerspectiveView() {
 											onToothClick={handleToothClickFromChart}
 											useSurfaces={true}
 											hideHeader={true}
-											className="border-0 shadow-none p-0 bg-transparent"
+											className="border-0 shadow-none p-0 bg-transparent w-full"
 										/>
 									</div>
 								) : (
-									<div className="space-y-4">
+									<div className="space-y-5 min-h-[420px]">
 										{/* Upper Milk Arch (55–65) */}
 										<div>
-											<div className="text-xs font-bold text-[var(--muted,#64748b)] dark:text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+											<div className="text-sm font-bold text-[var(--muted,#64748b)] dark:text-slate-400 uppercase tracking-wider mb-2.5 flex items-center justify-between">
 												<span>Верхняя челюсть (55–51 | 61–65)</span>
 												{isMixedDentition && <span className="text-purple-700 dark:text-purple-300 font-bold">+ моляры 16, 26</span>}
 											</div>
 											<div
-												className={`grid gap-2 overflow-x-auto pb-1 ${
+												className={`grid gap-2.5 overflow-x-auto pb-1 ${
 													isMixedDentition ? "grid-cols-6 sm:grid-cols-12" : "grid-cols-5 sm:grid-cols-10"
 												}`}
 											>
@@ -646,26 +646,26 @@ export function PediatricPerspectiveView() {
 															key={tNum}
 															type="button"
 															onClick={() => setSelectedTooth(tNum)}
-															className={`min-h-[58px] min-w-[44px] p-1 rounded-2xl flex flex-col items-center justify-center font-black transition-all border cursor-pointer active:scale-95 whitespace-nowrap ${
+															className={`min-h-[64px] min-w-[48px] p-2 rounded-2xl flex flex-col items-center justify-center font-black transition-all border cursor-pointer active:scale-95 whitespace-nowrap ${
 																isSelected
 																	? "bg-pink-600 text-white border-pink-700 shadow-lg shadow-pink-600/30 scale-105 z-10"
 																	: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 border-[var(--line,#cbd5e1)] dark:border-slate-700"
 															}`}
 														>
-															<span className="text-xs sm:text-sm md:text-base font-black whitespace-nowrap leading-tight">{tNum}</span>
+															<span className="text-sm sm:text-base md:text-lg font-black whitespace-nowrap leading-tight">{tNum}</span>
 															<span
-																className={`flex items-center justify-center gap-1 mt-0.5 text-[10px] font-bold px-0.5 rounded-sm whitespace-nowrap leading-none ${
+																className={`flex items-center justify-center gap-1.5 mt-1 text-xs font-bold px-1 rounded whitespace-nowrap leading-none ${
 																	isSelected ? "text-pink-100" : "text-[var(--ink,#0f172a)] dark:text-slate-300"
 																}`}
 															>
 																<span
-																	className="w-1.5 h-1.5 rounded-full shrink-0"
+																	className="w-2 h-2 rounded-full shrink-0"
 																	style={{ backgroundColor: meta.dotColor }}
 																/>
-																<span className="whitespace-nowrap">{meta.code}</span>
+																<span className="whitespace-nowrap font-mono">{meta.code}</span>
 															</span>
 															{surfaces && surfaces.length > 0 && (
-																<span className="text-[8px] leading-tight text-pink-300 dark:text-pink-200 mt-0.5 truncate max-w-full">
+																<span className="text-[11px] font-bold leading-tight text-pink-300 dark:text-pink-200 mt-1 truncate max-w-full">
 																	{surfaces.join("")}
 																</span>
 															)}
@@ -677,12 +677,12 @@ export function PediatricPerspectiveView() {
 
 										{/* Lower Milk Arch (85–75) */}
 										<div>
-											<div className="text-xs font-bold text-[var(--muted,#64748b)] dark:text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+											<div className="text-sm font-bold text-[var(--muted,#64748b)] dark:text-slate-400 uppercase tracking-wider mb-2.5 flex items-center justify-between">
 												<span>Нижняя челюсть (85–81 | 71–75)</span>
 												{isMixedDentition && <span className="text-purple-700 dark:text-purple-300 font-bold">+ моляры 46, 36</span>}
 											</div>
 											<div
-												className={`grid gap-2 overflow-x-auto pb-1 ${
+												className={`grid gap-2.5 overflow-x-auto pb-1 ${
 													isMixedDentition ? "grid-cols-6 sm:grid-cols-12" : "grid-cols-5 sm:grid-cols-10"
 												}`}
 											>
@@ -696,26 +696,26 @@ export function PediatricPerspectiveView() {
 															key={tNum}
 															type="button"
 															onClick={() => setSelectedTooth(tNum)}
-															className={`min-h-[58px] min-w-[44px] p-1 rounded-2xl flex flex-col items-center justify-center font-black transition-all border cursor-pointer active:scale-95 whitespace-nowrap ${
+															className={`min-h-[64px] min-w-[48px] p-2 rounded-2xl flex flex-col items-center justify-center font-black transition-all border cursor-pointer active:scale-95 whitespace-nowrap ${
 																isSelected
 																	? "bg-pink-600 text-white border-pink-700 shadow-lg shadow-pink-600/30 scale-105 z-10"
 																	: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 border-[var(--line,#cbd5e1)] dark:border-slate-700"
 															}`}
 														>
-															<span className="text-xs sm:text-sm md:text-base font-black whitespace-nowrap leading-tight">{tNum}</span>
+															<span className="text-sm sm:text-base md:text-lg font-black whitespace-nowrap leading-tight">{tNum}</span>
 															<span
-																className={`flex items-center justify-center gap-1 mt-0.5 text-[10px] font-bold px-0.5 rounded-sm whitespace-nowrap leading-none ${
+																className={`flex items-center justify-center gap-1.5 mt-1 text-xs font-bold px-1 rounded whitespace-nowrap leading-none ${
 																	isSelected ? "text-pink-100" : "text-[var(--ink,#0f172a)] dark:text-slate-300"
 																}`}
 															>
 																<span
-																	className="w-1.5 h-1.5 rounded-full shrink-0"
+																	className="w-2 h-2 rounded-full shrink-0"
 																	style={{ backgroundColor: meta.dotColor }}
 																/>
-																<span className="whitespace-nowrap">{meta.code}</span>
+																<span className="whitespace-nowrap font-mono">{meta.code}</span>
 															</span>
 															{surfaces && surfaces.length > 0 && (
-																<span className="text-[8px] leading-tight text-pink-300 dark:text-pink-200 mt-0.5 truncate max-w-full">
+																<span className="text-[11px] font-bold leading-tight text-pink-300 dark:text-pink-200 mt-1 truncate max-w-full">
 																	{surfaces.join("")}
 																</span>
 															)}
@@ -732,12 +732,12 @@ export function PediatricPerspectiveView() {
 									<div className="text-sm font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 mb-3 flex items-center justify-between flex-wrap gap-2">
 										<span className="flex items-center gap-2">
 											<span>Быстрое присвоение статуса для зуба #{selectedTooth}:</span>
-											<span className="text-xs px-2 py-0.5 rounded bg-pink-50 dark:bg-pink-950/60 text-pink-800 dark:text-pink-300 border border-pink-500/30">
+											<span className="text-xs px-2.5 py-0.5 rounded-md bg-pink-50 dark:bg-pink-950/60 text-pink-800 dark:text-pink-300 border border-pink-500/30 font-bold">
 												{TOOTH_STATE_LABELS[selectedToothState] || selectedToothState}
 											</span>
 										</span>
 										{isSavingTooth && (
-											<span className="text-pink-600 dark:text-pink-400 text-xs flex items-center gap-1">
+											<span className="text-pink-600 dark:text-pink-400 text-xs flex items-center gap-1 font-bold">
 												<Loader2 size={14} className="animate-spin" /> Сохранение...
 											</span>
 										)}
@@ -751,12 +751,12 @@ export function PediatricPerspectiveView() {
 													type="button"
 													disabled={isSavingTooth}
 													onClick={() => void handleToothStatusSelect(opt.state)}
-													className={`min-h-[58px] p-2 rounded-xl font-bold text-xs border flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer shadow-sm min-w-0 ${opt.colorClass} ${opt.borderClass} ${
+													className={`min-h-[60px] p-2.5 rounded-xl font-bold text-xs sm:text-sm border flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-sm min-w-0 ${opt.colorClass} ${opt.borderClass} ${
 														isActive ? "ring-2 ring-pink-500 ring-offset-1 font-black" : ""
 													}`}
 												>
-													<span className="text-center leading-tight line-clamp-1 min-w-0">{opt.label}</span>
-													<span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black shrink-0 ${opt.badgeClass}`}>
+													<span className="text-center leading-tight line-clamp-1 min-w-0 font-bold">{opt.label}</span>
+													<span className={`text-xs px-2 py-0.5 rounded-full font-black shrink-0 ${opt.badgeClass}`}>
 														{opt.shortCode}
 													</span>
 												</button>
@@ -791,15 +791,15 @@ export function PediatricPerspectiveView() {
 							</div>
 						</div>
 
-						<p className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 mb-4 leading-relaxed">
+						<p className="text-sm font-medium text-[var(--muted,#64748b)] dark:text-slate-400 mb-4 leading-relaxed">
 							{selectedToothName}
 						</p>
 
 						{/* Surface Selector Matrix */}
 						<div className="p-3 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800/80 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 mb-2">
-							<div className="text-xs font-bold text-[var(--ink,#0f172a)] dark:text-slate-200 mb-2 flex items-center justify-between">
+							<div className="text-sm font-bold text-[var(--ink,#0f172a)] dark:text-slate-200 mb-2 flex items-center justify-between">
 								<span>Поверхности кариеса / пломбы (СИЦ):</span>
-								<span className="text-[11px] text-pink-700 dark:text-pink-300 font-mono font-bold">
+								<span className="text-xs text-pink-700 dark:text-pink-300 font-mono font-bold">
 									{currentSurfaces.length > 0 ? currentSurfaces.join(", ") : "Вся коронка"}
 								</span>
 							</div>
@@ -813,7 +813,7 @@ export function PediatricPerspectiveView() {
 							</div>
 
 							{/* Quick Surface Toggle Badges */}
-							<div className="flex flex-wrap items-center justify-center gap-1.5 mt-2 pt-2 border-t border-[var(--line,#e2e8f0)] dark:border-slate-700">
+							<div className="flex flex-wrap items-center justify-center gap-2 mt-2 pt-2 border-t border-[var(--line,#e2e8f0)] dark:border-slate-700">
 								{(["V", "L", "M", "D", "O"] as const).map((surf) => {
 									const isSurfActive = currentSurfaces.includes(surf);
 									return (
@@ -821,7 +821,7 @@ export function PediatricPerspectiveView() {
 											key={surf}
 											type="button"
 											onClick={() => toggleSurface(surf)}
-											className={`min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
+											className={`min-h-[44px] min-w-[44px] px-3.5 py-2 rounded-xl text-sm font-bold transition-all border cursor-pointer ${
 												isSurfActive
 													? "bg-pink-600 text-white border-pink-700 shadow-sm"
 													: "bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-600 hover:bg-pink-50 dark:hover:bg-slate-600"
@@ -834,14 +834,14 @@ export function PediatricPerspectiveView() {
 								<button
 									type="button"
 									onClick={() => handleSurfaceChange(["V", "L", "M", "D", "O"])}
-									className="min-h-[44px] min-w-[44px] px-3 py-1 rounded-lg text-xs font-semibold bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-600 hover:bg-slate-100 cursor-pointer"
+									className="min-h-[44px] min-w-[48px] px-3.5 py-2 rounded-xl text-sm font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-600 hover:bg-slate-100 cursor-pointer"
 								>
 									Все
 								</button>
 								<button
 									type="button"
 									onClick={() => handleSurfaceChange([])}
-									className="min-h-[44px] min-w-[44px] px-3 py-1 rounded-lg text-xs font-semibold bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-red-600 dark:text-red-400 border border-[var(--line,#cbd5e1)] dark:border-slate-600 hover:bg-red-50 cursor-pointer"
+									className="min-h-[44px] min-w-[48px] px-3.5 py-2 rounded-xl text-sm font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-red-600 dark:text-red-400 border border-[var(--line,#cbd5e1)] dark:border-slate-600 hover:bg-red-50 cursor-pointer"
 								>
 									Сброс
 								</button>
@@ -858,14 +858,14 @@ export function PediatricPerspectiveView() {
 									Законный представитель (323-ФЗ)
 								</h3>
 							</div>
-							<span className="text-[10px] bg-pink-50 dark:bg-pink-950/70 text-pink-700 dark:text-pink-300 font-bold px-2 py-0.5 rounded border border-pink-500/30">
+							<span className="text-xs bg-pink-50 dark:bg-pink-950/70 text-pink-700 dark:text-pink-300 font-bold px-2.5 py-1 rounded-md border border-pink-500/30">
 								ИДС подписано
 							</span>
 						</div>
 
-						<div className="p-3 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800/80 border border-[var(--line,#cbd5e1)] dark:border-slate-700 rounded-xl flex items-center justify-between shadow-sm">
+						<div className="p-3.5 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800/80 border border-[var(--line,#cbd5e1)] dark:border-slate-700 rounded-xl flex items-center justify-between shadow-sm">
 							<div className="flex items-center gap-3">
-								<div className="w-10 h-10 rounded-full bg-pink-100 dark:bg-pink-950/80 border border-pink-400 text-pink-700 dark:text-pink-300 flex items-center justify-center font-bold text-sm shrink-0">
+								<div className="w-11 h-11 rounded-full bg-pink-100 dark:bg-pink-950/80 border border-pink-400 text-pink-700 dark:text-pink-300 flex items-center justify-center font-bold text-sm shrink-0">
 									МА
 								</div>
 								<div>
@@ -873,7 +873,7 @@ export function PediatricPerspectiveView() {
 										Иванова Мария Алексеевна (Мать)
 									</div>
 									<div className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-2 mt-0.5">
-										<span className="flex items-center gap-1">
+										<span className="flex items-center gap-1 font-medium">
 											<Phone size={12} /> +7 (916) 234-56-78
 										</span>
 									</div>
@@ -892,10 +892,10 @@ export function PediatricPerspectiveView() {
 										Детские клинические шаблоны
 									</h3>
 								</div>
-								<span className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 font-medium">Прейскурант</span>
+								<span className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 font-bold">Прейскурант</span>
 							</div>
 
-							<div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+							<div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
 								{PEDIATRIC_TEMPLATES.map((tmpl) => {
 									const isApplied = appliedTemplates.includes(tmpl.id);
 									return (
@@ -903,23 +903,23 @@ export function PediatricPerspectiveView() {
 											key={tmpl.id}
 											type="button"
 											onClick={() => toggleTemplate(tmpl.id)}
-											className={`w-full min-h-[52px] p-3 rounded-xl text-left text-xs font-semibold flex items-center justify-between transition-all border cursor-pointer active:scale-98 shadow-sm ${
+											className={`w-full min-h-[56px] p-3 rounded-xl text-left text-sm font-semibold flex items-center justify-between transition-all border cursor-pointer active:scale-98 shadow-sm ${
 												isApplied
 													? "bg-pink-50 dark:bg-pink-950/70 text-pink-800 dark:text-pink-200 border-pink-500/70 shadow-sm"
 													: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800/80 text-[var(--ink,#0f172a)] dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700"
 											}`}
 										>
-											<div className="flex items-center gap-2.5">
-												<span className="text-base">{tmpl.icon}</span>
+											<div className="flex items-center gap-3">
+												<span className="text-lg">{tmpl.icon}</span>
 												<div>
-													<div className="font-bold text-[var(--ink,#0f172a)] dark:text-white leading-tight">{tmpl.title}</div>
-													<div className="text-[11px] text-[var(--muted,#64748b)] dark:text-slate-400 mt-0.5">{tmpl.price}</div>
+													<div className="font-bold text-sm text-[var(--ink,#0f172a)] dark:text-white leading-tight">{tmpl.title}</div>
+													<div className="text-xs font-semibold text-[var(--muted,#64748b)] dark:text-slate-400 mt-0.5">{tmpl.price}</div>
 												</div>
 											</div>
 											{isApplied ? (
-												<Check size={18} className="text-pink-600 dark:text-pink-400 shrink-0 ml-2" />
+												<Check size={20} className="text-pink-600 dark:text-pink-400 shrink-0 ml-2" />
 											) : (
-												<Plus size={18} className="text-[var(--muted,#64748b)] dark:text-slate-400 shrink-0 ml-2" />
+												<Plus size={20} className="text-[var(--muted,#64748b)] dark:text-slate-400 shrink-0 ml-2" />
 											)}
 										</button>
 									);
@@ -932,9 +932,9 @@ export function PediatricPerspectiveView() {
 							<button
 								type="button"
 								onClick={handlePrintFairyCertificate}
-								className="w-full min-h-[48px] bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-pink-500/20 cursor-pointer active:scale-95 transition-all border border-pink-300/40"
+								className="w-full min-h-[50px] bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-pink-500/20 cursor-pointer active:scale-95 transition-all border border-pink-300/40"
 							>
-								<Award size={18} />
+								<Award size={20} />
 								<span>Напечатать грамоту от Зубной Феи 🧚✨</span>
 							</button>
 						</div>

@@ -764,3 +764,91 @@ export class SanPiNRegulatoryEngine {
 		};
 	}
 }
+
+export class SanPiNSterilizationEngine {
+	static computeMinimumPsoSampleSize(batchCount: number): number {
+		const count = Math.max(1, Math.floor(Number(batchCount) || 1));
+		return Math.max(3, Math.ceil(count * 0.01));
+	}
+
+	static evaluatePsoCleaningBatch(
+		batchCount: number,
+		testedCount: number,
+		isAzopyramNegative: boolean,
+		isPhenolphthaleinNegative: boolean,
+	): {
+		isBatchApproved: boolean;
+		minSampleRequired: number;
+		samplingSatisfied: boolean;
+		rejectionReason: string | null;
+	} {
+		return SanPiNRegulatoryEngine.evaluatePsoSampling(
+			batchCount,
+			testedCount,
+			isAzopyramNegative,
+			isPhenolphthaleinNegative,
+		);
+	}
+
+	static validateAutoclaveCycle(params: {
+		cycleMode: "B" | "dry_heat_180" | string;
+		temperatureCelsius: number;
+		pressureBar?: number;
+		durationMin: number;
+		passedIndicator: boolean;
+	}): {
+		isValid: boolean;
+		status: "passed" | "failed";
+		reasons: string[];
+	} {
+		const reasons: string[] = [];
+		let isValid = true;
+
+		if (params.cycleMode === "B") {
+			if (params.temperatureCelsius < 134.0) {
+				isValid = false;
+				reasons.push("Температура ниже допустимой нормы 134°C");
+			}
+			if ((params.pressureBar ?? 0) < 2.05) {
+				isValid = false;
+				reasons.push("Недостаточное давление пара (менее 2.05 бар)");
+			}
+		} else if (params.cycleMode === "dry_heat_180") {
+			if (params.temperatureCelsius < 180.0) {
+				isValid = false;
+				reasons.push("Температура сухожара ниже 180°C");
+			}
+		}
+
+		if (!params.passedIndicator) {
+			isValid = false;
+			reasons.push("Химический индикатор не сработал");
+		}
+
+		return {
+			isValid,
+			status: isValid ? "passed" : "failed",
+			reasons,
+		};
+	}
+
+	static generateSterilizationBarcode(params: {
+		cycleId: string;
+		trayCode: string;
+		expiryDate: Date | string;
+	}): string {
+		const cleanCycle = params.cycleId.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+		const cleanTray = params.trayCode.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+		const dateObj =
+			typeof params.expiryDate === "string"
+				? new Date(params.expiryDate)
+				: params.expiryDate;
+		const year = dateObj.getUTCFullYear();
+		const month = String(dateObj.getUTCMonth() + 1).padStart(2, "0");
+		const day = String(dateObj.getUTCDate()).padStart(2, "0");
+		const dateStr = `${year}${month}${day}`;
+
+		return `DNT-STER-${cleanCycle}-${cleanTray}-${dateStr}`;
+	}
+}
+

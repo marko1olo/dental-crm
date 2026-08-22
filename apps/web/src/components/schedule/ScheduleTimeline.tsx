@@ -173,6 +173,15 @@ export function ScheduleTimeline(props: ScheduleTimelineProps) {
 				);
 
 				e.preventDefault();
+				if (currentFocusedIndex === -1) {
+					if (e.key === "ArrowDown") {
+						focusables[0]?.focus();
+					} else {
+						focusables[focusables.length - 1]?.focus();
+					}
+					return;
+				}
+
 				if (e.key === "ArrowDown") {
 					const nextIndex =
 						currentFocusedIndex < focusables.length - 1
@@ -327,7 +336,11 @@ export function ScheduleTimeline(props: ScheduleTimelineProps) {
 									? "один врач и одно кресло"
 									: row.sameDoctor
 										? "один и тот же врач"
-										: "одно и то же кресло";
+										: row.sameChair
+											? "одно и то же кресло"
+											: row.sameAssistant
+												? "один и тот же ассистент"
+												: "один и тот же пациент";
 
 							return (
 								<div

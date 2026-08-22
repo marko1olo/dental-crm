@@ -1,4 +1,5 @@
 import { logger } from "../../utils/logger";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
 	type VisiographWindowPreset,
 	VISIOGRAPH_WINDOW_PRESETS,
@@ -405,10 +406,10 @@ export async function exportSnapshotToClinicalRecord(
 
 		const res = await fetch("/api/xray/scans", {
 			method: "POST",
-			headers: {
+			headers: denteAdminSecretRequestHeaders({
 				"Content-Type": "application/json",
 				...authHeaders,
-			},
+			}),
 			body: JSON.stringify({
 				patientId: payload.patientId,
 				imageBase64: payload.imageDataUri,

@@ -14,9 +14,10 @@ import {
 import React, { useCallback } from "react";
 
 import {
-	generateAppointmentConfirmationMessage,
-	openWhatsAppChat,
-} from "../../store/telephonyStore";
+	generateAppointmentWhatsAppMessage,
+	buildWhatsAppUrl,
+} from "./generateAppointmentWhatsAppMessage";
+import { openWhatsAppChat } from "../../store/telephonyStore";
 
 export type QuickActionStatus =
 	| "confirmed"
@@ -33,7 +34,12 @@ export interface AppointmentQuickActionsProps {
 	patientName: string;
 	patientPhone?: string | null | undefined;
 	doctorName?: string | null | undefined;
+	doctorSpecialty?: string | null | undefined;
 	startsAt?: string | undefined;
+	clinicName?: string | null | undefined;
+	clinicAddress?: string | null | undefined;
+	clinicPhone?: string | null | undefined;
+	treatmentReason?: string | null | undefined;
 	appointmentHasOpenVisit?: boolean;
 	activeVisitLockedAppointmentStatuses?: Set<Appointment["status"]>;
 	onStatusChange: (
@@ -52,7 +58,12 @@ export function AppointmentQuickActions({
 	patientName,
 	patientPhone,
 	doctorName,
+	doctorSpecialty,
 	startsAt,
+	clinicName,
+	clinicAddress,
+	clinicPhone,
+	treatmentReason,
 	appointmentHasOpenVisit = false,
 	activeVisitLockedAppointmentStatuses,
 	onStatusChange,
@@ -61,8 +72,19 @@ export function AppointmentQuickActions({
 	compact = false,
 	showLabels = true,
 }: AppointmentQuickActionsProps) {
+	const [optimisticStatus, setOptimisticStatus] = React.useState<Appointment["status"] | null>(null);
+	const [optimisticNote, setOptimisticNote] = React.useState<string | null>(null);
+
+	// Sync optimistic state whenever incoming currentStatus updates
+	React.useEffect(() => {
+		setOptimisticStatus(null);
+		setOptimisticNote(null);
+	}, [currentStatus]);
+
+	const effectiveStatus = optimisticStatus ?? currentStatus;
+
 	const handleAction = useCallback(
-		(status: Appointment["status"], noteAppend?: string) => {
+		async (status: Appointment["status"], noteAppend?: string) => {
 			if (disabled) return;
 			if (
 				appointmentHasOpenVisit &&
@@ -70,7 +92,16 @@ export function AppointmentQuickActions({
 			) {
 				return;
 			}
-			void onStatusChange(status, noteAppend);
+			// 1-Click Optimistic UI update
+			setOptimisticStatus(status);
+			setOptimisticNote(noteAppend ?? null);
+			try {
+				await onStatusChange(status, noteAppend);
+			} catch {
+				// Rollback on failure
+				setOptimisticStatus(null);
+				setOptimisticNote(null);
+			}
 		},
 		[
 			disabled,
@@ -97,9 +128,9 @@ export function AppointmentQuickActions({
 			targetStatus: "arrived",
 			label: "Пришел",
 			shortLabel: "Пришел",
-			icon: <UserCheck size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />,
-			title: `Отметить прибытие: ${patientName} в клинике`,
-			activeClass: "ring-2 ring-emerald-500 bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 font-bold",
+			icon: <UserCheck size={15} className="shrink-0 text-emerald-600 dark:text-emerald-400" />,
+			title: `Отметить прибытие: ${patientName} в клинике (Клавиша 1)`,
+			activeClass: "ring-2 ring-emerald-500 bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 font-bold shadow-xs",
 			hoverClass: "hover:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
 			bgStyle: "border-emerald-500/30 bg-emerald-500/10",
 		},
@@ -108,9 +139,9 @@ export function AppointmentQuickActions({
 			targetStatus: "in_treatment",
 			label: "В кресле",
 			shortLabel: "В кресле",
-			icon: <CalendarCheck size={14} className="shrink-0 text-sky-600 dark:text-sky-400" />,
-			title: `Отметить: ${patientName} в кресле у врача`,
-			activeClass: "ring-2 ring-sky-500 bg-sky-500/20 text-sky-800 dark:text-sky-200 font-bold",
+			icon: <CalendarCheck size={15} className="shrink-0 text-sky-600 dark:text-sky-400" />,
+			title: `Отметить: ${patientName} в кресле у врача (Клавиша 2)`,
+			activeClass: "ring-2 ring-sky-500 bg-sky-500/20 text-sky-800 dark:text-sky-200 font-bold shadow-xs",
 			hoverClass: "hover:bg-sky-500/15 text-sky-700 dark:text-sky-300",
 			bgStyle: "border-sky-500/30 bg-sky-500/10",
 		},
@@ -119,9 +150,9 @@ export function AppointmentQuickActions({
 			targetStatus: "completed",
 			label: "Завершен",
 			shortLabel: "Готово",
-			icon: <CheckCircle2 size={14} className="shrink-0 text-teal-600 dark:text-teal-400" />,
-			title: `Завершить прием: ${patientName}`,
-			activeClass: "ring-2 ring-teal-500 bg-teal-500/20 text-teal-800 dark:text-teal-200 font-bold",
+			icon: <CheckCircle2 size={15} className="shrink-0 text-teal-600 dark:text-teal-400" />,
+			title: `Завершить прием: ${patientName} (Клавиша 3)`,
+			activeClass: "ring-2 ring-teal-500 bg-teal-500/20 text-teal-800 dark:text-teal-200 font-bold shadow-xs",
 			hoverClass: "hover:bg-teal-500/15 text-teal-700 dark:text-teal-300",
 			bgStyle: "border-teal-500/30 bg-teal-500/10",
 		},
@@ -130,9 +161,9 @@ export function AppointmentQuickActions({
 			targetStatus: "confirmed",
 			label: "Подтвердить",
 			shortLabel: "Подтвержден",
-			icon: <PhoneCall size={14} className="shrink-0 text-violet-600 dark:text-violet-400" />,
+			icon: <PhoneCall size={15} className="shrink-0 text-violet-600 dark:text-violet-400" />,
 			title: `Подтвердить запись: звонок или SMS для ${patientName}`,
-			activeClass: "ring-2 ring-violet-500 bg-violet-500/20 text-violet-800 dark:text-violet-200 font-bold",
+			activeClass: "ring-2 ring-violet-500 bg-violet-500/20 text-violet-800 dark:text-violet-200 font-bold shadow-xs",
 			hoverClass: "hover:bg-violet-500/15 text-violet-700 dark:text-violet-300",
 			bgStyle: "border-violet-500/30 bg-violet-500/10",
 		},
@@ -142,9 +173,9 @@ export function AppointmentQuickActions({
 			noteAppend: "Опоздание",
 			label: "Опоздал",
 			shortLabel: "Опоздал",
-			icon: <Clock size={14} className="shrink-0 text-amber-600 dark:text-amber-400" />,
-			title: `Отметить опоздание: ${patientName}`,
-			activeClass: "ring-2 ring-amber-500 bg-amber-500/20 text-amber-800 dark:text-amber-200 font-bold",
+			icon: <Clock size={15} className="shrink-0 text-amber-600 dark:text-amber-400" />,
+			title: `Отметить опоздание: ${patientName} (Клавиша 4)`,
+			activeClass: "ring-2 ring-amber-500 bg-amber-500/20 text-amber-800 dark:text-amber-200 font-bold shadow-xs",
 			hoverClass: "hover:bg-amber-500/15 text-amber-700 dark:text-amber-300",
 			bgStyle: "border-amber-500/30 bg-amber-500/10",
 		},
@@ -153,9 +184,9 @@ export function AppointmentQuickActions({
 			targetStatus: "no_show",
 			label: "Не пришел",
 			shortLabel: "Не явился",
-			icon: <UserX size={14} className="shrink-0 text-rose-600 dark:text-rose-400" />,
-			title: `Неявка: ${patientName} не пришел на прием`,
-			activeClass: "ring-2 ring-rose-500 bg-rose-500/20 text-rose-800 dark:text-rose-200 font-bold",
+			icon: <UserX size={15} className="shrink-0 text-rose-600 dark:text-rose-400" />,
+			title: `Неявка: ${patientName} не пришел на прием (Клавиша 5)`,
+			activeClass: "ring-2 ring-rose-500 bg-rose-500/20 text-rose-800 dark:text-rose-200 font-bold shadow-xs",
 			hoverClass: "hover:bg-rose-500/15 text-rose-700 dark:text-rose-300",
 			bgStyle: "border-rose-500/30 bg-rose-500/10",
 		},
@@ -164,9 +195,9 @@ export function AppointmentQuickActions({
 			targetStatus: "cancelled",
 			label: "Отменен",
 			shortLabel: "Отменен",
-			icon: <XCircle size={14} className="shrink-0 text-slate-500 dark:text-slate-400" />,
+			icon: <XCircle size={15} className="shrink-0 text-slate-500 dark:text-slate-400" />,
 			title: `Отменить прием: ${patientName}`,
-			activeClass: "ring-2 ring-slate-500 bg-slate-500/20 text-slate-800 dark:text-slate-200 font-bold",
+			activeClass: "ring-2 ring-slate-500 bg-slate-500/20 text-slate-800 dark:text-slate-200 font-bold shadow-xs",
 			hoverClass: "hover:bg-slate-500/15 text-slate-700 dark:text-slate-300",
 			bgStyle: "border-slate-500/30 bg-slate-500/10",
 		},
@@ -174,19 +205,20 @@ export function AppointmentQuickActions({
 
 	return (
 		<div
-			className={`appointment-quick-actions-bar flex flex-wrap items-center gap-1.5 ${compact ? "p-1" : "p-1.5"} rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] shadow-inner`}
+			className={`appointment-quick-actions-bar flex flex-wrap items-center gap-2 ${compact ? "p-1" : "p-2"} rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] shadow-inner min-w-0 max-w-full`}
 			data-testid={`appointment-quick-actions-${appointmentId}`}
 			role="toolbar"
 			aria-label={`Быстрые действия по статусу: ${patientName}`}
 		>
-			<span className="text-[11px] font-semibold text-[var(--muted)] px-1 uppercase tracking-wider select-none hidden sm:inline">
+			<span className="text-[11px] font-semibold text-[var(--muted)] px-1 uppercase tracking-wider select-none hidden sm:inline shrink-0">
 				Статус:
 			</span>
 			{actions.map((action) => {
 				const isCurrent =
 					action.key === "late"
-						? currentStatus === "no_show" && action.noteAppend === "Опоздание"
-						: currentStatus === action.targetStatus;
+						? effectiveStatus === "no_show" &&
+							(optimisticNote !== null ? optimisticNote === "Опоздание" : action.noteAppend === "Опоздание")
+						: effectiveStatus === action.targetStatus;
 				const isLocked =
 					appointmentHasOpenVisit &&
 					Boolean(activeVisitLockedAppointmentStatuses?.has(action.targetStatus));
@@ -198,9 +230,9 @@ export function AppointmentQuickActions({
 						disabled={disabled || isLocked}
 						onClick={(e) => {
 							e.stopPropagation();
-							handleAction(action.targetStatus, action.noteAppend);
+							void handleAction(action.targetStatus, action.noteAppend);
 						}}
-						className={`quick-action-pill min-h-[44px] sm:min-h-[36px] px-2.5 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all duration-150 cursor-pointer select-none active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed focus:ring-2 focus:ring-teal-500 focus:outline-none ${
+						className={`quick-action-pill min-h-[44px] px-3 py-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer select-none active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed focus:ring-2 focus:ring-teal-500 focus:outline-none min-w-0 ${
 							isCurrent ? action.activeClass : `${action.bgStyle} ${action.hoverClass}`
 						}`}
 						title={
@@ -212,36 +244,49 @@ export function AppointmentQuickActions({
 						aria-pressed={isCurrent}
 					>
 						{action.icon}
-						{showLabels && <span>{compact ? action.shortLabel : action.label}</span>}
+						{showLabels && (
+							<span className="break-words leading-tight text-center">
+								{compact ? action.shortLabel : action.label}
+							</span>
+						)}
 						{isCurrent && (
-							<Check size={12} className="shrink-0 text-current ml-0.5 opacity-80" />
+							<Check size={14} className="shrink-0 text-current ml-0.5 opacity-90" />
 						)}
 					</button>
 				);
 			})}
 
-			{/* 1-Click WhatsApp confirmation trigger */}
-			{patientPhone && startsAt && currentStatus !== "confirmed" && (
+			{/* 1-Click WhatsApp reminder / confirmation trigger */}
+			{patientPhone && startsAt && (
 				<button
 					type="button"
 					onClick={(e) => {
 						e.stopPropagation();
-						const text = generateAppointmentConfirmationMessage({
+						const text = generateAppointmentWhatsAppMessage({
 							patientName,
 							doctorName: doctorName ?? null,
+							doctorSpecialty: doctorSpecialty ?? null,
 							appointmentStartsAt: startsAt,
+							clinicName: clinicName ?? null,
+							clinicAddress: clinicAddress ?? null,
+							clinicPhone: clinicPhone ?? null,
+							treatmentReason: treatmentReason ?? null,
 						});
 						openWhatsAppChat(patientPhone, text);
 						if (onWhatsAppConfirm) {
 							onWhatsAppConfirm();
 						}
 					}}
-					className="quick-action-pill min-h-[44px] sm:min-h-[36px] px-2 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer"
-					title={`Отправить подтверждение записи в WhatsApp (${patientName})`}
-					aria-label={`WhatsApp подтверждение: ${patientName}`}
+					className="quick-action-pill min-h-[44px] px-3.5 py-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:outline-none select-none min-w-0"
+					title={`Отправить напоминание с памяткой в WhatsApp (${patientName})`}
+					aria-label={`WhatsApp напоминание: ${patientName}`}
 				>
-					<MessageSquare size={13} className="shrink-0 text-emerald-500" />
-					{showLabels && !compact && <span>WhatsApp</span>}
+					<MessageSquare size={15} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+					{showLabels && (
+						<span className="break-words leading-tight text-center">
+							{compact ? "WA" : "💬 WhatsApp"}
+						</span>
+					)}
 				</button>
 			)}
 		</div>

@@ -559,7 +559,6 @@ describe("ChiefPhysicianAuditService — Fastify HTTP Endpoints", () => {
 			const idList = sql.join(createdUserIds.map((id) => sql`${id}::uuid`), sql`, `);
 			await db.execute(sql`DELETE FROM users WHERE id IN (${idList})`);
 		}
-		await pool.end();
 	});
 
 

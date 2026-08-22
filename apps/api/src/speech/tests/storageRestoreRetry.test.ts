@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { randomUUID } from "node:crypto";
-import { after, before, describe, it } from "node:test";
+import { afterEach, beforeEach, describe, it, mock } from "node:test";
 import type { SpeechTranscriptionChunk } from "@dental/shared";
 import { pool } from "../../db/client.js";
 import {
@@ -79,13 +79,20 @@ async function withEnv(
 	}
 }
 
-before(async () => {
-	await pool.end();
+beforeEach(() => {
+	mock.method(pool, "query", () => {
+		return Promise.reject(new Error("Connection terminated unexpectedly (simulated pool error)"));
+	});
+	mock.method(pool, "connect", () => {
+		return Promise.reject(new Error("Connection terminated unexpectedly (simulated pool error)"));
+	});
 });
 
-after(() => {
+afterEach(() => {
+	mock.restoreAll();
 	resetSpeechTranscriptionCacheForRestart();
 });
+
 
 describe("расшифровки диктовки при недоступной PostgreSQL", () => {
 	it("провал восстановления не запоминается навсегда: следующая проверка пробует снова", async () => {

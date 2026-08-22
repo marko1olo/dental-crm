@@ -111,50 +111,10 @@ export function EmergencyRescueModal({
 	const [isAdrenalineTimerRunning, setIsAdrenalineTimerRunning] = useState<boolean>(false);
 	const [isAdrenalineDue, setIsAdrenalineDue] = useState<boolean>(false);
 
-	// CPR Metronome state (110 BPM, 30:2)
-	const [isCprRunning, setIsCprRunning] = useState<boolean>(false);
-	const [cprBeat, setCprBeat] = useState<number>(1);
-	const [cprCycle, setCprCycle] = useState<number>(1);
-	const [cprPhase, setCprPhase] = useState<'compressions' | 'ventilations'>('compressions');
-	const [isAudioSoundEnabled, setIsAudioSoundEnabled] = useState<boolean>(false);
-	const [heartBeating, setHeartBeating] = useState<boolean>(false);
-
 	// Copy feedback state
 	const [isCopiedAct, setIsCopiedAct] = useState<boolean>(false);
 	const [isCopiedCheatSheet, setIsCopiedCheatSheet] = useState<boolean>(false);
 	const [activeProtocolTab, setActiveProtocolTab] = useState<'act' | 'cheatsheet'>('act');
-
-	// Web Audio context ref for metronome ticks and timer alert
-	const audioCtxRef = useRef<AudioContext | null>(null);
-
-	// Initialize Audio Context on demand
-	const playBeep = useCallback((freq = 880, duration = 0.08, type: OscillatorType = 'sine') => {
-		try {
-			if (!audioCtxRef.current) {
-				const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-				if (AudioContextClass) {
-					audioCtxRef.current = new AudioContextClass();
-				}
-			}
-			if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
-				audioCtxRef.current.resume();
-			}
-			if (audioCtxRef.current) {
-				const osc = audioCtxRef.current.createOscillator();
-				const gain = audioCtxRef.current.createGain();
-				osc.type = type;
-				osc.frequency.value = freq;
-				gain.gain.setValueAtTime(0.15, audioCtxRef.current.currentTime);
-				gain.gain.exponentialRampToValueAtTime(0.001, audioCtxRef.current.currentTime + duration);
-				osc.connect(gain);
-				gain.connect(audioCtxRef.current.destination);
-				osc.start();
-				osc.stop(audioCtxRef.current.currentTime + duration);
-			}
-		} catch {
-			// AudioContext may be restricted by browser autoplay policy
-		}
-	}, []);
 
 	// Adrenaline Timer countdown effect
 	useEffect(() => {
@@ -165,7 +125,6 @@ export function EmergencyRescueModal({
 					if (prev <= 1) {
 						setIsAdrenalineTimerRunning(false);
 						setIsAdrenalineDue(true);
-						playBeep(1200, 0.4, 'triangle');
 						return 0;
 					}
 					return prev - 1;
@@ -175,49 +134,7 @@ export function EmergencyRescueModal({
 		return () => {
 			if (intervalId) clearInterval(intervalId);
 		};
-	}, [isAdrenalineTimerRunning, adrenalineTimerSeconds, playBeep]);
-
-	// CPR Metronome tick effect (110 BPM = ~545ms interval)
-	useEffect(() => {
-		let cprIntervalId: NodeJS.Timeout | null = null;
-		const beatIntervalMs = Math.round(60000 / 110);
-
-		if (isCprRunning) {
-			cprIntervalId = setInterval(() => {
-				setCprBeat((prevBeat) => {
-					setHeartBeating(true);
-					setTimeout(() => setHeartBeating(false), 120);
-
-					if (cprPhase === 'compressions') {
-						if (isAudioSoundEnabled) {
-							// High pitch on beat 30, normal tick otherwise
-							playBeep(prevBeat === 30 ? 1000 : 750, 0.06, 'sine');
-						}
-						if (prevBeat >= 30) {
-							setCprPhase('ventilations');
-							return 1;
-						}
-						return prevBeat + 1;
-					} else {
-						// Ventilations phase (1 -> 2 -> back to compressions)
-						if (isAudioSoundEnabled) {
-							playBeep(520, 0.18, 'triangle'); // breath sound
-						}
-						if (prevBeat >= 2) {
-							setCprPhase('compressions');
-							setCprCycle((prevC) => prevC + 1);
-							return 1;
-						}
-						return prevBeat + 1;
-					}
-				});
-			}, beatIntervalMs);
-		}
-
-		return () => {
-			if (cprIntervalId) clearInterval(cprIntervalId);
-		};
-	}, [isCprRunning, cprPhase, isAudioSoundEnabled, playBeep]);
+	}, [isAdrenalineTimerRunning, adrenalineTimerSeconds]);
 
 	// Toggle Step completion
 	const handleToggleStep = (stepId: string) => {
@@ -655,60 +572,32 @@ export function EmergencyRescueModal({
 							</div>
 						</div>
 
-						{/* CPR Metronome & 30:2 Resuscitation Assistant */}
+						{/* Statutory Resuscitation Guidelines Card */}
 						<div className="emergency-cpr-box">
 							<div className="emergency-cpr-header">
 								<div className="emergency-cpr-title">
 									<Heart size={18} className="text-red-500" />
-									МЕТРОНОМ СЛР 30:2 (110 BPM)
-								</div>
-								<span className="text-xs font-semibold text-gray-400">
-									Цикл: {cprCycle}
-								</span>
-							</div>
-
-							<div className="emergency-cpr-visual">
-								<div className="emergency-cpr-heart">
-									<Heart
-										size={42}
-										className={`emergency-cpr-heart-icon ${heartBeating ? 'beating' : ''}`}
-									/>
-									<span className="text-xs font-bold text-gray-300">
-										{cprPhase === 'compressions' ? 'КОМПРЕССИИ' : 'ВДОХИ ИВЛ'}
-									</span>
-								</div>
-
-								<div className="emergency-cpr-count">
-									{cprPhase === 'compressions' ? `${cprBeat} / 30` : `ВДОХ ${cprBeat} / 2`}
+									СТАНДАРТ БАЗОВОЙ СЛР (МИНЗДРАВ РФ & ФАР)
 								</div>
 							</div>
 
-							<div className="emergency-cpr-controls">
-								<button
-									type="button"
-									className={`emergency-cpr-start-btn ${isCprRunning ? 'running' : ''}`}
-									onClick={() => setIsCprRunning(!isCprRunning)}
-								>
-									{isCprRunning ? (
-										<>
-											<Pause size={16} /> Пауза
-										</>
-									) : (
-										<>
-											<Play size={16} /> Запустить СЛР (110 уд/мин)
-										</>
-									)}
-								</button>
-
-								<button
-									type="button"
-									className="emergency-cpr-sound-btn"
-									onClick={() => setIsAudioSoundEnabled(!isAudioSoundEnabled)}
-									title="Звуковой метроном"
-								>
-									{isAudioSoundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-									{isAudioSoundEnabled ? 'Звук ВКЛ' : 'Без звука'}
-								</button>
+							<div className="p-3 text-xs space-y-2 text-gray-200">
+								<div className="flex justify-between border-b border-gray-700 pb-1">
+									<span className="text-gray-400">Соотношение:</span>
+									<span className="font-bold text-red-400">30 компрессий : 2 вдоха</span>
+								</div>
+								<div className="flex justify-between border-b border-gray-700 pb-1">
+									<span className="text-gray-400">Частота нажатий:</span>
+									<span className="font-bold text-white">100–120 в минуту</span>
+								</div>
+								<div className="flex justify-between border-b border-gray-700 pb-1">
+									<span className="text-gray-400">Глубина компрессий:</span>
+									<span className="font-bold text-white">5–6 см (1/3 грудной клетки)</span>
+								</div>
+								<div className="flex justify-between">
+									<span className="text-gray-400">Положение:</span>
+									<span className="font-bold text-green-400">Твердая горизонтальная поверхность</span>
+								</div>
 							</div>
 						</div>
 

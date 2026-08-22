@@ -87,6 +87,8 @@ import { ServicePricelistManagerModal } from "../components/catalog/pricelist/Se
 import { LoyaltyProgramModal } from "../components/loyalty/program/LoyaltyProgramModal";
 import { MedicalReferral057Modal } from "../components/documents/referral057/MedicalReferral057Modal";
 import { SickLeaveElnModal } from "../components/documents/sickLeave/SickLeaveElnModal";
+import { AutoclaveLog257Modal } from "../components/sanpin/autoclaveLog/AutoclaveLog257Modal";
+import { DoctorShiftRosterModal } from "../components/schedule/roster/DoctorShiftRosterModal";
 import { AnesthesiaQuickBar } from "../components/anesthesia/AnesthesiaQuickBar";
 import type { CompletedWorksActAndWriteOffData, TreatmentPlanItem } from "../components/treatment-plans/types";
 import type { DiaryState } from "../components/useVisitDiaryLogic";
@@ -318,6 +320,8 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isLoyaltyProgramOpen, setIsLoyaltyProgramOpen] = useState(false);
 	const [isReferral057Open, setIsReferral057Open] = useState(false);
 	const [isSickLeaveElnOpen, setIsSickLeaveElnOpen] = useState(false);
+	const [isAutoclaveLog257Open, setIsAutoclaveLog257Open] = useState(false);
+	const [isDoctorShiftRosterOpen, setIsDoctorShiftRosterOpen] = useState(false);
 
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -1442,7 +1446,55 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</button>
 					</div>
 
-					{/* 44. Anesthesia QuickBar 1-Click Presets */}
+					{/* 44. Statutory Form 257/u Autoclave Log Studio Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Flame className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Журнал работы стерилизаторов (Форма 257/у)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								СанПиН 3.3686-21: контроль 5 точек камеры (термо/баро), индикаторы 4-5 кл., биоконтроль бацилл и печать журнала 257/у.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsAutoclaveLog257Open(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-autoclave-log-257-modal-btn"
+						>
+							<Flame size={15} />
+							<span>Открыть журнал 257/у</span>
+						</button>
+					</div>
+
+					{/* 45. Statutory Doctor Shift Roster Studio Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Calendar className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									График смен врачей & Табель Т-13
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Статья 350 ТК РФ (33 ч/нед медработников), шахматка кресел, конфликты наложений, тепловая карта и табель Т-13.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsDoctorShiftRosterOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-doctor-shift-roster-modal-btn"
+						>
+							<Calendar size={15} />
+							<span>Открыть график смен</span>
+						</button>
+					</div>
+
+					{/* 46. Anesthesia QuickBar 1-Click Presets */}
 					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4 md:col-span-2 lg:col-span-3">
 						<div className="space-y-2">
 							<div className="flex items-center gap-2 text-[var(--teal)]">
@@ -1849,6 +1901,16 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				onClose={() => setIsSickLeaveElnOpen(false)}
 				initialPatientName={SAMPLE_PATIENT.fullName}
 				initialPatientBirthDate={SAMPLE_PATIENT.birthDate}
+			/>
+
+			<AutoclaveLog257Modal
+				isOpen={isAutoclaveLog257Open}
+				onClose={() => setIsAutoclaveLog257Open(false)}
+			/>
+
+			<DoctorShiftRosterModal
+				isOpen={isDoctorShiftRosterOpen}
+				onClose={() => setIsDoctorShiftRosterOpen(false)}
 			/>
 		</div>
 	);

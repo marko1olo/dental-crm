@@ -5,6 +5,7 @@
 
 export * from "./planPriceValidationPresets";
 export * from "./planPriceValidationEngine";
+export * from "./starProtocolValidationEngine";
 export {
 	TreatmentPlanPriceValidatorModal,
 	type TreatmentPlanPriceValidatorModalProps,

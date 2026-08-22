@@ -4,7 +4,6 @@
 
 export * from './autoclavePresets';
 export * from './autoclaveEngine';
-export * from './AutoclaveSensorGauge';
 export * from './KraftPackBatchBuilder';
 export * from './KraftBarcodeLabelSheet';
 export * from './SanpinJournal257View';

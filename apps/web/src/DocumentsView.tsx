@@ -27,6 +27,23 @@ import { FnsNdflXmlModal } from "./components/documents/ndflXml/FnsNdflXmlModal"
 import { EgiszRemdXmlModal } from "./components/egisz/remdXml/EgiszRemdXmlModal";
 import { MedicalReferral057Modal } from "./components/documents/referral057/MedicalReferral057Modal";
 import { SickLeaveElnModal } from "./components/documents/sickLeave/SickLeaveElnModal";
+import { AutoclaveLog257Modal } from "./components/sanpin/autoclaveLog/AutoclaveLog257Modal";
+import "./components/documents/documentNavigation.css";
+import {
+	DocumentNavTabs,
+	type DocumentCategoryTab,
+} from "./components/documents/DocumentNavTabs";
+import { DocumentQuickRoleScenarios } from "./components/documents/DocumentQuickRoleScenarios";
+import { PrimaryIntakePackageModal } from "./components/documents/PrimaryIntakePackageModal";
+import { SurgicalPackageModal } from "./components/documents/SurgicalPackageModal";
+import { ClinicalVisitPackageModal } from "./components/documents/ClinicalVisitPackageModal";
+import { TaxAccountingPackageModal } from "./components/documents/TaxAccountingPackageModal";
+import { HospitalSanpinPackageModal } from "./components/documents/HospitalSanpinPackageModal";
+import {
+	DocumentRegistryFilterBar,
+	type DocumentStatusFilter,
+	type DocumentEdsFilter,
+} from "./components/documents/DocumentRegistryFilterBar";
 import type { Egisz043uPayload } from "./components/egisz/remdXml/egiszRemdEngine";
 import {
 	DEFAULT_EGISZ_CLINIC_PRESET,
@@ -456,6 +473,23 @@ export function DocumentsView(props: DocumentsViewProps) {
 	const [isEgiszRemdOpen, setIsEgiszRemdOpen] = useState(false);
 	const [isReferral057Open, setIsReferral057Open] = useState(false);
 	const [isSickLeaveElnOpen, setIsSickLeaveElnOpen] = useState(false);
+	const [isAutoclaveLogOpen, setIsAutoclaveLogOpen] = useState(false);
+	const [isPrimaryIntakeOpen, setIsPrimaryIntakeOpen] = useState(false);
+	const [isSurgicalPackageOpen, setIsSurgicalPackageOpen] = useState(false);
+	const [isClinicalVisitOpen, setIsClinicalVisitOpen] = useState(false);
+	const [isTaxAccountingOpen, setIsTaxAccountingOpen] = useState(false);
+	const [isHospitalSanpinOpen, setIsHospitalSanpinOpen] = useState(false);
+
+	const [activeCategoryTab, setActiveCategoryTab] =
+		useState<DocumentCategoryTab>("all");
+	const [registrySearchQuery, setRegistrySearchQuery] = useState("");
+	const [registryStatusFilter, setRegistryStatusFilter] =
+		useState<DocumentStatusFilter>("all");
+	const [registryEdsFilter, setRegistryEdsFilter] =
+		useState<DocumentEdsFilter>("all");
+	const [registryKindFilter, setRegistryKindFilter] = useState("all");
+	const [docNavCategory, setDocNavCategory] = useState<string>("all");
+	const [docNavSearch, setDocNavSearch] = useState<string>("");
 
 	const egiszInitialPayload: Partial<Egisz043uPayload> = useMemo(() => {
 		const payload: Record<string, any> = {
@@ -1018,10 +1052,202 @@ export function DocumentsView(props: DocumentsViewProps) {
 		return `Аннулировано. Источник: ${sourceLabel}.`;
 	}
 
+	const intakeKinds = useMemo(
+		() =>
+			new Set<DocumentKind>([
+				"paid_medical_services_contract",
+				"informed_consent",
+				"personal_data_processing_consent",
+				"patient_intake_questionnaire",
+				"minor_legal_representative_consent",
+				"photo_video_consent",
+				"medical_intervention_refusal",
+			]),
+		[],
+	);
+
+	const clinicalKinds = useMemo(
+		() =>
+			new Set<DocumentKind>([
+				"dental_medical_card_043u",
+				"outpatient_medical_card_025u",
+				"orthodontic_medical_card_043_1u",
+				"daily_dentist_diary_037u",
+				"summary_dentist_statement_039u",
+				"medical_record_extract",
+				"medical_record_copy_request",
+				"medical_document_release_receipt",
+				"treatment_plan",
+				"treatment_plan_acceptance",
+				"anesthesia_consent_log",
+				"prescription_medication_order",
+				"post_visit_recommendations",
+				"visit_attendance_certificate",
+				"xray_cbct_referral",
+				"radiation_dose_sheet",
+				"warranty_service_memo",
+				"lab_work_order",
+			]),
+		[],
+	);
+
+	const financeTaxKinds = useMemo(
+		() =>
+			new Set<DocumentKind>([
+				"paid_medical_services_contract",
+				"treatment_cost_estimate",
+				"payment_invoice",
+				"payment_receipt",
+				"installment_payment_schedule",
+				"completed_works_act",
+				"payment_refund_correction_request",
+				"tax_deduction_application",
+				"tax_deduction_certificate",
+				"legacy_tax_deduction_certificate",
+				"tax_deduction_registry",
+			]),
+		[],
+	);
+
+	const hospitalSanpinKinds = useMemo(
+		() =>
+			new Set<DocumentKind>([
+				"outpatient_medical_card_025u",
+				"dental_medical_card_043u",
+				"medical_record_extract",
+				"radiation_dose_sheet",
+				"xray_cbct_referral",
+				"visit_attendance_certificate",
+			]),
+		[],
+	);
+
+	const navCategoryCounts = useMemo(() => {
+		const allDocs = typedActiveDocuments ?? [];
+		return {
+			all: allDocs.length,
+			intake: allDocs.filter((d) => intakeKinds.has(d.kind)).length,
+			clinical: allDocs.filter((d) => clinicalKinds.has(d.kind)).length,
+			finance_tax: allDocs.filter((d) => financeTaxKinds.has(d.kind)).length,
+			hospital_sanpin: allDocs.filter((d) => hospitalSanpinKinds.has(d.kind)).length,
+		};
+	}, [typedActiveDocuments, intakeKinds, clinicalKinds, financeTaxKinds, hospitalSanpinKinds]);
+
+	const availableRegistryKinds = useMemo(() => {
+		const kindsSet = new Set<DocumentKind>();
+		for (const doc of typedActiveDocuments ?? []) {
+			kindsSet.add(doc.kind);
+		}
+		return Array.from(kindsSet).map((k) => ({
+			kind: k,
+			label: documentLabels[k] || k,
+		}));
+	}, [typedActiveDocuments, documentLabels]);
+
+	const patientIssuedDocsCount = useMemo(
+		() => (typedActiveDocuments ?? []).filter((d) => d.status === "issued").length,
+		[typedActiveDocuments],
+	);
+	const patientDraftDocsCount = useMemo(
+		() => (typedActiveDocuments ?? []).filter((d) => d.status === "draft").length,
+		[typedActiveDocuments],
+	);
+
+	const filteredActiveDocuments = useMemo(() => {
+		let result = typedActiveDocuments ?? [];
+
+		// Tab Category Filter
+		if (activeCategoryTab === "intake") {
+			result = result.filter((d) => intakeKinds.has(d.kind));
+		} else if (activeCategoryTab === "clinical") {
+			result = result.filter((d) => clinicalKinds.has(d.kind));
+		} else if (activeCategoryTab === "finance_tax") {
+			result = result.filter((d) => financeTaxKinds.has(d.kind));
+		} else if (activeCategoryTab === "hospital_sanpin") {
+			result = result.filter((d) => hospitalSanpinKinds.has(d.kind));
+		}
+
+		// Status Filter
+		if (registryStatusFilter !== "all") {
+			result = result.filter((d) => d.status === registryStatusFilter);
+		}
+
+		// EDS / ЭЦП Filter
+		if (registryEdsFilter === "signed_eds") {
+			result = result.filter(
+				(d) =>
+					d.signatureAttestation?.mode === "qualified_electronic_signature" ||
+					d.signatureAttestation?.mode === "simple_electronic_signature" ||
+					Boolean(d.issuedSnapshotSha256),
+			);
+		} else if (registryEdsFilter === "signed_paper") {
+			result = result.filter(
+				(d) => d.signatureAttestation?.mode === "paper_signed",
+			);
+		} else if (registryEdsFilter === "unsigned") {
+			result = result.filter((d) => !d.signatureAttestation);
+		}
+
+		// Kind Filter
+		if (registryKindFilter !== "all") {
+			result = result.filter((d) => d.kind === registryKindFilter);
+		}
+
+		// Search Query
+		const query = registrySearchQuery.trim().toLowerCase();
+		if (query) {
+			result = result.filter((d) => {
+				const titleMatch = d.title?.toLowerCase().includes(query);
+				const labelMatch = (documentLabels[d.kind] || "")
+					.toLowerCase()
+					.includes(query);
+				const kindMatch = d.kind.toLowerCase().includes(query);
+				const patName = patientName(dashboard?.patients, d.patientId).toLowerCase();
+				const patMatch = patName.includes(query);
+				const staffMatch = (d.signatureAttestation?.staffFullName || "")
+					.toLowerCase()
+					.includes(query);
+				const recipientMatch = (
+					d.signatureAttestation?.recipientFullName || ""
+				)
+					.toLowerCase()
+					.includes(query);
+				const innMatch = (d.taxPayerInn || "").includes(query);
+				const yearMatch = String(d.taxYear || "").includes(query);
+
+				return (
+					titleMatch ||
+					labelMatch ||
+					kindMatch ||
+					patMatch ||
+					staffMatch ||
+					recipientMatch ||
+					innMatch ||
+					yearMatch
+				);
+			});
+		}
+
+		return result;
+	}, [
+		typedActiveDocuments,
+		activeCategoryTab,
+		registryStatusFilter,
+		registryEdsFilter,
+		registryKindFilter,
+		registrySearchQuery,
+		intakeKinds,
+		clinicalKinds,
+		financeTaxKinds,
+		hospitalSanpinKinds,
+		documentLabels,
+		dashboard?.patients,
+	]);
+
 	return (
 		<div className="panel documents-panel" id="documents">
 			<div className="panel-heading">
-				<h2>Документы к закрытию</h2>
+				<h2>Документы и Реестр</h2>
 				<div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
 					<button
 						type="button"
@@ -1037,7 +1263,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 						onClick={() => setIsSickLeaveElnOpen(true)}
 						data-testid="open-sick-leave-eln-modal-btn"
 					>
-						Больничный лист (ЭЛН Приказ № 1089н)
+						Больничный лист (ЭЛН 1089н)
+					</button>
+					<button
+						type="button"
+						className="secondary-button"
+						onClick={() => setIsAutoclaveLogOpen(true)}
+						data-testid="open-autoclave-log-257-btn"
+					>
+						Журнал автоклава (Форма № 257/у)
 					</button>
 					<button
 						className="text-button"
@@ -1063,6 +1297,63 @@ export function DocumentsView(props: DocumentsViewProps) {
 					</button>
 				</div>
 			</div>
+
+			{/* 1. ПАЦИЕНТСКИЙ БАННЕР И СВОДКА СТАТИСТИКИ */}
+			<div className="document-patient-banner">
+				<div className="document-patient-info">
+					<span className="document-patient-name">
+						{activePatient ? activePatient.fullName : "Все пациенты клиники"}
+					</span>
+					{activePatient?.birthDate && (
+						<span className="document-patient-badge">
+							Д/Р: {formatShortDate(activePatient.birthDate)}
+						</span>
+					)}
+					{activePatient?.phone && (
+						<span className="document-patient-badge">
+							Тел: {activePatient.phone}
+						</span>
+					)}
+				</div>
+				<div className="document-patient-stats">
+					<span className="document-stat-pill issued" title="Выданные и подписанные документы">
+						✓ Выдано: {patientIssuedDocsCount}
+					</span>
+					<span className="document-stat-pill draft" title="Черновики в работе">
+						⏱ Черновиков: {patientDraftDocsCount}
+					</span>
+					<span className="document-stat-pill" title="Всего документов">
+						📋 Всего: {typedActiveDocuments?.length ?? 0}
+					</span>
+				</div>
+			</div>
+
+			{/* 2. БЫСТРЫЕ РОЛЕВЫЕ СЦЕНАРИИ В 1 КЛИК */}
+			<DocumentQuickRoleScenarios
+				onOpenPrimaryIntake={() => setIsPrimaryIntakeOpen(true)}
+				onOpenSurgicalPackage={() => setIsSurgicalPackageOpen(true)}
+				onOpenClinicalVisit={() => setIsClinicalVisitOpen(true)}
+				onOpenTaxAccounting={() => setIsTaxAccountingOpen(true)}
+				onOpenHospitalSanpin={() => setIsHospitalSanpinOpen(true)}
+			/>
+
+			{/* 3. НАВИГАЦИОННЫЕ ВКЛАДКИ ПО КАТЕГОРИЯМ */}
+			<DocumentNavTabs
+				activeTab={activeCategoryTab}
+				onSelectTab={(tab) => {
+					setActiveCategoryTab(tab);
+					if (tab === "intake") {
+						setSelectedDocumentKind("paid_medical_services_contract");
+					} else if (tab === "clinical") {
+						setSelectedDocumentKind("dental_medical_card_043u");
+					} else if (tab === "finance_tax") {
+						setSelectedDocumentKind("tax_deduction_certificate");
+					} else if (tab === "hospital_sanpin") {
+						setSelectedDocumentKind("radiation_dose_sheet");
+					}
+				}}
+				counts={navCategoryCounts}
+			/>
 			{!activeUsableDocuments?.[0] ? (
 				<p
 					className="document-open-guidance"
@@ -5929,8 +6220,29 @@ export function DocumentsView(props: DocumentsViewProps) {
 					</div>
 				</section>
 			) : null}
+			{/* 4. СМАРТ-ПОИСК И ФИЛЬТРЫ РЕЕСТРА */}
+			<DocumentRegistryFilterBar
+				searchQuery={registrySearchQuery}
+				onSearchChange={setRegistrySearchQuery}
+				statusFilter={registryStatusFilter}
+				onStatusFilterChange={setRegistryStatusFilter}
+				edsFilter={registryEdsFilter}
+				onEdsFilterChange={setRegistryEdsFilter}
+				kindFilter={registryKindFilter}
+				onKindFilterChange={setRegistryKindFilter}
+				totalCount={typedActiveDocuments?.length ?? 0}
+				filteredCount={filteredActiveDocuments.length}
+				availableKinds={availableRegistryKinds}
+				onResetFilters={() => {
+					setRegistrySearchQuery("");
+					setRegistryStatusFilter("all");
+					setRegistryEdsFilter("all");
+					setRegistryKindFilter("all");
+				}}
+			/>
+
 			<div className="document-list">
-				{(typedActiveDocuments ?? []).map((document) => {
+				{(filteredActiveDocuments ?? []).map((document) => {
 					const documentActionLabel = documentActionLabels[document.kind];
 					const documentKindLabel = documentLabels[document.kind];
 					const documentTaxYearContext = document.taxYear
@@ -6104,15 +6416,90 @@ export function DocumentsView(props: DocumentsViewProps) {
 						</article>
 					);
 				})}
-				{(typedActiveDocuments ?? []).length === 0 ? (
-					<EmptyState
-						title="Нет документов"
-						description="Для этого пациента еще не сформировано ни одного документа. Выберите шаблон выше и нажмите «Создать»."
-						icon={<FileText size={24} aria-hidden="true" />}
-						className="my-4 py-6"
-					/>
+				{(filteredActiveDocuments ?? []).length === 0 ? (
+					(typedActiveDocuments ?? []).length === 0 ? (
+						<EmptyState
+							title="Нет документов"
+							description="Для этого пациента еще не сформировано ни одного документа. Выберите шаблон выше и нажмите «Создать»."
+							icon={<FileText size={24} aria-hidden="true" />}
+							className="my-4 py-6"
+						/>
+					) : (
+						<EmptyState
+							title="Документы не найдены"
+							description="По заданным фильтрам и поисковому запросу ничего не найдено. Попробуйте сбросить фильтры поиска."
+							icon={<FileText size={24} aria-hidden="true" />}
+							className="my-4 py-6"
+						/>
+					)
 				) : null}
 			</div>
+
+			<PrimaryIntakePackageModal
+				isOpen={isPrimaryIntakeOpen}
+				onClose={() => setIsPrimaryIntakeOpen(false)}
+				patient={activePatient ?? null}
+				existingDocuments={typedActiveDocuments ?? []}
+				onCreateDocument={(kind) => void createDocument(kind)}
+				onOpenDocument={(id) => void openIssuedDocumentHtml(id)}
+				onSelectDocumentKind={(kind) => setSelectedDocumentKind(kind)}
+			/>
+
+			<SurgicalPackageModal
+				isOpen={isSurgicalPackageOpen}
+				onClose={() => setIsSurgicalPackageOpen(false)}
+				patient={activePatient ?? null}
+				doctorFullName={activeDoctor?.fullName}
+				existingDocuments={typedActiveDocuments ?? []}
+				onCreateDocument={(kind) => void createDocument(kind)}
+				onOpenDocument={(id) => void openIssuedDocumentHtml(id)}
+				onSelectDocumentKind={(kind) => setSelectedDocumentKind(kind)}
+			/>
+
+			<ClinicalVisitPackageModal
+				isOpen={isClinicalVisitOpen}
+				onClose={() => setIsClinicalVisitOpen(false)}
+				patient={activePatient ?? null}
+				doctorFullName={activeDoctor?.fullName}
+				existingDocuments={typedActiveDocuments ?? []}
+				onCreateDocument={(kind) => void createDocument(kind)}
+				onOpenDocument={(id) => void openIssuedDocumentHtml(id)}
+				onSelectDocumentKind={(kind) => setSelectedDocumentKind(kind)}
+			/>
+
+			<TaxAccountingPackageModal
+				isOpen={isTaxAccountingOpen}
+				onClose={() => setIsTaxAccountingOpen(false)}
+				patient={activePatient ?? null}
+				taxYear={taxDocumentYear}
+				setTaxYear={setTaxDocumentYear}
+				payerOptions={typedTaxDocumentPayerOptions}
+				selectedPayerKey={selectedTaxDocumentPayerKey}
+				onSelectPayerKey={(key) => setTaxDocumentPayerInn(key)}
+				existingDocuments={typedActiveDocuments ?? []}
+				onCreateDocument={(kind) => void createDocument(kind)}
+				onOpenDocument={(id) => void openIssuedDocumentHtml(id)}
+				onSelectDocumentKind={(kind) => setSelectedDocumentKind(kind)}
+				onOpenFnsXmlModal={() => setIsFnsNdflXmlOpen(true)}
+			/>
+
+			<HospitalSanpinPackageModal
+				isOpen={isHospitalSanpinOpen}
+				onClose={() => setIsHospitalSanpinOpen(false)}
+				patient={activePatient ?? null}
+				existingDocuments={typedActiveDocuments ?? []}
+				onOpenReferral057={() => setIsReferral057Open(true)}
+				onOpenSickLeaveEln={() => setIsSickLeaveElnOpen(true)}
+				onOpenAutoclaveLog257={() => setIsAutoclaveLogOpen(true)}
+				onOpenEgiszRemd={() => setIsEgiszRemdOpen(true)}
+				onCreateDocument={(kind) => void createDocument(kind)}
+				onSelectDocumentKind={(kind) => setSelectedDocumentKind(kind)}
+			/>
+
+			<AutoclaveLog257Modal
+				isOpen={isAutoclaveLogOpen}
+				onClose={() => setIsAutoclaveLogOpen(false)}
+			/>
 
 			{isFnsNdflXmlOpen && (
 				<FnsNdflXmlModal

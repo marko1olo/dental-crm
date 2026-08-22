@@ -51,7 +51,7 @@ import {
 	kopecksToRubles,
 	updateLineActualQuantity,
 	validateWriteoffDocument,
-} from "./clinicalWriteoffEngine";
+} from "./clinicalWriteoffEngine.js";
 import {
 	CLINICAL_MATERIALS_CATALOG,
 	type CabinetStockBatch,
@@ -63,7 +63,7 @@ import {
 	type Order804nServiceNorm,
 	getDiscrepancyReason,
 	getOrder804nServiceNorm,
-} from "./clinicalWriteoffPresets";
+} from "./clinicalWriteoffPresets.js";
 
 export interface ClinicalWriteoffModalProps {
 	readonly isOpen: boolean;

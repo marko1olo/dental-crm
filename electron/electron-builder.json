@@ -1,0 +1,64 @@
+{
+  "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
+  "appId": "ru.dente.desktop",
+  "productName": "DENTE Dental CRM",
+  "copyright": "Copyright © 2026 DENTE Dental CRM",
+  "directories": {
+    "output": "dist",
+    "app": "."
+  },
+  "files": [
+    "main.cjs",
+    "preload.cjs",
+    "package.json",
+    "../apps/web/dist/**/*"
+  ],
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      },
+      {
+        "target": "portable",
+        "arch": ["x64"]
+      }
+    ],
+    "icon": "../apps/web/public/icon.svg",
+    "legalTrademarks": "DENTE Dental CRM",
+    "fileAssociations": [
+      {
+        "ext": "dcm",
+        "name": "DICOM Dental Radiograph",
+        "description": "Медицинский рентгеновский снимок DICOM",
+        "role": "Viewer"
+      },
+      {
+        "ext": "dicom",
+        "name": "DICOM Dental Radiograph",
+        "description": "Медицинский рентгеновский снимок DICOM",
+        "role": "Viewer"
+      },
+      {
+        "ext": "dente",
+        "name": "DENTE Clinical Export Package",
+        "description": "Клинический архив DENTE Dental CRM",
+        "role": "Editor"
+      }
+    ]
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": "always",
+    "createStartMenuShortcut": true,
+    "shortcutName": "DENTE Dental CRM",
+    "language": "1049"
+  },
+  "protocols": [
+    {
+      "name": "DENTE Clinical Protocol Handler",
+      "schemes": ["dente"]
+    }
+  ]
+}

@@ -207,7 +207,18 @@
 	.dnt-actions__panel-close,
 	.viewer-tool-button,
 	.schedule-day-step-prev,
-	.schedule-day-step-next {
+	.schedule-day-step-next,
+	.doc-nav-cat-btn,
+	.doc-nav-action-btn,
+	.doc-nav-template-chip,
+	.doc-nav-search-wrap,
+	.document-factory-kind-button,
+	.document-nav-tab-btn,
+	.document-scenario-card,
+	.document-filter-chip,
+	.document-search-input,
+	.document-registry-kind-select,
+	.document-reset-filters-btn {
 		min-height: 44px;
 		min-width: 44px;
 		box-sizing: border-box;

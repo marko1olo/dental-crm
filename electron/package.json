@@ -1,0 +1,24 @@
+{
+  "name": "@dental/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DENTE Dental CRM — Desktop Windows Standalone Runtime (.EXE)",
+  "main": "main.cjs",
+  "type": "commonjs",
+  "scripts": {
+    "build": "node scripts/package-desktop.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "keywords": [
+    "dental",
+    "crm",
+    "electron",
+    "windows",
+    "desktop",
+    "twain",
+    "dicom",
+    "kkt"
+  ],
+  "author": "DENTE Dental CRM",
+  "license": "MIT"
+}

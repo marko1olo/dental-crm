@@ -54,6 +54,7 @@ import {
  */
 import { chargeLineOutcome } from "../money/patientDebt.js";
 import { repairMojibakeText } from "../text/repairMojibake.js";
+import { kopecksToWordsRu, legalMoneyInWordsRu } from "./moneyWordsRu.js";
 import { taxPaymentsForDocumentScope } from "./taxPaymentSnapshot.js";
 
 export type DocumentRenderContext = {
@@ -720,8 +721,25 @@ function checkList(items: string[]) {
 
 function signatureBlock(left = "Пациент", right = "Представитель клиники") {
 	return `<div class="signatures">
-    <p>${escapeHtml(left)}: ____________________</p>
-    <p>${escapeHtml(right)}: ____________________</p>
+    <section class="signature-column signature-left">
+      <p class="signature-role"><strong>${escapeHtml(left)}</strong></p>
+      <p class="signature-line">Подпись: ____________________ / ____________________ /</p>
+      <p class="signature-subtext">(личная подпись)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(расшифровка подписи)</p>
+      <p class="signature-date">Дата: «____» ______________ 20___ г.</p>
+    </section>
+    <section class="signature-column signature-right">
+      <p class="signature-role"><strong>${escapeHtml(right)}</strong></p>
+      <p class="signature-line">Подпись: ____________________ / ____________________ /</p>
+      <p class="signature-subtext">(личная подпись)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(расшифровка подписи)</p>
+      <p class="signature-date">Дата: «____» ______________ 20___ г.</p>
+      <p class="signature-stamps">
+        <span class="stamp-seal-circle">М.П.</span>
+        <span class="ukep-digital-box">
+          <strong class="ukep-digital-title">ДОКУМЕНТ ПОДПИСАН ЭП (63-ФЗ)</strong><br />
+          <span class="ukep-digital-desc">Сертификат / Владелец / Дата в МИС ДЕНТЕ</span>
+        </span>
+      </p>
+    </section>
   </div>`;
 }
 
@@ -823,11 +841,20 @@ function baseDocument(
 ) {
 	const clinicProfile = context.clinicProfile;
 	const clinicName = clinicDisplayName(clinicProfile);
+	const clinicLegalName = present(clinicProfile?.legalName);
 	const inn = clinicProfile?.inn ? `ИНН: ${clinicProfile.inn}` : "";
+	const kpp = clinicProfile?.kpp ? `КПП: ${clinicProfile.kpp}` : "";
 	const ogrn = clinicProfile?.ogrn ? `ОГРН: ${clinicProfile.ogrn}` : "";
-	const license = clinicLicenseLine(clinicProfile) ?? "Лицензия на осуществление медицинской деятельности";
+	const license = clinicLicenseLine(clinicProfile) ?? "Лицензия на осуществление медицинской деятельности (ЕРУЛ)";
 	const docNum = document.id.slice(0, 8).toUpperCase();
 	const dateStr = issuedDate(document);
+	const clinicContacts = [
+		clinicProfile?.phone ? `тел. ${clinicProfile.phone}` : null,
+		clinicProfile?.email ? `email: ${clinicProfile.email}` : null,
+		clinicProfile?.website ? `сайт: ${clinicProfile.website}` : null,
+	]
+		.filter(Boolean)
+		.join(" • ");
 
 	return `<!doctype html>
 <html lang="ru">
@@ -837,10 +864,10 @@ function baseDocument(
   <style>
     @page {
       size: A4 portrait;
-      margin: 15mm 10mm 15mm 20mm;
+      margin: 20mm 15mm 20mm 20mm;
       @bottom-right {
         content: "Стр. " counter(page);
-        font-family: "PT Astra Sans", "Arial", sans-serif;
+        font-family: "PT Astra Sans", Arial, sans-serif;
         font-size: 8pt;
         color: #64748b;
       }
@@ -849,7 +876,7 @@ function baseDocument(
     body {
       font-family: "PT Astra Serif", "Times New Roman", "PT Astra Sans", Arial, serif;
       font-size: 9.5pt;
-      line-height: 1.28;
+      line-height: 1.25;
       color: #0f172a;
       background: #ffffff;
       margin: 0;
@@ -869,9 +896,11 @@ function baseDocument(
       margin-bottom: 8px;
       border-bottom: 2px solid #0f172a;
       padding-bottom: 6px;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     .clinic-info {
-      width: 58%;
+      width: 60%;
       font-family: "PT Astra Sans", Arial, sans-serif;
       font-size: 7.5pt;
       line-height: 1.25;
@@ -885,8 +914,19 @@ function baseDocument(
       margin-bottom: 2px;
       letter-spacing: 0.02em;
     }
+    .clinic-legal-sub {
+      font-weight: 600;
+      font-size: 8.5pt;
+      color: #1e293b;
+      margin-bottom: 3px;
+    }
+    .clinic-details {
+      margin-top: 2px;
+      font-size: 7.5pt;
+      line-height: 1.25;
+    }
     .doc-requisites {
-      width: 40%;
+      width: 38%;
       text-align: right;
       font-family: "PT Astra Sans", Arial, sans-serif;
       font-size: 7.5pt;
@@ -896,13 +936,17 @@ function baseDocument(
     .form-badge {
       display: inline-block;
       font-weight: 800;
-      font-size: 8.5pt;
+      font-size: 8pt;
       text-transform: uppercase;
       color: #0f172a;
       border: 1pt solid #0f172a;
       padding: 1pt 5pt;
-      margin-bottom: 2pt;
+      margin-bottom: 4pt;
       background: #f8fafc;
+      letter-spacing: 0.03em;
+    }
+    .doc-meta-row {
+      margin: 1.5pt 0;
     }
     h1 {
       font-family: "PT Astra Sans", Arial, sans-serif;
@@ -913,13 +957,15 @@ function baseDocument(
       color: #0f172a;
       margin: 10px 0 8px;
       text-align: center;
+      page-break-after: avoid;
+      break-after: avoid;
     }
     h2 {
       font-family: "PT Astra Sans", Arial, sans-serif;
       font-size: 9.5pt;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.02em;
       margin: 10px 0 4px;
       background: #f1f5f9;
       color: #0f172a;
@@ -928,14 +974,40 @@ function baseDocument(
       page-break-after: avoid;
       break-after: avoid;
     }
-    h3 { font-size: 9pt; font-weight: 700; margin: 8px 0 4px; }
-    p { margin: 4px 0; }
+    h3 {
+      font-family: "PT Astra Sans", Arial, sans-serif;
+      font-size: 9pt;
+      font-weight: 700;
+      margin: 8px 0 4px;
+      page-break-after: avoid;
+      break-after: avoid;
+    }
+    p {
+      margin: 4px 0;
+      line-height: 1.25;
+    }
+    p.legal-clause, .legal-body p {
+      text-align: justify;
+      text-justify: inter-word;
+      text-indent: 1.25cm;
+      margin: 3.5pt 0;
+      line-height: 1.25;
+    }
+    p.preamble {
+      text-align: justify;
+      text-justify: inter-word;
+      text-indent: 1.25cm;
+      margin: 4pt 0 8pt;
+      line-height: 1.28;
+    }
     table {
       border-collapse: collapse;
       margin: 4px 0 8px;
       width: 100%;
       font-size: 8.5pt;
       line-height: 1.25;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     td, th {
       border: 0.5pt solid #cbd5e1;
@@ -949,8 +1021,18 @@ function baseDocument(
       font-family: "PT Astra Sans", Arial, sans-serif;
       font-weight: 700;
     }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .text-left { text-align: left; }
+    .financial-table th {
+      text-align: center;
+      font-size: 8pt;
+    }
     ul { margin: 4px 0 8px 18px; padding: 0; }
-    li { margin: 2px 0; }
+    li { margin: 2px 0; text-align: justify; line-height: 1.25; }
     .meta {
       background: #f8fafc;
       border: 0.5pt solid #cbd5e1;
@@ -958,6 +1040,8 @@ function baseDocument(
       margin-bottom: 10px;
       font-size: 8.5pt;
       border-radius: 3px;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     .document-status-banner {
       border: 2px solid #a34f32;
@@ -977,17 +1061,116 @@ function baseDocument(
       padding: 6px 8px;
       margin: 6px 0;
       font-size: 8.5pt;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     .check-list { list-style: none; margin-left: 0; }
     .check-list li { align-items: baseline; display: flex; gap: 6px; }
     .check-list span { color: #334155; font-weight: 700; }
-    .signatures {
-      display: grid;
-      gap: 24px;
-      grid-template-columns: 1fr 1fr;
-      margin-top: 24px;
+    .total-words-box {
+      background: #f8fafc;
+      border: 1pt solid #cbd5e1;
+      padding: 6pt 8pt;
+      margin: 6pt 0 10pt;
+      font-size: 9pt;
       page-break-inside: avoid;
       break-inside: avoid;
+    }
+    .executive-requisites {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 10pt 0 6pt;
+      font-size: 8.5pt;
+      line-height: 1.25;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .executive-requisites-col {
+      border: 0.5pt solid #cbd5e1;
+      padding: 6pt 8pt;
+      background: #f8fafc;
+    }
+    .executive-requisites-title {
+      font-family: "PT Astra Sans", Arial, sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 8.5pt;
+      color: #0f172a;
+      margin-bottom: 4pt;
+      border-bottom: 1pt solid #cbd5e1;
+      padding-bottom: 2pt;
+    }
+    .signatures {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 14pt;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .signature-column {
+      font-size: 8.5pt;
+      line-height: 1.25;
+    }
+    .signature-role {
+      font-family: "PT Astra Sans", Arial, sans-serif;
+      font-size: 9pt;
+      font-weight: 700;
+      margin-bottom: 6pt;
+      border-bottom: 1pt solid #cbd5e1;
+      padding-bottom: 2pt;
+    }
+    .signature-line-block {
+      margin: 6pt 0 3pt;
+    }
+    .signature-line {
+      font-family: "PT Astra Serif", "Times New Roman", serif;
+      font-size: 8.5pt;
+    }
+    .signature-subtext {
+      font-size: 6.5pt;
+      color: #64748b;
+      margin-top: 1pt;
+    }
+    .signature-date {
+      margin-top: 5pt;
+      font-size: 8.5pt;
+    }
+    .signature-stamps {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8pt;
+    }
+    .stamp-seal-circle {
+      width: 20mm;
+      height: 20mm;
+      border: 1pt dashed #64748b;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      font-weight: 700;
+      font-size: 9pt;
+      flex-shrink: 0;
+    }
+    .ukep-digital-box {
+      border: 1pt solid #0284c7;
+      border-radius: 3pt;
+      padding: 3pt 5pt;
+      font-size: 6.5pt;
+      color: #0369a1;
+      background: #f0f9ff;
+      line-height: 1.2;
+      flex: 1;
+    }
+    .ukep-digital-title {
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 1pt;
+      letter-spacing: 0.02em;
     }
     .small { color: #64748b; font-size: 8pt; }
     @media print {
@@ -997,6 +1180,8 @@ function baseDocument(
       td, th { border-color: #000 !important; }
       .header-grid { border-bottom-color: #000 !important; }
       .document-status-banner { color: #000; border-color: #000; }
+      .stamp-seal-circle { border-color: #000 !important; color: #000 !important; }
+      .ukep-digital-box { border-color: #000 !important; color: #000 !important; background: #fff !important; }
     }
   </style>
 </head>
@@ -1005,15 +1190,19 @@ function baseDocument(
   <div class="header-grid">
     <div class="clinic-info">
       <div class="clinic-title">${escapeHtml(clinicName)}</div>
-      <div>${escapeHtml(clinicProfile?.address ?? "")}</div>
-      <div>${escapeHtml([inn, ogrn].filter(Boolean).join(" | "))}</div>
-      <div>${escapeHtml(license)}</div>
+      ${clinicLegalName && clinicLegalName !== clinicName ? `<div class="clinic-legal-sub">${escapeHtml(clinicLegalName)}</div>` : ""}
+      <div class="clinic-details">
+        <div><strong>Лицензия (ЕРУЛ):</strong> ${escapeHtml(license)}</div>
+        <div>${escapeHtml([ogrn, inn, kpp].filter(Boolean).join(" • "))}</div>
+        <div><strong>Адрес:</strong> ${escapeHtml(clinicProfile?.address ?? "")}</div>
+        <div><strong>Контакты:</strong> ${escapeHtml(clinicContacts || (clinicProfile?.phone ? `тел. ${clinicProfile.phone}` : ""))}</div>
+      </div>
     </div>
     <div class="doc-requisites">
       <div class="form-badge">DENTE CLINICAL CRM</div>
-      <div>Документ №: <strong>${escapeHtml(docNum)}</strong></div>
-      <div>Дата составления: <strong>${escapeHtml(dateStr)}</strong></div>
-      <div>Статус: <strong>${escapeHtml(documentStatusLabels[document.status])}</strong></div>
+      <div class="doc-meta-row">Документ №: <strong>${escapeHtml(docNum)}</strong></div>
+      <div class="doc-meta-row">Дата: <strong>${escapeHtml(dateStr)}</strong></div>
+      <div class="doc-meta-row">Статус: <strong>${escapeHtml(documentStatusLabels[document.status])}</strong></div>
     </div>
   </div>
 
@@ -1225,29 +1414,31 @@ function financialServiceRows(
 	const services = serviceCatalogMap(context);
 	const items = financialDocumentTreatmentItems(document, context);
 	if (!items.length) {
-		return `<tr><td colspan="${includeStatus ? 7 : 6}">Состав услуг не загружен из плана лечения.</td></tr>`;
+		return `<tr><td colspan="${includeStatus ? 9 : 8}" class="text-center">Состав услуг не загружен из плана лечения.</td></tr>`;
 	}
 
 	return items
-		.map((item) => {
+		.map((item, index) => {
 			const service = services.get(item.serviceId);
 			const title = service?.title ?? item.serviceId;
-			const code = service?.code ? `${service.code} ` : "";
+			const code = service?.code ? service.code : "A16.07.001";
 			const tooth = item.toothCode
 				? `зуб ${item.toothCode}`
 				: "без привязки к зубу";
 			const discount =
-				parseKopecks(item.discountRub) > 0 ? rub(item.discountRub) : "нет";
+				parseKopecks(item.discountRub) > 0 ? rub(item.discountRub) : "0,00 руб.";
 			const statusCell = includeStatus
-				? `<td>${escapeHtml(treatmentPlanItemStatusLabels[item.status])}</td>`
+				? `<td class="text-center">${escapeHtml(treatmentPlanItemStatusLabels[item.status])}</td>`
 				: "";
 			return `<tr>
-        <td>${escapeHtml(`${code}${title}`)}</td>
-        <td>${escapeHtml(tooth)}</td>
-        <td>${item.quantity}</td>
-        <td>${escapeHtml(rub(item.unitPriceRub))}</td>
-        <td>${escapeHtml(discount)}</td>
-        <td>${escapeHtml(rub(treatmentPlanItemTotalRub(item)))}</td>
+        <td class="text-center tabular-nums">${index + 1}</td>
+        <td class="text-center tabular-nums">${escapeHtml(code)}</td>
+        <td>${escapeHtml(title)}</td>
+        <td class="text-center">${escapeHtml(tooth)}</td>
+        <td class="text-center tabular-nums">${item.quantity}</td>
+        <td class="text-right tabular-nums">${escapeHtml(rub(item.unitPriceRub))}</td>
+        <td class="text-right tabular-nums">${escapeHtml(discount)}</td>
+        <td class="text-right tabular-nums"><strong>${escapeHtml(rub(treatmentPlanItemTotalRub(item)))}</strong></td>
         ${statusCell}
       </tr>`;
 		})
@@ -1259,10 +1450,36 @@ function financialServiceTable(
 	context: DocumentRenderContext,
 	includeStatus = false,
 ) {
-	return `<table>
-      <tr><th>Услуга</th><th>Зуб/область</th><th>Кол-во</th><th>Цена</th><th>Скидка</th><th>Сумма</th>${includeStatus ? "<th>Статус</th>" : ""}</tr>
-      ${financialServiceRows(document, context, includeStatus)}
-    </table>`;
+	const totalKopecks = treatmentPlanTotalKopecks(document, context);
+	const totalFormatted = rub(treatmentPlanTotalRub(document, context));
+	const totalWords = totalKopecks !== null ? legalMoneyInWordsRu(totalKopecks) : "";
+
+	return `<table class="financial-table">
+      <thead>
+        <tr>
+          <th style="width: 5%;">№ п/п</th>
+          <th style="width: 13%;">Код (804н)</th>
+          <th style="width: 32%;">Наименование медицинской услуги</th>
+          <th style="width: 14%;">Зуб / область</th>
+          <th style="width: 6%;">Кол-во</th>
+          <th style="width: 10%; text-align: right;">Цена, руб.</th>
+          <th style="width: 10%; text-align: right;">Скидка, руб.</th>
+          <th style="width: 10%; text-align: right;">Итого, руб.</th>
+          ${includeStatus ? '<th style="width: 10%;">Статус</th>' : ""}
+        </tr>
+      </thead>
+      <tbody>
+        ${financialServiceRows(document, context, includeStatus)}
+      </tbody>
+      <tfoot>
+        <tr>
+          <th colspan="7" style="text-align: right;">ИТОГО ПО РАСЧЕТУ:</th>
+          <th class="text-right tabular-nums">${escapeHtml(totalFormatted)}</th>
+          ${includeStatus ? "<th></th>" : ""}
+        </tr>
+      </tfoot>
+    </table>
+    ${totalWords ? `<div class="total-words-box"><strong>Сумма прописью:</strong> ${escapeHtml(totalWords)}</div>` : ""}`;
 }
 
 /** Фактически оплачено по документу, в целых копейках. Точное сложение. */
@@ -1356,75 +1573,116 @@ function paidMedicalServicesContract(
 	const payload = document.payload?.paidMedicalServicesContract as
 		| PaidMedicalServicesContractPayload
 		| undefined;
-	if (payload) {
-		const customerRows = [
-			row("Номер договора", payload.contractNumber),
-			row("Дата договора", payload.contractDate),
-			row("Исполнитель", clinicLegalRequisites(context.clinicProfile)),
-			row("Заказчик", payload.customerFullName || "не указан"),
-			row("Представитель", payload.representativeFullName || "отсутствует"),
-			row("Срок начала оказания", payload.serviceStart),
-			row("Окончание / условие завершения", payload.serviceEndOrCondition),
-			row("Ответственный врач", payload.doctorFullName),
-			row("Подписано", payload.signedAt),
-		].join("");
+	const clinicProfile = context.clinicProfile;
+	const clinicName = clinicDisplayName(clinicProfile);
+	const license = clinicLicenseLine(clinicProfile) ?? "Лицензия на медицинскую деятельность (ЕРУЛ)";
+	const signatory = clinicSignatory(clinicProfile);
 
-		return `<h2>Договор оказания платных медицинских услуг</h2>
+	if (payload) {
+		const totalWords = legalMoneyInWordsRu(payload.estimatedTotalRub);
+		const customerName = payload.customerFullName || "Заказчик";
+		const representativeInfo = payload.representativeFullName
+			? ` при участии представителя: ${escapeHtml(payload.representativeFullName)}`
+			: "";
+
+		return `<h2>Договор на оказание платных медицинских услуг № ${escapeHtml(payload.contractNumber)}</h2>
     <div class="notice">
-      Договор подготовлен по структурированным данным клиники и пациента. Перед выдачей сверить локальную форму договора, лицензию, подписи и приложения.
+      Договор составлен в строгом соответствии с Постановлением Правительства РФ от 11.05.2023 № 736 «Об утверждении Правил предоставления медицинскими организациями платных медицинских услуг», Федеральным законом от 21.11.2011 № 323-ФЗ «Об основах охраны здоровья граждан в РФ» и Законом РФ от 07.02.1992 № 2300-1 «О защите прав потребителей».
     </div>
-    <table>${customerRows}</table>
+
+    <p class="preamble">
+      <strong>${escapeHtml(clinicName)}</strong> (далее — <strong>«Исполнитель»</strong>), осуществляющее медицинскую деятельность на основании ${escapeHtml(license)}, в лице ${escapeHtml(signatory)}, с одной стороны, и гражданин(ка) <strong>${escapeHtml(customerName)}</strong> (далее — <strong>«Заказчик / Пациент»</strong>)${representativeInfo}, с другой стороны, совместно именуемые <strong>«Стороны»</strong>, заключили настоящий Договор о нижеследующем:
+    </p>
+
     <h2>1. Предмет договора</h2>
-    <table>
-      ${row("Основание обращения", payload.plannedCareReason)}
-      ${row("Состав платных услуг", payload.serviceScopeSummary)}
-      ${row("Ориентировочная стоимость", rub(payload.estimatedTotalRub))}
-      ${row("Правовая основа", "Правила предоставления медицинскими организациями платных медицинских услуг, постановление Правительства РФ от 11.05.2023 № 736")}
-    </table>
-    <h2>2. Перечень услуг и стоимость</h2>
-    ${financialServiceTable(document, context, true)}
-    <h2>3. Оплата и изменение объема</h2>
-    <table>
-      ${row("Порядок оплаты", payload.paymentTerms)}
-      ${row("Изменение цены/объема", payload.priceChangeRules)}
-      ${row("Отказ и возврат", payload.refusalAndRefundTerms)}
-    </table>
-    <h2>4. Информирование пациента</h2>
-    ${checkList([
-			payload.freeCareAvailabilityNotice,
-			payload.medicalRecommendationWarning,
-			payload.warrantyAndClaimsTerms,
-			"пациент получил сведения об исполнителе, лицензии, услугах, цене, сроках и порядке оплаты",
-			"дополнительные платные услуги оформляются письменным соглашением или новым договором до оказания",
-			"несоблюдение рекомендаций врача может снизить качество услуги, изменить сроки или повлиять на состояние здоровья",
-		])}
-    <h2>5. Подтверждения</h2>
-    ${checkList([
-			"сведения о клинике и лицензии переданы пациенту до подписания",
-			"перечень услуг и стоимость согласованы",
-			"пациент понимает платную основу оказания услуг",
-			"изменения договора фиксируются письменно",
-		])}
-    ${signatureBlock()}`;
+    <div class="legal-body">
+      <p class="legal-clause">1.1. Исполнитель обязуется оказать Пациенту платные медицинские (стоматологические) услуги надлежащего качества по медицинским показаниям, а Заказчик обязуется своевременно оплатить их в порядке и на условиях, определенных настоящим Договором и приложениями к нему.</p>
+      <p class="legal-clause">1.2. Основание обращения и клинические цели: <strong>${escapeHtml(payload.plannedCareReason)}</strong>. Перечень и объем медицинских услуг: <strong>${escapeHtml(payload.serviceScopeSummary)}</strong>.</p>
+      <p class="legal-clause">1.3. ${escapeHtml(payload.freeCareAvailabilityNotice)}. Заказчик (Пациент) подтверждает, что проинформирован о возможности получения бесплатной медицинской помощи по программе государственных гарантий и добровольно согласен на получение платных медицинских услуг.</p>
+    </div>
+
+    <h2>2. Условия и сроки предоставления медицинских услуг</h2>
+    <div class="legal-body">
+      <p class="legal-clause">2.1. Медицинские услуги оказываются при условии оформления информированного добровольного согласия Пациента (его законного представителя) в соответствии со ст. 20 Федерального закона от 21.11.2011 № 323-ФЗ и Приказом Минздрава России от 12.11.2021 № 1051н.</p>
+      <p class="legal-clause">2.2. Срок начала оказания медицинских услуг: <strong>${escapeHtml(payload.serviceStart)}</strong>. Срок окончания оказания услуг / условие завершения: <strong>${escapeHtml(payload.serviceEndOrCondition)}</strong>.</p>
+      <p class="legal-clause">2.3. Услуги оказываются в соответствии с порядками оказания медицинской помощи, клиническими рекомендациями и с учетом стандартов медицинской помощи, утвержденных Минздравом РФ.</p>
+      <p class="legal-clause">2.4. Ответственный лечащий врач: <strong>${escapeHtml(payload.doctorFullName)}</strong>.</p>
+    </div>
+
+    <h2>3. Стоимость услуг, сроки и порядок расчетов</h2>
+    <div class="legal-body">
+      <p class="legal-clause">3.1. Предварительная (ориентировочная) стоимость медицинских услуг по настоящему Договору составляет: <strong>${escapeHtml(rub(payload.estimatedTotalRub))}</strong>. Сумма прописью: <strong>${escapeHtml(totalWords)}</strong>. НДС не облагается (пп. 2 п. 2 ст. 149 НК РФ).</p>
+      <p class="legal-clause">3.2. Согласованный перечень медицинских услуг с кодами по Номенклатуре медицинских услуг (Приказ Минздрава России № 804н):</p>
+      ${financialServiceTable(document, context, true)}
+      <p class="legal-clause">3.3. Порядок оплаты: <strong>${escapeHtml(payload.paymentTerms)}</strong>. Оплата производится безналичным расчетом либо наличными денежными средствами в кассу Исполнителя с обязательной выдачей фискального кассового чека.</p>
+      <p class="legal-clause">3.4. Правила изменения стоимости и объема услуг: <strong>${escapeHtml(payload.priceChangeRules)}</strong>. Оказание дополнительных платных услуг оформляется дополнительным соглашением к договору до начала их оказания. Экстренная медицинская помощь при угрозе жизни оказывается без взимания дополнительной платы.</p>
+      <p class="legal-clause">3.5. Отказ от услуг и порядок возврата денежных средств: <strong>${escapeHtml(payload.refusalAndRefundTerms)}</strong>. При отказе Заказчик оплачивает Исполнителю фактически понесенные расходы.</p>
+    </div>
+
+    <h2>4. Права и обязанности сторон</h2>
+    <div class="legal-body">
+      <p class="legal-clause">4.1. <strong>Исполнитель обязан:</strong> обеспечить качественное оказание медицинских услуг, предоставить доступную информацию о лечении, материалах и лицензии, соблюдать врачебную тайну по ст. 13 Федерального закона № 323-ФЗ, вести медицинскую карту и выдать по заявлению копии документов.</p>
+      <p class="legal-clause">4.2. <strong>Заказчик (Пациент) обязан:</strong> своевременно оплачивать услуги, предоставить достоверный анамнез (аллергостатус, хронические болезни, принимаемые препараты), строго соблюдать назначения и режим лечения, являться на контрольные осмотры.</p>
+      <p class="legal-clause">4.3. <strong>Исполнитель имеет право:</strong> требовать от Пациента соблюдения медицинских предписаний, корректировать план лечения по согласованию с Пациентом при выявлении скрытых патологий.</p>
+      <p class="legal-clause">4.4. <strong>Заказчик имеет право:</strong> на выбор врача, получение полной информации о здоровье и отказ от исполнения договора до завершения лечения с компенсацией фактически понесенных затрат.</p>
+    </div>
+
+    <h2>5. Гарантии и качество услуг</h2>
+    <div class="legal-body">
+      <p class="legal-clause">5.1. Услуги оказываются с использованием сертифицированных материалов и зарегистрированного медицинского оборудования.</p>
+      <p class="legal-clause">5.2. Условия гарантии и порядок рассмотрения претензий: <strong>${escapeHtml(payload.warrantyAndClaimsTerms)}</strong>.</p>
+      <p class="legal-clause">5.3. Гарантийные обязательства сохраняются при условии соблюдения Пациентом гигиены полости рта, врачебных назначений и прохождения регулярных профилактических осмотров (не реже одного раза в 6 месяцев).</p>
+    </div>
+
+    <h2>6. Ответственность сторон</h2>
+    <div class="legal-body">
+      <p class="legal-clause">6.1. За неисполнение или ненадлежащее исполнение обязательств Стороны несут ответственность в соответствии с действующим законодательством РФ.</p>
+      <p class="legal-clause">6.2. Предупреждение о последствиях нарушения режима: <strong>${escapeHtml(payload.medicalRecommendationWarning)}</strong>.</p>
+      <p class="legal-clause">6.3. Исполнитель освобождается от ответственности за неблагоприятный исход лечения, если он наступил вследствие нарушения Пациентом рекомендаций врача, сокрытия данных о здоровье либо индивидуальных непредсказуемых биологических реакций.</p>
+    </div>
+
+    <h2>7. Срок действия договора, порядок изменения и расторжения</h2>
+    <div class="legal-body">
+      <p class="legal-clause">7.1. Настоящий Договор вступает в силу с момента его подписания и действует до полного исполнения Сторонами своих обязательств.</p>
+      <p class="legal-clause">7.2. Все изменения и дополнения к Договору оформляются в письменной форме дополнительными соглашениями.</p>
+      <p class="legal-clause">7.3. Договор составлен в двух экземплярах, имеющих равную юридическую силу, по одному для каждой из Сторон.</p>
+    </div>
+
+    <h2>8. Адреса, банковские реквизиты и подписи сторон</h2>
+    <div class="executive-requisites">
+      <div class="executive-requisites-col">
+        <div class="executive-requisites-title">Исполнитель</div>
+        <div>${escapeHtml(clinicPaymentRequisites(clinicProfile))}</div>
+      </div>
+      <div class="executive-requisites-col">
+        <div class="executive-requisites-title">Заказчик (Пациент)</div>
+        <div><strong>Ф.И.О.:</strong> ${escapeHtml(customerName)}</div>
+        <div><strong>Дата подписания:</strong> ${escapeHtml(payload.signedAt)}</div>
+      </div>
+    </div>
+    ${signatureBlock("Заказчик (Пациент)", signatureParty("Уполномоченное лицо Исполнителя", signatory))}`;
 	}
-	return `<h2>1. Стороны и предмет</h2>
-    <p>Медицинская организация оказывает пациенту платные стоматологические услуги по утвержденному прейскуранту, плану лечения, медицинским показаниям и после получения необходимых согласий.</p>
+
+	return `<h2>Договор на оказание платных медицинских услуг</h2>
+    <p class="preamble">Медицинская организация оказывает пациенту платные стоматологические услуги по утвержденному прейскуранту, плану лечения и медицинским показаниям в соответствии с Постановлением Правительства РФ от 11.05.2023 № 736.</p>
+    <h2>1. Предмет договора и стороны</h2>
     <table>
       ${row("Исполнитель", clinicLegalRequisites(context.clinicProfile))}
       ${row("Документ", document.title)}
       ${row("Ориентировочная сумма", rub(treatmentPlanTotalRub(document, context)))}
-      ${row("Основание", "Правила предоставления медицинскими организациями платных медицинских услуг; локальный договор клиники")}
+      ${row("Правовая основа", "Правила предоставления медицинскими организациями платных медицинских услуг (ПП РФ от 11.05.2023 № 736), ст. 84 Федерального закона № 323-ФЗ")}
     </table>
-    <h2>2. Перечень услуг и стоимость</h2>
+    <h2>2. Перечень услуг и стоимость (Номенклатура 804н)</h2>
     ${financialServiceTable(document, context, true)}
-    <h2>3. Порядок оказания и оплаты</h2>
+    <h2>3. Порядок оказания, оплаты и гарантии</h2>
     ${checkList([
-			"услуги оказываются по медицинским показаниям и согласованному плану лечения",
-			"изменение состава услуг фиксируется дополнительной сметой или соглашением",
-			"кассовый чек и акт выполненных работ хранятся вместе с договором",
-			"гарантийные условия и претензионный порядок применяются по локальным правилам клиники",
+			"услуги оказываются по медицинским показаниям и согласованному плану лечения после оформления ИДС",
+			"изменение состава услуг фиксируется дополнительной сметой или письменным соглашением",
+			"кассовый чек и акт выполненных работ выдаются пациенту при оплате и завершении услуг",
+			"гарантийные обязательства и претензионный порядок применяются по локальным правилам клиники",
 		])}
-    ${signatureBlock()}`;
+    <h2>4. Реквизиты и подписи сторон</h2>
+    ${signatureBlock("Пациент / Заказчик", signatureParty("Представитель Исполнителя", signatory))}`;
 }
 
 function completedWorksAct(
@@ -1434,37 +1692,62 @@ function completedWorksAct(
 	const payload = document.payload?.completedWorksAct as
 		| CompletedWorksActPayload
 		| undefined;
+	const clinicProfile = context.clinicProfile;
+	const signatory = clinicSignatory(clinicProfile);
+
 	if (payload) {
-		return `<h2>Акт выполненных работ</h2>
+		const totalWords = legalMoneyInWordsRu(payload.totalByActRub);
+		const paidWords = legalMoneyInWordsRu(payload.paidRub);
+
+		return `<h2>Акт выполненных работ (оказанных медицинских услуг) № ${escapeHtml(payload.actNumber)}</h2>
     <div class="notice">
-      Акт закрывает фактически оказанные и оплаченные стоматологические услуги. Состав работ сверяется с договором, медицинской записью, планом лечения и фискальными чеками.
+      Настоящий Акт составлен в соответствии со ст. 720 Гражданского кодекса РФ и Постановлением Правительства РФ от 11.05.2023 № 736. Акт подтверждает факт надлежащего оказания стоматологических услуг, отсутствие претензий по качеству и сверку с фискальными чеками.
     </div>
+
     <table>
-      ${row("Номер акта", payload.actNumber)}
-      ${row("Дата акта", payload.actDate)}
-      ${row("Договор", payload.contractNumber)}
-      ${row("ID выданного договора", payload.linkedContractDocumentId)}
-      ${row("Период оказания", `${payload.servicePeriodStart} - ${payload.servicePeriodEnd}`)}
+      ${row("Номер и дата акта", `${payload.actNumber} от ${payload.actDate}`)}
+      ${row("Базовый договор", `${payload.contractNumber} (ID: ${payload.linkedContractDocumentId})`)}
+      ${row("Период оказания услуг", `с ${payload.servicePeriodStart} по ${payload.servicePeriodEnd}`)}
       ${row("Врач-исполнитель", payload.doctorFullName)}
-      ${row("Состав работ", payload.acceptedServicesSummary)}
-      ${row("Сумма по акту", rub(payload.totalByActRub))}
+      ${row("Состав выполненных работ", payload.acceptedServicesSummary)}
+      ${row("Общая сумма по акту", rub(payload.totalByActRub))}
       ${row("Фактически оплачено", rub(payload.paidRub))}
       ${row("Фискальные чеки", payload.fiscalReceiptNumbers.join("; "))}
-      ${row("Замечания пациента", payload.patientClaimsText?.trim() || "замечаний по объему, срокам и качеству на момент подписания нет")}
+      ${row("Замечания и претензии", payload.patientClaimsText?.trim() || "Медицинские услуги оказаны качественно, в полном объеме и в срок; замечаний и претензий нет.")}
     </table>
-    <h2>Оказанные услуги</h2>
+
+    <h2>Перечень выполненных услуг (Номенклатура 804н)</h2>
     ${financialServiceTable(document, context, true)}
-    ${checkList([
-			"акт связан с подписанным договором и планом лечения",
-			"финальный состав работ сверил врач или администратор",
-			"фискальные чеки и оплаты проверены",
-			"пациент принял выполненные работы; замечания внесены в акт до подписания",
-		])}
-    ${signatureBlock("Пациент / плательщик", signatureParty("Врач-исполнитель / представитель клиники", payload.doctorFullName))}`;
+
+    <div class="total-words-box">
+      <div><strong>Сумма по акту прописью:</strong> ${escapeHtml(totalWords)}</div>
+      <div><strong>Фактически оплачено прописью:</strong> ${escapeHtml(paidWords)}</div>
+    </div>
+
+    <div class="legal-body">
+      <p class="legal-clause">Медицинские услуги оказаны Исполнителем надлежащим образом, в полном объеме, в установленные сроки и в соответствии с требованиями клинических протоколов. Заказчик (Пациент) подтверждает приемку оказанных услуг и отсутствие претензий по их объему, качеству и стоимости.</p>
+    </div>
+
+    <h2>Реквизиты и подписи сторон</h2>
+    <div class="executive-requisites">
+      <div class="executive-requisites-col">
+        <div class="executive-requisites-title">Исполнитель</div>
+        <div>${escapeHtml(clinicPaymentRequisites(clinicProfile))}</div>
+      </div>
+      <div class="executive-requisites-col">
+        <div class="executive-requisites-title">Заказчик (Пациент / Плательщик)</div>
+        <div><strong>Дата приемки:</strong> ${escapeHtml(payload.actDate)}</div>
+        <div><strong>Фискальные чеки проверены:</strong> ${escapeHtml(payload.fiscalReceiptNumbers.join(", "))}</div>
+      </div>
+    </div>
+    ${signatureBlock("Пациент / Заказчик", signatureParty("Врач-исполнитель / представитель клиники", payload.doctorFullName || signatory))}`;
 	}
 
-	return `<h2>Оказанные услуги</h2>
-    <p>Пациент подтверждает получение стоматологических услуг. Замечания по объему, срокам и качеству фиксируются до подписания акта.</p>
+	return `<h2>Акт выполненных работ (оказанных услуг)</h2>
+    <div class="notice">
+      Пациент подтверждает надлежащее получение стоматологических услуг. Замечания по объему, срокам и качеству фиксируются до подписания акта.
+    </div>
+    <h2>Перечень оказанных услуг (Номенклатура 804н)</h2>
     ${financialServiceTable(document, context, true)}
     <table>
       ${row("Фактически оплачено", rub(paidTotalForDocument(document, context) || document.totalAmountRub))}
@@ -1472,11 +1755,12 @@ function completedWorksAct(
     </table>
     <h2>Контроль перед выдачей</h2>
     ${checkList([
-			"сверить акт с договором, кассовым чеком и фактически оказанными услугами",
-			"даты оказания услуг и врач-исполнитель берутся из связанного визита и карты пациента",
-			"зафиксировать замечания пациента или отметить их отсутствие",
+			"состав работ сверен с договором, планом лечения и записями в медицинской карте",
+			"фискальные кассовые чеки проверены и прикреплены к расчету",
+			"пациент подтвердил отсутствие претензий по качеству и срокам оказания услуг",
 		])}
-    ${signatureBlock()}`;
+    <h2>Подписи сторон</h2>
+    ${signatureBlock("Пациент / Заказчик", signatureParty("Представитель Исполнителя", signatory))}`;
 }
 
 function documentTaxYear(document: GeneratedDocument) {
@@ -2520,57 +2804,84 @@ function informedConsent(document: GeneratedDocument) {
 		| InformedConsentPayload
 		| undefined;
 	if (payload) {
-		return `<div class="notice">
-      Информированное добровольное согласие оформляется до вмешательства. Основание: 323-ФЗ, клинические разъяснения врача и локально утвержденная форма клиники.
-      Документ фиксирует конкретное вмешательство, риски, альтернативы и подтверждения пациента.
+		const trusted = present(payload.trustedContactForMedicalInfo);
+		const trustedContacts = trusted
+			? escapeHtml(trusted)
+			: "сведения о состоянии здоровья и диагнозе третьим лицам не передавать (за исключением случаев, предусмотренных ст. 13 323-ФЗ)";
+
+		return `<h2>Информированное добровольное согласие на медицинское вмешательство</h2>
+    <div class="notice">
+      Настоящее информированное добровольное согласие составлено в строгом соответствии со ст. 20 Федерального закона от 21.11.2011 № 323-ФЗ «Об основах охраны здоровья граждан в Российской Федерации» и Приказом Министерства здравоохранения РФ от 12.11.2021 № 1051н.
     </div>
-    <h2>Медицинское вмешательство</h2>
+
+    <h2>1. Сведения о планируемом медицинском вмешательстве</h2>
     <table>
-      ${row("Планируемое вмешательство", payload.intervention)}
-      ${row("Область/зубы", payload.toothOrArea)}
-      ${row("Диагноз или клиническое показание", payload.diagnosisOrIndication)}
-      ${row("Ожидаемая польза", payload.expectedBenefit)}
-      ${row("Анестезия", present(payload.plannedAnesthesia) ?? "не применяется / не указана")}
-      ${present(payload.materialOrMedicationNotes) ? row("Материалы, препараты и ограничения", payload.materialOrMedicationNotes ?? "") : ""}
-      ${present(payload.trustedContactForMedicalInfo) ? row("Кому можно сообщать медицинские сведения", payload.trustedContactForMedicalInfo ?? "") : ""}
-      ${row("Врач, проводивший разъяснение", payload.doctorFullName)}
-      ${row("Дата и время подтверждения", payload.consentConfirmedAt)}
+      ${row("Вид медицинского вмешательства", payload.intervention)}
+      ${row("Область / анатомическая зона / зубы", payload.toothOrArea)}
+      ${row("Диагноз и клинические показания", payload.diagnosisOrIndication)}
+      ${row("Цели вмешательства и ожидаемая польза", payload.expectedBenefit)}
+      ${row("Планируемое обезболивание / анестезия", present(payload.plannedAnesthesia) ?? "не применяется / по клиническим показаниям")}
+      ${present(payload.materialOrMedicationNotes) ? row("Материалы, лекарственные препараты", payload.materialOrMedicationNotes ?? "") : ""}
+      ${row("Лечащий врач, проводивший разъяснение", payload.doctorFullName)}
+      ${row("Дата и время оформления согласия", payload.consentConfirmedAt)}
     </table>
-    <h2>Разъясненные риски</h2>
-    ${bulletList(payload.explainedRisks)}
-    <h2>Альтернативы</h2>
-    ${bulletList(payload.alternatives)}
-    <h2>После вмешательства</h2>
-    ${bulletList(payload.aftercareRequirements)}
-    <h2>Подтверждения пациента</h2>
-    ${checkList([
-			"пациент получил ответы на вопросы до подписания",
-			"пациент понимает характер вмешательства, риски и возможные осложнения",
-			"пациент знает, что может отозвать согласие до начала вмешательства",
-		])}
-    ${signatureBlock("Пациент/законный представитель", signatureParty("Врач", payload.doctorFullName))}`;
-	}
-	return `<div class="notice">
-      Информированное добровольное согласие оформляется до вмешательства. Основа: 323-ФЗ и действующие формы/порядки Минздрава.
-      Стоматологический текст клиники должен быть утвержден локально.
+
+    <h2>2. Разъясненные риски и возможные осложнения</h2>
+    <div class="legal-body">
+      <p class="legal-clause">Пациенту в доступной форме разъяснены вероятные риски, связанные с проведением вмешательства, а также возможные индивидуальные реакции и осложнения:</p>
+      ${bulletList(payload.explainedRisks)}
     </div>
-    <h2>Медицинское вмешательство</h2>
+
+    <h2>3. Альтернативные методы лечения и последствия отказа</h2>
+    <div class="legal-body">
+      <p class="legal-clause">Пациенту разъяснены альтернативные методы лечения (включая консервативные, хирургические и ортопедические варианты), их сравнительная эффективность и последствия полного или частичного отказа от медицинского вмешательства (прогрессирование патологического процесса, развитие воспалительных осложнений, потеря зуба, деструкция костной ткани):</p>
+      ${bulletList(payload.alternatives)}
+    </div>
+
+    <h2>4. Рекомендации и назначения после вмешательства</h2>
+    <div class="legal-body">
+      <p class="legal-clause">Пациент обязуется строго соблюдать предписания лечащего врача, режим приема медикаментов, правила гигиены и явиться на контрольный осмотр:</p>
+      ${bulletList(payload.aftercareRequirements)}
+    </div>
+
+    <h2>5. Сведения о доверенных лицах (ст. 13 Федерального закона № 323-ФЗ)</h2>
+    <div class="legal-body">
+      <p class="legal-clause">В соответствии с частью 3 статьи 13 Федерального закона от 21.11.2011 № 323-ФЗ «Об основах охраны здоровья граждан в Российской Федерации» Пациент определяет следующих лиц, которым может быть передана информация о состоянии здоровья, результатах обследования и диагнозе:</p>
+      <p class="legal-clause"><strong>Доверенные лица:</strong> ${trustedContacts}.</p>
+    </div>
+
+    <h2>6. Подтверждения и волеизъявление пациента</h2>
+    ${checkList([
+			"пациент получил исчерпывающие и понятные ответы на все интересующие вопросы до начала медицинского вмешательства",
+			"пациент проинформирован о целях, методах оказания медицинской помощи, связанном с ними риске, возможных вариантах медицинского вмешательства, о его последствиях, а также о предполагаемых результатах",
+			"пациент подтвердил предоставление полных сведений об аллергических реакциях, перенесенных и сопутствующих заболеваниях и принимаемых препаратах",
+			"пациент знает о своем законном праве отказаться от медицинского вмешательства или потребовать его прекращения в любой момент до начала вмешательства (ч. 3 ст. 20 323-ФЗ)",
+		])}
+    ${signatureBlock("Пациент / Законный представитель", signatureParty("Врач, проводивший разъяснение", payload.doctorFullName))}`;
+	}
+
+	return `<h2>Информированное добровольное согласие на медицинское вмешательство</h2>
+    <div class="notice">
+      Информированное добровольное согласие оформляется до начала оказания медицинской помощи в соответствии со ст. 20 Федерального закона от 21.11.2011 № 323-ФЗ и Приказом Минздрава России от 12.11.2021 № 1051н.
+    </div>
+    <h2>1. Медицинское вмешательство</h2>
     <table>
       ${row("Планируемое вмешательство", document.title)}
       ${row("Область/зубы", "заполнить врачом перед подписанием")}
       ${row("Анестезия", "указать препарат/метод при применении")}
-      ${row("Кому можно сообщать медсведения", 'ФИО/телефон доверенного лица или "не разрешаю"')}
+      ${row("Доверенные лица (ст. 13 323-ФЗ)", 'ФИО/телефон доверенного лица или "не разрешаю передавать сведения третьим лицам"')}
     </table>
-    <h2>Пациенту разъяснено</h2>
+    <h2>2. Разъяснения пациенту</h2>
     ${bulletList([
-			"цель, характер, объем и ожидаемый результат вмешательства",
-			"основные риски, осложнения, боль, отек, кровотечение, аллергические реакции, необходимость повторного приема",
-			"альтернативы лечения и последствия отказа",
-			"право задавать вопросы и отозвать согласие до вмешательства",
-			"необходимость сообщить об аллергиях, лекарствах, беременности, хронических заболеваниях",
+			"цели, методы оказания медицинской помощи, связанный с ними риск, возможные варианты и последствия",
+			"основные риски: болевой синдром, отек, гематома, кровотечение, аллергические реакции, необходимость дополнительных этапов",
+			"альтернативные методы лечения и последствия отказа от медицинского вмешательства",
+			"право задавать вопросы лечащему врачу и отозвать согласие до начала вмешательства",
+			"обязанность предоставить полные данные об аллергиях, хронических болезнях, лекарствах и беременности",
 		])}
-    <p>Пациент подтверждает, что получил ответы на вопросы и согласен на проведение вмешательства.</p>
-    ${signatureBlock("Пациент/законный представитель", "Врач")}`;
+    <h2>3. Подтверждения и подписи</h2>
+    <p class="legal-clause">Пациент подтверждает, что получил исчерпывающие разъяснения от лечащего врача и дает добровольное согласие на проведение вмешательства.</p>
+    ${signatureBlock("Пациент / Законный представитель", "Лечащий врач")}`;
 }
 
 function procedureSpecificConsentPacket(document: GeneratedDocument) {
@@ -2594,52 +2905,74 @@ function procedureSpecificConsentPacket(document: GeneratedDocument) {
 			periodontology: "пародонтология",
 			other: "другая процедура",
 		};
-		return `<div class="notice">
-      Процедурное приложение к информированному согласию оформлено по конкретной процедуре. Общие чеклисты без указания области, рисков и подтверждений пациента не считаются готовым согласием.
+		return `<h2>Процедурное информированное добровольное согласие: ${escapeHtml(procedureTypeLabels[payload.procedureType])}</h2>
+    <div class="notice">
+      Специализированное приложение к информированному добровольному согласию по конкретному клиническому протоколу (ст. 20 Федерального закона № 323-ФЗ, Приказ Минздрава России № 1051н).
     </div>
-    <h2>Конкретная процедура</h2>
+
+    <h2>1. Сведения о процедуре и клиническом обосновании</h2>
     <table>
-      ${row("Блок процедуры", procedureTypeLabels[payload.procedureType])}
-      ${row("Процедура/этап", payload.procedureName)}
-      ${row("Область/зубы", payload.toothOrArea)}
-      ${row("Диагноз или клиническое показание", payload.diagnosisOrIndication)}
-      ${row("Анестезия", present(payload.plannedAnesthesia) ?? "не применяется / не указана")}
+      ${row("Направление / блок", procedureTypeLabels[payload.procedureType])}
+      ${row("Конкретная процедура / этап", payload.procedureName)}
+      ${row("Область / анатомическая зона / зубы", payload.toothOrArea)}
+      ${row("Диагноз и клинические показания", payload.diagnosisOrIndication)}
+      ${row("Обезболивание / анестезия", present(payload.plannedAnesthesia) ?? "не применяется / по показаниям")}
       ${present(payload.materialsAndSystems) ? row("Материалы, системы и конструкции", payload.materialsAndSystems ?? "") : ""}
-      ${row("Врач, проводивший разъяснение", payload.doctorFullName)}
+      ${row("Лечащий врач, проводивший разъяснение", payload.doctorFullName)}
       ${row("Дата и время подтверждения", payload.consentConfirmedAt)}
-      ${row("Локальная форма клиники", payload.localClinicFormAttached ? "приложена или включена в пакет" : "не приложена; используется этот структурированный пакет")}
+      ${row("Локальная форма клиники", payload.localClinicFormAttached ? "приложена к пакету документов" : "используется данный структурированный электронный протокол")}
     </table>
-    <h2>Клиническая детализация по зубам и сегментам</h2>
+
+    <h2>2. Клиническая детализация по зубам и сегментам</h2>
     ${clinicalToothRowsTable(payload.clinicalToothRows)}
-    <h2>Факторы риска пациента</h2>
-    ${bulletList(payload.patientSpecificRiskFactors)}
-    <h2>Процедурные риски</h2>
-    ${bulletList(payload.procedureSpecificRisks)}
-    <h2>Альтернативы и отказ</h2>
-    ${bulletList(payload.alternatives)}
-    <h2>Ограничения после процедуры</h2>
-    ${bulletList(payload.aftercareAndLimits)}
-    <h2>Подтверждения перед подписью</h2>
-    ${checkList([
-			"пациенту разъяснена именно указанная процедура, а не общий стоматологический шаблон",
-			"пациент сообщил об аллергиях, препаратах, беременности, хронических заболеваниях и антикоагулянтах либо подтвердил их отсутствие",
-			"пациент получил ответы на вопросы до подписания",
-			"альтернативы лечения и последствия отказа проговорены",
-			"рекомендации после процедуры и признаки срочного обращения понятны пациенту",
-		])}
-    ${signatureBlock("Пациент/законный представитель", signatureParty("Врач", payload.doctorFullName))}`;
-	}
-	return `<div class="notice">
-      Приложение к информированному согласию: врач отмечает только фактическую процедуру. Пустые разделы не считаются согласием.
+
+    <h2>3. Индивидуальные факторы риска пациента</h2>
+    <div class="legal-body">
+      <p class="legal-clause">Учтены следующие персональные факторы анамнеза и анатомические особенности:</p>
+      ${bulletList(payload.patientSpecificRiskFactors)}
     </div>
-    <h2>Процедура</h2>
+
+    <h2>4. Процедурные риски и возможные осложнения</h2>
+    <div class="legal-body">
+      <p class="legal-clause">Пациенту подробно разъяснены специфические риски и возможные осложнения, свойственные данной процедуре:</p>
+      ${bulletList(payload.procedureSpecificRisks)}
+    </div>
+
+    <h2>5. Альтернативные варианты и последствия отказа</h2>
+    <div class="legal-body">
+      <p class="legal-clause">Пациент ознакомлен с альтернативными методиками лечения и возможными негативными последствиями отказа от процедуры:</p>
+      ${bulletList(payload.alternatives)}
+    </div>
+
+    <h2>6. Режим и ограничения после вмешательства</h2>
+    <div class="legal-body">
+      <p class="legal-clause">Пациент проинформирован о необходимых ограничениях, правилах ухода и признаках, требующих срочного обращения к врачу:</p>
+      ${bulletList(payload.aftercareAndLimits)}
+    </div>
+
+    <h2>7. Подтверждения перед проведением процедуры</h2>
+    ${checkList([
+			"пациенту подробно разъяснена суть и этапы именно указанной процедуры, а не общий шаблон",
+			"пациент предоставил достоверные данные об аллергических реакциях, сопутствующих заболеваниях, лекарствах и антикоагулянтах",
+			"пациент получил исчерпывающие ответы на все вопросы от лечащего врача до начала процедуры",
+			"альтернативные методы, риски осложнений и последствия отказа понятны пациенту",
+			"пациент подтверждает свое добровольное согласие на проведение медицинского вмешательства",
+		])}
+    ${signatureBlock("Пациент / Законный представитель", signatureParty("Врач, проводивший разъяснение", payload.doctorFullName))}`;
+	}
+
+	return `<h2>Процедурное информированное согласие</h2>
+    <div class="notice">
+      Приложение к информированному добровольному согласию по конкретной процедуре (ст. 20 323-ФЗ, Приказ 1051н). Врач отмечает фактическую процедуру и клинические параметры.
+    </div>
+    <h2>1. Параметры процедуры</h2>
     <table>
       ${row("Процедура/этап", document.title)}
       ${row("Область/зубы", "заполнить врачом")}
       ${row("Анестезия", "нет / инфильтрационная / проводниковая / аппликационная / иное")}
       ${row("Материалы и конструкции", "композит / керамика / цирконий / имплант-система / брекеты / элайнеры / иное")}
     </table>
-    <h2>Отметить применимый блок</h2>
+    <h2>2. Процедурные блоки и риски</h2>
     ${checkList([
 			"анестезия: онемение, травма мягких тканей, аллергическая реакция, сердечно-сосудистые реакции",
 			"терапия/эндодонтия: повторная боль, перелечивание каналов, перфорация, инструментальный риск, необходимость коронки",
@@ -2649,14 +2982,13 @@ function procedureSpecificConsentPacket(document: GeneratedDocument) {
 			"ортодонтия: сроки лечения, гигиена, риск кариеса/резорбции/рецессий, ретенция после лечения",
 			"гигиена/отбеливание: чувствительность, раздражение десны, ограничения по питанию и домашнему уходу",
 		])}
-    <h2>Перед подписью</h2>
+    <h2>3. Подтверждения</h2>
     ${checkList([
-			"альтернативы лечения и последствия отказа проговорены",
-			"сроки, этапы, стоимость и необходимость снимков/КТ понятны пациенту",
-			"пациент сообщил об аллергиях, лекарствах, беременности, хронических заболеваниях и антикоагулянтах",
-			"отдельные локальные формы клиники приложены, если процедура требует расширенного согласия",
+			"альтернативы лечения и последствия отказа проговорены с врачом",
+			"сроки, этапы, стоимость и необходимость контрольных снимков понятны пациенту",
+			"пациент сообщил обо всех аллергиях, препаратах и хронических заболеваниях",
 		])}
-    ${signatureBlock("Пациент/законный представитель", "Врач")}`;
+    ${signatureBlock("Пациент / Законный представитель", "Лечащий врач")}`;
 }
 
 function treatmentPlan(document: GeneratedDocument) {
@@ -3157,67 +3489,118 @@ function treatmentCostEstimate(
 	const payload = document.payload?.treatmentCostEstimate as
 		| TreatmentCostEstimatePayload
 		| undefined;
+	const clinicProfile = context.clinicProfile;
+	const signatory = clinicSignatory(clinicProfile);
+
 	if (payload) {
+		const totalWords = legalMoneyInWordsRu(payload.totalAmountRub);
 		const serviceRows = payload.serviceLines
 			.map(
-				(line) => `<tr>
+				(line, index) => `<tr>
+          <td class="text-center tabular-nums">${index + 1}</td>
+          <td class="text-center tabular-nums">A16.07.001</td>
           <td>${escapeHtml(line.serviceName)}</td>
-          <td>${escapeHtml(present(line.toothOrArea) ?? "без отдельной области")}</td>
-          <td>${line.quantity}</td>
-          <td>${escapeHtml(rub(line.unitPriceRub))}</td>
-          <td>${escapeHtml(rub(line.discountRub))}</td>
-          <td>${escapeHtml(rub(line.totalRub))}</td>
+          <td class="text-center">${escapeHtml(present(line.toothOrArea) ?? "без отдельной области")}</td>
+          <td class="text-center tabular-nums">${line.quantity}</td>
+          <td class="text-right tabular-nums">${escapeHtml(rub(line.unitPriceRub))}</td>
+          <td class="text-right tabular-nums">${escapeHtml(rub(line.discountRub))}</td>
+          <td class="text-right tabular-nums"><strong>${escapeHtml(rub(line.totalRub))}</strong></td>
         </tr>`,
 			)
 			.join("");
-		return `<h2>Предварительная смета лечения</h2>
+
+		return `<h2>Предварительная смета на оказание медицинских услуг № ${escapeHtml(payload.estimateNumber)}</h2>
       <div class="notice">
-        Смета фиксирует предварительный расчет до оказания услуг. Она не заменяет договор платных медицинских услуг,
-        информированное согласие, акт выполненных работ и кассовый чек.
+        Смета составлена в соответствии с Постановлением Правительства РФ от 11.05.2023 № 736. Смета фиксирует предварительный расчет объема и стоимости стоматологических услуг и материалов. Окончательный расчет производится по фактически оказанным услугам с оформлением акта и выдачей кассового чека.
       </div>
+
       <table>
-        ${row("Номер сметы", payload.estimateNumber)}
-        ${row("Дата сметы", payload.estimateDate)}
-        ${row("Пациент или плательщик", payload.patientOrPayerFullName)}
-        ${row("Основание лечения", payload.treatmentBasis)}
-        ${row("Смета действует до", payload.estimateValidUntil)}
+        ${row("Номер и дата сметы", `${payload.estimateNumber} от ${payload.estimateDate}`)}
+        ${row("Пациент / Плательщик", payload.patientOrPayerFullName)}
+        ${row("Клиническое основание / диагноз", payload.treatmentBasis)}
+        ${row("Срок действия сметы", payload.estimateValidUntil)}
         ${row("Ответственный врач", payload.responsibleDoctorFullName)}
-        ${row("Ответственный администратор", present(payload.responsibleAdminFullName) ?? "не указан")}
-        ${row("Дата ознакомления", payload.signedAt)}
+        ${row("Ответственный администратор", present(payload.responsibleAdminFullName) ?? "дежурный администратор")}
+        ${row("Дата согласования", payload.signedAt)}
       </table>
-      <h2>Состав услуг и материалов</h2>
+
+      <h2>Перечень планируемых медицинских услуг и материалов</h2>
+      <table class="financial-table">
+        <thead>
+          <tr>
+            <th style="width: 5%;">№ п/п</th>
+            <th style="width: 12%;">Код (804н)</th>
+            <th style="width: 33%;">Наименование услуги / материала</th>
+            <th style="width: 14%;">Зуб / область</th>
+            <th style="width: 6%;">Кол-во</th>
+            <th style="width: 10%; text-align: right;">Цена, руб.</th>
+            <th style="width: 10%; text-align: right;">Скидка, руб.</th>
+            <th style="width: 10%; text-align: right;">Итого, руб.</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${serviceRows}
+        </tbody>
+        <tfoot>
+          <tr>
+            <th colspan="7" style="text-align: right;">ИТОГО ПО СМЕТЕ:</th>
+            <th class="text-right tabular-nums">${escapeHtml(rub(payload.totalAmountRub))}</th>
+          </tr>
+        </tfoot>
+      </table>
+
+      <div class="total-words-box">
+        <strong>Сумма прописью:</strong> ${escapeHtml(totalWords)}
+      </div>
+
       <table>
-        <tr><th>Услуга</th><th>Зуб/область</th><th>Кол-во</th><th>Цена</th><th>Скидка</th><th>Итого</th></tr>
-        ${serviceRows}
+        ${row("Порядок и этапы оплаты", payload.paymentMilestoneNotes)}
+        ${row("Правила изменения объема и стоимости", payload.priceChangeRules)}
       </table>
-      <table>
-        ${row("Итого по смете", rub(payload.totalAmountRub))}
-        ${row("Условия оплаты", payload.paymentMilestoneNotes)}
-        ${row("Правила изменения цены", payload.priceChangeRules)}
-      </table>
-      <h2>Не входит в текущую смету</h2>
+
+      <h2>Не входит в текущую смету (дополнительные расходы при необходимости)</h2>
       ${bulletList(payload.excludedItems)}
+
+      <h2>Подтверждения пациента</h2>
       ${checkList([
-				"пациент понимает предварительный характер сметы и срок ее действия",
-				"состав услуг сметы сверён с планом лечения или клиническим назначением",
-				"пациент предупрежден, что смета не заменяет договор, акт и кассовый чек",
-				"изменение объема или цены требует обновленной сметы либо отдельного согласования",
+				"пациент (плательщик) ознакомлен с предварительным характером сметы и сроком ее действия",
+				"состав услуг и материалов полностью сверен с согласованным планом лечения",
+				"пациент предупрежден, что смета является неотъемлемой частью договора на оказание платных медицинских услуг",
+				"изменение объема или технологии лечения требует составления дополнительной сметы до начала вмешательства",
 			])}
-      ${signatureBlock("Пациент/плательщик", "Врач/администратор")}`;
+
+      <h2>Реквизиты и подписи</h2>
+      <div class="executive-requisites">
+        <div class="executive-requisites-col">
+          <div class="executive-requisites-title">Исполнитель</div>
+          <div>${escapeHtml(clinicPaymentRequisites(clinicProfile))}</div>
+        </div>
+        <div class="executive-requisites-col">
+          <div class="executive-requisites-title">Пациент / Плательщик</div>
+          <div><strong>Ф.И.О.:</strong> ${escapeHtml(payload.patientOrPayerFullName)}</div>
+          <div><strong>Дата согласования:</strong> ${escapeHtml(payload.signedAt)}</div>
+        </div>
+      </div>
+      ${signatureBlock("Пациент / Плательщик", signatureParty("Ответственный врач / представитель клиники", payload.responsibleDoctorFullName || signatory))}`;
 	}
-	return `<h2>Предварительная смета</h2>
+
+	return `<h2>Предварительная смета на лечение</h2>
+    <div class="notice">
+      Предварительный расчет стоимости услуг по плану лечения (Постановление Правительства РФ от 11.05.2023 № 736).
+    </div>
+    <h2>Перечень услуг и материалов</h2>
     ${financialServiceTable(document, context, true)}
     <table>
       ${row("Итого по смете", rub(treatmentPlanTotalRub(document, context)))}
       ${row("Связанный план/визит", document.visitId ? `визит ${document.visitId}` : "план пациента без отдельного визита")}
     </table>
-    <h2>Правила сметы</h2>
+    <h2>Правила и условия сметы</h2>
     ${bulletList([
-			"смета предварительная и уточняется после диагностики и согласования плана",
-			"материалы, лаборатория, снимки и дополнительные этапы выделяются отдельными строками плана лечения",
-			"скидки, рассрочка, предоплата и остаток фиксируются до подписания договора/акта",
+			"смета является предварительной и может уточняться в процессе лечения по согласованию с пациентом",
+			"дополнительные материалы, лабораторные этапы и снимки вносятся в план отдельными строками",
+			"оплата производится в соответствии с условиями договора и фактически оказанным объемом",
 		])}
-    ${signatureBlock("Пациент ознакомлен", "Администратор/врач")}`;
+    ${signatureBlock("Пациент / Плательщик", signatureParty("Представитель клиники", signatory))}`;
 }
 
 function paymentInvoice(
@@ -3227,66 +3610,95 @@ function paymentInvoice(
 	const payload = document.payload?.paymentInvoice as
 		| PaymentInvoicePayload
 		| undefined;
+	const clinicProfile = context.clinicProfile;
+	const signatory = clinicSignatory(clinicProfile);
+
 	if (payload) {
+		const totalWords = legalMoneyInWordsRu(payload.totalAmountRub);
 		const payerContact =
 			compactParts([payload.payerPhone, payload.payerEmail]) ||
-			"контакт не передается в счет";
+			"контакт не указан";
 		const serviceRows = payload.serviceLines
 			.map(
-				(line) => `<tr>
+				(line, index) => `<tr>
+          <td class="text-center tabular-nums">${index + 1}</td>
           <td>${escapeHtml(line.serviceName)}</td>
-          <td>${escapeHtml(present(line.toothOrArea) ?? "без отдельной области")}</td>
-          <td>${line.quantity}</td>
-          <td>${escapeHtml(rub(line.unitPriceRub))}</td>
-          <td>${escapeHtml(rub(line.discountRub))}</td>
-          <td>${escapeHtml(rub(line.totalRub))}</td>
+          <td class="text-center">${escapeHtml(present(line.toothOrArea) ?? "без отдельной области")}</td>
+          <td class="text-center tabular-nums">${line.quantity}</td>
+          <td class="text-right tabular-nums">${escapeHtml(rub(line.unitPriceRub))}</td>
+          <td class="text-right tabular-nums">${escapeHtml(rub(line.discountRub))}</td>
+          <td class="text-right tabular-nums"><strong>${escapeHtml(rub(line.totalRub))}</strong></td>
         </tr>`,
 			)
 			.join("");
-		return `<h2>Счет на оплату</h2>
+
+		return `<h2>Счет на оплату медицинских услуг № ${escapeHtml(payload.invoiceNumber)}</h2>
       <div class="notice">
-        Счет фиксирует согласованную сумму и реквизиты оплаты. Он не заменяет кассовый чек, договор платных медицинских услуг,
-        информированное согласие и акт выполненных работ.
+        Счет фиксирует согласованную сумму и банковские реквизиты для безналичного расчета. Счет не заменяет кассовый чек, выдаваемый при фискализации платежа.
       </div>
+
       <table>
-        ${row("Номер счета", payload.invoiceNumber)}
-        ${row("Дата счета", payload.invoiceDate)}
+        ${row("Номер и дата счета", `${payload.invoiceNumber} от ${payload.invoiceDate}`)}
         ${row("Плательщик", payload.payerFullName)}
         ${row("Контакт плательщика", payerContact)}
         ${row("Назначение платежа", payload.paymentPurpose)}
         ${row("Срок оплаты", payload.dueDate)}
         ${row("Условия оплаты", payload.paymentTerms)}
-        ${row("Получатель и реквизиты", payload.clinicBankDetails)}
-        ${row("Оплата безналично", payload.cashlessPaymentAllowed ? "разрешена" : "не используется")}
-        ${row("Оплата в кассе", payload.cashDeskPaymentAllowed ? "разрешена" : "не используется")}
-        ${present(payload.qrPaymentPayload) ? row("QR/платежная строка", payload.qrPaymentPayload ?? "") : ""}
+        ${row("Банковские реквизиты получателя", payload.clinicBankDetails)}
+        ${row("Оплата безналично / по счету", payload.cashlessPaymentAllowed ? "разрешена" : "не используется")}
+        ${row("Оплата в кассе клиники", payload.cashDeskPaymentAllowed ? "разрешена" : "не используется")}
+        ${present(payload.qrPaymentPayload) ? row("QR-код / платежная строка", payload.qrPaymentPayload ?? "") : ""}
       </table>
+
       <h2>Состав счета</h2>
-      <table>
-        <tr><th>Услуга</th><th>Зуб/область</th><th>Кол-во</th><th>Цена</th><th>Скидка</th><th>Сумма</th></tr>
-        ${serviceRows}
+      <table class="financial-table">
+        <thead>
+          <tr>
+            <th style="width: 6%;">№ п/п</th>
+            <th style="width: 40%;">Наименование услуги / платежа</th>
+            <th style="width: 14%;">Зуб / область</th>
+            <th style="width: 6%;">Кол-во</th>
+            <th style="width: 11%; text-align: right;">Цена, руб.</th>
+            <th style="width: 11%; text-align: right;">Скидка, руб.</th>
+            <th style="width: 12%; text-align: right;">Итого, руб.</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${serviceRows}
+        </tbody>
+        <tfoot>
+          <tr>
+            <th colspan="6" style="text-align: right;">ИТОГО К ОПЛАТЕ:</th>
+            <th class="text-right tabular-nums">${escapeHtml(rub(payload.totalAmountRub))}</th>
+          </tr>
+        </tfoot>
       </table>
-      <table>
-        ${row("Итого к оплате", rub(payload.totalAmountRub))}
-      </table>
+
+      <div class="total-words-box">
+        <strong>Сумма к оплате прописью:</strong> ${escapeHtml(totalWords)}
+      </div>
+
       ${checkList([
-				"реквизиты клиники проверены перед передачей счета",
-				"состав услуг соответствует согласованному плану или договору",
-				"пациент предупрежден, что счет не является фискальным чеком",
+				"реквизиты клиники проверены перед передачей счета плательщику",
+				"состав услуг соответствует согласованному плану лечения и договору",
+				"плательщик предупрежден о необходимости указания номера счета в назначении платежа",
 			])}
-      ${signatureBlock("Администратор", "Плательщик")}`;
+
+      <h2>Подписи сторон</h2>
+      ${signatureBlock("Плательщик", signatureParty("Главный бухгалтер / Администратор", signatory))}`;
 	}
-	return `<h2>Счет на оплату</h2>
+
+	return `<h2>Счет на оплату медицинских услуг</h2>
     <table>
       ${row("Назначение платежа", `оплата стоматологических услуг по документу ${document.title}`)}
       ${row("Сумма к оплате", rub(treatmentPlanTotalRub(document, context)))}
-      ${row("Получатель", clinicPaymentRequisites(context.clinicProfile))}
+      ${row("Получатель", clinicPaymentRequisites(clinicProfile))}
       ${row("Срок оплаты", "по согласованному плану лечения или договору")}
     </table>
     <h2>Состав счета</h2>
     ${financialServiceTable(document, context, false)}
     <p class="small">Счет не заменяет кассовый чек и медицинские документы.</p>
-    ${signatureBlock("Администратор", "Плательщик")}`;
+    ${signatureBlock("Плательщик", signatureParty("Администратор клиники", signatory))}`;
 }
 
 function paymentReceipt(

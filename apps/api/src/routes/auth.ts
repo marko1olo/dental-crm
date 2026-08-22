@@ -706,13 +706,15 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 				60 * 60 * 8, // 8h staff session
 			);
 
-			await db.insert(auditEvents).values({
-				organizationId: orgId,
-				actorUserId: user.id,
-				entityType: "user",
-				entityId: user.id,
-				action: "staff_unlock_success",
-				reason: `Сотрудник ${user.fullName} начал сессию.`,
+			await withTenantCtx(orgId, async (tx) => {
+				await tx.insert(auditEvents).values({
+					organizationId: orgId,
+					actorUserId: user.id,
+					entityType: "user",
+					entityId: user.id,
+					action: "staff_unlock_success",
+					reason: `Сотрудник ${user.fullName} начал сессию.`,
+				});
 			});
 
 			return reply.send({

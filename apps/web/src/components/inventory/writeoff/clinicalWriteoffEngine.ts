@@ -28,7 +28,23 @@ import {
 	getClinicalMaterialById,
 	getDiscrepancyReason,
 	getOrder804nServiceNorm,
-} from "./clinicalWriteoffPresets";
+} from "./clinicalWriteoffPresets.js";
+
+export {
+	CLINICAL_MATERIALS_CATALOG,
+	type CabinetStockBatch,
+	type ClinicalMaterialDefinition,
+	DEFAULT_CLINIC_LEGAL_INFO,
+	type ClinicLegalInfo,
+	DENTAL_CABINET_STOCK_PRESETS,
+	type DiscrepancyReasonCode,
+	type MaterialMeasurementUnit,
+	ORDER_804N_SERVICE_NORMS,
+	type Order804nServiceNorm,
+	getClinicalMaterialById,
+	getDiscrepancyReason,
+	getOrder804nServiceNorm,
+};
 
 export interface CompletedClinicalService {
 	readonly serviceCode: string;

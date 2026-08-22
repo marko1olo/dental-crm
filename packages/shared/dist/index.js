@@ -8,6 +8,7 @@ export * from "./documents/index.js";
 export * from "./pediatricDentition.js";
 export * from "./toothCanalsAndBilling804n.js";
 export * from "./emr/index.js";
+export * from "./sync/index.js";
 import { dailyDentistDiary037uPayloadSchema, fullForm043uPayloadSchema, medicalCardExtract003vuPayloadSchema, orthodonticCard043_1uPayloadSchema, radiationDoseSheetPayloadSchema, summaryDentistStatement039uPayloadSchema, } from "./documents/index.js";
 import { moneyRubSchema, nonNegativeMoneyRubSchema, positiveMoneyRubSchema, } from "./money.js";
 /**
@@ -11011,3 +11012,4 @@ export class DentalInteractionMatrixEngine {
         };
     }
 }
+export * from "./fiscal/index.js";

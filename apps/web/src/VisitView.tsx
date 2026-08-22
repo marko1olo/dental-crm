@@ -240,8 +240,16 @@ import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { EndoCanalLogModal } from "./components/odontogram/EndoCanalLogModal";
 import { DentalLabOrderModal } from "./components/lab/DentalLabOrderModal";
 import { StagePaymentPlanModal } from "./components/treatment-plans/stagePayment/StagePaymentPlanModal";
+import { TreatmentPlanPriceValidatorModal } from "./components/treatment-plans/validation/TreatmentPlanPriceValidatorModal";
+import {
+	type CatalogServiceItem,
+	SAMPLE_CURRENT_PRICELIST,
+	SAMPLE_TREATMENT_PLAN_FOR_VALIDATION,
+	type TreatmentPlanValidationPayload,
+} from "./components/treatment-plans/validation/planPriceValidationPresets";
 import { VisitNoteDraftPanel } from "./VisitNoteDraftPanel";
 import { VisitAnamnesisTab } from "./components/visit/VisitAnamnesisTab";
+import { Lock, ShieldCheck } from "lucide-react";
 
 export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const logicContext = useAppLogicContext();
@@ -440,6 +448,96 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const [isLabOrderModalOpen, setIsLabOrderModalOpen] = React.useState(false);
 	const [labOrderModalToothNumber, setLabOrderModalToothNumber] = React.useState<number | string | null>(null);
 	const [isStagePaymentModalOpen, setIsStagePaymentModalOpen] = React.useState(false);
+	const [isPriceValidatorModalOpen, setIsPriceValidatorModalOpen] = React.useState(false);
+
+	const priceValidatorCatalogList = React.useMemo<readonly CatalogServiceItem[]>(() => {
+		const rawCatalog = (dashboard as { serviceCatalog?: unknown[] } | null)?.serviceCatalog;
+		if (Array.isArray(rawCatalog) && rawCatalog.length > 0) {
+			return rawCatalog.map((item: any) => ({
+				id: String(item.id || item.code || ""),
+				code804n: String(item.code || item.code804n || "A16.07.001"),
+				title: String(item.title || item.name || "Медицинская услуга"),
+				category: String(item.category || "Терапия"),
+				basePriceRub: Number(item.basePriceRub) || 0,
+				active: Boolean(item.active ?? true),
+				isArchived: Boolean(item.isArchived ?? false),
+			}));
+		}
+		return SAMPLE_CURRENT_PRICELIST;
+	}, [dashboard]);
+
+	const priceValidatorPlanPayload = React.useMemo<TreatmentPlanValidationPayload>(() => {
+		const patientId =
+			(typeof activePatient?.id === "string" && activePatient.id) ||
+			(typeof dashboard?.activeVisit?.patientId === "string" && dashboard.activeVisit.patientId) ||
+			"pat_active";
+		const patientName =
+			(typeof activePatient?.fullName === "string" && activePatient.fullName) ||
+			(typeof activePatient?.name === "string" && activePatient.name) ||
+			"Пациент клиники";
+		const doctorId =
+			(typeof activeDoctor?.id === "string" && activeDoctor.id) ||
+			(typeof activeDoctor?.userId === "string" && activeDoctor.userId) ||
+			"doc_active";
+		const doctorFullName =
+			(typeof activeDoctor?.fullName === "string" && activeDoctor.fullName) ||
+			(typeof activeDoctor?.name === "string" && activeDoctor.name) ||
+			"Лечащий врач";
+
+		const rawItems = (dashboard as { treatmentPlanItems?: unknown[] } | null)?.treatmentPlanItems;
+		const patientItems = Array.isArray(rawItems)
+			? rawItems.filter((i: any) => i?.patientId === patientId)
+			: [];
+
+		if (patientItems.length > 0) {
+			return {
+				planId: `plan_${patientId}`,
+				planNumber: `ПЛ-${new Date().getFullYear()}/${patientId.slice(0, 4)}`,
+				planTitle: `Комплексный план лечения: ${patientName}`,
+				patientId,
+				patientName,
+				doctorId,
+				doctorFullName,
+				createdAtIso: new Date().toISOString(),
+				items: patientItems.map((item: any, idx: number) => ({
+					itemId: String(item.id || `item_${idx + 1}`),
+					toothNumber: item.toothCode ? Number.parseInt(item.toothCode, 10) || undefined : undefined,
+					code804n: String(item.code804n || item.serviceId || "A16.07.002"),
+					serviceTitle: String(item.snapshotServiceName || item.serviceTitle || "Услуга плана лечения"),
+					category: String(item.snapshotServiceCategory || "Терапия"),
+					planUnitPriceRub: Number(item.unitPriceRub) || 0,
+					planDiscountRub: Number(item.discountRub) || 0,
+					planDiscountPercent:
+						Number(item.unitPriceRub) > 0
+							? Math.round(((Number(item.discountRub) || 0) / Number(item.unitPriceRub)) * 100)
+							: 0,
+					quantity: Number(item.quantity) || 1,
+					planLineTotalRub:
+						(Number(item.unitPriceRub) || 0) * (Number(item.quantity) || 1) - (Number(item.discountRub) || 0),
+					serviceId: item.serviceId ? String(item.serviceId) : undefined,
+					notes: item.notes ? String(item.notes) : undefined,
+				})),
+				notes:
+					(typeof visitNoteForm?.treatmentPlan === "string" && visitNoteForm.treatmentPlan) ||
+					(typeof draft?.treatmentPlan === "string" && draft.treatmentPlan) ||
+					undefined,
+			};
+		}
+
+		return {
+			...SAMPLE_TREATMENT_PLAN_FOR_VALIDATION,
+			patientId,
+			patientName: patientName !== "Пациент клиники" ? patientName : SAMPLE_TREATMENT_PLAN_FOR_VALIDATION.patientName,
+			doctorId,
+			doctorFullName: doctorFullName !== "Лечащий врач" ? doctorFullName : SAMPLE_TREATMENT_PLAN_FOR_VALIDATION.doctorFullName,
+		};
+	}, [
+		activePatient,
+		activeDoctor,
+		dashboard,
+		visitNoteForm?.treatmentPlan,
+		draft?.treatmentPlan,
+	]);
 
 	/*
     НАЗВАНИЯ МАТЕРИАЛОВ ПОПАДАЮТ В ТЕКСТ ПЛАНА ЛЕЧЕНИЯ, ПОЭТОМУ ОНИ ТОЧНЫЕ.
@@ -2511,6 +2609,115 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						null
 					}
 				/>
+
+				{/*
+              Финансовый аудит и валидация цен плана лечения (Приказ 804н / Price Lock):
+              Сверка стоимости услуг плана с актуальным каталогом клиники, гарантия фиксации
+              цен и экспорт в заказ-наряд ЗТЛ / Акт выполненных работ.
+            */}
+				<section
+					className="treatment-plan-validation-panel"
+					data-testid="treatment-plan-price-validator-section"
+					aria-label="Финансовый аудит и фиксация цен плана лечения"
+					style={{
+						margin: "1rem 0",
+						padding: "1rem",
+						borderRadius: "12px",
+						border: "1px solid var(--line, #e2e8f0)",
+						backgroundColor: "var(--paper, #ffffff)",
+						boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+					}}
+				>
+					<div
+						style={{
+							display: "flex",
+							flexWrap: "wrap",
+							alignItems: "center",
+							justifyContent: "space-between",
+							gap: "0.75rem",
+						}}
+					>
+						<div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									width: "40px",
+									height: "40px",
+									borderRadius: "10px",
+									backgroundColor: "var(--teal-light, #e0f2fe)",
+									color: "var(--teal, #0284c7)",
+								}}
+							>
+								<ShieldCheck size={22} />
+							</div>
+							<div>
+								<div
+									style={{
+										fontSize: "0.95rem",
+										fontWeight: 700,
+										color: "var(--ink, #0f172a)",
+									}}
+								>
+									План лечения & Контроль цен прайса (804н / Price Lock)
+								</div>
+								<div
+									style={{
+										fontSize: "0.8rem",
+										color: "var(--muted, #64748b)",
+									}}
+								>
+									Сверка позиций с каталогом услуг, фиксация гарантийной сметы и формирование наряда/акта
+								</div>
+							</div>
+						</div>
+
+						<div
+							style={{
+								display: "flex",
+								flexWrap: "wrap",
+								alignItems: "center",
+								gap: "0.5rem",
+							}}
+						>
+							<button
+								type="button"
+								data-testid="price-validator-trigger-btn"
+								className="primary-button min-h-[44px] px-3.5 py-2 inline-flex items-center gap-2"
+								style={{
+									backgroundColor: "var(--teal, #0284c7)",
+									color: "#ffffff",
+									fontWeight: 600,
+									fontSize: "0.85rem",
+									borderRadius: "8px",
+									cursor: "pointer",
+								}}
+								onClick={() => setIsPriceValidatorModalOpen(true)}
+								title="Проверить актуальность цен прайса / Price Lock"
+							>
+								<ShieldCheck size={16} />
+								<span>Проверить актуальность цен прайса / Price Lock</span>
+							</button>
+
+							<button
+								type="button"
+								data-testid="stage-payment-trigger-btn"
+								className="secondary-button min-h-[44px] px-3 py-2 inline-flex items-center gap-2"
+								style={{
+									fontSize: "0.85rem",
+									borderRadius: "8px",
+									cursor: "pointer",
+								}}
+								onClick={() => setIsStagePaymentModalOpen(true)}
+								title="График оплаты и этапы (Escrow / Рассрочка)"
+							>
+								<Lock size={15} />
+								<span>График этапов</span>
+							</button>
+						</div>
+					</div>
+				</section>
 				{activePatient?.id ? (
 					<div className="mt-4" data-testid="visit-note-draft-mount">
 						<VisitNoteDraftPanel
@@ -3173,6 +3380,34 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				patientId={activePatient?.id}
 				patientName={activePatient?.fullName}
 				doctorFullName={activeDoctor?.fullName}
+			/>
+
+			{/* Treatment Plan Price Lock & Pricelist Validator Modal */}
+			<TreatmentPlanPriceValidatorModal
+				isOpen={isPriceValidatorModalOpen}
+				onClose={() => setIsPriceValidatorModalOpen(false)}
+				planPayload={priceValidatorPlanPayload}
+				catalogPricelist={priceValidatorCatalogList}
+				onExportWorkOrder={(exportData) => {
+					appendToEMKField(
+						"treatmentPlan",
+						`Сформирован наряд-заказ ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽. Фиксация цен: ${exportData.isApprovedByManager ? "Согласовано управляющим" : "По гарантии"}.`,
+					);
+					showToast(
+						`Зуботехнический наряд-заказ ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽ добавлен в протокол приема.`,
+						"success",
+					);
+				}}
+				onExportCompletedAct={(exportData) => {
+					appendToEMKField(
+						"treatmentPlan",
+						`Сформирован акт выполненных работ ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽.`,
+					);
+					showToast(
+						`Акт выполненных работ ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽ готов к подписанию.`,
+						"success",
+					);
+				}}
 			/>
 		</>
 	);

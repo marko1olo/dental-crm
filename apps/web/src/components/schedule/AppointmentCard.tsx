@@ -165,6 +165,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 	const canSave = appointmentReadyToSave && !collision.hasCollision;
 
 	const [isQuickStatusUpdating, setIsQuickStatusUpdating] = useState(false);
+	const [optimisticStatus, setOptimisticStatus] = useState<Appointment["status"] | null>(null);
 
 	const handleQuickStatusChange = useCallback(
 		async (newStatus: Appointment["status"], noteAppend?: string) => {
@@ -178,7 +179,9 @@ export function AppointmentCard(props: AppointmentCardProps) {
 				);
 				return;
 			}
+			const prevStatus = appointment.status;
 			const normalized = normalizedAppointmentStatus(newStatus);
+			setOptimisticStatus(normalized);
 			updateAppointmentScheduleDraft(appointment.id, "status", normalized);
 			if (noteAppend) {
 				const currentComment = String(
@@ -199,13 +202,22 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						"success",
 						3000,
 					);
+				} else {
+					setOptimisticStatus(null);
+					updateAppointmentScheduleDraft(appointment.id, "status", prevStatus);
+					showToast("Не удалось сохранить статус приёма", "error");
 				}
+			} catch {
+				setOptimisticStatus(null);
+				updateAppointmentScheduleDraft(appointment.id, "status", prevStatus);
+				showToast("Ошибка при сохранении статуса приёма", "error");
 			} finally {
 				setIsQuickStatusUpdating(false);
 			}
 		},
 		[
 			appointment.id,
+			appointment.status,
 			appointment.comment,
 			appointmentDraft?.comment,
 			appointmentHasOpenVisit,
@@ -227,6 +239,36 @@ export function AppointmentCard(props: AppointmentCardProps) {
 		if (e.key === "Enter" && !appointmentEditing) {
 			e.preventDefault();
 			openAppointmentEditor(appointment);
+		} else if (e.key === " " && !appointmentEditing) {
+			// Space key: 1-click progression of status
+			e.preventDefault();
+			const cur = optimisticStatus ?? appointment.status;
+			let nextStatus: Appointment["status"] = "arrived";
+			if (cur === "planned" || cur === "confirmed") {
+				nextStatus = "arrived";
+			} else if (cur === "arrived") {
+				nextStatus = "in_treatment";
+			} else if (cur === "in_treatment") {
+				nextStatus = "completed";
+			} else {
+				nextStatus = "confirmed";
+			}
+			void handleQuickStatusChange(nextStatus);
+		} else if (e.key === "1") {
+			e.preventDefault();
+			void handleQuickStatusChange("arrived");
+		} else if (e.key === "2") {
+			e.preventDefault();
+			void handleQuickStatusChange("in_treatment");
+		} else if (e.key === "3") {
+			e.preventDefault();
+			void handleQuickStatusChange("completed");
+		} else if (e.key === "4") {
+			e.preventDefault();
+			void handleQuickStatusChange("no_show", "Опоздание");
+		} else if (e.key === "5") {
+			e.preventDefault();
+			void handleQuickStatusChange("no_show");
 		} else if ((e.key === "r" || e.key === "R" || e.key === "к" || e.key === "К") && !e.ctrlKey && !e.metaKey) {
 			e.preventDefault();
 			repeatAppointment(appointment);
@@ -241,12 +283,14 @@ export function AppointmentCard(props: AppointmentCardProps) {
 		}
 	};
 
-	return (
-		<div className="timeline-node" key={appointment.id}>
-			<div className="timeline-line"></div>
-			<div className="timeline-time">{formatTime(appointment.startsAt)}</div>
+	const displayStatus = optimisticStatus ?? appointment?.status;
 
-			<div className="timeline-content">
+	return (
+		<div className="timeline-node min-w-0 max-w-full" key={appointment.id}>
+			<div className="timeline-line"></div>
+			<div className="timeline-time shrink-0 font-medium">{formatTime(appointment.startsAt)}</div>
+
+			<div className="timeline-content min-w-0 max-w-full">
 				<p style={{ display: "none" }}>{appointment.reason}</p>
 				<article
 					data-testid="appointment-card"
@@ -254,7 +298,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 					tabIndex={0}
 					onKeyDown={handleCardKeyDown}
 					aria-label={`Карточка приема: ${appointmentPatientName}, ${formatTime(appointment.startsAt)} - ${formatTime(appointment.endsAt)}`}
-					className={`appointment-card mode-fit-card glass-panel rounded-xl p-4 mb-3 shadow-sm transition-all focus:ring-2 focus:ring-teal-500 focus:outline-none ${readiness ? `readiness-${readiness.state}` : ""}`}
+					className={`appointment-card mode-fit-card glass-panel rounded-xl p-4 mb-3 shadow-sm transition-all focus:ring-2 focus:ring-teal-500 focus:outline-none min-w-0 max-w-full overflow-hidden ${readiness ? `readiness-${readiness.state}` : ""}`}
 					style={{
 						display: "flex",
 						flexDirection: "column",
@@ -262,49 +306,59 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						background: "var(--paper)",
 						border: "1px solid var(--line)",
 						color: "var(--ink)",
+						minWidth: 0,
+						maxWidth: "100%",
+						boxSizing: "border-box",
 					}}
 				>
-					<div className="appointment-card-header border-b border-slate-200 dark:border-slate-800 pb-2 mb-1 flex justify-between items-center">
-						<div className="appointment-card-time font-semibold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
+					<div className="appointment-card-header border-b border-slate-200 dark:border-slate-800 pb-2 mb-1 flex justify-between items-center gap-2 min-w-0 flex-wrap">
+						<div className="appointment-card-time font-semibold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2 shrink-0">
 							{appointment?.startsAt ? formatTime(appointment.startsAt) : ""}
 							<span className="font-normal text-slate-500 dark:text-slate-400">
-								{appointment?.endsAt ? formatTime(appointment.endsAt) : ""}
+								{appointment?.endsAt ? ` - ${formatTime(appointment.endsAt)}` : ""}
 							</span>
 						</div>
-						<span
-							className={`appointment-card-status status-pill status-${appointment?.status ?? ""}`}
-						>
-							{appointmentLabels?.[appointment?.status] ??
-								String(appointment?.status ?? "")}
-						</span>
-						{appointmentHasOpenVisit ? (
-							<span className="handoff-lock">
-								Открыт прием: пациент закреплен
+						<div className="flex items-center gap-1.5 flex-wrap min-w-0">
+							<span
+								className={`appointment-card-status status-pill status-${displayStatus ?? ""} max-w-full truncate`}
+								title={appointmentLabels?.[displayStatus] ?? String(displayStatus ?? "")}
+							>
+								{appointmentLabels?.[displayStatus] ??
+									String(displayStatus ?? "")}
 							</span>
-						) : null}
+							{appointmentHasOpenVisit ? (
+								<span className="handoff-lock text-xs break-words" title="Открыт прием: пациент закреплен">
+									Открыт прием: пациент закреплен
+								</span>
+							) : null}
+						</div>
 					</div>
 
-					<div className="appointment-card-body">
+					<div className="appointment-card-body min-w-0 max-w-full">
 						<h3
-							className="text-base font-semibold"
-							style={{ color: "var(--ink)" }}
+							className="text-base font-semibold truncate break-words"
+							style={{ color: "var(--ink)", minWidth: 0, maxWidth: "100%" }}
+							title={appointmentPatientName}
 						>
 							{appointmentPatientName}
 						</h3>
 						<div
-							className="chip-group"
+							className="chip-group min-w-0 max-w-full"
 							style={{
 								display: "flex",
 								flexWrap: "wrap",
 								gap: "6px",
 								alignItems: "center",
+								minWidth: 0,
+								maxWidth: "100%",
 							}}
 						>
 							{appointmentSuggestions.map((suggestion) => (
 								<button
 									type="button"
 									key={suggestion.id}
-									className={`chip chip-suggestion priority-${suggestion.priority}`}
+									className={`chip chip-suggestion priority-${suggestion.priority} max-w-full text-left`}
+									style={{ whiteSpace: "normal", wordBreak: "break-word", maxWidth: "100%" }}
 									onClick={(e) => {
 										e.stopPropagation();
 										openScheduleSuggestion(suggestion.section);
@@ -316,33 +370,54 @@ export function AppointmentCard(props: AppointmentCardProps) {
 											openScheduleSuggestion(suggestion.section);
 										}
 									}}
-									title={suggestion.detail}
+									title={suggestion.detail || suggestion.title}
 								>
-									⚠️ {suggestion.title}
+									⚠️ <span className="break-words">{suggestion.title}</span>
 								</button>
 							))}
-							<span className="chip chip-reason">
+							<span
+								className="chip chip-reason max-w-full"
+								title={appointment?.reason || "Причина не указана"}
+								style={{
+									whiteSpace: "normal",
+									wordBreak: "break-word",
+									maxWidth: "100%",
+									textAlign: "left",
+								}}
+							>
 								{appointment?.reason || "Причина не указана"}
 							</span>
-							<span className="chip chip-doctor">
-								{(appointmentDoctor?.fullName || "").split(" ")[0] ||
-									"Врач не назначен"}
+							<span
+								className="chip chip-doctor max-w-full truncate"
+								title={appointmentDoctor?.fullName ? `Врач: ${appointmentDoctor.fullName}` : "Врач не назначен"}
+								style={{ maxWidth: "100%" }}
+							>
+								{appointmentDoctor?.fullName || "Врач не назначен"}
 							</span>
-							<span className="chip chip-assistant">
-								{(appointmentAssistant?.fullName || "").split(" ")[0] ||
-									"ассистент не назначен"}
+							<span
+								className="chip chip-assistant max-w-full truncate"
+								title={appointmentAssistant?.fullName ? `Ассистент: ${appointmentAssistant.fullName}` : "ассистент не назначен"}
+								style={{ maxWidth: "100%" }}
+							>
+								{appointmentAssistant?.fullName || "ассистент не назначен"}
 							</span>
 							{appointmentChair && (
-								<span className="chip chip-chair">{appointmentChair.name}</span>
+								<span
+									className="chip chip-chair max-w-full truncate"
+									title={`Кресло: ${appointmentChair.name}`}
+									style={{ maxWidth: "100%" }}
+								>
+									{appointmentChair.name}
+								</span>
 							)}
 						</div>
 						{readiness && (
-							<div className="appt-readiness-row">
+							<div className="appt-readiness-row flex items-center gap-2 min-w-0 flex-wrap mt-1">
 								<span
-									className={`readiness-dot readiness-dot-${readiness.state}`}
+									className={`readiness-dot readiness-dot-${readiness.state} shrink-0`}
 								/>
-								<span className="appt-next-action">{readiness.nextAction}</span>
-								<span className="appt-readiness-score">{readiness.score}%</span>
+								<span className="appt-next-action truncate max-w-full" title={readiness.nextAction}>{readiness.nextAction}</span>
+								<span className="appt-readiness-score shrink-0">{readiness.score}%</span>
 							</div>
 						)}
 					</div>
@@ -391,7 +466,12 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						patientName={appointmentPatientName}
 						patientPhone={appointmentPatient?.phone}
 						doctorName={appointmentDoctor?.fullName}
+						doctorSpecialty={appointmentDoctor?.role}
 						startsAt={appointment.startsAt}
+						clinicName={dashboard?.clinicSettings?.profile?.clinicName}
+						clinicAddress={dashboard?.clinicSettings?.profile?.address}
+						clinicPhone={dashboard?.clinicSettings?.profile?.phone}
+						treatmentReason={appointment.reason}
 						appointmentHasOpenVisit={appointmentHasOpenVisit}
 						activeVisitLockedAppointmentStatuses={
 							activeVisitLockedAppointmentStatuses
@@ -402,45 +482,33 @@ export function AppointmentCard(props: AppointmentCardProps) {
 
 					<div className="appointment-card-footer flex flex-wrap justify-end gap-2 mt-2 pt-2 border-t border-[var(--line)]">
 						<button
-							className="secondary-button appointment-repeat-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+							className="secondary-button appointment-repeat-button min-h-[44px] px-3.5 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors text-xs font-semibold flex items-center justify-center cursor-pointer"
 							type="button"
 							onClick={() => repeatAppointment(appointment)}
 							aria-label={`Повторить запись: ${appointmentPatientName}. Форма новой записи откроется заполненной, останется выбрать время`}
-							title={`Повторить запись: те же пациент, врач и кресло — останется выбрать время`}
-							style={{
-								padding: "6px 14px",
-								fontSize: "13px",
-							}}
+							title={`Повторить запись: те же пациент, врач и кресло — останется выбрать время (Клавиша R)`}
 						>
 							Повторить
 						</button>
 						{copyAppointmentToBuffer ? (
 							<button
-								className="secondary-button appointment-buffer-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+								className="secondary-button appointment-buffer-button min-h-[44px] px-3.5 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors text-xs font-semibold flex items-center justify-center cursor-pointer"
 								type="button"
 								onClick={() => copyAppointmentToBuffer(appointment)}
 								aria-label={`В буфер: ${appointmentPatientName}`}
-								title="Скопировать в буфер расписания для вставки на другое время"
-								style={{
-									padding: "6px 14px",
-									fontSize: "13px",
-								}}
+								title="Скопировать в буфер расписания для вставки на другое время (Клавиша B)"
 							>
 								В буфер
 							</button>
 						) : null}
 						<button
-							className="secondary-button appointment-edit-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+							className="secondary-button appointment-edit-button min-h-[44px] px-3.5 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors text-xs font-semibold flex items-center justify-center cursor-pointer"
 							type="button"
 							onClick={() => openAppointmentEditor(appointment)}
 							aria-expanded={appointmentEditing}
 							aria-controls={appointmentEditorId}
 							aria-label={`Настроить запись: ${appointmentPatientName}, ${formatTime(appointment.startsAt)}-${formatTime(appointment.endsAt)}`}
-							title={`Настроить запись: ${appointmentPatientName}, ${formatTime(appointment.startsAt)}-${formatTime(appointment.endsAt)}`}
-							style={{
-								padding: "6px 14px",
-								fontSize: "13px",
-							}}
+							title={`Настроить запись: ${appointmentPatientName}, ${formatTime(appointment.startsAt)}-${formatTime(appointment.endsAt)} (Клавиша Enter)`}
 						>
 							Настроить
 						</button>
@@ -504,7 +572,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									gridColumn: "1 / -1",
 								}}
 							>
-								<div>
+								<div className="min-w-0">
 									<span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">
 										Пациент
 									</span>
@@ -522,7 +590,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 											disabled={
 												appointment.id === dashboard.activeVisit?.appointmentId
 											}
-											className="w-full p-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none"
+											className="w-full p-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none truncate"
 											aria-describedby={
 												appointmentHasOpenVisit
 													? appointmentHandoffNoteId
@@ -539,14 +607,15 @@ export function AppointmentCard(props: AppointmentCardProps) {
 												))}
 										</select>
 									) : (
-										<div className="flex flex-wrap gap-1.5">
+										<div className="flex flex-wrap gap-1.5 min-w-0">
 											{(dashboard.patients ?? [])
 												.filter((patient) => patient.status === "active")
 												.map((patient) => (
 													<button
 														key={patient.id}
 														type="button"
-														className={`quick-chip ${appointmentDraft.patientId === patient.id ? "active" : ""}`}
+														className={`quick-chip max-w-full truncate ${appointmentDraft.patientId === patient.id ? "active" : ""}`}
+														title={patient.fullName}
 														onClick={() =>
 															updateAppointmentScheduleDraft(
 																appointment.id,
@@ -559,14 +628,14 @@ export function AppointmentCard(props: AppointmentCardProps) {
 															dashboard.activeVisit?.appointmentId
 														}
 													>
-														{patient.fullName}
+														<span className="truncate">{patient.fullName}</span>
 													</button>
 												))}
 										</div>
 									)}
 								</div>
 
-								<div>
+								<div className="min-w-0">
 									<span className="text-xs font-semibold text-[var(--muted)] block mb-2">
 										Врач
 									</span>
@@ -580,7 +649,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 													e.target.value,
 												)
 											}
-											className="w-full p-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none"
+											className="w-full p-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none truncate"
 										>
 											<option value="">-- Выберите врача --</option>
 											{(dashboard.clinicSettings?.staff ?? [])
@@ -596,7 +665,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 												))}
 										</select>
 									) : (
-										<div className="flex flex-wrap gap-1.5">
+										<div className="flex flex-wrap gap-1.5 min-w-0">
 											{(dashboard.clinicSettings?.staff ?? [])
 												.filter(
 													(member) =>
@@ -608,7 +677,8 @@ export function AppointmentCard(props: AppointmentCardProps) {
 													<button
 														key={member.id}
 														type="button"
-														className={`quick-chip ${appointmentDraft.doctorUserId === member.id ? "active" : ""}`}
+														className={`quick-chip max-w-full truncate ${appointmentDraft.doctorUserId === member.id ? "active" : ""}`}
+														title={member.fullName}
 														onClick={() =>
 															updateAppointmentScheduleDraft(
 																appointment.id,
@@ -617,7 +687,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 															)
 														}
 													>
-														{member.fullName}
+														<span className="truncate">{member.fullName}</span>
 													</button>
 												))}
 										</div>
@@ -625,11 +695,11 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								</div>
 
 								{dashboard?.clinicSettings?.profile?.mode !== "solo_doctor" && (
-									<div>
+									<div className="min-w-0">
 										<span className="text-xs font-semibold text-[var(--muted)] block mb-2">
 											Ассистент
 										</span>
-										<div className="flex flex-wrap gap-1.5">
+										<div className="flex flex-wrap gap-1.5 min-w-0">
 											{(dashboard.clinicSettings?.staff ?? [])
 												.filter(
 													(member) =>
@@ -639,7 +709,8 @@ export function AppointmentCard(props: AppointmentCardProps) {
 													<button
 														key={member.id}
 														type="button"
-														className={`quick-chip ${appointmentDraft.assistantUserId === member.id ? "active" : ""}`}
+														className={`quick-chip max-w-full truncate ${appointmentDraft.assistantUserId === member.id ? "active" : ""}`}
+														title={member.fullName}
 														onClick={() =>
 															updateAppointmentScheduleDraft(
 																appointment.id,
@@ -650,25 +721,26 @@ export function AppointmentCard(props: AppointmentCardProps) {
 															)
 														}
 													>
-														{member.fullName}
+														<span className="truncate">{member.fullName}</span>
 													</button>
 												))}
 										</div>
 									</div>
 								)}
 
-								<div>
+								<div className="min-w-0">
 									<span className="text-xs font-semibold text-[var(--muted)] block mb-2">
 										Кресло
 									</span>
-									<div className="flex flex-wrap gap-1.5">
+									<div className="flex flex-wrap gap-1.5 min-w-0">
 										{(dashboard.clinicSettings?.chairs ?? [])
 											.filter((chair) => chair.active)
 											.map((chair) => (
 												<button
 													key={chair.id}
 													type="button"
-													className={`quick-chip ${appointmentDraft.chairId === chair.id ? "active" : ""}`}
+													className={`quick-chip max-w-full truncate ${appointmentDraft.chairId === chair.id ? "active" : ""}`}
+													title={chair.name}
 													onClick={() =>
 														updateAppointmentScheduleDraft(
 															appointment.id,
@@ -677,17 +749,17 @@ export function AppointmentCard(props: AppointmentCardProps) {
 														)
 													}
 												>
-													{chair.name}
+													<span className="truncate">{chair.name}</span>
 												</button>
 											))}
 									</div>
 								</div>
 
-								<div>
+								<div className="min-w-0">
 									<span className="text-xs font-semibold text-[var(--muted)] block mb-2">
 										Статус
 									</span>
-									<div className="flex flex-wrap gap-1.5">
+									<div className="flex flex-wrap gap-1.5 min-w-0">
 										{(
 											Object.keys(
 												appointmentLabels ?? {},
@@ -696,7 +768,8 @@ export function AppointmentCard(props: AppointmentCardProps) {
 											<button
 												key={status}
 												type="button"
-												className={`quick-chip ${appointmentDraft?.status === status ? "active" : ""}`}
+												className={`quick-chip max-w-full truncate ${appointmentDraft?.status === status ? "active" : ""}`}
+												title={appointmentLabels?.[status] ?? status}
 												onClick={() =>
 													updateAppointmentScheduleDraft(
 														appointment.id,
@@ -711,14 +784,14 @@ export function AppointmentCard(props: AppointmentCardProps) {
 													)
 												}
 											>
-												{appointmentLabels?.[status] ?? status}
+												<span className="truncate">{appointmentLabels?.[status] ?? status}</span>
 											</button>
 										))}
 									</div>
 									{appointmentHasOpenVisit && (
 										<div
 											id={appointmentHandoffNoteId}
-											className="status-blocker-note appointment-handoff-note text-xs mt-1 font-medium p-2 rounded"
+											className="status-blocker-note appointment-handoff-note text-xs mt-1 font-medium p-2 rounded break-words"
 										>
 											Статус приема заблокирован: по этому приему открыт
 											активный визит. Завершите или отмените визит в рабочем
@@ -728,9 +801,10 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									)}
 								</div>
 							</div>
-							<label className="form-span-2">
+							<label className="form-span-2 min-w-0">
 								Причина
 								<input
+									className="w-full"
 									value={String(appointmentDraft.reason || "")}
 									onChange={(event: TextFieldChangeEvent) =>
 										updateAppointmentScheduleDraft(
@@ -740,7 +814,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										)
 									}
 								/>
-								<div className="flex flex-wrap gap-1.5 mt-1.5">
+								<div className="flex flex-wrap gap-1.5 mt-1.5 min-w-0">
 									{[
 										"Кариес",
 										"Пульпит",
@@ -769,16 +843,17 @@ export function AppointmentCard(props: AppointmentCardProps) {
 													newVal,
 												);
 											}}
-											className="quick-chip quick-chip--sm"
+											className="quick-chip quick-chip--sm max-w-full truncate"
 										>
 											+ {chip}
 										</button>
 									))}
 								</div>
 							</label>
-							<label className="form-span-2">
+							<label className="form-span-2 min-w-0">
 								Комментарий
 								<textarea
+									className="w-full"
 									value={String(appointmentDraft.comment || "")}
 									onChange={(event: TextFieldChangeEvent) =>
 										updateAppointmentScheduleDraft(
@@ -789,7 +864,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									}
 									rows={2}
 								/>
-								<div className="flex flex-wrap gap-1.5 mt-1.5">
+								<div className="flex flex-wrap gap-1.5 mt-1.5 min-w-0">
 									{[
 										"Первичный",
 										"Боль",
@@ -813,24 +888,24 @@ export function AppointmentCard(props: AppointmentCardProps) {
 													newVal,
 												);
 											}}
-											className="quick-chip quick-chip--sm"
+											className="quick-chip quick-chip--sm max-w-full truncate"
 										>
 											+ {chip}
 										</button>
 									))}
 								</div>
 							</label>
-							<div className="appointment-editor-actions">
+							<div className="appointment-editor-actions flex flex-wrap items-center justify-between gap-3 min-w-0">
 								<div
-									className="min-h-reserved-error"
+									className="min-h-reserved-error min-w-0"
 									style={{ flex: 1, flexDirection: "column" }}
 								>
 									{appointmentSaveError ? (
-										<span className="save-error">{appointmentSaveError}</span>
+										<span className="save-error break-words">{appointmentSaveError}</span>
 									) : null}
 									{collision.hasCollision ? (
 										<div
-											className="schedule-create-missing schedule-save-missing"
+											className="schedule-create-missing schedule-save-missing min-w-0 break-words"
 											id={`appointment-collision-${appointment?.id ?? ""}`}
 											role="alert"
 										>
@@ -841,7 +916,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									) : null}
 									{(appointmentMissingSteps ?? []).length ? (
 										<div
-											className="schedule-create-missing schedule-save-missing"
+											className="schedule-create-missing schedule-save-missing min-w-0 break-words"
 											id={appointmentSaveMissingId}
 											role="status"
 											aria-live="polite"
@@ -849,83 +924,65 @@ export function AppointmentCard(props: AppointmentCardProps) {
 											<strong>Чтобы сохранить запись, исправьте:</strong>
 											<ul>
 												{(appointmentMissingSteps ?? []).map((step) => (
-													<li key={step}>{step}</li>
+													<li key={step} className="break-words">{step}</li>
 												))}
 											</ul>
 										</div>
 									) : null}
 								</div>
-								{/*
-              ПРАВКА ВРЕМЕНИ ПРИЁМА МОЛЧА ПРОПАДАЛА ПРИ ЗАКРЫТИИ.
-
-              ЧТО БЫЛО СЛОМАНО. Признак «в черновике есть несохранённые изменения»
-              сюда передаётся (appointmentDirty, считается в ScheduleView), но в
-              карточке не использовался НИ РАЗУ: подпись у кнопки всегда говорила
-              «Ждет сохранения» — и когда правок нет, и когда администратор
-              переставил время, но не сохранил.
-
-              ЧТО ВИДЕЛ АДМИНИСТРАТОР. Открыл «Настроить», переставил начало с
-              14:00 на 15:00, отвлёкся на звонок, нажал «Закрыть» — правка исчезла
-              без единого слова, а в расписании осталось 14:00. Пациенту при этом
-              уже сказали «перенесли на три». Приём сорван, а на экране всё ровно.
-
-              ЧТО СТАЛО. Подпись говорит правду: «Изменения не сохранены», когда
-              они есть, и «Изменений нет», когда их нет. «Закрыть» с
-              несохранёнными правками спрашивает подтверждение — потерять их можно
-              только осознанно. Классы подписи не тронуты: оформление живёт в
-              чужих таблицах стилей.
-            */}
-								<span
-									className={`save-state save-state-${appointmentSaveState}`}
-								>
-									{appointmentSaveState === "saving"
-										? "Сохраняю"
-										: appointmentSaveState === "saved"
-											? "Сохранено"
-											: appointmentSaveState === "error"
-												? "Ошибка сохранения"
-												: appointmentDirty
-													? "Изменения не сохранены"
-													: "Изменений нет"}
-								</span>
-								<button
-									className="secondary-button"
-									type="button"
-									disabled={appointmentSaveState === "saving"}
-									aria-busy={appointmentSaveState === "saving" || undefined}
-									onClick={() => {
-										if (
-											appointmentDirty &&
-											!window.confirm(
-												"Изменения этой записи не сохранены. Закрыть и потерять их?",
-											)
-										) {
-											return;
+								<div className="flex items-center gap-2 flex-wrap shrink-0">
+									<span
+										className={`save-state save-state-${appointmentSaveState} break-words`}
+									>
+										{appointmentSaveState === "saving"
+											? "Сохраняю"
+											: appointmentSaveState === "saved"
+												? "Сохранено"
+												: appointmentSaveState === "error"
+													? "Ошибка сохранения"
+													: appointmentDirty
+														? "Изменения не сохранены"
+														: "Изменений нет"}
+									</span>
+									<button
+										className="secondary-button min-h-[44px] px-4 py-2 text-xs font-semibold cursor-pointer shrink-0"
+										type="button"
+										disabled={appointmentSaveState === "saving"}
+										aria-busy={appointmentSaveState === "saving" || undefined}
+										onClick={() => {
+											if (
+												appointmentDirty &&
+												!window.confirm(
+													"Изменения этой записи не сохранены. Закрыть и потерять их?",
+												)
+											) {
+												return;
+											}
+											closeAppointmentEditor(appointment.id);
+										}}
+									>
+										Закрыть
+									</button>
+									<button
+										className="primary-button min-h-[44px] px-5 py-2 text-xs font-bold cursor-pointer shrink-0"
+										type="button"
+										onClick={() => void saveAppointmentSchedule(appointment.id)}
+										disabled={
+											appointmentSaveState === "saving" || !canSave
 										}
-										closeAppointmentEditor(appointment.id);
-									}}
-								>
-									Закрыть
-								</button>
-								<button
-									className="primary-button"
-									type="button"
-									onClick={() => void saveAppointmentSchedule(appointment.id)}
-									disabled={
-										appointmentSaveState === "saving" || !canSave
-									}
-									aria-busy={appointmentSaveState === "saving" || undefined}
-									aria-describedby={
-										collision.hasCollision
-											? `appointment-collision-${appointment?.id ?? ""}`
-											: !appointmentReadyToSave &&
-													(appointmentMissingSteps ?? []).length
-												? appointmentSaveMissingId
-												: undefined
-									}
-								>
-									Сохранить запись
-								</button>
+										aria-busy={appointmentSaveState === "saving" || undefined}
+										aria-describedby={
+											collision.hasCollision
+												? `appointment-collision-${appointment?.id ?? ""}`
+												: !appointmentReadyToSave &&
+														(appointmentMissingSteps ?? []).length
+													? appointmentSaveMissingId
+													: undefined
+										}
+									>
+										Сохранить запись
+									</button>
+								</div>
 							</div>
 						</section>
 					) : null}

@@ -2,13 +2,16 @@
  * fiscalReceiptRoutes.ts — Statutory 54-FZ (FFD 1.2 / ФФД 1.2) Fiscal & Split Payment Routes.
  *
  * Endpoints:
- * - POST /api/fiscal/receipts: Build, validate and queue / print 54-FZ FFD 1.2 receipt.
+ * - POST /api/fiscal/receipts: Build, validate and queue / print 54-FZ FFD 1.2 receipt via LAN KKT.
  * - POST /api/fiscal/validate: Pre-flight validator for kopecks, 804n codes, and Chestny ZNAK DataMatrix.
  * - POST /api/fiscal/refund: Build 54-FZ refund receipt (Tag 1054 = 2).
- * - POST /api/fiscal/correction: Build 54-FZ correction receipt (Tag 1173, Tag 1178, Tag 1179).
+ * - POST /api/fiscal/devices/status: Query LAN KKT hardware connectivity and paper status.
+ * - POST /api/fiscal/devices/test-connection: Ping socket / test LAN connection to ATOL/Shtrikh-M.
  * - GET  /api/fiscal/queue: List pending / offline fiscal receipts.
- * - POST /api/fiscal/queue/:id/retry: Retry printing specific receipt.
+ * - POST /api/fiscal/queue/:id/retry: Retry printing specific receipt over LAN.
  * - POST /api/fiscal/queue/retry-all: Retry printing all pending receipts for organization.
+ * - POST /api/fiscal/queue/auto-retry/start: Start automatic background retry loop.
+ * - POST /api/fiscal/queue/auto-retry/stop: Stop automatic background retry loop.
  */
 
 import {
@@ -30,6 +33,11 @@ import { db } from "../../db/client.js";
 import { fiscalReceiptQueue, payments } from "../../db/schema.js";
 import { Fiscal54FzService, Fiscal54FzValidationError } from "../../services/billing/fiscal54fzService.js";
 import { FiscalReceiptFactory } from "../../services/kkt/FiscalReceiptFactory.js";
+import {
+	FiscalQueueRetryWorker,
+	type KktLanConfig,
+	LanKktDriverService,
+} from "../../services/kkt/lanKktDriverService.js";
 
 export async function registerFiscalReceiptRoutes(
 	app: FastifyInstance,
@@ -72,8 +80,58 @@ export async function registerFiscalReceiptRoutes(
 	});
 
 	/**
+	 * GET /api/fiscal/devices/status
+	 * Queries status of LAN KKT hardware (online, paper, cover, model name, latency).
+	 */
+	app.get("/api/fiscal/devices/status", async (request: FastifyRequest, reply: FastifyReply) => {
+		const ctx = await requireClinicalReadContext(request, reply, "kkt device status");
+		if (!ctx) return;
+
+		const status = await LanKktDriverService.checkDeviceStatus();
+		return reply.status(200).send({
+			success: true,
+			status,
+		});
+	});
+
+	/**
+	 * POST /api/fiscal/devices/test-connection
+	 * Pings IP and port of LAN KKT device in clinic subnet.
+	 */
+	app.post("/api/fiscal/devices/test-connection", async (request: FastifyRequest, reply: FastifyReply) => {
+		const ctx = await requireClinicalMutationContext(request, reply, "kkt test connection");
+		if (!ctx) return;
+
+		const schema = z.object({
+			host: z.string().trim().min(1).default("192.168.1.150"),
+			port: z.number().int().min(1).max(65535).default(16732),
+			timeoutMs: z.number().int().min(500).max(10000).default(3000),
+		});
+
+		const parsed = schema.safeParse(request.body || {});
+		if (!parsed.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры подключения к ККТ",
+			});
+		}
+
+		const { host, port, timeoutMs } = parsed.data;
+		const result = await LanKktDriverService.pingSocket(host, port, timeoutMs);
+
+		return reply.status(200).send({
+			success: result.reachable,
+			host,
+			port,
+			latencyMs: result.latencyMs,
+			error: result.error || null,
+		});
+	});
+
+	/**
 	 * POST /api/fiscal/receipts
-	 * Creates, validates, and queues 54-FZ FFD 1.2 receipt for KKT hardware printing / cloud OFD.
+	 * Creates, validates, and prints 54-FZ FFD 1.2 receipt via direct LAN KKT.
+	 * If KKT is offline or out of paper, buffers receipt in fiscal_receipt_queue without blocking checkout.
 	 */
 	app.post("/api/fiscal/receipts", async (request: FastifyRequest, reply: FastifyReply) => {
 		const ctx = await requireClinicalMutationContext(request, reply, "fiscal receipt create");
@@ -92,35 +150,11 @@ export async function registerFiscalReceiptRoutes(
 		const data = parsed.data;
 		const compiled = FiscalReceiptFactory.buildFfd12Receipt(data);
 
-		const isKktOffline =
-			process.env.KKM_FORCE_OFFLINE === "1" || process.env.KKM_HARDWARE_TIMEOUT === "1";
+		// Execute print via LAN KKT driver (handles offline & out of paper detection)
+		const printResult = await LanKktDriverService.printFiscalReceipt(compiled);
 
+		const isOffline = printResult.status === "hardware_offline";
 		const now = new Date();
-		const fnSerial = process.env.KKT_FN_SERIAL || "9960440302145896";
-		const fiscalDocNumber = String(Math.floor(10000 + Math.random() * 90000));
-		const fiscalSign = FiscalReceiptFactory.computeFiscalSign(
-			fnSerial,
-			fiscalDocNumber,
-			now,
-			data.totalKopecks,
-		);
-
-		const ofdUrl = FiscalReceiptFactory.buildOfdUrl({
-			fn: fnSerial,
-			fd: fiscalDocNumber,
-			fpd: fiscalSign,
-			amountKopecks: data.totalKopecks,
-			operationType: data.operationType,
-		});
-
-		const qrString = Fiscal54FzService.generate54FzQrString({
-			issuedAt: now,
-			totalRub: data.totalKopecks / 100,
-			fnSerial,
-			fiscalDocNumber,
-			fiscalSign,
-			operationType: FiscalReceiptFactory.resolveTag1054(data.operationType),
-		});
 
 		const [queueRow] = await db
 			.insert(fiscalReceiptQueue)
@@ -128,11 +162,11 @@ export async function registerFiscalReceiptRoutes(
 				organizationId: orgId,
 				visitId: data.visitId || null,
 				receiptType: data.operationType,
-				status: isKktOffline ? "hardware_offline" : "printed",
+				status: printResult.status,
 				payloadJson: compiled as unknown as Record<string, unknown>,
-				lastError: isKktOffline ? "KKT connection timed out or printer offline" : null,
-				retryCount: 0,
-				printedAt: isKktOffline ? null : now,
+				lastError: isOffline ? printResult.errorMessage || "KKT hardware offline or out of paper" : null,
+				retryCount: isOffline ? 1 : 0,
+				printedAt: isOffline ? null : now,
 			})
 			.returning();
 
@@ -140,13 +174,14 @@ export async function registerFiscalReceiptRoutes(
 			success: true,
 			queueId: queueRow?.id,
 			status: queueRow?.status,
-			fnSerial,
-			fiscalDocumentNumber: fiscalDocNumber,
-			fiscalSign,
-			receiptIssuedAt: now.toISOString(),
-			ofdVerificationUrl: ofdUrl,
-			qrString,
+			fnSerial: printResult.fnSerial,
+			fiscalDocumentNumber: printResult.fiscalDocumentNumber,
+			fiscalSign: printResult.fiscalSign,
+			receiptIssuedAt: printResult.receiptIssuedAt,
+			ofdVerificationUrl: printResult.ofdVerificationUrl,
+			qrString: printResult.qrString,
 			compiledReceipt: compiled,
+			hardwareWarning: isOffline ? printResult.errorMessage : null,
 		});
 	});
 
@@ -190,23 +225,9 @@ export async function registerFiscalReceiptRoutes(
 		});
 
 		const compiled = FiscalReceiptFactory.buildFfd12Receipt(refundReceiptInput);
+		const printResult = await LanKktDriverService.printFiscalReceipt(compiled);
+		const isOffline = printResult.status === "hardware_offline";
 		const now = new Date();
-		const fnSerial = process.env.KKT_FN_SERIAL || "9960440302145896";
-		const fiscalDocNumber = String(Math.floor(10000 + Math.random() * 90000));
-		const fiscalSign = FiscalReceiptFactory.computeFiscalSign(
-			fnSerial,
-			fiscalDocNumber,
-			now,
-			data.totalRefundKopecks,
-		);
-
-		const ofdUrl = FiscalReceiptFactory.buildOfdUrl({
-			fn: fnSerial,
-			fd: fiscalDocNumber,
-			fpd: fiscalSign,
-			amountKopecks: data.totalRefundKopecks,
-			operationType: "income_return",
-		});
 
 		let validPaymentId: string | null = null;
 		if (data.originalPaymentId) {
@@ -226,21 +247,22 @@ export async function registerFiscalReceiptRoutes(
 				organizationId: orgId,
 				paymentId: validPaymentId,
 				receiptType: "income_return",
-				status: "printed",
+				status: printResult.status,
 				payloadJson: compiled as unknown as Record<string, unknown>,
-				retryCount: 0,
-				printedAt: now,
+				lastError: isOffline ? printResult.errorMessage || "KKT offline on refund" : null,
+				retryCount: isOffline ? 1 : 0,
+				printedAt: isOffline ? null : now,
 			})
 			.returning();
 
 		return reply.status(200).send({
 			success: true,
 			refundQueueId: queueRow?.id,
-			status: "printed",
+			status: queueRow?.status,
 			originalReceiptNumber: data.originalReceiptNumber,
-			fiscalDocumentNumber: fiscalDocNumber,
-			fiscalSign,
-			ofdVerificationUrl: ofdUrl,
+			fiscalDocumentNumber: printResult.fiscalDocumentNumber,
+			fiscalSign: printResult.fiscalSign,
+			ofdVerificationUrl: printResult.ofdVerificationUrl,
 			totalRefundRub: kopecksToNumericString(data.totalRefundKopecks),
 		});
 	});
@@ -290,7 +312,7 @@ export async function registerFiscalReceiptRoutes(
 
 	/**
 	 * POST /api/fiscal/queue/:id/retry
-	 * Retries printing a specific queued fiscal receipt.
+	 * Retries printing a specific queued fiscal receipt via LAN KKT driver.
 	 */
 	app.post("/api/fiscal/queue/:id/retry", async (request: FastifyRequest, reply: FastifyReply) => {
 		const ctx = await requireClinicalMutationContext(request, reply, "fiscal queue retry");
@@ -322,15 +344,14 @@ export async function registerFiscalReceiptRoutes(
 			});
 		}
 
-		const isKktOffline =
-			process.env.KKM_FORCE_OFFLINE === "1" || process.env.KKM_HARDWARE_TIMEOUT === "1";
+		const deviceStatus = await LanKktDriverService.checkDeviceStatus();
 
-		if (isKktOffline) {
+		if (!deviceStatus.online || !deviceStatus.paperOk) {
 			const [updated] = await db
 				.update(fiscalReceiptQueue)
 				.set({
 					status: "hardware_offline",
-					lastError: "KKT connection timed out (5000ms) or printer offline",
+					lastError: deviceStatus.error || "KKT connection timed out or printer offline",
 					retryCount: sql`${fiscalReceiptQueue.retryCount} + 1`,
 					updatedAt: new Date(),
 				})
@@ -351,6 +372,7 @@ export async function registerFiscalReceiptRoutes(
 				status: "printed",
 				printedAt: new Date(),
 				lastError: null,
+				retryCount: sql`${fiscalReceiptQueue.retryCount} + 1`,
 				updatedAt: new Date(),
 			})
 			.where(and(eq(fiscalReceiptQueue.id, id), eq(fiscalReceiptQueue.organizationId, orgId)))
@@ -372,53 +394,46 @@ export async function registerFiscalReceiptRoutes(
 		if (!ctx) return;
 		const orgId = ctx.organizationId;
 
-		const pendingItems = await db
-			.select()
-			.from(fiscalReceiptQueue)
-			.where(
-				and(
-					eq(fiscalReceiptQueue.organizationId, orgId),
-					inArray(fiscalReceiptQueue.status, ["pending_print", "hardware_offline"]),
-				),
-			);
-
-		const isKktOffline =
-			process.env.KKM_FORCE_OFFLINE === "1" || process.env.KKM_HARDWARE_TIMEOUT === "1";
-
-		let printedCount = 0;
-		let failedCount = 0;
-
-		for (const item of pendingItems) {
-			if (isKktOffline) {
-				await db
-					.update(fiscalReceiptQueue)
-					.set({
-						status: "hardware_offline",
-						lastError: "KKT connection timed out (5000ms) or printer offline",
-						retryCount: sql`${fiscalReceiptQueue.retryCount} + 1`,
-						updatedAt: new Date(),
-					})
-					.where(and(eq(fiscalReceiptQueue.id, item.id), eq(fiscalReceiptQueue.organizationId, orgId)));
-				failedCount++;
-			} else {
-				await db
-					.update(fiscalReceiptQueue)
-					.set({
-						status: "printed",
-						printedAt: new Date(),
-						lastError: null,
-						updatedAt: new Date(),
-					})
-					.where(and(eq(fiscalReceiptQueue.id, item.id), eq(fiscalReceiptQueue.organizationId, orgId)));
-				printedCount++;
-			}
-		}
+		const result = await FiscalQueueRetryWorker.flushOrganizationQueue(orgId);
 
 		return reply.status(200).send({
 			success: true,
-			totalProcessed: pendingItems.length,
-			printedCount,
-			failedCount,
+			totalProcessed: result.totalProcessed,
+			printedCount: result.printedCount,
+			failedCount: result.failedCount,
+			deviceStatus: result.deviceStatus,
+		});
+	});
+
+	/**
+	 * POST /api/fiscal/queue/auto-retry/start
+	 * Starts background auto-retry loop for the organization.
+	 */
+	app.post("/api/fiscal/queue/auto-retry/start", async (request: FastifyRequest, reply: FastifyReply) => {
+		const ctx = await requireClinicalMutationContext(request, reply, "fiscal auto retry start");
+		if (!ctx) return;
+
+		FiscalQueueRetryWorker.startAutoRetryLoop(ctx.organizationId);
+
+		return reply.status(200).send({
+			success: true,
+			message: "Фоновый авто-повтор печати чеков запущен (интервал: 30с).",
+		});
+	});
+
+	/**
+	 * POST /api/fiscal/queue/auto-retry/stop
+	 * Stops background auto-retry loop.
+	 */
+	app.post("/api/fiscal/queue/auto-retry/stop", async (request: FastifyRequest, reply: FastifyReply) => {
+		const ctx = await requireClinicalMutationContext(request, reply, "fiscal auto retry stop");
+		if (!ctx) return;
+
+		FiscalQueueRetryWorker.stopAutoRetryLoop();
+
+		return reply.status(200).send({
+			success: true,
+			message: "Фоновый авто-повтор печати чеков остановлен.",
 		});
 	});
 }

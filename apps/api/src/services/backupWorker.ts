@@ -668,6 +668,7 @@ export async function createEncryptedBackup(): Promise<BackupResult> {
 }
 
 let backupInterval: NodeJS.Timeout | null = null;
+let firstRunTimeout: NodeJS.Timeout | null = null;
 
 function backupIntervalMs(): number {
 	const configured = Number(process.env.DENTE_BACKUP_INTERVAL_HOURS ?? 24);
@@ -683,7 +684,7 @@ function backupIntervalMs(): number {
  * клинике, где компьютер выключают на ночь, копия не создавалась никогда.
  */
 export function startBackupDaemon(): void {
-	if (backupInterval) return;
+	if (backupInterval || firstRunTimeout) return;
 
 	const keyResult = resolveEncryptionKey();
 	if ("error" in keyResult) {
@@ -699,8 +700,9 @@ export function startBackupDaemon(): void {
 	const firstRunDelayMs = Number(
 		process.env.DENTE_BACKUP_FIRST_RUN_DELAY_MS ?? 120_000,
 	);
-	const firstRun: ReturnType<typeof setTimeout> = setTimeout(
+	firstRunTimeout = setTimeout(
 		() => {
+			firstRunTimeout = null;
 			void createEncryptedBackup().catch((err) => {
 				console.error("[BackupWorker] Uncaught error during initial backup run:", err);
 			});
@@ -708,7 +710,7 @@ export function startBackupDaemon(): void {
 		Math.max(0, firstRunDelayMs),
 	);
 	// unref, чтобы отложенный первый прогон не удерживал процесс при остановке.
-	(firstRun as unknown as { unref?: () => void }).unref?.();
+	(firstRunTimeout as unknown as { unref?: () => void }).unref?.();
 
 	backupInterval = setInterval(() => {
 		void createEncryptedBackup().catch((err) => {
@@ -719,6 +721,10 @@ export function startBackupDaemon(): void {
 }
 
 export function stopBackupDaemon(): void {
+	if (firstRunTimeout) {
+		clearTimeout(firstRunTimeout);
+		firstRunTimeout = null;
+	}
 	if (backupInterval) {
 		clearInterval(backupInterval);
 		backupInterval = null;

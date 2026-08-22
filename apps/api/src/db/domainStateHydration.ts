@@ -371,7 +371,6 @@ const CRITICAL_SLICES = new Set([
 	"treatmentItems",
 	"payments",
 	"visits",
-	"clinicalRules",
 	"patients",
 ]);
 
@@ -381,8 +380,7 @@ class DomainStateSliceUnavailableError extends Error {
 
 	constructor(slices: Array<{ slice: string; message: string }>) {
 		super(
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			`Не удалось прочитать данные клиники: ${slices.map((entry) => `${entry.slice} - ${(entry as any).error}`).join(", ")}.`,
+			`Не удалось прочитать данные клиники: ${slices.map((entry) => `${entry.slice} - ${entry.message}`).join(", ")}.`,
 		);
 		this.name = "DomainStateSliceUnavailableError";
 		this.slices = slices;

@@ -5,6 +5,7 @@ import type {
 	StaffRole,
 } from "@dental/shared";
 import {
+	Bell,
 	CheckCircle2,
 	FileText,
 	History,
@@ -12,6 +13,8 @@ import {
 	Send,
 } from "lucide-react";
 import { useState } from "react";
+import { WhatsAppChatPanel } from "./components/chat/WhatsAppChatPanel";
+import { PatientNotificationCenter } from "./components/notifications/PatientNotificationCenter";
 import { CampaignPanel } from "./components/communications/CampaignPanel";
 import {
 	journalDirectionLabel,
@@ -512,6 +515,10 @@ export function CommunicationsView({
 		typeof communicationNote === "string" &&
 		communicationNote.trim().length > 0;
 
+	const [activeSection, setActiveSection] = useState<
+		"tasks" | "chat" | "notifications"
+	>("tasks");
+
 	const communicationSummaryHasNumbers = Boolean(
 		(dashboard?.communicationSummary?.openTasks ?? 0) ||
 			(dashboard?.communicationSummary?.dueToday ?? 0) ||
@@ -540,6 +547,63 @@ export function CommunicationsView({
 					Расписание
 				</button>
 			</div>
+
+			{/* Sub-navigation tabs: Tasks & Dispatch, WhatsApp Direct Chat, and Notifications Center */}
+			<div className="flex items-center gap-2 mb-5 p-1 bg-[var(--paper-soft,rgba(30,41,59,0.5))] rounded-xl border border-[var(--line,#334155)]">
+				<button
+					type="button"
+					onClick={() => setActiveSection("tasks")}
+					className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center gap-2 ${
+						activeSection === "tasks"
+							? "bg-teal-600 text-white shadow-xs"
+							: "text-[var(--muted)] hover:text-[var(--ink)]"
+					}`}
+				>
+					<MessageSquare size={14} />
+					<span>Очередь задач и рассылки</span>
+				</button>
+
+				<button
+					type="button"
+					onClick={() => setActiveSection("chat")}
+					className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center gap-2 ${
+						activeSection === "chat"
+							? "bg-teal-600 text-white shadow-xs"
+							: "text-[var(--muted)] hover:text-[var(--ink)]"
+					}`}
+				>
+					<Send size={14} />
+					<span>WhatsApp Чат</span>
+				</button>
+
+				<button
+					type="button"
+					onClick={() => setActiveSection("notifications")}
+					className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center gap-2 ${
+						activeSection === "notifications"
+							? "bg-teal-600 text-white shadow-xs"
+							: "text-[var(--muted)] hover:text-[var(--ink)]"
+					}`}
+				>
+					<Bell size={14} />
+					<span>Центр уведомлений</span>
+				</button>
+			</div>
+
+			{activeSection === "chat" && (
+				<div className="h-[750px] mb-5">
+					<WhatsAppChatPanel />
+				</div>
+			)}
+
+			{activeSection === "notifications" && (
+				<div className="h-[750px] mb-5">
+					<PatientNotificationCenter />
+				</div>
+			)}
+
+			{activeSection === "tasks" && (
+				<>
 
 			{/*
         Сводка из четырёх счётчиков нужна тогда, когда в ней есть хоть что-то.
@@ -884,6 +948,8 @@ export function CommunicationsView({
         confirmation_performance_reports тоже без единого писателя, и на всех
         трёх экранах он показывал одну и ту же пустоту.
       */}
+				</>
+			)}
 		</div>
 	);
 }

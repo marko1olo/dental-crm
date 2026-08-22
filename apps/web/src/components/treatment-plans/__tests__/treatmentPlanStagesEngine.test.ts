@@ -356,3 +356,48 @@ describe("treatmentPlanStagesEngine: Order 804n Endodontic Canal Precision (1..4
 		assert.ok(stage1.items.some((i) => i.toothNumber === 36 && i.code804n === "A16.07.008.004"));
 	});
 });
+
+describe("treatmentPlanStagesEngine: Orthopedic Laboratory Work Order Extraction (Crowns, Bridges, Dentures)", () => {
+	test("Извлекает ортопедические зубы для наряд-заказа в лабораторию при коронках и мостах", () => {
+		const teeth: ToothData[] = [
+			{ toothNumber: 11, state: "Crown" },
+			{ toothNumber: 21, state: "Crown" },
+			{ toothNumber: 36, state: "Missing" }, // Имплант + коронка
+		];
+
+		const stages = generateTreatmentPlanStages(teeth);
+		const stage3 = stages.find((s) => s.stageKind === "stage_3_orthopedics");
+
+		assert.ok(stage3, "Ортопедический этап должен существовать");
+		assert.equal(stage3?.stageNumber, 3);
+		assert.ok(stage3!.items.length >= 2, "Должно быть как минимум 2 ортопедические процедуры");
+
+		// Проверяем наличие коронки на 11 и 21, и коронки на имплантате на 36
+		const stageTeeth = stage3!.items
+			.map((it) => it.toothNumber)
+			.filter((t): t is number => typeof t === "number" && t > 0);
+
+		assert.ok(stageTeeth.includes(11), "Зуб 11 должен быть в ортопедическом этапе");
+		assert.ok(stageTeeth.includes(21), "Зуб 21 должен быть в ортопедическом этапе");
+		assert.ok(stageTeeth.includes(36), "Зуб 36 должен быть в ортопедическом этапе");
+	});
+
+	test("Определяет ортопедические номенклатурные коды Приказа 804н (коронки, мосты, вкладки, абатменты)", () => {
+		const orthoCodes = [
+			"A16.07.003", // Вкладка Inlay/Onlay
+			"A16.07.004.001", // Коронка из диоксида циркония
+			"A16.07.004.002", // Коронка/винир E.max
+			"A16.07.004.003", // Детская коронка
+			"A16.07.005", // Мостовидный протез
+			"A16.07.006", // Коронка на имплантате с абатментом
+		];
+
+		for (const code of orthoCodes) {
+			const matching = Object.values(ORDER_804N_DICTIONARY).find((d) => d.code === code);
+			assert.ok(matching, `Процедура ${code} должна присутствовать в словаре 804н`);
+			assert.equal(matching.stageKind, "stage_3_orthopedics");
+			assert.equal(matching.stageNumber, 3);
+		}
+	});
+});
+

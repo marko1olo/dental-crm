@@ -1,7 +1,20 @@
 import type { Appointment, Dashboard } from "@dental/shared";
-import { Clock, Plus, User } from "lucide-react";
+import {
+	AlertTriangle,
+	CalendarCheck,
+	CheckCircle2,
+	Clock,
+	MessageSquare,
+	PhoneCall,
+	Plus,
+	User,
+	UserCheck,
+	UserX,
+} from "lucide-react";
 import React, { useMemo } from "react";
 import type { QuickBookingSlotInfo } from "./QuickBookingDrawer";
+import { generateAppointmentWhatsAppMessage } from "./generateAppointmentWhatsAppMessage";
+import { openWhatsAppChat } from "../../store/telephonyStore";
 
 export interface ScheduleGridProps {
 	dashboard: Dashboard;
@@ -9,6 +22,9 @@ export interface ScheduleGridProps {
 	appointments: Appointment[];
 	onSlotClick: (slot: QuickBookingSlotInfo) => void;
 	onAppointmentClick: (appointment: Appointment) => void;
+	onQuickStatusChange?:
+		| ((appointmentId: string, status: Appointment["status"]) => void)
+		| undefined;
 	patientName: (
 		patients: Dashboard["patients"],
 		patientId: string | null,
@@ -43,6 +59,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 		appointments,
 		onSlotClick,
 		onAppointmentClick,
+		onQuickStatusChange,
 		patientName,
 		toDateTimeLocalValue,
 		appointmentLabels,
@@ -67,6 +84,76 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 			return localDate === dateKey;
 		});
 	}, [appointments, dateKey, toDateTimeLocalValue, timezone]);
+
+	// Calculate cross-chair and intra-chair collisions on the active date
+	const collisionMap = useMemo(() => {
+		const collisions = new Map<
+			string,
+			{
+				sameDoctor: boolean;
+				sameChair: boolean;
+				sameAssistant: boolean;
+				samePatient: boolean;
+				conflictWith: string;
+			}
+		>();
+		const occupyingAppointments = dayAppointments.filter(
+			(a) => a.status !== "cancelled" && a.status !== "no_show",
+		);
+
+		for (let i = 0; i < occupyingAppointments.length; i++) {
+			for (let j = i + 1; j < occupyingAppointments.length; j++) {
+				const a1 = occupyingAppointments[i]!;
+				const a2 = occupyingAppointments[j]!;
+
+				const s1 = Date.parse(a1.startsAt);
+				const e1 = Date.parse(a1.endsAt);
+				const s2 = Date.parse(a2.startsAt);
+				const e2 = Date.parse(a2.endsAt);
+
+				if (
+					Number.isFinite(s1) &&
+					Number.isFinite(e1) &&
+					Number.isFinite(s2) &&
+					Number.isFinite(e2)
+				) {
+					const overlapMs = Math.min(e1, e2) - Math.max(s1, s2);
+					if (overlapMs > 0) {
+						const sameDoctor = Boolean(
+							a1.doctorUserId && a1.doctorUserId === a2.doctorUserId,
+						);
+						const sameChair = Boolean(a1.chairId && a1.chairId === a2.chairId);
+						const sameAssistant = Boolean(
+							a1.assistantUserId && a1.assistantUserId === a2.assistantUserId,
+						);
+						const samePatient = Boolean(
+							a1.patientId && a1.patientId === a2.patientId,
+						);
+
+						if (sameDoctor || sameChair || sameAssistant || samePatient) {
+							const prev1 = collisions.get(a1.id);
+							collisions.set(a1.id, {
+								sameDoctor: Boolean(prev1?.sameDoctor || sameDoctor),
+								sameChair: Boolean(prev1?.sameChair || sameChair),
+								sameAssistant: Boolean(prev1?.sameAssistant || sameAssistant),
+								samePatient: Boolean(prev1?.samePatient || samePatient),
+								conflictWith: a2.id,
+							});
+							const prev2 = collisions.get(a2.id);
+							collisions.set(a2.id, {
+								sameDoctor: Boolean(prev2?.sameDoctor || sameDoctor),
+								sameChair: Boolean(prev2?.sameChair || sameChair),
+								sameAssistant: Boolean(prev2?.sameAssistant || sameAssistant),
+								samePatient: Boolean(prev2?.samePatient || samePatient),
+								conflictWith: a1.id,
+							});
+						}
+					}
+				}
+			}
+		}
+		return collisions;
+	}, [dayAppointments]);
 
 	return (
 		<div
@@ -148,37 +235,199 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 													timezone,
 												).slice(11, 16);
 
+												const patObj = dashboard.patients?.find((p) => p.id === a.patientId);
+												const docObj = dashboard.clinicSettings?.staff?.find((s) => s.id === a.doctorUserId);
+												const collision = collisionMap.get(a.id);
+
 												return (
-													<button
+													<div
 														key={a.id}
-														type="button"
-														onClick={() => onAppointmentClick(a)}
-														className={`w-full text-left p-2 rounded-xl border text-xs font-semibold shadow-xs flex items-center justify-between gap-2 cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99] focus:ring-2 focus:ring-[var(--teal)] focus:outline-none min-h-[44px] ${
-															a.status === "arrived"
-																? "bg-emerald-500/15 border-emerald-500/30 text-emerald-800 dark:text-emerald-200"
-																: a.status === "in_treatment"
-																	? "bg-sky-500/15 border-sky-500/30 text-sky-800 dark:text-sky-200"
-																	: a.status === "completed"
-																		? "bg-teal-500/15 border-teal-500/30 text-teal-800 dark:text-teal-200"
-																		: a.status === "cancelled" || a.status === "no_show"
-																			? "bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300 opacity-70"
-																			: "bg-[var(--paper)] border-[var(--line-strong)] text-[var(--ink)]"
+														className={`w-full text-left p-2 rounded-xl border text-xs font-semibold shadow-xs flex flex-col justify-between gap-1.5 transition-all min-h-[52px] ${
+															collision
+																? "bg-rose-500/15 border-rose-500/40 text-rose-900 dark:text-rose-100 ring-1 ring-rose-500/50"
+																: a.status === "arrived"
+																	? "bg-emerald-500/15 border-emerald-500/30 text-emerald-800 dark:text-emerald-200"
+																	: a.status === "in_treatment"
+																		? "bg-sky-500/15 border-sky-500/30 text-sky-800 dark:text-sky-200"
+																		: a.status === "completed"
+																			? "bg-teal-500/15 border-teal-500/30 text-teal-800 dark:text-teal-200"
+																			: a.status === "confirmed"
+																				? "bg-violet-500/15 border-violet-500/30 text-violet-800 dark:text-violet-200"
+																				: a.status === "cancelled" || a.status === "no_show"
+																					? "bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300 opacity-70"
+																					: "bg-[var(--paper)] border-[var(--line-strong)] text-[var(--ink)]"
 														}`}
-														title={`${pName}: ${aStart} - ${aEnd} (${appointmentLabels[a.status] || a.status})`}
 													>
-														<div className="truncate">
-															<div className="font-bold truncate flex items-center gap-1">
-																<User size={12} className="shrink-0 text-[var(--teal)]" />
-																<span>{pName}</span>
+														<div
+															onClick={() => onAppointmentClick(a)}
+															className="cursor-pointer flex items-center justify-between gap-2"
+															role="button"
+															tabIndex={0}
+															onKeyDown={(e) => {
+																if (e.key === "Enter" || e.key === " ") {
+																	e.preventDefault();
+																	onAppointmentClick(a);
+																}
+															}}
+														>
+															<div className="truncate">
+																<div className="font-bold truncate flex items-center gap-1">
+																	<User size={12} className="shrink-0 text-[var(--teal)]" />
+																	<span>{pName}</span>
+																</div>
+																<div className="text-[10px] opacity-75 font-normal">
+																	{aStart} - {aEnd} · {a.reason || "Прием"}
+																</div>
 															</div>
-															<div className="text-[10px] opacity-75 font-normal">
-																{aStart} - {aEnd} · {a.reason || "Прием"}
-															</div>
+															<span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-[var(--paper)]/80 shrink-0">
+																{appointmentLabels[a.status] || a.status}
+															</span>
 														</div>
-														<span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-[var(--paper)]/80 shrink-0">
-															{appointmentLabels[a.status] || a.status}
-														</span>
-													</button>
+
+														{/* Collision Alert Pill if overlapping */}
+														{collision && (
+															<div
+																className="px-2 py-1 rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-800 dark:text-rose-200 text-[10px] font-bold flex items-center gap-1"
+																title={
+																	collision.sameDoctor && collision.sameChair
+																		? "Коллизия: один врач и одно кресло в одно время!"
+																		: collision.sameDoctor
+																			? "Коллизия: врач записан в другое кресло одновременно!"
+																			: collision.sameChair
+																				? "Коллизия: два пациента в одном кресле одновременно!"
+																				: collision.sameAssistant
+																					? "Коллизия: ассистент занят в другом приеме!"
+																					: "Коллизия: пациент записан на два приема одновременно!"
+																}
+															>
+																<AlertTriangle size={12} className="shrink-0 text-rose-600 dark:text-rose-400" />
+																<span>
+																	{collision.sameDoctor && collision.sameChair
+																		? "Накладка: врач + кресло"
+																		: collision.sameDoctor
+																			? "Коллизия врача"
+																			: collision.sameChair
+																				? "Накладка кресла"
+																				: collision.sameAssistant
+																					? "Накладка ассистента"
+																					: "Накладка пациента"}
+																</span>
+															</div>
+														)}
+
+														{/* Mini Quick Action Toggles */}
+														<div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-[var(--line)]/50 mt-1">
+															{onQuickStatusChange && (
+																<>
+																	<button
+																		type="button"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			onQuickStatusChange(a.id, "confirmed");
+																		}}
+																		className={`p-2 rounded-xl border min-h-[44px] min-w-[44px] flex items-center justify-center transition-all cursor-pointer ${
+																			a.status === "confirmed"
+																				? "bg-violet-500 text-white border-violet-600 font-bold shadow-xs"
+																				: "bg-[var(--paper-soft)] border-[var(--line)] text-violet-700 dark:text-violet-300 hover:bg-violet-500/20"
+																		}`}
+																		title="Подтвержден"
+																		aria-label={`Отметить статус Подтвержден для ${pName}`}
+																	>
+																		<PhoneCall size={16} />
+																	</button>
+																	<button
+																		type="button"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			onQuickStatusChange(a.id, "arrived");
+																		}}
+																		className={`p-2 rounded-xl border min-h-[44px] min-w-[44px] flex items-center justify-center transition-all cursor-pointer ${
+																			a.status === "arrived"
+																				? "bg-emerald-500 text-white border-emerald-600 font-bold shadow-xs"
+																				: "bg-[var(--paper-soft)] border-[var(--line)] text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20"
+																		}`}
+																		title="Пришел"
+																		aria-label={`Отметить статус Пришел для ${pName}`}
+																	>
+																		<UserCheck size={16} />
+																	</button>
+																	<button
+																		type="button"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			onQuickStatusChange(a.id, "in_treatment");
+																		}}
+																		className={`p-2 rounded-xl border min-h-[44px] min-w-[44px] flex items-center justify-center transition-all cursor-pointer ${
+																			a.status === "in_treatment"
+																				? "bg-sky-500 text-white border-sky-600 font-bold shadow-xs"
+																				: "bg-[var(--paper-soft)] border-[var(--line)] text-sky-700 dark:text-sky-300 hover:bg-sky-500/20"
+																		}`}
+																		title="В кресле"
+																		aria-label={`Отметить статус В кресле для ${pName}`}
+																	>
+																		<CalendarCheck size={16} />
+																	</button>
+																	<button
+																		type="button"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			onQuickStatusChange(a.id, "completed");
+																		}}
+																		className={`p-2 rounded-xl border min-h-[44px] min-w-[44px] flex items-center justify-center transition-all cursor-pointer ${
+																			a.status === "completed"
+																				? "bg-teal-500 text-white border-teal-600 font-bold shadow-xs"
+																				: "bg-[var(--paper-soft)] border-[var(--line)] text-teal-700 dark:text-teal-300 hover:bg-teal-500/20"
+																		}`}
+																		title="Завершен"
+																		aria-label={`Отметить статус Завершен для ${pName}`}
+																	>
+																		<CheckCircle2 size={16} />
+																	</button>
+																	<button
+																		type="button"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			onQuickStatusChange(a.id, "no_show");
+																		}}
+																		className={`p-2 rounded-xl border min-h-[44px] min-w-[44px] flex items-center justify-center transition-all cursor-pointer ${
+																			a.status === "no_show"
+																				? "bg-rose-500 text-white border-rose-600 font-bold shadow-xs"
+																				: "bg-[var(--paper-soft)] border-[var(--line)] text-rose-700 dark:text-rose-300 hover:bg-rose-500/20"
+																		}`}
+																		title="Не явился"
+																		aria-label={`Отметить статус Не явился для ${pName}`}
+																	>
+																		<UserX size={16} />
+																	</button>
+																</>
+															)}
+
+															{patObj?.phone && (
+																<button
+																	type="button"
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		const text = generateAppointmentWhatsAppMessage({
+																			patientName: pName,
+																			doctorName: docObj?.fullName,
+																			doctorSpecialty: docObj?.role,
+																			appointmentStartsAt: a.startsAt,
+																			clinicName: dashboard.clinicSettings?.profile?.clinicName,
+																			clinicAddress: dashboard.clinicSettings?.profile?.address,
+																			clinicPhone: dashboard.clinicSettings?.profile?.phone,
+																			treatmentReason: a.reason,
+																		});
+																		openWhatsAppChat(patObj.phone!, text);
+																	}}
+																	className="p-2 ml-auto rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 min-h-[44px] min-w-[44px] flex items-center justify-center transition-all cursor-pointer"
+																	title={`Отправить WhatsApp напоминание (${pName})`}
+																	aria-label={`WhatsApp напоминание для ${pName}`}
+																>
+																	<MessageSquare size={16} />
+																</button>
+															)}
+														</div>
+													</div>
 												);
 											})}
 										</div>

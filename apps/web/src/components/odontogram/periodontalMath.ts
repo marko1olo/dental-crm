@@ -523,9 +523,9 @@ export function generateComprehensivePerio043Text(
 		calculatePeriodontalRiskAssessment({
 			teeth,
 			summary: currentSummary,
-			patientAgeYears: options?.patientAgeYears,
-			smokingStatus: options?.smokingStatus,
-			diabetesStatus: options?.diabetesStatus,
+			...(options?.patientAgeYears !== undefined ? { patientAgeYears: options.patientAgeYears } : {}),
+			...(options?.smokingStatus !== undefined ? { smokingStatus: options.smokingStatus } : {}),
+			...(options?.diabetesStatus !== undefined ? { diabetesStatus: options.diabetesStatus } : {}),
 		});
 
 	const riskLabels: Record<PraRiskLevel, string> = {

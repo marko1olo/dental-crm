@@ -59,6 +59,8 @@ import {
 import { useAppLogic } from "./useAppLogic";
 import { logger } from "./utils/logger";
 import { WorkspaceContinuityStrip } from "./workspaceContinuityStrip";
+import { useNetworkConnectivity } from "./hooks/useNetworkConnectivity";
+import { useOfflineMutationQueue } from "./hooks/useOfflineMutationQueue";
 import {
 	preloadWorkspaceView,
 	scheduleIdleWorkspacePreload,
@@ -184,6 +186,12 @@ export function App() {
 	};
 	const perspective = usePerspectiveStore((s) => s.perspective);
 	const appLogicValue = useAppLogic();
+	const { networkState } = useNetworkConnectivity();
+	const {
+		pendingMutationCount,
+		syncNow: syncOfflineMutations,
+		isSyncing: isSyncingMutations,
+	} = useOfflineMutationQueue();
 	const {
 		acceptDraftToVisit,
 		activeAppointment,
@@ -1951,6 +1959,10 @@ export function App() {
 						onFlushVisit={() => void flushPendingVisitSaves({ silent: false })}
 						pendingSpeechChunkCount={pendingSpeechChunkCount}
 						pendingVisitSaveCount={pendingVisitSaveCount}
+						networkState={networkState}
+						pendingMutationCount={pendingMutationCount}
+						onSyncMutations={() => void syncOfflineMutations()}
+						isSyncingMutations={isSyncingMutations}
 					/>
 					{error ? (
 						<section className="app-notice" role="alert" aria-live="assertive">

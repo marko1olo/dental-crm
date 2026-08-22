@@ -709,7 +709,7 @@ export function EndoCanalLogModal({
 														}
 														className="w-full min-h-[44px] pl-3 pr-8 py-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white font-mono font-bold text-xs focus:ring-2 focus:ring-rose-500 outline-none"
 													/>
-													<span className="absolute right-2 text-[10px] text-rose-700 dark:text-rose-300 font-bold pointer-events-none">
+													<span className="absolute right-2.5 text-xs text-rose-700 dark:text-rose-300 font-bold pointer-events-none">
 														мм
 													</span>
 												</div>
@@ -809,7 +809,7 @@ export function EndoCanalLogModal({
 								type="text"
 								value={irrigation}
 								onChange={(e) => setIrrigation(e.target.value)}
-								className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs outline-none focus:ring-2 focus:ring-rose-500"
+								className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs outline-none focus:ring-2 focus:ring-rose-500"
 								placeholder="3% NaOCl + 17% EDTA с ультразвуковой активацией"
 							/>
 						</div>
@@ -826,7 +826,7 @@ export function EndoCanalLogModal({
 								type="text"
 								value={radiologyControl}
 								onChange={(e) => setRadiologyControl(e.target.value)}
-								className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs outline-none focus:ring-2 focus:ring-rose-500"
+								className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs outline-none focus:ring-2 focus:ring-rose-500"
 								placeholder="Контрольная визиография: каналы обтурированы до апекса."
 							/>
 						</div>
@@ -843,7 +843,7 @@ export function EndoCanalLogModal({
 							<button
 								type="button"
 								onClick={handleCopyText}
-								className="min-h-[36px] px-3 py-1 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer"
+								className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer"
 							>
 								{copied ? <Check size={14} className="text-emerald-500" /> : <Clipboard size={14} />}
 								<span>{copied ? "Скопировано!" : "Копировать текст"}</span>

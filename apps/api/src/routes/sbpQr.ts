@@ -180,7 +180,7 @@ function resolveTag1054(
 
 /** Helper to map FFD 1.2 Tag 1212 payment subject */
 function resolveTag1212(
-	subject: "commodity" | "job" | "service" | "payment",
+	subject: string,
 ): number {
 	switch (subject) {
 		case "commodity":
@@ -191,6 +191,20 @@ function resolveTag1212(
 			return 4;
 		case "payment":
 			return 10;
+		case "composite":
+			return 11;
+		case "other":
+			return 12;
+		case "excisable_goods_without_marking":
+			return 30;
+		case "excisable_goods_with_marking":
+			return 31;
+		case "goods_without_marking":
+			return 32;
+		case "goods_with_marking":
+			return 33;
+		default:
+			return 4;
 	}
 }
 
@@ -455,7 +469,7 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 			tag1214_paymentMethod: resolveTag1214(item.method),
 			tag1199_vatRate: resolveTag1199(item.vatRate),
 			tag2108_quantityMeasure: resolveTag2108(item.measure),
-			medicalServiceCodeMzk: item.medicalServiceCodeMzk || null,
+			medicalServiceCode804n: item.medicalServiceCode804n || null,
 		}));
 
 		const result = await db.transaction(async (tx) => {

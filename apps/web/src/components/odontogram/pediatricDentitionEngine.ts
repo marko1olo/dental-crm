@@ -35,6 +35,8 @@ import {
 	type CariogramSectorBreakdown,
 	calculateCariogramRisk,
 	cariogramInputSchema,
+	generatePediatricCariogramDiaryText,
+	type PediatricDiaryTextOptions,
 } from "@dental/shared";
 
 export {
@@ -63,6 +65,8 @@ export {
 	type CariogramSectorBreakdown,
 	calculateCariogramRisk,
 	cariogramInputSchema,
+	generatePediatricCariogramDiaryText,
+	type PediatricDiaryTextOptions,
 };
 
 export type DentitionMode = "adult" | "pediatric" | "mixed";

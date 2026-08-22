@@ -64,7 +64,6 @@ after(async () => {
 		);
 		await db.execute(sql`DELETE FROM clinical_tasks WHERE id IN (${idList})`);
 	}
-	await pool.end();
 });
 
 describe("ClinicalRouter — передача между клиническими этапами", () => {

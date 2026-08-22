@@ -13,7 +13,7 @@ import {
 	LAB_WORKFLOW_STAGES,
 	LAB_STAGE_ORDER,
 	ProstheticTypeId
-} from '../components/lab/orders/labWorkOrderPresets';
+} from '../components/lab/orders/labWorkOrderPresets.js';
 
 import {
 	calculateLabFinancials,
@@ -25,7 +25,7 @@ import {
 	generateFdiOdontogramSvg,
 	generatePrintableLabWorkOrderHtml,
 	createLabWorkOrder
-} from '../components/lab/orders/labWorkOrderEngine';
+} from '../components/lab/orders/labWorkOrderEngine.js';
 
 describe('Statutory Dental Laboratory Work Order & Tracking Studio Suite', () => {
 

@@ -274,7 +274,7 @@ html.light,
 	--surface-muted: #f0fdfa;
 	--ink: #134e4a;
 	--ink-2: #115e59;
-	--muted: #0d9488;
+	--muted: #0f766e;
 	--line: #99f6e4;
 	--line-strong: #5eead4;
 
@@ -613,7 +613,7 @@ html.light,
 /* ⚡ CYBER_XRAY THEME (Neon Cyberpunk CT) */
 :root[data-theme="cyber_xray"],
 [data-theme="cyber_xray"] {
-	color: #00f0ff;
+	color: #e0f2fe;
 	background: #030712;
 
 	--paper: #081026;
@@ -623,9 +623,9 @@ html.light,
 	--surface-muted: #030712;
 	--glass-panel: rgba(8, 16, 38, 0.92);
 	--glass-border: rgba(0, 240, 255, 0.35);
-	--ink: #e0f2fe;
-	--ink-2: #38bdf8;
-	--muted: #00f0ff;
+	--ink: #ffffff;
+	--ink-2: #e0f2fe;
+	--muted: #38bdf8;
 	--line: rgba(0, 240, 255, 0.25);
 	--line-strong: rgba(0, 240, 255, 0.5);
 
@@ -696,26 +696,26 @@ html.light,
 	--glass-border: #fde68a;
 	--ink: #451a03;
 	--ink-2: #78350f;
-	--muted: #b45309;
+	--muted: #92400e;
 	--line: #fde68a;
 	--line-strong: #f59e0b;
 
-	--teal: #d97706;
-	--teal-dark: #b45309;
+	--teal: #92400e;
+	--teal-dark: #78350f;
 	--teal-soft: #fef3c7;
-	--teal-glow: rgba(217, 119, 6, 0.2);
+	--teal-glow: rgba(146, 64, 14, 0.2);
 	--teal-surface: rgba(254, 243, 199, 0.6);
 
 	--rust: #dc2626;
 	--rust-soft: #fee2e2;
-	--amber: #d97706;
+	--amber: #92400e;
 	--amber-soft: #fef3c7;
 	--red: #dc2626;
 	--green: #15803d;
 
 	--ok-fg: #15803d;
 	--ok-bg: #dcfce7;
-	--warn-fg: #b45309;
+	--warn-fg: #92400e;
 	--warn-bg: #fef3c7;
 	--bad-fg: #dc2626;
 	--bad-bg: #fee2e2;

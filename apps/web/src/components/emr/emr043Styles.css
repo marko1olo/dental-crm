@@ -453,6 +453,140 @@
 .emr043-progress-fill.yellow { background: #f59e0b; }
 .emr043-progress-fill.red { background: #ef4444; }
 
+/* ── CMO EMR Quality Audit Integrations ── */
+.emr043-btn-approved {
+  background: #059669;
+  color: #ffffff;
+  border-color: #047857;
+}
+
+.emr043-btn-approved:hover {
+  background: #047857;
+}
+
+.emr043-cmo-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 9999px;
+}
+
+.emr043-cmo-pill.green {
+  background: rgba(16, 185, 129, 0.15);
+  color: #059669;
+  border: 1px solid #10b981;
+}
+
+.emr043-cmo-pill.yellow {
+  background: rgba(245, 158, 11, 0.15);
+  color: #d97706;
+  border: 1px solid #f59e0b;
+}
+
+.emr043-cmo-pill.red {
+  background: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+  border: 1px solid #ef4444;
+}
+
+.emr043-cmo-trigger-link {
+  background: none;
+  border: none;
+  color: #0284c7;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.emr043-cmo-trigger-link:hover {
+  background: rgba(2, 132, 199, 0.1);
+  text-decoration: underline;
+}
+
+.emr043-audit-status-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--paper-strong, #ffffff);
+  border: 1px solid var(--glass-border, #cbd5e1);
+  border-radius: 10px;
+  padding: 14px 20px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+[data-theme="dark"] .emr043-audit-status-banner,
+.dark .emr043-audit-status-banner {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+.emr043-audit-badge-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.emr043-audit-badge-icon.approved {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+[data-theme="dark"] .emr043-audit-badge-icon.approved,
+.dark .emr043-audit-badge-icon.approved {
+  background: #064e3b;
+  color: #34d399;
+}
+
+.emr043-audit-badge-icon.pending {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+[data-theme="dark"] .emr043-audit-badge-icon.pending,
+.dark .emr043-audit-badge-icon.pending {
+  background: #0c4a6e;
+  color: #38bdf8;
+}
+
+.emr043-status-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.emr043-status-badge.approved {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+.emr043-status-badge.rejected_with_remarks {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
+.emr043-status-badge.pending {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
 /* ── Dedicated Magazine-Grade @media print Rules ── */
 @media print {
   body * {

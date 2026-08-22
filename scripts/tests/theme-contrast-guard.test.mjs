@@ -80,8 +80,6 @@ const GUARDED_SELECTORS = [
 	".onboarding-compact-strip span",
 	".onboarding-compact-score",
 	".finance-due",
-	".handoff-lock",
-	".appointment-handoff-note",
 	".chip-reason",
 	".chip-doctor",
 	".chip-chair",
@@ -96,35 +94,9 @@ const GUARDED_SELECTORS = [
 /**
  * ИЗВЕСТНЫЙ ДОЛГ, ПЕРЕЧИСЛЕННЫЙ ПОИМЁННО. Базовый селектор (без плеча темы), у
  * которого есть поправка на «Ночь», нет поправки на «Тепло», а в самом базовом
- * правиле стоит светлый литерал. Список закрыт: правки серии из него ушли,
- * остальное — незакрытые места, а не разрешение писать новые.
+ * правиле стоит светлый литерал. Все 24 места переведены на токены палитры.
  */
-const KNOWN_DARK_WITHOUT_NIGHT = new Set([
-	"._ccm-btn",
-	"._ccm-btn:hover",
-	"._ccm-panel",
-	".clinic-legal-form",
-	".clinic-profile-form-grid input",
-	".clinic-profile-form-grid select",
-	".clinic-profile-form-grid textarea",
-	".clinical-rules-toggle",
-	".clinical-rules-toggle > summary",
-	".clinical-rules-toggle > summary:hover",
-	".communication-empty-state",
-	".compliance-bar",
-	".dictation-action-guidance",
-	".emk-tab-button.active",
-	".mode-readiness > div",
-	".mode-readiness span",
-	".onboarding-draft-strip",
-	".payment-capture-detail-section",
-	".schedule-filter-strip",
-	".schedule-shift-summary",
-	".schedule-shift-summary-grid article",
-	".status-empty",
-	".status-neutral",
-	".visit-draft-missing",
-]);
+const KNOWN_DARK_WITHOUT_NIGHT = new Set([]);
 
 const COLOR_PROPERTY =
 	/^(color|background|background-color|border|border-color|border-top-color|border-right-color|border-bottom-color|border-left-color|outline-color|fill|stroke)$/;
@@ -442,14 +414,9 @@ test("--teal-glow с двумя типами: теневое использов�
 
 	assert.equal(
 		shadowTyped.length,
-		1,
-		"--teal-glow объявлен цветом в main.css/dente-redesign.css и готовой тенью в premium.css; побеждает цвет, " +
-			`поэтому каждое теневое использование недействительно и тень пропадает целиком:\n${shadowTyped.join("\n")}`,
-	);
-	assert.match(
-		shadowTyped[0],
-		/^premium\.css:/,
-		"известное теневое использование одно, в premium.css",
+		0,
+		"--teal-glow объявлен цветом, поэтому теневых использований без явных смещений быть не должно:\n" +
+			shadowTyped.join("\n"),
 	);
 	assert.ok(
 		colorTyped.length > 0,

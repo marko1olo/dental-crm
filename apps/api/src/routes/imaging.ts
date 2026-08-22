@@ -145,6 +145,7 @@ import { withTenantCtx } from "../db/rls.js";
 import { getVisitByIdInDb } from "../db/visitsQuery.js";
 import { browserRenderableImageMimeType } from "../imaging/previewFormats.js";
 import { requireOrganizationId } from "../security/identity.js";
+import { LocalPacsStorageService } from "../services/imaging/localPacsStorageService.js";
 
 const kindLabels = {
 	periapical: "Прицельный",
@@ -9551,6 +9552,155 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 			return reply.send(createReadStream(resolved));
 		},
 	);
+
+	/**
+	 * POST /api/imaging/local-offline/register
+	 * Registers a radiograph / CBCT scan stored locally on the clinic computer.
+	 * Returns local_offline_available: true and canStartConsultationImmediately: true.
+	 */
+	app.post("/api/imaging/local-offline/register", async (request: FastifyRequest, reply: FastifyReply) => {
+		if (!(await requireClinicalMutationAccess(request, reply, "register local radiology scan"))) {
+			return;
+		}
+		const organizationId = requireOrganizationId(request, reply);
+		if (!organizationId) return;
+
+		const schema = createImagingStudySchema.extend({
+			localFilePath: createImagingStudySchema.shape.title.min(1, "Путь к локальному файлу снимка обязателен"),
+			fileSizeBytes: createImagingStudySchema.shape.title.optional(),
+			dicomStudyUid: createImagingStudySchema.shape.toothCode.optional(),
+			dicomSeriesUid: createImagingStudySchema.shape.toothCode.optional(),
+			dicomSopInstanceUid: createImagingStudySchema.shape.toothCode.optional(),
+			localThumbnailDataUri: createImagingStudySchema.shape.toothCode.optional(),
+		});
+
+		const body = request.body as Record<string, unknown>;
+		const patientId = typeof body.patientId === "string" ? body.patientId : "";
+		const kind = (typeof body.kind === "string" ? body.kind : "cbct") as ImagingStudyKind;
+		const title = typeof body.title === "string" ? body.title : `Снимок ${kind.toUpperCase()}`;
+		const localFilePath = typeof body.localFilePath === "string" ? body.localFilePath : typeof body.storagePath === "string" ? body.storagePath : "";
+		const visitId = typeof body.visitId === "string" ? body.visitId : undefined;
+		const toothCode = typeof body.toothCode === "string" ? body.toothCode : undefined;
+		const region = typeof body.region === "string" ? body.region : undefined;
+		const fileSizeBytes = typeof body.fileSizeBytes === "number" ? body.fileSizeBytes : undefined;
+		const dicomStudyUid = typeof body.dicomStudyUid === "string" ? body.dicomStudyUid : undefined;
+		const dicomSeriesUid = typeof body.dicomSeriesUid === "string" ? body.dicomSeriesUid : undefined;
+		const dicomSopInstanceUid = typeof body.dicomSopInstanceUid === "string" ? body.dicomSopInstanceUid : undefined;
+		const localThumbnailDataUri = typeof body.localThumbnailDataUri === "string" ? body.localThumbnailDataUri : undefined;
+
+		if (!patientId || !localFilePath) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Необходимо указать patientId и localFilePath",
+			});
+		}
+
+		const result = await withTenantCtx(organizationId, async () => {
+			return await LocalPacsStorageService.registerLocalRadiologyScan({
+				organizationId,
+				patientId,
+				visitId,
+				kind,
+				title,
+				toothCode,
+				region,
+				localFilePath,
+				fileSizeBytes,
+				dicomStudyUid,
+				dicomSeriesUid,
+				dicomSopInstanceUid,
+				localThumbnailDataUri,
+			});
+		});
+
+		return reply.status(201).send({
+			success: true,
+			...result,
+		});
+	});
+
+	/**
+	 * GET /api/imaging/local-offline/studies/:studyId
+	 * Retrieves local radiology study state for doctor consultation.
+	 */
+	app.get<{ Params: { studyId: string } }>(
+		"/api/imaging/local-offline/studies/:studyId",
+		async (request, reply) => {
+			if (!(await requireClinicalReadAccess(request, reply, "get local radiology study"))) {
+				return;
+			}
+			const organizationId = requireOrganizationId(request, reply);
+			if (!organizationId) return;
+
+			const { studyId } = request.params;
+			const study = await withTenantCtx(organizationId, async () => {
+				return await LocalPacsStorageService.getLocalStudyForConsultation(organizationId, studyId);
+			});
+
+			if (!study) {
+				return reply.status(404).send({
+					error: "ImagingStudyNotFound",
+					message: "Локальный снимок не найден в базе данных клиники",
+				});
+			}
+
+			return reply.status(200).send({
+				success: true,
+				study,
+			});
+		},
+	);
+
+	/**
+	 * POST /api/imaging/local-offline/sync-queue
+	 * Queues background asynchronous cloud sync for large CBCT scans without blocking consultation.
+	 */
+	app.post("/api/imaging/local-offline/sync-queue", async (request: FastifyRequest, reply: FastifyReply) => {
+		if (!(await requireClinicalMutationAccess(request, reply, "queue local study sync"))) {
+			return;
+		}
+		const organizationId = requireOrganizationId(request, reply);
+		if (!organizationId) return;
+
+		const body = request.body as Record<string, unknown> | undefined;
+		const studyId = typeof body?.studyId === "string" ? body.studyId : "";
+
+		if (!studyId) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Необходимо указать studyId",
+			});
+		}
+
+		const result = await withTenantCtx(organizationId, async () => {
+			return await LocalPacsStorageService.queueCloudSync(studyId, organizationId);
+		});
+
+		return reply.status(200).send(result);
+	});
+
+	/**
+	 * GET /api/imaging/local-offline/sync-status
+	 * Returns queue of local studies and their cloud sync status.
+	 */
+	app.get("/api/imaging/local-offline/sync-status", async (request: FastifyRequest, reply: FastifyReply) => {
+		if (!(await requireClinicalReadAccess(request, reply, "get local sync status"))) {
+			return;
+		}
+		const organizationId = requireOrganizationId(request, reply);
+		if (!organizationId) return;
+
+		const pending = await withTenantCtx(organizationId, async () => {
+			return await LocalPacsStorageService.listPendingSyncs(organizationId);
+		});
+
+		return reply.status(200).send({
+			success: true,
+			organizationId,
+			items: pending,
+			total: pending.length,
+		});
+	});
 }
 
 export async function commitImagingImport(

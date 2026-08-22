@@ -60,6 +60,7 @@ import { actionFailureToast } from "../../lib/panelStateText";
 import { postVisitCarePresets } from "../../postVisitCareData";
 import { normalizeRubAmountInput } from "../../rubAmountInput";
 import { useDocumentStore } from "../../store/documentStore";
+import { type DocumentPackageId } from "../../utils/documentPackages";
 import {
 	clinicalToothStatusValue,
 	clinicalToothSurfacesValue,
@@ -4103,8 +4104,21 @@ export function useDocumentWorkflowModule({
 		(documentPatient as any)?.administrativeProfile?.insuranceContractId ||
 		"";
 
+	function applyQuickDocumentPackage(packageId: DocumentPackageId) {
+		const patientNameStr =
+			dashboard && documentPatient
+				? patientName(dashboard.patients, documentPatient.id)
+				: "";
+		documentState.applyDocumentPackage(packageId, {
+			doctorFullName: activeDoctor?.fullName || "",
+			patientFullName: patientNameStr,
+			taxYear: documentState.taxDocumentYear,
+		});
+	}
+
 	return {
 		...documentState,
+		applyQuickDocumentPackage,
 		requestDocumentIssue,
 		confirmDocumentIssue,
 		requestDocumentVoid,

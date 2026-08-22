@@ -280,8 +280,6 @@ after(async () => {
 				await app?.close();
 			} finally {
 				process.env = originalEnv;
-				// Пул закрывается последним: он ждёт возврата всех выданных клиентов.
-				await pool.end();
 			}
 		}
 	}

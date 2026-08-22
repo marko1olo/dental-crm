@@ -236,15 +236,7 @@ after(async () => {
 		await purgeFixtureOrganizations([ORG_OWN, ORG_OTHER]);
 		resetSpeechTranscriptionCacheForRestart();
 	} finally {
-		// Сначала блокировка, потом пул: pool.end() ждёт возврата всех выданных
-		// клиентов и на удержанном соединении блокировки не завершился бы. Вложенный
-		// finally по той же причине: сорвавшееся снятие блокировки не должно оставить
-		// пул открытым — процесс с живым сокетом до базы не выходит.
-		try {
-			await durableLock?.release();
-		} finally {
-			await pool.end();
-		}
+		await durableLock?.release();
 	}
 });
 

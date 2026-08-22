@@ -32,6 +32,13 @@ import type {
 	PaymentRefundCorrectionMethod,
 } from "../AppConstants";
 import { postVisitCarePresets } from "../postVisitCareData";
+import {
+	DOCUMENT_PACKAGES,
+	type DocumentPackageDefinition,
+	type DocumentPackageId,
+	type DocumentPackagePresetOptions,
+	buildDocumentPackageStatePatch,
+} from "../utils/documentPackages";
 /*
  * dateInputValuePlusDays отсюда убран вместе со сроком оплаты счёта и графиком
  * рассрочки: в значении поля он считался при загрузке модуля и подсовывал в
@@ -165,6 +172,18 @@ export interface DocumentState {
 	refusalUrgentWarningSigns: string;
 	documentIngestionTarget: DocumentIngestionTarget;
 	documentIngestion: DocumentIngestionResponse | null;
+	activeDocumentPackage: DocumentPackageId | null;
+	setActiveDocumentPackage: (
+		val:
+			| DocumentPackageId
+			| null
+			| ((prev: DocumentPackageId | null) => DocumentPackageId | null),
+	) => void;
+	applyDocumentPackage: (
+		packageId: DocumentPackageId,
+		options?: DocumentPackagePresetOptions,
+	) => void;
+	documentPackages: Record<DocumentPackageId, DocumentPackageDefinition>;
 	setPaymentAmount: (val: string | ((prev: string) => string)) => void;
 	setPaymentMethod: (
 		val: PaymentMethod | ((prev: PaymentMethod) => PaymentMethod),
@@ -1849,6 +1868,19 @@ const createDocumentSlice = (set: any) => ({
 	setDocumentIngestionTarget: createSetter(set, "documentIngestionTarget"),
 	documentIngestion: null,
 	setDocumentIngestion: createSetter(set, "documentIngestion"),
+	activeDocumentPackage: null as DocumentPackageId | null,
+	setActiveDocumentPackage: createSetter(set, "activeDocumentPackage"),
+	applyDocumentPackage: (
+		packageId: DocumentPackageId,
+		options?: DocumentPackagePresetOptions,
+	) => {
+		const patch = buildDocumentPackageStatePatch(packageId, options);
+		set({
+			activeDocumentPackage: packageId,
+			...patch,
+		});
+	},
+	documentPackages: DOCUMENT_PACKAGES,
 });
 
 // biome-ignore lint/suspicious/noExplicitAny: automated suppression

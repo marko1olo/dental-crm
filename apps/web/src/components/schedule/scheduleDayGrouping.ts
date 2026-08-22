@@ -55,7 +55,13 @@ export const MIN_VISIBLE_GAP_MINUTES = 10;
 export type ScheduleDayRow =
 	| { kind: "appointment"; appointment: DayGroupingAppointment }
 	/** Свободное окно между двумя приёмами: столько-то минут никем не занято. */
-	| { kind: "gap"; minutes: number; afterAppointmentId: string }
+	| {
+			kind: "gap";
+			minutes: number;
+			afterAppointmentId: string;
+			startsAt?: string;
+			endsAt?: string;
+	  }
 	/**
 	 * Наложение: два приёма делят время и при этом делят врача или кресло. Разные
 	 * врачи в разных креслах в одно время — это нормальная параллельная работа, а
@@ -200,6 +206,8 @@ export function groupAppointmentsByClinicDay(
 							kind: "gap",
 							minutes: gapMinutes,
 							afterAppointmentId: previous?.id ?? "",
+							startsAt: new Date(occupiedUntilMs).toISOString(),
+							endsAt: new Date(startMs).toISOString(),
 						});
 						freeGapMinutes += gapMinutes;
 					}

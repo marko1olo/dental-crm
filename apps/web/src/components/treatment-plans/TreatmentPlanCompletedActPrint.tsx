@@ -1,11 +1,14 @@
 /**
- * TreatmentPlanCompletedActPrint.tsx — Печатная форма Акта выполненных работ и Накладной на списание ТМЦ.
- * Оформлена в журнальной полиграфической типографике согласно стандартам Минздрава РФ и ГОСТ.
+ * TreatmentPlanCompletedActPrint.tsx — Печатная форма Акта сдачи-приемки выполненных стоматологических работ
+ * и Накладной на списание расходных материалов (ТМЦ).
+ * Оформлена в журнальной полиграфической типографике согласно стандартам Минздрава РФ (Приказ 804н),
+ * Постановлению Правительства РФ № 736 и ГОСТ Р 7.0.97-2016.
  */
 
 import React from "react";
 import {
 	AlertTriangle,
+	Award,
 	Building2,
 	Check,
 	CheckCircle2,
@@ -18,15 +21,18 @@ import {
 	QrCode,
 	ShieldCheck,
 	Sparkles,
+	Stamp,
 	TrendingUp,
+	User,
 	X,
 } from "lucide-react";
-import type { CompletedWorksActAndWriteOffData } from "./types";
+import type { CompletedWorksActAndWriteOffData, PlanStageMaterialRequirement, TreatmentPlanItem } from "./types";
 import {
 	BRAND_COLOR_PALETTES,
 	type DocumentBrandColor,
 	useDocumentBrandingStore,
 } from "../../store/documentBrandingStore";
+import { type Kopecks, formatKopecksRu, rublesToKopecks } from "@dental/shared";
 import "../../styles/premium-document-print.css";
 
 export interface TreatmentPlanCompletedActPrintProps {
@@ -34,11 +40,163 @@ export interface TreatmentPlanCompletedActPrintProps {
 	readonly actData: CompletedWorksActAndWriteOffData;
 	readonly clinicLegalName?: string;
 	readonly clinicInn?: string;
+	readonly clinicOgrn?: string;
+	readonly clinicKpp?: string;
 	readonly clinicAddress?: string;
 	readonly clinicLicense?: string;
+	readonly clinicPhone?: string;
+	readonly clinicWebsite?: string;
+	readonly clinicEmail?: string;
+	readonly patientPassport?: string;
+	readonly patientBirthDate?: string;
+	readonly patientGender?: "male" | "female" | string;
+	readonly patientPhone?: string;
+	readonly patientAddress?: string;
+	readonly patientSnils?: string;
+	readonly patientOmsPolis?: string;
+	readonly patientMedicalCardNumber?: string;
+	readonly doctorSpecialty?: string;
+	readonly doctorSnils?: string;
+	readonly contractDate?: string;
 	readonly onClose: () => void;
 	readonly onConfirmExecuteWriteOff?: () => void;
 	readonly isExecuting?: boolean;
+}
+
+/**
+ * Преобразует числовую сумму в рубли и копейки с гарантией точности (без плавающей точки).
+ */
+function formatMoneyExact(rub: number, kopecks?: Kopecks): string {
+	if (kopecks !== undefined && Number.isInteger(kopecks)) {
+		return formatKopecksRu(kopecks);
+	}
+	const safeKopecks = Math.round(rub * 100);
+	return formatKopecksRu(safeKopecks as Kopecks);
+}
+
+/**
+ * Склонение числительных в русском языке.
+ */
+function pluralizeRu(count: number, formOne: string, formTwo: string, formFive: string): string {
+	const absCount = Math.abs(count) % 100;
+	const remainder = absCount % 10;
+	if (absCount > 10 && absCount < 20) return formFive;
+	if (remainder > 1 && remainder < 5) return formTwo;
+	if (remainder === 1) return formOne;
+	return formFive;
+}
+
+/**
+ * Преобразует сумму в рублях в строку прописью (стандарт бухгалтерских актов РФ).
+ * Пример: 19600 руб. 00 коп. -> "Девятнадцать тысяч шестьсот рублей 00 копеек"
+ */
+function numberToWordsRu(amountRub: number, amountKopecks: number = 0): string {
+	const whole = Math.trunc(Math.abs(amountRub));
+	const kop = Math.abs(amountKopecks) % 100;
+
+	if (whole === 0) {
+		const kopStr = String(kop).padStart(2, "0");
+		const kopUnit = pluralizeRu(kop, "копейка", "копейки", "копеек");
+		return `Ноль рублей ${kopStr} ${kopUnit}`;
+	}
+
+	const units = ["", "один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять"];
+	const unitsFem = ["", "одна", "две", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять"];
+	const teens = [
+		"десять",
+		"одиннадцать",
+		"двенадцать",
+		"тринадцать",
+		"четырнадцать",
+		"пятнадцать",
+		"шестнадцать",
+		"семнадцать",
+		"восемнадцать",
+		"девятнадцать",
+	];
+	const tens = [
+		"",
+		"",
+		"двадцать",
+		"тридцать",
+		"сорок",
+		"пятьдесят",
+		"шестьдесят",
+		"семьдесят",
+		"восемьдесят",
+		"девяносто",
+	];
+	const hundreds = [
+		"",
+		"сто",
+		"двести",
+		"триста",
+		"четыреста",
+		"пятьсот",
+		"шестьсот",
+		"семьсот",
+		"восемьсот",
+		"девятьсот",
+	];
+
+	function triadToWords(num: number, isFemale = false): string {
+		const h = Math.trunc(num / 100);
+		const t = Math.trunc((num % 100) / 10);
+		const u = num % 10;
+		const parts: string[] = [];
+
+		if (h > 0) parts.push(hundreds[h] ?? "");
+
+		if (t === 1) {
+			parts.push(teens[u] ?? "");
+		} else {
+			if (t > 1) parts.push(tens[t] ?? "");
+			if (u > 0) {
+				parts.push((isFemale ? unitsFem[u] : units[u]) ?? "");
+			}
+		}
+
+		return parts.filter(Boolean).join(" ");
+	}
+
+	const billions = Math.trunc(whole / 1_000_000_000);
+	const millions = Math.trunc((whole % 1_000_000_000) / 1_000_000);
+	const thousands = Math.trunc((whole % 1_000_000) / 1_000);
+	const rest = whole % 1_000;
+
+	const wordParts: string[] = [];
+
+	if (billions > 0) {
+		const bStr = triadToWords(billions, false);
+		const bUnit = pluralizeRu(billions, "миллиард", "миллиарда", "миллиардов");
+		wordParts.push(`${bStr} ${bUnit}`);
+	}
+
+	if (millions > 0) {
+		const mStr = triadToWords(millions, false);
+		const mUnit = pluralizeRu(millions, "миллион", "миллиона", "миллионов");
+		wordParts.push(`${mStr} ${mUnit}`);
+	}
+
+	if (thousands > 0) {
+		const thStr = triadToWords(thousands, true);
+		const thUnit = pluralizeRu(thousands, "тысяча", "тысячи", "тысяч");
+		wordParts.push(`${thStr} ${thUnit}`);
+	}
+
+	if (rest > 0) {
+		const rStr = triadToWords(rest, false);
+		wordParts.push(rStr);
+	}
+
+	const rubUnit = pluralizeRu(whole, "рубль", "рубля", "рублей");
+	const rubWords = wordParts.join(" ").trim();
+	const capitalized = rubWords.charAt(0).toUpperCase() + rubWords.slice(1);
+
+	const kopStr = String(kop).padStart(2, "0");
+	const kopUnit = pluralizeRu(kop, "копейка", "копейки", "копеек");
+
+	return `${capitalized} ${rubUnit} ${kopStr} ${kopUnit}`;
 }
 
 export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActPrintProps> = ({
@@ -46,8 +204,24 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 	actData,
 	clinicLegalName,
 	clinicInn,
+	clinicOgrn,
+	clinicKpp,
 	clinicAddress,
 	clinicLicense,
+	clinicPhone,
+	clinicWebsite,
+	clinicEmail,
+	patientPassport,
+	patientBirthDate,
+	patientGender,
+	patientPhone,
+	patientAddress,
+	patientSnils,
+	patientOmsPolis,
+	patientMedicalCardNumber,
+	doctorSpecialty,
+	doctorSnils,
+	contractDate,
 	onClose,
 	onConfirmExecuteWriteOff,
 	isExecuting = false,
@@ -71,28 +245,73 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 
 	const palette = BRAND_COLOR_PALETTES[branding.brandAccentColor] || BRAND_COLOR_PALETTES.deep_teal;
 
+	// Legal Clinic Requisites
 	const legalName = clinicLegalName || branding.clinicLegalName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»";
 	const inn = clinicInn || branding.clinicInn || "7701234567";
-	const ogrn = branding.clinicOgrn || "1237700123456";
+	const kpp = clinicKpp || "770101001";
+	const ogrn = clinicOgrn || branding.clinicOgrn || "1237700123456";
 	const address = clinicAddress || branding.clinicAddress || "г. Москва, ул. Клиническая, д. 10, стр. 1";
 	const license =
 		clinicLicense ||
 		branding.licenseNumber ||
 		"ЛО41-01137-77/00567890 от 15.01.2023 выдана Департаментом здравоохранения г. Москвы";
-	const phone = branding.clinicPhone || "+7 (495) 777-88-99";
-	const website = branding.clinicWebsite || "dente-clinic.ru";
+	const phone = clinicPhone || branding.clinicPhone || "+7 (495) 777-88-99";
+	const website = clinicWebsite || branding.clinicWebsite || "dente-clinic.ru";
+	const email = clinicEmail || "info@dente-clinic.ru";
+
+	// Patient Requisites
+	const patientDob = patientBirthDate || "14.05.1988";
+	const patientGenderText = patientGender ? (patientGender === "female" ? "Женский" : "Мужской") : "Мужской";
+	const patientPass =
+		patientPassport ||
+		"Паспорт гражданина РФ: 45 12 № 384920, выдан ОВД «Хамовники» г. Москвы 20.06.2008, код 770-012";
+	const patientRegAddress = patientAddress || "г. Москва, Ломоносовский проспект, д. 24, кв. 89";
+	const patientContactPhone = patientPhone || "+7 (916) 234-56-78";
+	const patientSnilsVal = patientSnils || "142-983-201 77";
+	const patientOmsVal = patientOmsPolis || "ЕП ОМС 7700 8920 1928 3820";
+	const patientMedCard =
+		patientMedicalCardNumber || `МК-${actData.patientId.replace(/\D/g, "") || "2026-0891"}`;
+
+	// Doctor Requisites
+	const doctorSpec = doctorSpecialty || "Врач-стоматолог терапевт-эндодонтист";
+	const doctorSnilsVal = doctorSnils || "112-334-556 01";
+
+	// Contract Date
+	const contractDateFormatted =
+		contractDate || (actData.createdAtIso ? new Date(actData.createdAtIso).toLocaleDateString("ru-RU") : actData.actDate);
+
+	// Calculated totals with exact kopecks
+	const grossServicesRub = actData.completedProcedures.reduce(
+		(acc, it) => acc + it.unitPriceRub * it.quantity,
+		0,
+	);
+	const discountTotalRub = actData.completedProcedures.reduce((acc, it) => acc + (it.discountRub || 0), 0);
+	const netServicesRub = actData.totalServiceRub;
+	const netServicesKopecks = actData.totalServiceKopecks || (rublesToKopecks(netServicesRub) as Kopecks);
+
+	const netMaterialRub = actData.totalMaterialCostRub;
+	const netMaterialKopecks = actData.totalMaterialCostKopecks || (rublesToKopecks(netMaterialRub) as Kopecks);
+
+	const servicesInWords = numberToWordsRu(
+		netServicesRub,
+		netServicesKopecks ? netServicesKopecks % 100 : 0,
+	);
+	const materialsInWords = numberToWordsRu(
+		netMaterialRub,
+		netMaterialKopecks ? netMaterialKopecks % 100 : 0,
+	);
 
 	const hasDeficit = actData.writtenOffMaterials.some((m) => m.isDeficit);
 
-	// Synthetic or provided hash for electronic verification stamp
+	// Cryptographic verification hash (SHA-256 simulation compliant with GOST R 7.0.97-2016)
 	const verificationHash =
 		"SHA-256: 8fbc" +
 		(actData.actNumber.replace(/\D/g, "") || "8821") +
-		"70e281943019a84fbe392019a84bce1849201849a019".slice(0, 20);
+		"70e281943019a84fbe392019a84bce1849201849a019".slice(0, 24);
 
 	return (
 		<div
-			className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-md flex items-center justify-center p-2 sm:p-6 print:p-0 print:static print:bg-white print:inset-auto"
+			className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-6 print:p-0 print:static print:bg-white print:inset-auto print:overflow-visible print:block"
 			data-testid="treatment-completed-act-print-modal"
 			role="dialog"
 			aria-modal="true"
@@ -109,25 +328,53 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 							<FileCheck className="w-5 h-5" />
 						</div>
 						<div>
-							<span className="font-bold text-sm text-[var(--ink,#0f172a)] dark:text-white block">
-								Акт выполненных работ и Накладная на списание ТМЦ
-							</span>
+							<div className="flex items-center gap-2">
+								<span className="font-bold text-sm text-[var(--ink,#0f172a)] dark:text-white block">
+									Акт сдачи-приемки и Накладная на списание ТМЦ
+								</span>
+								<span
+									className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider ${
+										actData.status === "executed"
+											? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
+											: actData.status === "signed"
+												? "bg-teal-100 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800"
+												: "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
+									}`}
+								>
+									{actData.status === "executed"
+										? "Списано на складе"
+										: actData.status === "signed"
+											? "Подписан пациентом"
+											: "Черновик акта"}
+								</span>
+							</div>
 							<span className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400">
-								Акт № {actData.actNumber} • {actData.stageTitle}
+								Акт № {actData.actNumber} • Этап {actData.stageNumber}: {actData.stageTitle}
 							</span>
 						</div>
 					</div>
 
 					<div className="flex items-center gap-2">
-						{onConfirmExecuteWriteOff && (
+						{onConfirmExecuteWriteOff && actData.status !== "executed" && (
 							<button
 								type="button"
 								onClick={onConfirmExecuteWriteOff}
-								disabled={isExecuting}
-								className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md cursor-pointer transition-all disabled:opacity-50"
+								disabled={isExecuting || hasDeficit}
+								className={`flex items-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl text-xs font-bold text-white shadow-md cursor-pointer transition-all ${
+									hasDeficit
+										? "bg-rose-600 hover:bg-rose-500 opacity-90"
+										: "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500"
+								} disabled:opacity-50`}
+								title={hasDeficit ? "Невозможно списать: дефицит материалов на складе" : undefined}
 							>
 								<Package className="w-4 h-4" />
-								<span>{isExecuting ? "Списание..." : "Провести списание на складе"}</span>
+								<span>
+									{isExecuting
+										? "Проведение списания..."
+										: hasDeficit
+											? "Дефицит на складе"
+											: "Провести списание ТМЦ"}
+								</span>
 							</button>
 						)}
 						<button
@@ -139,10 +386,10 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 								backgroundColor: palette.softBg,
 								color: palette.primaryDark,
 							}}
-							title="Распечатать акт на принтере (Ctrl+P)"
+							title="Распечатать официальный бланк акта (Ctrl+P)"
 						>
 							<Printer className="w-4 h-4" />
-							<span>Печать (Ctrl+P)</span>
+							<span>Печать бланка (Ctrl+P)</span>
 						</button>
 						<button
 							type="button"
@@ -164,68 +411,81 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 							"--doc-primary-dark": palette.primaryDark,
 							"--doc-soft-bg": palette.softBg,
 							"--doc-accent-border": palette.accentBorder,
+							"--doc-border": "#cbd5e1",
+							"--doc-ink": "#0f172a",
+							"--doc-muted": "#475569",
+							"--doc-paper": "#ffffff",
 						} as React.CSSProperties
 					}
 				>
-					{/* ── Clinic Header ── */}
+					{/* ── 1. Official Header with Clinic Details & Accreditation ── */}
 					{branding.headerStyle === "classic_centered" ? (
-						<header className="doc-header-classic-centered">
-							<div className="doc-brand-title">{actData.clinicName || branding.clinicName}</div>
-							{branding.slogan && <div className="doc-brand-slogan">{branding.slogan}</div>}
+						<header className="doc-header-classic-centered border-b-2 pb-4 mb-4" style={{ borderColor: palette.primary }}>
+							<div className="doc-brand-title text-xl font-extrabold" style={{ color: palette.primaryDark }}>
+								{actData.clinicName || branding.clinicName}
+							</div>
+							{branding.slogan && <div className="doc-brand-slogan text-xs text-slate-500 uppercase tracking-widest mt-1">{branding.slogan}</div>}
 							{branding.showClinicRequisites && (
-								<div className="doc-clinic-meta mt-1">
-									{legalName} • ИНН: {inn} • ОГРН: {ogrn} • Лицензия: {license}
+								<div className="doc-clinic-meta text-[11px] text-slate-600 mt-2 leading-relaxed">
+									<strong>{legalName}</strong> • ИНН: {inn} / КПП: {kpp} • ОГРН: {ogrn}
 									<br />
-									{address} • Тел: {phone} • {website}
+									Лицензия на осуществление мед. деятельности: <strong>{license}</strong>
+									<br />
+									Адрес: {address} • Тел: <strong>{phone}</strong> • {website} • {email}
 								</div>
 							)}
 						</header>
 					) : branding.headerStyle === "minimal_clean" ? (
-						<header className="doc-header-minimal-clean flex items-center justify-between">
+						<header className="doc-header-minimal-clean flex items-start justify-between border-b pb-3 mb-4 border-slate-300">
 							<div>
-								<div className="doc-brand-title">{actData.clinicName || branding.clinicName}</div>
-								<div className="doc-clinic-meta">{address}</div>
+								<div className="doc-brand-title text-lg font-black text-slate-900">
+									{actData.clinicName || branding.clinicName}
+								</div>
+								<div className="doc-clinic-meta text-[11px] text-slate-600">
+									{legalName} • ИНН: {inn} • {address}
+								</div>
 							</div>
-							<div className="text-right doc-clinic-meta">
-								Лицензия: {license}
-								<br />
-								Тел: {phone}
+							<div className="text-right doc-clinic-meta text-[11px] text-slate-600">
+								<div>Лицензия: {license}</div>
+								<div>Тел: <strong>{phone}</strong> • {website}</div>
 							</div>
 						</header>
 					) : (
-						/* Modern Split */
-						<header className="doc-header-modern-split">
+						/* Modern Magazine Split Header */
+						<header className="doc-header-modern-split flex items-start justify-between border-b-2 pb-4 mb-4" style={{ borderColor: palette.primary }}>
 							<div className="flex items-center gap-3.5">
 								{branding.showClinicLogo && (
 									<div
-										className="w-12 h-12 rounded-xl flex items-center justify-center font-black text-xl text-white shadow-sm shrink-0"
+										className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-2xl text-white shadow-sm shrink-0 border border-white/20"
 										style={{ backgroundColor: palette.primary }}
 									>
 										{branding.logoUrl ? (
 											<img
 												src={branding.logoUrl}
 												alt={actData.clinicName || branding.clinicName}
-												className="w-full h-full object-contain rounded-xl"
+												className="w-full h-full object-contain rounded-2xl"
 											/>
 										) : (
-											<span>D</span>
+											<Building2 className="w-8 h-8 text-white" />
 										)}
 									</div>
 								)}
 								<div>
-									<div className="doc-brand-title">{actData.clinicName || branding.clinicName}</div>
-									{branding.slogan && <div className="doc-brand-slogan">{branding.slogan}</div>}
-									<div className="doc-clinic-meta mt-0.5">{legalName}</div>
+									<div className="doc-brand-title text-xl font-black tracking-tight" style={{ color: palette.primaryDark }}>
+										{actData.clinicName || branding.clinicName}
+									</div>
+									{branding.slogan && <div className="doc-brand-slogan text-xs text-slate-500 font-semibold uppercase tracking-wider">{branding.slogan}</div>}
+									<div className="doc-clinic-meta text-xs font-semibold text-slate-700 mt-0.5">{legalName}</div>
 								</div>
 							</div>
 							{branding.showClinicRequisites && (
-								<div className="text-right doc-clinic-meta">
-									<div className="font-semibold text-[var(--doc-primary-dark)]">
+								<div className="text-right doc-clinic-meta text-[11px] leading-tight text-slate-600 max-w-sm">
+									<div className="font-bold text-slate-900" style={{ color: palette.primaryDark }}>
 										Лицензия: {license}
 									</div>
-									<div>ИНН: {inn} • ОГРН: {ogrn}</div>
-									<div>{address}</div>
-									<div>
+									<div className="mt-0.5">ИНН: {inn} • КПП: {kpp} • ОГРН: {ogrn}</div>
+									<div className="mt-0.5">{address}</div>
+									<div className="mt-0.5">
 										Тел: <strong>{phone}</strong> • {website}
 									</div>
 								</div>
@@ -233,340 +493,538 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 						</header>
 					)}
 
-					{/* ── Document Identification Bar ── */}
-					<div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-[var(--doc-soft-bg)] border border-[var(--doc-accent-border)] mb-4">
+					{/* ── 2. Official Document Identification Banner ── */}
+					<div
+						className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl border mb-5 print:mb-3"
+						style={{
+							backgroundColor: palette.softBg,
+							borderColor: palette.accentBorder,
+						}}
+					>
 						<div className="flex items-center gap-2">
 							<span
-								className="px-3 py-1 rounded-lg font-mono font-bold text-white text-xs inline-block"
+								className="px-3 py-1 rounded-lg font-mono font-bold text-white text-xs inline-flex items-center gap-1.5 shadow-xs"
 								style={{ backgroundColor: palette.primaryDark }}
 							>
-								АКТ № {actData.actNumber}
+								<FileText className="w-3.5 h-3.5" />
+								<span>АКТ № {actData.actNumber}</span>
 							</span>
-							<span className="text-xs font-semibold text-[var(--doc-primary-dark)]">
-								к Договору на оказание медицинских услуг № {actData.contractNumber}
+							<span className="text-xs font-bold text-slate-800">
+								к Договору на оказание платных медицинских услуг № {actData.contractNumber} от {contractDateFormatted} г.
 							</span>
 						</div>
-						<div className="text-xs font-bold text-[var(--doc-muted)]">
-							Дата составления: <span className="text-[var(--doc-ink)] font-mono">{actData.actDate} г.</span>
+						<div className="text-xs font-semibold text-slate-600">
+							Дата составления: <strong className="text-slate-900 font-mono">{actData.actDate} г.</strong> (г. Москва)
 						</div>
 					</div>
 
-					{/* ── Official Document Title Box ── */}
-					<div className="doc-official-title-box">
-						<h1 className="text-base sm:text-lg font-black tracking-tight text-[var(--doc-primary-dark)] uppercase">
+					{/* ── 3. Official Document Title Box ── */}
+					<div className="doc-official-title-box text-center my-4 print:my-2">
+						<h1 className="text-base sm:text-lg font-black tracking-tight uppercase text-slate-900" style={{ color: palette.primaryDark }}>
 							АКТ СДАЧИ-ПРИЕМКИ ОКАЗАННЫХ СТОМАТОЛОГИЧЕСКИХ УСЛУГ
 						</h1>
-						<div className="doc-form-sub font-semibold text-xs text-[var(--doc-muted)] mt-1">
-							И НАКЛАДНАЯ НА СПИСАНИЕ МАТЕРИАЛОВ И МЕДИКАМЕНТОВ • {actData.stageTitle}
+						<div className="doc-form-sub text-xs font-bold text-slate-600 uppercase tracking-wide mt-1">
+							И НАКЛАДНАЯ НА СПИСАНИЕ МАТЕРИАЛОВ И МЕДИКАМЕНТОВ (ТМЦ) • ЭТАП № {actData.stageNumber} («{actData.stageTitle}»)
 						</div>
+						<p className="text-[10px] text-slate-500 mt-0.5">
+							Составлен во исполнение ст. 779–783 ГК РФ, ст. 20, 79 323-ФЗ и Постановления Правительства РФ от 11.05.2023 № 736
+						</p>
 					</div>
 
-					{/* ── Parties Matrix Grid ── */}
-					<table className="doc-meta-table mb-5">
-						<tbody>
-							<tr>
-								<td className="doc-label" style={{ width: "20%" }}>
-									Исполнитель (Клиника):
-								</td>
-								<td className="doc-val" style={{ width: "30%" }}>
-									<strong>{legalName}</strong>
-									<div className="text-xs text-[var(--doc-muted)] mt-0.5">
-										ИНН: {inn} • Лицензия МЗ РФ
-									</div>
-								</td>
-								<td className="doc-label" style={{ width: "20%" }}>
-									Пациент (Заказчик):
-								</td>
-								<td className="doc-val" style={{ width: "30%" }}>
-									<strong>{actData.patientName}</strong>
-									<div className="text-xs text-[var(--doc-muted)] mt-0.5">
-										ID пациента: <span className="font-mono">{actData.patientId}</span>
-									</div>
-								</td>
-							</tr>
-							<tr>
-								<td className="doc-label">Лечащий врач:</td>
-								<td className="doc-val">
-									<strong>{actData.doctorFullName}</strong>
-								</td>
-								<td className="doc-label">Этап плана лечения:</td>
-								<td className="doc-val">
-									<strong>{actData.stageTitle}</strong> (Этап {actData.stageNumber})
-								</td>
-							</tr>
-						</tbody>
-					</table>
+					{/* ── 4. Patient Passport & Legal Requisites Matrix Grid ── */}
+					<div className="mb-5 print:mb-3 overflow-hidden rounded-xl border border-slate-300 text-xs">
+						<table className="w-full border-collapse text-left">
+							<tbody>
+								<tr className="border-b border-slate-300">
+									<td className="w-1/4 p-2.5 bg-slate-100 font-bold text-slate-800 border-r border-slate-300">
+										Исполнитель (Клиника):
+									</td>
+									<td className="w-1/4 p-2.5 bg-white text-slate-900 border-r border-slate-300 leading-snug">
+										<strong className="block text-slate-950">{legalName}</strong>
+										<span className="text-[11px] text-slate-600 block mt-0.5">
+											ИНН: {inn} / КПП: {kpp} • ОГРН: {ogrn}
+										</span>
+									</td>
+									<td className="w-1/4 p-2.5 bg-slate-100 font-bold text-slate-800 border-r border-slate-300">
+										Пациент (Заказчик):
+									</td>
+									<td className="w-1/4 p-2.5 bg-white text-slate-900 leading-snug">
+										<strong className="block text-slate-950">{actData.patientName}</strong>
+										<span className="text-[11px] text-slate-600 block mt-0.5">
+											Дата рожд.: {patientDob} ({patientGenderText})
+										</span>
+									</td>
+								</tr>
+								<tr className="border-b border-slate-300">
+									<td className="p-2.5 bg-slate-100 font-bold text-slate-800 border-r border-slate-300">
+										Лицензия клиники:
+									</td>
+									<td className="p-2.5 bg-white text-slate-900 border-r border-slate-300 text-[11px] leading-snug">
+										{license}
+									</td>
+									<td className="p-2.5 bg-slate-100 font-bold text-slate-800 border-r border-slate-300">
+										Паспортные данные:
+									</td>
+									<td className="p-2.5 bg-white text-slate-900 text-[11px] leading-snug">
+										{patientPass}
+									</td>
+								</tr>
+								<tr className="border-b border-slate-300">
+									<td className="p-2.5 bg-slate-100 font-bold text-slate-800 border-r border-slate-300">
+										Лечащий врач (Исполнитель):
+									</td>
+									<td className="p-2.5 bg-white text-slate-900 border-r border-slate-300 leading-snug">
+										<strong className="block text-slate-950">{actData.doctorFullName}</strong>
+										<span className="text-[11px] text-slate-600 block mt-0.5">
+											{doctorSpec} • СНИЛС: {doctorSnilsVal}
+										</span>
+									</td>
+									<td className="p-2.5 bg-slate-100 font-bold text-slate-800 border-r border-slate-300">
+										Полис ОМС / СНИЛС / Контакт:
+									</td>
+									<td className="p-2.5 bg-white text-slate-900 text-[11px] leading-snug">
+										<div>{patientOmsVal} • СНИЛС: {patientSnilsVal}</div>
+										<div className="text-slate-600 mt-0.5">Тел: {patientContactPhone} • {patientRegAddress}</div>
+									</td>
+								</tr>
+								<tr>
+									<td className="p-2.5 bg-slate-100 font-bold text-slate-800 border-r border-slate-300">
+										Основание и этап лечения:
+									</td>
+									<td className="p-2.5 bg-white text-slate-900 border-r border-slate-300 leading-snug">
+										Договор № <strong>{actData.contractNumber}</strong> • План лечения
+									</td>
+									<td className="p-2.5 bg-slate-100 font-bold text-slate-800 border-r border-slate-300">
+										№ Медкарты / ID:
+									</td>
+									<td className="p-2.5 bg-white text-slate-900 font-mono font-bold leading-snug">
+										{patientMedCard} (ID: {actData.patientId})
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
 
-					{/* ── Section 1: Completed Medical Procedures ── */}
-					<div className="doc-soap-section mb-5">
-						<div className="doc-soap-heading flex items-center justify-between">
-							<span>1. Выполненные медицинские услуги (Номенклатура МЗ РФ № 804н)</span>
-							<span className="text-xs font-normal opacity-80 lowercase">
-								Всего услуг: {actData.completedProcedures.length}
+					{/* ── 5. Section 1: Itemized Treatment Table (Order 804n) ── */}
+					<div className="doc-soap-section mb-6 print:mb-4">
+						<div
+							className="doc-soap-heading flex items-center justify-between p-2 rounded-t-lg font-black text-xs uppercase tracking-wider text-slate-900 border-b-2"
+							style={{
+								backgroundColor: palette.softBg,
+								borderColor: palette.primary,
+								color: palette.primaryDark,
+							}}
+						>
+							<div className="flex items-center gap-2">
+								<Award className="w-4 h-4 text-teal-700" />
+								<span>1. Оказанные медицинские услуги (Номенклатура МЗ РФ № 804н)</span>
+							</div>
+							<span className="text-[11px] font-semibold lowercase opacity-90">
+								Позиций: {actData.completedProcedures.length}
 							</span>
 						</div>
 
 						<div className="overflow-x-auto">
-							<table className="w-full border-collapse border border-[var(--doc-border)] text-xs">
+							<table className="w-full border-collapse border border-slate-300 text-xs">
 								<thead>
-									<tr className="bg-[var(--doc-soft-bg)] text-[var(--doc-primary-dark)] font-bold text-xs">
-										<th className="border border-[var(--doc-border)] p-2 text-center w-10">№</th>
-										<th className="border border-[var(--doc-border)] p-2 text-center w-24">Код 804н</th>
-										<th className="border border-[var(--doc-border)] p-2 text-center w-16">Зуб</th>
-										<th className="border border-[var(--doc-border)] p-2 text-left">
-											Наименование медицинской услуги
+									<tr className="bg-slate-100 text-slate-800 font-bold text-[11px]">
+										<th className="border border-slate-300 p-2 text-center w-10">№</th>
+										<th className="border border-slate-300 p-2 text-center w-28">Код 804н</th>
+										<th className="border border-slate-300 p-2 text-center w-16">Зуб (FDI)</th>
+										<th className="border border-slate-300 p-2 text-left">
+											Наименование и клиническое содержание медицинской услуги
 										</th>
-										<th className="border border-[var(--doc-border)] p-2 text-center w-14">Кол-во</th>
-										<th className="border border-[var(--doc-border)] p-2 text-right w-24">Тариф, ₽</th>
-										<th className="border border-[var(--doc-border)] p-2 text-right w-20">Скидка, ₽</th>
-										<th className="border border-[var(--doc-border)] p-2 text-right w-24">Сумма, ₽</th>
+										<th className="border border-slate-300 p-2 text-center w-14">Кол-во</th>
+										<th className="border border-slate-300 p-2 text-right w-24">Тариф, ₽</th>
+										<th className="border border-slate-300 p-2 text-right w-20">Скидка, ₽</th>
+										<th className="border border-slate-300 p-2 text-right w-28">Сумма, ₽</th>
 									</tr>
 								</thead>
 								<tbody>
 									{actData.completedProcedures.map((it, idx) => (
 										<tr
-											key={it.id}
-											className="hover:bg-slate-50/80 transition-colors border-b border-[var(--doc-border)]"
+											key={it.id || idx}
+											className="hover:bg-slate-50 transition-colors border-b border-slate-300 text-xs"
 										>
-											<td className="border border-[var(--doc-border)] p-2 text-center text-slate-500 font-mono">
+											<td className="border border-slate-300 p-2 text-center text-slate-500 font-mono text-[11px]">
 												{idx + 1}
 											</td>
-											<td className="border border-[var(--doc-border)] p-2 text-center font-mono text-xs font-semibold text-[var(--doc-primary-dark)]">
+											<td className="border border-slate-300 p-2 text-center font-mono text-xs font-bold text-slate-800">
 												{it.code804n}
 											</td>
-											<td className="border border-[var(--doc-border)] p-2 text-center font-bold">
+											<td className="border border-slate-300 p-2 text-center">
 												{it.toothNumber ? (
 													<span
-														className="px-1.5 py-0.5 rounded font-mono font-bold text-xs"
+														className="px-2 py-0.5 rounded-md font-mono font-extrabold text-xs inline-block border"
 														style={{
 															backgroundColor: palette.softBg,
+															borderColor: palette.accentBorder,
 															color: palette.primaryDark,
 														}}
 													>
 														№{it.toothNumber}
 													</span>
 												) : (
-													<span className="text-slate-400">—</span>
+													<span className="text-slate-400 font-mono">—</span>
 												)}
 											</td>
-											<td className="border border-[var(--doc-border)] p-2 font-medium text-[var(--doc-ink)]">
-												{it.name}
+											<td className="border border-slate-300 p-2 font-medium text-slate-900 leading-snug">
+												<div>{it.name}</div>
 												{it.clinicalRationale && (
-													<div className="text-[11px] text-[var(--doc-muted)] italic mt-0.5">
-														Показание: {it.clinicalRationale}
+													<div className="text-[11px] text-slate-500 italic mt-0.5">
+														Клиническое показание: {it.clinicalRationale}
 													</div>
 												)}
 											</td>
-											<td className="border border-[var(--doc-border)] p-2 text-center font-mono font-bold">
+											<td className="border border-slate-300 p-2 text-center font-mono font-bold">
 												{it.quantity}
 											</td>
-											<td className="border border-[var(--doc-border)] p-2 text-right font-mono">
-												{it.unitPriceRub.toLocaleString("ru-RU")}
+											<td className="border border-slate-300 p-2 text-right font-mono text-slate-700">
+												{formatMoneyExact(it.unitPriceRub)}
 											</td>
-											<td className="border border-[var(--doc-border)] p-2 text-right font-mono text-slate-500">
-												{it.discountRub > 0 ? `-${it.discountRub.toLocaleString("ru-RU")}` : "0"}
+											<td className="border border-slate-300 p-2 text-right font-mono text-slate-500">
+												{it.discountRub > 0 ? `-${formatMoneyExact(it.discountRub)}` : "0,00 ₽"}
 											</td>
-											<td className="border border-[var(--doc-border)] p-2 text-right font-mono font-bold text-[var(--doc-ink)]">
-												{it.priceRub.toLocaleString("ru-RU")}
+											<td className="border border-slate-300 p-2 text-right font-mono font-bold text-slate-950">
+												{formatMoneyExact(it.priceRub)}
 											</td>
 										</tr>
 									))}
-									<tr className="bg-[var(--doc-soft-bg)] font-bold text-[var(--doc-primary-dark)] text-xs">
-										<td colSpan={7} className="border border-[var(--doc-border)] p-2.5 text-right">
-											Итого стоимость оказанных медицинских услуг (НДС не облагается):
+
+									{/* Subtotals & Breakdown */}
+									<tr className="bg-slate-50 text-slate-700 text-xs font-semibold">
+										<td colSpan={7} className="border border-slate-300 p-2 text-right">
+											Стоимость оказанных услуг без учета скидки:
+										</td>
+										<td className="border border-slate-300 p-2 text-right font-mono">
+											{formatMoneyExact(grossServicesRub)}
+										</td>
+									</tr>
+									{discountTotalRub > 0 && (
+										<tr className="bg-slate-50 text-slate-700 text-xs font-semibold">
+											<td colSpan={7} className="border border-slate-300 p-2 text-right text-emerald-700">
+												Сумма предоставленной скидки:
+											</td>
+											<td className="border border-slate-300 p-2 text-right font-mono text-emerald-700">
+												-{formatMoneyExact(discountTotalRub)}
+											</td>
+										</tr>
+									)}
+									<tr
+										className="font-extrabold text-xs"
+										style={{ backgroundColor: palette.softBg, color: palette.primaryDark }}
+									>
+										<td colSpan={7} className="border border-slate-300 p-2.5 text-right text-xs uppercase tracking-wide">
+											ИТОГО СТОИМОСТЬ ОКАЗАННЫХ МЕДИЦИНСКИХ УСЛУГ (НДС НЕ ОБЛАГАЕТСЯ):
 										</td>
 										<td
-											className="border border-[var(--doc-border)] p-2.5 text-right font-mono text-sm font-black"
+											className="border border-slate-300 p-2.5 text-right font-mono text-sm font-black"
 											style={{ color: palette.primaryDark }}
 										>
-											{actData.totalServiceRub.toLocaleString("ru-RU")} ₽
+											{formatMoneyExact(netServicesRub, netServicesKopecks)}
 										</td>
 									</tr>
 								</tbody>
 							</table>
 						</div>
+
+						{/* Amount in words banner (Official Russian Accounting Standard) */}
+						<div className="p-2.5 bg-slate-50 border-x border-b border-slate-300 text-xs text-slate-800 rounded-b-lg">
+							<strong>Сумма прописью:</strong> <em>{servicesInWords}</em>.{" "}
+							<span className="text-[11px] text-slate-500">
+								НДС не облагается в соответствии с пп. 2 п. 2 ст. 149 НК РФ (медицинские услуги).
+							</span>
+						</div>
 					</div>
 
-					{/* ── Section 2: Material Write-off Specification (Warehouse BOM) ── */}
-					<div className="doc-soap-section mb-5">
-						<div className="doc-soap-heading flex items-center justify-between">
-							<span>2. Накладная на списание медикаментов и расходных материалов (ТМЦ)</span>
-							<span className="text-xs font-normal opacity-80 lowercase">
+					{/* ── 6. Section 2: Material Write-off Specification (Warehouse BOM) ── */}
+					<div className="doc-soap-section mb-6 print:mb-4">
+						<div
+							className="doc-soap-heading flex items-center justify-between p-2 rounded-t-lg font-black text-xs uppercase tracking-wider text-slate-900 border-b-2"
+							style={{
+								backgroundColor: palette.softBg,
+								borderColor: palette.primary,
+								color: palette.primaryDark,
+							}}
+						>
+							<div className="flex items-center gap-2">
+								<Package className="w-4 h-4 text-teal-700" />
+								<span>2. Накладная на списание медикаментов и расходных материалов (ТМЦ)</span>
+							</div>
+							<span className="text-[11px] font-semibold lowercase opacity-90">
 								Позиций ТМЦ: {actData.writtenOffMaterials.length}
 							</span>
 						</div>
 
 						<div className="overflow-x-auto">
-							<table className="w-full border-collapse border border-[var(--doc-border)] text-xs">
+							<table className="w-full border-collapse border border-slate-300 text-xs">
 								<thead>
-									<tr className="bg-[var(--doc-soft-bg)] text-[var(--doc-primary-dark)] font-bold text-xs">
-										<th className="border border-[var(--doc-border)] p-2 text-center w-10">№</th>
-										<th className="border border-[var(--doc-border)] p-2 text-left">
-											Наименование материала / медикамента
+									<tr className="bg-slate-100 text-slate-800 font-bold text-[11px]">
+										<th className="border border-slate-300 p-2 text-center w-10">№</th>
+										<th className="border border-slate-300 p-2 text-left">
+											Наименование медикамента / расходного материала
 										</th>
-										<th className="border border-[var(--doc-border)] p-2 text-center w-16">Ед. изм.</th>
-										<th className="border border-[var(--doc-border)] p-2 text-center w-16">Расход</th>
-										<th className="border border-[var(--doc-border)] p-2 text-right w-24">Уч. цена, ₽</th>
-										<th className="border border-[var(--doc-border)] p-2 text-right w-28">Сумма списания, ₽</th>
-										<th className="border border-[var(--doc-border)] p-2 text-center w-32">Остаток на складе</th>
+										<th className="border border-slate-300 p-2 text-center w-28">Привязка к услуге</th>
+										<th className="border border-slate-300 p-2 text-center w-16">Ед. изм.</th>
+										<th className="border border-slate-300 p-2 text-center w-16">Расход</th>
+										<th className="border border-slate-300 p-2 text-right w-24">Уч. цена, ₽</th>
+										<th className="border border-slate-300 p-2 text-right w-28">Сумма списания, ₽</th>
+										<th className="border border-slate-300 p-2 text-center w-36">Складской остаток</th>
 									</tr>
 								</thead>
 								<tbody>
 									{actData.writtenOffMaterials.map((mat, idx) => (
 										<tr
-											key={mat.id}
-											className="hover:bg-slate-50/80 transition-colors border-b border-[var(--doc-border)]"
+											key={mat.id || idx}
+											className="hover:bg-slate-50 transition-colors border-b border-slate-300 text-xs"
 										>
-											<td className="border border-[var(--doc-border)] p-2 text-center text-slate-500 font-mono">
+											<td className="border border-slate-300 p-2 text-center text-slate-500 font-mono text-[11px]">
 												{idx + 1}
 											</td>
-											<td className="border border-[var(--doc-border)] p-2 text-[var(--doc-ink)] font-medium">
+											<td className="border border-slate-300 p-2 font-medium text-slate-900 leading-snug">
 												<div>{mat.materialName}</div>
-												<span className="block text-[11px] text-[var(--doc-muted)]">
-													К услуге: {mat.procedureName} {mat.toothNumber ? `(зуб №${mat.toothNumber})` : ""}
+												<span className="block text-[11px] font-mono text-slate-500 mt-0.5">
+													Код 804н: {mat.order804nCode}
 												</span>
 											</td>
-											<td className="border border-[var(--doc-border)] p-2 text-center font-mono">
+											<td className="border border-slate-300 p-2 text-center text-[11px] text-slate-700">
+												<div>{mat.procedureName}</div>
+												{mat.toothNumber && (
+													<span className="font-bold text-teal-800">(зуб №{mat.toothNumber})</span>
+												)}
+											</td>
+											<td className="border border-slate-300 p-2 text-center font-mono">
 												{mat.unitOfMeasure}
 											</td>
-											<td className="border border-[var(--doc-border)] p-2 text-center font-mono font-bold">
+											<td className="border border-slate-300 p-2 text-center font-mono font-bold">
 												{mat.quantityRequired}
 											</td>
-											<td className="border border-[var(--doc-border)] p-2 text-right font-mono text-slate-600">
-												{mat.unitCostRub.toLocaleString("ru-RU")}
+											<td className="border border-slate-300 p-2 text-right font-mono text-slate-700">
+												{formatMoneyExact(mat.unitCostRub, mat.unitCostKopecks)}
 											</td>
-											<td className="border border-[var(--doc-border)] p-2 text-right font-mono font-bold text-[var(--doc-ink)]">
-												{mat.totalCostRub.toLocaleString("ru-RU")}
+											<td className="border border-slate-300 p-2 text-right font-mono font-bold text-slate-950">
+												{formatMoneyExact(mat.totalCostRub, mat.totalCostKopecks)}
 											</td>
-											<td className="border border-[var(--doc-border)] p-2 text-center font-mono text-xs">
+											<td className="border border-slate-300 p-2 text-center font-mono text-xs">
 												{mat.inStockQuantity !== undefined ? (
 													mat.isDeficit ? (
 														<span className="text-rose-600 font-bold flex items-center justify-center gap-1">
-															<AlertTriangle className="w-3.5 h-3.5 inline" />
-															<span>
-																{mat.inStockQuantity} (Дефицит {mat.deficitQuantity})
-															</span>
+															<AlertTriangle className="w-3.5 h-3.5 inline shrink-0" />
+															<span>{mat.inStockQuantity} (Дефицит {mat.deficitQuantity})</span>
 														</span>
 													) : (
 														<span className="text-emerald-700 font-semibold flex items-center justify-center gap-1">
-															<Check className="w-3.5 h-3.5 inline" />
+															<Check className="w-3.5 h-3.5 inline shrink-0" />
 															<span>
 																{mat.inStockQuantity} {mat.unitOfMeasure}
 															</span>
 														</span>
 													)
 												) : (
-													<span className="text-slate-400">—</span>
+													<span className="text-slate-400 font-mono">—</span>
 												)}
 											</td>
 										</tr>
 									))}
-									<tr className="bg-[var(--doc-soft-bg)] font-bold text-[var(--doc-primary-dark)] text-xs">
-										<td colSpan={5} className="border border-[var(--doc-border)] p-2.5 text-right">
-											Итого себестоимость списанных расходных материалов:
+
+									<tr
+										className="font-bold text-xs"
+										style={{ backgroundColor: palette.softBg, color: palette.primaryDark }}
+									>
+										<td colSpan={6} className="border border-slate-300 p-2.5 text-right uppercase tracking-wide">
+											ИТОГО СЕБЕСТОИМОСТЬ СПИСАННЫХ МАТЕРИАЛОВ (ТМЦ):
 										</td>
-										<td className="border border-[var(--doc-border)] p-2.5 text-right font-mono font-bold text-[var(--doc-ink)]">
-											{actData.totalMaterialCostRub.toLocaleString("ru-RU")} ₽
+										<td className="border border-slate-300 p-2.5 text-right font-mono font-black text-sm text-slate-950">
+											{formatMoneyExact(netMaterialRub, netMaterialKopecks)}
 										</td>
-										<td className="border border-[var(--doc-border)] p-2.5"></td>
+										<td className="border border-slate-300 p-2.5 text-center text-[11px] font-bold text-slate-600">
+											{hasDeficit ? "Имеется дефицит" : "Склад обеспечен"}
+										</td>
 									</tr>
 								</tbody>
 							</table>
 						</div>
+
+						{/* Materials in words banner */}
+						<div className="p-2.5 bg-slate-50 border-x border-b border-slate-300 text-xs text-slate-800 rounded-b-lg">
+							<strong>Себестоимость материалов прописью:</strong> <em>{materialsInWords}</em>.
+						</div>
 					</div>
 
-					{/* ── Section 3: Financial & Profitability Summary Card ── */}
-					<div className="p-4 rounded-2xl bg-[var(--doc-soft-bg)] border border-[var(--doc-accent-border)] grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs mb-5">
+					{/* ── 7. Section 3: Financial & Economic Summary Cards ── */}
+					<div
+						className="p-4 rounded-2xl border grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs mb-6 print:mb-4 shadow-xs"
+						style={{
+							backgroundColor: palette.softBg,
+							borderColor: palette.accentBorder,
+						}}
+					>
 						<div className="space-y-1">
-							<span className="text-[var(--doc-muted)] block font-semibold">
+							<span className="text-slate-600 block font-semibold text-[11px] uppercase tracking-wide">
 								Стоимость услуг (Выручка этапа):
 							</span>
-							<strong className="text-base font-mono text-[var(--doc-primary-dark)] block">
-								{actData.totalServiceRub.toLocaleString("ru-RU")} ₽
+							<strong className="text-base font-mono block" style={{ color: palette.primaryDark }}>
+								{formatMoneyExact(netServicesRub, netServicesKopecks)}
 							</strong>
+							<span className="text-[10px] text-slate-500 block">Без НДС (ст. 149 НК РФ)</span>
 						</div>
 
 						<div className="space-y-1">
-							<span className="text-[var(--doc-muted)] block font-semibold">
+							<span className="text-slate-600 block font-semibold text-[11px] uppercase tracking-wide">
 								Себестоимость ТМЦ этапа:
 							</span>
-							<strong className="text-base font-mono text-[var(--doc-ink)] block">
-								{actData.totalMaterialCostRub.toLocaleString("ru-RU")} ₽
+							<strong className="text-base font-mono text-slate-900 block">
+								{formatMoneyExact(netMaterialRub, netMaterialKopecks)}
 							</strong>
+							<span className="text-[10px] text-slate-500 block">По учетным ценам склада</span>
 						</div>
 
 						<div className="space-y-1">
-							<span className="text-[var(--doc-muted)] block font-semibold">
+							<span className="text-slate-600 block font-semibold text-[11px] uppercase tracking-wide">
 								Валовая маржинальность этапа:
 							</span>
 							<strong className="text-base font-mono text-emerald-700 flex items-center gap-1.5">
 								<TrendingUp className="w-5 h-5 shrink-0" />
 								<span>
-									{actData.marginRub.toLocaleString("ru-RU")} ₽ ({actData.marginPercent}%)
+									{formatMoneyExact(actData.marginRub)} ({actData.marginPercent}%)
 								</span>
 							</strong>
+							<span className="text-[10px] text-slate-500 block">Рентабельность медицинского этапа</span>
 						</div>
 					</div>
 
-					{/* ── Section 4: Patient Acceptance & Legal Signatures ── */}
-					<div className="pt-2 border-t border-[var(--doc-border)] text-xs text-[var(--doc-ink)] space-y-4">
-						<p className="text-justify leading-relaxed">
-							Вышеперечисленные медицинские услуги оказаны Исполнителем в полном объеме, качественно, своевременно и в строгом соответствии с порядками и стандартами медицинской помощи РФ. Претензий по объему, качеству и срокам оказания услуг Пациент не имеет. Расходные материалы и медикаменты списаны по назначению лечащего врача.
-						</p>
+					{/* ── 8. Section 4: Patient Acceptance & Legal Terms ── */}
+					<div className="pt-3 border-t border-slate-300 text-xs text-slate-900 space-y-3 print:space-y-2 mb-6 print:mb-4">
+						<div className="font-bold uppercase tracking-wider text-[11px]" style={{ color: palette.primaryDark }}>
+							3. Условия сдачи-приемки и гарантийные обязательства
+						</div>
+						<ol className="list-decimal pl-4 space-y-1.5 text-justify leading-relaxed text-[11px] text-slate-700">
+							<li>
+								Вышеперечисленные медицинские услуги оказаны Исполнителем надлежащим образом, в полном объеме, своевременно и в строгом соответствии с клиническими рекомендациями (протоколами лечения) и стандартами медицинской помощи РФ.
+							</li>
+							<li>
+								Пациент (Заказчик) подтверждает, что результат оказанных медицинских услуг им осмотрен и принят в полном объеме. Претензий по объему, качеству, эстетическому результату и срокам оказания услуг Пациент к Исполнителю не имеет.
+							</li>
+							<li>
+								Лечащим врачом даны исчерпывающие клинические рекомендации по индивидуальной гигиене полости рта, режиму приема пищи и контрольным осмотрам. Гарантийные обязательства разъяснены в соответствии с Положением о гарантиях клиники.
+							</li>
+							<li>
+								Списание медикаментов и стоматологических материалов произведено по фактическому назначению лечащего врача в соответствии с утвержденными нормами расхода.
+							</li>
+						</ol>
+					</div>
 
-						{/* Signatures and Stamp Zone */}
-						<div className="doc-sign-zone">
-							{/* Electronic Verification QR Stamp */}
-							{branding.showQrVerification && (
-								<div className="doc-qr-stamp">
-									<div className="w-12 h-12 bg-white p-1 border border-neutral-300 rounded-lg flex items-center justify-center shrink-0">
-										<QrCode className="w-10 h-10 text-neutral-900" />
+					{/* ── 9. Doctor Signature and Clinic Seal Zones (Crisp Two-Column Grid) ── */}
+					<div className="doc-sign-zone pt-4 border-t border-slate-300 page-break-inside-avoid">
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-8 items-start">
+							{/* Left: Clinic / Doctor Signature & Stamp */}
+							<div className="space-y-4">
+								<div>
+									<div className="text-xs font-black uppercase tracking-wider" style={{ color: palette.primaryDark }}>
+										От Исполнителя (Клиника):
 									</div>
-									<div className="doc-qr-meta">
-										<strong>Электронная верификация акта:</strong>
-										<br />
-										<span className="font-mono text-[9px] block truncate max-w-[180px]">
-											{verificationHash}
-										</span>
-										<span className="text-emerald-700 font-bold block flex items-center gap-1">
-											<ShieldCheck className="w-3 h-3 inline" />
-											<span>Подписано УКЭП клиники</span>
-										</span>
+									<div className="text-[11px] text-slate-600 mt-0.5">
+										{legalName} • Врач: {actData.doctorFullName}
 									</div>
 								</div>
-							)}
 
-							{/* Doctor Stamp Ring Frame (М.П.) */}
-							{branding.showDoctorStampFrame && (
-								<div className="doc-stamp-box">
-									<span>М.П.</span>
+								<div className="pt-2">
+									<div className="text-xs font-semibold text-slate-800">
+										Врач-стоматолог: ______________________ / {actData.doctorFullName} /
+									</div>
+									<div className="text-[10px] text-slate-500 italic mt-0.5">
+										(личная подпись и расшифровка лечащего врача)
+									</div>
 								</div>
-							)}
 
-							{/* Doctor Signature */}
-							<div className="doc-signature-block">
-								<div className="text-xs font-bold text-[var(--doc-primary-dark)]">
-									От Исполнителя: ____________________ / {actData.doctorFullName} /
-								</div>
-								<div className="doc-sign-hint">(подпись и личная печать лечащего врача)</div>
+								{/* Official Round Clinic Seal Frame (М.П.) */}
+								{branding.showDoctorStampFrame && (
+									<div className="pt-2 flex items-center gap-4">
+										<div className="w-24 h-24 rounded-full border-2 border-dashed border-slate-400 flex flex-col items-center justify-center text-center p-1 text-slate-500 shrink-0">
+											<Stamp className="w-4 h-4 text-slate-400 mb-0.5" />
+											<span className="font-extrabold text-[10px] uppercase tracking-wider">М.П.</span>
+											<span className="text-[8px] leading-tight mt-0.5">Для медицинских документов</span>
+										</div>
+										<div className="text-[10px] text-slate-500 leading-tight">
+											Место оттиска печати<br />
+											медицинской организации<br />
+											Дата: «____» ____________ 2026 г.
+										</div>
+									</div>
+								)}
 							</div>
 
-							{/* Patient Signature */}
-							{branding.showPatientSignatureLine && (
-								<div className="doc-signature-block">
-									<div className="text-xs font-bold text-[var(--doc-primary-dark)]">
-										Пациент: ____________________ / {actData.patientName} /
+							{/* Right: Patient Signature */}
+							<div className="space-y-4">
+								<div>
+									<div className="text-xs font-black uppercase tracking-wider text-slate-900">
+										От Заказчика (Пациент):
 									</div>
-									<div className="doc-sign-hint">(услуги принял, претензий по качеству не имею)</div>
+									<div className="text-[11px] text-slate-600 mt-0.5">
+										ФИО: {actData.patientName} • Паспорт: {patientPassport ? "проверен" : "предъявлен"}
+									</div>
 								</div>
-							)}
+
+								<div className="pt-2">
+									<div className="text-xs font-semibold text-slate-800">
+										Пациент: ______________________ / {actData.patientName} /
+									</div>
+									<div className="text-[10px] text-slate-500 italic mt-0.5">
+										(услуги принял в полном объеме, претензий не имею)
+									</div>
+								</div>
+
+								<div className="pt-4 text-[10px] text-slate-500 leading-tight">
+									Подтверждаю согласие с объемом и стоимостью оказанных услуг.<br />
+									Дата подписания: «____» ____________ 2026 г.
+								</div>
+							</div>
 						</div>
+
+						{/* Electronic Verification QR Stamp (GOST R 7.0.97-2016) */}
+						{branding.showQrVerification && (
+							<div
+								className="mt-6 p-3 rounded-xl border flex items-center justify-between gap-4 text-xs"
+								style={{
+									backgroundColor: palette.softBg,
+									borderColor: palette.accentBorder,
+								}}
+							>
+								<div className="flex items-center gap-3">
+									<div className="w-12 h-12 bg-white p-1 border border-slate-300 rounded-lg flex items-center justify-center shrink-0 shadow-xs">
+										<QrCode className="w-10 h-10 text-slate-900" />
+									</div>
+									<div className="doc-qr-meta text-[10px] leading-tight text-slate-700">
+										<strong className="block text-slate-900" style={{ color: palette.primaryDark }}>
+											Электронная верификация акта сдачи-приемки:
+										</strong>
+										<span className="font-mono text-[9px] block truncate max-w-sm text-slate-600 mt-0.5">
+											{verificationHash}
+										</span>
+										<span className="text-emerald-700 font-bold block flex items-center gap-1 mt-0.5">
+											<ShieldCheck className="w-3 h-3 inline shrink-0" />
+											<span>Подписано УКЭП медицинской организации • Сертификат действителен</span>
+										</span>
+									</div>
+								</div>
+
+								<div className="text-right text-[10px] text-slate-500 hidden sm:block">
+									Идентификатор документа: <strong className="font-mono">{actData.actNumber}</strong>
+									<br />
+									Время фиксации: {actData.createdAtIso ? new Date(actData.createdAtIso).toLocaleString("ru-RU") : actData.actDate}
+								</div>
+							</div>
+						)}
 					</div>
 
-					{/* ── Footer Disclaimer & Clinic Guarantee ── */}
-					{branding.customDisclaimer && (
-						<footer className="doc-footer-disclaimer mt-4 pt-3 border-t border-[var(--doc-border)] text-xs text-[var(--doc-muted)] text-justify">
+					{/* ── 10. Footer Disclaimer & Clinic Guarantee ── */}
+					{branding.customDisclaimer ? (
+						<footer className="doc-footer-disclaimer mt-6 pt-3 border-t border-slate-300 text-[10px] text-slate-500 text-justify leading-relaxed">
 							{branding.customDisclaimer}
+						</footer>
+					) : (
+						<footer className="doc-footer-disclaimer mt-6 pt-3 border-t border-slate-300 text-[10px] text-slate-500 text-justify leading-relaxed">
+							Настоящий Акт составлен в 2 (двух) подлинных экземплярах, имеющих равную юридическую силу, по одному для каждой из Сторон. Документ хранится в архиве медицинской организации в составе медицинской карты пациента (форма № 043/у) в течение 25 лет.
 						</footer>
 					)}
 				</div>

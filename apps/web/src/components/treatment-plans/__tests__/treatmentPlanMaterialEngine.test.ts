@@ -30,7 +30,7 @@ describe("treatmentPlanMaterialEngine: Order 804n Material Consumption Norms", (
 				assert.ok(norm.materialName.length > 0, "Наименование материала не пустое");
 				assert.ok(norm.quantityPerProcedure > 0, "Расход на процедуру > 0");
 				assert.ok(
-					["г", "мл", "шт.", "карп.", "компл.", "порц.", "упак."].includes(norm.unitOfMeasure),
+					["г", "мл", "шт.", "карп.", "компл.", "порц.", "упак.", "см"].includes(norm.unitOfMeasure),
 					`Единица измерения ${norm.unitOfMeasure} валидна`,
 				);
 				assert.ok(norm.defaultUnitCostRub > 0, "Базовая себестоимость единицы > 0");
@@ -150,5 +150,51 @@ describe("treatmentPlanMaterialEngine: Order 804n Material Consumption Norms", (
 		assert.ok(act.completedProcedures.length > 0);
 		assert.ok(act.writtenOffMaterials.length > 0);
 		assert.equal(act.status, "draft");
+	});
+
+	test("Нормы расхода ТМЦ для эндодонтии (A16.07.030.001..004 и A16.07.008.001..004) пропорциональны числу каналов", () => {
+		// 1. Проверяем наличие норм для всех 1..4 каналов обработки
+		for (let canals = 1; canals <= 4; canals++) {
+			const prepCode = `A16.07.030.00${canals}`;
+			const prepNorms = ORDER_804N_MATERIAL_NORMS_MAP[prepCode];
+			assert.ok(prepNorms, `Нормы для ${prepCode} должны существовать`);
+			assert.ok(prepNorms.length >= 3, `Для ${prepCode} должно быть не менее 3 компонентов расхода`);
+
+			// Бумажные штифты пропорциональны каналам (3 шт. на канал)
+			const paperPoints = prepNorms.find((n) => n.materialName.includes("бумажные"));
+			assert.ok(paperPoints);
+			assert.equal(paperPoints.quantityPerProcedure, canals * 3);
+
+			// Натрия гипохлорит увеличивается с числом каналов
+			const naocl = prepNorms.find((n) => n.materialName.includes("гипохлорита"));
+			assert.ok(naocl);
+			assert.ok(naocl.quantityPerProcedure >= 15);
+		}
+
+		// 2. Проверяем наличие норм для всех 1..4 каналов обтурации
+		for (let canals = 1; canals <= 4; canals++) {
+			const obtCode = `A16.07.008.00${canals}`;
+			const obtNorms = ORDER_804N_MATERIAL_NORMS_MAP[obtCode];
+			assert.ok(obtNorms, `Нормы для ${obtCode} должны существовать`);
+
+			// Гуттаперчевые штифты
+			const gutta = obtNorms.find((n) => n.materialName.includes("Гуттаперчевые"));
+			assert.ok(gutta);
+			assert.equal(gutta.quantityPerProcedure, canals);
+
+			// Биокерамический силер
+			const sealer = obtNorms.find((n) => n.materialName.includes("силер"));
+			assert.ok(sealer);
+			assert.equal(Number(sealer.quantityPerProcedure.toFixed(1)), Number((canals * 0.1).toFixed(1)));
+		}
+
+		// 3. Проверяем нормы для Ca(OH)2 A16.07.091 и распломбирования A16.07.082
+		const caoh2Norms = ORDER_804N_MATERIAL_NORMS_MAP["A16.07.091"];
+		assert.ok(caoh2Norms && caoh2Norms.length >= 2);
+		assert.ok(caoh2Norms.some((n) => n.materialName.includes("UltraCal")));
+
+		const unsealNorms = ORDER_804N_MATERIAL_NORMS_MAP["A16.07.082"];
+		assert.ok(unsealNorms && unsealNorms.length >= 2);
+		assert.ok(unsealNorms.some((n) => n.materialName.includes("D-Solv") || n.materialName.includes("Эндосольв")));
 	});
 });

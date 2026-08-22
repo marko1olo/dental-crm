@@ -69,4 +69,34 @@ describe("ScheduleGrid", () => {
 		assert.ok(html.includes("Иванов Иван"), "должно быть имя пациента на карточке");
 		assert.ok(html.includes("+ Записать на"), "должна быть кнопка быстрой записи на пустом слоте");
 	});
+
+	it("renders quick status buttons and WhatsApp trigger with >=44px touch targets in grid", () => {
+		const html = renderToString(
+			React.createElement(ScheduleGrid, {
+				dashboard: mockDashboard as Dashboard,
+				dateKey: "2026-08-20",
+				appointments: [mockAppointment],
+				onSlotClick: () => {},
+				onAppointmentClick: () => {},
+				onQuickStatusChange: () => {},
+				patientName: () => "Иванов Иван",
+				formatTime: (iso: string) => iso.slice(11, 16),
+				toDateTimeLocalValue: (iso: string) => iso.slice(0, 16),
+				appointmentLabels: {
+					planned: "Запланирован",
+					confirmed: "Подтвержден",
+					arrived: "Пришел",
+					in_treatment: "В кресле",
+					completed: "Завершен",
+					cancelled: "Отменен",
+					no_show: "Не явился",
+				},
+			}),
+		);
+
+		assert.ok(html.includes("title=\"Пришел\""), "должна быть кнопка статуса Пришел");
+		assert.ok(html.includes("title=\"В кресле\""), "должна быть кнопка статуса В кресле");
+		assert.ok(html.includes("title=\"Завершен\""), "должна быть кнопка статуса Завершен");
+		assert.ok(html.includes("min-h-[44px]"), "кнопки должны соответствовать touch target >=44px");
+	});
 });

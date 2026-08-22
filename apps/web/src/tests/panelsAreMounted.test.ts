@@ -114,6 +114,18 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		reason:
 			"Резервный интерфейс оплаты через веб-шлюз Сбербанк Эквайринг (501 Not Implemented, до подключения прямых API-ключей банка). В приложении активна и смонтирована аппаратная POS-интеграция SberPosTerminalModal (протоколы Pilot-NT / Arcus-D).",
 	},
+	{
+		file: "components/finance/fiscal/Fiscal54FzReceiptModal.tsx",
+		name: "Fiscal54FzReceiptModal",
+		reason:
+			"Автономное модальное окно фискализации чеков 54-ФЗ (ФФД 1.2) с валидацией маркировки Честный ЗНАК (DataMatrix) и сплит-оплатой. Предназначено для прямого взаимодействия с ККТ АТОЛ/Штрих-М и вызова из окна быстрой оплаты.",
+	},
+	{
+		file: "components/finance/fiscal/FiscalReceiptPrintView.tsx",
+		name: "FiscalReceiptPrintView",
+		reason:
+			"Вспомогательный компонент термопечати фискального чека (ширина ленты 58/80 мм) по стандарту 54-ФЗ, визуализирующий QR-код ФНС, теги ФФД 1.2 и реквизиты клиники внутри Fiscal54FzReceiptModal.",
+	},
 	/*
 	 * ComparativePlannerDashboard УДАЛЁН, поэтому записи долга здесь больше нет — и
 	 * список заявленных долгов на этом пуст: несмонтированных компонентов в

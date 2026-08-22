@@ -2,7 +2,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { operatorReadableErrorDetail } from "../AppHelpers";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import {
+	ANESTHESIA_QUICK_PRESETS,
+	appendAnesthesiaToSoap,
+	CLINICAL_FAST_PRESETS,
 	generateSoapFromOdontogramFinding,
+	generateSoapFromOdontogramStates,
 	type MergeStrategy,
 	mergeSoapDiaryState,
 	type OdontogramFindingInput,
@@ -16,6 +20,11 @@ import {
 import { useVisitStore } from "../store/visitStore";
 import { useAppLogic } from "../useAppLogic";
 import { logger } from "../utils/logger";
+import {
+	deleteOfflineDraft,
+	loadOfflineDraft,
+	saveOfflineDraft,
+} from "../utils/offlineMutationQueue";
 import { showToast } from "./GlobalToast";
 
 export interface DiaryState {
@@ -311,6 +320,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	authRef.current = auth;
 
 	const autosaveRef = useRef<ReturnType<typeof setInterval> | null>(null);
+	const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const icdRef = useRef<HTMLDivElement>(null);
 	/**
 	 * Об отказе тихого автосохранения говорим один раз до следующей удачи.
@@ -517,6 +527,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			setIcdSearch("");
 			setShowPreview(false);
 			if (autosaveRef.current) clearInterval(autosaveRef.current);
+			if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
 			useVisitStore.getState().setDraft(null);
 		};
 	}, [visitId]);
@@ -601,11 +612,14 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		}
 	}, [loadState.phase, visitId, visitNoteForm, activeVisit]);
 
-	// ── LocalStorage resilience for draft protection across browser reloads / crashes
+	// ── Dual-layer IndexedDB & LocalStorage resilience for draft protection across browser reloads / crashes
 	const localDiaryStorageKey = `dente_diary_draft_${visitId}`;
 
 	useEffect(() => {
 		if (loadState.phase !== "empty" || !visitId) return;
+		let cancelled = false;
+
+		// 1. Fast synchronous restoration from localStorage
 		try {
 			const cached = localStorage.getItem(localDiaryStorageKey);
 			if (cached) {
@@ -620,6 +634,22 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		} catch {
 			// ignore JSON parse error on corrupted local state
 		}
+
+		// 2. Async restoration from IndexedDB (outbox drafts store)
+		void loadOfflineDraft<DiaryState>(localDiaryStorageKey).then((idbDraft) => {
+			if (!cancelled && idbDraft?.data) {
+				setDiary((prev) => ({ ...prev, ...idbDraft.data }));
+				if (idbDraft.data.diagnosisIcd10) {
+					setIcdSearch((c) =>
+						c.trim() ? c : (idbDraft.data.diagnosisIcd10 ?? c),
+					);
+				}
+			}
+		});
+
+		return () => {
+			cancelled = true;
+		};
 	}, [loadState.phase, visitId, localDiaryStorageKey]);
 
 	useEffect(() => {
@@ -633,6 +663,12 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			} catch {
 				// ignore localStorage quota errors
 			}
+			void saveOfflineDraft(
+				localDiaryStorageKey,
+				"DIARY_043_DRAFT",
+				visitId,
+				diary,
+			);
 		}
 	}, [diary, visitId, isLocked, loadState.phase, localDiaryStorageKey]);
 
@@ -875,6 +911,99 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 
 	const doSaveRef = useRef(doSave);
 	doSaveRef.current = doSave;
+
+	// ── Debounced Auto-Save (300ms) on diary modifications
+	const scheduleDebouncedSave = useCallback(() => {
+		if (isLocked || isRevising) return;
+		if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+		debounceTimerRef.current = setTimeout(() => {
+			void doSaveRef.current(true);
+		}, 300);
+	}, [isLocked, isRevising]);
+
+	// ── Populate from Odontogram
+	const populateFromOdontogram = useCallback(
+		(
+			states: readonly {
+				toothNumber: number;
+				state: string;
+				surfaces?: readonly string[] | null;
+				notes?: string;
+			}[],
+		) => {
+			if (isLocked && !isRevising) {
+				showToast("Дневник подписан — изменения заблокированы.", "info");
+				return;
+			}
+			const generated = generateSoapFromOdontogramStates(states);
+			setDiary((prev) =>
+				mergeSoapDiaryState(prev, generated, { strategy: "smart_append" }),
+			);
+			if (generated.diagnosisIcd10) {
+				setIcdSearch((c) => (c.trim() ? c : (generated.diagnosisIcd10 ?? c)));
+			}
+			scheduleDebouncedSave();
+			showToast("Дневник 043/у заполнен из зубной формулы", "success", 4000);
+		},
+		[isLocked, isRevising, scheduleDebouncedSave],
+	);
+
+	// ── Anesthesia Quick Logger
+	const applyAnesthesiaPreset = useCallback(
+		(anestheticText: string) => {
+			if (isLocked && !isRevising) {
+				showToast("Дневник подписан — изменения заблокированы.", "info");
+				return;
+			}
+			setDiary((prev) => appendAnesthesiaToSoap(prev, anestheticText));
+			scheduleDebouncedSave();
+			showToast("Запись об анестезии внесена в план лечения", "success", 3000);
+		},
+		[isLocked, isRevising, scheduleDebouncedSave],
+	);
+
+	// ── Fast Clinical Presets
+	const applyClinicalPreset = useCallback(
+		(presetId: string) => {
+			if (isLocked && !isRevising) {
+				showToast("Дневник подписан — изменения заблокированы.", "info");
+				return;
+			}
+			const found = CLINICAL_FAST_PRESETS.find((p) => p.id === presetId);
+			if (!found) return;
+			const target = found;
+			const incomingPayload: Partial<DiaryState> = {
+				anamnesis: target.anamnesis,
+				statusLocalis: target.statusLocalis,
+				diagnosisIcd10: target.defaultIcd10,
+				treatmentDescription: target.treatmentDescription,
+			};
+			if (target.complications) {
+				incomingPayload.complications = target.complications;
+			}
+			if (target.comorbidities) {
+				incomingPayload.comorbidities = target.comorbidities;
+			}
+
+			setDiary((prev) =>
+				mergeSoapDiaryState(
+					prev,
+					incomingPayload,
+					{ strategy: "smart_append" },
+				),
+			);
+			if (target.defaultIcd10) {
+				setIcdSearch(target.defaultIcd10);
+			}
+			scheduleDebouncedSave();
+			showToast(
+				`Клинический шаблон «${target.label}» применён`,
+				"success",
+				4000,
+			);
+		},
+		[isLocked, isRevising, scheduleDebouncedSave],
+	);
 
 	// ── Autosave
 	useEffect(() => {
@@ -1719,5 +1848,9 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		icdRef,
 		applyOdontogramFinding,
 		applySoapProtocol,
+		scheduleDebouncedSave,
+		populateFromOdontogram,
+		applyAnesthesiaPreset,
+		applyClinicalPreset,
 	};
 }

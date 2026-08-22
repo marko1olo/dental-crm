@@ -10,3 +10,4 @@ export * from "./inventory.js";
 export * from "./communications.js";
 export * from "./system.js";
 export * from "./sanpin.js";
+export * from "./sync.js";

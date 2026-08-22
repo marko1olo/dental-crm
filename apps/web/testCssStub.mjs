@@ -23,6 +23,9 @@
  * даёт красному дереву мешать всем остальным.
  */
 import { registerHooks } from "node:module";
+import React from "react";
+
+globalThis.React = React;
 
 registerHooks({
 	load(url, context, nextLoad) {

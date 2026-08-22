@@ -4,13 +4,16 @@
 
 import React, { useMemo, useState } from "react";
 import {
+	Award,
 	Calculator,
 	Check,
 	Coins,
 	CreditCard,
 	Download,
+	FileCheck,
 	FileDown,
 	FileText,
+	FlaskConical,
 	Layers,
 	PenTool,
 	Printer,
@@ -19,6 +22,7 @@ import {
 	Save,
 	ShieldCheck,
 	Sparkles,
+	Wallet,
 	Zap,
 } from "lucide-react";
 import type { ToothData } from "../odontogram/ToothChart";
@@ -41,7 +45,11 @@ import { TreatmentPlanContractPrint } from "./TreatmentPlanContractPrint";
 import { TreatmentPlanCompletedActPrint } from "./TreatmentPlanCompletedActPrint";
 import { TreatmentPlanSignatureModal } from "./TreatmentPlanSignatureModal";
 import { TreatmentPlanStageCard } from "./TreatmentPlanStageCard";
+import { TreatmentPlanComparatorModal } from "./comparator/TreatmentPlanComparatorModal";
+import { StagePaymentPlanModal } from "./stagePayment/StagePaymentPlanModal";
+import { TreatmentPlanPriceValidatorModal } from "./validation/TreatmentPlanPriceValidatorModal";
 import { FiscalReceipt54FzModal } from "../finance/FiscalReceipt54FzModal";
+import { LabWorkOrderModal } from "../lab/orders/LabWorkOrderModal";
 import type {
 	CashierInvoiceExportData,
 	CompletedWorksActAndWriteOffData,
@@ -50,6 +58,7 @@ import type {
 	TreatmentPlanTier,
 	TreatmentPlanTierId,
 } from "./types";
+import type { TreatmentPlanValidationPayload } from "./validation/planPriceValidationPresets";
 
 export interface TreatmentPlanModuleProps {
 	readonly patientId: string;
@@ -73,10 +82,18 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	const [selectedTierId, setSelectedTierId] = useState<TreatmentPlanTierId>("optimum");
 	const [discountPercent, setDiscountPercent] = useState<number>(0);
 	const [bonusPointsToUseRub, setBonusPointsToUseRub] = useState<number>(0);
+
+	// Modals State
 	const [isSignModalOpen, setIsSignModalOpen] = useState<boolean>(false);
 	const [isContractPrintOpen, setIsContractPrintOpen] = useState<boolean>(false);
 	const [isActPrintOpen, setIsActPrintOpen] = useState<boolean>(false);
 	const [isFiscalModalOpen, setIsFiscalModalOpen] = useState<boolean>(false);
+	const [isLabOrderModalOpen, setIsLabOrderModalOpen] = useState<boolean>(false);
+	const [isComparatorModalOpen, setIsComparatorModalOpen] = useState<boolean>(false);
+	const [isStagePaymentModalOpen, setIsStagePaymentModalOpen] = useState<boolean>(false);
+	const [isPriceValidatorModalOpen, setIsPriceValidatorModalOpen] = useState<boolean>(false);
+
+	const [selectedLabTeeth, setSelectedLabTeeth] = useState<number[] | undefined>(undefined);
 	const [selectedActStage, setSelectedActStage] = useState<TreatmentPlanStage | null>(null);
 	const [isExecutingWriteOff, setIsExecutingWriteOff] = useState<boolean>(false);
 	const [signedAgreement, setSignedAgreement] =
@@ -122,6 +139,72 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 			bonusPointsToUseRub,
 		);
 	}, [currentTier.totalKopecks, discountPercent, patientBalanceRub, bonusPointsToUseRub]);
+
+	// 3. Extract orthopedic teeth (crowns, bridges, dentures, veneers, implant crowns)
+	const orthopedicTeeth = useMemo(() => {
+		const teethFromStages = stages
+			.filter((s) => s.stageKind === "stage_3_orthopedics" || s.stageNumber === 3)
+			.flatMap((s) => s.items)
+			.map((it) => it.toothNumber)
+			.filter((t): t is number => typeof t === "number" && t > 0);
+
+		if (teethFromStages.length > 0) {
+			return Array.from(new Set(teethFromStages)).sort((a, b) => a - b);
+		}
+
+		const teethFromOdontogram = (teethData || [])
+			.filter((t) => {
+				const s = String(t.state || "").toLowerCase();
+				return (
+					s.includes("crown") ||
+					s.includes("bridge") ||
+					s.includes("denture") ||
+					s.includes("implant") ||
+					Boolean((t as any).isCrown) ||
+					Boolean((t as any).isBridge)
+				);
+			})
+			.map((t) => (t as any).toothNumber ?? (t as any).id)
+			.filter((id): id is number => typeof id === "number" && id > 0);
+
+		if (teethFromOdontogram.length > 0) {
+			return Array.from(new Set(teethFromOdontogram)).sort((a, b) => a - b);
+		}
+
+		return [21];
+	}, [stages, teethData]);
+
+	const handleOpenLabOrder = (teeth?: number[]) => {
+		setSelectedLabTeeth(teeth && teeth.length > 0 ? teeth : orthopedicTeeth);
+		setIsLabOrderModalOpen(true);
+	};
+
+	// Validation payload
+	const validationPayload: TreatmentPlanValidationPayload = useMemo(() => {
+		const allItems = stages.flatMap((s) => s.items);
+		return {
+			planId: `PLAN-${patientId.slice(0, 6).toUpperCase()}`,
+			planNumber: `ПЛАН-№${patientId.slice(0, 4)}`,
+			planTitle: currentTier.title,
+			patientId,
+			patientName,
+			doctorId: auth?.currentUser?.id || "doc-01",
+			doctorFullName: auth?.currentUser?.name || "Д-р Смирнов А. В.",
+			createdAtIso: new Date().toISOString(),
+			items: allItems.map((it) => ({
+				itemId: it.id,
+				...(it.toothNumber !== undefined ? { toothNumber: it.toothNumber } : {}),
+				code804n: it.code804n,
+				serviceTitle: it.name,
+				category: it.category,
+				planUnitPriceRub: it.unitPriceRub,
+				planDiscountPercent: discountPercent,
+				planDiscountRub: it.discountRub,
+				quantity: it.quantity,
+				planLineTotalRub: Math.max(0, it.unitPriceRub - it.discountRub) * it.quantity,
+			})),
+		};
+	}, [stages, patientId, patientName, currentTier.title, auth, discountPercent]);
 
 	// Action: Export directly to cashier as an Invoice
 	const handleExportCashier = () => {
@@ -247,7 +330,6 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 		if (!completedActData) return;
 		setIsExecutingWriteOff(true);
 		try {
-			// Send material write-off ledger event
 			showToast(
 				`Материалы по этапу «${completedActData.stageTitle}» на сумму ${completedActData.totalMaterialCostRub.toLocaleString("ru-RU")} ₽ успешно списаны со склада!`,
 				"success",
@@ -281,6 +363,9 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 							<span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 font-mono font-bold border border-cyan-500/20">
 								Приказ МЗ РФ №804н
 							</span>
+							<span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-mono font-bold border border-emerald-500/20">
+								СтАР
+							</span>
 						</div>
 						<p className="text-xs text-[var(--muted,#64748b)]">
 							Пациент: <strong className="text-[var(--ink,#0f172a)]">{patientName}</strong> ·{" "}
@@ -313,15 +398,48 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 						>
-							Поэтапный план (Этапы I, II, III)
+							Поэтапный план (I, II, III)
 						</button>
 					</div>
+
+					{/* 3-Tier Comparator Studio Trigger */}
+					<button
+						type="button"
+						onClick={() => setIsComparatorModalOpen(true)}
+						className="min-h-[40px] flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-teal-800 dark:text-teal-200 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 cursor-pointer transition-colors shadow-xs"
+						title="Открыть полноэкранную презентационную 3-Tier Студию с дифференциальным анализом"
+					>
+						<Sparkles size={14} className="text-teal-600 dark:text-teal-400" />
+						<span>Студия 3-Tier</span>
+					</button>
+
+					{/* Stage Payment Studio Trigger */}
+					<button
+						type="button"
+						onClick={() => setIsStagePaymentModalOpen(true)}
+						className="min-h-[40px] flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-amber-800 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 cursor-pointer transition-colors shadow-xs"
+						title="Открыть студию поэтапной оплаты, эскроу-депозитов и актов (ГК РФ ст. 709/711)"
+					>
+						<Coins size={14} className="text-amber-600 dark:text-amber-400" />
+						<span>Эскроу & Этапы</span>
+					</button>
+
+					{/* Price & Star Protocols Validator Trigger */}
+					<button
+						type="button"
+						onClick={() => setIsPriceValidatorModalOpen(true)}
+						className="min-h-[40px] flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-emerald-800 dark:text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 cursor-pointer transition-colors shadow-xs"
+						title="Проверить соответствие сметы прайс-листу и протоколам СтАР"
+					>
+						<FileCheck size={14} className="text-emerald-600 dark:text-emerald-400" />
+						<span>Валидатор СтАР</span>
+					</button>
 
 					{/* Digital Signature Indicator / Button */}
 					{signedAgreement ? (
 						<div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold">
 							<ShieldCheck size={16} />
-							<span>ПОДПИСАНО ПАЦИЕНТОМ</span>
+							<span>ПОДПИСАНО</span>
 						</div>
 					) : (
 						<button
@@ -340,10 +458,22 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						type="button"
 						onClick={() => setIsContractPrintOpen(true)}
 						className="min-h-[40px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] shadow-xs cursor-pointer transition-colors"
-						title="Открыть договор на оказание платных медицинских услуг и спецификацию"
+						title="Открыть договор на оказание платных медицинских услуг, спецификацию и смету с QR-кодом"
 					>
 						<FileText size={15} className="text-teal-600 dark:text-teal-400" />
-						<span>Договор и план</span>
+						<span>Договор (QR)</span>
+					</button>
+
+					{/* Lab Work Order in Dental Laboratory Trigger */}
+					<button
+						type="button"
+						onClick={() => handleOpenLabOrder()}
+						className="min-h-[40px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 shadow-xs cursor-pointer transition-colors"
+						title="Оформить наряд-заказ в зуботехническую лабораторию"
+						data-testid="lab-work-order-btn"
+					>
+						<FlaskConical size={15} className="text-teal-600 dark:text-teal-400" />
+						<span>Наряд-заказ</span>
 					</button>
 
 					{/* Export to Cashier Button */}
@@ -365,7 +495,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						title="Принять оплату (карты, СБП QR, наличные) и пробить фискальный чек 54-ФЗ"
 					>
 						<ShieldCheck size={15} />
-						<span>Чек 54-ФЗ / Оплата</span>
+						<span>Чек 54-ФЗ</span>
 					</button>
 
 					{/* Save to DB */}
@@ -454,6 +584,9 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						setSelectedTierId(tier.tierId);
 						setIsSignModalOpen(true);
 					}}
+					onOpenComparatorStudio={() => setIsComparatorModalOpen(true)}
+					onOpenStagePaymentStudio={() => setIsStagePaymentModalOpen(true)}
+					onOpenPriceValidatorStudio={() => setIsPriceValidatorModalOpen(true)}
 				/>
 			) : (
 				<div className="flex flex-col gap-4">
@@ -466,9 +599,56 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 								? { inventoryItems: dashboard.inventoryItems as InventoryItemLookup[] }
 								: {})}
 							onExecuteWriteOffStage={handleExecuteWriteOffStage}
+							onOpenLabOrder={handleOpenLabOrder}
 						/>
 					))}
 				</div>
+			)}
+
+			{/* 3-Tier Multi-Variant Presentation Studio Modal */}
+			{isComparatorModalOpen && (
+				<TreatmentPlanComparatorModal
+					isOpen={isComparatorModalOpen}
+					onClose={() => setIsComparatorModalOpen(false)}
+					patientName={patientName}
+					doctorName={auth?.currentUser?.name || "Д-р Смирнов А. В."}
+					clinicName={dashboard?.clinicSettings?.profile?.brandName || "Стоматологическая клиника DENTE"}
+					onPlanSelected={(tierCode) => {
+						const mappedTierId =
+							tierCode === "economy_basic"
+								? "economy"
+								: tierCode === "standard_recommended"
+									? "standard"
+									: "optimum";
+						setSelectedTierId(mappedTierId);
+						setIsComparatorModalOpen(false);
+						showToast(`Выбран вариант лечения «${tierCode}»`, "success");
+					}}
+				/>
+			)}
+
+			{/* Stage Payment & Escrow Studio Modal */}
+			{isStagePaymentModalOpen && (
+				<StagePaymentPlanModal
+					isOpen={isStagePaymentModalOpen}
+					onClose={() => setIsStagePaymentModalOpen(false)}
+					patientName={patientName}
+					patientId={patientId}
+					planTitle={currentTier.title}
+					clinicName={dashboard?.clinicSettings?.profile?.brandName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
+					doctorFullName={auth?.currentUser?.name || "Д-р Смирнов А. В."}
+				/>
+			)}
+
+			{/* Price & Star Protocols Validator Modal */}
+			{isPriceValidatorModalOpen && (
+				<TreatmentPlanPriceValidatorModal
+					isOpen={isPriceValidatorModalOpen}
+					onClose={() => setIsPriceValidatorModalOpen(false)}
+					planPayload={validationPayload}
+					stages={stages}
+					catalogPricelist={catalog as any}
+				/>
 			)}
 
 			{/* Digital Signature Modal */}
@@ -543,7 +723,33 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					}}
 				/>
 			)}
+
+			{/* Statutory Lab Work Order & Tracking Studio Modal */}
+			{isLabOrderModalOpen && (
+				<LabWorkOrderModal
+					isOpen={isLabOrderModalOpen}
+					onClose={() => setIsLabOrderModalOpen(false)}
+					patientId={patientId}
+					patientName={patientName}
+					patientChartNumber={
+						patient?.chartNumber || patient?.cardNumber || `К-${patientId.slice(0, 5)}`
+					}
+					doctorId={auth?.currentUser?.id || "doc-001"}
+					doctorName={auth?.currentUser?.name || "Д-р Ковалев С. П."}
+					initialTeeth={
+						selectedLabTeeth && selectedLabTeeth.length > 0 ? selectedLabTeeth : orthopedicTeeth
+					}
+					onSaveOrder={(order) => {
+						showToast(
+							`Наряд-заказ №${order.orderNumber} в зуботехническую лабораторию на сумму ${order.financials.patientPriceTotalRub.toLocaleString("ru-RU")} ₽ успешно сохранен!`,
+							"success",
+							5000,
+						);
+					}}
+				/>
+			)}
 		</div>
 	);
 };
 
+export default TreatmentPlanModule;

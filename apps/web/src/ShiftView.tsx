@@ -231,16 +231,16 @@ export function ShiftView({
 						<>
 							<div className="patient-hero">
 								<PatientAvatar fullName={visitPatient.fullName} size={44} />
-								<div className="hero-info">
-									<h2>{visitPatient.fullName}</h2>
-									<p className="hero-phone">
+								<div className="hero-info min-w-0">
+									<h2 className="break-words leading-tight">{visitPatient.fullName}</h2>
+									<p className="hero-phone break-words">
 										{visitPatient.phone ?? "телефон не указан"}
 									</p>
 								</div>
 							</div>
 							<div className="hero-actions">
 								<button
-									className="primary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+									className="primary-button min-h-[44px] px-3 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
 									type="button"
 									onClick={() => {
 										setSelectedPatientId(visitPatient.id);
@@ -250,7 +250,7 @@ export function ShiftView({
 									<ClipboardCheck aria-hidden="true" /> Открыть прием
 								</button>
 								<button
-									className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+									className="secondary-button min-h-[44px] px-3 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
 									type="button"
 									onClick={() => {
 										setSelectedPatientId(visitPatient.id);
@@ -260,7 +260,7 @@ export function ShiftView({
 									<ImageIcon aria-hidden="true" /> Снимки
 								</button>
 								<button
-									className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+									className="secondary-button min-h-[44px] px-3 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
 									type="button"
 									aria-label="Позвонить пациенту"
 									aria-describedby={
@@ -290,9 +290,9 @@ export function ShiftView({
 							</div>
 
 							{/* Compact Status Tracker */}
-							<div className="status-flow">
-								<span className="status-flow-label">Статус:</span>
-								<div className="status-flow-steps">
+							<div className="status-flow min-w-0">
+								<span className="status-flow-label shrink-0">Статус:</span>
+								<div className="status-flow-steps flex flex-wrap items-center min-w-0">
 									<span className="status-flow-step done">1. Запись</span>
 									<span className="status-flow-arrow" aria-hidden="true">
 										→
@@ -323,11 +323,11 @@ export function ShiftView({
 									fullName={nextAppointmentPatient?.fullName ?? "?"}
 									size={44}
 								/>
-								<div className="hero-info">
-									<h2>
+								<div className="hero-info min-w-0">
+									<h2 className="break-words leading-tight">
 										{nextAppointmentPatient?.fullName ?? "Пациент не найден"}
 									</h2>
-									<p className="hero-phone">
+									<p className="hero-phone break-words leading-tight">
 										Ближайший прием сегодня в{" "}
 										{formatClockTime(nextAppointment.startsAt)}
 										{nextAppointment.reason
@@ -338,7 +338,7 @@ export function ShiftView({
 							</div>
 							<div className="hero-actions">
 								<button
-									className="primary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+									className="primary-button min-h-[44px] px-3 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
 									type="button"
 									onClick={() => {
 										if (nextAppointmentPatient)
@@ -349,7 +349,7 @@ export function ShiftView({
 									<ClipboardCheck aria-hidden="true" /> Начать прием
 								</button>
 								<button
-									className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+									className="secondary-button min-h-[44px] px-3 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
 									type="button"
 									onClick={() => {
 										window.location.hash = "schedule";
@@ -376,7 +376,7 @@ export function ShiftView({
 							style={{ padding: "20px 16px" }}
 							action={
 								<button
-									className="primary-button"
+									className="primary-button min-h-[44px] px-3 py-2"
 									type="button"
 									onClick={() => {
 										window.location.hash = "schedule";
@@ -391,7 +391,7 @@ export function ShiftView({
 				</div>
 
 				{/* РАСПИСАНИЕ НА СЕГОДНЯ */}
-				<div className="today-schedule-box">
+				<div className="today-schedule-box min-w-0">
 					<div className="today-schedule-header">
 						<h3>
 							<ClipboardCheck size={16} aria-hidden="true" /> Расписание приемов
@@ -431,7 +431,7 @@ export function ShiftView({
 										type="button"
 										key={app.id}
 										aria-label={`Прием: ${patient ? patient.fullName : "Неизвестный пациент"}, ${timeStart} – ${timeEnd}`}
-										className={`today-schedule-item focus:ring-2 focus:ring-teal-600 focus:outline-none ${isCurrent ? "current-active" : ""}`}
+										className={`today-schedule-item min-h-[44px] py-2 px-3 focus:ring-2 focus:ring-teal-600 focus:outline-none min-w-0 ${isCurrent ? "current-active" : ""}`}
 										style={{ textAlign: "left", width: "100%" }}
 										onClick={() => {
 											if (patient) {
@@ -447,14 +447,14 @@ export function ShiftView({
 											}
 										}}
 									>
-										<div className="today-schedule-item-info">
-											<span className="today-schedule-time">
+										<div className="today-schedule-item-info min-w-0">
+											<span className="today-schedule-time shrink-0">
 												{timeStart} – {timeEnd}
 											</span>
-											<strong className="today-schedule-name">
+											<strong className="today-schedule-name break-words leading-tight">
 												{patient ? patient.fullName : "Неизвестный пациент"}
 											</strong>
-											<span className="today-schedule-reason">
+											<span className="today-schedule-reason break-words leading-tight">
 												{app.reason || "плановый осмотр"}
 												{manyDoctors && doctor ? ` · ${doctor.fullName}` : ""}
 											</span>
@@ -462,7 +462,7 @@ export function ShiftView({
 										{/* Резервным значением был сам app.status — ключ базы
                             латиницей. Именно так на экран врача попали «Статус не
                             загружены»: неизвестный ключ печатался как есть. */}
-										<span className={`status-pill status-${statusKey}`}>
+										<span className={`status-pill status-${statusKey} shrink-0`}>
 											{statusLabels[statusKey] ?? "статус неизвестен"}
 										</span>
 									</button>
@@ -478,7 +478,7 @@ export function ShiftView({
 							style={{ padding: "20px 16px" }}
 							action={
 								<button
-									className="secondary-button"
+									className="secondary-button min-h-[44px] px-3 py-2"
 									type="button"
 									onClick={() => {
 										window.location.hash = "schedule";
@@ -526,25 +526,25 @@ export function ShiftView({
 								return (
 									<li
 										key={action.id}
-										className={`shift-todo-item priority-${action.priority}`}
+										className={`shift-todo-item priority-${action.priority} min-w-0`}
 									>
 										<span
-											className={`shift-todo-priority priority-${action.priority}`}
+											className={`shift-todo-priority priority-${action.priority} shrink-0`}
 										>
 											{recommendedActionPriorityLabels?.[action.priority] ??
 												"без пометки"}
 										</span>
-										<div className="shift-todo-text">
-											<strong>{action.title}</strong>
-											<p>{action.detail}</p>
+										<div className="shift-todo-text min-w-0">
+											<strong className="break-words leading-tight">{action.title}</strong>
+											<p className="break-words leading-tight">{action.detail}</p>
 											{patient ? (
-												<span className="shift-todo-patient">
+												<span className="shift-todo-patient break-words">
 													{patient.fullName}
 												</span>
 											) : null}
 										</div>
 										<button
-											className="secondary-button shift-todo-go"
+											className="secondary-button shift-todo-go min-h-[44px] px-3 py-2 shrink-0"
 											type="button"
 											onClick={() => runRecommendedAction(action)}
 										>
@@ -630,6 +630,8 @@ export function ShiftView({
 										fontSize: "14px",
 										fontWeight: 700,
 										color: "var(--ink)",
+										wordBreak: "break-word",
+										lineHeight: 1.25,
 									}}
 								>
 									Операционный контроль смены
@@ -640,6 +642,8 @@ export function ShiftView({
 										fontSize: "12px",
 										color: "var(--ink-2)",
 										fontWeight: 500,
+										wordBreak: "break-word",
+										lineHeight: 1.35,
 									}}
 								>
 									Насколько режим клиники и загрузка кресел совпадают с планом
@@ -648,12 +652,13 @@ export function ShiftView({
 							</div>
 						</div>
 						<button
-							className="secondary-button"
+							className="secondary-button min-h-[44px] px-3 py-2"
 							type="button"
 							aria-expanded={showAnalytics}
 							onClick={() => setShowAnalytics((v) => !v)}
 							style={{
-								padding: "0 12px",
+								minHeight: "44px",
+								padding: "8px 12px",
 								fontSize: "12px",
 								flexShrink: 0,
 							}}
@@ -683,12 +688,12 @@ export function ShiftView({
 									className="mode-fit-head"
 									style={{ display: "flex", alignItems: "center", gap: "10px" }}
 								>
-									<Building2 aria-hidden="true" />
-									<div>
+									<Building2 aria-hidden="true" className="shrink-0" />
+									<div style={{ minWidth: 0 }}>
 										<p className="eyebrow">Режим клиники</p>
 										{/* «По умолчанию» — слово из настроек программы, а не ответ
                             на вопрос «какой у клиники режим». */}
-										<h2 style={{ fontSize: "15px", margin: 0 }}>
+										<h2 style={{ fontSize: "15px", margin: 0, wordBreak: "break-word", lineHeight: 1.25 }}>
 											{dashboard?.shiftIntelligence?.modeFit?.title ??
 												"Режим ещё не выбран"}
 										</h2>
@@ -698,6 +703,7 @@ export function ShiftView({
 											marginLeft: "auto",
 											fontSize: "18px",
 											color: "var(--teal-dark)",
+											flexShrink: 0,
 										}}
 									>
 										{dashboard?.shiftIntelligence?.modeFit?.fitScore ?? 0}%
@@ -708,6 +714,8 @@ export function ShiftView({
 										fontSize: "12.5px",
 										color: "var(--muted)",
 										margin: "8px 0",
+										wordBreak: "break-word",
+										lineHeight: 1.35,
 									}}
 								>
 									{dashboard?.shiftIntelligence?.modeFit?.lowFrictionNextStep ??
@@ -728,12 +736,12 @@ export function ShiftView({
 									className="mode-fit-head"
 									style={{ display: "flex", alignItems: "center", gap: "10px" }}
 								>
-									<Gauge aria-hidden="true" />
-									<div>
+									<Gauge aria-hidden="true" className="shrink-0" />
+									<div style={{ minWidth: 0 }}>
 										<p className="eyebrow">Загрузка</p>
 										{/* «Нет ресурсов» — название сущности из базы. В клинике
                             загружены кресла и врачи, ресурсов там нет. */}
-										<h2 style={{ fontSize: "15px", margin: 0 }}>
+										<h2 style={{ fontSize: "15px", margin: 0, wordBreak: "break-word", lineHeight: 1.25 }}>
 											{mostLoadedResource?.title ?? "Кресел и врачей нет"}
 										</h2>
 									</div>
@@ -742,6 +750,7 @@ export function ShiftView({
 											marginLeft: "auto",
 											fontSize: "18px",
 											color: "var(--teal-dark)",
+											flexShrink: 0,
 										}}
 									>
 										{mostLoadedResource
@@ -756,6 +765,8 @@ export function ShiftView({
 												fontSize: "12.5px",
 												color: "var(--muted)",
 												margin: "8px 0",
+												wordBreak: "break-word",
+												lineHeight: 1.35,
 											}}
 										>
 											{/* Было «1 записей»: число не согласовывалось с существительным. */}
@@ -797,6 +808,8 @@ export function ShiftView({
 											fontSize: "12.5px",
 											color: "var(--muted)",
 											margin: "8px 0",
+											wordBreak: "break-word",
+											lineHeight: 1.35,
 										}}
 									>
 										Врачей и кресел пока нет в настройках.
@@ -842,7 +855,7 @@ export function ShiftView({
 								{(dashboard?.shiftIntelligence?.roleQueues ?? []).length >
 									1 && (
 									<button
-										className="text-button toggle-queues-btn"
+										className="text-button toggle-queues-btn min-h-[44px] px-3 py-2 flex items-center"
 										type="button"
 										onClick={() => setShowOtherQueues((v) => !v)}
 									>
@@ -956,6 +969,8 @@ export function ShiftView({
 													fontSize: "14px",
 													fontWeight: 700,
 													color: "var(--ink)",
+													wordBreak: "break-word",
+													lineHeight: 1.25,
 												}}
 											>
 												{queue.title}
@@ -965,6 +980,8 @@ export function ShiftView({
 													margin: "2px 0 0",
 													fontSize: "12.5px",
 													color: "var(--ink-2)",
+													wordBreak: "break-word",
+													lineHeight: 1.35,
 												}}
 											>
 												{queue.nextAction}
@@ -975,6 +992,8 @@ export function ShiftView({
 													marginTop: "8px",
 													fontSize: "11.5px",
 													color: "var(--muted)",
+													wordBreak: "break-word",
+													lineHeight: 1.3,
 												}}
 											>
 												{queue.blockedBy?.[0] ?? queue.automationHint}
@@ -1063,10 +1082,10 @@ export function PatientCockpit({
 							marginTop: "10px",
 						}}
 					>
-						<a className="secondary-button" href="#patients">
+						<a className="secondary-button min-h-[44px] px-3 py-2 flex items-center justify-center" href="#patients">
 							Выбрать пациента
 						</a>
-						<a className="text-button" href="#schedule">
+						<a className="text-button min-h-[44px] px-3 py-2 flex items-center justify-center" href="#schedule">
 							Открыть записи
 						</a>
 					</div>
@@ -1094,10 +1113,10 @@ export function PatientCockpit({
 				>
 					Карточка пациента
 				</p>
-				<div className="patient-hero">
+				<div className="patient-hero min-w-0">
 					<PatientAvatar fullName={activePatient.fullName} size={44} />
-					<div className="hero-info">
-						<h2 style={{ fontSize: "16px" }}>{activePatient.fullName}</h2>
+					<div className="hero-info min-w-0">
+						<h2 style={{ fontSize: "16px", wordBreak: "break-word", lineHeight: 1.25 }}>{activePatient.fullName}</h2>
 						{/* Пациенту без id подставлялся номер карты «1042» — выдуманный
                     номер, которого нет ни в одной картотеке. Придумывать номер
                     нельзя: администратор станет искать по нему бумажную карту. */}
@@ -1106,6 +1125,7 @@ export function PatientCockpit({
 								margin: "1px 0 0",
 								fontSize: "12px",
 								color: "var(--muted)",
+								wordBreak: "break-word",
 							}}
 						>
 							{activePatient.id
@@ -1123,23 +1143,24 @@ export function PatientCockpit({
 						gap: "9px",
 						fontSize: "13px",
 						color: "var(--ink-2)",
+						minWidth: 0,
 					}}
 				>
-					<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+					<div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
 						<Calendar
 							size={14}
 							style={{ color: "var(--muted)", flexShrink: 0 }}
 						/>
-						<span>
+						<span className="min-w-0 break-words">
 							Дата рождения:{" "}
 							<strong style={{ color: "var(--ink)", fontWeight: 600 }}>
 								{birthDateLabel(activePatient.birthDate)}
 							</strong>
 						</span>
 					</div>
-					<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+					<div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
 						<Phone size={14} style={{ color: "var(--muted)", flexShrink: 0 }} />
-						<span>
+						<span className="min-w-0 break-words">
 							Телефон:{" "}
 							<strong
 								style={{
@@ -1158,6 +1179,7 @@ export function PatientCockpit({
 								display: "flex",
 								alignItems: "flex-start",
 								gap: "8px",
+								minWidth: 0,
 							}}
 						>
 							<Info
@@ -1168,7 +1190,7 @@ export function PatientCockpit({
 									marginTop: "2px",
 								}}
 							/>
-							<span>
+							<span className="min-w-0 break-words leading-tight">
 								Заметки:{" "}
 								<strong style={{ color: "var(--ink)", fontWeight: 600 }}>
 									{activePatient.notes}
@@ -1225,6 +1247,7 @@ export function PatientCockpit({
 											: activePatientInsight.riskLevel === "watch"
 												? "var(--warn-fg)"
 												: "var(--muted)",
+									flexShrink: 0,
 								}}
 							>
 								{/* Приведение `as keyof typeof` тоже убрано: с типизированными
@@ -1232,7 +1255,7 @@ export function PatientCockpit({
                         как раз и прятало бы новое расхождение. */}
 								{patientInsightRiskLabels[activePatientInsight.riskLevel]}
 							</span>
-							<strong style={{ fontSize: "12.5px", color: "var(--ink)" }}>
+							<strong style={{ fontSize: "12.5px", color: "var(--ink)", wordBreak: "break-word", lineHeight: 1.3 }}>
 								{activePatientInsight.nextBestAction}
 							</strong>
 						</div>
@@ -1321,7 +1344,7 @@ export function PatientCockpit({
 				<button
 					type="button"
 					aria-label="Открыть ЭМК и историю"
-					className="clickable-card"
+					className="clickable-card min-h-[44px] p-3 min-w-0"
 					style={{ textAlign: "left" }}
 					onClick={() => {
 						window.location.hash = "visit";
@@ -1333,16 +1356,16 @@ export function PatientCockpit({
 						}
 					}}
 				>
-					<History aria-hidden="true" size={24} />
-					<div>
-						<h3>ЭМК / История</h3>
-						<p className="tile-meta">Приёмы · диагнозы · зубная карта</p>
+					<History aria-hidden="true" size={24} className="shrink-0" />
+					<div className="min-w-0">
+						<h3 className="break-words leading-tight">ЭМК / История</h3>
+						<p className="tile-meta break-words leading-tight">Приёмы · диагнозы · зубная карта</p>
 					</div>
 				</button>
 				<button
 					type="button"
 					aria-label="Открыть документы"
-					className="clickable-card"
+					className="clickable-card min-h-[44px] p-3 min-w-0"
 					style={{ textAlign: "left" }}
 					onClick={() => {
 						window.location.hash = "documents";
@@ -1354,12 +1377,12 @@ export function PatientCockpit({
 						}
 					}}
 				>
-					<FileText aria-hidden="true" size={24} />
-					<div>
-						<h3>Документы</h3>
+					<FileText aria-hidden="true" size={24} className="shrink-0" />
+					<div className="min-w-0">
+						<h3 className="break-words leading-tight">Документы</h3>
 						{/* Было «3 шт. по визиту», а на пустой карточке — «нет по визиту»:
                     сокращение из накладной и фраза, которая по-русски не строится. */}
-						<p className="tile-meta">
+						<p className="tile-meta break-words leading-tight">
 							{(activeUsableDocuments?.length ?? 0) > 0
 								? `${countLabel(activeUsableDocuments?.length ?? 0, "документ", "документа", "документов")} по визиту`
 								: "по визиту документов нет"}
@@ -1369,7 +1392,7 @@ export function PatientCockpit({
 				<button
 					type="button"
 					aria-label="Открыть оплаты"
-					className="clickable-card"
+					className="clickable-card min-h-[44px] p-3 min-w-0"
 					style={{ textAlign: "left" }}
 					onClick={() => {
 						window.location.hash = "finance";
@@ -1381,9 +1404,9 @@ export function PatientCockpit({
 						}
 					}}
 				>
-					<CreditCard aria-hidden="true" size={24} />
-					<div>
-						<h3>Оплаты</h3>
+					<CreditCard aria-hidden="true" size={24} className="shrink-0" />
+					<div className="min-w-0">
+						<h3 className="break-words leading-tight">Оплаты</h3>
 						{/*
                   Здесь стояло `?? 0`, и подмена случалась ДО money(), поэтому
                   общая правка форматирования этот экран не спасала. Плитка
@@ -1393,7 +1416,7 @@ export function PatientCockpit({
                   как «пациент рассчитался», хотя суммы просто ещё нет.
                   Без `?? 0` money() честно печатает «не определено».
                 */}
-						<p className="tile-meta">
+						<p className="tile-meta break-words leading-tight">
 							{money(dashboard?.billingSummary?.totalPaidRub)} · долг{" "}
 							{money(dashboard?.billingSummary?.totalDueRub)}
 						</p>
@@ -1402,7 +1425,7 @@ export function PatientCockpit({
 				<button
 					type="button"
 					aria-label="Открыть связь и задачи"
-					className="clickable-card"
+					className="clickable-card min-h-[44px] p-3 min-w-0"
 					style={{ textAlign: "left" }}
 					onClick={() => {
 						window.location.hash = "communications";
@@ -1414,10 +1437,10 @@ export function PatientCockpit({
 						}
 					}}
 				>
-					<MessageSquare aria-hidden="true" size={24} />
-					<div>
-						<h3>Связь</h3>
-						<p className="tile-meta">
+					<MessageSquare aria-hidden="true" size={24} className="shrink-0" />
+					<div className="min-w-0">
+						<h3 className="break-words leading-tight">Связь</h3>
+						<p className="tile-meta break-words leading-tight">
 							{(activeCommunicationTasks?.length ?? 0) > 0
 								? countLabel(
 										activeCommunicationTasks?.length ?? 0,
@@ -1432,7 +1455,7 @@ export function PatientCockpit({
 				<button
 					type="button"
 					aria-label="Открыть снимки пациента"
-					className="clickable-card"
+					className="clickable-card min-h-[44px] p-3 min-w-0"
 					style={{ textAlign: "left" }}
 					onClick={() => {
 						window.location.hash = "imaging";
@@ -1444,10 +1467,10 @@ export function PatientCockpit({
 						}
 					}}
 				>
-					<ImageIcon aria-hidden="true" size={24} />
-					<div>
-						<h3>Снимки</h3>
-						<p className="tile-meta">
+					<ImageIcon aria-hidden="true" size={24} className="shrink-0" />
+					<div className="min-w-0">
+						<h3 className="break-words leading-tight">Снимки</h3>
+						<p className="tile-meta break-words leading-tight">
 							{(activeImagingStudies?.length ?? 0) > 0
 								? countLabel(
 										activeImagingStudies?.length ?? 0,

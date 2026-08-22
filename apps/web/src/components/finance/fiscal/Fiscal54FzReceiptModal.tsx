@@ -31,6 +31,7 @@ import {
 	validateDataMatrixBarcode,
 } from "./fiscal54fzEngine";
 import { FiscalReceiptPrintView } from "./FiscalReceiptPrintView";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 
 export interface Fiscal54FzReceiptModalProps {
 	readonly isOpen: boolean;
@@ -175,9 +176,9 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 
 			const response = await fetch("/api/fiscal/receipts", {
 				method: "POST",
-				headers: {
+				headers: denteAdminSecretRequestHeaders({
 					"Content-Type": "application/json",
-				},
+				}),
 				body: JSON.stringify(payload),
 			});
 

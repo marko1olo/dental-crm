@@ -3,9 +3,9 @@
  *
  * Выполняет:
  * 1. 1-Click генерацию 3 клинических этапов по одонтограмме с номенклатурой Приказа Минздрава РФ № 804н:
- *    - Этап 1: Неотложная помощь и терапевтическая санация (кариес, пульпиты, периодонтиты, профгигиена, КЛКТ).
- *    - Этап 2: Хирургический этап (удаление корней, костная пластика, синус-лифтинг, навигационный шаблон, имплантация).
- *    - Этап 3: Ортопедический этап (коронки E.max / диоксид циркония, мостовидные протезы, вкладки, протезирование на имплантатах).
+ *    - Этап 1: Неотложная помощь и терапевтическая санация (кариес, пульпиты, периодонтиты, пародонтология SRP A16.07.051, профгигиена A16.07.050, детская терапия, КЛКТ).
+ *    - Этап 2: Хирургический этап (удаление корней/молочных зубов A16.07.001, костная пластика A16.07.041, синус-лифтинг, навигационный шаблон, имплантация A16.07.054.001).
+ *    - Этап 3: Ортопедический этап (коронки E.max / диоксид циркония A16.07.004.001, мостовидные протезы, вкладки, протезирование на имплантатах A16.07.006, детские коронки A16.07.004.003).
  * 2. Генерацию 3 вариантов плана лечения («Эконом», «Стандарт», «Оптимальный») для презентации пациенту.
  * 3. Расчёт 13% налогового вычета НДФЛ (Код 01 / Код 02) и рассрочки 0% (3, 6, 12, 24 мес.) в копейках.
  * 4. Сопоставление с реальным каталогом услуг клиники (ServiceCatalogItem).
@@ -42,12 +42,156 @@ export interface CatalogServiceLookupItem {
 }
 
 /**
+ * Проверка принадлежности зуба к временному (молочному) прикусу по стандарту FDI ISO 3950.
+ * Временные зубы: квадранты 5 (51-55), 6 (61-65), 7 (71-75), 8 (81-85).
+ */
+export function isDeciduousTooth(toothNumber: number): boolean {
+	return (
+		(toothNumber >= 51 && toothNumber <= 55) ||
+		(toothNumber >= 61 && toothNumber <= 65) ||
+		(toothNumber >= 71 && toothNumber <= 75) ||
+		(toothNumber >= 81 && toothNumber <= 85)
+	);
+}
+
+/**
+ * Определение анатомического количества корневых каналов по стандарту FDI ISO 3950:
+ * - Резцы и клыки (11..13, 21..23, 31..33, 41..43): 1 канал
+ * - Верхние 1-е премоляры (14, 24): 2 канала (щечный B + небный P)
+ * - Верхние 2-е премоляры (15, 25): 1 канал
+ * - Нижние премоляры (34, 35, 44, 45): 1 канал
+ * - Нижние моляры (36, 37, 46, 47, 38, 48): 3 канала (MB, ML, Distal) или 4 канала
+ * - Верхние моляры (16, 17, 26, 27, 18, 28): 4 канала (MB1, MB2, DB, Palatal) или 3 канала
+ * - Временные резцы/клыки (51..53, 61..63, 71..73, 81..83): 1 канал
+ * - Временные моляры (54, 55, 64, 65): 3 канала; (74, 75, 84, 85): 2 канала
+ */
+export function getAnatomicalRootCanalCount(
+	toothNumber: number,
+	clinicalCanalCount?: number,
+): number {
+	if (
+		typeof clinicalCanalCount === "number" &&
+		Number.isFinite(clinicalCanalCount) &&
+		clinicalCanalCount > 0
+	) {
+		return Math.min(4, Math.max(1, Math.round(clinicalCanalCount)));
+	}
+
+	const isDeciduous = isDeciduousTooth(toothNumber);
+	const quadrant = Math.floor(toothNumber / 10);
+	const pos = toothNumber % 10;
+	const isUpper =
+		quadrant === 1 || quadrant === 2 || quadrant === 5 || quadrant === 6;
+
+	// Временный прикус
+	if (isDeciduous) {
+		if (pos <= 3) return 1;
+		if (isUpper) return 3;
+		return 2;
+	}
+
+	// Постоянный прикус
+	// Резцы и клыки: 11..13, 21..23, 31..33, 41..43 -> 1 канал
+	if (pos >= 1 && pos <= 3) {
+		return 1;
+	}
+
+	// Премоляры:
+	if (pos === 4) {
+		// Верхний 1-й премоляр (14, 24) -> 2 канала (B, P)
+		if (isUpper) return 2;
+		// Нижний 1-й премоляр (34, 44) -> 1 канал
+		return 1;
+	}
+
+	if (pos === 5) {
+		// Верхний 2-й премоляр (15, 25) и нижний 2-й премоляр (35, 45) -> 1 канал
+		return 1;
+	}
+
+	// Моляры: 6, 7, 8
+	if (pos >= 6 && pos <= 8) {
+		if (isUpper) {
+			// Верхние моляры (16, 17, 26, 27, 18, 28): 4 канала (MB1, MB2, DB, Palatal)
+			return 4;
+		}
+		// Нижние моляры (36, 37, 46, 47, 38, 48): 3 канала (MB, ML, Distal)
+		return 3;
+	}
+
+	return 1;
+}
+
+/**
+ * Получить процедуру инструментальной обработки каналов (A16.07.030.001..004)
+ */
+export function getEndoPreparationProcedure(canalsCount: number): Order804nProcedureDefinition {
+	const clamped = Math.min(4, Math.max(1, Math.round(canalsCount)));
+	const key = `EndoPrep${clamped}Canal${clamped > 1 ? "s" : ""}`;
+	return (
+		ORDER_804N_DICTIONARY[key] ?? {
+			code: `A16.07.030.00${clamped}`,
+			title: `Инструментальная и медикаментозная обработка корневых каналов (${clamped}-канальный зуб)`,
+			category: "Эндодонтия",
+			defaultPriceRub: 3500 + (clamped - 1) * 2000,
+			stageKind: "stage_1_therapy",
+			stageNumber: 1,
+			keywords: ["обработка каналов", "инструментальная"],
+			materialsDefault: "Никель-титановые ротационные файлы, NaOCl 3%, EDTA 17%",
+			uetDoctor: 2.0 + clamped * 0.5,
+			uetNurse: 1.5 + clamped * 0.5,
+		}
+	);
+}
+
+/**
+ * Получить процедуру пломбирования / обтурации корневых каналов (A16.07.008.001..004)
+ */
+export function getEndoObturationProcedure(canalsCount: number): Order804nProcedureDefinition {
+	const clamped = Math.min(4, Math.max(1, Math.round(canalsCount)));
+	const key = `EndoObturation${clamped}Canal${clamped > 1 ? "s" : ""}`;
+	return (
+		ORDER_804N_DICTIONARY[key] ?? {
+			code: `A16.07.008.00${clamped}`,
+			title: `Пломбирование корневых каналов зуба (${clamped}-канальный зуб)`,
+			category: "Эндодонтия",
+			defaultPriceRub: 3000 + (clamped - 1) * 2000,
+			stageKind: "stage_1_therapy",
+			stageNumber: 1,
+			keywords: ["пломбирование каналов", "обтурация"],
+			materialsDefault: "Гуттаперчевые конусные штифты, биокерамический силер",
+			uetDoctor: 2.0 + clamped * 0.5,
+			uetNurse: 1.5 + clamped * 0.5,
+		}
+	);
+}
+
+/**
+ * Получить пару процедур эндодонтии (обработка + обтурация) с расчетом общей цены.
+ */
+export function getEndodonticOrder804nPair(canalsCount: number): {
+	readonly canalCount: number;
+	readonly instrumentation: Order804nProcedureDefinition;
+	readonly obturation: Order804nProcedureDefinition;
+	readonly combinedPriceRub: number;
+} {
+	const prep = getEndoPreparationProcedure(canalsCount);
+	const obt = getEndoObturationProcedure(canalsCount);
+	return {
+		canalCount: Math.min(4, Math.max(1, Math.round(canalsCount))),
+		instrumentation: prep,
+		obturation: obt,
+		combinedPriceRub: prep.defaultPriceRub + obt.defaultPriceRub,
+	};
+}
+
+/**
  * Официальная Номенклатура медицинских услуг (Приказ Минздрава России от 13.10.2017 № 804н)
  * с эталонной клинической структуризацией по 3 этапам комплексного плана.
  */
 export const ORDER_804N_DICTIONARY: Record<string, Order804nProcedureDefinition> = {
 	// ==========================================
-	// ЭТАП 1: ТЕРАПИЯ И НЕОТЛОЖНАЯ САНАЦИЯ
+	// ЭТАП 1: ТЕРАПИЯ, ПАРОДОНТОЛОГИЯ, ДЕТСКАЯ СТОМАТОЛОГИЯ И НЕОТЛОЖНАЯ САНАЦИЯ
 	// ==========================================
 	DiagnosticsCT: {
 		code: "A06.07.004",
@@ -62,15 +206,51 @@ export const ORDER_804N_DICTIONARY: Record<string, Order804nProcedureDefinition>
 		uetNurse: 1.5,
 	},
 	HygieneComplex: {
-		code: "A16.07.051",
-		title: "Профессиональная гигиена полости рта и зубов (Air-Flow + УЗ-скейлинг)",
+		code: "A16.07.050",
+		title: "Профессиональная гигиена полости рта и зубов (Air-Flow + УЗ-скейлинг + реминерализация)",
 		category: "Гигиена",
 		defaultPriceRub: 5500,
 		stageKind: "stage_1_therapy",
 		stageNumber: 1,
-		keywords: ["гигиен", "air-flow", "чистк", "скейлинг", "отложени"],
-		materialsDefault: "Порошок Glycine/Erythritol, фторлак Clinpro White Varnish",
+		keywords: ["гигиен", "air-flow", "чистк", "скейлинг", "отложени", "профгигиен"],
+		materialsDefault: "Глициновый порошок Air-Flow Plus, фторлак Clinpro White Varnish, оптрагейт",
 		uetDoctor: 2.0,
+		uetNurse: 2.0,
+	},
+	PeriodontalScalingSRP: {
+		code: "A16.07.051",
+		title: "Скейлинг и сглаживание поверхности корня при заболеваниях пародонта (SRP / Вектор-терапия)",
+		category: "Пародонтология",
+		defaultPriceRub: 2500,
+		stageKind: "stage_1_therapy",
+		stageNumber: 1,
+		keywords: ["скейлинг", "srp", "пародонт", "вектор", "корен", "десн", "карман"],
+		materialsDefault: "Ультразвуковые микронасадки EMS Perio Slim, полировочный флюид Vector Polish",
+		uetDoctor: 2.0,
+		uetNurse: 1.5,
+	},
+	PeriodontalClosedCurettage: {
+		code: "A16.07.039",
+		title: "Закрытый кюретаж пародонтального кармана в области зуба",
+		category: "Пародонтология",
+		defaultPriceRub: 1800,
+		stageKind: "stage_1_therapy",
+		stageNumber: 1,
+		keywords: ["кюретаж", "закрытый", "пародонтит", "карман"],
+		materialsDefault: "Зоноспецифические кюреты Грейси Hu-Friedy, антисептический гель Curasept",
+		uetDoctor: 1.5,
+		uetNurse: 1.0,
+	},
+	PeriodontalSplinting: {
+		code: "A16.07.019",
+		title: "Временное шинирование зубов при заболеваниях пародонта (стекловолоконная лента)",
+		category: "Пародонтология",
+		defaultPriceRub: 4500,
+		stageKind: "stage_1_therapy",
+		stageNumber: 1,
+		keywords: ["шинирован", "ribbond", "подвижност", "стекловолокн"],
+		materialsDefault: "Стекловолоконная лента Ribbond Ultra, наногибридный текучий композит GrandioSO",
+		uetDoctor: 2.5,
 		uetNurse: 2.0,
 	},
 	CariesTherapy: {
@@ -85,6 +265,133 @@ export const ORDER_804N_DICTIONARY: Record<string, Order804nProcedureDefinition>
 		uetDoctor: 2.5,
 		uetNurse: 2.0,
 	},
+	// Эндодонтия 804н — Инструментальная и медикаментозная обработка корневых каналов (A16.07.030.001..004)
+	EndoPrep1Canal: {
+		code: "A16.07.030.001",
+		title: "Инструментальная и медикаментозная обработка корневого канала (1-канальный зуб)",
+		category: "Эндодонтия",
+		defaultPriceRub: 3500,
+		stageKind: "stage_1_therapy",
+		stageNumber: 1,
+		keywords: ["обработка канала", "1 канал", "инструментальная", "эндо", "prep"],
+		materialsDefault: "Никель-титановые ротационные файлы WaveOne Gold, NaOCl 3%, EDTA 17%",
+		uetDoctor: 2.0,
+		uetNurse: 1.5,
+	},
+	EndoPrep2Canals: {
+		code: "A16.07.030.002",
+		title: "Инструментальная и медикаментозная обработка корневых каналов (2-канальный зуб)",
+		category: "Эндодонтия",
+		defaultPriceRub: 5500,
+		stageKind: "stage_1_therapy",
+		stageNumber: 1,
+		keywords: ["обработка каналов", "2 канала", "инструментальная", "эндо", "prep"],
+		materialsDefault: "Никель-титановые ротационные файлы WaveOne Gold, NaOCl 3%, EDTA 17%",
+		uetDoctor: 2.5,
+		uetNurse: 2.0,
+	},
+	EndoPrep3Canals: {
+		code: "A16.07.030.003",
+		title: "Инструментальная и медикаментозная обработка корневых каналов (3-канальный зуб)",
+		category: "Эндодонтия",
+		defaultPriceRub: 7500,
+		stageKind: "stage_1_therapy",
+		stageNumber: 1,
+		keywords: ["обработка каналов", "3 канала", "инструментальная", "эндо", "prep"],
+		materialsDefault: "Никель-титановые ротационные файлы ProTaper Gold, NaOCl 3%, гель EDTA 17%",
+		uetDoctor: 3.5,
+		uetNurse: 2.5,
+	},
+	EndoPrep4Canals: {
+		code: "A16.07.030.004",
+		title: "Инструментальная и медикаментозная обработка корневых каналов (4-канальный зуб)",
+		category: "Эндодонтия",
+		defaultPriceRub: 9500,
+		stageKind: "stage_1_therapy",
+		stageNumber: 1,
+		keywords: ["обработка каналов", "4 канала", "инструментальная", "эндо", "prep"],
+		materialsDefault: "Никель-титановые ротационные файлы ProTaper Gold / WaveOne, NaOCl 3%, EDTA 17%",
+		uetDoctor: 4.0,
+		uetNurse: 3.0,
+	},
+
+	// Эндодонтия 804н — Пломбирование / обтурация корневых каналов (A16.07.008.001..004)
+	EndoObturation1Canal: {
+		code: "A16.07.008.001",
+		title: "Пломбирование корневого канала зуба гуттаперчей / биокерамикой (1 канал)",
+		category: "Эндодонтия",
+		defaultPriceRub: 3000,
+		stageKind: "stage_1_therapy",
+		stageNumber: 1,
+		keywords: ["пломбирование канала", "1 канал", "обтурация", "гуттаперча"],
+		materialsDefault: "Гуттаперчевые конусные штифты 0.04/0.06, биокерамический силер TotalFill / AH Plus",
+		uetDoctor: 2.0,
+		uetNurse: 1.5,
+	},
+	EndoObturation2Canals: {
+		code: "A16.07.008.002",
+		title: "Пломбирование корневых каналов зуба (2-канальный зуб)",
+		category: "Эндодонтия",
+		defaultPriceRub: 5000,
+		stageKind: "stage_1_therapy",
+		stageNumber: 1,
+		keywords: ["пломбирование каналов", "2 канала", "обтурация", "гуттаперча"],
+		materialsDefault: "Гуттаперчевые конусные штифты 0.04/0.06, биокерамический силер TotalFill / AH Plus",
+		uetDoctor: 2.5,
+		uetNurse: 2.0,
+	},
+	EndoObturation3Canals: {
+		code: "A16.07.008.003",
+		title: "Пломбирование корневых каналов зуба (3-канальный зуб)",
+		category: "Эндодонтия",
+		defaultPriceRub: 7000,
+		stageKind: "stage_1_therapy",
+		stageNumber: 1,
+		keywords: ["пломбирование каналов", "3 канала", "обтурация", "гуттаперча"],
+		materialsDefault: "Гуттаперчевые конусные штифты 0.04/0.06, биокерамический силер TotalFill / AH Plus",
+		uetDoctor: 3.5,
+		uetNurse: 2.5,
+	},
+	EndoObturation4Canals: {
+		code: "A16.07.008.004",
+		title: "Пломбирование корневых каналов зуба (4-канальный зуб)",
+		category: "Эндодонтия",
+		defaultPriceRub: 9000,
+		stageKind: "stage_1_therapy",
+		stageNumber: 1,
+		keywords: ["пломбирование каналов", "4 канала", "обтурация", "гуттаперча"],
+		materialsDefault: "Гуттаперчевые конусные штифты 0.04/0.06, биокерамический силер TotalFill / AH Plus",
+		uetDoctor: 4.0,
+		uetNurse: 3.0,
+	},
+
+	// Дополнительные процедуры эндодонтии
+	EndoMedicationCaOH2: {
+		code: "A16.07.091",
+		title: "Временное пломбирование лекарственным препаратом корневого канала (Ca(OH)2)",
+		category: "Эндодонтия",
+		defaultPriceRub: 2000,
+		stageKind: "stage_1_therapy",
+		stageNumber: 1,
+		keywords: ["кальций", "гидроксид кальция", "ultracal", "временное пломбирование канала"],
+		materialsDefault: "Препарат на основе гидроксида кальция UltraCal XS, стерильные бумажные штифты",
+		uetDoctor: 1.5,
+		uetNurse: 1.0,
+	},
+	EndoUnsealing: {
+		code: "A16.07.082",
+		title: "Распломбирование корневого канала зуба",
+		category: "Эндодонтия",
+		defaultPriceRub: 2500,
+		stageKind: "stage_1_therapy",
+		stageNumber: 1,
+		keywords: ["распломбирование", "перелечивание", "извлечение штифта", "эндосольв"],
+		materialsDefault: "Растворитель гуттаперчи D-Solv, ретритмент-файлы ProTaper D1-D3",
+		uetDoctor: 2.5,
+		uetNurse: 2.0,
+	},
+
+	// Комплексные пакеты пульпита и периодонтита
 	PulpitisEndo: {
 		code: "A16.07.008.002",
 		title: "Эндодонтическое лечение пульпита (инструментальная обработка и 3D-обтурация каналов)",
@@ -108,6 +415,44 @@ export const ORDER_804N_DICTIONARY: Record<string, Order804nProcedureDefinition>
 		materialsDefault: "Препарат на основе гидроксида кальция UltraCal, термопластифицированная гуттаперча",
 		uetDoctor: 5.0,
 		uetNurse: 4.0,
+	},
+
+	// Детская стоматология (Временные зубы)
+	PediatricCariesTherapy: {
+		code: "A16.07.002.001",
+		title: "Восстановление временного зуба пломбой (лечение кариеса молочного зуба)",
+		category: "Детская терапия",
+		defaultPriceRub: 3200,
+		stageKind: "stage_1_therapy",
+		stageNumber: 1,
+		keywords: ["детск кариес", "молочн зуб", "временн зуб", "twinky", "fuji"],
+		materialsDefault: "Цветной компомер Twinky Star / стеклоиономер Fuji IX GP, аппликационная анестезия",
+		uetDoctor: 2.0,
+		uetNurse: 1.5,
+	},
+	PediatricPulpitisPulpotomy: {
+		code: "A16.07.008.001",
+		title: "Пульпотомия (ампутация пульпы) временного зуба с биоактивной герметизацией",
+		category: "Детская терапия",
+		defaultPriceRub: 5800,
+		stageKind: "stage_1_therapy",
+		stageNumber: 1,
+		keywords: ["пульпотом", "детск пульпит", "ампутац пульпы", "biodentine"],
+		materialsDefault: "Биоактивный заменитель дентина Septodont Biodentine / МТА, цинк-оксид-эвгенол",
+		uetDoctor: 3.0,
+		uetNurse: 2.0,
+	},
+	PediatricFissureSealing: {
+		code: "A16.07.057",
+		title: "Запечатывание фиссуры зуба герметиком (герметизация фиссур у детей)",
+		category: "Профилактика",
+		defaultPriceRub: 2200,
+		stageKind: "stage_1_therapy",
+		stageNumber: 1,
+		keywords: ["герметизац", "фиссур", "силан", "clinpro"],
+		materialsDefault: "Светоотверждаемый герметик с цветовой индикацией 3M Clinpro Sealant",
+		uetDoctor: 1.5,
+		uetNurse: 1.0,
 	},
 
 	// ==========================================
@@ -137,6 +482,18 @@ export const ORDER_804N_DICTIONARY: Record<string, Order804nProcedureDefinition>
 		uetDoctor: 3.5,
 		uetNurse: 3.0,
 	},
+	PediatricExtraction: {
+		code: "A16.07.001",
+		title: "Удаление временного зуба с аппликационной / инфильтрационной анестезией",
+		category: "Детская хирургия",
+		defaultPriceRub: 1800,
+		stageKind: "stage_2_surgery",
+		stageNumber: 2,
+		keywords: ["удаление молочн", "удаление временн", "детск удален", "смена зубов"],
+		materialsDefault: "Аппликационный обезболивающий гель, стерильный гемостатик",
+		uetDoctor: 1.5,
+		uetNurse: 1.5,
+	},
 	BoneGraftingSinusLift: {
 		code: "A16.07.041",
 		title: "Костная пластика челюстно-лицевой области (направленная костная регенерация / синус-лифтинг)",
@@ -144,8 +501,8 @@ export const ORDER_804N_DICTIONARY: Record<string, Order804nProcedureDefinition>
 		defaultPriceRub: 28000,
 		stageKind: "stage_2_surgery",
 		stageNumber: 2,
-		keywords: ["костн", "пластик", "синус", "лифтинг", "аугментац", "bio-oss"],
-		materialsDefault: "Ксеногенный костный материал Geistlich Bio-Oss + мембрана Bio-Gide",
+		keywords: ["костн", "пластик", "синус", "лифтинг", "аугментац", "bio-oss", "нкр"],
+		materialsDefault: "Ксеногенный костный материал Geistlich Bio-Oss + коллагеновая мембрана Bio-Gide",
 		uetDoctor: 5.0,
 		uetNurse: 4.0,
 	},
@@ -212,6 +569,18 @@ export const ORDER_804N_DICTIONARY: Record<string, Order804nProcedureDefinition>
 		materialsDefault: "Дисиликат лития IPS e.max CAD/Press с индивидуальным нанесением",
 		uetDoctor: 4.5,
 		uetNurse: 3.0,
+	},
+	PediatricCrownSSC: {
+		code: "A16.07.004.003",
+		title: "Восстановление временного зуба стандартной защитной металлической / циркониевой коронкой",
+		category: "Детская ортопедия",
+		defaultPriceRub: 4900,
+		stageKind: "stage_3_orthopedics",
+		stageNumber: 3,
+		keywords: ["детск коронк", "стальн коронк", "коронка на молочн", "nusmile", "3m ssc"],
+		materialsDefault: "Стальная анатомическая коронка 3M ESPE Stainless Steel Crown / цирконий NuSmile",
+		uetDoctor: 2.5,
+		uetNurse: 2.0,
 	},
 	BridgeProsthesis: {
 		code: "A16.07.005",
@@ -315,6 +684,7 @@ export function matchCatalogService(
 
 /**
  * 1-Click генерация комплексных этапов плана лечения на основе одонтограммы.
+ * Поддерживает взрослую и детскую одонтограмму (молочные зубы), пародонтологические патологии и имплантацию.
  */
 export function generateTreatmentPlanStages(
 	teeth: readonly ToothData[],
@@ -327,13 +697,262 @@ export function generateTreatmentPlanStages(
 
 	const validDiscountPct = Math.max(0, Math.min(50, discountPercent));
 
-	// Анализируем патологии зубов
+	let hasPeriodontalNeeds = false;
+
+	// Анализируем зубы и пародонтальный статус
 	for (const tooth of teeth) {
 		const num = tooth.toothNumber;
 		const state: ToothState | string = tooth.state || "Healthy";
+		const isDeciduous = isDeciduousTooth(num);
+
+		// Пародонтологический скрининг (костная резорбция, подвижность, карманы)
+		const hasBoneLoss = Boolean(tooth.boneLossLevel && tooth.boneLossLevel > 0);
+		const hasMobility = Boolean(tooth.mobility && tooth.mobility > 0);
+		const hasFurcation = Boolean(tooth.furcationGrade && tooth.furcationGrade > 0);
+
+		if (hasBoneLoss || hasMobility || hasFurcation) {
+			hasPeriodontalNeeds = true;
+
+			// Добавляем скейлинг и сглаживание корней (A16.07.051)
+			const defSrp = ORDER_804N_DICTIONARY.PeriodontalScalingSRP!;
+			const matchSrp = matchCatalogService(
+				catalog,
+				"periodontics",
+				defSrp.keywords,
+				defSrp.defaultPriceRub,
+				defSrp.code,
+			);
+			const srpUnit = matchSrp.priceRub;
+			const srpDisc =
+				validDiscountPct > 0 ? Math.round((srpUnit * validDiscountPct) / 100) : 0;
+
+			stage1Items.push({
+				id: `srp-${num}`,
+				toothNumber: num,
+				code804n: defSrp.code,
+				name: matchSrp.title || `Зуб ${num}: ${defSrp.title}`,
+				category: "Пародонтология",
+				unitPriceRub: srpUnit,
+				priceRub: srpUnit - srpDisc,
+				discountRub: srpDisc,
+				quantity: 1,
+				phase: 1,
+				stageKind: "stage_1_therapy",
+				isAuto: true,
+				priceId: matchSrp.priceId,
+				fromCatalog: matchSrp.fromCatalog,
+				materials: defSrp.materialsDefault,
+				clinicalRationale: "Устранение поддесневого биопленочного налета и полировка корня",
+			});
+
+			// Если глубокая потеря кости (grade >= 2) — добавляем закрытый кюретаж кармана (A16.07.039)
+			if ((tooth.boneLossLevel && tooth.boneLossLevel >= 2) || hasFurcation) {
+				const defCurettage = ORDER_804N_DICTIONARY.PeriodontalClosedCurettage!;
+				const matchCur = matchCatalogService(
+					catalog,
+					"periodontics",
+					defCurettage.keywords,
+					defCurettage.defaultPriceRub,
+					defCurettage.code,
+				);
+				const curUnit = matchCur.priceRub;
+				const curDisc =
+					validDiscountPct > 0 ? Math.round((curUnit * validDiscountPct) / 100) : 0;
+
+				stage1Items.push({
+					id: `curettage-${num}`,
+					toothNumber: num,
+					code804n: defCurettage.code,
+					name: matchCur.title || `Зуб ${num}: ${defCurettage.title}`,
+					category: "Пародонтология",
+					unitPriceRub: curUnit,
+					priceRub: curUnit - curDisc,
+					discountRub: curDisc,
+					quantity: 1,
+					phase: 1,
+					stageKind: "stage_1_therapy",
+					isAuto: true,
+					priceId: matchCur.priceId,
+					fromCatalog: matchCur.fromCatalog,
+					materials: defCurettage.materialsDefault,
+					clinicalRationale: "Аблация грануляционной ткани и редукция глубины пародонтального кармана",
+				});
+			}
+
+			// Если патологическая подвижность >= 2 — шинирование Ribbond (A16.07.019)
+			if (tooth.mobility && tooth.mobility >= 2) {
+				const defSplint = ORDER_804N_DICTIONARY.PeriodontalSplinting!;
+				const matchSplint = matchCatalogService(
+					catalog,
+					"periodontics",
+					defSplint.keywords,
+					defSplint.defaultPriceRub,
+					defSplint.code,
+				);
+				const spUnit = matchSplint.priceRub;
+				const spDisc =
+					validDiscountPct > 0 ? Math.round((spUnit * validDiscountPct) / 100) : 0;
+
+				stage1Items.push({
+					id: `splint-${num}`,
+					toothNumber: num,
+					code804n: defSplint.code,
+					name: matchSplint.title || `Зуб ${num}: ${defSplint.title}`,
+					category: "Пародонтология",
+					unitPriceRub: spUnit,
+					priceRub: spUnit - spDisc,
+					discountRub: spDisc,
+					quantity: 1,
+					phase: 1,
+					stageKind: "stage_1_therapy",
+					isAuto: true,
+					priceId: matchSplint.priceId,
+					fromCatalog: matchSplint.fromCatalog,
+					materials: defSplint.materialsDefault,
+					clinicalRationale: "Иммобилизация подвижного зуба в единый стабилизирующий блок",
+				});
+			}
+		}
 
 		if (state === "Healthy" || state === "Filled") continue;
 
+		// ----------------------------------------------------
+		// 1. ДЕТСКИЙ ПРИКУС (Временные зубы 51..85)
+		// ----------------------------------------------------
+		if (isDeciduous) {
+			if (state === "Caries") {
+				const def = ORDER_804N_DICTIONARY.PediatricCariesTherapy!;
+				const match = matchCatalogService(
+					catalog,
+					"pediatric",
+					def.keywords,
+					def.defaultPriceRub,
+					def.code,
+				);
+				const unitPrice = match.priceRub;
+				const discountRub =
+					validDiscountPct > 0 ? Math.round((unitPrice * validDiscountPct) / 100) : 0;
+
+				stage1Items.push({
+					id: `ped-caries-${num}`,
+					toothNumber: num,
+					code804n: def.code,
+					name: match.title || `Временный зуб ${num}: ${def.title}`,
+					category: "Детская терапия",
+					unitPriceRub: unitPrice,
+					priceRub: Math.max(0, unitPrice - discountRub),
+					discountRub: discountRub,
+					quantity: 1,
+					phase: 1,
+					stageKind: "stage_1_therapy",
+					isAuto: true,
+					priceId: match.priceId,
+					fromCatalog: match.fromCatalog,
+					materials: def.materialsDefault,
+					clinicalRationale: "Устранение кариозного дефекта молочного зуба и защита зачатка постоянного",
+				});
+			} else if (state === "Pulpitis") {
+				const def = ORDER_804N_DICTIONARY.PediatricPulpitisPulpotomy!;
+				const match = matchCatalogService(
+					catalog,
+					"pediatric",
+					def.keywords,
+					def.defaultPriceRub,
+					def.code,
+				);
+				const unitPrice = match.priceRub;
+				const discountRub =
+					validDiscountPct > 0 ? Math.round((unitPrice * validDiscountPct) / 100) : 0;
+
+				stage1Items.push({
+					id: `ped-pulpotomy-${num}`,
+					toothNumber: num,
+					code804n: def.code,
+					name: match.title || `Временный зуб ${num}: ${def.title}`,
+					category: "Детская терапия",
+					unitPriceRub: unitPrice,
+					priceRub: Math.max(0, unitPrice - discountRub),
+					discountRub: discountRub,
+					quantity: 1,
+					phase: 1,
+					stageKind: "stage_1_therapy",
+					isAuto: true,
+					priceId: match.priceId,
+					fromCatalog: match.fromCatalog,
+					materials: def.materialsDefault,
+					clinicalRationale: "Витальная пульпотомия с биоактивной герметизацией корневых устьев",
+				});
+
+				// Для временного моляра после пульпотомии добавляем стандартную стальную коронку SSC в Этап 3
+				const defSsc = ORDER_804N_DICTIONARY.PediatricCrownSSC!;
+				const matchSsc = matchCatalogService(
+					catalog,
+					"pediatric",
+					defSsc.keywords,
+					defSsc.defaultPriceRub,
+					defSsc.code,
+				);
+				const sscUnit = matchSsc.priceRub;
+				const sscDisc =
+					validDiscountPct > 0 ? Math.round((sscUnit * validDiscountPct) / 100) : 0;
+
+				stage3Items.push({
+					id: `ped-ssc-${num}`,
+					toothNumber: num,
+					code804n: defSsc.code,
+					name: matchSsc.title || `Временный зуб ${num}: ${defSsc.title}`,
+					category: "Детская ортопедия",
+					unitPriceRub: sscUnit,
+					priceRub: Math.max(0, sscUnit - sscDisc),
+					discountRub: sscDisc,
+					quantity: 1,
+					phase: 3,
+					stageKind: "stage_3_orthopedics",
+					isAuto: true,
+					priceId: matchSsc.priceId,
+					fromCatalog: matchSsc.fromCatalog,
+					materials: defSsc.materialsDefault,
+					clinicalRationale: "Предотвращение повторного скола и сохранение высоты прикуса до смены",
+				});
+			} else if (state === "Missing" || state === "Periodontitis") {
+				// Удаление молочного зуба в этап хирургии (без имплантации)
+				const defExtract = ORDER_804N_DICTIONARY.PediatricExtraction!;
+				const matchExtract = matchCatalogService(
+					catalog,
+					"pediatric_surgery",
+					defExtract.keywords,
+					defExtract.defaultPriceRub,
+					defExtract.code,
+				);
+				const unitPrice = matchExtract.priceRub;
+				const discountRub =
+					validDiscountPct > 0 ? Math.round((unitPrice * validDiscountPct) / 100) : 0;
+
+				stage2Items.push({
+					id: `ped-extract-${num}`,
+					toothNumber: num,
+					code804n: defExtract.code,
+					name: matchExtract.title || `Временный зуб ${num}: ${defExtract.title}`,
+					category: "Детская хирургия",
+					unitPriceRub: unitPrice,
+					priceRub: Math.max(0, unitPrice - discountRub),
+					discountRub: discountRub,
+					quantity: 1,
+					phase: 2,
+					stageKind: "stage_2_surgery",
+					isAuto: true,
+					priceId: matchExtract.priceId,
+					fromCatalog: matchExtract.fromCatalog,
+					materials: defExtract.materialsDefault,
+					clinicalRationale: "Физиологическая смена или санация очага инфекции временного зуба",
+				});
+			}
+			continue;
+		}
+
+		// ----------------------------------------------------
+		// 2. ВЗРОСЛЫЙ ПРИКУС (Постоянные зубы 11..48)
+		// ----------------------------------------------------
 		if (state === "Caries") {
 			const def = ORDER_804N_DICTIONARY.CariesTherapy!;
 			const match = matchCatalogService(
@@ -367,7 +986,17 @@ export function generateTreatmentPlanStages(
 				clinicalRationale: "Устранение очага кариозного распада, восстановление контактного пункта",
 			});
 		} else if (state === "Pulpitis") {
-			const def = ORDER_804N_DICTIONARY.PulpitisEndo!;
+			const clinicalCanals =
+				tooth.clinicalData &&
+				typeof tooth.clinicalData === "object" &&
+				"canals" in tooth.clinicalData &&
+				Array.isArray((tooth.clinicalData as { canals?: unknown[] }).canals)
+					? (tooth.clinicalData as { canals?: unknown[] }).canals?.length
+					: undefined;
+
+			const canalsCount = getAnatomicalRootCanalCount(num, clinicalCanals);
+			const obtProc = getEndoObturationProcedure(canalsCount);
+			const def = obtProc;
 			const match = matchCatalogService(
 				catalog,
 				"therapy",
@@ -431,7 +1060,7 @@ export function generateTreatmentPlanStages(
 				clinicalRationale: "Ликвидация апикального периапикального воспаления",
 			});
 		} else if (state === "Missing" || state === "Planned_Implant") {
-			// Хирургический этап: Удаление корня + Навигационный шаблон + Имплантация
+			// Хирургический этап: Удаление корня (если Missing) + Костная пластика (при атрофии) + Навигационный шаблон + Имплантация
 			const defGuide = ORDER_804N_DICTIONARY.SurgicalNavigationGuide!;
 			const defImplant = ORDER_804N_DICTIONARY.DentalImplantation!;
 
@@ -483,6 +1112,40 @@ export function generateTreatmentPlanStages(
 				});
 			}
 
+			// Если отмечена атрофия кости (boneLossLevel > 0) — добавляем костную пластику / синус-лифтинг (A16.07.041)
+			if (tooth.boneLossLevel && tooth.boneLossLevel > 0) {
+				const defGraft = ORDER_804N_DICTIONARY.BoneGraftingSinusLift!;
+				const matchGraft = matchCatalogService(
+					catalog,
+					"surgery",
+					defGraft.keywords,
+					defGraft.defaultPriceRub,
+					defGraft.code,
+				);
+				const graftUnit = matchGraft.priceRub;
+				const graftDisc =
+					validDiscountPct > 0 ? Math.round((graftUnit * validDiscountPct) / 100) : 0;
+
+				stage2Items.push({
+					id: `graft-${num}`,
+					toothNumber: num,
+					code804n: defGraft.code,
+					name: matchGraft.title || `Зуб ${num}: ${defGraft.title}`,
+					category: "Хирургия",
+					unitPriceRub: graftUnit,
+					priceRub: graftUnit - graftDisc,
+					discountRub: graftDisc,
+					quantity: 1,
+					phase: 2,
+					stageKind: "stage_2_surgery",
+					isAuto: true,
+					priceId: matchGraft.priceId,
+					fromCatalog: matchGraft.fromCatalog,
+					materials: defGraft.materialsDefault,
+					clinicalRationale: "Восстановление ширины и высоты альвеолярного гребня материалом Bio-Oss",
+				});
+			}
+
 			const guideUnit = matchGuide.priceRub;
 			const guideDisc =
 				validDiscountPct > 0 ? Math.round((guideUnit * validDiscountPct) / 100) : 0;
@@ -524,10 +1187,10 @@ export function generateTreatmentPlanStages(
 				priceId: matchImplant.priceId,
 				fromCatalog: matchImplant.fromCatalog,
 				materials: defImplant.materialsDefault,
-				clinicalRationale: "Восстановление утраченной жевательной опоры",
+				clinicalRationale: "Восстановление утраченной жевательной опоры внутрикостным имплантатом",
 			});
 
-			// Ортопедический этап на имплантате
+			// Ортопедический этап на имплантате (A16.07.006)
 			const defImpCrown = ORDER_804N_DICTIONARY.ImplantCrownProsthetics!;
 			const matchImpCrown = matchCatalogService(
 				catalog,
@@ -556,7 +1219,7 @@ export function generateTreatmentPlanStages(
 				priceId: matchImpCrown.priceId,
 				fromCatalog: matchImpCrown.fromCatalog,
 				materials: defImpCrown.materialsDefault,
-				clinicalRationale: "Финишная эстетическая и функциональная реставрация на имплантате",
+				clinicalRationale: "Финишная эстетическая и функциональная реставрация на имплантате с винтовой фиксацией",
 			});
 		} else if (state === "Crown") {
 			const defCrown = ORDER_804N_DICTIONARY.CrownZirconia!;
@@ -587,12 +1250,12 @@ export function generateTreatmentPlanStages(
 				priceId: matchCrown.priceId,
 				fromCatalog: matchCrown.fromCatalog,
 				materials: defCrown.materialsDefault,
-				clinicalRationale: "Анатомическое укрепление депульпированного зуба коронкой",
+				clinicalRationale: "Анатомическое укрепление депульпированного зуба коронкой из диоксида циркония",
 			});
 		}
 	}
 
-	// Если есть патологии — добавляем диагностику и гигиену в Этап 1
+	// Если есть любые манипуляции — добавляем КЛКТ диагностику и комплексную гигиену в начало Этапа 1
 	if (stage1Items.length > 0 || stage2Items.length > 0 || stage3Items.length > 0) {
 		const defDiag = ORDER_804N_DICTIONARY.DiagnosticsCT!;
 		const matchDiag = matchCatalogService(
@@ -690,8 +1353,8 @@ export function generateTreatmentPlanStages(
 	const s1 = buildStage(
 		1,
 		"stage_1_therapy",
-		"Этап 1: Неотложная помощь и терапевтическая санация",
-		"Купирование боли, лечение кариеса, пульпита, периодонтита и профгигиена",
+		"Этап 1: Неотложная помощь, терапия и пародонтология",
+		"Купирование боли, лечение кариеса, пульпита, пародонтита SRP и профгигиена",
 		"Полная ликвидация очагов инфекции и воспаления в полости рта",
 		stage1Items,
 	);
@@ -700,7 +1363,7 @@ export function generateTreatmentPlanStages(
 		2,
 		"stage_2_surgery",
 		"Этап 2: Хирургический этап",
-		"Атравматичное удаление, костная пластика и дентальная имплантация",
+		"Атравматичное удаление, костная пластика, синус-лифтинг и дентальная имплантация",
 		"Восстановление объема костной ткани и интеграция титановых опор",
 		stage2Items,
 	);

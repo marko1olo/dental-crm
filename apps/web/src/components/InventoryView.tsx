@@ -4,10 +4,12 @@ import {
 	ArrowUpFromLine,
 	Edit2,
 	Package,
+	PackageCheck,
 	Plus,
 	Search,
 	Trash2,
 	TrendingUp,
+	Truck,
 	X,
 } from "lucide-react";
 import React, { useState } from "react";
@@ -15,6 +17,8 @@ import { money } from "../AppHelpers";
 import { InventoryConfirmDialog } from "./inventory/InventoryConfirmDialog";
 import { ProcedureMaterialDeductionModal } from "./inventory/ProcedureMaterialDeductionModal";
 import { useInventoryLogic } from "./inventory/useInventoryLogic";
+import { WarehouseTransferModal } from "./inventory/transfers/WarehouseTransferModal";
+import { ClinicalWriteoffModal } from "./inventory/writeoff/ClinicalWriteoffModal";
 
 /**
  * Как показать срок годности расходника.
@@ -154,6 +158,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 	} = inventory;
 
 	const [isDeductionModalOpen, setIsDeductionModalOpen] = useState(false);
+	const [isClinicalWriteoffOpen, setIsClinicalWriteoffOpen] = useState(false);
+	const [isWarehouseTransferOpen, setIsWarehouseTransferOpen] = useState(false);
 
 	/*
 	 * ЭТО ЗНАЧЕНИЯ CSS, А НЕ ИМЕНА КЛАССОВ.
@@ -814,7 +820,51 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								}}
 							/>
 						</div>
-						<div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+						<div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+							<button
+								type="button"
+								className="secondary-button"
+								data-testid="clinical-writeoff-trigger"
+								onClick={() => setIsClinicalWriteoffOpen(true)}
+								style={{
+									display: "inline-flex",
+									alignItems: "center",
+									gap: 8,
+									padding: "10px 16px",
+									borderRadius: 8,
+									border: `1px solid ${borderColor}`,
+									background: paperSoftBg,
+									color: "var(--ink)",
+									fontWeight: 600,
+									fontSize: 14,
+									cursor: "pointer",
+								}}
+								title="Клиническое списание расходников по нормам Приказа Минздрава 804н с генерацией актов 0504230, М-11 и ТОРГ-16"
+							>
+								<PackageCheck size={18} className="text-teal-600" /> Списание материалов по наряду (Приказ 804н / ТОРГ-16 / М-11)
+							</button>
+							<button
+								type="button"
+								className="secondary-button"
+								data-testid="warehouse-transfer-trigger"
+								onClick={() => setIsWarehouseTransferOpen(true)}
+								style={{
+									display: "inline-flex",
+									alignItems: "center",
+									gap: 8,
+									padding: "10px 16px",
+									borderRadius: 8,
+									border: `1px solid ${borderColor}`,
+									background: paperSoftBg,
+									color: "var(--ink)",
+									fontWeight: 600,
+									fontSize: 14,
+									cursor: "pointer",
+								}}
+								title="Межфилиальное перемещение ТМЦ по накладным ТОРГ-13"
+							>
+								<Truck size={18} /> Перемещение ТМЦ (ТОРГ-13)
+							</button>
 							<button
 								type="button"
 								className="secondary-button"
@@ -1914,6 +1964,24 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 				warehouseItems={items}
 				onConfirmDeduction={async () => {
 					setIsDeductionModalOpen(false);
+					fetchItems();
+				}}
+			/>
+
+			<ClinicalWriteoffModal
+				isOpen={isClinicalWriteoffOpen}
+				onClose={() => setIsClinicalWriteoffOpen(false)}
+				onConfirmWriteoff={async () => {
+					setIsClinicalWriteoffOpen(false);
+					fetchItems();
+				}}
+			/>
+
+			<WarehouseTransferModal
+				isOpen={isWarehouseTransferOpen}
+				onClose={() => setIsWarehouseTransferOpen(false)}
+				onDocumentSaved={async () => {
+					setIsWarehouseTransferOpen(false);
 					fetchItems();
 				}}
 			/>

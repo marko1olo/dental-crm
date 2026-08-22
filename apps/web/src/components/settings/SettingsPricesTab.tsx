@@ -11,6 +11,7 @@ import {
 	Plus,
 	ReceiptText,
 	Search,
+	ShieldCheck,
 	Sparkles,
 	Trash2,
 	UploadCloud,
@@ -28,6 +29,7 @@ import {
 	type SettingsAccessHeaders,
 	staffMutationHeaders,
 } from "./staffMutationRequest";
+import { ServicePricelistManagerModal } from "../catalog/pricelist/ServicePricelistManagerModal";
 
 // biome-ignore lint/correctness/noUnusedVariables: automated suppression
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
@@ -131,6 +133,8 @@ export function SettingsPricesTab() {
 		"catalog",
 	);
 	const [searchQuery, setSearchQuery] = useState("");
+	const [isServicePricelistModalOpen, setIsServicePricelistModalOpen] =
+		useState(false);
 
 	const [editServiceId, setEditServiceId] = useState<string | null>(null);
 	const [editServiceForm, setEditServiceForm] = useState(NEW_SERVICE_TEMPLATE);
@@ -416,6 +420,23 @@ export function SettingsPricesTab() {
 							</div>
 							<button
 								type="button"
+								className="secondary-button"
+								onClick={() => setIsServicePricelistModalOpen(true)}
+								data-testid="open-service-pricelist-modal-btn"
+								title="Справочник услуг и прайс-лист (Приказ Минздрава № 804н / ДМС / VIP)"
+								style={{
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "6px",
+									minHeight: "44px",
+									fontWeight: 600,
+								}}
+							>
+								<ShieldCheck size={16} style={{ color: "var(--teal)" }} />
+								<span>Справочник услуг и прайс-лист (Приказ Минздрава № 804н / ДМС / VIP)</span>
+							</button>
+							<button
+								type="button"
 								className="primary-button"
 								onClick={() => {
 									setEditServiceForm(NEW_SERVICE_TEMPLATE);
@@ -424,6 +445,7 @@ export function SettingsPricesTab() {
 									setPriceProblem(null);
 									setEditServiceId("new");
 								}}
+								style={{ minHeight: "44px" }}
 							>
 								<Plus size={18} /> Добавить услугу
 							</button>
@@ -1138,6 +1160,16 @@ export function SettingsPricesTab() {
 					</div>
 				</div>
 			)}
+
+			<ServicePricelistManagerModal
+				isOpen={isServicePricelistModalOpen}
+				onClose={() => setIsServicePricelistModalOpen(false)}
+				clinicName={dashboard?.clinicSettings?.name}
+				clinicAddress={dashboard?.clinicSettings?.address}
+				clinicPhone={dashboard?.clinicSettings?.phone}
+				clinicLicense={dashboard?.clinicSettings?.license}
+				chiefDoctorName={dashboard?.clinicSettings?.chiefDoctor}
+			/>
 		</div>
 	);
 }

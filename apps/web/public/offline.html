@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>DENTE Dental CRM — Автономный оффлайн-режим</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #0f172a;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .offline-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 480px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+    .offline-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+      color: #0d9488;
+    }
+    h1 {
+      font-size: 20px;
+      margin: 0 0 12px;
+      font-weight: 700;
+    }
+    p {
+      font-size: 14px;
+      color: #94a3b8;
+      line-height: 1.5;
+      margin: 0 0 24px;
+    }
+    .btn {
+      display: inline-block;
+      min-height: 44px;
+      min-width: 44px;
+      padding: 12px 24px;
+      background: #0d9488;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .btn:hover {
+      background: #0f766e;
+    }
+  </style>
+</head>
+<body>
+  <div class="offline-card">
+    <svg class="offline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.58 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/>
+    </svg>
+    <h1>Автономный режим DENTE</h1>
+    <p>Подключение к серверу временно недоступно. Ваши локальные черновики (043/у, одонтограмма, чеки) сохранены в защищённой базе IndexedDB и будут автоматически отправлены при восстановлении связи.</p>
+    <button class="btn" onclick="window.location.reload()">Проверить соединение</button>
+  </div>
+</body>
+</html>

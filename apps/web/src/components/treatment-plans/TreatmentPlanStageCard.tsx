@@ -8,6 +8,7 @@ import {
 	Clock,
 	Coins,
 	FileText,
+	FlaskConical,
 	Layers,
 	Package,
 	Shield,
@@ -29,6 +30,7 @@ interface TreatmentPlanStageCardProps {
 	readonly onUpdateItemQuantity?: (itemId: string, newQty: number) => void;
 	readonly onRemoveItem?: (itemId: string) => void;
 	readonly onExecuteWriteOffStage?: (stage: TreatmentPlanStage) => void;
+	readonly onOpenLabOrder?: (teeth?: number[]) => void;
 	readonly className?: string;
 }
 
@@ -39,6 +41,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 	onUpdateItemQuantity,
 	onRemoveItem,
 	onExecuteWriteOffStage,
+	onOpenLabOrder,
 	className = "",
 }) => {
 	const [isExpanded, setIsExpanded] = useState<boolean>(defaultExpanded);
@@ -190,6 +193,33 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 									</div>
 
 									<div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-[var(--border,#cbd5e1)]">
+										{onOpenLabOrder &&
+											(item.category === "Ортопедия" ||
+												item.category === "Детская ортопедия" ||
+												item.stageKind === "stage_3_orthopedics" ||
+												/коронк|мост|протез|винир|вкладк|абатмент|бюгел|all-on|onlay|inlay/i.test(
+													item.name,
+												) ||
+												item.code804n.startsWith("A16.07.003") ||
+												item.code804n.startsWith("A16.07.004") ||
+												item.code804n.startsWith("A16.07.005") ||
+												item.code804n.startsWith("A16.07.006")) && (
+												<button
+													type="button"
+													onClick={() =>
+														onOpenLabOrder(
+															item.toothNumber ? [item.toothNumber] : undefined,
+														)
+													}
+													className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 cursor-pointer transition-colors shrink-0"
+													title={`Оформить наряд-заказ в зуботехническую лабораторию для ${item.name}`}
+													data-testid={`item-lab-order-btn-${item.id}`}
+												>
+													<FlaskConical size={12} className="text-teal-600 dark:text-teal-400" />
+													<span>Наряд в ЗТЛ</span>
+												</button>
+											)}
+
 										<div className="text-right">
 											<span className="text-xs font-bold text-[var(--ink,#0f172a)] font-mono">
 												{item.priceRub.toLocaleString("ru-RU")} ₽
@@ -320,17 +350,45 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 							</span>
 						</div>
 
-						{onExecuteWriteOffStage && stage.items.length > 0 && (
-							<button
-								type="button"
-								onClick={() => onExecuteWriteOffStage(stage)}
-								className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 cursor-pointer transition-colors"
-								title="Сформировать Акт выполненных работ и провести списание ТМЦ со склада"
-							>
-								<Package size={13} />
-								<span>Акт и списание ТМЦ</span>
-							</button>
-						)}
+						<div className="flex flex-wrap items-center gap-2">
+							{onOpenLabOrder &&
+								(stage.stageKind === "stage_3_orthopedics" ||
+									stage.stageNumber === 3 ||
+									stage.items.some(
+										(it) =>
+											it.category === "Ортопедия" ||
+											it.category === "Детская ортопедия" ||
+											/коронк|мост|протез|винир|вкладк|абатмент|бюгел/i.test(it.name),
+									)) && (
+									<button
+										type="button"
+										onClick={() => {
+											const stageTeeth = stage.items
+												.map((it) => it.toothNumber)
+												.filter((t): t is number => typeof t === "number" && t > 0);
+											onOpenLabOrder(stageTeeth.length > 0 ? stageTeeth : undefined);
+										}}
+										className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 cursor-pointer transition-colors"
+										title="Оформить наряд-заказ в зуботехническую лабораторию"
+										data-testid={`stage-${stage.stageNumber}-lab-order-btn`}
+									>
+										<FlaskConical size={13} className="text-teal-600 dark:text-teal-400" />
+										<span>Наряд-заказ в зуботехническую лабораторию</span>
+									</button>
+								)}
+
+							{onExecuteWriteOffStage && stage.items.length > 0 && (
+								<button
+									type="button"
+									onClick={() => onExecuteWriteOffStage(stage)}
+									className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 cursor-pointer transition-colors"
+									title="Сформировать Акт выполненных работ и провести списание ТМЦ со склада"
+								>
+									<Package size={13} />
+									<span>Акт и списание ТМЦ</span>
+								</button>
+							)}
+						</div>
 					</div>
 				</div>
 			)}
