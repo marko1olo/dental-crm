@@ -556,14 +556,14 @@ export async function registerSberPosWebhookRoutes(app: FastifyInstance) {
 						),
 					);
 
-				if (lockedPayment && nextStatus === "REFUNDED") {
+				if (nextStatus === "REFUNDED") {
 					await tx
 						.update(payments)
 						.set({ status: "refunded", updatedAt: new Date() })
 						.where(
 							and(
-								eq(payments.id, lockedPayment.id),
 								eq(payments.organizationId, lockedTx.organizationId),
+								eq(payments.clientMutationId, clientMutationId),
 							),
 						);
 				}
