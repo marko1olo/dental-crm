@@ -55,7 +55,7 @@
 }
 
 .implant-touch-button:focus-visible {
-	outline: 2px solid var(--accent, #0d9488);
+	outline: 2px solid var(--brand-500, #0d9488);
 	outline-offset: 2px;
 }
 
@@ -79,13 +79,13 @@
 }
 
 .implant-spec-pill:hover {
-	border-color: var(--accent, #0d9488);
+	border-color: var(--brand-500, #0d9488);
 	background: var(--paper, #ffffff);
 }
 
 .implant-spec-pill.active {
-	border-color: var(--accent, #0d9488);
-	background: var(--accent, #0d9488);
+	border-color: var(--brand-500, #0d9488);
+	background: var(--brand-500, #0d9488);
 	color: #ffffff;
 	box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.25);
 }
@@ -166,7 +166,7 @@
 }
 
 .implant-density-btn:hover {
-	border-color: var(--accent, #0d9488);
+	border-color: var(--brand-500, #0d9488);
 }
 
 .implant-density-btn.active {

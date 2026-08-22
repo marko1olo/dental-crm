@@ -145,7 +145,7 @@
 }
 
 .mpr-btn-touch:hover:not(:disabled) {
-	background: var(--primary-hover, #2563eb);
+	background: var(--brand-500, #2563eb);
 	color: #ffffff;
 	border-color: transparent;
 	transform: translateY(-1px);
@@ -161,7 +161,7 @@
 }
 
 .mpr-btn-active {
-	background: var(--primary, #2563eb) !important;
+	background: var(--brand-500, #2563eb) !important;
 	color: #ffffff !important;
 	border-color: #3b82f6 !important;
 	box-shadow: 0 0 12px rgba(37, 99, 235, 0.4);

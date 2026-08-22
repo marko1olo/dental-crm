@@ -348,9 +348,9 @@
 }
 
 .dnt-voice-badge--high {
-	background: var(--good-bg, rgba(16, 185, 129, 0.2));
-	color: var(--good-fg, #10b981);
-	border: 1px solid var(--good-fg, #10b981);
+	background: var(--ok-bg, rgba(16, 185, 129, 0.2));
+	color: var(--ok-fg, #10b981);
+	border: 1px solid var(--ok-fg, #10b981);
 }
 
 .dnt-voice-badge--review {
@@ -538,7 +538,7 @@
 	border-radius: 20px;
 	background: var(--paper-strong, rgba(255, 255, 255, 0.06));
 	border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
-	color: var(--ink-secondary, #cbd5e1);
+	color: var(--muted, #cbd5e1);
 	cursor: pointer;
 	transition: all 0.15s ease;
 	min-height: 32px;
