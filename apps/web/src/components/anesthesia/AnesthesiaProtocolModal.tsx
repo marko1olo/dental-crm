@@ -32,11 +32,11 @@ import './anesthesia.css';
 export interface AnesthesiaProtocolModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	onApplyToDiary?: (diaryText: string, result: AnesthesiaCalculationResult) => void;
-	initialToothNumber?: number | string;
-	initialPatientWeightKg?: number;
-	initialPatientAgeYears?: number;
-	initialHasCardioRisk?: boolean;
+	onApplyToDiary?: ((diaryText: string, result: AnesthesiaCalculationResult) => void) | undefined;
+	initialToothNumber?: number | string | undefined;
+	initialPatientWeightKg?: number | undefined;
+	initialPatientAgeYears?: number | undefined;
+	initialHasCardioRisk?: boolean | undefined;
 }
 
 export function AnesthesiaProtocolModal({

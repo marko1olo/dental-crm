@@ -191,7 +191,10 @@ export function AnesthesiaQuickBar({
 							className="stopper-btn-switch"
 							onClick={() => {
 								setSafetyWarning(null);
-								handleFastClick(STANDARD_QUICK_PRESETS[2]); // Switch to Scandonest
+								const scandonestPreset = STANDARD_QUICK_PRESETS.find((p) => p.drugId === 'mepivacaine_plain');
+								if (scandonestPreset) {
+									handleFastClick(scandonestPreset);
+								}
 							}}
 						>
 							Ввести Скандонест (безопасно)
