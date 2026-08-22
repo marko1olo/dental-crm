@@ -18,6 +18,7 @@
  *      4 = Service (Медицинская стоматологическая услуга)
  *      10 = Payment / Advance (Платеж / Аванс / Взнос)
  *      11 = Agency Fee
+ *      32 = Goods with Marking (Честный ЗНАК / МДЛП — анестетики, имплантаты, мембраны)
  *    - Tag 1055 (Применяемая система налогообложения — СНО):
  *      1 = OSN (Общая система налогообложения — ОСН)
  *      2 = USN Income (УСН Доходы)
@@ -36,6 +37,7 @@
  *      1 = VAT 20%, 2 = VAT 10%, 5 = VAT 0%
  *    - Tag 2108 (Мера количества предмета расчета):
  *      0 = piece (штука / единица), 10 = gram, 11 = kilogram, 255 = other
+ *    - Tag 2000 / Tag 1162 / Tag 1163 (Код товара / Честный ЗНАК / МДЛП DataMatrix)
  *    - Payment Tenders (Теги видов оплат):
  *      Tag 1031 (Сумма наличными)
  *      Tag 1081 (Сумма электронными / картой / СБП / онлайн)
@@ -48,6 +50,7 @@
  *    - Dynamic conversion of Advance deposits (Tag 1214=3) into Final settlement (Tag 1214=4) with advance offset (Tag 1215).
  *    - Multi-payment splits: Cash + Card + SberPay QR + Advance Offset.
  *    - 54-FZ Correction receipt builder (Tag 1173, Tag 1178, Tag 1179).
+ *    - 54-FZ Refund receipt builder (Tag 1054 = 2).
  *    - OFD verification URL and QR payload generator (t=...&s=...&fn=...&i=...&fp=...&n=...).
  */
 
@@ -55,108 +58,50 @@ import { Decimal } from "decimal.js";
 import { z } from "zod";
 import {
 	type AnatomicalCanalCount,
+	buildFfd12Tag2000MarkingPayload,
 	calculateEndodonticCompositeTreatment,
+	FFD12_TAG_1054_OPERATION_CODES,
+	FFD12_TAG_1055_TAXATION_CODES,
+	FFD12_TAG_1173_CORRECTION_CODES,
+	FFD12_TAG_1199_VAT_CODES,
+	FFD12_TAG_1212_SUBJECT_CODES,
+	FFD12_TAG_1214_METHOD_CODES,
+	FFD12_TAG_2108_MEASURE_CODES,
+	type Ffd12CorrectionType,
+	type Ffd12MarkingCodeDescriptor,
+	type Ffd12OperationType,
+	type Ffd12PaymentMethod,
+	type Ffd12PaymentSubject,
+	type Ffd12QuantityMeasure,
+	type Ffd12TaxationSystem,
+	type Ffd12VatRate,
 	getAnatomicalRootCanalCount,
 	getOrder804nEndoProcedureForTooth,
 	isMultiRootedTooth,
+	kopecksToNumericString,
+	parseChestnyZnakDataMatrix,
 } from "@dental/shared";
 
 // High-precision decimal arithmetic configuration for monetary calculations
 Decimal.set({ precision: 20, rounding: Decimal.ROUND_HALF_UP });
 
-/**
- * 54-FZ FFD 1.2 Tag 1214: Calculation Method (Признак способа расчета)
- */
-export const FFD12_TAG_1214_METHOD_CODES = {
-	full_prepayment: 1, // Предоплата 100%
-	prepayment: 2, // Частичная предоплата
-	advance: 3, // Аванс
-	full_payment: 4, // Полный расчет (включая зачет аванса)
-	partial_payment_and_credit: 5, // Частичный расчет и кредит
-	credit_handover: 6, // Передача в кредит
-	credit_payment: 7, // Оплата кредита
-} as const;
+export {
+	FFD12_TAG_1054_OPERATION_CODES,
+	FFD12_TAG_1055_TAXATION_CODES,
+	FFD12_TAG_1173_CORRECTION_CODES,
+	FFD12_TAG_1199_VAT_CODES,
+	FFD12_TAG_1212_SUBJECT_CODES,
+	FFD12_TAG_1214_METHOD_CODES,
+	FFD12_TAG_2108_MEASURE_CODES,
+};
 
-export type Ffd12Tag1214Method = keyof typeof FFD12_TAG_1214_METHOD_CODES;
-
-/**
- * 54-FZ FFD 1.2 Tag 1212: Calculation Subject (Признак предмета расчета)
- */
-export const FFD12_TAG_1212_SUBJECT_CODES = {
-	commodity: 1, // Товар
-	job: 3, // Работа
-	service: 4, // Услуга
-	payment: 10, // Платеж / Аванс
-	agency_fee: 11, // Агентское вознаграждение
-	composite: 13, // Составной предмет расчета
-	other: 14, // Иной предмет расчета
-} as const;
-
-export type Ffd12Tag1212Subject = keyof typeof FFD12_TAG_1212_SUBJECT_CODES;
-
-/**
- * 54-FZ FFD 1.2 Tag 1055: Taxation System (Применяемая система налогообложения)
- */
-export const FFD12_TAG_1055_TAXATION_CODES = {
-	osn: 1, // Общая (ОСН)
-	usn_income: 2, // УСН Доходы
-	usn_income_expense: 4, // УСН Доходы минус Расходы
-	esxn: 8, // ЕСХН
-	psn: 16, // Патент (ПСН)
-} as const;
-
-export type Ffd12Tag1055Taxation = keyof typeof FFD12_TAG_1055_TAXATION_CODES;
-
-/**
- * 54-FZ FFD 1.2 Tag 1054: Operation Type (Признак расчета)
- */
-export const FFD12_TAG_1054_OPERATION_CODES = {
-	income: 1, // Приход
-	income_return: 2, // Возврат прихода
-	expense: 3, // Расход
-	expense_return: 4, // Возврат расхода
-} as const;
-
-export type Ffd12Tag1054Operation = keyof typeof FFD12_TAG_1054_OPERATION_CODES;
-
-/**
- * 54-FZ FFD 1.2 Tag 1199: VAT Rate (Ставка НДС)
- */
-export const FFD12_TAG_1199_VAT_CODES = {
-	vat_20: 1, // 20%
-	vat_10: 2, // 10%
-	vat_20_120: 3, // 20/120
-	vat_10_110: 4, // 10/110
-	vat_0: 5, // 0%
-	vat_none: 6, // Без НДС (ст. 149 п. 2 пп. 2 НК РФ)
-} as const;
-
-export type Ffd12Tag1199Vat = keyof typeof FFD12_TAG_1199_VAT_CODES;
-
-/**
- * 54-FZ FFD 1.2 Tag 2108: Quantity Measure (Мера количества)
- */
-export const FFD12_TAG_2108_MEASURE_CODES = {
-	piece: 0, // шт / ед
-	gram: 10, // г
-	kilogram: 11, // кг
-	minute: 20, // мин
-	hour: 21, // час
-	day: 22, // сут
-	other: 255, // иное
-} as const;
-
-export type Ffd12Tag2108Measure = keyof typeof FFD12_TAG_2108_MEASURE_CODES;
-
-/**
- * 54-FZ FFD 1.2 Tag 1173: Correction Type (Тип коррекции)
- */
-export const FFD12_TAG_1173_CORRECTION_TYPES = {
-	self_initiated: 0, // Самостоятельно
-	by_instruction: 1, // По предписанию налогового органа
-} as const;
-
-export type Ffd12Tag1173CorrectionType = keyof typeof FFD12_TAG_1173_CORRECTION_TYPES;
+export type Ffd12Tag1214Method = Ffd12PaymentMethod;
+export type Ffd12Tag1212Subject = Ffd12PaymentSubject;
+export type Ffd12Tag1055Taxation = Ffd12TaxationSystem;
+export type Ffd12Tag1054Operation = Ffd12OperationType;
+export type Ffd12Tag1199Vat = Ffd12VatRate;
+export type Ffd12Tag2108Measure = Ffd12QuantityMeasure;
+export type Ffd12Tag1173CorrectionType = Ffd12CorrectionType;
 
 export interface FiscalReceiptPositionInput {
 	readonly name: string;
@@ -170,6 +115,7 @@ export interface FiscalReceiptPositionInput {
 	readonly toothFdiNumber?: number | null | undefined;
 	readonly canalCount?: AnatomicalCanalCount | null | undefined;
 	readonly taxDeductionCategory?: "1" | "2" | undefined;
+	readonly markingCode?: string | null | undefined;
 }
 
 export interface NormalizedFiscalPosition {
@@ -179,12 +125,22 @@ export interface NormalizedFiscalPosition {
 	readonly amountKopecks: number;
 	readonly priceRub: number;
 	readonly amountRub: number;
+	readonly tag1079_unitPriceRub: string;
+	readonly tag1043_amountRub: string;
 	readonly tag1212_paymentSubject: number;
 	readonly tag1214_paymentMethod: number;
 	readonly tag1199_vatRate: number;
 	readonly tag2108_quantityMeasure: number;
 	readonly medicalServiceCode804n: string | null;
 	readonly taxDeductionCategory: "1" | "2";
+	readonly markingCode: string | null;
+	readonly tag2000_markingPayload?: {
+		readonly tag1163_markingCode: string;
+		readonly tag2106_checkResult: number;
+		readonly tag2107_productStatus: number;
+		readonly gtin: string;
+		readonly serialNumber: string;
+	} | null | undefined;
 }
 
 export interface MultiTenderPaymentSplitInput {
@@ -199,18 +155,22 @@ export interface MultiTenderPaymentSplitInput {
 export interface NormalizedMultiTenderPayments {
 	readonly tag1031_cashKopecks: number;
 	readonly tag1031_cashRub: number;
+	readonly tag1031_cashRubString: string;
 	readonly tag1081_electronicKopecks: number;
 	readonly tag1081_electronicRub: number;
+	readonly tag1081_electronicRubString: string;
 	readonly sberCardKopecks: number;
 	readonly sberPayQrKopecks: number;
 	readonly tag1215_advanceOffsetKopecks: number;
 	readonly tag1215_advanceOffsetRub: number;
+	readonly tag1215_advanceOffsetRubString: string;
 	readonly tag1216_creditPostpaymentKopecks: number;
 	readonly tag1216_creditPostpaymentRub: number;
 	readonly tag1217_counterProvisionKopecks: number;
 	readonly tag1217_counterProvisionRub: number;
 	readonly totalPaymentsKopecks: number;
 	readonly totalPaymentsRub: number;
+	readonly totalPaymentsRubString: string;
 }
 
 export interface BuildFiscalReceiptInput {
@@ -250,6 +210,8 @@ export interface CompiledFiscal54FzReceipt {
 	readonly tag1187_paymentPlace: string | null;
 	readonly tag1020_totalKopecks: number;
 	readonly tag1020_totalRub: number;
+	readonly tag1020_totalRubString: string;
+	readonly totalRub: number;
 	readonly payments: NormalizedMultiTenderPayments;
 	readonly items: readonly NormalizedFiscalPosition[];
 	readonly overallTaxDeductionCategory: "1" | "2";
@@ -481,18 +443,22 @@ export class Fiscal54FzService {
 		return {
 			tag1031_cashKopecks: cashKopecks,
 			tag1031_cashRub: this.kopecksToRub(cashKopecks),
+			tag1031_cashRubString: kopecksToNumericString(cashKopecks),
 			tag1081_electronicKopecks: electronicKopecks,
 			tag1081_electronicRub: this.kopecksToRub(electronicKopecks),
+			tag1081_electronicRubString: kopecksToNumericString(electronicKopecks),
 			sberCardKopecks,
 			sberPayQrKopecks,
 			tag1215_advanceOffsetKopecks: advanceOffsetKopecks,
 			tag1215_advanceOffsetRub: this.kopecksToRub(advanceOffsetKopecks),
+			tag1215_advanceOffsetRubString: kopecksToNumericString(advanceOffsetKopecks),
 			tag1216_creditPostpaymentKopecks: creditPostpaymentKopecks,
 			tag1216_creditPostpaymentRub: this.kopecksToRub(creditPostpaymentKopecks),
 			tag1217_counterProvisionKopecks: counterProvisionKopecks,
 			tag1217_counterProvisionRub: this.kopecksToRub(counterProvisionKopecks),
 			totalPaymentsKopecks,
 			totalPaymentsRub: this.kopecksToRub(totalPaymentsKopecks),
+			totalPaymentsRubString: kopecksToNumericString(totalPaymentsKopecks),
 		};
 	}
 
@@ -542,7 +508,9 @@ export class Fiscal54FzService {
 			const amountKopecks = Math.round(priceKopecks * pos.quantity);
 			totalItemsKopecks += amountKopecks;
 
-			const subject = pos.subject ?? (pos.name.toLowerCase().includes("аванс") ? "payment" : "service");
+			const subject =
+				pos.subject ??
+				(pos.markingCode ? "goods_with_marking" : pos.name.toLowerCase().includes("аванс") ? "payment" : "service");
 			const method = pos.method ?? defaultMethod;
 			const vatRate = pos.vatRate ?? "vat_none";
 			const measure = pos.measure ?? "piece";
@@ -567,6 +535,24 @@ export class Fiscal54FzService {
 				hasCode2ExpensiveTreatment = true;
 			}
 
+			let markingPayload: NormalizedFiscalPosition["tag2000_markingPayload"] = null;
+			if (pos.markingCode && pos.markingCode.trim().length > 0) {
+				const parsedMarking = parseChestnyZnakDataMatrix(pos.markingCode);
+				if (!parsedMarking.isValid || !parsedMarking.gtin || !parsedMarking.serialNumber) {
+					throw new Fiscal54FzValidationError(
+						"InvalidMarkingCode",
+						`Некорректный код маркировки Честный ЗНАК для позиции «${pos.name}»: ${parsedMarking.errorMessage || "ошибка валидации"}`,
+					);
+				}
+				markingPayload = buildFfd12Tag2000MarkingPayload({
+					rawDataMatrix: pos.markingCode,
+					gtin: parsedMarking.gtin,
+					serialNumber: parsedMarking.serialNumber,
+					cryptoKey: parsedMarking.cryptoKey,
+					cryptoTail: parsedMarking.cryptoTail,
+				});
+			}
+
 			return {
 				tag1030_subjectName: tag1030,
 				priceKopecks,
@@ -574,12 +560,16 @@ export class Fiscal54FzService {
 				amountKopecks,
 				priceRub: this.kopecksToRub(priceKopecks),
 				amountRub: this.kopecksToRub(amountKopecks),
+				tag1079_unitPriceRub: kopecksToNumericString(priceKopecks),
+				tag1043_amountRub: kopecksToNumericString(amountKopecks),
 				tag1212_paymentSubject: this.resolveTag1212(subject),
 				tag1214_paymentMethod: this.resolveTag1214(method),
 				tag1199_vatRate: this.resolveTag1199(vatRate),
 				tag2108_quantityMeasure: this.resolveTag2108(measure),
 				medicalServiceCode804n: code804n,
 				taxDeductionCategory: taxCat,
+				markingCode: pos.markingCode ?? null,
+				tag2000_markingPayload: markingPayload,
 			};
 		});
 
@@ -610,12 +600,14 @@ export class Fiscal54FzService {
 			tag1187_paymentPlace: input.paymentPlace?.trim() || null,
 			tag1020_totalKopecks: totalItemsKopecks,
 			tag1020_totalRub: this.kopecksToRub(totalItemsKopecks),
+			tag1020_totalRubString: kopecksToNumericString(totalItemsKopecks),
+			totalRub: this.kopecksToRub(totalItemsKopecks),
 			payments,
 			items: normalizedItems,
 			overallTaxDeductionCategory: hasCode2ExpensiveTreatment ? "2" : "1",
 			isCorrection: Boolean(input.isCorrectionReceipt),
 			tag1173_correctionType: input.correctionBase
-				? FFD12_TAG_1173_CORRECTION_TYPES[input.correctionBase.type]
+				? FFD12_TAG_1173_CORRECTION_CODES[input.correctionBase.type]
 				: undefined,
 			tag1178_correctionDocDate: input.correctionBase?.documentDate,
 			tag1179_correctionDocNumber: input.correctionBase?.documentNumber,
@@ -652,8 +644,6 @@ export class Fiscal54FzService {
 		// How much can be covered by the advance deposit
 		const advanceOffsetKopecks = Math.min(totalInvoiceKopecks, availableDepositKopecks);
 		const advanceOffsetRub = this.kopecksToRub(advanceOffsetKopecks);
-
-		const remainingDueKopecks = totalInvoiceKopecks - advanceOffsetKopecks;
 
 		// The additional payments must cover the remaining due
 		const tenderSplits: MultiTenderPaymentSplitInput = {

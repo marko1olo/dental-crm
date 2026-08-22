@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export * from "./money.js";
+export * from "./fiscal/index.js";
 export * from "./utils/mdlpDataMatrix.js";
 export * from "./sanpin.js";
 export * from "./legal/legalContractsAndConsents.js";
@@ -13280,146 +13281,7 @@ export type GenerateSbpDynamicQrInput = z.infer<
 	typeof generateSbpDynamicQrSchema
 >;
 
-export const ffd12OperationTypeSchema = z.enum([
-	"income", // 1 (Приход)
-	"income_return", // 2 (Возврат прихода)
-	"expense", // 3 (Расход)
-	"expense_return", // 4 (Возврат расхода)
-]);
-export type Ffd12OperationType = z.infer<typeof ffd12OperationTypeSchema>;
-
-export const ffd12PaymentSubjectSchema = z.enum([
-	"commodity", // 1 (Товар, напр. паста/щетка)
-	"service", // 4 (Медицинская услуга)
-	"job", // 3 (Работа)
-	"payment", // 10 (Платеж)
-]);
-export type Ffd12PaymentSubject = z.infer<typeof ffd12PaymentSubjectSchema>;
-
-export const ffd12PaymentMethodSchema = z.enum([
-	"full_prepayment", // 1 (Предоплата 100%)
-	"prepayment", // 2 (Частичная предоплата)
-	"advance", // 3 (Аванс)
-	"full_payment", // 4 (Полный расчет)
-	"partial_payment_and_credit", // 5 (Частичный расчет и кредит)
-	"credit_handover", // 6 (Передача в кредит)
-	"credit_payment", // 7 (Оплата кредита)
-]);
-export type Ffd12PaymentMethod = z.infer<typeof ffd12PaymentMethodSchema>;
-
-export const ffd12VatRateSchema = z.enum([
-	"vat_20", // 1
-	"vat_10", // 2
-	"vat_20_120", // 3
-	"vat_10_110", // 4
-	"vat_0", // 5
-	"vat_none", // 6 (Без НДС - ст. 149 п. 2 пп. 2 НК РФ для мед. услуг)
-]);
-export type Ffd12VatRate = z.infer<typeof ffd12VatRateSchema>;
-
-export const taxDeductionCategorySchema = z.enum([
-	"code_1_standard", // Код 1: обычное лечение (терапия, гигиена, брекеты)
-	"code_2_expensive_treatment", // Код 2: дорогостоящее лечение (хирургическая имплантация, костная пластика)
-]);
-export type TaxDeductionCategory = z.infer<typeof taxDeductionCategorySchema>;
-
-/** Тег 2108: Мера количества предмета расчета (ФФД 1.2) */
-export const ffd12QuantityMeasureSchema = z.enum([
-	"piece", // 0 (штуки / единицы)
-	"gram", // 10 (граммы)
-	"kilogram", // 11 (килограммы)
-	"other", // 255 (иное)
-]);
-export type Ffd12QuantityMeasure = z.infer<typeof ffd12QuantityMeasureSchema>;
-
-/** Тег 1055: Применяемая система налогообложения (СНО) */
-export const ffd12TaxationSystemSchema = z.enum([
-	"osn", // 1 (Общая / ОСН)
-	"usn_income", // 2 (УСН Доходы)
-	"usn_income_expense", // 4 (УСН Доходы минус расходы)
-	"esxn", // 8 (ЕСХН)
-	"psn", // 16 (Патент / ПСН)
-]);
-export type Ffd12TaxationSystem = z.infer<typeof ffd12TaxationSystemSchema>;
-
-export const fiscalReceiptItemSchema = z
-	.object({
-		name: z.string().trim().min(1).max(128),
-		priceKopecks: z.number().int().positive(),
-		quantity: z.number().positive().default(1),
-		amountKopecks: z.number().int().positive(),
-		subject: ffd12PaymentSubjectSchema.default("service"),
-		method: ffd12PaymentMethodSchema.default("full_payment"),
-		vatRate: ffd12VatRateSchema.default("vat_none"),
-		measure: ffd12QuantityMeasureSchema.default("piece"),
-		taxDeductionCode: taxDeductionCategorySchema.default("code_1_standard"),
-		medicalServiceCodeMzk: z.string().trim().max(32).optional().nullable(),
-	})
-	.superRefine((item, ctx) => {
-		const expectedAmount = Math.round(item.priceKopecks * item.quantity);
-		if (Math.abs(expectedAmount - item.amountKopecks) > 1) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: `Сумма позиции «${item.name}» (${item.amountKopecks} коп.) не соответствует расчёту цена × количество (${expectedAmount} коп.).`,
-				path: ["amountKopecks"],
-			});
-		}
-	});
-export type FiscalReceiptItem = z.infer<typeof fiscalReceiptItemSchema>;
-
-export const createFiscalReceiptPayloadSchema = z
-	.object({
-		clientMutationId: z.string().trim().min(1).max(128).optional().nullable(),
-		invoiceId: z.string().uuid().optional().nullable(),
-		visitId: z.string().uuid().optional().nullable(),
-		documentId: z.string().uuid().optional().nullable(),
-		patientId: z.string().uuid(),
-		operationType: ffd12OperationTypeSchema.default("income"),
-		taxationSystem: ffd12TaxationSystemSchema.default("usn_income"),
-		customerContact: z.string().trim().min(5).max(100),
-		items: z.array(fiscalReceiptItemSchema).min(1),
-		cashKopecks: z.number().int().min(0).default(0),
-		electronicCardKopecks: z.number().int().min(0).default(0),
-		sbpKopecks: z.number().int().min(0).default(0),
-		prepaidKopecks: z.number().int().min(0).default(0),
-		totalKopecks: z.number().int().positive(),
-		cashierFullName: z
-			.string()
-			.trim()
-			.min(1)
-			.max(120)
-			.default("Кассир-администратор"),
-		cashierInn: z.string().trim().max(12).optional().nullable(),
-		taxDeductionSummaryCode: taxDeductionCategorySchema.default("code_1_standard"),
-	})
-	.superRefine((val, ctx) => {
-		const paymentsSum =
-			val.cashKopecks +
-			val.electronicCardKopecks +
-			val.sbpKopecks +
-			val.prepaidKopecks;
-		if (paymentsSum > 0 && paymentsSum !== val.totalKopecks) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: `Сумма способов оплаты (${paymentsSum} коп.) не совпадает с общей суммой чека (${val.totalKopecks} коп.)`,
-				path: ["totalKopecks"],
-			});
-		}
-		const itemsSum = val.items.reduce(
-			(sum, item) => sum + item.amountKopecks,
-			0,
-		);
-		if (itemsSum !== val.totalKopecks) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: `Сумма позиций чека (${itemsSum} коп.) не совпадает с общей суммой чека (${val.totalKopecks} коп.)`,
-				path: ["items"],
-			});
-		}
-	});
-export type CreateFiscalReceiptPayloadInput = z.infer<
-	typeof createFiscalReceiptPayloadSchema
->;
+// Note: 54-FZ FFD 1.2 fiscal schemas, tags, types and calculators are canonically exported from ./fiscal/index.js above.
 
 export class SbpQrEngine {
 	/**
@@ -13868,6 +13730,8 @@ export class DentalInteractionMatrixEngine {
 		};
 	}
 }
+
+export * from "./fiscal/kopecksArithmetic";
 
 
 

@@ -722,7 +722,10 @@ export async function registerSberPosWebhookRoutes(app: FastifyInstance) {
 					visitId: lockedTx.visitId || null,
 					receiptType: "income",
 					status: "pending_print",
-					payloadJson: fiscalReceiptPayload as unknown as Record<string, unknown>,
+					payloadJson: {
+						...fiscalReceiptPayload,
+						tag1020_totalRub: fiscalReceiptPayload.tag1020_totalRubString,
+					} as unknown as Record<string, unknown>,
 					retryCount: 0,
 				});
 

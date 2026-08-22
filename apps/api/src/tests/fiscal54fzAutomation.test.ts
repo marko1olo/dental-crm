@@ -396,8 +396,11 @@ describe("2. Sberbank POS Terminal & SberPay QR Webhook Integration Tests", () =
 		const orderId = "POS-LIFECYCLE-101";
 		const amountKopecks = 450000; // 4,500.00 RUB
 
-		// Seed initial transaction in WAITING_FOR_CARD state
+		// Clean up and seed initial transaction in WAITING_FOR_CARD state
 		await withFixtureTenant(ORG_ID, async () => {
+			await db.delete(fiscalReceiptQueue).where(eq(fiscalReceiptQueue.organizationId, ORG_ID));
+			await db.delete(payments).where(and(eq(payments.organizationId, ORG_ID), eq(payments.clientMutationId, `sberpos:${orderId}`)));
+			await db.delete(sberbankTransactions).where(and(eq(sberbankTransactions.organizationId, ORG_ID), eq(sberbankTransactions.orderId, orderId)));
 			await db.insert(sberbankTransactions).values({
 				organizationId: ORG_ID,
 				patientId: PATIENT_ID,

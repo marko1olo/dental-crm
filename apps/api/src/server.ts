@@ -77,6 +77,7 @@ import { registerReferralRoutes } from "./routes/referrals.js";
 import { registerReportRoutes } from "./routes/reports.js";
 import { registerSberbankRoutes } from "./routes/sberbank.js";
 import { registerSberPosWebhookRoutes } from "./routes/payments/sberPosWebhookRoute.js";
+import { registerFiscalReceiptRoutes } from "./routes/fiscal/index.js";
 import { registerSbpQrRoutes } from "./routes/sbpQr.js";
 import { registerScheduleRoutes } from "./routes/schedule.js";
 import { registerSettingsRoutes } from "./routes/settings.js";
@@ -624,6 +625,7 @@ export async function createDenteApiApp(
 	await registerAnesthesiaRoutes(app);
 	await registerClinicalImplantRoutes(app);
 	await registerSbpQrRoutes(app);
+	await registerFiscalReceiptRoutes(app);
 	await registerPharmacologyRoutes(app);
 	await registerMdlpRoutes(app);
 	// Ни один из этих модулей раньше не регистрировался, поэтому семейный кошелёк,

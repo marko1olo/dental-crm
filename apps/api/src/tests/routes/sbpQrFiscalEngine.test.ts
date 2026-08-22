@@ -81,7 +81,7 @@ describe("NSPK SBP Dynamic QR & 54-FZ Fiscal Engine", () => {
 				assert.equal(parsed.data.visitId, validVisitId);
 				assert.equal(parsed.data.documentId, validDocId);
 				assert.equal(parsed.data.totalKopecks, 150000);
-				assert.equal(parsed.data.items[0]?.medicalServiceCodeMzk, "A16.07.002.001");
+				assert.equal(parsed.data.items[0]?.medicalServiceCode804n, "A16.07.002.001");
 			}
 		});
 

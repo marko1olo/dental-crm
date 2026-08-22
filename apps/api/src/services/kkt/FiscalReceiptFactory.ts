@@ -5,10 +5,12 @@
  * - Advance Offset / Final Settlement (признак 4: full_payment, advance_offset)
  * - Split payments (Cash + Electronic/Card + SBP + Advance Offset) with kopeck-exact arithmetic
  * - Tag mappings: 1054, 1212, 1214, 1081, 1031, 1215, 1199 (Без НДС ст. 149 НК РФ), 2108, 1055
+ * - Tag 2000 / Tag 1162 / Tag 1163: DataMatrix GS1 / Честный ЗНАК / МДЛП Marking Codes
  */
 
 import { z } from "zod";
 import {
+	buildFfd12Tag2000MarkingPayload,
 	type CreateFiscalReceiptPayloadInput,
 	type Ffd12OperationType,
 	type Ffd12PaymentMethod,
@@ -16,8 +18,9 @@ import {
 	type Ffd12QuantityMeasure,
 	type Ffd12TaxationSystem,
 	type Ffd12VatRate,
-	type FiscalReceiptItem,
+	type FiscalReceiptItemInput,
 	kopecksToNumericString,
+	parseChestnyZnakDataMatrix,
 } from "@dental/shared";
 
 export interface Ffd12ItemPayload {
@@ -34,6 +37,14 @@ export interface Ffd12ItemPayload {
 	tag1199_vatRate: number;
 	tag2108_quantityMeasure: number;
 	medicalServiceCodeMzk?: string | null | undefined;
+	markingCode?: string | null | undefined;
+	tag2000_markingPayload?: {
+		readonly tag1163_markingCode: string;
+		readonly tag2106_checkResult: number;
+		readonly tag2107_productStatus: number;
+		readonly gtin: string;
+		readonly serialNumber: string;
+	} | null | undefined;
 }
 
 export interface Ffd12ReceiptPayload {
@@ -90,7 +101,7 @@ export class FiscalReceiptFactory {
 	}
 
 	/**
-	 * Tag 1212: Payment Subject (1=Commodity, 3=Job, 4=Service, 10=Payment/Advance)
+	 * Tag 1212: Payment Subject (1=Commodity, 3=Job, 4=Service, 10=Payment/Advance, 32=Marked Goods)
 	 */
 	public static resolveTag1212(subject: Ffd12PaymentSubject): number {
 		switch (subject) {
@@ -102,6 +113,10 @@ export class FiscalReceiptFactory {
 				return 4;
 			case "payment":
 				return 10;
+			case "goods_with_marking":
+				return 32;
+			case "goods_without_marking":
+				return 33;
 			default:
 				return 4;
 		}
@@ -207,6 +222,20 @@ export class FiscalReceiptFactory {
 			const tag1199 = this.resolveTag1199(item.vatRate);
 			const tag2108 = this.resolveTag2108(item.measure);
 
+			let markingPayload: Ffd12ItemPayload["tag2000_markingPayload"] = null;
+			if (item.markingCode && item.markingCode.trim().length > 0) {
+				const parsed = parseChestnyZnakDataMatrix(item.markingCode);
+				if (parsed.isValid && parsed.gtin && parsed.serialNumber) {
+					markingPayload = buildFfd12Tag2000MarkingPayload({
+						rawDataMatrix: item.markingCode,
+						gtin: parsed.gtin,
+						serialNumber: parsed.serialNumber,
+						cryptoKey: parsed.cryptoKey,
+						cryptoTail: parsed.cryptoTail,
+					});
+				}
+			}
+
 			return {
 				name: item.name,
 				priceKopecks: item.priceKopecks,
@@ -220,7 +249,9 @@ export class FiscalReceiptFactory {
 				tag1214_paymentMethod: tag1214,
 				tag1199_vatRate: tag1199,
 				tag2108_quantityMeasure: tag2108,
-				medicalServiceCodeMzk: item.medicalServiceCodeMzk ?? null,
+				medicalServiceCodeMzk: item.medicalServiceCode804n ?? null,
+				markingCode: item.markingCode ?? null,
+				tag2000_markingPayload: markingPayload,
 			};
 		});
 

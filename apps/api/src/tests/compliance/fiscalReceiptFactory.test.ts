@@ -52,6 +52,8 @@ describe("54-FZ Fiscal Receipt Factory & FFD 1.2 Suite", () => {
 			cashKopecks: 0,
 			sbpKopecks: 0,
 			prepaidKopecks: 0,
+			creditKopecks: 0,
+			isCorrection: false,
 			items: [
 				{
 					name: "Аванс за ортодонтическое лечение (элайнеры)",
@@ -92,6 +94,8 @@ describe("54-FZ Fiscal Receipt Factory & FFD 1.2 Suite", () => {
 			electronicCardKopecks: 0,
 			sbpKopecks: 0,
 			prepaidKopecks: 1000000, // 10,000 руб. зачет аванса
+			creditKopecks: 0,
+			isCorrection: false,
 			items: [
 				{
 					name: "Установка дентального имплантата Straumann",
@@ -132,6 +136,8 @@ describe("54-FZ Fiscal Receipt Factory & FFD 1.2 Suite", () => {
 			electronicCardKopecks: 300000,
 			sbpKopecks: 100000,
 			prepaidKopecks: 400000, // 2000 + 3000 + 1000 + 4000 = 10000 руб
+			creditKopecks: 0,
+			isCorrection: false,
 			items: [
 				{
 					name: "Комплексное терапевтическое лечение",
