@@ -189,7 +189,7 @@
 }
 
 .gauge-status-ok {
-	color: var(--ok, #10b981);
+	color: var(--ok-fg, #10b981);
 }
 
 .gauge-status-warn {
@@ -235,7 +235,7 @@
 
 .pack-status-badge.sterile {
 	background: rgba(16, 185, 129, 0.12);
-	color: var(--ok, #10b981);
+	color: var(--ok-fg, #10b981);
 	border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
@@ -322,9 +322,9 @@
 }
 
 .autoclave-btn-ok {
-	background: var(--ok, #10b981);
+	background: var(--ok-fg, #10b981);
 	color: #ffffff;
-	border-color: var(--ok, #10b981);
+	border-color: var(--ok-fg, #10b981);
 }
 
 .autoclave-btn-ok:hover {

@@ -25,13 +25,13 @@ export interface SterilePackRecord {
 	itemCategoryRu: string;
 	itemsListRu: string[];
 	operatorName: string;
-	operatorStaffId?: string;
+	operatorStaffId?: string | undefined;
 	status: 'sterile' | 'expiring_soon' | 'expired' | 'breached' | 'used';
 	isBreached: boolean;
-	usedAtPatientId?: string;
-	usedAtPatientName?: string;
-	usedAtVisitDate?: string;
-	usedByDoctorName?: string;
+	usedAtPatientId?: string | undefined;
+	usedAtPatientName?: string | undefined;
+	usedAtVisitDate?: string | undefined;
+	usedByDoctorName?: string | undefined;
 }
 
 export interface Form257SterilizerJournalEntry {
@@ -60,7 +60,7 @@ export interface Form257SterilizerJournalEntry {
 	operatorName: string;
 	operatorSignatureStamp: string;
 	generatedBarcodes: string[];
-	notes?: string;
+	notes?: string | undefined;
 }
 
 export interface PatientSterileUsageRecord {
