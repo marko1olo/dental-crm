@@ -1,0 +1,667 @@
+/**
+ * Clinical Dental Photography & Photo Protocol Styles
+ * Compliant with WCAG 2.1 touch target standards (>= 44x44px)
+ * 100% Multi-theme design tokens (var(--paper), var(--ink), var(--line), var(--surface))
+ */
+
+/* Modal Container */
+.photo-protocol-modal-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	background: rgba(15, 23, 42, 0.75);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+}
+
+.photo-protocol-modal {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 16px;
+	width: 100%;
+	max-width: 1400px;
+	max-height: 94vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="dark"] .photo-protocol-modal,
+.dark .photo-protocol-modal {
+	background: var(--paper-strong, #0f172a);
+	border-color: var(--line, #334155);
+}
+
+/* Header & Sub-headers */
+.photo-protocol-header {
+	padding: 16px 24px;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	flex-wrap: wrap;
+	background: var(--surface, #f8fafc);
+}
+
+[data-theme="dark"] .photo-protocol-header,
+.dark .photo-protocol-header {
+	background: rgba(30, 41, 59, 0.5);
+	border-color: var(--line, #334155);
+}
+
+.photo-protocol-title-group {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.photo-protocol-badge-icon {
+	width: 40px;
+	height: 40px;
+	border-radius: 10px;
+	background: rgba(37, 99, 235, 0.1);
+	color: var(--brand-500, #2563eb);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+/* Tabs & Toolbar */
+.photo-protocol-tabs {
+	display: flex;
+	gap: 8px;
+	background: var(--paper, #ffffff);
+	padding: 4px;
+	border-radius: 10px;
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+[data-theme="dark"] .photo-protocol-tabs,
+.dark .photo-protocol-tabs {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+.photo-protocol-tab-btn {
+	min-height: 44px;
+	min-width: 44px;
+	padding: 8px 16px;
+	border-radius: 8px;
+	font-size: 14px;
+	font-weight: 600;
+	border: none;
+	background: transparent;
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.photo-protocol-tab-btn:hover {
+	color: var(--ink, #0f172a);
+	background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .photo-protocol-tab-btn:hover,
+.dark .photo-protocol-tab-btn:hover {
+	color: #f8fafc;
+	background: rgba(255, 255, 255, 0.06);
+}
+
+.photo-protocol-tab-btn.active {
+	background: var(--brand-500, #2563eb);
+	color: #ffffff;
+	box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
+/* Content Area */
+.photo-protocol-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+}
+
+/* Grid Layout */
+.photo-slots-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+	gap: 16px;
+}
+
+@media (min-width: 1200px) {
+	.photo-slots-grid-12 {
+		grid-template-columns: repeat(4, 1fr);
+	}
+}
+
+/* Slot Card */
+.photo-slot-card {
+	background: var(--paper, #ffffff);
+	border: 1.5px dashed var(--line, #cbd5e1);
+	border-radius: 14px;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	position: relative;
+	min-height: 310px;
+}
+
+[data-theme="dark"] .photo-slot-card,
+.dark .photo-slot-card {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+.photo-slot-card:hover {
+	border-color: var(--brand-500, #2563eb);
+	transform: translateY(-2px);
+	box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.08);
+}
+
+.photo-slot-card.has-image {
+	border-style: solid;
+	border-color: var(--line, #e2e8f0);
+}
+
+[data-theme="dark"] .photo-slot-card.has-image,
+.dark .photo-slot-card.has-image {
+	border-color: var(--line, #334155);
+}
+
+.photo-slot-card.drag-active {
+	border-color: var(--brand-500, #2563eb);
+	background: rgba(37, 99, 235, 0.06);
+	transform: scale(1.02);
+}
+
+/* Slot Card Header */
+.photo-slot-header {
+	padding: 10px 14px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	border-bottom: 1px solid var(--line, #f1f5f9);
+	background: var(--surface, #f8fafc);
+	font-size: 13px;
+	font-weight: 600;
+}
+
+[data-theme="dark"] .photo-slot-header,
+.dark .photo-slot-header {
+	background: rgba(30, 41, 59, 0.7);
+	border-color: var(--line, #334155);
+}
+
+.photo-category-pill {
+	font-size: 11px;
+	font-weight: 700;
+	padding: 2px 8px;
+	border-radius: 6px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.photo-category-pill.extraoral {
+	background: rgba(59, 130, 246, 0.15);
+	color: #2563eb;
+}
+
+[data-theme="dark"] .photo-category-pill.extraoral,
+.dark .photo-category-pill.extraoral {
+	background: rgba(30, 58, 138, 0.5);
+	color: #93c5fd;
+}
+
+.photo-category-pill.intraoral {
+	background: rgba(16, 185, 129, 0.15);
+	color: #059669;
+}
+
+[data-theme="dark"] .photo-category-pill.intraoral,
+.dark .photo-category-pill.intraoral {
+	background: rgba(6, 78, 59, 0.5);
+	color: #6ee7b7;
+}
+
+/* Slot Viewport / Dropzone */
+.photo-slot-viewport {
+	flex: 1;
+	position: relative;
+	min-height: 190px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--surface, #f8fafc);
+	cursor: pointer;
+	overflow: hidden;
+}
+
+[data-theme="dark"] .photo-slot-viewport,
+.dark .photo-slot-viewport {
+	background: #090d16;
+}
+
+/* Empty Silhouette Guide */
+.photo-silhouette-guide {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	padding: 16px;
+	text-align: center;
+	color: var(--muted, #94a3b8);
+}
+
+.photo-silhouette-svg {
+	width: 90px;
+	height: 90px;
+	stroke: currentColor;
+	fill: none;
+	stroke-width: 2;
+	stroke-dasharray: 4 3;
+	opacity: 0.7;
+	transition: all 0.2s ease;
+}
+
+.photo-slot-card:hover .photo-silhouette-svg {
+	stroke: var(--brand-500, #2563eb);
+	opacity: 1;
+	transform: scale(1.05);
+}
+
+.photo-silhouette-label {
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--muted, #64748b);
+}
+
+/* Uploaded Image Preview */
+.photo-image-preview {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	transition: transform 0.2s ease;
+}
+
+.photo-image-container {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+/* Slot Badges Overlay */
+.photo-slot-badges {
+	position: absolute;
+	top: 8px;
+	left: 8px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	z-index: 2;
+}
+
+.photo-mini-badge {
+	font-size: 10px;
+	font-weight: 700;
+	padding: 2px 6px;
+	border-radius: 4px;
+	background: rgba(15, 23, 42, 0.75);
+	color: #ffffff;
+	backdrop-filter: blur(4px);
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.photo-mini-badge.shade-badge {
+	background: #2563eb;
+}
+
+/* Hover Action Bar */
+.photo-slot-actions {
+	padding: 8px 12px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	border-top: 1px solid var(--line, #f1f5f9);
+	background: var(--paper, #ffffff);
+}
+
+[data-theme="dark"] .photo-slot-actions,
+.dark .photo-slot-actions {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+.photo-touch-btn {
+	min-width: 44px;
+	min-height: 44px;
+	padding: 8px 12px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+[data-theme="dark"] .photo-touch-btn,
+.dark .photo-touch-btn {
+	background: var(--surface, #1e293b);
+	border-color: var(--line, #334155);
+	color: #f8fafc;
+}
+
+.photo-touch-btn:hover {
+	border-color: var(--brand-500, #2563eb);
+	color: var(--brand-500, #2563eb);
+	background: rgba(37, 99, 235, 0.04);
+}
+
+.photo-touch-btn.primary {
+	background: var(--brand-500, #2563eb);
+	color: #ffffff;
+	border-color: var(--brand-500, #2563eb);
+}
+
+.photo-touch-btn.primary:hover {
+	background: #1d4ed8;
+}
+
+.photo-touch-btn.danger {
+	color: #e11d48;
+}
+
+.photo-touch-btn.danger:hover {
+	background: rgba(225, 29, 72, 0.08);
+	border-color: #e11d48;
+}
+
+/* Before / After Split Slider */
+.ba-comparison-view {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	align-items: center;
+	width: 100%;
+}
+
+.ba-slider-container {
+	position: relative;
+	width: 100%;
+	max-width: 900px;
+	height: 540px;
+	border-radius: 14px;
+	overflow: hidden;
+	border: 1px solid var(--line, #cbd5e1);
+	background: #020617;
+	user-select: none;
+	touch-action: none;
+	cursor: ew-resize;
+	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+}
+
+.ba-image-layer {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	pointer-events: none;
+}
+
+.ba-handle-line {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: 3px;
+	background: #ffffff;
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+	transform: translateX(-50%);
+	pointer-events: none;
+	z-index: 10;
+}
+
+.ba-handle-circle {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 48px;
+	height: 48px;
+	border-radius: 50%;
+	background: #ffffff;
+	color: #0f172a;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+	cursor: grab;
+	pointer-events: auto;
+}
+
+.ba-pill-tag {
+	position: absolute;
+	bottom: 16px;
+	padding: 6px 14px;
+	border-radius: 20px;
+	font-size: 13px;
+	font-weight: 700;
+	background: rgba(15, 23, 42, 0.8);
+	color: #ffffff;
+	backdrop-filter: blur(6px);
+	z-index: 5;
+	pointer-events: none;
+}
+
+.ba-pill-tag.before {
+	left: 16px;
+}
+
+.ba-pill-tag.after {
+	right: 16px;
+}
+
+/* Calibration & Adjustment HUD Drawer / Submodal */
+.photo-editor-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 10000;
+	background: rgba(0, 0, 0, 0.85);
+	backdrop-filter: blur(10px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+}
+
+.photo-editor-modal {
+	background: var(--paper, #ffffff);
+	border-radius: 16px;
+	width: 100%;
+	max-width: 1200px;
+	max-height: 90vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .photo-editor-modal,
+.dark .photo-editor-modal {
+	background: var(--paper-strong, #0f172a);
+	color: #f8fafc;
+	border: 1px solid var(--line, #334155);
+}
+
+.photo-editor-content {
+	display: flex;
+	flex: 1;
+	overflow: hidden;
+}
+
+@media (max-width: 900px) {
+	.photo-editor-content {
+		flex-direction: column;
+		overflow-y: auto;
+	}
+}
+
+.photo-editor-canvas-pane {
+	flex: 1;
+	background: #020617;
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	min-height: 400px;
+}
+
+.photo-editor-sidebar {
+	width: 360px;
+	padding: 20px;
+	overflow-y: auto;
+	border-left: 1px solid var(--line, #e2e8f0);
+	background: var(--surface, #f8fafc);
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+[data-theme="dark"] .photo-editor-sidebar,
+.dark .photo-editor-sidebar {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+/* Shade Matching Tool */
+.shade-matching-box {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+[data-theme="dark"] .shade-matching-box,
+.dark .shade-matching-box {
+	background: var(--surface, #0f172a);
+	border-color: var(--line, #334155);
+}
+
+.shade-swatch-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.shade-color-chip {
+	width: 48px;
+	height: 48px;
+	border-radius: 8px;
+	border: 2px solid var(--line, #e2e8f0);
+	box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Clinical Collage Export Sheet */
+.photo-collage-sheet {
+	background: #ffffff;
+	color: #0f172a;
+	padding: 32px;
+	border-radius: 8px;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	width: 100%;
+	max-width: 1000px;
+	margin: 0 auto;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.photo-collage-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	border-bottom: 2px solid #0f172a;
+	padding-bottom: 16px;
+}
+
+.photo-collage-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 12px;
+}
+
+.photo-collage-item {
+	display: flex;
+	flex-direction: column;
+	border: 1px solid #cbd5e1;
+	border-radius: 6px;
+	overflow: hidden;
+}
+
+.photo-collage-thumb {
+	width: 100%;
+	height: 140px;
+	object-fit: cover;
+	background: #f1f5f9;
+}
+
+.photo-collage-label {
+	padding: 6px;
+	font-size: 11px;
+	font-weight: 700;
+	text-align: center;
+	background: #f8fafc;
+	border-top: 1px solid #e2e8f0;
+}
+
+/* Print Rules */
+@media print {
+	.photo-protocol-modal-backdrop {
+		position: static;
+		background: none;
+		padding: 0;
+	}
+	.photo-protocol-modal {
+		max-height: none;
+		max-width: none;
+		box-shadow: none;
+		border: none;
+	}
+	.photo-protocol-header,
+	.photo-protocol-tabs,
+	.photo-slot-actions,
+	.no-print {
+		display: none !important;
+	}
+}
