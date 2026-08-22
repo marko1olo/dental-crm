@@ -65,7 +65,6 @@ import { InformedConsentModal as InformedConsent323FzModal } from "../components
 import { AnesthesiaProtocolModal } from "../components/anesthesia/AnesthesiaProtocolModal";
 import { MedicalWasteJournalModal } from "../components/sanpin/waste/MedicalWasteJournalModal";
 import { EmergencyRescueModal } from "../components/emergency/EmergencyRescueModal";
-import { PediatricSedationModal } from "../components/sedation/PediatricSedationModal";
 import { WarrantyPassportModal } from "../components/warranty/WarrantyPassportModal";
 import { AnesthesiaQuickBar } from "../components/anesthesia/AnesthesiaQuickBar";
 import type { CompletedWorksActAndWriteOffData, TreatmentPlanItem } from "../components/treatment-plans/types";
@@ -282,7 +281,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isAnesthesiaProtocolOpen, setIsAnesthesiaProtocolOpen] = useState(false);
 	const [isMedicalWasteOpen, setIsMedicalWasteOpen] = useState(false);
 	const [isEmergencyRescueOpen, setIsEmergencyRescueOpen] = useState(false);
-	const [isPediatricSedationOpen, setIsPediatricSedationOpen] = useState(false);
 	const [isWarrantyPassportOpen, setIsWarrantyPassportOpen] = useState(false);
 
 	const handleThemeChange = (themeId: string) => {
@@ -1000,31 +998,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</button>
 					</div>
 
-					{/* 28. Pediatric Sedation & Frankl Behavior Log Trigger */}
-					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
-						<div className="space-y-2">
-							<div className="flex items-center gap-2 text-[var(--teal)]">
-								<Sparkles className="w-5 h-5" />
-								<span className="font-bold text-sm text-[var(--ink)]">
-									Детская седация ЗАКС & Франкл
-								</span>
-							</div>
-							<p className="text-xs text-[var(--muted)] leading-relaxed">
-								Ингаляционная седация N2O/O2, шкала Франкла 1–4, витальный монитор SpO2/ЧСС, одометр газов и грамота за храбрость.
-							</p>
-						</div>
-						<button
-							type="button"
-							onClick={() => setIsPediatricSedationOpen(true)}
-							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
-							data-testid="open-pediatric-sedation-modal-btn"
-						>
-							<Sparkles size={15} />
-							<span>Открыть седацию ЗАКС</span>
-						</button>
-					</div>
-
-					{/* 29. Dental Warranty Certificate & Guarantee Passport Trigger */}
+					{/* 28. Dental Warranty Certificate & Guarantee Passport Trigger */}
 					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
 						<div className="space-y-2">
 							<div className="flex items-center gap-2 text-[var(--teal)]">
@@ -1048,7 +1022,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</button>
 					</div>
 
-					{/* 30. Anesthesia QuickBar 1-Click Presets */}
+					{/* 29. Anesthesia QuickBar 1-Click Presets */}
 					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4 md:col-span-2 lg:col-span-3">
 						<div className="space-y-2">
 							<div className="flex items-center gap-2 text-[var(--teal)]">
@@ -1337,18 +1311,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				cabinetNumber="1"
 				doctorFullName="Д-р Смирнов Алексей Петрович"
 				assistantFullName="Медсестра Петрова Е. С."
-			/>
-
-			<PediatricSedationModal
-				isOpen={isPediatricSedationOpen}
-				onClose={() => setIsPediatricSedationOpen(false)}
-				patientName="Смирнов Артем"
-				patientAge={6}
-				patientBirthDate="2020-03-15"
-				doctorName="Д-р Смирнов Алексей Петрович"
-				assistantName="Медсестра Петрова Е. С."
-				clinicalDiagnosis="K02.1 Кариес дентина зубов 54, 55"
-				plannedProcedure="Лечение кариеса 54, 55 под седацией ЗАКС N2O/O2"
 			/>
 
 			<WarrantyPassportModal
