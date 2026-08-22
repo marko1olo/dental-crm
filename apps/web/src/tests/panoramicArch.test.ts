@@ -18,6 +18,14 @@ import {
 	resamplePolylineByArcLength,
 	sampleArchCurve,
 	type VolumeScalarDataSource,
+	classifyMischBoneDensity,
+	createAnatomicalJawControlPoints,
+	generateCatmullRomArch,
+	generateCrossSectionSlicePlanes,
+	synchronizeMprCoordinates,
+	vec3Distance,
+	vec3Dot,
+	vec3Length,
 } from "../components/dicom/panoramicArch.js";
 import type { Point2D } from "../mprMath.js";
 
@@ -1024,3 +1032,230 @@ describe("panoramicIssueLabels", () => {
 		);
 	});
 });
+
+describe("createAnatomicalJawControlPoints", () => {
+	test("generates 9 anatomical control points across jaw by default", () => {
+		const points = createAnatomicalJawControlPoints();
+		assert.strictEqual(points.length, 9);
+		assert.strictEqual(points[0]?.landmark, "condyle_right");
+		assert.strictEqual(points[1]?.landmark, "angle_right");
+		assert.strictEqual(points[2]?.landmark, "molar_right");
+		assert.strictEqual(points[3]?.landmark, "canine_right");
+		assert.strictEqual(points[4]?.landmark, "incisors");
+		assert.strictEqual(points[5]?.landmark, "canine_left");
+		assert.strictEqual(points[6]?.landmark, "molar_left");
+		assert.strictEqual(points[7]?.landmark, "angle_left");
+		assert.strictEqual(points[8]?.landmark, "condyle_left");
+	});
+
+	test("generates 7 anatomical points when molars are excluded", () => {
+		const points = createAnatomicalJawControlPoints({ includeMolars: false });
+		assert.strictEqual(points.length, 7);
+		assert.strictEqual(points[0]?.landmark, "condyle_right");
+		assert.strictEqual(points[3]?.landmark, "incisors");
+		assert.strictEqual(points[6]?.landmark, "condyle_left");
+	});
+
+	test("starts on patient right (negative X) and ends on patient left (positive X)", () => {
+		const points = createAnatomicalJawControlPoints();
+		const first = points[0]!;
+		const last = points[points.length - 1]!;
+		assert.ok(first.x < 0, `first point X should be negative: ${first.x}`);
+		assert.ok(last.x > 0, `last point X should be positive: ${last.x}`);
+		assert.strictEqual(first.x, -last.x, "mandible should be symmetrical around origin");
+	});
+
+	test("incisors peak anteriorly (+Y in DICOM patient frame)", () => {
+		const points = createAnatomicalJawControlPoints();
+		const incisor = points.find((p) => p.landmark === "incisors")!;
+		for (const pt of points) {
+			if (pt.landmark !== "incisors") {
+				assert.ok(
+					incisor.y >= pt.y,
+					`incisor Y (${incisor.y}) should be more anterior than ${pt.landmark} (${pt.y})`,
+				);
+			}
+		}
+	});
+});
+
+describe("generateCatmullRomArch & Frenet-Serret frames", () => {
+	const anatomicalPoints = createAnatomicalJawControlPoints();
+
+	test("generates smooth dense arch curve with monotonic arc length", () => {
+		const arch = generateCatmullRomArch(anatomicalPoints, 0.5);
+		assert.ok(arch.length > 50, `expected dense curve, got ${arch.length} points`);
+		assert.strictEqual(arch[0]?.arcLengthMm, 0);
+
+		for (let i = 1; i < arch.length; i++) {
+			assert.ok(
+				arch[i]!.arcLengthMm > arch[i - 1]!.arcLengthMm,
+				`arcLength must be strictly monotonic at index ${i}`,
+			);
+		}
+	});
+
+	test("tangent and normal vectors have unit length at every curve sample", () => {
+		const arch = generateCatmullRomArch(anatomicalPoints, 0.5);
+		for (let i = 0; i < arch.length; i++) {
+			const pt = arch[i]!;
+			const tLen = vec3Length(pt.tangent);
+			const nLen = vec3Length(pt.normal);
+			const bLen = vec3Length(pt.binormal);
+
+			assert.ok(
+				Math.abs(tLen - 1.0) < 1e-4,
+				`tangent unit length failed at index ${i}: ${tLen}`,
+			);
+			assert.ok(
+				Math.abs(nLen - 1.0) < 1e-4,
+				`normal unit length failed at index ${i}: ${nLen}`,
+			);
+			assert.ok(
+				Math.abs(bLen - 1.0) < 1e-4,
+				`binormal unit length failed at index ${i}: ${bLen}`,
+			);
+		}
+	});
+
+	test("tangent and normal are mutually orthogonal at every point", () => {
+		const arch = generateCatmullRomArch(anatomicalPoints, 0.5);
+		for (let i = 0; i < arch.length; i++) {
+			const pt = arch[i]!;
+			const dotTN = vec3Dot(pt.tangent, pt.normal);
+			const dotTB = vec3Dot(pt.tangent, pt.binormal);
+			const dotNB = vec3Dot(pt.normal, pt.binormal);
+
+			assert.ok(
+				Math.abs(dotTN) < 1e-3,
+				`tangent & normal not orthogonal at index ${i}: dot=${dotTN}`,
+			);
+			assert.ok(
+				Math.abs(dotTB) < 1e-3,
+				`tangent & binormal not orthogonal at index ${i}: dot=${dotTB}`,
+			);
+			assert.ok(
+				Math.abs(dotNB) < 1e-3,
+				`normal & binormal not orthogonal at index ${i}: dot=${dotNB}`,
+			);
+		}
+	});
+});
+
+describe("generateCrossSectionSlicePlanes", () => {
+	const anatomicalPoints = createAnatomicalJawControlPoints();
+	const arch = generateCatmullRomArch(anatomicalPoints, 0.5);
+
+	test("generates slice planes at specified step intervals (1.0 - 2.0 mm)", () => {
+		const slices1mm = generateCrossSectionSlicePlanes(arch, {
+			stepIntervalMm: 1.0,
+			thicknessMm: 1.0,
+		});
+		const slices2mm = generateCrossSectionSlicePlanes(arch, {
+			stepIntervalMm: 2.0,
+			thicknessMm: 1.0,
+		});
+
+		assert.ok(slices1mm.length > slices2mm.length);
+		const ratio = slices1mm.length / slices2mm.length;
+		assert.ok(
+			ratio >= 1.8 && ratio <= 2.2,
+			`expected ~2x slices for 1.0mm step vs 2.0mm step, got ${ratio}`,
+		);
+	});
+
+	test("preserves slice thickness and field of view parameters", () => {
+		const slices = generateCrossSectionSlicePlanes(arch, {
+			stepIntervalMm: 1.5,
+			thicknessMm: 3.5,
+			widthMm: 28.0,
+			heightMm: 36.0,
+		});
+
+		assert.ok(slices.length > 10);
+		for (const slice of slices) {
+			assert.strictEqual(slice.thicknessMm, 3.5);
+			assert.strictEqual(slice.widthMm, 28.0);
+			assert.strictEqual(slice.heightMm, 36.0);
+		}
+	});
+
+	test("slice normal is tangent to arch curve", () => {
+		const slices = generateCrossSectionSlicePlanes(arch, { stepIntervalMm: 1.5 });
+		for (const slice of slices) {
+			const nLen = vec3Length(slice.normal);
+			const tLen = vec3Length(slice.tangent);
+			const uLen = vec3Length(slice.up);
+
+			assert.ok(Math.abs(nLen - 1.0) < 1e-4);
+			assert.ok(Math.abs(tLen - 1.0) < 1e-4);
+			assert.ok(Math.abs(uLen - 1.0) < 1e-4);
+		}
+	});
+});
+
+describe("synchronizeMprCoordinates", () => {
+	const anatomicalPoints = createAnatomicalJawControlPoints();
+	const arch = generateCatmullRomArch(anatomicalPoints, 0.5);
+	const slices = generateCrossSectionSlicePlanes(arch, { stepIntervalMm: 1.5 });
+
+	test("synchronizes cursor position to 3D MPR slice planes", () => {
+		const worldPos = { x: 0, y: 50, z: -42.5 };
+		const sync = synchronizeMprCoordinates(worldPos, arch, slices);
+
+		assert.strictEqual(sync.axialSliceZ, -42.5);
+		assert.strictEqual(sync.coronalSliceY, 50);
+		assert.strictEqual(sync.sagittalSliceX, 0);
+		assert.ok(sync.activeCrossSectionIndex >= 0 && sync.activeCrossSectionIndex < slices.length);
+		assert.ok(sync.activeArchParamT >= 0 && sync.activeArchParamT <= 1);
+		assert.ok(sync.distanceToArchMm >= 0);
+	});
+});
+
+describe("classifyMischBoneDensity & Drilling recommendations", () => {
+	test("D1 (>1250 HU): dense cortical bone, cortical tap required, low RPM", () => {
+		const res = classifyMischBoneDensity(1450);
+		assert.strictEqual(res.mischClass, "D1");
+		assert.strictEqual(res.corticalTap, true);
+		assert.strictEqual(res.underDrilling, false);
+		assert.strictEqual(res.irrigation, true);
+		assert.ok(res.drillingRpm.includes("400–600"));
+		assert.ok(res.clinicalAdvice.includes("Cortical Tap"));
+	});
+
+	test("D2 (850-1250 HU): porous cortical & dense trabecular, standard protocol", () => {
+		const res = classifyMischBoneDensity(950);
+		assert.strictEqual(res.mischClass, "D2");
+		assert.strictEqual(res.corticalTap, false);
+		assert.strictEqual(res.underDrilling, false);
+		assert.strictEqual(res.irrigation, true);
+		assert.ok(res.drillingRpm.includes("800–1000"));
+	});
+
+	test("D3 (350-850 HU): porous cortical & fine trabecular", () => {
+		const res = classifyMischBoneDensity(600);
+		assert.strictEqual(res.mischClass, "D3");
+		assert.strictEqual(res.corticalTap, false);
+		assert.strictEqual(res.underDrilling, false);
+		assert.ok(res.drillingRpm.includes("1000–1200"));
+	});
+
+	test("D4 (150-350 HU): soft bone, underdrilling and bone condensation recommended", () => {
+		const res = classifyMischBoneDensity(220);
+		assert.strictEqual(res.mischClass, "D4");
+		assert.strictEqual(res.underDrilling, true);
+		assert.strictEqual(res.underDrillingMm, 1.0);
+		assert.strictEqual(res.osteotomeCondensation, true);
+		assert.ok(res.clinicalAdvice.includes("Under-drilling"));
+	});
+
+	test("D5 (<150 HU): very soft / resorbed bone, osteotomes expansion required", () => {
+		const res = classifyMischBoneDensity(80);
+		assert.strictEqual(res.mischClass, "D5");
+		assert.strictEqual(res.underDrilling, true);
+		assert.strictEqual(res.underDrillingMm, 1.5);
+		assert.strictEqual(res.osteotomeCondensation, true);
+		assert.ok(res.clinicalAdvice.includes("Bone Condensers"));
+	});
+});
+
