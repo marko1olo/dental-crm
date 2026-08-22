@@ -1,0 +1,462 @@
+/**
+ * Statutory Dental Laboratory Work Order & Tracking Studio Stylesheet
+ * 100% Token Compliant, Multi-Theme (Dark/Light), WCAG 2.1 Touch-First (>=44px), Print Optimized
+ */
+
+.lab-order-modal-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.7);
+	backdrop-filter: blur(5px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 9999;
+	padding: 1rem;
+}
+
+.lab-order-modal-container {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	width: 100%;
+	max-width: 1120px;
+	max-height: 92vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+}
+
+.lab-order-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1rem 1.25rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-strong, #f8fafc);
+}
+
+.lab-order-header-left {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.lab-order-title {
+	font-size: 1.125rem;
+	font-weight: 800;
+	color: var(--ink, #0f172a);
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.lab-order-badge {
+	font-size: 0.75rem;
+	font-weight: 700;
+	padding: 0.25rem 0.625rem;
+	border-radius: 6px;
+	background: rgba(13, 148, 136, 0.12);
+	color: var(--teal, #0d9488);
+	border: 1px solid rgba(13, 148, 136, 0.3);
+}
+
+.lab-order-tabs-nav {
+	display: flex;
+	gap: 0.25rem;
+	padding: 0.5rem 1.25rem;
+	background: var(--surface, #f1f5f9);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	overflow-x: auto;
+}
+
+.lab-order-tab-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.5rem 0.875rem;
+	min-height: 44px;
+	border-radius: 8px;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--muted, #64748b);
+	font-size: 0.875rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.lab-order-tab-btn:hover {
+	background: var(--paper-strong, #ffffff);
+	color: var(--ink, #0f172a);
+}
+
+.lab-order-tab-btn.active {
+	background: var(--paper, #ffffff);
+	color: var(--teal, #0d9488);
+	border-color: var(--line, #cbd5e1);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.lab-order-modal-body {
+	padding: 1.25rem;
+	overflow-y: auto;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+}
+
+/* 1-Click FDI Tooth Odontogram Selector */
+.lab-odontogram-panel {
+	background: var(--paper-strong, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 10px;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.lab-odontogram-grid {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	align-items: center;
+}
+
+.lab-tooth-row {
+	display: flex;
+	gap: 0.375rem;
+	justify-content: center;
+	flex-wrap: nowrap;
+}
+
+.lab-tooth-divider {
+	width: 2px;
+	background: var(--line, #cbd5e1);
+	margin: 0 0.25rem;
+}
+
+.lab-tooth-btn {
+	width: 44px;
+	height: 48px;
+	min-width: 44px;
+	min-height: 44px;
+	border-radius: 6px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-weight: 700;
+	font-size: 0.875rem;
+	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.15s ease;
+}
+
+.lab-tooth-btn:hover {
+	border-color: var(--teal, #0d9488);
+	background: rgba(13, 148, 136, 0.05);
+}
+
+.lab-tooth-btn.selected {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.3);
+}
+
+/* Prosthetic Matrix */
+.lab-types-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: 0.75rem;
+}
+
+.lab-type-card {
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 8px;
+	padding: 0.875rem;
+	background: var(--paper-strong, #f8fafc);
+	cursor: pointer;
+	display: flex;
+	align-items: flex-start;
+	gap: 0.75rem;
+	transition: all 0.15s ease;
+	min-height: 44px;
+}
+
+.lab-type-card:hover {
+	border-color: var(--teal, #0d9488);
+	transform: translateY(-1px);
+}
+
+.lab-type-card.selected {
+	border-color: var(--teal, #0d9488);
+	background: rgba(13, 148, 136, 0.08);
+	box-shadow: 0 0 0 1px var(--teal, #0d9488);
+}
+
+.lab-type-icon {
+	font-size: 1.5rem;
+	line-height: 1;
+}
+
+.lab-type-details {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	flex: 1;
+}
+
+.lab-type-name {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+.lab-type-desc {
+	font-size: 0.75rem;
+	color: var(--muted, #64748b);
+	line-height: 1.3;
+}
+
+.lab-type-meta {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-top: 0.375rem;
+	font-size: 0.75rem;
+}
+
+/* Shade Selector Swatches */
+.lab-swatches-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+	gap: 0.5rem;
+}
+
+.lab-swatch-chip {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-height: 44px;
+	min-width: 44px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1);
+	cursor: pointer;
+	padding: 0.375rem;
+	transition: all 0.15s ease;
+}
+
+.lab-swatch-chip:hover {
+	transform: scale(1.05);
+}
+
+.lab-swatch-chip.selected {
+	border: 2px solid var(--teal, #0d9488);
+	box-shadow: 0 0 8px rgba(13, 148, 136, 0.4);
+}
+
+.lab-swatch-color {
+	width: 24px;
+	height: 16px;
+	border-radius: 4px;
+	border: 1px solid rgba(0, 0, 0, 0.15);
+	margin-bottom: 0.25rem;
+}
+
+.lab-swatch-code {
+	font-size: 0.75rem;
+	font-weight: 800;
+	color: #0f172a;
+}
+
+/* 7-Stage Workflow Pipeline */
+.lab-pipeline-container {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	position: relative;
+	padding: 1rem 0.5rem;
+	overflow-x: auto;
+}
+
+.lab-stage-node {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.375rem;
+	cursor: pointer;
+	z-index: 2;
+	min-width: 90px;
+}
+
+.lab-stage-icon-circle {
+	width: 44px;
+	height: 44px;
+	border-radius: 50%;
+	background: var(--surface, #f1f5f9);
+	border: 2px solid var(--line, #cbd5e1);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 1.125rem;
+	transition: all 0.2s ease;
+}
+
+.lab-stage-node.active .lab-stage-icon-circle {
+	background: var(--teal, #0d9488);
+	border-color: var(--teal, #0d9488);
+	color: #ffffff;
+	transform: scale(1.1);
+	box-shadow: 0 0 12px rgba(13, 148, 136, 0.4);
+}
+
+.lab-stage-node.completed .lab-stage-icon-circle {
+	background: var(--ok, #10b981);
+	border-color: var(--ok, #10b981);
+	color: #ffffff;
+}
+
+.lab-stage-label {
+	font-size: 0.6875rem;
+	font-weight: 700;
+	text-align: center;
+	color: var(--muted, #64748b);
+	max-width: 90px;
+}
+
+.lab-stage-node.active .lab-stage-label {
+	color: var(--teal, #0d9488);
+	font-weight: 800;
+}
+
+/* Financials KPI Cards */
+.lab-financials-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 0.75rem;
+}
+
+.lab-kpi-card {
+	background: var(--paper-strong, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 8px;
+	padding: 0.875rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.lab-kpi-title {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+}
+
+.lab-kpi-value {
+	font-size: 1.25rem;
+	font-weight: 800;
+	color: var(--ink, #0f172a);
+	font-variant-numeric: tabular-nums;
+}
+
+.lab-kpi-sub {
+	font-size: 0.6875rem;
+	color: var(--muted, #64748b);
+}
+
+/* Buttons */
+.lab-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 0.5rem 1rem;
+	min-height: 44px;
+	min-width: 44px;
+	border-radius: 8px;
+	font-size: 0.875rem;
+	font-weight: 700;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+}
+
+.lab-btn:hover {
+	background: var(--surface, #f1f5f9);
+}
+
+.lab-btn-primary {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border-color: var(--teal, #0d9488);
+}
+
+.lab-btn-primary:hover {
+	background: #0f766e;
+}
+
+.lab-btn-danger {
+	background: var(--bad, #ef4444);
+	color: #ffffff;
+	border-color: var(--bad, #ef4444);
+}
+
+.lab-btn-danger:hover {
+	background: #dc2626;
+}
+
+/* Footer Actions */
+.lab-order-modal-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1rem 1.25rem;
+	border-top: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-strong, #f8fafc);
+	flex-wrap: wrap;
+	gap: 0.75rem;
+}
+
+/* Print View Container */
+.lab-print-preview-pane {
+	background: #ffffff;
+	color: #0f172a;
+	border: 1px solid var(--line, #cbd5e1);
+	border-radius: 8px;
+	padding: 1.5rem;
+	overflow-y: auto;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+@media print {
+	body * {
+		visibility: hidden;
+	}
+	.lab-print-preview-pane, .lab-print-preview-pane * {
+		visibility: visible;
+	}
+	.lab-print-preview-pane {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 100%;
+		border: none;
+		box-shadow: none;
+		padding: 0;
+	}
+}
