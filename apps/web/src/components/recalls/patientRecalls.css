@@ -1,0 +1,670 @@
+/* ==========================================================================
+   Patient Recall & Clinical Prophylaxis Engine Styles
+   Touch-First, Responsive, Multi-Theme (Light, Dark, Night, Calm Teal)
+   ========================================================================== */
+
+.recall-manager-modal-backdrop {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(15, 23, 42, 0.65);
+	backdrop-filter: blur(4px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1000;
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.recall-manager-container {
+	--rm-bg: var(--paper, #ffffff);
+	--rm-surface: var(--paper-strong, #f8fafc);
+	--rm-surface-hover: var(--surface-hover, #f1f5f9);
+	--rm-border: var(--border, #e2e8f0);
+	--rm-border-focus: var(--primary, #0d9488);
+	--rm-text-main: var(--ink, #0f172a);
+	--rm-text-muted: var(--muted, #64748b);
+	--rm-text-subtle: var(--text-subtle, #94a3b8);
+	--rm-primary: var(--primary, #0d9488);
+	--rm-primary-hover: var(--primary-hover, #0f766e);
+	--rm-primary-light: var(--primary-light, rgba(13, 148, 136, 0.12));
+	--rm-success: var(--success, #16a34a);
+	--rm-success-light: rgba(22, 163, 74, 0.12);
+	--rm-warning: var(--warning, #d97706);
+	--rm-warning-light: rgba(217, 119, 6, 0.12);
+	--rm-danger: var(--danger, #dc2626);
+	--rm-danger-light: rgba(220, 38, 38, 0.12);
+	--rm-info: #0284c7;
+	--rm-info-light: rgba(2, 132, 199, 0.12);
+	--rm-accent: #7c3aed;
+	--rm-accent-light: rgba(124, 58, 237, 0.12);
+	--rm-radius-lg: 14px;
+	--rm-radius-md: 10px;
+	--rm-radius-sm: 6px;
+	--rm-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+	background: var(--rm-bg);
+	color: var(--rm-text-main);
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-lg);
+	box-shadow: var(--rm-shadow);
+	width: 100%;
+	max-width: 1180px;
+	max-height: 92vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-sizing: border-box;
+	font-family: inherit;
+}
+
+/* Multi-Theme Overrides */
+[data-theme="dark"] .recall-manager-container,
+.dark .recall-manager-container {
+	--rm-bg: #0f172a;
+	--rm-surface: #1e293b;
+	--rm-surface-hover: #334155;
+	--rm-border: #334155;
+	--rm-text-main: #f8fafc;
+	--rm-text-muted: #94a3b8;
+	--rm-text-subtle: #64748b;
+	--rm-primary: #2dd4bf;
+	--rm-primary-hover: #14b8a6;
+	--rm-primary-light: rgba(45, 212, 191, 0.15);
+	--rm-success-light: rgba(74, 222, 128, 0.15);
+	--rm-warning-light: rgba(251, 191, 36, 0.15);
+	--rm-danger-light: rgba(248, 113, 113, 0.15);
+	--rm-info-light: rgba(56, 189, 248, 0.15);
+	--rm-accent-light: rgba(167, 139, 250, 0.15);
+}
+
+[data-theme="night"] .recall-manager-container,
+[data-theme="oled"] .recall-manager-container {
+	--rm-bg: #000000;
+	--rm-surface: #121215;
+	--rm-surface-hover: #27272a;
+	--rm-border: #27272a;
+	--rm-text-main: #ffffff;
+	--rm-text-muted: #a1a1aa;
+	--rm-text-subtle: #71717a;
+	--rm-primary: #2dd4bf;
+	--rm-primary-hover: #5eead4;
+	--rm-primary-light: rgba(45, 212, 191, 0.2);
+}
+
+[data-theme="calm_teal"] .recall-manager-container,
+[data-theme="calm-teal"] .recall-manager-container {
+	--rm-bg: #ffffff;
+	--rm-surface: #f0fdfa;
+	--rm-surface-hover: #ccfbf1;
+	--rm-border: #99f6e4;
+	--rm-text-main: #134e4a;
+	--rm-text-muted: #0f766e;
+	--rm-text-subtle: #14b8a6;
+	--rm-primary: #0f766e;
+	--rm-primary-hover: #115e59;
+}
+
+/* Header */
+.recall-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 18px 24px;
+	border-bottom: 1px solid var(--rm-border);
+	background: var(--rm-surface);
+	flex-shrink: 0;
+}
+
+.recall-header-title-wrap {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.recall-header-icon {
+	width: 38px;
+	height: 38px;
+	border-radius: var(--rm-radius-sm);
+	background: var(--rm-primary-light);
+	color: var(--rm-primary);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.recall-header-title {
+	font-size: 1.25rem;
+	font-weight: 700;
+	margin: 0;
+	line-height: 1.3;
+	color: var(--rm-text-main);
+}
+
+.recall-header-subtitle {
+	font-size: 0.8125rem;
+	color: var(--rm-text-muted);
+	margin: 2px 0 0 0;
+}
+
+.recall-close-btn {
+	min-width: 44px;
+	min-height: 44px;
+	border-radius: var(--rm-radius-sm);
+	border: 1px solid var(--rm-border);
+	background: transparent;
+	color: var(--rm-text-muted);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	font-size: 1.25rem;
+	touch-action: manipulation;
+}
+
+.recall-close-btn:hover {
+	background: var(--rm-surface-hover);
+	color: var(--rm-text-main);
+}
+
+/* Metrics Dashboard Strip */
+.recall-metrics-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 12px;
+	padding: 16px 24px;
+	background: var(--rm-bg);
+	border-bottom: 1px solid var(--rm-border);
+	flex-shrink: 0;
+}
+
+.recall-metric-card {
+	background: var(--rm-surface);
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-md);
+	padding: 12px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-height: 44px;
+	position: relative;
+	overflow: hidden;
+}
+
+.recall-metric-card--primary {
+	border-left: 4px solid var(--rm-primary);
+}
+
+.recall-metric-card--warning {
+	border-left: 4px solid var(--rm-warning);
+}
+
+.recall-metric-card--danger {
+	border-left: 4px solid var(--rm-danger);
+}
+
+.recall-metric-card--success {
+	border-left: 4px solid var(--rm-success);
+}
+
+.recall-metric-label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--rm-text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.recall-metric-value-row {
+	display: flex;
+	align-items: baseline;
+	gap: 6px;
+}
+
+.recall-metric-value {
+	font-size: 1.375rem;
+	font-weight: 800;
+	color: var(--rm-text-main);
+	line-height: 1;
+}
+
+.recall-metric-subtext {
+	font-size: 0.75rem;
+	color: var(--rm-text-muted);
+}
+
+/* Filters & Search Toolbar */
+.recall-toolbar {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 16px 24px;
+	background: var(--rm-surface);
+	border-bottom: 1px solid var(--rm-border);
+	flex-shrink: 0;
+}
+
+.recall-toolbar-top {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.recall-search-input-wrap {
+	position: relative;
+	flex: 1;
+	min-width: 220px;
+}
+
+.recall-search-input {
+	width: 100%;
+	min-height: 44px;
+	padding: 8px 12px 8px 36px;
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-sm);
+	background: var(--rm-bg);
+	color: var(--rm-text-main);
+	font-size: 0.875rem;
+	box-sizing: border-box;
+	transition: border-color 0.15s ease;
+}
+
+.recall-search-input:focus {
+	outline: none;
+	border-color: var(--rm-border-focus);
+	box-shadow: 0 0 0 2px var(--rm-primary-light);
+}
+
+.recall-search-icon {
+	position: absolute;
+	left: 10px;
+	top: 50%;
+	transform: translateY(-50%);
+	color: var(--rm-text-subtle);
+	pointer-events: none;
+}
+
+.recall-cycle-select {
+	min-height: 44px;
+	padding: 8px 12px;
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-sm);
+	background: var(--rm-bg);
+	color: var(--rm-text-main);
+	font-size: 0.875rem;
+	cursor: pointer;
+	box-sizing: border-box;
+}
+
+/* Status Chips Row */
+.recall-status-chips {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	overflow-x: auto;
+	padding-bottom: 4px;
+	-webkit-overflow-scrolling: touch;
+}
+
+.recall-chip {
+	min-height: 44px;
+	padding: 8px 14px;
+	border-radius: 9999px;
+	border: 1px solid var(--rm-border);
+	background: var(--rm-bg);
+	color: var(--rm-text-muted);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.recall-chip:hover {
+	background: var(--rm-surface-hover);
+	color: var(--rm-text-main);
+}
+
+.recall-chip.active {
+	background: var(--rm-primary);
+	border-color: var(--rm-primary);
+	color: #ffffff;
+	font-weight: 700;
+}
+
+.recall-chip-badge {
+	font-size: 0.75rem;
+	padding: 2px 6px;
+	border-radius: 9999px;
+	background: rgba(0, 0, 0, 0.08);
+}
+
+.recall-chip.active .recall-chip-badge {
+	background: rgba(255, 255, 255, 0.25);
+	color: #ffffff;
+}
+
+/* Content Area */
+.recall-content-area {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px 24px;
+	box-sizing: border-box;
+	min-height: 260px;
+}
+
+/* Candidates Table */
+.recall-table-wrap {
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-md);
+	overflow: hidden;
+	background: var(--rm-bg);
+}
+
+.recall-table {
+	width: 100%;
+	border-collapse: collapse;
+	text-align: left;
+	font-size: 0.875rem;
+}
+
+.recall-table th {
+	background: var(--rm-surface);
+	padding: 12px 14px;
+	font-weight: 700;
+	color: var(--rm-text-muted);
+	border-bottom: 1px solid var(--rm-border);
+	white-space: nowrap;
+}
+
+.recall-table td {
+	padding: 14px;
+	border-bottom: 1px solid var(--rm-border);
+	vertical-align: middle;
+}
+
+.recall-table tr:last-child td {
+	border-bottom: none;
+}
+
+.recall-table tr:hover td {
+	background: var(--rm-surface-hover);
+}
+
+.recall-patient-cell {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.recall-patient-name {
+	font-weight: 700;
+	color: var(--rm-text-main);
+	font-size: 0.9375rem;
+}
+
+.recall-patient-phone {
+	font-size: 0.8125rem;
+	color: var(--rm-text-muted);
+}
+
+/* Urgency Badges */
+.recall-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 8px;
+	border-radius: 9999px;
+	font-size: 0.75rem;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.recall-badge--upcoming {
+	background: var(--rm-info-light);
+	color: var(--rm-info);
+}
+
+.recall-badge--due_now {
+	background: var(--rm-warning-light);
+	color: var(--rm-warning);
+}
+
+.recall-badge--overdue_30 {
+	background: rgba(234, 88, 12, 0.15);
+	color: #ea580c;
+}
+
+.recall-badge--overdue_90 {
+	background: var(--rm-danger-light);
+	color: var(--rm-danger);
+}
+
+.recall-badge--completed {
+	background: var(--rm-success-light);
+	color: var(--rm-success);
+}
+
+/* Cycle Badges */
+.recall-cycle-tag {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 8px;
+	border-radius: var(--rm-radius-sm);
+	font-size: 0.75rem;
+	font-weight: 600;
+	background: var(--rm-surface);
+	border: 1px solid var(--rm-border);
+	color: var(--rm-text-main);
+}
+
+/* Action Buttons in Table */
+.recall-actions-cell {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.recall-action-btn {
+	min-height: 44px;
+	min-width: 44px;
+	padding: 8px 12px;
+	border-radius: var(--rm-radius-sm);
+	border: 1px solid var(--rm-border);
+	background: var(--rm-bg);
+	color: var(--rm-text-main);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.recall-action-btn:hover:not(:disabled) {
+	background: var(--rm-surface-hover);
+	border-color: var(--rm-text-muted);
+}
+
+.recall-action-btn--whatsapp {
+	color: #15803d;
+	background: rgba(34, 197, 94, 0.1);
+	border-color: rgba(34, 197, 94, 0.3);
+}
+
+.recall-action-btn--whatsapp:hover:not(:disabled) {
+	background: rgba(34, 197, 94, 0.2);
+	color: #166534;
+}
+
+.recall-action-btn--script {
+	color: var(--rm-primary);
+	background: var(--rm-primary-light);
+	border-color: var(--rm-primary);
+}
+
+.recall-action-btn--book {
+	color: #ffffff;
+	background: var(--rm-primary);
+	border-color: var(--rm-primary);
+}
+
+.recall-action-btn--book:hover:not(:disabled) {
+	background: var(--rm-primary-hover);
+}
+
+.recall-action-btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+/* Objection Script Helper Modal / Drawer */
+.recall-script-drawer {
+	margin-top: 16px;
+	border: 1.5px solid var(--rm-primary);
+	border-radius: var(--rm-radius-md);
+	background: var(--rm-surface);
+	padding: 16px;
+}
+
+.recall-script-drawer-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 12px;
+}
+
+.recall-script-title {
+	font-size: 1rem;
+	font-weight: 700;
+	color: var(--rm-text-main);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.recall-script-tabs {
+	display: flex;
+	gap: 8px;
+	overflow-x: auto;
+	margin-bottom: 12px;
+	padding-bottom: 4px;
+}
+
+.recall-script-tab-btn {
+	min-height: 44px;
+	padding: 6px 12px;
+	border-radius: var(--rm-radius-sm);
+	border: 1px solid var(--rm-border);
+	background: var(--rm-bg);
+	color: var(--rm-text-main);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	white-space: nowrap;
+	touch-action: manipulation;
+}
+
+.recall-script-tab-btn.active {
+	background: var(--rm-primary);
+	border-color: var(--rm-primary);
+	color: #ffffff;
+}
+
+.recall-script-content-box {
+	background: var(--rm-bg);
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-sm);
+	padding: 14px;
+	font-size: 0.875rem;
+	line-height: 1.5;
+}
+
+.recall-script-suggested-text {
+	background: var(--rm-primary-light);
+	border-left: 3px solid var(--rm-primary);
+	padding: 10px 12px;
+	border-radius: 4px;
+	margin-top: 8px;
+	font-weight: 500;
+	color: var(--rm-text-main);
+}
+
+.recall-script-tip {
+	font-size: 0.75rem;
+	color: var(--rm-text-muted);
+	margin-top: 6px;
+	font-style: italic;
+}
+
+/* Empty & Loading States */
+.recall-empty-state {
+	text-align: center;
+	padding: 48px 16px;
+	color: var(--rm-text-muted);
+}
+
+.recall-empty-icon {
+	font-size: 2.5rem;
+	margin-bottom: 8px;
+}
+
+/* Responsive Styles for Mobile Viewports */
+@media (max-width: 768px) {
+	.recall-manager-container {
+		max-height: 98vh;
+		border-radius: 0;
+	}
+
+	.recall-metrics-grid {
+		grid-template-columns: repeat(2, 1fr);
+		padding: 12px;
+	}
+
+	.recall-table thead {
+		display: none;
+	}
+
+	.recall-table,
+	.recall-table tbody,
+	.recall-table tr,
+	.recall-table td {
+		display: block;
+		width: 100%;
+		box-sizing: border-box;
+	}
+
+	.recall-table tr {
+		margin-bottom: 12px;
+		border: 1px solid var(--rm-border);
+		border-radius: var(--rm-radius-sm);
+		background: var(--rm-bg);
+	}
+
+	.recall-table td {
+		border-bottom: 1px solid var(--rm-surface);
+		padding: 10px 12px;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.recall-actions-cell {
+		justify-content: flex-end;
+	}
+}
