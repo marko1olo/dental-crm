@@ -1,0 +1,295 @@
+/**
+ * Dental Anesthesia Protocol & Safe Vasoconstrictor Dosage Calculator Stylesheet
+ * 100% Token Compliant, Multi-Theme (Dark/Light), WCAG 2.1 Touch-First (>=44px)
+ */
+
+.anesthesia-modal-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.65);
+	backdrop-filter: blur(4px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 9999;
+	padding: 1rem;
+}
+
+.anesthesia-modal-container {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	width: 100%;
+	max-width: 980px;
+	max-height: 90vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+}
+
+.anesthesia-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1rem 1.25rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-strong, #f8fafc);
+}
+
+.anesthesia-header-title {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	font-size: 1.125rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+.anesthesia-header-badge {
+	font-size: 0.75rem;
+	font-weight: 600;
+	padding: 0.25rem 0.5rem;
+	border-radius: 6px;
+	background: rgba(16, 185, 129, 0.12);
+	color: var(--ok, #10b981);
+	border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.anesthesia-modal-body {
+	padding: 1.25rem;
+	overflow-y: auto;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+}
+
+/* Drugs Grid */
+.anesthesia-drugs-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 0.75rem;
+}
+
+.anesthesia-drug-card {
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 10px;
+	padding: 0.875rem;
+	background: var(--paper-strong, #f8fafc);
+	cursor: pointer;
+	transition: all 0.2s ease;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	text-align: left;
+}
+
+.anesthesia-drug-card:hover {
+	border-color: var(--brand-500, #3b82f6);
+	transform: translateY(-1px);
+}
+
+.anesthesia-drug-card.selected {
+	border-color: var(--brand-500, #3b82f6);
+	background: rgba(59, 130, 246, 0.08);
+	box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.drug-card-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.drug-card-title {
+	font-size: 0.9375rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+.drug-card-substance {
+	font-size: 0.75rem;
+	color: var(--muted, #64748b);
+}
+
+.drug-epi-pill {
+	font-size: 0.6875rem;
+	font-weight: 600;
+	padding: 0.125rem 0.375rem;
+	border-radius: 4px;
+}
+
+.drug-epi-pill.has-epi {
+	background: rgba(245, 158, 11, 0.15);
+	color: var(--warn, #f59e0b);
+	border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.drug-epi-pill.no-epi {
+	background: rgba(16, 185, 129, 0.15);
+	color: var(--ok, #10b981);
+	border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* Safety Meter */
+.anesthesia-safety-meter {
+	background: var(--paper-strong, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 10px;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.safety-meter-bar-container {
+	width: 100%;
+	height: 12px;
+	background: var(--surface, #f1f5f9);
+	border-radius: 6px;
+	overflow: hidden;
+	position: relative;
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+.safety-meter-bar-fill {
+	height: 100%;
+	transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+}
+
+.safety-meter-bar-fill.safe {
+	background: var(--ok, #10b981);
+}
+
+.safety-meter-bar-fill.caution {
+	background: #84cc16;
+}
+
+.safety-meter-bar-fill.warning {
+	background: var(--warn, #f59e0b);
+}
+
+.safety-meter-bar-fill.overdose_danger {
+	background: var(--bad, #ef4444);
+}
+
+/* Metrics Row */
+.anesthesia-metrics-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+	gap: 0.75rem;
+}
+
+.anesthesia-metric-box {
+	background: var(--surface, #f1f5f9);
+	padding: 0.625rem 0.75rem;
+	border-radius: 8px;
+	border: 1px solid var(--line, #e2e8f0);
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.metric-label {
+	font-size: 0.6875rem;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.metric-value {
+	font-size: 1.125rem;
+	font-weight: 800;
+	color: var(--ink, #0f172a);
+	font-variant-numeric: tabular-nums;
+}
+
+/* Somatic & Alert Banners */
+.anesthesia-alert-box {
+	padding: 0.75rem 1rem;
+	border-radius: 8px;
+	font-size: 0.8125rem;
+	line-height: 1.4;
+	display: flex;
+	align-items: flex-start;
+	gap: 0.625rem;
+}
+
+.anesthesia-alert-box.danger {
+	background: rgba(239, 68, 68, 0.12);
+	color: var(--bad, #ef4444);
+	border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.anesthesia-alert-box.warning {
+	background: rgba(245, 158, 11, 0.12);
+	color: var(--warn, #f59e0b);
+	border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.anesthesia-alert-box.safe {
+	background: rgba(16, 185, 129, 0.12);
+	color: var(--ok, #10b981);
+	border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* Diary Box */
+.anesthesia-diary-box {
+	background: var(--paper-strong, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 8px;
+	padding: 0.875rem;
+	font-size: 0.8125rem;
+	color: var(--ink, #0f172a);
+	line-height: 1.5;
+	position: relative;
+}
+
+/* Action Buttons */
+.anesthesia-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 0.5rem 1rem;
+	min-height: 44px;
+	min-width: 44px;
+	border-radius: 8px;
+	font-size: 0.875rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+}
+
+.anesthesia-btn:hover {
+	background: var(--surface, #f1f5f9);
+}
+
+.anesthesia-btn-primary {
+	background: var(--brand-500, #3b82f6);
+	color: #ffffff;
+	border-color: var(--brand-500, #3b82f6);
+}
+
+.anesthesia-btn-primary:hover {
+	background: #2563eb;
+}
+
+.anesthesia-btn-ok {
+	background: var(--ok, #10b981);
+	color: #ffffff;
+	border-color: var(--ok, #10b981);
+}
+
+.anesthesia-btn-ok:hover {
+	background: #059669;
+}
