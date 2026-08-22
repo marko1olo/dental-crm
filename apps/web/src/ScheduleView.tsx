@@ -6,7 +6,7 @@ import type {
 	ScheduleSuggestion,
 	StaffRole,
 } from "@dental/shared";
-import { Calendar, Plus, ShieldCheck } from "lucide-react";
+import { Calendar, LayoutGrid, List, Plus, ShieldCheck, Sparkles } from "lucide-react";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import {
 	Fragment,
@@ -16,22 +16,6 @@ import {
 	useRef,
 	useState,
 } from "react";
-/*
- * auth — обычный экспорт модуля, читающий токен из localStorage, а не значение
- * из контекста.
- *
- * ПРЕЖНЕЕ ОБЪЯСНЕНИЕ БЫЛО НЕВЕРНЫМ. Здесь стояло «этот экран отрисован ВЫШЕ
- * AppLogicProvider … useAppLogicContext() тут пуст». Замерено: провайдер в App.tsx
- * открывается на строке 2509 и закрывается на 5070, а <ScheduleView … /> стоит на
- * 3910 — то есть ВНУТРИ. И пустого контекста больше не бывает в принципе:
- * useAppLogicContext() вне провайдера бросает исключение
- * (contexts/AppLogicContext.tsx), а не отдаёт выдуманный пустой объект.
- *
- * НАСТОЯЩАЯ ПРИЧИНА оставить этот импорт: запросы этого экрана без заголовков
- * охраны уходят на сервер и получают 401, то есть ящик листа ожидания выглядит
- * вечно пустым, — а нужны они и вне рендера, где хука нет вовсе. Перевод на
- * контекст требует прогона живого расписания, поэтому здесь не делается.
- */
 import {
 	appointmentScheduleMissingFields,
 	denteAdminSecretRequestHeaders,
@@ -39,12 +23,19 @@ import {
 import { EmptyState } from "./components/EmptyState";
 import { showToast } from "./components/GlobalToast";
 import { AppointmentCard } from "./components/schedule/AppointmentCard";
+import { AppointmentModal } from "./components/schedule/AppointmentModal";
 import { DayConfirmationsPanel } from "./components/schedule/DayConfirmationsPanel";
 import { FreedSlotsPanel } from "./components/schedule/FreedSlotsPanel";
 import { NewAppointmentForm } from "./components/schedule/NewAppointmentForm";
+import {
+	QuickBookingDrawer,
+	type QuickBookingSlotInfo,
+} from "./components/schedule/QuickBookingDrawer";
 import { ScheduleClipboardPanel } from "./components/schedule/ScheduleClipboardPanel";
 import { ScheduleFilterStrip } from "./components/schedule/ScheduleFilterStrip";
+import { ScheduleGrid } from "./components/schedule/ScheduleGrid";
 import { ScheduleSubNavTabs } from "./components/schedule/ScheduleSubNavTabs";
+import { ScheduleTimeline } from "./components/schedule/ScheduleTimeline";
 import {
 	type DayGroupingAppointment,
 	formatDayTitle,
@@ -53,6 +44,7 @@ import {
 	shiftDayKey,
 } from "./components/schedule/scheduleDayGrouping";
 import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
+import { DoctorShiftRosterModal } from "./components/schedule/roster/DoctorShiftRosterModal";
 import { WaitlistDrawer } from "./components/schedule/WaitlistDrawer";
 import {
 	type TargetSlotInfo,
@@ -60,6 +52,9 @@ import {
 } from "./components/schedule/WaitlistQuickFillModal";
 import { actionFailureToast } from "./lib/panelStateText";
 import { motionSafeScrollIntoView } from "./motionPreference";
+import { auth } from "./AppConstants";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
+import { useScheduleRealtime } from "./hooks/useScheduleRealtime";
 import { useScheduleStore } from "./store/scheduleStore";
 import { useSettingsStore } from "./store/settingsStore";
 
@@ -155,10 +150,6 @@ type ScheduleViewProps = {
 	/** Перечитывание данных клиники: нужно для живого обновления сетки. */
 	loadDashboard?: (options?: { adminSecret?: string }) => Promise<void>;
 };
-
-import { auth } from "./AppConstants";
-import { useAppLogicContext } from "./contexts/AppLogicContext";
-import { useScheduleRealtime } from "./hooks/useScheduleRealtime";
 
 export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	const logicContext = useAppLogicContext();
@@ -293,6 +284,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		scheduleAdminSecretDemand,
 	} = useSettingsStore();
 	const [showShiftAnalytics, setShowShiftAnalytics] = useState(false);
+	const [isRosterModalOpen, setIsRosterModalOpen] = useState(false);
 	/**
 	 * Раскрыта ли форма со всеми полями записи.
 	 *
@@ -343,6 +335,31 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	/** Сигнал панели перечитать список после «В буфер» с карточки. */
 	const [clipboardReloadToken, setClipboardReloadToken] = useState(0);
 
+	/** Быстрая 1-клик запись на прием (QuickBookingDrawer) */
+	const [quickBookingOpen, setQuickBookingOpen] = useState(false);
+	const [quickBookingSlot, setQuickBookingSlot] =
+		useState<QuickBookingSlotInfo | null>(null);
+
+	/** Детальное модальное окно записи (AppointmentModal) */
+	const [modalAppointment, setModalAppointment] =
+		useState<Appointment | null>(null);
+
+	/** Режим отображения: лента (timeline) или сетка по креслам (grid) */
+	const [scheduleViewMode, setScheduleViewMode] = useState<"timeline" | "grid">(
+		"timeline",
+	);
+
+	const todayScheduleDate = useCallback(
+		() =>
+			toDateTimeLocalValue(
+				new Date().toISOString(),
+				dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow",
+			).slice(0, 10),
+		[toDateTimeLocalValue, dashboard?.clinicSettings?.profile?.timezone],
+	);
+
+	const clinicToday = todayScheduleDate();
+
 	/**
 	 * Сколько человек стоит в очереди. Число живёт на кнопке, потому что очередь
 	 * — это то, о чём забывают: администратор открывает лист ожидания, только
@@ -376,8 +393,105 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		return () => {
 			cancelled = true;
 		};
-	}, [waitlistOpen]);
+	}, [waitlistOpen, auth]);
+
 	const [useManualSelects, setUseManualSelects] = useState(false);
+
+	// ── Reception Keyboard Navigation & Shortcuts (Arrow keys, N, Space, Escape)
+	useEffect(() => {
+		const handleGlobalKeyDown = (e: globalThis.KeyboardEvent) => {
+			const activeEl = document.activeElement;
+			const isInputFocused =
+				activeEl &&
+				(activeEl.tagName === "INPUT" ||
+					activeEl.tagName === "TEXTAREA" ||
+					activeEl.tagName === "SELECT" ||
+					activeEl.getAttribute("contenteditable") === "true");
+
+			if (e.key === "Escape") {
+				if (quickBookingOpen) {
+					setQuickBookingOpen(false);
+					return;
+				}
+				if (modalAppointment) {
+					setModalAppointment(null);
+					return;
+				}
+				if (waitlistOpen) {
+					setWaitlistOpen(false);
+					return;
+				}
+				if (showCreateForm) {
+					setShowCreateForm(false);
+					return;
+				}
+			}
+
+			if (isInputFocused) return;
+
+			if (
+				(e.key === "n" || e.key === "N" || e.key === "т" || e.key === "Т") &&
+				!e.ctrlKey &&
+				!e.metaKey
+			) {
+				e.preventDefault();
+				setQuickBookingSlot({
+					dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
+					doctorUserId: scheduleDoctorFilterId || null,
+					chairId: scheduleChairFilterId || null,
+					durationMinutes: 30,
+				});
+				setQuickBookingOpen(true);
+				return;
+			}
+
+			if (e.key === "ArrowDown" || e.key === "j") {
+				const focusableNodes = Array.from(
+					document.querySelectorAll<HTMLElement>(
+						"[data-timeline-focusable='true'], [data-appointment-id]",
+					),
+				);
+				if (focusableNodes.length === 0) return;
+				e.preventDefault();
+				const currentIndex = focusableNodes.findIndex(
+					(n) => n === document.activeElement || n.contains(document.activeElement),
+				);
+				const nextIndex =
+					currentIndex < 0 ? 0 : (currentIndex + 1) % focusableNodes.length;
+				const target = focusableNodes[nextIndex];
+				target?.focus();
+				if (target) motionSafeScrollIntoView(target, { block: "nearest" });
+			} else if (e.key === "ArrowUp" || e.key === "k") {
+				const focusableNodes = Array.from(
+					document.querySelectorAll<HTMLElement>(
+						"[data-timeline-focusable='true'], [data-appointment-id]",
+					),
+				);
+				if (focusableNodes.length === 0) return;
+				e.preventDefault();
+				const currentIndex = focusableNodes.findIndex(
+					(n) => n === document.activeElement || n.contains(document.activeElement),
+				);
+				const prevIndex =
+					currentIndex <= 0 ? focusableNodes.length - 1 : currentIndex - 1;
+				const target = focusableNodes[prevIndex];
+				target?.focus();
+				if (target) motionSafeScrollIntoView(target, { block: "nearest" });
+			}
+		};
+
+		window.addEventListener("keydown", handleGlobalKeyDown);
+		return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+	}, [
+		quickBookingOpen,
+		modalAppointment,
+		waitlistOpen,
+		showCreateForm,
+		scheduleDateFilter,
+		clinicToday,
+		scheduleDoctorFilterId,
+		scheduleChairFilterId,
+	]);
 
 	const adminSecretReady = scheduleAdminSecretDraft.trim().length > 0;
 
@@ -585,11 +699,6 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				patients: dashboard.patients ?? [],
 			},
 		);
-	const todayScheduleDate = () =>
-		toDateTimeLocalValue(
-			new Date().toISOString(),
-			dashboard.clinicSettings?.profile?.timezone ?? "Europe/Moscow",
-		).slice(0, 10);
 	/**
 	 * Разбор показанных приёмов по дням клиники: заголовок дня, свободные окна
 	 * между приёмами и накладки.
@@ -604,7 +713,6 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	 * Разбор — в отдельном проверенном модуле (scheduleDayGrouping.ts): в
 	 * арифметике времени ошибаются молча.
 	 */
-	const clinicToday = todayScheduleDate();
 	const scheduleDayGroups = useMemo(
 		() =>
 			groupAppointmentsByClinicDay(
@@ -860,12 +968,12 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 
 	return (
 		<div
-			className="panel schedule-panel"
+			className="panel schedule-panel min-w-0 max-w-full overflow-hidden"
 			id="schedule"
 			data-testid="schedule-view"
 		>
-			<div className="panel-heading">
-				<h2>Расписание приемов</h2>
+			<div className="panel-heading flex flex-wrap items-center justify-between gap-3 min-w-0">
+				<h2 className="truncate min-w-0">Расписание приемов</h2>
 				<ScheduleSubNavTabs
 					showShiftAnalytics={showShiftAnalytics}
 					setShowShiftAnalytics={setShowShiftAnalytics}
@@ -895,13 +1003,21 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 			)}
 
 			{showShiftAnalytics && (
-				<div className="schedule-command-grid">
-					<article>
+				<div className="schedule-command-grid min-w-0">
+					<article className="min-w-0">
 						<span>Врачи</span>
 						<strong>
 							{dashboard?.shiftIntelligence?.doctorLoads?.length ?? 0}
 						</strong>
-						<p>
+						<p
+							className="break-words"
+							title={(dashboard?.shiftIntelligence?.doctorLoads ?? [])
+								.map(
+									(load: ResourceLoad) =>
+										`${(load?.title ?? "").split(" ")[0]} ${load?.utilizationPercent ?? 0}%`,
+								)
+								.join(" · ")}
+						>
 							{(dashboard?.shiftIntelligence?.doctorLoads ?? [])
 								.map(
 									(load: ResourceLoad) =>
@@ -910,12 +1026,20 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 								.join(" · ")}
 						</p>
 					</article>
-					<article>
+					<article className="min-w-0">
 						<span>Ассистенты</span>
 						<strong>
 							{dashboard?.shiftIntelligence?.assistantLoads?.length ?? 0}
 						</strong>
-						<p>
+						<p
+							className="break-words"
+							title={(dashboard?.shiftIntelligence?.assistantLoads ?? [])
+								.map(
+									(load: ResourceLoad) =>
+										`${(load?.title ?? "").split(" ")[0]} ${load?.utilizationPercent ?? 0}%`,
+								)
+								.join(" · ") || "не назначены"}
+						>
 							{(dashboard?.shiftIntelligence?.assistantLoads ?? [])
 								.map(
 									(load: ResourceLoad) =>
@@ -924,12 +1048,20 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 								.join(" · ") || "не назначены"}
 						</p>
 					</article>
-					<article>
+					<article className="min-w-0">
 						<span>Кресла</span>
 						<strong>
 							{dashboard?.shiftIntelligence?.chairLoads?.length ?? 0}
 						</strong>
-						<p>
+						<p
+							className="break-words"
+							title={(dashboard?.shiftIntelligence?.chairLoads ?? [])
+								.map(
+									(load: ResourceLoad) =>
+										`${load?.title ?? ""} ${load?.utilizationPercent ?? 0}%`,
+								)
+								.join(" · ")}
+						>
 							{(dashboard?.shiftIntelligence?.chairLoads ?? [])
 								.map(
 									(load: ResourceLoad) =>
@@ -938,16 +1070,21 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 								.join(" · ")}
 						</p>
 					</article>
-					<article>
+					<article className="min-w-0">
 						<span>Контроль</span>
 						<strong>{shiftWarnings?.length ?? 0}</strong>
-						<p>{shiftWarnings?.[0]?.title ?? "Нет предупреждений"}</p>
+						<p
+							className="break-words"
+							title={shiftWarnings?.[0]?.title ?? "Нет предупреждений"}
+						>
+							{shiftWarnings?.[0]?.title ?? "Нет предупреждений"}
+						</p>
 					</article>
 				</div>
 			)}
 			{hasSummaryContent ? (
 				<section
-					className="schedule-shift-summary"
+					className="schedule-shift-summary min-w-0 max-w-full"
 					data-testid="schedule-shift-summary"
 					aria-label="Короткая сводка смены"
 					aria-live="polite"
@@ -956,10 +1093,12 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 						gap: "8px",
 						flexWrap: "wrap",
 						alignItems: "center",
+						minWidth: 0,
+						maxWidth: "100%",
 					}}
 				>
 					{visibleAppointmentCount > 0 ? (
-						<span className="status-pill status-confirmed">
+						<span className="status-pill status-confirmed shrink-0">
 							Записей: {visibleAppointmentCount}
 						</span>
 					) : null}
@@ -973,13 +1112,13 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					{activeScheduleFilterLabels.length > 0 ? (
 						<>
 							<span
-								className="status-pill status-arrived"
-								title="Что сейчас отобрано на экране"
+								className="status-pill status-arrived max-w-full truncate"
+								title={`Что сейчас отобрано на экране: ${activeScheduleFilterLabels.join(", ")}`}
 							>
 								Отбор: {activeScheduleFilterLabels.join(", ")}
 							</span>
 							<button
-								className="text-button"
+								className="text-button shrink-0"
 								type="button"
 								onClick={resetScheduleFilters}
 								style={{ minHeight: "44px", display: "inline-flex", alignItems: "center", padding: "0 10px" }}
@@ -996,11 +1135,11 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					{activeScheduleFilterLabels.length === 0 &&
 					visibleDayGroups?.length > 1 ? (
 						<>
-							<span className="status-pill status-planned">
+							<span className="status-pill status-planned shrink-0">
 								Показаны все дни: {visibleDayGroups?.length}
 							</span>
 							<button
-								className="text-button"
+								className="text-button shrink-0"
 								type="button"
 								onClick={() => setScheduleDateFilter(todayScheduleDate())}
 								style={{ minHeight: "44px", display: "inline-flex", alignItems: "center", padding: "0 10px" }}
@@ -1011,7 +1150,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					) : null}
 					{/* Накладки называются на самом верху: это то, из-за чего в коридоре встречаются двое. */}
 					{scheduleOverlapCount > 0 ? (
-						<span className="status-pill status-cancelled" role="alert">
+						<span className="status-pill status-cancelled shrink-0" role="alert">
 							Наложений на одно время: {scheduleOverlapCount}
 						</span>
 					) : null}
@@ -1027,24 +1166,24 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 						<button
 							key={warning.id}
 							type="button"
-							className={`status-pill schedule-warning-chip ${warning.severity === "critical" ? "status-cancelled" : "status-overdue"}`}
+							className={`status-pill schedule-warning-chip max-w-full text-left ${warning.severity === "critical" ? "status-cancelled" : "status-overdue"}`}
 							onClick={() => openScheduleWarning(warning)}
-							title={warning.detail}
+							title={`${warning.title}: ${warning.detail}`}
 							style={{ minHeight: "44px", display: "inline-flex", alignItems: "center" }}
 						>
-							{warning.title} — {warning.actionLabel.toLowerCase()}
+							<span className="truncate">{warning.title} — {warning.actionLabel.toLowerCase()}</span>
 						</button>
 					))}
 					{showShiftAnalytics && (
 						<div
-							className="schedule-shift-summary-grid"
+							className="schedule-shift-summary-grid min-w-0"
 							style={{ width: "100%", marginTop: "12px" }}
 						>
 							{scheduleLoadSummaryCards.map((card) => (
-								<article key={card.id}>
+								<article key={card.id} className="min-w-0">
 									<span>{card.title}</span>
 									<strong>{card.value}</strong>
-									<p>{card.detail}</p>
+									<p className="break-words" title={card.detail}>{card.detail}</p>
 								</article>
 							))}
 						</div>
@@ -1069,7 +1208,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 			/>
 			{scheduleAdminSecretNeeded ? (
 				<fieldset
-					className="appointment-editor schedule-admin-unlock"
+					className="appointment-editor schedule-admin-unlock min-w-0"
 					aria-label="Секрет администратора для сохранения расписания"
 					style={{
 						display: "flex",
@@ -1079,12 +1218,13 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 						borderRadius: "10px",
 						background: "var(--paper-soft)",
 						marginTop: "8px",
+						minWidth: 0,
 					}}
 				>
 					{!scheduleAdminSecretSession ? (
 						<>
 							<p
-								className="admin-unlock-guidance form-span-2"
+								className="admin-unlock-guidance form-span-2 break-words"
 								id="schedule-admin-unlock-guidance"
 								role="status"
 								aria-live="polite"
@@ -1092,7 +1232,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 							>
 								{scheduleAdminSecretReason}
 							</p>
-							<label className="form-span-2">
+							<label className="form-span-2 min-w-0">
 								Секрет администратора клиники
 								<input
 									type="password"
@@ -1111,13 +1251,13 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 									aria-describedby="schedule-admin-unlock-guidance"
 								/>
 							</label>
-							<div className="appointment-editor-actions">
-								<span className="save-state save-state-idle">
+							<div className="appointment-editor-actions flex flex-wrap items-center justify-between gap-3 min-w-0">
+								<span className="save-state save-state-idle break-words">
 									Секрет хранится только до перезагрузки страницы и относится
 									только к расписанию.
 								</span>
 								<button
-									className="secondary-button"
+									className="secondary-button shrink-0"
 									type="button"
 									onClick={unlockScheduleAdminSession}
 									aria-describedby="schedule-admin-unlock-guidance"
@@ -1129,19 +1269,13 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 							</div>
 						</>
 					) : (
-						<div className="appointment-editor-actions">
-							{/*
-                    Раньше здесь стояло «Админ-доступ активен для расписания».
-                    Это неправда: секрет никто не проверял — он просто лёг в
-                    память и подставляется заголовком. Верен он или нет, видно
-                    только при сохранении записи.
-                  */}
-							<span className="save-state save-state-idle">
+						<div className="appointment-editor-actions flex flex-wrap items-center justify-between gap-3 min-w-0">
+							<span className="save-state save-state-idle break-words">
 								Секрет запомнен до перезагрузки страницы. Он подставляется при
 								сохранении записи — верен он или нет, покажет само сохранение.
 							</span>
 							<button
-								className="secondary-button"
+								className="secondary-button shrink-0"
 								type="button"
 								onClick={lockScheduleAdminSession}
 							>
@@ -1169,244 +1303,181 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				showCreateForm={showCreateForm}
 				setShowCreateForm={setShowCreateForm}
 			/>
-			<div className="schedule-timeline timeline">
-				{/*
-                Приёмы идут ДНЯМИ, а не одной лентой. Заголовок дня — не
-                украшение: без него карточка «16:30» из января 2024 года выглядит
-                как сегодняшняя, и на этом администратор строит рабочие решения.
-                Между карточками показаны свободные окна и накладки — то, ради
-                чего человек и смотрит на день целиком.
-              */}
-				{(visibleDayGroups ?? []).map((group) => (
-					<Fragment key={group.dateKey}>
-						<div
-							className="schedule-day-heading"
-							data-testid="schedule-day-heading"
-							style={{
-								display: "flex",
-								flexWrap: "wrap",
-								alignItems: "baseline",
-								gap: "8px",
-								margin: "18px 0 10px",
-								paddingBottom: "6px",
-								borderBottom: "1px solid var(--line)",
-							}}
-						>
-							<strong
-								style={{
-									fontSize: "15px",
-									color: "var(--ink)",
-									textTransform: "capitalize",
-								}}
-							>
-								{group.title}
-							</strong>
-							{group.relativeLabel ? (
-								<span
-									className={`status-pill ${group.relation === "today" ? "status-confirmed" : "status-planned"}`}
-								>
-									{group.relativeLabel}
-								</span>
-							) : null}
-							<span style={{ fontSize: "12px", color: "var(--muted)" }}>
-								{/* Число записей и занятое время: «где перегруз» видно без счёта в голове. */}
-								записей: {group.appointmentCount} · занято{" "}
-								{formatMinutesForHumans(group.bookedMinutes)}
-								{group.freeGapMinutes > 0
-									? ` · свободно между приёмами ${formatMinutesForHumans(group.freeGapMinutes)}`
-									: ""}
-							</span>
-						</div>
-						{(group?.rows ?? []).map((row) => {
-							if (row.kind === "gap") {
-								return (
-									<p
-										key={`gap-${group.dateKey}-${row.afterAppointmentId ?? "start"}-${row.minutes}`}
-										className="schedule-day-gap"
-										data-testid="schedule-day-gap"
-										style={{
-											margin: "6px 0 6px 12px",
-											padding: "6px 10px",
-											borderLeft: "3px solid var(--line-strong)",
-											fontSize: "12px",
-											fontWeight: 700,
-											color: "var(--muted)",
-										}}
-									>
-										Свободно {formatMinutesForHumans(row.minutes)} — сюда можно
-										записать
-									</p>
-								);
-							}
-							if (row.kind === "overlap") {
-								/*
-                        Накладка названа словами и без сокращений: это то, из-за
-                        чего в коридоре оказываются два человека на одно время.
-                        Сервер такие записи принимает, значит поймать их может
-                        только экран.
-                      */
-								const overlapReason =
-									row.sameDoctor && row.sameChair
-										? "один врач и одно кресло"
-										: row.sameDoctor
-											? "один и тот же врач"
-											: "одно и то же кресло";
-								return (
-									<p
-										key={`overlap-${group.dateKey}-${row.withAppointmentId}`}
-										className="schedule-day-overlap"
-										data-testid="schedule-day-overlap"
-										role="alert"
-										style={{
-											margin: "6px 0 6px 12px",
-											padding: "8px 10px",
-											borderRadius: "8px",
-											background: "var(--bad-bg)",
-											fontSize: "12px",
-											fontWeight: 700,
-											color: "var(--ink)",
-										}}
-									>
-										Две записи на одно время ({overlapReason}), пересечение{" "}
-										{formatMinutesForHumans(row.minutes)}. Кого-то придётся
-										перенести.
-									</p>
-								);
-							}
+			{/* Панель переключения вида расписания и быстрой записи */}
+			<div className="schedule-view-mode-bar flex flex-wrap items-center justify-between gap-3 mt-4 mb-3 p-2.5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] min-w-0 max-w-full">
+				<div className="flex items-center gap-1 bg-[var(--paper)] p-1 rounded-xl border border-[var(--line)] shrink-0 flex-wrap" role="tablist" aria-label="Вид расписания">
+					<button
+						type="button"
+						onClick={() => setScheduleViewMode("timeline")}
+						className={`min-h-[44px] sm:min-h-[36px] px-3.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
+							scheduleViewMode === "timeline"
+								? "bg-[var(--teal-dark)] text-white shadow-xs"
+								: "text-[var(--muted)] hover:text-[var(--ink)]"
+						}`}
+						role="tab"
+						aria-selected={scheduleViewMode === "timeline"}
+					>
+						<List size={14} />
+						<span className="truncate">Лента по дням</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => setScheduleViewMode("grid")}
+						className={`min-h-[44px] sm:min-h-[36px] px-3.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
+							scheduleViewMode === "grid"
+								? "bg-[var(--teal-dark)] text-white shadow-xs"
+								: "text-[var(--muted)] hover:text-[var(--ink)]"
+						}`}
+						role="tab"
+						aria-selected={scheduleViewMode === "grid"}
+					>
+						<LayoutGrid size={14} />
+						<span className="truncate">Сетка по креслам</span>
+					</button>
+				</div>
 
-							const appointment = row.appointment as Appointment;
-							const draft =
-								appointmentScheduleDrafts[appointment.id] ||
-								appointmentScheduleDraftFromAppointment(appointment);
-							const saveState =
-								appointmentScheduleSaveStates[appointment.id] || "idle";
-							const error = appointmentScheduleErrors[appointment.id] || null;
-							const dirty = appointmentScheduleDirtyIds.has(appointment.id);
-							const isEditing = editingAppointmentId === appointment.id;
-							const hasOpenVisit =
-								dashboard.activeVisit &&
-								dashboard.activeVisit.appointmentId === appointment.id;
-
-							const missingSteps = appointmentDraftMissingSteps(draft);
-							const readyToSave = missingSteps?.length === 0 && dirty;
-
-							return (
-								<AppointmentCard
-									key={appointment.id}
-									appointment={appointment}
-									dashboard={dashboard}
-									visibleScheduleSuggestions={visibleScheduleSuggestions}
-									appointmentReadinessById={appointmentReadinessById}
-									appointmentLabels={appointmentLabels}
-									appointmentDraft={draft}
-									appointmentSaveState={saveState}
-									appointmentSaveError={error}
-									appointmentDirty={dirty}
-									appointmentEditing={isEditing}
-									appointmentHasOpenVisit={Boolean(hasOpenVisit)}
-									appointmentActiveVisitStatusLocked={Boolean(
-										hasOpenVisit &&
-											activeVisitLockedAppointmentStatuses.has(draft.status),
-									)}
-									appointmentMissingSteps={missingSteps as string[]}
-									appointmentReadyToSave={readyToSave}
-									openScheduleSuggestion={openScheduleSuggestion}
-									formatTime={formatTime}
-									patientName={patientName}
-									openAppointmentEditor={openAppointmentEditor}
-									repeatAppointment={repeatAppointment}
-									copyAppointmentToBuffer={copyAppointmentToBuffer}
-									closeAppointmentEditor={closeAppointmentEditor}
-									updateAppointmentScheduleDraft={
-										// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-										updateAppointmentScheduleDraft as any
-									}
-									saveAppointmentSchedule={saveAppointmentSchedule}
-									normalizedAppointmentStatus={normalizedAppointmentStatus}
-									toDateTimeLocalValue={toDateTimeLocalValue}
-									fromDateTimeLocalValue={fromDateTimeLocalValue}
-									useManualSelects={useManualSelects}
-									activeVisitLockedAppointmentStatuses={
-										activeVisitLockedAppointmentStatuses
-									}
-								/>
-							);
-						})}
-					</Fragment>
-				))}
-				{visibleAppointmentCount === 0 ? (
-					/*
-                  Три РАЗНЫЕ пустоты, а не одна.
-                  БЫЛО: всегда «Нет записей по выбранным фильтрам» и кнопка
-                  «Сбросить фильтры» — даже когда ни один фильтр не выставлен.
-                  Проверено в живом браузере на только что созданной клинике: она
-                  ни разу никого не записывала, а экран уверял, что записи прячут
-                  её фильтры, и предлагал сбросить то, чего нет. Человек ищет
-                  несуществующую поломку вместо того, чтобы записать пациента.
-                */
-					<EmptyState
-						icon={<Calendar size={32} />}
-						title={
-							(dashboard.appointments ?? []).length === 0
-								? "Записей пока нет ни одной"
-								: activeScheduleFilterCount > 0
-									? scheduleDateFilter.trim()
-										? "На этот день записей нет"
-										: "Всё скрыто фильтрами"
-									: "Записей нет"
-						}
-						description={
-							(dashboard.appointments ?? []).length === 0
-								? "Так и должно быть у новой клиники. Первая запись появится здесь, как только вы запишете пациента — форма выше, кнопка «Создать запись»."
-								: activeScheduleFilterCount > 0
-									? scheduleDateFilter.trim()
-										? "Расписание не сломалось: на выбранный день записей нет. Полистайте дни стрелками рядом с датой, вернитесь на сегодня или запишите пациента на это свободное время."
-										: "Расписание не сломалось: записи есть, но их скрывают выбранные врач, кресло или статус. Снимите фильтры кнопкой «Все записи»."
-									: "Расписание не сломалось: записей действительно нет. Запишите первого — форма выше."
-						}
-						glass={true}
-						action={
-							<div
-								className="schedule-empty-actions"
-								style={{
-									display: "flex",
-									gap: "8px",
-									flexWrap: "wrap",
-									justifyContent: "center",
-									marginTop: "12px",
-								}}
-							>
-								{scheduleDateFilter.trim() &&
-								scheduleDateFilter.trim() !== clinicToday ? (
-									<button
-										className="secondary-button min-h-[44px] px-3.5 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
-										type="button"
-										onClick={() => setScheduleDateFilter(todayScheduleDate())}
-									>
-										Вернуться на сегодня
-									</button>
-								) : null}
-								{activeScheduleFilterCount > 0 ? (
-									<button
-										className="text-button min-h-[44px] px-3.5 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
-										type="button"
-										onClick={resetScheduleFilters}
-									>
-										Снять все фильтры
-									</button>
-								) : null}
-								<button
-									className="primary-button min-h-[44px] px-4 flex items-center justify-center gap-1.5 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
-									type="button"
-									onClick={focusNewAppointmentEditor}
-								>
-									<Plus aria-hidden="true" /> Записать пациента
-								</button>
-							</div>
-						}
-					/>
-				) : null}
+				<div className="flex items-center gap-2 shrink-0">
+					<button
+						type="button"
+						onClick={() => {
+							setQuickBookingSlot({
+								dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
+								doctorUserId: scheduleDoctorFilterId || null,
+								chairId: scheduleChairFilterId || null,
+								durationMinutes: 30,
+							});
+							setQuickBookingOpen(true);
+						}}
+						className="primary-button min-h-[44px] sm:min-h-[36px] px-4 py-1.5 rounded-xl bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer shrink-0"
+						title="Быстрая 1-клик запись на прием (горячая клавиша N)"
+					>
+						<Sparkles size={14} />
+						<span className="truncate">+ Быстрая запись (N)</span>
+					</button>
+				</div>
 			</div>
+
+			{scheduleViewMode === "grid" ? (
+				<ScheduleGrid
+					dashboard={dashboard}
+					dateKey={scheduleDateFilter || clinicToday || todayScheduleDate()}
+					appointments={dashboard.appointments ?? []}
+					onSlotClick={(slot) => {
+						setQuickBookingSlot(slot);
+						setQuickBookingOpen(true);
+					}}
+					onAppointmentClick={(appointment) => {
+						setModalAppointment(appointment);
+					}}
+					onQuickStatusChange={async (appointmentId, status) => {
+						updateAppointmentScheduleDraft(appointmentId, "status", status);
+						const success = await saveAppointmentSchedule(appointmentId);
+						if (success) {
+							const p = dashboard.appointments?.find((a) => a.id === appointmentId);
+							const pName = p ? patientName(dashboard.patients, p.patientId) : "Пациент";
+							const label = appointmentLabels[status] || status;
+							showToast(`«${pName}» — статус «${label}»`, "success", 3000);
+						}
+					}}
+					patientName={patientName}
+					formatTime={formatTime}
+					toDateTimeLocalValue={toDateTimeLocalValue}
+					appointmentLabels={appointmentLabels}
+					selectedChairId={scheduleChairFilterId}
+					selectedDoctorId={scheduleDoctorFilterId}
+				/>
+			) : (
+				<ScheduleTimeline
+					visibleDayGroups={visibleDayGroups}
+					dashboard={dashboard}
+					visibleScheduleSuggestions={visibleScheduleSuggestions}
+					appointmentReadinessById={appointmentReadinessById}
+					appointmentLabels={appointmentLabels}
+					appointmentScheduleDrafts={appointmentScheduleDrafts}
+					appointmentScheduleSaveStates={appointmentScheduleSaveStates}
+					appointmentScheduleErrors={appointmentScheduleErrors}
+					appointmentScheduleDirtyIds={appointmentScheduleDirtyIds}
+					editingAppointmentId={editingAppointmentId}
+					appointmentDraftFromAppointment={
+						appointmentScheduleDraftFromAppointment
+					}
+					appointmentDraftMissingSteps={appointmentDraftMissingSteps}
+					activeVisitLockedAppointmentStatuses={
+						activeVisitLockedAppointmentStatuses
+					}
+					openScheduleSuggestion={openScheduleSuggestion}
+					formatTime={formatTime}
+					patientName={patientName}
+					openAppointmentEditor={openAppointmentEditor}
+					repeatAppointment={repeatAppointment}
+					copyAppointmentToBuffer={copyAppointmentToBuffer}
+					closeAppointmentEditor={closeAppointmentEditor}
+					updateAppointmentScheduleDraft={
+						// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+						updateAppointmentScheduleDraft as any
+					}
+					saveAppointmentSchedule={saveAppointmentSchedule}
+					normalizedAppointmentStatus={normalizedAppointmentStatus}
+					toDateTimeLocalValue={toDateTimeLocalValue}
+					fromDateTimeLocalValue={fromDateTimeLocalValue}
+					useManualSelects={useManualSelects}
+					onEmptySlotClick={(slot) => {
+						setQuickBookingSlot(slot);
+						setQuickBookingOpen(true);
+					}}
+					onNewAppointmentClick={() => {
+						setQuickBookingSlot({
+							dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
+							doctorUserId: scheduleDoctorFilterId || null,
+							chairId: scheduleChairFilterId || null,
+							durationMinutes: 30,
+						});
+						setQuickBookingOpen(true);
+					}}
+					stepScheduleDay={stepScheduleDay}
+					scheduleDateFilter={scheduleDateFilter}
+					clinicToday={clinicToday}
+					activeScheduleFilterCount={activeScheduleFilterCount}
+					resetScheduleFilters={resetScheduleFilters}
+					setScheduleDateFilter={setScheduleDateFilter}
+					todayScheduleDate={todayScheduleDate}
+				/>
+			)}
+
+			{/* Модальные ящики и диалоги быстрой записи и редактирования */}
+			<QuickBookingDrawer
+				isOpen={quickBookingOpen}
+				onClose={() => setQuickBookingOpen(false)}
+				initialSlot={quickBookingSlot}
+				dashboard={dashboard}
+				auth={auth}
+				toDateTimeLocalValue={toDateTimeLocalValue}
+				fromDateTimeLocalValue={fromDateTimeLocalValue}
+			/>
+
+			<AppointmentModal
+				isOpen={modalAppointment !== null}
+				appointment={modalAppointment}
+				dashboard={dashboard}
+				onClose={() => setModalAppointment(null)}
+				onSave={async (appointmentId, draft) => {
+					for (const [key, value] of Object.entries(draft)) {
+						updateAppointmentScheduleDraft(appointmentId, key, value);
+					}
+					return await saveAppointmentSchedule(appointmentId);
+				}}
+				repeatAppointment={repeatAppointment}
+				copyAppointmentToBuffer={copyAppointmentToBuffer}
+				patientName={patientName}
+				formatTime={formatTime}
+				toDateTimeLocalValue={toDateTimeLocalValue}
+				fromDateTimeLocalValue={fromDateTimeLocalValue}
+				appointmentLabels={appointmentLabels}
+				activeVisitLockedAppointmentStatuses={
+					activeVisitLockedAppointmentStatuses
+				}
+				appointmentReadinessById={appointmentReadinessById}
+			/>
 
 			{/* Schedule Utilities & Widgets Panel */}
 			<div
@@ -1435,14 +1506,14 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                 сервисов записи (Забота 2.0 / LoyalMed AI Боты)». Убран, потому
                 что данных в нём не могло появиться никогда, ни при каком
                 действии пользователя:
-                  1) он запрашивал /api/schedule/external-schedule-action-logs,
+                  1. он запрашивал /api/schedule/external-schedule-action-logs,
                      а такого маршрута в API нет — живой сервер отвечает 404
                      (проверено запросом);
-                  2) даже если маршрут написать, таблица
+                  2. даже если маршрут написать, таблица
                      external_schedule_action_logs (schema.ts:1858) не имеет ни
                      одного писателя во всём репозитории — ни drizzle-вставки,
                      ни сырого INSERT;
-                  3) интеграции с внешними ботами записи, которая эти логи
+                  3. интеграции с внешними ботами записи, которая эти логи
                      производила бы, в проекте нет. Придумывать её контракт
                      нельзя.
                 То есть пользователь на экране расписания видел карточку с
@@ -1488,6 +1559,10 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				focusNewAppointmentEditor={focusNewAppointmentEditor}
 				dashboard={dashboard}
 				auth={auth}
+			/>
+			<DoctorShiftRosterModal
+				isOpen={isRosterModalOpen}
+				onClose={() => setIsRosterModalOpen(false)}
 			/>
 		</div>
 	);

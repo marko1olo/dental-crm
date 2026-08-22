@@ -127,7 +127,7 @@ export interface Form257FilterCriteria {
 	readonly startDate?: string | undefined;
 	readonly endDate?: string | undefined;
 	readonly sterilizerId?: string | undefined;
-	readonly regimeId?: SterilizationRegimeId | undefined;
+	readonly regimeId?: SterilizationRegimeId | "all" | undefined;
 	readonly status?: "all" | "sterile_passed" | "rejected_defect" | "quarantine" | undefined;
 }
 

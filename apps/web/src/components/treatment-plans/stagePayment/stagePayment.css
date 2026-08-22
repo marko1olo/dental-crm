@@ -1,0 +1,295 @@
+/**
+ * stagePayment.css — Стили для Студии поэтапной оплаты и эскроу-депозита (Stage Payment Studio).
+ * Полная поддержка Light / Dark Mode через CSS переменные дизайн-системы DENTE.
+ */
+
+.stage-payment-modal-overlay {
+	position: fixed;
+	inset: 0;
+	background-color: rgba(15, 23, 42, 0.7);
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 9999;
+	padding: 1rem;
+}
+
+.stage-payment-modal-container {
+	background-color: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--border, #cbd5e1);
+	border-radius: 1.25rem;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+	width: 100%;
+	max-width: 68rem;
+	max-height: 92vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	animation: stagePaymentFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes stagePaymentFadeIn {
+	from {
+		opacity: 0;
+		transform: scale(0.98) translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1) translateY(0);
+	}
+}
+
+/* Header */
+.stage-payment-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1.25rem 1.5rem;
+	border-bottom: 1px solid var(--border, #cbd5e1);
+	background-color: var(--paper-strong, var(--paper, #ffffff));
+}
+
+/* Navigation Tabs */
+.stage-payment-tabs-bar {
+	display: flex;
+	gap: 0.5rem;
+	padding: 0.75rem 1.5rem;
+	border-bottom: 1px solid var(--border, #cbd5e1);
+	background-color: var(--paper-muted, rgba(148, 163, 184, 0.08));
+	overflow-x: auto;
+	scrollbar-width: thin;
+}
+
+.stage-payment-tab-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.625rem 1rem;
+	border-radius: 0.75rem;
+	font-size: 0.875rem;
+	font-weight: 600;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	min-height: 44px;
+	transition: all 0.15s ease-in-out;
+	white-space: nowrap;
+}
+
+.stage-payment-tab-btn:hover {
+	color: var(--ink, #0f172a);
+	background-color: rgba(148, 163, 184, 0.15);
+}
+
+.stage-payment-tab-btn.active {
+	background-color: var(--paper, #ffffff);
+	color: var(--teal, #0d9488);
+	border-color: var(--border, #cbd5e1);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Body Content */
+.stage-payment-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 1.5rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+}
+
+/* Progress bar banner */
+.stage-progress-card {
+	background: linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(16, 185, 129, 0.05) 100%);
+	border: 1px solid rgba(13, 148, 136, 0.25);
+	border-radius: 1rem;
+	padding: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.875rem;
+}
+
+.stage-progress-track {
+	height: 0.625rem;
+	background-color: rgba(148, 163, 184, 0.25);
+	border-radius: 9999px;
+	overflow: hidden;
+	display: flex;
+}
+
+.stage-progress-fill {
+	background: linear-gradient(90deg, #0d9488 0%, #10b981 100%);
+	height: 100%;
+	transition: width 0.4s ease-out;
+}
+
+/* Stage Cards */
+.stage-item-card {
+	background-color: var(--paper-strong, var(--paper, #ffffff));
+	border: 1px solid var(--border, #cbd5e1);
+	border-radius: 1rem;
+	padding: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	transition: all 0.2s ease;
+	position: relative;
+}
+
+.stage-item-card:hover {
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.stage-item-card.is-completed {
+	border-left: 4px solid var(--emerald, #10b981);
+}
+
+.stage-item-card.is-in-progress {
+	border-left: 4px solid var(--teal, #0d9488);
+}
+
+.stage-item-card.is-advance-paid {
+	border-left: 4px solid var(--amber, #f59e0b);
+}
+
+.stage-item-card.is-refunded {
+	border-left: 4px solid var(--rose, #f43f5e);
+	opacity: 0.85;
+}
+
+/* Action button inside cards */
+.stage-action-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	min-height: 44px;
+	padding: 0.5rem 1rem;
+	font-size: 0.875rem;
+	font-weight: 600;
+	border-radius: 0.625rem;
+	cursor: pointer;
+	transition: all 0.15s ease-in-out;
+	border: 1px solid transparent;
+}
+
+.stage-action-btn.primary {
+	background-color: var(--teal, #0d9488);
+	color: #ffffff;
+}
+
+.stage-action-btn.primary:hover {
+	opacity: 0.9;
+	transform: translateY(-1px);
+}
+
+.stage-action-btn.secondary {
+	background-color: transparent;
+	border-color: var(--border, #cbd5e1);
+	color: var(--ink, #0f172a);
+}
+
+.stage-action-btn.secondary:hover {
+	background-color: rgba(148, 163, 184, 0.12);
+}
+
+.stage-action-btn.danger {
+	background-color: rgba(244, 63, 94, 0.1);
+	color: var(--rose, #f43f5e);
+	border-color: rgba(244, 63, 94, 0.3);
+}
+
+.stage-action-btn.danger:hover {
+	background-color: rgba(244, 63, 94, 0.2);
+}
+
+/* Fiscal Receipt Paper Simulation */
+.fiscal-slip-container {
+	background-color: var(--paper-strong, #ffffff);
+	border: 1px dashed var(--border, #94a3b8);
+	border-radius: 0.75rem;
+	padding: 1.5rem;
+	font-family: "Courier New", Courier, monospace;
+	font-size: 0.8125rem;
+	line-height: 1.4;
+	max-width: 24rem;
+	margin: 0 auto;
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+	color: var(--ink, #0f172a);
+}
+
+.fiscal-slip-divider {
+	border-top: 1px dashed var(--border, #94a3b8);
+	margin: 0.75rem 0;
+}
+
+/* Statutory Print Addendum (A4) */
+.contract-addendum-a4 {
+	background-color: #ffffff;
+	color: #0f172a;
+	padding: 2rem;
+	border-radius: 0.5rem;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	font-family: "Times New Roman", Times, serif;
+	line-height: 1.5;
+	font-size: 11pt;
+}
+
+.contract-addendum-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 1rem 0;
+}
+
+.contract-addendum-table th,
+.contract-addendum-table td {
+	border: 1px solid #334155;
+	padding: 0.5rem;
+	text-align: left;
+	font-size: 10pt;
+}
+
+.contract-addendum-table th {
+	background-color: #f1f5f9;
+	font-weight: bold;
+}
+
+/* Print Rules */
+@media print {
+	.stage-payment-modal-overlay {
+		position: static;
+		background: none;
+		backdrop-filter: none;
+		padding: 0;
+	}
+
+	.stage-payment-modal-container {
+		border: none;
+		box-shadow: none;
+		max-width: 100%;
+		max-height: none;
+		border-radius: 0;
+	}
+
+	.stage-payment-header,
+	.stage-payment-tabs-bar,
+	.stage-action-btn,
+	.no-print {
+		display: none !important;
+	}
+
+	.stage-payment-body {
+		padding: 0;
+		overflow: visible;
+	}
+
+	.contract-addendum-a4 {
+		box-shadow: none;
+		padding: 0;
+		margin: 0;
+	}
+}

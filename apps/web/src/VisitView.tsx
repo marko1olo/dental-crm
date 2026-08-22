@@ -239,7 +239,9 @@ import { ClinicalTasksPanel } from "./ClinicalTasksPanel";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { EndoCanalLogModal } from "./components/odontogram/EndoCanalLogModal";
 import { DentalLabOrderModal } from "./components/lab/DentalLabOrderModal";
+import { StagePaymentPlanModal } from "./components/treatment-plans/stagePayment/StagePaymentPlanModal";
 import { VisitNoteDraftPanel } from "./VisitNoteDraftPanel";
+import { VisitAnamnesisTab } from "./components/visit/VisitAnamnesisTab";
 
 export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const logicContext = useAppLogicContext();
@@ -437,6 +439,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const [endoModalToothState, setEndoModalToothState] = React.useState<string | undefined>(undefined);
 	const [isLabOrderModalOpen, setIsLabOrderModalOpen] = React.useState(false);
 	const [labOrderModalToothNumber, setLabOrderModalToothNumber] = React.useState<number | string | null>(null);
+	const [isStagePaymentModalOpen, setIsStagePaymentModalOpen] = React.useState(false);
 
 	/*
     НАЗВАНИЯ МАТЕРИАЛОВ ПОПАДАЮТ В ТЕКСТ ПЛАНА ЛЕЧЕНИЯ, ПОЭТОМУ ОНИ ТОЧНЫЕ.
@@ -688,15 +691,15 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				</div>
 
 				<section className="visit-focus-bar" aria-label="Быстрый фокус приема">
-					<div className="visit-focus-patient">
+					<div className="visit-focus-patient min-w-0">
 						<PatientAvatar fullName={activePatient.fullName} size={44} />
-						<div>
+						<div className="min-w-0">
 							<p className="eyebrow">Пациент сейчас</p>
-							<h3>{activePatient.fullName}</h3>
+							<h3 className="break-words leading-tight">{activePatient.fullName}</h3>
 							<div
-								style={{ display: "flex", alignItems: "center", gap: "8px" }}
+								style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}
 							>
-								<p style={{ margin: 0 }}>
+								<p style={{ margin: 0 }} className="break-words leading-tight">
 									{activeAppointment?.reason ?? "прием"} ·{" "}
 									{activePatient.phone ?? "телефон не указан"}
 								</p>
@@ -704,9 +707,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							</div>
 						</div>
 					</div>
-					<div className="visit-focus-status">
+					<div className="visit-focus-status min-w-0">
 						{/* Было «4 предупр.» — сокращение ради экономии трёх букв. */}
-						<span className={safeVisitWarnings.length ? "" : "ready"}>
+						<span className={`${safeVisitWarnings.length ? "" : "ready"} shrink-0`}>
 							{safeVisitWarnings.length
 								? countLabel(
 										safeVisitWarnings.length,
@@ -716,10 +719,10 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									)
 								: "спокойно"}
 						</span>
-						<strong>{primaryVisitWarning?.title ?? "Можно вести прием"}</strong>
+						<strong className="break-words leading-tight">{primaryVisitWarning?.title ?? "Можно вести прием"}</strong>
 						{/* Было «1 снимка · 0 документа»: счёт без склонения читается
                     как ошибка программы. */}
-						<p>
+						<p className="break-words leading-tight">
 							{visitCloseChecklist
 								? `${visitCloseChecklist.score}% готовности`
 								: "статус закрытия не рассчитан"}{" "}
@@ -741,14 +744,14 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					</div>
 					<div className="visit-focus-actions">
 						<button
-							className="primary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+							className="primary-button min-h-[44px] px-3 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
 							type="button"
 							onClick={() => scrollToVisitArea(".dictation-box")}
 						>
 							<Mic aria-hidden="true" /> Диктовка
 						</button>
 						<button
-							className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+							className="secondary-button min-h-[44px] px-3 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
 							type="button"
 							onClick={openVisitWarningAction}
 						>
@@ -839,6 +842,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					</div>
 				)}
 
+				{visitSubViewTab === "anamnesis" && (
+					<div style={{ margin: "16px 0" }}>
+						<VisitAnamnesisTab />
+					</div>
+				)}
+
 				{visitSubViewTab === "perio" && activePatient?.id && (
 					<div style={{ margin: "16px 0" }}>
 						<PeriodontalChartModule
@@ -890,16 +899,16 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							data-testid="visit-next-step-panel"
 							aria-label="Следующий шаг приема"
 						>
-							<div className="visit-next-step-main">
-								<div>
+							<div className="visit-next-step-main min-w-0">
+								<div className="min-w-0">
 									<p className="eyebrow">Сейчас сделать</p>
-									<h3>{safeVisitPrimaryAction.label}</h3>
-									<p id="visit-primary-action-detail">
+									<h3 className="break-words leading-tight">{safeVisitPrimaryAction.label}</h3>
+									<p id="visit-primary-action-detail" className="break-words leading-tight">
 										{safeVisitPrimaryAction.detail}
 									</p>
 								</div>
 								<button
-									className="primary-button visit-primary-action"
+									className="primary-button visit-primary-action min-h-[44px] px-3 py-2"
 									type="button"
 									onClick={safeVisitPrimaryAction.onClick}
 									disabled={safeVisitPrimaryAction.disabled}
@@ -930,13 +939,13 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 								{safeVisitWorkflowSteps.map((step: any, index: number) => (
 									<article
-										className={`visit-progress-step step-${step.state}`}
+										className={`visit-progress-step step-${step.state} min-w-0`}
 										key={step.key}
 									>
 										<span>{index + 1}</span>
-										<div>
-											<strong>{step.label}</strong>
-											<p>{step.detail}</p>
+										<div className="min-w-0">
+											<strong className="break-words leading-tight">{step.label}</strong>
+											<p className="break-words leading-tight">{step.detail}</p>
 										</div>
 									</article>
 								))}
@@ -1077,7 +1086,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					</div>
 					<div
 						role="toolbar"
-						className="dictation-quick-row"
+						className="dictation-quick-row flex flex-wrap gap-1.5"
 						aria-label="Быстрые фразы для диктовки"
 					>
 						{(Array.isArray(dictationQuickPhrases) ? dictationQuickPhrases : [])
@@ -1086,6 +1095,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								<button
 									type="button"
 									key={phrase.label}
+									className="min-h-[44px] px-3 py-2 break-words leading-tight text-xs"
 									onClick={() => appendToTranscript?.(phrase.text)}
 								>
 									{phrase.label}
@@ -1258,16 +1268,17 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								setShowHints(false);
 							}}
 							style={{
-								padding: "12px 16px",
+								minHeight: "44px",
+								padding: "10px 16px",
 								fontSize: "15px",
 								justifyContent: "center",
 							}}
 						/>
 
 						<button
-							className="primary-button"
+							className="primary-button min-h-[44px] px-3 py-2"
 							type="button"
-							style={{ padding: "12px 16px", fontSize: "15px" }}
+							style={{ minHeight: "44px", padding: "10px 16px", fontSize: "15px" }}
 							onClick={() => {
 								const orchestratorResult =
 									AiOrchestrator.processEmkDictation(transcript);
@@ -1295,9 +1306,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						</button>
 
 						<button
-							className="secondary-button"
+							className="secondary-button min-h-[44px] px-3 py-2"
 							type="button"
-							style={{ padding: "12px 16px", fontSize: "15px" }}
+							style={{ minHeight: "44px", padding: "10px 16px", fontSize: "15px" }}
 							onClick={buildDraft}
 							disabled={isDraftLoading || !visitDraftReadyToBuild}
 							aria-describedby={
@@ -1314,7 +1325,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						<div style={{ flexGrow: 1 }} />
 
 						<button
-							className="secondary-button"
+							className="secondary-button min-h-[44px] px-3 py-2"
 							type="button"
 							onClick={clearTranscriptWithUndo}
 							disabled={!hasVisitTranscriptText}
@@ -1324,7 +1335,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						</button>
 						{clearedTranscriptSnapshot ? (
 							<button
-								className="secondary-button"
+								className="secondary-button min-h-[44px] px-3 py-2"
 								type="button"
 								onClick={undoTranscriptClear}
 								title="Вернуть текст"
@@ -1341,15 +1352,18 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									cursor: "pointer",
 									fontSize: "14px",
 									color: "var(--muted)",
-									padding: "8px",
+									padding: "10px 12px",
+									minHeight: "44px",
+									display: "inline-flex",
+									alignItems: "center",
 								}}
 							>
 								Дополнительно
 							</summary>
-							<div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+							<div style={{ display: "flex", gap: "8px", marginTop: "8px", flexWrap: "wrap" }}>
 								{pendingSpeechChunkCount ? (
 									<button
-										className="secondary-button"
+										className="secondary-button min-h-[44px] px-3 py-2"
 										type="button"
 										onClick={() => flushPendingSpeechChunks({ silent: false })}
 										title={pendingSpeechFlushActionTitle}
@@ -1358,7 +1372,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									</button>
 								) : null}
 								<button
-									className="secondary-button"
+									className="secondary-button min-h-[44px] px-3 py-2"
 									type="button"
 									onClick={polishTranscript}
 									disabled={!hasVisitTranscriptText || isTranscriptPolishing}
@@ -1472,7 +1486,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							Нумерация ФДИ
 						</span>
 					</div>
-					<div className="tooth-map-legend">
+					<div className="tooth-map-legend flex flex-wrap gap-2">
 						<span className="tooth-legend-item legend-planned">В плане</span>
 						<span className="tooth-legend-item legend-treatment">Лечение</span>
 						<span className="tooth-legend-item legend-watch">Наблюдение</span>
@@ -1482,49 +1496,49 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
 					{/* Быстрая раскраска карты: один выбранный цвет ставится кликом по зубу. */}
 					<div
-						className="tooth-stamp-bar"
+						className="tooth-stamp-bar flex flex-wrap gap-1.5 items-center"
 						role="toolbar"
 						aria-label="Инструменты быстрого штампа"
 					>
-						<span className="stamp-bar-title">Быстрый штамп:</span>
+						<span className="stamp-bar-title shrink-0">Быстрый штамп:</span>
 						<button
 							type="button"
-							className={`stamp-btn ${activeStamp === null ? "active" : ""}`}
+							className={`stamp-btn min-h-[44px] px-3 py-2 ${activeStamp === null ? "active" : ""}`}
 							onClick={() => setActiveStamp(null)}
 						>
 							🔍 Обычный клик
 						</button>
 						<button
 							type="button"
-							className={`stamp-btn stamp-planned ${activeStamp === "planned" ? "active" : ""}`}
+							className={`stamp-btn stamp-planned min-h-[44px] px-3 py-2 ${activeStamp === "planned" ? "active" : ""}`}
 							onClick={() => setActiveStamp("planned")}
 						>
 							📝 В план
 						</button>
 						<button
 							type="button"
-							className={`stamp-btn stamp-treatment ${activeStamp === "treatment" ? "active" : ""}`}
+							className={`stamp-btn stamp-treatment min-h-[44px] px-3 py-2 ${activeStamp === "treatment" ? "active" : ""}`}
 							onClick={() => setActiveStamp("treatment")}
 						>
 							🔴 Лечение
 						</button>
 						<button
 							type="button"
-							className={`stamp-btn stamp-watch ${activeStamp === "watch" ? "active" : ""}`}
+							className={`stamp-btn stamp-watch min-h-[44px] px-3 py-2 ${activeStamp === "watch" ? "active" : ""}`}
 							onClick={() => setActiveStamp("watch")}
 						>
 							⚠️ Наблюдение
 						</button>
 						<button
 							type="button"
-							className={`stamp-btn stamp-done ${activeStamp === "done" ? "active" : ""}`}
+							className={`stamp-btn stamp-done min-h-[44px] px-3 py-2 ${activeStamp === "done" ? "active" : ""}`}
 							onClick={() => setActiveStamp("done")}
 						>
 							🟢 Готово
 						</button>
 						<button
 							type="button"
-							className={`stamp-btn stamp-missing ${activeStamp === "missing" ? "active" : ""}`}
+							className={`stamp-btn stamp-missing min-h-[44px] px-3 py-2 ${activeStamp === "missing" ? "active" : ""}`}
 							onClick={() => setActiveStamp("missing")}
 						>
 							❌ Нет зуба
@@ -1556,10 +1570,10 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					</p>
 
 					{/* Панель выбора квадранта (Focus Mode) */}
-					<nav className="tooth-quadrant-nav" aria-label="Фокус на квадрант">
+					<nav className="tooth-quadrant-nav flex flex-wrap gap-1.5" aria-label="Фокус на квадрант">
 						<button
 							type="button"
-							className={`quadrant-nav-btn ${activeQuadrant === null ? "active" : ""}`}
+							className={`quadrant-nav-btn min-h-[44px] px-3 py-2 ${activeQuadrant === null ? "active" : ""}`}
 							onClick={() => setActiveQuadrant(null)}
 						>
 							Вся челюсть
@@ -1573,7 +1587,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                 */}
 						<button
 							type="button"
-							className={`quadrant-nav-btn ${activeQuadrant === 2 ? "active" : ""}`}
+							className={`quadrant-nav-btn min-h-[44px] px-3 py-2 ${activeQuadrant === 2 ? "active" : ""}`}
 							onClick={() => setActiveQuadrant(2)}
 							title="Второй сектор: зубы 21–28"
 						>
@@ -1581,7 +1595,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						</button>
 						<button
 							type="button"
-							className={`quadrant-nav-btn ${activeQuadrant === 1 ? "active" : ""}`}
+							className={`quadrant-nav-btn min-h-[44px] px-3 py-2 ${activeQuadrant === 1 ? "active" : ""}`}
 							onClick={() => setActiveQuadrant(1)}
 							title="Первый сектор: зубы 11–18"
 						>
@@ -1589,7 +1603,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						</button>
 						<button
 							type="button"
-							className={`quadrant-nav-btn ${activeQuadrant === 3 ? "active" : ""}`}
+							className={`quadrant-nav-btn min-h-[44px] px-3 py-2 ${activeQuadrant === 3 ? "active" : ""}`}
 							onClick={() => setActiveQuadrant(3)}
 							title="Третий сектор: зубы 31–38"
 						>
@@ -1597,7 +1611,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						</button>
 						<button
 							type="button"
-							className={`quadrant-nav-btn ${activeQuadrant === 4 ? "active" : ""}`}
+							className={`quadrant-nav-btn min-h-[44px] px-3 py-2 ${activeQuadrant === 4 ? "active" : ""}`}
 							onClick={() => setActiveQuadrant(4)}
 							title="Четвёртый сектор: зубы 41–48"
 						>
@@ -2332,11 +2346,11 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						</div>
 						<span>{dashboard?.protocolTemplates?.length ?? 0}</span>
 					</div>
-					<div className="specialty-strip">
+					<div className="specialty-strip flex flex-wrap gap-1.5">
 						{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 						{(specialtiesWithTemplates || []).map((specialty: any) => (
 							<button
-								className={selectedSpecialty === specialty ? "active" : ""}
+								className={`min-h-[44px] px-3 py-2 break-words leading-tight ${selectedSpecialty === specialty ? "active" : ""}`}
 								key={specialty}
 								type="button"
 								aria-pressed={selectedSpecialty === specialty}
@@ -2350,10 +2364,10 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						))}
 					</div>
 					{selectedProtocolTemplate ? (
-						<article className="protocol-card">
-							<div>
-								<strong>{selectedProtocolTemplate.title}</strong>
-								<p>
+						<article className="protocol-card min-w-0">
+							<div className="min-w-0">
+								<strong className="break-words leading-tight">{selectedProtocolTemplate.title}</strong>
+								<p className="break-words leading-tight">
 									{selectedProtocolTemplate.defaultDurationMinutes} мин · снимки{" "}
 									{(selectedProtocolTemplate.suggestedImaging || [])
 										// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -2361,15 +2375,15 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 										.join(", ")}
 								</p>
 							</div>
-							<div className="protocol-template-list">
+							<div className="protocol-template-list flex flex-wrap gap-1.5">
 								{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 								{(specialtyProtocolTemplates || []).map((template: any) => (
 									<button
-										className={
+										className={`min-h-[44px] px-3 py-2 break-words leading-tight ${
 											selectedProtocolTemplate.id === template.id
 												? "active"
 												: ""
-										}
+										}`}
 										key={template.id}
 										type="button"
 										aria-pressed={selectedProtocolTemplate.id === template.id}
@@ -2383,12 +2397,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								{(selectedProtocolTemplate.safetyWarnings || []).map(
 									// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 									(warning: any) => (
-										<li key={warning}>{warning}</li>
+										<li key={warning} className="break-words leading-tight">{warning}</li>
 									),
 								)}
 							</ul>
 							<button
-								className="secondary-button"
+								className="secondary-button min-h-[44px] px-3 py-2"
 								type="button"
 								onClick={() => applyProtocolTemplate(selectedProtocolTemplate)}
 							>
@@ -2552,16 +2566,16 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 							.map((task: any) => (
 								<button
-									className={`close-task ${task.ready ? "done" : ""} ${task.blocking && !task.ready ? "blocking" : ""}`}
+									className={`close-task min-h-[44px] px-3 py-2 min-w-0 ${task.ready ? "done" : ""} ${task.blocking && !task.ready ? "blocking" : ""}`}
 									key={task.id}
 									type="button"
 									onClick={() => openCloseChecklistSection(task)}
 								>
-									<CheckCircle2 aria-hidden="true" />
-									<div>
-										<strong>{task.title}</strong>
-										<p>{task.detail}</p>
-										<small>
+									<CheckCircle2 aria-hidden="true" className="shrink-0" />
+									<div className="min-w-0">
+										<strong className="break-words leading-tight">{task.title}</strong>
+										<p className="break-words leading-tight">{task.detail}</p>
+										<small className="break-words leading-tight">
 											{staffRoleLabels?.[task.ownerRole] ||
 												"исполнитель не указан"}{" "}
 											· {task.actionLabel}
@@ -3150,6 +3164,15 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						);
 					}
 				}}
+			/>
+
+			{/* Stage Payment & Milestone Escrow Modal */}
+			<StagePaymentPlanModal
+				isOpen={isStagePaymentModalOpen}
+				onClose={() => setIsStagePaymentModalOpen(false)}
+				patientId={activePatient?.id}
+				patientName={activePatient?.fullName}
+				doctorFullName={activeDoctor?.fullName}
 			/>
 		</>
 	);
