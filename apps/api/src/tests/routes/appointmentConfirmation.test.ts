@@ -235,6 +235,7 @@ describe("страница подтверждения приёма", () => {
 	let app: FastifyInstance;
 	let databaseAvailable = true;
 	const soon = new Date(Date.now() + 24 * 60 * 60 * 1000);
+	const later = new Date(Date.now() + 48 * 60 * 60 * 1000);
 	const past = new Date(Date.now() - 24 * 60 * 60 * 1000);
 	const env = { DENTE_PUBLIC_BASE_URL: BASE_URL };
 
@@ -289,8 +290,8 @@ describe("страница подтверждения приёма", () => {
 						organizationId: ORG_ID,
 						patientId: PATIENT_ID,
 						status: "confirmed",
-						startsAt: soon,
-						endsAt: new Date(soon.getTime() + 3_600_000),
+						startsAt: later,
+						endsAt: new Date(later.getTime() + 3_600_000),
 					},
 				]);
 			});

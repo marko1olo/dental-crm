@@ -915,6 +915,7 @@ async function processRow(
 	// отсутствие аккаунта или ненастроенный транспорт), проверяем следующие каналы
 	// в цепочке настроек (напр. Telegram -> WhatsApp -> SMS).
 	if (
+		outcome.kind !== "suppressed" &&
 		row.patientId &&
 		Array.isArray(settings.channelFallback) &&
 		settings.channelFallback.length > 1
