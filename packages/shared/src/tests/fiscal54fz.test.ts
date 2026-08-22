@@ -15,9 +15,11 @@ import {
 	FFD12_TAG_2108_MEASURE_CODES,
 	fiscalReceiptItemSchema,
 	fiscalRefundPayloadSchema,
+	format54FzFtsQrString,
 	isValidGs1Checksum,
 	kopecksToNumericString,
 	kopecksToRub,
+	parseAndValidate54FzFtsQrString,
 	parseChestnyZnakDataMatrix,
 	rubToKopecks,
 } from "../index.js";
@@ -223,5 +225,57 @@ describe("Shared Fiscal 54-FZ & FFD 1.2 Suite", () => {
 
 		const parsed = fiscalRefundPayloadSchema.safeParse(refundInput);
 		assert.equal(parsed.success, true);
+	});
+
+	it("1.11 format54FzFtsQrString generates compliant FNS QR string (Приказ ЕД-7-20/662@)", () => {
+		const qrString = format54FzFtsQrString({
+			issuedAt: "2026-08-22T14:35:00.000Z",
+			totalKopecks: 1250050, // 12,500.50 ₽
+			fnSerial: "9960440301234567",
+			fiscalDocumentNumber: 4821,
+			fiscalSign: "3920194821",
+			operationType: "income",
+		});
+
+		assert.ok(qrString.startsWith("t="));
+		assert.ok(qrString.includes("&s=12500.50"));
+		assert.ok(qrString.includes("&fn=9960440301234567"));
+		assert.ok(qrString.includes("&i=4821"));
+		assert.ok(qrString.includes("&fp=3920194821"));
+		assert.ok(qrString.endsWith("&n=1"));
+	});
+
+	it("1.12 parseAndValidate54FzFtsQrString strictly parses valid FNS QR code", () => {
+		const validQr = "t=20260822T1745&s=25000.00&fn=9960440302145896&i=8491&fp=2910485910&n=1";
+		const parsed = parseAndValidate54FzFtsQrString(validQr);
+
+		assert.equal(parsed.isValid, true);
+		assert.equal(parsed.totalAmountRub, 25000);
+		assert.equal(parsed.totalAmountKopecks, 2500000);
+		assert.equal(parsed.fnSerial, "9960440302145896");
+		assert.equal(parsed.fiscalDocumentNumber, 8491);
+		assert.equal(parsed.fiscalSign, "2910485910");
+		assert.equal(parsed.operationType, "income");
+		assert.ok(parsed.issuedAtIso?.startsWith("2026-08-22"));
+	});
+
+	it("1.13 parseAndValidate54FzFtsQrString rejects malformed or incomplete QR strings", () => {
+		// Missing 'fp'
+		const missingFp = "t=20260822T1745&s=25000.00&fn=9960440302145896&i=8491&n=1";
+		const res1 = parseAndValidate54FzFtsQrString(missingFp);
+		assert.equal(res1.isValid, false);
+		assert.ok(res1.errorMessage?.includes("обязательный реквизит 'fp'"));
+
+		// Invalid FN length (15 digits instead of 16)
+		const invalidFn = "t=20260822T1745&s=25000.00&fn=996044030214589&i=8491&fp=2910485910&n=1";
+		const res2 = parseAndValidate54FzFtsQrString(invalidFn);
+		assert.equal(res2.isValid, false);
+		assert.ok(res2.errorMessage?.includes("16 цифр"));
+
+		// Invalid operation type
+		const invalidN = "t=20260822T1745&s=25000.00&fn=9960440302145896&i=8491&fp=2910485910&n=9";
+		const res3 = parseAndValidate54FzFtsQrString(invalidN);
+		assert.equal(res3.isValid, false);
+		assert.ok(res3.errorMessage?.includes("Недопустимый признак расчета"));
 	});
 });
