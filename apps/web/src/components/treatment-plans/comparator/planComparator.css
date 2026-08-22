@@ -1,0 +1,499 @@
+/* ==========================================================================
+   Treatment Plan Multi-Variant Comparator & Patient Presentation Studio
+   Touch-First, Multi-Theme (Light, Dark, Night, Calm Teal) & Printable Brochure
+   ========================================================================== */
+
+.plan-comparator-backdrop {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(15, 23, 42, 0.7);
+	backdrop-filter: blur(6px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1000;
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.plan-comparator-modal {
+	--plan-bg: var(--paper, #ffffff);
+	--plan-surface: var(--paper-strong, #f8fafc);
+	--plan-surface-hover: var(--surface-hover, #f1f5f9);
+	--plan-border: var(--border, #e2e8f0);
+	--plan-border-focus: var(--primary, #0d9488);
+	--plan-text-main: var(--ink, #0f172a);
+	--plan-text-muted: var(--muted, #64748b);
+	--plan-primary: var(--primary, #0d9488);
+	--plan-primary-hover: var(--primary-hover, #0f766e);
+	--plan-primary-light: var(--primary-light, rgba(13, 148, 136, 0.1));
+	--plan-success: var(--success, #16a34a);
+	--plan-success-light: rgba(22, 163, 74, 0.1);
+	--plan-warning: var(--warning, #d97706);
+	--plan-warning-light: rgba(217, 119, 6, 0.1);
+	--plan-radius-lg: 16px;
+	--plan-radius-md: 10px;
+	--plan-radius-sm: 6px;
+	--plan-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+	background: var(--plan-bg);
+	color: var(--plan-text-main);
+	border: 1px solid var(--plan-border);
+	border-radius: var(--plan-radius-lg);
+	box-shadow: var(--plan-shadow);
+	width: 100%;
+	max-width: 1280px;
+	height: 92vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-sizing: border-box;
+	font-family: inherit;
+}
+
+/* Multi-Theme Overrides */
+[data-theme="dark"] .plan-comparator-modal,
+.dark .plan-comparator-modal {
+	--plan-bg: #0f172a;
+	--plan-surface: #1e293b;
+	--plan-surface-hover: #334155;
+	--plan-border: #334155;
+	--plan-text-main: #f8fafc;
+	--plan-text-muted: #94a3b8;
+	--plan-primary: #2dd4bf;
+	--plan-primary-hover: #14b8a6;
+	--plan-primary-light: rgba(45, 212, 191, 0.15);
+}
+
+[data-theme="night"] .plan-comparator-modal,
+[data-theme="oled"] .plan-comparator-modal {
+	--plan-bg: #000000;
+	--plan-surface: #121215;
+	--plan-surface-hover: #27272a;
+	--plan-border: #27272a;
+	--plan-text-main: #ffffff;
+	--plan-text-muted: #a1a1aa;
+	--plan-primary: #2dd4bf;
+	--plan-primary-hover: #5eead4;
+}
+
+[data-theme="calm_teal"] .plan-comparator-modal,
+[data-theme="calm-teal"] .plan-comparator-modal {
+	--plan-bg: #ffffff;
+	--plan-surface: #f0fdfa;
+	--plan-surface-hover: #ccfbf1;
+	--plan-border: #99f6e4;
+	--plan-text-main: #134e4a;
+	--plan-text-muted: #0f766e;
+	--plan-primary: #0f766e;
+	--plan-primary-hover: #115e59;
+}
+
+/* Header */
+.plan-comparator-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 24px;
+	border-bottom: 1px solid var(--plan-border);
+	background: var(--plan-surface);
+	flex-shrink: 0;
+}
+
+.plan-comparator-header-info {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.plan-header-icon {
+	width: 40px;
+	height: 40px;
+	border-radius: var(--plan-radius-sm);
+	background: var(--plan-primary-light);
+	color: var(--plan-primary);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.plan-header-title {
+	font-size: 1.25rem;
+	font-weight: 700;
+	margin: 0;
+	color: var(--plan-text-main);
+}
+
+.plan-header-subtitle {
+	font-size: 0.875rem;
+	color: var(--plan-text-muted);
+	margin: 2px 0 0 0;
+}
+
+.plan-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.plan-btn-icon {
+	min-width: 44px;
+	min-height: 44px;
+	border-radius: var(--plan-radius-sm);
+	border: 1px solid var(--plan-border);
+	background: var(--plan-bg);
+	color: var(--plan-text-muted);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.plan-btn-icon:hover {
+	background: var(--plan-surface-hover);
+	color: var(--plan-text-main);
+}
+
+/* Scrollable Content Body */
+.plan-comparator-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+}
+
+/* 3-Column Plan Cards Grid */
+.plan-cards-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 16px;
+}
+
+.plan-card {
+	background: var(--plan-surface);
+	border: 2px solid var(--plan-border);
+	border-radius: var(--plan-radius-md);
+	padding: 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	position: relative;
+	transition: all 0.2s ease;
+	cursor: pointer;
+}
+
+.plan-card:hover {
+	border-color: var(--plan-border-focus);
+	transform: translateY(-2px);
+}
+
+.plan-card.selected {
+	border-color: var(--plan-primary);
+	background: var(--plan-bg);
+	box-shadow: 0 10px 25px -5px rgba(13, 148, 136, 0.15);
+}
+
+.plan-card-badge {
+	align-self: flex-start;
+	font-size: 0.75rem;
+	font-weight: 700;
+	padding: 4px 10px;
+	border-radius: 20px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.plan-card-badge.primary {
+	background: var(--plan-primary-light);
+	color: var(--plan-primary);
+}
+
+.plan-card-badge.success {
+	background: var(--plan-success-light);
+	color: var(--plan-success);
+}
+
+.plan-card-badge.neutral {
+	background: rgba(148, 163, 184, 0.15);
+	color: var(--plan-text-muted);
+}
+
+.plan-card-title {
+	font-size: 1.125rem;
+	font-weight: 800;
+	margin: 0;
+	color: var(--plan-text-main);
+}
+
+.plan-card-cost {
+	font-size: 1.75rem;
+	font-weight: 900;
+	color: var(--plan-text-main);
+	display: flex;
+	align-items: baseline;
+	gap: 4px;
+}
+
+.plan-card-cost-sub {
+	font-size: 0.8125rem;
+	font-weight: 500;
+	color: var(--plan-text-muted);
+}
+
+/* Feature List */
+.plan-feature-list {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	font-size: 0.8125rem;
+	color: var(--plan-text-main);
+}
+
+.plan-feature-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+}
+
+.plan-feature-icon {
+	color: var(--plan-success);
+	flex-shrink: 0;
+	margin-top: 2px;
+}
+
+/* Metric Bars (Aesthetic, Longevity, Invasiveness) */
+.plan-metric-group {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	background: var(--plan-bg);
+	border: 1px solid var(--plan-border);
+	border-radius: var(--plan-radius-sm);
+	padding: 10px 12px;
+}
+
+.plan-metric-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 0.75rem;
+}
+
+.plan-metric-bar-bg {
+	height: 6px;
+	background: rgba(148, 163, 184, 0.2);
+	border-radius: 3px;
+	overflow: hidden;
+	margin-top: 2px;
+}
+
+.plan-metric-bar-fill {
+	height: 100%;
+	background: var(--plan-primary);
+	border-radius: 3px;
+}
+
+/* Interactive Timeline Roadmap */
+.plan-roadmap-section {
+	background: var(--plan-surface);
+	border: 1px solid var(--plan-border);
+	border-radius: var(--plan-radius-md);
+	padding: 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.plan-roadmap-title {
+	font-size: 1rem;
+	font-weight: 700;
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.plan-roadmap-stages {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 12px;
+}
+
+.plan-stage-step {
+	background: var(--plan-bg);
+	border: 1px solid var(--plan-border);
+	border-radius: var(--plan-radius-sm);
+	padding: 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.plan-stage-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.plan-stage-num {
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--plan-primary);
+	background: var(--plan-primary-light);
+	padding: 2px 8px;
+	border-radius: 12px;
+}
+
+.plan-stage-cost {
+	font-size: 0.875rem;
+	font-weight: 800;
+}
+
+.plan-proc-tag {
+	font-size: 0.75rem;
+	background: var(--plan-surface);
+	padding: 4px 8px;
+	border-radius: 4px;
+	color: var(--plan-text-muted);
+}
+
+/* Payment Options Grid */
+.plan-payment-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 12px;
+}
+
+.plan-payment-card {
+	background: var(--plan-bg);
+	border: 1px solid var(--plan-border);
+	border-radius: var(--plan-radius-sm);
+	padding: 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.plan-payment-card.active {
+	border-color: var(--plan-primary);
+}
+
+/* Footer & Presentation Controls */
+.plan-comparator-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 24px;
+	border-top: 1px solid var(--plan-border);
+	background: var(--plan-surface);
+	flex-shrink: 0;
+}
+
+.plan-action-btn-primary {
+	min-height: 44px;
+	padding: 10px 20px;
+	border-radius: var(--plan-radius-sm);
+	border: none;
+	background: var(--plan-primary);
+	color: #ffffff;
+	font-size: 0.9375rem;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.plan-action-btn-primary:hover {
+	background: var(--plan-primary-hover);
+}
+
+.plan-action-btn-secondary {
+	min-height: 44px;
+	padding: 10px 18px;
+	border-radius: var(--plan-radius-sm);
+	border: 1px solid var(--plan-border);
+	background: var(--plan-bg);
+	color: var(--plan-text-main);
+	font-size: 0.875rem;
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.plan-action-btn-secondary:hover {
+	background: var(--plan-surface-hover);
+}
+
+/* Print Presentation Brochure Styles */
+@media print {
+	.plan-comparator-backdrop {
+		position: static;
+		background: transparent;
+		padding: 0;
+	}
+
+	.plan-comparator-modal {
+		border: none;
+		box-shadow: none;
+		height: auto;
+		max-width: 100%;
+	}
+
+	.plan-header-actions,
+	.plan-comparator-footer,
+	.plan-btn-icon {
+		display: none !important;
+	}
+
+	.plan-card {
+		break-inside: avoid;
+		border: 1px solid #000000 !important;
+	}
+
+	.plan-cards-grid {
+		grid-template-columns: repeat(3, 1fr);
+	}
+}
+
+/* Mobile Responsive */
+@media (max-width: 960px) {
+	.plan-cards-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.plan-payment-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.plan-comparator-footer {
+		flex-direction: column;
+		gap: 12px;
+	}
+
+	.plan-comparator-footer > div {
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+}
