@@ -20,7 +20,13 @@ export {
 	clinicalSpecialtyKindSchema,
 	localAnesthesiaTypeSchema,
 	anestheticDrugSchema,
+	EmrProtocolGeneratorModal,
+	CORE_1CLICK_PRESETS,
+	type EmrProtocolGeneratorModalProps,
 	type ClinicalDiarySynthesisRequest,
+	type VisitDiaryEntry043,
+	type FdiToothRecord,
+	type ToothSurface,
 	type Statutory043ComplianceReport,
 	type Statutory043Issue,
 	type ClinicalProtocolTemplate,
@@ -29,3 +35,4 @@ export {
 	type LocalAnesthesiaType,
 	type AnestheticDrug,
 } from "./protocolGenerator/index";
+

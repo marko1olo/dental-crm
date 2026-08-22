@@ -4,6 +4,9 @@ export * from "./utils/mdlpDataMatrix.js";
 export * from "./sanpin.js";
 export * from "./legal/legalContractsAndConsents.js";
 export * from "./documents/index.js";
+export * from "./pediatricDentition.js";
+export * from "./toothCanalsAndBilling804n.js";
+export * from "./emr/index.js";
 import { dailyDentistDiary037uPayloadSchema, fullForm043uPayloadSchema, medicalCardExtract003vuPayloadSchema, orthodonticCard043_1uPayloadSchema, radiationDoseSheetPayloadSchema, summaryDentistStatement039uPayloadSchema, } from "./documents/index.js";
 import { moneyRubSchema, nonNegativeMoneyRubSchema, positiveMoneyRubSchema, } from "./money.js";
 /**
@@ -8751,8 +8754,16 @@ export const uiPreferencesSchema = z.object({
     onboardingStep: onboardingStepSchema.default("intro"),
     onboardingDraftMode: z.boolean().default(false),
     odontogramUseSurfaces: z.boolean().default(false),
+    odontogramViewMode: z
+        .enum(["anatomical_svg", "compact_clinical", "classic_gost"])
+        .default("anatomical_svg"),
     savedAt: z.string().default(""),
 });
+export const odontogramViewModeSchema = z.enum([
+    "anatomical_svg",
+    "compact_clinical",
+    "classic_gost",
+]);
 export const uiPreferencesInputSchema = uiPreferencesSchema
     .omit({ version: true, savedAt: true })
     .extend({

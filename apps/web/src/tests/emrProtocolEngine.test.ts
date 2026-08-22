@@ -12,9 +12,11 @@ import {
 	type FdiToothRecord,
 	type VisitDiaryEntry043,
 	STATUTORY_EMR_PROTOCOL_CATALOG,
+	CORE_1CLICK_PRESETS,
 	anestheticDrugLabels,
 	blackCavityClassLabels,
 } from "../components/emr/protocolGenerator/index";
+
 
 describe("EMR Form 043/u Statutory Protocol Engine & Diary Synthesizer (Order № 834n)", () => {
 	// ─────────────────────────────────────────────────────────────────────────
@@ -381,4 +383,52 @@ describe("EMR Form 043/u Statutory Protocol Engine & Diary Synthesizer (Order �
 			assert.match(formatted, /Петров П\.П\./);
 		});
 	});
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// 9. 1-CLICK PRESETS ENUMERATION & COMPLIANCE
+	// ─────────────────────────────────────────────────────────────────────────
+	describe("9. 1-Click Presets Enumeration & Statutory Validation", () => {
+		it("validates all 6 core presets exist with valid codes and specialties", () => {
+			const expectedPresetCodes = [
+				"K02.1",
+				"K04.0",
+				"K04.5",
+				"K08.1",
+				"K08.1_ORTHO",
+				"K05.3",
+			];
+
+			assert.strictEqual(CORE_1CLICK_PRESETS.length, 6);
+			for (const expectedCode of expectedPresetCodes) {
+				const found = CORE_1CLICK_PRESETS.find((p) => p.id === expectedCode);
+				assert.ok(found, `Preset ${expectedCode} must exist in CORE_1CLICK_PRESETS`);
+				assert.ok(found.title.length > 0);
+				assert.ok(found.description.length > 0);
+			}
+		});
+
+		it("synthesizes valid and compliant diaries for each of the 6 core presets", () => {
+			for (const preset of CORE_1CLICK_PRESETS) {
+				const diary = synthesizeClinicalDiary({
+					toothNumber: preset.id === "K05.3" ? null : 16,
+					icd10Code: preset.id,
+					surfaces: ["occlusal"],
+					doctorFullName: "Волкова Екатерина Сергеевна",
+					doctorSpecialty: preset.specialty === "orthopedics" ? "Врач-стоматолог-ортопед" : "Врач-стоматолог",
+				});
+
+				assert.ok(diary.subjectiveComplaints.length > 0);
+				assert.ok(diary.objectiveStatusLocalis.length > 0);
+				assert.ok(diary.assessmentDiagnosisText.length > 0);
+				assert.ok(diary.procedureProtocol.length > 0);
+				assert.strictEqual(diary.doctorFullName, "Волкова Екатерина Сергеевна");
+
+				const report = validateForm043uCompliance(diary);
+				assert.strictEqual(report.isCompliant, true, `Preset ${preset.id} must produce compliant report: ${JSON.stringify(report.issues)}`);
+				assert.strictEqual(report.criticalDefectsCount, 0);
+			}
+		});
+
+	});
 });
+

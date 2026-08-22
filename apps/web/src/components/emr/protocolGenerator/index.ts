@@ -6,3 +6,5 @@
 
 export * from "./emrProtocolPresets";
 export * from "./emrProtocolEngine";
+export * from "./EmrProtocolGeneratorModal";
+

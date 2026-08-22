@@ -1,7 +1,8 @@
 /**
  * ============================================================================
  * STATUTORY AUTOCLAVE LOG 257/U STUDIO STYLES
- * 100% Design token compliance, Touch-First UI, 2D/3D Chamber Points Matrix.
+ * 100% Design Token Compliance (Light, Dark, Multi-Theme)
+ * Touch-First UI (>=44px), 2D/3D Chamber Points Matrix, Clean Medical Layout
  * ============================================================================
  */
 
@@ -12,27 +13,46 @@
 	right: 0;
 	bottom: 0;
 	background-color: rgba(15, 23, 42, 0.75);
-	backdrop-filter: blur(4px);
+	backdrop-filter: blur(8px);
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	z-index: 9999;
 	padding: 1rem;
+	animation: autoclaveFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes autoclaveFadeIn {
+	from {
+		opacity: 0;
+		transform: scale(0.98);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
 }
 
 .autoclave-log-modal-container {
 	background: var(--paper, #ffffff);
 	color: var(--ink, #0f172a);
 	border: 1px solid var(--line, #e2e8f0);
-	border-radius: 12px;
+	border-radius: 20px;
 	width: 100%;
 	max-width: 1200px;
-	height: 90vh;
-	max-height: 880px;
+	height: 92vh;
+	max-height: 900px;
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
-	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .autoclave-log-modal-container,
+.dark .autoclave-log-modal-container {
+	background: var(--paper-strong, #0f172a);
+	border-color: var(--line, #1e293b);
+	color: #f8fafc;
 }
 
 /* Header */
@@ -41,8 +61,15 @@
 	align-items: center;
 	justify-content: space-between;
 	padding: 1rem 1.5rem;
-	background: var(--paper-strong, #f8fafc);
+	background: var(--paper-soft, #f8fafc);
 	border-bottom: 1px solid var(--line, #e2e8f0);
+	flex-shrink: 0;
+}
+
+[data-theme="dark"] .autoclave-log-header,
+.dark .autoclave-log-header {
+	background: #1e293b;
+	border-color: #334155;
 }
 
 .autoclave-log-title-group {
@@ -55,11 +82,14 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 42px;
-	height: 42px;
-	border-radius: 10px;
-	background: var(--teal-soft, rgba(20, 184, 166, 0.12));
+	width: 44px;
+	height: 44px;
+	min-width: 44px;
+	min-height: 44px;
+	border-radius: 12px;
+	background: rgba(13, 148, 136, 0.15);
 	color: var(--teal, #0d9488);
+	border: 1px solid rgba(13, 148, 136, 0.3);
 }
 
 .autoclave-log-title-text h2 {
@@ -70,30 +100,52 @@
 	line-height: 1.25;
 }
 
+[data-theme="dark"] .autoclave-log-title-text h2,
+.dark .autoclave-log-title-text h2 {
+	color: #f8fafc;
+}
+
 .autoclave-log-title-text p {
 	margin: 0.2rem 0 0 0;
 	font-size: 0.75rem;
 	color: var(--muted, #64748b);
 }
 
+[data-theme="dark"] .autoclave-log-title-text p,
+.dark .autoclave-log-title-text p {
+	color: #94a3b8;
+}
+
 .autoclave-log-close-btn {
 	background: transparent;
-	border: none;
+	border: 1px solid var(--line, #e2e8f0);
 	color: var(--muted, #64748b);
 	cursor: pointer;
 	padding: 0.5rem;
-	border-radius: 6px;
+	border-radius: 12px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	min-width: 44px;
 	min-height: 44px;
-	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	transition: all 0.15s ease;
+}
+
+[data-theme="dark"] .autoclave-log-close-btn,
+.dark .autoclave-log-close-btn {
+	border-color: #334155;
+	color: #94a3b8;
 }
 
 .autoclave-log-close-btn:hover {
-	background: rgba(0, 0, 0, 0.05);
+	background: var(--line, #e2e8f0);
 	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .autoclave-log-close-btn:hover,
+.dark .autoclave-log-close-btn:hover {
+	background: #334155;
+	color: #ffffff;
 }
 
 /* Navigation Tabs */
@@ -104,6 +156,14 @@
 	background: var(--paper, #ffffff);
 	border-bottom: 1px solid var(--line, #e2e8f0);
 	overflow-x: auto;
+	flex-shrink: 0;
+	-webkit-overflow-scrolling: touch;
+}
+
+[data-theme="dark"] .autoclave-log-tabs-nav,
+.dark .autoclave-log-tabs-nav {
+	background: #1e293b;
+	border-color: #334155;
 }
 
 .autoclave-log-tab-btn {
@@ -113,25 +173,32 @@
 	padding: 0.625rem 1rem;
 	min-height: 44px;
 	border: 1px solid transparent;
-	border-radius: 8px;
+	border-radius: 10px;
 	background: transparent;
 	color: var(--muted, #64748b);
 	font-size: 0.875rem;
 	font-weight: 600;
 	cursor: pointer;
 	white-space: nowrap;
-	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	flex-shrink: 0;
+	transition: all 0.15s ease;
 }
 
 .autoclave-log-tab-btn:hover {
-	background: var(--paper-strong, #f1f5f9);
+	background: var(--paper-soft, #f8fafc);
 	color: var(--ink, #0f172a);
 }
 
+[data-theme="dark"] .autoclave-log-tab-btn:hover,
+.dark .autoclave-log-tab-btn:hover {
+	background: #334155;
+	color: #f8fafc;
+}
+
 .autoclave-log-tab-btn.active {
-	background: var(--teal-soft, rgba(20, 184, 166, 0.12));
+	background: rgba(13, 148, 136, 0.15);
 	color: var(--teal, #0d9488);
-	border-color: var(--teal, #0d9488);
+	border-color: rgba(13, 148, 136, 0.3);
 }
 
 /* Body / Main Content Area */
@@ -152,29 +219,43 @@
 }
 
 .autoclave-regime-card {
-	border: 1px solid var(--line, #e2e8f0);
-	border-radius: 10px;
+	border: 1px solid var(--line, #cbd5e1);
+	border-radius: 12px;
 	padding: 0.875rem;
-	background: var(--paper-strong, #f8fafc);
+	background: var(--paper-soft, #f8fafc);
+	color: var(--ink, #0f172a);
 	cursor: pointer;
 	text-align: left;
-	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	transition: all 0.15s ease;
 	display: flex;
 	flex-direction: column;
 	gap: 0.35rem;
 	min-height: 80px;
 }
 
+[data-theme="dark"] .autoclave-regime-card,
+.dark .autoclave-regime-card {
+	background: #1e293b;
+	border-color: #334155;
+	color: #f8fafc;
+}
+
 .autoclave-regime-card:hover {
 	border-color: var(--teal, #0d9488);
 	transform: translateY(-1px);
-	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .autoclave-regime-card.selected {
-	background: var(--teal-soft, rgba(20, 184, 166, 0.12));
+	background: rgba(13, 148, 136, 0.12);
 	border-color: var(--teal, #0d9488);
 	box-shadow: 0 0 0 1px var(--teal, #0d9488);
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .autoclave-regime-card.selected,
+.dark .autoclave-regime-card.selected {
+	background: rgba(13, 148, 136, 0.2);
+	color: #f8fafc;
 }
 
 .autoclave-regime-card-header {
@@ -189,6 +270,11 @@
 	font-size: 0.75rem;
 	color: var(--muted, #64748b);
 	line-height: 1.3;
+}
+
+[data-theme="dark"] .autoclave-regime-card-sub,
+.dark .autoclave-regime-card-sub {
+	color: #94a3b8;
 }
 
 /* Form Styles */
@@ -210,36 +296,59 @@
 	color: var(--ink, #0f172a);
 }
 
+[data-theme="dark"] .autoclave-form-label,
+.dark .autoclave-form-label {
+	color: #f8fafc;
+}
+
 .autoclave-input,
 .autoclave-select,
 .autoclave-textarea {
 	border: 1px solid var(--line, #cbd5e1);
-	border-radius: 8px;
+	border-radius: 10px;
 	padding: 0.625rem 0.875rem;
 	font-size: 0.875rem;
 	background: var(--paper, #ffffff);
 	color: var(--ink, #0f172a);
 	min-height: 44px;
 	outline: none;
-	transition: border-color 0.2s;
+	transition: border-color 0.15s ease;
+	box-sizing: border-box;
+}
+
+[data-theme="dark"] .autoclave-input,
+[data-theme="dark"] .autoclave-select,
+[data-theme="dark"] .autoclave-textarea,
+.dark .autoclave-input,
+.dark .autoclave-select,
+.dark .autoclave-textarea {
+	background: #1e293b;
+	border-color: #334155;
+	color: #f8fafc;
 }
 
 .autoclave-input:focus,
 .autoclave-select:focus,
 .autoclave-textarea:focus {
 	border-color: var(--teal, #0d9488);
-	box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.2);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
 }
 
-/* 5 Chamber Points Interactive Matrix */
+/* 5 Chamber Points Interactive Matrix (Flat Segmented Medical Layout) */
 .chamber-matrix-wrapper {
 	border: 1px solid var(--line, #e2e8f0);
-	border-radius: 12px;
+	border-radius: 14px;
 	padding: 1.25rem;
-	background: var(--paper-strong, #f8fafc);
+	background: var(--paper-soft, #f8fafc);
 	display: flex;
 	flex-direction: column;
 	gap: 1rem;
+}
+
+[data-theme="dark"] .chamber-matrix-wrapper,
+.dark .chamber-matrix-wrapper {
+	background: #131d2e;
+	border-color: #1e293b;
 }
 
 .chamber-matrix-header {
@@ -252,8 +361,8 @@
 	position: relative;
 	width: 100%;
 	height: 240px;
-	background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-	border-radius: 10px;
+	background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+	border-radius: 12px;
 	overflow: hidden;
 	border: 2px solid #334155;
 	display: flex;
@@ -281,7 +390,7 @@
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	transition: transform 0.2s ease;
+	transition: transform 0.15s ease;
 }
 
 .chamber-point-marker:hover {
@@ -314,8 +423,9 @@
 	margin-top: 4px;
 	font-size: 0.6875rem;
 	font-weight: 600;
-	background: rgba(15, 23, 42, 0.85);
+	background: #1e293b;
 	color: #f8fafc;
+	border: 1px solid #334155;
 	padding: 2px 6px;
 	border-radius: 4px;
 	white-space: nowrap;
@@ -329,22 +439,36 @@
 }
 
 .chamber-point-card {
-	border: 1px solid var(--line, #e2e8f0);
-	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1);
+	border-radius: 10px;
 	padding: 0.75rem;
 	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
 	display: flex;
 	flex-direction: column;
 	gap: 0.35rem;
 	font-size: 0.75rem;
 }
 
+[data-theme="dark"] .chamber-point-card,
+.dark .chamber-point-card {
+	background: #1e293b;
+	border-color: #334155;
+	color: #f8fafc;
+}
+
 /* Journal 257/u Table */
 .journal257-table-wrapper {
 	overflow-x: auto;
 	border: 1px solid var(--line, #e2e8f0);
-	border-radius: 8px;
+	border-radius: 12px;
 	background: var(--paper, #ffffff);
+}
+
+[data-theme="dark"] .journal257-table-wrapper,
+.dark .journal257-table-wrapper {
+	background: #1e293b;
+	border-color: #334155;
 }
 
 .journal257-table {
@@ -355,7 +479,7 @@
 }
 
 .journal257-table th {
-	background: var(--paper-strong, #f8fafc);
+	background: var(--paper-soft, #f8fafc);
 	color: var(--muted, #64748b);
 	font-weight: 600;
 	padding: 0.75rem 1rem;
@@ -363,10 +487,24 @@
 	white-space: nowrap;
 }
 
+[data-theme="dark"] .journal257-table th,
+.dark .journal257-table th {
+	background: #131d2e;
+	border-color: #334155;
+	color: #94a3b8;
+}
+
 .journal257-table td {
 	padding: 0.75rem 1rem;
-	border-bottom: 1px solid var(--line, #f1f5f9);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	color: var(--ink, #0f172a);
 	vertical-align: middle;
+}
+
+[data-theme="dark"] .journal257-table td,
+.dark .journal257-table td {
+	border-color: #334155;
+	color: #f8fafc;
 }
 
 .journal257-table tr:last-child td {
@@ -374,7 +512,12 @@
 }
 
 .journal257-table tr:hover td {
-	background: var(--paper-strong, #f8fafc);
+	background: var(--paper-soft, #f8fafc);
+}
+
+[data-theme="dark"] .journal257-table tr:hover td,
+.dark .journal257-table tr:hover td {
+	background: #334155;
 }
 
 /* Badges */
@@ -389,17 +532,17 @@
 }
 
 .status-badge.passed {
-	background: rgba(16, 185, 129, 0.12);
+	background: rgba(16, 185, 129, 0.15);
 	color: #059669;
 }
 
 .status-badge.failed {
-	background: rgba(239, 68, 68, 0.12);
-	color: #dc2626;
+	background: rgba(239, 68, 68, 0.15);
+	color: #ef4444;
 }
 
 .status-badge.quarantine {
-	background: rgba(245, 158, 11, 0.12);
+	background: rgba(245, 158, 11, 0.15);
 	color: #d97706;
 }
 
@@ -411,11 +554,12 @@
 	gap: 0.5rem;
 	padding: 0.625rem 1.25rem;
 	min-height: 44px;
-	border-radius: 8px;
+	min-width: 44px;
+	border-radius: 12px;
 	font-size: 0.875rem;
 	font-weight: 600;
 	cursor: pointer;
-	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	transition: all 0.15s ease;
 	border: 1px solid transparent;
 }
 
@@ -429,13 +573,25 @@
 }
 
 .autoclave-btn-secondary {
-	background: var(--paper-strong, #f1f5f9);
+	background: var(--paper, #ffffff);
 	color: var(--ink, #0f172a);
 	border-color: var(--line, #cbd5e1);
 }
 
+[data-theme="dark"] .autoclave-btn-secondary,
+.dark .autoclave-btn-secondary {
+	background: #1e293b;
+	border-color: #334155;
+	color: #f8fafc;
+}
+
 .autoclave-btn-secondary:hover {
-	background: #e2e8f0;
+	background: var(--paper-soft, #f8fafc);
+}
+
+[data-theme="dark"] .autoclave-btn-secondary:hover,
+.dark .autoclave-btn-secondary:hover {
+	background: #334155;
 }
 
 /* Statistics Grid */
@@ -446,20 +602,26 @@
 }
 
 .autoclave-stat-card {
-	background: var(--paper-strong, #f8fafc);
+	background: var(--paper-soft, #f8fafc);
 	border: 1px solid var(--line, #e2e8f0);
-	border-radius: 10px;
+	border-radius: 14px;
 	padding: 1rem;
 	display: flex;
 	align-items: center;
 	gap: 0.875rem;
 }
 
+[data-theme="dark"] .autoclave-stat-card,
+.dark .autoclave-stat-card {
+	background: #131d2e;
+	border-color: #1e293b;
+}
+
 .autoclave-stat-icon {
 	width: 44px;
 	height: 44px;
-	border-radius: 10px;
-	background: var(--teal-soft, rgba(20, 184, 166, 0.12));
+	border-radius: 12px;
+	background: rgba(13, 148, 136, 0.15);
 	color: var(--teal, #0d9488);
 	display: flex;
 	align-items: center;
@@ -472,7 +634,43 @@
 	color: var(--ink, #0f172a);
 }
 
+[data-theme="dark"] .autoclave-stat-number,
+.dark .autoclave-stat-number {
+	color: #f8fafc;
+}
+
 .autoclave-stat-label {
 	font-size: 0.75rem;
 	color: var(--muted, #64748b);
 }
+
+[data-theme="dark"] .autoclave-stat-label,
+.dark .autoclave-stat-label {
+	color: #94a3b8;
+}
+
+@media (max-width: 640px) {
+	.autoclave-log-modal-overlay {
+		padding: 0.5rem;
+	}
+
+	.autoclave-log-modal-container {
+		max-height: 98vh;
+		height: 98vh;
+		border-radius: 12px;
+	}
+
+	.autoclave-log-header {
+		padding: 0.75rem 1rem;
+	}
+
+	.autoclave-log-tabs-nav {
+		padding: 0.5rem 1rem;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.autoclave-log-body {
+		padding: 1rem;
+	}
+}
+

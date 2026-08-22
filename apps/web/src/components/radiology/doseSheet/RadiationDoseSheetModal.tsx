@@ -916,9 +916,9 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 															<button
 																type="button"
 																onClick={() => handleDeleteRecord(st.id)}
-																className="p-2 rounded-xl text-rose-500 hover:bg-rose-500/10 min-h-[36px] min-w-[36px] inline-flex items-center justify-center transition-colors"
+																className="p-2.5 rounded-xl text-rose-500 hover:bg-rose-500/10 min-h-[44px] min-w-[44px] inline-flex items-center justify-center transition-colors cursor-pointer"
 																title="Удалить запись"
-																aria-label="Удалить"
+																aria-label="Удалить исследование"
 															>
 																<Trash2 className="w-4 h-4" />
 															</button>

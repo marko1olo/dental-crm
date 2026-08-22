@@ -116,8 +116,6 @@ export const MedicalReferral057Modal: React.FC<MedicalReferral057ModalProps> = (
 		});
 	});
 
-	if (!isOpen) return null;
-
 	// Active Profile definition
 	const currentProfileDef = useMemo(() => {
 		return getReferralProfileDefinition(docState.clinical.profileId);
@@ -302,6 +300,8 @@ export const MedicalReferral057Modal: React.FC<MedicalReferral057ModalProps> = (
 		onClose();
 	};
 
+	if (!isOpen) return null;
+
 	return (
 		<div className="ref057-modal-overlay" data-testid="referral-057-modal">
 			<div className="ref057-modal-container">
@@ -330,7 +330,7 @@ export const MedicalReferral057Modal: React.FC<MedicalReferral057ModalProps> = (
 						<button
 							type="button"
 							onClick={onClose}
-							className="w-9 h-9 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-[#334155] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-white transition-colors cursor-pointer"
+							className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-[#334155] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-white transition-colors cursor-pointer"
 							aria-label="Закрыть модальное окно"
 						>
 							<X className="w-5 h-5" />
@@ -1034,20 +1034,23 @@ export const MedicalReferral057Modal: React.FC<MedicalReferral057ModalProps> = (
 															/>
 														</td>
 														<td className="py-2 px-2 text-center">
-															<input
-																type="checkbox"
-																checked={!!t.isAbnormal}
-																onChange={(e) => handleUpdateDiagnosticTest(idx, "isAbnormal", e.target.checked)}
-																className="w-4 h-4 rounded text-red-600"
-																title="Отклонение от нормы (патологический результат)"
-															/>
+															<label className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center cursor-pointer">
+																<input
+																	type="checkbox"
+																	checked={!!t.isAbnormal}
+																	onChange={(e) => handleUpdateDiagnosticTest(idx, "isAbnormal", e.target.checked)}
+																	className="w-4 h-4 rounded text-red-600 cursor-pointer"
+																	title="Отклонение от нормы (патологический результат)"
+																/>
+															</label>
 														</td>
 														<td className="py-2 px-2 text-center">
 															<button
 																type="button"
 																onClick={() => handleRemoveDiagnosticTest(idx)}
-																className="text-red-500 hover:text-red-700 p-1"
+																className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center text-red-500 hover:text-red-700 hover:bg-red-500/10 rounded-lg cursor-pointer transition-colors"
 																title="Удалить строку"
+																aria-label="Удалить исследование"
 															>
 																<Trash2 className="w-4 h-4" />
 															</button>
@@ -1058,13 +1061,13 @@ export const MedicalReferral057Modal: React.FC<MedicalReferral057ModalProps> = (
 										</table>
 									</div>
 
-									{/* Pre-Op Checklist Reference */}
-									<div className="mt-3 p-3 rounded-xl bg-[var(--paper,#ffffff)] dark:bg-[#1e293b] border border-[var(--line,#e2e8f0)] dark:border-[#334155]">
-										<h5 className="text-[11px] font-bold text-[var(--ink,#0f172a)] dark:text-white uppercase mb-1 flex items-center gap-1.5">
-											<ShieldCheck className="w-3.5 h-3.5 text-teal-600" />
+									{/* Pre-Op Checklist Reference (Anti-Card-in-Card Flat Segment) */}
+									<div className="mt-3 p-3.5 rounded-xl bg-teal-500/10 border border-teal-500/30">
+										<h5 className="text-[11px] font-bold text-teal-800 dark:text-teal-200 uppercase mb-1 flex items-center gap-1.5">
+											<ShieldCheck className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
 											Нормативный чек-лист для профиля «{currentProfileDef.labelRu}»
 										</h5>
-										<ul className="text-[11px] text-[var(--muted,#64748b)] list-disc pl-4 space-y-0.5">
+										<ul className="text-[11px] text-teal-900 dark:text-teal-100 list-disc pl-4 space-y-0.5">
 											{currentProfileDef.preOpTestsChecklist.map((item, i) => (
 												<li key={i}>{item}</li>
 											))}
@@ -1220,17 +1223,19 @@ export const MedicalReferral057Modal: React.FC<MedicalReferral057ModalProps> = (
 								<button
 									type="button"
 									onClick={() => setZoomLevel((z) => Math.max(50, z - 15))}
-									className="p-1 rounded hover:bg-slate-700 text-slate-200"
-									title="Уменьшить"
+									className="min-w-[44px] min-h-[44px] p-2 rounded-lg hover:bg-slate-700 text-slate-200 inline-flex items-center justify-center cursor-pointer transition-colors"
+									title="Уменьшить масштаб"
+									aria-label="Уменьшить масштаб"
 								>
 									<ZoomOut className="w-4 h-4" />
 								</button>
-								<span className="text-xs font-mono px-1">{zoomLevel}%</span>
+								<span className="text-xs font-mono px-2 py-1 bg-slate-800 rounded font-bold">{zoomLevel}%</span>
 								<button
 									type="button"
 									onClick={() => setZoomLevel((z) => Math.min(130, z + 15))}
-									className="p-1 rounded hover:bg-slate-700 text-slate-200"
-									title="Увеличить"
+									className="min-w-[44px] min-h-[44px] p-2 rounded-lg hover:bg-slate-700 text-slate-200 inline-flex items-center justify-center cursor-pointer transition-colors"
+									title="Увеличить масштаб"
+									aria-label="Увеличить масштаб"
 								>
 									<ZoomIn className="w-4 h-4" />
 								</button>

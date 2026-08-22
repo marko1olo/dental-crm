@@ -4,6 +4,9 @@ export * from "./utils/mdlpDataMatrix.js";
 export * from "./sanpin.js";
 export * from "./legal/legalContractsAndConsents.js";
 export * from "./documents/index.js";
+export * from "./pediatricDentition.js";
+export * from "./toothCanalsAndBilling804n.js";
+export * from "./emr/index.js";
 export declare function isHttpUrl(value: string): boolean;
 export declare const httpUrlSchema: z.ZodEffects<z.ZodString, string, string>;
 export declare const patientStatusSchema: z.ZodEnum<["active", "archived"]>;
@@ -440,9 +443,9 @@ export declare const integrationPresetSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     status: "usable_now" | "needs_mapping" | "planned_connector";
     id: string;
+    category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
     title: string;
     vendor: string;
-    category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
     supportedInputs: string[];
     capabilities: ("imaging" | "documents" | "patients" | "appointments" | "visits" | "services" | "payments" | "tax_documents" | "audit")[];
     migrationNotes: string[];
@@ -450,9 +453,9 @@ export declare const integrationPresetSchema: z.ZodObject<{
 }, {
     status: "usable_now" | "needs_mapping" | "planned_connector";
     id: string;
+    category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
     title: string;
     vendor: string;
-    category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
     supportedInputs: string[];
     capabilities: ("imaging" | "documents" | "patients" | "appointments" | "visits" | "services" | "payments" | "tax_documents" | "audit")[];
     migrationNotes: string[];
@@ -528,7 +531,7 @@ export declare const speechChunkUploadSchema: z.ZodEffects<z.ZodObject<{
     localTranscript?: string | null | undefined;
     durationMs?: number | null | undefined;
     visitId?: string | null | undefined;
-    specialty?: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | undefined;
+    specialty?: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | undefined;
     clientRecordedAt?: string | null | undefined;
 }, {
     recordingId: string;
@@ -541,7 +544,7 @@ export declare const speechChunkUploadSchema: z.ZodEffects<z.ZodObject<{
     language?: string | undefined;
     source?: "visit" | "document" | "import" | "settings_lab" | undefined;
     visitId?: string | null | undefined;
-    specialty?: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | undefined;
+    specialty?: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | undefined;
     clientRecordedAt?: string | null | undefined;
 }>, {
     recordingId: string;
@@ -554,7 +557,7 @@ export declare const speechChunkUploadSchema: z.ZodEffects<z.ZodObject<{
     localTranscript?: string | null | undefined;
     durationMs?: number | null | undefined;
     visitId?: string | null | undefined;
-    specialty?: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | undefined;
+    specialty?: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | undefined;
     clientRecordedAt?: string | null | undefined;
 }, {
     recordingId: string;
@@ -567,7 +570,7 @@ export declare const speechChunkUploadSchema: z.ZodEffects<z.ZodObject<{
     language?: string | undefined;
     source?: "visit" | "document" | "import" | "settings_lab" | undefined;
     visitId?: string | null | undefined;
-    specialty?: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | undefined;
+    specialty?: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | undefined;
     clientRecordedAt?: string | null | undefined;
 }>;
 export type SpeechChunkUploadInput = z.infer<typeof speechChunkUploadSchema>;
@@ -925,13 +928,13 @@ export declare const speechRecordingStrategyRequestSchema: z.ZodObject<{
     source: z.ZodDefault<z.ZodEnum<["visit", "import", "document", "settings_lab"]>>;
 }, "strip", z.ZodTypeAny, {
     source: "visit" | "document" | "import" | "settings_lab";
-    specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     networkState: "unknown" | "online" | "offline";
     privacyMode: "cloud_allowed" | "local_only";
     expectedDurationMs?: number | null | undefined;
 }, {
     source?: "visit" | "document" | "import" | "settings_lab" | undefined;
-    specialty?: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | undefined;
+    specialty?: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | undefined;
     expectedDurationMs?: number | null | undefined;
     networkState?: "unknown" | "online" | "offline" | undefined;
     privacyMode?: "cloud_allowed" | "local_only" | undefined;
@@ -2783,7 +2786,7 @@ export declare const staffMemberSchema: z.ZodObject<{
     phone: string | null;
     fullName: string;
     role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
-    specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
+    specialties: ("pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal")[];
     canSignMedicalRecords: boolean;
     canManageMoney: boolean;
     canManageImports: boolean;
@@ -2804,7 +2807,7 @@ export declare const staffMemberSchema: z.ZodObject<{
     phone: string | null;
     fullName: string;
     role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
-    specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
+    specialties: ("pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal")[];
     canSignMedicalRecords: boolean;
     canManageMoney: boolean;
     canManageImports: boolean;
@@ -2860,7 +2863,7 @@ export declare const chairSchema: z.ZodObject<{
     name: string;
     active: boolean;
     room: string | null;
-    specialization: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | null;
+    specialization: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | null;
     hasXraySensor: boolean;
     hasMicroscope: boolean;
     hasSurgeryKit: boolean;
@@ -2877,7 +2880,7 @@ export declare const chairSchema: z.ZodObject<{
     name: string;
     active: boolean;
     room: string | null;
-    specialization: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | null;
+    specialization: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | null;
     hasXraySensor: boolean;
     hasMicroscope: boolean;
     hasSurgeryKit: boolean;
@@ -3160,7 +3163,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         phone: string | null;
         fullName: string;
         role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
-        specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
+        specialties: ("pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal")[];
         canSignMedicalRecords: boolean;
         canManageMoney: boolean;
         canManageImports: boolean;
@@ -3181,7 +3184,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         phone: string | null;
         fullName: string;
         role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
-        specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
+        specialties: ("pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal")[];
         canSignMedicalRecords: boolean;
         canManageMoney: boolean;
         canManageImports: boolean;
@@ -3236,7 +3239,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         name: string;
         active: boolean;
         room: string | null;
-        specialization: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | null;
+        specialization: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | null;
         hasXraySensor: boolean;
         hasMicroscope: boolean;
         hasSurgeryKit: boolean;
@@ -3253,7 +3256,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         name: string;
         active: boolean;
         room: string | null;
-        specialization: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | null;
+        specialization: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | null;
         hasXraySensor: boolean;
         hasMicroscope: boolean;
         hasSurgeryKit: boolean;
@@ -3277,9 +3280,9 @@ export declare const clinicSettingsSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         status: "usable_now" | "needs_mapping" | "planned_connector";
         id: string;
+        category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
         title: string;
         vendor: string;
-        category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
         supportedInputs: string[];
         capabilities: ("imaging" | "documents" | "patients" | "appointments" | "visits" | "services" | "payments" | "tax_documents" | "audit")[];
         migrationNotes: string[];
@@ -3287,9 +3290,9 @@ export declare const clinicSettingsSchema: z.ZodObject<{
     }, {
         status: "usable_now" | "needs_mapping" | "planned_connector";
         id: string;
+        category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
         title: string;
         vendor: string;
-        category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
         supportedInputs: string[];
         capabilities: ("imaging" | "documents" | "patients" | "appointments" | "visits" | "services" | "payments" | "tax_documents" | "audit")[];
         migrationNotes: string[];
@@ -3421,7 +3424,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         phone: string | null;
         fullName: string;
         role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
-        specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
+        specialties: ("pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal")[];
         canSignMedicalRecords: boolean;
         canManageMoney: boolean;
         canManageImports: boolean;
@@ -3439,7 +3442,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         name: string;
         active: boolean;
         room: string | null;
-        specialization: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | null;
+        specialization: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | null;
         hasXraySensor: boolean;
         hasMicroscope: boolean;
         hasSurgeryKit: boolean;
@@ -3453,9 +3456,9 @@ export declare const clinicSettingsSchema: z.ZodObject<{
     integrationPresets: {
         status: "usable_now" | "needs_mapping" | "planned_connector";
         id: string;
+        category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
         title: string;
         vendor: string;
-        category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
         supportedInputs: string[];
         capabilities: ("imaging" | "documents" | "patients" | "appointments" | "visits" | "services" | "payments" | "tax_documents" | "audit")[];
         migrationNotes: string[];
@@ -3541,7 +3544,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         phone: string | null;
         fullName: string;
         role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
-        specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
+        specialties: ("pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal")[];
         canSignMedicalRecords: boolean;
         canManageMoney: boolean;
         canManageImports: boolean;
@@ -3559,7 +3562,7 @@ export declare const clinicSettingsSchema: z.ZodObject<{
         name: string;
         active: boolean;
         room: string | null;
-        specialization: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | null;
+        specialization: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | null;
         hasXraySensor: boolean;
         hasMicroscope: boolean;
         hasSurgeryKit: boolean;
@@ -3573,9 +3576,9 @@ export declare const clinicSettingsSchema: z.ZodObject<{
     integrationPresets: {
         status: "usable_now" | "needs_mapping" | "planned_connector";
         id: string;
+        category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
         title: string;
         vendor: string;
-        category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
         supportedInputs: string[];
         capabilities: ("imaging" | "documents" | "patients" | "appointments" | "visits" | "services" | "payments" | "tax_documents" | "audit")[];
         migrationNotes: string[];
@@ -3627,6 +3630,7 @@ export declare const resourceLoadSchema: z.ZodObject<{
     flags: z.ZodArray<z.ZodString, "many">;
 }, "strip", z.ZodTypeAny, {
     id: string;
+    state: "healthy" | "idle" | "tight" | "overbooked";
     title: string;
     kind: "doctor" | "assistant" | "chair";
     subtitle: string;
@@ -3634,10 +3638,10 @@ export declare const resourceLoadSchema: z.ZodObject<{
     appointmentCount: number;
     utilizationPercent: number;
     nextFreeAt: string | null;
-    state: "healthy" | "idle" | "tight" | "overbooked";
     flags: string[];
 }, {
     id: string;
+    state: "healthy" | "idle" | "tight" | "overbooked";
     title: string;
     kind: "doctor" | "assistant" | "chair";
     subtitle: string;
@@ -3645,7 +3649,6 @@ export declare const resourceLoadSchema: z.ZodObject<{
     appointmentCount: number;
     utilizationPercent: number;
     nextFreeAt: string | null;
-    state: "healthy" | "idle" | "tight" | "overbooked";
     flags: string[];
 }>;
 export type ResourceLoad = z.infer<typeof resourceLoadSchema>;
@@ -3760,6 +3763,7 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
         flags: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
         id: string;
+        state: "healthy" | "idle" | "tight" | "overbooked";
         title: string;
         kind: "doctor" | "assistant" | "chair";
         subtitle: string;
@@ -3767,10 +3771,10 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
         appointmentCount: number;
         utilizationPercent: number;
         nextFreeAt: string | null;
-        state: "healthy" | "idle" | "tight" | "overbooked";
         flags: string[];
     }, {
         id: string;
+        state: "healthy" | "idle" | "tight" | "overbooked";
         title: string;
         kind: "doctor" | "assistant" | "chair";
         subtitle: string;
@@ -3778,7 +3782,6 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
         appointmentCount: number;
         utilizationPercent: number;
         nextFreeAt: string | null;
-        state: "healthy" | "idle" | "tight" | "overbooked";
         flags: string[];
     }>, "many">;
     assistantLoads: z.ZodArray<z.ZodObject<{
@@ -3794,6 +3797,7 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
         flags: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
         id: string;
+        state: "healthy" | "idle" | "tight" | "overbooked";
         title: string;
         kind: "doctor" | "assistant" | "chair";
         subtitle: string;
@@ -3801,10 +3805,10 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
         appointmentCount: number;
         utilizationPercent: number;
         nextFreeAt: string | null;
-        state: "healthy" | "idle" | "tight" | "overbooked";
         flags: string[];
     }, {
         id: string;
+        state: "healthy" | "idle" | "tight" | "overbooked";
         title: string;
         kind: "doctor" | "assistant" | "chair";
         subtitle: string;
@@ -3812,7 +3816,6 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
         appointmentCount: number;
         utilizationPercent: number;
         nextFreeAt: string | null;
-        state: "healthy" | "idle" | "tight" | "overbooked";
         flags: string[];
     }>, "many">;
     chairLoads: z.ZodArray<z.ZodObject<{
@@ -3828,6 +3831,7 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
         flags: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
         id: string;
+        state: "healthy" | "idle" | "tight" | "overbooked";
         title: string;
         kind: "doctor" | "assistant" | "chair";
         subtitle: string;
@@ -3835,10 +3839,10 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
         appointmentCount: number;
         utilizationPercent: number;
         nextFreeAt: string | null;
-        state: "healthy" | "idle" | "tight" | "overbooked";
         flags: string[];
     }, {
         id: string;
+        state: "healthy" | "idle" | "tight" | "overbooked";
         title: string;
         kind: "doctor" | "assistant" | "chair";
         subtitle: string;
@@ -3846,7 +3850,6 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
         appointmentCount: number;
         utilizationPercent: number;
         nextFreeAt: string | null;
-        state: "healthy" | "idle" | "tight" | "overbooked";
         flags: string[];
     }>, "many">;
     roleQueues: z.ZodArray<z.ZodObject<{
@@ -3910,6 +3913,7 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
     };
     doctorLoads: {
         id: string;
+        state: "healthy" | "idle" | "tight" | "overbooked";
         title: string;
         kind: "doctor" | "assistant" | "chair";
         subtitle: string;
@@ -3917,11 +3921,11 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
         appointmentCount: number;
         utilizationPercent: number;
         nextFreeAt: string | null;
-        state: "healthy" | "idle" | "tight" | "overbooked";
         flags: string[];
     }[];
     assistantLoads: {
         id: string;
+        state: "healthy" | "idle" | "tight" | "overbooked";
         title: string;
         kind: "doctor" | "assistant" | "chair";
         subtitle: string;
@@ -3929,11 +3933,11 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
         appointmentCount: number;
         utilizationPercent: number;
         nextFreeAt: string | null;
-        state: "healthy" | "idle" | "tight" | "overbooked";
         flags: string[];
     }[];
     chairLoads: {
         id: string;
+        state: "healthy" | "idle" | "tight" | "overbooked";
         title: string;
         kind: "doctor" | "assistant" | "chair";
         subtitle: string;
@@ -3941,7 +3945,6 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
         appointmentCount: number;
         utilizationPercent: number;
         nextFreeAt: string | null;
-        state: "healthy" | "idle" | "tight" | "overbooked";
         flags: string[];
     }[];
     roleQueues: {
@@ -3973,6 +3976,7 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
     };
     doctorLoads: {
         id: string;
+        state: "healthy" | "idle" | "tight" | "overbooked";
         title: string;
         kind: "doctor" | "assistant" | "chair";
         subtitle: string;
@@ -3980,11 +3984,11 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
         appointmentCount: number;
         utilizationPercent: number;
         nextFreeAt: string | null;
-        state: "healthy" | "idle" | "tight" | "overbooked";
         flags: string[];
     }[];
     assistantLoads: {
         id: string;
+        state: "healthy" | "idle" | "tight" | "overbooked";
         title: string;
         kind: "doctor" | "assistant" | "chair";
         subtitle: string;
@@ -3992,11 +3996,11 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
         appointmentCount: number;
         utilizationPercent: number;
         nextFreeAt: string | null;
-        state: "healthy" | "idle" | "tight" | "overbooked";
         flags: string[];
     }[];
     chairLoads: {
         id: string;
+        state: "healthy" | "idle" | "tight" | "overbooked";
         title: string;
         kind: "doctor" | "assistant" | "chair";
         subtitle: string;
@@ -4004,7 +4008,6 @@ export declare const shiftIntelligenceSchema: z.ZodObject<{
         appointmentCount: number;
         utilizationPercent: number;
         nextFreeAt: string | null;
-        state: "healthy" | "idle" | "tight" | "overbooked";
         flags: string[];
     }[];
     roleQueues: {
@@ -4047,7 +4050,7 @@ export declare const protocolTemplateSchema: z.ZodObject<{
     organizationId: string;
     updatedAt: string;
     title: string;
-    specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     visitReason: string;
     defaultDurationMinutes: number;
     complaintPrompt: string;
@@ -4055,14 +4058,14 @@ export declare const protocolTemplateSchema: z.ZodObject<{
     diagnosisHints: string[];
     treatmentPlanTemplate: string;
     requiredDocuments: ("treatment_plan" | "paid_medical_services_contract" | "completed_works_act" | "tax_deduction_certificate" | "informed_consent" | "procedure_specific_consent_packet" | "treatment_plan_acceptance" | "anesthesia_consent_log" | "prescription_medication_order" | "personal_data_processing_consent" | "minor_legal_representative_consent" | "photo_video_consent" | "medical_intervention_refusal" | "treatment_cost_estimate" | "payment_invoice" | "payment_receipt" | "installment_payment_schedule" | "post_visit_recommendations" | "outpatient_medical_card_025u" | "dental_medical_card_043u" | "orthodontic_medical_card_043_1u" | "daily_dentist_diary_037u" | "summary_dentist_statement_039u" | "medical_record_extract" | "medical_record_copy_request" | "medical_document_release_receipt" | "xray_cbct_referral" | "radiation_dose_sheet" | "lab_work_order" | "visit_attendance_certificate" | "warranty_service_memo" | "payment_refund_correction_request" | "tax_deduction_application" | "legacy_tax_deduction_certificate" | "tax_deduction_registry" | "patient_intake_questionnaire")[];
-    suggestedImaging: ("other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo")[];
+    suggestedImaging: ("other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo")[];
     safetyWarnings: string[];
 }, {
     id: string;
     organizationId: string;
     updatedAt: string;
     title: string;
-    specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     visitReason: string;
     defaultDurationMinutes: number;
     complaintPrompt: string;
@@ -4070,7 +4073,7 @@ export declare const protocolTemplateSchema: z.ZodObject<{
     diagnosisHints: string[];
     treatmentPlanTemplate: string;
     requiredDocuments: ("treatment_plan" | "paid_medical_services_contract" | "completed_works_act" | "tax_deduction_certificate" | "informed_consent" | "procedure_specific_consent_packet" | "treatment_plan_acceptance" | "anesthesia_consent_log" | "prescription_medication_order" | "personal_data_processing_consent" | "minor_legal_representative_consent" | "photo_video_consent" | "medical_intervention_refusal" | "treatment_cost_estimate" | "payment_invoice" | "payment_receipt" | "installment_payment_schedule" | "post_visit_recommendations" | "outpatient_medical_card_025u" | "dental_medical_card_043u" | "orthodontic_medical_card_043_1u" | "daily_dentist_diary_037u" | "summary_dentist_statement_039u" | "medical_record_extract" | "medical_record_copy_request" | "medical_document_release_receipt" | "xray_cbct_referral" | "radiation_dose_sheet" | "lab_work_order" | "visit_attendance_certificate" | "warranty_service_memo" | "payment_refund_correction_request" | "tax_deduction_application" | "legacy_tax_deduction_certificate" | "tax_deduction_registry" | "patient_intake_questionnaire")[];
-    suggestedImaging: ("other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo")[];
+    suggestedImaging: ("other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo")[];
     safetyWarnings: string[];
 }>;
 export type ProtocolTemplate = z.infer<typeof protocolTemplateSchema>;
@@ -4091,10 +4094,10 @@ export declare const serviceCatalogItemSchema: z.ZodObject<{
     id: string;
     organizationId: string;
     durationMinutes: number;
+    category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
     title: string;
     active: boolean;
-    category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-    specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     aliases: string[];
     basePriceRub: number;
     taxDeductible: boolean;
@@ -4103,10 +4106,10 @@ export declare const serviceCatalogItemSchema: z.ZodObject<{
     id: string;
     organizationId: string;
     durationMinutes: number;
+    category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
     title: string;
     active: boolean;
-    category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-    specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     basePriceRub: number;
     taxDeductible: boolean;
     aliases?: string[] | undefined;
@@ -4167,11 +4170,11 @@ export declare const dentalPricelistItemSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     id: string;
     durationMinutes: number | null;
+    category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
     confidence: number;
     warnings: string[];
     title: string;
-    category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-    specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     sourceLine: number;
     sourceText: string;
     normalizedTitle: string;
@@ -4188,11 +4191,11 @@ export declare const dentalPricelistItemSchema: z.ZodObject<{
 }, {
     id: string;
     durationMinutes: number | null;
+    category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
     confidence: number;
     warnings: string[];
     title: string;
-    category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-    specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     sourceLine: number;
     sourceText: string;
     normalizedTitle: string;
@@ -4220,8 +4223,8 @@ export declare const dentalPricelistCategorySummarySchema: z.ZodObject<{
     brands: z.ZodArray<z.ZodString, "many">;
 }, "strip", z.ZodTypeAny, {
     category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-    specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
     count: number;
+    specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     pricedCount: number;
     minPriceRub: number | null;
     maxPriceRub: number | null;
@@ -4230,8 +4233,8 @@ export declare const dentalPricelistCategorySummarySchema: z.ZodObject<{
     brands: string[];
 }, {
     category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-    specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
     count: number;
+    specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     pricedCount: number;
     minPriceRub: number | null;
     maxPriceRub: number | null;
@@ -4253,7 +4256,7 @@ export declare const dentalPricelistAnalysisRequestSchema: z.ZodEffects<z.ZodObj
     sourceKind: "manual" | "text" | "ocr_text" | "photo_ocr" | "spreadsheet_copy";
     rawText: string;
     imageMimeType: "image/jpeg" | "image/png" | "image/webp";
-    preferredSpecialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    preferredSpecialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     useServerAi: boolean;
     imageBase64?: string | undefined;
 }, {
@@ -4262,14 +4265,14 @@ export declare const dentalPricelistAnalysisRequestSchema: z.ZodEffects<z.ZodObj
     rawText?: string | undefined;
     imageBase64?: string | undefined;
     imageMimeType?: "image/jpeg" | "image/png" | "image/webp" | undefined;
-    preferredSpecialty?: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | undefined;
+    preferredSpecialty?: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | undefined;
     useServerAi?: boolean | undefined;
 }>, {
     sourceName: string;
     sourceKind: "manual" | "text" | "ocr_text" | "photo_ocr" | "spreadsheet_copy";
     rawText: string;
     imageMimeType: "image/jpeg" | "image/png" | "image/webp";
-    preferredSpecialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    preferredSpecialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     useServerAi: boolean;
     imageBase64?: string | undefined;
 }, {
@@ -4278,7 +4281,7 @@ export declare const dentalPricelistAnalysisRequestSchema: z.ZodEffects<z.ZodObj
     rawText?: string | undefined;
     imageBase64?: string | undefined;
     imageMimeType?: "image/jpeg" | "image/png" | "image/webp" | undefined;
-    preferredSpecialty?: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | undefined;
+    preferredSpecialty?: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | undefined;
     useServerAi?: boolean | undefined;
 }>;
 export type DentalPricelistAnalysisRequest = z.infer<typeof dentalPricelistAnalysisRequestSchema>;
@@ -4311,11 +4314,11 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         id: string;
         durationMinutes: number | null;
+        category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
         confidence: number;
         warnings: string[];
         title: string;
-        category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-        specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+        specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         sourceLine: number;
         sourceText: string;
         normalizedTitle: string;
@@ -4332,11 +4335,11 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
     }, {
         id: string;
         durationMinutes: number | null;
+        category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
         confidence: number;
         warnings: string[];
         title: string;
-        category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-        specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+        specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         sourceLine: number;
         sourceText: string;
         normalizedTitle: string;
@@ -4363,8 +4366,8 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         brands: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
         category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-        specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
         count: number;
+        specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         pricedCount: number;
         minPriceRub: number | null;
         maxPriceRub: number | null;
@@ -4373,8 +4376,8 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         brands: string[];
     }, {
         category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-        specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
         count: number;
+        specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         pricedCount: number;
         minPriceRub: number | null;
         maxPriceRub: number | null;
@@ -4407,19 +4410,14 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
     }>;
     groqJsonPromptVersion: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    warnings: string[];
-    generatedAt: string;
-    sourceName: string;
-    sourceKind: "manual" | "text" | "ocr_text" | "photo_ocr" | "spreadsheet_copy";
-    parserMode: "deterministic" | "groq_json" | "deterministic_groq_fallback";
     items: {
         id: string;
         durationMinutes: number | null;
+        category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
         confidence: number;
         warnings: string[];
         title: string;
-        category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-        specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+        specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         sourceLine: number;
         sourceText: string;
         normalizedTitle: string;
@@ -4434,10 +4432,15 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         priceMaxRub: number | null;
         matchedServiceId: string | null;
     }[];
+    warnings: string[];
+    generatedAt: string;
+    sourceName: string;
+    sourceKind: "manual" | "text" | "ocr_text" | "photo_ocr" | "spreadsheet_copy";
+    parserMode: "deterministic" | "groq_json" | "deterministic_groq_fallback";
     summary: {
         category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-        specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
         count: number;
+        specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         pricedCount: number;
         minPriceRub: number | null;
         maxPriceRub: number | null;
@@ -4455,19 +4458,14 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
     };
     groqJsonPromptVersion: string;
 }, {
-    warnings: string[];
-    generatedAt: string;
-    sourceName: string;
-    sourceKind: "manual" | "text" | "ocr_text" | "photo_ocr" | "spreadsheet_copy";
-    parserMode: "deterministic" | "groq_json" | "deterministic_groq_fallback";
     items: {
         id: string;
         durationMinutes: number | null;
+        category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
         confidence: number;
         warnings: string[];
         title: string;
-        category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-        specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+        specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         sourceLine: number;
         sourceText: string;
         normalizedTitle: string;
@@ -4482,10 +4480,15 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         priceMaxRub: number | null;
         matchedServiceId: string | null;
     }[];
+    warnings: string[];
+    generatedAt: string;
+    sourceName: string;
+    sourceKind: "manual" | "text" | "ocr_text" | "photo_ocr" | "spreadsheet_copy";
+    parserMode: "deterministic" | "groq_json" | "deterministic_groq_fallback";
     summary: {
         category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-        specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
         count: number;
+        specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         pricedCount: number;
         minPriceRub: number | null;
         maxPriceRub: number | null;
@@ -4526,11 +4529,11 @@ export declare const treatmentPlanItemSchema: z.ZodObject<{
     organizationId: string;
     notes: string | null;
     patientId: string;
+    quantity: number;
     visitId: string | null;
     serviceId: string;
     snapshotServiceName: string;
     toothCode: string | null;
-    quantity: number;
     unitPriceRub: number;
     discountRub: number;
     plannedDoctorUserId: string | null;
@@ -4542,11 +4545,11 @@ export declare const treatmentPlanItemSchema: z.ZodObject<{
     organizationId: string;
     notes: string | null;
     patientId: string;
+    quantity: number;
     visitId: string | null;
     serviceId: string;
     snapshotServiceName: string;
     toothCode: string | null;
-    quantity: number;
     unitPriceRub: number;
     discountRub: number;
     plannedDoctorUserId: string | null;
@@ -4649,11 +4652,11 @@ export declare const clinicalRuleSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     id: string;
     organizationId: string;
+    category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
     title: string;
     severity: "info" | "warning" | "blocker";
     active: boolean;
-    category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-    specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
     triggerServiceIds: string[];
@@ -4666,11 +4669,11 @@ export declare const clinicalRuleSchema: z.ZodObject<{
 }, {
     id: string;
     organizationId: string;
+    category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
     title: string;
     severity: "info" | "warning" | "blocker";
     active: boolean;
-    category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-    specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
     triggerServiceIds: string[];
@@ -4933,11 +4936,11 @@ export declare const createClinicalRuleSchema: z.ZodEffects<z.ZodObject<{
     patientText: z.ZodString;
     active: z.ZodDefault<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
+    category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
     title: string;
     severity: "info" | "warning" | "blocker";
     active: boolean;
-    category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-    specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
     triggerServiceIds: string[];
@@ -4948,10 +4951,10 @@ export declare const createClinicalRuleSchema: z.ZodEffects<z.ZodObject<{
     patientText: string;
     condition?: string | null | undefined;
 }, {
+    category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
     title: string;
     severity: "info" | "warning" | "blocker";
-    category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-    specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
     triggerServiceIds: string[];
@@ -4963,11 +4966,11 @@ export declare const createClinicalRuleSchema: z.ZodEffects<z.ZodObject<{
     blockedServiceIds?: string[] | undefined;
     condition?: string | null | undefined;
 }>, {
+    category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
     title: string;
     severity: "info" | "warning" | "blocker";
     active: boolean;
-    category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-    specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
     triggerServiceIds: string[];
@@ -4978,10 +4981,10 @@ export declare const createClinicalRuleSchema: z.ZodEffects<z.ZodObject<{
     patientText: string;
     condition?: string | null | undefined;
 }, {
+    category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
     title: string;
     severity: "info" | "warning" | "blocker";
-    category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-    specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
     triggerServiceIds: string[];
@@ -5013,11 +5016,11 @@ export declare const updateClinicalRuleSchema: z.ZodObject<{
     id: z.ZodString;
 }, "strip", z.ZodTypeAny, {
     id: string;
+    category?: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents" | undefined;
     title?: string | undefined;
     severity?: "info" | "warning" | "blocker" | undefined;
     active?: boolean | undefined;
-    category?: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents" | undefined;
-    specialty?: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | undefined;
+    specialty?: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | undefined;
     ownerRole?: "doctor" | "owner" | "administrator" | "assistant" | "manager" | undefined;
     action?: "add_required_service" | "block_service" | "show_warning" | "schedule_followup" | undefined;
     triggerServiceIds?: string[] | undefined;
@@ -5029,11 +5032,11 @@ export declare const updateClinicalRuleSchema: z.ZodObject<{
     patientText?: string | undefined;
 }, {
     id: string;
+    category?: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents" | undefined;
     title?: string | undefined;
     severity?: "info" | "warning" | "blocker" | undefined;
     active?: boolean | undefined;
-    category?: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents" | undefined;
-    specialty?: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | undefined;
+    specialty?: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | undefined;
     ownerRole?: "doctor" | "owner" | "administrator" | "assistant" | "manager" | undefined;
     action?: "add_required_service" | "block_service" | "show_warning" | "schedule_followup" | undefined;
     triggerServiceIds?: string[] | undefined;
@@ -6467,9 +6470,6 @@ export declare const denteTelegramOutboxResponseSchema: z.ZodObject<{
     }>, "many">;
     warnings: z.ZodArray<z.ZodString, "many">;
 }, "strip", z.ZodTypeAny, {
-    warnings: string[];
-    generatedAt: string;
-    mode: "disabled" | "shared_dente_bot" | "clinic_owned_bot";
     items: {
         id: string;
         organizationId: string;
@@ -6490,6 +6490,9 @@ export declare const denteTelegramOutboxResponseSchema: z.ZodObject<{
         scheduledAt: string;
         previewText: string;
     }[];
+    warnings: string[];
+    generatedAt: string;
+    mode: "disabled" | "shared_dente_bot" | "clinic_owned_bot";
     totalCount: number;
     filteredCount: number;
     limit: number;
@@ -6501,9 +6504,6 @@ export declare const denteTelegramOutboxResponseSchema: z.ZodObject<{
     notDueCount: number;
     blockedCount: number;
 }, {
-    warnings: string[];
-    generatedAt: string;
-    mode: "disabled" | "shared_dente_bot" | "clinic_owned_bot";
     items: {
         id: string;
         organizationId: string;
@@ -6524,6 +6524,9 @@ export declare const denteTelegramOutboxResponseSchema: z.ZodObject<{
         previewText: string;
         photoUrl?: string | null | undefined;
     }[];
+    warnings: string[];
+    generatedAt: string;
+    mode: "disabled" | "shared_dente_bot" | "clinic_owned_bot";
     totalCount: number;
     filteredCount: number;
     limit: number;
@@ -8034,15 +8037,15 @@ export declare const appointmentReadinessCheckSchema: z.ZodObject<{
     ready: z.ZodBoolean;
     detail: z.ZodString;
 }, "strip", z.ZodTypeAny, {
+    key: string;
     ready: boolean;
     title: string;
     detail: string;
-    key: string;
 }, {
+    key: string;
     ready: boolean;
     title: string;
     detail: string;
-    key: string;
 }>;
 export type AppointmentReadinessCheck = z.infer<typeof appointmentReadinessCheckSchema>;
 export declare const appointmentReadinessSchema: z.ZodObject<{
@@ -8060,41 +8063,41 @@ export declare const appointmentReadinessSchema: z.ZodObject<{
         ready: z.ZodBoolean;
         detail: z.ZodString;
     }, "strip", z.ZodTypeAny, {
+        key: string;
         ready: boolean;
         title: string;
         detail: string;
-        key: string;
     }, {
+        key: string;
         ready: boolean;
         title: string;
         detail: string;
-        key: string;
     }>, "many">;
 }, "strip", z.ZodTypeAny, {
     patientId: string | null;
+    state: "ready" | "blocked" | "needs_attention";
     warnings: string[];
     checks: {
+        key: string;
         ready: boolean;
         title: string;
         detail: string;
-        key: string;
     }[];
     nextAction: string;
-    state: "ready" | "blocked" | "needs_attention";
     ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
     blockers: string[];
     appointmentId: string;
     score: number;
 }, {
     patientId: string | null;
+    state: "ready" | "blocked" | "needs_attention";
     checks: {
+        key: string;
         ready: boolean;
         title: string;
         detail: string;
-        key: string;
     }[];
     nextAction: string;
-    state: "ready" | "blocked" | "needs_attention";
     ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
     blockers: string[];
     appointmentId: string;
@@ -8204,8 +8207,6 @@ export declare const visitCloseChecklistSchema: z.ZodObject<{
         section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
     }>, "many">;
 }, "strip", z.ZodTypeAny, {
-    visitId: string;
-    nextAction: string;
     items: {
         id: string;
         ready: boolean;
@@ -8217,12 +8218,12 @@ export declare const visitCloseChecklistSchema: z.ZodObject<{
         actionLabel: string;
         section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
     }[];
+    visitId: string;
+    nextAction: string;
     score: number;
     readyToSign: boolean;
     blockingItems: number;
 }, {
-    visitId: string;
-    nextAction: string;
     items: {
         id: string;
         ready: boolean;
@@ -8234,6 +8235,8 @@ export declare const visitCloseChecklistSchema: z.ZodObject<{
         actionLabel: string;
         section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
     }[];
+    visitId: string;
+    nextAction: string;
     score: number;
     readyToSign: boolean;
     blockingItems: number;
@@ -8261,12 +8264,12 @@ export declare const visitSchema: z.ZodObject<{
     createdAt: string;
     updatedAt: string;
     patientId: string;
+    anamnesis: string | null;
+    diagnosis: string | null;
     appointmentId: string | null;
     revision: number;
     complaint: string | null;
-    anamnesis: string | null;
     objectiveStatus: string | null;
-    diagnosis: string | null;
     treatmentPlan: string | null;
     doctorSummary: string | null;
 }, {
@@ -8276,11 +8279,11 @@ export declare const visitSchema: z.ZodObject<{
     createdAt: string;
     updatedAt: string;
     patientId: string;
+    anamnesis: string | null;
+    diagnosis: string | null;
     appointmentId: string | null;
     complaint: string | null;
-    anamnesis: string | null;
     objectiveStatus: string | null;
-    diagnosis: string | null;
     treatmentPlan: string | null;
     doctorSummary: string | null;
     revision?: number | undefined;
@@ -9087,7 +9090,7 @@ export declare const clinicalToothRowSchema: z.ZodObject<{
     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
     toothOrArea: string;
     diagnosisOrFinding: string;
     indication: string;
@@ -9098,7 +9101,7 @@ export declare const clinicalToothRowSchema: z.ZodObject<{
     orthodonticNotes?: string | null | undefined;
 }, {
     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
     toothOrArea: string;
     diagnosisOrFinding: string;
     indication: string;
@@ -9122,7 +9125,7 @@ export declare const clinicalToothRowsSchema: z.ZodArray<z.ZodObject<{
     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
     toothOrArea: string;
     diagnosisOrFinding: string;
     indication: string;
@@ -9133,7 +9136,7 @@ export declare const clinicalToothRowsSchema: z.ZodArray<z.ZodObject<{
     orthodonticNotes?: string | null | undefined;
 }, {
     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
     toothOrArea: string;
     diagnosisOrFinding: string;
     indication: string;
@@ -9176,14 +9179,14 @@ export declare const prescriptionMedicationRowSchema: z.ZodObject<{
     instructions: z.ZodString;
     duration: z.ZodString;
 }, "strip", z.ZodTypeAny, {
+    dosage: string;
     duration: string;
     medication: string;
-    dosage: string;
     instructions: string;
 }, {
+    dosage: string;
     duration: string;
     medication: string;
-    dosage: string;
     instructions: string;
 }>;
 export type PrescriptionMedicationRow = z.infer<typeof prescriptionMedicationRowSchema>;
@@ -9201,7 +9204,7 @@ export declare const prescriptionMedicationPayloadSchema: z.ZodObject<{
         orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9212,7 +9215,7 @@ export declare const prescriptionMedicationPayloadSchema: z.ZodObject<{
         orthodonticNotes?: string | null | undefined;
     }, {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9228,14 +9231,14 @@ export declare const prescriptionMedicationPayloadSchema: z.ZodObject<{
         instructions: z.ZodString;
         duration: z.ZodString;
     }, "strip", z.ZodTypeAny, {
+        dosage: string;
         duration: string;
         medication: string;
-        dosage: string;
         instructions: string;
     }, {
+        dosage: string;
         duration: string;
         medication: string;
-        dosage: string;
         instructions: string;
     }>, "many">;
     safetyNotes: z.ZodArray<z.ZodString, "many">;
@@ -9243,7 +9246,7 @@ export declare const prescriptionMedicationPayloadSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     clinicalToothRows: {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9254,9 +9257,9 @@ export declare const prescriptionMedicationPayloadSchema: z.ZodObject<{
         orthodonticNotes?: string | null | undefined;
     }[];
     medications: {
+        dosage: string;
         duration: string;
         medication: string;
-        dosage: string;
         instructions: string;
     }[];
     safetyNotes: string[];
@@ -9264,7 +9267,7 @@ export declare const prescriptionMedicationPayloadSchema: z.ZodObject<{
 }, {
     clinicalToothRows: {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9275,9 +9278,9 @@ export declare const prescriptionMedicationPayloadSchema: z.ZodObject<{
         orthodonticNotes?: string | null | undefined;
     }[];
     medications: {
+        dosage: string;
         duration: string;
         medication: string;
-        dosage: string;
         instructions: string;
     }[];
     safetyNotes: string[];
@@ -9298,7 +9301,7 @@ export declare const labWorkOrderPayloadSchema: z.ZodObject<{
         orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9309,7 +9312,7 @@ export declare const labWorkOrderPayloadSchema: z.ZodObject<{
         orthodonticNotes?: string | null | undefined;
     }, {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9331,7 +9334,7 @@ export declare const labWorkOrderPayloadSchema: z.ZodObject<{
     teethOrArea: string;
     clinicalToothRows: {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9351,7 +9354,7 @@ export declare const labWorkOrderPayloadSchema: z.ZodObject<{
     teethOrArea: string;
     clinicalToothRows: {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9511,7 +9514,7 @@ export declare const xrayCbctReferralPayloadSchema: z.ZodObject<{
         orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9522,7 +9525,7 @@ export declare const xrayCbctReferralPayloadSchema: z.ZodObject<{
         orthodonticNotes?: string | null | undefined;
     }, {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9544,13 +9547,13 @@ export declare const xrayCbctReferralPayloadSchema: z.ZodObject<{
     recipientClinic: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     dueDate: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
-    studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+    studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
     priority: "urgent" | "routine";
     pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
     indication: string;
     clinicalToothRows: {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9569,13 +9572,13 @@ export declare const xrayCbctReferralPayloadSchema: z.ZodObject<{
     dueDate?: string | null | undefined;
     recipientClinic?: string | null | undefined;
 }, {
-    studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+    studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
     priority: "urgent" | "routine";
     pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
     indication: string;
     clinicalToothRows: {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9656,7 +9659,7 @@ export declare const medicalRecordExtractPayloadSchema: z.ZodObject<{
         orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9667,7 +9670,7 @@ export declare const medicalRecordExtractPayloadSchema: z.ZodObject<{
         orthodonticNotes?: string | null | undefined;
     }, {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9687,12 +9690,12 @@ export declare const medicalRecordExtractPayloadSchema: z.ZodObject<{
     thirdPartyDataChecked: z.ZodLiteral<true>;
 }, "strip", z.ZodTypeAny, {
     doctorFullName: string;
-    objectiveStatus: string;
     diagnosis: string;
+    objectiveStatus: string;
     issuedAt: string;
     clinicalToothRows: {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9714,12 +9717,12 @@ export declare const medicalRecordExtractPayloadSchema: z.ZodObject<{
     preparedFromSignedMedicalRecords: true;
 }, {
     doctorFullName: string;
-    objectiveStatus: string;
     diagnosis: string;
+    objectiveStatus: string;
     issuedAt: string;
     clinicalToothRows: {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9915,7 +9918,7 @@ export declare const outpatientMedicalCard025uSpecialistVisitRecordSchema: z.Zod
         orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9926,7 +9929,7 @@ export declare const outpatientMedicalCard025uSpecialistVisitRecordSchema: z.Zod
         orthodonticNotes?: string | null | undefined;
     }, {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9938,10 +9941,11 @@ export declare const outpatientMedicalCard025uSpecialistVisitRecordSchema: z.Zod
     }>, "many">;
 }, "strip", z.ZodTypeAny, {
     doctorFullName: string;
+    complaints: string;
     anamnesis: string;
     clinicalToothRows: {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9955,7 +9959,6 @@ export declare const outpatientMedicalCard025uSpecialistVisitRecordSchema: z.Zod
     firstOrRepeat: "unknown" | "first" | "repeat";
     sourceVisitId: string;
     visitDate: string;
-    complaints: string;
     objectiveData: string;
     primaryDiagnosis: string;
     orders: string;
@@ -9974,10 +9977,11 @@ export declare const outpatientMedicalCard025uSpecialistVisitRecordSchema: z.Zod
     preferentialPrescriptions?: string | null | undefined;
 }, {
     doctorFullName: string;
+    complaints: string;
     anamnesis: string;
     clinicalToothRows: {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -9991,7 +9995,6 @@ export declare const outpatientMedicalCard025uSpecialistVisitRecordSchema: z.Zod
     firstOrRepeat: "unknown" | "first" | "repeat";
     sourceVisitId: string;
     visitDate: string;
-    complaints: string;
     objectiveData: string;
     primaryDiagnosis: string;
     orders: string;
@@ -10137,7 +10140,7 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
             orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -10148,7 +10151,7 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
             orthodonticNotes?: string | null | undefined;
         }, {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -10160,10 +10163,11 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
         }>, "many">;
     }, "strip", z.ZodTypeAny, {
         doctorFullName: string;
+        complaints: string;
         anamnesis: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -10177,7 +10181,6 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
         firstOrRepeat: "unknown" | "first" | "repeat";
         sourceVisitId: string;
         visitDate: string;
-        complaints: string;
         objectiveData: string;
         primaryDiagnosis: string;
         orders: string;
@@ -10196,10 +10199,11 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
         preferentialPrescriptions?: string | null | undefined;
     }, {
         doctorFullName: string;
+        complaints: string;
         anamnesis: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -10213,7 +10217,6 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
         firstOrRepeat: "unknown" | "first" | "repeat";
         sourceVisitId: string;
         visitDate: string;
-        complaints: string;
         objectiveData: string;
         primaryDiagnosis: string;
         orders: string;
@@ -10619,10 +10622,11 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
     }[];
     specialistVisitRecords: {
         doctorFullName: string;
+        complaints: string;
         anamnesis: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -10636,7 +10640,6 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
         firstOrRepeat: "unknown" | "first" | "repeat";
         sourceVisitId: string;
         visitDate: string;
-        complaints: string;
         objectiveData: string;
         primaryDiagnosis: string;
         orders: string;
@@ -10817,10 +10820,11 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
     }[];
     specialistVisitRecords: {
         doctorFullName: string;
+        complaints: string;
         anamnesis: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -10834,7 +10838,6 @@ export declare const outpatientMedicalCard025uPayloadSchema: z.ZodObject<{
         firstOrRepeat: "unknown" | "first" | "repeat";
         sourceVisitId: string;
         visitDate: string;
-        complaints: string;
         objectiveData: string;
         primaryDiagnosis: string;
         orders: string;
@@ -11229,7 +11232,7 @@ export declare const dentalMedicalCard043uPayloadSchema: z.ZodObject<{
         orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11240,7 +11243,7 @@ export declare const dentalMedicalCard043uPayloadSchema: z.ZodObject<{
         orthodonticNotes?: string | null | undefined;
     }, {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11286,14 +11289,14 @@ export declare const dentalMedicalCard043uPayloadSchema: z.ZodObject<{
     visitDate: string;
     diagnosisIcd10?: string | null | undefined;
     diagnosisText?: string | null | undefined;
+    anamnesis?: string | null | undefined;
     visitId?: string | null | undefined;
     complaint?: string | null | undefined;
-    anamnesis?: string | null | undefined;
     objectiveStatus?: string | null | undefined;
     treatmentPlan?: string | null | undefined;
     clinicalToothRows?: {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11357,14 +11360,14 @@ export declare const dentalMedicalCard043uPayloadSchema: z.ZodObject<{
     visitDate: string;
     diagnosisIcd10?: string | null | undefined;
     diagnosisText?: string | null | undefined;
+    anamnesis?: string | null | undefined;
     visitId?: string | null | undefined;
     complaint?: string | null | undefined;
-    anamnesis?: string | null | undefined;
     objectiveStatus?: string | null | undefined;
     treatmentPlan?: string | null | undefined;
     clinicalToothRows?: {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11427,10 +11430,10 @@ export declare const medicalRecordCopyRequestPayloadSchema: z.ZodObject<{
     includeDicomSourceData: boolean;
     identityVerified: true;
     thirdPartyDataExclusionAcknowledged: true;
+    specialInstructions?: string | null | undefined;
     periodStart?: string | null | undefined;
     periodEnd?: string | null | undefined;
     representativeAuthorityDocument?: string | null | undefined;
-    specialInstructions?: string | null | undefined;
 }, {
     requestedAt: string;
     recipientFullName: string;
@@ -11442,10 +11445,10 @@ export declare const medicalRecordCopyRequestPayloadSchema: z.ZodObject<{
     includeDicomSourceData: boolean;
     identityVerified: true;
     thirdPartyDataExclusionAcknowledged: true;
+    specialInstructions?: string | null | undefined;
     periodStart?: string | null | undefined;
     periodEnd?: string | null | undefined;
     representativeAuthorityDocument?: string | null | undefined;
-    specialInstructions?: string | null | undefined;
 }>;
 export type MedicalRecordCopyRequestPayload = z.infer<typeof medicalRecordCopyRequestPayloadSchema>;
 export declare const postVisitCareTopicSchema: z.ZodEnum<["extraction", "implantation", "filling_restoration", "endo", "surgery", "local_anesthesia", "hygiene", "prosthetics", "orthodontics", "periodontology", "other"]>;
@@ -11523,7 +11526,7 @@ export declare const treatmentPlanPayloadSchema: z.ZodObject<{
         orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11534,7 +11537,7 @@ export declare const treatmentPlanPayloadSchema: z.ZodObject<{
         orthodonticNotes?: string | null | undefined;
     }, {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11582,7 +11585,7 @@ export declare const treatmentPlanPayloadSchema: z.ZodObject<{
     teethOrArea: string;
     clinicalToothRows: {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11619,7 +11622,7 @@ export declare const treatmentPlanPayloadSchema: z.ZodObject<{
     teethOrArea: string;
     clinicalToothRows: {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11673,7 +11676,7 @@ export declare const treatmentPlanAcceptancePayloadSchema: z.ZodObject<{
         orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11684,7 +11687,7 @@ export declare const treatmentPlanAcceptancePayloadSchema: z.ZodObject<{
         orthodonticNotes?: string | null | undefined;
     }, {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11730,7 +11733,7 @@ export declare const treatmentPlanAcceptancePayloadSchema: z.ZodObject<{
     teethOrArea: string;
     clinicalToothRows: {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11765,7 +11768,7 @@ export declare const treatmentPlanAcceptancePayloadSchema: z.ZodObject<{
     teethOrArea: string;
     clinicalToothRows: {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11958,7 +11961,7 @@ export declare const procedureSpecificConsentPayloadSchema: z.ZodObject<{
         orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11969,7 +11972,7 @@ export declare const procedureSpecificConsentPayloadSchema: z.ZodObject<{
         orthodonticNotes?: string | null | undefined;
     }, {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -11997,7 +12000,7 @@ export declare const procedureSpecificConsentPayloadSchema: z.ZodObject<{
     diagnosisOrIndication: string;
     clinicalToothRows: {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -12026,7 +12029,7 @@ export declare const procedureSpecificConsentPayloadSchema: z.ZodObject<{
     diagnosisOrIndication: string;
     clinicalToothRows: {
         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
         toothOrArea: string;
         diagnosisOrFinding: string;
         indication: string;
@@ -12893,7 +12896,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -12904,7 +12907,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             orthodonticNotes?: string | null | undefined;
         }, {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -12920,14 +12923,14 @@ export declare const documentPayloadSchema: z.ZodObject<{
             instructions: z.ZodString;
             duration: z.ZodString;
         }, "strip", z.ZodTypeAny, {
+            dosage: string;
             duration: string;
             medication: string;
-            dosage: string;
             instructions: string;
         }, {
+            dosage: string;
             duration: string;
             medication: string;
-            dosage: string;
             instructions: string;
         }>, "many">;
         safetyNotes: z.ZodArray<z.ZodString, "many">;
@@ -12935,7 +12938,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -12946,9 +12949,9 @@ export declare const documentPayloadSchema: z.ZodObject<{
             orthodonticNotes?: string | null | undefined;
         }[];
         medications: {
+            dosage: string;
             duration: string;
             medication: string;
-            dosage: string;
             instructions: string;
         }[];
         safetyNotes: string[];
@@ -12956,7 +12959,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
     }, {
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -12967,9 +12970,9 @@ export declare const documentPayloadSchema: z.ZodObject<{
             orthodonticNotes?: string | null | undefined;
         }[];
         medications: {
+            dosage: string;
             duration: string;
             medication: string;
-            dosage: string;
             instructions: string;
         }[];
         safetyNotes: string[];
@@ -12989,7 +12992,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -13000,7 +13003,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             orthodonticNotes?: string | null | undefined;
         }, {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -13022,7 +13025,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         teethOrArea: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -13042,7 +13045,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         teethOrArea: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -13107,7 +13110,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -13118,7 +13121,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             orthodonticNotes?: string | null | undefined;
         }, {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -13140,13 +13143,13 @@ export declare const documentPayloadSchema: z.ZodObject<{
         recipientClinic: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         dueDate: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
-        studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+        studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
         priority: "urgent" | "routine";
         pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
         indication: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -13165,13 +13168,13 @@ export declare const documentPayloadSchema: z.ZodObject<{
         dueDate?: string | null | undefined;
         recipientClinic?: string | null | undefined;
     }, {
-        studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+        studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
         priority: "urgent" | "routine";
         pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
         indication: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -13357,7 +13360,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -13368,7 +13371,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -13380,10 +13383,11 @@ export declare const documentPayloadSchema: z.ZodObject<{
             }>, "many">;
         }, "strip", z.ZodTypeAny, {
             doctorFullName: string;
+            complaints: string;
             anamnesis: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -13397,7 +13401,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
             firstOrRepeat: "unknown" | "first" | "repeat";
             sourceVisitId: string;
             visitDate: string;
-            complaints: string;
             objectiveData: string;
             primaryDiagnosis: string;
             orders: string;
@@ -13416,10 +13419,11 @@ export declare const documentPayloadSchema: z.ZodObject<{
             preferentialPrescriptions?: string | null | undefined;
         }, {
             doctorFullName: string;
+            complaints: string;
             anamnesis: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -13433,7 +13437,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
             firstOrRepeat: "unknown" | "first" | "repeat";
             sourceVisitId: string;
             visitDate: string;
-            complaints: string;
             objectiveData: string;
             primaryDiagnosis: string;
             orders: string;
@@ -13839,10 +13842,11 @@ export declare const documentPayloadSchema: z.ZodObject<{
         }[];
         specialistVisitRecords: {
             doctorFullName: string;
+            complaints: string;
             anamnesis: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -13856,7 +13860,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
             firstOrRepeat: "unknown" | "first" | "repeat";
             sourceVisitId: string;
             visitDate: string;
-            complaints: string;
             objectiveData: string;
             primaryDiagnosis: string;
             orders: string;
@@ -14037,10 +14040,11 @@ export declare const documentPayloadSchema: z.ZodObject<{
         }[];
         specialistVisitRecords: {
             doctorFullName: string;
+            complaints: string;
             anamnesis: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -14054,7 +14058,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
             firstOrRepeat: "unknown" | "first" | "repeat";
             sourceVisitId: string;
             visitDate: string;
-            complaints: string;
             objectiveData: string;
             primaryDiagnosis: string;
             orders: string;
@@ -14336,7 +14339,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -14347,7 +14350,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             orthodonticNotes?: string | null | undefined;
         }, {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -14393,14 +14396,14 @@ export declare const documentPayloadSchema: z.ZodObject<{
         visitDate: string;
         diagnosisIcd10?: string | null | undefined;
         diagnosisText?: string | null | undefined;
+        anamnesis?: string | null | undefined;
         visitId?: string | null | undefined;
         complaint?: string | null | undefined;
-        anamnesis?: string | null | undefined;
         objectiveStatus?: string | null | undefined;
         treatmentPlan?: string | null | undefined;
         clinicalToothRows?: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -14464,14 +14467,14 @@ export declare const documentPayloadSchema: z.ZodObject<{
         visitDate: string;
         diagnosisIcd10?: string | null | undefined;
         diagnosisText?: string | null | undefined;
+        anamnesis?: string | null | undefined;
         visitId?: string | null | undefined;
         complaint?: string | null | undefined;
-        anamnesis?: string | null | undefined;
         objectiveStatus?: string | null | undefined;
         treatmentPlan?: string | null | undefined;
         clinicalToothRows?: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -15902,7 +15905,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -15913,7 +15916,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             orthodonticNotes?: string | null | undefined;
         }, {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -15933,12 +15936,12 @@ export declare const documentPayloadSchema: z.ZodObject<{
         thirdPartyDataChecked: z.ZodLiteral<true>;
     }, "strip", z.ZodTypeAny, {
         doctorFullName: string;
-        objectiveStatus: string;
         diagnosis: string;
+        objectiveStatus: string;
         issuedAt: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -15960,12 +15963,12 @@ export declare const documentPayloadSchema: z.ZodObject<{
         preparedFromSignedMedicalRecords: true;
     }, {
         doctorFullName: string;
-        objectiveStatus: string;
         diagnosis: string;
+        objectiveStatus: string;
         issuedAt: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16012,10 +16015,10 @@ export declare const documentPayloadSchema: z.ZodObject<{
         includeDicomSourceData: boolean;
         identityVerified: true;
         thirdPartyDataExclusionAcknowledged: true;
+        specialInstructions?: string | null | undefined;
         periodStart?: string | null | undefined;
         periodEnd?: string | null | undefined;
         representativeAuthorityDocument?: string | null | undefined;
-        specialInstructions?: string | null | undefined;
     }, {
         requestedAt: string;
         recipientFullName: string;
@@ -16027,10 +16030,10 @@ export declare const documentPayloadSchema: z.ZodObject<{
         includeDicomSourceData: boolean;
         identityVerified: true;
         thirdPartyDataExclusionAcknowledged: true;
+        specialInstructions?: string | null | undefined;
         periodStart?: string | null | undefined;
         periodEnd?: string | null | undefined;
         representativeAuthorityDocument?: string | null | undefined;
-        specialInstructions?: string | null | undefined;
     }>>;
     postVisitRecommendations: z.ZodOptional<z.ZodObject<{
         careTopic: z.ZodEnum<["extraction", "implantation", "filling_restoration", "endo", "surgery", "local_anesthesia", "hygiene", "prosthetics", "orthodontics", "periodontology", "other"]>;
@@ -16104,7 +16107,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16115,7 +16118,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             orthodonticNotes?: string | null | undefined;
         }, {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16163,7 +16166,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         teethOrArea: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16200,7 +16203,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         teethOrArea: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16251,7 +16254,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16262,7 +16265,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             orthodonticNotes?: string | null | undefined;
         }, {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16308,7 +16311,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         teethOrArea: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16343,7 +16346,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         teethOrArea: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16530,7 +16533,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16541,7 +16544,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             orthodonticNotes?: string | null | undefined;
         }, {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16569,7 +16572,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         diagnosisOrIndication: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16598,7 +16601,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         diagnosisOrIndication: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16711,7 +16714,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         teethOrArea: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16965,7 +16968,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
     prescriptionMedicationOrder?: {
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -16976,9 +16979,9 @@ export declare const documentPayloadSchema: z.ZodObject<{
             orthodonticNotes?: string | null | undefined;
         }[];
         medications: {
+            dosage: string;
             duration: string;
             medication: string;
-            dosage: string;
             instructions: string;
         }[];
         safetyNotes: string[];
@@ -16989,7 +16992,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         teethOrArea: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -17018,13 +17021,13 @@ export declare const documentPayloadSchema: z.ZodObject<{
         scopeNotes?: string | null | undefined;
     } | undefined;
     xrayCbctReferral?: {
-        studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+        studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
         priority: "urgent" | "routine";
         pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
         indication: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -17092,10 +17095,11 @@ export declare const documentPayloadSchema: z.ZodObject<{
         }[];
         specialistVisitRecords: {
             doctorFullName: string;
+            complaints: string;
             anamnesis: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -17109,7 +17113,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
             firstOrRepeat: "unknown" | "first" | "repeat";
             sourceVisitId: string;
             visitDate: string;
-            complaints: string;
             objectiveData: string;
             primaryDiagnosis: string;
             orders: string;
@@ -17287,14 +17290,14 @@ export declare const documentPayloadSchema: z.ZodObject<{
         visitDate: string;
         diagnosisIcd10?: string | null | undefined;
         diagnosisText?: string | null | undefined;
+        anamnesis?: string | null | undefined;
         visitId?: string | null | undefined;
         complaint?: string | null | undefined;
-        anamnesis?: string | null | undefined;
         objectiveStatus?: string | null | undefined;
         treatmentPlan?: string | null | undefined;
         clinicalToothRows?: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -17667,12 +17670,12 @@ export declare const documentPayloadSchema: z.ZodObject<{
     } | undefined;
     medicalRecordExtract?: {
         doctorFullName: string;
-        objectiveStatus: string;
         diagnosis: string;
+        objectiveStatus: string;
         issuedAt: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -17704,10 +17707,10 @@ export declare const documentPayloadSchema: z.ZodObject<{
         includeDicomSourceData: boolean;
         identityVerified: true;
         thirdPartyDataExclusionAcknowledged: true;
+        specialInstructions?: string | null | undefined;
         periodStart?: string | null | undefined;
         periodEnd?: string | null | undefined;
         representativeAuthorityDocument?: string | null | undefined;
-        specialInstructions?: string | null | undefined;
     } | undefined;
     postVisitRecommendations?: {
         doctorFullName: string;
@@ -17736,7 +17739,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         teethOrArea: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -17811,7 +17814,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         diagnosisOrIndication: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -17870,7 +17873,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         teethOrArea: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -18124,7 +18127,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
     prescriptionMedicationOrder?: {
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -18135,9 +18138,9 @@ export declare const documentPayloadSchema: z.ZodObject<{
             orthodonticNotes?: string | null | undefined;
         }[];
         medications: {
+            dosage: string;
             duration: string;
             medication: string;
-            dosage: string;
             instructions: string;
         }[];
         safetyNotes: string[];
@@ -18148,7 +18151,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         teethOrArea: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -18177,13 +18180,13 @@ export declare const documentPayloadSchema: z.ZodObject<{
         scopeNotes?: string | null | undefined;
     } | undefined;
     xrayCbctReferral?: {
-        studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+        studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
         priority: "urgent" | "routine";
         pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
         indication: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -18251,10 +18254,11 @@ export declare const documentPayloadSchema: z.ZodObject<{
         }[];
         specialistVisitRecords: {
             doctorFullName: string;
+            complaints: string;
             anamnesis: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -18268,7 +18272,6 @@ export declare const documentPayloadSchema: z.ZodObject<{
             firstOrRepeat: "unknown" | "first" | "repeat";
             sourceVisitId: string;
             visitDate: string;
-            complaints: string;
             objectiveData: string;
             primaryDiagnosis: string;
             orders: string;
@@ -18446,14 +18449,14 @@ export declare const documentPayloadSchema: z.ZodObject<{
         visitDate: string;
         diagnosisIcd10?: string | null | undefined;
         diagnosisText?: string | null | undefined;
+        anamnesis?: string | null | undefined;
         visitId?: string | null | undefined;
         complaint?: string | null | undefined;
-        anamnesis?: string | null | undefined;
         objectiveStatus?: string | null | undefined;
         treatmentPlan?: string | null | undefined;
         clinicalToothRows?: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -18826,12 +18829,12 @@ export declare const documentPayloadSchema: z.ZodObject<{
     } | undefined;
     medicalRecordExtract?: {
         doctorFullName: string;
-        objectiveStatus: string;
         diagnosis: string;
+        objectiveStatus: string;
         issuedAt: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -18863,10 +18866,10 @@ export declare const documentPayloadSchema: z.ZodObject<{
         includeDicomSourceData: boolean;
         identityVerified: true;
         thirdPartyDataExclusionAcknowledged: true;
+        specialInstructions?: string | null | undefined;
         periodStart?: string | null | undefined;
         periodEnd?: string | null | undefined;
         representativeAuthorityDocument?: string | null | undefined;
-        specialInstructions?: string | null | undefined;
     } | undefined;
     postVisitRecommendations?: {
         doctorFullName: string;
@@ -18895,7 +18898,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         teethOrArea: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -18970,7 +18973,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         diagnosisOrIndication: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -21215,7 +21218,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -21226,7 +21229,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -21242,14 +21245,14 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 instructions: z.ZodString;
                 duration: z.ZodString;
             }, "strip", z.ZodTypeAny, {
+                dosage: string;
                 duration: string;
                 medication: string;
-                dosage: string;
                 instructions: string;
             }, {
+                dosage: string;
                 duration: string;
                 medication: string;
-                dosage: string;
                 instructions: string;
             }>, "many">;
             safetyNotes: z.ZodArray<z.ZodString, "many">;
@@ -21257,7 +21260,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         }, "strip", z.ZodTypeAny, {
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -21268,9 +21271,9 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }[];
             medications: {
+                dosage: string;
                 duration: string;
                 medication: string;
-                dosage: string;
                 instructions: string;
             }[];
             safetyNotes: string[];
@@ -21278,7 +21281,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         }, {
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -21289,9 +21292,9 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }[];
             medications: {
+                dosage: string;
                 duration: string;
                 medication: string;
-                dosage: string;
                 instructions: string;
             }[];
             safetyNotes: string[];
@@ -21311,7 +21314,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -21322,7 +21325,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -21344,7 +21347,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -21364,7 +21367,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -21429,7 +21432,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -21440,7 +21443,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -21462,13 +21465,13 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             recipientClinic: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             dueDate: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
-            studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+            studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -21487,13 +21490,13 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             dueDate?: string | null | undefined;
             recipientClinic?: string | null | undefined;
         }, {
-            studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+            studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -21679,7 +21682,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 }, "strip", z.ZodTypeAny, {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -21690,7 +21693,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }, {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -21702,10 +21705,11 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 }>, "many">;
             }, "strip", z.ZodTypeAny, {
                 doctorFullName: string;
+                complaints: string;
                 anamnesis: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -21719,7 +21723,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 firstOrRepeat: "unknown" | "first" | "repeat";
                 sourceVisitId: string;
                 visitDate: string;
-                complaints: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
                 orders: string;
@@ -21738,10 +21741,11 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 preferentialPrescriptions?: string | null | undefined;
             }, {
                 doctorFullName: string;
+                complaints: string;
                 anamnesis: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -21755,7 +21759,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 firstOrRepeat: "unknown" | "first" | "repeat";
                 sourceVisitId: string;
                 visitDate: string;
-                complaints: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
                 orders: string;
@@ -22161,10 +22164,11 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             }[];
             specialistVisitRecords: {
                 doctorFullName: string;
+                complaints: string;
                 anamnesis: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -22178,7 +22182,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 firstOrRepeat: "unknown" | "first" | "repeat";
                 sourceVisitId: string;
                 visitDate: string;
-                complaints: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
                 orders: string;
@@ -22359,10 +22362,11 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             }[];
             specialistVisitRecords: {
                 doctorFullName: string;
+                complaints: string;
                 anamnesis: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -22376,7 +22380,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 firstOrRepeat: "unknown" | "first" | "repeat";
                 sourceVisitId: string;
                 visitDate: string;
-                complaints: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
                 orders: string;
@@ -22658,7 +22661,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -22669,7 +22672,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -22715,14 +22718,14 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             visitDate: string;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
+            anamnesis?: string | null | undefined;
             visitId?: string | null | undefined;
             complaint?: string | null | undefined;
-            anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -22786,14 +22789,14 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             visitDate: string;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
+            anamnesis?: string | null | undefined;
             visitId?: string | null | undefined;
             complaint?: string | null | undefined;
-            anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24224,7 +24227,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24235,7 +24238,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24255,12 +24258,12 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             thirdPartyDataChecked: z.ZodLiteral<true>;
         }, "strip", z.ZodTypeAny, {
             doctorFullName: string;
-            objectiveStatus: string;
             diagnosis: string;
+            objectiveStatus: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24282,12 +24285,12 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             preparedFromSignedMedicalRecords: true;
         }, {
             doctorFullName: string;
-            objectiveStatus: string;
             diagnosis: string;
+            objectiveStatus: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24334,10 +24337,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             includeDicomSourceData: boolean;
             identityVerified: true;
             thirdPartyDataExclusionAcknowledged: true;
+            specialInstructions?: string | null | undefined;
             periodStart?: string | null | undefined;
             periodEnd?: string | null | undefined;
             representativeAuthorityDocument?: string | null | undefined;
-            specialInstructions?: string | null | undefined;
         }, {
             requestedAt: string;
             recipientFullName: string;
@@ -24349,10 +24352,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             includeDicomSourceData: boolean;
             identityVerified: true;
             thirdPartyDataExclusionAcknowledged: true;
+            specialInstructions?: string | null | undefined;
             periodStart?: string | null | undefined;
             periodEnd?: string | null | undefined;
             representativeAuthorityDocument?: string | null | undefined;
-            specialInstructions?: string | null | undefined;
         }>>;
         postVisitRecommendations: z.ZodOptional<z.ZodObject<{
             careTopic: z.ZodEnum<["extraction", "implantation", "filling_restoration", "endo", "surgery", "local_anesthesia", "hygiene", "prosthetics", "orthodontics", "periodontology", "other"]>;
@@ -24426,7 +24429,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24437,7 +24440,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24485,7 +24488,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24522,7 +24525,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24573,7 +24576,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24584,7 +24587,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24630,7 +24633,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24665,7 +24668,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24852,7 +24855,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24863,7 +24866,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24891,7 +24894,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             diagnosisOrIndication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -24920,7 +24923,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             diagnosisOrIndication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -25033,7 +25036,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -25287,7 +25290,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         prescriptionMedicationOrder?: {
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -25298,9 +25301,9 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }[];
             medications: {
+                dosage: string;
                 duration: string;
                 medication: string;
-                dosage: string;
                 instructions: string;
             }[];
             safetyNotes: string[];
@@ -25311,7 +25314,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -25340,13 +25343,13 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             scopeNotes?: string | null | undefined;
         } | undefined;
         xrayCbctReferral?: {
-            studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+            studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -25414,10 +25417,11 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             }[];
             specialistVisitRecords: {
                 doctorFullName: string;
+                complaints: string;
                 anamnesis: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -25431,7 +25435,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 firstOrRepeat: "unknown" | "first" | "repeat";
                 sourceVisitId: string;
                 visitDate: string;
-                complaints: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
                 orders: string;
@@ -25609,14 +25612,14 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             visitDate: string;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
+            anamnesis?: string | null | undefined;
             visitId?: string | null | undefined;
             complaint?: string | null | undefined;
-            anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -25989,12 +25992,12 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         } | undefined;
         medicalRecordExtract?: {
             doctorFullName: string;
-            objectiveStatus: string;
             diagnosis: string;
+            objectiveStatus: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -26026,10 +26029,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             includeDicomSourceData: boolean;
             identityVerified: true;
             thirdPartyDataExclusionAcknowledged: true;
+            specialInstructions?: string | null | undefined;
             periodStart?: string | null | undefined;
             periodEnd?: string | null | undefined;
             representativeAuthorityDocument?: string | null | undefined;
-            specialInstructions?: string | null | undefined;
         } | undefined;
         postVisitRecommendations?: {
             doctorFullName: string;
@@ -26058,7 +26061,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -26133,7 +26136,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             diagnosisOrIndication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -26192,7 +26195,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -26446,7 +26449,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         prescriptionMedicationOrder?: {
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -26457,9 +26460,9 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }[];
             medications: {
+                dosage: string;
                 duration: string;
                 medication: string;
-                dosage: string;
                 instructions: string;
             }[];
             safetyNotes: string[];
@@ -26470,7 +26473,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -26499,13 +26502,13 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             scopeNotes?: string | null | undefined;
         } | undefined;
         xrayCbctReferral?: {
-            studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+            studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -26573,10 +26576,11 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             }[];
             specialistVisitRecords: {
                 doctorFullName: string;
+                complaints: string;
                 anamnesis: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -26590,7 +26594,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 firstOrRepeat: "unknown" | "first" | "repeat";
                 sourceVisitId: string;
                 visitDate: string;
-                complaints: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
                 orders: string;
@@ -26768,14 +26771,14 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             visitDate: string;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
+            anamnesis?: string | null | undefined;
             visitId?: string | null | undefined;
             complaint?: string | null | undefined;
-            anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -27148,12 +27151,12 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         } | undefined;
         medicalRecordExtract?: {
             doctorFullName: string;
-            objectiveStatus: string;
             diagnosis: string;
+            objectiveStatus: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -27185,10 +27188,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             includeDicomSourceData: boolean;
             identityVerified: true;
             thirdPartyDataExclusionAcknowledged: true;
+            specialInstructions?: string | null | undefined;
             periodStart?: string | null | undefined;
             periodEnd?: string | null | undefined;
             representativeAuthorityDocument?: string | null | undefined;
-            specialInstructions?: string | null | undefined;
         } | undefined;
         postVisitRecommendations?: {
             doctorFullName: string;
@@ -27217,7 +27220,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -27292,7 +27295,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             diagnosisOrIndication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -28273,7 +28276,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -28527,7 +28530,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         prescriptionMedicationOrder?: {
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -28538,9 +28541,9 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }[];
             medications: {
+                dosage: string;
                 duration: string;
                 medication: string;
-                dosage: string;
                 instructions: string;
             }[];
             safetyNotes: string[];
@@ -28551,7 +28554,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -28580,13 +28583,13 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             scopeNotes?: string | null | undefined;
         } | undefined;
         xrayCbctReferral?: {
-            studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+            studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -28654,10 +28657,11 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             }[];
             specialistVisitRecords: {
                 doctorFullName: string;
+                complaints: string;
                 anamnesis: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -28671,7 +28675,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 firstOrRepeat: "unknown" | "first" | "repeat";
                 sourceVisitId: string;
                 visitDate: string;
-                complaints: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
                 orders: string;
@@ -28849,14 +28852,14 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             visitDate: string;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
+            anamnesis?: string | null | undefined;
             visitId?: string | null | undefined;
             complaint?: string | null | undefined;
-            anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -29229,12 +29232,12 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         } | undefined;
         medicalRecordExtract?: {
             doctorFullName: string;
-            objectiveStatus: string;
             diagnosis: string;
+            objectiveStatus: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -29266,10 +29269,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             includeDicomSourceData: boolean;
             identityVerified: true;
             thirdPartyDataExclusionAcknowledged: true;
+            specialInstructions?: string | null | undefined;
             periodStart?: string | null | undefined;
             periodEnd?: string | null | undefined;
             representativeAuthorityDocument?: string | null | undefined;
-            specialInstructions?: string | null | undefined;
         } | undefined;
         postVisitRecommendations?: {
             doctorFullName: string;
@@ -29298,7 +29301,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -29373,7 +29376,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             diagnosisOrIndication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -29662,7 +29665,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -29916,7 +29919,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         prescriptionMedicationOrder?: {
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -29927,9 +29930,9 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }[];
             medications: {
+                dosage: string;
                 duration: string;
                 medication: string;
-                dosage: string;
                 instructions: string;
             }[];
             safetyNotes: string[];
@@ -29940,7 +29943,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -29969,13 +29972,13 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             scopeNotes?: string | null | undefined;
         } | undefined;
         xrayCbctReferral?: {
-            studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+            studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -30043,10 +30046,11 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             }[];
             specialistVisitRecords: {
                 doctorFullName: string;
+                complaints: string;
                 anamnesis: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -30060,7 +30064,6 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 firstOrRepeat: "unknown" | "first" | "repeat";
                 sourceVisitId: string;
                 visitDate: string;
-                complaints: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
                 orders: string;
@@ -30238,14 +30241,14 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             visitDate: string;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
+            anamnesis?: string | null | undefined;
             visitId?: string | null | undefined;
             complaint?: string | null | undefined;
-            anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -30618,12 +30621,12 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         } | undefined;
         medicalRecordExtract?: {
             doctorFullName: string;
-            objectiveStatus: string;
             diagnosis: string;
+            objectiveStatus: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -30655,10 +30658,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             includeDicomSourceData: boolean;
             identityVerified: true;
             thirdPartyDataExclusionAcknowledged: true;
+            specialInstructions?: string | null | undefined;
             periodStart?: string | null | undefined;
             periodEnd?: string | null | undefined;
             representativeAuthorityDocument?: string | null | undefined;
-            specialInstructions?: string | null | undefined;
         } | undefined;
         postVisitRecommendations?: {
             doctorFullName: string;
@@ -30687,7 +30690,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -30762,7 +30765,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             diagnosisOrIndication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32025,7 +32028,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32036,7 +32039,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32052,14 +32055,14 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 instructions: z.ZodString;
                 duration: z.ZodString;
             }, "strip", z.ZodTypeAny, {
+                dosage: string;
                 duration: string;
                 medication: string;
-                dosage: string;
                 instructions: string;
             }, {
+                dosage: string;
                 duration: string;
                 medication: string;
-                dosage: string;
                 instructions: string;
             }>, "many">;
             safetyNotes: z.ZodArray<z.ZodString, "many">;
@@ -32067,7 +32070,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         }, "strip", z.ZodTypeAny, {
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32078,9 +32081,9 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticNotes?: string | null | undefined;
             }[];
             medications: {
+                dosage: string;
                 duration: string;
                 medication: string;
-                dosage: string;
                 instructions: string;
             }[];
             safetyNotes: string[];
@@ -32088,7 +32091,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         }, {
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32099,9 +32102,9 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticNotes?: string | null | undefined;
             }[];
             medications: {
+                dosage: string;
                 duration: string;
                 medication: string;
-                dosage: string;
                 instructions: string;
             }[];
             safetyNotes: string[];
@@ -32121,7 +32124,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32132,7 +32135,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32154,7 +32157,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32174,7 +32177,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32239,7 +32242,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32250,7 +32253,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32272,13 +32275,13 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             recipientClinic: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             dueDate: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
-            studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+            studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32297,13 +32300,13 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             dueDate?: string | null | undefined;
             recipientClinic?: string | null | undefined;
         }, {
-            studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+            studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -32489,7 +32492,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 }, "strip", z.ZodTypeAny, {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -32500,7 +32503,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                     orthodonticNotes?: string | null | undefined;
                 }, {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -32512,10 +32515,11 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 }>, "many">;
             }, "strip", z.ZodTypeAny, {
                 doctorFullName: string;
+                complaints: string;
                 anamnesis: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -32529,7 +32533,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 firstOrRepeat: "unknown" | "first" | "repeat";
                 sourceVisitId: string;
                 visitDate: string;
-                complaints: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
                 orders: string;
@@ -32548,10 +32551,11 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 preferentialPrescriptions?: string | null | undefined;
             }, {
                 doctorFullName: string;
+                complaints: string;
                 anamnesis: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -32565,7 +32569,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 firstOrRepeat: "unknown" | "first" | "repeat";
                 sourceVisitId: string;
                 visitDate: string;
-                complaints: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
                 orders: string;
@@ -32971,10 +32974,11 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             }[];
             specialistVisitRecords: {
                 doctorFullName: string;
+                complaints: string;
                 anamnesis: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -32988,7 +32992,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 firstOrRepeat: "unknown" | "first" | "repeat";
                 sourceVisitId: string;
                 visitDate: string;
-                complaints: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
                 orders: string;
@@ -33169,10 +33172,11 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             }[];
             specialistVisitRecords: {
                 doctorFullName: string;
+                complaints: string;
                 anamnesis: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -33186,7 +33190,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 firstOrRepeat: "unknown" | "first" | "repeat";
                 sourceVisitId: string;
                 visitDate: string;
-                complaints: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
                 orders: string;
@@ -33468,7 +33471,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -33479,7 +33482,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -33525,14 +33528,14 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             visitDate: string;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
+            anamnesis?: string | null | undefined;
             visitId?: string | null | undefined;
             complaint?: string | null | undefined;
-            anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -33596,14 +33599,14 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             visitDate: string;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
+            anamnesis?: string | null | undefined;
             visitId?: string | null | undefined;
             complaint?: string | null | undefined;
-            anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35034,7 +35037,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35045,7 +35048,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35065,12 +35068,12 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             thirdPartyDataChecked: z.ZodLiteral<true>;
         }, "strip", z.ZodTypeAny, {
             doctorFullName: string;
-            objectiveStatus: string;
             diagnosis: string;
+            objectiveStatus: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35092,12 +35095,12 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             preparedFromSignedMedicalRecords: true;
         }, {
             doctorFullName: string;
-            objectiveStatus: string;
             diagnosis: string;
+            objectiveStatus: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35144,10 +35147,10 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             includeDicomSourceData: boolean;
             identityVerified: true;
             thirdPartyDataExclusionAcknowledged: true;
+            specialInstructions?: string | null | undefined;
             periodStart?: string | null | undefined;
             periodEnd?: string | null | undefined;
             representativeAuthorityDocument?: string | null | undefined;
-            specialInstructions?: string | null | undefined;
         }, {
             requestedAt: string;
             recipientFullName: string;
@@ -35159,10 +35162,10 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             includeDicomSourceData: boolean;
             identityVerified: true;
             thirdPartyDataExclusionAcknowledged: true;
+            specialInstructions?: string | null | undefined;
             periodStart?: string | null | undefined;
             periodEnd?: string | null | undefined;
             representativeAuthorityDocument?: string | null | undefined;
-            specialInstructions?: string | null | undefined;
         }>>;
         postVisitRecommendations: z.ZodOptional<z.ZodObject<{
             careTopic: z.ZodEnum<["extraction", "implantation", "filling_restoration", "endo", "surgery", "local_anesthesia", "hygiene", "prosthetics", "orthodontics", "periodontology", "other"]>;
@@ -35236,7 +35239,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35247,7 +35250,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35295,7 +35298,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35332,7 +35335,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35383,7 +35386,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35394,7 +35397,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35440,7 +35443,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35475,7 +35478,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35662,7 +35665,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35673,7 +35676,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35701,7 +35704,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             diagnosisOrIndication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35730,7 +35733,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             diagnosisOrIndication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -35843,7 +35846,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -36097,7 +36100,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         prescriptionMedicationOrder?: {
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -36108,9 +36111,9 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticNotes?: string | null | undefined;
             }[];
             medications: {
+                dosage: string;
                 duration: string;
                 medication: string;
-                dosage: string;
                 instructions: string;
             }[];
             safetyNotes: string[];
@@ -36121,7 +36124,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -36150,13 +36153,13 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             scopeNotes?: string | null | undefined;
         } | undefined;
         xrayCbctReferral?: {
-            studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+            studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -36224,10 +36227,11 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             }[];
             specialistVisitRecords: {
                 doctorFullName: string;
+                complaints: string;
                 anamnesis: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -36241,7 +36245,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 firstOrRepeat: "unknown" | "first" | "repeat";
                 sourceVisitId: string;
                 visitDate: string;
-                complaints: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
                 orders: string;
@@ -36419,14 +36422,14 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             visitDate: string;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
+            anamnesis?: string | null | undefined;
             visitId?: string | null | undefined;
             complaint?: string | null | undefined;
-            anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -36799,12 +36802,12 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         } | undefined;
         medicalRecordExtract?: {
             doctorFullName: string;
-            objectiveStatus: string;
             diagnosis: string;
+            objectiveStatus: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -36836,10 +36839,10 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             includeDicomSourceData: boolean;
             identityVerified: true;
             thirdPartyDataExclusionAcknowledged: true;
+            specialInstructions?: string | null | undefined;
             periodStart?: string | null | undefined;
             periodEnd?: string | null | undefined;
             representativeAuthorityDocument?: string | null | undefined;
-            specialInstructions?: string | null | undefined;
         } | undefined;
         postVisitRecommendations?: {
             doctorFullName: string;
@@ -36868,7 +36871,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -36943,7 +36946,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             diagnosisOrIndication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -37002,7 +37005,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -37256,7 +37259,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         prescriptionMedicationOrder?: {
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -37267,9 +37270,9 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 orthodonticNotes?: string | null | undefined;
             }[];
             medications: {
+                dosage: string;
                 duration: string;
                 medication: string;
-                dosage: string;
                 instructions: string;
             }[];
             safetyNotes: string[];
@@ -37280,7 +37283,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -37309,13 +37312,13 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             scopeNotes?: string | null | undefined;
         } | undefined;
         xrayCbctReferral?: {
-            studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+            studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -37383,10 +37386,11 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             }[];
             specialistVisitRecords: {
                 doctorFullName: string;
+                complaints: string;
                 anamnesis: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -37400,7 +37404,6 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 firstOrRepeat: "unknown" | "first" | "repeat";
                 sourceVisitId: string;
                 visitDate: string;
-                complaints: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
                 orders: string;
@@ -37578,14 +37581,14 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             visitDate: string;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
+            anamnesis?: string | null | undefined;
             visitId?: string | null | undefined;
             complaint?: string | null | undefined;
-            anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -37958,12 +37961,12 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         } | undefined;
         medicalRecordExtract?: {
             doctorFullName: string;
-            objectiveStatus: string;
             diagnosis: string;
+            objectiveStatus: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -37995,10 +37998,10 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             includeDicomSourceData: boolean;
             identityVerified: true;
             thirdPartyDataExclusionAcknowledged: true;
+            specialInstructions?: string | null | undefined;
             periodStart?: string | null | undefined;
             periodEnd?: string | null | undefined;
             representativeAuthorityDocument?: string | null | undefined;
-            specialInstructions?: string | null | undefined;
         } | undefined;
         postVisitRecommendations?: {
             doctorFullName: string;
@@ -38027,7 +38030,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -38102,7 +38105,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             diagnosisOrIndication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -39593,7 +39596,7 @@ export declare const imagingStudySchema: z.ZodObject<{
     sourceName: string;
     sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
     visitId: string | null;
-    kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo";
+    kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo";
     toothCode: string | null;
     region: string | null;
     capturedAt: string;
@@ -39611,7 +39614,7 @@ export declare const imagingStudySchema: z.ZodObject<{
     sourceName: string;
     sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
     visitId: string | null;
-    kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo";
+    kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo";
     toothCode: string | null;
     region: string | null;
     capturedAt: string;
@@ -39883,7 +39886,7 @@ export declare const dashboardSchema: z.ZodObject<{
             phone: string | null;
             fullName: string;
             role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
-            specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
+            specialties: ("pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal")[];
             canSignMedicalRecords: boolean;
             canManageMoney: boolean;
             canManageImports: boolean;
@@ -39904,7 +39907,7 @@ export declare const dashboardSchema: z.ZodObject<{
             phone: string | null;
             fullName: string;
             role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
-            specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
+            specialties: ("pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal")[];
             canSignMedicalRecords: boolean;
             canManageMoney: boolean;
             canManageImports: boolean;
@@ -39959,7 +39962,7 @@ export declare const dashboardSchema: z.ZodObject<{
             name: string;
             active: boolean;
             room: string | null;
-            specialization: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | null;
+            specialization: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | null;
             hasXraySensor: boolean;
             hasMicroscope: boolean;
             hasSurgeryKit: boolean;
@@ -39976,7 +39979,7 @@ export declare const dashboardSchema: z.ZodObject<{
             name: string;
             active: boolean;
             room: string | null;
-            specialization: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | null;
+            specialization: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | null;
             hasXraySensor: boolean;
             hasMicroscope: boolean;
             hasSurgeryKit: boolean;
@@ -40000,9 +40003,9 @@ export declare const dashboardSchema: z.ZodObject<{
         }, "strip", z.ZodTypeAny, {
             status: "usable_now" | "needs_mapping" | "planned_connector";
             id: string;
+            category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
             title: string;
             vendor: string;
-            category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
             supportedInputs: string[];
             capabilities: ("imaging" | "documents" | "patients" | "appointments" | "visits" | "services" | "payments" | "tax_documents" | "audit")[];
             migrationNotes: string[];
@@ -40010,9 +40013,9 @@ export declare const dashboardSchema: z.ZodObject<{
         }, {
             status: "usable_now" | "needs_mapping" | "planned_connector";
             id: string;
+            category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
             title: string;
             vendor: string;
-            category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
             supportedInputs: string[];
             capabilities: ("imaging" | "documents" | "patients" | "appointments" | "visits" | "services" | "payments" | "tax_documents" | "audit")[];
             migrationNotes: string[];
@@ -40144,7 +40147,7 @@ export declare const dashboardSchema: z.ZodObject<{
             phone: string | null;
             fullName: string;
             role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
-            specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
+            specialties: ("pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal")[];
             canSignMedicalRecords: boolean;
             canManageMoney: boolean;
             canManageImports: boolean;
@@ -40162,7 +40165,7 @@ export declare const dashboardSchema: z.ZodObject<{
             name: string;
             active: boolean;
             room: string | null;
-            specialization: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | null;
+            specialization: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | null;
             hasXraySensor: boolean;
             hasMicroscope: boolean;
             hasSurgeryKit: boolean;
@@ -40176,9 +40179,9 @@ export declare const dashboardSchema: z.ZodObject<{
         integrationPresets: {
             status: "usable_now" | "needs_mapping" | "planned_connector";
             id: string;
+            category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
             title: string;
             vendor: string;
-            category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
             supportedInputs: string[];
             capabilities: ("imaging" | "documents" | "patients" | "appointments" | "visits" | "services" | "payments" | "tax_documents" | "audit")[];
             migrationNotes: string[];
@@ -40264,7 +40267,7 @@ export declare const dashboardSchema: z.ZodObject<{
             phone: string | null;
             fullName: string;
             role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
-            specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
+            specialties: ("pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal")[];
             canSignMedicalRecords: boolean;
             canManageMoney: boolean;
             canManageImports: boolean;
@@ -40282,7 +40285,7 @@ export declare const dashboardSchema: z.ZodObject<{
             name: string;
             active: boolean;
             room: string | null;
-            specialization: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | null;
+            specialization: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | null;
             hasXraySensor: boolean;
             hasMicroscope: boolean;
             hasSurgeryKit: boolean;
@@ -40296,9 +40299,9 @@ export declare const dashboardSchema: z.ZodObject<{
         integrationPresets: {
             status: "usable_now" | "needs_mapping" | "planned_connector";
             id: string;
+            category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
             title: string;
             vendor: string;
-            category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
             supportedInputs: string[];
             capabilities: ("imaging" | "documents" | "patients" | "appointments" | "visits" | "services" | "payments" | "tax_documents" | "audit")[];
             migrationNotes: string[];
@@ -40368,6 +40371,7 @@ export declare const dashboardSchema: z.ZodObject<{
             flags: z.ZodArray<z.ZodString, "many">;
         }, "strip", z.ZodTypeAny, {
             id: string;
+            state: "healthy" | "idle" | "tight" | "overbooked";
             title: string;
             kind: "doctor" | "assistant" | "chair";
             subtitle: string;
@@ -40375,10 +40379,10 @@ export declare const dashboardSchema: z.ZodObject<{
             appointmentCount: number;
             utilizationPercent: number;
             nextFreeAt: string | null;
-            state: "healthy" | "idle" | "tight" | "overbooked";
             flags: string[];
         }, {
             id: string;
+            state: "healthy" | "idle" | "tight" | "overbooked";
             title: string;
             kind: "doctor" | "assistant" | "chair";
             subtitle: string;
@@ -40386,7 +40390,6 @@ export declare const dashboardSchema: z.ZodObject<{
             appointmentCount: number;
             utilizationPercent: number;
             nextFreeAt: string | null;
-            state: "healthy" | "idle" | "tight" | "overbooked";
             flags: string[];
         }>, "many">;
         assistantLoads: z.ZodArray<z.ZodObject<{
@@ -40402,6 +40405,7 @@ export declare const dashboardSchema: z.ZodObject<{
             flags: z.ZodArray<z.ZodString, "many">;
         }, "strip", z.ZodTypeAny, {
             id: string;
+            state: "healthy" | "idle" | "tight" | "overbooked";
             title: string;
             kind: "doctor" | "assistant" | "chair";
             subtitle: string;
@@ -40409,10 +40413,10 @@ export declare const dashboardSchema: z.ZodObject<{
             appointmentCount: number;
             utilizationPercent: number;
             nextFreeAt: string | null;
-            state: "healthy" | "idle" | "tight" | "overbooked";
             flags: string[];
         }, {
             id: string;
+            state: "healthy" | "idle" | "tight" | "overbooked";
             title: string;
             kind: "doctor" | "assistant" | "chair";
             subtitle: string;
@@ -40420,7 +40424,6 @@ export declare const dashboardSchema: z.ZodObject<{
             appointmentCount: number;
             utilizationPercent: number;
             nextFreeAt: string | null;
-            state: "healthy" | "idle" | "tight" | "overbooked";
             flags: string[];
         }>, "many">;
         chairLoads: z.ZodArray<z.ZodObject<{
@@ -40436,6 +40439,7 @@ export declare const dashboardSchema: z.ZodObject<{
             flags: z.ZodArray<z.ZodString, "many">;
         }, "strip", z.ZodTypeAny, {
             id: string;
+            state: "healthy" | "idle" | "tight" | "overbooked";
             title: string;
             kind: "doctor" | "assistant" | "chair";
             subtitle: string;
@@ -40443,10 +40447,10 @@ export declare const dashboardSchema: z.ZodObject<{
             appointmentCount: number;
             utilizationPercent: number;
             nextFreeAt: string | null;
-            state: "healthy" | "idle" | "tight" | "overbooked";
             flags: string[];
         }, {
             id: string;
+            state: "healthy" | "idle" | "tight" | "overbooked";
             title: string;
             kind: "doctor" | "assistant" | "chair";
             subtitle: string;
@@ -40454,7 +40458,6 @@ export declare const dashboardSchema: z.ZodObject<{
             appointmentCount: number;
             utilizationPercent: number;
             nextFreeAt: string | null;
-            state: "healthy" | "idle" | "tight" | "overbooked";
             flags: string[];
         }>, "many">;
         roleQueues: z.ZodArray<z.ZodObject<{
@@ -40518,6 +40521,7 @@ export declare const dashboardSchema: z.ZodObject<{
         };
         doctorLoads: {
             id: string;
+            state: "healthy" | "idle" | "tight" | "overbooked";
             title: string;
             kind: "doctor" | "assistant" | "chair";
             subtitle: string;
@@ -40525,11 +40529,11 @@ export declare const dashboardSchema: z.ZodObject<{
             appointmentCount: number;
             utilizationPercent: number;
             nextFreeAt: string | null;
-            state: "healthy" | "idle" | "tight" | "overbooked";
             flags: string[];
         }[];
         assistantLoads: {
             id: string;
+            state: "healthy" | "idle" | "tight" | "overbooked";
             title: string;
             kind: "doctor" | "assistant" | "chair";
             subtitle: string;
@@ -40537,11 +40541,11 @@ export declare const dashboardSchema: z.ZodObject<{
             appointmentCount: number;
             utilizationPercent: number;
             nextFreeAt: string | null;
-            state: "healthy" | "idle" | "tight" | "overbooked";
             flags: string[];
         }[];
         chairLoads: {
             id: string;
+            state: "healthy" | "idle" | "tight" | "overbooked";
             title: string;
             kind: "doctor" | "assistant" | "chair";
             subtitle: string;
@@ -40549,7 +40553,6 @@ export declare const dashboardSchema: z.ZodObject<{
             appointmentCount: number;
             utilizationPercent: number;
             nextFreeAt: string | null;
-            state: "healthy" | "idle" | "tight" | "overbooked";
             flags: string[];
         }[];
         roleQueues: {
@@ -40581,6 +40584,7 @@ export declare const dashboardSchema: z.ZodObject<{
         };
         doctorLoads: {
             id: string;
+            state: "healthy" | "idle" | "tight" | "overbooked";
             title: string;
             kind: "doctor" | "assistant" | "chair";
             subtitle: string;
@@ -40588,11 +40592,11 @@ export declare const dashboardSchema: z.ZodObject<{
             appointmentCount: number;
             utilizationPercent: number;
             nextFreeAt: string | null;
-            state: "healthy" | "idle" | "tight" | "overbooked";
             flags: string[];
         }[];
         assistantLoads: {
             id: string;
+            state: "healthy" | "idle" | "tight" | "overbooked";
             title: string;
             kind: "doctor" | "assistant" | "chair";
             subtitle: string;
@@ -40600,11 +40604,11 @@ export declare const dashboardSchema: z.ZodObject<{
             appointmentCount: number;
             utilizationPercent: number;
             nextFreeAt: string | null;
-            state: "healthy" | "idle" | "tight" | "overbooked";
             flags: string[];
         }[];
         chairLoads: {
             id: string;
+            state: "healthy" | "idle" | "tight" | "overbooked";
             title: string;
             kind: "doctor" | "assistant" | "chair";
             subtitle: string;
@@ -40612,7 +40616,6 @@ export declare const dashboardSchema: z.ZodObject<{
             appointmentCount: number;
             utilizationPercent: number;
             nextFreeAt: string | null;
-            state: "healthy" | "idle" | "tight" | "overbooked";
             flags: string[];
         }[];
         roleQueues: {
@@ -40936,41 +40939,41 @@ export declare const dashboardSchema: z.ZodObject<{
             ready: z.ZodBoolean;
             detail: z.ZodString;
         }, "strip", z.ZodTypeAny, {
+            key: string;
             ready: boolean;
             title: string;
             detail: string;
-            key: string;
         }, {
+            key: string;
             ready: boolean;
             title: string;
             detail: string;
-            key: string;
         }>, "many">;
     }, "strip", z.ZodTypeAny, {
         patientId: string | null;
+        state: "ready" | "blocked" | "needs_attention";
         warnings: string[];
         checks: {
+            key: string;
             ready: boolean;
             title: string;
             detail: string;
-            key: string;
         }[];
         nextAction: string;
-        state: "ready" | "blocked" | "needs_attention";
         ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
         blockers: string[];
         appointmentId: string;
         score: number;
     }, {
         patientId: string | null;
+        state: "ready" | "blocked" | "needs_attention";
         checks: {
+            key: string;
             ready: boolean;
             title: string;
             detail: string;
-            key: string;
         }[];
         nextAction: string;
-        state: "ready" | "blocked" | "needs_attention";
         ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
         blockers: string[];
         appointmentId: string;
@@ -41030,12 +41033,12 @@ export declare const dashboardSchema: z.ZodObject<{
         createdAt: string;
         updatedAt: string;
         patientId: string;
+        anamnesis: string | null;
+        diagnosis: string | null;
         appointmentId: string | null;
         revision: number;
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         doctorSummary: string | null;
     }, {
@@ -41045,11 +41048,11 @@ export declare const dashboardSchema: z.ZodObject<{
         createdAt: string;
         updatedAt: string;
         patientId: string;
+        anamnesis: string | null;
+        diagnosis: string | null;
         appointmentId: string | null;
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         doctorSummary: string | null;
         revision?: number | undefined;
@@ -41092,8 +41095,6 @@ export declare const dashboardSchema: z.ZodObject<{
             section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         }>, "many">;
     }, "strip", z.ZodTypeAny, {
-        visitId: string;
-        nextAction: string;
         items: {
             id: string;
             ready: boolean;
@@ -41105,12 +41106,12 @@ export declare const dashboardSchema: z.ZodObject<{
             actionLabel: string;
             section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         }[];
+        visitId: string;
+        nextAction: string;
         score: number;
         readyToSign: boolean;
         blockingItems: number;
     }, {
-        visitId: string;
-        nextAction: string;
         items: {
             id: string;
             ready: boolean;
@@ -41122,6 +41123,8 @@ export declare const dashboardSchema: z.ZodObject<{
             actionLabel: string;
             section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         }[];
+        visitId: string;
+        nextAction: string;
         score: number;
         readyToSign: boolean;
         blockingItems: number;
@@ -42113,7 +42116,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 }, "strip", z.ZodTypeAny, {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -42124,7 +42127,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }, {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -42140,14 +42143,14 @@ export declare const dashboardSchema: z.ZodObject<{
                     instructions: z.ZodString;
                     duration: z.ZodString;
                 }, "strip", z.ZodTypeAny, {
+                    dosage: string;
                     duration: string;
                     medication: string;
-                    dosage: string;
                     instructions: string;
                 }, {
+                    dosage: string;
                     duration: string;
                     medication: string;
-                    dosage: string;
                     instructions: string;
                 }>, "many">;
                 safetyNotes: z.ZodArray<z.ZodString, "many">;
@@ -42155,7 +42158,7 @@ export declare const dashboardSchema: z.ZodObject<{
             }, "strip", z.ZodTypeAny, {
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -42166,9 +42169,9 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 medications: {
+                    dosage: string;
                     duration: string;
                     medication: string;
-                    dosage: string;
                     instructions: string;
                 }[];
                 safetyNotes: string[];
@@ -42176,7 +42179,7 @@ export declare const dashboardSchema: z.ZodObject<{
             }, {
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -42187,9 +42190,9 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 medications: {
+                    dosage: string;
                     duration: string;
                     medication: string;
-                    dosage: string;
                     instructions: string;
                 }[];
                 safetyNotes: string[];
@@ -42209,7 +42212,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 }, "strip", z.ZodTypeAny, {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -42220,7 +42223,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }, {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -42242,7 +42245,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 teethOrArea: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -42262,7 +42265,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 teethOrArea: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -42327,7 +42330,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 }, "strip", z.ZodTypeAny, {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -42338,7 +42341,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }, {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -42360,13 +42363,13 @@ export declare const dashboardSchema: z.ZodObject<{
                 recipientClinic: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 dueDate: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
-                studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+                studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
                 priority: "urgent" | "routine";
                 pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
                 indication: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -42385,13 +42388,13 @@ export declare const dashboardSchema: z.ZodObject<{
                 dueDate?: string | null | undefined;
                 recipientClinic?: string | null | undefined;
             }, {
-                studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+                studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
                 priority: "urgent" | "routine";
                 pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
                 indication: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -42577,7 +42580,7 @@ export declare const dashboardSchema: z.ZodObject<{
                         orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                     }, "strip", z.ZodTypeAny, {
                         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                         toothOrArea: string;
                         diagnosisOrFinding: string;
                         indication: string;
@@ -42588,7 +42591,7 @@ export declare const dashboardSchema: z.ZodObject<{
                         orthodonticNotes?: string | null | undefined;
                     }, {
                         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                         toothOrArea: string;
                         diagnosisOrFinding: string;
                         indication: string;
@@ -42600,10 +42603,11 @@ export declare const dashboardSchema: z.ZodObject<{
                     }>, "many">;
                 }, "strip", z.ZodTypeAny, {
                     doctorFullName: string;
+                    complaints: string;
                     anamnesis: string;
                     clinicalToothRows: {
                         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                         toothOrArea: string;
                         diagnosisOrFinding: string;
                         indication: string;
@@ -42617,7 +42621,6 @@ export declare const dashboardSchema: z.ZodObject<{
                     firstOrRepeat: "unknown" | "first" | "repeat";
                     sourceVisitId: string;
                     visitDate: string;
-                    complaints: string;
                     objectiveData: string;
                     primaryDiagnosis: string;
                     orders: string;
@@ -42636,10 +42639,11 @@ export declare const dashboardSchema: z.ZodObject<{
                     preferentialPrescriptions?: string | null | undefined;
                 }, {
                     doctorFullName: string;
+                    complaints: string;
                     anamnesis: string;
                     clinicalToothRows: {
                         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                         toothOrArea: string;
                         diagnosisOrFinding: string;
                         indication: string;
@@ -42653,7 +42657,6 @@ export declare const dashboardSchema: z.ZodObject<{
                     firstOrRepeat: "unknown" | "first" | "repeat";
                     sourceVisitId: string;
                     visitDate: string;
-                    complaints: string;
                     objectiveData: string;
                     primaryDiagnosis: string;
                     orders: string;
@@ -43059,10 +43062,11 @@ export declare const dashboardSchema: z.ZodObject<{
                 }[];
                 specialistVisitRecords: {
                     doctorFullName: string;
+                    complaints: string;
                     anamnesis: string;
                     clinicalToothRows: {
                         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                         toothOrArea: string;
                         diagnosisOrFinding: string;
                         indication: string;
@@ -43076,7 +43080,6 @@ export declare const dashboardSchema: z.ZodObject<{
                     firstOrRepeat: "unknown" | "first" | "repeat";
                     sourceVisitId: string;
                     visitDate: string;
-                    complaints: string;
                     objectiveData: string;
                     primaryDiagnosis: string;
                     orders: string;
@@ -43257,10 +43260,11 @@ export declare const dashboardSchema: z.ZodObject<{
                 }[];
                 specialistVisitRecords: {
                     doctorFullName: string;
+                    complaints: string;
                     anamnesis: string;
                     clinicalToothRows: {
                         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                         toothOrArea: string;
                         diagnosisOrFinding: string;
                         indication: string;
@@ -43274,7 +43278,6 @@ export declare const dashboardSchema: z.ZodObject<{
                     firstOrRepeat: "unknown" | "first" | "repeat";
                     sourceVisitId: string;
                     visitDate: string;
-                    complaints: string;
                     objectiveData: string;
                     primaryDiagnosis: string;
                     orders: string;
@@ -43556,7 +43559,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 }, "strip", z.ZodTypeAny, {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -43567,7 +43570,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }, {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -43613,14 +43616,14 @@ export declare const dashboardSchema: z.ZodObject<{
                 visitDate: string;
                 diagnosisIcd10?: string | null | undefined;
                 diagnosisText?: string | null | undefined;
+                anamnesis?: string | null | undefined;
                 visitId?: string | null | undefined;
                 complaint?: string | null | undefined;
-                anamnesis?: string | null | undefined;
                 objectiveStatus?: string | null | undefined;
                 treatmentPlan?: string | null | undefined;
                 clinicalToothRows?: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -43684,14 +43687,14 @@ export declare const dashboardSchema: z.ZodObject<{
                 visitDate: string;
                 diagnosisIcd10?: string | null | undefined;
                 diagnosisText?: string | null | undefined;
+                anamnesis?: string | null | undefined;
                 visitId?: string | null | undefined;
                 complaint?: string | null | undefined;
-                anamnesis?: string | null | undefined;
                 objectiveStatus?: string | null | undefined;
                 treatmentPlan?: string | null | undefined;
                 clinicalToothRows?: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45122,7 +45125,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 }, "strip", z.ZodTypeAny, {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45133,7 +45136,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }, {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45153,12 +45156,12 @@ export declare const dashboardSchema: z.ZodObject<{
                 thirdPartyDataChecked: z.ZodLiteral<true>;
             }, "strip", z.ZodTypeAny, {
                 doctorFullName: string;
-                objectiveStatus: string;
                 diagnosis: string;
+                objectiveStatus: string;
                 issuedAt: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45180,12 +45183,12 @@ export declare const dashboardSchema: z.ZodObject<{
                 preparedFromSignedMedicalRecords: true;
             }, {
                 doctorFullName: string;
-                objectiveStatus: string;
                 diagnosis: string;
+                objectiveStatus: string;
                 issuedAt: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45232,10 +45235,10 @@ export declare const dashboardSchema: z.ZodObject<{
                 includeDicomSourceData: boolean;
                 identityVerified: true;
                 thirdPartyDataExclusionAcknowledged: true;
+                specialInstructions?: string | null | undefined;
                 periodStart?: string | null | undefined;
                 periodEnd?: string | null | undefined;
                 representativeAuthorityDocument?: string | null | undefined;
-                specialInstructions?: string | null | undefined;
             }, {
                 requestedAt: string;
                 recipientFullName: string;
@@ -45247,10 +45250,10 @@ export declare const dashboardSchema: z.ZodObject<{
                 includeDicomSourceData: boolean;
                 identityVerified: true;
                 thirdPartyDataExclusionAcknowledged: true;
+                specialInstructions?: string | null | undefined;
                 periodStart?: string | null | undefined;
                 periodEnd?: string | null | undefined;
                 representativeAuthorityDocument?: string | null | undefined;
-                specialInstructions?: string | null | undefined;
             }>>;
             postVisitRecommendations: z.ZodOptional<z.ZodObject<{
                 careTopic: z.ZodEnum<["extraction", "implantation", "filling_restoration", "endo", "surgery", "local_anesthesia", "hygiene", "prosthetics", "orthodontics", "periodontology", "other"]>;
@@ -45324,7 +45327,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 }, "strip", z.ZodTypeAny, {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45335,7 +45338,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }, {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45383,7 +45386,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 teethOrArea: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45420,7 +45423,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 teethOrArea: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45471,7 +45474,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 }, "strip", z.ZodTypeAny, {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45482,7 +45485,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }, {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45528,7 +45531,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 teethOrArea: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45563,7 +45566,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 teethOrArea: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45750,7 +45753,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 }, "strip", z.ZodTypeAny, {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45761,7 +45764,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }, {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45789,7 +45792,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 diagnosisOrIndication: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45818,7 +45821,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 diagnosisOrIndication: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -45931,7 +45934,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 teethOrArea: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -46185,7 +46188,7 @@ export declare const dashboardSchema: z.ZodObject<{
             prescriptionMedicationOrder?: {
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -46196,9 +46199,9 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 medications: {
+                    dosage: string;
                     duration: string;
                     medication: string;
-                    dosage: string;
                     instructions: string;
                 }[];
                 safetyNotes: string[];
@@ -46209,7 +46212,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 teethOrArea: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -46238,13 +46241,13 @@ export declare const dashboardSchema: z.ZodObject<{
                 scopeNotes?: string | null | undefined;
             } | undefined;
             xrayCbctReferral?: {
-                studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+                studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
                 priority: "urgent" | "routine";
                 pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
                 indication: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -46312,10 +46315,11 @@ export declare const dashboardSchema: z.ZodObject<{
                 }[];
                 specialistVisitRecords: {
                     doctorFullName: string;
+                    complaints: string;
                     anamnesis: string;
                     clinicalToothRows: {
                         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                         toothOrArea: string;
                         diagnosisOrFinding: string;
                         indication: string;
@@ -46329,7 +46333,6 @@ export declare const dashboardSchema: z.ZodObject<{
                     firstOrRepeat: "unknown" | "first" | "repeat";
                     sourceVisitId: string;
                     visitDate: string;
-                    complaints: string;
                     objectiveData: string;
                     primaryDiagnosis: string;
                     orders: string;
@@ -46507,14 +46510,14 @@ export declare const dashboardSchema: z.ZodObject<{
                 visitDate: string;
                 diagnosisIcd10?: string | null | undefined;
                 diagnosisText?: string | null | undefined;
+                anamnesis?: string | null | undefined;
                 visitId?: string | null | undefined;
                 complaint?: string | null | undefined;
-                anamnesis?: string | null | undefined;
                 objectiveStatus?: string | null | undefined;
                 treatmentPlan?: string | null | undefined;
                 clinicalToothRows?: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -46887,12 +46890,12 @@ export declare const dashboardSchema: z.ZodObject<{
             } | undefined;
             medicalRecordExtract?: {
                 doctorFullName: string;
-                objectiveStatus: string;
                 diagnosis: string;
+                objectiveStatus: string;
                 issuedAt: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -46924,10 +46927,10 @@ export declare const dashboardSchema: z.ZodObject<{
                 includeDicomSourceData: boolean;
                 identityVerified: true;
                 thirdPartyDataExclusionAcknowledged: true;
+                specialInstructions?: string | null | undefined;
                 periodStart?: string | null | undefined;
                 periodEnd?: string | null | undefined;
                 representativeAuthorityDocument?: string | null | undefined;
-                specialInstructions?: string | null | undefined;
             } | undefined;
             postVisitRecommendations?: {
                 doctorFullName: string;
@@ -46956,7 +46959,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 teethOrArea: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -47031,7 +47034,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 diagnosisOrIndication: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -47090,7 +47093,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 teethOrArea: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -47344,7 +47347,7 @@ export declare const dashboardSchema: z.ZodObject<{
             prescriptionMedicationOrder?: {
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -47355,9 +47358,9 @@ export declare const dashboardSchema: z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }[];
                 medications: {
+                    dosage: string;
                     duration: string;
                     medication: string;
-                    dosage: string;
                     instructions: string;
                 }[];
                 safetyNotes: string[];
@@ -47368,7 +47371,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 teethOrArea: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -47397,13 +47400,13 @@ export declare const dashboardSchema: z.ZodObject<{
                 scopeNotes?: string | null | undefined;
             } | undefined;
             xrayCbctReferral?: {
-                studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+                studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
                 priority: "urgent" | "routine";
                 pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
                 indication: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -47471,10 +47474,11 @@ export declare const dashboardSchema: z.ZodObject<{
                 }[];
                 specialistVisitRecords: {
                     doctorFullName: string;
+                    complaints: string;
                     anamnesis: string;
                     clinicalToothRows: {
                         status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                        surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                        surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                         toothOrArea: string;
                         diagnosisOrFinding: string;
                         indication: string;
@@ -47488,7 +47492,6 @@ export declare const dashboardSchema: z.ZodObject<{
                     firstOrRepeat: "unknown" | "first" | "repeat";
                     sourceVisitId: string;
                     visitDate: string;
-                    complaints: string;
                     objectiveData: string;
                     primaryDiagnosis: string;
                     orders: string;
@@ -47666,14 +47669,14 @@ export declare const dashboardSchema: z.ZodObject<{
                 visitDate: string;
                 diagnosisIcd10?: string | null | undefined;
                 diagnosisText?: string | null | undefined;
+                anamnesis?: string | null | undefined;
                 visitId?: string | null | undefined;
                 complaint?: string | null | undefined;
-                anamnesis?: string | null | undefined;
                 objectiveStatus?: string | null | undefined;
                 treatmentPlan?: string | null | undefined;
                 clinicalToothRows?: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -48046,12 +48049,12 @@ export declare const dashboardSchema: z.ZodObject<{
             } | undefined;
             medicalRecordExtract?: {
                 doctorFullName: string;
-                objectiveStatus: string;
                 diagnosis: string;
+                objectiveStatus: string;
                 issuedAt: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -48083,10 +48086,10 @@ export declare const dashboardSchema: z.ZodObject<{
                 includeDicomSourceData: boolean;
                 identityVerified: true;
                 thirdPartyDataExclusionAcknowledged: true;
+                specialInstructions?: string | null | undefined;
                 periodStart?: string | null | undefined;
                 periodEnd?: string | null | undefined;
                 representativeAuthorityDocument?: string | null | undefined;
-                specialInstructions?: string | null | undefined;
             } | undefined;
             postVisitRecommendations?: {
                 doctorFullName: string;
@@ -48115,7 +48118,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 teethOrArea: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -48190,7 +48193,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 diagnosisOrIndication: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -49344,7 +49347,7 @@ export declare const dashboardSchema: z.ZodObject<{
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         visitId: string | null;
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo";
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo";
         toothCode: string | null;
         region: string | null;
         capturedAt: string;
@@ -49362,7 +49365,7 @@ export declare const dashboardSchema: z.ZodObject<{
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         visitId: string | null;
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo";
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo";
         toothCode: string | null;
         region: string | null;
         capturedAt: string;
@@ -49392,7 +49395,7 @@ export declare const dashboardSchema: z.ZodObject<{
         organizationId: string;
         updatedAt: string;
         title: string;
-        specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+        specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         visitReason: string;
         defaultDurationMinutes: number;
         complaintPrompt: string;
@@ -49400,14 +49403,14 @@ export declare const dashboardSchema: z.ZodObject<{
         diagnosisHints: string[];
         treatmentPlanTemplate: string;
         requiredDocuments: ("treatment_plan" | "paid_medical_services_contract" | "completed_works_act" | "tax_deduction_certificate" | "informed_consent" | "procedure_specific_consent_packet" | "treatment_plan_acceptance" | "anesthesia_consent_log" | "prescription_medication_order" | "personal_data_processing_consent" | "minor_legal_representative_consent" | "photo_video_consent" | "medical_intervention_refusal" | "treatment_cost_estimate" | "payment_invoice" | "payment_receipt" | "installment_payment_schedule" | "post_visit_recommendations" | "outpatient_medical_card_025u" | "dental_medical_card_043u" | "orthodontic_medical_card_043_1u" | "daily_dentist_diary_037u" | "summary_dentist_statement_039u" | "medical_record_extract" | "medical_record_copy_request" | "medical_document_release_receipt" | "xray_cbct_referral" | "radiation_dose_sheet" | "lab_work_order" | "visit_attendance_certificate" | "warranty_service_memo" | "payment_refund_correction_request" | "tax_deduction_application" | "legacy_tax_deduction_certificate" | "tax_deduction_registry" | "patient_intake_questionnaire")[];
-        suggestedImaging: ("other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo")[];
+        suggestedImaging: ("other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo")[];
         safetyWarnings: string[];
     }, {
         id: string;
         organizationId: string;
         updatedAt: string;
         title: string;
-        specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+        specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         visitReason: string;
         defaultDurationMinutes: number;
         complaintPrompt: string;
@@ -49415,7 +49418,7 @@ export declare const dashboardSchema: z.ZodObject<{
         diagnosisHints: string[];
         treatmentPlanTemplate: string;
         requiredDocuments: ("treatment_plan" | "paid_medical_services_contract" | "completed_works_act" | "tax_deduction_certificate" | "informed_consent" | "procedure_specific_consent_packet" | "treatment_plan_acceptance" | "anesthesia_consent_log" | "prescription_medication_order" | "personal_data_processing_consent" | "minor_legal_representative_consent" | "photo_video_consent" | "medical_intervention_refusal" | "treatment_cost_estimate" | "payment_invoice" | "payment_receipt" | "installment_payment_schedule" | "post_visit_recommendations" | "outpatient_medical_card_025u" | "dental_medical_card_043u" | "orthodontic_medical_card_043_1u" | "daily_dentist_diary_037u" | "summary_dentist_statement_039u" | "medical_record_extract" | "medical_record_copy_request" | "medical_document_release_receipt" | "xray_cbct_referral" | "radiation_dose_sheet" | "lab_work_order" | "visit_attendance_certificate" | "warranty_service_memo" | "payment_refund_correction_request" | "tax_deduction_application" | "legacy_tax_deduction_certificate" | "tax_deduction_registry" | "patient_intake_questionnaire")[];
-        suggestedImaging: ("other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo")[];
+        suggestedImaging: ("other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo")[];
         safetyWarnings: string[];
     }>, "many">;
     serviceCatalog: z.ZodArray<z.ZodObject<{
@@ -49435,10 +49438,10 @@ export declare const dashboardSchema: z.ZodObject<{
         id: string;
         organizationId: string;
         durationMinutes: number;
+        category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
         title: string;
         active: boolean;
-        category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-        specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+        specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         aliases: string[];
         basePriceRub: number;
         taxDeductible: boolean;
@@ -49447,10 +49450,10 @@ export declare const dashboardSchema: z.ZodObject<{
         id: string;
         organizationId: string;
         durationMinutes: number;
+        category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
         title: string;
         active: boolean;
-        category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-        specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+        specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         basePriceRub: number;
         taxDeductible: boolean;
         aliases?: string[] | undefined;
@@ -49477,11 +49480,11 @@ export declare const dashboardSchema: z.ZodObject<{
         organizationId: string;
         notes: string | null;
         patientId: string;
+        quantity: number;
         visitId: string | null;
         serviceId: string;
         snapshotServiceName: string;
         toothCode: string | null;
-        quantity: number;
         unitPriceRub: number;
         discountRub: number;
         plannedDoctorUserId: string | null;
@@ -49493,11 +49496,11 @@ export declare const dashboardSchema: z.ZodObject<{
         organizationId: string;
         notes: string | null;
         patientId: string;
+        quantity: number;
         visitId: string | null;
         serviceId: string;
         snapshotServiceName: string;
         toothCode: string | null;
-        quantity: number;
         unitPriceRub: number;
         discountRub: number;
         plannedDoctorUserId: string | null;
@@ -49598,11 +49601,11 @@ export declare const dashboardSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         id: string;
         organizationId: string;
+        category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
         title: string;
         severity: "info" | "warning" | "blocker";
         active: boolean;
-        category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-        specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+        specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         triggerServiceIds: string[];
@@ -49615,11 +49618,11 @@ export declare const dashboardSchema: z.ZodObject<{
     }, {
         id: string;
         organizationId: string;
+        category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
         title: string;
         severity: "info" | "warning" | "blocker";
         active: boolean;
-        category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-        specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+        specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         triggerServiceIds: string[];
@@ -50346,7 +50349,7 @@ export declare const dashboardSchema: z.ZodObject<{
             phone: string | null;
             fullName: string;
             role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
-            specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
+            specialties: ("pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal")[];
             canSignMedicalRecords: boolean;
             canManageMoney: boolean;
             canManageImports: boolean;
@@ -50364,7 +50367,7 @@ export declare const dashboardSchema: z.ZodObject<{
             name: string;
             active: boolean;
             room: string | null;
-            specialization: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | null;
+            specialization: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | null;
             hasXraySensor: boolean;
             hasMicroscope: boolean;
             hasSurgeryKit: boolean;
@@ -50378,9 +50381,9 @@ export declare const dashboardSchema: z.ZodObject<{
         integrationPresets: {
             status: "usable_now" | "needs_mapping" | "planned_connector";
             id: string;
+            category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
             title: string;
             vendor: string;
-            category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
             supportedInputs: string[];
             capabilities: ("imaging" | "documents" | "patients" | "appointments" | "visits" | "services" | "payments" | "tax_documents" | "audit")[];
             migrationNotes: string[];
@@ -50425,6 +50428,7 @@ export declare const dashboardSchema: z.ZodObject<{
         };
         doctorLoads: {
             id: string;
+            state: "healthy" | "idle" | "tight" | "overbooked";
             title: string;
             kind: "doctor" | "assistant" | "chair";
             subtitle: string;
@@ -50432,11 +50436,11 @@ export declare const dashboardSchema: z.ZodObject<{
             appointmentCount: number;
             utilizationPercent: number;
             nextFreeAt: string | null;
-            state: "healthy" | "idle" | "tight" | "overbooked";
             flags: string[];
         }[];
         assistantLoads: {
             id: string;
+            state: "healthy" | "idle" | "tight" | "overbooked";
             title: string;
             kind: "doctor" | "assistant" | "chair";
             subtitle: string;
@@ -50444,11 +50448,11 @@ export declare const dashboardSchema: z.ZodObject<{
             appointmentCount: number;
             utilizationPercent: number;
             nextFreeAt: string | null;
-            state: "healthy" | "idle" | "tight" | "overbooked";
             flags: string[];
         }[];
         chairLoads: {
             id: string;
+            state: "healthy" | "idle" | "tight" | "overbooked";
             title: string;
             kind: "doctor" | "assistant" | "chair";
             subtitle: string;
@@ -50456,7 +50460,6 @@ export declare const dashboardSchema: z.ZodObject<{
             appointmentCount: number;
             utilizationPercent: number;
             nextFreeAt: string | null;
-            state: "healthy" | "idle" | "tight" | "overbooked";
             flags: string[];
         }[];
         roleQueues: {
@@ -50505,15 +50508,15 @@ export declare const dashboardSchema: z.ZodObject<{
     }[];
     appointmentReadiness: {
         patientId: string | null;
+        state: "ready" | "blocked" | "needs_attention";
         warnings: string[];
         checks: {
+            key: string;
             ready: boolean;
             title: string;
             detail: string;
-            key: string;
         }[];
         nextAction: string;
-        state: "ready" | "blocked" | "needs_attention";
         ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
         blockers: string[];
         appointmentId: string;
@@ -50537,18 +50540,16 @@ export declare const dashboardSchema: z.ZodObject<{
         createdAt: string;
         updatedAt: string;
         patientId: string;
+        anamnesis: string | null;
+        diagnosis: string | null;
         appointmentId: string | null;
         revision: number;
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         doctorSummary: string | null;
     } | null;
     visitCloseChecklist: {
-        visitId: string;
-        nextAction: string;
         items: {
             id: string;
             ready: boolean;
@@ -50560,6 +50561,8 @@ export declare const dashboardSchema: z.ZodObject<{
             actionLabel: string;
             section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         }[];
+        visitId: string;
+        nextAction: string;
         score: number;
         readyToSign: boolean;
         blockingItems: number;
@@ -50573,7 +50576,7 @@ export declare const dashboardSchema: z.ZodObject<{
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         visitId: string | null;
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo";
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo";
         toothCode: string | null;
         region: string | null;
         capturedAt: string;
@@ -50588,7 +50591,7 @@ export declare const dashboardSchema: z.ZodObject<{
         organizationId: string;
         updatedAt: string;
         title: string;
-        specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+        specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         visitReason: string;
         defaultDurationMinutes: number;
         complaintPrompt: string;
@@ -50596,7 +50599,7 @@ export declare const dashboardSchema: z.ZodObject<{
         diagnosisHints: string[];
         treatmentPlanTemplate: string;
         requiredDocuments: ("treatment_plan" | "paid_medical_services_contract" | "completed_works_act" | "tax_deduction_certificate" | "informed_consent" | "procedure_specific_consent_packet" | "treatment_plan_acceptance" | "anesthesia_consent_log" | "prescription_medication_order" | "personal_data_processing_consent" | "minor_legal_representative_consent" | "photo_video_consent" | "medical_intervention_refusal" | "treatment_cost_estimate" | "payment_invoice" | "payment_receipt" | "installment_payment_schedule" | "post_visit_recommendations" | "outpatient_medical_card_025u" | "dental_medical_card_043u" | "orthodontic_medical_card_043_1u" | "daily_dentist_diary_037u" | "summary_dentist_statement_039u" | "medical_record_extract" | "medical_record_copy_request" | "medical_document_release_receipt" | "xray_cbct_referral" | "radiation_dose_sheet" | "lab_work_order" | "visit_attendance_certificate" | "warranty_service_memo" | "payment_refund_correction_request" | "tax_deduction_application" | "legacy_tax_deduction_certificate" | "tax_deduction_registry" | "patient_intake_questionnaire")[];
-        suggestedImaging: ("other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo")[];
+        suggestedImaging: ("other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo")[];
         safetyWarnings: string[];
     }[];
     serviceCatalog: {
@@ -50604,10 +50607,10 @@ export declare const dashboardSchema: z.ZodObject<{
         id: string;
         organizationId: string;
         durationMinutes: number;
+        category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
         title: string;
         active: boolean;
-        category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-        specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+        specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         aliases: string[];
         basePriceRub: number;
         taxDeductible: boolean;
@@ -50618,11 +50621,11 @@ export declare const dashboardSchema: z.ZodObject<{
         organizationId: string;
         notes: string | null;
         patientId: string;
+        quantity: number;
         visitId: string | null;
         serviceId: string;
         snapshotServiceName: string;
         toothCode: string | null;
-        quantity: number;
         unitPriceRub: number;
         discountRub: number;
         plannedDoctorUserId: string | null;
@@ -50654,11 +50657,11 @@ export declare const dashboardSchema: z.ZodObject<{
     clinicalRules: {
         id: string;
         organizationId: string;
+        category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
         title: string;
         severity: "info" | "warning" | "blocker";
         active: boolean;
-        category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-        specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+        specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         triggerServiceIds: string[];
@@ -51016,7 +51019,7 @@ export declare const dashboardSchema: z.ZodObject<{
             phone: string | null;
             fullName: string;
             role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
-            specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
+            specialties: ("pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal")[];
             canSignMedicalRecords: boolean;
             canManageMoney: boolean;
             canManageImports: boolean;
@@ -51034,7 +51037,7 @@ export declare const dashboardSchema: z.ZodObject<{
             name: string;
             active: boolean;
             room: string | null;
-            specialization: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | null;
+            specialization: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | null;
             hasXraySensor: boolean;
             hasMicroscope: boolean;
             hasSurgeryKit: boolean;
@@ -51048,9 +51051,9 @@ export declare const dashboardSchema: z.ZodObject<{
         integrationPresets: {
             status: "usable_now" | "needs_mapping" | "planned_connector";
             id: string;
+            category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
             title: string;
             vendor: string;
-            category: "custom" | "spreadsheet" | "dental_mis" | "paper_archive" | "imaging_system" | "accounting";
             supportedInputs: string[];
             capabilities: ("imaging" | "documents" | "patients" | "appointments" | "visits" | "services" | "payments" | "tax_documents" | "audit")[];
             migrationNotes: string[];
@@ -51095,6 +51098,7 @@ export declare const dashboardSchema: z.ZodObject<{
         };
         doctorLoads: {
             id: string;
+            state: "healthy" | "idle" | "tight" | "overbooked";
             title: string;
             kind: "doctor" | "assistant" | "chair";
             subtitle: string;
@@ -51102,11 +51106,11 @@ export declare const dashboardSchema: z.ZodObject<{
             appointmentCount: number;
             utilizationPercent: number;
             nextFreeAt: string | null;
-            state: "healthy" | "idle" | "tight" | "overbooked";
             flags: string[];
         }[];
         assistantLoads: {
             id: string;
+            state: "healthy" | "idle" | "tight" | "overbooked";
             title: string;
             kind: "doctor" | "assistant" | "chair";
             subtitle: string;
@@ -51114,11 +51118,11 @@ export declare const dashboardSchema: z.ZodObject<{
             appointmentCount: number;
             utilizationPercent: number;
             nextFreeAt: string | null;
-            state: "healthy" | "idle" | "tight" | "overbooked";
             flags: string[];
         }[];
         chairLoads: {
             id: string;
+            state: "healthy" | "idle" | "tight" | "overbooked";
             title: string;
             kind: "doctor" | "assistant" | "chair";
             subtitle: string;
@@ -51126,7 +51130,6 @@ export declare const dashboardSchema: z.ZodObject<{
             appointmentCount: number;
             utilizationPercent: number;
             nextFreeAt: string | null;
-            state: "healthy" | "idle" | "tight" | "overbooked";
             flags: string[];
         }[];
         roleQueues: {
@@ -51175,14 +51178,14 @@ export declare const dashboardSchema: z.ZodObject<{
     }[];
     appointmentReadiness: {
         patientId: string | null;
+        state: "ready" | "blocked" | "needs_attention";
         checks: {
+            key: string;
             ready: boolean;
             title: string;
             detail: string;
-            key: string;
         }[];
         nextAction: string;
-        state: "ready" | "blocked" | "needs_attention";
         ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
         blockers: string[];
         appointmentId: string;
@@ -51207,18 +51210,16 @@ export declare const dashboardSchema: z.ZodObject<{
         createdAt: string;
         updatedAt: string;
         patientId: string;
+        anamnesis: string | null;
+        diagnosis: string | null;
         appointmentId: string | null;
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         doctorSummary: string | null;
         revision?: number | undefined;
     } | null;
     visitCloseChecklist: {
-        visitId: string;
-        nextAction: string;
         items: {
             id: string;
             ready: boolean;
@@ -51230,6 +51231,8 @@ export declare const dashboardSchema: z.ZodObject<{
             actionLabel: string;
             section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         }[];
+        visitId: string;
+        nextAction: string;
         score: number;
         readyToSign: boolean;
         blockingItems: number;
@@ -51243,7 +51246,7 @@ export declare const dashboardSchema: z.ZodObject<{
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         visitId: string | null;
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo";
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo";
         toothCode: string | null;
         region: string | null;
         capturedAt: string;
@@ -51258,7 +51261,7 @@ export declare const dashboardSchema: z.ZodObject<{
         organizationId: string;
         updatedAt: string;
         title: string;
-        specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+        specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         visitReason: string;
         defaultDurationMinutes: number;
         complaintPrompt: string;
@@ -51266,7 +51269,7 @@ export declare const dashboardSchema: z.ZodObject<{
         diagnosisHints: string[];
         treatmentPlanTemplate: string;
         requiredDocuments: ("treatment_plan" | "paid_medical_services_contract" | "completed_works_act" | "tax_deduction_certificate" | "informed_consent" | "procedure_specific_consent_packet" | "treatment_plan_acceptance" | "anesthesia_consent_log" | "prescription_medication_order" | "personal_data_processing_consent" | "minor_legal_representative_consent" | "photo_video_consent" | "medical_intervention_refusal" | "treatment_cost_estimate" | "payment_invoice" | "payment_receipt" | "installment_payment_schedule" | "post_visit_recommendations" | "outpatient_medical_card_025u" | "dental_medical_card_043u" | "orthodontic_medical_card_043_1u" | "daily_dentist_diary_037u" | "summary_dentist_statement_039u" | "medical_record_extract" | "medical_record_copy_request" | "medical_document_release_receipt" | "xray_cbct_referral" | "radiation_dose_sheet" | "lab_work_order" | "visit_attendance_certificate" | "warranty_service_memo" | "payment_refund_correction_request" | "tax_deduction_application" | "legacy_tax_deduction_certificate" | "tax_deduction_registry" | "patient_intake_questionnaire")[];
-        suggestedImaging: ("other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo")[];
+        suggestedImaging: ("other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo")[];
         safetyWarnings: string[];
     }[];
     serviceCatalog: {
@@ -51274,10 +51277,10 @@ export declare const dashboardSchema: z.ZodObject<{
         id: string;
         organizationId: string;
         durationMinutes: number;
+        category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
         title: string;
         active: boolean;
-        category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-        specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+        specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         basePriceRub: number;
         taxDeductible: boolean;
         aliases?: string[] | undefined;
@@ -51288,11 +51291,11 @@ export declare const dashboardSchema: z.ZodObject<{
         organizationId: string;
         notes: string | null;
         patientId: string;
+        quantity: number;
         visitId: string | null;
         serviceId: string;
         snapshotServiceName: string;
         toothCode: string | null;
-        quantity: number;
         unitPriceRub: number;
         discountRub: number;
         plannedDoctorUserId: string | null;
@@ -51324,11 +51327,11 @@ export declare const dashboardSchema: z.ZodObject<{
     clinicalRules: {
         id: string;
         organizationId: string;
+        category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
         title: string;
         severity: "info" | "warning" | "blocker";
         active: boolean;
-        category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
-        specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+        specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         ownerRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
         triggerServiceIds: string[];
@@ -51506,10 +51509,10 @@ export declare const insuranceCalculationItemSchema: z.ZodObject<{
     priceRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
     quantity: z.ZodDefault<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
+    quantity: number;
     category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
     priceRub: number;
     serviceId: string;
-    quantity: number;
     serviceName?: string | undefined;
 }, {
     category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
@@ -51529,10 +51532,10 @@ export declare const insuranceCoverageCalculationInputSchema: z.ZodObject<{
         priceRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
         quantity: z.ZodDefault<z.ZodNumber>;
     }, "strip", z.ZodTypeAny, {
+        quantity: number;
         category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
         priceRub: number;
         serviceId: string;
-        quantity: number;
         serviceName?: string | undefined;
     }, {
         category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
@@ -51543,10 +51546,10 @@ export declare const insuranceCoverageCalculationInputSchema: z.ZodObject<{
     }>, "many">;
 }, "strip", z.ZodTypeAny, {
     items: {
+        quantity: number;
         category: "other" | "prosthetics" | "orthodontics" | "periodontology" | "therapy" | "surgery" | "consultation" | "hygiene" | "imaging" | "documents";
         priceRub: number;
         serviceId: string;
-        quantity: number;
         serviceName?: string | undefined;
     }[];
     contractId: string;
@@ -51574,9 +51577,9 @@ export declare const insuranceItemBreakdownSchema: z.ZodObject<{
     coveredAmountRub: z.ZodNumber;
     patientCoPayRub: z.ZodNumber;
 }, "strip", z.ZodTypeAny, {
+    quantity: number;
     category: string;
     serviceId: string;
-    quantity: number;
     unitPriceRub: number;
     totalPriceRub: number;
     coveragePct: number;
@@ -51584,9 +51587,9 @@ export declare const insuranceItemBreakdownSchema: z.ZodObject<{
     patientCoPayRub: number;
     serviceName?: string | undefined;
 }, {
+    quantity: number;
     category: string;
     serviceId: string;
-    quantity: number;
     unitPriceRub: number;
     totalPriceRub: number;
     coveragePct: number;
@@ -51615,9 +51618,9 @@ export declare const insuranceCoverageCalculationResultSchema: z.ZodObject<{
         coveredAmountRub: z.ZodNumber;
         patientCoPayRub: z.ZodNumber;
     }, "strip", z.ZodTypeAny, {
+        quantity: number;
         category: string;
         serviceId: string;
-        quantity: number;
         unitPriceRub: number;
         totalPriceRub: number;
         coveragePct: number;
@@ -51625,9 +51628,9 @@ export declare const insuranceCoverageCalculationResultSchema: z.ZodObject<{
         patientCoPayRub: number;
         serviceName?: string | undefined;
     }, {
+        quantity: number;
         category: string;
         serviceId: string;
-        quantity: number;
         unitPriceRub: number;
         totalPriceRub: number;
         coveragePct: number;
@@ -51645,9 +51648,9 @@ export declare const insuranceCoverageCalculationResultSchema: z.ZodObject<{
     totalPatientCoPayRub: number;
     remainingAnnualLimitRub: number | null;
     itemBreakdown: {
+        quantity: number;
         category: string;
         serviceId: string;
-        quantity: number;
         unitPriceRub: number;
         totalPriceRub: number;
         coveragePct: number;
@@ -51665,9 +51668,9 @@ export declare const insuranceCoverageCalculationResultSchema: z.ZodObject<{
     totalPatientCoPayRub: number;
     remainingAnnualLimitRub: number | null;
     itemBreakdown: {
+        quantity: number;
         category: string;
         serviceId: string;
-        quantity: number;
         unitPriceRub: number;
         totalPriceRub: number;
         coveragePct: number;
@@ -52097,7 +52100,7 @@ export declare const createStaffMemberSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     fullName: string;
     role: "doctor" | "owner" | "administrator" | "assistant" | "manager";
-    specialties: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[];
+    specialties: ("pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal")[];
     email?: string | null | undefined;
     phone?: string | null | undefined;
     workingHours?: {
@@ -52117,7 +52120,7 @@ export declare const createStaffMemberSchema: z.ZodObject<{
         start: string;
         end: string;
     }[] | null | undefined;
-    specialties?: ("therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal")[] | undefined;
+    specialties?: ("pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal")[] | undefined;
 }>;
 export type CreateStaffMemberInput = z.infer<typeof createStaffMemberSchema>;
 export declare const updateStaffWorkingHoursSchema: z.ZodObject<{
@@ -52391,7 +52394,7 @@ export declare const createChairSchema: z.ZodObject<{
         end: string;
     }[] | null | undefined;
     room?: string | null | undefined;
-    specialization?: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | null | undefined;
+    specialization?: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | null | undefined;
 }, {
     name: string;
     notes?: string | null | undefined;
@@ -52402,7 +52405,7 @@ export declare const createChairSchema: z.ZodObject<{
         end: string;
     }[] | null | undefined;
     room?: string | null | undefined;
-    specialization?: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | null | undefined;
+    specialization?: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | null | undefined;
     hasXraySensor?: boolean | undefined;
     hasMicroscope?: boolean | undefined;
     hasSurgeryKit?: boolean | undefined;
@@ -53173,7 +53176,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -53184,7 +53187,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -53200,14 +53203,14 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 instructions: z.ZodString;
                 duration: z.ZodString;
             }, "strip", z.ZodTypeAny, {
+                dosage: string;
                 duration: string;
                 medication: string;
-                dosage: string;
                 instructions: string;
             }, {
+                dosage: string;
                 duration: string;
                 medication: string;
-                dosage: string;
                 instructions: string;
             }>, "many">;
             safetyNotes: z.ZodArray<z.ZodString, "many">;
@@ -53215,7 +53218,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         }, "strip", z.ZodTypeAny, {
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -53226,9 +53229,9 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }[];
             medications: {
+                dosage: string;
                 duration: string;
                 medication: string;
-                dosage: string;
                 instructions: string;
             }[];
             safetyNotes: string[];
@@ -53236,7 +53239,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         }, {
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -53247,9 +53250,9 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }[];
             medications: {
+                dosage: string;
                 duration: string;
                 medication: string;
-                dosage: string;
                 instructions: string;
             }[];
             safetyNotes: string[];
@@ -53269,7 +53272,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -53280,7 +53283,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -53302,7 +53305,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -53322,7 +53325,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -53387,7 +53390,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -53398,7 +53401,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -53420,13 +53423,13 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             recipientClinic: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             dueDate: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
-            studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+            studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -53445,13 +53448,13 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             dueDate?: string | null | undefined;
             recipientClinic?: string | null | undefined;
         }, {
-            studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+            studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -53637,7 +53640,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                     orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 }, "strip", z.ZodTypeAny, {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -53648,7 +53651,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                     orthodonticNotes?: string | null | undefined;
                 }, {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -53660,10 +53663,11 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 }>, "many">;
             }, "strip", z.ZodTypeAny, {
                 doctorFullName: string;
+                complaints: string;
                 anamnesis: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -53677,7 +53681,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 firstOrRepeat: "unknown" | "first" | "repeat";
                 sourceVisitId: string;
                 visitDate: string;
-                complaints: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
                 orders: string;
@@ -53696,10 +53699,11 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 preferentialPrescriptions?: string | null | undefined;
             }, {
                 doctorFullName: string;
+                complaints: string;
                 anamnesis: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -53713,7 +53717,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 firstOrRepeat: "unknown" | "first" | "repeat";
                 sourceVisitId: string;
                 visitDate: string;
-                complaints: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
                 orders: string;
@@ -54119,10 +54122,11 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }[];
             specialistVisitRecords: {
                 doctorFullName: string;
+                complaints: string;
                 anamnesis: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -54136,7 +54140,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 firstOrRepeat: "unknown" | "first" | "repeat";
                 sourceVisitId: string;
                 visitDate: string;
-                complaints: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
                 orders: string;
@@ -54317,10 +54320,11 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }[];
             specialistVisitRecords: {
                 doctorFullName: string;
+                complaints: string;
                 anamnesis: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -54334,7 +54338,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 firstOrRepeat: "unknown" | "first" | "repeat";
                 sourceVisitId: string;
                 visitDate: string;
-                complaints: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
                 orders: string;
@@ -54616,7 +54619,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -54627,7 +54630,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -54673,14 +54676,14 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             visitDate: string;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
+            anamnesis?: string | null | undefined;
             visitId?: string | null | undefined;
             complaint?: string | null | undefined;
-            anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -54744,14 +54747,14 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             visitDate: string;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
+            anamnesis?: string | null | undefined;
             visitId?: string | null | undefined;
             complaint?: string | null | undefined;
-            anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56182,7 +56185,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56193,7 +56196,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56213,12 +56216,12 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             thirdPartyDataChecked: z.ZodLiteral<true>;
         }, "strip", z.ZodTypeAny, {
             doctorFullName: string;
-            objectiveStatus: string;
             diagnosis: string;
+            objectiveStatus: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56240,12 +56243,12 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             preparedFromSignedMedicalRecords: true;
         }, {
             doctorFullName: string;
-            objectiveStatus: string;
             diagnosis: string;
+            objectiveStatus: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56292,10 +56295,10 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             includeDicomSourceData: boolean;
             identityVerified: true;
             thirdPartyDataExclusionAcknowledged: true;
+            specialInstructions?: string | null | undefined;
             periodStart?: string | null | undefined;
             periodEnd?: string | null | undefined;
             representativeAuthorityDocument?: string | null | undefined;
-            specialInstructions?: string | null | undefined;
         }, {
             requestedAt: string;
             recipientFullName: string;
@@ -56307,10 +56310,10 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             includeDicomSourceData: boolean;
             identityVerified: true;
             thirdPartyDataExclusionAcknowledged: true;
+            specialInstructions?: string | null | undefined;
             periodStart?: string | null | undefined;
             periodEnd?: string | null | undefined;
             representativeAuthorityDocument?: string | null | undefined;
-            specialInstructions?: string | null | undefined;
         }>>;
         postVisitRecommendations: z.ZodOptional<z.ZodObject<{
             careTopic: z.ZodEnum<["extraction", "implantation", "filling_restoration", "endo", "surgery", "local_anesthesia", "hygiene", "prosthetics", "orthodontics", "periodontology", "other"]>;
@@ -56384,7 +56387,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56395,7 +56398,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56443,7 +56446,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56480,7 +56483,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56531,7 +56534,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56542,7 +56545,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56588,7 +56591,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56623,7 +56626,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56810,7 +56813,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56821,7 +56824,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56849,7 +56852,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             diagnosisOrIndication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56878,7 +56881,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             diagnosisOrIndication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -56991,7 +56994,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -57245,7 +57248,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         prescriptionMedicationOrder?: {
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -57256,9 +57259,9 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }[];
             medications: {
+                dosage: string;
                 duration: string;
                 medication: string;
-                dosage: string;
                 instructions: string;
             }[];
             safetyNotes: string[];
@@ -57269,7 +57272,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -57298,13 +57301,13 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             scopeNotes?: string | null | undefined;
         } | undefined;
         xrayCbctReferral?: {
-            studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+            studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -57372,10 +57375,11 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }[];
             specialistVisitRecords: {
                 doctorFullName: string;
+                complaints: string;
                 anamnesis: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -57389,7 +57393,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 firstOrRepeat: "unknown" | "first" | "repeat";
                 sourceVisitId: string;
                 visitDate: string;
-                complaints: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
                 orders: string;
@@ -57567,14 +57570,14 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             visitDate: string;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
+            anamnesis?: string | null | undefined;
             visitId?: string | null | undefined;
             complaint?: string | null | undefined;
-            anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -57947,12 +57950,12 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         } | undefined;
         medicalRecordExtract?: {
             doctorFullName: string;
-            objectiveStatus: string;
             diagnosis: string;
+            objectiveStatus: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -57984,10 +57987,10 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             includeDicomSourceData: boolean;
             identityVerified: true;
             thirdPartyDataExclusionAcknowledged: true;
+            specialInstructions?: string | null | undefined;
             periodStart?: string | null | undefined;
             periodEnd?: string | null | undefined;
             representativeAuthorityDocument?: string | null | undefined;
-            specialInstructions?: string | null | undefined;
         } | undefined;
         postVisitRecommendations?: {
             doctorFullName: string;
@@ -58016,7 +58019,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -58091,7 +58094,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             diagnosisOrIndication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -58150,7 +58153,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -58404,7 +58407,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         prescriptionMedicationOrder?: {
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -58415,9 +58418,9 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }[];
             medications: {
+                dosage: string;
                 duration: string;
                 medication: string;
-                dosage: string;
                 instructions: string;
             }[];
             safetyNotes: string[];
@@ -58428,7 +58431,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -58457,13 +58460,13 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             scopeNotes?: string | null | undefined;
         } | undefined;
         xrayCbctReferral?: {
-            studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+            studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -58531,10 +58534,11 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }[];
             specialistVisitRecords: {
                 doctorFullName: string;
+                complaints: string;
                 anamnesis: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -58548,7 +58552,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 firstOrRepeat: "unknown" | "first" | "repeat";
                 sourceVisitId: string;
                 visitDate: string;
-                complaints: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
                 orders: string;
@@ -58726,14 +58729,14 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             visitDate: string;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
+            anamnesis?: string | null | undefined;
             visitId?: string | null | undefined;
             complaint?: string | null | undefined;
-            anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -59106,12 +59109,12 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         } | undefined;
         medicalRecordExtract?: {
             doctorFullName: string;
-            objectiveStatus: string;
             diagnosis: string;
+            objectiveStatus: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -59143,10 +59146,10 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             includeDicomSourceData: boolean;
             identityVerified: true;
             thirdPartyDataExclusionAcknowledged: true;
+            specialInstructions?: string | null | undefined;
             periodStart?: string | null | undefined;
             periodEnd?: string | null | undefined;
             representativeAuthorityDocument?: string | null | undefined;
-            specialInstructions?: string | null | undefined;
         } | undefined;
         postVisitRecommendations?: {
             doctorFullName: string;
@@ -59175,7 +59178,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -59250,7 +59253,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             diagnosisOrIndication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -59318,7 +59321,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -59572,7 +59575,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         prescriptionMedicationOrder?: {
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -59583,9 +59586,9 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }[];
             medications: {
+                dosage: string;
                 duration: string;
                 medication: string;
-                dosage: string;
                 instructions: string;
             }[];
             safetyNotes: string[];
@@ -59596,7 +59599,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -59625,13 +59628,13 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             scopeNotes?: string | null | undefined;
         } | undefined;
         xrayCbctReferral?: {
-            studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+            studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -59699,10 +59702,11 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }[];
             specialistVisitRecords: {
                 doctorFullName: string;
+                complaints: string;
                 anamnesis: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -59716,7 +59720,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 firstOrRepeat: "unknown" | "first" | "repeat";
                 sourceVisitId: string;
                 visitDate: string;
-                complaints: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
                 orders: string;
@@ -59894,14 +59897,14 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             visitDate: string;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
+            anamnesis?: string | null | undefined;
             visitId?: string | null | undefined;
             complaint?: string | null | undefined;
-            anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -60274,12 +60277,12 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         } | undefined;
         medicalRecordExtract?: {
             doctorFullName: string;
-            objectiveStatus: string;
             diagnosis: string;
+            objectiveStatus: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -60311,10 +60314,10 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             includeDicomSourceData: boolean;
             identityVerified: true;
             thirdPartyDataExclusionAcknowledged: true;
+            specialInstructions?: string | null | undefined;
             periodStart?: string | null | undefined;
             periodEnd?: string | null | undefined;
             representativeAuthorityDocument?: string | null | undefined;
-            specialInstructions?: string | null | undefined;
         } | undefined;
         postVisitRecommendations?: {
             doctorFullName: string;
@@ -60343,7 +60346,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -60418,7 +60421,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             diagnosisOrIndication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -60486,7 +60489,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -60740,7 +60743,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         prescriptionMedicationOrder?: {
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -60751,9 +60754,9 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }[];
             medications: {
+                dosage: string;
                 duration: string;
                 medication: string;
-                dosage: string;
                 instructions: string;
             }[];
             safetyNotes: string[];
@@ -60764,7 +60767,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -60793,13 +60796,13 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             scopeNotes?: string | null | undefined;
         } | undefined;
         xrayCbctReferral?: {
-            studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+            studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -60867,10 +60870,11 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }[];
             specialistVisitRecords: {
                 doctorFullName: string;
+                complaints: string;
                 anamnesis: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -60884,7 +60888,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 firstOrRepeat: "unknown" | "first" | "repeat";
                 sourceVisitId: string;
                 visitDate: string;
-                complaints: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
                 orders: string;
@@ -61062,14 +61065,14 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             visitDate: string;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
+            anamnesis?: string | null | undefined;
             visitId?: string | null | undefined;
             complaint?: string | null | undefined;
-            anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -61442,12 +61445,12 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         } | undefined;
         medicalRecordExtract?: {
             doctorFullName: string;
-            objectiveStatus: string;
             diagnosis: string;
+            objectiveStatus: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -61479,10 +61482,10 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             includeDicomSourceData: boolean;
             identityVerified: true;
             thirdPartyDataExclusionAcknowledged: true;
+            specialInstructions?: string | null | undefined;
             periodStart?: string | null | undefined;
             periodEnd?: string | null | undefined;
             representativeAuthorityDocument?: string | null | undefined;
-            specialInstructions?: string | null | undefined;
         } | undefined;
         postVisitRecommendations?: {
             doctorFullName: string;
@@ -61511,7 +61514,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -61586,7 +61589,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             diagnosisOrIndication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -61654,7 +61657,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -61908,7 +61911,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         prescriptionMedicationOrder?: {
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -61919,9 +61922,9 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }[];
             medications: {
+                dosage: string;
                 duration: string;
                 medication: string;
-                dosage: string;
                 instructions: string;
             }[];
             safetyNotes: string[];
@@ -61932,7 +61935,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -61961,13 +61964,13 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             scopeNotes?: string | null | undefined;
         } | undefined;
         xrayCbctReferral?: {
-            studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+            studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -62035,10 +62038,11 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }[];
             specialistVisitRecords: {
                 doctorFullName: string;
+                complaints: string;
                 anamnesis: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -62052,7 +62056,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 firstOrRepeat: "unknown" | "first" | "repeat";
                 sourceVisitId: string;
                 visitDate: string;
-                complaints: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
                 orders: string;
@@ -62230,14 +62233,14 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             visitDate: string;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
+            anamnesis?: string | null | undefined;
             visitId?: string | null | undefined;
             complaint?: string | null | undefined;
-            anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -62610,12 +62613,12 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         } | undefined;
         medicalRecordExtract?: {
             doctorFullName: string;
-            objectiveStatus: string;
             diagnosis: string;
+            objectiveStatus: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -62647,10 +62650,10 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             includeDicomSourceData: boolean;
             identityVerified: true;
             thirdPartyDataExclusionAcknowledged: true;
+            specialInstructions?: string | null | undefined;
             periodStart?: string | null | undefined;
             periodEnd?: string | null | undefined;
             representativeAuthorityDocument?: string | null | undefined;
-            specialInstructions?: string | null | undefined;
         } | undefined;
         postVisitRecommendations?: {
             doctorFullName: string;
@@ -62679,7 +62682,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -62754,7 +62757,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             diagnosisOrIndication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -62822,7 +62825,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -63076,7 +63079,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         prescriptionMedicationOrder?: {
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -63087,9 +63090,9 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }[];
             medications: {
+                dosage: string;
                 duration: string;
                 medication: string;
-                dosage: string;
                 instructions: string;
             }[];
             safetyNotes: string[];
@@ -63100,7 +63103,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -63129,13 +63132,13 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             scopeNotes?: string | null | undefined;
         } | undefined;
         xrayCbctReferral?: {
-            studyType: "other" | "opg" | "cbct" | "rvg" | "trg" | "tmj" | "sinus" | "photo_protocol";
+            studyType: "other" | "cbct" | "trg" | "rvg" | "opg" | "tmj" | "sinus" | "photo_protocol";
             priority: "urgent" | "routine";
             pregnancyStatus: "unknown" | "confirmed" | "not_applicable" | "denied" | "possible";
             indication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -63203,10 +63206,11 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             }[];
             specialistVisitRecords: {
                 doctorFullName: string;
+                complaints: string;
                 anamnesis: string;
                 clinicalToothRows: {
                     status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                    surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                    surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                     toothOrArea: string;
                     diagnosisOrFinding: string;
                     indication: string;
@@ -63220,7 +63224,6 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 firstOrRepeat: "unknown" | "first" | "repeat";
                 sourceVisitId: string;
                 visitDate: string;
-                complaints: string;
                 objectiveData: string;
                 primaryDiagnosis: string;
                 orders: string;
@@ -63398,14 +63401,14 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             visitDate: string;
             diagnosisIcd10?: string | null | undefined;
             diagnosisText?: string | null | undefined;
+            anamnesis?: string | null | undefined;
             visitId?: string | null | undefined;
             complaint?: string | null | undefined;
-            anamnesis?: string | null | undefined;
             objectiveStatus?: string | null | undefined;
             treatmentPlan?: string | null | undefined;
             clinicalToothRows?: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -63778,12 +63781,12 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         } | undefined;
         medicalRecordExtract?: {
             doctorFullName: string;
-            objectiveStatus: string;
             diagnosis: string;
+            objectiveStatus: string;
             issuedAt: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -63815,10 +63818,10 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             includeDicomSourceData: boolean;
             identityVerified: true;
             thirdPartyDataExclusionAcknowledged: true;
+            specialInstructions?: string | null | undefined;
             periodStart?: string | null | undefined;
             periodEnd?: string | null | undefined;
             representativeAuthorityDocument?: string | null | undefined;
-            specialInstructions?: string | null | undefined;
         } | undefined;
         postVisitRecommendations?: {
             doctorFullName: string;
@@ -63847,7 +63850,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -63922,7 +63925,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             diagnosisOrIndication: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -64186,7 +64189,7 @@ export declare const createImagingStudySchema: z.ZodObject<{
     title: string;
     sourceName: string;
     sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-    kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo";
+    kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo";
     visitId?: string | null | undefined;
     toothCode?: string | null | undefined;
     storagePath?: string | null | undefined;
@@ -64197,7 +64200,7 @@ export declare const createImagingStudySchema: z.ZodObject<{
 }, {
     patientId: string;
     title: string;
-    kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo";
+    kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo";
     sourceName?: string | undefined;
     sourceKind?: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch" | undefined;
     visitId?: string | null | undefined;
@@ -64239,14 +64242,14 @@ export declare const imagingImportPreviewRowSchema: z.ZodObject<{
     status: z.ZodEnum<["ready", "warning", "blocked"]>;
     warnings: z.ZodArray<z.ZodString, "many">;
 }, "strip", z.ZodTypeAny, {
-    status: "ready" | "warning" | "blocked";
+    status: "warning" | "ready" | "blocked";
     patientId: string | null;
     warnings: string[];
     title: string | null;
     sourceName: string;
     sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
     phone: string | null;
-    kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+    kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
     toothCode: string | null;
     region: string | null;
     capturedAt: string | null;
@@ -64254,14 +64257,14 @@ export declare const imagingImportPreviewRowSchema: z.ZodObject<{
     patientName: string | null;
     filePath: string | null;
 }, {
-    status: "ready" | "warning" | "blocked";
+    status: "warning" | "ready" | "blocked";
     patientId: string | null;
     warnings: string[];
     title: string | null;
     sourceName: string;
     sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
     phone: string | null;
-    kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+    kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
     toothCode: string | null;
     region: string | null;
     capturedAt: string | null;
@@ -64293,14 +64296,14 @@ export declare const imagingImportPreviewResponseSchema: z.ZodObject<{
         status: z.ZodEnum<["ready", "warning", "blocked"]>;
         warnings: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         patientId: string | null;
         warnings: string[];
         title: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         phone: string | null;
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         toothCode: string | null;
         region: string | null;
         capturedAt: string | null;
@@ -64308,14 +64311,14 @@ export declare const imagingImportPreviewResponseSchema: z.ZodObject<{
         patientName: string | null;
         filePath: string | null;
     }, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         patientId: string | null;
         warnings: string[];
         title: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         phone: string | null;
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         toothCode: string | null;
         region: string | null;
         capturedAt: string | null;
@@ -64332,14 +64335,14 @@ export declare const imagingImportPreviewResponseSchema: z.ZodObject<{
     blockedRows: number;
     readyRows: number;
     rows: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         patientId: string | null;
         warnings: string[];
         title: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         phone: string | null;
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         toothCode: string | null;
         region: string | null;
         capturedAt: string | null;
@@ -64356,14 +64359,14 @@ export declare const imagingImportPreviewResponseSchema: z.ZodObject<{
     blockedRows: number;
     readyRows: number;
     rows: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         patientId: string | null;
         warnings: string[];
         title: string | null;
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         phone: string | null;
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         toothCode: string | null;
         region: string | null;
         capturedAt: string | null;
@@ -64403,14 +64406,14 @@ export declare const imagingImportCommitResponseSchema: z.ZodObject<{
             status: z.ZodEnum<["ready", "warning", "blocked"]>;
             warnings: z.ZodArray<z.ZodString, "many">;
         }, "strip", z.ZodTypeAny, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             patientId: string | null;
             warnings: string[];
             title: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             phone: string | null;
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
             capturedAt: string | null;
@@ -64418,14 +64421,14 @@ export declare const imagingImportCommitResponseSchema: z.ZodObject<{
             patientName: string | null;
             filePath: string | null;
         }, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             patientId: string | null;
             warnings: string[];
             title: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             phone: string | null;
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
             capturedAt: string | null;
@@ -64442,14 +64445,14 @@ export declare const imagingImportCommitResponseSchema: z.ZodObject<{
         blockedRows: number;
         readyRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             patientId: string | null;
             warnings: string[];
             title: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             phone: string | null;
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
             capturedAt: string | null;
@@ -64466,14 +64469,14 @@ export declare const imagingImportCommitResponseSchema: z.ZodObject<{
         blockedRows: number;
         readyRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             patientId: string | null;
             warnings: string[];
             title: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             phone: string | null;
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
             capturedAt: string | null;
@@ -64497,14 +64500,14 @@ export declare const imagingImportCommitResponseSchema: z.ZodObject<{
         blockedRows: number;
         readyRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             patientId: string | null;
             warnings: string[];
             title: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             phone: string | null;
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
             capturedAt: string | null;
@@ -64528,14 +64531,14 @@ export declare const imagingImportCommitResponseSchema: z.ZodObject<{
         blockedRows: number;
         readyRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             patientId: string | null;
             warnings: string[];
             title: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             phone: string | null;
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
             capturedAt: string | null;
@@ -64599,14 +64602,14 @@ export declare const imagingFolderScanResponseSchema: z.ZodObject<{
             status: z.ZodEnum<["ready", "warning", "blocked"]>;
             warnings: z.ZodArray<z.ZodString, "many">;
         }, "strip", z.ZodTypeAny, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             patientId: string | null;
             warnings: string[];
             title: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             phone: string | null;
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
             capturedAt: string | null;
@@ -64614,14 +64617,14 @@ export declare const imagingFolderScanResponseSchema: z.ZodObject<{
             patientName: string | null;
             filePath: string | null;
         }, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             patientId: string | null;
             warnings: string[];
             title: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             phone: string | null;
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
             capturedAt: string | null;
@@ -64638,14 +64641,14 @@ export declare const imagingFolderScanResponseSchema: z.ZodObject<{
         blockedRows: number;
         readyRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             patientId: string | null;
             warnings: string[];
             title: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             phone: string | null;
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
             capturedAt: string | null;
@@ -64662,14 +64665,14 @@ export declare const imagingFolderScanResponseSchema: z.ZodObject<{
         blockedRows: number;
         readyRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             patientId: string | null;
             warnings: string[];
             title: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             phone: string | null;
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
             capturedAt: string | null;
@@ -64691,14 +64694,14 @@ export declare const imagingFolderScanResponseSchema: z.ZodObject<{
         blockedRows: number;
         readyRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             patientId: string | null;
             warnings: string[];
             title: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             phone: string | null;
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
             capturedAt: string | null;
@@ -64723,14 +64726,14 @@ export declare const imagingFolderScanResponseSchema: z.ZodObject<{
         blockedRows: number;
         readyRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             patientId: string | null;
             warnings: string[];
             title: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             phone: string | null;
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
             capturedAt: string | null;
@@ -64917,13 +64920,13 @@ export declare const dicomSeriesPreviewRowSchema: z.ZodObject<{
     status: z.ZodEnum<["ready", "warning", "blocked"]>;
     warnings: z.ZodArray<z.ZodString, "many">;
 }, "strip", z.ZodTypeAny, {
-    status: "ready" | "warning" | "blocked";
+    status: "warning" | "ready" | "blocked";
     patientId: string | null;
     warnings: string[];
     sourceName: string;
     sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
     phone: string | null;
-    kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+    kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
     capturedAt: string | null;
     rowNumber: number;
     patientName: string | null;
@@ -64941,13 +64944,13 @@ export declare const dicomSeriesPreviewRowSchema: z.ZodObject<{
     samplesPerPixel: number | null;
     estimatedPixelBytes: number | null;
 }, {
-    status: "ready" | "warning" | "blocked";
+    status: "warning" | "ready" | "blocked";
     patientId: string | null;
     warnings: string[];
     sourceName: string;
     sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
     phone: string | null;
-    kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+    kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
     capturedAt: string | null;
     rowNumber: number;
     patientName: string | null;
@@ -65077,13 +65080,13 @@ export declare const dicomSeriesPreviewGroupSchema: z.ZodObject<{
     status: z.ZodEnum<["ready", "warning", "blocked"]>;
     warnings: z.ZodArray<z.ZodString, "many">;
 }, "strip", z.ZodTypeAny, {
-    status: "ready" | "warning" | "blocked";
+    status: "warning" | "ready" | "blocked";
     id: string;
     patientId: string | null;
     warnings: string[];
     sourceName: string;
     sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-    kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+    kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
     capturedAt: string | null;
     patientName: string | null;
     modality: string | null;
@@ -65123,13 +65126,13 @@ export declare const dicomSeriesPreviewGroupSchema: z.ZodObject<{
         };
     };
 }, {
-    status: "ready" | "warning" | "blocked";
+    status: "warning" | "ready" | "blocked";
     id: string;
     patientId: string | null;
     warnings: string[];
     sourceName: string;
     sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-    kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+    kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
     capturedAt: string | null;
     patientName: string | null;
     modality: string | null;
@@ -65203,13 +65206,13 @@ export declare const dicomSeriesPreviewResponseSchema: z.ZodObject<{
         status: z.ZodEnum<["ready", "warning", "blocked"]>;
         warnings: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         phone: string | null;
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         rowNumber: number;
         patientName: string | null;
@@ -65227,13 +65230,13 @@ export declare const dicomSeriesPreviewResponseSchema: z.ZodObject<{
         samplesPerPixel: number | null;
         estimatedPixelBytes: number | null;
     }, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         phone: string | null;
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         rowNumber: number;
         patientName: string | null;
@@ -65362,13 +65365,13 @@ export declare const dicomSeriesPreviewResponseSchema: z.ZodObject<{
         status: z.ZodEnum<["ready", "warning", "blocked"]>;
         warnings: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -65408,13 +65411,13 @@ export declare const dicomSeriesPreviewResponseSchema: z.ZodObject<{
             };
         };
     }, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -65460,13 +65463,13 @@ export declare const dicomSeriesPreviewResponseSchema: z.ZodObject<{
     sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
     totalRows: number;
     rows: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         phone: string | null;
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         rowNumber: number;
         patientName: string | null;
@@ -65490,13 +65493,13 @@ export declare const dicomSeriesPreviewResponseSchema: z.ZodObject<{
     warningSeries: number;
     blockedSeries: number;
     series: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -65541,13 +65544,13 @@ export declare const dicomSeriesPreviewResponseSchema: z.ZodObject<{
     sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
     totalRows: number;
     rows: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         phone: string | null;
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         rowNumber: number;
         patientName: string | null;
@@ -65571,13 +65574,13 @@ export declare const dicomSeriesPreviewResponseSchema: z.ZodObject<{
     warningSeries: number;
     blockedSeries: number;
     series: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -65685,13 +65688,13 @@ export declare const dicomFolderSeriesPreviewResponseSchema: z.ZodObject<{
             status: z.ZodEnum<["ready", "warning", "blocked"]>;
             warnings: z.ZodArray<z.ZodString, "many">;
         }, "strip", z.ZodTypeAny, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             patientId: string | null;
             warnings: string[];
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             phone: string | null;
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             capturedAt: string | null;
             rowNumber: number;
             patientName: string | null;
@@ -65709,13 +65712,13 @@ export declare const dicomFolderSeriesPreviewResponseSchema: z.ZodObject<{
             samplesPerPixel: number | null;
             estimatedPixelBytes: number | null;
         }, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             patientId: string | null;
             warnings: string[];
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             phone: string | null;
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             capturedAt: string | null;
             rowNumber: number;
             patientName: string | null;
@@ -65844,13 +65847,13 @@ export declare const dicomFolderSeriesPreviewResponseSchema: z.ZodObject<{
             status: z.ZodEnum<["ready", "warning", "blocked"]>;
             warnings: z.ZodArray<z.ZodString, "many">;
         }, "strip", z.ZodTypeAny, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             patientId: string | null;
             warnings: string[];
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             capturedAt: string | null;
             patientName: string | null;
             modality: string | null;
@@ -65890,13 +65893,13 @@ export declare const dicomFolderSeriesPreviewResponseSchema: z.ZodObject<{
                 };
             };
         }, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             patientId: string | null;
             warnings: string[];
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             capturedAt: string | null;
             patientName: string | null;
             modality: string | null;
@@ -65942,13 +65945,13 @@ export declare const dicomFolderSeriesPreviewResponseSchema: z.ZodObject<{
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         totalRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             patientId: string | null;
             warnings: string[];
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             phone: string | null;
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             capturedAt: string | null;
             rowNumber: number;
             patientName: string | null;
@@ -65972,13 +65975,13 @@ export declare const dicomFolderSeriesPreviewResponseSchema: z.ZodObject<{
         warningSeries: number;
         blockedSeries: number;
         series: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             patientId: string | null;
             warnings: string[];
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             capturedAt: string | null;
             patientName: string | null;
             modality: string | null;
@@ -66023,13 +66026,13 @@ export declare const dicomFolderSeriesPreviewResponseSchema: z.ZodObject<{
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         totalRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             patientId: string | null;
             warnings: string[];
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             phone: string | null;
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             capturedAt: string | null;
             rowNumber: number;
             patientName: string | null;
@@ -66053,13 +66056,13 @@ export declare const dicomFolderSeriesPreviewResponseSchema: z.ZodObject<{
         warningSeries: number;
         blockedSeries: number;
         series: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             patientId: string | null;
             warnings: string[];
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             capturedAt: string | null;
             patientName: string | null;
             modality: string | null;
@@ -66109,13 +66112,13 @@ export declare const dicomFolderSeriesPreviewResponseSchema: z.ZodObject<{
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         totalRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             patientId: string | null;
             warnings: string[];
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             phone: string | null;
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             capturedAt: string | null;
             rowNumber: number;
             patientName: string | null;
@@ -66139,13 +66142,13 @@ export declare const dicomFolderSeriesPreviewResponseSchema: z.ZodObject<{
         warningSeries: number;
         blockedSeries: number;
         series: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             patientId: string | null;
             warnings: string[];
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             capturedAt: string | null;
             patientName: string | null;
             modality: string | null;
@@ -66199,13 +66202,13 @@ export declare const dicomFolderSeriesPreviewResponseSchema: z.ZodObject<{
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
         totalRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             patientId: string | null;
             warnings: string[];
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             phone: string | null;
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             capturedAt: string | null;
             rowNumber: number;
             patientName: string | null;
@@ -66229,13 +66232,13 @@ export declare const dicomFolderSeriesPreviewResponseSchema: z.ZodObject<{
         warningSeries: number;
         blockedSeries: number;
         series: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             patientId: string | null;
             warnings: string[];
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             capturedAt: string | null;
             patientName: string | null;
             modality: string | null;
@@ -67076,9 +67079,6 @@ export declare const dentalModelWorkbenchManifestSchema: z.ZodObject<{
     warnings: z.ZodArray<z.ZodString, "many">;
     nextAction: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    warnings: string[];
-    nextAction: string;
-    version: "dental-crm-model-workbench-v1";
     items: {
         warnings: string[];
         nextAction: string;
@@ -67115,15 +67115,15 @@ export declare const dentalModelWorkbenchManifestSchema: z.ZodObject<{
             containsMeshGeometry: false;
         } | null;
     }[];
+    warnings: string[];
+    nextAction: string;
+    version: "dental-crm-model-workbench-v1";
     folderFingerprint: string;
     totalModels: number;
     ctSurfaceModels: number;
     largestModelMb: number;
     recommendedTarget: "local_bridge" | "metadata_only" | "external_model_viewer";
 }, {
-    warnings: string[];
-    nextAction: string;
-    version: "dental-crm-model-workbench-v1";
     items: {
         warnings: string[];
         nextAction: string;
@@ -67160,6 +67160,9 @@ export declare const dentalModelWorkbenchManifestSchema: z.ZodObject<{
             containsMeshGeometry: false;
         } | null;
     }[];
+    warnings: string[];
+    nextAction: string;
+    version: "dental-crm-model-workbench-v1";
     folderFingerprint: string;
     totalModels: number;
     ctSurfaceModels: number;
@@ -67419,9 +67422,6 @@ export declare const localImagingOrganizerCaseSchema: z.ZodObject<{
         warnings: z.ZodArray<z.ZodString, "many">;
         nextAction: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        warnings: string[];
-        nextAction: string;
-        version: "dental-crm-model-workbench-v1";
         items: {
             warnings: string[];
             nextAction: string;
@@ -67458,15 +67458,15 @@ export declare const localImagingOrganizerCaseSchema: z.ZodObject<{
                 containsMeshGeometry: false;
             } | null;
         }[];
+        warnings: string[];
+        nextAction: string;
+        version: "dental-crm-model-workbench-v1";
         folderFingerprint: string;
         totalModels: number;
         ctSurfaceModels: number;
         largestModelMb: number;
         recommendedTarget: "local_bridge" | "metadata_only" | "external_model_viewer";
     }, {
-        warnings: string[];
-        nextAction: string;
-        version: "dental-crm-model-workbench-v1";
         items: {
             warnings: string[];
             nextAction: string;
@@ -67503,6 +67503,9 @@ export declare const localImagingOrganizerCaseSchema: z.ZodObject<{
                 containsMeshGeometry: false;
             } | null;
         }[];
+        warnings: string[];
+        nextAction: string;
+        version: "dental-crm-model-workbench-v1";
         folderFingerprint: string;
         totalModels: number;
         ctSurfaceModels: number;
@@ -67540,9 +67543,6 @@ export declare const localImagingOrganizerCaseSchema: z.ZodObject<{
         sizeBytes: number;
     }[];
     modelWorkbenchManifest: {
-        warnings: string[];
-        nextAction: string;
-        version: "dental-crm-model-workbench-v1";
         items: {
             warnings: string[];
             nextAction: string;
@@ -67579,6 +67579,9 @@ export declare const localImagingOrganizerCaseSchema: z.ZodObject<{
                 containsMeshGeometry: false;
             } | null;
         }[];
+        warnings: string[];
+        nextAction: string;
+        version: "dental-crm-model-workbench-v1";
         folderFingerprint: string;
         totalModels: number;
         ctSurfaceModels: number;
@@ -67614,9 +67617,6 @@ export declare const localImagingOrganizerCaseSchema: z.ZodObject<{
         sizeBytes: number;
     }[];
     modelWorkbenchManifest: {
-        warnings: string[];
-        nextAction: string;
-        version: "dental-crm-model-workbench-v1";
         items: {
             warnings: string[];
             nextAction: string;
@@ -67653,6 +67653,9 @@ export declare const localImagingOrganizerCaseSchema: z.ZodObject<{
                 containsMeshGeometry: false;
             } | null;
         }[];
+        warnings: string[];
+        nextAction: string;
+        version: "dental-crm-model-workbench-v1";
         folderFingerprint: string;
         totalModels: number;
         ctSurfaceModels: number;
@@ -67890,9 +67893,6 @@ export declare const localImagingOrganizerResponseSchema: z.ZodObject<{
             warnings: z.ZodArray<z.ZodString, "many">;
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
-            warnings: string[];
-            nextAction: string;
-            version: "dental-crm-model-workbench-v1";
             items: {
                 warnings: string[];
                 nextAction: string;
@@ -67929,15 +67929,15 @@ export declare const localImagingOrganizerResponseSchema: z.ZodObject<{
                     containsMeshGeometry: false;
                 } | null;
             }[];
+            warnings: string[];
+            nextAction: string;
+            version: "dental-crm-model-workbench-v1";
             folderFingerprint: string;
             totalModels: number;
             ctSurfaceModels: number;
             largestModelMb: number;
             recommendedTarget: "local_bridge" | "metadata_only" | "external_model_viewer";
         }, {
-            warnings: string[];
-            nextAction: string;
-            version: "dental-crm-model-workbench-v1";
             items: {
                 warnings: string[];
                 nextAction: string;
@@ -67974,6 +67974,9 @@ export declare const localImagingOrganizerResponseSchema: z.ZodObject<{
                     containsMeshGeometry: false;
                 } | null;
             }[];
+            warnings: string[];
+            nextAction: string;
+            version: "dental-crm-model-workbench-v1";
             folderFingerprint: string;
             totalModels: number;
             ctSurfaceModels: number;
@@ -68011,9 +68014,6 @@ export declare const localImagingOrganizerResponseSchema: z.ZodObject<{
             sizeBytes: number;
         }[];
         modelWorkbenchManifest: {
-            warnings: string[];
-            nextAction: string;
-            version: "dental-crm-model-workbench-v1";
             items: {
                 warnings: string[];
                 nextAction: string;
@@ -68050,6 +68050,9 @@ export declare const localImagingOrganizerResponseSchema: z.ZodObject<{
                     containsMeshGeometry: false;
                 } | null;
             }[];
+            warnings: string[];
+            nextAction: string;
+            version: "dental-crm-model-workbench-v1";
             folderFingerprint: string;
             totalModels: number;
             ctSurfaceModels: number;
@@ -68085,9 +68088,6 @@ export declare const localImagingOrganizerResponseSchema: z.ZodObject<{
             sizeBytes: number;
         }[];
         modelWorkbenchManifest: {
-            warnings: string[];
-            nextAction: string;
-            version: "dental-crm-model-workbench-v1";
             items: {
                 warnings: string[];
                 nextAction: string;
@@ -68124,6 +68124,9 @@ export declare const localImagingOrganizerResponseSchema: z.ZodObject<{
                     containsMeshGeometry: false;
                 } | null;
             }[];
+            warnings: string[];
+            nextAction: string;
+            version: "dental-crm-model-workbench-v1";
             folderFingerprint: string;
             totalModels: number;
             ctSurfaceModels: number;
@@ -68169,9 +68172,6 @@ export declare const localImagingOrganizerResponseSchema: z.ZodObject<{
             sizeBytes: number;
         }[];
         modelWorkbenchManifest: {
-            warnings: string[];
-            nextAction: string;
-            version: "dental-crm-model-workbench-v1";
             items: {
                 warnings: string[];
                 nextAction: string;
@@ -68208,6 +68208,9 @@ export declare const localImagingOrganizerResponseSchema: z.ZodObject<{
                     containsMeshGeometry: false;
                 } | null;
             }[];
+            warnings: string[];
+            nextAction: string;
+            version: "dental-crm-model-workbench-v1";
             folderFingerprint: string;
             totalModels: number;
             ctSurfaceModels: number;
@@ -68251,9 +68254,6 @@ export declare const localImagingOrganizerResponseSchema: z.ZodObject<{
             sizeBytes: number;
         }[];
         modelWorkbenchManifest: {
-            warnings: string[];
-            nextAction: string;
-            version: "dental-crm-model-workbench-v1";
             items: {
                 warnings: string[];
                 nextAction: string;
@@ -68290,6 +68290,9 @@ export declare const localImagingOrganizerResponseSchema: z.ZodObject<{
                     containsMeshGeometry: false;
                 } | null;
             }[];
+            warnings: string[];
+            nextAction: string;
+            version: "dental-crm-model-workbench-v1";
             folderFingerprint: string;
             totalModels: number;
             ctSurfaceModels: number;
@@ -69098,8 +69101,6 @@ export declare const imagingViewerSessionSchema: z.ZodObject<{
     createdAt: string;
     updatedAt: string;
     patientId: string;
-    warnings: string[];
-    visitId: string | null;
     state: {
         mode: "photo" | "two_d" | "stack" | "mpr";
         zoom: number;
@@ -69132,6 +69133,8 @@ export declare const imagingViewerSessionSchema: z.ZodObject<{
             selectedAt: string | null;
         } | null;
     };
+    warnings: string[];
+    visitId: string | null;
     annotations: {
         type: "surgical_guide" | "note" | "panoramic_curve" | "area_roi" | "volume_roi" | "implant_axis" | "nerve_canal" | "bone_density_probe" | "distance" | "angle" | "roi" | "landmark";
         id: string;
@@ -69160,8 +69163,6 @@ export declare const imagingViewerSessionSchema: z.ZodObject<{
     createdAt: string;
     updatedAt: string;
     patientId: string;
-    warnings: string[];
-    visitId: string | null;
     state: {
         mode: "photo" | "two_d" | "stack" | "mpr";
         zoom: number;
@@ -69194,6 +69195,8 @@ export declare const imagingViewerSessionSchema: z.ZodObject<{
             selectedAt?: string | null | undefined;
         } | null | undefined;
     };
+    warnings: string[];
+    visitId: string | null;
     annotations: {
         type: "surgical_guide" | "note" | "panoramic_curve" | "area_roi" | "volume_roi" | "implant_axis" | "nerve_canal" | "bone_density_probe" | "distance" | "angle" | "roi" | "landmark";
         id: string;
@@ -69413,8 +69416,6 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
         createdAt: string;
         updatedAt: string;
         patientId: string;
-        warnings: string[];
-        visitId: string | null;
         state: {
             mode: "photo" | "two_d" | "stack" | "mpr";
             zoom: number;
@@ -69447,6 +69448,8 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
                 selectedAt: string | null;
             } | null;
         };
+        warnings: string[];
+        visitId: string | null;
         annotations: {
             type: "surgical_guide" | "note" | "panoramic_curve" | "area_roi" | "volume_roi" | "implant_axis" | "nerve_canal" | "bone_density_probe" | "distance" | "angle" | "roi" | "landmark";
             id: string;
@@ -69475,8 +69478,6 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
         createdAt: string;
         updatedAt: string;
         patientId: string;
-        warnings: string[];
-        visitId: string | null;
         state: {
             mode: "photo" | "two_d" | "stack" | "mpr";
             zoom: number;
@@ -69509,6 +69510,8 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
                 selectedAt?: string | null | undefined;
             } | null | undefined;
         };
+        warnings: string[];
+        visitId: string | null;
         annotations: {
             type: "surgical_guide" | "note" | "panoramic_curve" | "area_roi" | "volume_roi" | "implant_axis" | "nerve_canal" | "bone_density_probe" | "distance" | "angle" | "roi" | "landmark";
             id: string;
@@ -69541,8 +69544,6 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
         createdAt: string;
         updatedAt: string;
         patientId: string;
-        warnings: string[];
-        visitId: string | null;
         state: {
             mode: "photo" | "two_d" | "stack" | "mpr";
             zoom: number;
@@ -69575,6 +69576,8 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
                 selectedAt: string | null;
             } | null;
         };
+        warnings: string[];
+        visitId: string | null;
         annotations: {
             type: "surgical_guide" | "note" | "panoramic_curve" | "area_roi" | "volume_roi" | "implant_axis" | "nerve_canal" | "bone_density_probe" | "distance" | "angle" | "roi" | "landmark";
             id: string;
@@ -69606,8 +69609,6 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
         createdAt: string;
         updatedAt: string;
         patientId: string;
-        warnings: string[];
-        visitId: string | null;
         state: {
             mode: "photo" | "two_d" | "stack" | "mpr";
             zoom: number;
@@ -69640,6 +69641,8 @@ export declare const imagingViewerSessionResponseSchema: z.ZodObject<{
                 selectedAt?: string | null | undefined;
             } | null | undefined;
         };
+        warnings: string[];
+        visitId: string | null;
         annotations: {
             type: "surgical_guide" | "note" | "panoramic_curve" | "area_roi" | "volume_roi" | "implant_axis" | "nerve_canal" | "bone_density_probe" | "distance" | "angle" | "roi" | "landmark";
             id: string;
@@ -69784,13 +69787,13 @@ export declare const dicomViewerLaunchManifestRequestSchema: z.ZodObject<{
         status: z.ZodEnum<["ready", "warning", "blocked"]>;
         warnings: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -69830,13 +69833,13 @@ export declare const dicomViewerLaunchManifestRequestSchema: z.ZodObject<{
             };
         };
     }, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -70059,13 +70062,13 @@ export declare const dicomViewerLaunchManifestRequestSchema: z.ZodObject<{
     allowExternalHandoff: z.ZodDefault<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
     series: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -70163,13 +70166,13 @@ export declare const dicomViewerLaunchManifestRequestSchema: z.ZodObject<{
     externalViewerPath?: string | null | undefined;
 }, {
     series: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -71659,13 +71662,13 @@ export declare const dicomRenderCachePlanRequestSchema: z.ZodObject<{
         status: z.ZodEnum<["ready", "warning", "blocked"]>;
         warnings: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -71705,13 +71708,13 @@ export declare const dicomRenderCachePlanRequestSchema: z.ZodObject<{
             };
         };
     }, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -71923,13 +71926,13 @@ export declare const dicomRenderCachePlanRequestSchema: z.ZodObject<{
     }>>>;
 }, "strip", z.ZodTypeAny, {
     series: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -72023,13 +72026,13 @@ export declare const dicomRenderCachePlanRequestSchema: z.ZodObject<{
     } | null | undefined;
 }, {
     series: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -72531,13 +72534,13 @@ export declare const dicomViewerToolStateBundleRequestSchema: z.ZodObject<{
         status: z.ZodEnum<["ready", "warning", "blocked"]>;
         warnings: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -72577,13 +72580,13 @@ export declare const dicomViewerToolStateBundleRequestSchema: z.ZodObject<{
             };
         };
     }, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -72860,13 +72863,13 @@ export declare const dicomViewerToolStateBundleRequestSchema: z.ZodObject<{
     }>>>;
 }, "strip", z.ZodTypeAny, {
     series: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -72981,13 +72984,13 @@ export declare const dicomViewerToolStateBundleRequestSchema: z.ZodObject<{
     } | null | undefined;
 }, {
     series: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -73962,13 +73965,13 @@ export declare const dicomWorkstationReadinessRequestSchema: z.ZodObject<{
         status: z.ZodEnum<["ready", "warning", "blocked"]>;
         warnings: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -74008,13 +74011,13 @@ export declare const dicomWorkstationReadinessRequestSchema: z.ZodObject<{
             };
         };
     }, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -74166,13 +74169,13 @@ export declare const dicomWorkstationReadinessRequestSchema: z.ZodObject<{
     }>>>;
 }, "strip", z.ZodTypeAny, {
     series: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -74252,13 +74255,13 @@ export declare const dicomWorkstationReadinessRequestSchema: z.ZodObject<{
     } | null | undefined;
 }, {
     series: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -74675,13 +74678,13 @@ export declare const dicomViewerWorkbenchManifestRequestSchema: z.ZodObject<{
         status: z.ZodEnum<["ready", "warning", "blocked"]>;
         warnings: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -74721,13 +74724,13 @@ export declare const dicomViewerWorkbenchManifestRequestSchema: z.ZodObject<{
             };
         };
     }, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -75060,13 +75063,13 @@ export declare const dicomViewerWorkbenchManifestRequestSchema: z.ZodObject<{
     allowExternalHandoff: z.ZodDefault<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
     series: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -75203,13 +75206,13 @@ export declare const dicomViewerWorkbenchManifestRequestSchema: z.ZodObject<{
     externalViewerPath?: string | null | undefined;
 }, {
     series: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -93388,13 +93391,13 @@ export declare const dicomFolderWorkupPlanSeriesSchema: z.ZodObject<{
         status: z.ZodEnum<["ready", "warning", "blocked"]>;
         warnings: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -93434,13 +93437,13 @@ export declare const dicomFolderWorkupPlanSeriesSchema: z.ZodObject<{
             };
         };
     }, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -94004,13 +94007,13 @@ export declare const dicomFolderWorkupPlanSeriesSchema: z.ZodObject<{
     nextAction: string;
     recommendedPath: "metadata_only" | "external_viewer" | "open_mpr" | "downsampled_mpr";
     series: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -94177,13 +94180,13 @@ export declare const dicomFolderWorkupPlanSeriesSchema: z.ZodObject<{
     nextAction: string;
     recommendedPath: "metadata_only" | "external_viewer" | "open_mpr" | "downsampled_mpr";
     series: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         patientId: string | null;
         warnings: string[];
         sourceName: string;
         sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-        kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+        kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
         capturedAt: string | null;
         patientName: string | null;
         modality: string | null;
@@ -94390,13 +94393,13 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 status: z.ZodEnum<["ready", "warning", "blocked"]>;
                 warnings: z.ZodArray<z.ZodString, "many">;
             }, "strip", z.ZodTypeAny, {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 patientId: string | null;
                 warnings: string[];
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 phone: string | null;
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 capturedAt: string | null;
                 rowNumber: number;
                 patientName: string | null;
@@ -94414,13 +94417,13 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 samplesPerPixel: number | null;
                 estimatedPixelBytes: number | null;
             }, {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 patientId: string | null;
                 warnings: string[];
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 phone: string | null;
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 capturedAt: string | null;
                 rowNumber: number;
                 patientName: string | null;
@@ -94549,13 +94552,13 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 status: z.ZodEnum<["ready", "warning", "blocked"]>;
                 warnings: z.ZodArray<z.ZodString, "many">;
             }, "strip", z.ZodTypeAny, {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 patientId: string | null;
                 warnings: string[];
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 capturedAt: string | null;
                 patientName: string | null;
                 modality: string | null;
@@ -94595,13 +94598,13 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                     };
                 };
             }, {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 patientId: string | null;
                 warnings: string[];
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 capturedAt: string | null;
                 patientName: string | null;
                 modality: string | null;
@@ -94647,13 +94650,13 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             totalRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 patientId: string | null;
                 warnings: string[];
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 phone: string | null;
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 capturedAt: string | null;
                 rowNumber: number;
                 patientName: string | null;
@@ -94677,13 +94680,13 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
             warningSeries: number;
             blockedSeries: number;
             series: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 patientId: string | null;
                 warnings: string[];
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 capturedAt: string | null;
                 patientName: string | null;
                 modality: string | null;
@@ -94728,13 +94731,13 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             totalRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 patientId: string | null;
                 warnings: string[];
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 phone: string | null;
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 capturedAt: string | null;
                 rowNumber: number;
                 patientName: string | null;
@@ -94758,13 +94761,13 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
             warningSeries: number;
             blockedSeries: number;
             series: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 patientId: string | null;
                 warnings: string[];
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 capturedAt: string | null;
                 patientName: string | null;
                 modality: string | null;
@@ -94814,13 +94817,13 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             totalRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 patientId: string | null;
                 warnings: string[];
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 phone: string | null;
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 capturedAt: string | null;
                 rowNumber: number;
                 patientName: string | null;
@@ -94844,13 +94847,13 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
             warningSeries: number;
             blockedSeries: number;
             series: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 patientId: string | null;
                 warnings: string[];
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 capturedAt: string | null;
                 patientName: string | null;
                 modality: string | null;
@@ -94904,13 +94907,13 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             totalRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 patientId: string | null;
                 warnings: string[];
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 phone: string | null;
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 capturedAt: string | null;
                 rowNumber: number;
                 patientName: string | null;
@@ -94934,13 +94937,13 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
             warningSeries: number;
             blockedSeries: number;
             series: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 patientId: string | null;
                 warnings: string[];
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 capturedAt: string | null;
                 patientName: string | null;
                 modality: string | null;
@@ -95100,13 +95103,13 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
             status: z.ZodEnum<["ready", "warning", "blocked"]>;
             warnings: z.ZodArray<z.ZodString, "many">;
         }, "strip", z.ZodTypeAny, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             patientId: string | null;
             warnings: string[];
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             capturedAt: string | null;
             patientName: string | null;
             modality: string | null;
@@ -95146,13 +95149,13 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
                 };
             };
         }, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             patientId: string | null;
             warnings: string[];
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             capturedAt: string | null;
             patientName: string | null;
             modality: string | null;
@@ -95716,13 +95719,13 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
         nextAction: string;
         recommendedPath: "metadata_only" | "external_viewer" | "open_mpr" | "downsampled_mpr";
         series: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             patientId: string | null;
             warnings: string[];
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             capturedAt: string | null;
             patientName: string | null;
             modality: string | null;
@@ -95889,13 +95892,13 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
         nextAction: string;
         recommendedPath: "metadata_only" | "external_viewer" | "open_mpr" | "downsampled_mpr";
         series: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             patientId: string | null;
             warnings: string[];
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             capturedAt: string | null;
             patientName: string | null;
             modality: string | null;
@@ -96073,13 +96076,13 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             totalRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 patientId: string | null;
                 warnings: string[];
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 phone: string | null;
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 capturedAt: string | null;
                 rowNumber: number;
                 patientName: string | null;
@@ -96103,13 +96106,13 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
             warningSeries: number;
             blockedSeries: number;
             series: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 patientId: string | null;
                 warnings: string[];
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 capturedAt: string | null;
                 patientName: string | null;
                 modality: string | null;
@@ -96162,13 +96165,13 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
         nextAction: string;
         recommendedPath: "metadata_only" | "external_viewer" | "open_mpr" | "downsampled_mpr";
         series: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             patientId: string | null;
             warnings: string[];
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             capturedAt: string | null;
             patientName: string | null;
             modality: string | null;
@@ -96344,13 +96347,13 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             totalRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 patientId: string | null;
                 warnings: string[];
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 phone: string | null;
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 capturedAt: string | null;
                 rowNumber: number;
                 patientName: string | null;
@@ -96374,13 +96377,13 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
             warningSeries: number;
             blockedSeries: number;
             series: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 patientId: string | null;
                 warnings: string[];
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 capturedAt: string | null;
                 patientName: string | null;
                 modality: string | null;
@@ -96433,13 +96436,13 @@ export declare const dicomFolderWorkupPlanResponseSchema: z.ZodObject<{
         nextAction: string;
         recommendedPath: "metadata_only" | "external_viewer" | "open_mpr" | "downsampled_mpr";
         series: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             patientId: string | null;
             warnings: string[];
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             capturedAt: string | null;
             patientName: string | null;
             modality: string | null;
@@ -97130,13 +97133,13 @@ export declare const visitNoteDraftRequestSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     patientId: string;
     source: "voice" | "typed" | "image";
-    specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     transcript: string;
 }, {
     patientId: string;
     transcript: string;
     source?: "voice" | "typed" | "image" | undefined;
-    specialty?: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | undefined;
+    specialty?: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | undefined;
 }>;
 export type VisitNoteDraftRequest = z.infer<typeof visitNoteDraftRequestSchema>;
 export declare const visitNoteDraftQualitySchema: z.ZodObject<{
@@ -97150,7 +97153,7 @@ export declare const visitNoteDraftQualitySchema: z.ZodObject<{
     nextAction: z.ZodString;
 }, "strip", z.ZodTypeAny, {
     confidence: number;
-    specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     level: "ready" | "review" | "needs_more_dictation";
     signals: string[];
     nextAction: string;
@@ -97159,7 +97162,7 @@ export declare const visitNoteDraftQualitySchema: z.ZodObject<{
     detectedToothStates?: Record<string, "missing" | "done" | "planned" | "idle" | "watch" | "treatment"> | undefined;
 }, {
     confidence: number;
-    specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     level: "ready" | "review" | "needs_more_dictation";
     signals: string[];
     nextAction: string;
@@ -97216,7 +97219,7 @@ export declare const visitNoteDraftSchema: z.ZodObject<{
         nextAction: z.ZodString;
     }, "strip", z.ZodTypeAny, {
         confidence: number;
-        specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+        specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         level: "ready" | "review" | "needs_more_dictation";
         signals: string[];
         nextAction: string;
@@ -97225,7 +97228,7 @@ export declare const visitNoteDraftSchema: z.ZodObject<{
         detectedToothStates?: Record<string, "missing" | "done" | "planned" | "idle" | "watch" | "treatment"> | undefined;
     }, {
         confidence: number;
-        specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+        specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         level: "ready" | "review" | "needs_more_dictation";
         signals: string[];
         nextAction: string;
@@ -97235,15 +97238,15 @@ export declare const visitNoteDraftSchema: z.ZodObject<{
     }>>;
     warnings: z.ZodArray<z.ZodString, "many">;
 }, "strip", z.ZodTypeAny, {
+    anamnesis: string | null;
+    diagnosis: string | null;
     warnings: string[];
     complaint: string | null;
-    anamnesis: string | null;
     objectiveStatus: string | null;
-    diagnosis: string | null;
     treatmentPlan: string | null;
     quality?: {
         confidence: number;
-        specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+        specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         level: "ready" | "review" | "needs_more_dictation";
         signals: string[];
         nextAction: string;
@@ -97263,15 +97266,15 @@ export declare const visitNoteDraftSchema: z.ZodObject<{
         generalHealthNotes?: string | null | undefined;
     } | null | undefined;
 }, {
+    anamnesis: string | null;
+    diagnosis: string | null;
     warnings: string[];
     complaint: string | null;
-    anamnesis: string | null;
     objectiveStatus: string | null;
-    diagnosis: string | null;
     treatmentPlan: string | null;
     quality?: {
         confidence: number;
-        specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+        specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         level: "ready" | "review" | "needs_more_dictation";
         signals: string[];
         nextAction: string;
@@ -97345,7 +97348,7 @@ export declare const visitDraftAutosaveSchema: z.ZodObject<{
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -97354,7 +97357,7 @@ export declare const visitDraftAutosaveSchema: z.ZodObject<{
             detectedToothStates?: Record<string, "missing" | "done" | "planned" | "idle" | "watch" | "treatment"> | undefined;
         }, {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -97364,15 +97367,15 @@ export declare const visitDraftAutosaveSchema: z.ZodObject<{
         }>>;
         warnings: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -97392,15 +97395,15 @@ export declare const visitDraftAutosaveSchema: z.ZodObject<{
             generalHealthNotes?: string | null | undefined;
         } | null | undefined;
     }, {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -97428,15 +97431,15 @@ export declare const visitDraftAutosaveSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     patientId: string;
     draft: {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -97460,22 +97463,22 @@ export declare const visitDraftAutosaveSchema: z.ZodObject<{
     transcript: string;
     clientSavedAt: string | null;
     serverSavedAt: string;
-    selectedSpecialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    selectedSpecialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     baseRevision: number | null;
     clientDraftId: string | null;
     transcriptHash: string;
 }, {
     patientId: string;
     draft: {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -97499,7 +97502,7 @@ export declare const visitDraftAutosaveSchema: z.ZodObject<{
     transcript: string;
     clientSavedAt: string | null;
     serverSavedAt: string;
-    selectedSpecialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    selectedSpecialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     baseRevision: number | null;
     clientDraftId: string | null;
     transcriptHash: string;
@@ -97558,7 +97561,7 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -97567,7 +97570,7 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
             detectedToothStates?: Record<string, "missing" | "done" | "planned" | "idle" | "watch" | "treatment"> | undefined;
         }, {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -97577,15 +97580,15 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
         }>>;
         warnings: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -97605,15 +97608,15 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
             generalHealthNotes?: string | null | undefined;
         } | null | undefined;
     }, {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -97639,15 +97642,15 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     patientId: string;
     draft: {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -97669,22 +97672,22 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
     };
     visitId: string;
     transcript: string;
-    selectedSpecialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    selectedSpecialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     clientSavedAt?: string | null | undefined;
     baseRevision?: number | null | undefined;
     clientDraftId?: string | null | undefined;
 }, {
     patientId: string;
     draft: {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -97705,7 +97708,7 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
         } | null | undefined;
     };
     visitId: string;
-    selectedSpecialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    selectedSpecialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     transcript?: string | undefined;
     clientSavedAt?: string | null | undefined;
     baseRevision?: number | null | undefined;
@@ -97713,15 +97716,15 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
 }>, {
     patientId: string;
     draft: {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -97743,22 +97746,22 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
     };
     visitId: string;
     transcript: string;
-    selectedSpecialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    selectedSpecialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     clientSavedAt?: string | null | undefined;
     baseRevision?: number | null | undefined;
     clientDraftId?: string | null | undefined;
 }, {
     patientId: string;
     draft: {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -97779,7 +97782,7 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
         } | null | undefined;
     };
     visitId: string;
-    selectedSpecialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    selectedSpecialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     transcript?: string | undefined;
     clientSavedAt?: string | null | undefined;
     baseRevision?: number | null | undefined;
@@ -97840,7 +97843,7 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
                 nextAction: z.ZodString;
             }, "strip", z.ZodTypeAny, {
                 confidence: number;
-                specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+                specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
                 level: "ready" | "review" | "needs_more_dictation";
                 signals: string[];
                 nextAction: string;
@@ -97849,7 +97852,7 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
                 detectedToothStates?: Record<string, "missing" | "done" | "planned" | "idle" | "watch" | "treatment"> | undefined;
             }, {
                 confidence: number;
-                specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+                specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
                 level: "ready" | "review" | "needs_more_dictation";
                 signals: string[];
                 nextAction: string;
@@ -97859,15 +97862,15 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
             }>>;
             warnings: z.ZodArray<z.ZodString, "many">;
         }, "strip", z.ZodTypeAny, {
+            anamnesis: string | null;
+            diagnosis: string | null;
             warnings: string[];
             complaint: string | null;
-            anamnesis: string | null;
             objectiveStatus: string | null;
-            diagnosis: string | null;
             treatmentPlan: string | null;
             quality?: {
                 confidence: number;
-                specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+                specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
                 level: "ready" | "review" | "needs_more_dictation";
                 signals: string[];
                 nextAction: string;
@@ -97887,15 +97890,15 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
                 generalHealthNotes?: string | null | undefined;
             } | null | undefined;
         }, {
+            anamnesis: string | null;
+            diagnosis: string | null;
             warnings: string[];
             complaint: string | null;
-            anamnesis: string | null;
             objectiveStatus: string | null;
-            diagnosis: string | null;
             treatmentPlan: string | null;
             quality?: {
                 confidence: number;
-                specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+                specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
                 level: "ready" | "review" | "needs_more_dictation";
                 signals: string[];
                 nextAction: string;
@@ -97923,15 +97926,15 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         patientId: string;
         draft: {
+            anamnesis: string | null;
+            diagnosis: string | null;
             warnings: string[];
             complaint: string | null;
-            anamnesis: string | null;
             objectiveStatus: string | null;
-            diagnosis: string | null;
             treatmentPlan: string | null;
             quality?: {
                 confidence: number;
-                specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+                specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
                 level: "ready" | "review" | "needs_more_dictation";
                 signals: string[];
                 nextAction: string;
@@ -97955,22 +97958,22 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
         transcript: string;
         clientSavedAt: string | null;
         serverSavedAt: string;
-        selectedSpecialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+        selectedSpecialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         baseRevision: number | null;
         clientDraftId: string | null;
         transcriptHash: string;
     }, {
         patientId: string;
         draft: {
+            anamnesis: string | null;
+            diagnosis: string | null;
             warnings: string[];
             complaint: string | null;
-            anamnesis: string | null;
             objectiveStatus: string | null;
-            diagnosis: string | null;
             treatmentPlan: string | null;
             quality?: {
                 confidence: number;
-                specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+                specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
                 level: "ready" | "review" | "needs_more_dictation";
                 signals: string[];
                 nextAction: string;
@@ -97994,7 +97997,7 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
         transcript: string;
         clientSavedAt: string | null;
         serverSavedAt: string;
-        selectedSpecialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+        selectedSpecialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         baseRevision: number | null;
         clientDraftId: string | null;
         transcriptHash: string;
@@ -98003,15 +98006,15 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
     serverDraft: {
         patientId: string;
         draft: {
+            anamnesis: string | null;
+            diagnosis: string | null;
             warnings: string[];
             complaint: string | null;
-            anamnesis: string | null;
             objectiveStatus: string | null;
-            diagnosis: string | null;
             treatmentPlan: string | null;
             quality?: {
                 confidence: number;
-                specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+                specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
                 level: "ready" | "review" | "needs_more_dictation";
                 signals: string[];
                 nextAction: string;
@@ -98035,7 +98038,7 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
         transcript: string;
         clientSavedAt: string | null;
         serverSavedAt: string;
-        selectedSpecialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+        selectedSpecialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         baseRevision: number | null;
         clientDraftId: string | null;
         transcriptHash: string;
@@ -98044,15 +98047,15 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
     serverDraft: {
         patientId: string;
         draft: {
+            anamnesis: string | null;
+            diagnosis: string | null;
             warnings: string[];
             complaint: string | null;
-            anamnesis: string | null;
             objectiveStatus: string | null;
-            diagnosis: string | null;
             treatmentPlan: string | null;
             quality?: {
                 confidence: number;
-                specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+                specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
                 level: "ready" | "review" | "needs_more_dictation";
                 signals: string[];
                 nextAction: string;
@@ -98076,7 +98079,7 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
         transcript: string;
         clientSavedAt: string | null;
         serverSavedAt: string;
-        selectedSpecialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+        selectedSpecialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         baseRevision: number | null;
         clientDraftId: string | null;
         transcriptHash: string;
@@ -98089,12 +98092,12 @@ export declare const speechTranscriptPolishRequestSchema: z.ZodObject<{
     source: z.ZodDefault<z.ZodEnum<["voice", "typed", "recording_chunk"]>>;
 }, "strip", z.ZodTypeAny, {
     source: "voice" | "typed" | "recording_chunk";
-    specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     transcript: string;
 }, {
     transcript: string;
     source?: "voice" | "typed" | "recording_chunk" | undefined;
-    specialty?: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | undefined;
+    specialty?: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | undefined;
 }>;
 export type SpeechTranscriptPolishRequest = z.infer<typeof speechTranscriptPolishRequestSchema>;
 export declare const speechTranscriptPolishModeSchema: z.ZodEnum<["deterministic", "deterministic_neural"]>;
@@ -98155,7 +98158,7 @@ export declare const speechTranscriptPolishResponseSchema: z.ZodObject<{
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -98164,7 +98167,7 @@ export declare const speechTranscriptPolishResponseSchema: z.ZodObject<{
             detectedToothStates?: Record<string, "missing" | "done" | "planned" | "idle" | "watch" | "treatment"> | undefined;
         }, {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -98174,15 +98177,15 @@ export declare const speechTranscriptPolishResponseSchema: z.ZodObject<{
         }>>;
         warnings: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -98202,15 +98205,15 @@ export declare const speechTranscriptPolishResponseSchema: z.ZodObject<{
             generalHealthNotes?: string | null | undefined;
         } | null | undefined;
     }, {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -98232,15 +98235,15 @@ export declare const speechTranscriptPolishResponseSchema: z.ZodObject<{
     }>;
 }, "strip", z.ZodTypeAny, {
     draft: {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -98269,15 +98272,15 @@ export declare const speechTranscriptPolishResponseSchema: z.ZodObject<{
     neuralWarnings: string[];
 }, {
     draft: {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -98366,7 +98369,7 @@ export declare const acceptVisitDraftSchema: z.ZodObject<{
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -98375,7 +98378,7 @@ export declare const acceptVisitDraftSchema: z.ZodObject<{
             detectedToothStates?: Record<string, "missing" | "done" | "planned" | "idle" | "watch" | "treatment"> | undefined;
         }, {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -98385,15 +98388,15 @@ export declare const acceptVisitDraftSchema: z.ZodObject<{
         }>>;
         warnings: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -98413,15 +98416,15 @@ export declare const acceptVisitDraftSchema: z.ZodObject<{
             generalHealthNotes?: string | null | undefined;
         } | null | undefined;
     }, {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -98447,15 +98450,15 @@ export declare const acceptVisitDraftSchema: z.ZodObject<{
     clientSavedAt: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
     draft: {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -98482,15 +98485,15 @@ export declare const acceptVisitDraftSchema: z.ZodObject<{
     baseRevision?: number | null | undefined;
 }, {
     draft: {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -98563,12 +98566,12 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
         createdAt: string;
         updatedAt: string;
         patientId: string;
+        anamnesis: string | null;
+        diagnosis: string | null;
         appointmentId: string | null;
         revision: number;
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         doctorSummary: string | null;
     }, {
@@ -98578,11 +98581,11 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
         createdAt: string;
         updatedAt: string;
         patientId: string;
+        anamnesis: string | null;
+        diagnosis: string | null;
         appointmentId: string | null;
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         doctorSummary: string | null;
         revision?: number | undefined;
@@ -98625,8 +98628,6 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
             section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         }>, "many">;
     }, "strip", z.ZodTypeAny, {
-        visitId: string;
-        nextAction: string;
         items: {
             id: string;
             ready: boolean;
@@ -98638,12 +98639,12 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
             actionLabel: string;
             section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         }[];
+        visitId: string;
+        nextAction: string;
         score: number;
         readyToSign: boolean;
         blockingItems: number;
     }, {
-        visitId: string;
-        nextAction: string;
         items: {
             id: string;
             ready: boolean;
@@ -98655,6 +98656,8 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
             actionLabel: string;
             section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         }[];
+        visitId: string;
+        nextAction: string;
         score: number;
         readyToSign: boolean;
         blockingItems: number;
@@ -98689,18 +98692,16 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
         createdAt: string;
         updatedAt: string;
         patientId: string;
+        anamnesis: string | null;
+        diagnosis: string | null;
         appointmentId: string | null;
         revision: number;
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         doctorSummary: string | null;
     };
     visitCloseChecklist: {
-        visitId: string;
-        nextAction: string;
         items: {
             id: string;
             ready: boolean;
@@ -98712,6 +98713,8 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
             actionLabel: string;
             section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         }[];
+        visitId: string;
+        nextAction: string;
         score: number;
         readyToSign: boolean;
         blockingItems: number;
@@ -98732,18 +98735,16 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
         createdAt: string;
         updatedAt: string;
         patientId: string;
+        anamnesis: string | null;
+        diagnosis: string | null;
         appointmentId: string | null;
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         doctorSummary: string | null;
         revision?: number | undefined;
     };
     visitCloseChecklist: {
-        visitId: string;
-        nextAction: string;
         items: {
             id: string;
             ready: boolean;
@@ -98755,6 +98756,8 @@ export declare const acceptVisitDraftResponseSchema: z.ZodObject<{
             actionLabel: string;
             section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
         }[];
+        visitId: string;
+        nextAction: string;
         score: number;
         readyToSign: boolean;
         blockingItems: number;
@@ -98955,7 +98958,7 @@ export declare const importPreviewRowSchema: z.ZodObject<{
     status: z.ZodEnum<["ready", "warning", "blocked"]>;
     warnings: z.ZodArray<z.ZodString, "many">;
 }, "strip", z.ZodTypeAny, {
-    status: "ready" | "warning" | "blocked";
+    status: "warning" | "ready" | "blocked";
     notes: string | null;
     warnings: string[];
     phone: string | null;
@@ -98963,7 +98966,7 @@ export declare const importPreviewRowSchema: z.ZodObject<{
     birthDate: string | null;
     rowNumber: number;
 }, {
-    status: "ready" | "warning" | "blocked";
+    status: "warning" | "ready" | "blocked";
     notes: string | null;
     warnings: string[];
     phone: string | null;
@@ -98987,7 +98990,7 @@ export declare const importPreviewResponseSchema: z.ZodObject<{
         status: z.ZodEnum<["ready", "warning", "blocked"]>;
         warnings: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         notes: string | null;
         warnings: string[];
         phone: string | null;
@@ -98995,7 +98998,7 @@ export declare const importPreviewResponseSchema: z.ZodObject<{
         birthDate: string | null;
         rowNumber: number;
     }, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         notes: string | null;
         warnings: string[];
         phone: string | null;
@@ -99010,7 +99013,7 @@ export declare const importPreviewResponseSchema: z.ZodObject<{
     blockedRows: number;
     readyRows: number;
     rows: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         notes: string | null;
         warnings: string[];
         phone: string | null;
@@ -99025,7 +99028,7 @@ export declare const importPreviewResponseSchema: z.ZodObject<{
     blockedRows: number;
     readyRows: number;
     rows: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         notes: string | null;
         warnings: string[];
         phone: string | null;
@@ -99065,7 +99068,7 @@ export declare const importCommitResponseSchema: z.ZodObject<{
             status: z.ZodEnum<["ready", "warning", "blocked"]>;
             warnings: z.ZodArray<z.ZodString, "many">;
         }, "strip", z.ZodTypeAny, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             notes: string | null;
             warnings: string[];
             phone: string | null;
@@ -99073,7 +99076,7 @@ export declare const importCommitResponseSchema: z.ZodObject<{
             birthDate: string | null;
             rowNumber: number;
         }, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             notes: string | null;
             warnings: string[];
             phone: string | null;
@@ -99088,7 +99091,7 @@ export declare const importCommitResponseSchema: z.ZodObject<{
         blockedRows: number;
         readyRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             notes: string | null;
             warnings: string[];
             phone: string | null;
@@ -99103,7 +99106,7 @@ export declare const importCommitResponseSchema: z.ZodObject<{
         blockedRows: number;
         readyRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             notes: string | null;
             warnings: string[];
             phone: string | null;
@@ -99125,7 +99128,7 @@ export declare const importCommitResponseSchema: z.ZodObject<{
         blockedRows: number;
         readyRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             notes: string | null;
             warnings: string[];
             phone: string | null;
@@ -99145,7 +99148,7 @@ export declare const importCommitResponseSchema: z.ZodObject<{
         blockedRows: number;
         readyRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             notes: string | null;
             warnings: string[];
             phone: string | null;
@@ -99193,7 +99196,7 @@ export declare const importIntakeResponseSchema: z.ZodObject<{
             status: z.ZodEnum<["ready", "warning", "blocked"]>;
             warnings: z.ZodArray<z.ZodString, "many">;
         }, "strip", z.ZodTypeAny, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             notes: string | null;
             warnings: string[];
             phone: string | null;
@@ -99201,7 +99204,7 @@ export declare const importIntakeResponseSchema: z.ZodObject<{
             birthDate: string | null;
             rowNumber: number;
         }, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             notes: string | null;
             warnings: string[];
             phone: string | null;
@@ -99216,7 +99219,7 @@ export declare const importIntakeResponseSchema: z.ZodObject<{
         blockedRows: number;
         readyRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             notes: string | null;
             warnings: string[];
             phone: string | null;
@@ -99231,7 +99234,7 @@ export declare const importIntakeResponseSchema: z.ZodObject<{
         blockedRows: number;
         readyRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             notes: string | null;
             warnings: string[];
             phone: string | null;
@@ -99251,7 +99254,7 @@ export declare const importIntakeResponseSchema: z.ZodObject<{
         blockedRows: number;
         readyRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             notes: string | null;
             warnings: string[];
             phone: string | null;
@@ -99272,7 +99275,7 @@ export declare const importIntakeResponseSchema: z.ZodObject<{
         blockedRows: number;
         readyRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             notes: string | null;
             warnings: string[];
             phone: string | null;
@@ -99576,11 +99579,12 @@ export declare const uiPreferencesSchema: z.ZodObject<{
     onboardingStep: z.ZodDefault<z.ZodEnum<["intro", "role", "clinic", "legal", "team", "sources", "telegram", "done"]>>;
     onboardingDraftMode: z.ZodDefault<z.ZodBoolean>;
     odontogramUseSurfaces: z.ZodDefault<z.ZodBoolean>;
+    odontogramViewMode: z.ZodDefault<z.ZodEnum<["anatomical_svg", "compact_clinical", "classic_gost"]>>;
     savedAt: z.ZodDefault<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     version: 1;
     ohifBaseUrl: string;
-    selectedSpecialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    selectedSpecialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     savedAt: string;
     uiLanguage: "ru";
     selectedWorkspaceRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
@@ -99613,7 +99617,7 @@ export declare const uiPreferencesSchema: z.ZodObject<{
     documentIngestionTarget: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text";
     imagingImportSourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
     smartImportMode: "imaging" | "patients" | "auto" | "mixed";
-    imagingKindFilter: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | "all";
+    imagingKindFilter: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | "all";
     dicomWebEndpointUrl: string;
     telegramBotConfigId: string;
     telegramLinkSubjectType: "patient" | "staff";
@@ -99625,10 +99629,11 @@ export declare const uiPreferencesSchema: z.ZodObject<{
     onboardingStep: "done" | "legal" | "telegram" | "role" | "clinic" | "intro" | "team" | "sources";
     onboardingDraftMode: boolean;
     odontogramUseSurfaces: boolean;
+    odontogramViewMode: "anatomical_svg" | "compact_clinical" | "classic_gost";
 }, {
     version?: 1 | undefined;
     ohifBaseUrl?: string | undefined;
-    selectedSpecialty?: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | undefined;
+    selectedSpecialty?: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | undefined;
     savedAt?: string | undefined;
     uiLanguage?: "ru" | undefined;
     selectedWorkspaceRole?: "doctor" | "owner" | "administrator" | "assistant" | "manager" | undefined;
@@ -99661,7 +99666,7 @@ export declare const uiPreferencesSchema: z.ZodObject<{
     documentIngestionTarget?: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text" | undefined;
     imagingImportSourceKind?: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch" | undefined;
     smartImportMode?: "imaging" | "patients" | "auto" | "mixed" | undefined;
-    imagingKindFilter?: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | "all" | undefined;
+    imagingKindFilter?: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | "all" | undefined;
     dicomWebEndpointUrl?: string | undefined;
     telegramBotConfigId?: string | undefined;
     telegramLinkSubjectType?: "patient" | "staff" | undefined;
@@ -99673,7 +99678,10 @@ export declare const uiPreferencesSchema: z.ZodObject<{
     onboardingStep?: "done" | "legal" | "telegram" | "role" | "clinic" | "intro" | "team" | "sources" | undefined;
     onboardingDraftMode?: boolean | undefined;
     odontogramUseSurfaces?: boolean | undefined;
+    odontogramViewMode?: "anatomical_svg" | "compact_clinical" | "classic_gost" | undefined;
 }>;
+export type OdontogramViewMode = "anatomical_svg" | "compact_clinical" | "classic_gost";
+export declare const odontogramViewModeSchema: z.ZodEnum<["anatomical_svg", "compact_clinical", "classic_gost"]>;
 export type UiPreferences = z.infer<typeof uiPreferencesSchema>;
 export declare const uiPreferencesInputSchema: z.ZodObject<Omit<{
     version: z.ZodDefault<z.ZodLiteral<1>>;
@@ -99722,13 +99730,14 @@ export declare const uiPreferencesInputSchema: z.ZodObject<Omit<{
     onboardingStep: z.ZodDefault<z.ZodEnum<["intro", "role", "clinic", "legal", "team", "sources", "telegram", "done"]>>;
     onboardingDraftMode: z.ZodDefault<z.ZodBoolean>;
     odontogramUseSurfaces: z.ZodDefault<z.ZodBoolean>;
+    odontogramViewMode: z.ZodDefault<z.ZodEnum<["anatomical_svg", "compact_clinical", "classic_gost"]>>;
     savedAt: z.ZodDefault<z.ZodString>;
 }, "version" | "savedAt"> & {
     version: z.ZodOptional<z.ZodLiteral<1>>;
     savedAt: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     ohifBaseUrl: string;
-    selectedSpecialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+    selectedSpecialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     uiLanguage: "ru";
     selectedWorkspaceRole: "doctor" | "owner" | "administrator" | "assistant" | "manager";
     selectedProtocolId: string | null;
@@ -99760,7 +99769,7 @@ export declare const uiPreferencesInputSchema: z.ZodObject<Omit<{
     documentIngestionTarget: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text";
     imagingImportSourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
     smartImportMode: "imaging" | "patients" | "auto" | "mixed";
-    imagingKindFilter: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | "all";
+    imagingKindFilter: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | "all";
     dicomWebEndpointUrl: string;
     telegramBotConfigId: string;
     telegramLinkSubjectType: "patient" | "staff";
@@ -99772,12 +99781,13 @@ export declare const uiPreferencesInputSchema: z.ZodObject<Omit<{
     onboardingStep: "done" | "legal" | "telegram" | "role" | "clinic" | "intro" | "team" | "sources";
     onboardingDraftMode: boolean;
     odontogramUseSurfaces: boolean;
+    odontogramViewMode: "anatomical_svg" | "compact_clinical" | "classic_gost";
     version?: 1 | undefined;
     savedAt?: string | undefined;
 }, {
     version?: 1 | undefined;
     ohifBaseUrl?: string | undefined;
-    selectedSpecialty?: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | undefined;
+    selectedSpecialty?: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | undefined;
     savedAt?: string | undefined;
     uiLanguage?: "ru" | undefined;
     selectedWorkspaceRole?: "doctor" | "owner" | "administrator" | "assistant" | "manager" | undefined;
@@ -99810,7 +99820,7 @@ export declare const uiPreferencesInputSchema: z.ZodObject<Omit<{
     documentIngestionTarget?: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text" | undefined;
     imagingImportSourceKind?: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch" | undefined;
     smartImportMode?: "imaging" | "patients" | "auto" | "mixed" | undefined;
-    imagingKindFilter?: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | "all" | undefined;
+    imagingKindFilter?: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | "all" | undefined;
     dicomWebEndpointUrl?: string | undefined;
     telegramBotConfigId?: string | undefined;
     telegramLinkSubjectType?: "patient" | "staff" | undefined;
@@ -99822,6 +99832,7 @@ export declare const uiPreferencesInputSchema: z.ZodObject<Omit<{
     onboardingStep?: "done" | "legal" | "telegram" | "role" | "clinic" | "intro" | "team" | "sources" | undefined;
     onboardingDraftMode?: boolean | undefined;
     odontogramUseSurfaces?: boolean | undefined;
+    odontogramViewMode?: "anatomical_svg" | "compact_clinical" | "classic_gost" | undefined;
 }>;
 export type UiPreferencesInput = z.infer<typeof uiPreferencesInputSchema>;
 export declare const smartImportRequestSchema: z.ZodObject<{
@@ -100206,7 +100217,7 @@ export declare const smartImportPreviewResponseSchema: z.ZodObject<{
             status: z.ZodEnum<["ready", "warning", "blocked"]>;
             warnings: z.ZodArray<z.ZodString, "many">;
         }, "strip", z.ZodTypeAny, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             notes: string | null;
             warnings: string[];
             phone: string | null;
@@ -100214,7 +100225,7 @@ export declare const smartImportPreviewResponseSchema: z.ZodObject<{
             birthDate: string | null;
             rowNumber: number;
         }, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             notes: string | null;
             warnings: string[];
             phone: string | null;
@@ -100229,7 +100240,7 @@ export declare const smartImportPreviewResponseSchema: z.ZodObject<{
         blockedRows: number;
         readyRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             notes: string | null;
             warnings: string[];
             phone: string | null;
@@ -100244,7 +100255,7 @@ export declare const smartImportPreviewResponseSchema: z.ZodObject<{
         blockedRows: number;
         readyRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             notes: string | null;
             warnings: string[];
             phone: string | null;
@@ -100276,14 +100287,14 @@ export declare const smartImportPreviewResponseSchema: z.ZodObject<{
             status: z.ZodEnum<["ready", "warning", "blocked"]>;
             warnings: z.ZodArray<z.ZodString, "many">;
         }, "strip", z.ZodTypeAny, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             patientId: string | null;
             warnings: string[];
             title: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             phone: string | null;
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
             capturedAt: string | null;
@@ -100291,14 +100302,14 @@ export declare const smartImportPreviewResponseSchema: z.ZodObject<{
             patientName: string | null;
             filePath: string | null;
         }, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             patientId: string | null;
             warnings: string[];
             title: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             phone: string | null;
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
             capturedAt: string | null;
@@ -100315,14 +100326,14 @@ export declare const smartImportPreviewResponseSchema: z.ZodObject<{
         blockedRows: number;
         readyRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             patientId: string | null;
             warnings: string[];
             title: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             phone: string | null;
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
             capturedAt: string | null;
@@ -100339,14 +100350,14 @@ export declare const smartImportPreviewResponseSchema: z.ZodObject<{
         blockedRows: number;
         readyRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             patientId: string | null;
             warnings: string[];
             title: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             phone: string | null;
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
             capturedAt: string | null;
@@ -100700,7 +100711,7 @@ export declare const smartImportPreviewResponseSchema: z.ZodObject<{
         blockedRows: number;
         readyRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             notes: string | null;
             warnings: string[];
             phone: string | null;
@@ -100717,14 +100728,14 @@ export declare const smartImportPreviewResponseSchema: z.ZodObject<{
         blockedRows: number;
         readyRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             patientId: string | null;
             warnings: string[];
             title: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             phone: string | null;
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
             capturedAt: string | null;
@@ -100826,7 +100837,7 @@ export declare const smartImportPreviewResponseSchema: z.ZodObject<{
         blockedRows: number;
         readyRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             notes: string | null;
             warnings: string[];
             phone: string | null;
@@ -100843,14 +100854,14 @@ export declare const smartImportPreviewResponseSchema: z.ZodObject<{
         blockedRows: number;
         readyRows: number;
         rows: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             patientId: string | null;
             warnings: string[];
             title: string | null;
             sourceName: string;
             sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
             phone: string | null;
-            kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+            kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
             toothCode: string | null;
             region: string | null;
             capturedAt: string | null;
@@ -100949,7 +100960,7 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 status: z.ZodEnum<["ready", "warning", "blocked"]>;
                 warnings: z.ZodArray<z.ZodString, "many">;
             }, "strip", z.ZodTypeAny, {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 notes: string | null;
                 warnings: string[];
                 phone: string | null;
@@ -100957,7 +100968,7 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 birthDate: string | null;
                 rowNumber: number;
             }, {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 notes: string | null;
                 warnings: string[];
                 phone: string | null;
@@ -100972,7 +100983,7 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             blockedRows: number;
             readyRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 notes: string | null;
                 warnings: string[];
                 phone: string | null;
@@ -100987,7 +100998,7 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             blockedRows: number;
             readyRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 notes: string | null;
                 warnings: string[];
                 phone: string | null;
@@ -101019,14 +101030,14 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 status: z.ZodEnum<["ready", "warning", "blocked"]>;
                 warnings: z.ZodArray<z.ZodString, "many">;
             }, "strip", z.ZodTypeAny, {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 patientId: string | null;
                 warnings: string[];
                 title: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 phone: string | null;
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
                 capturedAt: string | null;
@@ -101034,14 +101045,14 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 patientName: string | null;
                 filePath: string | null;
             }, {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 patientId: string | null;
                 warnings: string[];
                 title: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 phone: string | null;
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
                 capturedAt: string | null;
@@ -101058,14 +101069,14 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             blockedRows: number;
             readyRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 patientId: string | null;
                 warnings: string[];
                 title: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 phone: string | null;
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
                 capturedAt: string | null;
@@ -101082,14 +101093,14 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             blockedRows: number;
             readyRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 patientId: string | null;
                 warnings: string[];
                 title: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 phone: string | null;
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
                 capturedAt: string | null;
@@ -101443,7 +101454,7 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             blockedRows: number;
             readyRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 notes: string | null;
                 warnings: string[];
                 phone: string | null;
@@ -101460,14 +101471,14 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             blockedRows: number;
             readyRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 patientId: string | null;
                 warnings: string[];
                 title: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 phone: string | null;
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
                 capturedAt: string | null;
@@ -101569,7 +101580,7 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             blockedRows: number;
             readyRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 notes: string | null;
                 warnings: string[];
                 phone: string | null;
@@ -101586,14 +101597,14 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             blockedRows: number;
             readyRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 patientId: string | null;
                 warnings: string[];
                 title: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 phone: string | null;
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
                 capturedAt: string | null;
@@ -101684,7 +101695,7 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 status: z.ZodEnum<["ready", "warning", "blocked"]>;
                 warnings: z.ZodArray<z.ZodString, "many">;
             }, "strip", z.ZodTypeAny, {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 notes: string | null;
                 warnings: string[];
                 phone: string | null;
@@ -101692,7 +101703,7 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 birthDate: string | null;
                 rowNumber: number;
             }, {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 notes: string | null;
                 warnings: string[];
                 phone: string | null;
@@ -101707,7 +101718,7 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             blockedRows: number;
             readyRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 notes: string | null;
                 warnings: string[];
                 phone: string | null;
@@ -101722,7 +101733,7 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             blockedRows: number;
             readyRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 notes: string | null;
                 warnings: string[];
                 phone: string | null;
@@ -101744,7 +101755,7 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             blockedRows: number;
             readyRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 notes: string | null;
                 warnings: string[];
                 phone: string | null;
@@ -101764,7 +101775,7 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             blockedRows: number;
             readyRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 notes: string | null;
                 warnings: string[];
                 phone: string | null;
@@ -101804,14 +101815,14 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 status: z.ZodEnum<["ready", "warning", "blocked"]>;
                 warnings: z.ZodArray<z.ZodString, "many">;
             }, "strip", z.ZodTypeAny, {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 patientId: string | null;
                 warnings: string[];
                 title: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 phone: string | null;
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
                 capturedAt: string | null;
@@ -101819,14 +101830,14 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
                 patientName: string | null;
                 filePath: string | null;
             }, {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 patientId: string | null;
                 warnings: string[];
                 title: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 phone: string | null;
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
                 capturedAt: string | null;
@@ -101843,14 +101854,14 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             blockedRows: number;
             readyRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 patientId: string | null;
                 warnings: string[];
                 title: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 phone: string | null;
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
                 capturedAt: string | null;
@@ -101867,14 +101878,14 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             blockedRows: number;
             readyRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 patientId: string | null;
                 warnings: string[];
                 title: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 phone: string | null;
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
                 capturedAt: string | null;
@@ -101898,14 +101909,14 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             blockedRows: number;
             readyRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 patientId: string | null;
                 warnings: string[];
                 title: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 phone: string | null;
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
                 capturedAt: string | null;
@@ -101929,14 +101940,14 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             blockedRows: number;
             readyRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 patientId: string | null;
                 warnings: string[];
                 title: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 phone: string | null;
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
                 capturedAt: string | null;
@@ -101976,7 +101987,7 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             blockedRows: number;
             readyRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 notes: string | null;
                 warnings: string[];
                 phone: string | null;
@@ -101993,14 +102004,14 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             blockedRows: number;
             readyRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 patientId: string | null;
                 warnings: string[];
                 title: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 phone: string | null;
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
                 capturedAt: string | null;
@@ -102085,7 +102096,7 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             blockedRows: number;
             readyRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 notes: string | null;
                 warnings: string[];
                 phone: string | null;
@@ -102110,14 +102121,14 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             blockedRows: number;
             readyRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 patientId: string | null;
                 warnings: string[];
                 title: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 phone: string | null;
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
                 capturedAt: string | null;
@@ -102157,7 +102168,7 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             blockedRows: number;
             readyRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 notes: string | null;
                 warnings: string[];
                 phone: string | null;
@@ -102174,14 +102185,14 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             blockedRows: number;
             readyRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 patientId: string | null;
                 warnings: string[];
                 title: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 phone: string | null;
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
                 capturedAt: string | null;
@@ -102266,7 +102277,7 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             blockedRows: number;
             readyRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 notes: string | null;
                 warnings: string[];
                 phone: string | null;
@@ -102291,14 +102302,14 @@ export declare const smartImportCommitResponseSchema: z.ZodObject<{
             blockedRows: number;
             readyRows: number;
             rows: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 patientId: string | null;
                 warnings: string[];
                 title: string | null;
                 sourceName: string;
                 sourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
                 phone: string | null;
-                kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null;
+                kind: "other" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | null;
                 toothCode: string | null;
                 region: string | null;
                 capturedAt: string | null;
@@ -102589,14 +102600,14 @@ export declare const migrationReadinessItemSchema: z.ZodObject<{
     detail: z.ZodString;
     nextAction: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    status: "ready" | "warning" | "blocked";
+    status: "warning" | "ready" | "blocked";
     id: string;
     title: string;
     detail: string;
     owner: "doctor" | "administrator" | "assistant" | "system";
     nextAction: string;
 }, {
-    status: "ready" | "warning" | "blocked";
+    status: "warning" | "ready" | "blocked";
     id: string;
     title: string;
     detail: string;
@@ -102615,14 +102626,14 @@ export declare const migrationReadinessSchema: z.ZodObject<{
         detail: z.ZodString;
         nextAction: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         title: string;
         detail: string;
         owner: "doctor" | "administrator" | "assistant" | "system";
         nextAction: string;
     }, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         title: string;
         detail: string;
@@ -102637,14 +102648,14 @@ export declare const migrationReadinessSchema: z.ZodObject<{
         detail: z.ZodString;
         nextAction: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         title: string;
         detail: string;
         owner: "doctor" | "administrator" | "assistant" | "system";
         nextAction: string;
     }, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         title: string;
         detail: string;
@@ -102659,14 +102670,14 @@ export declare const migrationReadinessSchema: z.ZodObject<{
         detail: z.ZodString;
         nextAction: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         title: string;
         detail: string;
         owner: "doctor" | "administrator" | "assistant" | "system";
         nextAction: string;
     }, {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         title: string;
         detail: string;
@@ -102676,7 +102687,7 @@ export declare const migrationReadinessSchema: z.ZodObject<{
     nextAction: z.ZodString;
 }, "strip", z.ZodTypeAny, {
     ready: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         title: string;
         detail: string;
@@ -102684,7 +102695,7 @@ export declare const migrationReadinessSchema: z.ZodObject<{
         nextAction: string;
     }[];
     warnings: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         title: string;
         detail: string;
@@ -102694,7 +102705,7 @@ export declare const migrationReadinessSchema: z.ZodObject<{
     level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
     nextAction: string;
     blockers: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         title: string;
         detail: string;
@@ -102704,7 +102715,7 @@ export declare const migrationReadinessSchema: z.ZodObject<{
     score: number;
 }, {
     ready: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         title: string;
         detail: string;
@@ -102712,7 +102723,7 @@ export declare const migrationReadinessSchema: z.ZodObject<{
         nextAction: string;
     }[];
     warnings: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         title: string;
         detail: string;
@@ -102722,7 +102733,7 @@ export declare const migrationReadinessSchema: z.ZodObject<{
     level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
     nextAction: string;
     blockers: {
-        status: "ready" | "warning" | "blocked";
+        status: "warning" | "ready" | "blocked";
         id: string;
         title: string;
         detail: string;
@@ -102915,14 +102926,14 @@ export declare const migrationLocalSourceWorkupResponseSchema: z.ZodObject<{
             detail: z.ZodString;
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
             owner: "doctor" | "administrator" | "assistant" | "system";
             nextAction: string;
         }, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -102937,14 +102948,14 @@ export declare const migrationLocalSourceWorkupResponseSchema: z.ZodObject<{
             detail: z.ZodString;
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
             owner: "doctor" | "administrator" | "assistant" | "system";
             nextAction: string;
         }, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -102959,14 +102970,14 @@ export declare const migrationLocalSourceWorkupResponseSchema: z.ZodObject<{
             detail: z.ZodString;
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
             owner: "doctor" | "administrator" | "assistant" | "system";
             nextAction: string;
         }, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -102976,7 +102987,7 @@ export declare const migrationLocalSourceWorkupResponseSchema: z.ZodObject<{
         nextAction: z.ZodString;
     }, "strip", z.ZodTypeAny, {
         ready: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -102984,7 +102995,7 @@ export declare const migrationLocalSourceWorkupResponseSchema: z.ZodObject<{
             nextAction: string;
         }[];
         warnings: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -102994,7 +103005,7 @@ export declare const migrationLocalSourceWorkupResponseSchema: z.ZodObject<{
         level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
         nextAction: string;
         blockers: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -103004,7 +103015,7 @@ export declare const migrationLocalSourceWorkupResponseSchema: z.ZodObject<{
         score: number;
     }, {
         ready: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -103012,7 +103023,7 @@ export declare const migrationLocalSourceWorkupResponseSchema: z.ZodObject<{
             nextAction: string;
         }[];
         warnings: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -103022,7 +103033,7 @@ export declare const migrationLocalSourceWorkupResponseSchema: z.ZodObject<{
         level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
         nextAction: string;
         blockers: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -103224,7 +103235,7 @@ export declare const migrationLocalSourceWorkupResponseSchema: z.ZodObject<{
     sourceLabel: string;
     readiness: {
         ready: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -103232,7 +103243,7 @@ export declare const migrationLocalSourceWorkupResponseSchema: z.ZodObject<{
             nextAction: string;
         }[];
         warnings: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -103242,7 +103253,7 @@ export declare const migrationLocalSourceWorkupResponseSchema: z.ZodObject<{
         level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
         nextAction: string;
         blockers: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -103317,7 +103328,7 @@ export declare const migrationLocalSourceWorkupResponseSchema: z.ZodObject<{
     sourceLabel: string;
     readiness: {
         ready: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -103325,7 +103336,7 @@ export declare const migrationLocalSourceWorkupResponseSchema: z.ZodObject<{
             nextAction: string;
         }[];
         warnings: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -103335,7 +103346,7 @@ export declare const migrationLocalSourceWorkupResponseSchema: z.ZodObject<{
         level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
         nextAction: string;
         blockers: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -103616,14 +103627,14 @@ export declare const migrationLocalSourceProbeResponseSchema: z.ZodObject<{
             detail: z.ZodString;
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
             owner: "doctor" | "administrator" | "assistant" | "system";
             nextAction: string;
         }, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -103638,14 +103649,14 @@ export declare const migrationLocalSourceProbeResponseSchema: z.ZodObject<{
             detail: z.ZodString;
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
             owner: "doctor" | "administrator" | "assistant" | "system";
             nextAction: string;
         }, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -103660,14 +103671,14 @@ export declare const migrationLocalSourceProbeResponseSchema: z.ZodObject<{
             detail: z.ZodString;
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
             owner: "doctor" | "administrator" | "assistant" | "system";
             nextAction: string;
         }, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -103677,7 +103688,7 @@ export declare const migrationLocalSourceProbeResponseSchema: z.ZodObject<{
         nextAction: z.ZodString;
     }, "strip", z.ZodTypeAny, {
         ready: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -103685,7 +103696,7 @@ export declare const migrationLocalSourceProbeResponseSchema: z.ZodObject<{
             nextAction: string;
         }[];
         warnings: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -103695,7 +103706,7 @@ export declare const migrationLocalSourceProbeResponseSchema: z.ZodObject<{
         level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
         nextAction: string;
         blockers: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -103705,7 +103716,7 @@ export declare const migrationLocalSourceProbeResponseSchema: z.ZodObject<{
         score: number;
     }, {
         ready: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -103713,7 +103724,7 @@ export declare const migrationLocalSourceProbeResponseSchema: z.ZodObject<{
             nextAction: string;
         }[];
         warnings: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -103723,7 +103734,7 @@ export declare const migrationLocalSourceProbeResponseSchema: z.ZodObject<{
         level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
         nextAction: string;
         blockers: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -103879,7 +103890,7 @@ export declare const migrationLocalSourceProbeResponseSchema: z.ZodObject<{
     scannedFolders: number;
     readiness: {
         ready: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -103887,7 +103898,7 @@ export declare const migrationLocalSourceProbeResponseSchema: z.ZodObject<{
             nextAction: string;
         }[];
         warnings: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -103897,7 +103908,7 @@ export declare const migrationLocalSourceProbeResponseSchema: z.ZodObject<{
         level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
         nextAction: string;
         blockers: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -103996,7 +104007,7 @@ export declare const migrationLocalSourceProbeResponseSchema: z.ZodObject<{
     scannedFolders: number;
     readiness: {
         ready: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -104004,7 +104015,7 @@ export declare const migrationLocalSourceProbeResponseSchema: z.ZodObject<{
             nextAction: string;
         }[];
         warnings: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -104014,7 +104025,7 @@ export declare const migrationLocalSourceProbeResponseSchema: z.ZodObject<{
         level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
         nextAction: string;
         blockers: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -105005,14 +105016,14 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
                 detail: z.ZodString;
                 nextAction: z.ZodString;
             }, "strip", z.ZodTypeAny, {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
                 owner: "doctor" | "administrator" | "assistant" | "system";
                 nextAction: string;
             }, {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -105027,14 +105038,14 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
                 detail: z.ZodString;
                 nextAction: z.ZodString;
             }, "strip", z.ZodTypeAny, {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
                 owner: "doctor" | "administrator" | "assistant" | "system";
                 nextAction: string;
             }, {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -105049,14 +105060,14 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
                 detail: z.ZodString;
                 nextAction: z.ZodString;
             }, "strip", z.ZodTypeAny, {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
                 owner: "doctor" | "administrator" | "assistant" | "system";
                 nextAction: string;
             }, {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -105066,7 +105077,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
             ready: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -105074,7 +105085,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
                 nextAction: string;
             }[];
             warnings: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -105084,7 +105095,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
             level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
             nextAction: string;
             blockers: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -105094,7 +105105,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
             score: number;
         }, {
             ready: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -105102,7 +105113,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
                 nextAction: string;
             }[];
             warnings: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -105112,7 +105123,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
             level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
             nextAction: string;
             blockers: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -105268,7 +105279,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
         scannedFolders: number;
         readiness: {
             ready: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -105276,7 +105287,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
                 nextAction: string;
             }[];
             warnings: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -105286,7 +105297,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
             level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
             nextAction: string;
             blockers: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -105385,7 +105396,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
         scannedFolders: number;
         readiness: {
             ready: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -105393,7 +105404,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
                 nextAction: string;
             }[];
             warnings: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -105403,7 +105414,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
             level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
             nextAction: string;
             blockers: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -105505,14 +105516,14 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
             detail: z.ZodString;
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
             owner: "doctor" | "administrator" | "assistant" | "system";
             nextAction: string;
         }, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -105527,14 +105538,14 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
             detail: z.ZodString;
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
             owner: "doctor" | "administrator" | "assistant" | "system";
             nextAction: string;
         }, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -105549,14 +105560,14 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
             detail: z.ZodString;
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
             owner: "doctor" | "administrator" | "assistant" | "system";
             nextAction: string;
         }, {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -105566,7 +105577,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
         nextAction: z.ZodString;
     }, "strip", z.ZodTypeAny, {
         ready: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -105574,7 +105585,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
             nextAction: string;
         }[];
         warnings: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -105584,7 +105595,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
         level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
         nextAction: string;
         blockers: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -105594,7 +105605,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
         score: number;
     }, {
         ready: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -105602,7 +105613,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
             nextAction: string;
         }[];
         warnings: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -105612,7 +105623,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
         level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
         nextAction: string;
         blockers: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -105763,7 +105774,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
     score: number;
     readiness: {
         ready: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -105771,7 +105782,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
             nextAction: string;
         }[];
         warnings: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -105781,7 +105792,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
         level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
         nextAction: string;
         blockers: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -105856,7 +105867,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
         scannedFolders: number;
         readiness: {
             ready: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -105864,7 +105875,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
                 nextAction: string;
             }[];
             warnings: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -105874,7 +105885,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
             level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
             nextAction: string;
             blockers: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -105969,7 +105980,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
     score: number;
     readiness: {
         ready: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -105977,7 +105988,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
             nextAction: string;
         }[];
         warnings: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -105987,7 +105998,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
         level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
         nextAction: string;
         blockers: {
-            status: "ready" | "warning" | "blocked";
+            status: "warning" | "ready" | "blocked";
             id: string;
             title: string;
             detail: string;
@@ -106062,7 +106073,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
         scannedFolders: number;
         readiness: {
             ready: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -106070,7 +106081,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
                 nextAction: string;
             }[];
             warnings: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -106080,7 +106091,7 @@ export declare const migrationAutopilotSourceSchema: z.ZodObject<{
             level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
             nextAction: string;
             blockers: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -107047,14 +107058,14 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                     detail: z.ZodString;
                     nextAction: z.ZodString;
                 }, "strip", z.ZodTypeAny, {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
                     owner: "doctor" | "administrator" | "assistant" | "system";
                     nextAction: string;
                 }, {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -107069,14 +107080,14 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                     detail: z.ZodString;
                     nextAction: z.ZodString;
                 }, "strip", z.ZodTypeAny, {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
                     owner: "doctor" | "administrator" | "assistant" | "system";
                     nextAction: string;
                 }, {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -107091,14 +107102,14 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                     detail: z.ZodString;
                     nextAction: z.ZodString;
                 }, "strip", z.ZodTypeAny, {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
                     owner: "doctor" | "administrator" | "assistant" | "system";
                     nextAction: string;
                 }, {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -107108,7 +107119,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 nextAction: z.ZodString;
             }, "strip", z.ZodTypeAny, {
                 ready: {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -107116,7 +107127,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                     nextAction: string;
                 }[];
                 warnings: {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -107126,7 +107137,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
                 nextAction: string;
                 blockers: {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -107136,7 +107147,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 score: number;
             }, {
                 ready: {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -107144,7 +107155,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                     nextAction: string;
                 }[];
                 warnings: {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -107154,7 +107165,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
                 nextAction: string;
                 blockers: {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -107310,7 +107321,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
             scannedFolders: number;
             readiness: {
                 ready: {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -107318,7 +107329,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                     nextAction: string;
                 }[];
                 warnings: {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -107328,7 +107339,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
                 nextAction: string;
                 blockers: {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -107427,7 +107438,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
             scannedFolders: number;
             readiness: {
                 ready: {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -107435,7 +107446,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                     nextAction: string;
                 }[];
                 warnings: {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -107445,7 +107456,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
                 nextAction: string;
                 blockers: {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -107547,14 +107558,14 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 detail: z.ZodString;
                 nextAction: z.ZodString;
             }, "strip", z.ZodTypeAny, {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
                 owner: "doctor" | "administrator" | "assistant" | "system";
                 nextAction: string;
             }, {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -107569,14 +107580,14 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 detail: z.ZodString;
                 nextAction: z.ZodString;
             }, "strip", z.ZodTypeAny, {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
                 owner: "doctor" | "administrator" | "assistant" | "system";
                 nextAction: string;
             }, {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -107591,14 +107602,14 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 detail: z.ZodString;
                 nextAction: z.ZodString;
             }, "strip", z.ZodTypeAny, {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
                 owner: "doctor" | "administrator" | "assistant" | "system";
                 nextAction: string;
             }, {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -107608,7 +107619,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
             ready: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -107616,7 +107627,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 nextAction: string;
             }[];
             warnings: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -107626,7 +107637,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
             level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
             nextAction: string;
             blockers: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -107636,7 +107647,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
             score: number;
         }, {
             ready: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -107644,7 +107655,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 nextAction: string;
             }[];
             warnings: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -107654,7 +107665,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
             level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
             nextAction: string;
             blockers: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -107805,7 +107816,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
         score: number;
         readiness: {
             ready: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -107813,7 +107824,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 nextAction: string;
             }[];
             warnings: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -107823,7 +107834,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
             level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
             nextAction: string;
             blockers: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -107898,7 +107909,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
             scannedFolders: number;
             readiness: {
                 ready: {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -107906,7 +107917,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                     nextAction: string;
                 }[];
                 warnings: {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -107916,7 +107927,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
                 nextAction: string;
                 blockers: {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -108011,7 +108022,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
         score: number;
         readiness: {
             ready: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -108019,7 +108030,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 nextAction: string;
             }[];
             warnings: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -108029,7 +108040,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
             level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
             nextAction: string;
             blockers: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -108104,7 +108115,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
             scannedFolders: number;
             readiness: {
                 ready: {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -108112,7 +108123,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                     nextAction: string;
                 }[];
                 warnings: {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -108122,7 +108133,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
                 nextAction: string;
                 blockers: {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -108974,7 +108985,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
         score: number;
         readiness: {
             ready: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -108982,7 +108993,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 nextAction: string;
             }[];
             warnings: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -108992,7 +109003,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
             level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
             nextAction: string;
             blockers: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -109067,7 +109078,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
             scannedFolders: number;
             readiness: {
                 ready: {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -109075,7 +109086,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                     nextAction: string;
                 }[];
                 warnings: {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -109085,7 +109096,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
                 nextAction: string;
                 blockers: {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -109336,7 +109347,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
         score: number;
         readiness: {
             ready: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -109344,7 +109355,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 nextAction: string;
             }[];
             warnings: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -109354,7 +109365,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
             level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
             nextAction: string;
             blockers: {
-                status: "ready" | "warning" | "blocked";
+                status: "warning" | "ready" | "blocked";
                 id: string;
                 title: string;
                 detail: string;
@@ -109429,7 +109440,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
             scannedFolders: number;
             readiness: {
                 ready: {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -109437,7 +109448,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                     nextAction: string;
                 }[];
                 warnings: {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -109447,7 +109458,7 @@ export declare const migrationAutopilotResponseSchema: z.ZodObject<{
                 level: "blocked" | "manual_review" | "ready_for_preview" | "needs_bridge" | "needs_export";
                 nextAction: string;
                 blockers: {
-                    status: "ready" | "warning" | "blocked";
+                    status: "warning" | "ready" | "blocked";
                     id: string;
                     title: string;
                     detail: string;
@@ -110010,7 +110021,7 @@ export declare const visitFlowDraftStepResultSchema: z.ZodObject<{
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -110019,7 +110030,7 @@ export declare const visitFlowDraftStepResultSchema: z.ZodObject<{
             detectedToothStates?: Record<string, "missing" | "done" | "planned" | "idle" | "watch" | "treatment"> | undefined;
         }, {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -110029,15 +110040,15 @@ export declare const visitFlowDraftStepResultSchema: z.ZodObject<{
         }>>;
         warnings: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -110057,15 +110068,15 @@ export declare const visitFlowDraftStepResultSchema: z.ZodObject<{
             generalHealthNotes?: string | null | undefined;
         } | null | undefined;
     }, {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -110090,15 +110101,15 @@ export declare const visitFlowDraftStepResultSchema: z.ZodObject<{
     status: "pending" | "skipped" | "running" | "error" | "success";
     step: "draft";
     data: {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -110123,15 +110134,15 @@ export declare const visitFlowDraftStepResultSchema: z.ZodObject<{
     status: "pending" | "skipped" | "running" | "error" | "success";
     step: "draft";
     data: {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -110174,7 +110185,7 @@ export declare const visitFlowPlanStepResultSchema: z.ZodObject<{
             orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -110185,7 +110196,7 @@ export declare const visitFlowPlanStepResultSchema: z.ZodObject<{
             orthodonticNotes?: string | null | undefined;
         }, {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -110233,7 +110244,7 @@ export declare const visitFlowPlanStepResultSchema: z.ZodObject<{
         teethOrArea: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -110270,7 +110281,7 @@ export declare const visitFlowPlanStepResultSchema: z.ZodObject<{
         teethOrArea: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -110312,7 +110323,7 @@ export declare const visitFlowPlanStepResultSchema: z.ZodObject<{
         teethOrArea: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -110354,7 +110365,7 @@ export declare const visitFlowPlanStepResultSchema: z.ZodObject<{
         teethOrArea: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -110596,7 +110607,7 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
             nextAction: z.ZodString;
         }, "strip", z.ZodTypeAny, {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -110605,7 +110616,7 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
             detectedToothStates?: Record<string, "missing" | "done" | "planned" | "idle" | "watch" | "treatment"> | undefined;
         }, {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -110615,15 +110626,15 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
         }>>;
         warnings: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -110643,15 +110654,15 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
             generalHealthNotes?: string | null | undefined;
         } | null | undefined;
     }, {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -110676,15 +110687,15 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
     status: "pending" | "skipped" | "running" | "error" | "success";
     step: "draft";
     data: {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -110709,15 +110720,15 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
     status: "pending" | "skipped" | "running" | "error" | "success";
     step: "draft";
     data: {
+        anamnesis: string | null;
+        diagnosis: string | null;
         warnings: string[];
         complaint: string | null;
-        anamnesis: string | null;
         objectiveStatus: string | null;
-        diagnosis: string | null;
         treatmentPlan: string | null;
         quality?: {
             confidence: number;
-            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
             level: "ready" | "review" | "needs_more_dictation";
             signals: string[];
             nextAction: string;
@@ -110758,7 +110769,7 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
             orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -110769,7 +110780,7 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
             orthodonticNotes?: string | null | undefined;
         }, {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -110817,7 +110828,7 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
         teethOrArea: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -110854,7 +110865,7 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
         teethOrArea: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -110896,7 +110907,7 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
         teethOrArea: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -110938,7 +110949,7 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
         teethOrArea: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -111117,16 +111128,16 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
         priceRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
         toothCode: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
+        quantity: number;
         title: string;
         priceRub: number;
         serviceId: string;
-        quantity: number;
         toothCode?: string | null | undefined;
     }, {
+        quantity: number;
         title: string;
         priceRub: number;
         serviceId: string;
-        quantity: number;
         toothCode?: string | null | undefined;
     }>, "many">>;
     orchestratorConfig: z.ZodOptional<z.ZodObject<{
@@ -111159,7 +111170,7 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
             orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         }, "strip", z.ZodTypeAny, {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -111170,7 +111181,7 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
             orthodonticNotes?: string | null | undefined;
         }, {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -111218,7 +111229,7 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
         teethOrArea: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -111255,7 +111266,7 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
         teethOrArea: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -111349,12 +111360,12 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
     doctorFullName?: string | null | undefined;
     source?: string | undefined;
     visitId?: string | undefined;
-    specialty?: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | undefined;
+    specialty?: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | undefined;
     completedServices?: {
+        quantity: number;
         title: string;
         priceRub: number;
         serviceId: string;
-        quantity: number;
         toothCode?: string | null | undefined;
     }[] | undefined;
     orchestratorConfig?: {
@@ -111367,7 +111378,7 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
         teethOrArea: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -111425,12 +111436,12 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
     doctorFullName?: string | null | undefined;
     source?: string | undefined;
     visitId?: string | undefined;
-    specialty?: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal" | undefined;
+    specialty?: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal" | undefined;
     completedServices?: {
+        quantity: number;
         title: string;
         priceRub: number;
         serviceId: string;
-        quantity: number;
         toothCode?: string | null | undefined;
     }[] | undefined;
     orchestratorConfig?: {
@@ -111443,7 +111454,7 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
         teethOrArea: string;
         clinicalToothRows: {
             status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-            surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
             toothOrArea: string;
             diagnosisOrFinding: string;
             indication: string;
@@ -111550,7 +111561,7 @@ export declare const visitFlowResultSchema: z.ZodObject<{
                 nextAction: z.ZodString;
             }, "strip", z.ZodTypeAny, {
                 confidence: number;
-                specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+                specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
                 level: "ready" | "review" | "needs_more_dictation";
                 signals: string[];
                 nextAction: string;
@@ -111559,7 +111570,7 @@ export declare const visitFlowResultSchema: z.ZodObject<{
                 detectedToothStates?: Record<string, "missing" | "done" | "planned" | "idle" | "watch" | "treatment"> | undefined;
             }, {
                 confidence: number;
-                specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+                specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
                 level: "ready" | "review" | "needs_more_dictation";
                 signals: string[];
                 nextAction: string;
@@ -111569,15 +111580,15 @@ export declare const visitFlowResultSchema: z.ZodObject<{
             }>>;
             warnings: z.ZodArray<z.ZodString, "many">;
         }, "strip", z.ZodTypeAny, {
+            anamnesis: string | null;
+            diagnosis: string | null;
             warnings: string[];
             complaint: string | null;
-            anamnesis: string | null;
             objectiveStatus: string | null;
-            diagnosis: string | null;
             treatmentPlan: string | null;
             quality?: {
                 confidence: number;
-                specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+                specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
                 level: "ready" | "review" | "needs_more_dictation";
                 signals: string[];
                 nextAction: string;
@@ -111597,15 +111608,15 @@ export declare const visitFlowResultSchema: z.ZodObject<{
                 generalHealthNotes?: string | null | undefined;
             } | null | undefined;
         }, {
+            anamnesis: string | null;
+            diagnosis: string | null;
             warnings: string[];
             complaint: string | null;
-            anamnesis: string | null;
             objectiveStatus: string | null;
-            diagnosis: string | null;
             treatmentPlan: string | null;
             quality?: {
                 confidence: number;
-                specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+                specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
                 level: "ready" | "review" | "needs_more_dictation";
                 signals: string[];
                 nextAction: string;
@@ -111630,15 +111641,15 @@ export declare const visitFlowResultSchema: z.ZodObject<{
         status: "pending" | "skipped" | "running" | "error" | "success";
         step: "draft";
         data: {
+            anamnesis: string | null;
+            diagnosis: string | null;
             warnings: string[];
             complaint: string | null;
-            anamnesis: string | null;
             objectiveStatus: string | null;
-            diagnosis: string | null;
             treatmentPlan: string | null;
             quality?: {
                 confidence: number;
-                specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+                specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
                 level: "ready" | "review" | "needs_more_dictation";
                 signals: string[];
                 nextAction: string;
@@ -111663,15 +111674,15 @@ export declare const visitFlowResultSchema: z.ZodObject<{
         status: "pending" | "skipped" | "running" | "error" | "success";
         step: "draft";
         data: {
+            anamnesis: string | null;
+            diagnosis: string | null;
             warnings: string[];
             complaint: string | null;
-            anamnesis: string | null;
             objectiveStatus: string | null;
-            diagnosis: string | null;
             treatmentPlan: string | null;
             quality?: {
                 confidence: number;
-                specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+                specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
                 level: "ready" | "review" | "needs_more_dictation";
                 signals: string[];
                 nextAction: string;
@@ -111713,7 +111724,7 @@ export declare const visitFlowResultSchema: z.ZodObject<{
                 orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             }, "strip", z.ZodTypeAny, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -111724,7 +111735,7 @@ export declare const visitFlowResultSchema: z.ZodObject<{
                 orthodonticNotes?: string | null | undefined;
             }, {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -111772,7 +111783,7 @@ export declare const visitFlowResultSchema: z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -111809,7 +111820,7 @@ export declare const visitFlowResultSchema: z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -111851,7 +111862,7 @@ export declare const visitFlowResultSchema: z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -111893,7 +111904,7 @@ export declare const visitFlowResultSchema: z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -112066,15 +112077,15 @@ export declare const visitFlowResultSchema: z.ZodObject<{
         status: "pending" | "skipped" | "running" | "error" | "success";
         step: "draft";
         data: {
+            anamnesis: string | null;
+            diagnosis: string | null;
             warnings: string[];
             complaint: string | null;
-            anamnesis: string | null;
             objectiveStatus: string | null;
-            diagnosis: string | null;
             treatmentPlan: string | null;
             quality?: {
                 confidence: number;
-                specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+                specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
                 level: "ready" | "review" | "needs_more_dictation";
                 signals: string[];
                 nextAction: string;
@@ -112137,7 +112148,7 @@ export declare const visitFlowResultSchema: z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -112177,15 +112188,15 @@ export declare const visitFlowResultSchema: z.ZodObject<{
         status: "pending" | "skipped" | "running" | "error" | "success";
         step: "draft";
         data: {
+            anamnesis: string | null;
+            diagnosis: string | null;
             warnings: string[];
             complaint: string | null;
-            anamnesis: string | null;
             objectiveStatus: string | null;
-            diagnosis: string | null;
             treatmentPlan: string | null;
             quality?: {
                 confidence: number;
-                specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+                specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
                 level: "ready" | "review" | "needs_more_dictation";
                 signals: string[];
                 nextAction: string;
@@ -112248,7 +112259,7 @@ export declare const visitFlowResultSchema: z.ZodObject<{
             teethOrArea: string;
             clinicalToothRows: {
                 status: "completed" | "other" | "implant" | "missing" | "planned" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "prosthetic" | "orthodontic";
-                surfaces: ("occlusal" | "mesial" | "distal" | "not_applicable" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                surfaces: ("occlusal" | "mesial" | "distal" | "palatal" | "not_applicable" | "buccal" | "lingual" | "incisal" | "root" | "implant_site")[];
                 toothOrArea: string;
                 diagnosisOrFinding: string;
                 indication: string;
@@ -113848,7 +113859,7 @@ export declare const anesthesiaLogRecordSchema: z.ZodObject<{
     organizationId: string;
     patientId: string;
     vasoconstrictor: "none" | "1:100000" | "1:200000" | "1:50000";
-    technique: "infiltration" | "mandibular_block" | "tuberal_block" | "infraorbital_block" | "incisive_block" | "palatine_block" | "mental_block" | "intraligamentary" | "intraseptal" | "intraosseous" | "sedation_nitrous" | "sedation_iv";
+    technique: "infiltration" | "intraligamentary" | "intraosseous" | "mandibular_block" | "tuberal_block" | "infraorbital_block" | "incisive_block" | "palatine_block" | "mental_block" | "intraseptal" | "sedation_nitrous" | "sedation_iv";
     drug: "articaine" | "mepivacaine" | "lidocaine" | "bupivacaine";
     drugBrandName: string;
     concentrationPct: number;
@@ -113896,7 +113907,7 @@ export declare const anesthesiaLogRecordSchema: z.ZodObject<{
 }, {
     organizationId: string;
     patientId: string;
-    technique: "infiltration" | "mandibular_block" | "tuberal_block" | "infraorbital_block" | "incisive_block" | "palatine_block" | "mental_block" | "intraligamentary" | "intraseptal" | "intraosseous" | "sedation_nitrous" | "sedation_iv";
+    technique: "infiltration" | "intraligamentary" | "intraosseous" | "mandibular_block" | "tuberal_block" | "infraorbital_block" | "incisive_block" | "palatine_block" | "mental_block" | "intraseptal" | "sedation_nitrous" | "sedation_iv";
     drug: "articaine" | "mepivacaine" | "lidocaine" | "bupivacaine";
     totalDoseMg: number;
     maxAllowedDoseMg: number;
@@ -114645,8 +114656,8 @@ export declare const checkInteractionsRequestSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     patientId: string;
     currentMedications: string[];
-    chronicDiseases: string[];
     patientAgeYears: number;
+    chronicDiseases: string[];
     prescribedInnList: string[];
     vasoconstrictorPlanned: "none" | "1:100000" | "1:200000" | "1:50000";
     isPregnant: boolean;
@@ -114656,8 +114667,8 @@ export declare const checkInteractionsRequestSchema: z.ZodObject<{
     patientId: string;
     prescribedInnList: string[];
     currentMedications?: string[] | undefined;
-    chronicDiseases?: string[] | undefined;
     patientAgeYears?: number | undefined;
+    chronicDiseases?: string[] | undefined;
     localAnestheticPlanned?: string | null | undefined;
     vasoconstrictorPlanned?: "none" | "1:100000" | "1:200000" | "1:50000" | undefined;
     isPregnant?: boolean | undefined;

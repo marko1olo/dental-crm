@@ -65,7 +65,7 @@ export const localAnesthesiaTypeSchema = z.enum([
 export type LocalAnesthesiaType = z.infer<typeof localAnesthesiaTypeSchema>;
 
 /** Препараты для местной анестезии */
-export const anestheticDrugSchema = z.enum([
+export const statutoryAnestheticDrugSchema = z.enum([
 	"septanest_1_100000", // Септанест с адреналином 1:100000 (артикаин 4% + эпинефрин)
 	"septanest_1_200000", // Септанест с адреналином 1:200000
 	"ultracain_ds_forte", // Ультракаин Д-С форте 1:100000 (артикаин 4% + эпинефрин 1:100000)
@@ -76,9 +76,11 @@ export const anestheticDrugSchema = z.enum([
 	"lidocaine_2", // Лидокаин 2% с адреналином
 	"articaine_inibsa", // Артикаин Инибса 1:100000
 ]);
-export type AnestheticDrug = z.infer<typeof anestheticDrugSchema>;
+export type StatutoryAnestheticDrug = z.infer<typeof statutoryAnestheticDrugSchema>;
+export const anestheticDrugSchema = statutoryAnestheticDrugSchema;
+export type AnestheticDrug = StatutoryAnestheticDrug;
 
-export const anestheticDrugLabels: Record<AnestheticDrug, { name: string; activeSubstance: string; carpuleVolumeMl: number; vasoconstrictor: string }> = {
+export const statutoryAnestheticDrugLabels: Record<StatutoryAnestheticDrug, { name: string; activeSubstance: string; carpuleVolumeMl: number; vasoconstrictor: string }> = {
 	septanest_1_100000: {
 		name: "Септанест с адреналином 1:100000",
 		activeSubstance: "Артикаина гидрохлорид 40 мг/мл (4%)",
@@ -91,6 +93,7 @@ export const anestheticDrugLabels: Record<AnestheticDrug, { name: string; active
 		carpuleVolumeMl: 1.7,
 		vasoconstrictor: "Эпинефрин 1:200000 (5 мкг/мл)",
 	},
+
 	ultracain_ds_forte: {
 		name: "Ультракаин Д-С форте 1:100000",
 		activeSubstance: "Артикаина гидрохлорид 40 мг/мл (4%)",
@@ -134,6 +137,9 @@ export const anestheticDrugLabels: Record<AnestheticDrug, { name: string; active
 		vasoconstrictor: "Эпинефрин 1:100000 (10 мкг/мл)",
 	},
 };
+
+export const anestheticDrugLabels = statutoryAnestheticDrugLabels;
+
 
 /** Структурированный клинический шаблон протокола */
 export interface ClinicalProtocolTemplate {

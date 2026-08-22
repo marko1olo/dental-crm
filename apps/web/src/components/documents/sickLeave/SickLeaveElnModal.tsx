@@ -673,15 +673,11 @@ export function SickLeaveElnModal({
 													<button
 														type="button"
 														onClick={() => handleRemovePeriod(index)}
-														style={{
-															background: 'transparent',
-															border: 'none',
-															color: 'var(--danger-fg, #ef4444)',
-															cursor: 'pointer'
-														}}
+														className="sick-leave-delete-period-btn"
 														title="Удалить период"
+														aria-label="Удалить период"
 													>
-														<Trash2 size={16} />
+														<Trash2 size={18} />
 													</button>
 												)}
 											</div>
@@ -1057,7 +1053,7 @@ export function SickLeaveElnModal({
 								<button
 									type="button"
 									className="sick-leave-btn secondary"
-									style={{ padding: '0.25rem 0.5rem', minHeight: '32px' }}
+									style={{ padding: '0.5rem 0.875rem', minHeight: '44px' }}
 									onClick={() => {
 										navigator.clipboard.writeText(xmlPayload);
 										setIsCopiedXml(true);

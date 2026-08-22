@@ -334,7 +334,7 @@ export function AutoclaveJournal257Tab({
 													type="button"
 													onClick={() => onVerifyRecord?.(rec.id, clinicInfo.headNurse)}
 													className="autoclave-btn autoclave-btn-secondary"
-													style={{ padding: "0.25rem 0.5rem", fontSize: "0.6875rem", minHeight: "28px" }}
+													style={{ padding: "0.4rem 0.75rem", fontSize: "0.75rem", minHeight: "44px" }}
 												>
 													Заверить
 												</button>
@@ -348,9 +348,10 @@ export function AutoclaveJournal257Tab({
 													onClick={() => onDeleteRecord(rec.id)}
 													className="autoclave-log-close-btn"
 													title="Удалить запись"
-													style={{ minWidth: "32px", minHeight: "32px", padding: "4px" }}
+													aria-label="Удалить запись"
+													style={{ minWidth: "44px", minHeight: "44px", padding: "8px" }}
 												>
-													<Trash2 size={15} color="#ef4444" />
+													<Trash2 size={16} color="#ef4444" />
 												</button>
 											)}
 										</td>

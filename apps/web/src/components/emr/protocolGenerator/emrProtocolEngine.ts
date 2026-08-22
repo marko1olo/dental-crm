@@ -14,6 +14,10 @@ import {
 	type FdiToothRecord,
 	type ToothSurface,
 	type BlackCavityClass,
+	type ClinicalSpecialtyKind,
+	type AnestheticDrug,
+	type StatutoryAnestheticDrug,
+	type LocalAnesthesiaType,
 	synthesizeClinicalDiary,
 	synthesizeDiariesFromOdontogram,
 	validateForm043uCompliance,
@@ -24,7 +28,14 @@ import {
 	STATUTORY_EMR_PROTOCOL_CATALOG,
 	COMPANION_ICD10_CODES,
 	anestheticDrugLabels,
+	statutoryAnestheticDrugLabels,
 	blackCavityClassLabels,
+	clinicalSpecialtyLabels,
+	blackCavityClassSchema,
+	clinicalSpecialtyKindSchema,
+	localAnesthesiaTypeSchema,
+	anestheticDrugSchema,
+	statutoryAnestheticDrugSchema,
 } from "@dental/shared";
 
 export {
@@ -38,15 +49,31 @@ export {
 	STATUTORY_EMR_PROTOCOL_CATALOG,
 	COMPANION_ICD10_CODES,
 	anestheticDrugLabels,
+	statutoryAnestheticDrugLabels,
 	blackCavityClassLabels,
+	clinicalSpecialtyLabels,
+	blackCavityClassSchema,
+	clinicalSpecialtyKindSchema,
+	localAnesthesiaTypeSchema,
+	anestheticDrugSchema,
+	statutoryAnestheticDrugSchema,
 };
 
 export type {
+	VisitDiaryEntry043,
 	ClinicalDiarySynthesisRequest,
 	Statutory043ComplianceReport,
 	Statutory043Issue,
 	ClinicalProtocolTemplate,
+	FdiToothRecord,
+	ToothSurface,
+	BlackCavityClass,
+	ClinicalSpecialtyKind,
+	AnestheticDrug,
+	StatutoryAnestheticDrug,
+	LocalAnesthesiaType,
 };
+
 
 /** Форматирование протокола SOAP в читаемый текстовый блок для предварительного просмотра */
 export function formatStatutorySoapSummary(diary: VisitDiaryEntry043): string {

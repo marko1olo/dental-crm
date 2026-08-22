@@ -369,7 +369,7 @@ export function AutoclaveNewCycleTab({
 							type="button"
 							onClick={() => setAllPointsStatus(true)}
 							className="autoclave-btn autoclave-btn-secondary"
-							style={{ padding: "0.35rem 0.75rem", fontSize: "0.75rem", minHeight: "36px" }}
+							style={{ padding: "0.5rem 1rem", fontSize: "0.8125rem", minHeight: "44px" }}
 						>
 							Все 5 точек СТЕРИЛЬНО
 						</button>
@@ -377,7 +377,7 @@ export function AutoclaveNewCycleTab({
 							type="button"
 							onClick={() => setAllPointsStatus(false)}
 							className="autoclave-btn autoclave-btn-secondary"
-							style={{ padding: "0.35rem 0.75rem", fontSize: "0.75rem", minHeight: "36px", color: "#dc2626" }}
+							style={{ padding: "0.5rem 1rem", fontSize: "0.8125rem", minHeight: "44px", color: "#dc2626" }}
 						>
 							Сброс (Брак)
 						</button>

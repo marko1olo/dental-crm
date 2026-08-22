@@ -19,14 +19,19 @@ export type { FdiToothRecord, ToothSurface, ToothClinicalStatusCode, SoapVisitDi
 import {
 	type ClinicalProtocolTemplate,
 	type ClinicalSpecialtyKind,
-	type AnestheticDrug,
+	type StatutoryAnestheticDrug,
 	type LocalAnesthesiaType,
 	type BlackCavityClass,
 	STATUTORY_EMR_PROTOCOL_CATALOG,
 	COMPANION_ICD10_CODES,
 	anestheticDrugLabels,
+	statutoryAnestheticDrugLabels,
 	blackCavityClassLabels,
 } from "./emrProtocolPresets.js";
+
+export type { StatutoryAnestheticDrug };
+export { anestheticDrugLabels, statutoryAnestheticDrugLabels };
+
 
 /** Дневниковая запись одного посещения (SOAP формат по Приказу № 834н) */
 export interface VisitDiaryEntry043 {
@@ -68,11 +73,12 @@ export interface ClinicalDiarySynthesisRequest {
 	readonly dateStr?: string | null;
 	readonly timeStr?: string | null;
 	readonly customAnesthesia?: {
-		drug?: AnestheticDrug;
+		drug?: StatutoryAnestheticDrug | string;
 		doseCarpules?: number;
 		doseMl?: number;
 		technique?: LocalAnesthesiaType;
 	} | null;
+
 	readonly customMaterials?: readonly string[] | null;
 	readonly customComplaints?: string | null;
 	readonly customObjectiveNotes?: string | null;
@@ -274,7 +280,7 @@ export function synthesizeClinicalDiary(request: ClinicalDiarySynthesisRequest):
 	// 4. Формирование раздела P (Procedure Protocol)
 	const anesth = request.customAnesthesia || template.anesthesiaDefault;
 	const anesthDrugKey = anesth.drug || template.anesthesiaDefault.drug;
-	const anesthDrugInfo = anestheticDrugLabels[anesthDrugKey] || anestheticDrugLabels.septanest_1_100000;
+	const anesthDrugInfo = statutoryAnestheticDrugLabels[anesthDrugKey as StatutoryAnestheticDrug] || statutoryAnestheticDrugLabels.septanest_1_100000;
 	const anesthCarpules = anesth.doseCarpules || template.anesthesiaDefault.doseCarpules;
 	const anesthMl = anesth.doseMl || Number((anesthCarpules * anesthDrugInfo.carpuleVolumeMl).toFixed(1));
 	const anesthTechnique = anesth.technique || template.anesthesiaDefault.technique;
@@ -652,8 +658,18 @@ export function validateForm043uCompliance(
 			}
 		}
 
-		// Проверка хирургии (K08.1, удаление)
-		if (icdClean === "K08.1" && (protocolLower.includes("удален") || protocolLower.includes("экстракц"))) {
+		// Проверка хирургии (K08.1, удаление зуба)
+		const isSurgeryExtraction =
+			icdClean === "K08.1" &&
+			(protocolLower.includes("удаление зуба") ||
+				protocolLower.includes("удаление корн") ||
+				protocolLower.includes("экстракц") ||
+				protocolLower.includes("синдесмотомия") ||
+				String(d.assessmentDiagnosisText || "").toLowerCase().includes("удален")) &&
+			!protocolLower.includes("коронк") &&
+			!protocolLower.includes("протезиров");
+
+		if (isSurgeryExtraction) {
 			const hasSurgeryKeywords =
 				protocolLower.includes("кюретаж") ||
 				protocolLower.includes("лунк") ||
@@ -672,6 +688,7 @@ export function validateForm043uCompliance(
 				});
 			}
 		}
+
 
 		// Проверка подписи врача
 		if (!d.doctorFullName || String(d.doctorFullName).trim().length < 3) {

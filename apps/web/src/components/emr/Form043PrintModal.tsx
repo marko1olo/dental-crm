@@ -18,6 +18,7 @@ import {
 	ZoomIn,
 	ZoomOut,
 	ChevronRight,
+	Sparkles,
 } from "lucide-react";
 import type {
 	MedicalCardForm043uData,
@@ -36,7 +37,17 @@ import {
 	escapeHtml,
 } from "./emr043Math";
 import { dentalBiteTypeLabels, toothStatusCodeShortMap } from "@dental/shared";
+import { CmoEmrAuditModal } from "./audit/CmoEmrAuditModal";
+import { EmrProtocolGeneratorModal } from "./protocolGenerator/EmrProtocolGeneratorModal";
+import {
+	createAuditRecord,
+	runAutomatedEmrAudit,
+	calculateQualityScore,
+	type EmrAuditRecord,
+	type CmoAuditResolution,
+} from "./audit/cmoEmrAuditEngine";
 import "./emr043Styles.css";
+
 
 export interface Form043PrintModalProps {
 	isOpen: boolean;
@@ -44,6 +55,9 @@ export interface Form043PrintModalProps {
 	initialData?: Partial<MedicalCardForm043uData>;
 	onSave?: (data: MedicalCardForm043uData) => void;
 	readOnly?: boolean;
+	onOpenCmoAudit?: () => void;
+	cmoAuditorName?: string;
+	cmoAuditorRole?: "chief_medical_officer" | "deputy_cmo_qcr" | "medical_commission_chair";
 }
 
 const DEFAULT_043_DATA: MedicalCardForm043uData = {
@@ -216,7 +230,16 @@ const DEFAULT_043_DATA: MedicalCardForm043uData = {
 };
 
 export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
-	function Form043PrintModal({ isOpen, onClose, initialData, onSave, readOnly }) {
+	function Form043PrintModal({
+		isOpen,
+		onClose,
+		initialData,
+		onSave,
+		readOnly,
+		onOpenCmoAudit,
+		cmoAuditorName,
+		cmoAuditorRole,
+	}) {
 		const [formData, setFormData] = useState<MedicalCardForm043uData>(() => {
 			return {
 				...DEFAULT_043_DATA,
@@ -232,6 +255,67 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 		const [zoomScale, setZoomScale] = useState<number>(1.0);
 		const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 		const [copiedToast, setCopiedToast] = useState<boolean>(false);
+
+		// Состояние модального окна экспертизы КЭР (Начмед / ВК)
+		const [isCmoAuditOpen, setIsCmoAuditOpen] = useState<boolean>(false);
+		const [cmoResolution, setCmoResolution] = useState<CmoAuditResolution | null>(null);
+
+		// Состояние генератора клинических протоколов 043/у
+		const [isProtocolGeneratorOpen, setIsProtocolGeneratorOpen] = useState<boolean>(false);
+
+
+		// Формирование записи аудита для текущей карты
+		const currentAuditRecord = useMemo<EmrAuditRecord>(() => {
+			const rec = createAuditRecord({
+				cardData: formData,
+				medicalCardId: formData.passport.medicalCardNumber,
+				patientFullName: formData.passport.patientFullName,
+				patientBirthDate: formData.passport.patientBirthDate,
+				patientGender: formData.passport.patientSex,
+				patientPhone: formData.passport.patientPhone,
+				doctorFullName: formData.passport.attendingDoctorFullName,
+				doctorSpecialty: formData.passport.attendingDoctorSpecialty,
+				visitDate: formData.passport.cardOpenedDate,
+				attachedDocuments: [
+					{
+						id: "doc-ids-043",
+						type: "ids_323fz",
+						title: "ИДС на стоматологическое лечение (ст. 20 323-ФЗ)",
+						isSigned: true,
+						signedByPatient: true,
+						signedByDoctorUkep: Boolean(formData.visitDiaries[0]?.isSignedWithUkep),
+					},
+				],
+				completedActItems: formData.visitDiaries.map((vd) => ({
+					serviceCode: "A16.07.002",
+					serviceName: `Лечение зуба ${vd.toothNumber || "16"} (${vd.assessmentDiagnosisText})`,
+					toothNumber: vd.toothNumber || "16",
+					quantity: 1,
+					priceRub: 4500,
+				})),
+				treatmentPlanItems: formData.visitDiaries.map((vd) => ({
+					serviceCode: "A16.07.002",
+					serviceName: `Лечение зуба ${vd.toothNumber || "16"} (${vd.assessmentDiagnosisText})`,
+					toothNumber: vd.toothNumber || "16",
+					stage: "Терапевтический этап",
+				})),
+			});
+			if (cmoResolution) {
+				rec.cmoResolution = cmoResolution;
+				rec.status = cmoResolution.decision;
+			}
+			return rec;
+		}, [formData, cmoResolution]);
+
+		// Автоматический расчет показателей качества по Приказу 203н
+		const auditCheckSummary = useMemo(() => {
+			const audit = runAutomatedEmrAudit(currentAuditRecord);
+			const score = calculateQualityScore(audit.results, currentAuditRecord.cmoRemarks);
+			const passedCount = audit.results.filter((r) => r.passed).length;
+			const totalCount = audit.results.length;
+			const defects = audit.results.filter((r) => !r.passed);
+			return { score, passedCount, totalCount, defects };
+		}, [currentAuditRecord]);
 
 		// Валидация полноты формы
 		const validation = useMemo(() => {
@@ -388,6 +472,20 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 								<span>{copiedToast ? "Скопировано!" : "Копировать"}</span>
 							</button>
 
+							{/* Экспертиза ЭМК (Начмед / ВК) */}
+							<button
+								type="button"
+								className={`emr043-btn ${cmoResolution?.decision === "approved" ? "emr043-btn-approved" : "emr043-btn-secondary"}`}
+								onClick={() => {
+									setIsCmoAuditOpen(true);
+									onOpenCmoAudit?.();
+								}}
+								title="Экспертиза ЭМК (Начмед / ВК) по критериям Приказа Минздрава РФ № 203н"
+							>
+								<ShieldCheck className="w-4 h-4 text-emerald-600" />
+								<span>Экспертиза ЭМК (Начмед / ВК)</span>
+							</button>
+
 							{/* Полноэкранный режим */}
 							<button
 								type="button"
@@ -482,13 +580,77 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 								Не заполнено: {validation.missingFields.map((m) => m.label).join(", ")}
 							</span>
 						)}
+
+						<div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "10px" }}>
+							<span
+								className={`emr043-cmo-pill ${
+									auditCheckSummary.score >= 90 ? "green" : auditCheckSummary.score >= 70 ? "yellow" : "red"
+								}`}
+								title="Индекс качества по Приказу 203н"
+							>
+								КЭР: <strong>{auditCheckSummary.score}%</strong> ({auditCheckSummary.passedCount}/{auditCheckSummary.totalCount})
+							</span>
+							<button
+								type="button"
+								className="emr043-cmo-trigger-link"
+								onClick={() => {
+									setIsCmoAuditOpen(true);
+									onOpenCmoAudit?.();
+								}}
+							>
+								Экспертиза ЭМК (Начмед / ВК) &rarr;
+							</button>
+						</div>
 					</div>
 
 					{/* ── Основное содержимое вкладки ── */}
 					<main className="emr043-body">
 						{/* Вкладка 1: Обзор и интерактивный лист А4 */}
 						{activeTab === "overview" && (
-							<div className="emr043-preview-container">
+							<div className="emr043-preview-container" style={{ flexDirection: "column", alignItems: "center" }}>
+								<div className="emr043-audit-status-banner emr043-non-printable" style={{ width: "100%", maxWidth: "820px" }}>
+									<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+										<div className={`emr043-audit-badge-icon ${cmoResolution?.decision === "approved" ? "approved" : "pending"}`}>
+											<ShieldCheck className="w-6 h-6" />
+										</div>
+										<div>
+											<div style={{ fontWeight: 700, fontSize: "14px", display: "flex", alignItems: "center", gap: "8px" }}>
+												<span>Экспертиза качества медицинской карты (Приказ № 203н)</span>
+												{cmoResolution ? (
+													<span className={`emr043-status-badge ${cmoResolution.decision}`}>
+														{cmoResolution.decision === "approved" ? "✓ Утверждено ВК / Начмед" : "⚠ Замечания КЭР"}
+													</span>
+												) : (
+													<span className="emr043-status-badge pending">Готова к экспертизе КЭР</span>
+												)}
+											</div>
+											<div style={{ fontSize: "12px", color: "var(--muted, #64748b)", marginTop: "2px" }}>
+												{cmoResolution ? (
+													<span>
+														Эксперт: <strong>{cmoResolution.auditorFullName}</strong> ({cmoResolution.auditorRole}) • Оценка: {cmoResolution.finalQualityScore}%
+													</span>
+												) : (
+													<span>
+														Автоматический скоринг Росздравнадзора: <strong>{auditCheckSummary.score} / 100 баллов</strong> ({auditCheckSummary.defects.length === 0 ? "Дефектов не выявлено" : `Выявлено дефектов: ${auditCheckSummary.defects.length}`})
+													</span>
+												)}
+											</div>
+										</div>
+									</div>
+
+									<button
+										type="button"
+										className="emr043-btn emr043-btn-primary"
+										onClick={() => {
+											setIsCmoAuditOpen(true);
+											onOpenCmoAudit?.();
+										}}
+									>
+										<ShieldCheck className="w-4 h-4" />
+										<span>Экспертиза ЭМК (Начмед / ВК)</span>
+									</button>
+								</div>
+
 								<div
 									className="emr043-a4-sheet"
 									style={{ transform: `scale(${zoomScale})`, transformOrigin: "top center" }}
@@ -711,10 +873,38 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 						{activeTab === "diaries" && (
 							<div>
 								<div className="emr043-section-card">
-									<h3 className="emr043-section-card-title">
-										<Calendar className="w-4 h-4 text-sky-600" />
-										4. Дневники клинических приёмов (Формат SOAP)
-									</h3>
+									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", flexWrap: "wrap", gap: "8px" }}>
+										<h3 className="emr043-section-card-title" style={{ margin: 0 }}>
+											<Calendar className="w-4 h-4 text-sky-600" />
+											4. Дневники клинических приёмов (Формат SOAP)
+										</h3>
+										<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+											<button
+												type="button"
+												className="emr043-btn emr043-btn-primary"
+												style={{ minHeight: "36px", padding: "4px 12px", fontSize: "12px", background: "linear-gradient(135deg, #0d9488 0%, #059669 100%)", color: "white" }}
+												onClick={() => setIsProtocolGeneratorOpen(true)}
+												data-testid="form043-synthesize-diary-btn"
+												title="Сформировать дневник 043/у по МКБ-10 и формуле зубов"
+											>
+												<Sparkles className="w-3.5 h-3.5" />
+												<span>Сформировать дневник 043/у по МКБ-10 и формуле</span>
+											</button>
+											<button
+												type="button"
+												className="emr043-btn emr043-btn-secondary"
+												style={{ minHeight: "36px", padding: "4px 12px", fontSize: "12px" }}
+												onClick={() => {
+													setIsCmoAuditOpen(true);
+													onOpenCmoAudit?.();
+												}}
+											>
+												<ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+												<span>Экспертиза ЭМК (Начмед / ВК)</span>
+											</button>
+										</div>
+									</div>
+
 
 									{formData.visitDiaries.map((diary, index) => (
 										<div key={diary.id || index} className="emr043-soap-card">
@@ -768,10 +958,24 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 						{activeTab === "epicrisis" && (
 							<div>
 								<div className="emr043-section-card">
-									<h3 className="emr043-section-card-title">
-										<Award className="w-4 h-4 text-sky-600" />
-										5. Эпикриз, результаты лечения и план диспансерного наблюдения
-									</h3>
+									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", flexWrap: "wrap", gap: "8px" }}>
+										<h3 className="emr043-section-card-title" style={{ margin: 0 }}>
+											<Award className="w-4 h-4 text-sky-600" />
+											5. Эпикриз, результаты лечения и план диспансерного наблюдения
+										</h3>
+										<button
+											type="button"
+											className="emr043-btn emr043-btn-secondary"
+											style={{ minHeight: "36px", padding: "4px 12px", fontSize: "12px" }}
+											onClick={() => {
+												setIsCmoAuditOpen(true);
+												onOpenCmoAudit?.();
+											}}
+										>
+											<ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+											<span>Экспертиза ЭМК (Начмед / ВК)</span>
+										</button>
+									</div>
 									<div className="emr043-grid-2">
 										<div style={{ gridColumn: "1 / -1" }}>
 											<div className="emr043-field-label">Сводка проведенного лечения (Эпикриз):</div>
@@ -799,11 +1003,93 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 										</div>
 									</div>
 								</div>
+
+								{/* Экспертиза КЭР и заключение врачебной комиссии */}
+								<div className="emr043-section-card" style={{ border: "1px dashed var(--glass-border)", background: "var(--paper)" }}>
+									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+										<div>
+											<div style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 700, fontSize: "13px" }}>
+												<ShieldCheck className="w-4 h-4 text-emerald-600" />
+												<span>Заключение врачебной комиссии и службы КЭР (Приказ № 203н)</span>
+											</div>
+											<div style={{ fontSize: "12px", color: "var(--muted, #64748b)", marginTop: "4px" }}>
+												{cmoResolution ? (
+													<span>
+														Статус: <strong>{cmoResolution.decision === "approved" ? "Утверждено без замечаний" : "Возвращено с замечаниями"}</strong> • Эксперт: {cmoResolution.auditorFullName} ({cmoResolution.auditorRole})
+													</span>
+												) : (
+													<span>Карта ожидает экспертного заключения Начмеда / Председателя врачебной комиссии</span>
+												)}
+											</div>
+										</div>
+
+										<button
+											type="button"
+											className="emr043-btn emr043-btn-primary"
+											style={{ minHeight: "36px", padding: "6px 14px", fontSize: "12px" }}
+											onClick={() => {
+												setIsCmoAuditOpen(true);
+												onOpenCmoAudit?.();
+											}}
+										>
+											<ShieldCheck className="w-4 h-4" />
+											<span>Экспертиза ЭМК (Начмед / ВК)</span>
+										</button>
+									</div>
+								</div>
 							</div>
 						)}
 					</main>
+
+					{/* ── CMO EMR Quality Audit & Approval Modal ── */}
+					<CmoEmrAuditModal
+						isOpen={isCmoAuditOpen}
+						onClose={() => setIsCmoAuditOpen(false)}
+						records={[currentAuditRecord]}
+						onApproveRecord={(_recId, resolution) => {
+							setCmoResolution(resolution);
+						}}
+						onRejectRecord={(_recId, resolution) => {
+							setCmoResolution(resolution);
+						}}
+						currentAuditorName={cmoAuditorName || formData.clinic.chiefDoctorFullName || "Прохоров Константин Игоревич"}
+						currentAuditorRole={cmoAuditorRole || "chief_medical_officer"}
+					/>
+
+					{/* ── EMR Form 043/u Clinical Protocol 1-Click Generator Modal ── */}
+					<EmrProtocolGeneratorModal
+						isOpen={isProtocolGeneratorOpen}
+						onClose={() => setIsProtocolGeneratorOpen(false)}
+						patientFullName={formData.passport.patientFullName}
+						patientBirthDate={formData.passport.patientBirthDate}
+						medicalCardNumber={formData.passport.medicalCardNumber}
+						doctorFullName={formData.passport.attendingDoctorFullName}
+						doctorSpecialty={formData.passport.attendingDoctorSpecialty}
+						odontogramTeeth={formData.dentalStatus.odontogramTeeth}
+						onApplyDiary={(newDiary) => {
+							setFormData((prev) => {
+								const updated = {
+									...prev,
+									visitDiaries: [newDiary, ...prev.visitDiaries],
+								};
+								onSave?.(updated);
+								return updated;
+							});
+						}}
+						onApplyBatchDiaries={(newDiaries) => {
+							setFormData((prev) => {
+								const updated = {
+									...prev,
+									visitDiaries: [...newDiaries, ...prev.visitDiaries],
+								};
+								onSave?.(updated);
+								return updated;
+							});
+						}}
+					/>
 				</div>
 			</div>
 		);
+
 	},
 );
