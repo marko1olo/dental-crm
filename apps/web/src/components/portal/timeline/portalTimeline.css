@@ -1,0 +1,387 @@
+/* ==========================================================================
+   Patient Mobile Portal Odontogram & Treatment Progress Timeline Styles
+   Touch-First, Multi-Theme (Light, Dark, Night, Calm Teal)
+   ========================================================================== */
+
+.portal-timeline-backdrop {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(15, 23, 42, 0.75);
+	backdrop-filter: blur(6px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1000;
+	padding: 12px;
+	box-sizing: border-box;
+}
+
+.portal-timeline-modal {
+	--pt-bg: var(--paper, #ffffff);
+	--pt-surface: var(--paper-strong, #f8fafc);
+	--pt-surface-hover: var(--surface-hover, #f1f5f9);
+	--pt-border: var(--border, #e2e8f0);
+	--pt-border-focus: var(--primary, #0d9488);
+	--pt-text-main: var(--ink, #0f172a);
+	--pt-text-muted: var(--muted, #64748b);
+	--pt-primary: var(--primary, #0d9488);
+	--pt-primary-hover: var(--primary-hover, #0f766e);
+	--pt-primary-light: var(--primary-light, rgba(13, 148, 136, 0.1));
+	--pt-success: var(--success, #10b981);
+	--pt-success-light: rgba(16, 185, 129, 0.12);
+	--pt-warning: var(--warning, #f59e0b);
+	--pt-warning-light: rgba(245, 158, 11, 0.12);
+	--pt-danger: var(--danger, #ef4444);
+	--pt-radius-lg: 16px;
+	--pt-radius-md: 10px;
+	--pt-radius-sm: 6px;
+	--pt-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+	background: var(--pt-bg);
+	color: var(--pt-text-main);
+	border: 1px solid var(--pt-border);
+	border-radius: var(--pt-radius-lg);
+	box-shadow: var(--pt-shadow);
+	width: 100%;
+	max-width: 1100px;
+	height: 92vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-sizing: border-box;
+	font-family: inherit;
+}
+
+/* Multi-Theme Overrides */
+[data-theme="dark"] .portal-timeline-modal,
+.dark .portal-timeline-modal {
+	--pt-bg: #0f172a;
+	--pt-surface: #1e293b;
+	--pt-surface-hover: #334155;
+	--pt-border: #334155;
+	--pt-text-main: #f8fafc;
+	--pt-text-muted: #94a3b8;
+	--pt-primary: #2dd4bf;
+	--pt-primary-hover: #14b8a6;
+	--pt-primary-light: rgba(45, 212, 191, 0.15);
+}
+
+[data-theme="night"] .portal-timeline-modal,
+[data-theme="oled"] .portal-timeline-modal {
+	--pt-bg: #000000;
+	--pt-surface: #121215;
+	--pt-surface-hover: #27272a;
+	--pt-border: #27272a;
+	--pt-text-main: #ffffff;
+	--pt-text-muted: #a1a1aa;
+	--pt-primary: #2dd4bf;
+	--pt-primary-hover: #5eead4;
+}
+
+[data-theme="calm_teal"] .portal-timeline-modal,
+[data-theme="calm-teal"] .portal-timeline-modal {
+	--pt-bg: #ffffff;
+	--pt-surface: #f0fdfa;
+	--pt-surface-hover: #ccfbf1;
+	--pt-border: #99f6e4;
+	--pt-text-main: #134e4a;
+	--pt-text-muted: #0f766e;
+	--pt-primary: #0f766e;
+	--pt-primary-hover: #115e59;
+}
+
+/* Header */
+.pt-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 20px;
+	border-bottom: 1px solid var(--pt-border);
+	background: var(--pt-surface);
+	flex-shrink: 0;
+}
+
+.pt-header-user {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.pt-avatar {
+	width: 44px;
+	height: 44px;
+	border-radius: 50%;
+	background: var(--pt-primary-light);
+	color: var(--pt-primary);
+	font-weight: 700;
+	font-size: 1.125rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: 1.5px solid var(--pt-primary);
+}
+
+.pt-header-title {
+	font-size: 1.125rem;
+	font-weight: 700;
+	margin: 0;
+	color: var(--pt-text-main);
+}
+
+.pt-header-subtitle {
+	font-size: 0.8125rem;
+	color: var(--pt-text-muted);
+	margin: 2px 0 0 0;
+}
+
+.pt-close-btn {
+	min-width: 44px;
+	min-height: 44px;
+	border-radius: var(--pt-radius-sm);
+	border: 1px solid var(--pt-border);
+	background: var(--pt-bg);
+	color: var(--pt-text-muted);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.pt-close-btn:hover {
+	background: var(--pt-surface-hover);
+	color: var(--pt-text-main);
+}
+
+/* Body */
+.pt-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 18px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+}
+
+/* Overview Progress & Next Visit Cards */
+.pt-overview-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 12px;
+}
+
+.pt-card {
+	background: var(--pt-surface);
+	border: 1px solid var(--pt-border);
+	border-radius: var(--pt-radius-md);
+	padding: 14px 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.pt-card-title {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--pt-text-muted);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+}
+
+.pt-progress-bar-bg {
+	height: 8px;
+	background: rgba(148, 163, 184, 0.2);
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.pt-progress-bar-fill {
+	height: 100%;
+	background: var(--pt-primary);
+	border-radius: 4px;
+	transition: width 0.3s ease;
+}
+
+/* Interactive Odontogram Dental Arch */
+.pt-odontogram-card {
+	background: var(--pt-surface);
+	border: 1.5px solid var(--pt-border);
+	border-radius: var(--pt-radius-md);
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.pt-tooth-grid {
+	display: flex;
+	justify-content: center;
+	gap: 4px;
+	flex-wrap: wrap;
+}
+
+.pt-tooth-btn {
+	min-width: 44px;
+	min-height: 48px;
+	border-radius: 6px;
+	border: 1.5px solid var(--pt-border);
+	background: var(--pt-bg);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 2px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.pt-tooth-btn:hover {
+	transform: translateY(-2px);
+	border-color: var(--pt-border-focus);
+}
+
+.pt-tooth-btn.selected {
+	border-color: var(--pt-primary);
+	box-shadow: 0 0 0 2px var(--pt-primary-light);
+}
+
+.pt-tooth-num {
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--pt-text-main);
+}
+
+.pt-tooth-indicator {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+}
+
+/* Selected Tooth Detail Banner */
+.pt-tooth-detail-box {
+	background: var(--pt-bg);
+	border: 1.5px solid var(--pt-primary);
+	border-radius: var(--pt-radius-sm);
+	padding: 12px 14px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+/* Timeline Feed */
+.pt-timeline-feed {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.pt-visit-item {
+	background: var(--pt-surface);
+	border: 1px solid var(--pt-border);
+	border-radius: var(--pt-radius-md);
+	padding: 14px 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	transition: all 0.15s ease;
+}
+
+.pt-visit-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	cursor: pointer;
+}
+
+.pt-visit-date-badge {
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--pt-primary);
+	background: var(--pt-primary-light);
+	padding: 3px 8px;
+	border-radius: 12px;
+}
+
+.pt-proc-list {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	font-size: 0.8125rem;
+}
+
+.pt-care-alert {
+	background: var(--pt-warning-light);
+	color: var(--pt-warning);
+	border-radius: 6px;
+	padding: 8px 10px;
+	font-size: 0.75rem;
+	display: flex;
+	align-items: flex-start;
+	gap: 6px;
+}
+
+/* Photo Attachment Strip */
+.pt-media-strip {
+	display: flex;
+	gap: 8px;
+	overflow-x: auto;
+	padding-top: 4px;
+}
+
+.pt-media-card {
+	width: 140px;
+	flex-shrink: 0;
+	border-radius: 6px;
+	overflow: hidden;
+	border: 1px solid var(--pt-border);
+	background: var(--pt-bg);
+}
+
+.pt-media-thumb {
+	width: 100%;
+	height: 80px;
+	object-fit: cover;
+	display: block;
+}
+
+.pt-media-caption {
+	font-size: 0.6875rem;
+	padding: 4px 6px;
+	color: var(--pt-text-muted);
+}
+
+/* Financial Card */
+.pt-finance-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 0.8125rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+	.portal-timeline-modal {
+		height: 98vh;
+		border-radius: 0;
+	}
+
+	.pt-overview-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.pt-tooth-btn {
+		min-width: 36px;
+		min-height: 44px;
+	}
+}
