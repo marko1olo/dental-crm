@@ -150,6 +150,8 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 	const [copiedLink, setCopiedLink] = useState(false);
 	const [attachedStatus, setAttachedStatus] = useState(false);
 
+	const initialTeethKey = initialTeeth ? initialTeeth.join(",") : "";
+
 	// Инициализация при открытии модального окна
 	useEffect(() => {
 		if (isOpen) {
@@ -173,7 +175,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 			}
 
 			// Если переданы начальные зубы, создаем первичную позицию
-			if (initialTeeth.length > 0) {
+			if (initialTeeth && initialTeeth.length > 0) {
 				const initialItems: WarrantyItem[] = initialTeeth.map((tooth, idx) => ({
 					id: `item_${Date.now()}_${idx}`,
 					toothNumber: tooth,
@@ -205,7 +207,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 				]);
 			}
 		}
-	}, [isOpen, initialCategory, initialTeeth]);
+	}, [isOpen, initialCategory, initialTeethKey]);
 
 	// Обработчик выбора категории
 	const handleSelectCategory = (cat: WarrantyCategory) => {

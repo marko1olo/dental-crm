@@ -175,8 +175,8 @@
 	background: var(--paper-soft, var(--paper));
 	border: 1px solid var(--line);
 	border-radius: 8px;
-	padding: 16px;
-	margin-bottom: 16px;
+	padding: 12px 14px;
+	margin-bottom: 10px;
 }
 
 .warranty-section-header {
@@ -461,17 +461,17 @@
 	background: var(--paper);
 	border: 1px solid var(--line);
 	border-radius: 8px;
-	padding: 14px;
+	padding: 10px 12px;
 	display: flex;
 	flex-direction: column;
-	gap: 8px;
+	gap: 6px;
 }
 
 .warranty-hud-row {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	font-size: 12.5px;
+	font-size: 12px;
 }
 
 .warranty-hud-row .lbl {
