@@ -66,6 +66,7 @@ import {
 	useTelephonyStore,
 } from "../../store/telephonyStore";
 import { showToast } from "../GlobalToast";
+import "./telephonyFloatingWidget.css";
 
 export interface TelephonyFloatingWidgetProps {
 	className?: string;
@@ -387,7 +388,7 @@ export function TelephonyFloatingWidget({
 
 	return (
 		<div
-			className={`fixed bottom-5 right-5 z-[99999] flex flex-col items-end gap-2 font-sans transition-all duration-300 ${className}`}
+			className={`dnt-telephony-floating ${className}`}
 			data-testid="telephony-floating-widget"
 		>
 			{/* Collapsed Floating Pill Launcher */}
