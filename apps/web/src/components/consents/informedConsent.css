@@ -130,27 +130,32 @@
 /* Template Selector Tabs */
 .consent-tabs-scroll {
 	display: flex;
+	align-items: center;
 	gap: 0.5rem;
 	padding: 0.75rem 1.5rem;
 	background: var(--paper);
 	border-bottom: 1px solid var(--line);
 	overflow-x: auto;
 	scrollbar-width: thin;
+	flex-shrink: 0;
 }
 
 .consent-tab-btn {
-	display: flex;
+	display: inline-flex;
 	align-items: center;
+	justify-content: center;
 	gap: 0.4rem;
-	padding: 0.5rem 0.85rem;
-	min-height: 44px;
+	padding: 0.5rem 1rem;
+	min-height: 40px;
+	height: 40px;
 	border-radius: var(--radius-md, 8px);
 	border: 1px solid var(--line);
 	background: var(--paper-soft);
 	color: var(--ink);
-	font-size: 0.85rem;
+	font-size: 0.8125rem;
 	font-weight: 600;
 	white-space: nowrap;
+	flex-shrink: 0;
 	cursor: pointer;
 	transition: all 0.15s ease;
 }

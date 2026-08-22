@@ -59,6 +59,12 @@ import { LabStlViewerModal } from "../components/lab3d/LabStlViewerModal";
 import { TreatmentPlanComparatorModal } from "../components/treatment-plans/comparator/TreatmentPlanComparatorModal";
 import { WarehouseTransferModal } from "../components/inventory/transfers/WarehouseTransferModal";
 import { PatientPortalTimelineModal } from "../components/portal/timeline/PatientPortalTimelineModal";
+import { ImplantPlanningModal } from "../components/implant/ImplantPlanningModal";
+import { VoiceDictationAssistantModal } from "../components/voice/VoiceDictationAssistantModal";
+import { InformedConsentModal as InformedConsent323FzModal } from "../components/consents/InformedConsentModal";
+import { AnesthesiaProtocolModal } from "../components/anesthesia/AnesthesiaProtocolModal";
+import { MedicalWasteJournalModal } from "../components/sanpin/waste/MedicalWasteJournalModal";
+import { AnesthesiaQuickBar } from "../components/anesthesia/AnesthesiaQuickBar";
 import type { CompletedWorksActAndWriteOffData, TreatmentPlanItem } from "../components/treatment-plans/types";
 import type { DiaryState } from "../components/useVisitDiaryLogic";
 
@@ -267,6 +273,11 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isPlanComparatorOpen, setIsPlanComparatorOpen] = useState(false);
 	const [isTransferOpen, setIsTransferOpen] = useState(false);
 	const [isPortalOpen, setIsPortalOpen] = useState(false);
+	const [isImplantPlanningOpen, setIsImplantPlanningOpen] = useState(false);
+	const [isVoiceAssistantOpen, setIsVoiceAssistantOpen] = useState(false);
+	const [isConsent323Open, setIsConsent323Open] = useState(false);
+	const [isAnesthesiaProtocolOpen, setIsAnesthesiaProtocolOpen] = useState(false);
+	const [isMedicalWasteOpen, setIsMedicalWasteOpen] = useState(false);
 
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -838,6 +849,146 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 							<span>Открыть портал пациента</span>
 						</button>
 					</div>
+
+					{/* 22. 3D Implant Planning Modal Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Compass className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									3D-Планировщик имплантации
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Каталог Straumann, Nobel, Osstem, Dentium, аудит безопасности (IAN, пазуха, корни) и расчет торка.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsImplantPlanningOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-implant-planning-modal-btn"
+						>
+							<Compass size={15} />
+							<span>Открыть 3D-планировщик</span>
+						</button>
+					</div>
+
+					{/* 23. Voice Dictation Assistant Modal Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Activity className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Голосовой ассистент врача
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Распознавание русской стоматологической терминологии, формулы FDI, диагнозов МКБ-10 и VU-метр.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsVoiceAssistantOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-voice-assistant-modal-btn"
+						>
+							<Activity size={15} />
+							<span>Открыть голосовой ассистент</span>
+						</button>
+					</div>
+
+					{/* 24. Informed Consents 323-FZ Modal Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<FileText className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Электронные ИДС (323-ФЗ)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Юридические согласия по всем направлениям стоматологии, сенсорная Безье-подпись и SHA-256 хэш.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsConsent323Open(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-consent-323-modal-btn"
+						>
+							<FileText size={15} />
+							<span>Открыть конструктор ИДС</span>
+						</button>
+					</div>
+
+					{/* 25. Anesthesia Protocol & Max Dose Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Syringe className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Протокол анестезии & МДД
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Клинический калькулятор токсичности по СтАР/Минздрав РФ, кардиориски ASA I-IV и аспирационная проба.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsAnesthesiaProtocolOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-anesthesia-protocol-modal-btn"
+						>
+							<Syringe size={15} />
+							<span>Открыть протокол анестезии</span>
+						</button>
+					</div>
+
+					{/* 26. Medical Waste SanPiN 2.1.3684-21 Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Flame className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Журнал медотходов СанПиН
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Учет накопления и обеззараживания отходов классов А, Б и Г, весовой контроль и акты передачи.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsMedicalWasteOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-medical-waste-modal-btn"
+						>
+							<Flame size={15} />
+							<span>Открыть журнал медотходов</span>
+						</button>
+					</div>
+
+					{/* 27. Anesthesia QuickBar 1-Click Presets */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4 md:col-span-2 lg:col-span-3">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Syringe className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Быстрая анестезия в 1 клик (Touch-Bar для работы в перчатках)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Мгновенный выбор ходовых карпул без блокирующих окон: Ультракаин Д-С 1.7 мл, Форте, Скандонест без адреналина.
+							</p>
+						</div>
+						<AnesthesiaQuickBar
+							onApplyAnesthesia={(diaryText) => {
+								console.log("[QuickBar Anesthesia Applied]:", diaryText);
+							}}
+						/>
+					</div>
 				</div>
 
 				{/* 8. Interactive Live Anesthesia Calculator Component */}
@@ -1054,6 +1205,47 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 			<PatientPortalTimelineModal
 				isOpen={isPortalOpen}
 				onClose={() => setIsPortalOpen(false)}
+			/>
+
+			<ImplantPlanningModal
+				isOpen={isImplantPlanningOpen}
+				onClose={() => setIsImplantPlanningOpen(false)}
+				initialToothFdi={46}
+				patientName="Смирнова Екатерина Васильевна"
+			/>
+
+			<VoiceDictationAssistantModal
+				isOpen={isVoiceAssistantOpen}
+				onClose={() => setIsVoiceAssistantOpen(false)}
+				activeToothNumber={46}
+			/>
+
+			<InformedConsent323FzModal
+				isOpen={isConsent323Open}
+				onClose={() => setIsConsent323Open(false)}
+				initialTemplateKey="CONSENT_THERAPY"
+				patient={{
+					fullName: "Смирнова Екатерина Васильевна",
+					birthDate: "1988-06-14",
+					passport: "4512 789456",
+					phone: "+7 (999) 123-45-67",
+					cardNumber: "К-8492",
+				}}
+				doctorName="Д-р Смирнов Алексей Петрович"
+				clinicName="ООО «Денте Стоматология»"
+			/>
+
+			<AnesthesiaProtocolModal
+				isOpen={isAnesthesiaProtocolOpen}
+				onClose={() => setIsAnesthesiaProtocolOpen(false)}
+				initialToothNumber={46}
+				initialPatientWeightKg={70}
+				initialPatientAgeYears={35}
+			/>
+
+			<MedicalWasteJournalModal
+				isOpen={isMedicalWasteOpen}
+				onClose={() => setIsMedicalWasteOpen(false)}
 			/>
 		</div>
 	);

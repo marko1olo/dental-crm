@@ -103,6 +103,16 @@ export interface SignedConsentPayload {
 	attachedToForm043u: boolean;
 }
 
+const TEMPLATE_SHORT_TITLES: Record<ConsentTemplateKey, string> = {
+	CONSENT_THERAPY: "Терапия & Эндодонтия",
+	CONSENT_SURGERY_IMPLANT: "Хирургия & Имплантация",
+	CONSENT_ORTHODONTICS: "Ортодонтия (Брекеты)",
+	CONSENT_ORTHOPEDICS: "Ортопедия (Коронки)",
+	CONSENT_HYGIENE_BLEACHING: "Профгигиена & Отбеливание",
+	CONSENT_ANESTHESIA: "Местная анестезия",
+	CONSENT_PERSONAL_DATA: "Персональные данные (152-ФЗ)",
+};
+
 export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	isOpen,
 	onClose,
@@ -546,7 +556,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 								onClick={() => setActiveKey(tpl.key)}
 								aria-selected={isActive}
 							>
-								<span>{tpl.title.split("на ")[1] || tpl.title}</span>
+								<span>{TEMPLATE_SHORT_TITLES[tpl.key] || tpl.title}</span>
 							</button>
 						);
 					})}

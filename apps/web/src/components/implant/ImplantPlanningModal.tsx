@@ -724,7 +724,7 @@ export function ImplantPlanningModal({
 						{/* Interactive SVG Cross-Section Canvas */}
 						<div className="implant-cross-section-viewport relative flex-1 min-h-[380px] p-2 flex flex-col items-center justify-center">
 							<svg
-								viewBox="-60 -30 120 170"
+								viewBox="-60 -30 120 190"
 								className="w-full h-full max-h-[460px] select-none"
 							>
 								{/* Grid & Ruler Guidelines */}
@@ -743,11 +743,11 @@ export function ImplantPlanningModal({
 									</linearGradient>
 								</defs>
 
-								<rect x="-60" y="-30" width="120" height="170" fill="url(#grid-dots)" />
+								<rect x="-60" y="-30" width="120" height="190" fill="url(#grid-dots)" />
 
 								{/* Bone Ridge Contour (Maxilla or Mandible Profile) */}
 								<path
-									d="M -50,0 Q -30,-5 0,-5 Q 30,-5 50,0 L 50,130 Q 0,135 -50,130 Z"
+									d="M -50,0 Q -30,-5 0,-5 Q 30,-5 50,0 L 50,150 Q 0,155 -50,150 Z"
 									fill="url(#bone-grad)"
 									stroke="#334155"
 									strokeWidth="1.5"

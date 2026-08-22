@@ -74,6 +74,64 @@ export interface MedicalWasteJournalModalProps {
 	readonly onActCreated?: ((act: MedicalWasteTransferAct) => void) | undefined;
 }
 
+const DEFAULT_DEMO_WASTE_RECORDS: MedicalWasteJournalRecord[] = [
+	{
+		id: "rec-1",
+		timestamp: new Date(Date.now() - 3600 * 1000 * 6).toISOString().slice(0, 16),
+		wasteClass: "class_B",
+		departmentNameRu: "Терапевтический кабинет № 1",
+		packageType: "yellow_bag",
+		packageCount: 2,
+		grossWeightKg: 3.2,
+		tareWeightKg: 0.16,
+		netWeightKg: 3.04,
+		sealNumber: "ПЛ-Б-2026-00381",
+		barcode: "WASTE-CLASS_B-TER-20260822-1042",
+		decontaminationMethod: "chemical_soaking_disinfectant",
+		decontamDisinfectantName: "Бриллиант Классик 2% 60 мин",
+		storageLocation: "cabinet_room_temp",
+		operatorStaffFullName: "Смирнова А.В.",
+		operatorStaffPosition: "Медсестра",
+		status: "accumulating",
+	},
+	{
+		id: "rec-2",
+		timestamp: new Date(Date.now() - 3600 * 1000 * 18).toISOString().slice(0, 16),
+		wasteClass: "class_B",
+		departmentNameRu: "Хирургический кабинет",
+		packageType: "yellow_sharps_box_needle_remover",
+		packageCount: 1,
+		grossWeightKg: 1.45,
+		tareWeightKg: 0.18,
+		netWeightKg: 1.27,
+		sealNumber: "ПЛ-Б-2026-00382",
+		barcode: "WASTE-CLASS_B-SURG-20260821-9921",
+		decontaminationMethod: "physical_autoclave_134",
+		storageLocation: "waste_refrigerator_2_8",
+		operatorStaffFullName: "Иванова Е.К.",
+		operatorStaffPosition: "Старшая медсестра",
+		status: "accumulating",
+	},
+	{
+		id: "rec-3",
+		timestamp: new Date(Date.now() - 3600 * 1000 * 2).toISOString().slice(0, 16),
+		wasteClass: "class_A",
+		departmentNameRu: "Административный блок",
+		packageType: "white_bag",
+		packageCount: 3,
+		grossWeightKg: 4.8,
+		tareWeightKg: 0.15,
+		netWeightKg: 4.65,
+		sealNumber: "ПЛ-А-2026-00109",
+		barcode: "WASTE-CLASS_A-ADM-20260822-5501",
+		decontaminationMethod: "none_class_a",
+		storageLocation: "central_accumulation_site",
+		operatorStaffFullName: "Петрова Н.С.",
+		operatorStaffPosition: "Санитарка",
+		status: "accumulating",
+	},
+];
+
 export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> = ({
 	isOpen,
 	onClose,
@@ -100,7 +158,9 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 	const [notes, setNotes] = useState<string>("");
 
 	// 2. Список записей журнала
-	const [records, setRecords] = useState<MedicalWasteJournalRecord[]>([]);
+	const [records, setRecords] = useState<MedicalWasteJournalRecord[]>(() =>
+		initialRecords && initialRecords.length > 0 ? [...initialRecords] : DEFAULT_DEMO_WASTE_RECORDS
+	);
 
 	// 3. Состояние акта передачи
 	const [actNumber, setActNumber] = useState<string>(`АКТ-ВЫВОЗ-${new Date().getFullYear()}/048`);
@@ -108,74 +168,6 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 	const [disposalContractNo, setDisposalContractNo] = useState<string>("ДОГ-УТИЛ-2026/08-ДЕНТЕ");
 	const [driverName, setDriverName] = useState<string>("Кузнецов М.С.");
 	const [vehiclePlate, setVehiclePlate] = useState<string>("А 784 МЕ 777");
-
-	// Инициализация демо-записями при открытии
-	useEffect(() => {
-		if (isOpen) {
-			if (initialRecords.length > 0) {
-				setRecords([...initialRecords]);
-			} else {
-				// Стандартные демо-записи для журнала
-				setRecords([
-					{
-						id: "rec-1",
-						timestamp: new Date(Date.now() - 3600 * 1000 * 6).toISOString().slice(0, 16),
-						wasteClass: "class_B",
-						departmentNameRu: "Терапевтический кабинет № 1",
-						packageType: "yellow_bag",
-						packageCount: 2,
-						grossWeightKg: 3.2,
-						tareWeightKg: 0.16,
-						netWeightKg: 3.04,
-						sealNumber: "ПЛ-Б-2026-00381",
-						barcode: "WASTE-CLASS_B-TER-20260822-1042",
-						decontaminationMethod: "chemical_soaking_disinfectant",
-						decontamDisinfectantName: "Бриллиант Классик 2% 60 мин",
-						storageLocation: "cabinet_room_temp",
-						operatorStaffFullName: "Смирнова А.В.",
-						operatorStaffPosition: "Медсестра",
-						status: "accumulating",
-					},
-					{
-						id: "rec-2",
-						timestamp: new Date(Date.now() - 3600 * 1000 * 18).toISOString().slice(0, 16),
-						wasteClass: "class_B",
-						departmentNameRu: "Хирургический кабинет",
-						packageType: "yellow_sharps_box_needle_remover",
-						packageCount: 1,
-						grossWeightKg: 1.45,
-						tareWeightKg: 0.18,
-						netWeightKg: 1.27,
-						sealNumber: "ПЛ-Б-2026-00382",
-						barcode: "WASTE-CLASS_B-SURG-20260821-9921",
-						decontaminationMethod: "physical_autoclave_134",
-						storageLocation: "waste_refrigerator_2_8",
-						operatorStaffFullName: "Иванова Е.К.",
-						operatorStaffPosition: "Старшая медсестра",
-						status: "accumulating",
-					},
-					{
-						id: "rec-3",
-						timestamp: new Date(Date.now() - 3600 * 1000 * 2).toISOString().slice(0, 16),
-						wasteClass: "class_A",
-						departmentNameRu: "Административный блок",
-						packageType: "white_bag",
-						packageCount: 3,
-						grossWeightKg: 4.8,
-						tareWeightKg: 0.15,
-						netWeightKg: 4.65,
-						sealNumber: "ПЛ-А-2026-00109",
-						barcode: "WASTE-CLASS_A-ADM-20260822-5501",
-						decontaminationMethod: "none_class_a",
-						storageLocation: "central_accumulation_site",
-						operatorStaffFullName: "Петрова Н.С.",
-						operatorStaffPosition: "Санитарка",
-						status: "accumulating",
-					},
-				]);
-			}
-		}
-	}, [isOpen, initialRecords]);
 
 	// Автоматический пересчет весов
 	const currentWeights = useMemo(() => {
