@@ -69,7 +69,7 @@ import { MedicalWasteJournalModal } from "../components/sanpin/waste/MedicalWast
 import { EmergencyRescueModal } from "../components/emergency/EmergencyRescueModal";
 import { WarrantyPassportModal } from "../components/warranty/WarrantyPassportModal";
 import { CmoEmrAuditModal } from "../components/emr/audit/CmoEmrAuditModal";
-import { FnsNdflXmlModal } from "../components/documents/ndflXml/FnsNdflXmlModal";
+import { FnsNdflXmlModal } from "../components/documents/ndflXml/index";
 import { TreatmentPlanPriceValidatorModal } from "../components/treatment-plans/validation/TreatmentPlanPriceValidatorModal";
 import { SberPosTerminalModal } from "../components/payments/sberPos/SberPosTerminalModal";
 import { PatientCabinetModal } from "../components/portal/patientCabinet/PatientCabinetModal";
