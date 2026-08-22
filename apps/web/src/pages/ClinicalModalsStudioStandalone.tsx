@@ -17,6 +17,7 @@ import {
 	Gauge,
 	Layers,
 	Moon,
+	PackageCheck,
 	Palette,
 	PhoneCall,
 	Pill,
@@ -74,6 +75,9 @@ import { TreatmentPlanPriceValidatorModal } from "../components/treatment-plans/
 import { SberPosTerminalModal } from "../components/payments/sberPos/SberPosTerminalModal";
 import { PatientCabinetModal } from "../components/portal/patientCabinet/PatientCabinetModal";
 import { EgiszRemdXmlModal } from "../components/egisz/remdXml/EgiszRemdXmlModal";
+import { LabWorkOrderModal } from "../components/lab/orders/LabWorkOrderModal";
+import { SanpinJournalsModal } from "../components/sanpin/journals/SanpinJournalsModal";
+import { ClinicalWriteoffModal } from "../components/inventory/writeoff/ClinicalWriteoffModal";
 import { AnesthesiaQuickBar } from "../components/anesthesia/AnesthesiaQuickBar";
 import type { CompletedWorksActAndWriteOffData, TreatmentPlanItem } from "../components/treatment-plans/types";
 import type { DiaryState } from "../components/useVisitDiaryLogic";
@@ -296,6 +300,9 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isSberPosOpen, setIsSberPosOpen] = useState(false);
 	const [isPatientCabinetOpen, setIsPatientCabinetOpen] = useState(false);
 	const [isEgiszRemdOpen, setIsEgiszRemdOpen] = useState(false);
+	const [isLabWorkOrderOpen, setIsLabWorkOrderOpen] = useState(false);
+	const [isClinicalWriteoffOpen, setIsClinicalWriteoffOpen] = useState(false);
+	const [isSanpinJournalsOpen, setIsSanpinJournalsOpen] = useState(false);
 
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -844,6 +851,30 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</button>
 					</div>
 
+					{/* 20b. Clinical Auto-Writeoff & Order 804n Norms Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<PackageCheck className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Автосписание материалов (804н)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Нормы Минздрава 804н, партионный учет FEFO, фиксация отклонений и печать актов 0504230 / М-11 / ТОРГ-16.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsClinicalWriteoffOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-clinical-writeoff-modal-btn"
+						>
+							<PackageCheck size={15} />
+							<span>Открыть автосписание 804н</span>
+						</button>
+					</div>
+
 					{/* 21. Patient Mobile Portal Timeline Trigger */}
 					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
 						<div className="space-y-2">
@@ -1180,7 +1211,79 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</button>
 					</div>
 
-					{/* 35. Anesthesia QuickBar 1-Click Presets */}
+					{/* 35. Statutory Dental Laboratory Work Order & Tracking Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<FlaskConical className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Зуботехнический наряд-заказ и трекинг
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Наряд в лабораторию: 7 конструкций (ZrO2 Katana, E.max), расцветка VITA/ND, 7 этапов с примеркой, расчет маржи и бланк А4.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsLabWorkOrderOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-lab-work-order-modal-btn"
+						>
+							<FlaskConical size={15} />
+							<span>Открыть наряд-заказ лаборатории</span>
+						</button>
+					</div>
+
+					{/* 36. Statutory SanPiN 3.3686-21 Registers Studio Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Layers className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Журналы СанПиН 3.3686-21 (ПСО / УФ / Уборки)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Учет качества ПСО (Азопирам, Фенолфталеин ф. 366/у), наработка бактерицидных ламп Дезар, генуборки и дезсредства.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsSanpinJournalsOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-sanpin-journals-modal-btn"
+						>
+							<Layers size={15} />
+							<span>Открыть журналы СанПиН</span>
+						</button>
+					</div>
+
+					{/* 37. Clinical Material Auto-Writeoff Order 804n Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Boxes className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Автосписание материалов по № 804н (FEFO)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Нормы расхода на приеме: Filtek, AH Plus, Osstem, списание партий FEFO, детекция расхождений и акт ТОРГ-16 / М-11.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsClinicalWriteoffOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-clinical-writeoff-modal-btn"
+						>
+							<Boxes size={15} />
+							<span>Открыть списание материалов</span>
+						</button>
+					</div>
+
+					{/* 38. Anesthesia QuickBar 1-Click Presets */}
 					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4 md:col-span-2 lg:col-span-3">
 						<div className="space-y-2">
 							<div className="flex items-center gap-2 text-[var(--teal)]">
@@ -1412,6 +1515,16 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				onClose={() => setIsTransferOpen(false)}
 			/>
 
+			<ClinicalWriteoffModal
+				isOpen={isClinicalWriteoffOpen}
+				onClose={() => setIsClinicalWriteoffOpen(false)}
+			/>
+
+			<SanpinJournalsModal
+				isOpen={isSanpinJournalsOpen}
+				onClose={() => setIsSanpinJournalsOpen(false)}
+			/>
+
 			<PatientPortalTimelineModal
 				isOpen={isPortalOpen}
 				onClose={() => setIsPortalOpen(false)}
@@ -1517,6 +1630,26 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 			<EgiszRemdXmlModal
 				isOpen={isEgiszRemdOpen}
 				onClose={() => setIsEgiszRemdOpen(false)}
+			/>
+
+			<LabWorkOrderModal
+				isOpen={isLabWorkOrderOpen}
+				onClose={() => setIsLabWorkOrderOpen(false)}
+				patientName={SAMPLE_PATIENT.fullName}
+				patientChartNumber={SAMPLE_PATIENT.cardNumber}
+			/>
+
+			<SanpinJournalsModal
+				isOpen={isSanpinJournalsOpen}
+				onClose={() => setIsSanpinJournalsOpen(false)}
+			/>
+
+			<ClinicalWriteoffModal
+				isOpen={isClinicalWriteoffOpen}
+				onClose={() => setIsClinicalWriteoffOpen(false)}
+				patientName={SAMPLE_PATIENT.fullName}
+				doctorFullName="Д-р Смирнов Алексей Петрович"
+				assistantFullName="Медсестра Петрова Е. С."
 			/>
 		</div>
 	);
