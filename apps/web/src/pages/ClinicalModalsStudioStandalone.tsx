@@ -9,6 +9,7 @@ import {
 	CheckCircle2,
 	Coins,
 	Compass,
+	CreditCard,
 	Eye,
 	FileText,
 	Flame,
@@ -23,6 +24,7 @@ import {
 	QrCode,
 	Receipt,
 	Scan,
+	Shield,
 	ShieldCheck,
 	Sparkles,
 	Sun,
@@ -66,6 +68,12 @@ import { AnesthesiaProtocolModal } from "../components/anesthesia/AnesthesiaProt
 import { MedicalWasteJournalModal } from "../components/sanpin/waste/MedicalWasteJournalModal";
 import { EmergencyRescueModal } from "../components/emergency/EmergencyRescueModal";
 import { WarrantyPassportModal } from "../components/warranty/WarrantyPassportModal";
+import { CmoEmrAuditModal } from "../components/emr/audit/CmoEmrAuditModal";
+import { FnsNdflXmlModal } from "../components/documents/ndflXml/FnsNdflXmlModal";
+import { TreatmentPlanPriceValidatorModal } from "../components/treatment-plans/validation/TreatmentPlanPriceValidatorModal";
+import { SberPosTerminalModal } from "../components/payments/sberPos/SberPosTerminalModal";
+import { PatientCabinetModal } from "../components/portal/patientCabinet/PatientCabinetModal";
+import { EgiszRemdXmlModal } from "../components/egisz/remdXml/EgiszRemdXmlModal";
 import { AnesthesiaQuickBar } from "../components/anesthesia/AnesthesiaQuickBar";
 import type { CompletedWorksActAndWriteOffData, TreatmentPlanItem } from "../components/treatment-plans/types";
 import type { DiaryState } from "../components/useVisitDiaryLogic";
@@ -282,6 +290,12 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isMedicalWasteOpen, setIsMedicalWasteOpen] = useState(false);
 	const [isEmergencyRescueOpen, setIsEmergencyRescueOpen] = useState(false);
 	const [isWarrantyPassportOpen, setIsWarrantyPassportOpen] = useState(false);
+	const [isCmoEmrAuditOpen, setIsCmoEmrAuditOpen] = useState(false);
+	const [isFnsNdflXmlOpen, setIsFnsNdflXmlOpen] = useState(false);
+	const [isPlanPriceValidatorOpen, setIsPlanPriceValidatorOpen] = useState(false);
+	const [isSberPosOpen, setIsSberPosOpen] = useState(false);
+	const [isPatientCabinetOpen, setIsPatientCabinetOpen] = useState(false);
+	const [isEgiszRemdOpen, setIsEgiszRemdOpen] = useState(false);
 
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -1022,7 +1036,151 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</button>
 					</div>
 
-					{/* 29. Anesthesia QuickBar 1-Click Presets */}
+					{/* 29. Chief Medical Officer EMR Audit Modal Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<ShieldCheck className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Контроль качества ЭМК Главврачом
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Приказы МЗ РФ № 203н/834н & Росздравнадзор: экспертиза карты 043/у, дефекты ИДС, рейтинг врачей и протокол.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsCmoEmrAuditOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-cmo-emr-audit-modal-btn"
+						>
+							<ShieldCheck size={15} />
+							<span>Открыть аудит главврача</span>
+						</button>
+					</div>
+
+					{/* 30. FNS NDFL Tax Deduction XML Exporter Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Receipt className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Справка НДФЛ в XML (Приказ ФНС № ЕД-7-11/755@)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Официальный формат ФНС КНД 1184043 ВерсФорм 5.01, коды услуг 1 и 2, валидация ИНН/СНИЛС и печать КНД 1151156.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsFnsNdflXmlOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-fns-ndfl-xml-modal-btn"
+						>
+							<Receipt size={15} />
+							<span>Открыть выгрузку ФНС XML</span>
+						</button>
+					</div>
+
+					{/* 31. Treatment Plan Price Lock & Catalog Validator Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Calculator className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Валидатор цен и прайса плана лечения
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Защита от устаревших цен при переносе в наряд/акт, выявление архивных услуг, Price Lock и согласование скидок.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsPlanPriceValidatorOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-plan-price-validator-modal-btn"
+						>
+							<Calculator size={15} />
+							<span>Открыть валидатор цен</span>
+						</button>
+					</div>
+
+					{/* 32. Sberbank POS Terminal Integration Modal Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<CreditCard className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									POS-Терминал СберБанка (Pilot-NT / QR)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Прямой эквайринг (Оплата, SberPay QR, биометрия, возврат, сверка итогов Z-отчет) с печатью банковского слипа.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsSberPosOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-sber-pos-modal-btn"
+						>
+							<CreditCard size={15} />
+							<span>Открыть POS-терминал Сбера</span>
+						</button>
+					</div>
+
+					{/* 33. Patient Personal Portal & Mobile Cabinet Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<User className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Личный кабинет пациента (СБП / ИДС / Запись)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Мобильный кабинет: онлайн-оплата счетов через СБП, планы лечения, гарантии и SMS/OTP подписание ИДС.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsPatientCabinetOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-patient-cabinet-modal-btn"
+						>
+							<User size={15} />
+							<span>Открыть кабинет пациента</span>
+						</button>
+					</div>
+
+					{/* 34. EGISZ REMD CDA R2 Outpatient Card 043/u XML Generator Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Shield className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									ЕГИСЗ РЭМД (СЭМД 043/у CDA R2 XML)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Федеральный реестр Минздрава РФ: валидация OID, ЭЦП УКЭП (63-ФЗ XMLDSig), выгрузка CDA R2 XML и протокол 043/у.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsEgiszRemdOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-egisz-remd-modal-btn"
+						>
+							<Shield size={15} />
+							<span>Открыть ЕГИСЗ РЭМД СЭМД</span>
+						</button>
+					</div>
+
+					{/* 35. Anesthesia QuickBar 1-Click Presets */}
 					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4 md:col-span-2 lg:col-span-3">
 						<div className="space-y-2">
 							<div className="flex items-center gap-2 text-[var(--teal)]">
@@ -1328,6 +1486,37 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				clinicAddress="г. Москва, ул. Клиническая, д. 10, стр. 2"
 				clinicPhone="+7 (495) 777-88-99"
 				clinicLicenseNumber="ЛО-77-01-019842"
+			/>
+
+			<CmoEmrAuditModal
+				isOpen={isCmoEmrAuditOpen}
+				onClose={() => setIsCmoEmrAuditOpen(false)}
+			/>
+
+			{isFnsNdflXmlOpen && (
+				<FnsNdflXmlModal
+					onClose={() => setIsFnsNdflXmlOpen(false)}
+				/>
+			)}
+
+			<TreatmentPlanPriceValidatorModal
+				isOpen={isPlanPriceValidatorOpen}
+				onClose={() => setIsPlanPriceValidatorOpen(false)}
+			/>
+
+			<SberPosTerminalModal
+				isOpen={isSberPosOpen}
+				onClose={() => setIsSberPosOpen(false)}
+			/>
+
+			<PatientCabinetModal
+				isOpen={isPatientCabinetOpen}
+				onClose={() => setIsPatientCabinetOpen(false)}
+			/>
+
+			<EgiszRemdXmlModal
+				isOpen={isEgiszRemdOpen}
+				onClose={() => setIsEgiszRemdOpen(false)}
 			/>
 		</div>
 	);

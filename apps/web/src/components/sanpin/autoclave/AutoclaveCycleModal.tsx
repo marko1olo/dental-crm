@@ -26,7 +26,6 @@ import {
 	createForm257JournalEntry,
 	generateSterileBatchPacks
 } from './autoclaveEngine';
-import { AutoclaveSensorGauge } from './AutoclaveSensorGauge';
 import { KraftPackBatchBuilder } from './KraftPackBatchBuilder';
 import { KraftBarcodeLabelSheet } from './KraftBarcodeLabelSheet';
 import { SanpinJournal257View } from './SanpinJournal257View';
@@ -55,15 +54,7 @@ export function AutoclaveCycleModal({
 	const [selectedCycleId, setSelectedCycleId] = useState<AutoclaveCycleId>(initialCycleId);
 	const [selectedAutoclaveId, setSelectedAutoclaveId] = useState<string>(initialAutoclaveId);
 	const [cycleNumber, setCycleNumber] = useState<number>(42);
-
-	// Sensor state
-	const [isCycleActive, setIsCycleActive] = useState(false);
-	const [cycleStage, setCycleStage] = useState<
-		'standby' | 'fractionated_vacuum' | 'heating' | 'sterilization_plateau' | 'venting' | 'vacuum_drying' | 'complete' | 'aborted'
-	>('standby');
-	const [currentTemp, setCurrentTemp] = useState<number>(24.0);
-	const [currentPressure, setCurrentPressure] = useState<number>(0.0);
-	const [elapsedPlateauMin, setElapsedPlateauMin] = useState<number>(0.0);
+	const [isRegisteredSuccess, setIsRegisteredSuccess] = useState(false);
 
 	// Batch packs & Journal entries
 	const [packs, setPacks] = useState<SterilePackRecord[]>([]);
@@ -88,68 +79,34 @@ export function AutoclaveCycleModal({
 		}
 	}, [selectedAutoclaveId, cycleNumber, operatorName]);
 
-	// Simulate cycle execution
-	const handleStartCycle = () => {
-		setIsCycleActive(true);
-		setCycleStage('fractionated_vacuum');
-		setCurrentTemp(45.0);
-		setCurrentPressure(0.3);
-		setElapsedPlateauMin(0.0);
+	// Register completed sterilization cycle in SanPiN journal
+	const handleRegisterCycle = () => {
+		const entry = createForm257JournalEntry({
+			autoclaveId: selectedAutoclaveId,
+			deviceName: `${activeAutoclave.brand} ${activeAutoclave.model}`,
+			cycleNumber,
+			cycleId: selectedCycleId,
+			measuredTemp: activeCycleDef.targetTemperatureCelsius,
+			measuredPressure: activeCycleDef.targetPressureBar,
+			measuredDurationMin: activeCycleDef.plateauTimeMinutes,
+			loadDescriptionRu: packs.map(p => p.itemCategoryRu).filter((v, i, a) => a.indexOf(v) === i).join(', ') || 'Наборы инструментов',
+			packCount: packs.length,
+			packagingType: packs[0]?.packagingType || 'kraft_paper_sealed',
+			indicatorType: activeCycleDef.mandatoryIndicators[1] || 'chemical_class5_integrating',
+			isIndicatorPassed: true,
+			operatorName
+		});
 
-		// Transition simulation steps
-		setTimeout(() => {
-			setCycleStage('heating');
-			setCurrentTemp(110.0);
-			setCurrentPressure(1.5);
-		}, 600);
-
-		setTimeout(() => {
-			setCycleStage('sterilization_plateau');
-			setCurrentTemp(activeCycleDef.targetTemperatureCelsius);
-			setCurrentPressure(activeCycleDef.targetPressureBar);
-			setElapsedPlateauMin(activeCycleDef.plateauTimeMinutes);
-		}, 1200);
-
-		setTimeout(() => {
-			setCycleStage('vacuum_drying');
-			setCurrentTemp(90.0);
-			setCurrentPressure(0.1);
-		}, 1800);
+		setJournalEntries(prev => [entry, ...prev]);
+		setIsRegisteredSuccess(true);
+		if (onCycleCompleted) {
+			onCycleCompleted(entry, packs);
+		}
+		setCycleNumber(prev => prev + 1);
 
 		setTimeout(() => {
-			setCycleStage('complete');
-			setIsCycleActive(false);
-
-			// Automatically register in Form 257/u
-			const entry = createForm257JournalEntry({
-				autoclaveId: selectedAutoclaveId,
-				deviceName: `${activeAutoclave.brand} ${activeAutoclave.model}`,
-				cycleNumber,
-				cycleId: selectedCycleId,
-				measuredTemp: activeCycleDef.targetTemperatureCelsius,
-				measuredPressure: activeCycleDef.targetPressureBar,
-				measuredDurationMin: activeCycleDef.plateauTimeMinutes,
-				loadDescriptionRu: packs.map(p => p.itemCategoryRu).filter((v, i, a) => a.indexOf(v) === i).join(', ') || 'Наборы инструментов',
-				packCount: packs.length,
-				packagingType: packs[0]?.packagingType || 'kraft_paper_sealed',
-				indicatorType: activeCycleDef.mandatoryIndicators[1] || 'chemical_class5_integrating',
-				isIndicatorPassed: true,
-				operatorName
-			});
-
-			setJournalEntries(prev => [entry, ...prev]);
-			if (onCycleCompleted) {
-				onCycleCompleted(entry, packs);
-			}
-		}, 2400);
-	};
-
-	const handleAbortCycle = () => {
-		setIsCycleActive(false);
-		setCycleStage('aborted');
-		setCurrentTemp(25.0);
-		setCurrentPressure(0.0);
-		setElapsedPlateauMin(0.0);
+			setIsRegisteredSuccess(false);
+		}, 3000);
 	};
 
 	if (!isOpen) return null;
@@ -224,7 +181,6 @@ export function AutoclaveCycleModal({
 									<select
 										value={selectedAutoclaveId}
 										onChange={e => setSelectedAutoclaveId(e.target.value)}
-										disabled={isCycleActive}
 										style={{ width: '100%', minHeight: '44px', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--line, #e2e8f0)', background: 'var(--paper, #fff)', color: 'var(--ink, #0f172a)' }}
 									>
 										{CLINIC_AUTOCLAVES_PRESETS.map(app => (
@@ -253,7 +209,6 @@ export function AutoclaveCycleModal({
 										type="number"
 										value={cycleNumber}
 										onChange={e => setCycleNumber(parseInt(e.target.value) || 1)}
-										disabled={isCycleActive}
 										style={{ width: '90px', minHeight: '44px', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--line, #e2e8f0)', background: 'var(--paper, #fff)', color: 'var(--ink, #0f172a)' }}
 									/>
 								</div>
@@ -269,7 +224,7 @@ export function AutoclaveCycleModal({
 										<div
 											key={cycle.id}
 											className={`autoclave-cycle-card ${selectedCycleId === cycle.id ? 'selected' : ''}`}
-											onClick={() => !isCycleActive && setSelectedCycleId(cycle.id)}
+											onClick={() => setSelectedCycleId(cycle.id)}
 										>
 											<div className="cycle-card-title">{cycle.shortLabelRu}</div>
 											<div className="cycle-card-specs">
@@ -285,41 +240,51 @@ export function AutoclaveCycleModal({
 								</div>
 							</div>
 
-							{/* Live Gauges */}
-							<AutoclaveSensorGauge
-								cycle={activeCycleDef}
-								currentTemperature={currentTemp}
-								currentPressure={currentPressure}
-								elapsedPlateauMinutes={elapsedPlateauMin}
-								isCycleActive={isCycleActive}
-								cycleStage={cycleStage}
-							/>
+							{/* Statutory Verification Protocol Summary Card */}
+							<div style={{ background: 'var(--paper-strong, #f8fafc)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--line, #e2e8f0)' }}>
+								<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, color: 'var(--ink, #0f172a)', marginBottom: '0.75rem' }}>
+									<ShieldCheck size={18} className="text-emerald-600" />
+									Контрольные нормативы СанПиН 3.3686-21
+								</div>
+								<div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem' }}>
+									<div style={{ padding: '0.5rem 0.75rem', background: 'var(--paper, #fff)', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)' }}>
+										<div style={{ fontSize: '0.75rem', color: 'var(--muted, #64748b)' }}>Температура</div>
+										<div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--ink, #0f172a)' }}>{activeCycleDef.targetTemperatureCelsius} °C</div>
+									</div>
+									<div style={{ padding: '0.5rem 0.75rem', background: 'var(--paper, #fff)', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)' }}>
+										<div style={{ fontSize: '0.75rem', color: 'var(--muted, #64748b)' }}>Давление пара</div>
+										<div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--ink, #0f172a)' }}>{activeCycleDef.targetPressureBar} бар</div>
+									</div>
+									<div style={{ padding: '0.5rem 0.75rem', background: 'var(--paper, #fff)', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)' }}>
+										<div style={{ fontSize: '0.75rem', color: 'var(--muted, #64748b)' }}>Время выдержки</div>
+										<div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--ink, #0f172a)' }}>{activeCycleDef.plateauTimeMinutes} мин</div>
+									</div>
+									<div style={{ padding: '0.5rem 0.75rem', background: 'var(--paper, #fff)', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)' }}>
+										<div style={{ fontSize: '0.75rem', color: 'var(--muted, #64748b)' }}>Тест-контроль</div>
+										<div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--emerald-600, #059669)' }}>5 класс (Пройден)</div>
+									</div>
+								</div>
+							</div>
 
 							{/* Execution Controls */}
 							<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--paper-strong, #f8fafc)', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid var(--line, #e2e8f0)' }}>
 								<div style={{ fontSize: '0.8125rem', color: 'var(--muted, #64748b)' }}>
 									Норматив: <strong>{activeCycleDef.sanpinNormRefRu}</strong>
 								</div>
-								<div style={{ display: 'flex', gap: '0.5rem' }}>
-									{!isCycleActive ? (
-										<button
-											type="button"
-											onClick={handleStartCycle}
-											className="autoclave-btn autoclave-btn-primary"
-										>
-											<Play size={16} />
-											Запустить цикл #{cycleNumber}
-										</button>
-									) : (
-										<button
-											type="button"
-											onClick={handleAbortCycle}
-											className="autoclave-btn autoclave-btn-bad"
-										>
-											<Square size={16} />
-											Аварийная остановка
-										</button>
+								<div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+									{isRegisteredSuccess && (
+										<span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--emerald-600, #059669)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+											✓ Цикл #{cycleNumber - 1} успешно внесен в журнал ф. 257/у
+										</span>
 									)}
+									<button
+										type="button"
+										onClick={handleRegisterCycle}
+										className="autoclave-btn autoclave-btn-primary"
+									>
+										<CheckCircle2 size={16} />
+										Зафиксировать цикл #{cycleNumber} в журнале ф. 257/у
+									</button>
 								</div>
 							</div>
 						</div>
