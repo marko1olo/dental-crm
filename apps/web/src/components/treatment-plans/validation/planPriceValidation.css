@@ -1,0 +1,608 @@
+/* ==========================================================================
+   Treatment Plan Price Lock & Pricelist Validator Modal HUD
+   Touch-First, Multi-Theme (Light, Dark, Night, Calm Teal, Emerald, Ocean)
+   ========================================================================== */
+
+.price-validator-backdrop {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(15, 23, 42, 0.75);
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1050;
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.price-validator-modal {
+	--pv-bg: var(--paper, #ffffff);
+	--pv-surface: var(--paper-strong, #f8fafc);
+	--pv-surface-hover: var(--paper-soft, #f1f5f9);
+	--pv-border: var(--line, #e2e8f0);
+	--pv-border-focus: var(--brand-500, #0d9488);
+	--pv-text-main: var(--ink, #0f172a);
+	--pv-text-muted: var(--muted, #64748b);
+	--pv-brand: var(--brand-500, #0d9488);
+	--pv-brand-hover: var(--brand-600, #0f766e);
+	--pv-brand-light: var(--paper-soft, rgba(13, 148, 136, 0.12));
+	--pv-ok: var(--ok-fg, #16a34a);
+	--pv-ok-bg: var(--ok-bg, rgba(22, 163, 74, 0.12));
+	--pv-warn: var(--warn-fg, #d97706);
+	--pv-warn-bg: var(--warn-bg, rgba(217, 119, 6, 0.12));
+	--pv-danger: var(--danger-fg, #ef4444);
+	--pv-danger-bg: var(--danger-bg, rgba(239, 68, 68, 0.12));
+	--pv-radius-lg: 16px;
+	--pv-radius-md: 10px;
+	--pv-radius-sm: 6px;
+	--pv-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+
+	background: var(--pv-bg);
+	color: var(--pv-text-main);
+	border: 1px solid var(--pv-border);
+	border-radius: var(--pv-radius-lg);
+	box-shadow: var(--pv-shadow);
+	width: 100%;
+	max-width: 1240px;
+	height: 92vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-sizing: border-box;
+	font-family: inherit;
+}
+
+/* Multi-Theme Overrides */
+[data-theme="dark"] .price-validator-modal,
+.dark .price-validator-modal {
+	--pv-bg: #0f172a;
+	--pv-surface: #1e293b;
+	--pv-surface-hover: #334155;
+	--pv-border: #334155;
+	--pv-text-main: #f8fafc;
+	--pv-text-muted: #94a3b8;
+	--pv-brand: #2dd4bf;
+	--pv-brand-hover: #14b8a6;
+	--pv-brand-light: rgba(45, 212, 191, 0.15);
+	--pv-ok: #4ade80;
+	--pv-ok-bg: rgba(74, 222, 128, 0.15);
+	--pv-warn: #fbbf24;
+	--pv-warn-bg: rgba(251, 191, 36, 0.15);
+	--pv-danger: #f87171;
+	--pv-danger-bg: rgba(248, 113, 113, 0.15);
+}
+
+[data-theme="night"] .price-validator-modal,
+[data-theme="oled"] .price-validator-modal {
+	--pv-bg: #000000;
+	--pv-surface: #121215;
+	--pv-surface-hover: #27272a;
+	--pv-border: #27272a;
+	--pv-text-main: #ffffff;
+	--pv-text-muted: #a1a1aa;
+	--pv-brand: #2dd4bf;
+	--pv-brand-hover: #5eead4;
+	--pv-brand-light: rgba(45, 212, 191, 0.2);
+}
+
+[data-theme="calm_teal"] .price-validator-modal,
+[data-theme="calm-teal"] .price-validator-modal {
+	--pv-bg: #ffffff;
+	--pv-surface: #f0fdfa;
+	--pv-surface-hover: #ccfbf1;
+	--pv-border: #99f6e4;
+	--pv-text-main: #134e4a;
+	--pv-text-muted: #0f766e;
+	--pv-brand: #0f766e;
+	--pv-brand-hover: #115e59;
+	--pv-brand-light: rgba(15, 118, 110, 0.15);
+}
+
+/* Header */
+.price-validator-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 24px;
+	border-bottom: 1px solid var(--pv-border);
+	background: var(--pv-surface);
+	flex-shrink: 0;
+}
+
+.price-validator-header-info {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.price-validator-icon-badge {
+	width: 44px;
+	height: 44px;
+	border-radius: var(--pv-radius-md);
+	background: var(--pv-brand-light);
+	color: var(--pv-brand);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.price-validator-title-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.price-validator-title {
+	margin: 0;
+	font-size: 1.15rem;
+	font-weight: 700;
+	color: var(--pv-text-main);
+}
+
+.price-validator-subtitle {
+	margin: 2px 0 0 0;
+	font-size: 0.85rem;
+	color: var(--pv-text-muted);
+}
+
+.price-validator-close-btn {
+	background: transparent;
+	border: 1px solid var(--pv-border);
+	color: var(--pv-text-muted);
+	border-radius: var(--pv-radius-sm);
+	width: 36px;
+	height: 36px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.price-validator-close-btn:hover {
+	background: var(--pv-surface-hover);
+	color: var(--pv-text-main);
+	border-color: var(--pv-border-focus);
+}
+
+/* Top Metrics Bar */
+.price-validator-metrics-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 12px;
+	padding: 14px 24px;
+	background: var(--pv-surface);
+	border-bottom: 1px solid var(--pv-border);
+	flex-shrink: 0;
+}
+
+.price-validator-metric-card {
+	background: var(--pv-bg);
+	border: 1px solid var(--pv-border);
+	border-radius: var(--pv-radius-md);
+	padding: 10px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+.price-validator-metric-label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: var(--pv-text-muted);
+	margin-bottom: 4px;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.price-validator-metric-value {
+	font-size: 1.25rem;
+	font-weight: 800;
+	color: var(--pv-text-main);
+	line-height: 1.2;
+}
+
+.price-validator-metric-sub {
+	font-size: 0.75rem;
+	color: var(--pv-text-muted);
+	margin-top: 2px;
+}
+
+.price-validator-metric-card.highlight-ok {
+	border-color: var(--pv-ok);
+	background: var(--pv-ok-bg);
+}
+
+.price-validator-metric-card.highlight-warn {
+	border-color: var(--pv-warn);
+	background: var(--pv-warn-bg);
+}
+
+.price-validator-metric-card.highlight-danger {
+	border-color: var(--pv-danger);
+	background: var(--pv-danger-bg);
+}
+
+/* Toolbar & Policy Selector */
+.price-validator-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 24px;
+	border-bottom: 1px solid var(--pv-border);
+	background: var(--pv-bg);
+	gap: 12px;
+	flex-wrap: wrap;
+	flex-shrink: 0;
+}
+
+.price-validator-policy-selector {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.price-validator-policy-select {
+	background: var(--pv-surface);
+	color: var(--pv-text-main);
+	border: 1px solid var(--pv-border);
+	border-radius: var(--pv-radius-sm);
+	padding: 8px 12px;
+	font-size: 0.85rem;
+	font-weight: 600;
+	cursor: pointer;
+	outline: none;
+	transition: border-color 0.2s;
+}
+
+.price-validator-policy-select:focus {
+	border-color: var(--pv-brand);
+}
+
+.price-validator-batch-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.price-validator-btn-secondary {
+	background: var(--pv-surface);
+	color: var(--pv-text-main);
+	border: 1px solid var(--pv-border);
+	border-radius: var(--pv-radius-sm);
+	padding: 8px 14px;
+	font-size: 0.85rem;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.2s;
+	min-height: 38px;
+}
+
+.price-validator-btn-secondary:hover {
+	background: var(--pv-surface-hover);
+	border-color: var(--pv-brand);
+}
+
+.price-validator-btn-brand {
+	background: var(--pv-brand);
+	color: #ffffff;
+	border: 1px solid var(--pv-brand);
+	border-radius: var(--pv-radius-sm);
+	padding: 8px 14px;
+	font-size: 0.85rem;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.2s;
+	min-height: 38px;
+}
+
+.price-validator-btn-brand:hover {
+	background: var(--pv-brand-hover);
+}
+
+/* Scrollable Content Body */
+.price-validator-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+/* Validation Messages Banner */
+.price-validator-banner {
+	padding: 12px 16px;
+	border-radius: var(--pv-radius-md);
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	font-size: 0.88rem;
+	line-height: 1.4;
+}
+
+.price-validator-banner.status-ok {
+	background: var(--pv-ok-bg);
+	border: 1px solid var(--pv-ok);
+	color: var(--pv-text-main);
+}
+
+.price-validator-banner.status-warn {
+	background: var(--pv-warn-bg);
+	border: 1px solid var(--pv-warn);
+	color: var(--pv-text-main);
+}
+
+.price-validator-banner.status-danger {
+	background: var(--pv-danger-bg);
+	border: 1px solid var(--pv-danger);
+	color: var(--pv-text-main);
+}
+
+/* Comparison Table */
+.price-validator-table-container {
+	border: 1px solid var(--pv-border);
+	border-radius: var(--pv-radius-md);
+	overflow-x: auto;
+	background: var(--pv-bg);
+}
+
+.price-validator-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.85rem;
+	text-align: left;
+	min-width: 900px;
+}
+
+.price-validator-table th {
+	background: var(--pv-surface);
+	color: var(--pv-text-muted);
+	font-weight: 700;
+	text-transform: uppercase;
+	font-size: 0.75rem;
+	letter-spacing: 0.03em;
+	padding: 12px 14px;
+	border-bottom: 1px solid var(--pv-border);
+}
+
+.price-validator-table td {
+	padding: 12px 14px;
+	border-bottom: 1px solid var(--pv-border);
+	vertical-align: middle;
+}
+
+.price-validator-table tr:last-child td {
+	border-bottom: none;
+}
+
+.price-validator-table tr:hover {
+	background: var(--pv-surface-hover);
+}
+
+/* Badges */
+.pv-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 8px;
+	border-radius: var(--pv-radius-sm);
+	font-size: 0.75rem;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.pv-badge-tooth {
+	background: var(--pv-surface);
+	border: 1px solid var(--pv-border);
+	color: var(--pv-brand);
+	font-family: monospace;
+	font-size: 0.85rem;
+	padding: 2px 6px;
+}
+
+.pv-badge-code {
+	background: var(--pv-surface);
+	border: 1px solid var(--pv-border);
+	color: var(--pv-text-muted);
+	font-family: monospace;
+	font-size: 0.75rem;
+}
+
+.pv-badge-ok {
+	background: var(--pv-ok-bg);
+	color: var(--pv-ok);
+	border: 1px solid var(--pv-ok);
+}
+
+.pv-badge-warn {
+	background: var(--pv-warn-bg);
+	color: var(--pv-warn);
+	border: 1px solid var(--pv-warn);
+}
+
+.pv-badge-danger {
+	background: var(--pv-danger-bg);
+	color: var(--pv-danger);
+	border: 1px solid var(--pv-danger);
+}
+
+.pv-badge-info {
+	background: var(--pv-brand-light);
+	color: var(--pv-brand);
+	border: 1px solid var(--pv-brand);
+}
+
+/* Resolution Selector Inside Table */
+.pv-resolution-selector {
+	display: flex;
+	gap: 4px;
+}
+
+.pv-res-btn {
+	background: var(--pv-surface);
+	border: 1px solid var(--pv-border);
+	color: var(--pv-text-muted);
+	padding: 4px 8px;
+	border-radius: var(--pv-radius-sm);
+	font-size: 0.75rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.pv-res-btn:hover {
+	border-color: var(--pv-brand);
+	color: var(--pv-text-main);
+}
+
+.pv-res-btn.active-lock {
+	background: var(--pv-brand-light);
+	border-color: var(--pv-brand);
+	color: var(--pv-brand);
+	font-weight: 700;
+}
+
+.pv-res-btn.active-current {
+	background: var(--pv-ok-bg);
+	border-color: var(--pv-ok);
+	color: var(--pv-ok);
+	font-weight: 700;
+}
+
+.pv-res-btn.active-override {
+	background: var(--pv-warn-bg);
+	border-color: var(--pv-warn);
+	color: var(--pv-warn);
+	font-weight: 700;
+}
+
+/* Admin Override Drawer */
+.price-validator-admin-box {
+	background: var(--pv-surface);
+	border: 1px solid var(--pv-warn);
+	border-radius: var(--pv-radius-md);
+	padding: 14px 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.price-validator-admin-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 0.9rem;
+	font-weight: 700;
+	color: var(--pv-warn);
+}
+
+.price-validator-admin-inputs {
+	display: grid;
+	grid-template-columns: 1fr 1.5fr auto;
+	gap: 10px;
+	align-items: center;
+}
+
+.price-validator-input {
+	background: var(--pv-bg);
+	color: var(--pv-text-main);
+	border: 1px solid var(--pv-border);
+	border-radius: var(--pv-radius-sm);
+	padding: 8px 12px;
+	font-size: 0.85rem;
+	outline: none;
+	box-sizing: border-box;
+}
+
+.price-validator-input:focus {
+	border-color: var(--pv-brand);
+}
+
+/* Footer Actions */
+.price-validator-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 24px;
+	border-top: 1px solid var(--pv-border);
+	background: var(--pv-surface);
+	gap: 12px;
+	flex-wrap: wrap;
+	flex-shrink: 0;
+}
+
+.price-validator-footer-summary {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	font-size: 0.9rem;
+}
+
+.price-validator-footer-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+/* Responsive adjustments */
+@media (max-width: 960px) {
+	.price-validator-metrics-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+	.price-validator-admin-inputs {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 640px) {
+	.price-validator-backdrop {
+		padding: 0;
+	}
+	.price-validator-modal {
+		height: 100vh;
+		max-width: 100vw;
+		border-radius: 0;
+		border: none;
+	}
+	.price-validator-metrics-grid {
+		grid-template-columns: 1fr;
+		padding: 10px 14px;
+	}
+	.price-validator-toolbar {
+		padding: 10px 14px;
+	}
+	.price-validator-body {
+		padding: 10px 14px;
+	}
+	.price-validator-footer {
+		padding: 12px 14px;
+		flex-direction: column;
+		align-items: stretch;
+	}
+	.price-validator-footer-actions {
+		width: 100%;
+		justify-content: stretch;
+	}
+	.price-validator-footer-actions button {
+		flex: 1;
+	}
+}
