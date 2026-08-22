@@ -7,10 +7,13 @@ import {
 	Calendar,
 	Camera,
 	CheckCircle2,
+	Award,
 	Coins,
 	Compass,
 	CreditCard,
 	Eye,
+	FileBadge,
+	FileCheck2,
 	FileText,
 	Flame,
 	FlaskConical,
@@ -81,6 +84,9 @@ import { ClinicalWriteoffModal } from "../components/inventory/writeoff/Clinical
 import { DmsInsuranceManagerModal } from "../components/insurance/dmsManager/DmsInsuranceManagerModal";
 import { KraftPackageBarcodeModal } from "../components/sanpin/kraft/KraftPackageBarcodeModal";
 import { ServicePricelistManagerModal } from "../components/catalog/pricelist/ServicePricelistManagerModal";
+import { LoyaltyProgramModal } from "../components/loyalty/program/LoyaltyProgramModal";
+import { MedicalReferral057Modal } from "../components/documents/referral057/MedicalReferral057Modal";
+import { SickLeaveElnModal } from "../components/documents/sickLeave/SickLeaveElnModal";
 import { AnesthesiaQuickBar } from "../components/anesthesia/AnesthesiaQuickBar";
 import type { CompletedWorksActAndWriteOffData, TreatmentPlanItem } from "../components/treatment-plans/types";
 import type { DiaryState } from "../components/useVisitDiaryLogic";
@@ -309,6 +315,9 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isDmsManagerOpen, setIsDmsManagerOpen] = useState(false);
 	const [isKraftBarcodeOpen, setIsKraftBarcodeOpen] = useState(false);
 	const [isServicePricelistOpen, setIsServicePricelistOpen] = useState(false);
+	const [isLoyaltyProgramOpen, setIsLoyaltyProgramOpen] = useState(false);
+	const [isReferral057Open, setIsReferral057Open] = useState(false);
+	const [isSickLeaveElnOpen, setIsSickLeaveElnOpen] = useState(false);
 
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -1361,7 +1370,79 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</button>
 					</div>
 
-					{/* 41. Anesthesia QuickBar 1-Click Presets */}
+					{/* 41. Dental Loyalty, Bonus & Gift Certificate Studio Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Award className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Программа лояльности и сертификаты
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Кэшбэк (3-7%), семейные счета, подарочные сертификаты с кодом Luhn-16 и сплит-оплата на кассе 54-ФЗ.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsLoyaltyProgramOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-loyalty-program-modal-btn"
+						>
+							<Award size={15} />
+							<span>Открыть программу лояльности</span>
+						</button>
+					</div>
+
+					{/* 42. Statutory Form 057/u-04 Medical Referral Studio Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<FileBadge className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Направление (Форма № 057/у-04)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Приказ Минздравсоцразвития № 255: направления в стационар ЧЛХ, на МРТ ВНЧС, КЛКТ 3D, к аллергологу/ЛОРу с печатью А4.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsReferral057Open(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-referral-057-modal-btn"
+						>
+							<FileBadge size={15} />
+							<span>Открыть форму 057/у-04</span>
+						</button>
+					</div>
+
+					{/* 43. Statutory Electronic Sick Leave (ЭЛН) & Medical Commission Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<FileCheck2 className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Больничные листы (ЭЛН) & ВК 1089н
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Приказ Минздрава № 1089н: лимит 15 дней единолично, протоколы ВК, журнал 036/у, XML для СФР и памятка пациенту.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsSickLeaveElnOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-sick-leave-eln-modal-btn"
+						>
+							<FileCheck2 size={15} />
+							<span>Открыть больничные листы (ЭЛН)</span>
+						</button>
+					</div>
+
+					{/* 44. Anesthesia QuickBar 1-Click Presets */}
 					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4 md:col-span-2 lg:col-span-3">
 						<div className="space-y-2">
 							<div className="flex items-center gap-2 text-[var(--teal)]">
@@ -1743,6 +1824,31 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 			<ServicePricelistManagerModal
 				isOpen={isServicePricelistOpen}
 				onClose={() => setIsServicePricelistOpen(false)}
+			/>
+
+			<LoyaltyProgramModal
+				isOpen={isLoyaltyProgramOpen}
+				onClose={() => setIsLoyaltyProgramOpen(false)}
+				patientName={SAMPLE_PATIENT.fullName}
+				medicalCardNumber={SAMPLE_PATIENT.cardNumber}
+			/>
+
+			<MedicalReferral057Modal
+				isOpen={isReferral057Open}
+				onClose={() => setIsReferral057Open(false)}
+				patient={{
+					fullName: SAMPLE_PATIENT.fullName,
+					birthDate: SAMPLE_PATIENT.birthDate,
+					phone: SAMPLE_PATIENT.phone,
+					omsPolicyNumber: "7700001234567890",
+				}}
+			/>
+
+			<SickLeaveElnModal
+				isOpen={isSickLeaveElnOpen}
+				onClose={() => setIsSickLeaveElnOpen(false)}
+				initialPatientName={SAMPLE_PATIENT.fullName}
+				initialPatientBirthDate={SAMPLE_PATIENT.birthDate}
 			/>
 		</div>
 	);

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from "react";
 import {
 	FileText,
 	Calendar,
@@ -16,7 +16,7 @@ import {
 	UserCheck,
 	Stethoscope,
 	Check
-} from 'lucide-react';
+} from "lucide-react";
 import {
 	IncapacityReasonCode,
 	IncapacityRegimeType,
@@ -27,7 +27,7 @@ import {
 	REGIME_VIOLATION_CODES,
 	DENTAL_CLINICAL_PRESETS,
 	DEFAULT_COMMISSION_PRESETS
-} from './sickLeaveElnPresets';
+} from "./sickLeaveElnPresets";
 import {
 	SickLeaveFormState,
 	SickLeavePatientData,
@@ -49,8 +49,8 @@ import {
 	DEFAULT_CLINIC_ADDRESS,
 	DEFAULT_CLINIC_LICENCE,
 	SINGLE_DOCTOR_MAX_DAYS
-} from './sickLeaveElnEngine';
-import './sickLeaveEln.css';
+} from "./sickLeaveElnEngine";
+import "./sickLeaveEln.css";
 
 export interface SickLeaveElnModalProps {
 	isOpen: boolean;
