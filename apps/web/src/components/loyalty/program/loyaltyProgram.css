@@ -1,0 +1,514 @@
+/**
+ * DENTE Dental CRM — Statutory Loyalty, Bonus & Gift Certificate Studio Styles
+ * Pure CSS Tokens, High-Contrast Multi-Theme Support, Touch-First Sizing & Print A5/A6 Layouts
+ */
+
+.loyalty-modal-overlay {
+	position: fixed;
+	inset: 0;
+	background-color: rgba(15, 23, 42, 0.75);
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 9999;
+	padding: 1rem;
+}
+
+.loyalty-modal-container {
+	background-color: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 1.25rem;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+	width: 100%;
+	max-width: 68rem;
+	height: 90vh;
+	max-height: 92vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+/* Header */
+.loyalty-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1.25rem 1.5rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-soft, #f8fafc);
+}
+
+.loyalty-modal-title-wrap {
+	display: flex;
+	align-items: center;
+	gap: 0.875rem;
+}
+
+.loyalty-modal-icon-badge {
+	width: 2.75rem;
+	height: 2.75rem;
+	border-radius: 0.75rem;
+	background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%);
+	color: #ffffff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+}
+
+.loyalty-modal-title {
+	font-size: 1.25rem;
+	font-weight: 700;
+	line-height: 1.2;
+	color: var(--ink, #0f172a);
+}
+
+.loyalty-modal-subtitle {
+	font-size: 0.8125rem;
+	color: var(--muted, #64748b);
+	margin-top: 0.125rem;
+}
+
+.loyalty-close-btn {
+	width: 2.5rem;
+	height: 2.5rem;
+	min-width: 44px;
+	min-height: 44px;
+	border-radius: 0.5rem;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--muted, #64748b);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.loyalty-close-btn:hover {
+	background: var(--paper-soft, #f1f5f9);
+	color: var(--ink, #0f172a);
+}
+
+/* Nav Tabs */
+.loyalty-nav-tabs {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.75rem 1.5rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	overflow-x: auto;
+}
+
+.loyalty-tab-btn {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.625rem 1rem;
+	min-height: 44px;
+	border-radius: 0.625rem;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--muted, #64748b);
+	font-size: 0.875rem;
+	font-weight: 600;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.loyalty-tab-btn:hover {
+	background: var(--paper-soft, #f8fafc);
+	color: var(--ink, #0f172a);
+}
+
+.loyalty-tab-btn.active {
+	background: rgba(13, 148, 136, 0.1);
+	border-color: rgba(13, 148, 136, 0.3);
+	color: var(--teal, #0d9488);
+}
+
+/* Content Area */
+.loyalty-modal-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 1.5rem;
+	background: var(--paper-soft, #f8fafc);
+}
+
+/* Tier Card Showcase */
+.loyalty-tier-hero {
+	border-radius: 1.25rem;
+	padding: 1.5rem;
+	color: #ffffff;
+	position: relative;
+	overflow: hidden;
+	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+	margin-bottom: 1.5rem;
+}
+
+.loyalty-tier-hero-bg-accent {
+	position: absolute;
+	right: -2rem;
+	top: -2rem;
+	width: 14rem;
+	height: 14rem;
+	border-radius: 9999px;
+	background: rgba(255, 255, 255, 0.1);
+	pointer-events: none;
+}
+
+.loyalty-tier-hero-top {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	position: relative;
+	z-index: 2;
+}
+
+.loyalty-tier-hero-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.375rem 0.875rem;
+	border-radius: 9999px;
+	background: rgba(255, 255, 255, 0.2);
+	backdrop-filter: blur(4px);
+	font-size: 0.8125rem;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+}
+
+.loyalty-points-display {
+	margin: 1.25rem 0;
+	position: relative;
+	z-index: 2;
+}
+
+.loyalty-points-value {
+	font-size: 2.75rem;
+	font-weight: 800;
+	line-height: 1;
+	letter-spacing: -0.02em;
+	display: flex;
+	align-items: baseline;
+	gap: 0.5rem;
+}
+
+.loyalty-points-label {
+	font-size: 1.125rem;
+	font-weight: 500;
+	opacity: 0.9;
+}
+
+.loyalty-tier-progress-wrap {
+	margin-top: 1rem;
+	position: relative;
+	z-index: 2;
+}
+
+.loyalty-progress-bar-track {
+	height: 0.625rem;
+	background: rgba(255, 255, 255, 0.25);
+	border-radius: 9999px;
+	overflow: hidden;
+}
+
+.loyalty-progress-bar-fill {
+	height: 100%;
+	background: #ffffff;
+	border-radius: 9999px;
+	transition: width 0.3s ease;
+}
+
+.loyalty-progress-info {
+	display: flex;
+	justify-content: space-between;
+	font-size: 0.75rem;
+	margin-top: 0.375rem;
+	opacity: 0.9;
+}
+
+/* Cashier Fast Calculator */
+.loyalty-cashier-card {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 1rem;
+	padding: 1.25rem;
+	margin-bottom: 1.5rem;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.loyalty-section-title {
+	font-size: 1rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-bottom: 1rem;
+}
+
+.loyalty-quick-actions-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.625rem;
+	margin: 0.75rem 0 1rem;
+}
+
+.loyalty-quick-btn {
+	flex: 1;
+	min-width: 120px;
+	min-height: 44px;
+	padding: 0.625rem 0.875rem;
+	border-radius: 0.625rem;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-soft, #f8fafc);
+	color: var(--ink, #0f172a);
+	font-size: 0.875rem;
+	font-weight: 600;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	transition: all 0.15s ease;
+}
+
+.loyalty-quick-btn:hover {
+	background: rgba(13, 148, 136, 0.08);
+	border-color: var(--teal, #0d9488);
+	color: var(--teal, #0d9488);
+}
+
+.loyalty-quick-btn.max-btn {
+	background: linear-gradient(135deg, rgba(13, 148, 136, 0.15), rgba(2, 132, 199, 0.15));
+	border-color: var(--teal, #0d9488);
+	color: var(--teal, #0d9488);
+	font-weight: 700;
+}
+
+/* Fiscal 54-FZ Panel */
+.loyalty-fiscal-box {
+	background: var(--paper-soft, #f8fafc);
+	border: 1px dashed var(--line, #cbd5e1);
+	border-radius: 0.75rem;
+	padding: 1rem;
+	margin-top: 1rem;
+}
+
+.loyalty-fiscal-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 0.8125rem;
+	padding: 0.375rem 0;
+	color: var(--ink, #0f172a);
+}
+
+.loyalty-fiscal-row.highlight {
+	font-weight: 700;
+	font-size: 0.9375rem;
+	border-top: 1px solid var(--line, #e2e8f0);
+	padding-top: 0.5rem;
+	margin-top: 0.375rem;
+	color: var(--teal, #0d9488);
+}
+
+/* Gift Certificate Card */
+.loyalty-certificate-card-preview {
+	background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+	color: #ffffff;
+	border: 2px solid #d97706;
+	border-radius: 1.25rem;
+	padding: 1.75rem;
+	position: relative;
+	box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.5);
+	overflow: hidden;
+}
+
+.loyalty-cert-gold-foil {
+	position: absolute;
+	inset: 0;
+	background: radial-gradient(circle at top right, rgba(251, 191, 36, 0.15), transparent 70%);
+	pointer-events: none;
+}
+
+.loyalty-cert-serial-code {
+	font-family: monospace;
+	font-size: 1.375rem;
+	font-weight: 700;
+	letter-spacing: 0.18em;
+	color: #fef08a;
+	text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+	margin: 1.25rem 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(0, 0, 0, 0.3);
+	padding: 0.625rem 1rem;
+	border-radius: 0.5rem;
+	border: 1px dashed rgba(251, 191, 36, 0.4);
+}
+
+.loyalty-barcode-strip {
+	height: 3rem;
+	background: repeating-linear-gradient(
+		90deg,
+		#ffffff,
+		#ffffff 2px,
+		transparent 2px,
+		transparent 4px,
+		#ffffff 4px,
+		#ffffff 7px,
+		transparent 7px,
+		transparent 9px
+	);
+	border-radius: 0.25rem;
+	opacity: 0.85;
+	margin-top: 1rem;
+}
+
+/* Family Tree Grid */
+.loyalty-family-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: 1rem;
+	margin-top: 1rem;
+}
+
+.loyalty-family-member-card {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 0.875rem;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.loyalty-member-role-badge {
+	font-size: 0.6875rem;
+	font-weight: 700;
+	padding: 0.25rem 0.5rem;
+	border-radius: 0.375rem;
+	background: rgba(13, 148, 136, 0.1);
+	color: var(--teal, #0d9488);
+	display: inline-block;
+}
+
+/* Table Ledger */
+.loyalty-ledger-table-wrap {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 0.875rem;
+	overflow: hidden;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.loyalty-ledger-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8125rem;
+	text-align: left;
+}
+
+.loyalty-ledger-table th {
+	background: var(--paper-soft, #f8fafc);
+	padding: 0.75rem 1rem;
+	font-weight: 700;
+	color: var(--muted, #64748b);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+}
+
+.loyalty-ledger-table td {
+	padding: 0.75rem 1rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	color: var(--ink, #0f172a);
+}
+
+.loyalty-ledger-table tr:last-child td {
+	border-bottom: none;
+}
+
+.loyalty-delta-badge {
+	font-weight: 700;
+	padding: 0.25rem 0.5rem;
+	border-radius: 0.375rem;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+}
+
+.loyalty-delta-badge.positive {
+	background: rgba(16, 185, 129, 0.1);
+	color: #059669;
+}
+
+.loyalty-delta-badge.negative {
+	background: rgba(239, 68, 68, 0.1);
+	color: #dc2626;
+}
+
+/* Promo Code Grid */
+.loyalty-promo-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	gap: 1rem;
+}
+
+.loyalty-promo-card {
+	background: var(--paper, #ffffff);
+	border: 2px dashed var(--line, #cbd5e1);
+	border-radius: 0.875rem;
+	padding: 1.25rem;
+	position: relative;
+	transition: all 0.2s ease;
+}
+
+.loyalty-promo-card:hover {
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.1);
+}
+
+.loyalty-promo-code-chip {
+	font-family: monospace;
+	font-size: 1rem;
+	font-weight: 700;
+	background: rgba(13, 148, 136, 0.1);
+	color: var(--teal, #0d9488);
+	padding: 0.25rem 0.625rem;
+	border-radius: 0.375rem;
+	border: 1px solid rgba(13, 148, 136, 0.2);
+	display: inline-block;
+}
+
+/* Exclusion Rules Callout */
+.loyalty-exclusion-callout {
+	background: rgba(245, 158, 11, 0.08);
+	border: 1px solid rgba(245, 158, 11, 0.3);
+	border-radius: 0.875rem;
+	padding: 1rem 1.25rem;
+	margin-top: 1.5rem;
+}
+
+/* Print Styles */
+@media print {
+	body * {
+		visibility: hidden;
+	}
+	.loyalty-certificate-printable,
+	.loyalty-certificate-printable * {
+		visibility: visible;
+	}
+	.loyalty-certificate-printable {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 100%;
+	}
+}
