@@ -41,31 +41,26 @@ export const PanelLoadFailure: React.FC<{
 	return (
 		<div
 			role="alert"
-			className={`flex flex-wrap items-start gap-x-3 gap-y-2 p-3 rounded-lg border text-xs leading-relaxed bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950/50 dark:text-amber-100 dark:border-amber-900 ${className}`.trim()}
+			style={{ gridColumn: "1 / -1", width: "100%" }}
+			className={`flex flex-col sm:flex-row items-start gap-3 p-3.5 rounded-lg border text-xs leading-relaxed bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950/50 dark:text-amber-100 dark:border-amber-900 ${className}`.trim()}
 		>
-			<AlertTriangle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
-			{/* min-w-0 + break-words: причина отказа длиннее строки и обязана переноситься, а не обрезаться. */}
-			<div className="flex-1 min-w-0 break-words">
-				<div className="font-semibold">{text.title}</div>
-				<div className="mt-0.5">{text.hint}</div>
+			<div className="flex items-start gap-2.5 flex-1 min-w-0 w-full">
+				<AlertTriangle size={15} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+				{/* min-w-0 + break-words: причина отказа длиннее строки и обязана переноситься, а не обрезаться. */}
+				<div className="flex-1 min-w-0 break-words">
+					<div className="font-semibold text-amber-950 dark:text-amber-100">{text.title}</div>
+					<div className="mt-0.5 text-amber-900/90 dark:text-amber-200/90">{text.hint}</div>
+				</div>
 			</div>
 			{/*
 				ОДНО решение, и принимает его `panelRetryLabel` по коду ответа: есть
 				подпись — есть кнопка, нет подписи — нет и кнопки.
-
-				БЫЛО: кнопка «Повторить» рисовалась по одному факту наличия `onRetry`.
-				Рядом с «сервер не знает такого раздела — сообщите администратору»
-				она предлагала действие, которое не сработает никогда, а после
-				«войдите в смену заново» выглядела альтернативой входу. Когда кнопки
-				нет, следующий шаг остаётся в самом тексте отказа выше — 404, 400 и
-				422 заканчиваются словами «сообщите администратору», поэтому экран не
-				превращается в тупик без выхода.
 			*/}
 			{text.retryLabel && (
 				<button
 					type="button"
 					onClick={onRetry}
-					className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-amber-300 dark:border-amber-800 bg-white dark:bg-slate-900 text-amber-900 dark:text-amber-100 font-semibold cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors"
+					className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-amber-300 dark:border-amber-800 bg-white dark:bg-slate-900 text-amber-900 dark:text-amber-100 font-semibold cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors text-xs self-start sm:self-auto"
 				>
 					<RefreshCw size={13} aria-hidden="true" /> {text.retryLabel}
 				</button>

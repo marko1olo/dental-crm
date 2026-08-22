@@ -196,6 +196,13 @@
 	overflow-y: auto;
 	padding-right: 8px;
 }
+@media (max-width: 640px) {
+	.auth-staff-grid {
+		grid-template-columns: 1fr;
+		max-height: none;
+		padding-right: 0;
+	}
+}
 /* custom scrollbar */
 .auth-staff-grid::-webkit-scrollbar {
 	width: 6px;
