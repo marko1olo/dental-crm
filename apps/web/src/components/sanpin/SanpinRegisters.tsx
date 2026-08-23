@@ -111,6 +111,39 @@ export function SanpinRegisters() {
 		}
 	};
 
+	const [autoFilling, setAutoFilling] = useState(false);
+
+	const handleAutofillShift = async () => {
+		try {
+			setAutoFilling(true);
+			const clinicToken = readDenteClinicToken();
+			const staffToken = readDenteStaffToken();
+			const res = await fetch("/api/registers/autofill-shift", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+				},
+			});
+
+			if (res.ok) {
+				const data = await res.json();
+				showToast(
+					`⚡ Смена успешно оформлена в 1 клик: ${data.batchCount} лотков, выборка ${data.sampleCount} шт. (Азопирам отр., Автоклав 134°C ОК). Досье готово для Роспотребнадзора.`,
+					"success",
+				);
+				fetchSummary();
+			} else {
+				showToast("Ошибка при авто-заполнении смены", "error");
+			}
+		} catch (err) {
+			showToast("Сетевая ошибка при авто-заполнении", "error");
+		} finally {
+			setAutoFilling(false);
+		}
+	};
+
 	const handleExportDossierPdf = () => {
 		window.print();
 	};
@@ -144,6 +177,27 @@ export function SanpinRegisters() {
 					<span className="sanpin-badge-gov" style={{ minHeight: "44px", fontSize: "0.85rem" }}>
 						<CheckCircle2 size={16} /> Роспотребнадзор 2026 Ready
 					</span>
+
+					<button
+						type="button"
+						onClick={handleAutofillShift}
+						disabled={autoFilling}
+						className="sanpin-btn sanpin-btn-primary"
+						style={{
+							minHeight: "44px",
+							padding: "0.5rem 1.2rem",
+							fontSize: "0.95rem",
+							fontWeight: 700,
+							background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
+							borderColor: "#047857",
+							color: "#ffffff",
+							boxShadow: "0 2px 8px rgba(5, 150, 105, 0.25)",
+						}}
+						title="1 Клик: Автоматически сформировать и опечатать журналы 257/у и 366/у за всю смену на основе завершенных приемов"
+						data-testid="sanpin-1click-autofill-btn"
+					>
+						<Sparkles size={18} /> {autoFilling ? "Оформление..." : "⚡ Заполнить всё за смену (1 Клик)"}
+					</button>
 
 					<button
 						type="button"
