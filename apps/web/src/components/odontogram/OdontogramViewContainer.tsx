@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import {
 	Activity,
 	Coins,
@@ -8,6 +8,7 @@ import {
 	Mic,
 	Radio,
 	Sparkles,
+	Stethoscope,
 	Trash2,
 	Zap,
 } from "lucide-react";
@@ -76,6 +77,15 @@ export interface OdontogramViewContainerProps {
 	initialViewMode?: OdontogramViewMode | undefined;
 	onViewModeChange?: ((mode: OdontogramViewMode) => void) | undefined;
 	onOpenVoiceDictation?: (() => void) | undefined;
+	onOpenPediatricModal?: (() => void) | undefined;
+	onTogglePerio?: (() => void) | undefined;
+	isPerioOpen?: boolean | undefined;
+	onToggleEstimator?: (() => void) | undefined;
+	isEstimatorOpen?: boolean | undefined;
+	onLoadDiagnocat?: (() => void) | undefined;
+	diagnocatLoading?: boolean | undefined;
+	isMultiSelectMode?: boolean | undefined;
+	onToggleMultiSelect?: ((enabled: boolean) => void) | undefined;
 }
 
 export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = ({
@@ -95,6 +105,15 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 	initialViewMode,
 	onViewModeChange,
 	onOpenVoiceDictation,
+	onOpenPediatricModal,
+	onTogglePerio,
+	isPerioOpen,
+	onToggleEstimator,
+	isEstimatorOpen,
+	onLoadDiagnocat,
+	diagnocatLoading,
+	isMultiSelectMode,
+	onToggleMultiSelect,
 }) => {
 	// 1. Read mode from zustand app store or initialViewMode or localStorage preferences
 	const storeMode = useAppStore((state) => state.odontogramViewMode);
@@ -199,21 +218,21 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 
 	return (
 		<div
-			className={`odontogram-view-container flex flex-col gap-3 w-full relative ${className}`.trim()}
+			className={`odontogram-view-container flex flex-col gap-1.5 w-full relative ${className}`.trim()}
 			data-testid="odontogram-view-container"
 			data-view-mode={activeMode}
 		>
-			{/* Mode Switcher & Quick Action Toolbar */}
+			{/* Unified Clinical Toolbar - Sleek Single Horizontal Scroll Track */}
 			{!hideModeSwitcher && (
 				<div
-					className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 p-2.5 bg-[var(--odontogram-surface,#f8fafc)] backdrop-blur-md rounded-2xl border border-[var(--odontogram-border,#cbd5e1)] shadow-sm"
+					className="odontogram-toolbar flex items-center gap-2 py-1 border-b border-[var(--odontogram-border-subtle,#e2e8f0)] w-full overflow-x-auto flex-nowrap scrollbar-none select-none"
 					role="toolbar"
 					aria-label="Панель управления зубной формулой"
 				>
 					{/* Left Group: View Mode Radios */}
-					<div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+					<div className="flex items-center gap-1.5 shrink-0">
 						<div
-							className="inline-flex items-center p-1 rounded-xl bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0"
+							className="inline-flex items-center p-0.5 rounded-xl bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0"
 							role="radiogroup"
 							aria-label="Режимы схемы"
 						>
@@ -228,9 +247,9 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 										title={option.tooltip}
 										data-testid={`odontogram-mode-btn-${option.mode}`}
 										onClick={() => handleModeSwitch(option.mode)}
-										className={`min-h-[40px] flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-150 cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50 ${
+										className={`min-h-[44px] flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-all duration-150 cursor-pointer select-none shrink-0 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 ${
 											isActive
-												? "bg-[var(--odontogram-paper,#ffffff)] text-[var(--odontogram-ink,#0f172a)] shadow-sm font-bold border border-[var(--odontogram-border,#cbd5e1)]"
+												? "bg-[var(--odontogram-paper,#ffffff)] text-[var(--odontogram-ink,#0f172a)] shadow-xs font-black border border-[var(--odontogram-border,#cbd5e1)]"
 												: "text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-paper,#ffffff)]/60"
 										}`}
 									>
@@ -238,7 +257,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 										<span>{option.shortLabel}</span>
 										{option.badge && (
 											<span
-												className={`text-[9px] px-1.5 py-0.5 rounded font-black tracking-tight ${
+												className={`text-xs px-1.5 py-0.5 rounded font-black tracking-tight ${
 													isActive
 														? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/25 font-mono"
 														: "bg-[var(--odontogram-border-subtle,#e2e8f0)] text-[var(--odontogram-ink-muted,#64748b)]"
@@ -251,22 +270,87 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 								);
 							})}
 						</div>
+
+						{/* Shift Multi-Select Checkbox */}
+						{onToggleMultiSelect && (
+							<label
+								className={`flex items-center gap-1.5 min-h-[44px] text-xs sm:text-sm font-bold cursor-pointer select-none px-3 py-1.5 rounded-xl border transition-colors shrink-0 ${
+									isMultiSelectMode
+										? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30 font-black"
+										: "bg-[var(--odontogram-surface-hover,#f1f5f9)] text-[var(--odontogram-ink-muted,#64748b)] border-[var(--odontogram-border-subtle,#e2e8f0)]"
+								}`}
+							>
+								<input
+									type="checkbox"
+									checked={isMultiSelectMode ?? false}
+									onChange={(e) => onToggleMultiSelect(e.target.checked)}
+									className="accent-indigo-500 rounded cursor-pointer shrink-0"
+								/>
+								<span className="whitespace-nowrap">Группа</span>
+							</label>
+						)}
 					</div>
 
-					{/* Right Group: Fast Clinical Toggles */}
-					<div className="flex flex-wrap items-center gap-2 overflow-x-auto">
+					<div className="h-5 w-[1px] bg-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0 mx-0.5 hidden sm:block" />
+
+					{/* Clinical Actions & Modules in Single Sleek Horizontal Scroll Line */}
+					<div className="flex items-center gap-1.5 shrink-0 flex-nowrap">
+						{/* Pediatric Mixed Dentition Modal */}
+						{onOpenPediatricModal && (
+							<button
+								type="button"
+								onClick={onOpenPediatricModal}
+								className="min-h-[44px] flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 rounded-xl transition-colors shrink-0 whitespace-nowrap cursor-pointer select-none"
+								title="Сменный прикус: сроки прорезывания, стадии резорбции корней и Кариограмма Браттхолла"
+							>
+								<Sparkles size={15} className="text-amber-500 shrink-0" />
+								<span>Сменный прикус</span>
+							</button>
+						)}
+
+						{/* Periodontal Charting Module */}
+						{onTogglePerio && (
+							<button
+								type="button"
+								onClick={onTogglePerio}
+								className={`min-h-[44px] flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-bold rounded-xl border transition-all shrink-0 whitespace-nowrap cursor-pointer select-none ${
+									isPerioOpen
+										? "bg-teal-500/20 text-teal-800 dark:text-teal-200 border-teal-500/50 shadow-xs font-black"
+										: "bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30 hover:bg-teal-500/20"
+								}`}
+								title="Открыть / скрыть пародонтологическую карту PSR / 6 точек зондирования"
+							>
+								<Activity size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+								<span>Пародонтограмма</span>
+							</button>
+						)}
+
+						{/* Diagnocat AI Report */}
+						{onLoadDiagnocat && (
+							<button
+								type="button"
+								onClick={onLoadDiagnocat}
+								disabled={diagnocatLoading}
+								className="min-h-[44px] flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/30 hover:bg-blue-500/20 rounded-xl transition-colors shrink-0 whitespace-nowrap cursor-pointer select-none"
+								title="Загрузить отчёт Diagnocat AI"
+							>
+								<Stethoscope size={15} className="text-blue-500 shrink-0" />
+								<span>{diagnocatLoading ? "Загрузка..." : "Diagnocat"}</span>
+							</button>
+						)}
+
 						{/* Wisdom Teeth Toggle */}
 						<button
 							type="button"
 							onClick={() => setShowWisdomTeeth((prev) => !prev)}
-							className={`min-h-[40px] flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap border transition-all cursor-pointer ${
+							className={`min-h-[44px] flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap border transition-all shrink-0 cursor-pointer ${
 								showWisdomTeeth
-									? "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-400/40 shadow-xs"
+									? "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-400/40 shadow-xs font-black"
 									: "bg-[var(--odontogram-surface-hover,#f1f5f9)] text-[var(--odontogram-ink-muted,#64748b)] border-[var(--odontogram-border-subtle,#e2e8f0)] opacity-80"
 							}`}
 							title="Показать или скрыть зубы мудрости (18, 28, 38, 48)"
 						>
-							{showWisdomTeeth ? <Eye size={14} /> : <EyeOff size={14} />}
+							{showWisdomTeeth ? <Eye size={15} /> : <EyeOff size={15} />}
 							<span>8-ки</span>
 						</button>
 
@@ -275,15 +359,15 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							<button
 								type="button"
 								onClick={() => setShowPulpAndCanals((prev) => !prev)}
-								className={`min-h-[40px] flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap border transition-all cursor-pointer ${
+								className={`min-h-[44px] flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap border transition-all shrink-0 cursor-pointer ${
 									showPulpAndCanals
-										? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-400/40 shadow-xs"
+										? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-400/40 shadow-xs font-black"
 										: "bg-[var(--odontogram-surface-hover,#f1f5f9)] text-[var(--odontogram-ink-muted,#64748b)] border-[var(--odontogram-border-subtle,#e2e8f0)] opacity-80"
 								}`}
 								title="Рентген-прозрачность эмали для просмотра корневых каналов и пульпы"
 							>
-								<Activity size={14} />
-								<span>Каналы (Рентген)</span>
+								<Activity size={15} />
+								<span>Каналы</span>
 							</button>
 						)}
 
@@ -291,29 +375,35 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 						<button
 							type="button"
 							onClick={() => setIsFastExtractMode((prev) => !prev)}
-							className={`min-h-[40px] flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap border transition-all cursor-pointer ${
+							className={`min-h-[44px] flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap border transition-all shrink-0 cursor-pointer ${
 								isFastExtractMode
-									? "bg-rose-600 text-white border-rose-700 shadow-md animate-pulse font-extrabold"
+									? "bg-rose-600 text-white border-rose-700 shadow-md animate-pulse font-black"
 									: "bg-[var(--odontogram-surface-hover,#f1f5f9)] text-[var(--odontogram-ink-muted,#64748b)] border-[var(--odontogram-border-subtle,#e2e8f0)] hover:text-rose-600 dark:hover:text-rose-400"
 							}`}
 							title="Режим быстрого удаления зубов в 1 клик"
 						>
-							<Trash2 size={14} />
-							<span>{isFastExtractMode ? "Удаление ВКЛ" : "Удаление (0)"}</span>
+							<Trash2 size={15} />
+							<span>{isFastExtractMode ? "Удаление ВКЛ" : "Удаление"}</span>
 						</button>
 
 						{/* Live Invoice Toggle */}
 						<button
 							type="button"
-							onClick={() => setIsLiveInvoiceOpen((prev) => !prev)}
-							className={`min-h-[40px] flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap border transition-all cursor-pointer ${
-								isLiveInvoiceOpen
-									? "bg-emerald-600 text-white border-emerald-700 shadow-sm"
+							onClick={() => {
+								if (onToggleEstimator) {
+									onToggleEstimator();
+								} else {
+									setIsLiveInvoiceOpen((prev) => !prev);
+								}
+							}}
+							className={`min-h-[44px] flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap border transition-all shrink-0 cursor-pointer ${
+								(isEstimatorOpen ?? isLiveInvoiceOpen)
+									? "bg-emerald-600 text-white border-emerald-700 shadow-sm font-black"
 									: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20"
 							}`}
 							title="Открыть живой калькулятор сметы лечения"
 						>
-							<Coins size={14} />
+							<Coins size={15} />
 							<span>Смета</span>
 						</button>
 
@@ -322,10 +412,10 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							<button
 								type="button"
 								onClick={onOpenVoiceDictation}
-								className="min-h-[40px] flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold whitespace-nowrap bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm cursor-pointer transition-all active:scale-95"
+								className="min-h-[44px] flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-black whitespace-nowrap bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs shrink-0 cursor-pointer transition-all active:scale-95"
 								title="Голосовая диктовка зубной формулы («16 кариес, 24 пломба, 36 отсутствует»)"
 							>
-								<Mic size={14} />
+								<Mic size={15} />
 								<span>Голос</span>
 							</button>
 						)}
