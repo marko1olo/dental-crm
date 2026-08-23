@@ -21,6 +21,10 @@ import { EgiszCdaExportModal } from "../egisz/EgiszCdaExportModal";
 import { PrescriptionModal } from "./PrescriptionModal";
 import { VisitFlowProgress } from "./VisitFlowProgress";
 import {
+	ClinicalQuickPresetsBar,
+	type ClinicalQuickPreset,
+} from "./ClinicalQuickPresetsBar";
+import {
 	forgetVisitFlowResultOwner,
 	rememberVisitFlowResultOwner,
 	visitFlowOwnerKey,
@@ -450,6 +454,41 @@ export function VisitEmkTab() {
 				<VisitFlowProgress result={visitFlowResult} />
 			) : null}
 
+			{/* Быстрые клинические протоколы SOAP + МКБ-10 (1 клик) */}
+			<ClinicalQuickPresetsBar
+				onSelectPreset={(preset) => {
+					if (!updateVisitNoteField) return;
+					const currComplaint = visitNoteForm.complaint || "";
+					const currAnamnesis = visitNoteForm.anamnesis || "";
+					const currStatus = visitNoteForm.objectiveStatus || "";
+					const currPlan = visitNoteForm.treatmentPlan || "";
+
+					updateVisitNoteField(
+						"complaint",
+						appendClinicalText(currComplaint, preset.anamnesis, " "),
+					);
+					updateVisitNoteField(
+						"anamnesis",
+						appendClinicalText(currAnamnesis, preset.anamnesis, " "),
+					);
+					updateVisitNoteField(
+						"objectiveStatus",
+						appendClinicalText(currStatus, preset.statusLocalis, "\n\n"),
+					);
+					updateVisitNoteField(
+						"diagnosis",
+						preset.icd10Label
+							? `${preset.icd10} ${preset.icd10Label}`
+							: `${preset.icd10} ${preset.title}`,
+					);
+					updateVisitNoteField(
+						"treatmentPlan",
+						appendClinicalText(currPlan, preset.treatmentDescription, "\n\n"),
+					);
+				}}
+				isLocked={locked}
+			/>
+
 			{/* Красивые вкладки (EMK Tabs) для уменьшения перегруженности */}
 			<div className="emk-tabs-container" role="tablist">
 				{emkTabs.map((tab) => {
@@ -477,11 +516,11 @@ export function VisitEmkTab() {
 			>
 				{fieldsUnavailable ? (
 					<div
-						className="p-4 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-sm text-slate-600 dark:text-slate-300"
+						className="p-4 rounded-xl border border-dashed border-[var(--line)] bg-[var(--paper-soft)] text-sm text-[var(--ink)]"
 						role="status"
 						aria-live="polite"
 					>
-						<strong className="block mb-1 text-slate-900 dark:text-white">
+						<strong className="block mb-1 text-[var(--ink)]">
 							Поля приёма пока не открылись
 						</strong>
 						Карта приёма ещё загружается. Если через несколько секунд поля не
@@ -492,47 +531,101 @@ export function VisitEmkTab() {
 				{visibleFields.map((field) => {
 					const QUICK_CHIPS: Record<string, string[]> = {
 						complaint: [
-							"Жалоб нет",
-							"Ноющие боли",
 							"Острая боль",
-							"Боль при накусывании",
+							"Ноющие боли",
 							"Реакция на холод/горячее",
+							"Кариес",
+							"Пульпит",
+							"Периодонтит",
+							"Пломба (скол)",
+							"Коронка",
+							"Удален (подвижность)",
+							"Здоров (профосмотр)",
+							"Боль при накусывании",
 							"Застревание пищи",
-							"Эстетический дефект",
-							"Проф. осмотр",
+							"Жалоб нет",
 						],
 						anamnesis: [
 							"Ранее лечен по поводу неосложненного кариеса",
+							"Ранее проводилось эндодонтическое лечение",
 							"Травма зуба",
-							"Хрон. заболевания отрицает",
+							"Хрон. соматические заболевания отрицает",
 							"Аллергоанамнез не отягощен",
-							"Аллергия на лидокаин",
+							"Аллергию на анестетики отрицает",
+							"Гигиена полости рта регулярная",
 						],
 						objectiveStatus: [
 							"Зондирование безболезненно",
 							"Перкуссия безболезненна",
-							"Слизистая оболочка бледно-розового цвета",
+							"Слизистая бледно-розовая, без воспаления",
 							"Глубокая кариозная полость",
-							"Сообщается с полостью зуба",
+							"Сообщается с полостью зуба, пульпа кровоточит",
+							"Зондирование устьев каналов безболезненно",
+							"ЭОД 6–8 мкА (норма)",
+							"ЭОД 35–45 мкА (пульпит)",
+							"ЭОД > 100 мкА (периодонтит)",
 						],
 						diagnosis: [
 							"K02.1 Кариес дентина",
 							"K04.0 Острый пульпит",
 							"K04.5 Хронический апикальный периодонтит",
 							"K05.0 Острый гингивит",
+							"K05.3 Хронический пародонтит",
 							"K08.1 Потеря зубов",
+							"Z51.8 Ортопедическое лечение (коронка)",
+							"Z01.2 Стоматологический осмотр (здоров)",
 						],
 						treatmentPlan: [
-							"Анестезия аппликационная",
-							"Анестезия инфильтрационная",
-							"Коффердам",
-							"Мех/Мед обработка",
-							"Реставрация композитом светового отверждения",
-							"Шлифовка, полировка",
-							"Удаление зуба",
+							"Анестезия инфильтрационная (Артикаин 4% 1.7 мл)",
+							"Анестезия проводниковая",
+							"Изоляция коффердамом",
+							"Препарирование, некрэктомия",
+							"Адгезивный протокол + Светоотверждаемый композит",
+							"Витальная экстирпация + NiTi обработка каналов",
+							"Ирригация NaOCl 3% + ЭДТА 17% + УЗ-активация",
+							"Обтурация гуттаперчей с эпоксидным силером",
+							"Лечебная паста Calcept Ca(OH)2",
+							"Шлифовка, полировка (диски, паста)",
+							"Удаление зуба + кюретаж + гемостаз + шов",
+							"УЗ-скейлинг + Air-Flow + Clinpro White Varnish",
 						],
 					};
 					const chips = QUICK_CHIPS[field.key] || [];
+
+					const handleChipClick = (chip: string) => {
+						if (!updateVisitNoteField) return;
+						const curr = visitNoteForm[field.key] || "";
+						updateVisitNoteField(
+							field.key,
+							appendClinicalText(curr, chip, field.key === "treatmentPlan" || field.key === "objectiveStatus" ? "\n" : ", "),
+						);
+
+						// Auto-match ICD-10 when clicking complaint chips if diagnosis is empty or default
+						if (field.key === "complaint") {
+							const currDiag = (visitNoteForm.diagnosis || "").trim();
+							if (!currDiag || currDiag === "K02.1" || currDiag.length < 4) {
+								const COMPLAINT_ICD10_MAP: Record<string, string> = {
+									"Острая боль": "K04.0 Острый пульпит",
+									"Пульпит": "K04.0 Острый пульпит",
+									"Ноющие боли": "K04.5 Хронический апикальный периодонтит",
+									"Боль при накусывании": "K04.5 Хронический апикальный периодонтит",
+									"Периодонтит": "K04.5 Хронический апикальный периодонтит",
+									"Реакция на холод/горячее": "K02.1 Кариес дентина",
+									"Кариес": "K02.1 Кариес дентина",
+									"Застревание пищи": "K02.1 Кариес дентина",
+									"Пломба (скол)": "K02.1 Кариес дентина / Дефект пломбы",
+									"Коронка": "Z51.8 Ортопедическое лечение (коронка)",
+									"Удален (подвижность)": "K08.1 Потеря зубов вследствие удаления",
+									"Здоров (профосмотр)": "Z01.2 Стоматологическое обследование и гигиена",
+									"Жалоб нет": "Z01.2 Стоматологическое обследование и гигиена",
+								};
+								if (COMPLAINT_ICD10_MAP[chip]) {
+									updateVisitNoteField("diagnosis", COMPLAINT_ICD10_MAP[chip]);
+								}
+							}
+						}
+					};
+
 					return (
 						<div
 							key={field.key}
@@ -551,7 +644,7 @@ export function VisitEmkTab() {
 									width: "100%",
 								}}
 							>
-								<strong className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+								<strong className="text-xs font-semibold text-[var(--ink)]">
 									{field.label}
 								</strong>
 								<SmartMicrophoneButton
@@ -573,22 +666,15 @@ export function VisitEmkTab() {
 									style={{
 										display: "flex",
 										flexWrap: "wrap",
-										gap: "0.3rem",
+										gap: "0.35rem",
 									}}
 								>
 									{chips.map((chip) => (
 										<button
 											key={chip}
 											type="button"
-											onClick={() => {
-												if (!updateVisitNoteField) return;
-												const curr = visitNoteForm[field.key] || "";
-												updateVisitNoteField(
-													field.key,
-													appendClinicalText(curr, chip, ", "),
-												);
-											}}
-											className="quick-chip"
+											onClick={() => handleChipClick(chip)}
+											className="quick-chip min-h-[44px] min-w-[44px] px-3 py-2 text-xs font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all cursor-pointer touch-manipulation"
 										>
 											+ {chip}
 										</button>
@@ -601,7 +687,7 @@ export function VisitEmkTab() {
 								onChange={(event) =>
 									updateVisitNoteField?.(field.key, event.target.value)
 								}
-								className="min-h-[80px] rounded-lg p-2.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white resize-y w-full outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+								className="min-h-[90px] rounded-xl p-3 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] placeholder:text-[var(--muted)] resize-y w-full outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 font-sans text-sm leading-relaxed"
 							/>
 						</div>
 					);

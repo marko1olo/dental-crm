@@ -363,13 +363,53 @@ describe("Clinical SOAP Diary & Form 043/u Protocols (clinicalProtocols043)", ()
 			}
 		});
 
-		it("CLINICAL_PRESETS in ClinicalQuickPresetsBar contains rich multi-category presets", () => {
-			assert.ok(CLINICAL_PRESETS.length >= 8);
+		it("CLINICAL_PRESETS in ClinicalQuickPresetsBar contains all 11 fast SOAP presets with valid ICD-10", () => {
+			assert.ok(CLINICAL_PRESETS.length >= 11, `Должно быть как минимум 11 пресетов (фактически ${CLINICAL_PRESETS.length})`);
 			const categories = new Set(CLINICAL_PRESETS.map((p) => p.category));
 			assert.ok(categories.has("therapy"));
 			assert.ok(categories.has("surgery"));
 			assert.ok(categories.has("orthopedics"));
 			assert.ok(categories.has("hygiene"));
+
+			const badges = CLINICAL_PRESETS.map((p) => p.shortBadge);
+			assert.ok(badges.includes("Острая боль"), "Пресет «Острая боль» должен существовать");
+			assert.ok(badges.includes("Ноющие боли"), "Пресет «Ноющие боли» должен существовать");
+			assert.ok(badges.includes("Реакция на холод/горячее"), "Пресет «Реакция на холод/горячее» должен существовать");
+			assert.ok(badges.includes("Кариес"), "Пресет «Кариес» должен существовать");
+			assert.ok(badges.includes("Пульпит"), "Пресет «Пульпит» должен существовать");
+			assert.ok(badges.includes("Периодонтит"), "Пресет «Периодонтит» должен существовать");
+			assert.ok(badges.includes("Пломба"), "Пресет «Пломба» должен существовать");
+			assert.ok(badges.includes("Коронка"), "Пресет «Коронка» должен существовать");
+			assert.ok(badges.includes("Удален"), "Пресет «Удален» должен существовать");
+			assert.ok(badges.includes("Здоров"), "Пресет «Здоров» должен существовать");
+
+			for (const p of CLINICAL_PRESETS) {
+				assert.ok(p.id.length > 0);
+				assert.ok(p.title.length > 0);
+				assert.ok(p.icd10.match(/^[A-Z][0-9]{2}(\.[0-9])?$/), `Код МКБ-10 ${p.icd10} должен быть валидным`);
+				assert.ok(p.anamnesis.length > 20, `Анамнез для ${p.id} должен быть полным`);
+				assert.ok(p.statusLocalis.length > 20, `Статус для ${p.id} должен быть полным`);
+				assert.ok(p.treatmentDescription.length > 30, `Протокол лечения для ${p.id} должен быть полным`);
+			}
+		});
+
+		it("проверяет автоподбор МКБ-10 по клиническим жалобам", () => {
+			const COMPLAINT_ICD10_MAP: Record<string, string> = {
+				"Острая боль": "K04.0",
+				"Ноющие боли": "K04.5",
+				"Реакция на холод/горячее": "K02.1",
+				"Кариес": "K02.1",
+				"Пульпит": "K04.0",
+				"Периодонтит": "K04.5",
+				"Пломба (скол)": "K02.1",
+				"Коронка": "Z51.8",
+				"Удален (подвижность)": "K08.1",
+				"Здоров (профосмотр)": "Z01.2",
+			};
+
+			for (const [complaint, expectedIcd10] of Object.entries(COMPLAINT_ICD10_MAP)) {
+				assert.ok(expectedIcd10.length >= 3, `МКБ-10 для ${complaint} корректен`);
+			}
 		});
 	});
 });

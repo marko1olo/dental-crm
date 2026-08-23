@@ -1127,8 +1127,8 @@ const UPPER_MOLAR_GEOMETRY: AnatomicalTemplateData = {
 		C: "M 16 96 Q 50 92 84 96 L 78 108 Q 50 104 22 108 Z",
 	},
 	viewBox: { x: 0, y: 0, width: 100, height: 160 },
-	standardWidthPx: 80,
-	standardHeightPx: 128,
+	standardWidthPx: 88,
+	standardHeightPx: 150,
 };
 
 // --- 2. ВЕРХНИЕ ПРЕМОЛЯРЫ (14, 15, 24, 25) ---
@@ -1184,8 +1184,8 @@ const UPPER_PREMOLAR_GEOMETRY: AnatomicalTemplateData = {
 		C: "M 22 96 Q 50 92 78 96 L 74 108 Q 50 104 26 108 Z",
 	},
 	viewBox: { x: 10, y: 0, width: 80, height: 160 },
-	standardWidthPx: 64,
-	standardHeightPx: 128,
+	standardWidthPx: 72,
+	standardHeightPx: 150,
 };
 
 // --- 3. ВЕРХНИЕ КЛЫКИ (13, 23) ---
@@ -1223,8 +1223,8 @@ const UPPER_CANINE_GEOMETRY: AnatomicalTemplateData = {
 		C: "M 26 96 Q 50 92 74 96 L 68 108 Q 50 104 32 108 Z",
 	},
 	viewBox: { x: 12, y: 0, width: 76, height: 160 },
-	standardWidthPx: 60,
-	standardHeightPx: 128,
+	standardWidthPx: 68,
+	standardHeightPx: 150,
 };
 
 // --- 4. ВЕРХНИЕ РЕЗЦЫ (11, 21, 12, 22) ---
@@ -1262,8 +1262,8 @@ const UPPER_INCISOR_GEOMETRY: AnatomicalTemplateData = {
 		C: "M 26 96 Q 50 92 74 96 L 68 108 Q 50 104 32 108 Z",
 	},
 	viewBox: { x: 12, y: 0, width: 76, height: 160 },
-	standardWidthPx: 58,
-	standardHeightPx: 128,
+	standardWidthPx: 64,
+	standardHeightPx: 150,
 };
 
 // --- 5. НИЖНИЕ МОЛЯРЫ (36, 37, 38, 46, 47, 48) ---
@@ -1332,8 +1332,8 @@ const LOWER_MOLAR_GEOMETRY: AnatomicalTemplateData = {
 		C: "M 16 64 Q 50 68 84 64 L 78 52 Q 50 56 22 52 Z",
 	},
 	viewBox: { x: 0, y: 0, width: 100, height: 160 },
-	standardWidthPx: 80,
-	standardHeightPx: 128,
+	standardWidthPx: 88,
+	standardHeightPx: 150,
 };
 
 // --- 6. НИЖНИЕ ПРЕМОЛЯРЫ (34, 35, 44, 45) ---
@@ -1371,8 +1371,8 @@ const LOWER_PREMOLAR_GEOMETRY: AnatomicalTemplateData = {
 		C: "M 24 64 Q 50 68 76 64 L 70 52 Q 50 56 30 52 Z",
 	},
 	viewBox: { x: 10, y: 0, width: 80, height: 160 },
-	standardWidthPx: 64,
-	standardHeightPx: 128,
+	standardWidthPx: 72,
+	standardHeightPx: 150,
 };
 
 // --- 7. НИЖНИЕ КЛЫКИ (33, 43) ---
@@ -1409,8 +1409,8 @@ const LOWER_CANINE_GEOMETRY: AnatomicalTemplateData = {
 		C: "M 26 64 Q 50 68 74 64 L 68 52 Q 50 56 32 52 Z",
 	},
 	viewBox: { x: 12, y: 0, width: 76, height: 160 },
-	standardWidthPx: 60,
-	standardHeightPx: 128,
+	standardWidthPx: 68,
+	standardHeightPx: 150,
 };
 
 // --- 8. НИЖНИЕ РЕЗЦЫ (31, 32, 41, 42) ---
@@ -1448,8 +1448,8 @@ const LOWER_INCISOR_GEOMETRY: AnatomicalTemplateData = {
 		C: "M 28 64 Q 50 68 72 64 L 68 52 Q 50 56 32 52 Z",
 	},
 	viewBox: { x: 12, y: 0, width: 76, height: 160 },
-	standardWidthPx: 54,
-	standardHeightPx: 128,
+	standardWidthPx: 60,
+	standardHeightPx: 150,
 };
 
 // --- 9. МОЛОЧНЫЕ ВЕРХНИЕ МОЛЯРЫ (54, 55, 64, 65) ---
@@ -1513,8 +1513,8 @@ const PEDIATRIC_UPPER_MOLAR_GEOMETRY: AnatomicalTemplateData = {
 		C: "M 18 84 Q 50 80 82 84 L 76 96 Q 50 92 24 96 Z",
 	},
 	viewBox: { x: 0, y: 0, width: 100, height: 160 },
-	standardWidthPx: 72,
-	standardHeightPx: 116,
+	standardWidthPx: 78,
+	standardHeightPx: 140,
 };
 
 // --- 10. МОЛОЧНЫЕ НИЖНИЕ МОЛЯРЫ (74, 75, 84, 85) ---
@@ -1570,8 +1570,8 @@ const PEDIATRIC_LOWER_MOLAR_GEOMETRY: AnatomicalTemplateData = {
 		C: "M 18 76 Q 50 80 82 76 L 76 64 Q 50 68 24 64 Z",
 	},
 	viewBox: { x: 0, y: 0, width: 100, height: 160 },
-	standardWidthPx: 72,
-	standardHeightPx: 116,
+	standardWidthPx: 78,
+	standardHeightPx: 140,
 };
 
 /**
