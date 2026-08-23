@@ -6,10 +6,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
 	listDesktopPrinters,
+	printDesktopEscPosReceipt,
 	printDesktopThermalLabel,
 	type DesktopNativeApi,
 } from "../native/desktopBridge";
 import {
+	dispatchEscPosReceiptPrint,
 	dispatchThermalLabelPrint,
 	detectRuntimePlatform,
 } from "../native/hardwareDispatcher";
@@ -115,7 +117,40 @@ test("Desktop Silent Thermal Printing & Multi-Platform Form Factors Suite", asyn
 		assert.equal(printResult.silent, true);
 	});
 
-	await t.test("4. Device form factor detection: distinguishes tablet vs phone vs desktop", () => {
+	await t.test("4. dispatchEscPosReceiptPrint: sends silent ESC/POS receipt in desktop mode", async () => {
+		const mockNative: Partial<DesktopNativeApi> = {
+			isDesktop: true,
+			platform: "win32",
+			version: "0.1.0",
+			printEscPosReceipt: async (params) => ({
+				success: true,
+				printedAt: "2026-08-23T10:00:00.000Z",
+				target: params.host ? `tcp://${params.host}:${params.port || 9100}` : "Default ESC/POS",
+				bytesSent: 196,
+				silent: true,
+			}),
+		};
+
+		globalThis.window = {
+			denteDesktopNative: mockNative as DesktopNativeApi,
+		} as unknown as Window & typeof globalThis;
+
+		const res = await dispatchEscPosReceiptPrint({
+			host: "192.168.1.200",
+			port: 9100,
+			text: "КЛИНИКА ДЕНТЕ\nЧек №1042\nСумма: 3000.00 руб.\n",
+			silent: true,
+			widthMm: 80,
+			cutPaper: true,
+		});
+
+		assert.equal(res.success, true);
+		assert.equal(res.silent, true);
+		assert.equal(res.target, "tcp://192.168.1.200:9100");
+		assert.equal(res.bytesSent, 196);
+	});
+
+	await t.test("5. Device form factor detection: distinguishes tablet vs phone vs desktop", () => {
 		// Mock desktop viewport
 		globalThis.window = {
 			innerWidth: 1440,
@@ -147,7 +182,7 @@ test("Desktop Silent Thermal Printing & Multi-Platform Form Factors Suite", asyn
 		assert.equal(isMobileSmartphone(), true);
 	});
 
-	await t.test("5. getSafeAreaInsets: returns fallback zero insets in mock environment", () => {
+	await t.test("6. getSafeAreaInsets: returns fallback zero insets in mock environment", () => {
 		const insets = getSafeAreaInsets();
 		assert.deepEqual(insets, { top: 0, bottom: 0, left: 0, right: 0 });
 	});

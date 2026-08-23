@@ -98,6 +98,28 @@ export interface DesktopThermalPrintResult {
 	error?: string | undefined;
 }
 
+export interface DesktopEscPosPrintParams {
+	host?: string | undefined;
+	port?: number | undefined;
+	printerName?: string | undefined;
+	rawEscPosBase64?: string | undefined;
+	text?: string | undefined;
+	html?: string | undefined;
+	silent?: boolean | undefined;
+	widthMm?: number | undefined;
+	cutPaper?: boolean | undefined;
+}
+
+export interface DesktopEscPosPrintResult {
+	success: boolean;
+	printedAt?: string | undefined;
+	target?: string | undefined;
+	printerName?: string | undefined;
+	bytesSent?: number | undefined;
+	silent?: boolean | undefined;
+	error?: string | undefined;
+}
+
 export interface DesktopNativeApi {
 	isDesktop: boolean;
 	platform: "win32" | "darwin" | "linux" | "web";
@@ -107,6 +129,7 @@ export interface DesktopNativeApi {
 	acquireTwainImage: (deviceId: string) => Promise<{ success: boolean; dataBase64?: string; error?: string }>;
 	listPrinters?: () => Promise<DesktopPrinterInfo[]>;
 	printThermalLabel?: (params: DesktopThermalPrintParams) => Promise<DesktopThermalPrintResult>;
+	printEscPosReceipt?: (params: DesktopEscPosPrintParams) => Promise<DesktopEscPosPrintResult>;
 	printFiscalReceiptTcp: (params: {
 		host: string;
 		port: number;
@@ -179,6 +202,36 @@ export async function printDesktopThermalLabel(
 		});
 	} catch (err: unknown) {
 		const message = err instanceof Error ? err.message : "Ошибка прямой печати на термопринтер";
+		return {
+			success: false,
+			error: message,
+		};
+	}
+}
+
+/**
+ * Direct ESC/POS thermal receipt printing over LAN (socket 9100) or OS print queue.
+ */
+export async function printDesktopEscPosReceipt(
+	params: DesktopEscPosPrintParams,
+): Promise<DesktopEscPosPrintResult> {
+	const api = getDesktopNativeApi();
+	if (!api || !api.printEscPosReceipt) {
+		return {
+			success: false,
+			error: "Прямая печать чеков на ESC/POS принтер доступна в приложении DENTE Desktop (.exe).",
+		};
+	}
+
+	try {
+		return await api.printEscPosReceipt({
+			...params,
+			silent: params.silent !== false,
+			widthMm: params.widthMm || 80,
+			cutPaper: params.cutPaper !== false,
+		});
+	} catch (err: unknown) {
+		const message = err instanceof Error ? err.message : "Ошибка печати ESC/POS чека";
 		return {
 			success: false,
 			error: message,

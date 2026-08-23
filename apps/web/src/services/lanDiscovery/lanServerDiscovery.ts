@@ -39,6 +39,24 @@ let activeApiBaseUrl: string = typeof window !== "undefined"
 	: "/api";
 
 /**
+ * Generates candidate IP addresses for common LAN clinic subnets.
+ * Prioritizes standard static IP addresses assigned to clinic server gateways/desktops.
+ */
+export function generateSubnetIpCandidates(
+	baseSubnets: string[] = ["192.168.1", "192.168.0", "192.168.31", "10.0.0"],
+): string[] {
+	const priorityHostSuffixes = [1, 100, 200, 150, 250, 2, 10, 50, 88, 101, 155, 222];
+	const candidates: string[] = [];
+
+	for (const subnet of baseSubnets) {
+		for (const suffix of priorityHostSuffixes) {
+			candidates.push(`http://${subnet}.${suffix}:4100`);
+		}
+	}
+	return candidates;
+}
+
+/**
  * Returns list of LAN server candidate URLs to probe for local discovery
  */
 export function getLanDiscoveryCandidates(additional: string[] = []): string[] {
@@ -66,10 +84,23 @@ export function getLanDiscoveryCandidates(additional: string[] = []): string[] {
 		const currentHost = window.location.hostname;
 		if (isLocalOrLanHostname(currentHost) && currentHost !== "localhost" && currentHost !== "127.0.0.1") {
 			candidates.add(`http://${currentHost}:4100`);
+			// Infer current /24 subnet from hostname if IPv4
+			if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(currentHost)) {
+				const parts = currentHost.split(".");
+				const currentSubnet = `${parts[0]}.${parts[1]}.${parts[2]}`;
+				for (const url of generateSubnetIpCandidates([currentSubnet])) {
+					candidates.add(url);
+				}
+			}
 		}
 	}
 
-	// 4. Additional candidate IPs from options
+	// 4. Common clinic subnet candidate IPs
+	for (const url of generateSubnetIpCandidates()) {
+		candidates.add(url);
+	}
+
+	// 5. Additional candidate IPs from options
 	for (const url of additional) {
 		if (url) {
 			try {

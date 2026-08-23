@@ -8,6 +8,7 @@ import {
 	getTwainDevices,
 	getSystemPrinters,
 	printThermalLabel,
+	printEscPosReceipt,
 	printFiscalReceiptTcpSocket,
 	setupDicomFolderWatch,
 	unwatchDicomFolder,
@@ -71,6 +72,22 @@ test("Desktop Standalone Windows Runtime Harness", async (t) => {
 		assert.equal(result.silent, true);
 		assert.equal(result.widthMm, 58);
 		assert.equal(result.heightMm, 40);
+		assert.ok(result.printedAt);
+	});
+
+	await t.test("Direct silent ESC/POS thermal receipt printing over LAN socket", async () => {
+		const result = await printEscPosReceipt({
+			host: "127.0.0.1",
+			port: 9100,
+			text: "СТОМАТОЛОГИЯ ДЕНТЕ\nЧек №1402\nИтого: 4500.00 руб.\n",
+			silent: true,
+			widthMm: 80,
+			cutPaper: true,
+		});
+
+		assert.equal(result.success, true);
+		assert.equal(result.silent, true);
+		assert.ok(result.bytesSent);
 		assert.ok(result.printedAt);
 	});
 

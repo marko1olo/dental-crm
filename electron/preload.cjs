@@ -32,6 +32,10 @@ contextBridge.exposeInMainWorld("denteDesktopNative", {
 		return await ipcRenderer.invoke("dente:print-thermal-label", params);
 	},
 
+	printEscPosReceipt: async (params) => {
+		return await ipcRenderer.invoke("dente:print-escpos-receipt", params);
+	},
+
 	printFiscalReceiptTcp: async (params) => {
 		return await ipcRenderer.invoke("dente:print-fiscal-receipt-tcp", params);
 	},

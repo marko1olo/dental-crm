@@ -89,9 +89,28 @@ export function startLanDiscoveryService(options: {
 
 		socket.on("message", (msg, rinfo) => {
 			const query = msg.toString("utf8").trim();
-			if (query.includes("DENTE_DISCOVERY_PROBE") || query.includes("M-SEARCH") || query.includes("DISCOVER")) {
+			if (query.includes("DENTE_DISCOVERY_PROBE") || query.includes("M-SEARCH") || query.includes("DISCOVER") || query.includes("ST: urn:dente")) {
 				const metadata = getLanServerDiscoveryMetadata();
-				const responseBuffer = Buffer.from(JSON.stringify(metadata), "utf8");
+				let responseBuffer: Buffer;
+
+				if (query.includes("M-SEARCH") || query.includes("ST:")) {
+					const primaryIp = metadata.lanAddresses[0] || "127.0.0.1";
+					const ssdpResponse = [
+						"HTTP/1.1 200 OK",
+						"CACHE-CONTROL: max-age=1800",
+						"EXT:",
+						`LOCATION: http://${primaryIp}:${metadata.apiPort}/api/health/discovery`,
+						"SERVER: DENTE-Dental-CRM-Server/0.1.0 UPnP/1.1",
+						"ST: urn:dente:service:clinic-server:1",
+						`USN: uuid:${metadata.serverId}::urn:dente:service:clinic-server:1`,
+						"",
+						"",
+					].join("\r\n");
+					responseBuffer = Buffer.from(ssdpResponse, "utf8");
+				} else {
+					responseBuffer = Buffer.from(JSON.stringify(metadata), "utf8");
+				}
+
 				socket.send(responseBuffer, 0, responseBuffer.length, rinfo.port, rinfo.address, (err) => {
 					if (err && log) {
 						log.error(`[LanDiscoveryService] Failed to send discovery response: ${err.message}`);
@@ -104,6 +123,9 @@ export function startLanDiscoveryService(options: {
 			if (log) {
 				log.info(`[LanDiscoveryService] Listening for LAN discovery queries on UDP port ${udpPort}`);
 			}
+			try {
+				socket.addMembership("239.255.255.250");
+			} catch {}
 		});
 
 		return {

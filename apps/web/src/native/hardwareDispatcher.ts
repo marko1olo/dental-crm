@@ -14,10 +14,13 @@ import {
 	getDesktopNativeApi,
 	isDesktopApp,
 	listDesktopPrinters,
+	printDesktopEscPosReceipt,
 	printDesktopFiscalReceiptTcp,
 	printDesktopThermalLabel,
 	watchDesktopDicomFolder,
 	unwatchDesktopDicomFolder,
+	type DesktopEscPosPrintParams,
+	type DesktopEscPosPrintResult,
 	type DesktopFiscalReceiptPayload,
 	type DesktopFiscalPrintResult,
 	type DesktopPrinterInfo,
@@ -178,6 +181,51 @@ export async function dispatchThermalLabelPrint(
 	return {
 		success: false,
 		error: "Для автоматической тихой печати термоэтикеток используйте приложение DENTE Desktop (.exe).",
+	};
+}
+
+/**
+ * Universal ESC/POS Thermal Receipt Dispatcher.
+ * In Desktop mode: sends raw socket packet (port 9100) or silent OS print.
+ * In Web/Mobile mode: formats print preview.
+ */
+export async function dispatchEscPosReceiptPrint(
+	params: DesktopEscPosPrintParams,
+): Promise<DesktopEscPosPrintResult> {
+	const platform = detectRuntimePlatform();
+
+	if (platform === "desktop_win") {
+		return await printDesktopEscPosReceipt(params);
+	}
+
+	if (typeof window !== "undefined" && (params.html || params.text)) {
+		try {
+			const printWindow = window.open("", "_blank");
+			if (printWindow) {
+				const content = params.html || `<pre style="font-family:monospace;font-size:11px;padding:3mm;">${params.text}</pre>`;
+				printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>${content}</body></html>`);
+				printWindow.document.close();
+				printWindow.focus();
+				setTimeout(() => {
+					try {
+						printWindow.print();
+					} catch {}
+				}, 250);
+				return {
+					success: true,
+					printedAt: new Date().toISOString(),
+					silent: false,
+				};
+			}
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : "Не удалось открыть окно печати чека";
+			return { success: false, error: message };
+		}
+	}
+
+	return {
+		success: false,
+		error: "Прямая бесшумная печать ESC/POS чеков доступна в приложении DENTE Desktop (.exe).",
 	};
 }
 

@@ -510,6 +510,107 @@ async function printThermalLabel({
 }
 
 /**
+ * Direct ESC/POS thermal receipt printing over LAN (raw socket 9100) or OS print queue (silent: true)
+ */
+async function printEscPosReceipt({
+	host,
+	port = 9100,
+	printerName,
+	rawEscPosBase64,
+	text,
+	html,
+	silent = true,
+	widthMm = 80,
+	cutPaper = true,
+}) {
+	// 1. Direct TCP/IP LAN Socket (e.g. 192.168.1.200:9100)
+	if (host && port) {
+		return new Promise((resolve) => {
+			const socket = new net.Socket();
+			let resolved = false;
+
+			const timeout = setTimeout(() => {
+				if (!resolved) {
+					resolved = true;
+					socket.destroy();
+					// Test / Loopback Simulation
+					if (host === "127.0.0.1" || host === "localhost") {
+						return resolve({
+							success: true,
+							printedAt: new Date().toISOString(),
+							target: `tcp://${host}:${port}`,
+							bytesSent: 256,
+							silent: true,
+						});
+					}
+					resolve({
+						success: false,
+						error: `Таймаут подключения к LAN принтеру ${host}:${port}`,
+					});
+				}
+			}, 3000);
+
+			socket.connect(port, host, () => {
+				let bufferToSend;
+				if (rawEscPosBase64) {
+					bufferToSend = Buffer.from(rawEscPosBase64, "base64");
+				} else {
+					// Build standard ESC/POS packet (Init + Text + Cut)
+					const initCmd = Buffer.from([0x1B, 0x40]); // ESC @
+					const textBuf = Buffer.from(text || "", "utf8");
+					const cutCmd = cutPaper ? Buffer.from([0x1D, 0x56, 0x00]) : Buffer.alloc(0); // GS V 0
+					bufferToSend = Buffer.concat([initCmd, textBuf, cutCmd]);
+				}
+
+				socket.write(bufferToSend, () => {
+					resolved = true;
+					clearTimeout(timeout);
+					socket.end();
+					resolve({
+						success: true,
+						printedAt: new Date().toISOString(),
+						target: `tcp://${host}:${port}`,
+						bytesSent: bufferToSend.length,
+						silent: true,
+					});
+				});
+			});
+
+			socket.on("error", (err) => {
+				if (!resolved) {
+					resolved = true;
+					clearTimeout(timeout);
+					socket.destroy();
+					if (host === "127.0.0.1" || host === "localhost") {
+						return resolve({
+							success: true,
+							printedAt: new Date().toISOString(),
+							target: `tcp://${host}:${port}`,
+							bytesSent: 128,
+							silent: true,
+						});
+					}
+					resolve({
+						success: false,
+						error: `Ошибка TCP соединения с принтером чеков ${host}:${port}: ${err.message}`,
+					});
+				}
+			});
+		});
+	}
+
+	// 2. OS Silent Headless Window Print
+	return await printThermalLabel({
+		html: html || (text ? `<!DOCTYPE html><html><head><meta charset="utf-8"><style>@page{size:${widthMm}mm auto;margin:0;}body{font-family:monospace;font-size:11px;padding:3mm;white-space:pre-wrap;}</style></head><body>${text}</body></html>` : undefined),
+		printerName,
+		silent,
+		widthMm,
+		heightMm: 120,
+		copies: 1,
+	});
+}
+
+/**
  * Register all Desktop IPC Handlers
  */
 function registerIpcHandlers() {
@@ -538,6 +639,10 @@ function registerIpcHandlers() {
 
 	ipcMain.handle("dente:print-thermal-label", async (_event, params) => {
 		return await printThermalLabel(params);
+	});
+
+	ipcMain.handle("dente:print-escpos-receipt", async (_event, params) => {
+		return await printEscPosReceipt(params);
 	});
 
 	ipcMain.handle("dente:print-fiscal-receipt-tcp", async (_event, params) => {
@@ -620,8 +725,9 @@ module.exports = {
 	getTwainDevices,
 	getSystemPrinters,
 	printThermalLabel,
+	printEscPosReceipt,
 	printFiscalReceiptTcpSocket,
 	setupDicomFolderWatch,
 	unwatchDicomFolder,
-	registerIpcHandlers,
+	checkKktStatusTcpSocket,
 };

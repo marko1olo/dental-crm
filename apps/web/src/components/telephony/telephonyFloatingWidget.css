@@ -4,9 +4,9 @@
 
 .dnt-telephony-floating {
 	position: fixed;
-	bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+	bottom: calc(76px + env(safe-area-inset-bottom, 0px));
 	right: calc(12px + env(safe-area-inset-right, 0px));
-	z-index: 9999;
+	z-index: 45;
 	display: flex;
 	flex-direction: column;
 	align-items: flex-end;
@@ -20,10 +20,26 @@
 	pointer-events: auto;
 }
 
+/* Auto-hide telephony floating launcher when any modal, drawer, or bottom sheet is active */
+body:has(.modal-overlay) .dnt-telephony-floating,
+body:has(dialog[open]) .dnt-telephony-floating,
+body:has(._ccm-overlay) .dnt-telephony-floating,
+body:has(.treatment-plan-modal) .dnt-telephony-floating,
+body:has(.dnt-modal-overlay) .dnt-telephony-floating,
+body:has(.sanpin-modal-overlay) .dnt-telephony-floating,
+body:has(.sber-pos-modal-overlay) .dnt-telephony-floating,
+body:has(.stage-payment-modal) .dnt-telephony-floating {
+	opacity: 0 !important;
+	pointer-events: none !important;
+	visibility: hidden !important;
+	transform: scale(0.8) translateY(20px) !important;
+}
+
 @media (min-width: 768px) {
 	.dnt-telephony-floating {
-		bottom: 20px;
-		right: 20px;
+		bottom: 24px;
+		right: 24px;
+		z-index: 400;
 	}
 }
 
