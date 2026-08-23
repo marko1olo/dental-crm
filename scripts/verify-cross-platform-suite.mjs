@@ -66,6 +66,11 @@ const steps = [
 		cmd: "node --import tsx --import ./testCssStub.mjs --test src/tests/offlineMutationQueue.test.ts",
 		cwd: path.join(projectRoot, "apps/web"),
 	},
+	{
+		name: "11. SanPiN 3.3686-21 Kraft Package TSPL/ZPL Thermal Label Suite",
+		cmd: "node --import tsx --import ./testCssStub.mjs --test src/tests/kraftPackage.test.ts",
+		cwd: path.join(projectRoot, "apps/web"),
+	},
 ];
 
 let totalPassed = 0;

@@ -390,4 +390,115 @@ describe("54-FZ FFD 1.2 Fiscal Routes Suite (/api/fiscal/*)", () => {
 		const retryBody = JSON.parse(retryRes.body);
 		assert.equal(retryBody.success, true);
 	});
+
+	it("1.7 POST /api/fiscal/receipts — Issues 54-FZ Correction Receipt (Чек коррекции, Теги 1173, 1178, 1179)", async (context) => {
+		if (!databaseAvailable) return context.skip("Database unavailable");
+
+		const correctionPayload = {
+			patientId: PATIENT_ID,
+			operationType: "income",
+			taxationSystem: "usn_income",
+			customerContact: "+79991112233",
+			cashierFullName: "Старший Кассир",
+			totalKopecks: 750000,
+			electronicCardKopecks: 750000,
+			cashKopecks: 0,
+			sbpKopecks: 0,
+			prepaidKopecks: 0,
+			isCorrection: true,
+			correctionType: "self_initiated",
+			correctionDocDate: "2026-08-22",
+			correctionDocNumber: "АКТ-ИНВ-2026/08",
+			items: [
+				{
+					name: "Установка винира E.max (чек коррекции неприменения ККТ)",
+					priceKopecks: 750000,
+					quantity: 1,
+					amountKopecks: 750000,
+					subject: "service",
+					method: "full_payment",
+					vatRate: "vat_none",
+					measure: "piece",
+				},
+			],
+		};
+
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/fiscal/receipts",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+				[STAFF_TOKEN_HEADER]: staffToken,
+			},
+			payload: correctionPayload,
+		});
+
+		assert.equal(res.statusCode, 201);
+		const body = JSON.parse(res.body);
+		assert.equal(body.success, true);
+		assert.ok(body.queueId);
+		assert.ok(body.fiscalDocumentNumber);
+	});
+
+	it("1.8 POST /api/fiscal/refund — Proportional Multi-Tender Partial Refund (Наличные + СБП/Электронные)", async (context) => {
+		if (!databaseAvailable) return context.skip("Database unavailable");
+
+		const paymentId = fixtureUuid(NAMESPACE, 98);
+		// Original split: 2000 cash + 3000 sbp = 5000 rub
+		await withFixtureTenant(ORG_ID, async () => {
+			await db
+				.insert(payments)
+				.values({
+					id: paymentId,
+					organizationId: ORG_ID,
+					patientId: PATIENT_ID,
+					amountRub: 5000,
+					method: "other",
+					status: "paid",
+				})
+				.onConflictDoNothing();
+		});
+
+		// Partial refund of 1,500 RUB (150,000 коп): 600 cash (40%) + 900 electronic (60%)
+		const refundPayload = {
+			originalPaymentId: paymentId,
+			originalReceiptNumber: "CHK-2026-9920",
+			originalFiscalSign: "4920194833",
+			patientId: PATIENT_ID,
+			refundCashKopecks: 60000,
+			refundElectronicKopecks: 90000,
+			refundPrepaidKopecks: 0,
+			totalRefundKopecks: 150000,
+			reason: "Частичный отказ от плана лечения",
+			cashierFullName: "Кассир Иванова М.С.",
+			items: [
+				{
+					name: "Терапевтическое лечение (частичный возврат)",
+					priceKopecks: 150000,
+					quantity: 1,
+					amountKopecks: 150000,
+					subject: "service",
+					method: "full_payment",
+					vatRate: "vat_none",
+					measure: "piece",
+				},
+			],
+		};
+
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/fiscal/refund",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+				[STAFF_TOKEN_HEADER]: staffToken,
+			},
+			payload: refundPayload,
+		});
+
+		assert.equal(res.statusCode, 200);
+		const body = JSON.parse(res.body);
+		assert.equal(body.success, true);
+		assert.equal(body.totalRefundRub, "1500.00");
+		assert.ok(body.refundQueueId);
+	});
 });

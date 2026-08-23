@@ -13,6 +13,8 @@ import {
 	generateDataMatrixSvg,
 	generateKraftBatchRecords,
 	generateThermalStickerHtml,
+	generateTsplLabelCode,
+	generateZplLabelCode,
 	type KraftPackageRecord,
 } from "../components/sanpin/kraft/kraftPackageEngine.js";
 import {
@@ -482,6 +484,46 @@ describe("SanPiN 3.3686-21 Statutory Kraft Package Barcode & Expiry Studio Suite
 			assert.ok(csv.includes("Стерильно (годен)"));
 			assert.ok(csv.includes("Смирнова А.В."));
 		});
+
+		it("generates raw TSPL (TSC/Xprinter) label script with SanPiN 3.3686-21, cycle and dates", () => {
+			const tspl58 = generateTsplLabelCode(sampleRecord, { size: "58x40", copies: 2 });
+			assert.ok(tspl58.includes("SIZE 58 mm, 40 mm"));
+			assert.ok(tspl58.includes("STERILE - SANPIN 3.3686-21"));
+			assert.ok(tspl58.includes("AUTO-01/#3"));
+			assert.ok(tspl58.includes("DMATRIX"));
+			assert.ok(tspl58.includes("PACK: 2026-08-22"));
+			assert.ok(tspl58.includes("EXP:  2026-10-11"));
+			assert.ok(tspl58.includes("PRINT 1,2"));
+
+			const tspl43 = generateTsplLabelCode(sampleRecord, { size: "43x25", copies: 1 });
+			assert.ok(tspl43.includes("SIZE 43 mm, 25 mm"));
+			assert.ok(tspl43.includes("STERILE SANPIN"));
+			assert.ok(tspl43.includes("AUTO-01/#3"));
+			assert.ok(tspl43.includes("PRINT 1,1"));
+		});
+
+		it("generates raw ZPL II (Zebra) label script with SanPiN 3.3686-21, cycle and dates", () => {
+			const zpl58 = generateZplLabelCode(sampleRecord, { size: "58x40", copies: 3 });
+			assert.ok(zpl58.includes("^XA"));
+			assert.ok(zpl58.includes("^PW464"));
+			assert.ok(zpl58.includes("^LL320"));
+			assert.ok(zpl58.includes("STERILE - SANPIN 3.3686-21"));
+			assert.ok(zpl58.includes("AUTO-01/#3"));
+			assert.ok(zpl58.includes("^BXN"));
+			assert.ok(zpl58.includes("PACK: 2026-08-22"));
+			assert.ok(zpl58.includes("EXP:  2026-10-11"));
+			assert.ok(zpl58.includes("^PQ3,0,1,Y"));
+			assert.ok(zpl58.includes("^XZ"));
+
+			const zpl43 = generateZplLabelCode(sampleRecord, { size: "43x25", copies: 1 });
+			assert.ok(zpl43.includes("^XA"));
+			assert.ok(zpl43.includes("^PW344"));
+			assert.ok(zpl43.includes("^LL200"));
+			assert.ok(zpl43.includes("STERILE SANPIN"));
+			assert.ok(zpl43.includes("AUTO-01/#3"));
+			assert.ok(zpl43.includes("^PQ1,0,1,Y"));
+			assert.ok(zpl43.includes("^XZ"));
+		});
 	});
 
 	// ─────────────────────────────────────────────────────────────────────────
@@ -493,6 +535,8 @@ describe("SanPiN 3.3686-21 Statutory Kraft Package Barcode & Expiry Studio Suite
 			assert.equal(typeof calculatePackageExpiration, "function");
 			assert.equal(typeof generateKraftBatchRecords, "function");
 			assert.equal(typeof generateThermalStickerHtml, "function");
+			assert.equal(typeof generateTsplLabelCode, "function");
+			assert.equal(typeof generateZplLabelCode, "function");
 			assert.equal(typeof exportKraftBatchToCsv, "function");
 		});
 	});
