@@ -12,6 +12,7 @@ import {
 	printFiscalReceiptTcpSocket,
 	setupDicomFolderWatch,
 	unwatchDicomFolder,
+	parseDicomFilenameMetadata,
 } from "../main.cjs";
 
 test("Desktop Standalone Windows Runtime Harness", async (t) => {
@@ -125,5 +126,29 @@ test("Desktop Standalone Windows Runtime Harness", async (t) => {
 		try {
 			fs.rmSync(tempWatchDir, { recursive: true, force: true });
 		} catch {}
+	});
+
+	await t.test("Parses FDI tooth codes & patient identifiers from radiology filenames (Vatech, Planmeca, Carestream)", () => {
+		// Vatech EzSensor: tooth 16
+		const vatech = parseDicomFilenameMetadata("VATECH_EzSensor_tooth_16_20260823.dcm");
+		assert.equal(vatech.toothCode, "16");
+
+		// Planmeca ProSensor: tooth 46
+		const planmeca = parseDicomFilenameMetadata("PLANMECA_46_EXP01.dcm");
+		assert.equal(planmeca.toothCode, "46");
+
+		// Carestream RVG 6200: tooth 37 with patient ID
+		const carestream = parseDicomFilenameMetadata("CARESTREAM_RVG_p-1042_tooth-37.ima");
+		assert.equal(carestream.toothCode, "37");
+		assert.equal(carestream.patientId, "1042");
+
+		// Pediatric primary tooth: tooth 54 (Upper Right Primary First Molar)
+		const pediatric = parseDicomFilenameMetadata("PEDIATRIC_patient-990_tooth_54.jpg");
+		assert.equal(pediatric.toothCode, "54");
+		assert.equal(pediatric.patientId, "990");
+
+		// Empty/unmatched filename
+		const plain = parseDicomFilenameMetadata("scan_without_tooth_marker.dcm");
+		assert.equal(plain.toothCode, undefined);
 	});
 });

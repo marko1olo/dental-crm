@@ -289,6 +289,30 @@ function printFiscalReceiptTcpSocket({ host, port, protocol = "atol", timeoutMs 
 }
 
 /**
+ * Parse metadata hints from radiology/visiograph filenames (e.g. "VATECH_tooth_16.dcm" or "PLANMECA_46_20260823.dcm")
+ */
+function parseDicomFilenameMetadata(fileName) {
+	if (!fileName || typeof fileName !== "string") {
+		return { toothCode: undefined, patientId: undefined };
+	}
+	let toothCode = undefined;
+	let patientId = undefined;
+
+	// Matches FDI dental numbering: Permanent (11..48) or Primary/Pediatric (51..85)
+	const matchTooth = fileName.match(/(?:tooth[_-]?|_|-)([1-4][1-8]|5[1-5]|6[1-5]|7[1-5]|8[1-5])(?:\b|_|-|\.|$)/i);
+	if (matchTooth) {
+		toothCode = matchTooth[1];
+	}
+
+	const matchPatient = fileName.match(/(?:^|[_\W])(?:patient[_-]?|pat[_-]?|pid[_-]?|p[_-])([A-Za-z0-9]+)(?=[_\W]|$)/i);
+	if (matchPatient) {
+		patientId = matchPatient[1];
+	}
+
+	return { toothCode, patientId };
+}
+
+/**
  * Watch local DICOM / Visiograph directory
  */
 function setupDicomFolderWatch(folderPath, callbackId) {
@@ -325,11 +349,8 @@ function setupDicomFolderWatch(folderPath, callbackId) {
 						handledFiles.add(fullPath);
 						setTimeout(() => handledFiles.delete(fullPath), 5000);
 
-						// Parse metadata hints from filename (e.g. "PATIENT123_16_20260823.dcm")
-						let toothCode = undefined;
-						let patientId = undefined;
-						const matchTooth = fileName.match(/(?:tooth|_|-)([1-4][1-8]|5[1-5]|6[1-5]|7[1-5]|8[1-5])/i);
-						if (matchTooth) toothCode = matchTooth[1];
+						// Parse metadata hints from filename (e.g. "VATECH_tooth_16.dcm" or "PLANMECA_46_20260823.dcm")
+						const { toothCode, patientId } = parseDicomFilenameMetadata(fileName);
 
 						const sampleRadiographBase64 =
 							"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
@@ -730,4 +751,5 @@ module.exports = {
 	setupDicomFolderWatch,
 	unwatchDicomFolder,
 	checkKktStatusTcpSocket,
+	parseDicomFilenameMetadata,
 };

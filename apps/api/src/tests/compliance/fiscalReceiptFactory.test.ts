@@ -8,7 +8,9 @@ import {
 	createFiscalReceiptPayloadSchema,
 	format54FzFtsQrString,
 	parseAndValidate54FzFtsQrString,
+	validateRussianTaxpayerInn,
 } from "@dental/shared";
+import { buildKnd1151156Xml } from "../../documents/taxXml.js";
 
 describe("54-FZ Fiscal Receipt Factory & FFD 1.2 Suite", () => {
 	it("1.1 Resolves FFD 1.2 Tag 1054 operation types correctly", () => {
@@ -277,6 +279,178 @@ describe("54-FZ Fiscal Receipt Factory & FFD 1.2 Suite", () => {
 		assert.equal(parsed.totalAmountKopecks, 450000);
 		assert.equal(parsed.totalAmountRub, 4500);
 		assert.equal(parsed.operationType, "income");
+	});
+
+	it("1.12 Auto-classification of Code 01 (standard) and Code 02 (expensive) treatments for Form KND 1151156", () => {
+		// Code 01: Standard dental therapy / hygiene
+		const standardItem = {
+			patientId: "00000000-0000-0000-0000-000000000001",
+			operationType: "income" as const,
+			taxationSystem: "usn_income" as const,
+			customerContact: "+79991112233",
+			cashierFullName: "Кассир",
+			totalKopecks: 350000,
+			electronicCardKopecks: 350000,
+			cashKopecks: 0,
+			sbpKopecks: 0,
+			prepaidKopecks: 0,
+			creditKopecks: 0,
+			isCorrection: false,
+			items: [
+				{
+					name: "Лечение кариеса A16.07.002.001",
+					priceKopecks: 350000,
+					quantity: 1,
+					amountKopecks: 350000,
+					subject: "service" as const,
+					method: "full_payment" as const,
+					vatRate: "vat_none" as const,
+					measure: "piece" as const,
+					taxDeductionCode: "code_1_standard" as const,
+					medicalServiceCode804n: "A16.07.002.001",
+				},
+			],
+			taxDeductionSummaryCode: "code_1_standard" as const,
+		};
+
+		const compiledStandard = FiscalReceiptFactory.buildFfd12Receipt(
+			createFiscalReceiptPayloadSchema.parse(standardItem),
+		);
+		assert.equal(compiledStandard.taxDeductionCategory, "1");
+
+		// Code 02: Expensive treatment (Dental implant Straumann A16.07.054)
+		const expensiveItem = {
+			...standardItem,
+			totalKopecks: 6500000,
+			electronicCardKopecks: 6500000,
+			items: [
+				{
+					name: "Внутрикостная дентальная имплантация системы Straumann (A16.07.054)",
+					priceKopecks: 6500000,
+					quantity: 1,
+					amountKopecks: 6500000,
+					subject: "service" as const,
+					method: "full_payment" as const,
+					vatRate: "vat_none" as const,
+					measure: "piece" as const,
+					taxDeductionCode: "code_2_expensive_treatment" as const,
+					medicalServiceCode804n: "A16.07.054",
+				},
+			],
+			taxDeductionSummaryCode: "code_2_expensive_treatment" as const,
+		};
+
+		const compiledExpensive = FiscalReceiptFactory.buildFfd12Receipt(
+			createFiscalReceiptPayloadSchema.parse(expensiveItem),
+		);
+		assert.equal(compiledExpensive.taxDeductionCategory, "2");
+	});
+
+	it("1.13 Statutory Russian Taxpayer INN checksum validation (10-digit ЮЛ and 12-digit ФЛ/ИП)", () => {
+		// Valid 10-digit Legal Entity INN (Сбербанк: 7707083893)
+		const validUl = validateRussianTaxpayerInn("7707083893");
+		assert.equal(validUl.isValid, true);
+		assert.equal(validUl.kind, "ul");
+
+		// Invalid 10-digit INN with broken checksum
+		const invalidUl = validateRussianTaxpayerInn("7707083894");
+		assert.equal(invalidUl.isValid, false);
+		assert.match(invalidUl.errorMessage || "", /контрольная сумма/i);
+
+		// Valid 12-digit Individual INN (500100732259)
+		const validFl = validateRussianTaxpayerInn("500100732259");
+		assert.equal(validFl.isValid, true);
+		assert.equal(validFl.kind, "fl");
+
+		// Invalid 12-digit INN with broken checksum
+		const invalidFl = validateRussianTaxpayerInn("500100732258");
+		assert.equal(invalidFl.isValid, false);
+		assert.match(invalidFl.errorMessage || "", /контрольная сумма/i);
+
+		// Non-digits or wrong length rejection
+		assert.equal(validateRussianTaxpayerInn("12345").isValid, false);
+		assert.equal(validateRussianTaxpayerInn(null).isValid, false);
+	});
+
+	it("1.14 Generates compliant Form KND 1151156 XML draft with exact kopeck aggregation for Code 01 and Code 02", () => {
+		const doc = {
+			id: "doc-tax-2026",
+			patientId: "patient-101",
+			kind: "tax_deduction_certificate" as const,
+			taxYear: 2026,
+			issuedAt: "2026-08-20T10:00:00Z",
+			organizationId: "org-001",
+			status: "issued" as const,
+			payload: {
+				taxPaymentSelection: { selectedPaymentIds: ["pay-1", "pay-2"] },
+			},
+		};
+
+		const patient = {
+			id: "patient-101",
+			fullName: "Кузнецов Алексей Сергеевич",
+			birthDate: "1985-04-12",
+			administrativeProfile: {
+				taxpayerInn: "500100732259",
+				identityDocument: "Паспорт 45 10 123456 выдан 15.05.2005",
+			},
+		};
+
+		const clinic = {
+			clinicName: "DENTE Premium Dental Clinic",
+			legalName: "ООО ДЕНТЕ ПРЕМИУМ",
+			inn: "7707083893",
+			kpp: "770701001",
+			signatoryName: "Смирнов Виктор Павлович",
+		};
+
+		const payments = [
+			{
+				id: "pay-1",
+				amountRub: 15400.5,
+				taxDeductionCode: "1" as const,
+				payerFullName: "Кузнецов Алексей Сергеевич",
+				payerBirthDate: "1985-04-12",
+				payerInn: "500100732259",
+				payerRelationship: "self",
+				patientId: "patient-101",
+				status: "paid" as const,
+				paidAt: "2026-03-10T11:00:00Z",
+			},
+			{
+				id: "pay-2",
+				amountRub: 85000.0,
+				taxDeductionCode: "2" as const, // Дорогостоящее лечение
+				payerFullName: "Кузнецов Алексей Сергеевич",
+				payerBirthDate: "1985-04-12",
+				payerInn: "500100732259",
+				payerRelationship: "self",
+				patientId: "patient-101",
+				status: "paid" as const,
+				paidAt: "2026-06-15T15:30:00Z",
+			},
+		];
+
+		const xmlResult = buildKnd1151156Xml(
+			doc as any,
+			patient as any,
+			{
+				clinicProfile: clinic as any,
+				payments: payments as any,
+				taxOfficeCode: "7707",
+			},
+		);
+
+		assert.equal(xmlResult.ok, true);
+		if (xmlResult.ok) {
+			assert.match(xmlResult.xml, /КНД="1184043"/);
+			assert.match(xmlResult.xml, /ОтчГод="2026"/);
+			assert.match(xmlResult.xml, /КодНО="7707"/);
+			assert.match(xmlResult.xml, /СуммаКод1="15400\.50"/);
+			assert.match(xmlResult.xml, /СуммаКод2="85000\.00"/);
+			assert.match(xmlResult.xml, /ИНН="500100732259"/);
+			assert.match(xmlResult.xml, /ПрПациент="1"/);
+		}
 	});
 });
 

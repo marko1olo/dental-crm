@@ -71,6 +71,11 @@ const steps = [
 		cmd: "node --import tsx --import ./testCssStub.mjs --test src/tests/kraftPackage.test.ts",
 		cwd: path.join(projectRoot, "apps/web"),
 	},
+	{
+		name: "12. Visiograph 2D/3D & RVG Tonal Processing Suite",
+		cmd: "node --import tsx --import ./testCssStub.mjs --test src/components/visiograph/__tests__/visiographImageProcessing.test.ts src/components/visiograph/__tests__/visiographPresetsAndMath.test.ts",
+		cwd: path.join(projectRoot, "apps/web"),
+	},
 ];
 
 let totalPassed = 0;
