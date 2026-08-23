@@ -19,6 +19,15 @@ export interface WorkspaceContinuityStripProps {
 const workspaceContinuityOfflineGuidanceId =
 	"workspace-continuity-offline-guidance";
 
+function pluralizeChanges(count: number): string {
+	const abs = Math.abs(count) % 100;
+	const num = abs % 10;
+	if (abs > 10 && abs < 20) return `${count} изменений`;
+	if (num > 1 && num < 5) return `${count} изменения`;
+	if (num === 1) return `${count} изменение`;
+	return `${count} изменений`;
+}
+
 export function WorkspaceContinuityStrip({
 	browserContinuityCritical,
 	browserWarnings,
@@ -47,12 +56,16 @@ export function WorkspaceContinuityStrip({
 
 	const statusBadge = networkState
 		? networkState.mode === "cloud_online"
-			? `🟢 Онлайн (Облако)${networkState.rttMs !== null ? ` · ${networkState.rttMs} мс` : ""}`
+			? `🟢 Онлайн${networkState.rttMs !== null ? ` · ${networkState.rttMs} мс` : ""}`
 			: networkState.mode === "lan_online"
-				? `🟡 Локальная сеть клиники (LAN/Wi-Fi)${networkState.rttMs !== null ? ` · ${networkState.rttMs} мс` : ""}`
-				: "🟠 Автономный офлайн"
+				? `🟡 Локальная сеть${networkState.rttMs !== null ? ` · ${networkState.rttMs} мс` : ""}`
+				: totalPending > 0
+					? `🟠 Офлайн: накоплено ${pluralizeChanges(totalPending)}`
+					: "🟠 Автономный офлайн"
 		: !effectiveOnline
-			? "🟠 Автономный офлайн"
+			? totalPending > 0
+				? `🟠 Офлайн: накоплено ${pluralizeChanges(totalPending)}`
+				: "🟠 Автономный офлайн"
 			: "🟢 Онлайн";
 
 	const title = !effectiveOnline

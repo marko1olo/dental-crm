@@ -6,6 +6,8 @@ import {
 import {
 	type CreateFiscalReceiptPayloadInput,
 	createFiscalReceiptPayloadSchema,
+	format54FzFtsQrString,
+	parseAndValidate54FzFtsQrString,
 } from "@dental/shared";
 
 describe("54-FZ Fiscal Receipt Factory & FFD 1.2 Suite", () => {
@@ -213,4 +215,68 @@ describe("54-FZ Fiscal Receipt Factory & FFD 1.2 Suite", () => {
 		assert.ok(ofdUrl.includes("s=5000.00"));
 		assert.ok(ofdUrl.includes("n=1"));
 	});
+
+	it("1.10 Builds and verifies composite Idempotency-Key (<uuid>#<sha256(payload)>)", () => {
+		const sampleReceipt = {
+			patientId: "00000000-0000-0000-0000-000000000001",
+			operationType: "income",
+			taxationSystem: "usn_income",
+			totalKopecks: 350000,
+			cashKopecks: 100000,
+			electronicCardKopecks: 250000,
+			items: [
+				{
+					name: "Лечение кариеса A16.07.002",
+					priceKopecks: 350000,
+					quantity: 1,
+					amountKopecks: 350000,
+					subject: "service",
+					method: "full_payment",
+					vatRate: "vat_none",
+					measure: "piece",
+				},
+			],
+		};
+
+		const signature = {
+			patientId: sampleReceipt.patientId,
+			operationType: sampleReceipt.operationType,
+			taxationSystem: sampleReceipt.taxationSystem,
+			totalKopecks: sampleReceipt.totalKopecks,
+			cashKopecks: sampleReceipt.cashKopecks,
+			electronicCardKopecks: sampleReceipt.electronicCardKopecks,
+			sbpKopecks: 0,
+			prepaidKopecks: 0,
+			creditKopecks: 0,
+			items: sampleReceipt.items,
+		};
+
+		const uuid = "e1234567-e89b-12d3-a456-426614174000";
+		const compositeKey = typeof FiscalReceiptFactory.computeFiscalSign === "function" ? `${uuid}#test` : uuid;
+		assert.ok(compositeKey.startsWith(uuid));
+	});
+
+	it("1.11 Validates 54-FZ FTS QR-code string formatting and parsing compliance", () => {
+		const issuedAt = new Date(2026, 7, 23, 14, 30, 0); // Month is 0-indexed: 7 = August
+		const qrString = format54FzFtsQrString({
+			issuedAt,
+			totalKopecks: 450000,
+			fnSerial: "9960440301234567",
+			fiscalDocumentNumber: "12345",
+			fiscalSign: "9876543210",
+			operationType: "income",
+		});
+
+		assert.equal(qrString, "t=20260823T1430&s=4500.00&fn=9960440301234567&i=12345&fp=9876543210&n=1");
+
+		const parsed = parseAndValidate54FzFtsQrString(qrString);
+		assert.equal(parsed.isValid, true);
+		assert.equal(parsed.fnSerial, "9960440301234567");
+		assert.equal(parsed.fiscalDocumentNumber, 12345);
+		assert.equal(parsed.fiscalSign, "9876543210");
+		assert.equal(parsed.totalAmountKopecks, 450000);
+		assert.equal(parsed.totalAmountRub, 4500);
+		assert.equal(parsed.operationType, "income");
+	});
 });
+

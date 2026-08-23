@@ -486,7 +486,7 @@ export function VisitEmkTab() {
 						appendClinicalText(currPlan, preset.treatmentDescription, "\n\n"),
 					);
 				}}
-				isLocked={locked}
+				isLocked={Boolean(dashboard?.activeVisit?.status === "signed")}
 			/>
 
 			{/* Красивые вкладки (EMK Tabs) для уменьшения перегруженности */}
