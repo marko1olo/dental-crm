@@ -70,6 +70,34 @@ export interface DesktopKktStatusResult {
 	error?: string | undefined;
 }
 
+export interface DesktopPrinterInfo {
+	name: string;
+	isDefault: boolean;
+	status: number;
+	isThermal?: boolean | undefined;
+}
+
+export interface DesktopThermalPrintParams {
+	html?: string | undefined;
+	text?: string | undefined;
+	printerName?: string | undefined;
+	silent?: boolean | undefined;
+	widthMm?: number | undefined;
+	heightMm?: number | undefined;
+	copies?: number | undefined;
+}
+
+export interface DesktopThermalPrintResult {
+	success: boolean;
+	printedAt?: string | undefined;
+	printerName?: string | undefined;
+	widthMm?: number | undefined;
+	heightMm?: number | undefined;
+	copies?: number | undefined;
+	silent?: boolean | undefined;
+	error?: string | undefined;
+}
+
 export interface DesktopNativeApi {
 	isDesktop: boolean;
 	platform: "win32" | "darwin" | "linux" | "web";
@@ -77,6 +105,8 @@ export interface DesktopNativeApi {
 	listSerialPorts: () => Promise<DesktopSerialPortInfo[]>;
 	listTwainDevices: () => Promise<DesktopTwainDevice[]>;
 	acquireTwainImage: (deviceId: string) => Promise<{ success: boolean; dataBase64?: string; error?: string }>;
+	listPrinters?: () => Promise<DesktopPrinterInfo[]>;
+	printThermalLabel?: (params: DesktopThermalPrintParams) => Promise<DesktopThermalPrintResult>;
 	printFiscalReceiptTcp: (params: {
 		host: string;
 		port: number;
@@ -110,6 +140,50 @@ export function getDesktopNativeApi(): DesktopNativeApi | null {
 		return null;
 	}
 	return window.denteDesktopNative;
+}
+
+/**
+ * Safe wrapper for querying system printers in Desktop mode.
+ */
+export async function listDesktopPrinters(): Promise<DesktopPrinterInfo[]> {
+	const api = getDesktopNativeApi();
+	if (!api || !api.listPrinters) return [];
+	try {
+		return await api.listPrinters();
+	} catch {
+		return [];
+	}
+}
+
+/**
+ * Direct silent printing for thermal sterilization & specimen labels (no browser dialogs).
+ */
+export async function printDesktopThermalLabel(
+	params: DesktopThermalPrintParams,
+): Promise<DesktopThermalPrintResult> {
+	const api = getDesktopNativeApi();
+	if (!api || !api.printThermalLabel) {
+		return {
+			success: false,
+			error: "Прямая печать термоэтикеток без диалога доступна в приложении DENTE Desktop (.exe).",
+		};
+	}
+
+	try {
+		return await api.printThermalLabel({
+			...params,
+			silent: params.silent !== false,
+			widthMm: params.widthMm || 58,
+			heightMm: params.heightMm || 40,
+			copies: params.copies || 1,
+		});
+	} catch (err: unknown) {
+		const message = err instanceof Error ? err.message : "Ошибка прямой печати на термопринтер";
+		return {
+			success: false,
+			error: message,
+		};
+	}
 }
 
 /**

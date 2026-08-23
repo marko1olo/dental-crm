@@ -241,3 +241,59 @@ export function triggerHaptic(type: "light" | "medium" | "heavy" | "success" | "
 		}
 	}
 }
+
+export type DeviceFormFactor = "tablet" | "phone" | "desktop";
+
+/**
+ * Detects device form factor: Doctor Tablet vs Administrator Phone vs Desktop
+ */
+export function getDeviceFormFactor(): DeviceFormFactor {
+	if (typeof window === "undefined") return "desktop";
+	const width = window.innerWidth || 1200;
+	const isTouch = typeof navigator !== "undefined" && (navigator.maxTouchPoints > 0 || "ontouchstart" in window);
+
+	if (isTouch) {
+		if (width >= 768 && width <= 1366) return "tablet";
+		if (width < 768) return "phone";
+	}
+
+	if (width < 768) return "phone";
+	if (width < 1200) return "tablet";
+	return "desktop";
+}
+
+/**
+ * Returns true if the active device is a doctor tablet (e.g. iPad, Samsung Galaxy Tab in operatory)
+ */
+export function isTabletDevice(): boolean {
+	return getDeviceFormFactor() === "tablet";
+}
+
+/**
+ * Returns true if the active device is a mobile smartphone (e.g. administrator/doctor on call)
+ */
+export function isMobileSmartphone(): boolean {
+	return getDeviceFormFactor() === "phone";
+}
+
+/**
+ * Returns safe-area insets in pixels from CSS environment variables or defaults
+ */
+export function getSafeAreaInsets(): { top: number; bottom: number; left: number; right: number } {
+	if (typeof window === "undefined" || typeof document === "undefined") {
+		return { top: 0, bottom: 0, left: 0, right: 0 };
+	}
+
+	const style = getComputedStyle(document.documentElement);
+	const parseInset = (prop: string) => {
+		const val = style.getPropertyValue(prop);
+		return val ? Number.parseInt(val, 10) || 0 : 0;
+	};
+
+	return {
+		top: parseInset("--sat") || 0,
+		bottom: parseInset("--sab") || 0,
+		left: parseInset("--sal") || 0,
+		right: parseInset("--sar") || 0,
+	};
+}

@@ -66,15 +66,17 @@ import {
 	type KraftPackageMaterialId,
 	type KraftPackageSizeId,
 } from "./kraftPackagePresets";
+import { isDesktopApp } from "../../../native/desktopBridge";
+import { dispatchThermalLabelPrint } from "../../../native/hardwareDispatcher";
 import "./kraftPackage.css";
 
 export interface KraftPackageBarcodeModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly onBatchCreated?: (records: KraftPackageRecord[]) => void;
-	readonly initialAutoclaveId?: string;
-	readonly initialCycleNumber?: number;
-	readonly initialOperatorName?: string;
+	readonly onBatchCreated?: ((records: KraftPackageRecord[]) => void) | undefined;
+	readonly initialAutoclaveId?: string | undefined;
+	readonly initialCycleNumber?: number | undefined;
+	readonly initialOperatorName?: string | undefined;
 }
 
 export type StudioActiveTab = "builder" | "register" | "print" | "standards";
@@ -241,7 +243,7 @@ export function KraftPackageBarcodeModal({
 		showToast("Реестр крафт-пакетов экспортирован в CSV (UTF-8 BOM)", "success");
 	};
 
-	const handlePrintThermalStickers = () => {
+	const handlePrintThermalStickers = async () => {
 		const targetPacks = packages.filter(
 			(p) => selectedForPrint.size === 0 || selectedForPrint.has(p.id),
 		);
@@ -250,17 +252,11 @@ export function KraftPackageBarcodeModal({
 			return;
 		}
 
-		const printWindow = window.open("", "_blank");
-		if (!printWindow) {
-			showToast("Разрешите всплывающие окна для печати", "error");
-			return;
-		}
-
 		const stickersHtml = targetPacks
 			.map((p) => generateThermalStickerHtml(p, { size: previewLabelSize }))
 			.join("\n<div style='page-break-after:always;'></div>\n");
 
-		printWindow.document.write(`
+		const fullHtml = `
 			<!DOCTYPE html>
 			<html>
 			<head>
@@ -278,7 +274,29 @@ export function KraftPackageBarcodeModal({
 				</script>
 			</body>
 			</html>
-		`);
+		`;
+
+		if (isDesktopApp()) {
+			const res = await dispatchThermalLabelPrint({
+				html: fullHtml,
+				widthMm: previewLabelSize === "58x40" ? 58 : 43,
+				heightMm: previewLabelSize === "58x40" ? 40 : 25,
+				copies: targetPacks.length,
+				silent: true,
+			});
+			if (res.success) {
+				showToast(`Напечатано ${targetPacks.length} термоэтикеток (Direct Silent Print)`, "success");
+				return;
+			}
+		}
+
+		const printWindow = window.open("", "_blank");
+		if (!printWindow) {
+			showToast("Разрешите всплывающие окна для печати", "error");
+			return;
+		}
+
+		printWindow.document.write(fullHtml);
 		printWindow.document.close();
 	};
 

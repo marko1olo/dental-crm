@@ -13,19 +13,29 @@ import {
 	acquireDesktopVisiographImage,
 	getDesktopNativeApi,
 	isDesktopApp,
+	listDesktopPrinters,
 	printDesktopFiscalReceiptTcp,
+	printDesktopThermalLabel,
 	watchDesktopDicomFolder,
 	unwatchDesktopDicomFolder,
 	type DesktopFiscalReceiptPayload,
 	type DesktopFiscalPrintResult,
+	type DesktopPrinterInfo,
+	type DesktopThermalPrintParams,
+	type DesktopThermalPrintResult,
 } from "./desktopBridge";
 import {
 	authenticateBiometricStaff,
+	getDeviceFormFactor,
 	getMobileNativeApi,
+	getSafeAreaInsets,
 	isMobileApp,
+	isMobileSmartphone,
+	isTabletDevice,
 	parseGs1DataMatrix,
 	scanDataMatrixWithCamera,
 	triggerHaptic,
+	type DeviceFormFactor,
 	type MobileBiometricAuthResult,
 	type ParsedGs1DataMatrix,
 } from "./mobileBridge";
@@ -123,6 +133,51 @@ export async function dispatchFiscalReceiptPrint(params: {
 	return {
 		success: false,
 		error: "Для прямой печати на локальный ККТ настройте соединение в DENTE Desktop (.exe) или используйте кассовый шлюз клиники.",
+	};
+}
+
+/**
+ * Universal Thermal Label Printing Dispatcher.
+ * In Desktop mode: executes silent direct print without popup windows or dialogs.
+ * In Web/Mobile mode: opens print preview or triggers window.print().
+ */
+export async function dispatchThermalLabelPrint(
+	params: DesktopThermalPrintParams,
+): Promise<DesktopThermalPrintResult> {
+	const platform = detectRuntimePlatform();
+
+	if (platform === "desktop_win") {
+		return await printDesktopThermalLabel(params);
+	}
+
+	// Browser / Mobile fallback: open print window
+	if (typeof window !== "undefined" && params.html) {
+		try {
+			const printWindow = window.open("", "_blank");
+			if (printWindow) {
+				printWindow.document.write(params.html);
+				printWindow.document.close();
+				printWindow.focus();
+				setTimeout(() => {
+					try {
+						printWindow.print();
+					} catch {}
+				}, 250);
+				return {
+					success: true,
+					printedAt: new Date().toISOString(),
+					silent: false,
+				};
+			}
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : "Не удалось открыть окно печати";
+			return { success: false, error: message };
+		}
+	}
+
+	return {
+		success: false,
+		error: "Для автоматической тихой печати термоэтикеток используйте приложение DENTE Desktop (.exe).",
 	};
 }
 

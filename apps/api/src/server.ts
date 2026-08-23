@@ -62,6 +62,7 @@ import { registerLoyaltyRoutes } from "./routes/loyalty.js";
 import { registerMaxRoutes } from "./routes/max.js";
 import { registerMdlpRoutes } from "./routes/mdlp.js";
 import { registerPharmacologyRoutes } from "./routes/pharmacology.js";
+import { registerPrescriptionRoutes } from "./routes/prescriptions.js";
 import { registerMigrationRoutes } from "./routes/migration.js";
 import { registerMigrationRunRoutes } from "./routes/migrationRuns.js";
 import { registerOdontogramRoutes } from "./routes/odontogram.js";
@@ -115,6 +116,10 @@ import {
 	stopBackupDaemon,
 } from "./services/backupWorker.js";
 import { TaskQueueService } from "./services/TaskQueueService.js";
+import {
+	startLanDiscoveryService,
+	stopLanDiscoveryService,
+} from "./services/lanDiscoveryService.js";
 import { startCommunicationDispatchWorker } from "./services/communications/dispatchWorker.js";
 import { getProxyAgent } from "./speech/keyPool.js";
 import { ensureSshTunnel } from "./speech/tunnel.js";
@@ -628,6 +633,7 @@ export async function createDenteApiApp(
 	await registerSbpQrRoutes(app);
 	await registerFiscalReceiptRoutes(app);
 	await registerPharmacologyRoutes(app);
+	await registerPrescriptionRoutes(app);
 	await registerMdlpRoutes(app);
 	// Ни один из этих модулей раньше не регистрировался, поэтому семейный кошелёк,
 	// ДМС, зуботехническая лаборатория, лист ожидания, лиды, стерилизация,
@@ -854,6 +860,7 @@ export async function startDenteApiServer() {
 					await taskQueueWorker.stop();
 				}
 				stopBackupDaemon();
+				stopLanDiscoveryService();
 				await app.close();
 				// Единственное закрытие пула на процесс: владелец — процесс, не
 				// приложение. endPool идемпотентен, повторный вызов дожидается
@@ -880,6 +887,9 @@ export async function startDenteApiServer() {
 		// не вызывался НИ ОТКУДА — копий не создавалось вообще, при том что в логах
 		// и в интерфейсе всё выглядело так, будто они делаются.
 		startBackupDaemon();
+
+		// Авто-обнаружение сервера в локальной сети (mDNS / UDP discovery responder)
+		startLanDiscoveryService({ logger: app.log });
 
 		process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 		process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));

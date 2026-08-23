@@ -6,6 +6,8 @@ import os from "node:os";
 import {
 	getWindowsSerialPorts,
 	getTwainDevices,
+	getSystemPrinters,
+	printThermalLabel,
 	printFiscalReceiptTcpSocket,
 	setupDicomFolderWatch,
 	unwatchDicomFolder,
@@ -32,6 +34,44 @@ test("Desktop Standalone Windows Runtime Harness", async (t) => {
 		assert.ok(vatech);
 		assert.equal(vatech.type, "sensor");
 		assert.equal(vatech.connected, true);
+	});
+
+	await t.test("Enumerates system printers and detects thermal label printers", async () => {
+		const printers = await getSystemPrinters();
+		assert.ok(Array.isArray(printers));
+		assert.ok(printers.length >= 2);
+
+		const thermalPrinter = printers.find((p) => p.isThermal);
+		assert.ok(thermalPrinter, "Must detect at least one thermal label printer");
+		assert.ok(thermalPrinter.name.length > 0);
+	});
+
+	await t.test("Direct silent thermal label printing without browser print dialog", async () => {
+		const result = await printThermalLabel({
+			printerName: "Xprinter XP-365B (Thermal)",
+			silent: true,
+			widthMm: 58,
+			heightMm: 40,
+			copies: 1,
+			html: `<!DOCTYPE html>
+<html>
+<head>
+  <style>@page{size:58mm 40mm;margin:0;}body{font-family:sans-serif;font-size:10px;padding:2mm;}</style>
+</head>
+<body>
+  <div style="font-weight:bold;">СТЕРИЛИЗАЦИЯ ЦСО</div>
+  <div>Пакет: #CSO-2026-08-23-01</div>
+  <div>Срок до: 23.09.2026</div>
+  <div>Код: [2D-DATAMATRIX]</div>
+</body>
+</html>`,
+		});
+
+		assert.equal(result.success, true);
+		assert.equal(result.silent, true);
+		assert.equal(result.widthMm, 58);
+		assert.equal(result.heightMm, 40);
+		assert.ok(result.printedAt);
 	});
 
 	await t.test("Direct TCP socket fiscal receipt printing on localhost simulator", async () => {

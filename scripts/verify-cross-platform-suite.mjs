@@ -37,22 +37,32 @@ const steps = [
 		cwd: path.join(projectRoot, "apps/web"),
 	},
 	{
-		name: "5. Web PWA Standalone Manifest & Service Worker Compliance",
+		name: "5. Desktop Silent Thermal Label Printing & Form Factors Suite",
+		cmd: "node --import tsx --import ./testCssStub.mjs --test src/tests/desktopSilentPrint.test.ts",
+		cwd: path.join(projectRoot, "apps/web"),
+	},
+	{
+		name: "6. Web PWA Standalone Manifest & Service Worker Compliance",
 		cmd: "node scripts/validate-pwa-manifest.mjs",
 		cwd: projectRoot,
 	},
 	{
-		name: "6. PWA Manifest & Offline Outbox Unit Suite",
+		name: "7. PWA Manifest & Offline Outbox Unit Suite",
 		cmd: "node --import tsx --import ./testCssStub.mjs --test src/tests/pwaManifestAndOfflineOutbox.test.ts",
 		cwd: path.join(projectRoot, "apps/web"),
 	},
 	{
-		name: "7. Universal Hardware Dispatcher & Multi-Platform Bridges Suite",
+		name: "8. Universal Hardware Dispatcher & Multi-Platform Bridges Suite",
 		cmd: "node --import tsx --import ./testCssStub.mjs --test src/tests/multiPlatformNativeBridges.test.ts",
 		cwd: path.join(projectRoot, "apps/web"),
 	},
 	{
-		name: "8. 3-Tier Offline Mutation Outbox & Network Connectivity Engine",
+		name: "9. Local Clinic Server Discovery & Offline Failover Suite",
+		cmd: "node --import tsx --import ./testCssStub.mjs --test src/tests/lanServerDiscovery.test.ts",
+		cwd: path.join(projectRoot, "apps/web"),
+	},
+	{
+		name: "10. 3-Tier Offline Mutation Outbox & Network Connectivity Engine",
 		cmd: "node --import tsx --import ./testCssStub.mjs --test src/tests/offlineMutationQueue.test.ts",
 		cwd: path.join(projectRoot, "apps/web"),
 	},

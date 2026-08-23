@@ -15,6 +15,7 @@ import {
 	detectRuntimePlatform,
 	dispatchFiscalReceiptPrint,
 	dispatchStaffBiometricAuth,
+	dispatchThermalLabelPrint,
 	dispatchUniversalScan,
 	dispatchVisiographAcquisition,
 } from "../native/hardwareDispatcher";
@@ -87,6 +88,12 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 				kktSerialNumber: "0010670000001234",
 				printedAt: "2026-08-22T23:00:00.000Z",
 			}),
+			printThermalLabel: async (params) => ({
+				success: true,
+				printedAt: "2026-08-23T10:00:00.000Z",
+				printerName: params.printerName || "Xprinter XP-365B",
+				silent: true,
+			}),
 			watchLocalDicomFolder: async (_folderPath, _callbackId) => ({ success: true }),
 			unwatchLocalDicomFolder: async (_folderPath) => ({ success: true }),
 		};
@@ -128,6 +135,13 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 			});
 			assert.equal(printResult.success, true);
 			assert.equal(printResult.fiscalSign, "9876543210");
+
+			const thermalRes = await dispatchThermalLabelPrint({
+				html: "<div>Sterilization #01</div>",
+				silent: true,
+			});
+			assert.equal(thermalRes.success, true);
+			assert.equal(thermalRes.silent, true);
 
 			const watchRes = await watchDesktopDicomFolder("C:\\DenteDICOM\\Incoming", "cb-1");
 			assert.equal(watchRes.success, true);

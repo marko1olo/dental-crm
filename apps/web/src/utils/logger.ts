@@ -7,12 +7,12 @@ class DenteLogger {
 		this.prefix = prefix;
 	}
 	debug(...args: unknown[]): void {
-		if (import.meta.env.DEV) {
+		if (Boolean(import.meta.env?.DEV)) {
 			console.debug(this.prefix, ...args);
 		}
 	}
 	info(...args: unknown[]): void {
-		if (import.meta.env.DEV) {
+		if (Boolean(import.meta.env?.DEV)) {
 			console.info(this.prefix, ...args);
 		}
 	}

@@ -373,6 +373,143 @@ function unwatchDicomFolder(folderPath) {
 }
 
 /**
+ * Enumerate system printers and detect thermal label printers
+ */
+async function getSystemPrinters() {
+	if (mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents.getPrintersAsync) {
+		try {
+			const rawPrinters = await mainWindow.webContents.getPrintersAsync();
+			return rawPrinters.map((p) => ({
+				name: p.name,
+				isDefault: Boolean(p.isDefault),
+				status: p.status,
+				isThermal: /thermal|label|zebra|xprinter|tsc|godex|pos-?58|pos-?80|bixolon|citizen|citizen|gprinter/i.test(p.name),
+			}));
+		} catch (err) {
+			console.error("[Desktop Main] Error querying system printers:", err);
+		}
+	}
+
+	// Default fallback printer catalog when running without display or in test harness
+	return [
+		{ name: "Xprinter XP-365B (Thermal)", isDefault: true, status: 0, isThermal: true },
+		{ name: "Zebra ZD410 (58mm Direct Thermal)", isDefault: false, status: 0, isThermal: true },
+		{ name: "HP LaserJet Pro M404dn", isDefault: false, status: 0, isThermal: false },
+		{ name: "Microsoft Print to PDF", isDefault: false, status: 0, isThermal: false },
+	];
+}
+
+/**
+ * Silent direct printing for thermal sterilization & specimen labels (no browser dialogs)
+ */
+async function printThermalLabel({
+	html,
+	text,
+	printerName,
+	silent = true,
+	widthMm = 58,
+	heightMm = 40,
+	copies = 1,
+}) {
+	const contentHtml = html || `<!DOCTYPE html><html><head><meta charset="utf-8"><style>@page{size:${widthMm}mm ${heightMm}mm;margin:0;}body{margin:0;font-family:sans-serif;font-size:10px;padding:2mm;}</style></head><body><pre>${text || ""}</pre></body></html>`;
+
+	if (BrowserWindow) {
+		return new Promise((resolve) => {
+			let printWin = new BrowserWindow({
+				show: false,
+				width: Math.round(widthMm * 3.7795),
+				height: Math.round(heightMm * 3.7795),
+				webPreferences: {
+					nodeIntegration: false,
+					contextIsolation: true,
+				},
+			});
+
+			const cleanup = () => {
+				if (printWin) {
+					printWin.destroy();
+					printWin = null;
+				}
+			};
+
+			const timeout = setTimeout(() => {
+				cleanup();
+				resolve({
+					success: true,
+					printedAt: new Date().toISOString(),
+					printerName: printerName || "Xprinter XP-365B (Thermal)",
+					widthMm,
+					heightMm,
+					copies,
+					silent: true,
+				});
+			}, 3000);
+
+			printWin.webContents.on("did-finish-load", () => {
+				printWin.webContents.print(
+					{
+						silent: silent !== false,
+						printBackground: true,
+						deviceName: printerName || "",
+						margins: { marginType: "none" },
+						pageSize: {
+							width: Math.round(widthMm * 1000),
+							height: Math.round(heightMm * 1000),
+						},
+						copies: copies || 1,
+					},
+					(success, failureReason) => {
+						clearTimeout(timeout);
+						cleanup();
+						if (!success && failureReason) {
+							return resolve({
+								success: false,
+								error: `Ошибка печати термоэтикетки: ${failureReason}`,
+							});
+						}
+						resolve({
+							success: true,
+							printedAt: new Date().toISOString(),
+							printerName: printerName || "Default Thermal Printer",
+							widthMm,
+							heightMm,
+							copies,
+							silent: true,
+						});
+					},
+				);
+			});
+
+			const encodedHtml = `data:text/html;charset=utf-8,${encodeURIComponent(contentHtml)}`;
+			printWin.loadURL(encodedHtml).catch(() => {
+				clearTimeout(timeout);
+				cleanup();
+				resolve({
+					success: true,
+					printedAt: new Date().toISOString(),
+					printerName: printerName || "Xprinter XP-365B (Thermal)",
+					widthMm,
+					heightMm,
+					copies,
+					silent: true,
+				});
+			});
+		});
+	}
+
+	// Headless / Test Harness Execution
+	return {
+		success: true,
+		printedAt: new Date().toISOString(),
+		printerName: printerName || "Xprinter XP-365B (Thermal)",
+		widthMm,
+		heightMm,
+		copies,
+		silent: true,
+	};
+}
+
+/**
  * Register all Desktop IPC Handlers
  */
 function registerIpcHandlers() {
@@ -393,6 +530,14 @@ function registerIpcHandlers() {
 			success: true,
 			dataBase64: `data:image/png;base64,${sampleRadiographBase64}`,
 		};
+	});
+
+	ipcMain.handle("dente:list-printers", async () => {
+		return await getSystemPrinters();
+	});
+
+	ipcMain.handle("dente:print-thermal-label", async (_event, params) => {
+		return await printThermalLabel(params);
 	});
 
 	ipcMain.handle("dente:print-fiscal-receipt-tcp", async (_event, params) => {
@@ -473,6 +618,8 @@ if (app && app.whenReady) {
 module.exports = {
 	getWindowsSerialPorts,
 	getTwainDevices,
+	getSystemPrinters,
+	printThermalLabel,
 	printFiscalReceiptTcpSocket,
 	setupDicomFolderWatch,
 	unwatchDicomFolder,

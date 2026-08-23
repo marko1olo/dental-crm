@@ -24,6 +24,14 @@ contextBridge.exposeInMainWorld("denteDesktopNative", {
 		return await ipcRenderer.invoke("dente:acquire-twain-image", deviceId);
 	},
 
+	listPrinters: async () => {
+		return await ipcRenderer.invoke("dente:list-printers");
+	},
+
+	printThermalLabel: async (params) => {
+		return await ipcRenderer.invoke("dente:print-thermal-label", params);
+	},
+
 	printFiscalReceiptTcp: async (params) => {
 		return await ipcRenderer.invoke("dente:print-fiscal-receipt-tcp", params);
 	},
