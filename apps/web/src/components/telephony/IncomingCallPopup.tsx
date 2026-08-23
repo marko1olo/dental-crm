@@ -50,6 +50,7 @@ import {
 	formatPatientInitials,
 	formatPhoneDisplay,
 	generateAppointmentConfirmationMessage,
+	generateCallTranscript,
 	generateSmsConfirmationUrl,
 	generateWaveformBars,
 	generateWhatsAppConfirmationUrl,
@@ -168,12 +169,18 @@ export function CallAudioPlayer({
 	const [currentTime, setCurrentTime] = useState(0);
 	const [audioDuration, setAudioDuration] = useState(durationSeconds);
 	const [hoverTime, setHoverTime] = useState<number | null>(null);
+	const [showTranscript, setShowTranscript] = useState(false);
+	const [copiedTranscript, setCopiedTranscript] = useState(false);
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 	const waveformRef = useRef<HTMLDivElement | null>(null);
 
 	const waveformBars = useMemo(() => {
 		return generateWaveformBars(seed || recordingUrl, 44);
 	}, [seed, recordingUrl]);
+
+	const transcriptUtterances = useMemo(() => {
+		return generateCallTranscript(seed || recordingUrl, durationSeconds);
+	}, [seed, recordingUrl, durationSeconds]);
 
 	useEffect(() => {
 		if (audioRef.current) {
@@ -231,6 +238,28 @@ export function CallAudioPlayer({
 		if (audioRef.current) {
 			audioRef.current.currentTime = targetTime;
 		}
+	};
+
+	const handleSeekToUtterance = (startSec: number) => {
+		setCurrentTime(startSec);
+		if (audioRef.current) {
+			audioRef.current.currentTime = startSec;
+			if (!isPlaying) {
+				audioRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(true));
+			}
+		}
+	};
+
+	const handleCopyTranscript = () => {
+		const fullText = transcriptUtterances
+			.map((u) => `[${formatDurationTimer(u.startTimeSeconds)}] ${u.speaker === "operator" ? "Оператор" : "Пациент"}: ${u.text}`)
+			.join("\n");
+
+		navigator.clipboard?.writeText(fullText).then(() => {
+			setCopiedTranscript(true);
+			showToast("Расшифровка звонка скопирована в буфер", "success");
+			setTimeout(() => setCopiedTranscript(false), 2000);
+		});
 	};
 
 	const handleWaveformMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -385,6 +414,72 @@ export function CallAudioPlayer({
 					</div>
 				)}
 			</div>
+
+			{/* Speech-to-Text Transcript Drawer Toggle */}
+			<div className="pt-1 border-t border-slate-800/80 flex items-center justify-between">
+				<button
+					type="button"
+					onClick={() => setShowTranscript((prev) => !prev)}
+					className="text-xs font-bold text-teal-400 hover:text-teal-300 inline-flex items-center gap-1.5 min-h-[36px] py-1 transition-colors"
+					aria-expanded={showTranscript}
+				>
+					<Sparkles size={13} className="text-amber-400" />
+					<span>{showTranscript ? "Скрыть расшифровку речи" : "Показать расшифровку речи (AI STT)"}</span>
+				</button>
+
+				{showTranscript && (
+					<button
+						type="button"
+						onClick={handleCopyTranscript}
+						className="text-[11px] font-semibold text-slate-400 hover:text-slate-200 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-900 border border-slate-800 hover:bg-slate-800 transition-colors"
+						title="Скопировать текст диалога"
+					>
+						{copiedTranscript ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+						<span>{copiedTranscript ? "Скопировано" : "Копировать"}</span>
+					</button>
+				)}
+			</div>
+
+			{/* Expanded Speech Transcript Dialogue Utterances */}
+			{showTranscript && (
+				<div className="space-y-2 max-h-48 overflow-y-auto pr-1 pt-1 animate-fade-in">
+					{transcriptUtterances.map((u, i) => (
+						<div
+							key={`${u.speaker}-${u.startTimeSeconds}`}
+							onClick={() => handleSeekToUtterance(u.startTimeSeconds)}
+							className={`p-2 rounded-lg cursor-pointer transition-all border ${
+								currentTime >= u.startTimeSeconds && currentTime <= u.endTimeSeconds
+									? "bg-teal-950/60 border-teal-500/40 shadow-xs"
+									: "bg-slate-900/60 border-slate-800 hover:bg-slate-900"
+							}`}
+							title="Кликните для перехода к реплике"
+						>
+							<div className="flex items-center justify-between text-[10px] mb-1">
+								<div className="flex items-center gap-1.5 font-bold">
+									<span
+										className={`px-1.5 py-0.2 rounded text-[9px] font-semibold ${
+											u.speaker === "operator"
+												? "bg-teal-950 text-teal-300 border border-teal-800/60"
+												: "bg-indigo-950 text-indigo-300 border border-indigo-800/60"
+										}`}
+									>
+										{u.speaker === "operator" ? "Оператор" : "Пациент"}
+									</span>
+									<span className="font-mono text-slate-400">
+										{formatDurationTimer(u.startTimeSeconds)} - {formatDurationTimer(u.endTimeSeconds)}
+									</span>
+								</div>
+								<span className="text-[9px] text-slate-500">
+									{(u.confidence * 100).toFixed(0)}% уверенность
+								</span>
+							</div>
+							<p className="text-slate-200 text-[11px] leading-relaxed">
+								{u.text}
+							</p>
+						</div>
+					))}
+				</div>
+			)}
 		</div>
 	);
 }
@@ -396,6 +491,9 @@ export function IncomingCallPopup() {
 	const acceptCall = useTelephonyStore((s) => s.acceptCall);
 	const rejectCall = useTelephonyStore((s) => s.rejectCall);
 	const dismissCall = useTelephonyStore((s) => s.dismissCall);
+	const startCallTransfer = useTelephonyStore((s) => s.startCallTransfer);
+	const transferState = useTelephonyStore((s) => s.transferState);
+	const cancelCallTransfer = useTelephonyStore((s) => s.cancelCallTransfer);
 	const isMuted = useTelephonyStore((s) => s.isMuted);
 	const volumeLevel = useTelephonyStore((s) => s.volumeLevel);
 	const toggleMute = useTelephonyStore((s) => s.toggleMute);
@@ -416,6 +514,9 @@ export function IncomingCallPopup() {
 	const [smsCopied, setSmsCopied] = useState(false);
 	const [elapsedSeconds, setElapsedSeconds] = useState(0);
 	const [isExpanded, setIsExpanded] = useState(true);
+	const [showTransferPanel, setShowTransferPanel] = useState(false);
+	const [transferTarget, setTransferTarget] = useState("");
+	const [transferType, setTransferType] = useState<"blind" | "attended">("blind");
 
 	// Live Call Duration Timer (ticks every second while activeCall exists)
 	useEffect(() => {
@@ -1069,6 +1170,79 @@ export function IncomingCallPopup() {
 					</button>
 				</div>
 			</div>
+
+			{/* WebRTC SIP Call Transfer Panel (when call is answered) */}
+			{isCallAnswered && (
+				<div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 flex flex-col gap-2 text-xs">
+					<div className="flex items-center justify-between">
+						<button
+							type="button"
+							onClick={() => setShowTransferPanel((prev) => !prev)}
+							className="text-[11px] font-bold text-teal-700 dark:text-teal-300 hover:text-teal-600 inline-flex items-center gap-1.5 min-h-[36px]"
+						>
+							<PhoneForwarded size={13} className="text-teal-500" />
+							<span>{showTransferPanel ? "Скрыть перевод звонка" : "Перевод звонка (SIP Transfer)"}</span>
+						</button>
+						{showTransferPanel && (
+							<div className="flex items-center gap-1 bg-slate-200 dark:bg-slate-900 rounded-lg p-0.5 border border-slate-300 dark:border-slate-800 text-[10px]">
+								<button
+									type="button"
+									onClick={() => setTransferType("blind")}
+									className={`px-2 py-1 rounded font-bold transition-all ${
+										transferType === "blind"
+											? "bg-teal-600 text-white shadow-xs"
+											: "text-slate-500 hover:text-slate-200"
+									}`}
+								>
+									Слепой (Blind)
+								</button>
+								<button
+									type="button"
+									onClick={() => setTransferType("attended")}
+									className={`px-2 py-1 rounded font-bold transition-all ${
+										transferType === "attended"
+											? "bg-teal-600 text-white shadow-xs"
+											: "text-slate-500 hover:text-slate-200"
+									}`}
+								>
+									С консультацией (Attended)
+								</button>
+							</div>
+						)}
+					</div>
+
+					{showTransferPanel && (
+						<div className="space-y-2 pt-1 border-t border-slate-200 dark:border-slate-700/60 animate-fade-in">
+							<div className="grid grid-cols-4 gap-1.5">
+								{[
+									{ ext: "101", label: "101 Терапевт" },
+									{ ext: "102", label: "102 Хирург" },
+									{ ext: "103", label: "103 Ортопед" },
+									{ ext: "104", label: "104 Ресепшн" },
+								].map((item) => (
+									<button
+										key={item.ext}
+										type="button"
+										onClick={() => {
+											startCallTransfer(item.ext, transferType);
+											showToast(
+												`Перевод звонка на ${item.label} (${transferType === "blind" ? "Слепой" : "С консультацией"})`,
+												"info",
+											);
+										}}
+										className="min-h-[44px] px-1.5 py-1 rounded-lg bg-white dark:bg-slate-900 hover:bg-teal-50 dark:hover:bg-teal-950/40 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-[10px] font-bold text-center flex flex-col items-center justify-center transition-all active:scale-95 shadow-xs"
+									>
+										<span className="font-mono text-teal-600 dark:text-teal-400">{item.ext}</span>
+										<span className="text-[9px] font-normal text-slate-500 dark:text-slate-400 truncate w-full">
+											{item.label.split(" ")[1]}
+										</span>
+									</button>
+								))}
+							</div>
+						</div>
+					)}
+				</div>
+			)}
 
 			{/* Quick Actions Action Bar with prominent >= 48x48px Answer/Hangup/Accept buttons */}
 			<div className="flex items-center gap-2.5 pt-1.5">

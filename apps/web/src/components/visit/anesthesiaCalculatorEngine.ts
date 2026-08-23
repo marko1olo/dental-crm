@@ -43,6 +43,7 @@ export interface AnesthesiaDrugDefinition {
 	readonly volumeMlPerCarpule: number;
 	readonly mgPerCarpule: number;
 	readonly maxDoseMgPerKg: number;
+	readonly maxDoseMgPerKgPediatric?: number;
 	readonly absoluteMaxDoseMg: number;
 	readonly isAdrenalineFree: boolean;
 	readonly description: string;
@@ -61,6 +62,7 @@ export const ANESTHESIA_DRUGS: Record<AnesthesiaDrugKey, AnesthesiaDrugDefinitio
 		volumeMlPerCarpule: 1.7,
 		mgPerCarpule: 68,
 		maxDoseMgPerKg: 7.0,
+		maxDoseMgPerKgPediatric: 5.0,
 		absoluteMaxDoseMg: 500,
 		isAdrenalineFree: false,
 		description: "Высокая глубина анестезии. Для травматичных вмешательств, пульпитов, хирургии.",
@@ -77,6 +79,7 @@ export const ANESTHESIA_DRUGS: Record<AnesthesiaDrugKey, AnesthesiaDrugDefinitio
 		volumeMlPerCarpule: 1.7,
 		mgPerCarpule: 68,
 		maxDoseMgPerKg: 7.0,
+		maxDoseMgPerKgPediatric: 5.0,
 		absoluteMaxDoseMg: 500,
 		isAdrenalineFree: false,
 		description: "Стандартная терапия и препарирование. Оптимальная кардиоваскулярная безопасность.",
@@ -93,6 +96,7 @@ export const ANESTHESIA_DRUGS: Record<AnesthesiaDrugKey, AnesthesiaDrugDefinitio
 		volumeMlPerCarpule: 1.7,
 		mgPerCarpule: 68,
 		maxDoseMgPerKg: 7.0,
+		maxDoseMgPerKgPediatric: 5.0,
 		absoluteMaxDoseMg: 500,
 		isAdrenalineFree: false,
 		description: "Французский артикаиновый анестетик быстрого действия.",
@@ -109,6 +113,7 @@ export const ANESTHESIA_DRUGS: Record<AnesthesiaDrugKey, AnesthesiaDrugDefinitio
 		volumeMlPerCarpule: 1.7,
 		mgPerCarpule: 51,
 		maxDoseMgPerKg: 4.4,
+		maxDoseMgPerKgPediatric: 4.4,
 		absoluteMaxDoseMg: 300,
 		isAdrenalineFree: true,
 		description: "Без адреналина и без сульфитов. Препарат выбора для пациентов с гипертонией, ССЗ, глаукомой, астмой, аллергией на сульфиты.",
@@ -125,6 +130,7 @@ export const ANESTHESIA_DRUGS: Record<AnesthesiaDrugKey, AnesthesiaDrugDefinitio
 		volumeMlPerCarpule: 2.0,
 		mgPerCarpule: 40,
 		maxDoseMgPerKg: 4.4,
+		maxDoseMgPerKgPediatric: 4.4,
 		absoluteMaxDoseMg: 300,
 		isAdrenalineFree: true,
 		description: "Классический амидный анестетик без вазоконстриктора и сульфитов для инфильтрации и проводниковой блокады.",
@@ -376,12 +382,16 @@ export interface AnesthesiaSafetyParams {
 	readonly patientWeightKg: number;
 	readonly carpulesCount: number;
 	readonly customVolumeMl?: number | undefined;
+	readonly patientAgeYears?: number | null | undefined;
+	readonly isPediatric?: boolean | undefined;
 	readonly somaticProfile?: SomaticRiskProfile | undefined;
 }
 
 export interface AnesthesiaCalculationResult {
 	readonly drug: AnesthesiaDrugDefinition;
 	readonly patientWeightKg: number;
+	readonly isPediatric: boolean;
+	readonly effectiveMaxMgPerKg: number;
 	readonly carpulesCount: number;
 	readonly totalVolumeMl: number;
 	readonly totalDoseMg: number;
@@ -407,6 +417,15 @@ export function calculateAnesthesiaSafety(params: AnesthesiaSafetyParams): Anest
 	const weight = Math.max(10, Math.min(250, Number.isFinite(params.patientWeightKg) && params.patientWeightKg > 0 ? params.patientWeightKg : 70));
 	const carpules = Math.max(0, Number.isFinite(params.carpulesCount) ? params.carpulesCount : 1);
 
+	// Определение детского возраста (< 18 лет) для расчета дозировки по педиатрическому стандарту (5 мг/кг для артикаина)
+	const isPediatric = Boolean(
+		params.isPediatric ||
+		(params.patientAgeYears !== null && params.patientAgeYears !== undefined && params.patientAgeYears < 18),
+	);
+	const effectiveMaxMgPerKg = isPediatric && drug.maxDoseMgPerKgPediatric
+		? drug.maxDoseMgPerKgPediatric
+		: drug.maxDoseMgPerKg;
+
 	const totalVolumeMl = params.customVolumeMl !== undefined && Number.isFinite(params.customVolumeMl) && params.customVolumeMl > 0
 		? Math.round(params.customVolumeMl * 100) / 100
 		: Math.round(carpules * drug.volumeMlPerCarpule * 100) / 100;
@@ -414,9 +433,9 @@ export function calculateAnesthesiaSafety(params: AnesthesiaSafetyParams): Anest
 	// Рассчитываем введенную дозу действующего вещества: (Объем мл * Концентрация % * 10 мг/мл)
 	const totalDoseMg = Math.round(totalVolumeMl * (drug.concentrationPct * 10) * 10) / 10;
 
-	// Предельная доза по весу пациента
-	const weightLimitMg = Math.round(weight * drug.maxDoseMgPerKg * 10) / 10;
-	let maxSafeDoseMg = Math.min(weightLimitMg, drug.absoluteMaxDoseMg);
+	// Предельная доза по весу пациента (для детей 5 мг/кг, для взрослых 7 мг/кг макс 500 мг)
+	const weightLimitMg = Math.round(weight * effectiveMaxMgPerKg * 10) / 10;
+	let maxSafeDoseMg = isPediatric ? weightLimitMg : Math.min(weightLimitMg, drug.absoluteMaxDoseMg);
 
 	let maxSafeCarpules = drug.mgPerCarpule > 0
 		? Math.round((maxSafeDoseMg / drug.mgPerCarpule) * 10) / 10
@@ -483,6 +502,8 @@ export function calculateAnesthesiaSafety(params: AnesthesiaSafetyParams): Anest
 	return {
 		drug,
 		patientWeightKg: weight,
+		isPediatric,
+		effectiveMaxMgPerKg,
 		carpulesCount: carpules,
 		totalVolumeMl,
 		totalDoseMg,
@@ -507,6 +528,8 @@ export interface AnesthesiaSoapRecordParams {
 	carpulesCount: number;
 	customVolumeMl?: number | undefined;
 	patientWeightKg?: number | undefined;
+	patientAgeYears?: number | null | undefined;
+	isPediatric?: boolean | undefined;
 	toothNumber?: number | string | undefined;
 	aspirationTestPassed?: boolean | undefined;
 	reactionNormal?: boolean | undefined;
@@ -524,6 +547,8 @@ export function formatAnesthesiaSoapText(params: AnesthesiaSoapRecordParams): st
 		drugKey: params.drugKey,
 		patientWeightKg: params.patientWeightKg ?? 70,
 		carpulesCount: params.carpulesCount,
+		patientAgeYears: params.patientAgeYears,
+		isPediatric: params.isPediatric,
 		somaticProfile: params.somaticProfile,
 		...(params.customVolumeMl !== undefined ? { customVolumeMl: params.customVolumeMl } : {}),
 	});

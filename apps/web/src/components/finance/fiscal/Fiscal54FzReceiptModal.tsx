@@ -12,6 +12,7 @@ import {
 	Coins,
 	CreditCard,
 	FileText,
+	Gift,
 	Layers,
 	Printer,
 	QrCode,
@@ -20,13 +21,19 @@ import {
 	ShieldCheck,
 	Sparkles,
 	Tag,
+	Users,
 	Wallet,
 	X,
 } from "lucide-react";
+import {
+	buildFiscalReceiptPayloadSignature,
+	createFiscalCompositeIdempotencyKey,
+} from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import {
 	compileFiscalDraftSummary,
 	type FiscalItemDraft,
+	getCashPresetSuggestions,
 	type SplitTenderState,
 	validateDataMatrixBarcode,
 } from "./fiscal54fzEngine";
@@ -40,6 +47,7 @@ export interface Fiscal54FzReceiptModalProps {
 	readonly patientName?: string;
 	readonly patientPhone?: string;
 	readonly patientDepositRub?: number;
+	readonly patientFamilyBalanceRub?: number;
 	readonly cashierFullName?: string;
 	readonly clinicName?: string;
 	readonly clinicInn?: string;
@@ -54,6 +62,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 	patientName = "Пациент",
 	patientPhone = "+7 (999) 000-00-00",
 	patientDepositRub = 0,
+	patientFamilyBalanceRub = 0,
 	cashierFullName = "Кассир-администратор",
 	clinicName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
 	clinicInn = "7701234567",
@@ -64,9 +73,11 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 
 	const [activeTab, setActiveTab] = useState<"split" | "preview">("split");
 	const [cashAmount, setCashAmount] = useState<number>(0);
+	const [receivedCashRub, setReceivedCashRub] = useState<number>(0);
 	const [cardAmount, setCardAmount] = useState<number>(0);
 	const [sbpAmount, setSbpAmount] = useState<number>(0);
 	const [advanceOffsetAmount, setAdvanceOffsetAmount] = useState<number>(0);
+	const [familyWalletAmount, setFamilyWalletAmount] = useState<number>(0);
 	const [certificateAmount, setCertificateAmount] = useState<number>(0);
 	const [customerContact, setCustomerContact] = useState<string>(patientPhone);
 	const [isFiscalizing, setIsFiscalizing] = useState<boolean>(false);
@@ -82,15 +93,22 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 
 	const tenders: SplitTenderState = useMemo(() => ({
 		cashRub: Number(cashAmount) || 0,
+		receivedCashRub: receivedCashRub > 0 ? Number(receivedCashRub) : Number(cashAmount) || 0,
 		cardRub: Number(cardAmount) || 0,
 		sbpRub: Number(sbpAmount) || 0,
 		advanceOffsetRub: Number(advanceOffsetAmount) || 0,
+		familyWalletRub: Number(familyWalletAmount) || 0,
 		certificateRub: Number(certificateAmount) || 0,
-	}), [cashAmount, cardAmount, sbpAmount, advanceOffsetAmount, certificateAmount]);
+	}), [cashAmount, receivedCashRub, cardAmount, sbpAmount, advanceOffsetAmount, familyWalletAmount, certificateAmount]);
 
 	const summary = useMemo(() => {
 		return compileFiscalDraftSummary(currentItems, tenders);
 	}, [currentItems, tenders]);
+
+	// Cash Presets suggestions
+	const cashPresets = useMemo(() => {
+		return getCashPresetSuggestions(cashAmount);
+	}, [cashAmount]);
 
 	// Initialize default 100% to Card on mount
 	React.useEffect(() => {
@@ -99,6 +117,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 			cardAmount === 0 &&
 			sbpAmount === 0 &&
 			advanceOffsetAmount === 0 &&
+			familyWalletAmount === 0 &&
 			certificateAmount === 0 &&
 			summary.totalRub > 0
 		) {
@@ -106,28 +125,39 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 				const offset = Math.min(summary.totalRub, patientDepositRub);
 				setAdvanceOffsetAmount(offset);
 				setCardAmount(Math.max(0, summary.totalRub - offset));
+			} else if (patientFamilyBalanceRub > 0) {
+				const familyOffset = Math.min(summary.totalRub, patientFamilyBalanceRub);
+				setFamilyWalletAmount(familyOffset);
+				setCardAmount(Math.max(0, summary.totalRub - familyOffset));
 			} else {
 				setCardAmount(summary.totalRub);
 			}
 		}
-	}, [summary.totalRub, patientDepositRub]);
+	}, [summary.totalRub, patientDepositRub, patientFamilyBalanceRub]);
 
-	const handleOneClickMethod = (method: "card" | "cash" | "sbp" | "deposit_all") => {
+	const handleOneClickMethod = (method: "card" | "cash" | "sbp" | "deposit_all" | "family_all") => {
 		setCashAmount(0);
+		setReceivedCashRub(0);
 		setCardAmount(0);
 		setSbpAmount(0);
 		setAdvanceOffsetAmount(0);
+		setFamilyWalletAmount(0);
 		setCertificateAmount(0);
 
 		if (method === "card") {
 			setCardAmount(summary.totalRub);
 		} else if (method === "cash") {
 			setCashAmount(summary.totalRub);
+			setReceivedCashRub(summary.totalRub);
 		} else if (method === "sbp") {
 			setSbpAmount(summary.totalRub);
 		} else if (method === "deposit_all") {
 			const offset = Math.min(summary.totalRub, patientDepositRub);
 			setAdvanceOffsetAmount(offset);
+			setCardAmount(Math.max(0, summary.totalRub - offset));
+		} else if (method === "family_all") {
+			const offset = Math.min(summary.totalRub, patientFamilyBalanceRub);
+			setFamilyWalletAmount(offset);
 			setCardAmount(Math.max(0, summary.totalRub - offset));
 		}
 	};
@@ -147,7 +177,34 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 
 		setIsFiscalizing(true);
 		try {
+			// Generate composite Idempotency-Key: <uuid>#<sha256(payloadSignature)>
+			const rawUuid = crypto.randomUUID();
+			const signature = buildFiscalReceiptPayloadSignature({
+				patientId,
+				operationType: "income",
+				taxationSystem: "usn_income",
+				totalKopecks: summary.totalKopecks,
+				cashKopecks: Math.round(tenders.cashRub * 100),
+				electronicCardKopecks: Math.round(tenders.cardRub * 100),
+				sbpKopecks: Math.round(tenders.sbpRub * 100),
+				prepaidKopecks: Math.round((tenders.advanceOffsetRub + (tenders.familyWalletRub || 0) + tenders.certificateRub) * 100),
+				items: currentItems.map((it) => ({
+					name: it.name,
+					priceKopecks: Math.round(it.priceRub * 100),
+					quantity: it.quantity,
+					amountKopecks: Math.round((it.priceRub * it.quantity - (it.discountRub || 0)) * 100),
+					subject: it.subject,
+					method: it.method,
+					vatRate: it.vatRate,
+					measure: it.measure,
+					markingCode: it.markingCode || null,
+					medicalServiceCode804n: it.code804n || null,
+				})),
+			});
+			const compositeIdempotencyKey = createFiscalCompositeIdempotencyKey(rawUuid, signature);
+
 			const payload = {
+				clientMutationId: compositeIdempotencyKey,
 				patientId,
 				customerContact,
 				cashierFullName,
@@ -157,7 +214,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 				cashKopecks: Math.round(tenders.cashRub * 100),
 				electronicCardKopecks: Math.round(tenders.cardRub * 100),
 				sbpKopecks: Math.round(tenders.sbpRub * 100),
-				prepaidKopecks: Math.round((tenders.advanceOffsetRub + tenders.certificateRub) * 100),
+				prepaidKopecks: Math.round((tenders.advanceOffsetRub + (tenders.familyWalletRub || 0) + tenders.certificateRub) * 100),
 				items: currentItems.map((it) => ({
 					name: it.name,
 					priceKopecks: Math.round(it.priceRub * 100),
@@ -178,6 +235,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 				method: "POST",
 				headers: denteAdminSecretRequestHeaders({
 					"Content-Type": "application/json",
+					"Idempotency-Key": compositeIdempotencyKey,
 				}),
 				body: JSON.stringify(payload),
 			});
@@ -214,7 +272,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 						</div>
 						<div>
 							<h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-								Фискализация по 54-ФЗ (ФФД 1.2)
+								Быстрая касса & 54-ФЗ (ФФД 1.2)
 								<span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
 									Online ККТ
 								</span>
@@ -226,6 +284,11 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 										· Депозит: {patientDepositRub.toLocaleString("ru-RU")} ₽
 									</span>
 								)}
+								{patientFamilyBalanceRub > 0 && (
+									<span className="ml-2 text-purple-600 dark:text-purple-400">
+										· Семья: {patientFamilyBalanceRub.toLocaleString("ru-RU")} ₽
+									</span>
+								)}
 							</p>
 						</div>
 					</div>
@@ -235,7 +298,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 							<button
 								type="button"
 								onClick={() => setActiveTab("split")}
-								className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+								className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
 									activeTab === "split"
 										? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm"
 										: "text-slate-600 dark:text-slate-400 hover:text-slate-900"
@@ -246,7 +309,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 							<button
 								type="button"
 								onClick={() => setActiveTab("preview")}
-								className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+								className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
 									activeTab === "preview"
 										? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm"
 										: "text-slate-600 dark:text-slate-400 hover:text-slate-900"
@@ -259,7 +322,8 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+							className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+							aria-label="Закрыть"
 						>
 							<X className="w-5 h-5" />
 						</button>
@@ -275,13 +339,13 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 								{/* 1-Click Fast Actions */}
 								<div>
 									<label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-										1-Click Способ оплаты
+										1-Click Способ оплаты (100% чека)
 									</label>
-									<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+									<div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
 										<button
 											type="button"
 											onClick={() => handleOneClickMethod("card")}
-											className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-blue-500 bg-white dark:bg-slate-800/80 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 text-slate-700 dark:text-slate-200 transition-all text-center"
+											className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-blue-500 bg-white dark:bg-slate-800/80 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 text-slate-700 dark:text-slate-200 transition-all text-center cursor-pointer active:scale-95"
 										>
 											<CreditCard className="w-5 h-5 text-blue-600" />
 											<span className="text-xs font-bold">100% Картой</span>
@@ -289,7 +353,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 										<button
 											type="button"
 											onClick={() => handleOneClickMethod("cash")}
-											className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-emerald-500 bg-white dark:bg-slate-800/80 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 text-slate-700 dark:text-slate-200 transition-all text-center"
+											className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-emerald-500 bg-white dark:bg-slate-800/80 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 text-slate-700 dark:text-slate-200 transition-all text-center cursor-pointer active:scale-95"
 										>
 											<Banknote className="w-5 h-5 text-emerald-600" />
 											<span className="text-xs font-bold">100% Наличные</span>
@@ -297,7 +361,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 										<button
 											type="button"
 											onClick={() => handleOneClickMethod("sbp")}
-											className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-purple-500 bg-white dark:bg-slate-800/80 hover:bg-purple-50/50 dark:hover:bg-purple-950/20 text-slate-700 dark:text-slate-200 transition-all text-center"
+											className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-purple-500 bg-white dark:bg-slate-800/80 hover:bg-purple-50/50 dark:hover:bg-purple-950/20 text-slate-700 dark:text-slate-200 transition-all text-center cursor-pointer active:scale-95"
 										>
 											<QrCode className="w-5 h-5 text-purple-600" />
 											<span className="text-xs font-bold">100% СБП QR</span>
@@ -306,10 +370,19 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 											type="button"
 											onClick={() => handleOneClickMethod("deposit_all")}
 											disabled={patientDepositRub <= 0}
-											className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500 bg-white dark:bg-slate-800/80 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 text-slate-700 dark:text-slate-200 transition-all text-center disabled:opacity-40 disabled:pointer-events-none"
+											className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500 bg-white dark:bg-slate-800/80 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 text-slate-700 dark:text-slate-200 transition-all text-center cursor-pointer active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
 										>
 											<Wallet className="w-5 h-5 text-indigo-600" />
-											<span className="text-xs font-bold">Зачет депозита</span>
+											<span className="text-xs font-bold">Депозит</span>
+										</button>
+										<button
+											type="button"
+											onClick={() => handleOneClickMethod("family_all")}
+											disabled={patientFamilyBalanceRub <= 0}
+											className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-pink-500 bg-white dark:bg-slate-800/80 hover:bg-pink-50/50 dark:hover:bg-pink-950/20 text-slate-700 dark:text-slate-200 transition-all text-center cursor-pointer active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+										>
+											<Users className="w-5 h-5 text-pink-600" />
+											<span className="text-xs font-bold">Семья</span>
 										</button>
 									</div>
 								</div>
@@ -345,7 +418,13 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 												min={0}
 												step="0.01"
 												value={cashAmount || ""}
-												onChange={(e) => setCashAmount(parseFloat(e.target.value) || 0)}
+												onChange={(e) => {
+													const val = parseFloat(e.target.value) || 0;
+													setCashAmount(val);
+													if (receivedCashRub < val) {
+														setReceivedCashRub(val);
+													}
+												}}
 												className="w-full px-3 py-2 text-sm font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
 												placeholder="0.00 ₽"
 											/>
@@ -380,8 +459,107 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 												placeholder="0.00 ₽"
 											/>
 										</div>
+
+										{patientFamilyBalanceRub > 0 && (
+											<div>
+												<span className="text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1 mb-1">
+													<Users className="w-3.5 h-3.5 text-pink-500" /> Семейный счет (Тег 1215)
+												</span>
+												<input
+													type="number"
+													min={0}
+													step="0.01"
+													value={familyWalletAmount || ""}
+													onChange={(e) => setFamilyWalletAmount(parseFloat(e.target.value) || 0)}
+													className="w-full px-3 py-2 text-sm font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-pink-500 focus:outline-none"
+													placeholder="0.00 ₽"
+												/>
+											</div>
+										)}
+
+										<div>
+											<span className="text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1 mb-1">
+												<Gift className="w-3.5 h-3.5 text-amber-500" /> Сертификат (Тег 1215)
+											</span>
+											<input
+												type="number"
+												min={0}
+												step="0.01"
+												value={certificateAmount || ""}
+												onChange={(e) => setCertificateAmount(parseFloat(e.target.value) || 0)}
+												className="w-full px-3 py-2 text-sm font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-none"
+												placeholder="0.00 ₽"
+											/>
+										</div>
 									</div>
 								</div>
+
+								{/* Быстрая касса: Расчет сдачи при оплате наличными */}
+								{cashAmount > 0 && (
+									<div className="bg-emerald-50 dark:bg-emerald-950/30 p-4 rounded-2xl border border-emerald-200 dark:border-emerald-800 space-y-3">
+										<div className="flex items-center justify-between">
+											<span className="text-xs font-extrabold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+												<Coins className="w-4 h-4 text-emerald-600" />
+												Моментальный расчет сдачи
+											</span>
+											{summary.changeRub > 0 && (
+												<span className="text-xs font-mono font-black px-2.5 py-1 rounded-lg bg-emerald-600 text-white">
+													Сдача: {summary.changeRub.toLocaleString("ru-RU")} ₽
+												</span>
+											)}
+										</div>
+
+										<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+											<div>
+												<label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+													Получено от пациента (рубли):
+												</label>
+												<input
+													type="number"
+													min={0}
+													step="1"
+													value={receivedCashRub || ""}
+													onChange={(e) => setReceivedCashRub(parseFloat(e.target.value) || 0)}
+													className="w-full px-3 py-2 text-base font-black font-mono bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-emerald-950 dark:text-emerald-200"
+													placeholder={`${cashAmount} ₽`}
+												/>
+											</div>
+
+											{/* Быстрые купюры */}
+											<div className="space-y-1">
+												<span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+													Быстрые купюры:
+												</span>
+												<div className="flex flex-wrap gap-1.5">
+													<button
+														type="button"
+														onClick={() => setReceivedCashRub(cashAmount)}
+														className="px-2 py-1 text-xs font-bold rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-slate-800 dark:text-slate-200 cursor-pointer"
+													>
+														Без сдачи
+													</button>
+													{cashPresets.map((preset) => (
+														<button
+															key={preset}
+															type="button"
+															onClick={() => setReceivedCashRub(preset)}
+															className="px-2 py-1 text-xs font-bold font-mono rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-slate-800 dark:text-slate-200 cursor-pointer"
+														>
+															{preset.toLocaleString("ru-RU")} ₽
+														</button>
+													))}
+												</div>
+											</div>
+										</div>
+
+										{summary.isCashShortage && (
+											<div className="text-xs font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-1">
+												<AlertTriangle className="w-3.5 h-3.5" />
+												Внесенной суммы не хватает (недобор: {summary.cashShortageRub.toLocaleString("ru-RU")} ₽)
+											</div>
+										)}
+									</div>
+								)}
 
 								{/* Electronic Delivery Contact */}
 								<div>
@@ -502,7 +680,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+							className="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
 						>
 							Отмена
 						</button>
@@ -511,7 +689,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 							type="button"
 							onClick={handleExecuteFiscalization}
 							disabled={!summary.isFullyAllocated || isFiscalizing}
-							className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-blue-600/25 transition-all"
+							className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-blue-600/25 transition-all cursor-pointer"
 						>
 							{isFiscalizing ? (
 								<>Печать чека на ККТ...</>

@@ -16,6 +16,14 @@ import {
 	taxDeductionCategorySchema,
 } from "./ffd12Types.js";
 import { isValidGs1Checksum, parseChestnyZnakDataMatrix } from "./markingValidation.js";
+import {
+	canonicalJsonStringify,
+	computePayloadHash,
+	createCompositeIdempotencyKey,
+	parseIdempotencyKey,
+	sha256Hex,
+	verifyPayloadHash,
+} from "../sync/hashing.js";
 
 /**
  * Single line item schema in a 54-FZ FFD 1.2 Fiscal Receipt.
@@ -421,3 +429,131 @@ export function parseAndValidate54FzFtsQrString(qrString: string): Parsed54FzQrR
 		rawParams: params,
 	};
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPOSITE IDEMPOTENCY KEY BUILDERS (<UUID>#<SHA256(PAYLOAD)>) FOR 54-FZ
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Builds a deterministic canonical signature for a 54-FZ receipt payload.
+ * Normalizes all fields to prevent key ordering or whitespace discrepancies.
+ */
+export function buildFiscalReceiptPayloadSignature(input: {
+	patientId: string;
+	operationType?: string | undefined;
+	taxationSystem?: string | undefined;
+	totalKopecks: number;
+	cashKopecks?: number | undefined;
+	electronicCardKopecks?: number | undefined;
+	sbpKopecks?: number | undefined;
+	prepaidKopecks?: number | undefined;
+	creditKopecks?: number | undefined;
+	items: readonly {
+		name: string;
+		priceKopecks: number;
+		quantity: number;
+		amountKopecks: number;
+		subject?: string | undefined;
+		method?: string | undefined;
+		vatRate?: string | undefined;
+		measure?: string | undefined;
+		markingCode?: string | null | undefined;
+		medicalServiceCode804n?: string | null | undefined;
+	}[];
+}): Record<string, unknown> {
+	return {
+		patientId: input.patientId,
+		operationType: input.operationType ?? "income",
+		taxationSystem: input.taxationSystem ?? "usn_income",
+		totalKopecks: input.totalKopecks,
+		cashKopecks: input.cashKopecks ?? 0,
+		electronicCardKopecks: input.electronicCardKopecks ?? 0,
+		sbpKopecks: input.sbpKopecks ?? 0,
+		prepaidKopecks: input.prepaidKopecks ?? 0,
+		creditKopecks: input.creditKopecks ?? 0,
+		items: input.items.map((it) => ({
+			name: it.name.trim(),
+			priceKopecks: it.priceKopecks,
+			quantity: it.quantity,
+			amountKopecks: it.amountKopecks,
+			subject: it.subject ?? "service",
+			method: it.method ?? "full_payment",
+			vatRate: it.vatRate ?? "vat_none",
+			measure: it.measure ?? "piece",
+			markingCode: it.markingCode ? it.markingCode.trim() : null,
+			medicalServiceCode804n: it.medicalServiceCode804n ? it.medicalServiceCode804n.trim() : null,
+		})),
+	};
+}
+
+/**
+ * Builds a deterministic canonical signature for a 54-FZ refund receipt payload.
+ */
+export function buildFiscalRefundPayloadSignature(input: {
+	originalPaymentId?: string | null | undefined;
+	originalReceiptNumber?: string | undefined;
+	patientId: string;
+	totalRefundKopecks: number;
+	refundCashKopecks?: number | undefined;
+	refundElectronicKopecks?: number | undefined;
+	refundPrepaidKopecks?: number | undefined;
+	reason?: string | undefined;
+	items: readonly {
+		name: string;
+		priceKopecks: number;
+		quantity: number;
+		amountKopecks: number;
+	}[];
+}): Record<string, unknown> {
+	return {
+		originalPaymentId: input.originalPaymentId ?? null,
+		originalReceiptNumber: input.originalReceiptNumber ?? null,
+		patientId: input.patientId,
+		totalRefundKopecks: input.totalRefundKopecks,
+		refundCashKopecks: input.refundCashKopecks ?? 0,
+		refundElectronicKopecks: input.refundElectronicKopecks ?? 0,
+		refundPrepaidKopecks: input.refundPrepaidKopecks ?? 0,
+		reason: input.reason ? input.reason.trim() : "",
+		items: input.items.map((it) => ({
+			name: it.name.trim(),
+			priceKopecks: it.priceKopecks,
+			quantity: it.quantity,
+			amountKopecks: it.amountKopecks,
+		})),
+	};
+}
+
+/**
+ * Creates a statutory composite Idempotency-Key: `<uuid>#<sha256(canonicalPayload)>`.
+ */
+export function createFiscalCompositeIdempotencyKey(
+	uuid: string,
+	payloadSignature: Record<string, unknown>,
+): string {
+	const hash = computePayloadHash(payloadSignature);
+	return `${uuid}#${hash}`;
+}
+
+/**
+ * Verifies if an incoming composite idempotency key matches the computed payload signature.
+ */
+export function verifyFiscalCompositeIdempotencyKey(
+	compositeKey: string,
+	payloadSignature: Record<string, unknown>,
+): {
+	isValid: boolean;
+	uuid: string;
+	expectedHash: string | null;
+	actualHash: string;
+} {
+	const parsed = parseIdempotencyKey(compositeKey);
+	const actualHash = computePayloadHash(payloadSignature);
+	const isValid = parsed.embeddedHash === null || parsed.embeddedHash === actualHash;
+	return {
+		isValid,
+		uuid: parsed.uuid,
+		expectedHash: parsed.embeddedHash,
+		actualHash,
+	};
+}
+

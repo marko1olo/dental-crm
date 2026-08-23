@@ -40,20 +40,33 @@ export interface Order804nFiscalReceiptItem {
 
 export interface SplitPaymentInput {
 	readonly cashRub?: number;
+	readonly receivedCashRub?: number;
 	readonly cardRub?: number;
 	readonly sbpRub?: number;
 	readonly depositRub?: number;
+	readonly familyWalletRub?: number;
+	readonly certificateRub?: number;
 }
 
 export interface SplitPaymentAllocation {
 	readonly cashRub: number;
 	readonly cashKopecks: Kopecks;
+	readonly receivedCashRub: number;
+	readonly receivedCashKopecks: Kopecks;
+	readonly changeRub: number;
+	readonly changeKopecks: Kopecks;
+	readonly isCashShortage: boolean;
+	readonly cashShortageRub: number;
 	readonly cardRub: number;
 	readonly cardKopecks: Kopecks;
 	readonly sbpRub: number;
 	readonly sbpKopecks: Kopecks;
 	readonly depositRub: number;
 	readonly depositKopecks: Kopecks;
+	readonly familyWalletRub: number;
+	readonly familyWalletKopecks: Kopecks;
+	readonly certificateRub: number;
+	readonly certificateKopecks: Kopecks;
 	readonly totalRub: number;
 	readonly totalKopecks: Kopecks;
 	readonly allocatedKopecks: Kopecks;
@@ -184,7 +197,7 @@ export function mapTreatmentItemsToFiscalReceipt(
 }
 
 /**
- * Точный расчет распределения раздельной оплаты (Наличные, Карта, СБП, Депозит) с контролем копеечного баланса.
+ * Точный расчет распределения раздельной оплаты (Наличные, Карта, СБП, Депозит, Семейный баланс, Сертификат) с контролем копеечного баланса и сдачи.
  */
 export function calculateSplitPaymentAllocation(
 	totalKopecks: Kopecks,
@@ -194,22 +207,52 @@ export function calculateSplitPaymentAllocation(
 	const cardKopecks = parseKopecks(Math.max(0, input.cardRub || 0));
 	const sbpKopecks = parseKopecks(Math.max(0, input.sbpRub || 0));
 	const depositKopecks = parseKopecks(Math.max(0, input.depositRub || 0));
+	const familyWalletKopecks = parseKopecks(Math.max(0, input.familyWalletRub || 0));
+	const certificateKopecks = parseKopecks(Math.max(0, input.certificateRub || 0));
+
+	const receivedCashRub = input.receivedCashRub !== undefined ? Math.max(0, input.receivedCashRub) : Math.round(cashKopecks / 100);
+	const receivedCashKopecks = parseKopecks(receivedCashRub);
+
+	let changeKopecks = 0 as Kopecks;
+	let isCashShortage = false;
+	let cashShortageKopecks = 0 as Kopecks;
+
+	if (cashKopecks > 0) {
+		if (receivedCashKopecks >= cashKopecks) {
+			changeKopecks = (receivedCashKopecks - cashKopecks) as Kopecks;
+		} else if (input.receivedCashRub !== undefined) {
+			isCashShortage = true;
+			cashShortageKopecks = (cashKopecks - receivedCashKopecks) as Kopecks;
+		}
+	}
 
 	const allocatedKopecks = (cashKopecks +
 		cardKopecks +
 		sbpKopecks +
-		depositKopecks) as Kopecks;
+		depositKopecks +
+		familyWalletKopecks +
+		certificateKopecks) as Kopecks;
 	const remainingKopecks = (totalKopecks - allocatedKopecks) as Kopecks;
 
 	return {
 		cashRub: Math.round(cashKopecks / 100),
 		cashKopecks,
+		receivedCashRub,
+		receivedCashKopecks,
+		changeRub: Math.round(changeKopecks / 100),
+		changeKopecks,
+		isCashShortage,
+		cashShortageRub: Math.round(cashShortageKopecks / 100),
 		cardRub: Math.round(cardKopecks / 100),
 		cardKopecks,
 		sbpRub: Math.round(sbpKopecks / 100),
 		sbpKopecks,
 		depositRub: Math.round(depositKopecks / 100),
 		depositKopecks,
+		familyWalletRub: Math.round(familyWalletKopecks / 100),
+		familyWalletKopecks,
+		certificateRub: Math.round(certificateKopecks / 100),
+		certificateKopecks,
 		totalRub: Math.round(totalKopecks / 100),
 		totalKopecks,
 		allocatedKopecks,

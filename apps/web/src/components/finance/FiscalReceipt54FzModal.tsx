@@ -74,6 +74,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 
 	const [activeTab, setActiveTab] = useState<"payment" | "preview">("payment");
 	const [cashAmount, setCashAmount] = useState<number>(0);
+	const [receivedCashRub, setReceivedCashRub] = useState<number>(0);
 	const [cardAmount, setCardAmount] = useState<number>(0);
 	const [sbpAmount, setSbpAmount] = useState<number>(0);
 	const [depositAmount, setDepositAmount] = useState<number>(0);
@@ -105,12 +106,13 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 	const splitInput: SplitPaymentInput = useMemo(
 		() => ({
 			cashRub: cashAmount,
+			receivedCashRub: receivedCashRub > 0 ? receivedCashRub : cashAmount,
 			cardRub: cardAmount,
 			sbpRub: sbpAmount,
 			// Сертификат и аванс фискализируются по 54-ФЗ как зачет предоплаты / встречное предоставление (Тег 1215/1216)
 			depositRub: depositAmount + certificateAmount,
 		}),
-		[cashAmount, cardAmount, sbpAmount, depositAmount, certificateAmount],
+		[cashAmount, receivedCashRub, cardAmount, sbpAmount, depositAmount, certificateAmount],
 	);
 
 	const allocation = useMemo(() => {
@@ -652,11 +654,13 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												min={0}
 												max={totalSumRub}
 												value={cashAmount || ""}
-												onChange={(e) =>
-													setCashAmount(
-														Math.max(0, Number(e.target.value) || 0),
-													)
-												}
+												onChange={(e) => {
+													const val = Math.max(0, Number(e.target.value) || 0);
+													setCashAmount(val);
+													if (receivedCashRub < val) {
+														setReceivedCashRub(val);
+													}
+												}}
 												placeholder="0"
 												className="min-h-[48px] w-28 sm:w-32 px-3 py-2 text-xs sm:text-sm font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
 											/>
@@ -682,6 +686,64 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 											)}
 										</div>
 									</div>
+
+									{/* Instant Cash Change Calculator HUD */}
+									{cashAmount > 0 && (
+										<div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-2">
+											<div className="flex items-center justify-between text-xs">
+												<span className="font-extrabold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+													<Coins size={14} className="text-emerald-600" />
+													Моментальный расчет сдачи
+												</span>
+												{allocation.changeRub > 0 && (
+													<span className="font-mono font-black px-2 py-0.5 rounded-md bg-emerald-600 text-white text-xs">
+														Сдача: {formatMoneyRu(allocation.changeRub)}
+													</span>
+												)}
+											</div>
+
+											<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 items-center">
+												<div>
+													<label className="block text-[11px] font-semibold text-[var(--muted,#64748b)] mb-1">
+														Внесено пациентом (рубли):
+													</label>
+													<input
+														type="number"
+														min={0}
+														value={receivedCashRub || ""}
+														onChange={(e) => setReceivedCashRub(Math.max(0, Number(e.target.value) || 0))}
+														placeholder={`${cashAmount} ₽`}
+														className="min-h-[44px] w-full px-3 py-1.5 text-sm font-mono font-black rounded-xl border border-emerald-300 dark:border-emerald-700 bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+													/>
+												</div>
+
+												<div className="space-y-1">
+													<span className="text-[10px] font-bold text-[var(--muted,#64748b)] uppercase tracking-wider block">
+														Быстрые купюры:
+													</span>
+													<div className="flex flex-wrap gap-1">
+														<button
+															type="button"
+															onClick={() => setReceivedCashRub(cashAmount)}
+															className="px-2 py-1 text-xs font-bold rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] hover:bg-emerald-500/20 cursor-pointer"
+														>
+															Без сдачи
+														</button>
+														{[100, 500, 1000, 2000, 5000].filter((b) => b > cashAmount).slice(0, 3).map((bill) => (
+															<button
+																key={bill}
+																type="button"
+																onClick={() => setReceivedCashRub(bill)}
+																className="px-2 py-1 text-xs font-bold font-mono rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] hover:bg-emerald-500/20 cursor-pointer"
+															>
+																{bill.toLocaleString("ru-RU")} ₽
+															</button>
+														))}
+													</div>
+												</div>
+											</div>
+										</div>
+									)}
 
 									{/* Patient Deposit / Prepaid */}
 									<div className="p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] flex items-center justify-between gap-3">

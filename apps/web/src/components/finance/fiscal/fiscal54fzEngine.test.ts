@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+	buildFiscalIdempotencyKey,
+	calculateCashChange,
 	compileFiscalDraftSummary,
 	type FiscalItemDraft,
+	getCashPresetSuggestions,
 	type SplitTenderState,
 	validateDataMatrixBarcode,
 } from "./fiscal54fzEngine";
@@ -137,4 +140,31 @@ describe("Frontend 54-FZ (FFD 1.2) Fiscal Engine Tests", () => {
 		assert.equal(invalidResult.isValid, false);
 		assert.ok(invalidResult.errorMessage?.includes("контрольная сумма"));
 	});
+
+	it("1.5 calculateCashChange & getCashPresetSuggestions — Fast Cashier change calculation", () => {
+		// Change calculation: Required 2350 ₽, Patient tendered 3000 ₽ -> Change 650 ₽
+		const changeResult = calculateCashChange(2350, 3000);
+		assert.equal(changeResult.changeRub, 650);
+		assert.equal(changeResult.changeKopecks, 65000);
+		assert.equal(changeResult.isShortage, false);
+
+		// Shortage calculation: Required 2350 ₽, Patient tendered 2000 ₽ -> Shortage 350 ₽
+		const shortageResult = calculateCashChange(2350, 2000);
+		assert.equal(shortageResult.changeRub, 0);
+		assert.equal(shortageResult.isShortage, true);
+		assert.equal(shortageResult.shortageRub, 350);
+
+		// Cash preset suggestions
+		const presets = getCashPresetSuggestions(2350);
+		assert.ok(presets.includes(2350)); // Exact
+		assert.ok(presets.includes(5000)); // Standard bill
+		assert.ok(presets.includes(2500)); // Round to next 500
+		assert.ok(presets.includes(3000)); // Round to next 1000
+
+		// Composite Idempotency-Key
+		const key = buildFiscalIdempotencyKey("uuid-123", { amount: 2350 });
+		assert.ok(key.startsWith("uuid-123#"));
+		assert.equal(key.split("#").length, 2);
+	});
 });
+

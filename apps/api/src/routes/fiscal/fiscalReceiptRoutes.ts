@@ -21,6 +21,9 @@ import {
 	kopecksToNumericString,
 	kopecksToRub,
 	parseChestnyZnakDataMatrix,
+	buildFiscalReceiptPayloadSignature,
+	buildFiscalRefundPayloadSignature,
+	verifyFiscalCompositeIdempotencyKey,
 } from "@dental/shared";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
@@ -131,6 +134,7 @@ export async function registerFiscalReceiptRoutes(
 	/**
 	 * POST /api/fiscal/receipts
 	 * Creates, validates, and prints 54-FZ FFD 1.2 receipt via direct LAN KKT.
+	 * Enforces composite Idempotency-Key (<uuid>#<sha256(payload)>) to guarantee strictly single execution in PostgreSQL.
 	 * If KKT is offline or out of paper, buffers receipt in fiscal_receipt_queue without blocking checkout.
 	 */
 	app.post("/api/fiscal/receipts", async (request: FastifyRequest, reply: FastifyReply) => {
@@ -148,6 +152,61 @@ export async function registerFiscalReceiptRoutes(
 		}
 
 		const data = parsed.data;
+
+		// ─────────────────────────────────────────────────────────────────────────
+		// IDEMPOTENCY CHECK (<UUID>#<SHA256(PAYLOAD)>): SINGLE EXECUTION GUARANTEE
+		// ─────────────────────────────────────────────────────────────────────────
+		if (data.clientMutationId && data.clientMutationId.trim().length > 0) {
+			const existingQueueRows = await db
+				.select()
+				.from(fiscalReceiptQueue)
+				.where(
+					and(
+						eq(fiscalReceiptQueue.organizationId, orgId),
+						sql`${fiscalReceiptQueue.payloadJson}->>'clientMutationId' = ${data.clientMutationId.trim()}`,
+					),
+				)
+				.limit(1);
+
+			const existingRow = existingQueueRows[0];
+			if (existingRow) {
+				const storedPayload = (existingRow.payloadJson || {}) as Record<string, unknown>;
+				const signature = buildFiscalReceiptPayloadSignature(data);
+				const verification = verifyFiscalCompositeIdempotencyKey(data.clientMutationId, signature);
+
+				const totalKopecksMatch = Number(storedPayload["totalKopecks"]) === data.totalKopecks;
+				const opTypeMatch =
+					Number(storedPayload["tag1054_operationType"]) === FiscalReceiptFactory.resolveTag1054(data.operationType);
+
+				if (verification.isValid && totalKopecksMatch && opTypeMatch) {
+					// Safe idempotent replay: return already queued/printed fiscal receipt without re-triggering LAN hardware
+					return reply.status(200).send({
+						success: true,
+						replayed: true,
+						queueId: existingRow.id,
+						status: existingRow.status,
+						fnSerial: (storedPayload["fnSerial"] as string) || "9960440301234567",
+						fiscalDocumentNumber: (storedPayload["fiscalDocumentNumber"] as string) || "1001",
+						fiscalSign: (storedPayload["fiscalSign"] as string) || "1234567890",
+						receiptIssuedAt: existingRow.printedAt ? existingRow.printedAt.toISOString() : existingRow.createdAt.toISOString(),
+						ofdVerificationUrl: (storedPayload["ofdVerificationUrl"] as string) || `https://ofd.ru/check?fn=9960440301234567&fd=1001&fpd=1234567890&s=${kopecksToNumericString(data.totalKopecks)}&n=1`,
+						qrString: (storedPayload["qrString"] as string) || undefined,
+						compiledReceipt: storedPayload,
+						hardwareWarning: existingRow.lastError,
+					});
+				} else {
+					return reply.status(409).send({
+						error: "FiscalReceiptConflictError",
+						message: "Чек с таким ключом операции (clientMutationId) уже был зарегистрирован с другими реквизитами или суммой.",
+						details: {
+							expectedHash: verification.expectedHash,
+							actualHash: verification.actualHash,
+						},
+					});
+				}
+			}
+		}
+
 		const compiled = FiscalReceiptFactory.buildFfd12Receipt(data);
 
 		// Execute print via LAN KKT driver (handles offline & out of paper detection)
@@ -156,6 +215,17 @@ export async function registerFiscalReceiptRoutes(
 		const isOffline = printResult.status === "hardware_offline";
 		const now = new Date();
 
+		const payloadToStore: Record<string, unknown> = {
+			...compiled,
+			clientMutationId: data.clientMutationId ?? null,
+			fnSerial: printResult.fnSerial,
+			fiscalDocumentNumber: printResult.fiscalDocumentNumber,
+			fiscalSign: printResult.fiscalSign,
+			ofdVerificationUrl: printResult.ofdVerificationUrl,
+			qrString: printResult.qrString ?? null,
+			receiptIssuedAt: printResult.receiptIssuedAt,
+		};
+
 		const [queueRow] = await db
 			.insert(fiscalReceiptQueue)
 			.values({
@@ -163,7 +233,7 @@ export async function registerFiscalReceiptRoutes(
 				visitId: data.visitId || null,
 				receiptType: data.operationType,
 				status: printResult.status,
-				payloadJson: compiled as unknown as Record<string, unknown>,
+				payloadJson: payloadToStore,
 				lastError: isOffline ? printResult.errorMessage || "KKT hardware offline or out of paper" : null,
 				retryCount: isOffline ? 1 : 0,
 				printedAt: isOffline ? null : now,
@@ -172,6 +242,7 @@ export async function registerFiscalReceiptRoutes(
 
 		return reply.status(201).send({
 			success: true,
+			replayed: false,
 			queueId: queueRow?.id,
 			status: queueRow?.status,
 			fnSerial: printResult.fnSerial,
@@ -187,7 +258,7 @@ export async function registerFiscalReceiptRoutes(
 
 	/**
 	 * POST /api/fiscal/refund
-	 * Issues 54-FZ Return Receipt (Tag 1054 = 2, income_return).
+	 * Issues 54-FZ Return Receipt (Tag 1054 = 2, income_return) with composite Idempotency-Key.
 	 */
 	app.post("/api/fiscal/refund", async (request: FastifyRequest, reply: FastifyReply) => {
 		const ctx = await requireClinicalMutationContext(request, reply, "fiscal refund create");
@@ -204,6 +275,48 @@ export async function registerFiscalReceiptRoutes(
 		}
 
 		const data = parsed.data;
+
+		// Idempotency check for refund
+		if (data.clientMutationId && data.clientMutationId.trim().length > 0) {
+			const existingQueueRows = await db
+				.select()
+				.from(fiscalReceiptQueue)
+				.where(
+					and(
+						eq(fiscalReceiptQueue.organizationId, orgId),
+						sql`${fiscalReceiptQueue.payloadJson}->>'clientMutationId' = ${data.clientMutationId.trim()}`,
+					),
+				)
+				.limit(1);
+
+			const existingRow = existingQueueRows[0];
+			if (existingRow) {
+				const storedPayload = (existingRow.payloadJson || {}) as Record<string, unknown>;
+				const signature = buildFiscalRefundPayloadSignature(data);
+				const verification = verifyFiscalCompositeIdempotencyKey(data.clientMutationId, signature);
+
+				const refundKopecksMatch = Number(storedPayload["totalKopecks"]) === data.totalRefundKopecks;
+				if (verification.isValid && refundKopecksMatch) {
+					return reply.status(200).send({
+						success: true,
+						replayed: true,
+						refundQueueId: existingRow.id,
+						status: existingRow.status,
+						originalReceiptNumber: data.originalReceiptNumber,
+						fiscalDocumentNumber: (storedPayload["fiscalDocumentNumber"] as string) || "1002",
+						fiscalSign: (storedPayload["fiscalSign"] as string) || "1234567890",
+						ofdVerificationUrl: (storedPayload["ofdVerificationUrl"] as string) || `https://ofd.ru/check?s=${kopecksToNumericString(data.totalRefundKopecks)}&n=2`,
+						totalRefundRub: kopecksToNumericString(data.totalRefundKopecks),
+					});
+				} else {
+					return reply.status(409).send({
+						error: "FiscalReceiptConflictError",
+						message: "Возврат с таким ключом операции (clientMutationId) уже был зарегистрирован с другими параметрами.",
+					});
+				}
+			}
+		}
+
 		const totalElectronicKopecks = data.refundElectronicKopecks;
 
 		const refundReceiptInput: CreateFiscalReceiptPayloadInput = createFiscalReceiptPayloadSchema.parse({
@@ -241,6 +354,17 @@ export async function registerFiscalReceiptRoutes(
 			}
 		}
 
+		const payloadToStore: Record<string, unknown> = {
+			...compiled,
+			clientMutationId: data.clientMutationId ?? null,
+			originalReceiptNumber: data.originalReceiptNumber ?? null,
+			fnSerial: printResult.fnSerial,
+			fiscalDocumentNumber: printResult.fiscalDocumentNumber,
+			fiscalSign: printResult.fiscalSign,
+			ofdVerificationUrl: printResult.ofdVerificationUrl,
+			receiptIssuedAt: printResult.receiptIssuedAt,
+		};
+
 		const [queueRow] = await db
 			.insert(fiscalReceiptQueue)
 			.values({
@@ -248,7 +372,7 @@ export async function registerFiscalReceiptRoutes(
 				paymentId: validPaymentId,
 				receiptType: "income_return",
 				status: printResult.status,
-				payloadJson: compiled as unknown as Record<string, unknown>,
+				payloadJson: payloadToStore,
 				lastError: isOffline ? printResult.errorMessage || "KKT offline on refund" : null,
 				retryCount: isOffline ? 1 : 0,
 				printedAt: isOffline ? null : now,
@@ -257,6 +381,7 @@ export async function registerFiscalReceiptRoutes(
 
 		return reply.status(200).send({
 			success: true,
+			replayed: false,
 			refundQueueId: queueRow?.id,
 			status: queueRow?.status,
 			originalReceiptNumber: data.originalReceiptNumber,

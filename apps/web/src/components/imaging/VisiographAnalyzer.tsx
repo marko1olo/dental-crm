@@ -47,6 +47,7 @@ import { showToast } from "../GlobalToast";
 // список здесь означал бы третий словарь состояний зуба в одном приложении.
 import { TOOTH_STATE_LABELS, type ToothState } from "../odontogram/ToothChart";
 import { PanelLoadFailure } from "../PanelLoadFailure";
+import { VisiographStudioCanvas } from "../visiograph/VisiographStudioCanvas";
 import { ShadowAnalystImageSlider } from "./ShadowAnalystImageSlider";
 import { planVisiographFindings } from "./visiographFindings";
 
@@ -354,6 +355,7 @@ export function VisiographAnalyzer() {
 	 * думал, что в карте нет файла.
 	 */
 	const [openFailure, setOpenFailure] = useState<string | null>(null);
+	const [isStudioMode, setIsStudioMode] = useState(false);
 
 	// ── Voice init ──────────────────────────────────────────────────────────
 	useEffect(() => {
@@ -1455,19 +1457,78 @@ export function VisiographAnalyzer() {
 						<div
 							style={{ display: "flex", flexDirection: "column", gap: "16px" }}
 						>
-							{/* Image viewer */}
+							{/* Image viewer & PACS Studio */}
 							{currentImageUrl && (
 								<div
 									style={{
-										borderRadius: "10px",
-										overflow: "hidden",
-										border: "1px solid var(--line)",
+										display: "flex",
+										flexDirection: "column",
+										gap: "8px",
 									}}
 								>
-									<ShadowAnalystImageSlider
-										imageUrl={currentImageUrl}
-										enhanced={true}
-									/>
+									<div
+										style={{
+											display: "flex",
+											justifyContent: "flex-end",
+											gap: "8px",
+										}}
+									>
+										<button
+											type="button"
+											onClick={() => setIsStudioMode((prev) => !prev)}
+											style={{
+												padding: "6px 12px",
+												background: isStudioMode
+													? "var(--teal)"
+													: "var(--paper-soft)",
+												color: isStudioMode
+													? "var(--on-teal)"
+													: "var(--ink)",
+												border: "1px solid var(--line)",
+												borderRadius: "8px",
+												fontSize: "0.82rem",
+												fontWeight: 600,
+												cursor: "pointer",
+												display: "flex",
+												alignItems: "center",
+												gap: "6px",
+												transition: "all 0.2s ease",
+											}}
+										>
+											<Sparkles size={14} />
+											{isStudioMode
+												? "Свернуть 2D PACS Студию"
+												: "📐 Инструменты анализа (Линейка, Углы, Очаги, ЭЦП)"}
+										</button>
+									</div>
+
+									{isStudioMode ? (
+										<VisiographStudioCanvas
+											imageUrl={currentImageUrl}
+											patientId={selectedPatientId}
+											patientFullName={
+												selectedPatientId
+													? `Пациент #${selectedPatientId}`
+													: undefined
+											}
+											toothCode={currentScan.toothCode}
+											studyId={currentScan.id}
+											onClose={() => setIsStudioMode(false)}
+										/>
+									) : (
+										<div
+											style={{
+												borderRadius: "10px",
+												overflow: "hidden",
+												border: "1px solid var(--line)",
+											}}
+										>
+											<ShadowAnalystImageSlider
+												imageUrl={currentImageUrl}
+												enhanced={true}
+											/>
+										</div>
+									)}
 								</div>
 							)}
 

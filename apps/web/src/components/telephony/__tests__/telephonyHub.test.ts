@@ -14,6 +14,7 @@ import {
 	formatPhoneDisplay,
 	fuzzyMatchPhone,
 	generateAppointmentConfirmationMessage,
+	generateCallTranscript,
 	generateSmsConfirmationUrl,
 	generateTelegramConfirmationUrl,
 	generateWaveformBars,
@@ -551,6 +552,124 @@ describe("Telephony & Reception Live Hub Suite", () => {
 			assert.ok(primaryActionTouchTargetMin >= 48, "Call action buttons must be at least 48x48px");
 			assert.equal(mobileBottomOffset, 72, "Mobile bottom offset above navigation bar must be 72px");
 			assert.equal(mobileRightOffset, 12, "Mobile right offset must be 12px");
+		});
+	});
+
+	describe("7. SIP Call Transfer (Blind vs Attended Transfer)", () => {
+		test("startCallTransfer with blind transfer transfers call immediately and updates history", () => {
+			useTelephonyStore.getState().triggerIncomingCall({
+				callId: "call-trans-1",
+				phone: "+79261112233",
+				patientId: null,
+				patientName: "Пациент для перевода",
+				status: "answered",
+				timestamp: new Date().toISOString(),
+			});
+
+			assert.ok(useTelephonyStore.getState().activeCall);
+
+			useTelephonyStore.getState().startCallTransfer("102", "blind");
+
+			const state = useTelephonyStore.getState();
+			assert.equal(state.activeCall, null, "Active call should be cleared on blind transfer");
+			assert.equal(state.transferState.isTransferring, true);
+			assert.equal(state.transferState.targetExtension, "102");
+			assert.equal(state.transferState.transferType, "blind");
+			assert.equal(state.transferState.status, "transferred");
+
+			const historyItem = state.callHistory[0];
+			assert.equal(historyItem?.actionTaken, "transferred");
+			assert.equal(historyItem?.transferTarget, "102");
+		});
+
+		test("startCallTransfer with attended transfer keeps activeCall until completeCallTransfer", () => {
+			useTelephonyStore.getState().triggerIncomingCall({
+				callId: "call-trans-2",
+				phone: "+79269998877",
+				patientId: null,
+				patientName: "Пациент Attended",
+				status: "answered",
+				timestamp: new Date().toISOString(),
+			});
+
+			useTelephonyStore.getState().startCallTransfer("101", "attended");
+
+			let state = useTelephonyStore.getState();
+			assert.ok(state.activeCall, "Active call remains during attended consultation");
+			assert.equal(state.transferState.transferType, "attended");
+			assert.equal(state.transferState.status, "dialing");
+
+			useTelephonyStore.getState().completeCallTransfer();
+			state = useTelephonyStore.getState();
+			assert.equal(state.activeCall, null, "Active call cleared on transfer completion");
+			assert.equal(state.transferState.status, "transferred");
+		});
+
+		test("cancelCallTransfer restores transferState to idle without dropping call", () => {
+			useTelephonyStore.getState().triggerIncomingCall({
+				callId: "call-trans-3",
+				phone: "+79265554433",
+				patientId: null,
+				patientName: "Пациент Отмена Перевода",
+				status: "answered",
+				timestamp: new Date().toISOString(),
+			});
+
+			useTelephonyStore.getState().startCallTransfer("103", "attended");
+			assert.equal(useTelephonyStore.getState().transferState.targetExtension, "103");
+
+			useTelephonyStore.getState().cancelCallTransfer();
+			const state = useTelephonyStore.getState();
+			assert.equal(state.transferState.isTransferring, false);
+			assert.equal(state.transferState.status, "idle");
+			assert.ok(state.activeCall, "Active call remains intact");
+			useTelephonyStore.getState().rejectCall();
+		});
+	});
+
+	describe("8. Speech-to-Text Clinical Transcript & Dialogue Parsing", () => {
+		test("generateCallTranscript returns deterministic utterances with operator and patient speakers", () => {
+			const transcript = generateCallTranscript("test-call-id-99", 45);
+
+			assert.ok(Array.isArray(transcript), "Transcript must be an array");
+			assert.ok(transcript.length >= 3, "Transcript must have at least 3 utterances");
+
+			const speakers = new Set(transcript.map((u) => u.speaker));
+			assert.ok(speakers.has("operator"), "Must contain operator utterances");
+			assert.ok(speakers.has("patient"), "Must contain patient utterances");
+
+			for (const u of transcript) {
+				assert.ok(u.startTimeSeconds >= 0, "startTimeSeconds must be non-negative");
+				assert.ok(u.endTimeSeconds > u.startTimeSeconds, "endTimeSeconds must be greater than startTimeSeconds");
+				assert.ok(u.text.length > 5, "Utterance text must be realistic");
+				assert.ok(u.confidence >= 0.9 && u.confidence <= 1.0, "Confidence must be between 0.9 and 1.0");
+				assert.ok(["neutral", "positive", "negative"].includes(u.sentiment), "Valid sentiment");
+			}
+		});
+
+		test("generateCallTranscript is deterministic for identical seeds", () => {
+			const t1 = generateCallTranscript("seed-alpha", 60);
+			const t2 = generateCallTranscript("seed-alpha", 60);
+
+			assert.equal(t1.length, t2.length);
+			assert.equal(t1[0]?.text, t2[0]?.text);
+			assert.equal(t1[1]?.speaker, t2[1]?.speaker);
+		});
+
+		test("incoming call trigger automatically attaches realistic transcript to call history", () => {
+			useTelephonyStore.getState().triggerIncomingCall({
+				callId: "call-with-transcript",
+				phone: "+79998887766",
+				patientId: null,
+				patientName: "Тест Расшифровки",
+				timestamp: new Date().toISOString(),
+			});
+
+			const historyItem = useTelephonyStore.getState().callHistory[0];
+			assert.ok(historyItem);
+			assert.ok(historyItem.transcript, "Transcript should be attached to history item");
+			assert.ok((historyItem.transcript?.length ?? 0) >= 3);
+			useTelephonyStore.getState().dismissCall();
 		});
 	});
 });

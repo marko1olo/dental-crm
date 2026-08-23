@@ -810,7 +810,7 @@ export const ORDER_804N_SERVICE_NORMS: readonly Order804nServiceNorm[] = [
 		],
 	},
 
-	// A16.07.004 — Местная анестезия
+	// A16.07.004 — Местная анестезия (проводниковая / общая)
 	{
 		serviceCode: "A16.07.004",
 		serviceTitle: "Анестезия местная инфильтрационная / проводниковая",
@@ -838,6 +838,45 @@ export const ORDER_804N_SERVICE_NORMS: readonly Order804nServiceNorm[] = [
 				isMandatory: false,
 				defaultDiscrepancyAllowedPercent: 50,
 				clinicalRationaleRu: "Аппликационный гель для комфортного вкола иглы",
+			},
+		],
+	},
+
+	// A16.07.030.001 — Анестезия инфильтрационная (Приказ Минздрава РФ № 804н)
+	{
+		serviceCode: "A16.07.030.001",
+		serviceTitle: "Анестезия инфильтрационная в стоматологии (Номенклатура 804н)",
+		specialty: "general",
+		descriptionRu: "Инфильтрационное обезболивание периапикальной зоны с предварительной аппликационной анестезией",
+		standardDurationMinutes: 10,
+		materials: [
+			{
+				materialId: "mat_articaine_ultracain",
+				standardQuantity: 1,
+				isMandatory: true,
+				defaultDiscrepancyAllowedPercent: 0,
+				clinicalRationaleRu: "1 карпула (1.7 мл) артикаина 4% с эпинефрином 1:200 000 (Ультракаин Д-С)",
+			},
+			{
+				materialId: "mat_dental_needle_30g",
+				standardQuantity: 1,
+				isMandatory: true,
+				defaultDiscrepancyAllowedPercent: 0,
+				clinicalRationaleRu: "1 карпульная игла тонкостенная 30G (0.3 x 25 мм)",
+			},
+			{
+				materialId: "mat_topical_anesthesia_gel",
+				standardQuantity: 0.2,
+				isMandatory: false,
+				defaultDiscrepancyAllowedPercent: 50,
+				clinicalRationaleRu: "0.2 г аппликационного геля бензокаина/лидокаина (Dis針-Top / Топикал)",
+			},
+			{
+				materialId: "mat_cotton_rolls",
+				standardQuantity: 2,
+				isMandatory: true,
+				defaultDiscrepancyAllowedPercent: 50,
+				clinicalRationaleRu: "2 ватных валика для изоляции и высушивания слизистой перед вколом",
 			},
 		],
 	},

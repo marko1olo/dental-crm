@@ -85,12 +85,29 @@ describe("Order 804n Clinical Service Norms & BOM Specifications", () => {
 		);
 	});
 
+	it("Спецификация A16.07.030.001 (Инфильтрационная анестезия) включает артикаин, иглу 30G и гель", () => {
+		const anesNorm = getOrder804nServiceNorm("A16.07.030.001");
+		assert.ok(anesNorm, "Норма расхода A16.07.030.001 должна присутствовать в каталоге");
+
+		const materialIds = anesNorm.materials.map((m) => m.materialId);
+		assert.ok(materialIds.includes("mat_articaine_ultracain"), "Должен быть артикаин");
+		assert.ok(materialIds.includes("mat_dental_needle_30g"), "Должна быть игла 30G");
+		assert.ok(materialIds.includes("mat_topical_anesthesia_gel"), "Должен быть аппликационный гель");
+		assert.ok(materialIds.includes("mat_cotton_rolls"), "Должны быть ватные валики");
+	});
+
 	it("aggregateWriteoffFromServices формирует точные строки списания со склада кабинета", () => {
 		const completedServices: CompletedClinicalService[] = [
 			{
 				serviceCode: "A16.07.002.001",
 				toothNumber: 26,
 				serviceTitle: "Лечение глубокого кариеса",
+				quantityMultiplier: 1,
+			},
+			{
+				serviceCode: "A16.07.030.001",
+				toothNumber: 26,
+				serviceTitle: "Инфильтрационная анестезия",
 				quantityMultiplier: 1,
 			},
 		];
@@ -111,7 +128,10 @@ describe("Order 804n Clinical Service Norms & BOM Specifications", () => {
 
 		for (const line of lines) {
 			assert.equal(line.toothNumber, 26);
-			assert.equal(line.serviceCode, "A16.07.002.001");
+			assert.ok(
+				line.serviceCode === "A16.07.002.001" || line.serviceCode === "A16.07.030.001",
+				"Код услуги должен быть A16.07.002.001 или A16.07.030.001",
+			);
 			assert.ok(line.standardQuantity > 0);
 			assert.ok(line.unitCostKopecks > 0);
 		}

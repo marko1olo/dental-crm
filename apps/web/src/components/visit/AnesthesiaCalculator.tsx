@@ -15,6 +15,7 @@ import {
 	ShieldAlert,
 	ShieldCheck,
 	Syringe,
+	User,
 	Wind,
 	Zap,
 } from "lucide-react";
@@ -32,6 +33,8 @@ import { showToast } from "../GlobalToast";
 export interface AnesthesiaCalculatorProps {
 	readonly defaultToothNumber?: number | string | undefined;
 	readonly defaultWeightKg?: number | undefined;
+	readonly patientAgeYears?: number | null | undefined;
+	readonly isPediatric?: boolean | undefined;
 	readonly initialSomaticProfile?: SomaticRiskProfile | undefined;
 	readonly onApplyToDiary?: ((anesthesiaSoapText: string) => void) | undefined;
 	readonly isLocked?: boolean | undefined;
@@ -41,6 +44,8 @@ export interface AnesthesiaCalculatorProps {
 export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 	defaultToothNumber,
 	defaultWeightKg = 70,
+	patientAgeYears,
+	isPediatric = false,
 	initialSomaticProfile,
 	onApplyToDiary,
 	isLocked = false,
@@ -50,6 +55,11 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 	const [drugKey, setDrugKey] = useState<AnesthesiaDrugKey>("ultracain_ds_forte");
 	const [methodKey, setMethodKey] = useState<AnesthesiaMethodKey>("infiltration");
 	const [patientWeightKg, setPatientWeightKg] = useState<number>(defaultWeightKg);
+	const [isPediatricMode, setIsPediatricMode] = useState<boolean>(() => {
+		if (isPediatric) return true;
+		if (patientAgeYears !== null && patientAgeYears !== undefined && patientAgeYears < 18) return true;
+		return defaultWeightKg <= 40;
+	});
 	const [carpulesCount, setCarpulesCount] = useState<number>(1);
 	const [toothNumber, setToothNumber] = useState<string>(
 		defaultToothNumber ? String(defaultToothNumber) : "",
@@ -84,9 +94,11 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 			drugKey,
 			patientWeightKg,
 			carpulesCount,
+			patientAgeYears,
+			isPediatric: isPediatricMode,
 			somaticProfile,
 		});
-	}, [drugKey, patientWeightKg, carpulesCount, somaticProfile]);
+	}, [drugKey, patientWeightKg, carpulesCount, patientAgeYears, isPediatricMode, somaticProfile]);
 
 	const soapText = useMemo(() => {
 		return formatAnesthesiaSoapText({
@@ -94,6 +106,8 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 			drugKey,
 			carpulesCount,
 			patientWeightKg,
+			patientAgeYears,
+			isPediatric: isPediatricMode,
 			...(toothNumber.trim() ? { toothNumber: toothNumber.trim() } : {}),
 			aspirationTestPassed,
 			reactionNormal,
@@ -105,6 +119,8 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 		drugKey,
 		carpulesCount,
 		patientWeightKg,
+		patientAgeYears,
+		isPediatricMode,
 		toothNumber,
 		aspirationTestPassed,
 		reactionNormal,
@@ -449,11 +465,39 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 					{/* Weight & Carpule Dosage Calculator */}
 					<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--border)] space-y-3">
 						<div className="flex flex-wrap items-center justify-between gap-4">
-							{/* Weight Selector */}
-							<div className="flex items-center gap-2">
-								<span className="text-xs font-bold text-[var(--ink)]">Масса тела:</span>
+							{/* Age / Category & Weight Selector */}
+							<div className="flex flex-wrap items-center gap-2">
+								{/* Pediatric / Adult Mode Toggle */}
+								<div className="inline-flex rounded-xl border border-[var(--border)] p-0.5 bg-[var(--paper)]">
+									<button
+										type="button"
+										onClick={() => setIsPediatricMode(false)}
+										className={`px-2.5 py-1 text-xs rounded-lg font-bold flex items-center gap-1 transition-all ${
+											!isPediatricMode
+												? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-xs"
+												: "text-[var(--muted)] hover:text-[var(--ink)]"
+										}`}
+									>
+										<User size={12} />
+										<span>Взрослый (7 мг/кг)</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => setIsPediatricMode(true)}
+										className={`px-2.5 py-1 text-xs rounded-lg font-bold flex items-center gap-1 transition-all ${
+											isPediatricMode
+												? "bg-amber-500 text-white shadow-xs"
+												: "text-[var(--muted)] hover:text-[var(--ink)]"
+										}`}
+									>
+										<Baby size={12} />
+										<span>Детский (5 мг/кг)</span>
+									</button>
+								</div>
+
+								<span className="text-xs font-bold text-[var(--ink)] ml-2">Вес:</span>
 								<div className="flex items-center gap-1">
-									{[50, 60, 70, 80, 90].map((w) => (
+									{(isPediatricMode ? [15, 20, 25, 30, 40] : [50, 60, 70, 80, 90]).map((w) => (
 										<button
 											key={w}
 											type="button"
@@ -471,12 +515,12 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 								<div className="flex items-center gap-1 ml-1">
 									<input
 										type="number"
-										min={10}
+										min={5}
 										max={250}
 										value={patientWeightKg}
 										onChange={(e) =>
 											setPatientWeightKg(
-												Math.max(10, Math.min(250, Number(e.target.value) || 70)),
+												Math.max(5, Math.min(250, Number(e.target.value) || 70)),
 											)
 										}
 										className="w-16 min-h-[38px] px-2 py-1 text-xs rounded-lg border border-[var(--border)] bg-[var(--paper)] text-[var(--ink)] font-mono font-bold text-center"

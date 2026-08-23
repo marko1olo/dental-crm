@@ -52,7 +52,22 @@ export interface DesktopDicomFileEvent {
 	detectedAt: string;
 	patientName?: string | undefined;
 	patientId?: string | undefined;
+	toothCode?: string | undefined;
 	modality?: string | undefined;
+	thumbnailDataUri?: string | undefined;
+}
+
+export interface DesktopKktStatusResult {
+	online: boolean;
+	paperOk: boolean;
+	coverClosed: boolean;
+	fnPresent: boolean;
+	fnFiscalized: boolean;
+	latencyMs: number;
+	modelName?: string | undefined;
+	fnSerial?: string | undefined;
+	kktSerialNumber?: string | undefined;
+	error?: string | undefined;
 }
 
 export interface DesktopNativeApi {
@@ -66,10 +81,18 @@ export interface DesktopNativeApi {
 		host: string;
 		port: number;
 		protocol?: "atol" | "shtrih" | undefined;
+		timeoutMs?: number | undefined;
 		payloadJson: string;
 	}) => Promise<DesktopFiscalPrintResult>;
+	checkKktStatusTcp?: (params: {
+		host: string;
+		port: number;
+		protocol?: "atol" | "shtrih" | undefined;
+		timeoutMs?: number | undefined;
+	}) => Promise<DesktopKktStatusResult>;
 	watchLocalDicomFolder: (folderPath: string, callbackId: string) => Promise<{ success: boolean; error?: string }>;
 	unwatchLocalDicomFolder: (folderPath: string) => Promise<{ success: boolean }>;
+	onDicomFileDetected?: (callback: (event: DesktopDicomFileEvent) => void) => () => void;
 }
 
 declare global {
@@ -212,4 +235,55 @@ export async function unwatchDesktopDicomFolder(
 	} catch {
 		return { success: false };
 	}
+}
+
+/**
+ * Check KKT hardware status via direct TCP in Desktop mode.
+ */
+export async function checkDesktopKktStatusTcp(params: {
+	host: string;
+	port: number;
+	protocol?: "atol" | "shtrih" | undefined;
+	timeoutMs?: number | undefined;
+}): Promise<DesktopKktStatusResult> {
+	const api = getDesktopNativeApi();
+	if (!api || !api.checkKktStatusTcp) {
+		return {
+			online: false,
+			paperOk: false,
+			coverClosed: false,
+			fnPresent: false,
+			fnFiscalized: false,
+			latencyMs: 0,
+			error: "Проверка ККТ через TCP доступна в приложении DENTE Desktop (.exe).",
+		};
+	}
+
+	try {
+		return await api.checkKktStatusTcp(params);
+	} catch (err: unknown) {
+		const message = err instanceof Error ? err.message : "Ошибка опроса ККТ по TCP";
+		return {
+			online: false,
+			paperOk: false,
+			coverClosed: false,
+			fnPresent: false,
+			fnFiscalized: false,
+			latencyMs: 0,
+			error: message,
+		};
+	}
+}
+
+/**
+ * Subscribe to incoming DICOM / Visiograph files detected in watched directory.
+ */
+export function subscribeDesktopDicomFiles(
+	callback: (event: DesktopDicomFileEvent) => void,
+): () => void {
+	const api = getDesktopNativeApi();
+	if (!api || !api.onDicomFileDetected) {
+		return () => {};
+	}
+	return api.onDicomFileDetected(callback);
 }

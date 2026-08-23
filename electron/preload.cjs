@@ -28,6 +28,10 @@ contextBridge.exposeInMainWorld("denteDesktopNative", {
 		return await ipcRenderer.invoke("dente:print-fiscal-receipt-tcp", params);
 	},
 
+	checkKktStatusTcp: async (params) => {
+		return await ipcRenderer.invoke("dente:check-kkt-status-tcp", params);
+	},
+
 	watchLocalDicomFolder: async (folderPath, callbackId) => {
 		return await ipcRenderer.invoke("dente:watch-dicom-folder", {
 			folderPath,

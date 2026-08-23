@@ -184,4 +184,65 @@ describe("order804nFiscalEngine — 54-FZ & SBP QR Fiscalization", () => {
 		assert.equal(receipt.fnSerial.length, 16);
 		assert.equal(receipt.cashierFullName, "Сидорова Анна Павловна");
 	});
+
+	it("calculates instant cash change and shortage correctly for cash tender", () => {
+		const totalKopecks = parseKopecks(3500); // 3 500 ₽
+
+		// Case 1: Paid 5000 ₽ for 3500 ₽ cash portion -> Change 1500 ₽
+		const alloc1 = calculateSplitPaymentAllocation(totalKopecks, {
+			cashRub: 3500,
+			receivedCashRub: 5000,
+		});
+
+		assert.equal(alloc1.cashRub, 3500);
+		assert.equal(alloc1.receivedCashRub, 5000);
+		assert.equal(alloc1.changeRub, 1500);
+		assert.equal(alloc1.changeKopecks, parseKopecks(1500));
+		assert.equal(alloc1.isCashShortage, false);
+
+		// Case 2: Exact payment 3500 ₽ -> Change 0 ₽
+		const alloc2 = calculateSplitPaymentAllocation(totalKopecks, {
+			cashRub: 3500,
+			receivedCashRub: 3500,
+		});
+		assert.equal(alloc2.changeRub, 0);
+		assert.equal(alloc2.isCashShortage, false);
+
+		// Case 3: Shortage (patient gave 3000 ₽ instead of 3500 ₽)
+		const alloc3 = calculateSplitPaymentAllocation(totalKopecks, {
+			cashRub: 3500,
+			receivedCashRub: 3000,
+		});
+		assert.equal(alloc3.changeRub, 0);
+		assert.equal(alloc3.isCashShortage, true);
+		assert.equal(alloc3.cashShortageRub, 500);
+	});
+
+	it("handles multi-tender split with family balance, advance deposit, cash, card, and SBP", () => {
+		const totalKopecks = parseKopecks(100000); // 100 000 ₽
+
+		const alloc = calculateSplitPaymentAllocation(totalKopecks, {
+			cashRub: 15000,
+			receivedCashRub: 20000,
+			cardRub: 35000,
+			sbpRub: 20000,
+			depositRub: 10000,
+			familyWalletRub: 15000,
+			certificateRub: 5000,
+		});
+
+		// 15k + 35k + 20k + 10k + 15k + 5k = 100k
+		assert.equal(alloc.isFullyAllocated, true);
+		assert.equal(alloc.isOverallocated, false);
+		assert.equal(alloc.cashRub, 15000);
+		assert.equal(alloc.changeRub, 5000); // 20k - 15k = 5k
+		assert.equal(alloc.cardRub, 35000);
+		assert.equal(alloc.sbpRub, 20000);
+		assert.equal(alloc.depositRub, 10000);
+		assert.equal(alloc.familyWalletRub, 15000);
+		assert.equal(alloc.certificateRub, 5000);
+		assert.equal(alloc.totalRub, 100000);
+		assert.equal(alloc.remainingKopecks, 0);
+	});
 });
+

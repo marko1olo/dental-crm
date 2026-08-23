@@ -98,10 +98,24 @@ export const Order804nFiscalReceiptPrint: React.FC<Order804nFiscalReceiptPrintPr
 
 				<div className="pt-2 space-y-1 text-[10px] text-slate-700">
 					{receipt.payments.cashRub > 0 && (
-						<div className="flex justify-between">
-							<span>НАЛИЧНЫМИ (Тег 1031):</span>
-							<span className="font-bold">{receipt.payments.cashRub.toLocaleString("ru-RU")} ₽</span>
-						</div>
+						<>
+							<div className="flex justify-between">
+								<span>НАЛИЧНЫМИ (Тег 1031):</span>
+								<span className="font-bold">{receipt.payments.cashRub.toLocaleString("ru-RU")} ₽</span>
+							</div>
+							{receipt.payments.receivedCashRub > receipt.payments.cashRub && (
+								<>
+									<div className="flex justify-between text-slate-500">
+										<span>ПОЛУЧЕНО НАЛИЧНЫМИ:</span>
+										<span>{receipt.payments.receivedCashRub.toLocaleString("ru-RU")} ₽</span>
+									</div>
+									<div className="flex justify-between text-emerald-800 font-bold">
+										<span>СДАЧА:</span>
+										<span>{receipt.payments.changeRub.toLocaleString("ru-RU")} ₽</span>
+									</div>
+								</>
+							)}
+						</>
 					)}
 					{receipt.payments.cardRub > 0 && (
 						<div className="flex justify-between">
@@ -119,6 +133,18 @@ export const Order804nFiscalReceiptPrint: React.FC<Order804nFiscalReceiptPrintPr
 						<div className="flex justify-between">
 							<span>ПРЕДОПЛАТА / АВАНС (Тег 1215):</span>
 							<span className="font-bold text-amber-800">{receipt.payments.depositRub.toLocaleString("ru-RU")} ₽</span>
+						</div>
+					)}
+					{receipt.payments.familyWalletRub > 0 && (
+						<div className="flex justify-between text-pink-900">
+							<span>СЕМЕЙНЫЙ БАЛАНС (Тег 1215):</span>
+							<span className="font-bold text-pink-800">{receipt.payments.familyWalletRub.toLocaleString("ru-RU")} ₽</span>
+						</div>
+					)}
+					{receipt.payments.certificateRub > 0 && (
+						<div className="flex justify-between text-amber-900">
+							<span>СЕРТИФИКАТ (Тег 1215):</span>
+							<span className="font-bold text-amber-800">{receipt.payments.certificateRub.toLocaleString("ru-RU")} ₽</span>
 						</div>
 					)}
 				</div>
