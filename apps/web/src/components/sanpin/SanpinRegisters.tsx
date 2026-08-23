@@ -43,6 +43,8 @@ import { PsoRegisterTab } from "./PsoRegisterTab";
 import { TemperatureHumidityRegisterTab } from "./TemperatureHumidityRegisterTab";
 import { SanpinCycleModal } from "./SanpinCycleModal";
 import { SanpinJournalsModal } from "./journals/SanpinJournalsModal";
+import { KraftPackageBarcodeModal } from "./kraft/KraftPackageBarcodeModal";
+import { AutoclaveLog257Modal } from "./autoclaveLog/AutoclaveLog257Modal";
 import "./SanpinRegisters.css";
 
 export type SanpinRegisterTab =
@@ -59,6 +61,8 @@ export function SanpinRegisters() {
 	const [summary, setSummary] = useState<any>(null);
 	const [loadingSummary, setLoadingSummary] = useState(true);
 	const [isCycleModalOpen, setIsCycleModalOpen] = useState(false);
+	const [isKraftModalOpen, setIsKraftModalOpen] = useState(false);
+	const [isJournal257ModalOpen, setIsJournal257ModalOpen] = useState(false);
 	const [isSanpinJournalsModalOpen, setIsSanpinJournalsModalOpen] = useState(false);
 	const [sanpinJournalsTab, setSanpinJournalsTab] = useState<"pso" | "bactericidal" | "cleaning" | "disinfectants">("pso");
 	const [isNurseSignModalOpen, setIsNurseSignModalOpen] = useState(false);
@@ -173,9 +177,9 @@ export function SanpinRegisters() {
 					</div>
 				</div>
 
-				<div className="sanpin-header-actions" style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-					<span className="sanpin-badge-gov" style={{ minHeight: "44px", fontSize: "0.85rem" }}>
-						<CheckCircle2 size={16} /> Роспотребнадзор 2026 Ready
+				<div className="sanpin-header-actions" style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem", alignItems: "center" }}>
+					<span className="sanpin-badge-gov" style={{ minHeight: "48px", fontSize: "0.88rem", display: "inline-flex", alignItems: "center" }}>
+						<CheckCircle2 size={18} /> Роспотребнадзор 2026 Ready
 					</span>
 
 					<button
@@ -184,28 +188,59 @@ export function SanpinRegisters() {
 						disabled={autoFilling}
 						className="sanpin-btn sanpin-btn-primary"
 						style={{
-							minHeight: "44px",
-							padding: "0.5rem 1.2rem",
-							fontSize: "0.95rem",
-							fontWeight: 700,
+							minHeight: "48px",
+							padding: "0.6rem 1.4rem",
+							fontSize: "0.98rem",
+							fontWeight: 800,
 							background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
 							borderColor: "#047857",
 							color: "#ffffff",
-							boxShadow: "0 2px 8px rgba(5, 150, 105, 0.25)",
+							boxShadow: "0 3px 12px rgba(5, 150, 105, 0.35)",
+							cursor: "pointer",
 						}}
 						title="1 Клик: Автоматически сформировать и опечатать журналы 257/у и 366/у за всю смену на основе завершенных приемов"
 						data-testid="sanpin-1click-autofill-btn"
 					>
-						<Sparkles size={18} /> {autoFilling ? "Оформление..." : "⚡ Заполнить всё за смену (1 Клик)"}
+						<Sparkles size={20} /> {autoFilling ? "Оформление..." : "⚡ Всё чисто — закрыть смену по СанПиН (1 клик)"}
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setIsCycleModalOpen(true)}
 						className="sanpin-btn sanpin-btn-primary"
-						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.9rem", fontWeight: 700 }}
+						style={{ minHeight: "48px", padding: "0.5rem 1.1rem", fontSize: "0.92rem", fontWeight: 700, cursor: "pointer" }}
 					>
-						<Plus size={16} /> + Новый цикл автоклава
+						<Plus size={18} /> + Новый цикл автоклава
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setIsKraftModalOpen(true)}
+						className="sanpin-btn sanpin-btn-secondary"
+						style={{
+							minHeight: "48px",
+							padding: "0.5rem 1rem",
+							fontSize: "0.92rem",
+							fontWeight: 700,
+							borderColor: "var(--brand-primary, #2563eb)",
+							color: "var(--brand-primary, #2563eb)",
+							cursor: "pointer",
+						}}
+						title="Студия маркировки крафт-пакетов: термоэтикетки 58x40, DataMatrix, Code128, печать партий"
+						data-testid="open-kraft-studio-header-btn"
+					>
+						<QrCode size={18} color="var(--brand-primary, #2563eb)" /> Маркировка пакетов (DataMatrix)
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setIsJournal257ModalOpen(true)}
+						className="sanpin-btn sanpin-btn-secondary"
+						style={{ minHeight: "48px", padding: "0.5rem 1rem", fontSize: "0.92rem", fontWeight: 700, cursor: "pointer" }}
+						title="Журнал № 257/у: 5 точек камеры, биологический контроль, статистика автоклавов"
+						data-testid="open-journal-257-header-btn"
+					>
+						<FileSpreadsheet size={18} color="var(--brand-primary)" /> Журнал 257/у (5 точек)
 					</button>
 
 					<button
@@ -213,44 +248,43 @@ export function SanpinRegisters() {
 						onClick={() => handleOpenSanpinJournals()}
 						className="sanpin-btn sanpin-btn-secondary"
 						style={{
-							minHeight: "44px",
+							minHeight: "48px",
 							padding: "0.5rem 1rem",
-							fontSize: "0.9rem",
-							fontWeight: 600,
-							borderColor: "var(--brand-primary, #2563eb)",
-							color: "var(--brand-primary, #2563eb)",
+							fontSize: "0.92rem",
+							fontWeight: 700,
+							cursor: "pointer",
 						}}
 						title="Журналы СанПиН 3.3686-21 (ПСО Азопирам, Бактерицидные лампы, Генеральные уборки)"
 						data-testid="open-sanpin-journals-modal-btn"
 					>
-						<FileSpreadsheet size={16} color="var(--brand-primary, #2563eb)" /> Журналы СанПиН 3.3686-21 (ПСО Азопирам, Бактерицидные лампы, Генеральные уборки)
+						<FileSpreadsheet size={18} color="var(--brand-primary, #2563eb)" /> Журналы СанПиН (ПСО, Лампы, Уборки)
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setIsNurseSignModalOpen(true)}
 						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.9rem", fontWeight: 600 }}
+						style={{ minHeight: "48px", padding: "0.5rem 1rem", fontSize: "0.92rem", fontWeight: 700, cursor: "pointer" }}
 						title="Электронная цифровая подпись медсестры ЦСО на журналы смены"
 					>
-						<Award size={16} color="var(--brand-primary)" /> Заверить смену (ЭЦП)
+						<Award size={18} color="var(--brand-primary)" /> Заверить смену (ЭЦП)
 					</button>
 
 					<button
 						type="button"
 						onClick={handleExportDossierPdf}
 						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "44px", padding: "0.5rem 0.9rem", fontSize: "0.9rem" }}
+						style={{ minHeight: "48px", padding: "0.5rem 1rem", fontSize: "0.92rem", fontWeight: 600, cursor: "pointer" }}
 						title="Печать полного досье СанПиН"
 					>
-						<Printer size={16} /> Печать / PDF
+						<Printer size={18} /> Печать / PDF
 					</button>
 
 					<button
 						type="button"
 						onClick={fetchSummary}
 						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "44px", padding: "0.5rem 0.8rem" }}
+						style={{ minHeight: "48px", padding: "0.5rem 0.9rem", cursor: "pointer" }}
 						title="Обновить сводку"
 					>
 						<RotateCcw size={16} />
@@ -520,6 +554,18 @@ export function SanpinRegisters() {
 					</div>
 				</div>
 			)}
+
+			{/* Kraft Package Barcode Studio Modal */}
+			<KraftPackageBarcodeModal
+				isOpen={isKraftModalOpen}
+				onClose={() => setIsKraftModalOpen(false)}
+			/>
+
+			{/* Form 257/u Studio Modal: 5 Chamber Points, BioControl, Analytics */}
+			<AutoclaveLog257Modal
+				isOpen={isJournal257ModalOpen}
+				onClose={() => setIsJournal257ModalOpen(false)}
+			/>
 		</div>
 	);
 }

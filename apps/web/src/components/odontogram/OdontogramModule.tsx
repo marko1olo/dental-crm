@@ -950,7 +950,7 @@ export const OdontogramModule = ({
 											void updateToothState(selectedTeeth, action.state);
 											setMenuConfig(null);
 										}}
-										className={`flex items-center justify-center p-2.5 rounded-xl border transition-all duration-200 font-bold text-xs cursor-pointer select-none active:scale-95 text-center leading-tight break-words min-w-0 ${action.className}`}
+										className={`flex items-center justify-center min-h-[48px] p-3 rounded-xl border transition-all duration-200 font-black text-sm sm:text-base cursor-pointer select-none active:scale-95 text-center leading-tight break-words min-w-0 ${action.className}`}
 									>
 										<span className="min-w-0 break-words text-center leading-tight">{action.label}</span>
 									</button>
@@ -962,7 +962,7 @@ export const OdontogramModule = ({
 										setHistoryTooth(menuConfig.toothNumber);
 										setMenuConfig(null);
 									}}
-									className="col-span-2 flex items-center justify-center p-2.5 rounded-xl border transition-all duration-200 font-bold text-xs bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/25 hover:bg-indigo-500/20 cursor-pointer min-w-0 text-center leading-tight"
+									className="col-span-2 flex items-center justify-center min-h-[48px] p-3 rounded-xl border transition-all duration-200 font-bold text-sm bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/25 hover:bg-indigo-500/20 cursor-pointer min-w-0 text-center leading-tight"
 								>
 									<History className="w-4 h-4 inline mr-2 shrink-0" />
 									<span className="min-w-0 break-words">История зуба</span>
@@ -974,7 +974,7 @@ export const OdontogramModule = ({
 										setEndoTooth(menuConfig.toothNumber);
 										setMenuConfig(null);
 									}}
-									className="col-span-2 flex items-center justify-center p-2.5 rounded-xl border transition-all duration-200 font-bold text-xs bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/25 hover:bg-rose-500/20 cursor-pointer min-w-0 text-center leading-tight"
+									className="col-span-2 flex items-center justify-center min-h-[48px] p-3 rounded-xl border transition-all duration-200 font-bold text-sm bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/25 hover:bg-rose-500/20 cursor-pointer min-w-0 text-center leading-tight"
 								>
 									<Activity className="w-4 h-4 inline mr-2 shrink-0" />
 									<span className="min-w-0 break-words">Журнал каналов (Эндо)</span>
@@ -995,7 +995,7 @@ export const OdontogramModule = ({
 										showToast(`Протокол для зуба #${num} скопирован для Формы 043/у`, "success");
 										setMenuConfig(null);
 									}}
-									className="col-span-2 flex items-center justify-center p-2.5 rounded-xl border transition-all duration-200 font-bold text-xs bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/25 hover:bg-teal-500/20 cursor-pointer min-w-0 text-center leading-tight"
+									className="col-span-2 flex items-center justify-center min-h-[48px] p-3 rounded-xl border transition-all duration-200 font-bold text-sm bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/25 hover:bg-teal-500/20 cursor-pointer min-w-0 text-center leading-tight"
 								>
 									<Sparkles className="w-4 h-4 inline mr-2 shrink-0" />
 									<span className="min-w-0 break-words">Вставить в дневник 043/у</span>
