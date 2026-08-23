@@ -810,9 +810,9 @@ select:focus {
 	font-size: 18px;
 	font-weight: 700;
 	color: var(--ink);
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
+	white-space: normal;
+	word-break: break-word;
+	line-height: 1.25;
 }
 .topbar .eyebrow {
 	margin: 0;
