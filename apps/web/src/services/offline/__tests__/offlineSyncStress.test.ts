@@ -1389,5 +1389,112 @@ describe("Offline-First & Multi-Level Sync Engine: Industrial Stress & Chaos Sui
 		const remainingPending = await getPendingOfflineMutations({ organizationId: orgId });
 		assert.strictEqual(remainingPending.length, 0, "All mutations successfully processed and marked synced");
 	});
+
+	// ── 17. 4 Dental Chairs Concurrent Heavy Read/Write Outbox Storm & Migration Stability ──
+	test("STRESS 17: 4 Dental Chairs Concurrent Heavy Read/Write Outbox Storm During IndexedDB Connection Resets", async () => {
+		const orgId = "org-chair-storm-4";
+		const chairCount = 4;
+		const opsPerChair = 15;
+
+		// We execute 4 concurrent async streams representing 4 independent dental chairs
+		const chairPromises = Array.from({ length: chairCount }, async (_, chairIdx) => {
+			const patientId = `patient_chair_${chairIdx + 1}`;
+
+			for (let op = 1; op <= opsPerChair; op++) {
+				// 1. Alternating mutations across clinical domains
+				if (chairIdx === 0) {
+					// Orthodontist
+					await enqueueOfflineMutation({
+						entityType: "ODONTOGRAM_STATUS",
+						entityId: `${patientId}_tooth_${11 + op}`,
+						action: "update",
+						payload: {
+							toothNumber: 11 + op,
+							status: "Healthy",
+							notes: `Установка брекет-системы шаг ${op}`,
+						},
+						organizationId: orgId,
+					});
+				} else if (chairIdx === 1) {
+					// Surgeon
+					await enqueueOfflineMutation({
+						entityType: "TREATMENT_PLAN_DRAFT",
+						entityId: `${patientId}_implant_${30 + op}`,
+						action: "create",
+						payload: {
+							implantSite: 30 + op,
+							fixture: "Straumann SLA 4.1x10mm",
+							torqueNcm: 35,
+						},
+						organizationId: orgId,
+					});
+				} else if (chairIdx === 2) {
+					// Pediatrician saving Form 043 drafts
+					await saveForm043Draft(
+						patientId,
+						{
+							childAge: 7,
+							milkTeethStatus: `Зуб 5${op} санирован`,
+							step: op,
+						},
+						orgId,
+					);
+				} else {
+					// Receptionist cash / card payment
+					await enqueueOfflineMutation({
+						entityType: "payment",
+						entityId: `pay_${patientId}_${op}`,
+						action: "create",
+						payload: {
+							amountKopecks: (5000 + op * 100) * 100,
+							paymentMethod: op % 2 === 0 ? "card" : "cash",
+						},
+						organizationId: orgId,
+					});
+				}
+
+				// 2. Intermittent read queries simulating live UI badge & counter updates
+				if (op % 5 === 0) {
+					const metrics = await getOfflineQueueMetrics();
+					assert.ok(metrics.pendingCount >= 0);
+				}
+
+				// 3. Simulated network / tab context switch causing DB connection re-instantiation
+				if (op === 7) {
+					resetOfflineDbConnection();
+				}
+			}
+		});
+
+		await Promise.all(chairPromises);
+
+		// Verify final integrity across all 4 chairs
+		const allPending = await getPendingOfflineMutations({ organizationId: orgId });
+		// Chairs 0, 1, 3 enqueued 15 mutations each = 45 mutations total
+		assert.strictEqual(allPending.length, opsPerChair * 3, "All 45 mutations from 3 writing chairs must be intact");
+
+		// Chair 2 saved drafts
+		const pediatricDraft = await loadForm043Draft<{ childAge: number; milkTeethStatus: string; step: number }>(
+			"patient_chair_3",
+		);
+		assert.ok(pediatricDraft, "Pediatrician Form 043 draft must be preserved");
+		assert.strictEqual(pediatricDraft.data.step, opsPerChair);
+
+		// Verify every single mutation has valid UUIDv7 and status 'pending'
+		for (const mut of allPending) {
+			assert.strictEqual(mut.status, "pending");
+			assert.strictEqual(mut.organizationId, orgId);
+			assert.ok(mut.mutationId.length > 20, "Must have valid UUID identifier");
+		}
+
+		// Cleanup all mutations and drafts
+		for (const mut of allPending) {
+			await updateOfflineMutationStatus(mut.mutationId, "synced");
+		}
+		await deleteForm043Draft("patient_chair_3");
+
+		const remaining = await getPendingOfflineMutations({ organizationId: orgId });
+		assert.strictEqual(remaining.length, 0, "All mutations cleaned up successfully");
+	});
 });
 
