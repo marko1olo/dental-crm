@@ -52,27 +52,34 @@ test("PWA Manifest & Offline Mutation Outbox Verification Suite", async (t) => {
 		assert.ok(shiftShortcut, "Form 043/u shift shortcut must be defined");
 	});
 
-	await t.test("Service worker script contains shell caching and bypass for DICOM streaming", () => {
+	await t.test("Service worker script contains shell caching, fonts, odontogram SVG assets, and DICOM bypass", () => {
 		assert.ok(fs.existsSync(swPath), `sw.js must exist at ${swPath}`);
 
 		const swCode = fs.readFileSync(swPath, "utf8");
 		assert.ok(swCode.includes("SHELL_CACHE"));
 		assert.ok(swCode.includes("isForbiddenRuntimeResponse"));
+		assert.ok(swCode.includes("isCacheableShellAsset"));
+		assert.ok(swCode.includes("isCacheableExternalFont"));
+		assert.ok(swCode.includes("odontogram"));
+		assert.ok(swCode.includes("fonts.googleapis.com"));
+		assert.ok(swCode.includes("fonts.gstatic.com"));
+		assert.ok(swCode.includes("woff2"));
 		assert.ok(swCode.includes("dicom"));
 		assert.ok(swCode.includes("/api/"));
 	});
 
-	await t.test("Offline mutation queue generates valid RFC4122 UUID v4 and ISO ms timestamps", () => {
+	await t.test("Offline mutation queue generates valid RFC 9562 UUIDv7 and ISO ms timestamps", () => {
 		const uuid = generateMutationUuid();
 		const timestamp = nowIsoWithMs();
 
 		assert.match(
 			uuid,
-			/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-			"Generated UUID must be valid UUIDv4",
+			/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+			"Generated UUID must be valid RFC 9562 UUIDv7",
 		);
 		assert.ok(timestamp.includes("T") && timestamp.includes("Z"));
 	});
+
 
 	await t.test("Offline draft save and load workflow preserves 100% text integrity", async () => {
 		const originalWindowDesc = Object.getOwnPropertyDescriptor(globalThis, "window");

@@ -1,4 +1,4 @@
-const SHELL_CACHE = "dental-crm-shell-v4";
+const SHELL_CACHE = "dental-crm-shell-v6";
 const SHELL_ASSETS = [
 	"/",
 	"/index.html",
@@ -6,7 +6,7 @@ const SHELL_ASSETS = [
 	"/manifest.webmanifest",
 	"/icon.svg",
 ];
-const MAX_DYNAMIC_SHELL_CACHE_ENTRIES = 80;
+const MAX_DYNAMIC_SHELL_CACHE_ENTRIES = 500;
 
 function isForbiddenRuntimeResponse(url) {
 	if (url.pathname.startsWith("/api/")) return true;
@@ -23,14 +23,24 @@ function isForbiddenRuntimeResponse(url) {
 
 function isCacheableShellAsset(url) {
 	if (SHELL_ASSETS.includes(url.pathname)) return true;
-	return /^\/assets\/[-A-Za-z0-9_./]+(?:\.js|\.css|\.svg|\.png|\.webp|\.woff2?)$/.test(url.pathname);
+	// Cache static bundles, styles, icons, fonts, odontogram SVG schemas, auth art, shaders, wasm, and workers
+	return /^\/(?:assets|auth-art|fonts|icons|workers|wasm|odontogram|images|static)\/[-A-Za-z0-9_./]+(?:\.js|\.css|\.svg|\.png|\.webp|\.avif|\.woff2?|\.ttf|\.otf|\.wasm|\.json)$/.test(
+		url.pathname,
+	);
+}
+
+function isCacheableExternalFont(url) {
+	return (
+		(url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com") &&
+		(url.pathname.startsWith("/css") || /\.(?:woff2?|ttf|otf|eot)$/i.test(url.pathname))
+	);
 }
 
 function isNetworkFirstShellAsset(url) {
 	return (
-		/\.(?:js|css)$/i.test(url.pathname) ||
 		url.pathname === "/" ||
-		url.pathname === "/index.html"
+		url.pathname === "/index.html" ||
+		url.pathname === "/manifest.webmanifest"
 	);
 }
 
@@ -109,11 +119,30 @@ self.addEventListener("fetch", (event) => {
 	const request = event.request;
 	const url = new URL(request.url);
 
-	if (
-		request.method !== "GET" ||
-		url.origin !== self.location.origin ||
-		isForbiddenRuntimeResponse(url)
-	) {
+	if (request.method !== "GET" || isForbiddenRuntimeResponse(url)) {
+		event.respondWith(fetch(request));
+		return;
+	}
+
+	// 1. External Typography & Web Fonts (Google Fonts CSS & WOFF2) — Cache-First with Stale-While-Revalidate Fallback
+	if (isCacheableExternalFont(url)) {
+		event.respondWith(
+			caches.match(request).then((cached) => {
+				if (cached) return cached;
+				return fetch(request)
+					.then((response) => {
+						if (response.ok || response.type === "opaque") {
+							putShellCache(request, response.clone());
+						}
+						return response;
+					})
+					.catch(() => cached ?? Response.error());
+			}),
+		);
+		return;
+	}
+
+	if (url.origin !== self.location.origin) {
 		event.respondWith(fetch(request));
 		return;
 	}
@@ -146,6 +175,11 @@ self.addEventListener("fetch", (event) => {
 
 	event.respondWith(
 		caches.match(request).then((cached) => {
+			if (cached && !isNetworkFirstShellAsset(url)) {
+				// Cache-first for hashed bundles, styles, fonts, and odontogram SVG assets (instant offline startup)
+				return cached;
+			}
+
 			const networkFetch = fetch(request)
 				.then((response) => {
 					if (response.ok && response.type !== "opaque") {
@@ -154,6 +188,7 @@ self.addEventListener("fetch", (event) => {
 					return response;
 				})
 				.catch(() => cached ?? Response.error());
+
 			return isNetworkFirstShellAsset(url)
 				? networkFetch
 				: (cached ?? networkFetch);
@@ -235,4 +270,3 @@ self.addEventListener("sync", (event) => {
 		);
 	}
 });
-
