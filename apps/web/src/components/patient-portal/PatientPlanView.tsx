@@ -60,6 +60,7 @@ export interface PatientPlanViewProps {
 	readonly phone?: string | undefined;
 	readonly onPayStageSbp?: ((stage: TreatmentPlanStage) => void) | undefined;
 	readonly onBookAppointment?: (() => void) | undefined;
+	readonly onRescheduleAppointment?: (() => void) | undefined;
 	readonly emergencyPhone?: string | undefined;
 	readonly emergencyWhatsappNumber?: string | undefined;
 }
@@ -133,6 +134,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 	phone = "+7 (999) 000-00-00",
 	onPayStageSbp,
 	onBookAppointment,
+	onRescheduleAppointment,
 	emergencyPhone = "+7 (800) 555-35-35",
 	emergencyWhatsappNumber = "79991234567",
 }) => {
@@ -430,6 +432,88 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 						<strong style={{ color: "var(--pc-success, #10b981)" }}>Честная прозрачная цена «Под ключ»:</strong>{" "}
 						Стоимость зафиксирована в плане лечения. В каждый этап уже включены: премиальная анестезия (Septanest), контрольные прицельные снимки визиографа (RVG), изоляция коффердамом и гарантийный сертификат. <strong>Никаких доплат на кассе клиники.</strong>
 					</div>
+				</div>
+			</div>
+
+			{/* 2.1. NEXT APPOINTMENT & RESCHEDULE BAR */}
+			<div
+				className="pc-card next-visit-card"
+				data-testid="next-visit-card"
+				style={{
+					backgroundColor: "var(--pc-surface, #1e293b)",
+					border: "1px solid var(--pc-border, #334155)",
+					borderRadius: "12px",
+					padding: "14px 16px",
+					display: "flex",
+					justifyContent: "space-between",
+					alignItems: "center",
+					flexWrap: "wrap",
+					gap: "12px",
+				}}
+			>
+				<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+					<div
+						style={{
+							width: "36px",
+							height: "36px",
+							borderRadius: "8px",
+							backgroundColor: "var(--pc-primary-light, rgba(13, 148, 136, 0.15))",
+							color: "var(--pc-primary, #0d9488)",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							flexShrink: 0,
+						}}
+					>
+						<Calendar size={20} />
+					</div>
+					<div>
+						<div style={{ fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
+							Следующий визит по плану лечения:
+						</div>
+						<strong style={{ fontSize: "14px", color: "var(--pc-text-main, #f8fafc)" }}>
+							Среда, 2 сентября в 11:00 &bull; Врач: Смирнова Е. В.
+						</strong>
+					</div>
+				</div>
+
+				<div style={{ display: "flex", gap: "8px" }}>
+					{onRescheduleAppointment && (
+						<button
+							type="button"
+							onClick={onRescheduleAppointment}
+							className="pc-btn-secondary"
+							data-testid="request-reschedule-btn"
+							style={{
+								minHeight: "44px",
+								padding: "8px 16px",
+								borderRadius: "8px",
+								fontSize: "13px",
+								fontWeight: 700,
+								touchAction: "manipulation",
+							}}
+						>
+							<Clock size={16} />
+							<span>Запросить перенос</span>
+						</button>
+					)}
+					{onBookAppointment && (
+						<button
+							type="button"
+							onClick={onBookAppointment}
+							className="pc-btn-primary"
+							style={{
+								minHeight: "44px",
+								padding: "8px 16px",
+								borderRadius: "8px",
+								fontSize: "13px",
+								fontWeight: 700,
+								touchAction: "manipulation",
+							}}
+						>
+							<span>Записаться</span>
+						</button>
+					)}
 				</div>
 			</div>
 

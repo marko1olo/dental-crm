@@ -137,6 +137,12 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	const [bookingDate, setBookingDate] = useState<string>("2026-09-01");
 	const [bookingNote, setBookingNote] = useState<string>("");
 
+	// Состояние переноса записи
+	const [reschedulingApt, setReschedulingApt] = useState<PatientAppointment | null>(null);
+	const [rescheduleDate, setRescheduleDate] = useState<string>("2026-09-02");
+	const [rescheduleTimeSlot, setRescheduleTimeSlot] = useState<string>("10:00 – 11:00");
+	const [rescheduleReason, setRescheduleReason] = useState<string>("");
+
 	// Баннер уведомления
 	const [toastNotice, setToastNotice] = useState<string | null>(null);
 
@@ -356,6 +362,15 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 
 		showToast(`Заявка на прием к специалисту (${bookingSpecialty}) на ${bookingDate} успешно отправлена администратору!`);
 		setBookingNote("");
+	};
+
+	// Отправка заявки на перенос визита
+	const handleSendRescheduleRequest = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!reschedulingApt) return;
+		showToast(`Заявка на перенос визита к врачу (${reschedulingApt.doctorName}) на ${rescheduleDate} в ${rescheduleTimeSlot} успешно отправлена администратору!`);
+		setReschedulingApt(null);
+		setRescheduleReason("");
 	};
 
 	if (!isOpen) return null;
@@ -933,6 +948,14 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 							phone={data.phone}
 							onPayStageSbp={handlePayStageWithSbp}
 							onBookAppointment={() => setActiveTab("appointments")}
+							onRescheduleAppointment={() => {
+								const upcoming = data.appointments.find((a) => a.status === "scheduled");
+								if (upcoming) {
+									setReschedulingApt(upcoming);
+								} else {
+									setActiveTab("appointments");
+								}
+							}}
 						/>
 					)}
 
@@ -1258,9 +1281,9 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 												<button
 													type="button"
 													className="pc-btn-secondary"
-													onClick={() => showToast(`Запрос на перенос визита ${apt.dateIso} отправлен администратору.`)}
+													onClick={() => setReschedulingApt(apt)}
 												>
-													Перенести
+													Запросить перенос
 												</button>
 											</div>
 										)}
@@ -1579,6 +1602,145 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 							}));
 						}}
 					/>
+				)}
+
+				{/* Reschedule Appointment Modal Dialog */}
+				{reschedulingApt && (
+					<div className="pc-submodal-backdrop" role="dialog" aria-modal="true">
+						<div className="pc-submodal-card" style={{ maxWidth: "480px" }}>
+							<div className="pc-submodal-header">
+								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+									<Calendar size={20} style={{ color: "var(--pc-primary)" }} />
+									<h3 style={{ margin: 0, fontSize: "1.0625rem", fontWeight: 800 }}>
+										Запрос на перенос записи
+									</h3>
+								</div>
+								<button
+									type="button"
+									className="pc-close-btn"
+									onClick={() => setReschedulingApt(null)}
+									aria-label="Закрыть"
+								>
+									<X size={18} />
+								</button>
+							</div>
+
+							<div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
+								<div style={{ backgroundColor: "var(--pc-surface)", padding: "12px", borderRadius: "8px", border: "1px solid var(--pc-border)" }}>
+									<div style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)" }}>Текущая запись:</div>
+									<strong style={{ fontSize: "0.9375rem", display: "block", marginTop: "2px" }}>
+										{reschedulingApt.titleRu}
+									</strong>
+									<div style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)", marginTop: "4px" }}>
+										📅 {reschedulingApt.dateIso} в {reschedulingApt.timeRu} &bull; Врач: {reschedulingApt.doctorName} ({reschedulingApt.roomNumber})
+									</div>
+								</div>
+
+								<form onSubmit={handleSendRescheduleRequest} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+									<div>
+										<label style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--pc-text-muted)", display: "block", marginBottom: "4px" }}>
+											Выберите желаемую новую дату:
+										</label>
+										<input
+											type="date"
+											value={rescheduleDate}
+											onChange={(e) => setRescheduleDate(e.target.value)}
+											required
+											style={{
+												width: "100%",
+												minHeight: "44px",
+												borderRadius: "var(--pc-radius-sm)",
+												border: "1px solid var(--pc-border)",
+												background: "var(--pc-bg)",
+												color: "var(--pc-text-main)",
+												padding: "8px 12px",
+												fontSize: "0.875rem",
+											}}
+										/>
+									</div>
+
+									<div>
+										<label style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--pc-text-muted)", display: "block", marginBottom: "6px" }}>
+											Удобное время (свободные окна врача):
+										</label>
+										<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: "6px" }}>
+											{[
+												"09:00 – 10:00",
+												"10:30 – 11:30",
+												"12:00 – 13:00",
+												"14:30 – 15:30",
+												"16:00 – 17:00",
+												"17:30 – 18:30",
+											].map((slot) => {
+												const isSelected = rescheduleTimeSlot === slot;
+												return (
+													<button
+														key={slot}
+														type="button"
+														onClick={() => setRescheduleTimeSlot(slot)}
+														style={{
+															minHeight: "44px",
+															borderRadius: "6px",
+															border: `1.5px solid ${isSelected ? "var(--pc-primary)" : "var(--pc-border)"}`,
+															backgroundColor: isSelected ? "var(--pc-primary-light)" : "var(--pc-bg)",
+															color: isSelected ? "var(--pc-primary)" : "var(--pc-text-main)",
+															fontWeight: isSelected ? 800 : 500,
+															fontSize: "0.8125rem",
+															cursor: "pointer",
+															touchAction: "manipulation",
+														}}
+													>
+														{slot}
+													</button>
+												);
+											})}
+										</div>
+									</div>
+
+									<div>
+										<label style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--pc-text-muted)", display: "block", marginBottom: "4px" }}>
+											Причина переноса (необязательно):
+										</label>
+										<input
+											type="text"
+											value={rescheduleReason}
+											onChange={(e) => setRescheduleReason(e.target.value)}
+											placeholder="Например: Задержка на работе или командировка"
+											style={{
+												width: "100%",
+												minHeight: "44px",
+												borderRadius: "var(--pc-radius-sm)",
+												border: "1px solid var(--pc-border)",
+												background: "var(--pc-bg)",
+												color: "var(--pc-text-main)",
+												padding: "8px 12px",
+												fontSize: "0.875rem",
+											}}
+										/>
+									</div>
+
+									<div style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
+										<button
+											type="button"
+											className="pc-btn-secondary"
+											onClick={() => setReschedulingApt(null)}
+											style={{ flex: 1, minHeight: "44px" }}
+										>
+											Отмена
+										</button>
+										<button
+											type="submit"
+											className="pc-btn-primary"
+											style={{ flex: 2, minHeight: "44px" }}
+										>
+											<CheckCircle2 size={16} />
+											<span>Отправить заявку</span>
+										</button>
+									</div>
+								</form>
+							</div>
+						</div>
+					</div>
 				)}
 			</div>
 		</div>

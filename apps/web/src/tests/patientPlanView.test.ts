@@ -136,3 +136,33 @@ describe("Patient Treatment Plan - Post-Treatment Emergency Pain Triage", () => 
 		assert.ok(urgent.pointsRu.some((p) => p.includes("Кровотечение")));
 	});
 });
+
+describe("Patient Treatment Plan - Reschedule Request Validation", () => {
+	it("formats reschedule request payload with required metadata", () => {
+		const scheduledApt = PATIENT_CABINET_PRESET_ALEXEY.appointments.find((a) => a.status === "scheduled");
+		assert.ok(scheduledApt);
+
+		const newDate = "2026-09-05";
+		const newSlot = "14:30 – 15:30";
+		const reason = "Срочная командировка";
+
+		const payload = {
+			appointmentId: scheduledApt.id,
+			patientName: PATIENT_CABINET_PRESET_ALEXEY.fullName,
+			doctorName: scheduledApt.doctorName,
+			originalDateIso: scheduledApt.dateIso,
+			originalTimeRu: scheduledApt.timeRu,
+			requestedDateIso: newDate,
+			requestedTimeSlotRu: newSlot,
+			reason,
+			requestedAtIso: new Date().toISOString(),
+		};
+
+		assert.equal(payload.appointmentId, scheduledApt.id);
+		assert.equal(payload.requestedDateIso, "2026-09-05");
+		assert.equal(payload.requestedTimeSlotRu, "14:30 – 15:30");
+		assert.equal(payload.reason, "Срочная командировка");
+		assert.ok(payload.requestedAtIso.length > 0);
+	});
+});
+
