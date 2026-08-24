@@ -29,6 +29,7 @@ import {
 } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
+import { DocumentCameraScannerModal } from "../scanner/DocumentCameraScannerModal";
 
 type AttachmentFile = {
 	id: string;
@@ -86,6 +87,7 @@ export const PatientAttachmentsPanel: React.FC<
 	const [uploading, setUploading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [downloadingId, setDownloadingId] = useState<string | null>(null);
+	const [scannerModalOpen, setScannerModalOpen] = useState(false);
 	const inputRef = useRef<HTMLInputElement | null>(null);
 	const pid = (patientId ?? "").trim();
 
@@ -270,37 +272,47 @@ export const PatientAttachmentsPanel: React.FC<
 
 	return (
 		<section
-			className="rounded-2xl border border-sky-500/25 bg-zinc-950/80 p-4 shadow-[0_0_40px_-18px_rgba(56,189,248,0.28)]"
+			className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-4 md:p-6 text-[var(--ink)] shadow-sm"
 			data-testid="patient-attachments-panel"
 			aria-label="Вложения карточки пациента"
 		>
 			<div className="mb-3 flex flex-wrap items-start justify-between gap-2">
 				<div>
-					<h3 className="text-sm font-bold text-sky-200 tracking-wide">
-						Файлы карточки
+					<h3 className="text-base font-bold text-[var(--ink)] tracking-wide">
+						Файлы и документы карточки
 					</h3>
-					<p className="text-xs text-zinc-500 mt-0.5">
-						Паспорт, направление, договор и прочие документы
+					<p className="text-xs text-[var(--muted)] mt-0.5">
+						Паспорт, направление, договор, снимки и прочие документы
 						{nameHint ? ` · ${nameHint}` : ""}. Не фото дневника приёма — те
 						живут во вкладке визита.
 					</p>
 				</div>
-				<label className="cursor-pointer inline-flex items-center gap-1.5 min-h-[44px] min-w-[44px] px-3 py-2 text-sm font-medium rounded-xl bg-sky-600/90 hover:bg-sky-500 text-white border border-sky-400/40 disabled:opacity-50">
-					{uploading ? "Загружаю…" : "Прикрепить файл"}
-					<input
-						ref={inputRef}
-						type="file"
-						className="hidden"
-						data-testid="patient-attachments-input"
-						disabled={uploading || loading}
-						onChange={(ev) => void onUpload(ev)}
-					/>
-				</label>
+				<div className="flex items-center gap-2">
+					<button
+						type="button"
+						data-testid="patient-camera-scan-button"
+						onClick={() => setScannerModalOpen(true)}
+						className="inline-flex items-center gap-1.5 min-h-[44px] min-w-[44px] px-3.5 py-2 text-xs font-bold rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-[var(--ink)] border border-[var(--line-strong)] transition-colors shadow-xs"
+					>
+						📸 Скан камерой
+					</button>
+					<label className="cursor-pointer inline-flex items-center gap-1.5 min-h-[44px] min-w-[44px] px-3.5 py-2 text-xs font-bold rounded-xl bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white border border-[var(--teal)] transition-colors shadow-sm disabled:opacity-50">
+						{uploading ? "Загружаю…" : "Прикрепить файл"}
+						<input
+							ref={inputRef}
+							type="file"
+							className="hidden"
+							data-testid="patient-attachments-input"
+							disabled={uploading || loading}
+							onChange={(ev) => void onUpload(ev)}
+						/>
+					</label>
+				</div>
 			</div>
 
 			{error ? (
 				<p
-					className="mb-3 text-xs text-rose-300 bg-rose-500/10 border border-rose-500/25 rounded-xl px-3 py-2"
+					className="mb-3 text-xs font-semibold text-rose-600 dark:text-rose-300 bg-rose-500/10 border border-rose-500/25 rounded-xl px-3 py-2"
 					data-testid="patient-attachments-error"
 					role="alert"
 				>
@@ -310,17 +322,17 @@ export const PatientAttachmentsPanel: React.FC<
 
 			{loading && files.length === 0 ? (
 				<p
-					className="text-xs text-zinc-500"
+					className="text-xs text-[var(--muted)]"
 					data-testid="patient-attachments-loading"
 				>
 					Загрузка списка…
 				</p>
 			) : files.length === 0 ? (
 				<p
-					className="text-xs text-zinc-500"
+					className="text-xs text-[var(--muted)] bg-[var(--paper-soft)] p-4 rounded-xl border border-[var(--line)]"
 					data-testid="patient-attachments-empty"
 				>
-					Вложений пока нет. Прикрепите скан или PDF.
+					Вложений пока нет. Прикрепите скан, снимок или PDF-документ.
 				</p>
 			) : (
 				<ul
@@ -330,21 +342,21 @@ export const PatientAttachmentsPanel: React.FC<
 					{(files ?? []).map((att) => (
 						<li
 							key={att.id}
-							className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-zinc-800 bg-zinc-900/60 px-3 py-2"
+							className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] px-3.5 py-2.5"
 							data-testid={`patient-attachment-row-${att.id}`}
 						>
 							<div className="min-w-0 flex-1">
-								<p className="text-sm text-zinc-100 truncate" title={att.name}>
+								<p className="text-sm font-semibold text-[var(--ink)] truncate" title={att.name}>
 									{att.name}
 								</p>
-								<p className="text-[11px] text-zinc-500 truncate">{att.type}</p>
+								<p className="text-xs text-[var(--muted)] truncate">{att.type}</p>
 							</div>
 							<button
 								type="button"
 								data-testid={`patient-attachment-download-${att.id}`}
 								disabled={downloadingId === att.id}
 								onClick={() => void onDownload(att)}
-								className="min-h-[44px] min-w-[44px] px-3 py-1.5 text-xs font-medium rounded-lg bg-zinc-800 hover:bg-zinc-700 text-sky-200 border border-zinc-700 disabled:opacity-50"
+								className="min-h-[44px] px-3.5 py-1.5 text-xs font-bold rounded-lg bg-[var(--paper)] hover:bg-[var(--teal-surface)] text-[var(--ink)] border border-[var(--line-strong)] disabled:opacity-50 transition-colors"
 							>
 								{downloadingId === att.id ? "…" : "Скачать"}
 							</button>
@@ -352,6 +364,14 @@ export const PatientAttachmentsPanel: React.FC<
 					))}
 				</ul>
 			)}
+
+			<DocumentCameraScannerModal
+				isOpen={scannerModalOpen}
+				patientId={pid}
+				patientName={patientName ?? undefined}
+				onClose={() => setScannerModalOpen(false)}
+				onAttachmentUploaded={() => void load()}
+			/>
 		</section>
 	);
 };

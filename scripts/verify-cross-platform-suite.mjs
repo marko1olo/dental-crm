@@ -76,6 +76,11 @@ const steps = [
 		cmd: "node --import tsx --import ./testCssStub.mjs --test src/components/visiograph/__tests__/visiographImageProcessing.test.ts src/components/visiograph/__tests__/visiographPresetsAndMath.test.ts",
 		cwd: path.join(projectRoot, "apps/web"),
 	},
+	{
+		name: "13. Clinical Document Camera Scanner & Russian ID/Insurance OCR Suite",
+		cmd: "node --import tsx --import ./testCssStub.mjs --test src/components/scanner/__tests__/documentScannerEngine.test.ts",
+		cwd: path.join(projectRoot, "apps/web"),
+	},
 ];
 
 let totalPassed = 0;
