@@ -125,7 +125,9 @@ export function AppointmentCard(props: AppointmentCardProps) {
 		(p) => p?.id === appointment?.patientId,
 	);
 	const patientBalance = useMemo(() => {
-		const raw = (appointmentPatient as { balance?: number | string | null } | undefined)?.balance;
+		const raw =
+			appointmentPatient?.balanceRub ??
+			(appointmentPatient as { balance?: number | string | null } | undefined)?.balance;
 		if (raw === undefined || raw === null || raw === "") return null;
 		const num = Number(raw);
 		return Number.isFinite(num) ? num : null;
@@ -169,6 +171,77 @@ export function AppointmentCard(props: AppointmentCardProps) {
 		dashboard?.clinicSettings?.profile?.timezone,
 		dashboard?.patients,
 		toDateTimeLocalValue,
+	]);
+
+	const activeScheduleCollision = useMemo(() => {
+		const curDoctorId = appointment?.doctorUserId;
+		const curChairId = appointment?.chairId;
+		const curPatientId = appointment?.patientId;
+		const curStartMs = new Date(appointment?.startsAt ?? "").getTime();
+		const curEndMs = new Date(appointment?.endsAt ?? "").getTime();
+
+		if (
+			!curStartMs ||
+			!curEndMs ||
+			appointment?.status === "cancelled" ||
+			appointment?.status === "no_show"
+		) {
+			return null;
+		}
+
+		const conflicting = (dashboard?.appointments ?? []).find((other) => {
+			if (
+				other.id === appointment.id ||
+				other.status === "cancelled" ||
+				other.status === "no_show"
+			) {
+				return false;
+			}
+			const oStartMs = new Date(other.startsAt).getTime();
+			const oEndMs = new Date(other.endsAt).getTime();
+			const isOverlap = curStartMs < oEndMs && curEndMs > oStartMs;
+			if (!isOverlap) return false;
+
+			const sameDoc = Boolean(curDoctorId && other.doctorUserId === curDoctorId);
+			const sameCh = Boolean(curChairId && other.chairId === curChairId);
+			const samePat = Boolean(curPatientId && other.patientId === curPatientId);
+
+			return sameDoc || sameCh || samePat;
+		});
+
+		if (!conflicting) return null;
+
+		const sameDoctor = Boolean(curDoctorId && conflicting.doctorUserId === curDoctorId);
+		const sameChair = Boolean(curChairId && conflicting.chairId === curChairId);
+		const samePatient = Boolean(curPatientId && conflicting.patientId === curPatientId);
+
+		let message = "⚠️ Коллизия: пересечение по времени";
+		if (sameDoctor && !sameChair) {
+			message = "⚠️ Коллизия: врач записан в два кабинета одновременно";
+		} else if (sameDoctor && sameChair) {
+			message = "⚠️ Коллизия: двойная запись у врача в одном кабинете";
+		} else if (sameChair) {
+			message = "⚠️ Коллизия: наложение двух пациентов в одном кабинете";
+		} else if (samePatient) {
+			message = "⚠️ Коллизия: пациент записан на два приема одновременно";
+		}
+
+		return {
+			conflicting,
+			sameDoctor,
+			sameChair,
+			samePatient,
+			message,
+		};
+	}, [
+		appointment?.id,
+		appointment?.startsAt,
+		appointment?.endsAt,
+		appointment?.doctorUserId,
+		appointment?.chairId,
+		appointment?.patientId,
+		appointment?.status,
+		dashboard?.appointments,
 	]);
 
 	const canSave = appointmentReadyToSave && !collision.hasCollision;
@@ -253,6 +326,48 @@ export function AppointmentCard(props: AppointmentCardProps) {
 			const newStartIso = new Date(newStartMs).toISOString();
 			const newEndIso = new Date(newEndMs).toISOString();
 
+			// 1. Проверка времени закрытия клиники (до 21:00)
+			const endDateObj = new Date(newEndMs);
+			const endHour = endDateObj.getHours();
+			const endMin = endDateObj.getMinutes();
+			const endTotalMinutes = endHour * 60 + endMin;
+			if (endTotalMinutes > 21 * 60) {
+				showToast(
+					`Нельзя сдвинуть запись: окончание приема (${formatTime(newEndIso)}) выходит за рамки работы клиники (до 21:00)`,
+					"warning",
+					4500,
+				);
+				return;
+			}
+
+			// 2. Проверка коллизий с последующими записями врача или кабинета
+			const conflictingAppt = (dashboard?.appointments ?? []).find((other) => {
+				if (other.id === appointment.id || other.status === "cancelled" || other.status === "no_show") {
+					return false;
+				}
+				const sameDoctor = Boolean(other.doctorUserId && other.doctorUserId === appointment.doctorUserId);
+				const sameChair = Boolean(other.chairId && other.chairId === appointment.chairId);
+				if (!sameDoctor && !sameChair) {
+					return false;
+				}
+				const otherStart = new Date(other.startsAt).getTime();
+				const otherEnd = new Date(other.endsAt).getTime();
+				return newStartMs < otherEnd && newEndMs > otherStart;
+			});
+
+			if (conflictingAppt) {
+				const otherPatientName = patientName(dashboard?.patients ?? [], conflictingAppt.patientId);
+				const resourceReason = conflictingAppt.doctorUserId === appointment.doctorUserId
+					? "у этого врача"
+					: "в этом кресле";
+				showToast(
+					`Конфликт наложения ${resourceReason}: сдвиг на +${minutes} мин пересекается с записью «${otherPatientName}» (${formatTime(conflictingAppt.startsAt)} – ${formatTime(conflictingAppt.endsAt)})`,
+					"error",
+					5000,
+				);
+				return;
+			}
+
 			updateAppointmentScheduleDraft(appointment.id, "startsAt", newStartIso);
 			updateAppointmentScheduleDraft(appointment.id, "endsAt", newEndIso);
 			setIsQuickStatusUpdating(true);
@@ -260,7 +375,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 				const success = await saveAppointmentSchedule(appointment.id);
 				if (success) {
 					showToast(
-						`Запись «${appointmentPatientName}» сдвинута на +${minutes} мин (${formatTime(newStartIso)} - ${formatTime(newEndIso)})`,
+						`Запись «${appointmentPatientName}» сдвинута на +${minutes} мин (${formatTime(newStartIso)} – ${formatTime(newEndIso)})`,
 						"success",
 						3500,
 					);
@@ -279,11 +394,16 @@ export function AppointmentCard(props: AppointmentCardProps) {
 		},
 		[
 			appointment.id,
+			appointment.doctorUserId,
+			appointment.chairId,
 			appointment.startsAt,
 			appointment.endsAt,
 			appointmentHasOpenVisit,
 			appointmentPatientName,
+			dashboard?.appointments,
+			dashboard?.patients,
 			formatTime,
+			patientName,
 			saveAppointmentSchedule,
 			updateAppointmentScheduleDraft,
 		],
@@ -381,21 +501,21 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							{patientBalance !== null ? (
 								patientBalance < 0 ? (
 									<span
-										className="px-2 py-0.5 rounded-lg text-xs font-bold bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30"
+										className="px-2.5 py-1 rounded-lg text-xs font-bold font-mono tracking-tight bg-rose-500/15 text-rose-700 dark:text-rose-200 dark:bg-rose-950/50 border border-rose-500/40 shadow-xs"
 										title={`Задолженность пациента: ${Math.abs(patientBalance).toLocaleString("ru-RU")} ₽`}
 									>
 										Долг: {Math.abs(patientBalance).toLocaleString("ru-RU")} ₽
 									</span>
 								) : patientBalance > 0 ? (
 									<span
-										className="px-2 py-0.5 rounded-lg text-xs font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
+										className="px-2.5 py-1 rounded-lg text-xs font-bold font-mono tracking-tight bg-emerald-500/15 text-emerald-700 dark:text-emerald-200 dark:bg-emerald-950/50 border border-emerald-500/40 shadow-xs"
 										title={`Аванс/депозит пациента: ${patientBalance.toLocaleString("ru-RU")} ₽`}
 									>
 										Аванс: {patientBalance.toLocaleString("ru-RU")} ₽
 									</span>
 								) : (
 									<span
-										className="px-2 py-0.5 rounded-lg text-xs font-medium bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20"
+										className="px-2 py-0.5 rounded-lg text-xs font-medium font-mono text-slate-600 dark:text-slate-400 bg-slate-500/10 dark:bg-slate-800/50 border border-slate-500/20"
 										title="Баланс пациента: 0 ₽"
 									>
 										Баланс: 0 ₽
@@ -409,6 +529,15 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								{appointmentLabels?.[displayStatus] ??
 									String(displayStatus ?? "")}
 							</span>
+							{activeScheduleCollision ? (
+								<span
+									className="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/50 shadow-xs flex items-center gap-1 animate-pulse shrink-0"
+									title={activeScheduleCollision.message}
+									data-testid="appointment-collision-badge"
+								>
+									{activeScheduleCollision.message}
+								</span>
+							) : null}
 							{appointmentHasOpenVisit ? (
 								<span className="handoff-lock text-xs break-words" title="Открыт прием: пациент закреплен">
 									Открыт прием: пациент закреплен
@@ -560,9 +689,9 @@ export function AppointmentCard(props: AppointmentCardProps) {
 					) : null}
 
 					{/* Кнопки быстрого сдвига времени при опозданиях (+15 мин, +30 мин, +45 мин) */}
-					<div className="appointment-delay-shift-bar flex items-center justify-between gap-2 p-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs flex-wrap">
-						<span className="font-bold text-amber-800 dark:text-amber-200 flex items-center gap-1.5 shrink-0">
-							<Clock size={14} className="text-amber-600 shrink-0" />
+					<div className="appointment-delay-shift-bar flex items-center justify-between gap-2 p-2 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-xs flex-wrap">
+						<span className="font-bold text-amber-800 dark:text-amber-200 flex items-center gap-1.5 shrink-0 select-none">
+							<Clock size={15} className="text-amber-600 dark:text-amber-400 shrink-0" />
 							Пациент опаздывает:
 						</span>
 						<div className="flex items-center gap-1.5 flex-wrap">
@@ -575,8 +704,9 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										e.stopPropagation();
 										void handleShiftAppointmentTime(m);
 									}}
-									className="min-h-[36px] px-3 py-1.5 rounded-lg border border-amber-500/40 bg-[var(--paper,#ffffff)] hover:bg-amber-500/20 text-amber-900 dark:text-amber-100 text-xs font-bold transition-all cursor-pointer disabled:opacity-40 shadow-xs select-none active:scale-95"
+									className="min-h-[44px] px-3.5 py-2 rounded-xl border border-amber-500/40 bg-[var(--paper,#ffffff)] dark:bg-amber-950/40 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-bold transition-all cursor-pointer disabled:opacity-40 shadow-xs select-none active:scale-95 flex items-center justify-center"
 									title={`Сдвинуть время визита на +${m} минут позже`}
+									aria-label={`Сдвинуть запись на +${m} минут`}
 								>
 									+{m} мин
 								</button>
@@ -597,6 +727,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						clinicAddress={dashboard?.clinicSettings?.profile?.address}
 						clinicPhone={dashboard?.clinicSettings?.profile?.phone}
 						treatmentReason={appointment.reason}
+						cabinetName={appointmentChair?.name}
 						appointmentHasOpenVisit={appointmentHasOpenVisit}
 						activeVisitLockedAppointmentStatuses={
 							activeVisitLockedAppointmentStatuses

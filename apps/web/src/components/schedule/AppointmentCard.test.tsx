@@ -161,4 +161,57 @@ describe("AppointmentCard Suite", () => {
 		assert.ok(html.includes("Аванс: 12 000 ₽") || html.includes("Аванс: 12 000 ₽"), "должен быть бейдж аванса пациента");
 		assert.ok(html.includes("bg-emerald-500/15"), "бейдж аванса должен быть выделен зеленым/изумрудным акцентом");
 	});
+
+	it("renders amber collision warning badge when doctor has overlapping appointment in another room", () => {
+		const overlappingAppt: any = {
+			id: "app-other",
+			organizationId: "org-1",
+			patientId: "pat-zero",
+			doctorUserId: "doc-1",
+			chairId: "chair-2",
+			startsAt: "2026-08-20T10:00:00.000Z",
+			endsAt: "2026-08-20T10:30:00.000Z",
+			status: "confirmed",
+		};
+
+		const dashboardWithCollision = {
+			...mockDashboard,
+			appointments: [overlappingAppt],
+		};
+
+		const html = renderToStaticMarkup(
+			React.createElement(AppointmentCard, {
+				appointment: baseAppointment,
+				dashboard: dashboardWithCollision as Dashboard,
+				visibleScheduleSuggestions: [],
+				appointmentReadinessById: new Map(),
+				appointmentLabels: mockAppointmentLabels,
+				appointmentDraft: {},
+				appointmentSaveState: "idle",
+				appointmentSaveError: null,
+				appointmentDirty: false,
+				appointmentEditing: false,
+				appointmentHasOpenVisit: false,
+				appointmentActiveVisitStatusLocked: false,
+				appointmentMissingSteps: [],
+				appointmentReadyToSave: true,
+				openScheduleSuggestion: () => {},
+				formatTime: () => "10:00",
+				patientName: () => "Кузнецов Петр Сергеевич",
+				openAppointmentEditor: () => {},
+				repeatAppointment: () => {},
+				closeAppointmentEditor: () => {},
+				updateAppointmentScheduleDraft: () => {},
+				saveAppointmentSchedule: async () => true,
+				normalizedAppointmentStatus: (v: any) => v,
+				toDateTimeLocalValue: (v: string) => v,
+				fromDateTimeLocalValue: (v: string) => v,
+				useManualSelects: false,
+				activeVisitLockedAppointmentStatuses: activeVisitLockedStatuses,
+			})
+		);
+
+		assert.ok(html.includes("Коллизия: врач записан в два кабинета одновременно"), "должен быть бейдж коллизии врача");
+		assert.ok(html.includes("data-testid=\"appointment-collision-badge\""), "должен быть data-testid бейджа коллизии");
+	});
 });

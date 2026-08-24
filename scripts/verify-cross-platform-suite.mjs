@@ -81,6 +81,11 @@ const steps = [
 		cmd: "node --import tsx --import ./testCssStub.mjs --test src/components/scanner/__tests__/documentScannerEngine.test.ts",
 		cwd: path.join(projectRoot, "apps/web"),
 	},
+	{
+		name: "14. Patient Personal Cabinet & 375px Mobile Portal Ergonomics Suite",
+		cmd: "node --import tsx --import ./testCssStub.mjs --test src/tests/patientCabinetMobile375.test.ts src/tests/portalTimeline.test.ts src/tests/portalSelfCheckin.test.ts",
+		cwd: path.join(projectRoot, "apps/web"),
+	},
 ];
 
 let totalPassed = 0;

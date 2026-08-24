@@ -99,4 +99,54 @@ describe("ScheduleGrid", () => {
 		assert.ok(html.includes("title=\"Завершен\""), "должна быть кнопка статуса Завершен");
 		assert.ok(html.includes("min-h-[44px]"), "кнопки должны соответствовать touch target >=44px");
 	});
+
+	it("renders amber collision warning badge when doctor is scheduled simultaneously in two chairs", () => {
+		const appt1: Appointment = {
+			...mockAppointment,
+			id: "appt-1",
+			chairId: "chair-1",
+			doctorUserId: "doc-1",
+			startsAt: "2026-08-20T10:00:00.000Z",
+			endsAt: "2026-08-20T11:00:00.000Z",
+		};
+		const appt2: Appointment = {
+			...mockAppointment,
+			id: "appt-2",
+			chairId: "chair-2",
+			doctorUserId: "doc-1", // Same doctor at the same time in different chair!
+			startsAt: "2026-08-20T10:00:00.000Z",
+			endsAt: "2026-08-20T10:30:00.000Z",
+		};
+
+		const html = renderToString(
+			React.createElement(ScheduleGrid, {
+				dashboard: mockDashboard as Dashboard,
+				dateKey: "2026-08-20",
+				appointments: [appt1, appt2],
+				onSlotClick: () => {},
+				onAppointmentClick: () => {},
+				patientName: () => "Иванов Иван",
+				formatTime: (iso: string) => iso.slice(11, 16),
+				toDateTimeLocalValue: (iso: string) => iso.slice(0, 16),
+				appointmentLabels: {
+					planned: "Запланирован",
+					confirmed: "Подтвержден",
+					arrived: "Пришел",
+					in_treatment: "В кресле",
+					completed: "Завершен",
+					cancelled: "Отменен",
+					no_show: "Не явился",
+				},
+			}),
+		);
+
+		assert.ok(
+			html.includes("Коллизия: врач записан в два кабинета одновременно"),
+			"должно отображаться предупреждение о коллизии врача в разных кабинетах",
+		);
+		assert.ok(
+			html.includes("data-testid=\"schedule-grid-collision-badge\""),
+			"должен присутствовать testid бейджа коллизии",
+		);
+	});
 });

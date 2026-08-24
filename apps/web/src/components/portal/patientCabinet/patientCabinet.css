@@ -816,6 +816,107 @@
 	}
 }
 
+/* ── Mobile Smartphone Optimization (<= 480px & iPhone SE 375px) ── */
+@media (max-width: 480px) {
+	.patient-cabinet-backdrop {
+		padding: 0;
+	}
+
+	.patient-cabinet-modal {
+		height: 100vh;
+		max-height: 100vh;
+		border-radius: 0;
+		border: none;
+	}
+
+	.pc-header {
+		padding: 10px 12px;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+	}
+
+	.pc-header-user {
+		width: 100%;
+		justify-content: flex-start;
+	}
+
+	.pc-header-badges {
+		width: 100%;
+		justify-content: space-between;
+		gap: 6px;
+	}
+
+	.pc-close-btn {
+		margin-left: auto;
+	}
+
+	.pc-body {
+		padding: 10px 8px;
+		gap: 12px;
+	}
+
+	.pc-card {
+		padding: 12px 10px;
+	}
+
+	.pc-alert-banner {
+		padding: 10px 12px;
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.pc-alert-banner button {
+		width: 100%;
+		min-height: 44px;
+	}
+
+	.pc-invoice-header {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 6px;
+	}
+
+	.pc-invoice-actions {
+		flex-direction: column;
+		align-items: stretch;
+		width: 100%;
+	}
+
+	.pc-invoice-actions button,
+	.pc-invoice-actions a {
+		width: 100%;
+		min-height: 44px;
+		justify-content: center;
+	}
+
+	.tax-deduction-quick-card,
+	.next-visit-card,
+	.emergency-hotline-card {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.tax-deduction-quick-card button,
+	.next-visit-card button,
+	.next-visit-card a,
+	.emergency-hotline-card a {
+		width: 100%;
+		min-height: 44px;
+		justify-content: center;
+	}
+
+	.pc-bank-buttons-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.pc-otp-digit {
+		width: 38px;
+		height: 44px;
+		font-size: 1.125rem;
+	}
+}
+
 /* ==========================================================================
    Reschedule & Submodal Dialogs (Mobile 375px & Touch First)
    ========================================================================== */

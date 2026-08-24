@@ -1,4 +1,4 @@
-import type { Appointment, Dashboard } from "@dental/shared";
+import type { Appointment, Dashboard, DentalSpecialty } from "@dental/shared";
 import {
 	AlertTriangle,
 	CalendarCheck,
@@ -7,6 +7,7 @@ import {
 	MessageSquare,
 	PhoneCall,
 	Plus,
+	Stethoscope,
 	User,
 	UserCheck,
 	UserX,
@@ -15,6 +16,9 @@ import React, { useMemo } from "react";
 import type { QuickBookingSlotInfo } from "./QuickBookingDrawer";
 import { generateAppointmentWhatsAppMessage } from "./generateAppointmentWhatsAppMessage";
 import { openWhatsAppChat } from "../../store/telephonyStore";
+import { specialtyLabels } from "../../workspaceUiLabels";
+import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
+import { showToast } from "../GlobalToast";
 
 export interface ScheduleGridProps {
 	dashboard: Dashboard;
@@ -242,9 +246,22 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 												return (
 													<div
 														key={a.id}
-														className={`w-full text-left p-2 rounded-xl border text-xs font-semibold shadow-xs flex flex-col justify-between gap-1.5 transition-all min-h-[52px] ${
+														draggable
+														onDragStart={(e) => {
+															e.dataTransfer.setData(
+																"application/json",
+																JSON.stringify({
+																	type: "appointment",
+																	appointmentId: a.id,
+																	doctorUserId: a.doctorUserId,
+																	durationMinutes: Math.round((Date.parse(a.endsAt) - Date.parse(a.startsAt)) / 60000) || 30,
+																}),
+															);
+															e.dataTransfer.effectAllowed = "move";
+														}}
+														className={`w-full text-left p-2 rounded-xl border text-xs font-semibold shadow-xs flex flex-col justify-between gap-1.5 transition-all min-h-[52px] cursor-grab active:cursor-grabbing ${
 															collision
-																? "bg-rose-500/15 border-rose-500/40 text-rose-900 dark:text-rose-100 ring-1 ring-rose-500/50"
+																? "bg-amber-500/15 border-amber-500/40 text-amber-900 dark:text-amber-100 ring-1 ring-amber-500/50"
 																: a.status === "arrived"
 																	? "bg-emerald-500/15 border-emerald-500/30 text-emerald-800 dark:text-emerald-200"
 																	: a.status === "in_treatment"
@@ -270,16 +287,32 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																}
 															}}
 														>
-															<div className="truncate">
+															<div className="truncate flex-1 min-w-0">
 																<div className="font-bold truncate flex items-center gap-1">
 																	<User size={12} className="shrink-0 text-[var(--teal)]" />
-																	<span>{pName}</span>
+																	<span className="truncate">{pName}</span>
 																</div>
-																<div className="text-[10px] opacity-75 font-normal">
+																<div className="text-xs opacity-75 font-normal truncate">
 																	{aStart} - {aEnd} · {a.reason || "Прием"}
 																</div>
+																{docObj && (
+																	<div className="text-xs opacity-85 font-medium truncate flex items-center gap-1 mt-0.5">
+																		<Stethoscope size={12} className="shrink-0 text-[var(--teal)]" />
+																		<span className="truncate">
+																			{docObj.fullName
+																				?.split(" ")
+																				.map((part, index) => (index === 0 ? part : `${part[0]}.`))
+																				.join(" ") || docObj.fullName}
+																		</span>
+																		{docObj.specialties && docObj.specialties.length > 0 && (
+																			<span className="text-xs px-1 py-0.2 rounded bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)] shrink-0">
+																				{docObj.specialties.map((s: string) => specialtyLabels[s as DentalSpecialty] || s).join(", ")}
+																			</span>
+																		)}
+																	</div>
+																)}
 															</div>
-															<span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-[var(--paper)]/80 shrink-0">
+															<span className="text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-[var(--paper)]/80 shrink-0">
 																{appointmentLabels[a.status] || a.status}
 															</span>
 														</div>
@@ -287,12 +320,13 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 														{/* Collision Alert Pill if overlapping */}
 														{collision && (
 															<div
-																className="px-2 py-1 rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-800 dark:text-rose-200 text-[10px] font-bold flex items-center gap-1"
+																className="px-2 py-1 rounded-lg bg-amber-500/20 border border-amber-500/50 text-amber-900 dark:text-amber-200 text-xs font-extrabold flex items-center gap-1 shadow-xs animate-pulse"
+																data-testid="schedule-grid-collision-badge"
 																title={
-																	collision.sameDoctor && collision.sameChair
-																		? "Коллизия: один врач и одно кресло в одно время!"
-																		: collision.sameDoctor
-																			? "Коллизия: врач записан в другое кресло одновременно!"
+																	collision.sameDoctor && !collision.sameChair
+																		? "Коллизия: врач записан в два кабинета одновременно!"
+																		: collision.sameDoctor && collision.sameChair
+																			? "Коллизия: двойная запись у врача в одном кабинете!"
 																			: collision.sameChair
 																				? "Коллизия: два пациента в одном кресле одновременно!"
 																				: collision.sameAssistant
@@ -300,17 +334,17 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																					: "Коллизия: пациент записан на два приема одновременно!"
 																}
 															>
-																<AlertTriangle size={12} className="shrink-0 text-rose-600 dark:text-rose-400" />
-																<span>
-																	{collision.sameDoctor && collision.sameChair
-																		? "Накладка: врач + кресло"
-																		: collision.sameDoctor
-																			? "Коллизия врача"
+																<AlertTriangle size={12} className="shrink-0 text-amber-600 dark:text-amber-400" />
+																<span className="truncate">
+																	{collision.sameDoctor && !collision.sameChair
+																		? "⚠️ Коллизия: врач записан в два кабинета одновременно"
+																		: collision.sameDoctor && collision.sameChair
+																			? "⚠️ Коллизия: врач и кабинет"
 																			: collision.sameChair
-																				? "Накладка кресла"
+																				? "⚠️ Коллизия: кабинет занят"
 																				: collision.sameAssistant
-																					? "Накладка ассистента"
-																					: "Накладка пациента"}
+																					? "⚠️ Коллизия: ассистент"
+																					: "⚠️ Коллизия: пациент"}
 																</span>
 															</div>
 														)}
@@ -434,11 +468,68 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 									);
 								}
 
-								// Empty cell with 1-click booking
+								// Empty cell with 1-click booking & Drag-and-Drop collision safety
 								return (
 									<div
 										key={chair.id}
 										className="p-1 border-r border-[var(--line)] last:border-r-0 min-h-[56px] flex items-center justify-center"
+										onDragOver={(e) => {
+											e.preventDefault();
+											e.dataTransfer.dropEffect = "move";
+										}}
+										onDrop={(e) => {
+											e.preventDefault();
+											try {
+												const rawData = e.dataTransfer.getData("application/json");
+												if (!rawData) return;
+												const data = JSON.parse(rawData);
+												if (data?.type === "appointment" && data.appointmentId) {
+													const sourceAppt = (appointments ?? []).find((x) => x.id === data.appointmentId);
+													if (!sourceAppt) return;
+													const targetChairId = chair.id !== "default-chair" ? chair.id : null;
+													const targetDoctorId = selectedDoctorId || sourceAppt.doctorUserId;
+													const slotDuration = data.durationMinutes || 30;
+													const targetStartIso = `${dateKey}T${hour}:00:00.000Z`;
+													const targetEndIso = new Date(Date.parse(targetStartIso) + slotDuration * 60000).toISOString();
+
+													// Pre-check collision before move to protect administrator from accidental double-booking
+													const collisionCheck = checkAppointmentResourceCollision(
+														{
+															startsAt: targetStartIso,
+															endsAt: targetEndIso,
+															doctorUserId: targetDoctorId,
+															chairId: targetChairId,
+															patientId: sourceAppt.patientId,
+														},
+														appointments,
+														{
+															excludeAppointmentId: sourceAppt.id,
+															staff: dashboard?.clinicSettings?.staff,
+															chairs: dashboard?.clinicSettings?.chairs,
+															patients: dashboard?.patients,
+															formatTimeFn: (iso) => toDateTimeLocalValue(iso, timezone).slice(11, 16),
+														},
+													);
+
+													if (collisionCheck.hasCollision) {
+														showToast(`⛔ Перемещение заблокировано: ${collisionCheck.message}`, "error", 5000);
+														return;
+													}
+
+													onSlotClick({
+														dateKey,
+														startTime: hour,
+														chairId: targetChairId,
+														doctorUserId: targetDoctorId,
+														durationMinutes: slotDuration,
+														patientId: sourceAppt.patientId,
+														reason: sourceAppt.reason || undefined,
+													});
+												}
+											} catch {
+												// Ignore invalid JSON drop
+											}
+										}}
 									>
 										<button
 											type="button"
@@ -451,12 +542,12 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 													durationMinutes: 30,
 												})
 											}
-											className="w-full h-full min-h-[44px] rounded-xl border border-transparent hover:border-dashed hover:border-[var(--teal)] hover:bg-[var(--teal-surface)]/60 text-transparent hover:text-[var(--teal-dark)] text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
+											className="w-full h-full min-h-[44px] rounded-xl border border-dashed border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
 											title={`Записать на ${hour} (${chair.name})`}
 											aria-label={`Свободно на ${hour}, кресло ${chair.name}. Нажмите для быстрой записи`}
 										>
-											<Plus size={14} />
-											<span>+ Записать на {hour}</span>
+											<Plus size={14} className="text-[var(--teal)] opacity-60 group-hover:opacity-100" />
+											<span className="text-xs">+ Записать на {hour}</span>
 										</button>
 									</div>
 								);
