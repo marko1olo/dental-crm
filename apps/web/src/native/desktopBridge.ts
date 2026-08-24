@@ -7,6 +7,12 @@
  * - Local filesystem folder watching for incoming X-ray DICOM / Visiograph files.
  */
 
+import {
+	parseGs1DataMatrix,
+	triggerHaptic,
+	type ParsedGs1DataMatrix,
+} from "./mobileBridge";
+
 export interface DesktopSerialPortInfo {
 	path: string;
 	manufacturer?: string | undefined;
@@ -635,6 +641,8 @@ export async function toggleDesktopKioskMode(flag?: boolean): Promise<DesktopWin
 	return await toggleDesktopFullScreen(flag);
 }
 
+export const toggleKioskMode = toggleDesktopKioskMode;
+
 /**
  * Retrieves current desktop window state (fullscreen, kiosk, maximized).
  */
@@ -650,4 +658,157 @@ export async function getDesktopWindowState(): Promise<DesktopWindowState> {
 
 	const isFs = typeof document !== "undefined" && Boolean(document.fullscreenElement);
 	return { isFullScreen: isFs, isKiosk: false, isMaximized: isFs };
+}
+
+export interface UsbHidScanEvent {
+	rawCode: string;
+	parsedGs1: ParsedGs1DataMatrix;
+	timestamp: number;
+	durationMs: number;
+	charCount: number;
+	source: "usb_hid_scanner";
+}
+
+export interface UsbHidScannerOptions {
+	/** Max milliseconds between consecutive keystrokes to be considered a hardware scanner burst (default 35ms) */
+	maxInterKeyDelayMs?: number;
+	/** Minimum barcode character length (default 3) */
+	minBarcodeLength?: number;
+	/** Whether to preventDefault on Enter key when hardware scan detected (default true) */
+	preventDefault?: boolean;
+	/** Optional callback when hardware barcode scan is detected */
+	onScan?: (event: UsbHidScanEvent) => void;
+}
+
+/**
+ * Validates whether a stream of recorded keystrokes represents a high-speed hardware scanner burst.
+ */
+export function isUsbHidScanBurst(
+	keystrokes: Array<{ key: string; timestamp: number }>,
+	maxInterKeyDelayMs = 35,
+	minBarcodeLength = 3,
+): boolean {
+	if (!keystrokes || keystrokes.length < minBarcodeLength) {
+		return false;
+	}
+
+	for (let i = 1; i < keystrokes.length; i++) {
+		const curr = keystrokes[i];
+		const prev = keystrokes[i - 1];
+		if (!curr || !prev) continue;
+		const delta = curr.timestamp - prev.timestamp;
+		if (delta > maxInterKeyDelayMs) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/**
+ * Creates an autonomous USB HID 2D barcode / DataMatrix scanner detector.
+ * Intercepts rapid keyboard emulation bursts (< 30-35ms) without requiring active input focus.
+ */
+export function createUsbHidScannerDetector(options: UsbHidScannerOptions = {}) {
+	const maxInterKeyDelayMs = options.maxInterKeyDelayMs ?? 35;
+	const minBarcodeLength = options.minBarcodeLength ?? 3;
+	const preventDefault = options.preventDefault ?? true;
+
+	let buffer: Array<{ key: string; timestamp: number }> = [];
+	let active = false;
+
+	const processKey = (key: string, timestamp = Date.now()): UsbHidScanEvent | null => {
+		if (key === "Enter" || key === "Tab") {
+			if (isUsbHidScanBurst(buffer, maxInterKeyDelayMs, minBarcodeLength)) {
+				const rawCode = buffer.map((b) => b.key).join("");
+				const first = buffer[0];
+				const last = buffer[buffer.length - 1];
+				const durationMs =
+					first && last && buffer.length > 1
+						? last.timestamp - first.timestamp
+						: 0;
+				const parsedGs1 = parseGs1DataMatrix(rawCode);
+				const scanEvent: UsbHidScanEvent = {
+					rawCode,
+					parsedGs1,
+					timestamp,
+					durationMs,
+					charCount: rawCode.length,
+					source: "usb_hid_scanner",
+				};
+
+				triggerHaptic("success");
+				options.onScan?.(scanEvent);
+				buffer = [];
+				return scanEvent;
+			}
+			buffer = [];
+			return null;
+		}
+
+		// Filter out non-printable modifier keys (keep printable single characters)
+		if (key.length === 1) {
+			if (buffer.length > 0) {
+				const last = buffer[buffer.length - 1];
+				if (last && timestamp - last.timestamp > maxInterKeyDelayMs) {
+					// Typing too slow -> reset buffer to current key (human typing)
+					buffer = [];
+				}
+			}
+			buffer.push({ key, timestamp });
+		}
+
+		return null;
+	};
+
+	const handleKeyDown = (event: KeyboardEvent) => {
+		if (!active) return;
+		const result = processKey(event.key, Date.now());
+		if (result && preventDefault && typeof event.preventDefault === "function") {
+			event.preventDefault();
+			event.stopPropagation();
+		}
+	};
+
+	const start = () => {
+		if (active) return;
+		active = true;
+		buffer = [];
+		if (typeof window !== "undefined" && window.addEventListener) {
+			window.addEventListener("keydown", handleKeyDown, true);
+		}
+	};
+
+	const stop = () => {
+		active = false;
+		buffer = [];
+		if (typeof window !== "undefined" && window.removeEventListener) {
+			window.removeEventListener("keydown", handleKeyDown, true);
+		}
+	};
+
+	return {
+		start,
+		stop,
+		destroy: stop,
+		processKey,
+		getBuffer: () => [...buffer],
+	};
+}
+
+/**
+ * Global subscription helper for USB HID 2D scanner events.
+ */
+export function subscribeUsbHidScanner(
+	callback: (event: UsbHidScanEvent) => void,
+	options: Omit<UsbHidScannerOptions, "onScan"> = {},
+): () => void {
+	const detector = createUsbHidScannerDetector({
+		...options,
+		onScan: callback,
+	});
+	detector.start();
+	return () => {
+		detector.destroy();
+	};
 }

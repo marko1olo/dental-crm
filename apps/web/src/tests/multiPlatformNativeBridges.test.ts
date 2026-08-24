@@ -3,12 +3,15 @@ import test from "node:test";
 import {
 	acquireDesktopVisiographImage,
 	classifyTwainHardwareError,
+	createUsbHidScannerDetector,
 	getDesktopNativeApi,
 	getDesktopWindowState,
 	isDesktopApp,
+	isUsbHidScanBurst,
 	listDesktopSerialPorts,
 	listDesktopTwainDevices,
 	printDesktopFiscalReceiptTcp,
+	subscribeUsbHidScanner,
 	toggleDesktopFullScreen,
 	toggleDesktopKioskMode,
 	watchDesktopDicomFolder,
@@ -346,5 +349,67 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 				delete (globalThis as any).window;
 			}
 		}
+	});
+
+	await t.test("USB HID 2D Barcode Scanner detector auto-intercepts rapid keystroke bursts (< 35ms)", async () => {
+		// 1. Validate burst validator helper
+		const validBurst = [
+			{ key: "0", timestamp: 1000 },
+			{ key: "1", timestamp: 1010 },
+			{ key: "0", timestamp: 1020 },
+			{ key: "4", timestamp: 1030 },
+			{ key: "6", timestamp: 1042 },
+		];
+		assert.equal(isUsbHidScanBurst(validBurst, 35, 3), true);
+
+		const humanTyping = [
+			{ key: "0", timestamp: 1000 },
+			{ key: "1", timestamp: 1200 }, // 200ms delay
+			{ key: "0", timestamp: 1350 },
+		];
+		assert.equal(isUsbHidScanBurst(humanTyping, 35, 3), false);
+
+		// 2. Test USB HID Detector with simulated DataMatrix scan
+		const capturedEvents: any[] = [];
+		const detector = createUsbHidScannerDetector({
+			maxInterKeyDelayMs: 35,
+			minBarcodeLength: 10,
+			onScan: (ev) => capturedEvents.push(ev),
+		});
+
+		// Simulate DataMatrix code with standard GS1 separator: 010460123456789321ABCD123456789\u001d91EE06\u001d92qwe+rtyu=
+		const rawMdlpCode = "010460123456789321ABCD123456789\u001d91EE06\u001d92qwe+rtyu=";
+		let tTime = 10000;
+
+		for (const char of rawMdlpCode) {
+			detector.processKey(char, tTime);
+			tTime += 8; // 8ms per character (typical hardware scanner speed)
+		}
+
+		// Press Enter terminator
+		const result = detector.processKey("Enter", tTime + 5);
+		assert.ok(result !== null);
+		assert.equal(result.rawCode, rawMdlpCode);
+		assert.equal(result.source, "usb_hid_scanner");
+		assert.equal(result.parsedGs1.gtin, "04601234567893");
+		assert.equal(result.parsedGs1.serialNumber, "ABCD123456789");
+		assert.equal(result.parsedGs1.isValidMdlp, true);
+		assert.equal(capturedEvents.length, 1);
+
+		// 3. Verify human slow typing does not trigger scan event on Enter
+		tTime += 500;
+		detector.processKey("h", tTime);
+		tTime += 150; // slow
+		detector.processKey("e", tTime);
+		tTime += 200; // slow
+		detector.processKey("l", tTime);
+		tTime += 100;
+		detector.processKey("p", tTime);
+		const humanEnterResult = detector.processKey("Enter", tTime + 50);
+
+		assert.equal(humanEnterResult, null);
+		assert.equal(capturedEvents.length, 1); // No new scan event
+
+		detector.destroy();
 	});
 });

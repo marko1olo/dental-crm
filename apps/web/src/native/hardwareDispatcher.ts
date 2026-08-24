@@ -19,6 +19,11 @@ import {
 	printDesktopThermalLabel,
 	watchDesktopDicomFolder,
 	unwatchDesktopDicomFolder,
+	createUsbHidScannerDetector,
+	isUsbHidScanBurst,
+	subscribeUsbHidScanner,
+	type UsbHidScanEvent,
+	type UsbHidScannerOptions,
 	type DesktopEscPosPrintParams,
 	type DesktopEscPosPrintResult,
 	type DesktopFiscalReceiptPayload,
@@ -247,3 +252,11 @@ export async function dispatchStaffBiometricAuth(
 		error: "Биометрический вход поддерживается в мобильном приложении DENTE (.apk).",
 	};
 }
+
+export {
+	createUsbHidScannerDetector,
+	isUsbHidScanBurst,
+	subscribeUsbHidScanner,
+	type UsbHidScanEvent,
+	type UsbHidScannerOptions,
+};
