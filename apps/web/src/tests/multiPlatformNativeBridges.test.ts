@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+	CLINICAL_TOUCH_TARGETS,
 	acquireDesktopVisiographImage,
 	checkDesktopUpdates,
 	classifyTwainHardwareError,
@@ -17,6 +18,7 @@ import {
 	subscribeUsbHidScanner,
 	toggleDesktopFullScreen,
 	toggleDesktopKioskMode,
+	validateClinicalActionButtonErgonomics,
 	watchDesktopDicomFolder,
 	unwatchDesktopDicomFolder,
 	type DesktopNativeApi,
@@ -472,5 +474,34 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 				delete (globalThis as any).window;
 			}
 		}
+	});
+
+	await t.test("Clinical Touch-First Ergonomics Validator enforces >= 48px height, >= 14px font, and visible Russian labels", () => {
+		// 1. Check statutory constants
+		assert.equal(CLINICAL_TOUCH_TARGETS.MIN_TOUCH_SIZE_PX, 44);
+		assert.equal(CLINICAL_TOUCH_TARGETS.PRIMARY_ACTION_MIN_HEIGHT_PX, 48);
+		assert.equal(CLINICAL_TOUCH_TARGETS.MOBILE_ACTION_MIN_HEIGHT_PX, 52);
+		assert.equal(CLINICAL_TOUCH_TARGETS.PRIMARY_ACTION_FONT_SIZE_PX, 14);
+
+		// 2. Valid large action button (Save, Print, Pay, Scan, Remind)
+		const validButton = validateClinicalActionButtonErgonomics({
+			heightPx: 48,
+			fontSizePx: 14,
+			hasVisibleRussianLabel: true,
+		});
+		assert.equal(validButton.isValid, true);
+		assert.equal(validButton.issues.length, 0);
+
+		// 3. Invalid micro button (< 48px, small font, icon-only without text)
+		const invalidMicroButton = validateClinicalActionButtonErgonomics({
+			heightPx: 32,
+			fontSizePx: 11,
+			hasVisibleRussianLabel: false,
+		});
+		assert.equal(invalidMicroButton.isValid, false);
+		assert.equal(invalidMicroButton.issues.length, 3);
+		assert.ok(invalidMicroButton.issues.some((i) => i.includes("48px")));
+		assert.ok(invalidMicroButton.issues.some((i) => i.includes("14px")));
+		assert.ok(invalidMicroButton.issues.some((i) => i.includes("Запрет на изолированные иконки")));
 	});
 });

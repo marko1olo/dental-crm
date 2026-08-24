@@ -8,8 +8,10 @@
  */
 
 import {
+	CLINICAL_TOUCH_TARGETS,
 	parseGs1DataMatrix,
 	triggerHaptic,
+	validateClinicalActionButtonErgonomics,
 	type ParsedGs1DataMatrix,
 } from "./mobileBridge";
 
@@ -890,3 +892,8 @@ export function subscribeDesktopUpdates(
 	}
 	return () => {};
 }
+
+export {
+	CLINICAL_TOUCH_TARGETS,
+	validateClinicalActionButtonErgonomics,
+};

@@ -218,7 +218,12 @@
 	.document-filter-chip,
 	.document-search-input,
 	.document-registry-kind-select,
-	.document-reset-filters-btn {
+	.document-reset-filters-btn,
+	.weekday-toggle-row button,
+	.patient-admin-form-grid input,
+	.patient-admin-form-grid select,
+	.patient-core-form-grid input,
+	.patient-core-form-grid select {
 		min-height: 44px;
 		min-width: 44px;
 		box-sizing: border-box;
@@ -240,5 +245,59 @@
 	.sidebar .nav-item,
 	.app-shell .sidebar .nav-item {
 		min-height: 44px;
+	}
+}
+
+/* ============================================================
+   РАУНД 81: ГЛАВНЫЕ КЛИНИЧЕСКИЕ КНОПКИ ДЕЙСТВИЙ (48–52px)
+   Врачи и ассистенты работают в перчатках на сенсорных моноблоках и планшетах.
+   Кнопки ключевых действий («Печать», «Сохранить», «Оплатить», «Сканировать», «Напомнить»)
+   обязаны иметь высоту >= 48–52px, крупный жирный шрифт >= 14px и ясный русский текст рядом с иконкой.
+   ============================================================ */
+
+.btn-primary-action,
+.btn-save-action,
+.btn-print-action,
+.btn-pay-action,
+.btn-scan-action,
+.btn-remind-action,
+.action-button-lg,
+.primary-action-btn,
+.clinical-action-btn,
+.btn-sign,
+.btn-save,
+.btn-confirm {
+	min-height: 48px;
+	min-width: 48px;
+	font-size: 14px;
+	font-weight: 600;
+	letter-spacing: 0.01em;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 10px 18px;
+	border-radius: 8px;
+	touch-action: manipulation;
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+	.btn-primary-action,
+	.btn-save-action,
+	.btn-print-action,
+	.btn-pay-action,
+	.btn-scan-action,
+	.btn-remind-action,
+	.action-button-lg,
+	.primary-action-btn,
+	.clinical-action-btn,
+	.primary-button,
+	.btn-sign,
+	.btn-save,
+	.btn-confirm {
+		min-height: 50px;
+		font-size: 15px;
+		font-weight: 700;
+		padding: 12px 20px;
 	}
 }

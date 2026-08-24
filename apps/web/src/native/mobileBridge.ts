@@ -898,3 +898,44 @@ export async function shareClinicalDocumentMobile(params: {
 		error: "Не удалось отправить документ: функции общего доступа недоступны на этом устройстве.",
 	};
 }
+
+/**
+ * Clinical UI ergonomics touch target & button dimensions constants (SanPiN / Touch-First).
+ * In clinical operatories, doctors and nurses wear medical gloves and interact with touch monoblocks/tablets.
+ */
+export const CLINICAL_TOUCH_TARGETS = {
+	/** Minimum touch target size for standard interactive elements (WCAG / iOS / Material) */
+	MIN_TOUCH_SIZE_PX: 44,
+	/** Minimum height for primary action buttons (Save, Print, Pay, Scan, Remind) */
+	PRIMARY_ACTION_MIN_HEIGHT_PX: 48,
+	/** Touch-first operatory monoblock / mobile primary action height */
+	MOBILE_ACTION_MIN_HEIGHT_PX: 52,
+	/** Minimum typography font size for primary action labels */
+	PRIMARY_ACTION_FONT_SIZE_PX: 14,
+	/** Tooth formula anatomical element minimum touch height */
+	TOOTH_FORMULA_MIN_HEIGHT_PX: 140,
+} as const;
+
+/**
+ * Validates whether an action button layout conforms to clinical touch-first ergonomics.
+ */
+export function validateClinicalActionButtonErgonomics(params: {
+	heightPx: number;
+	fontSizePx: number;
+	hasVisibleRussianLabel: boolean;
+}): { isValid: boolean; issues: string[] } {
+	const issues: string[] = [];
+	if (params.heightPx < CLINICAL_TOUCH_TARGETS.PRIMARY_ACTION_MIN_HEIGHT_PX) {
+		issues.push(`Высота кнопки (${params.heightPx}px) меньше клинического норматива ${CLINICAL_TOUCH_TARGETS.PRIMARY_ACTION_MIN_HEIGHT_PX}px`);
+	}
+	if (params.fontSizePx < CLINICAL_TOUCH_TARGETS.PRIMARY_ACTION_FONT_SIZE_PX) {
+		issues.push(`Размер шрифта (${params.fontSizePx}px) меньше норматива ${CLINICAL_TOUCH_TARGETS.PRIMARY_ACTION_FONT_SIZE_PX}px`);
+	}
+	if (!params.hasVisibleRussianLabel) {
+		issues.push("Запрет на изолированные иконки без поясняющего русского текста в главных клинических действиях");
+	}
+	return {
+		isValid: issues.length === 0,
+		issues,
+	};
+}
