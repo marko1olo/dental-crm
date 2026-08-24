@@ -39,6 +39,7 @@ export const TOOTH_STATE_LABELS: Record<ToothState, string> = {
 	Healthy: "здоров",
 };
 
+import { getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import type { EndoToothClinicalData } from "./EndoCanalLogModal";
 import {
 	type CanalObturationMaterial,
@@ -72,6 +73,9 @@ export interface ToothData {
 	bopSites?: string[];
 	suppurationSites?: string[];
 	periapicalLesion?: boolean;
+	pocketDepth?: number;
+	pocketDepthMm?: number;
+	maxPocketDepth?: number;
 	notes?: string;
 	clinicalData?: EndoToothClinicalData | Record<string, unknown>;
 }
@@ -106,6 +110,16 @@ export const ALL_ADULT_TEETH_NUMBERS: readonly number[] = [
 	...BOTTOM_TEETH,
 ];
 
+export const ADULT_MOLARS: readonly number[] = [
+	18, 17, 16, 26, 27, 28, 48, 47, 46, 36, 37, 38,
+];
+export const ADULT_PREMOLARS: readonly number[] = [
+	15, 14, 24, 25, 45, 44, 34, 35,
+];
+export const ADULT_FRONTAL: readonly number[] = [
+	13, 12, 11, 21, 22, 23, 43, 42, 41, 31, 32, 33,
+];
+
 export function createDefaultAdultTeethData(): ToothData[] {
 	return ALL_ADULT_TEETH_NUMBERS.map((toothNumber) => ({
 		toothNumber,
@@ -115,13 +129,14 @@ export function createDefaultAdultTeethData(): ToothData[] {
 
 export const PEDIATRIC_TOP_TEETH = [55, 54, 53, 52, 51, 61, 62, 63, 64, 65];
 export const PEDIATRIC_BOTTOM_TEETH = [85, 84, 83, 82, 81, 71, 72, 73, 74, 75];
+export const PEDIATRIC_MOLARS: readonly number[] = [55, 54, 64, 65, 85, 84, 74, 75];
 export const MIXED_TOP_TEETH = [16, 55, 54, 53, 52, 51, 61, 62, 63, 64, 65, 26];
 export const MIXED_BOTTOM_TEETH = [46, 85, 84, 83, 82, 81, 71, 72, 73, 74, 75, 36];
 
 /**
- * Нижняя граница масштаба. Дуга масштабируется под экран мобильного устройства.
+ * Нижняя граница масштаба. Дуга масштабируется под экран мобильного устройства (375px–414px).
  */
-const MIN_ARCH_SCALE = 0.5;
+const MIN_ARCH_SCALE = 0.35;
 
 /** "56px" × 0.68 → "38.08px". Нечисловое значение возвращается как есть. */
 function scaleCssPx(value: string, factor: number): string {
@@ -248,7 +263,7 @@ const getToothColors = (
 					fill: "url(#gold-crown-gradient)",
 					crownFill: "url(#gold-crown-gradient)",
 					rootFill: "url(#dente-root-dentin)",
-					stroke: "#b45309",
+					stroke: "#d97706",
 					collarFill: "url(#gold-ridge-burnish)",
 					opacity: "1",
 					badgeColor: "#f59e0b",
@@ -261,7 +276,7 @@ const getToothColors = (
 					fill: "url(#pfm-crown-gradient)",
 					crownFill: "url(#pfm-crown-gradient)",
 					rootFill: "url(#dente-root-dentin)",
-					stroke: "#1e3a8a",
+					stroke: "#3b82f6",
 					collarFill: "url(#pfm-metal-collar)",
 					opacity: "1",
 					badgeColor: "#2563eb",
@@ -274,7 +289,7 @@ const getToothColors = (
 					fill: "url(#ceramic-emax-gradient)",
 					crownFill: "url(#ceramic-emax-gradient)",
 					rootFill: "url(#dente-root-dentin)",
-					stroke: "#0284c7",
+					stroke: "#38bdf8",
 					collarFill: "url(#ceramic-emax-gradient)",
 					opacity: "1",
 					badgeColor: "#38bdf8",
@@ -286,7 +301,7 @@ const getToothColors = (
 				fill: "url(#zirconia-crown-gradient)",
 				crownFill: "url(#zirconia-crown-gradient)",
 				rootFill: "url(#dente-root-dentin)",
-				stroke: "#1d4ed8",
+				stroke: "#60a5fa",
 				collarFill: "url(#dente-cervical-collar)",
 				opacity: "1",
 				badgeColor: "#3b82f6",
@@ -731,6 +746,9 @@ const ToothSVG = ({
 	boneLossLevel,
 	boneLossType,
 	periapicalLesion,
+	pocketDepth,
+	pocketDepthMm,
+	maxPocketDepth,
 	isSelected,
 	selectedTeeth,
 	activeStamp,
@@ -753,6 +771,9 @@ const ToothSVG = ({
 	boneLossLevel?: number | undefined;
 	boneLossType?: PeriodontalBoneLossPattern | undefined;
 	periapicalLesion?: boolean | undefined;
+	pocketDepth?: number | undefined;
+	pocketDepthMm?: number | undefined;
+	maxPocketDepth?: number | undefined;
 	isSelected?: boolean | undefined;
 	selectedTeeth?: number[] | undefined;
 	activeStamp?: ToothState | null | undefined;
@@ -765,6 +786,7 @@ const ToothSVG = ({
 	showPeriapicalHalos?: boolean | undefined;
 	showPeriodontalBoneLoss?: boolean | undefined;
 }) => {
+	const effectivePocketDepth = pocketDepth ?? pocketDepthMm ?? maxPocketDepth;
 	const isTop = number < 30 || (number >= 51 && number <= 65);
 	const geom = getToothPath(number);
 	const cfg = getToothConfig(number);
@@ -1505,6 +1527,16 @@ const ToothSVG = ({
 					style={{ backgroundColor: colors.badgeColor }}
 				/>
 				<span className="tooth-number-text font-black">{number}</span>
+				{effectivePocketDepth !== undefined && effectivePocketDepth > 4 && (
+					<span
+						className={`ml-1 px-1.5 py-0.5 rounded text-xs font-black text-white shadow-2xs leading-none ${
+							effectivePocketDepth >= 6 ? "bg-rose-600 animate-pulse" : "bg-amber-500"
+						}`}
+						title={`Пародонтальный карман ${effectivePocketDepth} мм (Риск пародонтита K05.3)`}
+					>
+						P{effectivePocketDepth}
+					</span>
+				)}
 			</span>
 		</div>
 	);
@@ -1517,7 +1549,8 @@ const ToothSVG = ({
 				isSelected ? "selected ring-2 ring-indigo-500/70" : ""
 			}`}
 			data-tooth-id={number}
-			aria-label={`Зуб ${number}, ${TOOTH_STATE_LABELS[state]}`}
+			title={`${getToothFolkAndAnatomicalNameRu(number)} — Статус: ${TOOTH_STATE_LABELS[state]}`}
+			aria-label={`${getToothFolkAndAnatomicalNameRu(number)}, статус: ${TOOTH_STATE_LABELS[state]}`}
 			aria-pressed={isSelected ? true : undefined}
 			onClick={(e) => {
 				if (activeStamp && onQuickStateChange) {
@@ -1528,20 +1561,51 @@ const ToothSVG = ({
 				onClick(e, number);
 			}}
 			onKeyDown={(e) => {
-				if (e.key === "Enter" || e.key === " ") {
+				// 1. Space: Fast toggle Healthy <-> Caries
+				if (e.key === " " || e.code === "Space") {
 					e.preventDefault();
-					if (activeStamp && onQuickStateChange) {
-						const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-						onQuickStateChange(targets, activeStamp, surfaces);
-						return;
+					if (onQuickStateChange) {
+						const targets =
+							selectedTeeth?.includes(number) && selectedTeeth.length > 0
+								? selectedTeeth
+								: [number];
+						const nextState: ToothState = state === "Caries" ? "Healthy" : "Caries";
+						const nextSurfaces =
+							nextState === "Healthy"
+								? []
+								: surfaces && surfaces.length > 0
+									? surfaces
+									: ["O"];
+						onQuickStateChange(targets, nextState, nextSurfaces);
 					}
-					onClick(e as unknown as React.MouseEvent, number);
 					return;
 				}
 
-				if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "Home" || e.key === "End") {
+				// 2. Enter: Confirm and advance focus to next tooth
+				if (e.key === "Enter") {
 					e.preventDefault();
-					const dirMap: Record<string, "left" | "right" | "up" | "down" | "home" | "end"> = {
+					const nextTooth = getNextFocusedTooth(number, "right", pediatricMode);
+					const nextEl = document.querySelector<HTMLButtonElement>(
+						`[data-tooth-id="${nextTooth}"]`,
+					);
+					nextEl?.focus();
+					return;
+				}
+
+				// 3. Arrow keys navigation (Left/Right/Up/Down/Home/End)
+				if (
+					e.key === "ArrowLeft" ||
+					e.key === "ArrowRight" ||
+					e.key === "ArrowUp" ||
+					e.key === "ArrowDown" ||
+					e.key === "Home" ||
+					e.key === "End"
+				) {
+					e.preventDefault();
+					const dirMap: Record<
+						string,
+						"left" | "right" | "up" | "down" | "home" | "end"
+					> = {
 						ArrowLeft: "left",
 						ArrowRight: "right",
 						ArrowUp: "up",
@@ -1552,17 +1616,58 @@ const ToothSVG = ({
 					const navDir = dirMap[e.key];
 					if (navDir) {
 						const nextTooth = getNextFocusedTooth(number, navDir, pediatricMode);
-						const nextEl = document.querySelector<HTMLButtonElement>(`[data-tooth-id="${nextTooth}"]`);
+						const nextEl = document.querySelector<HTMLButtonElement>(
+							`[data-tooth-id="${nextTooth}"]`,
+						);
 						nextEl?.focus();
 					}
 					return;
 				}
 
-				// 1-Click fast keys (К, П, Е, Ф, Ц, И, 0, З)
+				// 4. Number keys 1..5 / Numpad 1..5 for surfaces (O, M, D, V, L)
+				const surfaceMap: Record<string, string> = {
+					"1": "O",
+					"2": "M",
+					"3": "D",
+					"4": "V",
+					"5": "L",
+					Numpad1: "O",
+					Numpad2: "M",
+					Numpad3: "D",
+					Numpad4: "V",
+					Numpad5: "L",
+				};
+				const surfaceToToggle = surfaceMap[e.key] || surfaceMap[e.code];
+				if (surfaceToToggle && onQuickStateChange) {
+					e.preventDefault();
+					const currSurfaces = surfaces ?? [];
+					const nextSurfaces = currSurfaces.includes(surfaceToToggle)
+						? currSurfaces.filter((s) => s !== surfaceToToggle)
+						: [...currSurfaces, surfaceToToggle];
+					const targets =
+						selectedTeeth?.includes(number) && selectedTeeth.length > 0
+							? selectedTeeth
+							: [number];
+					const nextState: ToothState =
+						nextSurfaces.length > 0
+							? state === "Healthy"
+								? "Caries"
+								: state
+							: state === "Caries"
+								? "Healthy"
+								: state;
+					onQuickStateChange(targets, nextState, nextSurfaces);
+					return;
+				}
+
+				// 5. 1-Click fast keys (К, П, Е, Ф, Ц, И, 0, З)
 				const quickState = getToothStateFromHotkey(e.key);
 				if (quickState && onQuickStateChange) {
 					e.preventDefault();
-					const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+					const targets =
+						selectedTeeth?.includes(number) && selectedTeeth.length > 0
+							? selectedTeeth
+							: [number];
 					onQuickStateChange(targets, quickState, surfaces);
 				}
 			}}
@@ -1906,7 +2011,12 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 		return () => observer.disconnect();
 	}, []);
 
-	// High-speed keyboard triggers: instant 1-key assigning without opening sub-menus
+	const digitBufferRef = useRef<{ buffer: string; timer: any }>({
+		buffer: "",
+		timer: null,
+	});
+
+	// High-speed keyboard triggers: instant 1-key assigning and digit/arrow navigation without mouse
 	useEffect(() => {
 		const handleGlobalKeyDown = (e: KeyboardEvent) => {
 			const target = e.target as HTMLElement | null;
@@ -1918,6 +2028,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 				return;
 			}
 
+			// 1. Hotkey status assignment for selected teeth
 			if (selectedTeeth.length > 0 && onQuickStateChange) {
 				const quickState = getToothStateFromHotkey(e.key);
 				if (quickState) {
@@ -1931,9 +2042,59 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 				}
 			}
 
+			// 2. Digit 1-8 tooth navigation (Quadrant-aware & 2-digit FDI typing)
+			if (/^[1-8]$/.test(e.key) && !e.ctrlKey && !e.altKey && !e.metaKey) {
+				const digit = Number.parseInt(e.key, 10);
+				const firstTooth = selectedTeeth[0];
+
+				if (digitBufferRef.current.timer) {
+					clearTimeout(digitBufferRef.current.timer);
+				}
+
+				const prevBuffer = digitBufferRef.current.buffer;
+				if (prevBuffer.length === 1) {
+					const firstDigit = Number.parseInt(prevBuffer, 10);
+					const fdiCandidate = firstDigit * 10 + digit;
+					digitBufferRef.current.buffer = "";
+					const targetBtn = document.querySelector<HTMLButtonElement>(
+						`[data-tooth-id="${fdiCandidate}"]`,
+					);
+					if (targetBtn) {
+						e.preventDefault();
+						targetBtn.focus();
+						targetBtn.click();
+						return;
+					}
+				}
+
+				const quadrant = firstTooth ? Math.floor(firstTooth / 10) : 1;
+				const isPediatricQuad = quadrant >= 5 && quadrant <= 8;
+				if (!isPediatricQuad || digit <= 5) {
+					const targetTooth = quadrant * 10 + digit;
+					const targetBtn = document.querySelector<HTMLButtonElement>(
+						`[data-tooth-id="${targetTooth}"]`,
+					);
+					if (targetBtn) {
+						e.preventDefault();
+						targetBtn.focus();
+						targetBtn.click();
+					}
+				}
+
+				digitBufferRef.current.buffer = e.key;
+				digitBufferRef.current.timer = setTimeout(() => {
+					digitBufferRef.current.buffer = "";
+				}, 750);
+				return;
+			}
+
+			// 3. Arrow Keys navigation (Left, Right, Up, Down, Home, End)
 			const firstTooth = selectedTeeth[0];
-			if (selectedTeeth.length === 1 && firstTooth !== undefined) {
-				const dirMap: Record<string, "left" | "right" | "up" | "down" | "home" | "end"> = {
+			if (firstTooth !== undefined) {
+				const dirMap: Record<
+					string,
+					"left" | "right" | "up" | "down" | "home" | "end"
+				> = {
 					ArrowLeft: "left",
 					ArrowRight: "right",
 					ArrowUp: "up",
@@ -1945,8 +2106,29 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 				if (navDir) {
 					e.preventDefault();
 					const nextTooth = getNextFocusedTooth(firstTooth, navDir, pediatricMode);
-					const nextEl = document.querySelector<HTMLButtonElement>(`[data-tooth-id="${nextTooth}"]`);
-					nextEl?.focus();
+					const nextEl = document.querySelector<HTMLButtonElement>(
+						`[data-tooth-id="${nextTooth}"]`,
+					);
+					if (nextEl) {
+						nextEl.focus();
+						nextEl.click();
+					}
+				}
+			} else if (
+				e.key === "ArrowLeft" ||
+				e.key === "ArrowRight" ||
+				e.key === "ArrowUp" ||
+				e.key === "ArrowDown"
+			) {
+				// If nothing is selected, focus first tooth (18 or 11)
+				e.preventDefault();
+				const initialTooth = pediatricMode ? 55 : 18;
+				const initialEl = document.querySelector<HTMLButtonElement>(
+					`[data-tooth-id="${initialTooth}"]`,
+				);
+				if (initialEl) {
+					initialEl.focus();
+					initialEl.click();
 				}
 			}
 		};
@@ -1955,7 +2137,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 		return () => {
 			window.removeEventListener("keydown", handleGlobalKeyDown);
 		};
-	}, [selectedTeeth, onQuickStateChange, pediatricMode]);
+	}, [selectedTeeth, onQuickStateChange, pediatricMode, teethData]);
 
 	const handleToothClick = (
 		e: React.MouseEvent,
@@ -2033,6 +2215,9 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 										boneLossLevel={tData?.boneLossLevel}
 										boneLossType={tData?.boneLossType}
 										periapicalLesion={tData?.periapicalLesion}
+										pocketDepth={tData?.pocketDepth}
+										pocketDepthMm={tData?.pocketDepthMm}
+										maxPocketDepth={tData?.maxPocketDepth}
 										surfaces={tData?.surfaces}
 										useSurfaces={useSurfaces}
 										showPulpAndCanals={showPulpAndCanals}
@@ -2071,6 +2256,9 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 										boneLossLevel={tData?.boneLossLevel}
 										boneLossType={tData?.boneLossType}
 										periapicalLesion={tData?.periapicalLesion}
+										pocketDepth={tData?.pocketDepth}
+										pocketDepthMm={tData?.pocketDepthMm}
+										maxPocketDepth={tData?.maxPocketDepth}
 										surfaces={tData?.surfaces}
 										useSurfaces={useSurfaces}
 										showPulpAndCanals={showPulpAndCanals}
@@ -2115,6 +2303,9 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 										boneLossLevel={tData?.boneLossLevel}
 										boneLossType={tData?.boneLossType}
 										periapicalLesion={tData?.periapicalLesion}
+										pocketDepth={tData?.pocketDepth}
+										pocketDepthMm={tData?.pocketDepthMm}
+										maxPocketDepth={tData?.maxPocketDepth}
 										surfaces={tData?.surfaces}
 										useSurfaces={useSurfaces}
 										showPulpAndCanals={showPulpAndCanals}
@@ -2153,6 +2344,9 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 										boneLossLevel={tData?.boneLossLevel}
 										boneLossType={tData?.boneLossType}
 										periapicalLesion={tData?.periapicalLesion}
+										pocketDepth={tData?.pocketDepth}
+										pocketDepthMm={tData?.pocketDepthMm}
+										maxPocketDepth={tData?.maxPocketDepth}
 										surfaces={tData?.surfaces}
 										useSurfaces={useSurfaces}
 										showPulpAndCanals={showPulpAndCanals}

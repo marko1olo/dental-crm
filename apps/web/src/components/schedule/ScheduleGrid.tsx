@@ -537,7 +537,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																			e.stopPropagation();
 																			onQuickStatusChange(a.id, "confirmed");
 																		}}
-																		className={`p-2 rounded-xl border min-h-[44px] min-w-[44px] flex items-center justify-center transition-all cursor-pointer ${
+																		className={`p-2 rounded-xl border min-h-[48px] min-w-[48px] flex items-center justify-center transition-all cursor-pointer ${
 																			a.status === "confirmed"
 																				? "bg-violet-500 text-white border-violet-600 font-bold shadow-xs"
 																				: "bg-[var(--paper-soft)] border-[var(--line)] text-violet-700 dark:text-violet-300 hover:bg-violet-500/20"
@@ -553,7 +553,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																			e.stopPropagation();
 																			onQuickStatusChange(a.id, "arrived");
 																		}}
-																		className={`p-2 rounded-xl border min-h-[44px] min-w-[44px] flex items-center justify-center transition-all cursor-pointer ${
+																		className={`p-2 rounded-xl border min-h-[48px] min-w-[48px] flex items-center justify-center transition-all cursor-pointer ${
 																			a.status === "arrived"
 																				? "bg-emerald-500 text-white border-emerald-600 font-bold shadow-xs"
 																				: "bg-[var(--paper-soft)] border-[var(--line)] text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20"
@@ -569,7 +569,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																			e.stopPropagation();
 																			onQuickStatusChange(a.id, "in_treatment");
 																		}}
-																		className={`p-2 rounded-xl border min-h-[44px] min-w-[44px] flex items-center justify-center transition-all cursor-pointer ${
+																		className={`p-2 rounded-xl border min-h-[48px] min-w-[48px] flex items-center justify-center transition-all cursor-pointer ${
 																			a.status === "in_treatment"
 																				? "bg-sky-500 text-white border-sky-600 font-bold shadow-xs"
 																				: "bg-[var(--paper-soft)] border-[var(--line)] text-sky-700 dark:text-sky-300 hover:bg-sky-500/20"
@@ -585,7 +585,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																			e.stopPropagation();
 																			onQuickStatusChange(a.id, "completed");
 																		}}
-																		className={`p-2 rounded-xl border min-h-[44px] min-w-[44px] flex items-center justify-center transition-all cursor-pointer ${
+																		className={`p-2 rounded-xl border min-h-[48px] min-w-[48px] flex items-center justify-center transition-all cursor-pointer ${
 																			a.status === "completed"
 																				? "bg-teal-500 text-white border-teal-600 font-bold shadow-xs"
 																				: "bg-[var(--paper-soft)] border-[var(--line)] text-teal-700 dark:text-teal-300 hover:bg-teal-500/20"
@@ -601,7 +601,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																			e.stopPropagation();
 																			onQuickStatusChange(a.id, "no_show");
 																		}}
-																		className={`p-2 rounded-xl border min-h-[44px] min-w-[44px] flex items-center justify-center transition-all cursor-pointer ${
+																		className={`p-2 rounded-xl border min-h-[48px] min-w-[48px] flex items-center justify-center transition-all cursor-pointer ${
 																			a.status === "no_show"
 																				? "bg-rose-500 text-white border-rose-600 font-bold shadow-xs"
 																				: "bg-[var(--paper-soft)] border-[var(--line)] text-rose-700 dark:text-rose-300 hover:bg-rose-500/20"
@@ -635,7 +635,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																				showToast(`Текст напоминания для ${pName} скопирован в буфер`, "success");
 																			}
 																		}}
-																		className="p-2 rounded-xl border border-teal-500/30 bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 min-h-[44px] min-w-[44px] flex items-center justify-center transition-all cursor-pointer"
+																		className="p-2 rounded-xl border border-teal-500/30 bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 min-h-[48px] min-w-[48px] flex items-center justify-center transition-all cursor-pointer"
 																		title={`Скопировать текст напоминания (SMS) для ${pName}`}
 																		aria-label={`Скопировать SMS напоминание для ${pName}`}
 																	>
@@ -658,7 +658,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																			});
 																			openWhatsAppChat(patObj.phone!, text);
 																		}}
-																		className="p-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 min-h-[44px] min-w-[44px] flex items-center justify-center transition-all cursor-pointer"
+																		className="p-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 min-h-[48px] min-w-[48px] flex items-center justify-center transition-all cursor-pointer"
 																		title={`Отправить WhatsApp напоминание (${pName})`}
 																		aria-label={`WhatsApp напоминание для ${pName}`}
 																	>
@@ -748,7 +748,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 													durationMinutes: 30,
 												})
 											}
-											className="w-full h-full min-h-[44px] rounded-xl border border-dashed border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
+											className="w-full h-full min-h-[48px] rounded-xl border border-dashed border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
 											title={`Записать на ${hour} (${chair.name})`}
 											aria-label={`Свободно на ${hour}, кресло ${chair.name}. Нажмите для быстрой записи`}
 										>

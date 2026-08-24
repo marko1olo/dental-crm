@@ -404,6 +404,28 @@
 	}
 }
 
+@media (max-width: 640px) {
+	.tooth-chart-arch-container {
+		padding: 6px 2px;
+	}
+	.tooth-svg-wrapper {
+		min-width: 0;
+		padding: 1px 0;
+	}
+	.tooth-quadrant-group {
+		gap: 1px;
+	}
+	.teeth-row {
+		gap: 2px;
+	}
+	.tooth-arch-midline-guide {
+		width: 6px;
+	}
+	.midline-notch {
+		width: 1.5px;
+	}
+}
+
 @media (min-width: 1440px) {
 	.tooth-chart-arch-container {
 		overflow-x: auto;
@@ -1650,5 +1672,50 @@
 	border: 2px solid #000000;
 	color: #000000;
 	background: #ffffff;
+}
+
+/* ── Graphic Tooth Formula & Form 043/u A4 Print Styles ── */
+@media print {
+	body {
+		background: #ffffff !important;
+		color: #0f172a !important;
+	}
+
+	/* Ensure graphic SVG colors, borders, and fills are preserved during print */
+	#odontogram-print-a4,
+	#odontogram-print-a4 *,
+	#visit-emk-print-a4,
+	#visit-emk-print-a4 * {
+		-webkit-print-color-adjust: exact !important;
+		print-color-adjust: exact !important;
+		color-adjust: exact !important;
+	}
+
+	#odontogram-print-a4,
+	#visit-emk-print-a4 {
+		display: block !important;
+		width: 100% !important;
+		max-width: 297mm !important;
+		margin: 0 auto !important;
+		background: #ffffff !important;
+		color: #0f172a !important;
+		page-break-inside: avoid !important;
+		break-inside: avoid !important;
+	}
+
+	#visit-emk-print-a4 table,
+	#visit-emk-print-a4 tr,
+	#visit-emk-print-a4 td,
+	#odontogram-print-a4 table,
+	#odontogram-print-a4 tr,
+	#odontogram-print-a4 td {
+		page-break-inside: avoid !important;
+		break-inside: avoid !important;
+	}
+
+	@page {
+		size: A4 portrait;
+		margin: 8mm 10mm;
+	}
 }
 
