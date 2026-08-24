@@ -5,7 +5,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+	createLanFailoverFetch,
+	DEFAULT_LAN_BEACON_PORT,
 	discoverLocalClinicServer,
+	generateSubnetIpCandidates,
 	getActiveApiBaseUrl,
 	getLanDiscoveryCandidates,
 	isUsingLocalFallbackServer,
@@ -88,7 +91,7 @@ test("Local Clinic Server Discovery & Offline Failover Suite", async (t) => {
 
 	await t.test("4. discoverLocalClinicServer: probes candidates and selects healthy server", async () => {
 		globalThis.fetch = (async (url: string) => {
-			if (url.includes("127.0.0.1")) {
+			if (url.includes("127.0.0.1:4100")) {
 				return {
 					ok: true,
 					status: 200,
@@ -126,7 +129,7 @@ test("Local Clinic Server Discovery & Offline Failover Suite", async (t) => {
 
 	await t.test("6. switchApiToLocalLanServer: automatically discovers and activates failover", async () => {
 		globalThis.fetch = (async (url: string) => {
-			if (url.includes("dente-server.local")) {
+			if (url.includes("dente-server.local:4100")) {
 				return {
 					ok: true,
 					status: 200,
@@ -147,5 +150,72 @@ test("Local Clinic Server Discovery & Offline Failover Suite", async (t) => {
 		assert.equal(success, true);
 		assert.equal(getActiveApiBaseUrl(), "http://dente-server.local:4100/api");
 		assert.equal(isUsingLocalFallbackServer(), true);
+	});
+
+	await t.test("7. createLanFailoverFetch: transparently reroutes cloud requests to local server when WAN is down", async () => {
+		let callCount = 0;
+		const mockBaseFetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+			callCount++;
+			const url = String(input);
+			if (url.startsWith("/api/patients") && callCount === 1) {
+				// Simulate WAN cloud outage on first request
+				throw new TypeError("Failed to fetch (Cloud WAN Offline)");
+			}
+			if (url.includes("/api/health/discovery")) {
+				return {
+					ok: true,
+					status: 200,
+					json: async () => ({
+						serverName: "DENTE Local Microserver",
+						serverId: "lan-micro-01",
+						apiPort: 4100,
+						hostname: "dente-server.local",
+						lanAddresses: ["192.168.1.200"],
+						status: "online",
+					}),
+				};
+			}
+			if (url.startsWith("http://dente-server.local:4100/api/patients")) {
+				return {
+					ok: true,
+					status: 200,
+					json: async () => ({
+						success: true,
+						patients: [{ id: "pat-1", fullName: "Иванов Иван" }],
+					}),
+				};
+			}
+			return { ok: false, status: 404 };
+		}) as unknown as typeof fetch;
+
+		const resilientFetch = createLanFailoverFetch(mockBaseFetch);
+		const response = await resilientFetch("/api/patients", { method: "GET" });
+		assert.ok(response.ok);
+		const data = await response.json() as { success: boolean; patients: unknown[] };
+		assert.equal(data.success, true);
+		assert.equal(data.patients.length, 1);
+		assert.equal(isUsingLocalFallbackServer(), true);
+	});
+
+	await t.test("8. generateSubnetIpCandidates: generates standard ports 4100 and beacon port 4101", () => {
+		const candidates = generateSubnetIpCandidates(["192.168.5"], [4100, DEFAULT_LAN_BEACON_PORT]);
+		assert.ok(candidates.length > 0);
+		assert.ok(candidates.includes(`http://192.168.5.1:4100`));
+		assert.ok(candidates.includes(`http://192.168.5.1:${DEFAULT_LAN_BEACON_PORT}`));
+		assert.ok(candidates.includes(`http://192.168.5.100:4100`));
+	});
+
+	await t.test("9. Event notification: dispatches dente:api-base-url-changed on failover", async () => {
+		let receivedEventDetail: { url: string } | null = null;
+		globalThis.window.dispatchEvent = ((evt: CustomEvent<{ url: string }>) => {
+			if (evt.type === "dente:api-base-url-changed") {
+				receivedEventDetail = evt.detail;
+			}
+			return true;
+		}) as unknown as typeof window.dispatchEvent;
+
+		setActiveApiBaseUrl("http://192.168.1.100:4100/api");
+		assert.ok(receivedEventDetail);
+		assert.equal((receivedEventDetail as { url: string })?.url, "http://192.168.1.100:4100/api");
 	});
 });
