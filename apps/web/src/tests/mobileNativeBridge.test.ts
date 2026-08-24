@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
 	authenticateBiometricStaff,
+	classifyBiometricFallbackReason,
 	clearModalBackStack,
 	getDeviceFormFactor,
 	getModalBackStackDepth,
@@ -13,6 +14,7 @@ import {
 	isMobileApp,
 	isMobileSmartphone,
 	isTabletDevice,
+	isValidStaffPinFormat,
 	parseGs1DataMatrix,
 	popModalBackHandler,
 	pushModalBackHandler,
@@ -21,6 +23,8 @@ import {
 	saveSecureToken,
 	scanDataMatrixWithCamera,
 	triggerHaptic,
+	verifyStaffPinCode,
+	type MobileNativeApi,
 } from "../native/mobileBridge";
 
 test("Mobile Android (.APK) & GS1 DataMatrix Verification Suite", async (t) => {
@@ -217,6 +221,73 @@ test("Mobile Android (.APK) & GS1 DataMatrix Verification Suite", async (t) => {
 		assert.equal(getModalBackStackDepth(), 1);
 		unsubModal3();
 		assert.equal(getModalBackStackDepth(), 0);
+	});
+
+	await t.test("Staff PIN validation & constant-time verification protects against side-channel timing attacks", () => {
+		// Valid PIN format: 4 to 6 digits
+		assert.equal(isValidStaffPinFormat("1234"), true);
+		assert.equal(isValidStaffPinFormat("987654"), true);
+		assert.equal(isValidStaffPinFormat("123"), false); // too short
+		assert.equal(isValidStaffPinFormat("1234567"), false); // too long
+		assert.equal(isValidStaffPinFormat("12a4"), false); // letters
+		assert.equal(isValidStaffPinFormat(""), false);
+
+		// Constant-time PIN verification
+		assert.equal(verifyStaffPinCode("4455", "4455"), true);
+		assert.equal(verifyStaffPinCode("4455", "4456"), false);
+		assert.equal(verifyStaffPinCode("123456", "123456"), true);
+		assert.equal(verifyStaffPinCode("123456", "123457"), false);
+	});
+
+	await t.test("Biometric error classification triggers seamless fallback to 4/6-digit PIN", () => {
+		const notEnrolled = classifyBiometricFallbackReason("No biometric identities enrolled on device");
+		assert.equal(notEnrolled.fallbackRequired, true);
+		assert.equal(notEnrolled.reason, "not_enrolled");
+
+		const userCancel = classifyBiometricFallbackReason("User cancelled biometric prompt to use PIN passcode");
+		assert.equal(userCancel.fallbackRequired, true);
+		assert.equal(userCancel.reason, "user_fallback");
+
+		const lockedOut = classifyBiometricFallbackReason("Biometric sensor locked due to too many failed attempts");
+		assert.equal(lockedOut.fallbackRequired, true);
+		assert.equal(lockedOut.reason, "locked_out");
+
+		const hwUnavailable = classifyBiometricFallbackReason("Biometric hardware not present");
+		assert.equal(hwUnavailable.fallbackRequired, true);
+		assert.equal(hwUnavailable.reason, "hardware_unavailable");
+	});
+
+	await t.test("Simulated Android device seamlessly falls back to PIN on biometric refusal", async () => {
+		const mockNativeWithFallback: MobileNativeApi = {
+			isMobileApp: true,
+			platform: "android",
+			appVersion: "1.0.0",
+			scanBarcode: async () => ({ success: true }),
+			authenticateBiometric: async () => ({
+				success: false,
+				authenticated: false,
+				biometryType: "fingerprint",
+				error: "User selected fallback PIN",
+			}),
+			hapticFeedback: () => {},
+			shareFile: async () => ({ success: true }),
+		};
+
+		const original = (globalThis as any).window;
+		(globalThis as any).window = {
+			denteMobileNative: mockNativeWithFallback,
+		};
+
+		try {
+			const res = await authenticateBiometricStaff();
+			assert.equal(res.success, false);
+			assert.equal(res.authenticated, false);
+			assert.equal(res.authMethod, "pin");
+			assert.equal(res.fallbackRequired, true);
+			assert.equal(res.fallbackReason, "user_fallback");
+		} finally {
+			(globalThis as any).window = original;
+		}
 	});
 });
 

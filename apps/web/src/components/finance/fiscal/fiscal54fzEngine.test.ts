@@ -5,6 +5,7 @@ import {
 	calculateAdvanceStagePrepayment,
 	calculateCashChange,
 	calculateFinalSettlementWithAdvanceOffset,
+	calculateIncomeReturnDraft,
 	combineFamilyInvoicesIntoFiscalDraft,
 	compile54FzFiscalTags,
 	compile54FzShiftCloseZReport,
@@ -490,6 +491,58 @@ describe("Frontend 54-FZ (FFD 1.2) Fiscal Engine Tests", () => {
 		assert.equal(zReport.cashInDrawerRub, 6000.0);
 		assert.equal(zReport.cashInDrawerKopecks, 600000);
 		assert.equal(zReport.isBalanced, true);
+	});
+
+	it("1.12 calculateIncomeReturnDraft — 1-Click Income Return (Tag 1054=2) with Deposit Reversal (Tag 1215) and Card Refund (Tag 1081)", () => {
+		// Original treatment invoice: Total 50,000 ₽
+		// Paid by: Card = 30,000 ₽ (Tag 1081) + Patient Personal Advance Offset = 20,000 ₽ (Tag 1215)
+		const originalTenders: SplitTenderState = {
+			cashRub: 0,
+			cardRub: 30000.0,
+			sbpRub: 0,
+			advanceOffsetRub: 20000.0,
+			familyWalletRub: 0,
+			certificateRub: 0,
+		};
+
+		// Patient cancels 1 treatment stage: 25,000 ₽ returned
+		const returnedItems: FiscalItemDraft[] = [
+			{
+				id: "ret-item-1",
+				name: "Керамическая коронка E-max (Возврат)",
+				priceRub: 25000.0,
+				quantity: 1,
+				subject: "service",
+				method: "full_payment",
+				vatRate: "vat_none",
+				measure: "piece",
+			},
+		];
+
+		const returnDraft = calculateIncomeReturnDraft({
+			returnedItems,
+			originalTenders,
+			originalTotalKopecks: 5000000,
+		});
+
+		assert.equal(returnDraft.operationType, "income_return");
+		assert.equal(returnDraft.totalReturnRub, 25000.0);
+		assert.equal(returnDraft.totalReturnKopecks, 2500000);
+		assert.equal(returnDraft.isPartialRefund, true);
+
+		// Proportional restoration: 50% refund ratio
+		// Card refund (Tag 1081) = 30,000 * 0.5 = 15,000.00 ₽ (1,500,000 kop)
+		assert.equal(returnDraft.refundToCardRub, 15000.0);
+		assert.equal(returnDraft.refundToCardKopecks, 1500000);
+		// Deposit reversal to patient balance (Tag 1215) = 20,000 * 0.5 = 10,000.00 ₽ (1,000,000 kop)
+		assert.equal(returnDraft.restoredDepositRub, 10000.0);
+		assert.equal(returnDraft.restoredDepositKopecks, 1000000);
+
+		// Verification of 54-FZ Return Tags
+		assert.equal(returnDraft.fiscalTags.tag1081ElectronicKopecks, 1500000);
+		assert.equal(returnDraft.fiscalTags.tag1215PrepaidKopecks, 1000000);
+		assert.equal(returnDraft.fiscalTags.tag1031CashKopecks, 0);
+		assert.equal(returnDraft.fiscalTags.isBalanced, true);
 	});
 });
 

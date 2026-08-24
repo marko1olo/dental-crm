@@ -20,6 +20,7 @@ import {
 	Printer,
 	QrCode,
 	Receipt,
+	RotateCcw,
 	Send,
 	ShieldCheck,
 	Sparkles,
@@ -62,6 +63,7 @@ export interface Fiscal54FzReceiptModalProps {
 	readonly clinicName?: string;
 	readonly clinicInn?: string;
 	readonly clinicLicense?: string;
+	readonly initialOperationType?: "income" | "income_return" | undefined;
 	readonly onClose: () => void;
 	readonly onReceiptFiscalized?: (receiptData: unknown) => void;
 }
@@ -78,11 +80,13 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 	clinicName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
 	clinicInn = "7701234567",
 	clinicLicense = "Лицензия на мед. деятельность № ЛО41-01137-77/00368421 от 12.10.2021 г.",
+	initialOperationType = "income",
 	onClose,
 	onReceiptFiscalized,
 }) => {
 	if (!isOpen) return null;
 
+	const [operationType, setOperationType] = useState<"income" | "income_return">(initialOperationType);
 	const [activeTab, setActiveTab] = useState<"split" | "act" | "certificate" | "preview">("split");
 	const [actNumber, setActNumber] = useState<string>(
 		`АКТ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -257,7 +261,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 				patientId,
 				customerContact,
 				cashierFullName,
-				operationType: "income",
+				operationType,
 				taxationSystem: "usn_income",
 				totalKopecks: summary.totalKopecks,
 				cashKopecks: Math.round(tenders.cashRub * 100),
@@ -295,7 +299,8 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 			}
 
 			const result = await response.json();
-			showToast(`Чек успешно фискализирован: ФД №${result.fiscalDocumentNumber || "1"} · ФПД ${result.fiscalSign || "0"}`, "success");
+			const opTitle = operationType === "income_return" ? "Чек возврата прихода" : "Чек";
+			showToast(`${opTitle} успешно фискализирован: ФД №${result.fiscalDocumentNumber || "1"} · ФПД ${result.fiscalSign || "0"}`, "success");
 
 			onReceiptFiscalized?.(result);
 			onClose();
@@ -430,11 +435,39 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 									: activeTab === "certificate"
 										? "Справка для налоговой (КНД 1151156)"
 										: activeTab === "preview"
-											? "Предпросмотр фискального чека"
-											: "Быстрая касса & 54-ФЗ (ФФД 1.2)"}
+											? operationType === "income_return"
+												? "Предпросмотр чека возврата (Тег 1054=2)"
+												: "Предпросмотр фискального чека"
+											: operationType === "income_return"
+												? "Возврат прихода 54-ФЗ (Тег 1054=2)"
+												: "Быстрая касса & 54-ФЗ (ФФД 1.2)"}
 								<span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
 									Online ККТ
 								</span>
+								<div className="flex items-center gap-1 p-0.5 bg-slate-200 dark:bg-slate-800 rounded-lg ml-2">
+									<button
+										type="button"
+										onClick={() => setOperationType("income")}
+										className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+											operationType === "income"
+												? "bg-emerald-600 text-white shadow-xs"
+												: "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+										}`}
+									>
+										Приход
+									</button>
+									<button
+										type="button"
+										onClick={() => setOperationType("income_return")}
+										className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+											operationType === "income_return"
+												? "bg-rose-600 text-white shadow-xs"
+												: "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+										}`}
+									>
+										Возврат (1054=2)
+									</button>
+								</div>
 							</h2>
 							<p className="text-xs text-slate-500 dark:text-slate-400">
 								{distinctFamilyPatients.length > 1 ? "Плательщик:" : "Пациент:"} <span className="font-semibold text-slate-700 dark:text-slate-300">{patientName}</span>
@@ -532,6 +565,21 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 						<div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 							{/* Left Column: Tenders & 1-Click Fast Allocators */}
 							<div className="lg:col-span-7 space-y-5">
+								{/* Income Return (Tag 1054 = 2) Reversal Banner */}
+								{operationType === "income_return" && (
+									<div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-3">
+										<RotateCcw className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+										<div className="text-xs space-y-1">
+											<div className="font-bold text-rose-900 dark:text-rose-200">
+												Чек возврата прихода (54-ФЗ ФФД 1.2 Тег 1054 = 2) & Сторнирование
+											</div>
+											<div className="text-slate-600 dark:text-slate-300 leading-relaxed">
+												При фискализации возврата зачтенный аванс/депозит (Тег 1215: {tenders.advanceOffsetRub + (tenders.familyWalletRub || 0)} ₽) восстанавливается на баланс пациента, а безналичная оплата (Тег 1081: {tenders.cardRub + tenders.sbpRub} ₽) возвращается на банковскую карту через эквайринг/СБП.
+											</div>
+										</div>
+									</div>
+								)}
+
 								{/* 1-Click Fast Documentation Bar for Front Desk */}
 								<div className="p-3.5 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex flex-wrap items-center justify-between gap-2.5">
 									<div className="flex items-center gap-2 text-xs font-bold text-teal-900 dark:text-teal-100">
@@ -1193,6 +1241,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 								tenders={tenders}
 								totalRub={summary.totalRub}
 								totalRubFormatted={summary.totalRubFormatted}
+								isIncomeReturn={operationType === "income_return"}
 							/>
 						</div>
 					)}
@@ -1217,10 +1266,19 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 							type="button"
 							onClick={handleExecuteFiscalization}
 							disabled={!summary.isFullyAllocated || isFiscalizing}
-							className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-blue-600/25 transition-all cursor-pointer"
+							className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-lg transition-all cursor-pointer active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none ${
+								operationType === "income_return"
+									? "bg-rose-600 hover:bg-rose-700 shadow-rose-600/25"
+									: "bg-blue-600 hover:bg-blue-700 shadow-blue-600/25"
+							}`}
 						>
 							{isFiscalizing ? (
 								<>Печать чека на ККТ...</>
+							) : operationType === "income_return" ? (
+								<>
+									<RotateCcw className="w-4 h-4" />
+									Фискализировать чек возврата (1054=2)
+								</>
 							) : (
 								<>
 									<Printer className="w-4 h-4" />
