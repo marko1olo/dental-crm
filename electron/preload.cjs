@@ -76,4 +76,20 @@ contextBridge.exposeInMainWorld("denteDesktopNative", {
 	getWindowState: async () => {
 		return await ipcRenderer.invoke("dente:get-window-state");
 	},
+
+	checkForUpdates: async () => {
+		return await ipcRenderer.invoke("dente:check-for-updates");
+	},
+
+	installUpdate: async () => {
+		return await ipcRenderer.invoke("dente:install-update");
+	},
+
+	onUpdateAvailable: (callback) => {
+		const handler = (_event, data) => callback(data);
+		ipcRenderer.on("dente:update-available", handler);
+		return () => {
+			ipcRenderer.removeListener("dente:update-available", handler);
+		};
+	},
 });

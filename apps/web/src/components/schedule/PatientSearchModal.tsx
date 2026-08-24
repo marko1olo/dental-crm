@@ -25,7 +25,7 @@ import {
 import type { Patient } from "@dental/shared";
 import {
 	searchPatientsQuick,
-	type PatientWithSearchableData,
+	type SearchablePatient,
 	type SearchMatchHighlightPart,
 } from "./patientSearchEngine";
 import { openWhatsAppChat } from "../../store/telephonyStore";
@@ -187,9 +187,9 @@ export function PatientSearchModal({
 					) : (
 						searchResults.map((item, index) => {
 							const { patient } = item;
-							const patientData = patient as PatientWithSearchableData;
+							const patientRecord = patient as Record<string, any>;
 							const isSelected = index === selectedIndex;
-							const balance = patientData.balanceRub ?? 0;
+							const balance = typeof patientRecord.balanceRub === "number" ? patientRecord.balanceRub : 0;
 
 							return (
 								<div
@@ -252,13 +252,13 @@ export function PatientSearchModal({
 												</span>
 											)}
 
-											{patientData.cardNumber && (
+											{(patient as SearchablePatient).cardNumber && (
 												<span className="flex items-center gap-1 font-mono">
 													<CreditCard className="w-3 h-3 text-slate-400" />
 													{item.cardHighlights ? (
 														<RenderHighlightedParts parts={item.cardHighlights} />
 													) : (
-														`№${patientData.cardNumber}`
+														`№${(patient as SearchablePatient).cardNumber}`
 													)}
 												</span>
 											)}

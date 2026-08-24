@@ -2,15 +2,18 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
 	acquireDesktopVisiographImage,
+	checkDesktopUpdates,
 	classifyTwainHardwareError,
 	createUsbHidScannerDetector,
 	getDesktopNativeApi,
 	getDesktopWindowState,
+	installDesktopUpdate,
 	isDesktopApp,
 	isUsbHidScanBurst,
 	listDesktopSerialPorts,
 	listDesktopTwainDevices,
 	printDesktopFiscalReceiptTcp,
+	subscribeDesktopUpdates,
 	subscribeUsbHidScanner,
 	toggleDesktopFullScreen,
 	toggleDesktopKioskMode,
@@ -411,5 +414,63 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 		assert.equal(capturedEvents.length, 1); // No new scan event
 
 		detector.destroy();
+	});
+
+	await t.test("Desktop Silent Updates engine checks version and notifies renderer safely", async () => {
+		// 1. In browser fallback
+		const browserCheck = await checkDesktopUpdates();
+		assert.equal(browserCheck.updateAvailable, false);
+		assert.ok(browserCheck.releaseNotes?.includes("DENTE Desktop"));
+
+		// 2. In desktop with mock electron-updater
+		const mockUpdateDesktop: DesktopNativeApi = {
+			isDesktop: true,
+			platform: "win32",
+			version: "0.1.0",
+			listSerialPorts: async () => [],
+			listTwainDevices: async () => [],
+			acquireTwainImage: async () => ({ success: true }),
+			printFiscalReceiptTcp: async () => ({ success: true }),
+			watchLocalDicomFolder: async () => ({ success: true }),
+			unwatchLocalDicomFolder: async () => ({ success: true }),
+			checkForUpdates: async () => ({
+				updateAvailable: true,
+				currentVersion: "0.1.0",
+				latestVersion: "0.2.0",
+				releaseNotes: "Обновление модулей визиографа и печати СанПиН",
+			}),
+			installUpdate: async () => ({
+				success: true,
+				message: "Перезапуск и установка обновления...",
+			}),
+		};
+
+		const originalWindowDesc = Object.getOwnPropertyDescriptor(globalThis, "window");
+		Object.defineProperty(globalThis, "window", {
+			value: {
+				denteDesktopNative: mockUpdateDesktop,
+				location: { hostname: "localhost" },
+			},
+			configurable: true,
+			writable: true,
+		});
+
+		try {
+			const checkRes = await checkDesktopUpdates();
+			assert.equal(checkRes.updateAvailable, true);
+			assert.equal(checkRes.currentVersion, "0.1.0");
+			assert.equal(checkRes.latestVersion, "0.2.0");
+			assert.ok(checkRes.releaseNotes?.includes("СанПиН"));
+
+			const installRes = await installDesktopUpdate();
+			assert.equal(installRes.success, true);
+			assert.ok(installRes.message?.includes("Перезапуск"));
+		} finally {
+			if (originalWindowDesc) {
+				Object.defineProperty(globalThis, "window", originalWindowDesc);
+			} else {
+				delete (globalThis as any).window;
+			}
+		}
 	});
 });

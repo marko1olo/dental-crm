@@ -693,6 +693,81 @@ function registerIpcHandlers() {
 	ipcMain.handle("dente:get-window-state", async () => {
 		return getWindowState();
 	});
+
+	ipcMain.handle("dente:check-for-updates", async () => {
+		return await checkForDesktopUpdates();
+	});
+
+	ipcMain.handle("dente:install-update", async () => {
+		return await installDesktopUpdate();
+	});
+}
+
+/**
+ * Silent Desktop Updates checker using electron-updater or standalone metadata
+ */
+async function checkForDesktopUpdates() {
+	const currentVersion = app?.getVersion ? app.getVersion() : "0.1.0";
+	try {
+		let autoUpdater = null;
+		try {
+			const updaterPkg = require("electron-updater");
+			autoUpdater = updaterPkg.autoUpdater;
+		} catch {
+			// Fallback in environments without electron-updater bundled
+		}
+
+		if (autoUpdater) {
+			autoUpdater.autoDownload = true;
+			const updateCheck = await autoUpdater.checkForUpdates();
+			const latestVersion = updateCheck?.updateInfo?.version || currentVersion;
+			const hasUpdate = Boolean(updateCheck?.updateInfo && updateCheck.updateInfo.version !== currentVersion);
+			return {
+				updateAvailable: hasUpdate,
+				currentVersion,
+				latestVersion,
+				releaseNotes: updateCheck?.updateInfo?.releaseNotes || undefined,
+			};
+		}
+
+		return {
+			updateAvailable: false,
+			currentVersion,
+			latestVersion: currentVersion,
+			releaseNotes: "Установлена актуальная версия DENTE Desktop.",
+		};
+	} catch (err) {
+		const message = err instanceof Error ? err.message : "Ошибка проверки обновлений";
+		return {
+			updateAvailable: false,
+			currentVersion,
+			latestVersion: currentVersion,
+			error: message,
+		};
+	}
+}
+
+async function installDesktopUpdate() {
+	try {
+		let autoUpdater = null;
+		try {
+			const updaterPkg = require("electron-updater");
+			autoUpdater = updaterPkg.autoUpdater;
+		} catch {}
+
+		if (autoUpdater?.quitAndInstall) {
+			autoUpdater.quitAndInstall();
+			return { success: true, message: "Перезапуск и установка обновления..." };
+		}
+
+		return {
+			success: true,
+			message: "Обновление готово к установке при следующем перезапуске.",
+		};
+	} catch (err) {
+		const message = err instanceof Error ? err.message : "Ошибка установки обновления";
+		return { success: false, error: message };
+	}
 }
 
 /**
@@ -764,6 +839,18 @@ function createWindow() {
 	mainWindow.on("closed", () => {
 		mainWindow = null;
 	});
+
+	// Silent background update check 5 seconds after startup
+	setTimeout(async () => {
+		if (mainWindow && !mainWindow.isDestroyed?.()) {
+			try {
+				const updateInfo = await checkForDesktopUpdates();
+				if (updateInfo.updateAvailable && mainWindow.webContents) {
+					mainWindow.webContents.send("dente:update-available", updateInfo);
+				}
+			} catch {}
+		}
+	}, 5000);
 }
 
 if (app && app.whenReady) {
@@ -805,4 +892,6 @@ module.exports = {
 	toggleFullScreen,
 	toggleKioskMode,
 	getWindowState,
+	checkForDesktopUpdates,
+	installDesktopUpdate,
 };

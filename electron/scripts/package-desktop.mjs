@@ -71,6 +71,8 @@ const requiredExports = [
 	"toggleFullScreen",
 	"toggleKioskMode",
 	"getWindowState",
+	"checkForDesktopUpdates",
+	"installDesktopUpdate",
 ];
 
 for (const fnName of requiredExports) {
@@ -96,6 +98,9 @@ const expectedChannels = [
 	"dente:toggle-fullscreen",
 	"dente:toggle-kiosk",
 	"dente:get-window-state",
+	"dente:check-for-updates",
+	"dente:install-update",
+	"dente:update-available",
 ];
 
 for (const ch of expectedChannels) {
