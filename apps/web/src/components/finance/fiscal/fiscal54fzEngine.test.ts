@@ -7,6 +7,7 @@ import {
 	calculateFinalSettlementWithAdvanceOffset,
 	combineFamilyInvoicesIntoFiscalDraft,
 	compile54FzFiscalTags,
+	compile54FzShiftCloseZReport,
 	compileFiscalDraftSummary,
 	type FiscalItemDraft,
 	getCashPresetSuggestions,
@@ -407,6 +408,88 @@ describe("Frontend 54-FZ (FFD 1.2) Fiscal Engine Tests", () => {
 		assert.equal(receiptSummary.isFullyAllocated, true);
 		assert.equal(receiptSummary.isOverallocated, false);
 		assert.equal(receiptSummary.itemsCount, 3);
+	});
+
+	it("1.11 compile54FzShiftCloseZReport — Daily Shift Close balancing with Cash (Tag 1031), Electronic (Tag 1081), Advance Offset (Tag 1215), and Returns (Tag 1054=2)", () => {
+		// Daily receipts journal:
+		// 1. Receipt 1 (Income): Cash = 5,000 ₽ (Tag 1031)
+		// 2. Receipt 2 (Income): Card = 12,000 ₽ + SBP = 8,000 ₽ = 20,000 ₽ (Tag 1081)
+		// 3. Receipt 3 (Income): Deposit/Advance = 15,000 ₽ (Tag 1215) + SBP = 5,000 ₽ (Tag 1081) = 20,000 ₽
+		// 4. Receipt 4 (Income): Mixed Cash = 3,000 ₽ + Family Balance = 7,000 ₽ = 10,000 ₽
+		// 5. Receipt 5 (Income Return): Cash = 2,000 ₽ returned to patient
+		// 6. Receipt 6 (Income Return): Card = 4,000 ₽ returned to patient
+		const shiftReceipts = [
+			{
+				id: "rec-1",
+				operationType: "income" as const,
+				totalRub: 5000.0,
+				tenders: { cashRub: 5000.0, cardRub: 0, sbpRub: 0, advanceOffsetRub: 0, certificateRub: 0 },
+			},
+			{
+				id: "rec-2",
+				operationType: "income" as const,
+				totalRub: 20000.0,
+				tenders: { cashRub: 0, cardRub: 12000.0, sbpRub: 8000.0, advanceOffsetRub: 0, certificateRub: 0 },
+			},
+			{
+				id: "rec-3",
+				operationType: "income" as const,
+				totalRub: 20000.0,
+				tenders: { cashRub: 0, cardRub: 0, sbpRub: 5000.0, advanceOffsetRub: 15000.0, certificateRub: 0 },
+			},
+			{
+				id: "rec-4",
+				operationType: "income" as const,
+				totalRub: 10000.0,
+				tenders: { cashRub: 3000.0, cardRub: 0, sbpRub: 0, advanceOffsetRub: 0, familyWalletRub: 7000.0, certificateRub: 0 },
+			},
+			{
+				id: "rec-5",
+				operationType: "income_return" as const,
+				totalRub: 2000.0,
+				tenders: { cashRub: 2000.0, cardRub: 0, sbpRub: 0, advanceOffsetRub: 0, certificateRub: 0 },
+			},
+			{
+				id: "rec-6",
+				operationType: "income_return" as const,
+				totalRub: 4000.0,
+				tenders: { cashRub: 0, cardRub: 4000.0, sbpRub: 0, advanceOffsetRub: 0, certificateRub: 0 },
+			},
+		];
+
+		const zReport = compile54FzShiftCloseZReport(shiftReceipts, 42);
+
+		// Verification of Income Counters (Тег 1054 = 1)
+		assert.equal(zReport.shiftNumber, 42);
+		assert.equal(zReport.incomeCount, 4);
+		// Cash = 5,000 + 3,000 = 8,000.00 ₽ (800,000 kop)
+		assert.equal(zReport.incomeCashRub, 8000.0);
+		assert.equal(zReport.incomeCashKopecks, 800000);
+		// Electronic (Card + SBP) = 20,000 + 5,000 = 25,000.00 ₽ (2,500,000 kop)
+		assert.equal(zReport.incomeElectronicRub, 25000.0);
+		assert.equal(zReport.incomeElectronicKopecks, 2500000);
+		// Advance Offset = 15,000 + 7,000 = 22,000.00 ₽ (2,200,000 kop)
+		assert.equal(zReport.incomeAdvanceOffsetRub, 22000.0);
+		assert.equal(zReport.incomeAdvanceOffsetKopecks, 2200000);
+		// Total Income = 8,000 + 25,000 + 22,000 = 55,000.00 ₽ (5,500,000 kop)
+		assert.equal(zReport.incomeTotalRub, 55000.0);
+		assert.equal(zReport.incomeTotalKopecks, 5500000);
+
+		// Verification of Return Counters (Тег 1054 = 2)
+		assert.equal(zReport.incomeReturnCount, 2);
+		assert.equal(zReport.incomeReturnCashRub, 2000.0);
+		assert.equal(zReport.incomeReturnElectronicRub, 4000.0);
+		assert.equal(zReport.incomeReturnTotalRub, 6000.0);
+		assert.equal(zReport.incomeReturnTotalKopecks, 600000);
+
+		// Verification of Net Revenue & Drawer Balancing
+		// Net revenue = 55,000 - 6,000 = 49,000.00 ₽ (4,900,000 kop)
+		assert.equal(zReport.netRevenueRub, 49000.0);
+		assert.equal(zReport.netRevenueKopecks, 4900000);
+		// Cash in drawer = 8,000 - 2,000 = 6,000.00 ₽ (600,000 kop)
+		assert.equal(zReport.cashInDrawerRub, 6000.0);
+		assert.equal(zReport.cashInDrawerKopecks, 600000);
+		assert.equal(zReport.isBalanced, true);
 	});
 });
 
