@@ -1342,10 +1342,10 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 											<button
 												type="button"
 												className="pc-btn-primary"
-												style={{ minHeight: "36px", padding: "6px 14px", fontSize: "0.8125rem" }}
+												style={{ minHeight: "44px", padding: "8px 16px", fontSize: "0.875rem", touchAction: "manipulation" }}
 												onClick={() => showToast("Официальный рецепт 107-1/у с QR-кодом и МДЛП сохранен в PDF!")}
 											>
-												<Download size={14} />
+												<Download size={16} />
 												<span>Скачать рецепт (PDF)</span>
 											</button>
 										</div>
@@ -1369,10 +1369,10 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 											<button
 												type="button"
 												className="pc-btn-primary"
-												style={{ minHeight: "36px", padding: "6px 14px", fontSize: "0.8125rem" }}
+												style={{ minHeight: "44px", padding: "8px 16px", fontSize: "0.875rem", touchAction: "manipulation" }}
 												onClick={() => showToast("Официальный рецепт 107-1/у сохранен в PDF!")}
 											>
-												<Download size={14} />
+												<Download size={16} />
 												<span>Скачать рецепт (PDF)</span>
 											</button>
 										</div>
@@ -1406,10 +1406,10 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 										<button
 											type="button"
 											className="pc-btn-primary"
-											style={{ minHeight: "36px", padding: "6px 14px", fontSize: "0.8125rem" }}
+											style={{ minHeight: "44px", padding: "8px 16px", fontSize: "0.875rem", touchAction: "manipulation" }}
 											onClick={() => showToast("Справка КНД 1151156 с реестром фискальных чеков сформирована!")}
 										>
-											<Download size={14} />
+											<Download size={16} />
 											<span>Сформировать для ФНС (1 клик)</span>
 										</button>
 									</div>

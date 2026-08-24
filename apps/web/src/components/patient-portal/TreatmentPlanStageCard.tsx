@@ -108,20 +108,22 @@ export const TreatmentPlanStageCard: React.FC<PatientTreatmentStageProps> = ({
 							type="button"
 							onClick={onPaySbp}
 							style={{
-								padding: "6px 12px",
-								borderRadius: "6px",
+								padding: "8px 16px",
+								minHeight: "44px",
+								borderRadius: "8px",
 								border: "none",
 								backgroundColor: "var(--pc-primary, #0d9488)",
 								color: "#ffffff",
-								fontSize: "12px",
+								fontSize: "13px",
 								fontWeight: 700,
 								cursor: "pointer",
 								display: "flex",
 								alignItems: "center",
 								gap: "6px",
+								touchAction: "manipulation",
 							}}
 						>
-							<CreditCard size={14} />
+							<CreditCard size={16} />
 							<span>Оплатить СБП</span>
 						</button>
 					)}
