@@ -2,6 +2,7 @@ import type { Appointment, Dashboard, DentalSpecialty } from "@dental/shared";
 import {
 	AlertTriangle,
 	CalendarCheck,
+	Check,
 	CheckCircle2,
 	Clock,
 	Copy,
@@ -12,6 +13,7 @@ import {
 	User,
 	UserCheck,
 	UserX,
+	Zap,
 } from "lucide-react";
 import React, { useMemo } from "react";
 import type { QuickBookingSlotInfo } from "./QuickBookingDrawer";
@@ -283,6 +285,13 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 												const patObj = dashboard.patients?.find((p) => p.id === a.patientId);
 												const docObj = dashboard.clinicSettings?.staff?.find((s) => s.id === a.doctorUserId);
 												const collision = collisionMap.get(a.id);
+												const isCito = Boolean(
+													(a as any)?.isCito ||
+													(a as any)?.cito ||
+													(a?.reason ?? "").toLowerCase().includes("cito") ||
+													(a?.reason ?? "").toLowerCase().includes("острая боль") ||
+													(a?.reason ?? "").toLowerCase().includes("срочн")
+												);
 
 												return (
 													<div
@@ -303,17 +312,19 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 														className={`w-full text-left p-2 rounded-xl border text-xs font-semibold shadow-xs flex flex-col justify-between gap-1.5 transition-all min-h-[52px] cursor-grab active:cursor-grabbing ${
 															collision
 																? "bg-amber-500/15 border-amber-500/40 text-amber-900 dark:text-amber-100 ring-1 ring-amber-500/50"
-																: a.status === "arrived"
-																	? "bg-emerald-500/15 border-emerald-500/30 text-emerald-800 dark:text-emerald-200"
-																	: a.status === "in_treatment"
-																		? "bg-sky-500/15 border-sky-500/30 text-sky-800 dark:text-sky-200"
-																		: a.status === "completed"
-																			? "bg-teal-500/15 border-teal-500/30 text-teal-800 dark:text-teal-200"
-																			: a.status === "confirmed"
-																				? "bg-violet-500/15 border-violet-500/30 text-violet-800 dark:text-violet-200"
-																				: a.status === "cancelled" || a.status === "no_show"
-																					? "bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300 opacity-70"
-																					: "bg-[var(--paper)] border-[var(--line-strong)] text-[var(--ink)]"
+																: isCito
+																	? "bg-rose-500/20 border-rose-500 text-rose-900 dark:text-rose-100 ring-2 ring-rose-500/60 font-bold"
+																	: a.status === "confirmed"
+																		? "bg-emerald-500/15 border-emerald-500/50 text-emerald-800 dark:text-emerald-200"
+																		: a.status === "in_treatment"
+																			? "bg-sky-500/15 border-sky-500/50 text-sky-800 dark:text-sky-200"
+																			: a.status === "arrived"
+																				? "bg-amber-500/15 border-amber-500/50 text-amber-800 dark:text-amber-200"
+																				: a.status === "completed"
+																					? "bg-slate-500/10 border-slate-400/30 text-slate-600 dark:text-slate-400"
+																					: a.status === "cancelled" || a.status === "no_show"
+																						? "bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300 opacity-70"
+																						: "bg-[var(--paper)] border-[var(--line-strong)] text-[var(--ink)]"
 														}`}
 													>
 														<div
@@ -353,9 +364,37 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																	</div>
 																)}
 															</div>
-															<span className="text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-[var(--paper)]/80 shrink-0">
-																{appointmentLabels[a.status] || a.status}
-															</span>
+															<div className="flex items-center gap-1 shrink-0">
+																{isCito && (
+																	<span
+																		className="text-xs px-1.5 py-0.5 rounded-md bg-rose-600 text-white font-extrabold flex items-center gap-0.5 animate-pulse shrink-0"
+																		title="CITO! Прием по острой боли"
+																		data-testid="schedule-grid-cito-badge"
+																	>
+																		<Zap size={11} className="fill-white" />
+																		<span>CITO</span>
+																	</span>
+																)}
+																<span className={`text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md shrink-0 flex items-center gap-1 ${
+																	a.status === "in_treatment"
+																		? "bg-sky-500 text-white shadow-xs"
+																		: a.status === "arrived"
+																			? "bg-amber-500 text-white shadow-xs"
+																			: a.status === "confirmed"
+																				? "bg-emerald-600 text-white shadow-xs"
+																				: a.status === "completed"
+																					? "bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+																					: "bg-[var(--paper)]/80 text-[var(--ink)]"
+																}`}>
+																	{a.status === "in_treatment" && (
+																		<span className="w-1.5 h-1.5 rounded-full bg-white animate-ping shrink-0" />
+																	)}
+																	{a.status === "completed" && (
+																		<Check size={11} className="shrink-0 text-current" />
+																	)}
+																	<span>{appointmentLabels[a.status] || a.status}</span>
+																</span>
+															</div>
 														</div>
 
 														{/* Collision Alert Pill if overlapping */}

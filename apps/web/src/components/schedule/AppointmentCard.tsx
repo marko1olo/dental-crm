@@ -7,7 +7,7 @@ import type {
 } from "@dental/shared";
 import type { ChangeEvent } from "react";
 import { useCallback, useMemo, useState } from "react";
-import { Clock, Copy, MessageSquare } from "lucide-react";
+import { Check, Clock, Copy, MessageSquare, Zap } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { AppointmentQuickActions } from "./AppointmentQuickActions";
@@ -465,6 +465,13 @@ export function AppointmentCard(props: AppointmentCardProps) {
 	};
 
 	const displayStatus = optimisticStatus ?? appointment?.status;
+	const isCito = Boolean(
+		(appointment as any)?.isCito ||
+		(appointment as any)?.cito ||
+		(appointment?.reason ?? "").toLowerCase().includes("cito") ||
+		(appointment?.reason ?? "").toLowerCase().includes("острая боль") ||
+		(appointment?.reason ?? "").toLowerCase().includes("срочн")
+	);
 
 	return (
 		<div className="timeline-node min-w-0 max-w-full" key={appointment.id}>
@@ -479,13 +486,24 @@ export function AppointmentCard(props: AppointmentCardProps) {
 					tabIndex={0}
 					onKeyDown={handleCardKeyDown}
 					aria-label={`Карточка приема: ${appointmentPatientName}, ${formatTime(appointment.startsAt)} - ${formatTime(appointment.endsAt)}`}
-					className={`appointment-card mode-fit-card glass-panel rounded-xl p-4 mb-3 shadow-sm transition-all focus:ring-2 focus:ring-teal-500 focus:outline-none min-w-0 max-w-full overflow-hidden ${readiness ? `readiness-${readiness.state}` : ""}`}
+					className={`appointment-card mode-fit-card glass-panel rounded-xl p-4 mb-3 shadow-sm transition-all focus:ring-2 focus:ring-teal-500 focus:outline-none min-w-0 max-w-full overflow-hidden ${
+						isCito
+							? "border-rose-500 ring-2 ring-rose-500/40 bg-rose-500/5"
+							: displayStatus === "confirmed"
+								? "border-emerald-500/50"
+								: displayStatus === "in_treatment"
+									? "border-sky-500/60"
+									: displayStatus === "arrived"
+										? "border-amber-500/50"
+										: displayStatus === "completed"
+											? "border-slate-400/30 opacity-95"
+											: "border-[var(--line)]"
+					} ${readiness ? `readiness-${readiness.state}` : ""}`}
 					style={{
 						display: "flex",
 						flexDirection: "column",
 						gap: "8px",
 						background: "var(--paper)",
-						border: "1px solid var(--line)",
 						color: "var(--ink)",
 						minWidth: 0,
 						maxWidth: "100%",
@@ -524,12 +542,42 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									</span>
 								)
 							) : null}
+							{isCito && (
+								<span
+									className="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-rose-500/20 text-rose-800 dark:text-rose-100 border border-rose-500 ring-2 ring-rose-500/50 shadow-xs flex items-center gap-1 animate-pulse shrink-0"
+									title="CITO! Прием по острой боли (наивысший приоритет)"
+									data-testid="appointment-cito-badge"
+								>
+									<Zap size={13} className="text-rose-600 dark:text-rose-300 fill-rose-500" />
+									<span>CITO Острая боль</span>
+								</span>
+							)}
 							<span
-								className={`appointment-card-status status-pill status-${displayStatus ?? ""} max-w-full truncate`}
+								className={`appointment-card-status status-pill status-${displayStatus ?? ""} px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 shrink-0 ${
+									displayStatus === "confirmed"
+										? "bg-emerald-500/15 border-emerald-500/50 text-emerald-800 dark:text-emerald-200"
+										: displayStatus === "in_treatment"
+											? "bg-sky-500/15 border-sky-500/50 text-sky-800 dark:text-sky-200"
+											: displayStatus === "arrived"
+												? "bg-amber-500/15 border-amber-500/50 text-amber-800 dark:text-amber-200"
+												: displayStatus === "completed"
+													? "bg-slate-500/10 border-slate-400/30 text-slate-600 dark:text-slate-400"
+													: displayStatus === "cancelled" || displayStatus === "no_show"
+														? "bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300"
+														: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)]"
+								} max-w-full truncate`}
 								title={appointmentLabels?.[displayStatus] ?? String(displayStatus ?? "")}
 							>
-								{appointmentLabels?.[displayStatus] ??
-									String(displayStatus ?? "")}
+								{displayStatus === "in_treatment" && (
+									<span className="w-2 h-2 rounded-full bg-sky-500 animate-ping shrink-0" />
+								)}
+								{displayStatus === "arrived" && (
+									<span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+								)}
+								{displayStatus === "completed" && (
+									<Check size={12} className="shrink-0 text-slate-500" />
+								)}
+								<span>{appointmentLabels?.[displayStatus] ?? String(displayStatus ?? "")}</span>
 							</span>
 							{activeScheduleCollision ? (
 								<span

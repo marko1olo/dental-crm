@@ -214,4 +214,100 @@ describe("AppointmentCard Suite", () => {
 		assert.ok(html.includes("Коллизия: врач записан в два кабинета одновременно"), "должен быть бейдж коллизии врача");
 		assert.ok(html.includes("data-testid=\"appointment-collision-badge\""), "должен быть data-testid бейджа коллизии");
 	});
+
+	it("renders prominent CITO emergency badge and pulsing alert for acute pain", () => {
+		const citoAppointment = {
+			...baseAppointment,
+			id: "app-cito",
+			reason: "CITO! Острая зубная боль, пульпит",
+		};
+
+		const html = renderToStaticMarkup(
+			React.createElement(AppointmentCard, {
+				appointment: citoAppointment,
+				dashboard: mockDashboard as Dashboard,
+				visibleScheduleSuggestions: [],
+				appointmentReadinessById: new Map(),
+				appointmentLabels: mockAppointmentLabels,
+				appointmentDraft: {},
+				appointmentSaveState: "idle",
+				appointmentSaveError: null,
+				appointmentDirty: false,
+				appointmentEditing: false,
+				appointmentHasOpenVisit: false,
+				appointmentActiveVisitStatusLocked: false,
+				appointmentMissingSteps: [],
+				appointmentReadyToSave: true,
+				openScheduleSuggestion: () => {},
+				formatTime: () => "10:00",
+				patientName: () => "Кузнецов Петр Сергеевич",
+				openAppointmentEditor: () => {},
+				repeatAppointment: () => {},
+				closeAppointmentEditor: () => {},
+				updateAppointmentScheduleDraft: () => {},
+				saveAppointmentSchedule: async () => true,
+				normalizedAppointmentStatus: (v: any) => v,
+				toDateTimeLocalValue: (v: string) => v,
+				fromDateTimeLocalValue: (v: string) => v,
+				useManualSelects: false,
+				activeVisitLockedAppointmentStatuses: activeVisitLockedStatuses,
+			})
+		);
+
+		assert.ok(html.includes("CITO Острая боль"), "должен отображаться текст бейджа CITO");
+		assert.ok(html.includes("data-testid=\"appointment-cito-badge\""), "должен присутствовать data-testid appointment-cito-badge");
+	});
+
+	it("renders distinct status indicators for confirmed, in_treatment, arrived and completed", () => {
+		const statuses: Array<Appointment["status"]> = ["confirmed", "in_treatment", "arrived", "completed"];
+
+		for (const st of statuses) {
+			const stAppointment = {
+				...baseAppointment,
+				id: `app-${st}`,
+				status: st,
+			};
+
+			const html = renderToStaticMarkup(
+				React.createElement(AppointmentCard, {
+					appointment: stAppointment,
+					dashboard: mockDashboard as Dashboard,
+					visibleScheduleSuggestions: [],
+					appointmentReadinessById: new Map(),
+					appointmentLabels: mockAppointmentLabels,
+					appointmentDraft: {},
+					appointmentSaveState: "idle",
+					appointmentSaveError: null,
+					appointmentDirty: false,
+					appointmentEditing: false,
+					appointmentHasOpenVisit: false,
+					appointmentActiveVisitStatusLocked: false,
+					appointmentMissingSteps: [],
+					appointmentReadyToSave: true,
+					openScheduleSuggestion: () => {},
+					formatTime: () => "10:00",
+					patientName: () => "Кузнецов Петр Сергеевич",
+					openAppointmentEditor: () => {},
+					repeatAppointment: () => {},
+					closeAppointmentEditor: () => {},
+					updateAppointmentScheduleDraft: () => {},
+					saveAppointmentSchedule: async () => true,
+					normalizedAppointmentStatus: (v: any) => v,
+					toDateTimeLocalValue: (v: string) => v,
+					fromDateTimeLocalValue: (v: string) => v,
+					useManualSelects: false,
+					activeVisitLockedAppointmentStatuses: activeVisitLockedStatuses,
+				})
+			);
+
+			assert.ok(html.includes(mockAppointmentLabels[st]), `должен содержать лейбл статуса ${st}`);
+			if (st === "in_treatment") {
+				assert.ok(html.includes("bg-sky-500 animate-ping"), "должен содержать синий пульсирующий индикатор");
+			} else if (st === "confirmed") {
+				assert.ok(html.includes("border-emerald-500"), "должен содержать зеленый контур подтверждения");
+			} else if (st === "arrived") {
+				assert.ok(html.includes("border-amber-500"), "должен содержать янтарный индикатор ожидания");
+			}
+		}
+	});
 });
