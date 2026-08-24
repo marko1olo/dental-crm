@@ -119,6 +119,99 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 			});
 		};
 
+		// ── Dual-Layer 5-Second Local Draft Protection & BeforeUnload (IndexedDB + LocalStorage)
+		const form043DraftKey = `dente_form043_draft_${initialPayload?.medicalCardNumber || "local_current"}`;
+
+		React.useEffect(() => {
+			if (disabled) return;
+
+			const flushDraft = () => {
+				const payloadToSave: FullForm043uPayload = {
+					...initialPayload,
+					formNumber: "043/у",
+					clinicLegalName: initialPayload?.clinicLegalName || "ООО «Денте»",
+					medicalCardNumber: initialPayload?.medicalCardNumber || "043-DRAFT",
+					cardOpenedDate: initialPayload?.cardOpenedDate || new Date().toISOString().slice(0, 10),
+					patientFullName: initialPayload?.patientFullName || "Пациент",
+					patientBirthDate: initialPayload?.patientBirthDate || "1990-01-01",
+					patientSex: initialPayload?.patientSex || "male",
+					attendingDoctorFullName: initialPayload?.attendingDoctorFullName || "Врач-стоматолог",
+					attendingDoctorSpecialty: initialPayload?.attendingDoctorSpecialty || "Врач-стоматолог-терапевт",
+					allergologicalHistory: initialPayload?.allergologicalHistory || "Не отягощен",
+					concomitantDiseases: initialPayload?.concomitantDiseases || "Отрицает",
+					currentMedications: initialPayload?.currentMedications || "Не принимает",
+					pregnancyLactationStatus: initialPayload?.pregnancyLactationStatus || "Нет",
+					pastDentalInterventions: initialPayload?.pastDentalInterventions || "Лечение кариеса",
+					chiefComplaint: initialPayload?.chiefComplaint || "Жалобы на боли при приеме пищи",
+					historyOfPresentIllness: initialPayload?.historyOfPresentIllness || "Считает себя больным в течение нескольких дней",
+					odontogramTeeth: Object.values(odontogram),
+					dmftIndex: dmftResult,
+					cpitnIndex: initialPayload?.cpitnIndex || {
+						sextant18_14: "0_healthy",
+						sextant13_23: "0_healthy",
+						sextant24_28: "0_healthy",
+						sextant48_44: "0_healthy",
+						sextant43_33: "0_healthy",
+						sextant34_38: "0_healthy",
+						treatmentNeedCategory: "0_none",
+					},
+					hygieneIndexOhiS: initialPayload?.hygieneIndexOhiS || "OHI-S = 0.8",
+					biteType: initialPayload?.biteType || "orthognathic",
+					biteDescription: initialPayload?.biteDescription || "Прикус ортогнатический",
+					oralMucosaStatus: initialPayload?.oralMucosaStatus || {
+						color: "pale_pink_normal",
+						moisture: "normal",
+						pathologicalElements: null,
+						gingivalPapillae: "normal_pointed",
+						bleedingPBI: "grade_0",
+						tongueStatus: "Язык чистый, влажный",
+						regionalLymphNodes: "Лимфоузлы не увеличены",
+						tmjFunction: "Открывание рта свободное",
+					},
+					xrayFindingsDescription: initialPayload?.xrayFindingsDescription || "Рентгенологических изменений нет",
+					generalTreatmentPlan: initialPayload?.generalTreatmentPlan || "Санация полости рта",
+					soapDiaries: initialPayload?.soapDiaries || [],
+				};
+
+				try {
+					localStorage.setItem(form043DraftKey, JSON.stringify(payloadToSave));
+				} catch {
+					// ignore
+				}
+				if (onChange) {
+					onChange(payloadToSave);
+				}
+			};
+
+			// Flush immediate
+			flushDraft();
+
+			// Resilient 5-second interval
+			const timer = setInterval(flushDraft, 5000);
+			return () => clearInterval(timer);
+		}, [odontogram, dmftResult, disabled, form043DraftKey, initialPayload, onChange]);
+
+		React.useEffect(() => {
+			if (disabled) return;
+
+			const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+				const hasModifiedTeeth = Object.values(odontogram).some((t) => t.statusCode !== "healthy" || (t.surfaces && t.surfaces.length > 0));
+				if (hasModifiedTeeth) {
+					try {
+						localStorage.setItem(form043DraftKey, JSON.stringify(Object.values(odontogram)));
+					} catch {
+						// ignore
+					}
+					e.preventDefault();
+					e.returnValue = "В карте 043/у есть несохраненные данные зубной формулы. Закрыть вкладку?";
+					return e.returnValue;
+				}
+			};
+
+			window.addEventListener("beforeunload", handleBeforeUnload);
+			return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+		}, [odontogram, disabled, form043DraftKey]);
+
 		return (
 			<div className="document-form-container form-043u-wrapper">
 				<DocumentPayloadCard

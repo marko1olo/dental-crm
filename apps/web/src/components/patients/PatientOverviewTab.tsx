@@ -8,6 +8,7 @@ import { LabOrdersPanel } from "../LabOrdersPanel";
 import { PatientWorkspaceView } from "../patient/PatientWorkspaceView";
 import { OrthodonticProgressWidget } from "./OrthodonticProgressWidget";
 import { PatientArchiveAndBlacklistWidget } from "./PatientArchiveAndBlacklistWidget";
+import { PatientCommunicationConsentsPanel } from "./PatientCommunicationConsentsPanel";
 import { PatientCommunicationTimelineWidget } from "./PatientCommunicationTimelineWidget";
 import { PatientDuplicateAlert } from "./PatientDuplicateAlert";
 import { PatientFamilyCard } from "./PatientFamilyCard";
@@ -15,6 +16,7 @@ import { PatientLoyaltyHeader } from "./PatientLoyaltyHeader";
 import { PatientNoShowRisk } from "./PatientNoShowRisk";
 import { PatientReclamationsWidget } from "./PatientReclamationsWidget";
 import { PatientTaskTicketsWidget } from "./PatientTaskTicketsWidget";
+import { PatientWhatsappSendPanel } from "./PatientWhatsappSendPanel";
 
 // biome-ignore lint/correctness/noUnusedVariables: automated suppression
 type TextFieldChangeEvent = React.ChangeEvent<
@@ -223,6 +225,20 @@ export function PatientOverviewTab() {
 
 					{selectedPatientId && workspaceFlags.hasTasks && (
 						<PatientTaskTicketsWidget patientId={selectedPatientId} />
+					)}
+
+					{selectedPatientId && (
+						<PatientWhatsappSendPanel
+							patientId={selectedPatientId}
+							patientName={selectedPatient?.fullName || null}
+							patientPhone={selectedPatient?.phone || null}
+						/>
+					)}
+
+					{selectedPatientId && (
+						<PatientCommunicationConsentsPanel
+							patientId={selectedPatientId}
+						/>
 					)}
 
 					{selectedPatientId && (

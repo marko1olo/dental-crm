@@ -5,8 +5,13 @@ import {
 	formatDurationTimer,
 	formatPatientInitials,
 	formatPhoneDisplay,
+	generateAppointmentConfirmationMessage,
 	generateWaveformBars,
+	generateWhatsAppConfirmationUrl,
 	normalizePhoneDigits,
+	resolvePatientFromPhone,
+	resolvePatientUpcomingAppointment,
+	useTelephonyStore,
 } from "../../../store/telephonyStore";
 
 test("Telephony - phone number normalization and formatting", () => {
@@ -66,3 +71,82 @@ test("Telephony - patient financial status calculation", () => {
 	assert.strictEqual(status.debtRub, 5000);
 	assert.ok(status.formattedDebt.includes("5") && status.formattedDebt.includes("000"));
 });
+
+test("Telephony & WhatsApp - template message generation and URL formatting", () => {
+	const msg = generateAppointmentConfirmationMessage({
+		patientName: "Алексей Смирнов",
+		doctorName: "д-р Петров В.С.",
+		appointmentStartsAt: "2026-09-01T10:00:00Z",
+		clinicName: "Клиника DENTE",
+		templateType: "reminder",
+	});
+
+	assert.ok(msg.includes("Алексей Смирнов"));
+	assert.ok(msg.includes("д-р Петров В.С."));
+	assert.ok(msg.includes("Клиника DENTE"));
+	assert.ok(msg.includes("Напоминаем"));
+
+	const waUrl = generateWhatsAppConfirmationUrl("+7 (916) 123-45-67", msg);
+	assert.ok(waUrl.startsWith("https://wa.me/79161234567?text="));
+	assert.ok(waUrl.includes(encodeURIComponent("Алексей Смирнов")));
+});
+
+test("Telephony - resolve patient from phone fuzzy matching", () => {
+	const patients = [
+		{
+			id: "pat-100",
+			fullName: "Кузнецов Петр",
+			phone: "+7 (926) 555-44-33",
+			administrativeProfile: {
+				legalRepresentativePhone: "+7 (903) 777-88-99",
+			},
+		},
+	];
+
+	// Match primary phone with 8-prefix
+	const match1 = resolvePatientFromPhone(patients as any, "89265554433");
+	assert.strictEqual(match1?.id, "pat-100");
+
+	// Match legal representative phone
+	const match2 = resolvePatientFromPhone(patients as any, "89037778899");
+	assert.strictEqual(match2?.id, "pat-100");
+
+	// Non-matching phone
+	const noMatch = resolvePatientFromPhone(patients as any, "+79990000000");
+	assert.strictEqual(noMatch, null);
+});
+
+test("Telephony - incoming call lifecycle and store transitions", () => {
+	useTelephonyStore.getState().clearHistory();
+
+	// 1. Trigger incoming call
+	useTelephonyStore.getState().triggerIncomingCall({
+		callId: "call-live-1",
+		phone: "+79261112233",
+		patientId: "pat-1",
+		patientName: "Елена Соколова",
+		provider: "mango",
+		timestamp: new Date().toISOString(),
+		status: "ringing",
+	});
+
+	let active = useTelephonyStore.getState().activeCall;
+	assert.ok(active !== null);
+	assert.strictEqual(active?.status, "ringing");
+	assert.strictEqual(active?.patientName, "Елена Соколова");
+
+	// 2. Answer call
+	useTelephonyStore.getState().answerCall();
+	active = useTelephonyStore.getState().activeCall;
+	assert.strictEqual(active?.status, "answered");
+
+	// 3. Accept call & close active dialog
+	useTelephonyStore.getState().acceptCall();
+	assert.strictEqual(useTelephonyStore.getState().activeCall, null);
+
+	const history = useTelephonyStore.getState().callHistory;
+	assert.strictEqual(history.length, 1);
+	assert.strictEqual(history[0]?.status, "answered");
+	assert.strictEqual(history[0]?.actionTaken, "accepted");
+});
+
