@@ -1,4 +1,4 @@
-import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, List, Sparkles, Bot, Search, Flame, Stethoscope, UserSearch } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, List, Sparkles, Bot, Search, Send, Flame, Stethoscope, UserSearch } from "lucide-react";
 import type { ReactElement } from "react";
 import type { DentalSpecialty } from "@dental/shared";
 import { specialtyLabels } from "../../workspaceUiLabels";
@@ -46,6 +46,7 @@ export interface ScheduleFilterStripProps {
 	onOpenPatientSearch?: () => void;
 	onSelectWholeWeek?: () => void;
 	onEmergencyCitoBooking?: () => void;
+	onOpenTomorrowReminders?: () => void;
 }
 
 export function formatChairSpecialtyLabel(rawSpec?: string | null): string | null {
@@ -82,6 +83,7 @@ export function ScheduleFilterStrip({
 	onOpenPatientSearch,
 	onSelectWholeWeek,
 	onEmergencyCitoBooking,
+	onOpenTomorrowReminders,
 }: ScheduleFilterStripProps): ReactElement {
 	const activeChairs = chairs.filter((chair) => chair?.active);
 	const displayChairs: readonly ScheduleChair[] = activeChairs.length > 0 ? activeChairs : DEFAULT_CLINIC_CHAIRS;
@@ -312,6 +314,20 @@ export function ScheduleFilterStrip({
 					>
 						<Search size={16} className="text-teal-600 dark:text-teal-400" />
 						<span className="hidden md:inline">Свободные окна</span>
+					</button>
+				)}
+
+				{onOpenTomorrowReminders && (
+					<button
+						type="button"
+						onClick={onOpenTomorrowReminders}
+						className="secondary-button min-h-[44px] px-3.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all cursor-pointer border-2 border-emerald-500/40 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 shrink-0 shadow-xs"
+						title="1-клик массовая рассылка напоминаний и инструкций пациентам на завтра"
+						aria-label="Напомнить всем на завтра: рассылка WhatsApp и СМС"
+					>
+						<Send size={15} className="text-emerald-600 dark:text-emerald-400" />
+						<span className="hidden sm:inline">Напомнить на завтра</span>
+						<span className="sm:hidden">Напомнить</span>
 					</button>
 				)}
 

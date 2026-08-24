@@ -27,6 +27,15 @@ export type MutationEntityType =
 	| "TREATMENT_PLAN_DRAFT"
 	| "PATIENT_DRAFT"
 	| "GENERIC"
+	| "odontogram"
+	| "treatment_plan"
+	| "visit"
+	| "patient"
+	| "payment"
+	| "appointment"
+	| "pricelist"
+	| "inventory"
+	| "prescription"
 	| SyncMutationEntityKind;
 
 
@@ -117,6 +126,6 @@ export interface SyncConflictEvent {
 }
 
 export type SyncEventListener = (event: {
-	type: "progress" | "complete" | "conflict" | "error";
+	type: "progress" | "complete" | "conflict" | "error" | "slow_drain";
 	data: unknown;
 }) => void;

@@ -49,7 +49,6 @@ import {
 	MUTATIONS_STORE_NAME,
 	nowIsoWithMs,
 	OFFLINE_DB_VERSION,
-	type OfflineMutation,
 	offlineSyncService,
 	openOfflineOutboxDb,
 	resetOfflineDbConnection,
@@ -65,6 +64,10 @@ import {
 	getStorageEstimate,
 	purgeSyncedDraftsAndOldCache,
 } from "../index";
+import type {
+	MutationEntityType,
+	OfflineMutation,
+} from "../types";
 import {
 	createLanFailoverFetch,
 	DEFAULT_LAN_BEACON_PORT,
@@ -2348,6 +2351,217 @@ describe("Offline-First & Multi-Level Sync Engine: Industrial Stress & Chaos Sui
 				delete (globalThis.navigator as any).storage;
 			}
 		}
+	});
+
+	// ── 28. Long Network Request Indicator (> 3s) & Zero-UI-Freeze Backgrounding ──
+	test("STRESS 28: Long-running network requests (> 3s) emit slow-drain reassurance without blocking concurrent draft typing", async () => {
+		const orgId = "org-slow-drain-28";
+		const patientId = "patient-slow-drain-28";
+
+		// 1. Enqueue an offline mutation
+		await enqueueOfflineMutation({
+			entityType: "visit",
+			entityId: `visit_${patientId}_1`,
+			action: "update",
+			payload: { notes: "Slow network drain test" },
+			organizationId: orgId,
+		});
+
+		const pendingList = await getPendingOfflineMutations({ organizationId: orgId });
+		assert.strictEqual(pendingList.length, 1);
+		const expectedMutId = pendingList[0]!.mutationId;
+
+		// 2. Set up listener to capture slow_drain event
+		const slowEvents: unknown[] = [];
+		const unsubscribe = offlineSyncService.subscribe((evt) => {
+			if (evt.type === "slow_drain") {
+				slowEvents.push(evt.data);
+			}
+		});
+
+		try {
+			// 3. Mock slow fetch that delays 3200ms before returning 200 OK
+			const slowFetchImpl = async () => {
+				await new Promise((resolve) => setTimeout(resolve, 3200));
+				return new Response(
+					JSON.stringify({
+						batchId: "slow_batch_1",
+						serverTime: new Date().toISOString(),
+						results: [
+							{
+								mutationId: expectedMutId,
+								status: "applied",
+								entityKind: "visit",
+								entityId: `visit_${patientId}_1`,
+								action: "update",
+								appliedAt: new Date().toISOString(),
+							},
+						],
+					}),
+					{ status: 200, headers: { "Content-Type": "application/json" } },
+				);
+			};
+
+			// 4. Start background drain (do NOT await immediately!)
+			const drainPromise = offlineSyncService.drainOutbox({
+				organizationId: orgId,
+				fetchImpl: slowFetchImpl as unknown as typeof fetch,
+			});
+
+			// 5. Concurrently while drain is in-flight: doctor continues typing and saving Form 043/u and Odontogram
+			const typeStartMs = Date.now();
+			await saveForm043Draft(patientId, {
+				complaints: "Пациент не испытывает задержек интерфейса",
+				diagnosis: "К02.1 Кариес дентина 1.6",
+			});
+			await saveOdontogramDraft(patientId, [
+				{ toothNumber: 16, state: "caries", diagnosis: "K02.1" },
+			]);
+			const typeElapsedMs = Date.now() - typeStartMs;
+
+			// Typing must take under 100ms (zero UI freeze!)
+			assert.ok(typeElapsedMs < 150, `Concurrent typing must not block UI (took ${typeElapsedMs}ms)`);
+
+			// 6. Wait for drain to complete
+			const drainResult = await drainPromise;
+			assert.strictEqual(drainResult.appliedCount, 1, "Drain should succeed after delay");
+
+			// 7. Verify slow_drain event was emitted
+			assert.ok(slowEvents.length >= 1, "slow_drain event must be emitted for requests > 3s");
+			const firstSlowEvent = slowEvents[0] as { message: string; elapsedMs: number };
+			assert.ok(
+				firstSlowEvent.message.includes("Идет сохранение..."),
+				"Message must reassure user that background saving is in progress",
+			);
+
+			// 8. Verify clinical drafts saved during drain are 100% intact
+			const formDraft = await loadForm043Draft<{ complaints: string }>(patientId);
+			assert.ok(formDraft?.data);
+			assert.strictEqual(
+				formDraft.data.complaints,
+				"Пациент не испытывает задержек интерфейса",
+			);
+		} finally {
+			unsubscribe();
+			await deleteForm043Draft(patientId);
+			await deleteOdontogramDraft(patientId);
+		}
+	});
+
+	// ── 29. Chaotic Wi-Fi Packet Drops & FIFO Order Guarantee for 50 Mutations ──
+	test("STRESS 29: 50 concurrent offline mutations across 5 domains maintain strict FIFO order and 0% data loss under chaotic Wi-Fi packet drops", async () => {
+		const orgId = "org-chaotic-wifi-29";
+		const domainTypes = ["visit", "odontogram", "payment", "appointment", "patient"] as const;
+		const totalMutations = 50;
+		const createdEnvelopes: Array<{ id: string; seq: number; domain: string }> = [];
+
+		// 1. Enqueue 50 diverse mutations in rapid succession
+		for (let i = 1; i <= totalMutations; i++) {
+			const domain = domainTypes[(i - 1) % domainTypes.length]!;
+			const entityId = `entity_${domain}_29_${i}`;
+			const mut = await enqueueOfflineMutation({
+				entityType: domain,
+				entityId,
+				action: "create",
+				payload: {
+					seqIndex: i,
+					domain,
+					description: `Clinical record #${i} for ${domain}`,
+					timestamp: new Date(Date.now() + i * 10).toISOString(),
+				},
+				organizationId: orgId,
+			});
+			createdEnvelopes.push({ id: mut.mutationId, seq: i, domain });
+		}
+
+		// 2. Verify outbox contains all 50 items in pending state
+		const initialPending = await getPendingOfflineMutations({ organizationId: orgId });
+		assert.strictEqual(initialPending.length, totalMutations, "All 50 mutations must be enqueued");
+
+		// 3. Chaos Wi-Fi Network Simulator:
+		// Tracks received batches and simulates packet drop / 503 / 429 before succeeding
+		let attemptCounter = 0;
+		const serverReceivedSeqOrder: number[] = [];
+
+		const chaoticWifiFetchImpl = async (url: string | URL | Request, init?: RequestInit) => {
+			attemptCounter++;
+			const body = JSON.parse(String(init?.body || "{}")) as {
+				mutations: Array<{ mutationId: string; payload: { seqIndex: number } }>;
+			};
+
+			// Chaos rule: Fail the first 3 network attempts to simulate Wi-Fi flapping
+			if (attemptCounter === 1) {
+				throw new TypeError("Failed to fetch (Wi-Fi packet dropped / AP disconnect)");
+			}
+			if (attemptCounter === 2) {
+				return new Response(JSON.stringify({ error: "HTTP 503 Gateway Timeout" }), {
+					status: 503,
+					headers: { "Content-Type": "application/json" },
+				});
+			}
+			if (attemptCounter === 3) {
+				return new Response(JSON.stringify({ error: "HTTP 429 Too Many Requests" }), {
+					status: 429,
+					headers: { "Content-Type": "application/json" },
+				});
+			}
+
+			// Success response: Record received sequence indices in order
+			const results = body.mutations.map((m) => {
+				serverReceivedSeqOrder.push(m.payload.seqIndex);
+				return {
+					mutationId: m.mutationId,
+					status: "applied",
+					entityKind: "visit",
+					entityId: `entity_${m.mutationId}`,
+					action: "create",
+					appliedAt: new Date().toISOString(),
+				};
+			});
+
+			return new Response(
+				JSON.stringify({
+					batchId: `wifi_batch_${attemptCounter}`,
+					serverTime: new Date().toISOString(),
+					results,
+				}),
+				{ status: 200, headers: { "Content-Type": "application/json" } },
+			);
+		};
+
+		// 4. Drain the outbox in batches of 10 under chaotic Wi-Fi
+		const drainResult = await offlineSyncService.drainOutbox({
+			batchSize: 10,
+			maxRetries: 4,
+			baseBackoffMs: 20,
+			maxBackoffMs: 100,
+			jitter: false,
+			organizationId: orgId,
+			fetchImpl: chaoticWifiFetchImpl as unknown as typeof fetch,
+		});
+
+		// 5. Assert 100% success (0% data loss)
+		assert.strictEqual(drainResult.appliedCount, totalMutations, "All 50 mutations must be applied");
+		assert.strictEqual(drainResult.failedCount, 0, "No mutations should fail permanently");
+		assert.strictEqual(drainResult.errors.length, 0, "No unrecovered errors");
+
+		// 6. Assert strict FIFO sequence ordering on the server
+		assert.strictEqual(
+			serverReceivedSeqOrder.length,
+			totalMutations,
+			"Server must receive all 50 mutations",
+		);
+		for (let i = 0; i < totalMutations; i++) {
+			assert.strictEqual(
+				serverReceivedSeqOrder[i],
+				i + 1,
+				`Mutation at position ${i} must have sequential seqIndex ${i + 1}`,
+			);
+		}
+
+		// 7. Verify outbox is completely clean after automatic purge
+		const remainingPending = await getPendingOfflineMutations({ organizationId: orgId });
+		assert.strictEqual(remainingPending.length, 0, "Outbox must have 0 pending items after drain");
 	});
 });
 

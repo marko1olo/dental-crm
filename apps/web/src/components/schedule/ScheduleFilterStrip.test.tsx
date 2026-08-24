@@ -199,5 +199,26 @@ describe("ScheduleFilterStrip Component", () => {
 		assert.ok(html.includes("Завтра"), "Renders 'Завтра' button");
 		assert.ok(html.includes("Вся неделя"), "Renders 'Вся неделя' button");
 	});
+
+	it("renders 'Напомнить на завтра' button when onOpenTomorrowReminders is provided", () => {
+		const html = renderToStaticMarkup(
+			createElement(ScheduleFilterStrip, {
+				scheduleDateFilter: "2026-08-25",
+				setScheduleDateFilter: () => {},
+				stepScheduleDay: () => {},
+				activeScheduleFilterCount: 0,
+				resetScheduleFilters: () => {},
+				staffMembers: [],
+				chairs: [],
+				scheduleDoctorFilterId: null,
+				setScheduleDoctorFilterId: () => {},
+				scheduleChairFilterId: null,
+				setScheduleChairFilterId: () => {},
+				onOpenTomorrowReminders: () => {},
+			}),
+		);
+
+		assert.ok(html.includes("Напомнить на завтра"), "Renders 'Напомнить на завтра' button");
+	});
 });
 
