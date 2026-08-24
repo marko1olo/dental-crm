@@ -1663,7 +1663,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 										<label style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--pc-text-muted)", display: "block", marginBottom: "6px" }}>
 											Удобное время (свободные окна врача):
 										</label>
-										<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: "6px" }}>
+										<div className="pc-slot-chips-grid">
 											{[
 												"09:00 – 10:00",
 												"10:30 – 11:30",
@@ -1678,17 +1678,8 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 														key={slot}
 														type="button"
 														onClick={() => setRescheduleTimeSlot(slot)}
-														style={{
-															minHeight: "44px",
-															borderRadius: "6px",
-															border: `1.5px solid ${isSelected ? "var(--pc-primary)" : "var(--pc-border)"}`,
-															backgroundColor: isSelected ? "var(--pc-primary-light)" : "var(--pc-bg)",
-															color: isSelected ? "var(--pc-primary)" : "var(--pc-text-main)",
-															fontWeight: isSelected ? 800 : 500,
-															fontSize: "0.8125rem",
-															cursor: "pointer",
-															touchAction: "manipulation",
-														}}
+														className={`pc-slot-chip-btn ${isSelected ? "selected" : ""}`}
+														data-testid={`reschedule-slot-${slot.replace(/\s+/g, "_")}`}
 													>
 														{slot}
 													</button>

@@ -137,12 +137,79 @@ export function getPreparationInstructionForReason(
 	return null;
 }
 
+export type AppointmentMessageType =
+	| "reminder_24h"
+	| "confirmation"
+	| "time_shift"
+	| "sms_concise";
+
+export interface AppointmentWhatsAppMessageParams {
+	patientName: string;
+	doctorName?: string | null | undefined;
+	doctorSpecialty?: string | null | undefined;
+	appointmentStartsAt: string;
+	clinicName?: string | null | undefined;
+	clinicAddress?: string | null | undefined;
+	clinicPhone?: string | null | undefined;
+	treatmentReason?: string | null | undefined;
+	cabinetName?: string | null | undefined;
+	messageType?: AppointmentMessageType | undefined;
+	customTemplate?: string | undefined;
+	shiftedMinutes?: number | undefined;
+	newStartsAt?: string | undefined;
+}
+
+export interface AppointmentMessageTokens {
+	clinicName: string;
+	patientName: string;
+	dateTime: string;
+	date: string;
+	time: string;
+	doctorName: string;
+	doctorTitle: string;
+	doctorSpecialty: string;
+	address: string;
+	addressTitle: string;
+	cabinetName: string;
+	cabinetTitle: string;
+	clinicPhone: string;
+	phoneTitle: string;
+	prepInstruction: string;
+	newTime: string;
+	shiftedMinutes: string;
+	shiftedMinutesLabel: string;
+}
+
+export const DEFAULT_APPOINTMENT_TEMPLATES: Record<AppointmentMessageType, string> = {
+	reminder_24h:
+		"Здравствуйте, {patientName}! Напоминаем о вашей записи в {clinicName}{addressTitle}: {dateTime}{doctorTitle}{cabinetTitle}.{prepInstruction}\n\nПожалуйста, подтвердите визит ответным сообщением ДА{phoneTitle}. До встречи!",
+	confirmation:
+		"Здравствуйте, {patientName}! Ваша запись в {clinicName} успешно подтверждена: {dateTime}{doctorTitle}{cabinetTitle}. Ждем вас по адресу: {address}{phoneTitle}. До встречи!",
+	time_shift:
+		"Здравствуйте, {patientName}! Сообщаем, что время вашего приема в {clinicName} скорректировано на {newTime}{doctorTitle}. Приносим извинения за возможное ожидание. Ждем вас!",
+	sms_concise:
+		"{patientName}, запись в {clinicName}: {date} в {time}. {doctorTitle}{cabinetTitle}. Ждем вас! {clinicPhone}",
+};
+
 /**
- * Генерирует русскоязычный текст сообщения для WhatsApp.
+ * Подставляет динамические токены в шаблон сообщения.
  */
-export function generateAppointmentWhatsAppMessage(
-	params: AppointmentWhatsAppMessageParams,
+export function renderAppointmentMessageTemplate(
+	template: string,
+	tokens: Partial<AppointmentMessageTokens>,
 ): string {
+	return template.replace(/\{(\w+)\}/g, (_match, tokenKey: string) => {
+		const val = tokens[tokenKey as keyof AppointmentMessageTokens];
+		return val !== undefined && val !== null ? val : "";
+	});
+}
+
+/**
+ * Формирует словарь динамических токенов для записи.
+ */
+export function getAppointmentMessageTokens(
+	params: AppointmentWhatsAppMessageParams,
+): AppointmentMessageTokens {
 	const {
 		patientName,
 		doctorName,
@@ -152,22 +219,42 @@ export function generateAppointmentWhatsAppMessage(
 		clinicAddress,
 		clinicPhone,
 		treatmentReason,
+		cabinetName,
+		shiftedMinutes,
+		newStartsAt,
 	} = params;
 
 	const dateObj = new Date(appointmentStartsAt);
-	const formattedDate = dateObj.toLocaleDateString("ru-RU", {
-		day: "numeric",
-		month: "long",
-		weekday: "short",
-	});
-	const formattedTime = dateObj.toLocaleTimeString("ru-RU", {
-		hour: "2-digit",
-		minute: "2-digit",
-	});
+	const formattedDate = Number.isNaN(dateObj.getTime())
+		? appointmentStartsAt
+		: dateObj.toLocaleDateString("ru-RU", {
+				day: "numeric",
+				month: "long",
+				weekday: "short",
+			});
+	const formattedTime = Number.isNaN(dateObj.getTime())
+		? ""
+		: dateObj.toLocaleTimeString("ru-RU", {
+				hour: "2-digit",
+				minute: "2-digit",
+			});
+
+	let newTimeFormatted = "";
+	if (newStartsAt) {
+		const newDateObj = new Date(newStartsAt);
+		newTimeFormatted = Number.isNaN(newDateObj.getTime())
+			? newStartsAt
+			: newDateObj.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+	} else if (shiftedMinutes && !Number.isNaN(dateObj.getTime())) {
+		const shiftedMs = dateObj.getTime() + shiftedMinutes * 60000;
+		const shiftedDateObj = new Date(shiftedMs);
+		newTimeFormatted = shiftedDateObj.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+	}
 
 	const clinic = clinicName?.trim() || "стоматологическую клинику DENTE";
-	const addressPart = clinicAddress?.trim() ? ` по адресу: ${clinicAddress.trim()}` : "";
-	
+	const rawAddress = clinicAddress?.trim() || "";
+	const addressPart = rawAddress ? ` по адресу: ${rawAddress}` : "";
+
 	let doctorPart = "";
 	if (doctorName?.trim()) {
 		doctorPart = doctorSpecialty?.trim()
@@ -175,12 +262,50 @@ export function generateAppointmentWhatsAppMessage(
 			: ` к доктору ${doctorName.trim()}`;
 	}
 
+	const rawCabinet = cabinetName?.trim() || "";
+	const cabinetPart = rawCabinet ? ` (${rawCabinet})` : "";
 	const prepInstruction = getPreparationInstructionForReason(treatmentReason);
 	const prepPart = prepInstruction ? `\n\n📌 Памятка к приему: ${prepInstruction}` : "";
+	const rawPhone = clinicPhone?.trim() || "";
+	const phonePart = rawPhone ? ` или по телефону ${rawPhone}` : "";
 
-	const phonePart = clinicPhone?.trim() ? ` или по телефону ${clinicPhone.trim()}` : "";
+	return {
+		clinicName: clinic,
+		patientName: patientName?.trim() || "Пациент",
+		dateTime: `${formattedDate} в ${formattedTime}`,
+		date: formattedDate,
+		time: formattedTime,
+		doctorName: doctorName?.trim() || "",
+		doctorTitle: doctorPart,
+		doctorSpecialty: doctorSpecialty?.trim() || "",
+		address: rawAddress,
+		addressTitle: addressPart,
+		cabinetName: rawCabinet,
+		cabinetTitle: cabinetPart,
+		clinicPhone: rawPhone,
+		phoneTitle: phonePart,
+		prepInstruction: prepPart,
+		newTime: newTimeFormatted,
+		shiftedMinutes: shiftedMinutes !== undefined && shiftedMinutes !== null ? String(shiftedMinutes) : "",
+		shiftedMinutesLabel: shiftedMinutes !== undefined && shiftedMinutes !== null ? `(+${shiftedMinutes} мин)` : "",
+	};
+}
 
-	return `Здравствуйте, ${patientName}! Напоминаем о вашей записи в ${clinic}${addressPart}: ${formattedDate} в ${formattedTime}${doctorPart}.${prepPart}\n\nПожалуйста, подтвердите визит ответным сообщением ДА${phonePart}. До встречи!`;
+/**
+ * Генерирует русскоязычный текст сообщения для WhatsApp.
+ */
+export function generateAppointmentWhatsAppMessage(
+	params: AppointmentWhatsAppMessageParams,
+): string {
+	const { messageType = "reminder_24h", customTemplate } = params;
+	const tokens = getAppointmentMessageTokens(params);
+
+	if (customTemplate && customTemplate.trim().length > 0) {
+		return renderAppointmentMessageTemplate(customTemplate, tokens);
+	}
+
+	const template = DEFAULT_APPOINTMENT_TEMPLATES[messageType] || DEFAULT_APPOINTMENT_TEMPLATES.reminder_24h;
+	return renderAppointmentMessageTemplate(template, tokens);
 }
 
 /**
@@ -195,6 +320,7 @@ export function generateAppointmentSmsMessage(
 		appointmentStartsAt,
 		clinicName,
 		clinicPhone,
+		cabinetName,
 	} = params;
 
 	const dateObj = new Date(appointmentStartsAt);
@@ -209,9 +335,10 @@ export function generateAppointmentSmsMessage(
 
 	const clinic = clinicName?.trim() || "DENTE";
 	const docPart = doctorName?.trim() ? ` Врач: ${doctorName.trim()}.` : "";
+	const cabPart = cabinetName?.trim() ? ` ${cabinetName.trim()}.` : "";
 	const phonePart = clinicPhone?.trim() ? ` Тел: ${clinicPhone.trim()}` : "";
 
-	return `${patientName}, запись в ${clinic}: ${formattedDate} в ${formattedTime}.${docPart} Ждем вас!${phonePart}`;
+	return `${patientName}, запись в ${clinic}: ${formattedDate} в ${formattedTime}.${docPart}${cabPart} Ждем вас!${phonePart}`;
 }
 
 /**
@@ -219,7 +346,12 @@ export function generateAppointmentSmsMessage(
  */
 export function buildWhatsAppUrl(phone: string, text: string): string {
 	const clean = phone.replace(/\D/g, "");
-	const e164 = clean.startsWith("8") && clean.length === 11 ? `7${clean.slice(1)}` : clean;
+	let e164 = clean;
+	if (clean.startsWith("8") && clean.length === 11) {
+		e164 = `7${clean.slice(1)}`;
+	} else if (clean.length === 10) {
+		e164 = `7${clean}`;
+	}
 	return `https://wa.me/${e164}?text=${encodeURIComponent(text)}`;
 }
 
@@ -229,4 +361,18 @@ export function buildWhatsAppUrl(phone: string, text: string): string {
 export function buildSmsUrl(phone: string, text: string): string {
 	const clean = phone.replace(/[^\d+]/g, "");
 	return `sms:${clean}?body=${encodeURIComponent(text)}`;
+}
+
+/**
+ * Формирует ссылку для построения маршрута до клиники на Яндекс Картах.
+ */
+export function buildYandexMapsUrl(address: string): string {
+	return `https://yandex.ru/maps/?text=${encodeURIComponent(address.trim())}`;
+}
+
+/**
+ * Формирует ссылку для поиска и навигации до клиники в 2ГИС.
+ */
+export function build2GisUrl(address: string): string {
+	return `https://2gis.ru/search/${encodeURIComponent(address.trim())}`;
 }
