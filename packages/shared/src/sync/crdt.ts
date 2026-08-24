@@ -39,9 +39,23 @@ function parseIsoTimestamp(isoString?: string | null | undefined): number {
  * When clockSkewMs is added to local timestamp, we get the calibrated server-aligned timestamp.
  */
 let currentClockSkewMs = 0;
+let lastMonotonicAdjustedMs = 0;
+
+// Hard boundary bounds for valid JavaScript Dates (Year 1970 to Year 2999)
+const MIN_VALID_EPOCH_MS = 0;
+const MAX_VALID_EPOCH_MS = 32503680000000; // ~Year 3000
 
 export function setGlobalClockSkew(skewMs: number): void {
-	currentClockSkewMs = Number.isFinite(skewMs) ? skewMs : 0;
+	if (!Number.isFinite(skewMs)) {
+		currentClockSkewMs = 0;
+		return;
+	}
+	// Bound extreme drifts to +/- 10 years to prevent arithmetic overflow in JS Date
+	const MAX_REASONABLE_SKEW_MS = 10 * 365.25 * 24 * 60 * 60 * 1000;
+	currentClockSkewMs = Math.max(
+		-MAX_REASONABLE_SKEW_MS,
+		Math.min(MAX_REASONABLE_SKEW_MS, skewMs),
+	);
 }
 
 export function getGlobalClockSkew(): number {
@@ -49,29 +63,72 @@ export function getGlobalClockSkew(): number {
 }
 
 export function calibrateClockSkew(
-	serverIsoOrMs: string | number,
-	clientLocalTimeMs: number = Date.now(),
+	serverIsoOrMs?: string | number | null | undefined,
+	clientLocalTimeMs?: number | undefined,
 ): number {
-	const serverMs =
-		typeof serverIsoOrMs === "number"
-			? serverIsoOrMs
-			: new Date(serverIsoOrMs).getTime();
-	if (Number.isNaN(serverMs) || serverMs <= 0) return currentClockSkewMs;
-	const skew = serverMs - clientLocalTimeMs;
+	if (serverIsoOrMs === null || serverIsoOrMs === undefined || serverIsoOrMs === "") {
+		return currentClockSkewMs;
+	}
+
+	let serverMs: number;
+	if (typeof serverIsoOrMs === "number") {
+		serverMs = serverIsoOrMs;
+	} else {
+		serverMs = new Date(serverIsoOrMs).getTime();
+	}
+
+	if (!Number.isFinite(serverMs) || serverMs < MIN_VALID_EPOCH_MS || serverMs > MAX_VALID_EPOCH_MS) {
+		return currentClockSkewMs;
+	}
+
+	const safeLocalTimeMs =
+		typeof clientLocalTimeMs === "number" && Number.isFinite(clientLocalTimeMs)
+			? clientLocalTimeMs
+			: Date.now();
+
+	const skew = serverMs - safeLocalTimeMs;
 	setGlobalClockSkew(skew);
-	return skew;
+	return currentClockSkewMs;
 }
 
-export function getAdjustedNowMs(localTimeMs: number = Date.now()): number {
-	return localTimeMs + currentClockSkewMs;
+export function getAdjustedNowMs(localTimeMs?: number): number {
+	const isExplicit = typeof localTimeMs === "number" && Number.isFinite(localTimeMs);
+	const safeLocalMs = isExplicit ? (localTimeMs as number) : Date.now();
+
+	let calculated = safeLocalMs + currentClockSkewMs;
+
+	// Clamp within valid JS Date bounds
+	if (!Number.isFinite(calculated) || calculated < MIN_VALID_EPOCH_MS) {
+		calculated = safeLocalMs;
+	}
+
+	if (!isExplicit) {
+		// Guarantee monotonic non-decreasing timestamp sequence when generating "now" within the session
+		if (calculated <= lastMonotonicAdjustedMs) {
+			calculated = lastMonotonicAdjustedMs + 1;
+		}
+		lastMonotonicAdjustedMs = calculated;
+	}
+
+	return calculated;
 }
 
-export function getAdjustedNowIso(localTimeMs: number = Date.now()): string {
-	return new Date(getAdjustedNowMs(localTimeMs)).toISOString();
+export function getAdjustedNowIso(localTimeMs?: number): string {
+	const ms = getAdjustedNowMs(localTimeMs);
+	try {
+		const date = new Date(ms);
+		if (Number.isNaN(date.getTime())) {
+			return new Date().toISOString();
+		}
+		return date.toISOString();
+	} catch {
+		return new Date().toISOString();
+	}
 }
 
 export function resetGlobalClockSkew(): void {
 	currentClockSkewMs = 0;
+	lastMonotonicAdjustedMs = 0;
 }
 
 /**

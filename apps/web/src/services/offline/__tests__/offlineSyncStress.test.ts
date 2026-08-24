@@ -1126,5 +1126,48 @@ describe("Offline-First & Multi-Level Sync Engine: Industrial Stress & Chaos Sui
 		assert.strictEqual(crdtResult.conflicts[0]?.winner, "client");
 		assert.strictEqual(crdtResult.conflicts[1]?.winner, "client");
 	});
+
+	// ── 13. Extreme Clock Skew Resilience (+24h ahead, -24h behind, Timezone Shift & Monotonicity Guards) ──
+	test("STRESS 13: Extreme Clock Skew Resilience (+24h ahead, -24h behind, Timezone Shift & Monotonicity Guards)", async () => {
+		const baseNowMs = Date.now();
+
+		// 1. Extreme Future Skew: +24 hours ahead
+		const plus24hServerTime = new Date(baseNowMs + 24 * 60 * 60 * 1000).toISOString();
+		calibrateClockSkew(plus24hServerTime, baseNowMs);
+		const plus24Iso = getAdjustedNowIso(baseNowMs);
+		assert.ok(!plus24Iso.includes("NaN"), "ISO string must never contain NaN");
+		assert.ok(!plus24Iso.includes("Invalid"), "ISO string must be valid Date");
+		assert.strictEqual(new Date(plus24Iso).toISOString(), plus24Iso);
+
+		// 2. Extreme Past Skew: -24 hours behind
+		const minus24hServerTime = new Date(baseNowMs - 24 * 60 * 60 * 1000).toISOString();
+		calibrateClockSkew(minus24hServerTime, baseNowMs);
+		const minus24Iso = getAdjustedNowIso(baseNowMs);
+		assert.ok(!minus24Iso.includes("NaN"));
+		assert.strictEqual(new Date(minus24Iso).toISOString(), minus24Iso);
+
+		// 3. Timezone Shift: Server timestamp with non-UTC offset (+05:45 Nepal / -08:00 PST)
+		const timezoneServerTime = "2026-08-24T18:30:00.000+05:45";
+		calibrateClockSkew(timezoneServerTime, baseNowMs);
+		const tzIso = getAdjustedNowIso(baseNowMs);
+		assert.ok(tzIso.endsWith("Z"), "Adjusted ISO timestamp must always normalize to canonical UTC format with Z");
+
+		// 4. Monotonicity Guarantee: rapid sequence of adjusted timestamps never goes backwards
+		const seq1 = getAdjustedNowMs();
+		const seq2 = getAdjustedNowMs();
+		const seq3 = getAdjustedNowMs();
+		assert.ok(seq2 > seq1, "Adjusted timestamp sequence must be strictly monotonic non-decreasing");
+		assert.ok(seq3 > seq2, "Adjusted timestamp sequence must be strictly monotonic non-decreasing");
+
+		// 5. Malformed inputs fallback safely without throwing
+		calibrateClockSkew("garbage-invalid-date-string", baseNowMs);
+		calibrateClockSkew(null, baseNowMs);
+		calibrateClockSkew(undefined, baseNowMs);
+		calibrateClockSkew(NaN, baseNowMs);
+
+		const safeIso = getAdjustedNowIso();
+		assert.ok(safeIso.length > 0);
+		assert.ok(!Number.isNaN(new Date(safeIso).getTime()));
+	});
 });
 
