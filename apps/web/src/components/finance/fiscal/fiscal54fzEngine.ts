@@ -668,3 +668,117 @@ export function calculateIncomeReturnDraft(params: {
 		isPartialRefund,
 	};
 }
+
+export interface InstallmentStageItem {
+	readonly stageIndex: number;
+	readonly title: string;
+	readonly dueDateIso: string;
+	readonly dueDateRu: string;
+	readonly amountRub: number;
+	readonly amountKopecks: number;
+	readonly paymentMethod: Ffd12PaymentMethod; // "prepayment" (Тег 1214=2) for down payment / partial, "full_payment" (Тег 1214=4) for final closure
+	readonly isInitialDownPayment: boolean;
+	readonly status: "pending" | "paid" | "scheduled";
+}
+
+export interface InstallmentPlanScheduleResult {
+	readonly totalPlanRub: number;
+	readonly totalPlanKopecks: number;
+	readonly downPaymentPercent: number;
+	readonly downPaymentRub: number;
+	readonly downPaymentKopecks: number;
+	readonly remainingDebtRub: number;
+	readonly remainingDebtKopecks: number;
+	readonly monthsCount: number;
+	readonly monthlyPaymentRub: number;
+	readonly monthlyPaymentKopecks: number;
+	readonly stages: readonly InstallmentStageItem[];
+	readonly isBalanced: boolean;
+}
+
+/**
+ * Calculates a zero-interest clinic installment schedule (Беспроцентная рассрочка клиники 0%)
+ * with exact integer kopecks arithmetic, down payment calculation (Tag 1214=2 / prepayment),
+ * and equal monthly milestones with automatic remainder penny balancing.
+ */
+export function calculateInstallmentPlanSchedule(params: {
+	readonly totalRub: number;
+	readonly downPaymentPercent?: number | undefined; // Default: 30%
+	readonly monthsCount?: number | undefined; // Default: 3 months
+	readonly startDateIso?: string | undefined; // Default: today
+	readonly planTitle?: string | undefined;
+}): InstallmentPlanScheduleResult {
+	const totalKopecks = rubToKopecks(params.totalRub);
+	const downPaymentPercent = params.downPaymentPercent ?? 30;
+	const monthsCount = Math.max(1, params.monthsCount ?? 3);
+	const startDate = params.startDateIso ? new Date(params.startDateIso) : new Date();
+
+	// Calculate down payment exact kopecks
+	const downPaymentKopecks = Math.min(
+		totalKopecks,
+		Math.round((totalKopecks * downPaymentPercent) / 100),
+	);
+	const remainingDebtKopecks = Math.max(0, totalKopecks - downPaymentKopecks);
+
+	// Calculate equal monthly payments in integer kopecks with penny balancing on last month
+	const baseMonthlyKop = Math.floor(remainingDebtKopecks / monthsCount);
+	const stages: InstallmentStageItem[] = [];
+
+	// Initial down payment (Today / Stage 0)
+	stages.push({
+		stageIndex: 0,
+		title: params.planTitle
+			? `Первый взнос (${downPaymentPercent}%): ${params.planTitle}`
+			: `Первый взнос по рассрочке (${downPaymentPercent}%)`,
+		dueDateIso: startDate.toISOString(),
+		dueDateRu: startDate.toLocaleDateString("ru-RU"),
+		amountRub: kopecksToRub(downPaymentKopecks),
+		amountKopecks: downPaymentKopecks,
+		paymentMethod: "prepayment", // 54-FZ Tag 1214 = 2 (Предоплата)
+		isInitialDownPayment: true,
+		status: "pending",
+	});
+
+	let allocatedDebtKop = 0;
+	for (let i = 1; i <= monthsCount; i++) {
+		const monthDueDate = new Date(startDate);
+		monthDueDate.setMonth(startDate.getMonth() + i);
+
+		// Last month absorbs remainder penny to guarantee exact sum
+		const isLastMonth = i === monthsCount;
+		const stageKop = isLastMonth
+			? remainingDebtKopecks - allocatedDebtKop
+			: baseMonthlyKop;
+
+		allocatedDebtKop += stageKop;
+
+		stages.push({
+			stageIndex: i,
+			title: `Платеж ${i}/${monthsCount} по рассрочке`,
+			dueDateIso: monthDueDate.toISOString(),
+			dueDateRu: monthDueDate.toLocaleDateString("ru-RU"),
+			amountRub: kopecksToRub(stageKop),
+			amountKopecks: stageKop,
+			paymentMethod: isLastMonth ? "full_payment" : "prepayment", // Финальный платеж закрывает полный расчет
+			isInitialDownPayment: false,
+			status: "scheduled",
+		});
+	}
+
+	const sumAllStagesKop = stages.reduce((acc, s) => acc + s.amountKopecks, 0);
+
+	return {
+		totalPlanRub: kopecksToRub(totalKopecks),
+		totalPlanKopecks: totalKopecks,
+		downPaymentPercent,
+		downPaymentRub: kopecksToRub(downPaymentKopecks),
+		downPaymentKopecks,
+		remainingDebtRub: kopecksToRub(remainingDebtKopecks),
+		remainingDebtKopecks,
+		monthsCount,
+		monthlyPaymentRub: kopecksToRub(baseMonthlyKop),
+		monthlyPaymentKopecks: baseMonthlyKop,
+		stages,
+		isBalanced: sumAllStagesKop === totalKopecks,
+	};
+}

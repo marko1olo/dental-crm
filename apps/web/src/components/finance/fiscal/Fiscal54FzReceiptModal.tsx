@@ -7,6 +7,7 @@ import {
 	AlertCircle,
 	AlertTriangle,
 	Banknote,
+	Calendar,
 	Check,
 	CheckCircle2,
 	Coins,
@@ -35,6 +36,7 @@ import {
 } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import {
+	calculateInstallmentPlanSchedule,
 	compileFiscalDraftSummary,
 	type FiscalItemDraft,
 	getCashPresetSuggestions,
@@ -188,7 +190,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 		}
 	}, [summary.totalRub, patientDepositRub, patientFamilyBalanceRub]);
 
-	const handleOneClickMethod = (method: "card" | "cash" | "sbp" | "deposit_all" | "family_all") => {
+	const handleOneClickMethod = (method: "card" | "cash" | "sbp" | "deposit_all" | "family_all" | "installment_30") => {
 		setCashAmount(0);
 		setReceivedCashRub(0);
 		setCardAmount(0);
@@ -212,8 +214,22 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 			const offset = Math.min(summary.totalRub, patientFamilyBalanceRub);
 			setFamilyWalletAmount(offset);
 			setCardAmount(Math.max(0, summary.totalRub - offset));
+		} else if (method === "installment_30") {
+			const downPayment = Math.round(summary.totalRub * 0.3);
+			setCardAmount(downPayment);
+			showToast(`Рассрочка 0%: Первый взнос 30% (${downPayment.toLocaleString("ru-RU")} ₽) с фиксацией 3 платежей`, "info");
 		}
 	};
+
+	const installmentSchedule = useMemo(() => {
+		if (summary.totalRub <= 0) return null;
+		return calculateInstallmentPlanSchedule({
+			totalRub: summary.totalRub,
+			downPaymentPercent: 30,
+			monthsCount: 3,
+			planTitle: currentItems[0]?.name,
+		});
+	}, [summary.totalRub, currentItems]);
 
 	const handleMarkingCodeChange = (itemId: string, code: string) => {
 		setItemMarkingCodes((prev) => ({
@@ -234,7 +250,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 			const rawUuid = crypto.randomUUID();
 			const signature = buildFiscalReceiptPayloadSignature({
 				patientId,
-				operationType: "income",
+				operationType,
 				taxationSystem: "usn_income",
 				totalKopecks: summary.totalKopecks,
 				cashKopecks: Math.round(tenders.cashRub * 100),
@@ -612,7 +628,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 									<label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
 										1-Click Способ оплаты (100% чека)
 									</label>
-									<div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+									<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
 										<button
 											type="button"
 											onClick={() => handleOneClickMethod("card")}
@@ -655,8 +671,50 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 											<Users className="w-5 h-5 text-pink-600" />
 											<span className="text-xs font-bold">Семья</span>
 										</button>
+										<button
+											type="button"
+											onClick={() => handleOneClickMethod("installment_30")}
+											className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-amber-500 bg-white dark:bg-slate-800/80 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 text-slate-700 dark:text-slate-200 transition-all text-center cursor-pointer active:scale-95"
+											title="1-Клик: Рассрочка 0% — первый взнос 30% сегодня (Тег 1214=2) + 3 равных платежа"
+										>
+											<Calendar className="w-5 h-5 text-amber-600" />
+											<span className="text-xs font-bold">Рассрочка 30%</span>
+										</button>
 									</div>
 								</div>
+
+								{/* Installment Plan Schedule Card (if installment active) */}
+								{installmentSchedule && (
+									<div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2">
+										<div className="flex items-center justify-between text-xs font-bold text-amber-900 dark:text-amber-200">
+											<span className="flex items-center gap-1.5">
+												<Calendar className="w-4 h-4 text-amber-600" />
+												График платежей по рассрочке (0% без переплат):
+											</span>
+											<span className="font-mono text-emerald-700 dark:text-emerald-300">
+												Итого: {installmentSchedule.totalPlanRub.toLocaleString("ru-RU")} ₽
+											</span>
+										</div>
+										<div className="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-1">
+											{installmentSchedule.stages.map((st) => (
+												<div
+													key={st.stageIndex}
+													className={`p-2 rounded-xl border text-[11px] font-sans space-y-0.5 ${
+														st.isInitialDownPayment
+															? "bg-amber-100/70 dark:bg-amber-950/40 border-amber-400 dark:border-amber-700"
+															: "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+													}`}
+												>
+													<div className="flex justify-between font-bold">
+														<span>{st.isInitialDownPayment ? "Взнос 30% (Сегодня)" : `Этап ${st.stageIndex}`}</span>
+														<span className="font-mono text-emerald-600 dark:text-emerald-400">{st.amountRub.toLocaleString("ru-RU")} ₽</span>
+													</div>
+													<div className="text-[10px] text-slate-500">Срок: {st.dueDateRu}</div>
+												</div>
+											))}
+										</div>
+									</div>
+								)}
 
 								{/* Multi-Tender Inputs */}
 								<div className="space-y-3 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">

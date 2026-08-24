@@ -6,6 +6,7 @@ import {
 	calculateCashChange,
 	calculateFinalSettlementWithAdvanceOffset,
 	calculateIncomeReturnDraft,
+	calculateInstallmentPlanSchedule,
 	combineFamilyInvoicesIntoFiscalDraft,
 	compile54FzFiscalTags,
 	compile54FzShiftCloseZReport,
@@ -543,6 +544,60 @@ describe("Frontend 54-FZ (FFD 1.2) Fiscal Engine Tests", () => {
 		assert.equal(returnDraft.fiscalTags.tag1215PrepaidKopecks, 1000000);
 		assert.equal(returnDraft.fiscalTags.tag1031CashKopecks, 0);
 		assert.equal(returnDraft.fiscalTags.isBalanced, true);
+	});
+
+	it("1.13 calculateInstallmentPlanSchedule — Zero-interest installment plan calculation with 30% down payment (Tag 1214=2) and 3 monthly milestones", () => {
+		// Total treatment cost: 100,000.50 ₽ (10,000,050 kop)
+		// 30% down payment today = 30,000.15 ₽ (3,000,015 kop)
+		// Remaining debt = 70,000.35 ₽ (7,000,035 kop)
+		// 3 monthly installments: 23,333.45 ₽ each
+		const result = calculateInstallmentPlanSchedule({
+			totalRub: 100000.5,
+			downPaymentPercent: 30,
+			monthsCount: 3,
+			startDateIso: "2026-09-01T10:00:00.000Z",
+			planTitle: "Тотальная реабилитация All-on-4",
+		});
+
+		assert.equal(result.totalPlanRub, 100000.5);
+		assert.equal(result.totalPlanKopecks, 10000050);
+		assert.equal(result.downPaymentPercent, 30);
+		assert.equal(result.downPaymentRub, 30000.15);
+		assert.equal(result.downPaymentKopecks, 3000015);
+		assert.equal(result.remainingDebtRub, 70000.35);
+		assert.equal(result.remainingDebtKopecks, 7000035);
+		assert.equal(result.monthsCount, 3);
+		assert.equal(result.isBalanced, true);
+
+		// Check stages breakdown
+		assert.equal(result.stages.length, 4); // Stage 0 (Down payment) + 3 monthly installments
+
+		// Stage 0: Initial down payment today (Tag 1214 = 2 / prepayment)
+		assert.equal(result.stages[0]?.stageIndex, 0);
+		assert.equal(result.stages[0]?.isInitialDownPayment, true);
+		assert.equal(result.stages[0]?.amountRub, 30000.15);
+		assert.equal(result.stages[0]?.paymentMethod, "prepayment");
+		assert.equal(result.stages[0]?.status, "pending");
+
+		// Stage 1: Month 1
+		assert.equal(result.stages[1]?.stageIndex, 1);
+		assert.equal(result.stages[1]?.amountRub, 23333.45);
+		assert.equal(result.stages[1]?.paymentMethod, "prepayment");
+		assert.equal(result.stages[1]?.status, "scheduled");
+
+		// Stage 2: Month 2
+		assert.equal(result.stages[2]?.stageIndex, 2);
+		assert.equal(result.stages[2]?.amountRub, 23333.45);
+		assert.equal(result.stages[2]?.paymentMethod, "prepayment");
+
+		// Stage 3: Month 3 (Final closure / full payment)
+		assert.equal(result.stages[3]?.stageIndex, 3);
+		assert.equal(result.stages[3]?.amountRub, 23333.45);
+		assert.equal(result.stages[3]?.paymentMethod, "full_payment");
+
+		// Verify total of all stages equals 100,000.50 ₽ exactly
+		const sumKop = result.stages.reduce((acc, s) => acc + s.amountKopecks, 0);
+		assert.equal(sumKop, 10000050);
 	});
 });
 
