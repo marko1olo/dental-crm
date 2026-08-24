@@ -150,6 +150,7 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 				type="button"
 				onClick={() => handleToothClick(tooth)}
 				style={{
+					minWidth: "36px",
 					width: "36px",
 					height: "48px",
 					borderRadius: "6px",
@@ -162,14 +163,16 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 					justifyContent: "center",
 					cursor: "pointer",
 					padding: "2px",
-					boxShadow: isSelected ? "0 0 0 3px rgba(13, 148, 136, 0.4)" : "none",
+					boxShadow: isSelected ? "0 0 0 3px rgba(13, 148, 136, 0.5)" : "0 1px 2px rgba(0, 0, 0, 0.2)",
 					transition: "all 0.15s ease",
 					touchAction: "manipulation",
+					userSelect: "none",
+					flexShrink: 0,
 				}}
 				title={`${tooth.fdiCode}: ${tooth.humanNameRu}`}
 			>
-				<span style={{ fontSize: "11px", fontWeight: 800 }}>{tooth.fdiCode}</span>
-				{tooth.status === "healthy" && <Check size={12} />}
+				<span style={{ fontSize: "11px", fontWeight: 800, textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>{tooth.fdiCode}</span>
+				{tooth.status === "healthy" && <Check size={12} strokeWidth={3} />}
 				{tooth.status === "in_treatment" && <span style={{ fontSize: "10px" }}>⏳</span>}
 				{tooth.status === "needs_treatment" && <span style={{ fontSize: "10px" }}>⚠️</span>}
 				{tooth.status === "missing_or_implant" && <span style={{ fontSize: "10px" }}>🔩</span>}
@@ -178,18 +181,19 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 	};
 
 	return (
-		<div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+		<div style={{ display: "flex", flexDirection: "column", gap: "14px", width: "100%", maxWidth: "100%", boxSizing: "border-box" }}>
 			{/* Color Legend */}
 			<div
 				style={{
 					display: "flex",
 					flexWrap: "wrap",
-					gap: "12px",
+					gap: "10px",
 					padding: "8px 12px",
 					backgroundColor: "var(--pc-surface, #1e293b)",
 					borderRadius: "8px",
 					fontSize: "12px",
 					justifyContent: "center",
+					border: "1px solid var(--pc-border, #334155)",
 				}}
 			>
 				<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -210,10 +214,15 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 				</div>
 			</div>
 
+			{/* Mobile scroll hint */}
+			<div style={{ fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)", textAlign: "center" }}>
+				<span>↔ Прокрутите влево/вправо для просмотра всех зубов формулы</span>
+			</div>
+
 			{/* Dental Arch Display */}
 			<div
 				style={{
-					padding: "16px",
+					padding: "14px",
 					backgroundColor: "var(--pc-bg, #0f172a)",
 					border: "1px solid var(--pc-border, #334155)",
 					borderRadius: "12px",
@@ -221,10 +230,13 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 					flexDirection: "column",
 					gap: "12px",
 					overflowX: "auto",
+					WebkitOverflowScrolling: "touch",
+					maxWidth: "100%",
+					boxSizing: "border-box",
 				}}
 			>
 				{/* Upper Arch */}
-				<div>
+				<div style={{ minWidth: "640px", display: "flex", flexDirection: "column", alignItems: "center" }}>
 					<div style={{ fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)", textAlign: "center", marginBottom: "6px" }}>
 						ВЕРХНЯЯ ЧЕЛЮСТЬ (ПРАВО ↔ ЛЕВО)
 					</div>
@@ -236,10 +248,10 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 				</div>
 
 				{/* Divider */}
-				<div style={{ height: "1px", backgroundColor: "var(--pc-border, #334155)", margin: "4px 0" }} />
+				<div style={{ height: "1px", backgroundColor: "var(--pc-border, #334155)", margin: "4px 0", minWidth: "640px" }} />
 
 				{/* Lower Arch */}
-				<div>
+				<div style={{ minWidth: "640px", display: "flex", flexDirection: "column", alignItems: "center" }}>
 					<div style={{ display: "flex", justifyContent: "center", gap: "4px" }}>
 						<div style={{ display: "flex", gap: "3px" }}>{lowerRight.map(renderToothButton)}</div>
 						<div style={{ width: "8px" }} />
