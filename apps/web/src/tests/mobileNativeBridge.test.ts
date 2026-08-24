@@ -18,8 +18,10 @@ import {
 	isMobileSmartphone,
 	isTabletDevice,
 	isValidStaffPinFormat,
+	isClinicalAudioMuted,
 	parseDenteDeepLink,
 	parseGs1DataMatrix,
+	playClinicalAudioFeedback,
 	popModalBackHandler,
 	pushModalBackHandler,
 	registerSafeSwipeGesture,
@@ -27,6 +29,7 @@ import {
 	requestPushNotificationPermission,
 	saveSecureToken,
 	scanDataMatrixWithCamera,
+	setClinicalAudioMuted,
 	shareClinicalDocumentMobile,
 	triggerHaptic,
 	verifyStaffPinCode,
@@ -444,6 +447,75 @@ test("Mobile Android (.APK) & GS1 DataMatrix Verification Suite", async (t) => {
 		// Clean up
 		unsubscribe();
 		assert.equal(Object.keys(mockListeners).length, 0);
+	});
+
+	await t.test("Clinical Web Audio API sound feedback synthesizes soft tones and respects mute toggle", () => {
+		// 1. Initially unmuted
+		setClinicalAudioMuted(false);
+		assert.equal(isClinicalAudioMuted(), false);
+
+		// 2. Mute toggle
+		setClinicalAudioMuted(true);
+		assert.equal(isClinicalAudioMuted(), true);
+
+		// When muted, play returns false without throwing
+		const mutedRes = playClinicalAudioFeedback("scan_success");
+		assert.equal(mutedRes, false);
+
+		// 3. Unmute
+		setClinicalAudioMuted(false);
+		assert.equal(isClinicalAudioMuted(), false);
+
+		// 4. In simulated Web Audio environment
+		let oscillatorStarted = false;
+		let oscillatorFreq = 0;
+		const mockAudioContext = function (this: any) {
+			this.currentTime = 0;
+			this.destination = {};
+			this.createOscillator = () => ({
+				type: "sine",
+				frequency: {
+					setValueAtTime: (freq: number) => {
+						oscillatorFreq = freq;
+					},
+				},
+				connect: () => {},
+				start: () => {
+					oscillatorStarted = true;
+				},
+				stop: () => {},
+			});
+			this.createGain = () => ({
+				gain: {
+					setValueAtTime: () => {},
+					exponentialRampToValueAtTime: () => {},
+				},
+				connect: () => {},
+			});
+		};
+
+		const originalWindow = (globalThis as any).window;
+		(globalThis as any).window = {
+			AudioContext: mockAudioContext,
+		};
+
+		try {
+			// Scan success tone (880 Hz)
+			const scanSuccess = playClinicalAudioFeedback("scan_success");
+			assert.equal(scanSuccess, true);
+			assert.equal(oscillatorStarted, true);
+			assert.equal(oscillatorFreq, 880);
+
+			// Protocol/payment save tone (chord)
+			const saveSuccess = playClinicalAudioFeedback("save_success");
+			assert.equal(saveSuccess, true);
+
+			// Error / warning tone
+			const errorSuccess = playClinicalAudioFeedback("error");
+			assert.equal(errorSuccess, true);
+		} finally {
+			(globalThis as any).window = originalWindow;
+		}
 	});
 });
 

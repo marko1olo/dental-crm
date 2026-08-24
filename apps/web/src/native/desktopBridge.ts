@@ -9,9 +9,13 @@
 
 import {
 	CLINICAL_TOUCH_TARGETS,
+	isClinicalAudioMuted,
 	parseGs1DataMatrix,
+	playClinicalAudioFeedback,
+	setClinicalAudioMuted,
 	triggerHaptic,
 	validateClinicalActionButtonErgonomics,
+	type ClinicalAudioFeedbackType,
 	type ParsedGs1DataMatrix,
 } from "./mobileBridge";
 
@@ -896,4 +900,8 @@ export function subscribeDesktopUpdates(
 export {
 	CLINICAL_TOUCH_TARGETS,
 	validateClinicalActionButtonErgonomics,
+	playClinicalAudioFeedback,
+	isClinicalAudioMuted,
+	setClinicalAudioMuted,
+	type ClinicalAudioFeedbackType,
 };

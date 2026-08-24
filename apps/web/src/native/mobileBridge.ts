@@ -1040,3 +1040,179 @@ export function registerSafeSwipeGesture(
 		element.removeEventListener("touchend", handleTouchEnd);
 	};
 }
+
+/**
+ * Clinical Audio Feedback Types
+ */
+export type ClinicalAudioFeedbackType =
+	| "scan_success"
+	| "save_success"
+	| "pay_success"
+	| "warning"
+	| "error"
+	| "click";
+
+let isAudioMutedState = false;
+let audioContextInstance: AudioContext | null = null;
+
+const MUTE_STORAGE_KEY = "dente_clinical_audio_muted";
+
+/**
+ * Gets or sets the global clinical audio mute state.
+ */
+export function isClinicalAudioMuted(): boolean {
+	if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+		try {
+			const stored = localStorage.getItem(MUTE_STORAGE_KEY);
+			if (stored !== null) {
+				return stored === "true";
+			}
+		} catch {
+			// Ignore localStorage access restrictions
+		}
+	}
+	return isAudioMutedState;
+}
+
+export function setClinicalAudioMuted(muted: boolean): void {
+	isAudioMutedState = muted;
+	if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+		try {
+			localStorage.setItem(MUTE_STORAGE_KEY, String(muted));
+		} catch {
+			// Ignore localStorage error
+		}
+	}
+}
+
+function getOrCreateAudioContext(): AudioContext | null {
+	if (typeof window === "undefined") return null;
+	const AudioContextClass =
+		window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+	if (!AudioContextClass) return null;
+
+	if (!audioContextInstance || audioContextInstance.state === "closed") {
+		try {
+			audioContextInstance = new AudioContextClass();
+		} catch {
+			return null;
+		}
+	}
+	if (audioContextInstance.state === "suspended") {
+		audioContextInstance.resume().catch(() => {});
+	}
+	return audioContextInstance;
+}
+
+/**
+ * Synthesizes soft clinical audio cues using pure Web Audio API without external asset requests.
+ */
+export function playClinicalAudioFeedback(
+	type: ClinicalAudioFeedbackType = "scan_success",
+): boolean {
+	if (isClinicalAudioMuted()) {
+		return false;
+	}
+
+	const ctx = getOrCreateAudioContext();
+	if (!ctx) {
+		return false;
+	}
+
+	try {
+		const now = ctx.currentTime;
+
+		if (type === "scan_success") {
+			// 880 Hz (A5), 80ms gentle scan confirmation
+			const osc = ctx.createOscillator();
+			const gain = ctx.createGain();
+			osc.type = "sine";
+			osc.frequency.setValueAtTime(880, now);
+
+			gain.gain.setValueAtTime(0.001, now);
+			gain.gain.exponentialRampToValueAtTime(0.18, now + 0.01);
+			gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+			osc.connect(gain);
+			gain.connect(ctx.destination);
+
+			osc.start(now);
+			osc.stop(now + 0.08);
+			return true;
+		}
+
+		if (type === "save_success" || type === "pay_success") {
+			// Two-tone rising major third chord (C5 523Hz -> E5 659Hz)
+			const osc1 = ctx.createOscillator();
+			const osc2 = ctx.createOscillator();
+			const gain = ctx.createGain();
+
+			osc1.type = "sine";
+			osc2.type = "sine";
+			osc1.frequency.setValueAtTime(523.25, now);
+			osc2.frequency.setValueAtTime(659.25, now + 0.08);
+
+			gain.gain.setValueAtTime(0.001, now);
+			gain.gain.exponentialRampToValueAtTime(0.15, now + 0.02);
+			gain.gain.exponentialRampToValueAtTime(0.15, now + 0.12);
+			gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+
+			osc1.connect(gain);
+			osc2.connect(gain);
+			gain.connect(ctx.destination);
+
+			osc1.start(now);
+			osc1.stop(now + 0.1);
+			osc2.start(now + 0.08);
+			osc2.stop(now + 0.22);
+			return true;
+		}
+
+		if (type === "warning" || type === "error") {
+			// Double descending warning pulse (330 Hz -> 220 Hz)
+			const osc = ctx.createOscillator();
+			const gain = ctx.createGain();
+
+			osc.type = "triangle";
+			osc.frequency.setValueAtTime(330, now);
+			osc.frequency.setValueAtTime(220, now + 0.09);
+
+			gain.gain.setValueAtTime(0.001, now);
+			gain.gain.exponentialRampToValueAtTime(0.2, now + 0.01);
+			gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+			gain.gain.setValueAtTime(0.001, now + 0.08);
+			gain.gain.exponentialRampToValueAtTime(0.2, now + 0.09);
+			gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+
+			osc.connect(gain);
+			gain.connect(ctx.destination);
+
+			osc.start(now);
+			osc.stop(now + 0.16);
+			return true;
+		}
+
+		if (type === "click") {
+			// 1046 Hz micro-tap, 25ms
+			const osc = ctx.createOscillator();
+			const gain = ctx.createGain();
+			osc.type = "sine";
+			osc.frequency.setValueAtTime(1046, now);
+
+			gain.gain.setValueAtTime(0.001, now);
+			gain.gain.exponentialRampToValueAtTime(0.1, now + 0.005);
+			gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+
+			osc.connect(gain);
+			gain.connect(ctx.destination);
+
+			osc.start(now);
+			osc.stop(now + 0.025);
+			return true;
+		}
+
+		return false;
+	} catch {
+		return false;
+	}
+}

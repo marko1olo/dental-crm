@@ -55,7 +55,7 @@ export function compileTomorrowReminders(
 ): TomorrowRemindersSummary {
 	const dateIso = targetDateIso || getTomorrowDateIso();
 	const clinicProfile = dashboard?.clinicSettings?.profile;
-	const clinicName = clinicProfile?.clinicName || "Стоматологическая клиника «ДЕНТЕ»";
+	const clinicName = (clinicProfile as { name?: string; clinicName?: string } | undefined)?.name || clinicProfile?.clinicName || "Стоматологическая клиника «ДЕНТЕ»";
 	const clinicAddress = dashboard?.clinicSettings?.profile?.address || "г. Москва, ул. Медицинская, д. 10";
 	const clinicPhone = dashboard?.clinicSettings?.profile?.phone || "+7 (495) 100-20-30";
 
