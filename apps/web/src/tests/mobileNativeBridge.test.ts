@@ -4,6 +4,9 @@ import {
 	authenticateBiometricStaff,
 	classifyBiometricFallbackReason,
 	clearModalBackStack,
+	createDenteDeepLink,
+	generateTelegramDocShareLink,
+	generateWhatsAppDocShareLink,
 	getDeviceFormFactor,
 	getModalBackStackDepth,
 	getMobileNativeApi,
@@ -15,6 +18,7 @@ import {
 	isMobileSmartphone,
 	isTabletDevice,
 	isValidStaffPinFormat,
+	parseDenteDeepLink,
 	parseGs1DataMatrix,
 	popModalBackHandler,
 	pushModalBackHandler,
@@ -22,6 +26,7 @@ import {
 	requestPushNotificationPermission,
 	saveSecureToken,
 	scanDataMatrixWithCamera,
+	shareClinicalDocumentMobile,
 	triggerHaptic,
 	verifyStaffPinCode,
 	type MobileNativeApi,
@@ -288,6 +293,61 @@ test("Mobile Android (.APK) & GS1 DataMatrix Verification Suite", async (t) => {
 		} finally {
 			(globalThis as any).window = original;
 		}
+	});
+
+	await t.test("Deep link parser & creator accurately routes dente:// URLs to clinical workspaces", () => {
+		// 1. Visit Deep Link: dente://open-visit?patientId=pat-100&visitId=vis-200
+		const visitLink = "dente://open-visit?patientId=pat-100&visitId=vis-200";
+		const parsedVisit = parseDenteDeepLink(visitLink);
+		assert.ok(parsedVisit);
+		assert.equal(parsedVisit.protocol, "dente");
+		assert.equal(parsedVisit.action, "open-visit");
+		assert.equal(parsedVisit.patientId, "pat-100");
+		assert.equal(parsedVisit.visitId, "vis-200");
+
+		// 2. Tax Deduction Deep Link: dente://open-tax-cert?patientId=pat-400
+		const taxLink = "dente://open-tax-cert?patientId=pat-400";
+		const parsedTax = parseDenteDeepLink(taxLink);
+		assert.ok(parsedTax);
+		assert.equal(parsedTax.action, "open-tax-cert");
+		assert.equal(parsedTax.patientId, "pat-400");
+
+		// 3. HTTPS Web PWA fallback routing: https://crm.dente.ru/open-patient?pid=pat-999
+		const webLink = "https://crm.dente.ru/open-patient?pid=pat-999";
+		const parsedWeb = parseDenteDeepLink(webLink);
+		assert.ok(parsedWeb);
+		assert.equal(parsedWeb.protocol, "https");
+		assert.equal(parsedWeb.action, "open-patient");
+		assert.equal(parsedWeb.patientId, "pat-999");
+
+		// 4. Create Deep Link URL
+		const generated = createDenteDeepLink("open-visit", {
+			patientId: "pat-555",
+			visitId: "vis-777",
+		});
+		assert.equal(generated, "dente://open-visit?patientId=pat-555&visitId=vis-777");
+	});
+
+	await t.test("Clinical document messenger sharing dispatches WhatsApp SOS and Telegram links safely", async () => {
+		// WhatsApp Share Link
+		const waLink = generateWhatsAppDocShareLink("89161234567", "Справка КНД 1151156 готова");
+		assert.ok(waLink.startsWith("https://api.whatsapp.com/send?phone=79161234567&text="));
+		assert.ok(waLink.includes(encodeURIComponent("Справка КНД 1151156 готова")));
+
+		// Telegram Share Link
+		const tgLink = generateTelegramDocShareLink("Чек 54-ФЗ №1042", "https://crm.dente.ru/receipt/1042");
+		assert.ok(tgLink.startsWith("https://t.me/share/url?"));
+		assert.ok(tgLink.includes(encodeURIComponent("https://crm.dente.ru/receipt/1042")));
+
+		// Dispatch via shareClinicalDocumentMobile (fallback messenger)
+		const res = await shareClinicalDocumentMobile({
+			title: "Справка об оплате медицинских услуг (КНД 1151156)",
+			text: "Клиника ДЕНТЕ: Ваша справка за 2025 год сформирована.",
+			phone: "+7 (999) 111-22-33",
+		});
+		assert.equal(res.success, true);
+		assert.equal(res.sharedVia, "whatsapp_sos");
+		assert.ok(res.urlOrPayload?.includes("79991112233"));
 	});
 });
 
