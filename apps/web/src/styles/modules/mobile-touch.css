@@ -1,34 +1,77 @@
 /*
- * Mobile Touch Target Ergonomics (WCAG 2.1 AA / AAA standard >= 44px)
- * Optimizes clinic ergonomics on tablet / smartphone viewports for doctors and receptionists.
+ * Mobile & Multi-Screen Ergonomics (WCAG 2.1 AA/AAA >= 44px)
+ * Multi-device adaptation: Smartphone 390x844, Tablet 768x1024 / 820x1180, Desktop 1440x900, 4K 3840x2160
+ * PWA standalone mode, safe-area insets & horizontal overflow containment.
  */
 
-@media (pointer: coarse), (max-width: 768px) {
+/* ── 1. Global Viewport & Horizontal Overflow Protection ── */
+html,
+body {
+	max-width: 100vw;
+	overflow-x: hidden;
+	-webkit-text-size-adjust: 100%;
+	touch-action: pan-y pinch-zoom;
+}
+
+#root,
+.app-shell,
+.workspace-shell,
+.main-content {
+	max-width: 100vw;
+	box-sizing: border-box;
+}
+
+/* ── 2. PWA Notch & Safe Area Insets (iOS / Android Capacitor / PWA) ── */
+@supports (padding-top: env(safe-area-inset-top)) {
+	.app-header,
+	.top-bar,
+	.navbar {
+		padding-top: calc(env(safe-area-inset-top, 0px) + 6px);
+		padding-left: calc(env(safe-area-inset-left, 0px) + 8px);
+		padding-right: calc(env(safe-area-inset-right, 0px) + 8px);
+	}
+
+	.app-bottom-nav,
+	.mobile-actions-bar,
+	.floating-bottom-bar {
+		padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+		padding-left: calc(env(safe-area-inset-left, 0px) + 8px);
+		padding-right: calc(env(safe-area-inset-right, 0px) + 8px);
+	}
+}
+
+/* ── 3. Touch Targets (Coarse Pointers / Mobile & Tablet Screens <= 820px) ── */
+@media (pointer: coarse), (max-width: 820px) {
 	/* Interactive Buttons & Action Bars */
 	button,
 	.primary-button,
 	.secondary-button,
 	.ghost-button,
 	.danger-button,
-	.action-button {
+	.action-button,
+	.btn-primary,
+	.btn-secondary {
 		min-height: 44px;
 		min-width: 44px;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
+		box-sizing: border-box;
 	}
 
-	/* Form Inputs, Selects & Checkbox Containers */
+	/* Form Inputs, Selects & Textareas */
 	input[type="text"],
 	input[type="date"],
 	input[type="time"],
 	input[type="number"],
 	input[type="tel"],
 	input[type="email"],
+	input[type="search"],
 	select,
 	textarea {
 		min-height: 44px;
-		font-size: 16px; /* Prevents auto-zoom in mobile Safari */
+		font-size: 16px; /* Prevents unwanted auto-zoom in mobile browsers */
+		box-sizing: border-box;
 	}
 
 	/* Checkbox & Radio Labels */
@@ -42,7 +85,7 @@
 		cursor: pointer;
 	}
 
-	/* Odontogram FDI Tooth Buttons on Tablet */
+	/* Odontogram FDI Tooth Buttons on Tablet / Mobile */
 	.odontogram-tooth-btn,
 	.tooth-cell {
 		min-width: 44px;
@@ -56,5 +99,50 @@
 	.view-switcher-button {
 		min-height: 44px;
 		padding: 10px 16px;
+		box-sizing: border-box;
+	}
+
+	/* Modal Dialogs on Mobile (390px - 820px) */
+	.modal-content,
+	.dialog-body {
+		max-width: 100vw;
+		max-height: 92vh;
+		overflow-y: auto;
+		-webkit-overflow-scrolling: touch;
 	}
 }
+
+/* ── 4. Smartphone Compact Optimization (<= 480px / 390x844) ── */
+@media (max-width: 480px) {
+	.grid-2,
+	.grid-3,
+	.grid-4,
+	.kpi-grid,
+	.summary-strip {
+		grid-template-columns: 1fr !important;
+	}
+
+	.panel-container,
+	.patient-workspace-view,
+	.schedule-container {
+		padding: 8px 6px;
+	}
+
+	.table-responsive,
+	.data-table-wrap {
+		width: 100%;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+}
+
+/* ── 5. Ultra-Wide & 4K Displays (>= 1920px & 3840x2160) ── */
+@media (min-width: 1920px) {
+	.app-shell-centered,
+	.workspace-container-fluid {
+		max-width: 1800px;
+		margin-left: auto;
+		margin-right: auto;
+	}
+}
+

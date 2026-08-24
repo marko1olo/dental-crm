@@ -45,6 +45,15 @@ import {
 	saveVisitDraft,
 	updateOfflineMutationStatus,
 } from "../index";
+import {
+	createLanFailoverFetch,
+	DEFAULT_LAN_BEACON_PORT,
+	discoverLocalClinicServer,
+	getActiveApiBaseUrl,
+	resetApiToCloud,
+	setActiveApiBaseUrl,
+	switchApiToLocalLanServer,
+} from "../../lanDiscovery/lanServerDiscovery";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Isolated In-Memory IndexedDB Mock for High-Throughput Stress Testing
@@ -888,6 +897,150 @@ describe("Offline-First & Multi-Level Sync Engine: Industrial Stress & Chaos Sui
 		// Verify zero ghost residue in storage
 		assert.strictEqual(await loadVisitDraft(visitId), null);
 		assert.strictEqual(await loadForm043Draft(patientId), null);
+	});
+
+	// ── 11. Multi-Cabinet Clinic Wi-Fi Mesh & LAN Microserver Synchronization during WAN Outage ──
+	test("STRESS 11: Multi-Cabinet Clinic Wi-Fi Mesh & LAN Microserver Synchronization during WAN Outage", async () => {
+		const orgId = "org-mesh-clinic";
+
+		// 1. Setup 4 concurrent clinical workstations
+		// Cabinet 1 (Doctor 1 - Therapy)
+		await enqueueOfflineMutation({
+			entityType: "DIARY_043_DRAFT",
+			entityId: "visit-101",
+			payload: {
+				anamnesis: "Лечение глубокого кариеса 16 зуба",
+				diagnosisIcd10: "K02.1",
+				doctorName: "Д-р Смирнов А.В.",
+			},
+			organizationId: orgId,
+		});
+
+		// Cabinet 2 (Doctor 2 - Surgery)
+		await enqueueOfflineMutation({
+			entityType: "ODONTOGRAM_STATUS",
+			entityId: "visit-102",
+			payload: {
+				toothNumber: 48,
+				state: "extracted_absent",
+				notes: "Сложное удаление ретинированного дистопированного зуба",
+				doctorName: "Д-р Ковалев И.С.",
+			},
+			organizationId: orgId,
+		});
+
+		// Reception (Front Desk)
+		await enqueueOfflineMutation({
+			entityType: "DOCUMENT_DRAFT",
+			entityId: "visit-201",
+			payload: {
+				patientFullName: "Соколова Марина Петровна",
+				serviceName: "Первичная консультация и КТ",
+				receptionist: "Волкова Е.Н.",
+			},
+			organizationId: orgId,
+		});
+
+		// X-Ray Room (Diagnostic Workstation)
+		await enqueueOfflineMutation({
+			entityType: "DOCUMENT_DRAFT",
+			entityId: "ct-scan-301",
+			payload: {
+				studyInstanceUid: "1.2.392.200036.9125.101",
+				modality: "CT",
+				seriesDescription: "3D КТ челюстно-лицевой области 0.1mm",
+				technician: "Федоров П.М.",
+			},
+			organizationId: orgId,
+		});
+
+		// Verify 4 mutations queued in local outbox
+		const pendingBefore = await getPendingOfflineMutations({ organizationId: orgId });
+		assert.strictEqual(pendingBefore.length, 4);
+
+		// 2. Simulate WAN Cloud Internet Disconnection + Active LAN Wi-Fi Mesh
+		const mockNetworkFetch = async (
+			url: string | URL | Request,
+			init?: RequestInit,
+		): Promise<Response> => {
+			const urlStr = String(url);
+
+			// Beacon Discovery Endpoint on Local LAN Microserver
+			if (urlStr.includes("/api/health/discovery") && (urlStr.includes("dente-server.local:4100") || urlStr.includes("192.168.1.100:4100"))) {
+				return new Response(
+					JSON.stringify({
+						serverName: "DENTE Clinic LAN Microserver (Cabinet 1 Host)",
+						serverId: "lan-microserver-mesh-01",
+						apiPort: 4100,
+						hostname: "dente-server.local",
+						lanAddresses: ["192.168.1.100"],
+						status: "online",
+						version: "0.1.0",
+					}),
+					{ status: 200, headers: { "Content-Type": "application/json" } },
+				);
+			}
+
+			// LAN Local Server Gateway succeeds over Wi-Fi
+			if (urlStr.includes("dente-server.local:4100") || urlStr.includes("192.168.1.100:4100")) {
+				const body = JSON.parse(String(init?.body || "{}"));
+				const results = (body.mutations || []).map((m: { mutationId: string; idempotencyKey: string }) => ({
+					mutationId: m.mutationId,
+					idempotencyKey: m.idempotencyKey,
+					status: "applied",
+					entityKind: "clinical_record",
+					entityId: "mesh-entity",
+					appliedAt: new Date().toISOString(),
+				}));
+
+				return new Response(
+					JSON.stringify({
+						syncBatchId: body.syncBatchId,
+						processedCount: results.length,
+						appliedCount: results.length,
+						duplicateCount: 0,
+						mergedCount: 0,
+						rejectedCount: 0,
+						results,
+						serverTime: new Date().toISOString(),
+					}),
+					{ status: 200, headers: { "Content-Type": "application/json" } },
+				);
+			}
+
+			// WAN Cloud Gateway / other endpoints fail with network outage (TypeError)
+			throw new TypeError("Failed to fetch: WAN Cloud Gateway unreachable (DNS resolution failed)");
+		};
+
+		// 3. Trigger resilient LAN failover discovery & drain
+		const originalFetch = globalThis.fetch;
+		globalThis.fetch = mockNetworkFetch as unknown as typeof fetch;
+		try {
+			const discovered = await discoverLocalClinicServer({
+				forceRefresh: true,
+				additionalCandidates: ["http://dente-server.local:4100"],
+			});
+			assert.ok(discovered, "LAN Microserver must be discovered over local Wi-Fi beacon");
+			assert.strictEqual(discovered?.hostname, "dente-server.local");
+
+			// 4. Drain outbox via discovered LAN Microserver
+			const lanDrainResult = await offlineSyncService.drainOutbox({
+				organizationId: orgId,
+				batchSize: 50,
+				fetchImpl: mockNetworkFetch as unknown as typeof fetch,
+				gatewayUrl: `${discovered.baseUrl}/api/sync/gateway/drain`,
+			});
+
+			assert.strictEqual(lanDrainResult.processedCount, 4);
+			assert.strictEqual(lanDrainResult.appliedCount, 4);
+			assert.strictEqual(lanDrainResult.failedCount, 0);
+
+			// Verify outbox is cleanly synced without dropped mutations
+			const pendingAfter = await getPendingOfflineMutations({ organizationId: orgId });
+			assert.strictEqual(pendingAfter.length, 0, "All 4 cabinet records must be safely committed on LAN");
+		} finally {
+			globalThis.fetch = originalFetch;
+		}
 	});
 });
 
