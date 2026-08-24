@@ -37,6 +37,7 @@ import {
 import { showToast } from "../../GlobalToast";
 import {
 	calculateInstallmentPlanSchedule,
+	calculateThreeSourceSplit,
 	compileFiscalDraftSummary,
 	type FiscalItemDraft,
 	getCashPresetSuggestions,
@@ -190,7 +191,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 		}
 	}, [summary.totalRub, patientDepositRub, patientFamilyBalanceRub]);
 
-	const handleOneClickMethod = (method: "card" | "cash" | "sbp" | "deposit_all" | "family_all" | "installment_30") => {
+	const handleOneClickMethod = (method: "card" | "cash" | "sbp" | "deposit_all" | "family_all" | "installment_30" | "multi_3_source") => {
 		setCashAmount(0);
 		setReceivedCashRub(0);
 		setCardAmount(0);
@@ -206,6 +207,13 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 			setReceivedCashRub(summary.totalRub);
 		} else if (method === "sbp") {
 			setSbpAmount(summary.totalRub);
+		} else if (method === "multi_3_source") {
+			const split = calculateThreeSourceSplit(summary.totalRub, { cardRatio: 0.5, sbpRatio: 0.25, cashRatio: 0.25 });
+			setCardAmount(split.cardRub);
+			setSbpAmount(split.sbpRub);
+			setCashAmount(split.cashRub);
+			setReceivedCashRub(split.cashRub);
+			showToast(`Мульти-оплата 54-ФЗ: Карта (${split.cardRub} ₽) + СБП (${split.sbpRub} ₽) + Нал (${split.cashRub} ₽)`, "info");
 		} else if (method === "deposit_all") {
 			const offset = Math.min(summary.totalRub, patientDepositRub);
 			setAdvanceOffsetAmount(offset);
@@ -628,14 +636,14 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 									<label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
 										1-Click Способ оплаты (100% чека)
 									</label>
-									<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+									<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
 										<button
 											type="button"
 											onClick={() => handleOneClickMethod("card")}
 											className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-blue-500 bg-white dark:bg-slate-800/80 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 text-slate-700 dark:text-slate-200 transition-all text-center cursor-pointer active:scale-95"
 										>
 											<CreditCard className="w-5 h-5 text-blue-600" />
-											<span className="text-xs font-bold">100% Картой</span>
+											<span className="text-xs font-bold">100% Карта</span>
 										</button>
 										<button
 											type="button"
@@ -652,6 +660,15 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 										>
 											<QrCode className="w-5 h-5 text-purple-600" />
 											<span className="text-xs font-bold">100% СБП QR</span>
+										</button>
+										<button
+											type="button"
+											onClick={() => handleOneClickMethod("multi_3_source")}
+											className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-teal-500 bg-white dark:bg-slate-800/80 hover:bg-teal-50/50 dark:hover:bg-teal-950/20 text-slate-700 dark:text-slate-200 transition-all text-center cursor-pointer active:scale-95"
+											title="1-Клик: Разделить чек на 3 источника: Карта 50% + СБП 25% + Наличные 25% с точным сведением до копейки"
+										>
+											<Layers className="w-5 h-5 text-teal-600" />
+											<span className="text-xs font-bold">Карта+СБП+Нал</span>
 										</button>
 										<button
 											type="button"
@@ -718,9 +735,46 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 
 								{/* Multi-Tender Inputs */}
 								<div className="space-y-3 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
-									<label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-										Разделение сумм по видам оплат (рубли)
-									</label>
+									<div className="flex flex-wrap items-center justify-between gap-2">
+										<label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
+											Разделение сумм по видам оплат (рубли)
+										</label>
+										{summary.remainingRub > 0 && (
+											<div className="flex items-center gap-1.5 flex-wrap">
+												<span className="text-[11px] text-slate-500 font-medium">
+													Остаток <span className="font-mono font-bold text-amber-600 dark:text-amber-400">{summary.remainingRub.toLocaleString("ru-RU")} ₽</span>:
+												</span>
+												<button
+													type="button"
+													onClick={() => setCardAmount((prev) => +(prev + summary.remainingRub).toFixed(2))}
+													className="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-blue-100 hover:bg-blue-200 dark:bg-blue-950/60 dark:hover:bg-blue-900 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700 cursor-pointer"
+													title="Добавить весь остаток на Карту"
+												>
+													+ на Карту
+												</button>
+												<button
+													type="button"
+													onClick={() => setSbpAmount((prev) => +(prev + summary.remainingRub).toFixed(2))}
+													className="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-purple-100 hover:bg-purple-200 dark:bg-purple-950/60 dark:hover:bg-purple-900 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-700 cursor-pointer"
+													title="Добавить весь остаток в СБП QR"
+												>
+													+ в СБП
+												</button>
+												<button
+													type="button"
+													onClick={() => {
+														const newCash = +(cashAmount + summary.remainingRub).toFixed(2);
+														setCashAmount(newCash);
+														if (receivedCashRub < newCash) setReceivedCashRub(newCash);
+													}}
+													className="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-950/60 dark:hover:bg-emerald-900 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 cursor-pointer"
+													title="Добавить весь остаток в Наличные"
+												>
+													+ в Нал
+												</button>
+											</div>
+										)}
+									</div>
 
 									<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 										<div>

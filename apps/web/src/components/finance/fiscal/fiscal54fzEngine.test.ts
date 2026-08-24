@@ -7,6 +7,7 @@ import {
 	calculateFinalSettlementWithAdvanceOffset,
 	calculateIncomeReturnDraft,
 	calculateInstallmentPlanSchedule,
+	calculateThreeSourceSplit,
 	combineFamilyInvoicesIntoFiscalDraft,
 	compile54FzFiscalTags,
 	compile54FzShiftCloseZReport,
@@ -598,6 +599,39 @@ describe("Frontend 54-FZ (FFD 1.2) Fiscal Engine Tests", () => {
 		// Verify total of all stages equals 100,000.50 ₽ exactly
 		const sumKop = result.stages.reduce((acc, s) => acc + s.amountKopecks, 0);
 		assert.equal(sumKop, 10000050);
+	});
+
+	it("1.14 calculateThreeSourceSplit — 3-Source multi-tender payment (Card 50% + SBP QR 25% + Cash 25%) 54-FZ", () => {
+		// Complex invoice: Total = 45,789.33 ₽ (4,578,933 kop)
+		// Card (50%) = Math.round(4578933 * 0.5) = 2289467 kop = 22,894.67 ₽
+		// SBP (25%) = Math.round(4578933 * 0.25) = 1144733 kop = 11,447.33 ₽
+		// Cash (residual 25%) = 4578933 - 2289467 - 1144733 = 1144733 kop = 11,447.33 ₽
+		const split = calculateThreeSourceSplit(45789.33);
+
+		assert.equal(split.totalRub, 45789.33);
+		assert.equal(split.totalKopecks, 4578933);
+		assert.equal(split.cardRub, 22894.67);
+		assert.equal(split.cardKopecks, 2289467);
+		assert.equal(split.sbpRub, 11447.33);
+		assert.equal(split.sbpKopecks, 1144733);
+		assert.equal(split.cashRub, 11447.33);
+		assert.equal(split.cashKopecks, 1144733);
+		assert.equal(split.isExactBalanced, true);
+
+		// Tag 1081 (Card + SBP Electronic) = 2289467 + 1144733 = 3434200 kop (34,342.00 ₽)
+		assert.equal(split.fiscalTags.tag1081ElectronicKopecks, 3434200);
+		assert.equal(split.fiscalTags.tag1081ElectronicRub, 34342.0);
+
+		// Tag 1031 (Cash) = 1144733 kop (11,447.33 ₽)
+		assert.equal(split.fiscalTags.tag1031CashKopecks, 1144733);
+		assert.equal(split.fiscalTags.tag1031CashRub, 11447.33);
+
+		// Tag 1215 (Prepaid) = 0
+		assert.equal(split.fiscalTags.tag1215PrepaidKopecks, 0);
+
+		// Total tender equals total check exactly
+		assert.equal(split.fiscalTags.totalTenderKopecks, 4578933);
+		assert.equal(split.fiscalTags.isBalanced, true);
 	});
 });
 

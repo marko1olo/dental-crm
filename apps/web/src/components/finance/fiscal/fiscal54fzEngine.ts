@@ -376,6 +376,90 @@ export function compile54FzFiscalTags(
 	};
 }
 
+export interface ThreeSourceSplitWeights {
+	cardRatio?: number | undefined;
+	sbpRatio?: number | undefined;
+	cashRatio?: number | undefined;
+}
+
+export interface ThreeSourceSplitResult {
+	readonly cardRub: number;
+	readonly cardKopecks: number;
+	readonly sbpRub: number;
+	readonly sbpKopecks: number;
+	readonly cashRub: number;
+	readonly cashKopecks: number;
+	readonly totalKopecks: number;
+	readonly totalRub: number;
+	readonly isExactBalanced: boolean;
+	readonly tenders: SplitTenderState;
+	readonly fiscalTags: Ffd12TenderTagsSummary;
+}
+
+/**
+ * 54-FZ FFD 1.2: Calculates 3-source multi-tender split (Card + SBP QR + Cash)
+ * with 100% kopeck-exact integer balancing and tag compilation (Tag 1081 Card + SBP, Tag 1031 Cash).
+ */
+export function calculateThreeSourceSplit(
+	totalDueRub: number,
+	weights?: ThreeSourceSplitWeights | undefined,
+): ThreeSourceSplitResult {
+	const totalKopecks = Math.max(0, rubToKopecks(totalDueRub));
+	if (totalKopecks === 0) {
+		const zeroTenders: SplitTenderState = {
+			cashRub: 0,
+			cardRub: 0,
+			sbpRub: 0,
+			advanceOffsetRub: 0,
+			certificateRub: 0,
+		};
+		return {
+			cardRub: 0,
+			cardKopecks: 0,
+			sbpRub: 0,
+			sbpKopecks: 0,
+			cashRub: 0,
+			cashKopecks: 0,
+			totalKopecks: 0,
+			totalRub: 0,
+			isExactBalanced: true,
+			tenders: zeroTenders,
+			fiscalTags: compile54FzFiscalTags(zeroTenders, 0),
+		};
+	}
+
+	const wCard = weights?.cardRatio !== undefined ? weights.cardRatio : 0.5; // default 50% card
+	const wSbp = weights?.sbpRatio !== undefined ? weights.sbpRatio : 0.25; // default 25% sbp
+
+	const cardKopecks = Math.min(totalKopecks, Math.round(totalKopecks * wCard));
+	const sbpKopecks = Math.min(totalKopecks - cardKopecks, Math.round(totalKopecks * wSbp));
+	const cashKopecks = Math.max(0, totalKopecks - cardKopecks - sbpKopecks);
+
+	const tenders: SplitTenderState = {
+		cashRub: kopecksToRub(cashKopecks),
+		cardRub: kopecksToRub(cardKopecks),
+		sbpRub: kopecksToRub(sbpKopecks),
+		advanceOffsetRub: 0,
+		certificateRub: 0,
+	};
+
+	const fiscalTags = compile54FzFiscalTags(tenders, totalKopecks);
+
+	return {
+		cardRub: kopecksToRub(cardKopecks),
+		cardKopecks,
+		sbpRub: kopecksToRub(sbpKopecks),
+		sbpKopecks,
+		cashRub: kopecksToRub(cashKopecks),
+		cashKopecks,
+		totalKopecks,
+		totalRub: kopecksToRub(totalKopecks),
+		isExactBalanced: cardKopecks + sbpKopecks + cashKopecks === totalKopecks,
+		tenders,
+		fiscalTags,
+	};
+}
+
 export interface FamilyMemberInvoiceGroup {
 	readonly patientId: string;
 	readonly patientFullName: string;
