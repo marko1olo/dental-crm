@@ -19,6 +19,7 @@ import { openWhatsAppChat } from "../../store/telephonyStore";
 import { specialtyLabels } from "../../workspaceUiLabels";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { showToast } from "../GlobalToast";
+import { calculateDailyChairDoctorTally } from "./doctorFreeSlotsEngine";
 
 export interface ScheduleGridProps {
 	dashboard: Dashboard;
@@ -159,35 +160,74 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 		return collisions;
 	}, [dayAppointments]);
 
-	return (
-		<div
-			className="schedule-grid-container overflow-x-auto rounded-2xl border border-[var(--line)] bg-[var(--paper)] shadow-sm"
-			data-testid="schedule-grid-view"
-			role="region"
-			aria-label="Сетка расписания по креслам и времени"
-		>
-			<div
-				className="grid min-w-[700px] border-b border-[var(--line)] bg-[var(--paper-soft)] sticky top-0 z-10"
-				style={{
-					gridTemplateColumns: `80px repeat(${chairs.length}, minmax(180px, 1fr))`,
-				}}
-			>
-				{/* Time corner header */}
-				<div className="p-3 text-center text-xs font-bold uppercase tracking-wider text-[var(--muted)] border-r border-[var(--line)] flex items-center justify-center gap-1">
-					<Clock size={14} className="text-[var(--teal)]" />
-					<span>Время</span>
-				</div>
+	const dailyTally = useMemo(() => {
+		return calculateDailyChairDoctorTally({
+			dateKey,
+			appointments,
+			chairs: dashboard?.clinicSettings?.chairs ?? [],
+			doctors: ((dashboard?.clinicSettings as any)?.staff ?? []) as any[],
+		});
+	}, [dateKey, appointments, dashboard?.clinicSettings?.chairs, (dashboard?.clinicSettings as any)?.staff]);
 
-				{/* Chair Column Headers */}
-				{chairs.map((chair) => (
-					<div
-						key={chair.id}
-						className="p-3 text-center text-xs font-bold uppercase tracking-wider text-[var(--ink)] border-r border-[var(--line)] last:border-r-0 flex items-center justify-center gap-1.5"
-					>
-						<span>{chair.name}</span>
+	return (
+		<div className="space-y-3">
+			{/* Daily Chair & Doctor Occupancy Summary Bar */}
+			{dailyTally.totalAppointmentsCount > 0 && (
+				<div className="p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-wrap items-center justify-between gap-3 text-xs">
+					<div className="flex items-center gap-3">
+						<span className="font-bold text-[var(--ink)] flex items-center gap-1.5">
+							<CalendarCheck size={16} className="text-teal-600" />
+							Загрузка клиники: {dailyTally.totalAppointmentsCount} визитов ({dailyTally.clinicOccupancyPercent}%)
+						</span>
+						<span className="text-[var(--muted)]">·</span>
+						<span className="text-[var(--muted)]">
+							Общее время приема: {Math.floor(dailyTally.totalDurationMinutes / 60)}ч {dailyTally.totalDurationMinutes % 60}мин
+						</span>
 					</div>
-				))}
-			</div>
+					{dailyTally.totalRevenueRub > 0 && (
+						<div className="font-bold font-mono text-emerald-600 dark:text-emerald-400">
+							Выручка дня: {dailyTally.totalRevenueRub.toLocaleString("ru-RU")} ₽
+						</div>
+					)}
+				</div>
+			)}
+
+			<div
+				className="schedule-grid-container overflow-x-auto rounded-2xl border border-[var(--line)] bg-[var(--paper)] shadow-sm"
+				data-testid="schedule-grid-view"
+				role="region"
+				aria-label="Сетка расписания по креслам и времени"
+			>
+				<div
+					className="grid min-w-[700px] border-b border-[var(--line)] bg-[var(--paper-soft)] sticky top-0 z-10"
+					style={{
+						gridTemplateColumns: `80px repeat(${chairs.length}, minmax(180px, 1fr))`,
+					}}
+				>
+					{/* Time corner header */}
+					<div className="p-3 text-center text-xs font-bold uppercase tracking-wider text-[var(--muted)] border-r border-[var(--line)] flex items-center justify-center gap-1">
+						<Clock size={14} className="text-[var(--teal)]" />
+						<span>Время</span>
+					</div>
+
+					{/* Chair Column Headers with Visit Count & Occupancy */}
+					{chairs.map((chair) => {
+						const chairStat = dailyTally.chairs.find((c) => c.chairId === chair.id);
+						return (
+							<div
+								key={chair.id}
+								className="p-3 text-center text-xs font-bold uppercase tracking-wider text-[var(--ink)] border-r border-[var(--line)] last:border-r-0 flex flex-col items-center justify-center gap-1"
+							>
+								<span>{chair.name}</span>
+								{chairStat && chairStat.appointmentsCount > 0 && (
+									<span className="text-[10px] font-normal font-sans lowercase px-2 py-0.5 rounded-full bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/20">
+										{chairStat.appointmentsCount} виз. ({chairStat.occupancyPercent}%)
+									</span>
+								)}
+							</div>
+						);
+					})}
+				</div>
 
 			{/* Time Rows */}
 			<div className="divide-y divide-[var(--line)]">
@@ -557,5 +597,6 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 				})}
 			</div>
 		</div>
+	</div>
 	);
 }
