@@ -101,40 +101,97 @@ export function openOfflineOutboxDb(): Promise<IDBDatabase> {
 				OFFLINE_DB_VERSION,
 			);
 
-			request.onupgradeneeded = () => {
+			request.onupgradeneeded = (event?: IDBVersionChangeEvent | any) => {
 				const db = request.result;
+				const tx = request.transaction;
+				const oldVersion = event?.oldVersion ?? 0;
+				logger.info(
+					`[Dente] [OfflineStorage] Upgrading IndexedDB schema: v${oldVersion} -> v${OFFLINE_DB_VERSION}`,
+				);
 
+				// Helper to check index existence safely across browsers and node test mock IDB
+				const safeCreateIndex = (store: any, name: string, keyPath?: string) => {
+					if (!store) return;
+					try {
+						const hasIndex =
+							store.indexNames &&
+							(typeof store.indexNames.contains === "function"
+								? store.indexNames.contains(name)
+								: typeof store.indexNames.indexOf === "function"
+									? store.indexNames.indexOf(name) !== -1
+									: false);
+						if (!hasIndex) {
+							store.createIndex(name, keyPath ?? name);
+						}
+					} catch {
+						// ignore if index already exists
+					}
+				};
+
+				// 1. Mutations Outbox Store
+				let mutStore: IDBObjectStore | undefined;
 				if (!db.objectStoreNames.contains(MUTATIONS_STORE_NAME)) {
-					const mutStore = db.createObjectStore(MUTATIONS_STORE_NAME, {
+					mutStore = db.createObjectStore(MUTATIONS_STORE_NAME, {
 						keyPath: "mutationId",
 					});
-					mutStore.createIndex("timestamp", "timestamp");
-					mutStore.createIndex("timestampMs", "timestampMs");
-					mutStore.createIndex("entityType", "entityType");
-					mutStore.createIndex("entityId", "entityId");
-					mutStore.createIndex("status", "status");
-					mutStore.createIndex("organizationId", "organizationId");
+				} else if (tx) {
+					try {
+						mutStore = tx.objectStore(MUTATIONS_STORE_NAME);
+					} catch {
+						// ignore
+					}
 				}
 
+				if (mutStore) {
+					safeCreateIndex(mutStore, "timestamp", "timestamp");
+					safeCreateIndex(mutStore, "timestampMs", "timestampMs");
+					safeCreateIndex(mutStore, "entityType", "entityType");
+					safeCreateIndex(mutStore, "entityId", "entityId");
+					safeCreateIndex(mutStore, "status", "status");
+					safeCreateIndex(mutStore, "organizationId", "organizationId");
+				}
+
+				// 2. Clinical Drafts Store (Form 043/u, SOAP, Odontogram)
+				let draftStore: IDBObjectStore | undefined;
 				if (!db.objectStoreNames.contains(DRAFTS_STORE_NAME)) {
-					const draftStore = db.createObjectStore(DRAFTS_STORE_NAME, {
+					draftStore = db.createObjectStore(DRAFTS_STORE_NAME, {
 						keyPath: "draftKey",
 					});
-					draftStore.createIndex("entityType", "entityType");
-					draftStore.createIndex("entityId", "entityId");
-					draftStore.createIndex("updatedAt", "updatedAt");
-					draftStore.createIndex("updatedAtMs", "updatedAtMs");
-					draftStore.createIndex("organizationId", "organizationId");
+				} else if (tx) {
+					try {
+						draftStore = tx.objectStore(DRAFTS_STORE_NAME);
+					} catch {
+						// ignore
+					}
 				}
 
+				if (draftStore) {
+					safeCreateIndex(draftStore, "entityType", "entityType");
+					safeCreateIndex(draftStore, "entityId", "entityId");
+					safeCreateIndex(draftStore, "updatedAt", "updatedAt");
+					safeCreateIndex(draftStore, "updatedAtMs", "updatedAtMs");
+					safeCreateIndex(draftStore, "organizationId", "organizationId");
+				}
+
+				// 3. Clinical Fast Cache Store
+				let cacheStore: IDBObjectStore | undefined;
 				if (!db.objectStoreNames.contains(CLINICAL_CACHE_STORE_NAME)) {
-					const cacheStore = db.createObjectStore(CLINICAL_CACHE_STORE_NAME, {
+					cacheStore = db.createObjectStore(CLINICAL_CACHE_STORE_NAME, {
 						keyPath: "cacheKey",
 					});
-					cacheStore.createIndex("entityKind", "entityKind");
-					cacheStore.createIndex("entityId", "entityId");
-					cacheStore.createIndex("cachedAtMs", "cachedAtMs");
-					cacheStore.createIndex("organizationId", "organizationId");
+				} else if (tx) {
+					try {
+						cacheStore = tx.objectStore(CLINICAL_CACHE_STORE_NAME);
+					} catch {
+						// ignore
+					}
+				}
+
+				if (cacheStore) {
+					safeCreateIndex(cacheStore, "entityKind", "entityKind");
+					safeCreateIndex(cacheStore, "entityId", "entityId");
+					safeCreateIndex(cacheStore, "cachedAtMs", "cachedAtMs");
+					safeCreateIndex(cacheStore, "organizationId", "organizationId");
 				}
 			};
 
@@ -432,6 +489,13 @@ export async function updateOfflineMutationStatus(
 			saveLocalStorageMutations(list);
 		}
 	}
+}
+
+/**
+ * Отметка мутации как успешно синхронизированной
+ */
+export async function markMutationSynced(mutationId: string): Promise<void> {
+	await updateOfflineMutationStatus(mutationId, "synced");
 }
 
 /**

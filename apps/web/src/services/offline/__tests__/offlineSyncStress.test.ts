@@ -26,10 +26,12 @@ import {
 import {
 	calculateBackoffDelay,
 	clearSyncedOfflineMutations,
+	CLINICAL_CACHE_STORE_NAME,
 	deleteForm043Draft,
 	deleteOfflineDraft,
 	deleteOfflineMutation,
 	deleteVisitDraft,
+	DRAFTS_STORE_NAME,
 	enqueueOfflineMutation,
 	generateMutationUuid,
 	getOfflineMutationById,
@@ -41,7 +43,9 @@ import {
 	loadVisitDraft,
 	mapToSyncAction,
 	mapToSyncEntityKind,
+	MUTATIONS_STORE_NAME,
 	nowIsoWithMs,
+	OFFLINE_DB_VERSION,
 	type OfflineMutation,
 	offlineSyncService,
 	openOfflineOutboxDb,
@@ -1322,6 +1326,68 @@ describe("Offline-First & Multi-Level Sync Engine: Industrial Stress & Chaos Sui
 		await deleteForm043Draft(patientId);
 		const afterCleanup = await loadForm043Draft(patientId);
 		assert.strictEqual(afterCleanup, null);
+	});
+
+	// ── 16. IndexedDB Schema Versioning & Seamless Migration (v1 -> v2 without outbox mutation wipe) ──
+	test("STRESS 16: IndexedDB Schema Versioning & Seamless Migration (v1 -> v2 without outbox mutation wipe)", async () => {
+		const orgId = "org-mig-1";
+		const patientId = "patient-mig-101";
+
+		// 1. Enqueue 20 mutations into outbox before schema upgrade check
+		for (let i = 1; i <= 20; i++) {
+			await enqueueOfflineMutation({
+				entityType: "patient",
+				entityId: `${patientId}_${i}`,
+				action: "create",
+				payload: {
+					fullName: `Тестовый Пациент Миграции ${i}`,
+					phone: `+7 (999) 000-00-${String(i).padStart(2, "0")}`,
+				},
+				organizationId: orgId,
+			});
+		}
+
+		// 2. Also save a Form 043/u clinical draft
+		await saveForm043Draft(
+			patientId,
+			{
+				anamnesis: "Анамнез до миграции схемы v1->v2",
+				status16: "Кариес",
+			},
+			orgId,
+		);
+
+		// 3. Verify metrics before migration
+		const metricsBefore = await getOfflineQueueMetrics();
+		assert.ok(metricsBefore.pendingCount >= 20, "At least 20 pending mutations must be recorded");
+		assert.ok(metricsBefore.totalDrafts >= 1, "At least 1 draft must be recorded");
+
+		// 4. Reset DB connection instance and reopen DB to trigger schema verification & upgrade handler
+		resetOfflineDbConnection();
+		const db = await openOfflineOutboxDb();
+
+		assert.ok(db, "IndexedDB instance must be open");
+		assert.strictEqual(db.version, OFFLINE_DB_VERSION, "DB version must equal OFFLINE_DB_VERSION");
+		assert.ok(db.objectStoreNames.contains(MUTATIONS_STORE_NAME), "mutations store must exist");
+		assert.ok(db.objectStoreNames.contains(DRAFTS_STORE_NAME), "drafts store must exist");
+		assert.ok(db.objectStoreNames.contains(CLINICAL_CACHE_STORE_NAME), "clinical_cache store must exist");
+
+		// 5. Verify that all 20 mutations and drafts survived without data loss
+		const pendingList = await getPendingOfflineMutations({ organizationId: orgId });
+		assert.strictEqual(pendingList.length, 20, "All 20 mutations must be intact after seamless schema upgrade");
+
+		const restoredDraft = await loadForm043Draft<{ anamnesis: string; status16: string }>(patientId);
+		assert.ok(restoredDraft, "Clinical draft must be intact after schema upgrade");
+		assert.strictEqual(restoredDraft.data.anamnesis, "Анамнез до миграции схемы v1->v2");
+
+		// 6. Cleanup mutations and draft
+		for (const mut of pendingList) {
+			await updateOfflineMutationStatus(mut.mutationId, "synced");
+		}
+		await deleteForm043Draft(patientId);
+
+		const remainingPending = await getPendingOfflineMutations({ organizationId: orgId });
+		assert.strictEqual(remainingPending.length, 0, "All mutations successfully processed and marked synced");
 	});
 });
 
