@@ -22,6 +22,7 @@ import {
 	parseGs1DataMatrix,
 	popModalBackHandler,
 	pushModalBackHandler,
+	registerSafeSwipeGesture,
 	removeSecureToken,
 	requestPushNotificationPermission,
 	saveSecureToken,
@@ -383,6 +384,66 @@ test("Mobile Android (.APK) & GS1 DataMatrix Verification Suite", async (t) => {
 		assert.equal(res.success, true);
 		assert.equal(res.sharedVia, "whatsapp_sos");
 		assert.ok(res.urlOrPayload?.includes("79991112233"));
+	});
+
+	await t.test("Momentum-Scroll and Safe Swipe Gestures prevent accidental dismissal and finger jamming", () => {
+		let swipeLeftFired = false;
+		let swipeRightFired = false;
+
+		const mockListeners: Record<string, ((e: any) => void) | undefined> = {};
+		const mockElement = {
+			addEventListener: (event: string, handler: (e: any) => void) => {
+				mockListeners[event] = handler;
+			},
+			removeEventListener: (event: string, handler: (e: any) => void) => {
+				delete mockListeners[event];
+			},
+		} as unknown as HTMLElement;
+
+		const unsubscribe = registerSafeSwipeGesture(mockElement, {
+			minDistancePx: 48,
+			onSwipeLeft: () => {
+				swipeLeftFired = true;
+			},
+			onSwipeRight: () => {
+				swipeRightFired = true;
+			},
+		});
+
+		// 1. Simulate fast right swipe (> 48px, deltaX +60, deltaY 5)
+		const touchStart = mockListeners["touchstart"] as ((e: unknown) => void) | undefined;
+		const touchEnd = mockListeners["touchend"] as ((e: unknown) => void) | undefined;
+		if (touchStart) {
+			touchStart({
+				touches: [{ clientX: 100, clientY: 200 }],
+			});
+		}
+		if (touchEnd) {
+			touchEnd({
+				changedTouches: [{ clientX: 165, clientY: 205 }],
+			});
+		}
+		assert.equal(swipeRightFired, true);
+		assert.equal(swipeLeftFired, false);
+
+		// 2. Simulate tiny micro-drag (< 48px, e.g. finger jitter) -> should NOT fire
+		swipeRightFired = false;
+		if (touchStart) {
+			touchStart({
+				touches: [{ clientX: 100, clientY: 200 }],
+			});
+		}
+		if (touchEnd) {
+			touchEnd({
+				changedTouches: [{ clientX: 115, clientY: 202 }],
+			});
+		}
+		assert.equal(swipeRightFired, false);
+		assert.equal(swipeLeftFired, false);
+
+		// Clean up
+		unsubscribe();
+		assert.equal(Object.keys(mockListeners).length, 0);
 	});
 });
 

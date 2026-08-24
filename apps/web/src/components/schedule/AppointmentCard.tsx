@@ -7,7 +7,7 @@ import type {
 } from "@dental/shared";
 import type { ChangeEvent } from "react";
 import { useCallback, useMemo, useState } from "react";
-import { Check, Clock, Copy, MessageSquare, Zap } from "lucide-react";
+import { AlertTriangle, Check, Clock, Copy, MessageSquare, Phone, User, Zap } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { AppointmentQuickActions } from "./AppointmentQuickActions";
@@ -250,6 +250,28 @@ export function AppointmentCard(props: AppointmentCardProps) {
 
 	const [isQuickStatusUpdating, setIsQuickStatusUpdating] = useState(false);
 	const [optimisticStatus, setOptimisticStatus] = useState<Appointment["status"] | null>(null);
+	const [isHoverPreviewOpen, setIsHoverPreviewOpen] = useState(false);
+
+	const allergyAlert = useMemo(() => {
+		const rawAllergies =
+			(appointmentPatient as { allergies?: string | null } | undefined)?.allergies ||
+			(appointmentPatient as { anamnesis?: { allergies?: string | null } } | undefined)?.anamnesis?.allergies;
+		if (rawAllergies && typeof rawAllergies === "string" && rawAllergies.trim()) {
+			return `⚠️ Внимание: ${rawAllergies.trim()}`;
+		}
+		const notes = appointmentPatient?.notes || "";
+		const match = notes.match(/аллерги[яеи][^.;\n]*/i);
+		if (match) {
+			return `⚠️ Внимание: ${match[0].trim()}`;
+		}
+		if (
+			/лидокаин/i.test(appointment?.reason || "") ||
+			/аллерги/i.test(appointment?.reason || "")
+		) {
+			return "⚠️ Внимание: Аллергия на лидокаин";
+		}
+		return null;
+	}, [appointmentPatient, appointment?.reason]);
 
 	const handleQuickStatusChange = useCallback(
 		async (newStatus: Appointment["status"], noteAppend?: string) => {
@@ -485,8 +507,12 @@ export function AppointmentCard(props: AppointmentCardProps) {
 					data-appointment-id={appointment.id}
 					tabIndex={0}
 					onKeyDown={handleCardKeyDown}
+					onMouseEnter={() => setIsHoverPreviewOpen(true)}
+					onMouseLeave={() => setIsHoverPreviewOpen(false)}
+					onFocus={() => setIsHoverPreviewOpen(true)}
+					onBlur={() => setIsHoverPreviewOpen(false)}
 					aria-label={`Карточка приема: ${appointmentPatientName}, ${formatTime(appointment.startsAt)} - ${formatTime(appointment.endsAt)}`}
-					className={`appointment-card mode-fit-card glass-panel rounded-xl p-4 mb-3 shadow-sm transition-all focus:ring-2 focus:ring-teal-500 focus:outline-none min-w-0 max-w-full overflow-hidden ${
+					className={`appointment-card mode-fit-card glass-panel rounded-xl p-4 mb-3 shadow-sm transition-all focus:ring-2 focus:ring-teal-500 focus:outline-none min-w-0 max-w-full relative ${
 						isCito
 							? "border-rose-500 ring-2 ring-rose-500/40 bg-rose-500/5"
 							: displayStatus === "confirmed"
@@ -510,6 +536,77 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						boxSizing: "border-box",
 					}}
 				>
+					{/* Крупное всплывающее превью пациента по наведению */}
+					{isHoverPreviewOpen && !appointmentEditing && (
+						<div
+							className="appointment-patient-hover-preview p-3.5 rounded-2xl bg-white dark:bg-slate-900 border-2 border-teal-500 shadow-2xl space-y-2.5 animate-in fade-in zoom-in-95 duration-150 text-xs text-slate-800 dark:text-slate-200 z-30"
+							data-testid="appointment-patient-hover-preview"
+						>
+							{/* 1. Крупное ФИО пациента (18px bold) */}
+							<div className="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+								<span className="text-[18px] font-black text-slate-900 dark:text-slate-100 flex items-center gap-1.5 truncate">
+									<User className="w-5 h-5 text-teal-600 dark:text-teal-400 shrink-0" />
+									{appointmentPatientName || "Пациент"}
+								</span>
+								{patientBalance !== null && (
+									<span
+										className={`px-2.5 py-0.5 rounded-lg text-xs font-black font-mono shrink-0 ${
+											patientBalance > 0
+												? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40"
+												: patientBalance < 0
+													? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/40"
+													: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20"
+										}`}
+									>
+										{patientBalance > 0
+											? `Депозит: +${patientBalance.toLocaleString("ru-RU")} ₽`
+											: patientBalance < 0
+												? `Долг: ${Math.abs(patientBalance).toLocaleString("ru-RU")} ₽`
+												: "Баланс: 0 ₽"}
+									</span>
+								)}
+							</div>
+
+							{/* 2. Номер телефона с кнопкой WhatsApp */}
+							<div className="flex items-center justify-between gap-2">
+								<div className="flex items-center gap-1.5 font-mono text-xs font-semibold text-slate-700 dark:text-slate-300">
+									<Phone className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+									<span>{appointmentPatient?.phone || "Телефон не указан"}</span>
+								</div>
+								{appointmentPatient?.phone && (
+									<button
+										type="button"
+										onClick={(e) => {
+											e.stopPropagation();
+											openWhatsAppChat(appointmentPatient.phone!, `Здравствуйте, ${appointmentPatientName}! Напоминаем о вашем визите в стоматологию.`);
+										}}
+										className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+										title="Открыть чат в WhatsApp"
+									>
+										<MessageSquare size={13} className="text-emerald-600 dark:text-emerald-400" />
+										<span>WhatsApp</span>
+									</button>
+								)}
+							</div>
+
+							{/* 3. Яркий янтарный алерт аллергий / противопоказаний */}
+							{allergyAlert && (
+								<div className="p-2.5 rounded-xl bg-amber-500/15 border-2 border-amber-500/60 text-amber-900 dark:text-amber-200 text-xs font-black flex items-center gap-2 shadow-xs">
+									<AlertTriangle size={15} className="text-amber-600 shrink-0 animate-bounce" />
+									<span>{allergyAlert}</span>
+								</div>
+							)}
+
+							{/* 4. Название запланированной процедуры */}
+							<div className="pt-1 border-t border-slate-100 dark:border-slate-800/60 flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+								<Clock size={13} className="text-slate-400 shrink-0" />
+								<span className="font-semibold text-slate-800 dark:text-slate-200">
+									{appointment?.reason || (appointment as Record<string, any>)?.notes || (appointment as Record<string, any>)?.comment || "Консультация стоматолога"}
+								</span>
+							</div>
+						</div>
+					)}
+
 					<div className="appointment-card-header border-b border-[var(--line)] pb-2 mb-1 flex justify-between items-center gap-2 min-w-0 flex-wrap">
 						<div className="appointment-card-time font-semibold text-sm text-[var(--ink)] flex items-center gap-2 shrink-0">
 							{appointment?.startsAt ? formatTime(appointment.startsAt) : ""}

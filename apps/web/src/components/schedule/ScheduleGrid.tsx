@@ -7,6 +7,7 @@ import {
 	Clock,
 	Copy,
 	MessageSquare,
+	Phone,
 	PhoneCall,
 	Plus,
 	Stethoscope,
@@ -75,6 +76,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 		selectedDoctorId,
 	} = props;
 
+	const [hoveredApptId, setHoveredApptId] = React.useState<string | null>(null);
 	const timezone = dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow";
 
 	const chairs = useMemo(() => {
@@ -292,11 +294,37 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 													(a?.reason ?? "").toLowerCase().includes("острая боль") ||
 													(a?.reason ?? "").toLowerCase().includes("срочн")
 												);
+												const rawBal = patObj?.balanceRub ?? (patObj as { balance?: number | string | null } | undefined)?.balance;
+												const pBalance = rawBal !== undefined && rawBal !== null && rawBal !== "" && Number.isFinite(Number(rawBal)) ? Number(rawBal) : null;
+												const pAllergyAlert = (() => {
+													const rawAllergies =
+														(patObj as { allergies?: string | null } | undefined)?.allergies ||
+														(patObj as { anamnesis?: { allergies?: string | null } } | undefined)?.anamnesis?.allergies;
+													if (rawAllergies && typeof rawAllergies === "string" && rawAllergies.trim()) {
+														return `⚠️ Внимание: ${rawAllergies.trim()}`;
+													}
+													const notes = patObj?.notes || "";
+													const match = notes.match(/аллерги[яеи][^.;\n]*/i);
+													if (match) {
+														return `⚠️ Внимание: ${match[0].trim()}`;
+													}
+													if (
+														/лидокаин/i.test(a?.reason || "") ||
+														/аллерги/i.test(a?.reason || "")
+													) {
+														return "⚠️ Внимание: Аллергия на лидокаин";
+													}
+													return null;
+												})();
 
 												return (
 													<div
 														key={a.id}
 														draggable
+														onMouseEnter={() => setHoveredApptId(a.id)}
+														onMouseLeave={() => setHoveredApptId(null)}
+														onFocus={() => setHoveredApptId(a.id)}
+														onBlur={() => setHoveredApptId(null)}
 														onDragStart={(e) => {
 															e.dataTransfer.setData(
 																"application/json",
@@ -309,7 +337,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 															);
 															e.dataTransfer.effectAllowed = "move";
 														}}
-														className={`w-full text-left p-2 rounded-xl border text-xs font-semibold shadow-xs flex flex-col justify-between gap-1.5 transition-all min-h-[52px] cursor-grab active:cursor-grabbing ${
+														className={`w-full text-left p-2 rounded-xl border text-xs font-semibold shadow-xs flex flex-col justify-between gap-1.5 transition-all min-h-[52px] cursor-grab active:cursor-grabbing relative ${
 															collision
 																? "bg-amber-500/15 border-amber-500/40 text-amber-900 dark:text-amber-100 ring-1 ring-amber-500/50"
 																: isCito
@@ -327,6 +355,76 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																						: "bg-[var(--paper)] border-[var(--line-strong)] text-[var(--ink)]"
 														}`}
 													>
+														{/* Крупное всплывающее превью пациента по наведению */}
+														{hoveredApptId === a.id && (
+															<div
+																className="appointment-patient-hover-preview p-3.5 rounded-2xl bg-white dark:bg-slate-900 border-2 border-teal-500 shadow-2xl space-y-2.5 animate-in fade-in zoom-in-95 duration-150 text-xs text-slate-800 dark:text-slate-200 z-30"
+																data-testid="schedule-grid-patient-hover-preview"
+															>
+																{/* 1. Крупное ФИО пациента (18px bold) */}
+																<div className="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+																	<span className="text-[18px] font-black text-slate-900 dark:text-slate-100 flex items-center gap-1.5 truncate">
+																		<User className="w-5 h-5 text-teal-600 dark:text-teal-400 shrink-0" />
+																		{pName || "Пациент"}
+																	</span>
+																	{pBalance !== null && (
+																		<span
+																			className={`px-2.5 py-0.5 rounded-lg text-xs font-black font-mono shrink-0 ${
+																				pBalance > 0
+																					? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40"
+																					: pBalance < 0
+																						? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/40"
+																						: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20"
+																			}`}
+																		>
+																			{pBalance > 0
+																				? `Депозит: +${pBalance.toLocaleString("ru-RU")} ₽`
+																				: pBalance < 0
+																					? `Долг: ${Math.abs(pBalance).toLocaleString("ru-RU")} ₽`
+																					: "Баланс: 0 ₽"}
+																		</span>
+																	)}
+																</div>
+
+																{/* 2. Номер телефона с кнопкой WhatsApp */}
+																<div className="flex items-center justify-between gap-2">
+																	<div className="flex items-center gap-1.5 font-mono text-xs font-semibold text-slate-700 dark:text-slate-300">
+																		<Phone className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+																		<span>{patObj?.phone || "Телефон не указан"}</span>
+																	</div>
+																	{patObj?.phone && (
+																		<button
+																			type="button"
+																			onClick={(e) => {
+																				e.stopPropagation();
+																				openWhatsAppChat(patObj.phone!, `Здравствуйте, ${pName}! Напоминаем о вашем визите в стоматологию.`);
+																			}}
+																			className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+																			title="Открыть чат в WhatsApp"
+																		>
+																			<MessageSquare size={13} className="text-emerald-600 dark:text-emerald-400" />
+																			<span>WhatsApp</span>
+																		</button>
+																	)}
+																</div>
+
+																{/* 3. Яркий янтарный алерт аллергий / противопоказаний */}
+																{pAllergyAlert && (
+																	<div className="p-2.5 rounded-xl bg-amber-500/15 border-2 border-amber-500/60 text-amber-900 dark:text-amber-200 text-xs font-black flex items-center gap-2 shadow-xs">
+																		<AlertTriangle size={15} className="text-amber-600 shrink-0 animate-bounce" />
+																		<span>{pAllergyAlert}</span>
+																	</div>
+																)}
+
+																{/* 4. Название запланированной процедуры */}
+																<div className="pt-1 border-t border-slate-100 dark:border-slate-800/60 flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+																	<Clock size={13} className="text-slate-400 shrink-0" />
+																	<span className="font-semibold text-slate-800 dark:text-slate-200">
+																		{a?.reason || (a as Record<string, any>)?.notes || a?.comment || "Консультация стоматолога"}
+																	</span>
+																</div>
+															</div>
+														)}
 														<div
 															onClick={() => onAppointmentClick(a)}
 															className="cursor-pointer flex items-center justify-between gap-2"
