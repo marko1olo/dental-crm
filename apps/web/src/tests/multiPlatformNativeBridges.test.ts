@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
 	acquireDesktopVisiographImage,
+	classifyTwainHardwareError,
 	getDesktopNativeApi,
 	isDesktopApp,
 	listDesktopSerialPorts,
@@ -202,6 +203,69 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 			assert.equal(bioResult.success, true);
 			assert.equal(bioResult.authenticated, true);
 			assert.equal(bioResult.biometryType, "fingerprint");
+		} finally {
+			if (originalWindowDesc) {
+				Object.defineProperty(globalThis, "window", originalWindowDesc);
+			} else {
+				delete (globalThis as any).window;
+			}
+		}
+	});
+
+	await t.test("classifyTwainHardwareError accurately identifies USB disconnects, driver crashes and timeouts", () => {
+		const usbErr1 = classifyTwainHardwareError("TWRC_FAILURE: USB cable disconnected unexpectedly");
+		assert.equal(usbErr1.category, "usb_disconnected");
+		assert.ok(usbErr1.userFriendlyMessageRu.includes("USB-кабель"));
+
+		const usbErr2 = classifyTwainHardwareError("TWCC_NODS: Data source not found");
+		assert.equal(usbErr2.category, "usb_disconnected");
+		assert.ok(usbErr2.userFriendlyMessageRu.includes("Визиограф отключен"));
+
+		const crashErr = classifyTwainHardwareError("TWAIN_DS_FAILED: DLL driver crashed with unhandled exception");
+		assert.equal(crashErr.category, "driver_crash");
+		assert.ok(crashErr.userFriendlyMessageRu.includes("Сбой драйвера TWAIN"));
+
+		const timeoutErr = classifyTwainHardwareError("Exposure timeout: No radiation detected within 15 seconds");
+		assert.equal(timeoutErr.category, "exposure_timeout");
+		assert.ok(timeoutErr.userFriendlyMessageRu.includes("экспозиции"));
+
+		const cancelErr = classifyTwainHardwareError("TWRC_CANCEL: User aborted acquisition");
+		assert.equal(cancelErr.category, "user_cancelled");
+		assert.ok(cancelErr.userFriendlyMessageRu.includes("отменен"));
+	});
+
+	await t.test("Desktop TWAIN capture survives USB unplug and driver crash without throwing uncaught exceptions", async () => {
+		const originalWindowDesc = Object.getOwnPropertyDescriptor(globalThis, "window");
+
+		// Mock native desktop throwing simulated USB disconnection error
+		const mockDisconnectNative: DesktopNativeApi = {
+			isDesktop: true,
+			platform: "win32",
+			version: "0.1.0",
+			listSerialPorts: async () => [],
+			listTwainDevices: async () => [],
+			acquireTwainImage: async (_deviceId: string) => {
+				throw new Error("Device disconnected: USB communication link severed");
+			},
+			printFiscalReceiptTcp: async () => ({ success: false }),
+			watchLocalDicomFolder: async () => ({ success: true }),
+			unwatchLocalDicomFolder: async () => ({ success: true }),
+		};
+
+		Object.defineProperty(globalThis, "window", {
+			value: {
+				denteDesktopNative: mockDisconnectNative,
+				location: { hostname: "localhost" },
+			},
+			configurable: true,
+			writable: true,
+		});
+
+		try {
+			const res = await acquireDesktopVisiographImage("vatech-sensor-01");
+			assert.equal(res.success, false);
+			assert.equal(res.errorCategory, "usb_disconnected");
+			assert.ok(res.userFriendlyMessageRu?.includes("Визиограф отключен, проверьте USB-кабель"));
 		} finally {
 			if (originalWindowDesc) {
 				Object.defineProperty(globalThis, "window", originalWindowDesc);

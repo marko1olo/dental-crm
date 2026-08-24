@@ -26,6 +26,8 @@ import {
 	type DesktopPrinterInfo,
 	type DesktopThermalPrintParams,
 	type DesktopThermalPrintResult,
+	type TwainAcquisitionResult,
+	type TwainErrorCategory,
 } from "./desktopBridge";
 import {
 	authenticateBiometricStaff,
@@ -97,11 +99,7 @@ export async function dispatchUniversalScan(): Promise<UniversalScannerResult> {
 /**
  * Universal Visiograph Acquisition Dispatcher.
  */
-export async function dispatchVisiographAcquisition(deviceId?: string): Promise<{
-	success: boolean;
-	dataUri?: string | undefined;
-	error?: string | undefined;
-}> {
+export async function dispatchVisiographAcquisition(deviceId?: string): Promise<TwainAcquisitionResult> {
 	const platform = detectRuntimePlatform();
 
 	if (platform === "desktop_win" && deviceId) {
@@ -111,6 +109,8 @@ export async function dispatchVisiographAcquisition(deviceId?: string): Promise<
 	return {
 		success: false,
 		error: "Для прямого захвата с USB-визиографа используйте приложение DENTE Desktop (.exe) или выберите файл со снимком.",
+		errorCategory: "desktop_required",
+		userFriendlyMessageRu: "Прямой захват TWAIN-снимков поддерживается в приложении DENTE Desktop (.exe).",
 	};
 }
 
