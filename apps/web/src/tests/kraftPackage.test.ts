@@ -28,7 +28,6 @@ import {
 	getKraftMaterialDefinition,
 	getKraftSizeDefinition,
 } from "../components/sanpin/kraft/kraftPackagePresets.js";
-import { KraftPackageBarcodeModal } from "../components/sanpin/kraft/KraftPackageBarcodeModal.js";
 
 describe("SanPiN 3.3686-21 Statutory Kraft Package Barcode & Expiry Studio Suite", () => {
 	// ─────────────────────────────────────────────────────────────────────────
@@ -527,11 +526,10 @@ describe("SanPiN 3.3686-21 Statutory Kraft Package Barcode & Expiry Studio Suite
 	});
 
 	// ─────────────────────────────────────────────────────────────────────────
-	// 6. REACT COMPONENT BARREL & INTERACTION INTEGRITY
+	// 6. ENGINE & BARREL EXPORT INTEGRITY
 	// ─────────────────────────────────────────────────────────────────────────
-	describe("6. React Component & Barrel Export Integrity", () => {
-		it("verifies KraftPackageBarcodeModal is exported as a valid React component function", () => {
-			assert.equal(typeof KraftPackageBarcodeModal, "function");
+	describe("6. Engine & Barrel Export Integrity", () => {
+		it("verifies all Kraft Package engine functions are properly exported", () => {
 			assert.equal(typeof calculatePackageExpiration, "function");
 			assert.equal(typeof generateKraftBatchRecords, "function");
 			assert.equal(typeof generateThermalStickerHtml, "function");

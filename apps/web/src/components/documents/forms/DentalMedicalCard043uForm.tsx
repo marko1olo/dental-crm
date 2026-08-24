@@ -175,7 +175,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 
 							<div className="fdi-formula-grid" style={{ background: "var(--paper-strong, #f8fafc)", padding: "12px", borderRadius: "8px" }}>
 								<div style={{ textAlign: "center", fontWeight: 700, marginBottom: "6px" }}>Верхняя челюсть (Постоянный прикус)</div>
-								<div style={{ display: "flex", justifyContent: "center", gap: "4px", marginBottom: "10px", flexWrap: "wrap" }}>
+								<div style={{ display: "flex", justifyContent: "center", gap: "6px", marginBottom: "10px", flexWrap: "wrap" }}>
 									{PERMANENT_TEETH_UPPER.map((t) => {
 										const tooth = odontogram[t];
 										const isSelected = selectedTooth === t;
@@ -188,14 +188,19 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 													border: isSelected ? "2px solid #0284c7" : "1px solid #cbd5e1",
 													background: isSelected ? "#e0f2fe" : "#ffffff",
 													borderRadius: "6px",
-													padding: "4px 6px",
+													padding: "6px 8px",
 													textAlign: "center",
 													cursor: "pointer",
-													minWidth: "38px",
+													minWidth: "44px",
+													minHeight: "44px",
+													display: "flex",
+													flexDirection: "column",
+													justifyContent: "center",
+													alignItems: "center",
 												}}
 											>
-												<div style={{ fontSize: "11px", fontWeight: "bold" }}>{t}</div>
-												<div style={{ fontSize: "10px", color: code !== "healthy" ? "#b91c1c" : "#059669" }}>
+												<div style={{ fontSize: "13px", fontWeight: "bold" }}>{t}</div>
+												<div style={{ fontSize: "12px", fontWeight: 600, color: code !== "healthy" ? "#b91c1c" : "#059669" }}>
 													{toothStatusCodeShortMap[code] || "Norm"}
 												</div>
 											</div>
@@ -204,7 +209,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 								</div>
 
 								<div style={{ textAlign: "center", fontWeight: 700, margin: "10px 0 6px 0" }}>Нижняя челюсть (Постоянный прикус)</div>
-								<div style={{ display: "flex", justifyContent: "center", gap: "4px", flexWrap: "wrap" }}>
+								<div style={{ display: "flex", justifyContent: "center", gap: "6px", flexWrap: "wrap" }}>
 									{PERMANENT_TEETH_LOWER.map((t) => {
 										const tooth = odontogram[t];
 										const isSelected = selectedTooth === t;
@@ -217,14 +222,19 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 													border: isSelected ? "2px solid #0284c7" : "1px solid #cbd5e1",
 													background: isSelected ? "#e0f2fe" : "#ffffff",
 													borderRadius: "6px",
-													padding: "4px 6px",
+													padding: "6px 8px",
 													textAlign: "center",
 													cursor: "pointer",
-													minWidth: "38px",
+													minWidth: "44px",
+													minHeight: "44px",
+													display: "flex",
+													flexDirection: "column",
+													justifyContent: "center",
+													alignItems: "center",
 												}}
 											>
-												<div style={{ fontSize: "11px", fontWeight: "bold" }}>{t}</div>
-												<div style={{ fontSize: "10px", color: code !== "healthy" ? "#b91c1c" : "#059669" }}>
+												<div style={{ fontSize: "13px", fontWeight: "bold" }}>{t}</div>
+												<div style={{ fontSize: "12px", fontWeight: 600, color: code !== "healthy" ? "#b91c1c" : "#059669" }}>
 													{toothStatusCodeShortMap[code] || "Norm"}
 												</div>
 											</div>

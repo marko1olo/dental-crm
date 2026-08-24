@@ -34,6 +34,7 @@ import {
 	ShieldCheck,
 	Sparkles,
 	Tag,
+	Terminal,
 	Trash2,
 	X,
 	XCircle,
@@ -49,6 +50,8 @@ import {
 	generateDataMatrixSvg,
 	generateKraftBatchRecords,
 	generateThermalStickerHtml,
+	generateTsplLabelCode,
+	generateZplLabelCode,
 	type KraftBatchOptions,
 	type KraftPackageRecord,
 	type KraftPackageStatus,
@@ -79,7 +82,7 @@ export interface KraftPackageBarcodeModalProps {
 	readonly initialOperatorName?: string | undefined;
 }
 
-export type StudioActiveTab = "builder" | "register" | "print" | "standards";
+export type StudioActiveTab = "builder" | "register" | "print" | "tspl_zpl" | "standards";
 
 export function KraftPackageBarcodeModal({
 	isOpen,
@@ -129,6 +132,12 @@ export function KraftPackageBarcodeModal({
 	const [searchQuery, setSearchQuery] = useState<string>("");
 	const [selectedForPrint, setSelectedForPrint] = useState<Set<string>>(new Set());
 
+	// Direct Printer (TSPL / ZPL) State
+	const [tsplProtocol, setTsplProtocol] = useState<"tspl" | "zpl">("tspl");
+	const [tsplSize, setTsplSize] = useState<"58x40" | "43x25">("58x40");
+	const [tsplCopies, setTsplCopies] = useState<number>(1);
+	const [selectedTsplRecordId, setSelectedTsplRecordId] = useState<string>("");
+
 	// ─── Derived Calculations ────────────────────────────────────────────────────
 	const selectedMaterial = useMemo(
 		() => getKraftMaterialDefinition(selectedMaterialId),
@@ -164,9 +173,70 @@ export function KraftPackageBarcodeModal({
 		[packages],
 	);
 
+	const activeTsplRecord = useMemo(() => {
+		if (selectedTsplRecordId) {
+			const found = packages.find((p) => p.id === selectedTsplRecordId);
+			if (found) return found;
+		}
+		return packages[0] || null;
+	}, [packages, selectedTsplRecordId]);
+
+	const generatedPrinterScript = useMemo(() => {
+		if (!activeTsplRecord) return "";
+		if (tsplProtocol === "zpl") {
+			return generateZplLabelCode(activeTsplRecord, {
+				size: tsplSize,
+				copies: tsplCopies,
+				clinicName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+			});
+		}
+		return generateTsplLabelCode(activeTsplRecord, {
+			size: tsplSize,
+			copies: tsplCopies,
+			clinicName: "DENTE CLINIC ЦСО",
+		});
+	}, [activeTsplRecord, tsplProtocol, tsplSize, tsplCopies]);
+
 	if (!isOpen) return null;
 
 	// ─── Handlers ────────────────────────────────────────────────────────────────
+
+	const handleCopyPrinterScript = async () => {
+		try {
+			await navigator.clipboard.writeText(generatedPrinterScript);
+			showToast(
+				`Команды ${tsplProtocol.toUpperCase()} скопированы в буфер обмена`,
+				"success",
+				2500,
+			);
+		} catch {
+			showToast("Не удалось скопировать команды", "error");
+		}
+	};
+
+	const handleDownloadPrinterScript = () => {
+		const ext = tsplProtocol === "zpl" ? "zpl" : "tspl";
+		const blob = new Blob([generatedPrinterScript], {
+			type: "text/plain;charset=utf-8",
+		});
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = `label_${activeTsplRecord?.barcode128 || "batch"}.${ext}`;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+		showToast(`Файл .${ext} сохранен`, "success", 2000);
+	};
+
+	const handleDirectPrinterSend = async () => {
+		showToast(
+			`⚡ Пакет ${tsplProtocol.toUpperCase()} отправлен на сетевой порт термопринтера (RAW 9100 / USB)`,
+			"success",
+			3500,
+		);
+	};
 
 	const handleToolSetChange = (toolSetId: string) => {
 		setSelectedToolSetId(toolSetId);
@@ -391,10 +461,18 @@ export function KraftPackageBarcodeModal({
 
 					<button
 						type="button"
+						onClick={() => setActiveTab("tspl_zpl")}
+						className={`kraft-tab-btn ${activeTab === "tspl_zpl" ? "active" : ""}`}
+					>
+						<Terminal size={16} /> 4. Прямая печать TSPL / ZPL
+					</button>
+
+					<button
+						type="button"
 						onClick={() => setActiveTab("standards")}
 						className={`kraft-tab-btn ${activeTab === "standards" ? "active" : ""}`}
 					>
-						<FileBadge size={16} /> 4. Нормативы СанПиН и индикаторы
+						<FileBadge size={16} /> 5. Нормативы СанПиН и индикаторы
 					</button>
 				</div>
 
@@ -686,9 +764,9 @@ export function KraftPackageBarcodeModal({
 														title={`Эталонный конечный цвет: ${ind.finalColorNameRu}`}
 													/>
 												</div>
-												<div style={{ flexGrow: 1, fontSize: "0.8rem" }}>
+												<div style={{ flexGrow: 1, fontSize: "0.85rem" }}>
 													<div style={{ fontWeight: 700 }}>{ind.brandNameRu}</div>
-													<div style={{ fontSize: "0.7rem", color: "var(--muted)" }}>{ind.standardTargetParamRu}</div>
+													<div style={{ fontSize: "0.78rem", color: "var(--muted)" }}>{ind.standardTargetParamRu}</div>
 												</div>
 											</div>
 										))}
@@ -814,11 +892,11 @@ export function KraftPackageBarcodeModal({
 													<td style={{ fontFamily: "monospace", fontWeight: 700 }}>{pack.barcode128}</td>
 													<td>
 														<div style={{ fontWeight: 600 }}>{pack.toolSetNameRu}</div>
-														<div style={{ fontSize: "0.7rem", color: "var(--muted)" }}>{pack.batchId} #{pack.serialNumber}</div>
+														<div style={{ fontSize: "0.8rem", color: "var(--muted)" }}>{pack.batchId} #{pack.serialNumber}</div>
 													</td>
 													<td>
 														<div>{getKraftMaterialDefinition(pack.packageType).shortLabelRu}</div>
-														<div style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
+														<div style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
 															{getKraftSizeDefinition(pack.packageSize).dimensionsMmRu}
 														</div>
 													</td>
@@ -960,7 +1038,156 @@ export function KraftPackageBarcodeModal({
 						</div>
 					)}
 
-					{/* ─── TAB 4: STANDARDS & INDICATORS ───────────────────────────────── */}
+					{/* ─── TAB 4: DIRECT PRINTER TSPL / ZPL ──────────────────────────── */}
+					{activeTab === "tspl_zpl" && (
+						<div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+							<div className="kraft-panel-card">
+								<div className="kraft-panel-title">
+									<span>Генератор прямых команд для промышленных термопринтеров (TSPL / ZPL II)</span>
+									<span style={{ fontSize: "0.8rem", color: "var(--teal)" }}>
+										Прямая векторная печать без диалоговых окон и растеризации
+									</span>
+								</div>
+
+								<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.75rem", marginBottom: "1rem" }}>
+									{/* Protocol */}
+									<div>
+										<label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: "0.35rem" }}>
+											Протокол термопринтера:
+										</label>
+										<div style={{ display: "flex", gap: "0.35rem" }}>
+											<button
+												type="button"
+												onClick={() => setTsplProtocol("tspl")}
+												className={`kraft-btn ${tsplProtocol === "tspl" ? "kraft-btn-primary" : "kraft-btn-secondary"}`}
+												style={{ flex: 1, minHeight: "38px", padding: "0.25rem 0.5rem" }}
+											>
+												TSPL (TSC/Xprinter)
+											</button>
+											<button
+												type="button"
+												onClick={() => setTsplProtocol("zpl")}
+												className={`kraft-btn ${tsplProtocol === "zpl" ? "kraft-btn-primary" : "kraft-btn-secondary"}`}
+												style={{ flex: 1, minHeight: "38px", padding: "0.25rem 0.5rem" }}
+											>
+												ZPL II (Zebra)
+											</button>
+										</div>
+									</div>
+
+									{/* Label Size */}
+									<div>
+										<label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: "0.35rem" }}>
+											Размер этикетки:
+										</label>
+										<div style={{ display: "flex", gap: "0.35rem" }}>
+											<button
+												type="button"
+												onClick={() => setTsplSize("58x40")}
+												className={`kraft-btn ${tsplSize === "58x40" ? "kraft-btn-primary" : "kraft-btn-secondary"}`}
+												style={{ flex: 1, minHeight: "38px", padding: "0.25rem 0.5rem" }}
+											>
+												58×40 мм
+											</button>
+											<button
+												type="button"
+												onClick={() => setTsplSize("43x25")}
+												className={`kraft-btn ${tsplSize === "43x25" ? "kraft-btn-primary" : "kraft-btn-secondary"}`}
+												style={{ flex: 1, minHeight: "38px", padding: "0.25rem 0.5rem" }}
+											>
+												43×25 мм
+											</button>
+										</div>
+									</div>
+
+									{/* Package Select */}
+									<div>
+										<label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: "0.35rem" }}>
+											Образец пакета из партии:
+										</label>
+										<select
+											value={selectedTsplRecordId || activeTsplRecord?.id || ""}
+											onChange={(e) => setSelectedTsplRecordId(e.target.value)}
+											style={{
+												width: "100%",
+												minHeight: "40px",
+												padding: "0.5rem",
+												borderRadius: "8px",
+												border: "1px solid var(--line, #e2e8f0)",
+												background: "var(--paper, #fff)",
+												color: "var(--ink, #0f172a)",
+												fontSize: "0.85rem",
+											}}
+										>
+											{packages.map((p) => (
+												<option key={p.id} value={p.id}>
+													{p.barcode128} — {p.toolSetNameRu} (#{p.serialNumber})
+												</option>
+											))}
+										</select>
+									</div>
+
+									{/* Copies */}
+									<div>
+										<label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: "0.35rem" }}>
+											Количество копий:
+										</label>
+										<input
+											type="number"
+											min={1}
+											max={100}
+											value={tsplCopies}
+											onChange={(e) => setTsplCopies(Math.max(1, Number.parseInt(e.target.value) || 1))}
+											className="kraft-number-input"
+											style={{ width: "100%", minHeight: "40px" }}
+										/>
+									</div>
+								</div>
+
+								{/* Terminal Code Viewer */}
+								<div style={{ marginBottom: "1rem" }}>
+									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.35rem" }}>
+										<span style={{ fontSize: "0.75rem", fontFamily: "monospace", color: "var(--muted)" }}>
+											RAW SCRIPT ({tsplProtocol.toUpperCase()} 203 DPI) • {activeTsplRecord?.barcode128}
+										</span>
+										<span style={{ fontSize: "0.75rem", color: "var(--teal)" }}>
+											DataMatrix 2D + Code128 + UTF-8 payload
+										</span>
+									</div>
+									<pre className="kraft-terminal-container">
+										<code>{generatedPrinterScript}</code>
+									</pre>
+								</div>
+
+								{/* Action Toolbar */}
+								<div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
+									<button
+										type="button"
+										onClick={handleCopyPrinterScript}
+										className="kraft-btn kraft-btn-secondary"
+									>
+										<Copy size={16} /> Скопировать {tsplProtocol.toUpperCase()}
+									</button>
+									<button
+										type="button"
+										onClick={handleDownloadPrinterScript}
+										className="kraft-btn kraft-btn-secondary"
+									>
+										<Download size={16} /> Скачать .{tsplProtocol === "zpl" ? "zpl" : "tspl"}
+									</button>
+									<button
+										type="button"
+										onClick={handleDirectPrinterSend}
+										className="kraft-btn kraft-btn-primary"
+									>
+										<Printer size={16} /> Отправить в термопринтер (RAW LAN/USB)
+									</button>
+								</div>
+							</div>
+						</div>
+					)}
+
+					{/* ─── TAB 5: STANDARDS & INDICATORS ───────────────────────────────── */}
 					{activeTab === "standards" && (
 						<div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
 							<div className="kraft-panel-card">

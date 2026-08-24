@@ -1,3 +1,4 @@
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import {
 	Activity,
 	AlertOctagon,
@@ -57,6 +58,8 @@ export type SanpinRegisterTab =
 	| "temperature";
 
 export function SanpinRegisters() {
+	const appLogic = useOptionalAppLogicContext();
+	const auth = appLogic?.auth;
 	const [activeTab, setActiveTab] = useState<SanpinRegisterTab>("autoclave");
 	const [summary, setSummary] = useState<any>(null);
 	const [loadingSummary, setLoadingSummary] = useState(true);
@@ -73,13 +76,11 @@ export function SanpinRegisters() {
 	const fetchSummary = async () => {
 		try {
 			setLoadingSummary(true);
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
+			const headers: Record<string, string> = auth
+				? auth.denteClinicalReadHeaders()
+				: { "Content-Type": "application/json" };
 			const res = await fetch("/api/registers/summary", {
-				headers: {
-					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-				},
+				headers,
 			});
 			if (res.ok) {
 				const data = await res.json();
@@ -120,17 +121,15 @@ export function SanpinRegisters() {
 	const handleAutofillShift = async () => {
 		try {
 			setAutoFilling(true);
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
+			const headers: Record<string, string> = auth
+				? auth.denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+					})
+				: { "Content-Type": "application/json" };
 			const res = await fetch("/api/registers/autofill-shift", {
 				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-				},
+				headers,
 			});
-
 			if (res.ok) {
 				const data = await res.json();
 				showToast(
@@ -177,9 +176,9 @@ export function SanpinRegisters() {
 					</div>
 				</div>
 
-				<div className="sanpin-header-actions" style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem", alignItems: "center" }}>
-					<span className="sanpin-badge-gov" style={{ minHeight: "48px", fontSize: "0.88rem", display: "inline-flex", alignItems: "center" }}>
-						<CheckCircle2 size={18} /> Роспотребнадзор 2026 Ready
+				<div className="sanpin-header-actions" style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignItems: "center" }}>
+					<span className="sanpin-badge-gov" style={{ minHeight: "38px", fontSize: "0.82rem", display: "inline-flex", alignItems: "center", padding: "0.3rem 0.65rem" }}>
+						<CheckCircle2 size={16} /> Роспотребнадзор 2026 Ready
 					</span>
 
 					<button
@@ -188,29 +187,29 @@ export function SanpinRegisters() {
 						disabled={autoFilling}
 						className="sanpin-btn sanpin-btn-primary"
 						style={{
-							minHeight: "48px",
-							padding: "0.6rem 1.4rem",
-							fontSize: "0.98rem",
+							minHeight: "44px",
+							padding: "0.5rem 1rem",
+							fontSize: "0.875rem",
 							fontWeight: 800,
 							background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
 							borderColor: "#047857",
 							color: "#ffffff",
-							boxShadow: "0 3px 12px rgba(5, 150, 105, 0.35)",
+							boxShadow: "0 2px 8px rgba(5, 150, 105, 0.3)",
 							cursor: "pointer",
 						}}
 						title="1 Клик: Автоматически сформировать и опечатать журналы 257/у и 366/у за всю смену на основе завершенных приемов"
 						data-testid="sanpin-1click-autofill-btn"
 					>
-						<Sparkles size={20} /> {autoFilling ? "Оформление..." : "⚡ Всё чисто — закрыть смену по СанПиН (1 клик)"}
+						<Sparkles size={16} /> {autoFilling ? "Оформление..." : "⚡ Закрыть смену по СанПиН (1 клик)"}
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setIsCycleModalOpen(true)}
 						className="sanpin-btn sanpin-btn-primary"
-						style={{ minHeight: "48px", padding: "0.5rem 1.1rem", fontSize: "0.92rem", fontWeight: 700, cursor: "pointer" }}
+						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.875rem", fontWeight: 700, cursor: "pointer" }}
 					>
-						<Plus size={18} /> + Новый цикл автоклава
+						<Plus size={16} /> + Новый цикл
 					</button>
 
 					<button
@@ -218,10 +217,10 @@ export function SanpinRegisters() {
 						onClick={() => setIsKraftModalOpen(true)}
 						className="sanpin-btn sanpin-btn-secondary"
 						style={{
-							minHeight: "48px",
-							padding: "0.5rem 1rem",
-							fontSize: "0.92rem",
-							fontWeight: 700,
+							minHeight: "44px",
+							padding: "0.5rem 0.9rem",
+							fontSize: "0.875rem",
+							fontWeight: 600,
 							borderColor: "var(--brand-primary, #2563eb)",
 							color: "var(--brand-primary, #2563eb)",
 							cursor: "pointer",
@@ -229,18 +228,18 @@ export function SanpinRegisters() {
 						title="Студия маркировки крафт-пакетов: термоэтикетки 58x40, DataMatrix, Code128, печать партий"
 						data-testid="open-kraft-studio-header-btn"
 					>
-						<QrCode size={18} color="var(--brand-primary, #2563eb)" /> Маркировка пакетов (DataMatrix)
+						<QrCode size={16} color="var(--brand-primary, #2563eb)" /> Маркировка
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setIsJournal257ModalOpen(true)}
 						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "48px", padding: "0.5rem 1rem", fontSize: "0.92rem", fontWeight: 700, cursor: "pointer" }}
+						style={{ minHeight: "44px", padding: "0.5rem 0.9rem", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}
 						title="Журнал № 257/у: 5 точек камеры, биологический контроль, статистика автоклавов"
 						data-testid="open-journal-257-header-btn"
 					>
-						<FileSpreadsheet size={18} color="var(--brand-primary)" /> Журнал 257/у (5 точек)
+						<FileSpreadsheet size={16} color="var(--brand-primary)" /> Журнал 257/у
 					</button>
 
 					<button
@@ -248,43 +247,43 @@ export function SanpinRegisters() {
 						onClick={() => handleOpenSanpinJournals()}
 						className="sanpin-btn sanpin-btn-secondary"
 						style={{
-							minHeight: "48px",
-							padding: "0.5rem 1rem",
-							fontSize: "0.92rem",
-							fontWeight: 700,
+							minHeight: "44px",
+							padding: "0.5rem 0.9rem",
+							fontSize: "0.875rem",
+							fontWeight: 600,
 							cursor: "pointer",
 						}}
 						title="Журналы СанПиН 3.3686-21 (ПСО Азопирам, Бактерицидные лампы, Генеральные уборки)"
 						data-testid="open-sanpin-journals-modal-btn"
 					>
-						<FileSpreadsheet size={18} color="var(--brand-primary, #2563eb)" /> Журналы СанПиН (ПСО, Лампы, Уборки)
+						<FileSpreadsheet size={16} color="var(--brand-primary, #2563eb)" /> Журналы СанПиН
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setIsNurseSignModalOpen(true)}
 						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "48px", padding: "0.5rem 1rem", fontSize: "0.92rem", fontWeight: 700, cursor: "pointer" }}
+						style={{ minHeight: "44px", padding: "0.5rem 0.9rem", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}
 						title="Электронная цифровая подпись медсестры ЦСО на журналы смены"
 					>
-						<Award size={18} color="var(--brand-primary)" /> Заверить смену (ЭЦП)
+						<Award size={16} color="var(--brand-primary)" /> ЭЦП медсестры
 					</button>
 
 					<button
 						type="button"
 						onClick={handleExportDossierPdf}
 						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "48px", padding: "0.5rem 1rem", fontSize: "0.92rem", fontWeight: 600, cursor: "pointer" }}
+						style={{ minHeight: "44px", padding: "0.5rem 0.9rem", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}
 						title="Печать полного досье СанПиН"
 					>
-						<Printer size={18} /> Печать / PDF
+						<Printer size={16} /> Печать / PDF
 					</button>
 
 					<button
 						type="button"
 						onClick={fetchSummary}
 						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "48px", padding: "0.5rem 0.9rem", cursor: "pointer" }}
+						style={{ minHeight: "44px", minWidth: "44px", padding: "0.5rem 0.75rem", cursor: "pointer" }}
 						title="Обновить сводку"
 					>
 						<RotateCcw size={16} />

@@ -109,7 +109,7 @@ export const OrthodonticCard043_1uForm: React.FC<OrthodonticCard043_1uFormProps>
 									<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "6px" }}>
 										{(["t12", "t11", "t21", "t22"] as const).map((k) => (
 											<div key={k}>
-												<label style={{ fontSize: "11px" }}>{k.toUpperCase()}</label>
+												<label style={{ fontSize: "12px", fontWeight: 600 }}>{k.toUpperCase()}</label>
 												<input
 													type="number"
 													step="0.1"
@@ -127,7 +127,7 @@ export const OrthodonticCard043_1uForm: React.FC<OrthodonticCard043_1uFormProps>
 									<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "6px" }}>
 										{(["t42", "t41", "t31", "t32"] as const).map((k) => (
 											<div key={k}>
-												<label style={{ fontSize: "11px" }}>{k.toUpperCase()}</label>
+												<label style={{ fontSize: "12px", fontWeight: 600 }}>{k.toUpperCase()}</label>
 												<input
 													type="number"
 													step="0.1"
