@@ -36,16 +36,23 @@ export interface Order804nFiscalReceiptItem {
 	readonly paymentMethod: Ffd12PaymentMethod;
 	readonly quantityMeasure: Ffd12QuantityMeasure;
 	readonly taxDeductionCategory: "1" | "2"; // 1 = стандартное лечение (лимит 150к), 2 = дорогостоящее (имплантация/хирургия, без лимита)
+	readonly stageKind?: string | undefined;
+	readonly stageCategoryTitle?: string | undefined;
+	readonly markingCode?: string | undefined;
+	readonly isMarkedItem?: boolean | undefined;
+	readonly matchedTradeName?: string | undefined;
 }
 
 export interface SplitPaymentInput {
-	readonly cashRub?: number;
-	readonly receivedCashRub?: number;
-	readonly cardRub?: number;
-	readonly sbpRub?: number;
-	readonly depositRub?: number;
-	readonly familyWalletRub?: number;
-	readonly certificateRub?: number;
+	readonly cashRub?: number | undefined;
+	readonly receivedCashRub?: number | undefined;
+	readonly cardRub?: number | undefined;
+	readonly sbpRub?: number | undefined;
+	readonly depositRub?: number | undefined;
+	readonly familyWalletRub?: number | undefined;
+	readonly certificateRub?: number | undefined;
+	readonly insuranceRub?: number | undefined;
+	readonly guaranteeLetterNumber?: string | undefined;
 }
 
 export interface SplitPaymentAllocation {
@@ -63,10 +70,16 @@ export interface SplitPaymentAllocation {
 	readonly sbpKopecks: Kopecks;
 	readonly depositRub: number;
 	readonly depositKopecks: Kopecks;
+	readonly advanceOffsetRub: number;
+	readonly advanceOffsetKopecks: Kopecks;
 	readonly familyWalletRub: number;
 	readonly familyWalletKopecks: Kopecks;
 	readonly certificateRub: number;
 	readonly certificateKopecks: Kopecks;
+	readonly insuranceRub: number;
+	readonly insuranceKopecks: Kopecks;
+	readonly patientCoPayRub: number;
+	readonly patientCoPayKopecks: Kopecks;
 	readonly totalRub: number;
 	readonly totalKopecks: Kopecks;
 	readonly allocatedKopecks: Kopecks;
@@ -97,6 +110,9 @@ export interface FiscalReceipt54FzResult {
 	readonly payments: SplitPaymentAllocation;
 	readonly totalRub: number;
 	readonly totalKopecks: Kopecks;
+	readonly insuranceCoveredRub?: number;
+	readonly guaranteeLetterNumber?: string;
+	readonly patientCoPayRub?: number;
 	readonly taxDeductionCategory: "1" | "2";
 	readonly ofdUrl: string;
 	readonly sbpPayloadUrl?: string;
@@ -128,6 +144,14 @@ export function formatFiscalItemName(
 	// Тег 1030 ограничен 128 символами по стандарту ФФД 1.2
 	return fullName.length > 128 ? fullName.slice(0, 125) + "..." : fullName;
 }
+
+export const TREATMENT_STAGE_LABELS: Record<string, string> = {
+	stage_1_therapy: "Терапевтический этап (санация)",
+	stage_2_surgery: "Хирургический этап (имплантация)",
+	stage_3_orthopedics: "Ортопедический этап (протезирование)",
+	stage_4_orthodontics: "Ортодонтический этап (исправление прикуса)",
+	stage_5_hygiene: "Профгигиена и пародонтология",
+};
 
 /**
  * Преобразование позиций плана лечения в строго валидированные фискальные позиции 54-ФЗ.
@@ -161,6 +185,19 @@ export function mapTreatmentItemsToFiscalReceipt(
 		const taxCat = resolveTaxDeductionCategory(it.code804n);
 		const fiscalName = formatFiscalItemName(it.name, it.code804n, it.toothNumber);
 
+		// Check if item is MDLP marked (anesthetics, implants, bone materials)
+		const lowerName = (it.name || "").toLowerCase();
+		const lowerMat = (it.materials || "").toLowerCase();
+		const isMarked =
+			lowerName.includes("имплантат") ||
+			lowerName.includes("анестези") ||
+			lowerName.includes("ультракаин") ||
+			lowerName.includes("септанест") ||
+			lowerName.includes("убистезин") ||
+			lowerName.includes("bio-oss") ||
+			lowerMat.includes("имплантат") ||
+			lowerMat.includes("анестетик");
+
 		resultItems.push({
 			id: it.id,
 			name: fiscalName,
@@ -174,10 +211,17 @@ export function mapTreatmentItemsToFiscalReceipt(
 			amountRub,
 			amountKopecks: netAmountKopecks,
 			vatRate: "vat_none", // Медицинские стоматологические услуги освобождены от НДС (ст. 149 НК РФ)
-			paymentSubject: "service", // Тег 1212 = 4 (Услуга)
+			paymentSubject: isMarked ? "goods_with_marking" : "service", // Тег 1212 = 32 (Маркированный товар) / 4 (Услуга)
 			paymentMethod, // Тег 1214 = 4 (Полный расчет)
 			quantityMeasure: "piece", // Тег 2108 = 0 (Штука/ед.)
 			taxDeductionCategory: taxCat,
+			stageKind: it.stageKind,
+			stageCategoryTitle:
+				(it.stageKind ? TREATMENT_STAGE_LABELS[it.stageKind] : undefined) ||
+				it.category ||
+				"Стоматологическое лечение",
+			isMarkedItem: isMarked,
+			matchedTradeName: isMarked ? it.name : undefined,
 		});
 	}
 
@@ -209,6 +253,7 @@ export function calculateSplitPaymentAllocation(
 	const depositKopecks = parseKopecks(Math.max(0, input.depositRub || 0));
 	const familyWalletKopecks = parseKopecks(Math.max(0, input.familyWalletRub || 0));
 	const certificateKopecks = parseKopecks(Math.max(0, input.certificateRub || 0));
+	const insuranceKopecks = parseKopecks(Math.max(0, input.insuranceRub || 0));
 
 	const receivedCashRub = input.receivedCashRub !== undefined ? Math.max(0, input.receivedCashRub) : Math.round(cashKopecks / 100);
 	const receivedCashKopecks = parseKopecks(receivedCashRub);
@@ -226,13 +271,21 @@ export function calculateSplitPaymentAllocation(
 		}
 	}
 
-	const allocatedKopecks = (cashKopecks +
+	// Сумма, которую фактически оплачивает пациент (все методы кроме страховой компании)
+	const patientPaidKopecks = (cashKopecks +
 		cardKopecks +
 		sbpKopecks +
 		depositKopecks +
 		familyWalletKopecks +
 		certificateKopecks) as Kopecks;
+
+	const allocatedKopecks = (patientPaidKopecks + insuranceKopecks) as Kopecks;
 	const remainingKopecks = (totalKopecks - allocatedKopecks) as Kopecks;
+	const patientCoPayKopecks = Math.max(0, totalKopecks - insuranceKopecks) as Kopecks;
+
+	// В 54-ФЗ (ФФД 1.2): Списание с депозита/аванса фискализируется в Тег 1215 (Зачет аванса)
+	const advanceOffsetKopecks = depositKopecks;
+	const advanceOffsetRub = Math.round(depositKopecks / 100);
 
 	return {
 		cashRub: Math.round(cashKopecks / 100),
@@ -249,10 +302,16 @@ export function calculateSplitPaymentAllocation(
 		sbpKopecks,
 		depositRub: Math.round(depositKopecks / 100),
 		depositKopecks,
+		advanceOffsetRub,
+		advanceOffsetKopecks,
 		familyWalletRub: Math.round(familyWalletKopecks / 100),
 		familyWalletKopecks,
 		certificateRub: Math.round(certificateKopecks / 100),
 		certificateKopecks,
+		insuranceRub: Math.round(insuranceKopecks / 100),
+		insuranceKopecks,
+		patientCoPayRub: Math.round(patientCoPayKopecks / 100),
+		patientCoPayKopecks,
 		totalRub: Math.round(totalKopecks / 100),
 		totalKopecks,
 		allocatedKopecks,
@@ -383,6 +442,9 @@ export function generateFiscalReceipt54Fz(params: {
 		payments,
 		totalRub: payments.totalRub,
 		totalKopecks: payments.totalKopecks,
+		insuranceCoveredRub: payments.insuranceRub,
+		...(splitPayment.guaranteeLetterNumber ? { guaranteeLetterNumber: splitPayment.guaranteeLetterNumber } : {}),
+		patientCoPayRub: payments.patientCoPayRub,
 		taxDeductionCategory: fiscalItemsData.taxDeductionSummaryCode,
 		ofdUrl,
 		...(sbpPayloadUrl ? { sbpPayloadUrl } : {}),

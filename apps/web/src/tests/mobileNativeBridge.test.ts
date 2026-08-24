@@ -2,9 +2,17 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
 	authenticateBiometricStaff,
+	getDeviceFormFactor,
 	getMobileNativeApi,
+	getSafeAreaInsets,
+	getSecureToken,
 	isMobileApp,
+	isMobileSmartphone,
+	isTabletDevice,
 	parseGs1DataMatrix,
+	removeSecureToken,
+	requestPushNotificationPermission,
+	saveSecureToken,
 	scanDataMatrixWithCamera,
 	triggerHaptic,
 } from "../native/mobileBridge";
@@ -61,4 +69,100 @@ test("Mobile Android (.APK) & GS1 DataMatrix Verification Suite", async (t) => {
 		assert.doesNotThrow(() => triggerHaptic("error"));
 		assert.doesNotThrow(() => triggerHaptic("heavy"));
 	});
+
+	await t.test("saveSecureToken and getSecureToken store and retrieve session tokens safely", async () => {
+		const saveRes = await saveSecureToken("clinic_jwt", "bearer-test-token-123");
+		assert.equal(saveRes.success, true);
+
+		const getRes = await getSecureToken("clinic_jwt");
+		assert.equal(getRes.success, true);
+
+		const removeRes = await removeSecureToken("clinic_jwt");
+		assert.equal(removeRes.success, true);
+	});
+
+	await t.test("requestPushNotificationPermission handles browser environment gracefully", async () => {
+		const res = await requestPushNotificationPermission();
+		assert.equal(typeof res.granted, "boolean");
+		assert.ok(["granted", "denied", "default"].includes(res.status));
+	});
+
+	await t.test("Device form factor detection handles responsive breakpoints", () => {
+		const factor = getDeviceFormFactor();
+		assert.ok(["tablet", "phone", "desktop"].includes(factor));
+		assert.equal(typeof isTabletDevice(), "boolean");
+		assert.equal(typeof isMobileSmartphone(), "boolean");
+
+		const insets = getSafeAreaInsets();
+		assert.equal(typeof insets.top, "number");
+		assert.equal(typeof insets.bottom, "number");
+		assert.equal(typeof insets.left, "number");
+		assert.equal(typeof insets.right, "number");
+	});
+
+	await t.test("Simulated Android Capacitor bridge delegates biometrics & Keystore properly", async () => {
+		const mockTokens = new Map<string, string>();
+		const mockNativeApi = {
+			isMobileApp: true,
+			platform: "android" as const,
+			appVersion: "1.4.2",
+			scanBarcode: async () => ({
+				success: true,
+				barcode: "010460123456789021SN102938\u001d91EE06\u001d92SIG12345",
+				format: "DATA_MATRIX" as const,
+			}),
+			authenticateBiometric: async () => ({
+				success: true,
+				authenticated: true,
+				biometryType: "fingerprint" as const,
+			}),
+			hapticFeedback: () => {},
+			shareFile: async () => ({ success: true }),
+			setSecureSecret: async (k: string, v: string) => {
+				mockTokens.set(k, v);
+				return { success: true };
+			},
+			getSecureSecret: async (k: string) => ({
+				success: true,
+				value: mockTokens.get(k),
+			}),
+			removeSecureSecret: async (k: string) => {
+				mockTokens.delete(k);
+				return { success: true };
+			},
+			registerPushNotifications: async () => ({
+				success: true,
+				token: "fcm-registration-token-live-2026",
+			}),
+		};
+
+		// Inject mock bridge
+		const original = (globalThis as any).window;
+		(globalThis as any).window = {
+			denteMobileNative: mockNativeApi,
+		};
+
+		try {
+			assert.equal(isMobileApp(), true);
+			const bio = await authenticateBiometricStaff("Вход врача в клинику");
+			assert.equal(bio.success, true);
+			assert.equal(bio.authenticated, true);
+			assert.equal(bio.biometryType, "fingerprint");
+
+			const scan = await scanDataMatrixWithCamera();
+			assert.equal(scan.success, true);
+			assert.equal(scan.format, "DATA_MATRIX");
+
+			await saveSecureToken("auth_pin", "9988");
+			const retrieved = await getSecureToken("auth_pin");
+			assert.equal(retrieved.value, "9988");
+
+			await removeSecureToken("auth_pin");
+			const afterDelete = await getSecureToken("auth_pin");
+			assert.equal(afterDelete.value, undefined);
+		} finally {
+			(globalThis as any).window = original;
+		}
+	});
 });
+

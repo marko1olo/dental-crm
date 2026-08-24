@@ -54,8 +54,17 @@ if (!swContent.includes("addEventListener(\"install\"") || !swContent.includes("
 	throw new Error("sw.js is missing required install or fetch event listeners");
 }
 
+if (!swContent.includes("addEventListener(\"push\"") || !swContent.includes("addEventListener(\"notificationclick\"")) {
+	throw new Error("sw.js is missing push notification or notificationclick handlers");
+}
+
+if (!swContent.includes("addEventListener(\"sync\"")) {
+	throw new Error("sw.js is missing background sync event listener");
+}
+
 console.log(`[PWA Validation] Manifest Name: "${manifest.name}" (${manifest.short_name})`);
 console.log(`[PWA Validation] Display Mode: ${manifest.display}`);
 console.log(`[PWA Validation] Shortcuts: ${manifest.shortcuts.map((s) => s.name).join("; ")}`);
 console.log(`[PWA Validation] Icons: ${manifest.icons.length} configured`);
+console.log(`[PWA Validation] Service Worker: Install, Fetch, Push, NotificationClick, and Background Sync verified`);
 console.log("[PWA Validation] SUCCESS: Web PWA Standalone Runtime is 100% compliant.");
