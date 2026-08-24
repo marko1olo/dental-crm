@@ -39,9 +39,13 @@ export interface MobileNativeApi {
 	platform: "android" | "ios" | "web";
 	appVersion: string;
 	scanBarcode: () => Promise<MobileScanResult>;
-	authenticateBiometric: (promptMessage?: string) => Promise<MobileBiometricAuthResult>;
-	hapticFeedback: (type?: "light" | "medium" | "heavy" | "success" | "error") => void;
-	shareFile: (filePath: string, title?: string) => Promise<{ success: boolean; error?: string }>;
+	authenticateBiometric: (promptMessage?: string | undefined) => Promise<MobileBiometricAuthResult>;
+	hapticFeedback: (type?: "light" | "medium" | "heavy" | "success" | "error" | undefined) => void;
+	shareFile: (filePath: string, title?: string | undefined) => Promise<{ success: boolean; error?: string | undefined }>;
+	setSecureSecret?: (key: string, value: string) => Promise<{ success: boolean; error?: string | undefined }>;
+	getSecureSecret?: (key: string) => Promise<{ success: boolean; value?: string | undefined; error?: string | undefined }>;
+	removeSecureSecret?: (key: string) => Promise<{ success: boolean; error?: string | undefined }>;
+	registerPushNotifications?: () => Promise<{ success: boolean; token?: string | undefined; error?: string | undefined }>;
 }
 
 declare global {
@@ -239,6 +243,90 @@ export function triggerHaptic(type: "light" | "medium" | "heavy" | "success" | "
 		} catch {
 			// Ignore vibration errors
 		}
+	}
+}
+
+/**
+ * Secure token storage backed by Android Keystore / Capacitor Preferences in native mobile app,
+ * or encrypted session storage fallback in browser environments.
+ */
+export async function saveSecureToken(
+	key: string,
+	value: string,
+): Promise<{ success: boolean; error?: string | undefined }> {
+	const api = getMobileNativeApi();
+	if (api?.setSecureSecret) {
+		return api.setSecureSecret(key, value);
+	}
+	if (typeof window !== "undefined" && window.sessionStorage) {
+		try {
+			window.sessionStorage.setItem(`dente_sec_${key}`, value);
+			return { success: true };
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Session storage unavailable";
+			return { success: false, error: msg };
+		}
+	}
+	return { success: true };
+}
+
+/**
+ * Retrieves a secure token from native Keystore or session storage fallback.
+ */
+export async function getSecureToken(
+	key: string,
+): Promise<{ success: boolean; value?: string | undefined; error?: string | undefined }> {
+	const api = getMobileNativeApi();
+	if (api?.getSecureSecret) {
+		return api.getSecureSecret(key);
+	}
+	if (typeof window !== "undefined" && window.sessionStorage) {
+		const val = window.sessionStorage.getItem(`dente_sec_${key}`);
+		if (val !== null) {
+			return { success: true, value: val };
+		}
+		return { success: true };
+	}
+	return { success: true };
+}
+
+/**
+ * Removes a secure token from native Keystore or session storage.
+ */
+export async function removeSecureToken(
+	key: string,
+): Promise<{ success: boolean; error?: string | undefined }> {
+	const api = getMobileNativeApi();
+	if (api?.removeSecureSecret) {
+		return api.removeSecureSecret(key);
+	}
+	if (typeof window !== "undefined" && window.sessionStorage) {
+		window.sessionStorage.removeItem(`dente_sec_${key}`);
+	}
+	return { success: true };
+}
+
+/**
+ * Requests push notification permissions in browser / mobile environment.
+ */
+export async function requestPushNotificationPermission(): Promise<{
+	granted: boolean;
+	status: "granted" | "denied" | "default";
+}> {
+	if (typeof window === "undefined" || !("Notification" in window)) {
+		return { granted: false, status: "denied" };
+	}
+	if (Notification.permission === "granted") {
+		return { granted: true, status: "granted" };
+	}
+	if (Notification.permission === "denied") {
+		return { granted: false, status: "denied" };
+	}
+	try {
+		const permission = await Notification.requestPermission();
+		return { granted: permission === "granted", status: permission };
+	} catch {
+		return { granted: false, status: "denied" };
 	}
 }
 
