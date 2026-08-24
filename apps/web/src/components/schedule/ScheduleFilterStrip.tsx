@@ -1,5 +1,7 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, LayoutGrid, List, Sparkles, Bot, Search, Flame, Stethoscope, UserSearch } from "lucide-react";
 import type { ReactElement } from "react";
+import type { DentalSpecialty } from "@dental/shared";
+import { specialtyLabels } from "../../workspaceUiLabels";
 
 export interface ScheduleStaffMember {
 	id: string;
@@ -12,7 +14,15 @@ export interface ScheduleChair {
 	id: string;
 	name: string;
 	active?: boolean;
+	specialization?: string | null;
+	room?: string | null;
 }
+
+export const DEFAULT_CLINIC_CHAIRS: readonly ScheduleChair[] = [
+	{ id: "chair-1", name: "Кресло 1", specialization: "therapist", room: "Каб. 1 (Терапия)", active: true },
+	{ id: "chair-2", name: "Кресло 2", specialization: "surgeon", room: "Каб. 2 (Хирургия)", active: true },
+	{ id: "chair-3", name: "Кресло 3", specialization: "orthodontist", room: "Каб. 3 (Ортодонтия)", active: true },
+];
 
 export interface ScheduleFilterStripProps {
 	scheduleDateFilter: string;
@@ -27,10 +37,26 @@ export interface ScheduleFilterStripProps {
 	setScheduleDoctorFilterId: (id: string | null) => void;
 	scheduleChairFilterId: string | null;
 	setScheduleChairFilterId: (id: string | null) => void;
+	scheduleViewMode?: "timeline" | "grid";
+	setScheduleViewMode?: (mode: "timeline" | "grid") => void;
+	onQuickBooking?: () => void;
+	onToggleSmartAi?: () => void;
+	isSmartAiOpen?: boolean;
+	onOpenDoctorFreeSlots?: () => void;
+	onOpenPatientSearch?: () => void;
+	onEmergencyCitoBooking?: () => void;
+}
+
+export function formatChairSpecialtyLabel(rawSpec?: string | null): string | null {
+	if (!rawSpec) return null;
+	const specKey = rawSpec as DentalSpecialty;
+	const label = specialtyLabels[specKey] || rawSpec;
+	return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 /**
- * ScheduleFilterStrip component for filtering schedule view by date, doctor, or chair.
+ * ScheduleFilterStrip component for filtering schedule view by date, doctor, or chair,
+ * with integrated view mode switcher, emergency CITO booking, and quick booking trigger.
  * Ensures strict vertical alignment and >=44px touch targets on mobile viewports.
  */
 export function ScheduleFilterStrip({
@@ -46,180 +72,229 @@ export function ScheduleFilterStrip({
 	setScheduleDoctorFilterId,
 	scheduleChairFilterId,
 	setScheduleChairFilterId,
+	scheduleViewMode = "timeline",
+	setScheduleViewMode,
+	onQuickBooking,
+	onToggleSmartAi,
+	isSmartAiOpen = false,
+	onOpenDoctorFreeSlots,
+	onOpenPatientSearch,
+	onEmergencyCitoBooking,
 }: ScheduleFilterStripProps): ReactElement {
+	const activeChairs = chairs.filter((chair) => chair?.active);
+	const displayChairs: readonly ScheduleChair[] = activeChairs.length > 0 ? activeChairs : DEFAULT_CLINIC_CHAIRS;
 	return (
 		<section
-			className="schedule-filter-strip"
+			className="schedule-filter-strip flex flex-wrap md:flex-nowrap items-center justify-between gap-2 px-3 sm:px-4 py-2 border-b border-[var(--line)] bg-[var(--paper)] max-w-full overflow-hidden"
 			aria-label="Сохраненные фильтры расписания"
-			style={{
-				display: "flex",
-				gap: "8px",
-				flexWrap: "wrap",
-				alignItems: "center",
-				padding: "12px 16px",
-				borderBottom: "1px solid var(--line)",
-			}}
 		>
 			{/* Date control group */}
-			<div
-				className="schedule-date-picker-group"
-				style={{
-					display: "flex",
-					alignItems: "center",
-					gap: "6px",
-					borderRight: "1px solid var(--line)",
-					paddingRight: "12px",
-					marginRight: "4px",
-				}}
-			>
-				<div
-					className="schedule-date-stepper"
-					style={{
-						display: "inline-flex",
-						alignItems: "center",
-						gap: "4px",
-					}}
-				>
+			<div className="schedule-date-picker-group flex items-center gap-1.5 shrink-0 pr-2 border-r border-[var(--line)]">
+				<div className="schedule-date-stepper inline-flex items-center gap-1">
 					<button
 						type="button"
-						className="secondary-button schedule-day-step-prev"
+						className="secondary-button schedule-day-step-prev min-h-[44px] min-w-[44px] px-2 inline-flex items-center justify-center cursor-pointer rounded-xl font-bold"
 						onClick={() => stepScheduleDay(-1)}
 						aria-label="Показать предыдущий день"
 						title="День назад"
-						style={{
-							padding: "0 10px",
-							minHeight: "44px",
-							minWidth: "44px",
-							lineHeight: "1",
-							display: "inline-flex",
-							alignItems: "center",
-							justifyContent: "center",
-							boxSizing: "border-box",
-						}}
 					>
-						<ChevronLeft size={16} aria-hidden="true" />
+						<ChevronLeft size={18} aria-hidden="true" />
 					</button>
 					<input
 						type="date"
 						aria-label="Фильтр расписания по дате"
 						value={scheduleDateFilter}
 						onChange={(event) => setScheduleDateFilter(event.target.value)}
-						className="schedule-date-input"
-						style={{
-							minHeight: "44px",
-							lineHeight: "1",
-							boxSizing: "border-box",
-							border: "1px solid var(--line)",
-							borderRadius: "8px",
-							background: "var(--paper-soft)",
-							padding: "4px 8px",
-							fontSize: "13px",
-							fontWeight: 600,
-							color: "var(--ink)",
-							outline: "none",
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-						}}
+						className="schedule-date-input min-h-[44px] px-3 py-1 text-xs sm:text-sm font-bold rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer"
 					/>
 					<button
 						type="button"
-						className="secondary-button schedule-day-step-next"
+						className="secondary-button schedule-day-step-next min-h-[44px] min-w-[44px] px-2 inline-flex items-center justify-center cursor-pointer rounded-xl font-bold"
 						onClick={() => stepScheduleDay(1)}
 						aria-label="Показать следующий день"
 						title="День вперёд"
-						style={{
-							padding: "0 10px",
-							minHeight: "44px",
-							minWidth: "44px",
-							lineHeight: "1",
-							display: "inline-flex",
-							alignItems: "center",
-							justifyContent: "center",
-							boxSizing: "border-box",
-						}}
 					>
-						<ChevronRight size={16} aria-hidden="true" />
+						<ChevronRight size={18} aria-hidden="true" />
 					</button>
 				</div>
 			</div>
 
-			{/* "Все записи" filter chip button */}
-			<button
-				type="button"
-				className={`quick-chip ${activeScheduleFilterCount === 0 ? "active" : ""}`.trim()}
-				onClick={resetScheduleFilters}
-				style={{
-					minHeight: "44px",
-					lineHeight: "1",
-					padding: "0 14px",
-					boxSizing: "border-box",
-					display: "inline-flex",
-					alignItems: "center",
-					justifyContent: "center",
-					margin: 0,
-					alignSelf: "center",
-				}}
-			>
-				Все записи
-			</button>
+			{/* Horizontal Scrollable Chips Container */}
+			<div className="schedule-filter-chips flex items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none flex-1 min-w-0 py-1">
+				{/* "Все записи" filter chip button */}
+				<button
+					type="button"
+					className={`quick-chip ${activeScheduleFilterCount === 0 ? "active" : ""} min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold shrink-0 cursor-pointer`}
+					onClick={resetScheduleFilters}
+				>
+					Все записи
+				</button>
 
-			{/* Doctor filter chips */}
-			{!isSoloDoctor &&
-				staffMembers
-					.filter(
-						(member) =>
-							member?.active &&
-							(member?.role === "doctor" || member?.role === "owner"),
-					)
-					.map((member) => (
+				{/* Doctor filter chips */}
+				{!isSoloDoctor &&
+					staffMembers
+						.filter(
+							(member) =>
+								member?.active &&
+								(member?.role === "doctor" || member?.role === "owner"),
+						)
+						.map((member) => (
+							<button
+								key={member.id}
+								type="button"
+								className={`quick-chip ${scheduleDoctorFilterId === member.id ? "active" : ""} min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold shrink-0 cursor-pointer`}
+								onClick={() =>
+									setScheduleDoctorFilterId(
+										scheduleDoctorFilterId === member.id ? null : member.id,
+									)
+								}
+							>
+								{member?.fullName
+									?.split(" ")
+									.map((part, index) => (index === 0 ? part : `${part[0]}.`))
+									.join(" ") ||
+									member?.fullName ||
+									"Врач"}
+							</button>
+						))}
+
+				{/* Chair filter chips */}
+				{displayChairs.map((chair) => {
+					const specName = formatChairSpecialtyLabel(chair?.specialization);
+					const chairLabel = specName && !chair.name.includes("(")
+						? `${chair.name} (${specName})`
+						: chair?.name || "Кресло";
+
+					return (
 						<button
-							key={member.id}
+							key={chair.id}
 							type="button"
-							className={`quick-chip min-h-[44px] ${scheduleDoctorFilterId === member.id ? "active" : ""}`}
+							className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold shrink-0 cursor-pointer flex items-center gap-1.5`}
 							onClick={() =>
-								setScheduleDoctorFilterId(
-									scheduleDoctorFilterId === member.id ? null : member.id,
+								setScheduleChairFilterId(
+									scheduleChairFilterId === chair.id ? null : chair.id,
 								)
 							}
-							style={{
-								boxSizing: "border-box",
-								display: "inline-flex",
-								alignItems: "center",
-								justifyContent: "center",
-								margin: 0,
-								alignSelf: "center",
-							}}
+							title={`Фильтр по кабинету / креслу: ${chairLabel}${chair.room ? ` (${chair.room})` : ""}`}
+							aria-label={`Фильтр по кабинету / креслу: ${chairLabel}`}
 						>
-							{(member?.fullName ?? "").split(" ")[0]}
+							<span>{chairLabel}</span>
+							{chair.room && (
+								<span className="text-[10px] opacity-75 font-normal px-1 py-0.2 rounded bg-black/5 dark:bg-white/10 shrink-0">
+									{chair.room.split(" ")[0]}
+								</span>
+							)}
 						</button>
-					))}
+					);
+				})}
+			</div>
 
-			{/* Chair filter chips */}
-			{chairs
-				.filter((chair) => chair?.active)
-				.map((chair) => (
+			{/* Integrated View Switcher & Action Controls */}
+			<div className="flex items-center gap-2 shrink-0 pl-1">
+				{onOpenPatientSearch && (
 					<button
-						key={chair.id}
 						type="button"
-						className={`quick-chip min-h-[44px] ${scheduleChairFilterId === chair.id ? "active" : ""}`}
-						onClick={() =>
-							setScheduleChairFilterId(
-								scheduleChairFilterId === chair.id ? null : chair.id,
-							)
-						}
-						style={{
-							boxSizing: "border-box",
-							display: "inline-flex",
-							alignItems: "center",
-							justifyContent: "center",
-							margin: 0,
-							alignSelf: "center",
-						}}
+						onClick={onOpenPatientSearch}
+						className="secondary-button min-h-[44px] px-3.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-all cursor-pointer border border-[var(--line)] hover:border-teal-500 text-[var(--ink)] hover:text-teal-600 shrink-0"
+						title="Мгновенный поиск пациента по телефону или фамилии (Ctrl+K)"
+						aria-label="Поиск пациента"
 					>
-						{chair.name}
+						<UserSearch size={16} className="text-teal-600 dark:text-teal-400" />
+						<span className="hidden md:inline">Пациент</span>
 					</button>
-				))}
+				)}
+				{onToggleSmartAi && (
+					<button
+						type="button"
+						onClick={onToggleSmartAi}
+						className={`secondary-button min-h-[44px] px-3 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+							isSmartAiOpen ? "border-sky-500 text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/30" : ""
+						}`}
+						title="Голосовой и текстовый ИИ ввод записи"
+					>
+						<Bot size={16} className="text-sky-600 dark:text-sky-400" />
+						<span className="hidden md:inline">Записать словами</span>
+					</button>
+				)}
+
+				{setScheduleViewMode && (
+					<div
+						className="flex items-center gap-1 bg-[var(--paper-soft)] p-1 rounded-xl border border-[var(--line)]"
+						role="tablist"
+						aria-label="Вид расписания"
+					>
+						<button
+							type="button"
+							onClick={() => setScheduleViewMode("timeline")}
+							className={`min-h-[44px] px-3 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+								scheduleViewMode === "timeline"
+									? "bg-[var(--teal-dark)] text-white shadow-xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+							role="tab"
+							aria-selected={scheduleViewMode === "timeline"}
+							title="Лента по дням"
+						>
+							<List size={16} />
+							<span className="hidden lg:inline">Лента</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => setScheduleViewMode("grid")}
+							className={`min-h-[44px] px-3 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+								scheduleViewMode === "grid"
+									? "bg-[var(--teal-dark)] text-white shadow-xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+							role="tab"
+							aria-selected={scheduleViewMode === "grid"}
+							title="Сетка по креслам"
+						>
+							<LayoutGrid size={16} />
+							<span className="hidden lg:inline">Сетка</span>
+						</button>
+					</div>
+				)}
+
+				{onOpenDoctorFreeSlots && (
+					<button
+						type="button"
+						onClick={onOpenDoctorFreeSlots}
+						className="secondary-button min-h-[44px] px-3.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-all cursor-pointer border border-teal-600/30 text-teal-700 dark:text-teal-300 hover:bg-teal-500/10 shrink-0"
+						title="Поиск свободных окон врача на 7–14 дней"
+					>
+						<Search size={16} className="text-teal-600 dark:text-teal-400" />
+						<span className="hidden md:inline">Свободные окна</span>
+					</button>
+				)}
+
+				{onEmergencyCitoBooking && (
+					<button
+						type="button"
+						onClick={onEmergencyCitoBooking}
+						className="min-h-[44px] px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 active:scale-95 text-white text-xs sm:text-sm font-extrabold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer shrink-0 border border-rose-500/50"
+						title="Пациент с острой болью (CITO!) — экстренная 1-клик вставка слота дежурному врачу (Горячая клавиша C)"
+						aria-label="Пациент с острой болью CITO: быстрая запись дежурному врачу"
+					>
+						<Flame size={16} className="text-amber-300 animate-pulse" />
+						<span className="truncate hidden sm:inline">Острая боль (CITO!)</span>
+						<span className="truncate sm:hidden">CITO!</span>
+					</button>
+				)}
+
+				{onQuickBooking && (
+					<button
+						type="button"
+						onClick={onQuickBooking}
+						className="primary-button min-h-[44px] px-4 py-2 rounded-xl bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer shrink-0"
+						title="Быстрая 1-клик запись на прием (горячая клавиша N)"
+					>
+						<Sparkles size={16} />
+						<span className="truncate hidden sm:inline">+ Быстрая запись (N)</span>
+						<span className="truncate sm:hidden">+ Запись</span>
+					</button>
+				)}
+			</div>
 		</section>
 	);
 }
