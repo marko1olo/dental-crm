@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	buildFiscalIdempotencyKey,
+	calculateAdvanceStagePrepayment,
 	calculateCashChange,
+	calculateFinalSettlementWithAdvanceOffset,
+	compile54FzFiscalTags,
 	compileFiscalDraftSummary,
 	type FiscalItemDraft,
 	getCashPresetSuggestions,
@@ -165,6 +168,136 @@ describe("Frontend 54-FZ (FFD 1.2) Fiscal Engine Tests", () => {
 		const key = buildFiscalIdempotencyKey("uuid-123", { amount: 2350 });
 		assert.ok(key.startsWith("uuid-123#"));
 		assert.equal(key.split("#").length, 2);
+	});
+
+	it("1.6 calculateAdvanceStagePrepayment — FFD 1.2 Tag 1214=2 partial prepayment calculation", () => {
+		const result = calculateAdvanceStagePrepayment({
+			stageName: "Аванс за ортопедический этап: Циркониевая коронка",
+			stageTotalRub: 35000.0,
+			prepaymentAmountRub: 15000.0,
+			paymentMethod: "prepayment",
+			tender: "card",
+			taxDeductionCategory: "1",
+		});
+
+		assert.equal(result.itemDraft.priceRub, 15000.0);
+		assert.equal(result.itemDraft.method, "prepayment");
+		assert.equal(result.tenders.cardRub, 15000.0);
+		assert.equal(result.tenders.advanceOffsetRub, 0);
+		assert.equal(result.tag1215AdvanceOffsetKopecks, 0);
+		assert.equal(result.remainingStageRub, 20000.0);
+		assert.equal(result.remainingStageKopecks, 2000000);
+	});
+
+	it("1.7 calculateFinalSettlementWithAdvanceOffset — FFD 1.2 Tag 1214=4 with Tag 1215 Advance Offset", () => {
+		const stageItems: FiscalItemDraft[] = [
+			{
+				id: "item-crown",
+				name: "Установка коронки из диоксида циркония",
+				priceRub: 35000.0,
+				quantity: 1,
+				subject: "service",
+				method: "full_payment",
+				vatRate: "vat_none",
+				measure: "piece",
+			},
+		];
+
+		// Previously paid advance: 15,000 ₽. Total due: 35,000 ₽.
+		// Result: Advance offset (Tag 1215) = 15,000 ₽, Additional cash/card = 20,000 ₽.
+		const settlement = calculateFinalSettlementWithAdvanceOffset({
+			stageItems,
+			previouslyPaidAdvanceRub: 15000.0,
+			additionalPaymentTender: "sbp",
+		});
+
+		assert.equal(settlement.items[0]?.method, "full_payment");
+		assert.equal(settlement.tag1215AdvanceOffsetKopecks, 1500000);
+		assert.equal(settlement.tenders.advanceOffsetRub, 15000.0);
+		assert.equal(settlement.tenders.sbpRub, 20000.0);
+		assert.equal(settlement.additionalPaymentRub, 20000.0);
+	});
+
+	it("1.8 compile54FzFiscalTags — Family balance offset (Tag 1215) and Card/SBP surcharge (Tag 1081)", () => {
+		// Example: Treatment total = 12,450.75 ₽
+		// Patient uses Family Wallet = 5,000.00 ₽ (Tag 1215)
+		// Patient pays with SBP QR = 4,000.75 ₽ (Tag 1081)
+		// Patient pays with Bank Card = 2,450.00 ₽ (Tag 1081)
+		// Patient pays Cash = 1,000.00 ₽ (Tag 1031)
+		// Total tender = 5000 + 4000.75 + 2450 + 1000 = 12,450.75 ₽ = 1,245,075 kopecks
+		const mixedTenders: SplitTenderState = {
+			cashRub: 1000.0,
+			cardRub: 2450.0,
+			sbpRub: 4000.75,
+			advanceOffsetRub: 0,
+			familyWalletRub: 5000.0,
+			certificateRub: 0,
+		};
+
+		const expectedTotalKopecks = 1245075;
+		const tags = compile54FzFiscalTags(mixedTenders, expectedTotalKopecks);
+
+		// Tag 1031: Cash = 100,000 kopecks (1,000.00 ₽)
+		assert.equal(tags.tag1031CashKopecks, 100000);
+		assert.equal(tags.tag1031CashRub, 1000.0);
+
+		// Tag 1081: Electronic (Card + SBP) = 245,000 + 400,075 = 645,075 kopecks (6,450.75 ₽)
+		assert.equal(tags.tag1081ElectronicKopecks, 645075);
+		assert.equal(tags.tag1081ElectronicRub, 6450.75);
+
+		// Tag 1215: Advance/Family balance offset = 500,000 kopecks (5,000.00 ₽)
+		assert.equal(tags.tag1215PrepaidKopecks, 500000);
+		assert.equal(tags.tag1215PrepaidRub, 5000.0);
+
+		// Total & Parity
+		assert.equal(tags.totalTenderKopecks, 1245075);
+		assert.equal(tags.totalTenderRub, 12450.75);
+		assert.equal(tags.isBalanced, true);
+	});
+
+	it("1.9 compileFiscalDraftSummary — Mixed Family Balance and SBP QR allocation parity", () => {
+		const items: FiscalItemDraft[] = [
+			{
+				id: "item-composite-1",
+				name: "Профессиональная гигиена полости рта и AirFlow",
+				priceRub: 7500.0,
+				quantity: 1,
+				subject: "service",
+				method: "full_payment",
+				vatRate: "vat_none",
+				measure: "piece",
+			},
+			{
+				id: "item-composite-2",
+				name: "Лечение глубокого кариеса с реставрацией Estelite Asteria",
+				priceRub: 8500.0,
+				quantity: 1,
+				subject: "service",
+				method: "full_payment",
+				vatRate: "vat_none",
+				measure: "piece",
+			},
+		];
+
+		// Total: 7,500 + 8,500 = 16,000.00 ₽ = 1,600,000 kopecks
+		// Split: Family balance = 10,000 ₽ (Tag 1215), SBP surcharge = 6,000 ₽ (Tag 1081)
+		const tenders: SplitTenderState = {
+			cashRub: 0,
+			cardRub: 0,
+			sbpRub: 6000.0,
+			advanceOffsetRub: 0,
+			familyWalletRub: 10000.0,
+			certificateRub: 0,
+		};
+
+		const summary = compileFiscalDraftSummary(items, tenders);
+
+		assert.equal(summary.totalKopecks, 1600000);
+		assert.equal(summary.totalRub, 16000.0);
+		assert.equal(summary.allocatedKopecks, 1600000);
+		assert.equal(summary.remainingKopecks, 0);
+		assert.equal(summary.isFullyAllocated, true);
+		assert.equal(summary.isOverallocated, false);
 	});
 });
 
