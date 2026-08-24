@@ -23,6 +23,7 @@ import {
 	Wallet,
 	X,
 } from "lucide-react";
+import { parseChestnyZnakDataMatrix } from "@dental/shared";
 import type { TreatmentPlanItem } from "../treatment-plans/types";
 import { showToast } from "../GlobalToast";
 import {
@@ -30,6 +31,7 @@ import {
 	generateFiscalReceipt54Fz,
 	mapTreatmentItemsToFiscalReceipt,
 	type SplitPaymentInput,
+	TREATMENT_STAGE_LABELS,
 } from "./order804nFiscalEngine";
 import { Order804nFiscalReceiptPrint } from "./Order804nFiscalReceiptPrint";
 
@@ -52,7 +54,7 @@ export interface FiscalReceipt54FzModalProps {
 function formatMoneyRu(value: number): string {
 	return (
 		value.toLocaleString("ru-RU", {
-			minimumFractionDigits: value % 1 !== 0 ? 2 : 0,
+			minimumFractionDigits: 2,
 			maximumFractionDigits: 2,
 		}) + " ₽"
 	);
@@ -73,18 +75,38 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 	if (!isOpen) return null;
 
 	const [activeTab, setActiveTab] = useState<"payment" | "preview">("payment");
+	const [selectedStageKind, setSelectedStageKind] = useState<string>("all");
+	const [mdlpCodes, setMdlpCodes] = useState<Record<string, string>>({});
+	const [showItemsList, setShowItemsList] = useState<boolean>(true);
 	const [cashAmount, setCashAmount] = useState<number>(0);
 	const [receivedCashRub, setReceivedCashRub] = useState<number>(0);
 	const [cardAmount, setCardAmount] = useState<number>(0);
 	const [sbpAmount, setSbpAmount] = useState<number>(0);
 	const [depositAmount, setDepositAmount] = useState<number>(0);
 	const [certificateAmount, setCertificateAmount] = useState<number>(0);
+	const [insuranceAmount, setInsuranceAmount] = useState<number>(0);
+	const [guaranteeLetterNumber, setGuaranteeLetterNumber] = useState<string>("");
+	const [isDmsActive, setIsDmsActive] = useState<boolean>(false);
 	const [customerContact, setCustomerContact] = useState<string>(patientPhone);
 	const [isFiscalizing, setIsFiscalizing] = useState<boolean>(false);
 
-	const fiscalData = useMemo(() => {
-		return mapTreatmentItemsToFiscalReceipt(items);
+	const availableStages = useMemo(() => {
+		const stages = new Set<string>();
+		for (const it of items) {
+			if (it.stageKind) stages.add(it.stageKind);
+			else if (it.category) stages.add(it.category);
+		}
+		return Array.from(stages);
 	}, [items]);
+
+	const activeItems = useMemo(() => {
+		if (selectedStageKind === "all") return items;
+		return items.filter((it) => (it.stageKind || it.category) === selectedStageKind);
+	}, [items, selectedStageKind]);
+
+	const fiscalData = useMemo(() => {
+		return mapTreatmentItemsToFiscalReceipt(activeItems);
+	}, [activeItems]);
 
 	const totalSumRub = fiscalData.totalRub;
 	const totalKopecks = fiscalData.totalKopecks;
@@ -97,11 +119,43 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 			sbpAmount === 0 &&
 			depositAmount === 0 &&
 			certificateAmount === 0 &&
+			insuranceAmount === 0 &&
 			totalSumRub > 0
 		) {
 			setCardAmount(totalSumRub);
 		}
 	}, [totalSumRub]);
+
+	const handleSelectStage = (stage: string) => {
+		setSelectedStageKind(stage);
+		const filtered = stage === "all" ? items : items.filter((it) => (it.stageKind || it.category) === stage);
+		const newTotalRub = mapTreatmentItemsToFiscalReceipt(filtered).totalRub;
+		setCardAmount(newTotalRub);
+		setCashAmount(0);
+		setSbpAmount(0);
+		setDepositAmount(0);
+		setCertificateAmount(0);
+		setInsuranceAmount(0);
+		showToast(
+			stage === "all"
+				? `Выбран полный план: ${formatMoneyRu(newTotalRub)}`
+				: `Выбран этап [${TREATMENT_STAGE_LABELS[stage] || stage}]: ${formatMoneyRu(newTotalRub)}`,
+			"info",
+			2000,
+		);
+	};
+
+	const handleUpdateMdlpCode = (itemId: string, rawCode: string) => {
+		setMdlpCodes((prev) => ({ ...prev, [itemId]: rawCode }));
+		if (rawCode.trim()) {
+			const parsed = parseChestnyZnakDataMatrix(rawCode);
+			if (parsed.isValid) {
+				showToast(`DataMatrix Честный ЗНАК валиден: ${parsed.matchedTradeName || "код принят"}`, "success", 2000);
+			} else {
+				showToast(`Некорректный код маркировки: ${parsed.errorMessage || "ошибка формата"}`, "warning", 3000);
+			}
+		}
+	};
 
 	const splitInput: SplitPaymentInput = useMemo(
 		() => ({
@@ -111,8 +165,19 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 			sbpRub: sbpAmount,
 			// Сертификат и аванс фискализируются по 54-ФЗ как зачет предоплаты / встречное предоставление (Тег 1215/1216)
 			depositRub: depositAmount + certificateAmount,
+			insuranceRub: insuranceAmount,
+			...(guaranteeLetterNumber.trim() ? { guaranteeLetterNumber: guaranteeLetterNumber.trim() } : {}),
 		}),
-		[cashAmount, receivedCashRub, cardAmount, sbpAmount, depositAmount, certificateAmount],
+		[
+			cashAmount,
+			receivedCashRub,
+			cardAmount,
+			sbpAmount,
+			depositAmount,
+			certificateAmount,
+			insuranceAmount,
+			guaranteeLetterNumber,
+		],
 	);
 
 	const allocation = useMemo(() => {
@@ -120,67 +185,82 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 	}, [totalKopecks, splitInput]);
 
 	const remainingRub = Math.round(allocation.remainingKopecks / 100);
+	const patientCoPayRub = allocation.patientCoPayRub;
 
 	// Select 100% to single payment method
 	const selectSingleMethod = (
-		type: "card" | "sbp" | "cash" | "deposit" | "certificate",
+		type: "card" | "sbp" | "cash" | "deposit" | "certificate" | "insurance",
 	) => {
-		if (type === "card") {
-			setCardAmount(totalSumRub);
+		if (type === "insurance") {
+			setInsuranceAmount(totalSumRub);
+			setCardAmount(0);
+			setSbpAmount(0);
+			setCashAmount(0);
+			setDepositAmount(0);
+			setCertificateAmount(0);
+			setIsDmsActive(true);
+			showToast(
+				`Выбрана 100% оплата по ДМС: ${formatMoneyRu(totalSumRub)}`,
+				"info",
+				1500,
+			);
+		} else if (type === "card") {
+			setCardAmount(totalSumRub - insuranceAmount);
 			setSbpAmount(0);
 			setCashAmount(0);
 			setDepositAmount(0);
 			setCertificateAmount(0);
 			showToast(
-				`Выбрана оплата картой: ${formatMoneyRu(totalSumRub)}`,
+				`Выбрана оплата картой: ${formatMoneyRu(totalSumRub - insuranceAmount)}`,
 				"info",
 				1500,
 			);
 		} else if (type === "sbp") {
-			setSbpAmount(totalSumRub);
+			setSbpAmount(totalSumRub - insuranceAmount);
 			setCardAmount(0);
 			setCashAmount(0);
 			setDepositAmount(0);
 			setCertificateAmount(0);
 			showToast(
-				`Выбрана оплата СБП QR: ${formatMoneyRu(totalSumRub)}`,
+				`Выбрана оплата СБП QR: ${formatMoneyRu(totalSumRub - insuranceAmount)}`,
 				"info",
 				1500,
 			);
 		} else if (type === "cash") {
-			setCashAmount(totalSumRub);
+			setCashAmount(totalSumRub - insuranceAmount);
 			setCardAmount(0);
 			setSbpAmount(0);
 			setDepositAmount(0);
 			setCertificateAmount(0);
 			showToast(
-				`Выбрана оплата наличными: ${formatMoneyRu(totalSumRub)}`,
+				`Выбрана оплата наличными: ${formatMoneyRu(totalSumRub - insuranceAmount)}`,
 				"info",
 				1500,
 			);
 		} else if (type === "deposit") {
-			const depUsed = Math.min(patientDepositRub, totalSumRub);
+			const targetTotal = totalSumRub - insuranceAmount;
+			const depUsed = Math.min(patientDepositRub, targetTotal);
 			setDepositAmount(depUsed);
-			const rest = totalSumRub - depUsed;
+			const rest = targetTotal - depUsed;
 			setCardAmount(rest);
 			setSbpAmount(0);
 			setCashAmount(0);
 			setCertificateAmount(0);
 			showToast(
-				depUsed === totalSumRub
+				depUsed === targetTotal
 					? `Выбрана 100% оплата с депозита: ${formatMoneyRu(depUsed)}`
 					: `Зачет аванса: ${formatMoneyRu(depUsed)} + остаток на карту ${formatMoneyRu(rest)}`,
 				"info",
 				2000,
 			);
 		} else if (type === "certificate") {
-			setCertificateAmount(totalSumRub);
+			setCertificateAmount(totalSumRub - insuranceAmount);
 			setCardAmount(0);
 			setSbpAmount(0);
 			setCashAmount(0);
 			setDepositAmount(0);
 			showToast(
-				`Выбрана оплата сертификатом: ${formatMoneyRu(totalSumRub)}`,
+				`Выбрана оплата сертификатом: ${formatMoneyRu(totalSumRub - insuranceAmount)}`,
 				"info",
 				1500,
 			);
@@ -235,7 +315,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 
 	const fiscalReceipt = useMemo(() => {
 		return generateFiscalReceipt54Fz({
-			items,
+			items: activeItems,
 			splitPayment: splitInput,
 			patientId,
 			patientName,
@@ -244,7 +324,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 			clinicLegalName: clinicName,
 		});
 	}, [
-		items,
+		activeItems,
 		splitInput,
 		patientId,
 		patientName,
@@ -358,21 +438,21 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 		>
 			<div className="relative flex flex-col w-full max-w-4xl max-h-[92vh] bg-[var(--paper,var(--background,#ffffff))] text-[var(--ink,#0f172a)] rounded-3xl shadow-2xl overflow-hidden border border-[var(--border,#cbd5e1)]">
 				{/* Top Modal Header */}
-				<div className="flex items-center justify-between px-6 py-4 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--border,#cbd5e1)] shrink-0">
-					<div className="flex items-center gap-3">
-						<div className="p-2.5 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
+				<div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3.5 sm:py-4 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--border,#cbd5e1)] shrink-0 flex-wrap sm:flex-nowrap">
+					<div className="flex items-center gap-3 min-w-0">
+						<div className="p-2.5 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 shrink-0">
 							<Receipt size={20} />
 						</div>
-						<div>
-							<div className="flex items-center gap-2">
-								<h3 className="font-extrabold text-sm sm:text-base text-[var(--ink,#0f172a)]">
+						<div className="min-w-0">
+							<div className="flex items-center gap-2 flex-wrap">
+								<h3 className="font-extrabold text-sm sm:text-base text-[var(--ink,#0f172a)] truncate">
 									Фискализация 54-ФЗ & Прием оплаты
 								</h3>
 								<span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 font-bold">
 									ФФД 1.2
 								</span>
 							</div>
-							<p className="text-xs text-[var(--muted,#64748b)]">
+							<p className="text-xs text-[var(--muted,#64748b)] truncate">
 								Пациент:{" "}
 								<strong className="text-[var(--ink,#0f172a)]">
 									{patientName}
@@ -385,7 +465,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 						</div>
 					</div>
 
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2 shrink-0">
 						{/* Tab Selector */}
 						<div className="inline-flex p-1 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-xs">
 							<button
@@ -429,6 +509,112 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 						<div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 							{/* Left Column: Split Payment Builders */}
 							<div className="lg:col-span-7 space-y-4">
+								{/* Stage Filter Chips (Терапия, Хирургия, Ортопедия, Ортодонтия, Гигиена) */}
+								{availableStages.length > 0 && (
+									<div className="p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] space-y-2">
+										<div className="flex items-center justify-between text-xs font-bold">
+											<span className="flex items-center gap-1.5 text-[var(--muted,#64748b)] uppercase tracking-wider text-[10px]">
+												<Layers size={14} className="text-teal-600 dark:text-teal-400" />
+												Этап плана лечения для оплаты:
+											</span>
+											<span className="font-mono text-teal-700 dark:text-teal-300">
+												Позиций: {activeItems.length}
+											</span>
+										</div>
+										<div className="flex flex-wrap gap-1.5">
+											<button
+												type="button"
+												onClick={() => handleSelectStage("all")}
+												className={`min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+													selectedStageKind === "all"
+														? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-xs"
+														: "bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:border-teal-400"
+												}`}
+											>
+												Все этапы ({formatMoneyRu(mapTreatmentItemsToFiscalReceipt(items).totalRub)})
+											</button>
+											{availableStages.map((st) => {
+												const stageItems = items.filter((i) => (i.stageKind || i.category) === st);
+												const stageSumRub = mapTreatmentItemsToFiscalReceipt(stageItems).totalRub;
+												const label = TREATMENT_STAGE_LABELS[st] || st;
+												return (
+													<button
+														key={st}
+														type="button"
+														onClick={() => handleSelectStage(st)}
+														className={`min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+															selectedStageKind === st
+																? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-xs"
+																: "bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:border-teal-400"
+														}`}
+													>
+														{label} ({formatMoneyRu(stageSumRub)})
+													</button>
+												);
+											})}
+										</div>
+									</div>
+								)}
+
+								{/* MDLP DataMatrix Marking Code Capture Block */}
+								{fiscalData.items.some((i) => i.isMarkedItem) && (
+									<div className="p-3.5 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700/60 space-y-2">
+										<div className="flex items-center justify-between text-xs">
+											<span className="font-extrabold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+												<ShieldCheck size={16} className="text-amber-600" />
+												Маркировка Честный ЗНАК / МДЛП (Тег 1162 / 2000)
+											</span>
+											<span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100">
+												Обязательно 54-ФЗ
+											</span>
+										</div>
+										<p className="text-[11px] text-amber-800 dark:text-amber-300">
+											В счете присутствуют лекарственные препараты / имплантаты, подлежащие выводу из оборота через ККТ.
+										</p>
+										<div className="space-y-2 pt-1">
+											{fiscalData.items
+												.filter((i) => i.isMarkedItem)
+												.map((markedItem) => {
+													const currentCode = mdlpCodes[markedItem.id] || "";
+													const parseResult = currentCode ? parseChestnyZnakDataMatrix(currentCode) : null;
+													return (
+														<div
+															key={markedItem.id}
+															className="p-2.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-amber-200 dark:border-amber-800/60 space-y-1.5"
+														>
+															<div className="flex items-center justify-between text-xs">
+																<span className="font-bold text-[var(--ink,#0f172a)] truncate max-w-[280px]">
+																	{markedItem.name}
+																</span>
+																<span className="text-[10px] font-mono text-[var(--muted,#64748b)]">
+																	{formatMoneyRu(markedItem.amountRub)}
+																</span>
+															</div>
+															<div className="flex items-center gap-2">
+																<input
+																	type="text"
+																	value={currentCode}
+																	onChange={(e) => handleUpdateMdlpCode(markedItem.id, e.target.value)}
+																	placeholder="Отсканируйте GS1 DataMatrix (01)...(21)..."
+																	className="min-h-[40px] flex-1 px-3 py-1.5 text-xs font-mono rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
+																/>
+																{parseResult?.isValid ? (
+																	<span className="shrink-0 px-2.5 py-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 text-xs font-bold flex items-center gap-1">
+																		<CheckCircle2 size={14} /> [М] ОК
+																	</span>
+																) : currentCode ? (
+																	<span className="shrink-0 px-2.5 py-1.5 rounded-lg bg-rose-100 dark:bg-rose-900 text-rose-800 dark:text-rose-200 text-xs font-bold">
+																		Ошибка GS1
+																	</span>
+																) : null}
+															</div>
+														</div>
+													);
+												})}
+										</div>
+									</div>
+								)}
+
 								<div className="flex items-center justify-between">
 									<h4 className="font-bold text-xs uppercase tracking-wider text-[var(--muted,#64748b)]">
 										1. Способ оплаты (1 клик для 100% суммы)
@@ -439,12 +625,13 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 								</div>
 
 								{/* 5 Big Tactile Payment Method Tiles (Elevated to min-h-[56px] / >= 48px) */}
-								<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+								{/* 6 Tactile Payment Method Tiles with DMS & Guarantee Letter support */}
+								<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
 									<button
 										type="button"
 										onClick={() => selectSingleMethod("card")}
 										className={`min-h-[56px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer select-none active:scale-95 ${
-											cardAmount === totalSumRub && totalSumRub > 0
+											cardAmount === (totalSumRub - insuranceAmount) && cardAmount > 0
 												? "border-blue-600 bg-blue-500/15 text-blue-700 dark:text-blue-300 shadow-md ring-2 ring-blue-500/30"
 												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-blue-400 text-[var(--ink,#0f172a)]"
 										}`}
@@ -454,14 +641,14 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 											className="text-blue-600 dark:text-blue-400 shrink-0"
 										/>
 										<span className="text-xs font-bold whitespace-nowrap">Карта</span>
-										<span className="text-[10px] opacity-75 font-normal leading-none">(100%)</span>
+										<span className="text-[10px] opacity-75 font-normal leading-none">Безнал</span>
 									</button>
 
 									<button
 										type="button"
 										onClick={() => selectSingleMethod("sbp")}
 										className={`min-h-[56px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer select-none active:scale-95 ${
-											sbpAmount === totalSumRub && totalSumRub > 0
+											sbpAmount === (totalSumRub - insuranceAmount) && sbpAmount > 0
 												? "border-teal-600 bg-teal-500/15 text-teal-700 dark:text-teal-300 shadow-md ring-2 ring-teal-500/30"
 												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-teal-400 text-[var(--ink,#0f172a)]"
 										}`}
@@ -471,14 +658,14 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 											className="text-teal-600 dark:text-teal-400 shrink-0"
 										/>
 										<span className="text-xs font-bold whitespace-nowrap">СБП QR</span>
-										<span className="text-[10px] opacity-75 font-normal leading-none">(100%)</span>
+										<span className="text-[10px] opacity-75 font-normal leading-none">Плати QR</span>
 									</button>
 
 									<button
 										type="button"
 										onClick={() => selectSingleMethod("cash")}
 										className={`min-h-[56px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer select-none active:scale-95 ${
-											cashAmount === totalSumRub && totalSumRub > 0
+											cashAmount === (totalSumRub - insuranceAmount) && cashAmount > 0
 												? "border-emerald-600 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 shadow-md ring-2 ring-emerald-500/30"
 												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-emerald-400 text-[var(--ink,#0f172a)]"
 										}`}
@@ -488,7 +675,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 											className="text-emerald-600 dark:text-emerald-400 shrink-0"
 										/>
 										<span className="text-xs font-bold whitespace-nowrap">Наличные</span>
-										<span className="text-[10px] opacity-75 font-normal leading-none">(100%)</span>
+										<span className="text-[10px] opacity-75 font-normal leading-none">Касса</span>
 									</button>
 
 									<button
@@ -512,7 +699,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 										type="button"
 										onClick={() => selectSingleMethod("certificate")}
 										className={`min-h-[56px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer select-none active:scale-95 ${
-											certificateAmount === totalSumRub && totalSumRub > 0
+											certificateAmount === (totalSumRub - insuranceAmount) && certificateAmount > 0
 												? "border-purple-600 bg-purple-500/15 text-purple-700 dark:text-purple-300 shadow-md ring-2 ring-purple-500/30"
 												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-purple-400 text-[var(--ink,#0f172a)]"
 										}`}
@@ -522,12 +709,104 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 											className="text-purple-600 dark:text-purple-400 shrink-0"
 										/>
 										<span className="text-xs font-bold whitespace-nowrap">Сертификат</span>
-										<span className="text-[10px] opacity-75 font-normal leading-none">(100%)</span>
+										<span className="text-[10px] opacity-75 font-normal leading-none">Подарок</span>
+									</button>
+
+									<button
+										type="button"
+										onClick={() => selectSingleMethod("insurance")}
+										className={`min-h-[56px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer select-none active:scale-95 ${
+											insuranceAmount > 0
+												? "border-indigo-600 bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 shadow-md ring-2 ring-indigo-500/30"
+												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-indigo-400 text-[var(--ink,#0f172a)]"
+										}`}
+									>
+										<ShieldCheck
+											size={16}
+											className="text-indigo-600 dark:text-indigo-400 shrink-0"
+										/>
+										<span className="text-xs font-bold whitespace-nowrap">ДМС / ГП</span>
+										<span className="text-[10px] opacity-75 font-normal leading-none">Страховая</span>
 									</button>
 								</div>
 
 								{/* Detailed Split Payment Rows with Elevated min-h-[48px] Buttons */}
 								<div className="space-y-3 pt-1">
+									{/* DMS Insurance / Guarantee Letter Split Block */}
+									<div className="p-3.5 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/60 space-y-3">
+										<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+											<div className="flex items-center gap-3">
+												<div className="p-2.5 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+													<ShieldCheck size={18} />
+												</div>
+												<div>
+													<span className="font-bold text-xs sm:text-sm block text-indigo-950 dark:text-indigo-100">
+														Страховая компания (ДМС / Гарантийное письмо)
+													</span>
+													<span className="text-[10px] sm:text-xs text-indigo-800 dark:text-indigo-300 font-medium">
+														Безналичный взаиморасчет по Номенклатуре 804н (без НДС)
+													</span>
+												</div>
+											</div>
+
+											<div className="flex items-center gap-2 w-full sm:w-auto">
+												<input
+													type="number"
+													min={0}
+													max={totalSumRub}
+													value={insuranceAmount || ""}
+													onChange={(e) => {
+														const val = Math.max(0, Math.min(totalSumRub, Number(e.target.value) || 0));
+														setInsuranceAmount(val);
+														if (val > 0) setIsDmsActive(true);
+													}}
+													placeholder="0"
+													className="min-h-[48px] flex-1 sm:w-32 px-3 py-2 text-xs sm:text-sm font-mono font-bold rounded-xl border border-indigo-300 dark:border-indigo-700 bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
+												/>
+												{insuranceAmount < totalSumRub && (
+													<button
+														type="button"
+														onClick={() => selectSingleMethod("insurance")}
+														className="min-h-[48px] px-3.5 py-2 text-xs sm:text-sm font-bold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer transition-colors flex items-center justify-center shadow-xs shrink-0"
+														title="100% покрытие страховой компанией"
+													>
+														100% ДМС
+													</button>
+												)}
+												{insuranceAmount > 0 && (
+													<button
+														type="button"
+														onClick={() => setInsuranceAmount(0)}
+														className="min-h-[48px] px-2.5 py-2 text-xs font-bold rounded-xl bg-indigo-100 text-indigo-700 hover:bg-indigo-200 cursor-pointer transition-colors shrink-0"
+														title="Сбросить ДМС"
+													>
+														Сброс
+													</button>
+												)}
+											</div>
+										</div>
+
+										{/* Guarantee letter number input & Co-payment summary */}
+										<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-indigo-100 dark:border-indigo-900/30">
+											<div className="flex items-center gap-2">
+												<FileText size={14} className="text-indigo-600 shrink-0" />
+												<input
+													type="text"
+													value={guaranteeLetterNumber}
+													onChange={(e) => setGuaranteeLetterNumber(e.target.value)}
+													placeholder="Номер ГП (напр. ГП-2026/8412)"
+													className="w-full text-xs font-mono px-3 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-800 bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+												/>
+											</div>
+
+											<div className="flex items-center justify-end gap-2 text-xs">
+												<span className="text-[var(--muted,#64748b)]">Доплата в кассу:</span>
+												<span className="font-mono font-bold text-slate-900 dark:text-white px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-800">
+													{formatMoneyRu(patientCoPayRub)}
+												</span>
+											</div>
+										</div>
+									</div>
 									{/* Bank Card / Acquiring */}
 									<div className="p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] flex items-center justify-between gap-3">
 										<div className="flex items-center gap-3">

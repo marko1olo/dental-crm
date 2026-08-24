@@ -485,7 +485,7 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 	selectedTeeth = [],
 	onToothClick,
 	onQuickStateChange,
-	useSurfaces = true,
+	useSurfaces = false,
 	hideHeader = false,
 	hideLegend = false,
 	className = "",
@@ -620,7 +620,7 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 				}`}
 			>
 				{/* FDI Tooth Number */}
-				<span className="text-[11px] sm:text-xs font-black tracking-tight text-[var(--odontogram-ink)] font-mono">
+				<span className="text-xs font-black tracking-tight text-[var(--odontogram-ink)] font-mono">
 					{toothNumber}
 				</span>
 
@@ -635,14 +635,14 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 				<div className="flex flex-wrap items-center justify-center gap-0.5 min-h-[14px]">
 					{useSurfaces && surfaces && surfaces.length > 0 ? (
 						<span
-							className="text-[9px] sm:text-[10px] font-bold px-1 py-0.2 rounded bg-teal-500/20 text-teal-800 dark:text-teal-200 border border-teal-500/30 font-mono"
+							className="text-xs font-bold px-1 py-0.2 rounded bg-teal-500/20 text-teal-800 dark:text-teal-200 border border-teal-500/30 font-mono"
 							title={`Поверхности: ${surfaces.join(", ")}`}
 						>
 							{surfaces.join("")}
 						</span>
 					) : hasCanals ? (
 						<span
-							className="text-[9px] sm:text-[10px] font-bold px-1 py-0.2 rounded bg-rose-500/20 text-rose-700 dark:text-rose-300 font-mono"
+							className="text-xs font-bold px-1 py-0.2 rounded bg-rose-500/20 text-rose-700 dark:text-rose-300 font-mono"
 							title="Заполнены корневые каналы"
 						>
 							{
@@ -652,7 +652,7 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 							к
 						</span>
 					) : (
-						<span className="text-[9px] text-[var(--odontogram-ink-muted)]">
+						<span className="text-xs text-[var(--odontogram-ink-muted)]">
 							{isUpper ? "в/ч" : "н/ч"}
 						</span>
 					)}
@@ -663,7 +663,7 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 
 	return (
 		<div
-			className={`flex flex-col gap-4 w-full p-4 sm:p-5 bg-[var(--odontogram-paper)] backdrop-blur-md rounded-2xl border border-[var(--odontogram-border)] shadow-xl text-[var(--odontogram-ink)] ${className}`.trim()}
+			className={`tooth-chart-container classic-gost-mode flex flex-col gap-4 w-full text-[var(--odontogram-ink)] ${className}`.trim()}
 		>
 			{!hideHeader && (
 				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--odontogram-border-subtle)]">
@@ -714,12 +714,12 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 								<strong className="font-black text-sm text-[var(--odontogram-ink)]">
 									{dmftStats.dmftTotal}
 								</strong>
-								<span className="text-[11px] text-[var(--odontogram-ink-muted)]">
+								<span className="text-xs font-semibold text-[var(--odontogram-ink-muted)]">
 									(К={dmftStats.decayed}, П={dmftStats.filled}, У=
 									{dmftStats.missing})
 								</span>
 							</div>
-							<span className="ml-1 hidden md:inline-block font-bold text-[11px] text-[var(--odontogram-ink-muted)]">
+							<span className="ml-1 hidden md:inline-block font-bold text-xs text-[var(--odontogram-ink-muted)]">
 								· {dmftStats.severityLabel}
 							</span>
 						</div>
@@ -761,7 +761,7 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 					{/* Occlusal Plane Cross Divider */}
 					<div className="flex items-center gap-3 my-1">
 						<div className="h-[1.5px] flex-1 bg-gradient-to-r from-transparent via-[var(--odontogram-border-strong)] to-transparent" />
-						<span className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--odontogram-ink-muted)]">
+						<span className="text-xs font-black uppercase tracking-wider text-[var(--odontogram-ink-muted)]">
 							Окклюзионная плоскость
 						</span>
 						<div className="h-[1.5px] flex-1 bg-gradient-to-r from-transparent via-[var(--odontogram-border-strong)] to-transparent" />
@@ -872,7 +872,7 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 			</div>
 
 			{!hideLegend && (
-				<div className="flex flex-wrap items-center justify-center gap-2 pt-2 border-t border-[var(--odontogram-border-subtle)] text-[11px]">
+				<div className="flex flex-wrap items-center justify-center gap-2 pt-2 border-t border-[var(--odontogram-border-subtle)] text-xs font-semibold">
 					<span className="font-semibold text-[var(--odontogram-ink-muted)] mr-1">
 						Обозначения:
 					</span>

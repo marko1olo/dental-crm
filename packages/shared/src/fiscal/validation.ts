@@ -557,3 +557,141 @@ export function verifyFiscalCompositeIdempotencyKey(
 	};
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// FAST CASHIER: CHANGE CALCULATION & DENOMINATION PRESET HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface CashChangeResult {
+	readonly cashRequiredRub: number;
+	readonly receivedCashRub: number;
+	readonly changeRub: number;
+	readonly changeKopecks: number;
+	readonly isShortage: boolean;
+	readonly shortageRub: number;
+	readonly shortageKopecks: number;
+}
+
+/**
+ * Computes exact kopeck cash change or shortage for rapid cashier counter.
+ */
+export function calculateCashChange(
+	cashRequiredRub: number,
+	receivedCashRub: number,
+): CashChangeResult {
+	const requiredKopecks = Math.max(0, Math.round(cashRequiredRub * 100));
+	const receivedKopecks = Math.max(0, Math.round(receivedCashRub * 100));
+
+	if (receivedKopecks >= requiredKopecks) {
+		const changeKop = receivedKopecks - requiredKopecks;
+		return {
+			cashRequiredRub,
+			receivedCashRub,
+			changeRub: Number((changeKop / 100).toFixed(2)),
+			changeKopecks: changeKop,
+			isShortage: false,
+			shortageRub: 0,
+			shortageKopecks: 0,
+		};
+	}
+
+	const shortageKop = requiredKopecks - receivedKopecks;
+	return {
+		cashRequiredRub,
+		receivedCashRub,
+		changeRub: 0,
+		changeKopecks: 0,
+		isShortage: true,
+		shortageRub: Number((shortageKop / 100).toFixed(2)),
+		shortageKopecks: shortageKop,
+	};
+}
+
+/**
+ * Returns rapid cash preset suggestions for common banknotes and exact amounts.
+ */
+export function getCashPresetSuggestions(cashRequiredRub: number): number[] {
+	const req = Math.ceil(cashRequiredRub);
+	if (req <= 0) return [100, 500, 1000, 5000];
+
+	const presets = new Set<number>();
+	presets.add(req);
+
+	const standardBills = [50, 100, 200, 500, 1000, 2000, 5000];
+	for (const bill of standardBills) {
+		if (bill >= req) {
+			presets.add(bill);
+		}
+	}
+
+	const nextHundred = Math.ceil(req / 100) * 100;
+	if (nextHundred > req) presets.add(nextHundred);
+
+	const nextFiveHundred = Math.ceil(req / 500) * 500;
+	if (nextFiveHundred > req) presets.add(nextFiveHundred);
+
+	const nextThousand = Math.ceil(req / 1000) * 1000;
+	if (nextThousand > req) presets.add(nextThousand);
+
+	return Array.from(presets).sort((a, b) => a - b).slice(0, 5);
+}
+
+/**
+ * Statutory validation of Russian Taxpayer Identification Numbers (ИНН):
+ * - Legal entity (ЮЛ): 10 digits with Modulo 11 checksum
+ * - Individual / Sole proprietor (ФЛ / ИП): 12 digits with 2-level Modulo 11 checksum
+ */
+export function validateRussianTaxpayerInn(inn: string | null | undefined): {
+	isValid: boolean;
+	kind: "ul" | "fl" | null;
+	digits: string;
+	errorMessage?: string | undefined;
+} {
+	if (!inn) {
+		return { isValid: false, kind: null, digits: "", errorMessage: "ИНН не указан" };
+	}
+	const clean = inn.trim().replace(/\D/g, "");
+	if (clean.length !== 10 && clean.length !== 12) {
+		return {
+			isValid: false,
+			kind: null,
+			digits: clean,
+			errorMessage: "ИНН должен содержать ровно 10 цифр (ЮЛ) или 12 цифр (ФЛ/ИП)",
+		};
+	}
+
+	const digitsArr = clean.split("").map(Number);
+
+	if (clean.length === 10) {
+		// 10-digit INN (Legal Entity): checksum on 10th digit
+		const weights = [2, 4, 10, 3, 5, 9, 4, 6, 8];
+		const sum = weights.reduce((acc, w, idx) => acc + w * (digitsArr[idx] ?? 0), 0);
+		const checkDigit = (sum % 11) % 10;
+		const isValid = checkDigit === digitsArr[9];
+		return {
+			isValid,
+			kind: "ul",
+			digits: clean,
+			errorMessage: isValid ? undefined : "Неверная контрольная сумма 10-значного ИНН ЮЛ",
+		};
+	}
+
+	// 12-digit INN (Individual / Sole proprietor): checksums on 11th and 12th digits
+	const weights11 = [7, 2, 4, 10, 3, 5, 9, 4, 6, 8];
+	const weights12 = [3, 7, 2, 4, 10, 3, 5, 9, 4, 6, 8];
+
+	const sum11 = weights11.reduce((acc, w, idx) => acc + w * (digitsArr[idx] ?? 0), 0);
+	const checkDigit11 = (sum11 % 11) % 10;
+
+	const sum12 = weights12.reduce((acc, w, idx) => acc + w * (digitsArr[idx] ?? 0), 0);
+	const checkDigit12 = (sum12 % 11) % 10;
+
+	const isValid = checkDigit11 === digitsArr[10] && checkDigit12 === digitsArr[11];
+	return {
+		isValid,
+		kind: "fl",
+		digits: clean,
+		errorMessage: isValid ? undefined : "Неверная контрольная сумма 12-значного ИНН ФЛ/ИП",
+	};
+}
+
+

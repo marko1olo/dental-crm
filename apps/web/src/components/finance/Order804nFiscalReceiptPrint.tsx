@@ -66,9 +66,21 @@ export const Order804nFiscalReceiptPrint: React.FC<Order804nFiscalReceiptPrintPr
 				<div className="space-y-2">
 					{receipt.items.map((it, idx) => (
 						<div key={it.id || idx} className="space-y-0.5">
-							<div className="font-bold text-[11px] text-slate-900 leading-snug">
-								{idx + 1}. {it.name}
+							<div className="flex items-baseline justify-between gap-1">
+								<div className="font-bold text-[11px] text-slate-900 leading-snug">
+									{idx + 1}. {it.name}
+								</div>
+								{it.isMarkedItem && (
+									<span className="shrink-0 px-1 py-0.2 rounded bg-slate-900 text-white text-[8px] font-mono font-black" title="Маркированный товар Честный ЗНАК / МДЛП (Тег 1162 / 2000)">
+										[М]
+									</span>
+								)}
 							</div>
+							{it.stageCategoryTitle && (
+								<div className="text-[9px] text-slate-500 font-medium">
+									Этап: {it.stageCategoryTitle}
+								</div>
+							)}
 							<div className="flex justify-between text-[10px] text-slate-600">
 								<span>
 									{it.quantity} шт. × {it.unitPriceRub.toLocaleString("ru-RU")} ₽
@@ -127,6 +139,18 @@ export const Order804nFiscalReceiptPrint: React.FC<Order804nFiscalReceiptPrintPr
 						<div className="flex justify-between">
 							<span>СБП / ПЛАТИ QR (Тег 1081):</span>
 							<span className="font-bold text-teal-800">{receipt.payments.sbpRub.toLocaleString("ru-RU")} ₽</span>
+						</div>
+					)}
+					{receipt.payments.insuranceRub > 0 && (
+						<div className="flex justify-between text-indigo-900 bg-indigo-50/60 px-1 py-0.5 rounded border border-indigo-100">
+							<span>ДМС СТРАХОВАЯ {receipt.guaranteeLetterNumber ? `(ГП №${receipt.guaranteeLetterNumber})` : "(БЕЗНАЛ)"}:</span>
+							<span className="font-bold text-indigo-800">{receipt.payments.insuranceRub.toLocaleString("ru-RU")} ₽</span>
+						</div>
+					)}
+					{receipt.payments.insuranceRub > 0 && receipt.payments.patientCoPayRub > 0 && (
+						<div className="flex justify-between font-semibold text-slate-800 pt-0.5">
+							<span>ДОПЛАТА ПАЦИЕНТА В КАССУ:</span>
+							<span className="font-bold">{receipt.payments.patientCoPayRub.toLocaleString("ru-RU")} ₽</span>
 						</div>
 					)}
 					{receipt.payments.depositRub > 0 && (

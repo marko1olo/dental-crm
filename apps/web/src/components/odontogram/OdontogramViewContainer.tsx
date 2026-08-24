@@ -97,7 +97,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 	selectedTeeth = [],
 	onToothClick,
 	onQuickStateChange,
-	useSurfaces: initialUseSurfaces = true,
+	useSurfaces: initialUseSurfaces = false,
 	hideHeader = false,
 	hideLegend = false,
 	hideModeSwitcher = false,

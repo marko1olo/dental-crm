@@ -587,7 +587,7 @@ export function ChairsiderPerspectiveView() {
 									selectedTeeth={[selectedTooth]}
 									onToothClick={handleToothClickFromChart}
 									onQuickStateChange={handleBatchToothStatus}
-									useSurfaces={true}
+									useSurfaces={false}
 									hideHeader={true}
 									className="border-0 shadow-none p-0 bg-transparent"
 								/>

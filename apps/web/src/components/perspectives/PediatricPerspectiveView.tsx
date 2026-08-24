@@ -618,7 +618,7 @@ export function PediatricPerspectiveView() {
 											bottomTeeth={lowerMilkTeeth}
 											selectedTeeth={[selectedTooth]}
 											onToothClick={handleToothClickFromChart}
-											useSurfaces={true}
+											useSurfaces={false}
 											hideHeader={true}
 											className="border-0 shadow-none p-0 bg-transparent w-full"
 										/>
