@@ -79,6 +79,7 @@ export interface DesktopPrinterInfo {
 
 export interface DesktopThermalPrintParams {
 	html?: string | undefined;
+	labelHtml?: string | undefined;
 	text?: string | undefined;
 	printerName?: string | undefined;
 	silent?: boolean | undefined;
@@ -91,6 +92,7 @@ export interface DesktopThermalPrintResult {
 	success: boolean;
 	printedAt?: string | undefined;
 	printerName?: string | undefined;
+	printerUsed?: string | undefined;
 	widthMm?: number | undefined;
 	heightMm?: number | undefined;
 	copies?: number | undefined;
@@ -108,6 +110,7 @@ export interface DesktopEscPosPrintParams {
 	silent?: boolean | undefined;
 	widthMm?: number | undefined;
 	cutPaper?: boolean | undefined;
+	copies?: number | undefined;
 }
 
 export interface DesktopEscPosPrintResult {
@@ -115,6 +118,7 @@ export interface DesktopEscPosPrintResult {
 	printedAt?: string | undefined;
 	target?: string | undefined;
 	printerName?: string | undefined;
+	printerUsed?: string | undefined;
 	bytesSent?: number | undefined;
 	silent?: boolean | undefined;
 	error?: string | undefined;
@@ -207,6 +211,49 @@ export async function printDesktopThermalLabel(
 			error: message,
 		};
 	}
+}
+
+/**
+ * Direct silent printing of SanPiN 3.3686-21 sterilization labels in TSPL, ZPL, ESC/POS, or HTML mode.
+ */
+export async function printDesktopSanpinThermalLabel(params: {
+	format: "tspl" | "zpl" | "escpos" | "html";
+	rawPayloadOrHtml: string;
+	printerName?: string;
+	widthMm?: number;
+	heightMm?: number;
+	copies?: number;
+}): Promise<DesktopThermalPrintResult> {
+	const api = getDesktopNativeApi();
+	if (!api) {
+		return {
+			success: false,
+			error: "Прямая печать термоэтикеток стерилизации доступна в приложении DENTE Desktop (.exe).",
+		};
+	}
+
+	if (params.format === "escpos" && api.printEscPosReceipt) {
+		const res = await api.printEscPosReceipt({
+			printerName: params.printerName,
+			silent: true,
+			rawEscPosBase64: typeof btoa === "function" ? btoa(params.rawPayloadOrHtml) : undefined,
+			text: params.rawPayloadOrHtml,
+		});
+		return {
+			success: res.success,
+			printerName: res.printerName || res.printerUsed,
+			error: res.error,
+		};
+	}
+
+	return await printDesktopThermalLabel({
+		printerName: params.printerName,
+		html: params.rawPayloadOrHtml,
+		widthMm: params.widthMm || 58,
+		heightMm: params.heightMm || 40,
+		copies: params.copies || 1,
+		silent: true,
+	});
 }
 
 /**

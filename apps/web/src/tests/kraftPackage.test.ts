@@ -3,6 +3,7 @@ import test, { describe, it } from "node:test";
 import {
 	calculateKraftBatchStatistics,
 	calculatePackageExpiration,
+	encodeStringToCp866,
 	evaluateKraftPackageStatus,
 	exportKraftBatchToCsv,
 	filterKraftPackages,
@@ -11,6 +12,7 @@ import {
 	generateA4BatchSheetHtml,
 	generateCode128Svg,
 	generateDataMatrixSvg,
+	generateEscPosSanpinLabelBinary,
 	generateKraftBatchRecords,
 	generateThermalStickerHtml,
 	generateTsplLabelCode,
@@ -523,6 +525,42 @@ describe("SanPiN 3.3686-21 Statutory Kraft Package Barcode & Expiry Studio Suite
 			assert.ok(zpl43.includes("^PQ1,0,1,Y"));
 			assert.ok(zpl43.includes("^XZ"));
 		});
+
+		it("encodes Russian Cyrillic strings into standard IBM CP866 byte arrays for legacy thermal printers", () => {
+			const textRu = "СТЕРИЛИЗАЦИЯ: САНПИН № 123";
+			const bytes = encodeStringToCp866(textRu);
+			assert.ok(bytes instanceof Uint8Array);
+			assert.equal(bytes.length, textRu.length);
+
+			// 'С' in CP866: 0x91
+			assert.equal(bytes[0], 0x91);
+			// 'Т' in CP866: 0x92
+			assert.equal(bytes[1], 0x92);
+			// '№' in CP866: 0xFC
+			assert.equal(bytes[21], 0xfc);
+		});
+
+		it("generates valid raw ESC/POS binary stream with CP866 code page and auto-cut", () => {
+			const binary = generateEscPosSanpinLabelBinary(sampleRecord, {
+				clinicName: "СТОМАТОЛОГИЯ DENTE",
+				cutPaper: true,
+			});
+			assert.ok(binary instanceof Uint8Array);
+			assert.ok(binary.length > 50);
+
+			// Check ESC @ init [0x1B, 0x40]
+			assert.equal(binary[0], 0x1b);
+			assert.equal(binary[1], 0x40);
+
+			// Check ESC t 17 (CP866) [0x1B, 0x74, 0x11]
+			assert.equal(binary[2], 0x1b);
+			assert.equal(binary[3], 0x74);
+			assert.equal(binary[4], 0x11);
+
+			// Check GS V 66 0 (Cut) at the end
+			const last4 = binary.slice(-4);
+			assert.deepEqual(Array.from(last4), [0x1d, 0x56, 0x42, 0x00]);
+		});
 	});
 
 	// ─────────────────────────────────────────────────────────────────────────
@@ -535,6 +573,8 @@ describe("SanPiN 3.3686-21 Statutory Kraft Package Barcode & Expiry Studio Suite
 			assert.equal(typeof generateThermalStickerHtml, "function");
 			assert.equal(typeof generateTsplLabelCode, "function");
 			assert.equal(typeof generateZplLabelCode, "function");
+			assert.equal(typeof encodeStringToCp866, "function");
+			assert.equal(typeof generateEscPosSanpinLabelBinary, "function");
 			assert.equal(typeof exportKraftBatchToCsv, "function");
 		});
 	});

@@ -570,6 +570,199 @@ export function generateA4BatchSheetHtml(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 5.1 DIRECT THERMAL PRINTER LANGUAGES (TSPL & ZPL II)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Generates raw TSPL (TSC Printer Language) command script for direct thermal printing
+ * Supported hardware: TSC TDP-225/TE200, Xprinter XP-365B/370B, Godex, Gprinter.
+ */
+export function generateTsplLabelCode(
+	record: KraftPackageRecord,
+	options: {
+		size?: "58x40" | "43x25";
+		clinicName?: string;
+		copies?: number;
+	} = {},
+): string {
+	const size = options.size || "58x40";
+	const clinicName = options.clinicName || "DENTE CLINIC";
+	const copies = options.copies || 1;
+	const cleanName = record.toolSetNameRu.replace(/["\r\n]/g, "").slice(0, 22);
+
+	if (size === "43x25") {
+		return [
+			`SIZE 43 mm, 25 mm`,
+			`GAP 2 mm, 0 mm`,
+			`DIRECTION 1`,
+			`CLS`,
+			`TEXT 15,10,"2",0,1,1,"STERILE SANPIN"`,
+			`TEXT 220,10,"2",0,1,1,"${record.autoclaveId}/#${record.cycleNumber}"`,
+			`DMATRIX 15,35,90,90,"${record.barcodeDataMatrixPayload}"`,
+			`TEXT 120,40,"2",0,1,1,"${cleanName.slice(0, 15)}"`,
+			`TEXT 120,65,"1",0,1,1,"SN: ${record.barcode128}"`,
+			`TEXT 120,85,"2",0,1,1,"PACK:${record.packDate}"`,
+			`TEXT 120,110,"2",0,1,1,"EXP: ${record.expDate}"`,
+			`PRINT 1,${copies}`,
+		].join("\r\n");
+	}
+
+	return [
+		`SIZE 58 mm, 40 mm`,
+		`GAP 3 mm, 0 mm`,
+		`DIRECTION 1`,
+		`CLS`,
+		`TEXT 20,15,"3",0,1,1,"STERILE - SANPIN 3.3686-21"`,
+		`TEXT 20,40,"2",0,1,1,"${clinicName.slice(0, 28)}"`,
+		`TEXT 340,15,"2",0,1,1,"${record.autoclaveId}/#${record.cycleNumber}"`,
+		`BAR 20,62,420,2`,
+		`DMATRIX 20,75,130,130,"${record.barcodeDataMatrixPayload}"`,
+		`TEXT 165,75,"3",0,1,1,"${cleanName}"`,
+		`TEXT 165,105,"2",0,1,1,"SN: ${record.barcode128}"`,
+		`TEXT 165,130,"2",0,1,1,"PACK: ${record.packDate}"`,
+		`TEXT 165,155,"3",0,1,1,"EXP:  ${record.expDate}"`,
+		`BAR 20,225,420,2`,
+		`TEXT 20,235,"2",0,1,1,"OPERATOR: ${record.operatorName.split(" ")[0]}  [ECD SIGN OK]"`,
+		`PRINT 1,${copies}`,
+	].join("\r\n");
+}
+
+/**
+ * Generates raw ZPL II (Zebra Programming Language) script for direct thermal printing
+ * Supported hardware: Zebra ZD410, ZD420, ZD220, ZT230, GK420d, GX430t.
+ */
+export function generateZplLabelCode(
+	record: KraftPackageRecord,
+	options: {
+		size?: "58x40" | "43x25";
+		clinicName?: string;
+		copies?: number;
+	} = {},
+): string {
+	const size = options.size || "58x40";
+	const clinicName = options.clinicName || "DENTE CLINIC";
+	const copies = options.copies || 1;
+	const cleanName = record.toolSetNameRu.replace(/[\^~]/g, "").slice(0, 22);
+
+	if (size === "43x25") {
+		return [
+			`^XA`,
+			`^PW344`,
+			`^LL200`,
+			`^FO15,10^A0N,20,20^FDSTERILE SANPIN^FS`,
+			`^FO220,10^A0N,18,18^FD${record.autoclaveId}/#${record.cycleNumber}^FS`,
+			`^FO15,35^BXN,5,200^FD${record.barcodeDataMatrixPayload}^FS`,
+			`^FO115,40^A0N,20,20^FD${cleanName.slice(0, 15)}^FS`,
+			`^FO115,65^A0N,16,16^FDSN: ${record.barcode128}^FS`,
+			`^FO115,85^A0N,18,18^FDPACK: ${record.packDate}^FS`,
+			`^FO115,110^A0N,20,20^FDEXP:  ${record.expDate}^FS`,
+			`^PQ${copies},0,1,Y`,
+			`^XZ`,
+		].join("\n");
+	}
+
+	return [
+		`^XA`,
+		`^PW464`,
+		`^LL320`,
+		`^FO20,15^A0N,22,22^FDSTERILE - SANPIN 3.3686-21^FS`,
+		`^FO20,40^A0N,18,18^FD${clinicName.slice(0, 28)}^FS`,
+		`^FO320,15^A0N,20,20^FD${record.autoclaveId}/#${record.cycleNumber}^FS`,
+		`^FO20,62^GB424,2,2^FS`,
+		`^FO20,75^BXN,7,200^FD${record.barcodeDataMatrixPayload}^FS`,
+		`^FO160,75^A0N,24,24^FD${cleanName}^FS`,
+		`^FO160,105^A0N,18,18^FDSN: ${record.barcode128}^FS`,
+		`^FO160,130^A0N,20,20^FDPACK: ${record.packDate}^FS`,
+		`^FO160,160^A0N,24,24^FDEXP:  ${record.expDate}^FS`,
+		`^FO20,230^GB424,2,2^FS`,
+		`^FO20,240^A0N,18,18^FDOPERATOR: ${record.operatorName.split(" ")[0]}  [ECD SIGN OK]^FS`,
+		`^PQ${copies},0,1,Y`,
+		`^XZ`,
+	].join("\n");
+}
+
+/**
+ * Encodes Unicode/UTF-8 string to standard IBM CP866 (DOS Cyrillic) byte array.
+ * Used for thermal receipt printers (Xprinter, POS-58/80, Epson ESC/POS, АТОЛ/Штрих).
+ */
+export function encodeStringToCp866(text: string): Uint8Array {
+	const bytes = new Uint8Array(text.length);
+	for (let i = 0; i < text.length; i++) {
+		const code = text.charCodeAt(i);
+		if (code <= 0x7f) {
+			bytes[i] = code;
+		} else if (code >= 0x0410 && code <= 0x043f) {
+			// 'А' (0x0410) .. 'п' (0x043F) -> 0x80 .. 0xAF
+			bytes[i] = code - 0x0410 + 0x80;
+		} else if (code >= 0x0440 && code <= 0x044f) {
+			// 'р' (0x0440) .. 'я' (0x044F) -> 0xE0 .. 0xEF
+			bytes[i] = code - 0x0440 + 0xe0;
+		} else if (code === 0x0401) {
+			// 'Ё' -> 0xF0
+			bytes[i] = 0xf0;
+		} else if (code === 0x0451) {
+			// 'ё' -> 0xF1
+			bytes[i] = 0xf1;
+		} else if (code === 0x2116) {
+			// '№' -> 0xFC (in CP866)
+			bytes[i] = 0xfc;
+		} else {
+			bytes[i] = 0x3f; // '?'
+		}
+	}
+	return bytes;
+}
+
+/**
+ * Generates raw ESC/POS binary command stream for SanPiN 3.3686-21 thermal label printing.
+ * Configures CP866 code table, bold text, and automated paper cut.
+ */
+export function generateEscPosSanpinLabelBinary(
+	record: KraftPackageRecord,
+	options: {
+		clinicName?: string;
+		cutPaper?: boolean;
+	} = {},
+): Uint8Array {
+	const clinicName = options.clinicName || "СТОМАТОЛОГИЯ DENTE";
+	const cutPaper = options.cutPaper !== false;
+
+	const textParts: string[] = [
+		`${clinicName}\n`,
+		`СТЕРИЛИЗАЦИЯ: САНПИН 3.3686-21\n`,
+		`--------------------------------\n`,
+		`НАБОР: ${record.toolSetNameRu}\n`,
+		`ШТРИХКОД: ${record.barcode128}\n`,
+		`АВТОКЛАВ: ${record.autoclaveId} (ЦИКЛ #${record.cycleNumber})\n`,
+		`ДАТА СТЕРИЛ.: ${record.packDate}\n`,
+		`ГОДЕН ДО:     ${record.expDate} (${record.daysLifespan} сут.)\n`,
+		`ОПЕРАТОР:     ${record.operatorName}\n`,
+		`--------------------------------\n`,
+		`ЭЦП ЦСО ПОДТВЕРЖДЕНА\n\n\n`,
+	];
+
+	const combinedText = textParts.join("");
+	const textBytes = encodeStringToCp866(combinedText);
+
+	const initHeader = new Uint8Array([
+		0x1b, 0x40, // ESC @ (Init)
+		0x1b, 0x74, 0x11, // ESC t 17 (CP866)
+	]);
+
+	const cutFooter = cutPaper
+		? new Uint8Array([0x1d, 0x56, 0x42, 0x00]) // GS V 'B' 0 (Feed and partial cut)
+		: new Uint8Array([0x0a, 0x0a]);
+
+	const totalLength = initHeader.length + textBytes.length + cutFooter.length;
+	const out = new Uint8Array(totalLength);
+	out.set(initHeader, 0);
+	out.set(textBytes, initHeader.length);
+	out.set(cutFooter, initHeader.length + textBytes.length);
+
+	return out;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 6. CSV EXPORT & STATISTICAL METRICS (RFC 4180 with UTF-8 BOM)
 // ─────────────────────────────────────────────────────────────────────────────
 
