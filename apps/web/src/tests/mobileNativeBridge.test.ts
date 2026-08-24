@@ -2,14 +2,20 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
 	authenticateBiometricStaff,
+	clearModalBackStack,
 	getDeviceFormFactor,
+	getModalBackStackDepth,
 	getMobileNativeApi,
 	getSafeAreaInsets,
 	getSecureToken,
+	handleHardwareBackAction,
+	initHardwareBackButtonListener,
 	isMobileApp,
 	isMobileSmartphone,
 	isTabletDevice,
 	parseGs1DataMatrix,
+	popModalBackHandler,
+	pushModalBackHandler,
 	removeSecureToken,
 	requestPushNotificationPermission,
 	saveSecureToken,
@@ -163,6 +169,54 @@ test("Mobile Android (.APK) & GS1 DataMatrix Verification Suite", async (t) => {
 		} finally {
 			(globalThis as any).window = original;
 		}
+	});
+
+	await t.test("Hardware Back Button LIFO Modal Stack intercepts back actions and closes top modal", () => {
+		clearModalBackStack();
+		assert.equal(getModalBackStackDepth(), 0);
+
+		// With empty stack, back action is not consumed
+		assert.equal(handleHardwareBackAction(), false);
+
+		const closedModals: string[] = [];
+
+		// Push Modal 1 (e.g. PatientCardModal)
+		const unsubModal1 = pushModalBackHandler("modal_patient_card", () => {
+			closedModals.push("modal_patient_card");
+			return true;
+		}, 10);
+
+		// Push Submodal 2 (e.g. SbpPaymentSheet on top)
+		const unsubModal2 = pushModalBackHandler("submodal_sbp_payment", () => {
+			closedModals.push("submodal_sbp_payment");
+			return true;
+		}, 20);
+
+		assert.equal(getModalBackStackDepth(), 2);
+
+		// First Back Action -> must close top Submodal 2
+		const action1Consumed = handleHardwareBackAction();
+		assert.equal(action1Consumed, true);
+		assert.deepEqual(closedModals, ["submodal_sbp_payment"]);
+		assert.equal(getModalBackStackDepth(), 1);
+
+		// Second Back Action -> must close Modal 1
+		const action2Consumed = handleHardwareBackAction();
+		assert.equal(action2Consumed, true);
+		assert.deepEqual(closedModals, ["submodal_sbp_payment", "modal_patient_card"]);
+		assert.equal(getModalBackStackDepth(), 0);
+
+		// Third Back Action -> stack is now empty, allows app exit/minimize
+		const action3Consumed = handleHardwareBackAction();
+		assert.equal(action3Consumed, false);
+
+		// Test explicit unsubscribe
+		const unsubModal3 = pushModalBackHandler("modal_temp", () => {
+			closedModals.push("modal_temp");
+		}, 10);
+		assert.equal(getModalBackStackDepth(), 1);
+		unsubModal3();
+		assert.equal(getModalBackStackDepth(), 0);
 	});
 });
 
