@@ -7,12 +7,14 @@ import type {
 } from "@dental/shared";
 import type { ChangeEvent } from "react";
 import { useCallback, useMemo, useState } from "react";
-import { Clock } from "lucide-react";
+import { Clock, Copy, MessageSquare } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { AppointmentQuickActions } from "./AppointmentQuickActions";
 import { WaitlistMatchesBlock } from "./WaitlistMatchesBlock";
 import { specialtyLabels } from "../../workspaceUiLabels";
+import { generateAppointmentWhatsAppMessage } from "./generateAppointmentWhatsAppMessage";
+import { openWhatsAppChat } from "../../store/telephonyStore";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
@@ -737,6 +739,35 @@ export function AppointmentCard(props: AppointmentCardProps) {
 					/>
 
 					<div className="appointment-card-footer flex flex-wrap justify-end gap-2 mt-2 pt-2 border-t border-[var(--line)]">
+						<button
+							className="secondary-button min-h-[44px] px-3.5 py-2 border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+							type="button"
+							onClick={(e) => {
+								e.stopPropagation();
+								const text = generateAppointmentWhatsAppMessage({
+									patientName: appointmentPatientName,
+									doctorName: appointmentDoctor?.fullName,
+									doctorSpecialty: appointmentDoctor?.role,
+									appointmentStartsAt: appointment.startsAt,
+									clinicName: dashboard?.clinicSettings?.profile?.clinicName,
+									clinicAddress: dashboard?.clinicSettings?.profile?.address,
+									clinicPhone: dashboard?.clinicSettings?.profile?.phone,
+									treatmentReason: appointment.reason,
+								});
+								if (appointmentPatient?.phone) {
+									openWhatsAppChat(appointmentPatient.phone, text);
+								} else if (typeof navigator !== "undefined" && navigator.clipboard) {
+									void navigator.clipboard.writeText(text);
+									showToast(`Текст напоминания для ${appointmentPatientName} скопирован в буфер`, "success");
+								}
+							}}
+							aria-label={`Напомнить в WhatsApp / СМС: ${appointmentPatientName}`}
+							title="1-Клик: Отправить или скопировать напоминание с реквизитами клиники и временем приема"
+						>
+							<MessageSquare size={14} className="text-emerald-600 dark:text-emerald-400" />
+							<span>Напомнить</span>
+						</button>
+
 						<button
 							className="secondary-button appointment-repeat-button min-h-[44px] px-3.5 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors text-xs font-semibold flex items-center justify-center cursor-pointer"
 							type="button"

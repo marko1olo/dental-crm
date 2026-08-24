@@ -5,6 +5,7 @@ import {
 	Check,
 	CheckCircle2,
 	Clock,
+	Copy,
 	MessageSquare,
 	PhoneCall,
 	UserCheck,
@@ -12,10 +13,12 @@ import {
 	XCircle,
 } from "lucide-react";
 import React, { useCallback } from "react";
+import { showToast } from "../GlobalToast";
 
 import {
 	generateAppointmentWhatsAppMessage,
 	buildWhatsAppUrl,
+	type AppointmentMessageType,
 } from "./generateAppointmentWhatsAppMessage";
 import { openWhatsAppChat } from "../../store/telephonyStore";
 
@@ -40,6 +43,7 @@ export interface AppointmentQuickActionsProps {
 	clinicAddress?: string | null | undefined;
 	clinicPhone?: string | null | undefined;
 	treatmentReason?: string | null | undefined;
+	cabinetName?: string | null | undefined;
 	appointmentHasOpenVisit?: boolean;
 	activeVisitLockedAppointmentStatuses?: Set<Appointment["status"]>;
 	onStatusChange: (
@@ -64,6 +68,7 @@ export function AppointmentQuickActions({
 	clinicAddress,
 	clinicPhone,
 	treatmentReason,
+	cabinetName,
 	appointmentHasOpenVisit = false,
 	activeVisitLockedAppointmentStatuses,
 	onStatusChange,
@@ -108,6 +113,75 @@ export function AppointmentQuickActions({
 			appointmentHasOpenVisit,
 			activeVisitLockedAppointmentStatuses,
 			onStatusChange,
+		],
+	);
+
+	const handleSendWhatsApp = useCallback(
+		(messageType: AppointmentMessageType = "reminder_24h", shiftedMinutes?: number) => {
+			if (!patientPhone || !startsAt) return;
+			const text = generateAppointmentWhatsAppMessage({
+				patientName,
+				doctorName: doctorName ?? null,
+				doctorSpecialty: doctorSpecialty ?? null,
+				appointmentStartsAt: startsAt,
+				clinicName: clinicName ?? null,
+				clinicAddress: clinicAddress ?? null,
+				clinicPhone: clinicPhone ?? null,
+				treatmentReason: treatmentReason ?? null,
+				cabinetName: cabinetName ?? null,
+				messageType,
+				shiftedMinutes,
+			});
+			openWhatsAppChat(patientPhone, text);
+			if (onWhatsAppConfirm) {
+				onWhatsAppConfirm();
+			}
+		},
+		[
+			patientPhone,
+			startsAt,
+			patientName,
+			doctorName,
+			doctorSpecialty,
+			clinicName,
+			clinicAddress,
+			clinicPhone,
+			treatmentReason,
+			cabinetName,
+			onWhatsAppConfirm,
+		],
+	);
+
+	const handleCopySmsReminder = useCallback(
+		(messageType: AppointmentMessageType = "reminder_24h") => {
+			if (!startsAt) return;
+			const text = generateAppointmentWhatsAppMessage({
+				patientName,
+				doctorName: doctorName ?? null,
+				doctorSpecialty: doctorSpecialty ?? null,
+				appointmentStartsAt: startsAt,
+				clinicName: clinicName ?? null,
+				clinicAddress: clinicAddress ?? null,
+				clinicPhone: clinicPhone ?? null,
+				treatmentReason: treatmentReason ?? null,
+				cabinetName: cabinetName ?? null,
+				messageType,
+			});
+			if (typeof navigator !== "undefined" && navigator.clipboard) {
+				void navigator.clipboard.writeText(text);
+				showToast(`Текст напоминания для ${patientName} скопирован в буфер обмена`, "success");
+			}
+		},
+		[
+			startsAt,
+			patientName,
+			doctorName,
+			doctorSpecialty,
+			clinicName,
+			clinicAddress,
+			clinicPhone,
+			treatmentReason,
+			cabinetName,
 		],
 	);
 
@@ -210,7 +284,7 @@ export function AppointmentQuickActions({
 			role="toolbar"
 			aria-label={`Быстрые действия по статусу: ${patientName}`}
 		>
-			<span className="text-[11px] font-semibold text-[var(--muted)] px-1 uppercase tracking-wider select-none hidden sm:inline shrink-0">
+			<span className="text-xs font-semibold text-[var(--muted)] px-1 uppercase tracking-wider select-none hidden sm:inline shrink-0">
 				Статус:
 			</span>
 			{actions.map((action) => {
@@ -256,38 +330,72 @@ export function AppointmentQuickActions({
 				);
 			})}
 
-			{/* 1-Click WhatsApp reminder / confirmation trigger */}
+			{/* 1-Click WhatsApp reminder / confirmation / time-shift trigger */}
 			{patientPhone && startsAt && (
-				<button
-					type="button"
-					onClick={(e) => {
-						e.stopPropagation();
-						const text = generateAppointmentWhatsAppMessage({
-							patientName,
-							doctorName: doctorName ?? null,
-							doctorSpecialty: doctorSpecialty ?? null,
-							appointmentStartsAt: startsAt,
-							clinicName: clinicName ?? null,
-							clinicAddress: clinicAddress ?? null,
-							clinicPhone: clinicPhone ?? null,
-							treatmentReason: treatmentReason ?? null,
-						});
-						openWhatsAppChat(patientPhone, text);
-						if (onWhatsAppConfirm) {
-							onWhatsAppConfirm();
-						}
-					}}
-					className="quick-action-pill min-h-[44px] px-3.5 py-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:outline-none select-none min-w-0"
-					title={`Отправить напоминание с памяткой в WhatsApp (${patientName})`}
-					aria-label={`WhatsApp напоминание: ${patientName}`}
-				>
-					<MessageSquare size={15} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
-					{showLabels && (
-						<span className="break-words leading-tight text-center">
-							{compact ? "WA" : "💬 WhatsApp"}
-						</span>
-					)}
-				</button>
+				<div className="relative inline-flex items-center">
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							handleSendWhatsApp("reminder_24h");
+						}}
+						className="quick-action-pill min-h-[44px] px-3.5 py-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:outline-none select-none min-w-0"
+						title={`Отправить напоминание за 24ч с памяткой в WhatsApp (${patientName})`}
+						aria-label={`WhatsApp напоминание: ${patientName}`}
+					>
+						<MessageSquare size={15} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+						{showLabels && (
+							<span className="break-words leading-tight text-center">
+								{compact ? "WA" : "💬 WA: 24ч"}
+							</span>
+						)}
+					</button>
+
+					{/* 1-Click Confirmation, Time-Shift & SMS Copy Quick Options */}
+					<div className="flex items-center gap-1 ml-1">
+						<button
+							type="button"
+							onClick={(e) => {
+								e.stopPropagation();
+								handleCopySmsReminder("reminder_24h");
+							}}
+							className="min-h-[44px] px-2.5 py-1.5 rounded-lg border border-teal-500/30 bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 text-xs font-bold transition-all cursor-pointer flex items-center gap-1 touch-manipulation"
+							title={`Скопировать текст напоминания (SMS/мессенджер) для ${patientName}`}
+							aria-label={`Скопировать SMS: ${patientName}`}
+						>
+							<Copy size={13} className="shrink-0 text-teal-500" />
+							<span>SMS</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={(e) => {
+								e.stopPropagation();
+								handleSendWhatsApp("confirmation");
+							}}
+							className="min-h-[44px] px-2.5 py-1.5 rounded-lg border border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20 text-violet-700 dark:text-violet-300 text-xs font-bold transition-all cursor-pointer flex items-center gap-1 touch-manipulation"
+							title={`Отправить подтверждение визита в WhatsApp (${patientName})`}
+							aria-label={`WhatsApp подтверждение: ${patientName}`}
+						>
+							<CheckCircle2 size={13} className="shrink-0 text-violet-500" />
+							<span>Подтвердить</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={(e) => {
+								e.stopPropagation();
+								handleSendWhatsApp("time_shift", 15);
+							}}
+							className="min-h-[44px] px-2.5 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-bold transition-all cursor-pointer flex items-center gap-1 touch-manipulation"
+							title={`Отправить уведомление о переносе времени (+15 мин) в WhatsApp (${patientName})`}
+							aria-label={`WhatsApp перенос: ${patientName}`}
+						>
+							<Clock size={13} className="shrink-0 text-amber-500" />
+							<span>Перенос</span>
+						</button>
+					</div>
+				</div>
 			)}
 		</div>
 	);

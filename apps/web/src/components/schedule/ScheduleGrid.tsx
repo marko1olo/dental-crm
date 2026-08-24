@@ -4,6 +4,7 @@ import {
 	CalendarCheck,
 	CheckCircle2,
 	Clock,
+	Copy,
 	MessageSquare,
 	PhoneCall,
 	Plus,
@@ -477,28 +478,56 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 															)}
 
 															{patObj?.phone && (
-																<button
-																	type="button"
-																	onClick={(e) => {
-																		e.stopPropagation();
-																		const text = generateAppointmentWhatsAppMessage({
-																			patientName: pName,
-																			doctorName: docObj?.fullName,
-																			doctorSpecialty: docObj?.role,
-																			appointmentStartsAt: a.startsAt,
-																			clinicName: dashboard.clinicSettings?.profile?.clinicName,
-																			clinicAddress: dashboard.clinicSettings?.profile?.address,
-																			clinicPhone: dashboard.clinicSettings?.profile?.phone,
-																			treatmentReason: a.reason,
-																		});
-																		openWhatsAppChat(patObj.phone!, text);
-																	}}
-																	className="p-2 ml-auto rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 min-h-[44px] min-w-[44px] flex items-center justify-center transition-all cursor-pointer"
-																	title={`Отправить WhatsApp напоминание (${pName})`}
-																	aria-label={`WhatsApp напоминание для ${pName}`}
-																>
-																	<MessageSquare size={16} />
-																</button>
+																<div className="flex items-center gap-1 ml-auto">
+																	<button
+																		type="button"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			const text = generateAppointmentWhatsAppMessage({
+																				patientName: pName,
+																				doctorName: docObj?.fullName,
+																				doctorSpecialty: docObj?.role,
+																				appointmentStartsAt: a.startsAt,
+																				clinicName: dashboard.clinicSettings?.profile?.clinicName,
+																				clinicAddress: dashboard.clinicSettings?.profile?.address,
+																				clinicPhone: dashboard.clinicSettings?.profile?.phone,
+																				treatmentReason: a.reason,
+																			});
+																			if (typeof navigator !== "undefined" && navigator.clipboard) {
+																				void navigator.clipboard.writeText(text);
+																				showToast(`Текст напоминания для ${pName} скопирован в буфер`, "success");
+																			}
+																		}}
+																		className="p-2 rounded-xl border border-teal-500/30 bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 min-h-[44px] min-w-[44px] flex items-center justify-center transition-all cursor-pointer"
+																		title={`Скопировать текст напоминания (SMS) для ${pName}`}
+																		aria-label={`Скопировать SMS напоминание для ${pName}`}
+																	>
+																		<Copy size={16} />
+																	</button>
+
+																	<button
+																		type="button"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			const text = generateAppointmentWhatsAppMessage({
+																				patientName: pName,
+																				doctorName: docObj?.fullName,
+																				doctorSpecialty: docObj?.role,
+																				appointmentStartsAt: a.startsAt,
+																				clinicName: dashboard.clinicSettings?.profile?.clinicName,
+																				clinicAddress: dashboard.clinicSettings?.profile?.address,
+																				clinicPhone: dashboard.clinicSettings?.profile?.phone,
+																				treatmentReason: a.reason,
+																			});
+																			openWhatsAppChat(patObj.phone!, text);
+																		}}
+																		className="p-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 min-h-[44px] min-w-[44px] flex items-center justify-center transition-all cursor-pointer"
+																		title={`Отправить WhatsApp напоминание (${pName})`}
+																		aria-label={`WhatsApp напоминание для ${pName}`}
+																	>
+																		<MessageSquare size={16} />
+																	</button>
+																</div>
 															)}
 														</div>
 													</div>
