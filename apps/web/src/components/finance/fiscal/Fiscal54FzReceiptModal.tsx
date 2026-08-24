@@ -877,70 +877,98 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 									</div>
 								</div>
 
-								{/* Быстрая касса: Расчет сдачи при оплате наличными */}
+								{/* Быстрая касса: Крупный расчет сдачи и кнопки купюр 52px при оплате наличными */}
 								{cashAmount > 0 && (
-									<div className="bg-emerald-50 dark:bg-emerald-950/30 p-4 rounded-2xl border border-emerald-200 dark:border-emerald-800 space-y-3">
-										<div className="flex items-center justify-between">
+									<div className="bg-emerald-50/80 dark:bg-emerald-950/40 p-4 rounded-2xl border-2 border-emerald-500/40 space-y-3.5 shadow-sm">
+										<div className="flex flex-wrap items-center justify-between gap-2">
 											<span className="text-xs font-extrabold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
 												<Coins className="w-4 h-4 text-emerald-600" />
-												Моментальный расчет сдачи
+												Моментальный расчет сдачи наличных
 											</span>
-											{summary.changeRub > 0 && (
-												<span className="text-xs font-mono font-black px-2.5 py-1 rounded-lg bg-emerald-600 text-white">
-													Сдача: {summary.changeRub.toLocaleString("ru-RU")} ₽
-												</span>
-											)}
+											<span className="text-xs text-slate-600 dark:text-slate-400">
+												К оплате налом: <strong className="font-mono text-slate-900 dark:text-slate-100">{cashAmount.toLocaleString("ru-RU")} ₽</strong>
+											</span>
 										</div>
 
-										<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
-											<div>
-												<label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-													Получено от пациента (рубли):
-												</label>
-												<input
-													type="number"
-													min={0}
-													step="1"
-													value={receivedCashRub || ""}
-													onChange={(e) => setReceivedCashRub(parseFloat(e.target.value) || 0)}
-													className="w-full px-3 py-2 text-base font-black font-mono bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-emerald-950 dark:text-emerald-200"
-													placeholder={`${cashAmount} ₽`}
-												/>
-											</div>
-
-											{/* Быстрые купюры */}
-											<div className="space-y-1">
-												<span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-													Быстрые купюры:
-												</span>
-												<div className="flex flex-wrap gap-1.5">
-													<button
-														type="button"
-														onClick={() => setReceivedCashRub(cashAmount)}
-														className="px-2 py-1 text-xs font-bold rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-slate-800 dark:text-slate-200 cursor-pointer"
-													>
-														Без сдачи
-													</button>
-													{cashPresets.map((preset) => (
-														<button
-															key={preset}
-															type="button"
-															onClick={() => setReceivedCashRub(preset)}
-															className="px-2 py-1 text-xs font-bold font-mono rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-slate-800 dark:text-slate-200 cursor-pointer"
-														>
-															{preset.toLocaleString("ru-RU")} ₽
-														</button>
-													))}
+										{/* Гигантская строка сдачи клиенту */}
+										{summary.changeRub > 0 ? (
+											<div className="bg-emerald-500/15 dark:bg-emerald-500/25 border-2 border-emerald-500/60 p-3.5 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xs animate-in zoom-in-95 duration-150">
+												<div className="flex items-center gap-2.5">
+													<div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-xs shrink-0">
+														₽
+													</div>
+													<div>
+														<span className="text-xs font-black uppercase tracking-wider text-emerald-900 dark:text-emerald-200 block">
+															Сдача к выдаче клиенту
+														</span>
+														<span className="text-xs text-emerald-700 dark:text-emerald-300">
+															Получено: <strong>{receivedCashRub.toLocaleString("ru-RU")} ₽</strong> · Чек: <strong>{cashAmount.toLocaleString("ru-RU")} ₽</strong>
+														</span>
+													</div>
+												</div>
+												<div className="text-[22px] font-black text-emerald-700 dark:text-emerald-300 font-mono tracking-wide px-4 py-1.5 rounded-xl bg-emerald-500/20 dark:bg-emerald-500/30 border border-emerald-500/50 shadow-xs">
+													СДАЧА КЛИЕНТУ: {summary.changeRub.toLocaleString("ru-RU")} ₽
 												</div>
 											</div>
-										</div>
-
-										{summary.isCashShortage && (
-											<div className="text-xs font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-1">
-												<AlertTriangle className="w-3.5 h-3.5" />
+										) : summary.isCashShortage ? (
+											<div className="p-3 rounded-xl bg-amber-500/15 border border-amber-500/40 text-xs font-bold text-amber-800 dark:text-amber-200 flex items-center gap-2">
+												<AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
 												Внесенной суммы не хватает (недобор: {summary.cashShortageRub.toLocaleString("ru-RU")} ₽)
 											</div>
-										)}
+										) : null}
+
+										<div>
+											<label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+												Получено от пациента наличными (рубли):
+											</label>
+											<input
+												type="number"
+												min={0}
+												step="1"
+												value={receivedCashRub || ""}
+												onChange={(e) => setReceivedCashRub(parseFloat(e.target.value) || 0)}
+												className="w-full px-3.5 py-2.5 text-lg font-black font-mono bg-white dark:bg-slate-900 border-2 border-emerald-400 dark:border-emerald-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-emerald-950 dark:text-emerald-100"
+												placeholder={`${cashAmount} ₽`}
+											/>
+										</div>
+
+										{/* Крупные кнопки быстрого выбора купюр: [1 000 ₽], [2 000 ₽], [5 000 ₽], [Без сдачи] высотой 52px */}
+										<div className="space-y-1.5">
+											<span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+												Быстрый выбор купюр (высота 52px):
+											</span>
+											<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+												<button
+													type="button"
+													onClick={() => setReceivedCashRub(cashAmount)}
+													className="h-[52px] min-h-[52px] px-3 text-xs sm:text-sm font-black rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-800 dark:text-slate-100 transition-all active:scale-95 cursor-pointer flex items-center justify-center shadow-xs"
+													title="Внесена точная сумма без сдачи"
+												>
+													Без сдачи
+												</button>
+												<button
+													type="button"
+													onClick={() => setReceivedCashRub(1000)}
+													className="h-[52px] min-h-[52px] px-3 text-sm sm:text-base font-black font-mono rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-800 dark:text-slate-100 transition-all active:scale-95 cursor-pointer flex items-center justify-center shadow-xs"
+												>
+													1 000 ₽
+												</button>
+												<button
+													type="button"
+													onClick={() => setReceivedCashRub(2000)}
+													className="h-[52px] min-h-[52px] px-3 text-sm sm:text-base font-black font-mono rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-800 dark:text-slate-100 transition-all active:scale-95 cursor-pointer flex items-center justify-center shadow-xs"
+												>
+													2 000 ₽
+												</button>
+												<button
+													type="button"
+													onClick={() => setReceivedCashRub(5000)}
+													className="h-[52px] min-h-[52px] px-3 text-sm sm:text-base font-black font-mono rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-800 dark:text-slate-100 transition-all active:scale-95 cursor-pointer flex items-center justify-center shadow-xs"
+												>
+													5 000 ₽
+												</button>
+											</div>
+										</div>
 									</div>
 								)}
 

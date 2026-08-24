@@ -27,7 +27,9 @@ import {
 	calculateBackoffDelay,
 	clearSyncedOfflineMutations,
 	CLINICAL_CACHE_STORE_NAME,
+	clinicalDraftAutosaver,
 	deleteForm043Draft,
+	deleteOdontogramDraft,
 	deleteOfflineDraft,
 	deleteOfflineMutation,
 	deleteVisitDraft,
@@ -39,6 +41,7 @@ import {
 	getPendingOfflineMutations,
 	listOfflineDrafts,
 	loadForm043Draft,
+	loadOdontogramDraft,
 	loadOfflineDraft,
 	loadVisitDraft,
 	mapToSyncAction,
@@ -51,19 +54,36 @@ import {
 	openOfflineOutboxDb,
 	resetOfflineDbConnection,
 	saveForm043Draft,
+	saveOdontogramDraft,
 	saveOfflineDraft,
 	saveVisitDraft,
+	scheduleForm043Autosave,
+	scheduleOdontogramAutosave,
 	updateOfflineMutationStatus,
+	withIdbTransactionRetry,
+	formatBytesHuman,
+	getStorageEstimate,
+	purgeSyncedDraftsAndOldCache,
 } from "../index";
 import {
 	createLanFailoverFetch,
 	DEFAULT_LAN_BEACON_PORT,
 	discoverLocalClinicServer,
 	getActiveApiBaseUrl,
+	getBatteryState,
+	HEARTBEAT_INTERVAL_ACTIVE_MS,
+	HEARTBEAT_INTERVAL_IDLE_MS,
+	HEARTBEAT_INTERVAL_LOW_BATTERY_MS,
+	lanHeartbeatManager,
 	resetApiToCloud,
 	setActiveApiBaseUrl,
 	switchApiToLocalLanServer,
 } from "../../lanDiscovery/lanServerDiscovery";
+import {
+	formatHumanStatusText,
+	formatRttLabel,
+	getRttQuality,
+} from "../../../utils/networkConnectivity";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Isolated In-Memory IndexedDB Mock for High-Throughput Stress Testing
@@ -1691,6 +1711,652 @@ describe("Offline-First & Multi-Level Sync Engine: Industrial Stress & Chaos Sui
 		const finalPending = await getPendingOfflineMutations({ organizationId: orgId });
 		assert.strictEqual(finalPending.length, 0);
 	});
+
+	// ── 19. Browser Visibility & Focus Lifecycle Auto-Drain Handlers ─────────
+	test("STRESS 19: Browser visibilitychange & focus event handlers trigger automatic immediate outbox drain", async () => {
+		const orgId = "org-visibility-test-19";
+
+		// 1. Enqueue 3 mutations while tab was hidden
+		await enqueueOfflineMutation({
+			entityType: "DIARY_043_DRAFT",
+			entityId: "visit-vis-1",
+			payload: { anamnesis: "Запись 1 во фоновой вкладке" },
+			organizationId: orgId,
+		});
+		await enqueueOfflineMutation({
+			entityType: "ODONTOGRAM_STATUS",
+			entityId: "visit-vis-2",
+			payload: { toothNumber: 11, status: "healthy" },
+			organizationId: orgId,
+		});
+		await enqueueOfflineMutation({
+			entityType: "DOCUMENT_DRAFT",
+			entityId: "doc-vis-3",
+			payload: { docName: "Согласие" },
+			organizationId: orgId,
+		});
+
+		const pendingBefore = await getPendingOfflineMutations({ organizationId: orgId });
+		assert.strictEqual(pendingBefore.length, 3);
+
+		// 2. Setup mock fetch for drain
+		let drainExecuted = false;
+		const mockGatewayFetch = async (
+			_url: string | URL | Request,
+			init?: RequestInit,
+		): Promise<Response> => {
+			drainExecuted = true;
+			const body = JSON.parse(String(init?.body || "{}"));
+			const results = body.mutations.map((m: { mutationId: string; idempotencyKey: string }) => ({
+				mutationId: m.mutationId,
+				idempotencyKey: m.idempotencyKey,
+				status: "applied",
+				entityKind: "visit_diary",
+				entityId: "visit-vis",
+				appliedAt: new Date().toISOString(),
+			}));
+
+			return new Response(
+				JSON.stringify({
+					syncBatchId: body.syncBatchId,
+					processedCount: results.length,
+					appliedCount: results.length,
+					duplicateCount: 0,
+					mergedCount: 0,
+					rejectedCount: 0,
+					results,
+					serverTime: new Date().toISOString(),
+				}),
+				{ status: 200, headers: { "Content-Type": "application/json" } },
+			);
+		};
+
+		// 3. Setup document and window event listeners via lifecycle helper
+		const documentListeners = new Map<string, Function>();
+		const windowListeners = new Map<string, Function>();
+
+		const mockDoc = {
+			visibilityState: "visible",
+			addEventListener: (event: string, fn: Function) => {
+				documentListeners.set(event, fn);
+			},
+			removeEventListener: (event: string) => {
+				documentListeners.delete(event);
+			},
+		};
+
+		const prevDoc = (globalThis as any).document;
+		(globalThis as any).document = mockDoc;
+
+		const mockWin = {
+			...(globalThis as any).window,
+			addEventListener: (event: string, fn: Function) => {
+				windowListeners.set(event, fn);
+			},
+			removeEventListener: (event: string) => {
+				windowListeners.delete(event);
+			},
+		};
+		(globalThis as any).window = mockWin;
+
+		const prevFetch = globalThis.fetch;
+		globalThis.fetch = mockGatewayFetch as unknown as typeof fetch;
+
+		try {
+			offlineSyncService.cleanupBrowserLifecycleListeners();
+			offlineSyncService.initBrowserLifecycleListeners();
+
+			assert.ok(documentListeners.has("visibilitychange"), "Must register visibilitychange listener");
+			assert.ok(windowListeners.has("focus"), "Must register focus listener");
+			assert.ok(windowListeners.has("online"), "Must register online listener");
+
+			// 4. Simulate user switching back to CRM tab (visibilitychange -> visible)
+			mockDoc.visibilityState = "visible";
+			const visHandler = documentListeners.get("visibilitychange");
+			assert.ok(visHandler);
+			visHandler();
+
+			// Wait for async drain microtasks
+			const deadline = Date.now() + 3000;
+			while (!drainExecuted && Date.now() < deadline) {
+				await new Promise((resolve) => setTimeout(resolve, 50));
+			}
+
+			assert.strictEqual(drainExecuted, true, "Drain must be automatically executed upon visibilitychange");
+
+			const pendingAfter = await getPendingOfflineMutations({ organizationId: orgId });
+			assert.strictEqual(pendingAfter.length, 0, "All 3 pending mutations must be drained upon visibility return");
+		} finally {
+			offlineSyncService.cleanupBrowserLifecycleListeners();
+			(globalThis as any).document = prevDoc;
+			globalThis.fetch = prevFetch;
+		}
+	});
+
+	// ── 20. Rapid Double-Click & Burst Deduplication via Payload SHA-256 ────
+	test("STRESS 20: Rapid double-click on save button deduplicates identical mutations via SHA-256 payloadHash", async () => {
+		const orgId = "org-dedup-test-20";
+		const patientId = "patient-double-click-20";
+
+		const identicalPayload = {
+			anamnesis: "Пациент обратился с острой болью в зубе 46",
+			statusLocalis: "Кариозная полость на жевательной поверхности",
+			diagnosis: "К02.1 Кариес дентина",
+			treatmentDone: "Препарирование, медобработка, пломба Estelite Asteria A3",
+		};
+
+		// Simulate doctor accidentally double-clicking or rapid clicking 5 times in 50ms
+		const m1 = await enqueueOfflineMutation({
+			entityType: "DIARY_043_DRAFT",
+			entityId: patientId,
+			payload: identicalPayload,
+			organizationId: orgId,
+		});
+
+		const m2 = await enqueueOfflineMutation({
+			entityType: "DIARY_043_DRAFT",
+			entityId: patientId,
+			payload: identicalPayload,
+			organizationId: orgId,
+		});
+
+		const m3 = await enqueueOfflineMutation({
+			entityType: "DIARY_043_DRAFT",
+			entityId: patientId,
+			payload: identicalPayload,
+			organizationId: orgId,
+		});
+
+		// All 3 rapid calls must resolve to the EXACT same mutation without duplicate queue rows
+		assert.strictEqual(m1.mutationId, m2.mutationId, "Second click must deduplicate to the first mutationId");
+		assert.strictEqual(m1.mutationId, m3.mutationId, "Third click must deduplicate to the first mutationId");
+		assert.strictEqual(m1.payloadHash, m2.payloadHash, "Payload hashes must be byte-for-byte identical");
+
+		const pending = await getPendingOfflineMutations({ organizationId: orgId });
+		assert.strictEqual(pending.length, 1, "Queue must contain exactly 1 mutation, 0 duplicate ghost rows");
+
+		// If payload changes, new mutation must be enqueued
+		const mModified = await enqueueOfflineMutation({
+			entityType: "DIARY_043_DRAFT",
+			entityId: patientId,
+			payload: { ...identicalPayload, diagnosis: "K04.0 Пульпит начальный" },
+			organizationId: orgId,
+		});
+
+		assert.notStrictEqual(mModified.mutationId, m1.mutationId, "Modified payload must create a distinct mutation");
+		const pendingAfterMod = await getPendingOfflineMutations({ organizationId: orgId });
+		assert.strictEqual(pendingAfterMod.length, 2, "Outbox now contains 2 distinct versions");
+
+		// Clean up
+		await updateOfflineMutationStatus(m1.mutationId, "synced");
+		await updateOfflineMutationStatus(mModified.mutationId, "synced");
+		await clearSyncedOfflineMutations();
+	});
+
+	// ── 21. IndexedDB QuotaExceededError Multi-Tier Failover & Zero Loss ─────
+	test("STRESS 21: IndexedDB QuotaExceededError seamlessly falls back to chunked LocalStorage & in-memory buffer with 0% data loss", async () => {
+		const orgId = "org-quota-test-21";
+		const patientId = "patient-quota-exhaustion-21";
+
+		// 1. Prepare heavy clinical data (Form 043/u protocol + 32 teeth odontogram)
+		const heavyClinicalDiary = {
+			anamnesis: "Пациент обратился для тотальной реабилитации".repeat(200),
+			statusLocalis: "Множественный кариес, пульпит, стираемость зубов".repeat(200),
+			diagnosis: "K02.1, K04.0, K03.0 Тотальное восстановление",
+			treatmentDone: "Эндодонтия 16, 17, 26, 27, ортопедические коронки E.max".repeat(200),
+		};
+
+		const heavyOdontogramState = Array.from({ length: 32 }, (_, i) => ({
+			toothNumber: 11 + i,
+			state: "Caries",
+			surfaces: ["MOD", "O", "V"],
+			clinicalNotes: `Зуб ${11 + i} препарирован под коронку`.repeat(50),
+		}));
+
+		// 2. Simulate complete IndexedDB QuotaExceededError breakdown
+		const prevIndexedDb = (globalThis as any).indexedDB;
+		(globalThis as any).indexedDB = {
+			open: () => {
+				const req = new EventTarget() as any;
+				setTimeout(() => {
+					req.error = new DOMException("The quota has been exceeded.", "QuotaExceededError");
+					if (typeof req.onerror === "function") req.onerror(new Event("error"));
+				}, 10);
+				return req;
+			},
+		};
+
+		resetOfflineDbConnection();
+
+		try {
+			// 3. Save Form 043/u and Odontogram drafts under total IDB quota lockout
+			const savedDiaryDraft = await saveForm043Draft(patientId, heavyClinicalDiary, orgId);
+			assert.ok(savedDiaryDraft, "Diary draft must successfully save despite IDB quota error");
+
+			const savedOdontoDraft = await saveOdontogramDraft(patientId, heavyOdontogramState, orgId);
+			assert.ok(savedOdontoDraft, "Odontogram draft must successfully save despite IDB quota error");
+
+			// 4. Enqueue mutation under total IDB quota lockout
+			const savedMutation = await enqueueOfflineMutation({
+				entityType: "DIARY_043_DRAFT",
+				entityId: patientId,
+				payload: heavyClinicalDiary,
+				organizationId: orgId,
+			});
+			assert.ok(savedMutation, "Mutation must successfully enqueue despite IDB quota error");
+
+			// 5. Verify 100% loss-free load of both clinical drafts
+			const loadedDiary = await loadForm043Draft(patientId);
+			assert.ok(loadedDiary, "Form 043/u draft must be seamlessly loaded from fallback tiers");
+			assert.strictEqual(
+				(loadedDiary.data as any).treatmentDone,
+				heavyClinicalDiary.treatmentDone,
+				"Form 043/u protocol text must match byte-for-byte with zero loss",
+			);
+
+			const loadedOdonto = await loadOdontogramDraft(patientId);
+			assert.ok(loadedOdonto, "Odontogram draft must be seamlessly loaded from fallback tiers");
+			assert.strictEqual(
+				(loadedOdonto.data as any[]).length,
+				32,
+				"All 32 teeth odontogram states must be preserved intact",
+			);
+
+			// 6. Clean up
+			await deleteForm043Draft(patientId);
+			await deleteOdontogramDraft(patientId);
+			const purgedDiary = await loadForm043Draft(patientId);
+			assert.strictEqual(purgedDiary, null, "Draft must be cleaned up properly after deletion");
+		} finally {
+			(globalThis as any).indexedDB = prevIndexedDb;
+			resetOfflineDbConnection();
+		}
+	});
+
+	// ── 22. Low Battery Power-Saving Mode & Instant Interaction ───────────────
+	test("STRESS 22: Low battery (<= 15% discharging) switches LAN heartbeats to ultra-quiet (120s) while keeping instant UI response", async () => {
+		// 1. Mock Battery Manager with low battery (10%, discharging)
+		const mockBattery = {
+			level: 0.1, // 10%
+			charging: false,
+			chargingTime: Infinity,
+			dischargingTime: 1800,
+			addEventListener: (_event: string, _fn: () => void) => {},
+			removeEventListener: (_event: string, _fn: () => void) => {},
+		};
+
+		const hadNav = typeof globalThis.navigator !== "undefined";
+		if (!hadNav) {
+			(globalThis as any).navigator = {};
+		}
+
+		Object.defineProperty(globalThis.navigator, "getBattery", {
+			value: async () => mockBattery,
+			configurable: true,
+			writable: true,
+		});
+
+		try {
+			// Check battery helper in offlineSyncService
+			const isSaverActive = await offlineSyncService.isBatterySaverActive();
+			assert.strictEqual(isSaverActive, true, "Battery saver must be active when discharging at 10%");
+
+			// Check heartbeat manager switching to 120,000 ms (120s)
+			await lanHeartbeatManager.checkBatteryStatus();
+			assert.strictEqual(
+				lanHeartbeatManager.getInterval(),
+				HEARTBEAT_INTERVAL_LOW_BATTERY_MS,
+				"Heartbeat manager must switch to 120s ultra-quiet interval on low battery",
+			);
+			assert.strictEqual(
+				lanHeartbeatManager.getState().isLowBatteryDischarging,
+				true,
+				"State must reflect low battery discharging status",
+			);
+
+			// If device is plugged in (charging = true)
+			mockBattery.charging = true;
+			await lanHeartbeatManager.checkBatteryStatus();
+			assert.strictEqual(
+				lanHeartbeatManager.getInterval(),
+				HEARTBEAT_INTERVAL_IDLE_MS,
+				"Heartbeat manager must restore standard 45s interval when charging",
+			);
+
+			// If WAN outage occurs during low battery, fast active discovery (4s) must take priority
+			mockBattery.charging = false;
+			await lanHeartbeatManager.checkBatteryStatus();
+			lanHeartbeatManager.setCloudReachable(false);
+			assert.strictEqual(
+				lanHeartbeatManager.getInterval(),
+				HEARTBEAT_INTERVAL_ACTIVE_MS,
+				"WAN outage must override battery saver with 4s active discovery so doctor is not stalled",
+			);
+
+			// Restore cloud
+			lanHeartbeatManager.setCloudReachable(true);
+			assert.strictEqual(
+				lanHeartbeatManager.getInterval(),
+				HEARTBEAT_INTERVAL_LOW_BATTERY_MS,
+				"Heartbeat manager must return to 120s ultra-quiet once cloud is restored on low battery",
+			);
+		} finally {
+			try {
+				delete (globalThis.navigator as any).getBattery;
+			} catch {}
+			lanHeartbeatManager.setLowBatteryState(false);
+			lanHeartbeatManager.setCloudReachable(true);
+		}
+	});
+
+	// ── 23. 3-Second Autosave Debounce & Crash Resilience ───────────────────
+	test("STRESS 23: 3-second debounced clinical draft autosave coalesces keystrokes and survives simulated sudden browser crash", async () => {
+		const patientId = "patient-autosave-test-23";
+		const orgId = "org-autosave-23";
+
+		// 1. Simulate doctor typing rapidly into Form 043/u SOAP anamnesis field (10 keystrokes in 200ms)
+		for (let i = 1; i <= 10; i++) {
+			void scheduleForm043Autosave(
+				patientId,
+				{
+					anamnesis: `Жалобы на боли при накусывании (набор текста... символ ${i})`,
+					diagnosis: "K04.0 Пульпит",
+				},
+				orgId,
+				100, // Shortened to 100ms for test execution speed
+			);
+		}
+
+		assert.strictEqual(
+			clinicalDraftAutosaver.isPending(`dente_form043_draft_${patientId}`),
+			true,
+			"Autosave must be in pending state while doctor is actively typing",
+		);
+
+		// Wait for debounce timer to fire
+		await new Promise((resolve) => setTimeout(resolve, 150));
+
+		assert.strictEqual(
+			clinicalDraftAutosaver.isPending(`dente_form043_draft_${patientId}`),
+			false,
+			"Autosave timer must have completed and cleared pending state",
+		);
+
+		// Verify persisted draft has the latest keystroke version
+		const loadedDraft = await loadForm043Draft(patientId);
+		assert.ok(loadedDraft, "Draft must be persisted on disk");
+		assert.strictEqual(
+			(loadedDraft.data as any).anamnesis,
+			"Жалобы на боли при накусывании (набор текста... символ 10)",
+			"Persisted draft must contain the exact latest text version",
+		);
+
+		// 2. Simulate abrupt browser close / tab switch while typing — emergency flush
+		void scheduleOdontogramAutosave(
+			patientId,
+			[{ toothNumber: 36, state: "Caries", surfaces: ["MOD"] }],
+			orgId,
+			5000, // Long debounce (5s)
+		);
+
+		assert.strictEqual(
+			clinicalDraftAutosaver.isPending(`dente_odontogram_draft_${patientId}`),
+			true,
+			"Odontogram autosave must be pending",
+		);
+
+		// Emergency flush (e.g. beforeunload / visibilitychange hidden)
+		const flushedCount = await clinicalDraftAutosaver.flushAll();
+		assert.strictEqual(flushedCount, 1, "Emergency flush must save the pending odontogram draft immediately");
+		assert.strictEqual(clinicalDraftAutosaver.isPending(`dente_odontogram_draft_${patientId}`), false);
+
+		const loadedOdonto = await loadOdontogramDraft(patientId);
+		assert.ok(loadedOdonto, "Odontogram draft must be safely on disk before unload");
+		assert.strictEqual((loadedOdonto.data as any[])[0].toothNumber, 36);
+
+		// Clean up
+		await deleteForm043Draft(patientId);
+		await deleteOdontogramDraft(patientId);
+	});
+
+	// ── 24. Network RTT Micro-Indicator & Color-Coded Latency Tiers ──────────
+	test("STRESS 24: Network RTT micro-indicator accurately measures and grades latency (<=100ms green, 100..400ms yellow, >400ms red, offline)", async () => {
+		// 1. Verify exact threshold quality boundaries
+		assert.strictEqual(getRttQuality(5, true), "good", "5ms must be graded good (green)");
+		assert.strictEqual(getRttQuality(100, true), "good", "100ms must be graded good (green)");
+		assert.strictEqual(getRttQuality(101, true), "moderate", "101ms must be graded moderate (yellow)");
+		assert.strictEqual(getRttQuality(400, true), "moderate", "400ms must be graded moderate (yellow)");
+		assert.strictEqual(getRttQuality(401, true), "poor", "401ms must be graded poor (red)");
+		assert.strictEqual(getRttQuality(null, false), "offline", "null RTT when offline must be graded offline (red)");
+
+		// 2. Verify micro-indicator text formatting
+		assert.strictEqual(formatRttLabel("cloud_online", 15), "Облако (15 мс)");
+		assert.strictEqual(formatRttLabel("lan_online", 2), "Локальный Wi-Fi (2 мс)");
+		assert.strictEqual(formatRttLabel("offline", null), "Офлайн (0 мс)");
+		assert.strictEqual(formatRttLabel("offline", 0), "Офлайн (0 мс)");
+	});
+
+	// ── 25. IndexedDB Transaction Timeout & Inactivity Auto-Recovery ─────────
+	test("STRESS 25: withIdbTransactionRetry recovers seamlessly from simulated TransactionInactiveError and TimeoutError with exponential backoff", async () => {
+		let attempts = 0;
+
+		// 1. Simulate 2 transient TransactionInactiveError failures before succeeding on 3rd attempt
+		const result = await withIdbTransactionRetry(
+			async (_db) => {
+				attempts++;
+				if (attempts < 3) {
+					const error = new Error("The transaction is not active");
+					error.name = "TransactionInactiveError";
+					throw error;
+				}
+				return `success_after_${attempts}_attempts`;
+			},
+			3,
+			10, // Fast 10ms backoff for test suite
+		);
+
+		assert.strictEqual(attempts, 3, "Operation must have been retried exactly 3 times");
+		assert.strictEqual(result, "success_after_3_attempts");
+
+		// 2. Simulate TimeoutError recovery
+		let timeoutAttempts = 0;
+		const timeoutResult = await withIdbTransactionRetry(
+			async (_db) => {
+				timeoutAttempts++;
+				if (timeoutAttempts < 2) {
+					const error = new Error("IndexedDB transaction request timed out");
+					error.name = "TimeoutError";
+					throw error;
+				}
+				return "timeout_recovered";
+			},
+			3,
+			10,
+		);
+
+		assert.strictEqual(timeoutAttempts, 2, "TimeoutError must be retried and recovered");
+		assert.strictEqual(timeoutResult, "timeout_recovered");
+	});
+
+	// ── 26. IndexedDB Schema Migration Without Data Loss (Store & Index Upgrades) ──
+	test("STRESS 26: onupgradeneeded safely adds object stores and indexes during schema version bumps without wiping existing offline mutations and clinical drafts", async () => {
+		const orgId = "org-schema-migration-26";
+		const patientId = "patient-mig-26";
+
+		// 1. Write mutations and drafts before schema check
+		for (let i = 1; i <= 10; i++) {
+			await enqueueOfflineMutation({
+				entityType: "TREATMENT_PLAN_DRAFT",
+				entityId: `plan_${patientId}_${i}`,
+				action: "create",
+				payload: {
+					title: `План лечения ${i} (до апгрейда схемы)`,
+					costRub: i * 15000,
+				},
+				organizationId: orgId,
+			});
+		}
+
+		await saveOdontogramDraft(
+			patientId,
+			[{ toothNumber: 11, state: "Caries", surfaces: ["M"] }],
+			orgId,
+		);
+
+		// 2. Re-open DB to trigger onupgradeneeded safely
+		resetOfflineDbConnection();
+		const db = await openOfflineOutboxDb();
+
+		assert.ok(db, "Database handle must be open");
+		assert.ok(db.objectStoreNames.contains(MUTATIONS_STORE_NAME), "Mutations store must be present");
+		assert.ok(db.objectStoreNames.contains(DRAFTS_STORE_NAME), "Drafts store must be present");
+		assert.ok(db.objectStoreNames.contains(CLINICAL_CACHE_STORE_NAME), "Clinical cache store must be present");
+
+		// 3. Verify that 100% of mutations and drafts survived without data loss
+		const pendingList = await getPendingOfflineMutations({ organizationId: orgId });
+		assert.strictEqual(pendingList.length, 10, "All 10 treatment plan mutations must be preserved");
+
+		const loadedOdonto = await loadOdontogramDraft<{ toothNumber: number; state: string }[]>(patientId);
+		assert.ok(loadedOdonto, "Odontogram draft must be preserved after schema upgrade");
+		assert.ok(loadedOdonto.data && loadedOdonto.data.length > 0);
+		const firstItem = loadedOdonto.data[0];
+		assert.ok(firstItem);
+		assert.strictEqual(firstItem.toothNumber, 11);
+
+		// 4. Clean up
+		for (const mut of pendingList) {
+			await updateOfflineMutationStatus(mut.mutationId, "synced");
+		}
+		await deleteOdontogramDraft(patientId);
+
+		const remaining = await getPendingOfflineMutations({ organizationId: orgId });
+		assert.strictEqual(remaining.length, 0);
+	});
+
+	// ── 27. Disk Storage Quota Monitoring, Human Network Status & 1-Click Cache Purge ──
+	test("STRESS 27: Storage estimate monitoring accurately measures quota, formats clear human labels, and 1-click purges synced items", async () => {
+		const orgId = "org-storage-monitor-27";
+		const patientId = "patient-storage-27";
+
+		// 1. Human network status formatting verification
+		assert.strictEqual(
+			formatHumanStatusText("cloud_online", 15),
+			"Связь отличная (Облако онлайн)",
+		);
+		assert.strictEqual(
+			formatHumanStatusText("cloud_online", 250),
+			"Связь стабильная (Облако онлайн)",
+		);
+		assert.strictEqual(
+			formatHumanStatusText("cloud_online", 600),
+			"Медленный интернет (Облако онлайн)",
+		);
+		assert.strictEqual(
+			formatHumanStatusText("lan_online", 2),
+			"Работаем по локальной сети клиники (Wi-Fi)",
+		);
+		assert.strictEqual(
+			formatHumanStatusText("offline", null),
+			"Нет интернета. Все записи сохраняются на этот компьютер, ничего не пропадет!",
+		);
+
+		// 2. Byte formatting helper verification
+		assert.strictEqual(formatBytesHuman(0), "0 Б");
+		assert.strictEqual(formatBytesHuman(1024), "1.0 КБ");
+		assert.strictEqual(formatBytesHuman(10 * 1024 * 1024), "10 МБ");
+		assert.strictEqual(formatBytesHuman(45 * 1024 * 1024 * 1024), "45 ГБ");
+
+		// 3. Storage estimate verification with mock navigator.storage
+		const prevStorage = (globalThis.navigator as any)?.storage;
+		Object.defineProperty(globalThis.navigator, "storage", {
+			value: {
+				estimate: async () => ({
+					usage: 2.5 * 1024 * 1024 * 1024, // 2.5 GB
+					quota: 50 * 1024 * 1024 * 1024, // 50 GB
+				}),
+			},
+			configurable: true,
+			writable: true,
+		});
+
+		try {
+			const est = await getStorageEstimate();
+			assert.strictEqual(est.percentUsed, 5, "2.5 GB / 50 GB = 5% usage");
+			assert.strictEqual(est.isWarning, false, "5% should not trigger storage warning");
+			assert.ok(est.freeFormatted.includes("ГБ"));
+
+			// 4. Test warning state (> 80%)
+			Object.defineProperty(globalThis.navigator, "storage", {
+				value: {
+					estimate: async () => ({
+						usage: 42 * 1024 * 1024 * 1024, // 42 GB
+						quota: 50 * 1024 * 1024 * 1024, // 50 GB
+					}),
+				},
+				configurable: true,
+				writable: true,
+			});
+
+			const warningEst = await getStorageEstimate();
+			assert.strictEqual(warningEst.percentUsed, 84);
+			assert.strictEqual(warningEst.isWarning, true, "84% must trigger storage warning");
+
+			// 5. Enqueue synced and pending mutations, then test 1-click purge
+			await enqueueOfflineMutation({
+				entityType: "payment",
+				entityId: `pay_${patientId}_1`,
+				action: "create",
+				payload: { amountKopecks: 100000 },
+				organizationId: orgId,
+			});
+			const pending = await getPendingOfflineMutations({ organizationId: orgId });
+			assert.strictEqual(pending.length, 1);
+			const mutId = pending[0]!.mutationId;
+
+			// Mark as synced
+			await updateOfflineMutationStatus(mutId, "synced");
+
+			// Also add another pending mutation that should NOT be purged
+			await enqueueOfflineMutation({
+				entityType: "payment",
+				entityId: `pay_${patientId}_2`,
+				action: "create",
+				payload: { amountKopecks: 200000 },
+				organizationId: orgId,
+			});
+
+			// Execute 1-click purge
+			const purgeResult = await purgeSyncedDraftsAndOldCache();
+			assert.ok(purgeResult.purgedDrafts >= 1, "Synced mutation must be purged");
+
+			// Pending mutation must survive purge!
+			const remainingPending = await getPendingOfflineMutations({ organizationId: orgId });
+			assert.strictEqual(remainingPending.length, 1, "Active pending mutation must not be purged");
+			assert.strictEqual(remainingPending[0]!.entityId, `pay_${patientId}_2`);
+
+			// Cleanup
+			await updateOfflineMutationStatus(remainingPending[0]!.mutationId, "synced");
+			await purgeSyncedDraftsAndOldCache();
+		} finally {
+			if (prevStorage !== undefined) {
+				Object.defineProperty(globalThis.navigator, "storage", {
+					value: prevStorage,
+					configurable: true,
+					writable: true,
+				});
+			} else {
+				delete (globalThis.navigator as any).storage;
+			}
+		}
+	});
 });
+
+
+
+
+
+
+
+
 
 

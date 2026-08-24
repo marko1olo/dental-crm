@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, LayoutGrid, List, Sparkles, Bot, Search, Flame, Stethoscope, UserSearch } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, List, Sparkles, Bot, Search, Flame, Stethoscope, UserSearch } from "lucide-react";
 import type { ReactElement } from "react";
 import type { DentalSpecialty } from "@dental/shared";
 import { specialtyLabels } from "../../workspaceUiLabels";
@@ -44,6 +44,7 @@ export interface ScheduleFilterStripProps {
 	isSmartAiOpen?: boolean;
 	onOpenDoctorFreeSlots?: () => void;
 	onOpenPatientSearch?: () => void;
+	onSelectWholeWeek?: () => void;
 	onEmergencyCitoBooking?: () => void;
 }
 
@@ -79,10 +80,14 @@ export function ScheduleFilterStrip({
 	isSmartAiOpen = false,
 	onOpenDoctorFreeSlots,
 	onOpenPatientSearch,
+	onSelectWholeWeek,
 	onEmergencyCitoBooking,
 }: ScheduleFilterStripProps): ReactElement {
 	const activeChairs = chairs.filter((chair) => chair?.active);
 	const displayChairs: readonly ScheduleChair[] = activeChairs.length > 0 ? activeChairs : DEFAULT_CLINIC_CHAIRS;
+	const todayIso = new Date().toISOString().slice(0, 10);
+	const tomorrowIso = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+
 	return (
 		<section
 			className="schedule-filter-strip flex flex-wrap md:flex-nowrap items-center justify-between gap-2 px-3 sm:px-4 py-2 border-b border-[var(--line)] bg-[var(--paper)] max-w-full overflow-hidden"
@@ -115,6 +120,48 @@ export function ScheduleFilterStrip({
 						title="День вперёд"
 					>
 						<ChevronRight size={18} aria-hidden="true" />
+					</button>
+				</div>
+
+				{/* Quick Day Switchers: [📅 Сегодня], [Завтра], [Вся неделя] */}
+				<div className="hidden sm:inline-flex items-center gap-1">
+					<button
+						type="button"
+						onClick={() => setScheduleDateFilter(todayIso)}
+						className={`min-h-[44px] px-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1 ${
+							scheduleDateFilter === todayIso
+								? "bg-[var(--teal-dark)] text-white shadow-xs"
+								: "border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-teal-500"
+						}`}
+						title="Расписание на сегодня"
+					>
+						<span>📅 Сегодня</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => setScheduleDateFilter(tomorrowIso)}
+						className={`min-h-[44px] px-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1 ${
+							scheduleDateFilter === tomorrowIso
+								? "bg-[var(--teal-dark)] text-white shadow-xs"
+								: "border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-teal-500"
+						}`}
+						title="Расписание на завтра"
+					>
+						<span>Завтра</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => {
+							if (onSelectWholeWeek) {
+								onSelectWholeWeek();
+							} else if (setScheduleViewMode) {
+								setScheduleViewMode("timeline");
+							}
+						}}
+						className="min-h-[44px] px-2.5 rounded-xl text-xs sm:text-sm font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-teal-500 transition-all cursor-pointer flex items-center gap-1"
+						title="Обзор на всю неделю"
+					>
+						<span>Вся неделя</span>
 					</button>
 				</div>
 			</div>

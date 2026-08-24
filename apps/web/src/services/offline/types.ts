@@ -23,8 +23,12 @@ export type MutationEntityType =
 	| "PRESCRIPTION_107_DRAFT"
 	| "DOCUMENT_DRAFT"
 	| "CASH_RECEIPT_DRAFT"
+	| "APPOINTMENT_BOOKING_DRAFT"
+	| "TREATMENT_PLAN_DRAFT"
+	| "PATIENT_DRAFT"
 	| "GENERIC"
 	| SyncMutationEntityKind;
+
 
 export type MutationAction = SyncMutationAction | "sync";
 
