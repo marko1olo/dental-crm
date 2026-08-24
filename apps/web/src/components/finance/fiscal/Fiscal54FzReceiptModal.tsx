@@ -111,6 +111,33 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 		}));
 	}, [items, itemMarkingCodes]);
 
+	const distinctFamilyPatients = useMemo(() => {
+		interface FamilyPatientSummary {
+			readonly fullName: string;
+			readonly role: string | null;
+			count: number;
+			totalRub: number;
+		}
+		const map = new Map<string, FamilyPatientSummary>();
+		for (const it of currentItems) {
+			if (it.patientFullName) {
+				let existing = map.get(it.patientFullName);
+				if (!existing) {
+					existing = {
+						fullName: it.patientFullName,
+						role: it.familyMemberRole ?? null,
+						count: 0,
+						totalRub: 0,
+					};
+					map.set(it.patientFullName, existing);
+				}
+				existing.count += it.quantity || 1;
+				existing.totalRub += it.priceRub * (it.quantity || 1) - (it.discountRub || 0);
+			}
+		}
+		return Array.from(map.values());
+	}, [currentItems]);
+
 	const tenders: SplitTenderState = useMemo(() => ({
 		cashRub: Number(cashAmount) || 0,
 		receivedCashRub: receivedCashRub > 0 ? Number(receivedCashRub) : Number(cashAmount) || 0,
@@ -408,7 +435,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 								</span>
 							</h2>
 							<p className="text-xs text-slate-500 dark:text-slate-400">
-								Пациент: <span className="font-semibold text-slate-700 dark:text-slate-300">{patientName}</span>
+								{distinctFamilyPatients.length > 1 ? "Плательщик:" : "Пациент:"} <span className="font-semibold text-slate-700 dark:text-slate-300">{patientName}</span>
 								{patientDepositRub > 0 && (
 									<span className="ml-2 text-blue-600 dark:text-blue-400">
 										· Депозит: {patientDepositRub.toLocaleString("ru-RU")} ₽
@@ -420,6 +447,21 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 									</span>
 								)}
 							</p>
+							{distinctFamilyPatients.length > 1 && (
+								<div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+									<span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300">
+										Семья ({distinctFamilyPatients.length}):
+									</span>
+									{distinctFamilyPatients.map((member) => (
+										<span
+											key={member.fullName}
+											className="text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
+										>
+											{member.fullName}{member.role ? ` (${member.role})` : ""} — <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{member.totalRub.toLocaleString("ru-RU")} ₽</span>
+										</span>
+									))}
+								</div>
+							)}
 						</div>
 					</div>
 
@@ -776,6 +818,13 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 												key={it.id || idx}
 												className="p-3 bg-white dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1.5"
 											>
+												{it.patientFullName && distinctFamilyPatients.length > 1 && (
+													<div className="flex items-center gap-1">
+														<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300">
+															Пациент: {it.patientFullName}{it.familyMemberRole ? ` (${it.familyMemberRole})` : ""}
+														</span>
+													</div>
+												)}
 												<div className="flex justify-between items-start text-xs font-bold text-slate-900 dark:text-slate-100">
 													<span className="line-clamp-1">{idx + 1}. {it.name}</span>
 													<span className="font-extrabold text-blue-600 dark:text-blue-400 whitespace-nowrap ml-2">

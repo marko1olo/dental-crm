@@ -49,6 +49,14 @@ export const FiscalReceiptPrintView: React.FC<FiscalReceiptPrintViewProps> = ({
 	const receivedCash = tenders.receivedCashRub ?? tenders.cashRub;
 	const changeRub = Math.max(0, receivedCash - tenders.cashRub);
 
+	const distinctPatients = React.useMemo(() => {
+		const names = new Set<string>();
+		for (const it of items) {
+			if (it.patientFullName) names.add(it.patientFullName);
+		}
+		return Array.from(names);
+	}, [items]);
+
 	const paymentMethodLabels: Record<string, string> = {
 		full_prepayment: "Предоплата 100% (Тег 1214 = 1)",
 		prepayment: "Предоплата (Тег 1214 = 2)",
@@ -86,9 +94,15 @@ export const FiscalReceiptPrintView: React.FC<FiscalReceiptPrintViewProps> = ({
 					<span>{cashierFullName}</span>
 				</div>
 				<div className="flex justify-between">
-					<span>ПАЦИЕНТ:</span>
+					<span>{distinctPatients.length > 1 ? "ПЛАТЕЛЬЩИК (РОДИТЕЛЬ/ПРЕДСТАВИТЕЛЬ):" : "ПАЦИЕНТ:"}</span>
 					<span className="font-semibold truncate max-w-[180px]">{patientName}</span>
 				</div>
+				{distinctPatients.length > 1 && (
+					<div className="flex justify-between text-[9px] text-slate-800 font-bold bg-slate-100 px-1.5 py-0.5 rounded">
+						<span>ПАЦИЕНТЫ В ЧЕКЕ:</span>
+						<span className="truncate max-w-[180px]">{distinctPatients.join(", ")}</span>
+					</div>
+				)}
 				<div className="flex justify-between">
 					<span>КОНТАКТ (Тег 1008):</span>
 					<span>{customerContact}</span>
@@ -105,10 +119,13 @@ export const FiscalReceiptPrintView: React.FC<FiscalReceiptPrintViewProps> = ({
 					{items.map((it, idx) => {
 						const methodLabel = paymentMethodLabels[it.method] || "Полный расчет (Тег 1214 = 4)";
 						const codeSuffix = it.code804n ? ` [${it.code804n}]` : "";
+						const patientPrefix = it.patientFullName && distinctPatients.length > 1
+							? `[${it.patientFullName}${it.familyMemberRole ? ` (${it.familyMemberRole})` : ""}] `
+							: "";
 						return (
 							<div key={it.id || idx} className="space-y-0.5">
 								<div className="font-bold text-[11px] text-slate-900 leading-snug">
-									{idx + 1}. {it.name}{codeSuffix}
+									{idx + 1}. {patientPrefix}{it.name}{codeSuffix}
 								</div>
 								{it.markingCode && (
 									<div className="flex items-center gap-1 text-[9px] text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">

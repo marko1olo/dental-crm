@@ -30,6 +30,9 @@ export interface FiscalItemDraft {
 	readonly measure: Ffd12QuantityMeasure;
 	readonly taxDeductionCategory?: "1" | "2" | undefined;
 	readonly markingCode?: string | null | undefined;
+	readonly patientId?: string | undefined;
+	readonly patientFullName?: string | undefined;
+	readonly familyMemberRole?: string | undefined;
 }
 
 export interface SplitTenderState {
@@ -369,5 +372,89 @@ export function compile54FzFiscalTags(
 		totalTenderKopecks,
 		totalTenderRub: kopecksToRub(totalTenderKopecks),
 		isBalanced: expectedTotalKopecks !== undefined ? totalTenderKopecks === expectedTotalKopecks : true,
+	};
+}
+
+export interface FamilyMemberInvoiceGroup {
+	readonly patientId: string;
+	readonly patientFullName: string;
+	readonly relationshipRu?: string | undefined; // e.g. "Дочь", "Сын", "Супруг(а)", "Родитель"
+	readonly items: readonly FiscalItemDraft[];
+}
+
+export interface CombinedFamilyFiscalDraftResult {
+	readonly combinedItems: readonly FiscalItemDraft[];
+	readonly totalKopecks: number;
+	readonly totalRub: number;
+	readonly totalRubFormatted: string;
+	readonly patientsCount: number;
+	readonly summaryByPatient: readonly {
+		readonly patientId: string;
+		readonly patientFullName: string;
+		readonly relationshipRu?: string | undefined;
+		readonly itemsCount: number;
+		readonly subtotalRub: number;
+		readonly subtotalKopecks: number;
+	}[];
+}
+
+/**
+ * Combines multiple family members' invoices into a single unified 54-FZ fiscal receipt draft
+ * with separate patient-specific itemization, preserved 804n nomenclature codes, and exact kopeck sums.
+ */
+export function combineFamilyInvoicesIntoFiscalDraft(
+	payer: {
+		patientId: string;
+		payerFullName: string;
+		payerPhone?: string | undefined;
+	},
+	familyGroups: readonly FamilyMemberInvoiceGroup[],
+): CombinedFamilyFiscalDraftResult {
+	const combinedItems: FiscalItemDraft[] = [];
+	let totalKopecks = 0;
+
+	const summaryByPatient: {
+		patientId: string;
+		patientFullName: string;
+		relationshipRu?: string | undefined;
+		itemsCount: number;
+		subtotalRub: number;
+		subtotalKopecks: number;
+	}[] = [];
+
+	for (const group of familyGroups) {
+		let groupKopecks = 0;
+		for (const it of group.items) {
+			const unitPriceKop = rubToKopecks(it.priceRub);
+			const discountKop = it.discountRub ? rubToKopecks(it.discountRub) : 0;
+			const itemKop = Math.max(0, unitPriceKop - discountKop) * it.quantity;
+			groupKopecks += itemKop;
+
+			combinedItems.push({
+				...it,
+				patientId: it.patientId ?? group.patientId,
+				patientFullName: it.patientFullName ?? group.patientFullName,
+				familyMemberRole: it.familyMemberRole ?? group.relationshipRu,
+			});
+		}
+
+		totalKopecks += groupKopecks;
+		summaryByPatient.push({
+			patientId: group.patientId,
+			patientFullName: group.patientFullName,
+			relationshipRu: group.relationshipRu,
+			itemsCount: group.items.length,
+			subtotalRub: kopecksToRub(groupKopecks),
+			subtotalKopecks: groupKopecks,
+		});
+	}
+
+	return {
+		combinedItems,
+		totalKopecks,
+		totalRub: kopecksToRub(totalKopecks),
+		totalRubFormatted: kopecksToNumericString(totalKopecks),
+		patientsCount: familyGroups.length,
+		summaryByPatient,
 	};
 }

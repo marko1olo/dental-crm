@@ -5,6 +5,7 @@ import {
 	calculateAdvanceStagePrepayment,
 	calculateCashChange,
 	calculateFinalSettlementWithAdvanceOffset,
+	combineFamilyInvoicesIntoFiscalDraft,
 	compile54FzFiscalTags,
 	compileFiscalDraftSummary,
 	type FiscalItemDraft,
@@ -298,6 +299,114 @@ describe("Frontend 54-FZ (FFD 1.2) Fiscal Engine Tests", () => {
 		assert.equal(summary.remainingKopecks, 0);
 		assert.equal(summary.isFullyAllocated, true);
 		assert.equal(summary.isOverallocated, false);
+	});
+
+	it("1.10 combineFamilyInvoicesIntoFiscalDraft — Combines multi-child/family invoices with separate patient itemization", () => {
+		const payer = {
+			patientId: "pat-parent-1",
+			payerFullName: "Иванов Иван Петрович",
+			payerPhone: "+7 (999) 111-22-33",
+		};
+
+		const child1Items: FiscalItemDraft[] = [
+			{
+				id: "child1-tooth-fill",
+				name: "Лечение кариеса временного зуба",
+				code804n: "A16.07.002.001",
+				toothFdiNumber: 54,
+				priceRub: 4500.0,
+				quantity: 1,
+				subject: "service",
+				method: "full_payment",
+				vatRate: "vat_none",
+				measure: "piece",
+			},
+		];
+
+		const child2Items: FiscalItemDraft[] = [
+			{
+				id: "child2-hygiene",
+				name: "Комплексная гигиена полости рта детская",
+				code804n: "A16.07.051",
+				priceRub: 3200.0,
+				quantity: 1,
+				subject: "service",
+				method: "full_payment",
+				vatRate: "vat_none",
+				measure: "piece",
+			},
+			{
+				id: "child2-fluoride",
+				name: "Глубокое фторирование эмали (все зубы)",
+				code804n: "A11.07.024",
+				priceRub: 1800.0,
+				quantity: 1,
+				subject: "service",
+				method: "full_payment",
+				vatRate: "vat_none",
+				measure: "piece",
+			},
+		];
+
+		const familyGroups = [
+			{
+				patientId: "pat-child-1",
+				patientFullName: "Иванова Анна Ивановна",
+				relationshipRu: "Дочь",
+				items: child1Items,
+			},
+			{
+				patientId: "pat-child-2",
+				patientFullName: "Иванов Михаил Иванович",
+				relationshipRu: "Сын",
+				items: child2Items,
+			},
+		];
+
+		const result = combineFamilyInvoicesIntoFiscalDraft(payer, familyGroups);
+
+		// Verification:
+		// Child 1 total = 4,500.00 ₽ (450,000 kop)
+		// Child 2 total = 3,200 + 1,800 = 5,000.00 ₽ (500,000 kop)
+		// Total combined = 9,500.00 ₽ (950,000 kop)
+		assert.equal(result.patientsCount, 2);
+		assert.equal(result.combinedItems.length, 3);
+		assert.equal(result.totalKopecks, 950000);
+		assert.equal(result.totalRub, 9500.0);
+		assert.equal(result.totalRubFormatted, "9500.00");
+
+		// Check item 1 patient attribution
+		assert.equal(result.combinedItems[0]?.patientFullName, "Иванова Анна Ивановна");
+		assert.equal(result.combinedItems[0]?.familyMemberRole, "Дочь");
+		assert.equal(result.combinedItems[0]?.toothFdiNumber, 54);
+
+		// Check item 2 & 3 patient attribution
+		assert.equal(result.combinedItems[1]?.patientFullName, "Иванов Михаил Иванович");
+		assert.equal(result.combinedItems[1]?.familyMemberRole, "Сын");
+		assert.equal(result.combinedItems[2]?.patientFullName, "Иванов Михаил Иванович");
+
+		// Check summaries by patient
+		assert.equal(result.summaryByPatient.length, 2);
+		assert.equal(result.summaryByPatient[0]?.patientFullName, "Иванова Анна Ивановна");
+		assert.equal(result.summaryByPatient[0]?.subtotalRub, 4500.0);
+		assert.equal(result.summaryByPatient[1]?.patientFullName, "Иванов Михаил Иванович");
+		assert.equal(result.summaryByPatient[1]?.subtotalRub, 5000.0);
+
+		// Check compiled receipt with family tenders
+		const tenders: SplitTenderState = {
+			cashRub: 0,
+			cardRub: 4500.0, // Parent pays 4,500 ₽ by Card (Tag 1081)
+			sbpRub: 0,
+			advanceOffsetRub: 0,
+			familyWalletRub: 5000.0, // Parent covers 5,000 ₽ from Family Deposit (Tag 1215)
+			certificateRub: 0,
+		};
+
+		const receiptSummary = compileFiscalDraftSummary(result.combinedItems, tenders);
+		assert.equal(receiptSummary.totalKopecks, 950000);
+		assert.equal(receiptSummary.isFullyAllocated, true);
+		assert.equal(receiptSummary.isOverallocated, false);
+		assert.equal(receiptSummary.itemsCount, 3);
 	});
 });
 
