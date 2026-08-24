@@ -139,3 +139,65 @@
 	summary {
 	color: var(--ink);
 }
+
+/* --- 8. Полоса офлайн-непрерывности (Workspace & Offline Continuity Strip) ---
+ *
+ * Темная тема (Dark / Night / OLED):
+ * Фон: глубокий янтарный полупрозрачный rgba(69, 26, 3, 0.88) на темном фоне (#0f172a / #020617).
+ * Заголовок strong: #fbbf24 (янтарный 400, WCAG 11.2:1).
+ * Описание p, small: #fde68a (янтарный 200, WCAG 14.5:1).
+ */
+[data-theme="dark"] .workspace-continuity-strip,
+[data-theme="night"] .workspace-continuity-strip,
+[data-theme="oled"] .workspace-continuity-strip,
+html.dark .workspace-continuity-strip {
+	background: rgba(15, 45, 42, 0.85);
+	border-color: rgba(45, 212, 191, 0.35);
+	border-left-color: #14b8a6;
+}
+
+[data-theme="dark"] .workspace-continuity-strip strong,
+[data-theme="night"] .workspace-continuity-strip strong,
+[data-theme="oled"] .workspace-continuity-strip strong,
+html.dark .workspace-continuity-strip strong {
+	color: #5eead4;
+}
+
+[data-theme="dark"] .workspace-continuity-strip p,
+[data-theme="dark"] .workspace-continuity-strip small,
+[data-theme="night"] .workspace-continuity-strip p,
+[data-theme="night"] .workspace-continuity-strip small,
+[data-theme="oled"] .workspace-continuity-strip p,
+[data-theme="oled"] .workspace-continuity-strip small,
+html.dark .workspace-continuity-strip p,
+html.dark .workspace-continuity-strip small {
+	color: #ccfbf1;
+}
+
+[data-theme="dark"] .workspace-continuity-strip.offline,
+[data-theme="night"] .workspace-continuity-strip.offline,
+[data-theme="oled"] .workspace-continuity-strip.offline,
+html.dark .workspace-continuity-strip.offline {
+	background: rgba(69, 26, 3, 0.88);
+	border-color: rgba(245, 158, 11, 0.45);
+	border-left-color: #f59e0b;
+}
+
+[data-theme="dark"] .workspace-continuity-strip.offline strong,
+[data-theme="night"] .workspace-continuity-strip.offline strong,
+[data-theme="oled"] .workspace-continuity-strip.offline strong,
+html.dark .workspace-continuity-strip.offline strong {
+	color: #fbbf24;
+}
+
+[data-theme="dark"] .workspace-continuity-strip.offline p,
+[data-theme="dark"] .workspace-continuity-strip.offline small,
+[data-theme="night"] .workspace-continuity-strip.offline p,
+[data-theme="night"] .workspace-continuity-strip.offline small,
+[data-theme="oled"] .workspace-continuity-strip.offline p,
+[data-theme="oled"] .workspace-continuity-strip.offline small,
+html.dark .workspace-continuity-strip.offline p,
+html.dark .workspace-continuity-strip.offline small {
+	color: #fde68a;
+}
+

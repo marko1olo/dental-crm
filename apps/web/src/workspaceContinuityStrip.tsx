@@ -54,19 +54,24 @@ export function WorkspaceContinuityStrip({
 
 	if (!visible) return null;
 
-	const statusBadge = networkState
-		? networkState.mode === "cloud_online"
-			? `🟢 Онлайн${networkState.rttMs !== null ? ` · ${networkState.rttMs} мс` : ""}`
-			: networkState.mode === "lan_online"
-				? `🟡 Локальная сеть${networkState.rttMs !== null ? ` · ${networkState.rttMs} мс` : ""}`
-				: totalPending > 0
-					? `🟠 Офлайн: накоплено ${pluralizeChanges(totalPending)}`
+	const statusBadge = isSyncingMutations
+		? totalPending > 0
+			? `🟠 Синхронизация... (${pluralizeChanges(totalPending)} в очереди)`
+			: "🟠 Синхронизация..."
+		: networkState
+			? networkState.mode === "cloud_online"
+				? `🟢 В сети${networkState.rttMs !== null ? ` · ${networkState.rttMs} мс` : ""}`
+				: networkState.mode === "lan_online"
+					? `🟡 Автономный режим (Wi-Fi)${networkState.rttMs !== null ? ` · ${networkState.rttMs} мс` : ""}`
+					: totalPending > 0
+						? `🟠 Автономный режим (${pluralizeChanges(totalPending)} в очереди)`
+						: "🟠 Автономный офлайн"
+			: !effectiveOnline
+				? totalPending > 0
+					? `🟠 Автономный режим (${pluralizeChanges(totalPending)} в очереди)`
 					: "🟠 Автономный офлайн"
-		: !effectiveOnline
-			? totalPending > 0
-				? `🟠 Офлайн: накоплено ${pluralizeChanges(totalPending)}`
-				: "🟠 Автономный офлайн"
-			: "🟢 Онлайн";
+				: "🟢 В сети";
+
 
 	const title = !effectiveOnline
 		? `Работа без сети (${statusBadge})`
@@ -102,7 +107,7 @@ export function WorkspaceContinuityStrip({
 
 	return (
 		<section
-			className={`workspace-continuity-strip ${!effectiveOnline ? "offline" : "queued"}`}
+			className={`workspace-continuity-strip offline-continuity-strip ${!effectiveOnline ? "offline" : "queued"}`}
 			role="status"
 			aria-live="polite"
 		>
@@ -169,3 +174,7 @@ export function WorkspaceContinuityStrip({
 		</section>
 	);
 }
+
+export const OfflineContinuityStrip = WorkspaceContinuityStrip;
+export { pluralizeChanges };
+

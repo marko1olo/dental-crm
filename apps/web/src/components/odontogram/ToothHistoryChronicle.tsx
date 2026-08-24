@@ -1,4 +1,4 @@
-import { Activity, Calendar, FileText, History, X } from "lucide-react";
+import { Activity, Calendar, Camera, FileText, History, Image, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import {
@@ -6,6 +6,7 @@ import {
 	type PanelSubject,
 	panelStateText,
 } from "../../lib/panelStateText";
+import { listPatientMedia, type StoredMediaItem } from "../../services/media/offlineMediaVault";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
@@ -52,6 +53,7 @@ export function ToothHistoryChronicle({
 	onClose,
 }: Props) {
 	const [events, setEvents] = useState<ToothHistoryEvent[]>([]);
+	const [toothMedia, setToothMedia] = useState<StoredMediaItem[]>([]);
 	const [load, setLoad] = useState<HistoryLoadState>({ phase: "loading" });
 	/** Счётчик кнопки «Повторить»: меняется — запрос идёт заново. */
 	const [reloadToken, setReloadToken] = useState(0);
@@ -66,8 +68,19 @@ export function ToothHistoryChronicle({
 		 * они висели там навсегда. Врач читал чужое лечение как лечение этого зуба.
 		 */
 		setEvents([]);
+		setToothMedia([]);
 		setLoad({ phase: "loading" });
 
+		// 1. Загрузка локальных медиа-снимков зуба (200x200 WebP) из Offline Media Vault
+		listPatientMedia(patientId, toothNumber)
+			.then((mediaItems) => {
+				if (active) setToothMedia(mediaItems);
+			})
+			.catch((err) => {
+				logger.error("[tooth history] Ошибка чтения снимков из offlineMediaVault", err);
+			});
+
+		// 2. Загрузка хроники клинических событий
 		const fetchHistory = async () => {
 			let status: number | null = null;
 			try {
@@ -131,6 +144,69 @@ export function ToothHistoryChronicle({
 			</div>
 
 			<div className="history-body">
+				{/* ── Офлайн-снимки зуба (WebP 200x200) из offlineMediaVault ── */}
+				{toothMedia.length > 0 && (
+					<section
+						aria-label={`Снимки зуба ${toothNumber}`}
+						className="tooth-media-section mb-4 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/80 backdrop-blur-xs"
+					>
+						<div className="flex items-center gap-2 mb-2">
+							<Camera className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+							<h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200">
+								Снимки зуба ({toothMedia.length})
+							</h4>
+						</div>
+						<div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+							{toothMedia.map((m) => (
+								<div
+									key={m.mediaId}
+									className="group relative rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 shadow-xs transition-transform hover:scale-[1.02]"
+								>
+									<img
+										src={m.thumbnailWebpDataUrl}
+										alt={`Снимок зуба ${toothNumber} (${m.photoType})`}
+										className="w-full h-[120px] object-cover"
+										loading="lazy"
+									/>
+									<div className="p-1.5 text-[11px] bg-white/95 dark:bg-slate-900/95 border-t border-slate-200 dark:border-slate-700">
+										<div className="font-semibold text-slate-800 dark:text-slate-100 truncate">
+											{m.photoType === "intraoral_photo"
+												? "Внутриротовое фото"
+												: m.photoType === "periapical_xray"
+													? "Прицельный снимок"
+													: m.photoType === "computed_tomography_slice"
+														? "КЛКТ срез"
+														: m.photoType === "panoramic_xray"
+															? "ОПТГ панорама"
+															: "Медиафайл"}
+										</div>
+										<div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+											<span>
+												{new Intl.DateTimeFormat("ru-RU", {
+													day: "2-digit",
+													month: "2-digit",
+													hour: "2-digit",
+													minute: "2-digit",
+													timeZone: "Europe/Samara",
+												}).format(new Date(m.capturedAt))}
+											</span>
+											<span
+												className={`px-1 py-0.2 rounded text-[9px] font-medium ${
+													m.syncStatus === "synced"
+														? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300"
+														: "bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300"
+												}`}
+											>
+												{m.syncStatus === "synced" ? "Синхронизировано" : "Локально (Vault)"}
+											</span>
+										</div>
+									</div>
+								</div>
+							))}
+						</div>
+					</section>
+				)}
+
 				{load.phase === "loading" ? (
 					<div className="history-loading">
 						<div className="spinner" />

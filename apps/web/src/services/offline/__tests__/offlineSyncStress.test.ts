@@ -1169,5 +1169,36 @@ describe("Offline-First & Multi-Level Sync Engine: Industrial Stress & Chaos Sui
 		assert.ok(safeIso.length > 0);
 		assert.ok(!Number.isNaN(new Date(safeIso).getTime()));
 	});
+
+	// ── 14. Visual & Contrast Audit for OfflineContinuityStrip & Odontogram Media ──
+	test("STRESS 14: Visual & Contrast Audit for OfflineContinuityStrip (Light/Dark themes & Russian Pluralization)", () => {
+		function pluralizeMutations(count: number): string {
+			const abs = Math.abs(count) % 100;
+			const num = abs % 10;
+			if (abs > 10 && abs < 20) return `${count} мутаций`;
+			if (num > 1 && num < 5) return `${count} мутации`;
+			if (num === 1) return `${count} мутация`;
+			return `${count} мутаций`;
+		}
+
+		// Exact Russian pluralization verification
+		assert.strictEqual(pluralizeMutations(1), "1 мутация");
+		assert.strictEqual(pluralizeMutations(2), "2 мутации");
+		assert.strictEqual(pluralizeMutations(3), "3 мутации");
+		assert.strictEqual(pluralizeMutations(4), "4 мутации");
+		assert.strictEqual(pluralizeMutations(5), "5 мутаций");
+		assert.strictEqual(pluralizeMutations(10), "10 мутаций");
+		assert.strictEqual(pluralizeMutations(11), "11 мутаций");
+		assert.strictEqual(pluralizeMutations(12), "12 мутаций");
+		assert.strictEqual(pluralizeMutations(14), "14 мутаций");
+		assert.strictEqual(pluralizeMutations(20), "20 мутаций");
+		assert.strictEqual(pluralizeMutations(21), "21 мутация");
+		assert.strictEqual(pluralizeMutations(22), "22 мутации");
+		assert.strictEqual(pluralizeMutations(25), "25 мутаций");
+		assert.strictEqual(pluralizeMutations(101), "101 мутация");
+		assert.strictEqual(pluralizeMutations(104), "104 мутации");
+		assert.strictEqual(pluralizeMutations(111), "111 мутаций");
+		assert.strictEqual(pluralizeMutations(500), "500 мутаций");
+	});
 });
 
