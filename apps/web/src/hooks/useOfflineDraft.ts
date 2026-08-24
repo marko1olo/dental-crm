@@ -142,6 +142,39 @@ export function useOfflineDraft<T = unknown>(options: UseOfflineDraftOptions<T>)
 		currentDataRef.current = null;
 	}, [draftKey, storeDeleteDraft]);
 
+	// 4. Emergency beforeunload flush guard: ensures zero data loss on unexpected tab/browser exit
+	useEffect(() => {
+		const handleBeforeUnload = () => {
+			if (currentDataRef.current !== null && currentDataRef.current !== lastSavedData) {
+				if (typeof window !== "undefined" && window.localStorage) {
+					try {
+						const draftObj = {
+							draftKey,
+							entityType,
+							entityId,
+							data: currentDataRef.current,
+							updatedAt: new Date().toISOString(),
+							organizationId,
+						};
+						window.localStorage.setItem(
+							`dente_offline_draft_v1:${draftKey}`,
+							JSON.stringify(draftObj),
+						);
+					} catch {
+						// silent fail on window unload
+					}
+				}
+			}
+		};
+
+		if (typeof window !== "undefined") {
+			window.addEventListener("beforeunload", handleBeforeUnload);
+			return () => {
+				window.removeEventListener("beforeunload", handleBeforeUnload);
+			};
+		}
+	}, [draftKey, entityType, entityId, organizationId, lastSavedData]);
+
 	// 4. Commit draft to Outbox Mutation Queue and Clear Draft
 	const commitToOutbox = useCallback(
 		async (data?: T, action: MutationAction = "update") => {
