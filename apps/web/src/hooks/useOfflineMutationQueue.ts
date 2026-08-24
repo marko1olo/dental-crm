@@ -1,79 +1,155 @@
 /**
- * DENTE CRM — Hook for Offline Mutation Queue (Outbox)
+ * DENTE CRM — React Hook for Offline Mutation Queue & Multi-Chair Synchronization
+ *
+ * Предоставляет React-компонентам доступ к очереди мутаций IndexedDB:
+ * - Идемпотентность каждой мутации по UUIDv7/v4 + SHA-256 хэшу полезной нагрузки
+ * - Экспоненциальный retry (бэкофф с джиттером) при сбоях локального Wi-Fi в клинике
+ * - Разрешение конфликтов версий (Field-Level Last-Write-Wins / ServerTimestamp)
+ * - Автоматический drain очереди при восстановлении соединения (isOnline / isLan)
  */
 
 import { useCallback, useEffect } from "react";
+import {
+	type EnqueueMutationInput,
+	type MutationEntityType,
+	type OfflineMutation,
+	type SyncBatchDrainOptions,
+	type SyncBatchDrainResult,
+	offlineSyncService,
+} from "../services/offline";
 import { useOfflineStore } from "../store/offlineStore";
-import type {
-	EnqueueMutationInput,
-	MutationEntityType,
-	OfflineMutation,
-} from "../utils/offlineMutationQueue";
 
 export interface UseOfflineMutationQueueOptions {
-	entityType?: MutationEntityType | undefined;
-	organizationId?: string | undefined;
-	autoRefreshIntervalMs?: number | undefined;
+	readonly entityType?: MutationEntityType | undefined;
+	readonly organizationId?: string | undefined;
+	readonly autoDrain?: boolean | undefined;
+	readonly drainOptions?: SyncBatchDrainOptions | undefined;
+}
+
+export interface UseOfflineMutationQueueReturn {
+	readonly pendingMutations: readonly OfflineMutation[];
+	readonly pendingCount: number;
+	readonly pendingMutationCount: number;
+	readonly isSyncing: boolean;
+	readonly isSyncingMutations: boolean;
+	readonly isOnline: boolean;
+	readonly isLan: boolean;
+	readonly lastSyncAt: string | null;
+	readonly lastSyncError: string | null;
+	readonly enqueueMutation: <T = unknown>(
+		input: EnqueueMutationInput<T>,
+	) => Promise<OfflineMutation<T>>;
+	readonly drainQueue: (
+		options?: SyncBatchDrainOptions,
+	) => Promise<SyncBatchDrainResult>;
+	readonly syncNow: (
+		options?: SyncBatchDrainOptions,
+	) => Promise<SyncBatchDrainResult>;
+	readonly syncOfflineMutations: (
+		options?: SyncBatchDrainOptions,
+	) => Promise<SyncBatchDrainResult>;
+	readonly refreshQueue: (filter?: {
+		entityType?: MutationEntityType | undefined;
+		organizationId?: string | undefined;
+	}) => Promise<void>;
 }
 
 export function useOfflineMutationQueue(
 	options: UseOfflineMutationQueueOptions = {},
-) {
-	const { entityType, organizationId, autoRefreshIntervalMs = 15000 } = options;
+): UseOfflineMutationQueueReturn {
+	const pendingMutations = useOfflineStore((s) => s.pendingMutations);
+	const pendingCount = useOfflineStore((s) => s.pendingMutationCount);
+	const isSyncing = useOfflineStore((s) => s.isSyncing);
+	const networkState = useOfflineStore((s) => s.networkState);
+	const lastSyncAt = useOfflineStore((s) => s.lastSyncAt);
+	const lastSyncError = useOfflineStore((s) => s.lastSyncError);
+	const storeEnqueue = useOfflineStore((s) => s.enqueue);
+	const refreshQueue = useOfflineStore((s) => s.refreshQueue);
 
-	const pendingMutations = useOfflineStore((state) => state.pendingMutations);
-	const pendingMutationCount = useOfflineStore(
-		(state) => state.pendingMutationCount,
-	);
-	const isSyncing = useOfflineStore((state) => state.isSyncing);
-	const lastSyncAt = useOfflineStore((state) => state.lastSyncAt);
-	const lastSyncError = useOfflineStore((state) => state.lastSyncError);
-	const metrics = useOfflineStore((state) => state.metrics);
-
-	const enqueue = useOfflineStore((state) => state.enqueue);
-	const refreshQueue = useOfflineStore((state) => state.refreshQueue);
-	const syncOutbox = useOfflineStore((state) => state.syncOutbox);
-	const clearSynced = useOfflineStore((state) => state.clearSynced);
-
-	const refresh = useCallback(() => {
-		return refreshQueue({ entityType, organizationId });
-	}, [refreshQueue, entityType, organizationId]);
+	const { entityType, organizationId, autoDrain = true, drainOptions } = options;
 
 	useEffect(() => {
-		void refresh();
-		if (autoRefreshIntervalMs > 0) {
-			const timer = setInterval(() => void refresh(), autoRefreshIntervalMs);
-			return () => clearInterval(timer);
-		}
-	}, [refresh, autoRefreshIntervalMs]);
+		void refreshQueue({ entityType, organizationId });
+	}, [refreshQueue, entityType, organizationId]);
 
-	const enqueueMutation = useCallback(
-		<T = unknown>(input: EnqueueMutationInput<T>) => {
-			return enqueue<T>({
-				...input,
-				organizationId: input.organizationId ?? organizationId,
-			});
+	// Подписка на события OfflineSyncService для синхронизации очереди в реальном времени
+	useEffect(() => {
+		const unsubscribe = offlineSyncService.subscribe((event) => {
+			if (event.type === "complete" || event.type === "progress") {
+				void refreshQueue({ entityType, organizationId });
+			}
+		});
+		return () => {
+			unsubscribe();
+		};
+	}, [refreshQueue, entityType, organizationId]);
+
+	const drainQueue = useCallback(
+		async (opts?: SyncBatchDrainOptions): Promise<SyncBatchDrainResult> => {
+			useOfflineStore.setState({ isSyncing: true, lastSyncError: null });
+			try {
+				const mergedOptions: SyncBatchDrainOptions = {
+					organizationId,
+					...drainOptions,
+					...opts,
+				};
+				const res = await offlineSyncService.drainOutbox(mergedOptions);
+				await refreshQueue({ entityType, organizationId });
+				useOfflineStore.setState({
+					lastSyncAt: res.serverTime || new Date().toISOString(),
+					lastSyncError: res.errors.length > 0 ? (res.errors[0]?.error ?? "Unknown error") : null,
+					isSyncing: false,
+				});
+				return res;
+			} catch (err) {
+				const msg = err instanceof Error ? err.message : String(err);
+				useOfflineStore.setState({
+					lastSyncError: msg,
+					isSyncing: false,
+				});
+				throw err;
+			}
 		},
-		[enqueue, organizationId],
+		[refreshQueue, entityType, organizationId, drainOptions],
 	);
 
-	const syncNow = useCallback(
-		(executor?: (mutation: OfflineMutation) => Promise<boolean>) => {
-			return syncOutbox(executor);
+	// Автоматический drain при подключении к сети (isOnline или локальной сети клиники isLan)
+	useEffect(() => {
+		if (!autoDrain) return;
+		const isConnected = networkState.isOnline || networkState.isLan;
+		if (isConnected && pendingCount > 0 && !isSyncing && !offlineSyncService.isDrainActive()) {
+			void drainQueue();
+		}
+	}, [
+		networkState.isOnline,
+		networkState.isLan,
+		pendingCount,
+		isSyncing,
+		autoDrain,
+		drainQueue,
+	]);
+
+	const enqueueMutation = useCallback(
+		async <T = unknown>(input: EnqueueMutationInput<T>): Promise<OfflineMutation<T>> => {
+			return storeEnqueue<T>(input);
 		},
-		[syncOutbox],
+		[storeEnqueue],
 	);
 
 	return {
 		pendingMutations,
-		pendingMutationCount,
+		pendingCount,
+		pendingMutationCount: pendingCount,
 		isSyncing,
+		isSyncingMutations: isSyncing,
+		isOnline: networkState.isOnline,
+		isLan: networkState.isLan,
 		lastSyncAt,
 		lastSyncError,
-		metrics,
 		enqueueMutation,
-		syncNow,
-		refresh,
-		clearSynced,
+		drainQueue,
+		syncNow: drainQueue,
+		syncOfflineMutations: drainQueue,
+		refreshQueue,
 	};
 }

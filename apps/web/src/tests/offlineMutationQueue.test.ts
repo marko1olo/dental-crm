@@ -12,6 +12,11 @@
 
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it, test } from "node:test";
+import {
+	computePayloadHash,
+	createCompositeIdempotencyKey,
+} from "@dental/shared";
+import { offlineSyncService } from "../services/offline";
 import { useOfflineStore } from "../store/offlineStore";
 import {
 	ConnectivityMode,
@@ -245,17 +250,18 @@ describe("Offline Mutation Queue Engine (IndexedDB Outbox)", () => {
 		}
 	});
 
-	test("1. UUID generation: creates valid RFC4122 v4 UUIDs", () => {
+	test("1. UUID generation: creates valid RFC 9562 UUIDv7 identifiers", () => {
 		const uuid = generateMutationUuid();
 		assert.match(
 			uuid,
-			/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-			"Mutation UUID must conform to RFC4122 v4 format",
+			/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+			"Mutation UUID must conform to RFC 9562 UUIDv7 format",
 		);
 
 		const uuid2 = generateMutationUuid();
 		assert.notEqual(uuid, uuid2, "Generated UUIDs must be uniquely distinct");
 	});
+
 
 	test("2. Timestamp precision: produces ISO 8601 timestamps with millisecond accuracy", () => {
 		const ts = nowIsoWithMs();
@@ -564,8 +570,38 @@ describe("Network Connectivity & RTT Monitor", () => {
 	const originalWindowDesc = Object.getOwnPropertyDescriptor(globalThis, "window");
 	const originalNavigatorDesc = Object.getOwnPropertyDescriptor(globalThis, "navigator");
 	const originalFetchDesc = Object.getOwnPropertyDescriptor(globalThis, "fetch");
+	let localStorageMap = new Map<string, string>();
+	let mockDbHolder: ReturnType<typeof setupMockIndexedDb>;
+
+	beforeEach(() => {
+		resetOfflineDbConnection();
+		localStorageMap.clear();
+		mockDbHolder = setupMockIndexedDb();
+
+		const mockLocalStorage = {
+			getItem: (key: string) => localStorageMap.get(key) ?? null,
+			setItem: (key: string, val: string) => localStorageMap.set(key, String(val)),
+			removeItem: (key: string) => localStorageMap.delete(key),
+			clear: () => localStorageMap.clear(),
+			get length() {
+				return localStorageMap.size;
+			},
+			key: (i: number) => Array.from(localStorageMap.keys())[i] ?? null,
+		};
+
+		Object.defineProperty(globalThis, "window", {
+			value: {
+				indexedDB: mockDbHolder.mockIndexedDb,
+				localStorage: mockLocalStorage,
+				location: { hostname: "clinic.local" },
+			},
+			configurable: true,
+			writable: true,
+		});
+	});
 
 	afterEach(() => {
+		resetOfflineDbConnection();
 		if (originalWindowDesc) Object.defineProperty(globalThis, "window", originalWindowDesc);
 		else delete (globalThis as any).window;
 
@@ -623,11 +659,7 @@ describe("Network Connectivity & RTT Monitor", () => {
 		});
 
 		// A. Test LAN hostname
-		Object.defineProperty(globalThis, "window", {
-			value: { location: { hostname: "192.168.0.10" } },
-			configurable: true,
-			writable: true,
-		});
+		window.location.hostname = "192.168.0.10";
 		const lanState = await determineNetworkConnectivity();
 		assert.strictEqual(lanState.mode, "lan_online");
 		assert.strictEqual(lanState.isOnline, true);
@@ -637,11 +669,7 @@ describe("Network Connectivity & RTT Monitor", () => {
 		assert.ok(typeof lanState.rttMs === "number" && lanState.rttMs >= 1);
 
 		// B. Test Cloud domain
-		Object.defineProperty(globalThis, "window", {
-			value: { location: { hostname: "crm.dente.ru" } },
-			configurable: true,
-			writable: true,
-		});
+		window.location.hostname = "crm.dente.ru";
 		const cloudState = await determineNetworkConnectivity();
 		assert.strictEqual(cloudState.mode, "cloud_online");
 		assert.strictEqual(cloudState.isOnline, true);
@@ -651,30 +679,6 @@ describe("Network Connectivity & RTT Monitor", () => {
 	});
 
 	test("4. Zustand useOfflineStore: enqueues, syncs with executor, and tracks metrics", async () => {
-		// Mock IDB for store
-		const mockHolder = setupMockIndexedDb();
-		const localStorageMap = new Map<string, string>();
-		const mockLocalStorage = {
-			getItem: (key: string) => localStorageMap.get(key) ?? null,
-			setItem: (key: string, val: string) => localStorageMap.set(key, String(val)),
-			removeItem: (key: string) => localStorageMap.delete(key),
-			clear: () => localStorageMap.clear(),
-			get length() {
-				return localStorageMap.size;
-			},
-			key: (i: number) => Array.from(localStorageMap.keys())[i] ?? null,
-		};
-
-		Object.defineProperty(globalThis, "window", {
-			value: {
-				indexedDB: mockHolder.mockIndexedDb,
-				localStorage: mockLocalStorage,
-				location: { hostname: "clinic.local" },
-			},
-			configurable: true,
-			writable: true,
-		});
-
 		const store = useOfflineStore.getState();
 
 		// Enqueue via store
@@ -702,4 +706,112 @@ describe("Network Connectivity & RTT Monitor", () => {
 		const remaining = useOfflineStore.getState().pendingMutations;
 		assert.strictEqual(remaining.length, 0);
 	});
+
+	test("5. Idempotency Key and SHA-256 State Hash Preservation in Outbox", async () => {
+		const payload = {
+			anamnesis: "Кариес 3.5 контактный пункт",
+			diagnosisIcd10: "K02.1",
+			tooth: 35,
+		};
+		const expectedHash = computePayloadHash(payload);
+
+		const mut1 = await enqueueOfflineMutation({
+			entityType: "DIARY_043_DRAFT",
+			entityId: "visit-idem-1",
+			payload,
+			organizationId: "org-idem",
+		});
+
+		assert.ok(mut1.mutationId);
+		assert.strictEqual(mut1.payloadHash, expectedHash);
+		assert.strictEqual(
+			mut1.idempotencyKey,
+			createCompositeIdempotencyKey(mut1.mutationId, payload),
+		);
+
+		// Explicit idempotencyKey
+		const explicitKey = "custom-idempotency-key-uuid-999";
+		const mut2 = await enqueueOfflineMutation({
+			idempotencyKey: explicitKey,
+			entityType: "ODONTOGRAM_STATUS",
+			entityId: "patient-idem-2",
+			payload: { tooth: 35, state: "carious" },
+			organizationId: "org-idem",
+		});
+
+		assert.strictEqual(mut2.idempotencyKey, explicitKey);
+		assert.strictEqual(
+			mut2.payloadHash,
+			computePayloadHash({ tooth: 35, state: "carious" }),
+		);
+
+		const fetched = await getOfflineMutationById(mut1.mutationId);
+		assert.strictEqual(fetched?.idempotencyKey, mut1.idempotencyKey);
+		assert.strictEqual(fetched?.payloadHash, expectedHash);
+	});
+
+	test("6. Automatic Queue Drain on isOnline and isLan Network Transitions", async () => {
+		const payload1 = { note: "Офлайн запись 1" };
+		const payload2 = { note: "Офлайн запись 2 (LAN)" };
+
+		const m1 = await enqueueOfflineMutation({
+			entityType: "DIARY_043_DRAFT",
+			entityId: "visit-drain-1",
+			payload: payload1,
+			organizationId: "org-drain",
+		});
+		const m2 = await enqueueOfflineMutation({
+			entityType: "DOCUMENT_DRAFT",
+			entityId: "doc-drain-2",
+			payload: payload2,
+			organizationId: "org-drain",
+		});
+
+		const pendingBefore = await getPendingOfflineMutations({ organizationId: "org-drain" });
+		assert.strictEqual(pendingBefore.length, 2);
+
+		let receivedBatchCount = 0;
+		const mockDrainFetch = async (
+			_url: string | URL | Request,
+			init?: RequestInit,
+		): Promise<Response> => {
+			const body = JSON.parse(String(init?.body || "{}"));
+			receivedBatchCount = body.mutations?.length || 0;
+
+			return new Response(
+				JSON.stringify({
+					syncBatchId: body.syncBatchId,
+					processedCount: body.mutations.length,
+					appliedCount: body.mutations.length,
+					duplicateCount: 0,
+					mergedCount: 0,
+					rejectedCount: 0,
+					results: body.mutations.map((m: any) => ({
+						mutationId: m.mutationId,
+						idempotencyKey: m.idempotencyKey,
+						status: "applied",
+						entityKind: m.entityKind,
+						entityId: m.entityId,
+						appliedAt: new Date().toISOString(),
+					})),
+					serverTime: new Date().toISOString(),
+				}),
+				{ status: 200, headers: { "Content-Type": "application/json" } },
+			);
+		};
+
+		// Drain on network recovery
+		const drainRes = await offlineSyncService.drainOutbox({
+			organizationId: "org-drain",
+			fetchImpl: mockDrainFetch as unknown as typeof fetch,
+		});
+
+		assert.strictEqual(drainRes.appliedCount, 2);
+		assert.strictEqual(receivedBatchCount, 2);
+		assert.strictEqual(drainRes.failedCount, 0);
+
+		const pendingAfter = await getPendingOfflineMutations({ organizationId: "org-drain" });
+		assert.strictEqual(pendingAfter.length, 0);
+	});
 });
+
