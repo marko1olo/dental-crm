@@ -124,6 +124,12 @@ export interface DesktopEscPosPrintResult {
 	error?: string | undefined;
 }
 
+export interface DesktopWindowState {
+	isFullScreen: boolean;
+	isKiosk: boolean;
+	isMaximized?: boolean | undefined;
+}
+
 export interface DesktopNativeApi {
 	isDesktop: boolean;
 	platform: "win32" | "darwin" | "linux" | "web";
@@ -150,6 +156,9 @@ export interface DesktopNativeApi {
 	watchLocalDicomFolder: (folderPath: string, callbackId: string) => Promise<{ success: boolean; error?: string }>;
 	unwatchLocalDicomFolder: (folderPath: string) => Promise<{ success: boolean }>;
 	onDicomFileDetected?: (callback: (event: DesktopDicomFileEvent) => void) => () => void;
+	toggleFullScreen?: (flag?: boolean | undefined) => Promise<DesktopWindowState>;
+	toggleKioskMode?: (flag?: boolean | undefined) => Promise<DesktopWindowState>;
+	getWindowState?: () => Promise<DesktopWindowState>;
 }
 
 declare global {
@@ -577,4 +586,68 @@ export function subscribeDesktopDicomFiles(
 		return () => {};
 	}
 	return api.onDicomFileDetected(callback);
+}
+
+/**
+ * Toggles desktop full screen / kiosk mode for dental operatory displays (F11 / Header action).
+ */
+export async function toggleDesktopFullScreen(flag?: boolean): Promise<DesktopWindowState> {
+	const api = getDesktopNativeApi();
+	if (api?.toggleFullScreen) {
+		try {
+			return await api.toggleFullScreen(flag);
+		} catch {
+			// Fall through to standard Web Fullscreen API
+		}
+	}
+
+	// Browser / PWA Fullscreen API Fallback
+	if (typeof document !== "undefined") {
+		try {
+			if (!document.fullscreenElement) {
+				await document.documentElement.requestFullscreen();
+				return { isFullScreen: true, isKiosk: false, isMaximized: true };
+			} else {
+				await document.exitFullscreen();
+				return { isFullScreen: false, isKiosk: false, isMaximized: false };
+			}
+		} catch {
+			// Ignore fullscreen restrictions
+		}
+	}
+
+	return { isFullScreen: false, isKiosk: false, isMaximized: false };
+}
+
+/**
+ * Toggles dedicated clinical kiosk mode on operatory monoblocks (removes OS window frame & taskbar).
+ */
+export async function toggleDesktopKioskMode(flag?: boolean): Promise<DesktopWindowState> {
+	const api = getDesktopNativeApi();
+	if (api?.toggleKioskMode) {
+		try {
+			return await api.toggleKioskMode(flag);
+		} catch {
+			// Fall through
+		}
+	}
+
+	return await toggleDesktopFullScreen(flag);
+}
+
+/**
+ * Retrieves current desktop window state (fullscreen, kiosk, maximized).
+ */
+export async function getDesktopWindowState(): Promise<DesktopWindowState> {
+	const api = getDesktopNativeApi();
+	if (api?.getWindowState) {
+		try {
+			return await api.getWindowState();
+		} catch {
+			// Fall through
+		}
+	}
+
+	const isFs = typeof document !== "undefined" && Boolean(document.fullscreenElement);
+	return { isFullScreen: isFs, isKiosk: false, isMaximized: isFs };
 }

@@ -4,10 +4,13 @@ import {
 	acquireDesktopVisiographImage,
 	classifyTwainHardwareError,
 	getDesktopNativeApi,
+	getDesktopWindowState,
 	isDesktopApp,
 	listDesktopSerialPorts,
 	listDesktopTwainDevices,
 	printDesktopFiscalReceiptTcp,
+	toggleDesktopFullScreen,
+	toggleDesktopKioskMode,
 	watchDesktopDicomFolder,
 	unwatchDesktopDicomFolder,
 	type DesktopNativeApi,
@@ -266,6 +269,76 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 			assert.equal(res.success, false);
 			assert.equal(res.errorCategory, "usb_disconnected");
 			assert.ok(res.userFriendlyMessageRu?.includes("Визиограф отключен, проверьте USB-кабель"));
+		} finally {
+			if (originalWindowDesc) {
+				Object.defineProperty(globalThis, "window", originalWindowDesc);
+			} else {
+				delete (globalThis as any).window;
+			}
+		}
+	});
+
+	await t.test("Desktop Fullscreen & Kiosk Mode controller toggles window display states safely", async () => {
+		let currentFs = false;
+		let currentKiosk = false;
+
+		const mockWindowDesktop: DesktopNativeApi = {
+			isDesktop: true,
+			platform: "win32",
+			version: "0.1.0",
+			listSerialPorts: async () => [],
+			listTwainDevices: async () => [],
+			acquireTwainImage: async () => ({ success: true }),
+			printFiscalReceiptTcp: async () => ({ success: true }),
+			watchLocalDicomFolder: async () => ({ success: true }),
+			unwatchLocalDicomFolder: async () => ({ success: true }),
+			toggleFullScreen: async (flag) => {
+				currentFs = flag !== undefined ? flag : !currentFs;
+				return { isFullScreen: currentFs, isKiosk: currentKiosk, isMaximized: true };
+			},
+			toggleKioskMode: async (flag) => {
+				currentKiosk = flag !== undefined ? flag : !currentKiosk;
+				return { isFullScreen: currentKiosk, isKiosk: currentKiosk, isMaximized: true };
+			},
+			getWindowState: async () => ({
+				isFullScreen: currentFs,
+				isKiosk: currentKiosk,
+				isMaximized: true,
+			}),
+		};
+
+		const originalWindowDesc = Object.getOwnPropertyDescriptor(globalThis, "window");
+		Object.defineProperty(globalThis, "window", {
+			value: {
+				denteDesktopNative: mockWindowDesktop,
+				location: { hostname: "localhost" },
+			},
+			configurable: true,
+			writable: true,
+		});
+
+		try {
+			// Initial state
+			const initial = await getDesktopWindowState();
+			assert.equal(initial.isFullScreen, false);
+			assert.equal(initial.isKiosk, false);
+
+			// Toggle Fullscreen ON
+			const fsOn = await toggleDesktopFullScreen(true);
+			assert.equal(fsOn.isFullScreen, true);
+
+			// Toggle Fullscreen OFF
+			const fsOff = await toggleDesktopFullScreen(false);
+			assert.equal(fsOff.isFullScreen, false);
+
+			// Toggle Kiosk Mode ON (operatory monoblock display)
+			const kioskOn = await toggleDesktopKioskMode(true);
+			assert.equal(kioskOn.isKiosk, true);
+			assert.equal(kioskOn.isFullScreen, true);
+
+			// Toggle Kiosk Mode OFF
+			const kioskOff = await toggleDesktopKioskMode(false);
+			assert.equal(kioskOff.isKiosk, false);
 		} finally {
 			if (originalWindowDesc) {
 				Object.defineProperty(globalThis, "window", originalWindowDesc);

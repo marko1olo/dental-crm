@@ -64,4 +64,16 @@ contextBridge.exposeInMainWorld("denteDesktopNative", {
 			ipcRenderer.removeListener("dente:dicom-file-detected", handler);
 		};
 	},
+
+	toggleFullScreen: async (flag) => {
+		return await ipcRenderer.invoke("dente:toggle-fullscreen", flag);
+	},
+
+	toggleKioskMode: async (flag) => {
+		return await ipcRenderer.invoke("dente:toggle-kiosk", flag);
+	},
+
+	getWindowState: async () => {
+		return await ipcRenderer.invoke("dente:get-window-state");
+	},
 });

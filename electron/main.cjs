@@ -681,6 +681,56 @@ function registerIpcHandlers() {
 	ipcMain.handle("dente:unwatch-dicom-folder", async (_event, { folderPath }) => {
 		return unwatchDicomFolder(folderPath);
 	});
+
+	ipcMain.handle("dente:toggle-fullscreen", async (_event, flag) => {
+		return toggleFullScreen(flag);
+	});
+
+	ipcMain.handle("dente:toggle-kiosk", async (_event, flag) => {
+		return toggleKioskMode(flag);
+	});
+
+	ipcMain.handle("dente:get-window-state", async () => {
+		return getWindowState();
+	});
+}
+
+/**
+ * Toggle Fullscreen / Kiosk Mode for dental operatory displays
+ */
+function toggleFullScreen(flag) {
+	if (!mainWindow) return { isFullScreen: false, isKiosk: false };
+	const target = flag !== undefined ? Boolean(flag) : !mainWindow.isFullScreen();
+	mainWindow.setFullScreen(target);
+	return {
+		isFullScreen: mainWindow.isFullScreen(),
+		isKiosk: mainWindow.isKiosk?.() || false,
+	};
+}
+
+function toggleKioskMode(flag) {
+	if (!mainWindow) return { isFullScreen: false, isKiosk: false };
+	const target = flag !== undefined ? Boolean(flag) : !(mainWindow.isKiosk?.() || false);
+	if (mainWindow.setKiosk) {
+		mainWindow.setKiosk(target);
+	} else {
+		mainWindow.setFullScreen(target);
+	}
+	return {
+		isFullScreen: mainWindow.isFullScreen(),
+		isKiosk: mainWindow.isKiosk?.() || false,
+	};
+}
+
+function getWindowState() {
+	if (!mainWindow) {
+		return { isFullScreen: false, isKiosk: false, isMaximized: false };
+	}
+	return {
+		isFullScreen: mainWindow.isFullScreen(),
+		isKiosk: mainWindow.isKiosk?.() || false,
+		isMaximized: mainWindow.isMaximized?.() || false,
+	};
 }
 
 /**
@@ -752,4 +802,7 @@ module.exports = {
 	unwatchDicomFolder,
 	checkKktStatusTcpSocket,
 	parseDicomFilenameMetadata,
+	toggleFullScreen,
+	toggleKioskMode,
+	getWindowState,
 };

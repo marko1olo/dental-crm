@@ -68,6 +68,9 @@ const requiredExports = [
 	"unwatchDicomFolder",
 	"checkKktStatusTcpSocket",
 	"parseDicomFilenameMetadata",
+	"toggleFullScreen",
+	"toggleKioskMode",
+	"getWindowState",
 ];
 
 for (const fnName of requiredExports) {
@@ -90,6 +93,9 @@ const expectedChannels = [
 	"dente:watch-dicom-folder",
 	"dente:unwatch-dicom-folder",
 	"dente:dicom-file-detected",
+	"dente:toggle-fullscreen",
+	"dente:toggle-kiosk",
+	"dente:get-window-state",
 ];
 
 for (const ch of expectedChannels) {
