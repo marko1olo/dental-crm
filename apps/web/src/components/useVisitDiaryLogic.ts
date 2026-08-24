@@ -614,20 +614,31 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 
 	// ── Dual-layer IndexedDB & LocalStorage resilience for draft protection across browser reloads / crashes
 	const localDiaryStorageKey = `dente_diary_draft_${visitId}`;
+	const [isDraftRecovered, setIsDraftRecovered] = useState(false);
+	const [recoveredDraftTime, setRecoveredDraftTime] = useState<string | null>(null);
 
+	// 1-Click Draft Recovery & Auto-Hydration on initial load
 	useEffect(() => {
 		if (loadState.phase !== "empty" || !visitId) return;
 		let cancelled = false;
 
-		// 1. Fast synchronous restoration from localStorage
+		// Fast synchronous restoration from localStorage
 		try {
 			const cached = localStorage.getItem(localDiaryStorageKey);
 			if (cached) {
 				const parsed = JSON.parse(cached) as Partial<DiaryState>;
 				if (parsed && typeof parsed === "object") {
-					setDiary((prev) => ({ ...prev, ...parsed }));
-					if (parsed.diagnosisIcd10) {
-						setIcdSearch((c) => (c.trim() ? c : (parsed.diagnosisIcd10 ?? c)));
+					const hasContent = Object.values(parsed).some(
+						(v) => typeof v === "string" && v.trim().length > 0,
+					);
+					if (hasContent) {
+						setDiary((prev) => ({ ...prev, ...parsed }));
+						setIsDraftRecovered(true);
+						setRecoveredDraftTime(new Date().toLocaleTimeString("ru-RU"));
+						if (parsed.diagnosisIcd10) {
+							setIcdSearch((c) => (c.trim() ? c : (parsed.diagnosisIcd10 ?? c)));
+						}
+						showToast("Черновик приема восстановлен из локального хранилища", "info", 5000);
 					}
 				}
 			}
@@ -635,14 +646,25 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			// ignore JSON parse error on corrupted local state
 		}
 
-		// 2. Async restoration from IndexedDB (outbox drafts store)
+		// Async restoration from IndexedDB (outbox drafts store)
 		void loadOfflineDraft<DiaryState>(localDiaryStorageKey).then((idbDraft) => {
 			if (!cancelled && idbDraft?.data) {
-				setDiary((prev) => ({ ...prev, ...idbDraft.data }));
-				if (idbDraft.data.diagnosisIcd10) {
-					setIcdSearch((c) =>
-						c.trim() ? c : (idbDraft.data.diagnosisIcd10 ?? c),
+				const hasContent = Object.values(idbDraft.data).some(
+					(v) => typeof v === "string" && v.trim().length > 0,
+				);
+				if (hasContent) {
+					setDiary((prev) => ({ ...prev, ...idbDraft.data }));
+					setIsDraftRecovered(true);
+					setRecoveredDraftTime(
+						idbDraft.updatedAt
+							? new Date(idbDraft.updatedAt).toLocaleTimeString("ru-RU")
+							: new Date().toLocaleTimeString("ru-RU"),
 					);
+					if (idbDraft.data.diagnosisIcd10) {
+						setIcdSearch((c) =>
+							c.trim() ? c : (idbDraft.data.diagnosisIcd10 ?? c),
+						);
+					}
 				}
 			}
 		});
@@ -652,25 +674,71 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		};
 	}, [loadState.phase, visitId, localDiaryStorageKey]);
 
+	// ── 5-Second Local Draft Protection Autosave Loop (IndexedDB + LocalStorage)
 	useEffect(() => {
 		if (!visitId || isLocked || loadState.phase === "loading") return;
-		const hasContent = Object.values(diary).some(
-			(v) => typeof v === "string" && v.trim().length > 0,
-		);
-		if (hasContent) {
-			try {
-				localStorage.setItem(localDiaryStorageKey, JSON.stringify(diary));
-			} catch {
-				// ignore localStorage quota errors
-			}
-			void saveOfflineDraft(
-				localDiaryStorageKey,
-				"DIARY_043_DRAFT",
-				visitId,
-				diary,
+
+		const flushLocalDraft = () => {
+			const hasContent = Object.values(diary).some(
+				(v) => typeof v === "string" && v.trim().length > 0,
 			);
-		}
+			if (hasContent) {
+				try {
+					localStorage.setItem(localDiaryStorageKey, JSON.stringify(diary));
+				} catch {
+					// ignore localStorage quota errors
+				}
+				void saveOfflineDraft(
+					localDiaryStorageKey,
+					"DIARY_043_DRAFT",
+					visitId,
+					diary,
+				);
+			}
+		};
+
+		// Immediate save on modification
+		flushLocalDraft();
+
+		// Periodic 5-second resilient interval
+		const intervalTimer = setInterval(flushLocalDraft, 5000);
+
+		return () => clearInterval(intervalTimer);
 	}, [diary, visitId, isLocked, loadState.phase, localDiaryStorageKey]);
+
+	// ── Window beforeunload Tab Closure Protection
+	useEffect(() => {
+		if (!visitId || isLocked || loadState.phase === "loading") return;
+
+		const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+			const hasUnsavedContent = Object.values(diary).some(
+				(v) => typeof v === "string" && v.trim().length > 0,
+			);
+			if (hasUnsavedContent) {
+				// Synchronously flush to localStorage and fire async save to IDB
+				try {
+					localStorage.setItem(localDiaryStorageKey, JSON.stringify(diary));
+				} catch {
+					// ignore
+				}
+				void saveOfflineDraft(
+					localDiaryStorageKey,
+					"DIARY_043_DRAFT",
+					visitId,
+					diary,
+				);
+
+				e.preventDefault();
+				e.returnValue = "В приеме есть несохраненные данные дневника 043/у. Закрыть страницу?";
+				return e.returnValue;
+			}
+		};
+
+		window.addEventListener("beforeunload", handleBeforeUnload);
+		return () => {
+			window.removeEventListener("beforeunload", handleBeforeUnload);
+		};
+	}, [diary, isLocked, loadState.phase, localDiaryStorageKey, visitId]);
 
 	// ── Resize textareas
 
@@ -947,6 +1015,50 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		},
 		[isLocked, isRevising, scheduleDebouncedSave],
 	);
+
+	// ── Global 1-Click Fast-Track Protocol Dispatch Listener
+	useEffect(() => {
+		const handleGlobalSoapEvent = (e: Event) => {
+			const customEvt = e as CustomEvent<{
+				soap?: Partial<DiaryState>;
+				finding?: OdontogramFindingInput;
+				mode?: MergeStrategy;
+			}>;
+			if (!customEvt.detail) return;
+			const { soap, finding, mode = "smart_append" } = customEvt.detail;
+
+			if (isLocked && !isRevising) {
+				return;
+			}
+
+			if (soap) {
+				setDiary((prev) => mergeSoapDiaryState(prev, soap, { strategy: mode }));
+				if (soap.diagnosisIcd10) {
+					const icd = soap.diagnosisIcd10;
+					setIcdSearch((c) => (c.trim() ? c : icd));
+				}
+				scheduleDebouncedSave();
+			} else if (finding) {
+				const generated = generateSoapFromOdontogramFinding(finding);
+				setDiary((prev) =>
+					mergeSoapDiaryState(prev, generated, { strategy: mode }),
+				);
+				if (generated.diagnosisIcd10) {
+					const icd = generated.diagnosisIcd10;
+					setIcdSearch((c) => (c.trim() ? c : icd));
+				}
+				scheduleDebouncedSave();
+			}
+		};
+
+		window.addEventListener("dente-apply-soap-protocol", handleGlobalSoapEvent);
+		return () => {
+			window.removeEventListener(
+				"dente-apply-soap-protocol",
+				handleGlobalSoapEvent,
+			);
+		};
+	}, [isLocked, isRevising, scheduleDebouncedSave]);
 
 	// ── Anesthesia Quick Logger
 	const applyAnesthesiaPreset = useCallback(
@@ -1792,6 +1904,19 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		],
 	);
 
+	const clearDraft = useCallback(() => {
+		void deleteOfflineDraft(localDiaryStorageKey);
+		try {
+			localStorage.removeItem(localDiaryStorageKey);
+		} catch {
+			// ignore
+		}
+		setDiary(EMPTY_DIARY);
+		setIsDraftRecovered(false);
+		setRecoveredDraftTime(null);
+		showToast("Черновик приема очищен", "info", 3000);
+	}, [localDiaryStorageKey]);
+
 	return {
 		diary,
 		setDiary,
@@ -1823,6 +1948,9 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		revisionCount,
 		diaryRevisions,
 		isSaving,
+		isDraftRecovered,
+		recoveredDraftTime,
+		clearDraft,
 		showScanner,
 		setShowScanner,
 		trayBarcode,

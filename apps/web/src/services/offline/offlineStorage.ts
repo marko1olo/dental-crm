@@ -9,6 +9,12 @@
  * - Прозрачный fallback на localStorage при недоступности IndexedDB (приватный режим, сбои браузера)
  */
 
+import {
+	computePayloadHash,
+	createCompositeIdempotencyKey,
+	generateUuidV7,
+	isUuidV7,
+} from "@dental/shared";
 import { logger } from "../../utils/logger";
 import type {
 	EnqueueMutationInput,
@@ -20,60 +26,25 @@ import type {
 } from "./types";
 
 export const OFFLINE_DB_NAME = "dente-crm-offline-outbox";
-export const OFFLINE_DB_VERSION = 1;
+export const OFFLINE_DB_VERSION = 2;
 export const MUTATIONS_STORE_NAME = "mutations";
 export const DRAFTS_STORE_NAME = "drafts";
+export const CLINICAL_CACHE_STORE_NAME = "clinical_cache";
 
 export const LOCAL_STORAGE_MUTATIONS_KEY = "dente_offline_mutations_v1";
 export const LOCAL_STORAGE_DRAFTS_PREFIX = "dente_offline_draft_v1:";
 
+
 let dbPromiseInstance: Promise<IDBDatabase> | null = null;
 
+export { generateUuidV7, isUuidV7 };
+
 /**
- * Генерация UUID v4 с криптографической устойчивостью
+ * Генерация UUID v7 (RFC 9562) с миллисекундной упорядоченностью
+ * и криптографической устойчивостью.
  */
 export function generateMutationUuid(): string {
-	if (
-		typeof crypto !== "undefined" &&
-		typeof crypto.randomUUID === "function"
-	) {
-		try {
-			return crypto.randomUUID();
-		} catch {
-			// fallback below
-		}
-	}
-	if (
-		typeof crypto !== "undefined" &&
-		typeof crypto.getRandomValues === "function"
-	) {
-		const bytes = new Uint8Array(16);
-		crypto.getRandomValues(bytes);
-		bytes[6] = ((bytes[6] ?? 0) & 0x0f) | 0x40; // Version 4
-		bytes[8] = ((bytes[8] ?? 0) & 0x3f) | 0x80; // Variant RFC4122
-		const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join(
-			"",
-		);
-		return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
-	}
-	// Pure JS random fallback
-	let d = Date.now();
-	let d2 =
-		(typeof performance !== "undefined" &&
-			performance.now &&
-			performance.now() * 1000) ||
-		0;
-	return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-		let r = Math.random() * 16;
-		if (d > 0) {
-			r = (d + r) % 16 | 0;
-			d = Math.floor(d / 16);
-		} else if (d2 > 0) {
-			r = (d2 + r) % 16 | 0;
-			d2 = Math.floor(d2 / 16);
-		}
-		return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
-	});
+	return generateUuidV7();
 }
 
 /**
@@ -140,6 +111,16 @@ export function openOfflineOutboxDb(): Promise<IDBDatabase> {
 					draftStore.createIndex("updatedAtMs", "updatedAtMs");
 					draftStore.createIndex("organizationId", "organizationId");
 				}
+
+				if (!db.objectStoreNames.contains(CLINICAL_CACHE_STORE_NAME)) {
+					const cacheStore = db.createObjectStore(CLINICAL_CACHE_STORE_NAME, {
+						keyPath: "cacheKey",
+					});
+					cacheStore.createIndex("entityKind", "entityKind");
+					cacheStore.createIndex("entityId", "entityId");
+					cacheStore.createIndex("cachedAtMs", "cachedAtMs");
+					cacheStore.createIndex("organizationId", "organizationId");
+				}
 			};
 
 			request.onsuccess = () => {
@@ -172,9 +153,6 @@ export function openOfflineOutboxDb(): Promise<IDBDatabase> {
 	return dbPromiseInstance;
 }
 
-/**
- * Сброс закэшированного соединения базы данных
- */
 export function resetOfflineDbConnection(): void {
 	dbPromiseInstance = null;
 }
@@ -264,10 +242,15 @@ export async function enqueueOfflineMutation<T = unknown>(
 	const timestamp = input.timestamp || now.toISOString();
 	const timestampMs = new Date(timestamp).getTime() || now.getTime();
 	const mutationId = input.mutationId || generateMutationUuid();
+	const payloadHash = computePayloadHash(input.payload);
+	const idempotencyKey =
+		input.idempotencyKey ||
+		createCompositeIdempotencyKey(mutationId, input.payload);
 
 	const mutation: OfflineMutation<T> = {
 		mutationId,
-		idempotencyKey: input.idempotencyKey,
+		idempotencyKey,
+		payloadHash,
 		entityType: input.entityType,
 		entityId: input.entityId,
 		action: input.action || "update",
@@ -280,6 +263,7 @@ export async function enqueueOfflineMutation<T = unknown>(
 		status: "pending",
 		retryCount: 0,
 	};
+
 
 	try {
 		const db = await openOfflineOutboxDb();
@@ -711,3 +695,71 @@ export async function getOfflineQueueMetrics(): Promise<OfflineQueueMetrics> {
 		totalDrafts,
 	};
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Specialized Clinical Drafts (Visit Diary SOAP, Form 043/u, Odontogram)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const VISIT_DRAFT_KEY_PREFIX = "dente_diary_draft_";
+export const FORM_043_DRAFT_KEY_PREFIX = "dente_form043_draft_";
+
+/**
+ * Сохранение черновика визита (SOAP дневник 043/у)
+ */
+export async function saveVisitDraft<T = unknown>(
+	visitId: string,
+	data: T,
+	organizationId?: string | undefined,
+): Promise<OfflineDraft<T>> {
+	const key = `${VISIT_DRAFT_KEY_PREFIX}${visitId}`;
+	return saveOfflineDraft<T>(key, "DIARY_043_DRAFT", visitId, data, organizationId);
+}
+
+/**
+ * Загрузка черновика визита (SOAP дневник 043/у)
+ */
+export async function loadVisitDraft<T = unknown>(
+	visitId: string,
+): Promise<OfflineDraft<T> | null> {
+	const key = `${VISIT_DRAFT_KEY_PREFIX}${visitId}`;
+	return loadOfflineDraft<T>(key);
+}
+
+/**
+ * Удаление черновика визита после успешного сохранения / подписания
+ */
+export async function deleteVisitDraft(visitId: string): Promise<void> {
+	const key = `${VISIT_DRAFT_KEY_PREFIX}${visitId}`;
+	return deleteOfflineDraft(key);
+}
+
+/**
+ * Сохранение черновика карты 043/у пациента (одонтограмма, анамнез, индексы)
+ */
+export async function saveForm043Draft<T = unknown>(
+	patientId: string,
+	data: T,
+	organizationId?: string | undefined,
+): Promise<OfflineDraft<T>> {
+	const key = `${FORM_043_DRAFT_KEY_PREFIX}${patientId}`;
+	return saveOfflineDraft<T>(key, "DIARY_043_DRAFT", patientId, data, organizationId);
+}
+
+/**
+ * Загрузка черновика карты 043/у пациента
+ */
+export async function loadForm043Draft<T = unknown>(
+	patientId: string,
+): Promise<OfflineDraft<T> | null> {
+	const key = `${FORM_043_DRAFT_KEY_PREFIX}${patientId}`;
+	return loadOfflineDraft<T>(key);
+}
+
+/**
+ * Удаление черновика карты 043/у пациента
+ */
+export async function deleteForm043Draft(patientId: string): Promise<void> {
+	const key = `${FORM_043_DRAFT_KEY_PREFIX}${patientId}`;
+	return deleteOfflineDraft(key);
+}
+
