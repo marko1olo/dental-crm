@@ -2,11 +2,16 @@
  * DENTE Dental CRM — Russian Dental Pharmacopeia & Form 107-1/u Presets
  */
 
+import {
+	DENTAL_PRESCRIPTION_DRUG_CATALOG,
+	type DentalPrescriptionDrugPreset,
+} from "@dental/shared";
+
 export interface DentalMedicationPreset {
 	readonly id: string;
 	readonly tradeNameRu: string;
 	readonly activeSubstanceRu: string;
-	readonly category: "antibiotic" | "nsaid" | "antiseptic" | "dental_gel" | "antihistamine";
+	readonly category: "antibiotic" | "nsaid" | "antiseptic" | "dental_gel" | "antihistamine" | "controlled_pku" | "hemostatic" | "gastroprotective" | "preferential_somatic" | "other";
 	readonly categoryLabelRu: string;
 	readonly latinRp: string;
 	readonly formRu: string;
@@ -14,7 +19,7 @@ export interface DentalMedicationPreset {
 	readonly quantityLabel: string;
 	readonly dispenseLatin: string;
 	readonly signaRu: string;
-	readonly validityDays: 15 | 60 | 365;
+	readonly validityDays: 15 | 30 | 60 | 365;
 }
 
 export const DENTAL_MEDICATIONS_CATALOG: readonly DentalMedicationPreset[] = [
@@ -30,6 +35,20 @@ export const DENTAL_MEDICATIONS_CATALOG: readonly DentalMedicationPreset[] = [
 		quantityLabel: "N. 14",
 		dispenseLatin: "D.t.d. N 14 in tab.",
 		signaRu: "S. Внутрь по 1 таблетке 2 раза в сутки во время еды, курс 7 дней.",
+		validityDays: 60,
+	},
+	{
+		id: "amoxicillin_500",
+		tradeNameRu: "Амоксициллин 500 мг (Флемоксин)",
+		activeSubstanceRu: "Амоксициллин",
+		category: "antibiotic",
+		categoryLabelRu: "Антибиотик (Пенициллины)",
+		latinRp: "Rp.: Amoxicillini 500 mg",
+		formRu: "капсулы / таблетки",
+		dosageRu: "500 мг",
+		quantityLabel: "N. 20 (капсулы)",
+		dispenseLatin: "D.t.d. N 20 in caps.",
+		signaRu: "S. Внутрь по 1 капсуле (500 мг) 3 раза в день через каждые 8 часов, курс 5–7 дней.",
 		validityDays: 60,
 	},
 	{
@@ -86,6 +105,34 @@ export const DENTAL_MEDICATIONS_CATALOG: readonly DentalMedicationPreset[] = [
 		quantityLabel: "N. 10",
 		dispenseLatin: "D.t.d. N 10 in tab.",
 		signaRu: "S. Внутрь по 1 таблетке 1 раз в сутки вечером, 3–5 дней для уменьшения постоперационного отека.",
+		validityDays: 60,
+	},
+	{
+		id: "tramadol_50",
+		tradeNameRu: "Трамадол (Трамал)",
+		activeSubstanceRu: "Трамадол",
+		category: "controlled_pku",
+		categoryLabelRu: "Опиоидный анальгетик (ПКУ)",
+		latinRp: "Rp.: Tramadoli 50 mg",
+		formRu: "капсулы",
+		dosageRu: "50 мг",
+		quantityLabel: "N. 10 (капсулы)",
+		dispenseLatin: "D.t.d. N 10 in caps.",
+		signaRu: "S. Внутрь по 1 капсуле (50 мг) при выраженном болевом синдроме (строго ПКУ).",
+		validityDays: 15,
+	},
+	{
+		id: "tranexamic_500",
+		tradeNameRu: "Транексам (Транексамовая кислота)",
+		activeSubstanceRu: "Транексамовая кислота",
+		category: "hemostatic",
+		categoryLabelRu: "Гемостатик",
+		latinRp: "Rp.: Acidi tranexamici 500 mg",
+		formRu: "таблетки, покрытые оболочкой",
+		dosageRu: "500 мг",
+		quantityLabel: "N. 10",
+		dispenseLatin: "D.t.d. N 10 in tab.",
+		signaRu: "S. Внутрь по 1 таблетке 3 раза в день при кровоточивости лунки, 2-3 дня.",
 		validityDays: 60,
 	},
 ];
