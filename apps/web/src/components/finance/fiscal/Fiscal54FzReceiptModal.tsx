@@ -61,6 +61,7 @@ export interface Fiscal54FzReceiptModalProps {
 	readonly cashierFullName?: string;
 	readonly clinicName?: string;
 	readonly clinicInn?: string;
+	readonly clinicLicense?: string;
 	readonly onClose: () => void;
 	readonly onReceiptFiscalized?: (receiptData: unknown) => void;
 }
@@ -76,6 +77,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 	cashierFullName = "Кассир-администратор",
 	clinicName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
 	clinicInn = "7701234567",
+	clinicLicense = "Лицензия на мед. деятельность № ЛО41-01137-77/00368421 от 12.10.2021 г.",
 	onClose,
 	onReceiptFiscalized,
 }) => {
@@ -1183,6 +1185,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 							<FiscalReceiptPrintView
 								clinicName={clinicName}
 								clinicInn={clinicInn}
+								clinicLicense={clinicLicense}
 								cashierFullName={cashierFullName}
 								customerContact={customerContact}
 								patientName={patientName}

@@ -10,6 +10,7 @@ export interface FiscalReceiptPrintViewProps {
 	readonly clinicName: string;
 	readonly clinicInn: string;
 	readonly clinicAddress?: string;
+	readonly clinicLicense?: string;
 	readonly cashierFullName: string;
 	readonly customerContact: string;
 	readonly patientName: string;
@@ -24,12 +25,14 @@ export interface FiscalReceiptPrintViewProps {
 	readonly ofdVerificationUrl?: string;
 	readonly issuedAt?: string;
 	readonly isIncomeReturn?: boolean;
+	readonly isPaidStampVisible?: boolean;
 }
 
 export const FiscalReceiptPrintView: React.FC<FiscalReceiptPrintViewProps> = ({
 	clinicName,
 	clinicInn,
 	clinicAddress = "г. Москва, ул. Медицинская, д. 10",
+	clinicLicense = "Лицензия на мед. деятельность № ЛО41-01137-77/00368421 от 12.10.2021 г.",
 	cashierFullName,
 	customerContact,
 	patientName,
@@ -44,6 +47,7 @@ export const FiscalReceiptPrintView: React.FC<FiscalReceiptPrintViewProps> = ({
 	ofdVerificationUrl,
 	issuedAt = new Date().toLocaleString("ru-RU"),
 	isIncomeReturn = false,
+	isPaidStampVisible = true,
 }) => {
 	const totalElectronic = tenders.cardRub + tenders.sbpRub;
 	const receivedCash = tenders.receivedCashRub ?? tenders.cashRub;
@@ -77,6 +81,11 @@ export const FiscalReceiptPrintView: React.FC<FiscalReceiptPrintViewProps> = ({
 				<h3 className="font-black text-xs uppercase tracking-wider">{clinicName}</h3>
 				<p className="text-[10px] text-slate-600">ИНН: {clinicInn} · СНО: УСН Доходы (Тег 1055 = 2)</p>
 				<p className="text-[10px] text-slate-600">{clinicAddress}</p>
+				{clinicLicense && (
+					<p className="text-[9px] text-slate-500 font-sans leading-tight pt-0.5">
+						{clinicLicense}
+					</p>
+				)}
 			</div>
 
 			{/* Document Info */}
@@ -213,6 +222,41 @@ export const FiscalReceiptPrintView: React.FC<FiscalReceiptPrintViewProps> = ({
 				</div>
 			</div>
 
+			{/* Paid Stamp & Signatures Section */}
+			<div className="py-3 border-b border-dashed border-slate-400 space-y-3">
+				<div className="flex items-center justify-between">
+					{/* Paid Stamp */}
+					{isPaidStampVisible && (
+						<div
+							className="border-2 border-emerald-600 text-emerald-700 font-black text-[12px] uppercase px-3 py-1 rounded-lg transform -rotate-3 tracking-widest flex items-center gap-1.5 shadow-sm bg-emerald-50/70"
+							data-testid="receipt-paid-stamp"
+						>
+							<CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+							<span>ОПЛАЧЕНО</span>
+						</div>
+					)}
+
+					{/* Clinic Stamp / Seal Placeholder */}
+					<div className="text-right">
+						<span className="text-[9px] text-slate-400 border border-dashed border-slate-300 rounded-full px-2.5 py-1 uppercase font-bold tracking-wider">
+							М.П. Клиники
+						</span>
+					</div>
+				</div>
+
+				{/* Cashier Signature Line */}
+				<div className="pt-2 flex justify-between items-end text-[10px] text-slate-700">
+					<div>
+						<span className="text-slate-500">Подпись кассира:</span>
+						<div className="w-28 border-b border-slate-900 mt-4"></div>
+					</div>
+					<div className="text-right">
+						<span className="font-semibold text-slate-900">{cashierFullName}</span>
+						<div className="text-[8px] text-slate-400">(расшифровка подписи)</div>
+					</div>
+				</div>
+			</div>
+
 			{/* Fiscal Hardware Attributes & QR */}
 			<div className="pt-3 space-y-2 text-[9px] text-slate-600">
 				<div className="grid grid-cols-2 gap-1 bg-slate-50 p-2 rounded-lg border border-slate-200">
@@ -222,20 +266,25 @@ export const FiscalReceiptPrintView: React.FC<FiscalReceiptPrintViewProps> = ({
 					<div>ФПД: {fiscalSign}</div>
 				</div>
 
-				<div className="text-center pt-2 space-y-1">
-					<div className="inline-block p-2 bg-white border border-slate-300 rounded-lg shadow-sm">
-						<div className="w-24 h-24 mx-auto flex items-center justify-center bg-slate-100 rounded text-slate-400">
-							<QrCode className="w-16 h-16 text-slate-900" />
+				<div className="text-center pt-2 space-y-1.5">
+					<div className="inline-block p-2 bg-white border border-slate-300 rounded-xl shadow-sm">
+						<div className="w-24 h-24 mx-auto flex items-center justify-center bg-slate-50 rounded-lg text-slate-900 border border-slate-100">
+							<QrCode className="w-20 h-20 text-slate-950" />
 						</div>
 					</div>
-					<p className="text-[8px] text-slate-500">
-						Проверка чека в ФНС: www.nalog.gov.ru
-					</p>
-					{ofdVerificationUrl && (
-						<p className="text-[8px] text-blue-700 truncate max-w-[220px] mx-auto">
-							{ofdVerificationUrl}
+					<div className="space-y-0.5">
+						<p className="text-[9px] font-bold text-slate-800">
+							QR-код проверки чека в ФНС России
 						</p>
-					)}
+						<p className="text-[8px] text-slate-500">
+							Официальный сервис: www.nalog.gov.ru
+						</p>
+						{ofdVerificationUrl && (
+							<p className="text-[8px] text-blue-700 truncate max-w-[220px] mx-auto font-mono">
+								{ofdVerificationUrl}
+							</p>
+						)}
+					</div>
 				</div>
 			</div>
 		</div>
