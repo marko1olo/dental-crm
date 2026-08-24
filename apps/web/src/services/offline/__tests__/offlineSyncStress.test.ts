@@ -1496,5 +1496,201 @@ describe("Offline-First & Multi-Level Sync Engine: Industrial Stress & Chaos Sui
 		const remaining = await getPendingOfflineMutations({ organizationId: orgId });
 		assert.strictEqual(remaining.length, 0, "All mutations cleaned up successfully");
 	});
+
+	// ── 18. Unsaved Form 043/u Clinical Draft Crash Recovery & Anti-Loss Protocol ──
+	test("STRESS 18: Unsaved Form 043/u clinical draft crash recovery across abrupt browser termination, IDB connection loss & LocalStorage fallback", async () => {
+		const orgId = "org-crash-recovery-18";
+		const patientId = "patient_crash_test_043_18";
+
+		// 1. Doctor actively filling rich Form 043/u outpatient card
+		const fullMedicalCard043 = {
+			patientId,
+			generalInfo: {
+				fullName: "Калинин Сергей Михайлович",
+				birthDate: "1988-04-12",
+				gender: "M",
+				snils: "123-456-789 00",
+				omsPolicy: "9876543210123456",
+				phone: "+7 (916) 555-44-33",
+				address: "г. Москва, ул. Тверская, д. 15, кв. 42",
+			},
+			complaints: "Острая самопроизвольная приступообразная боль в области зуба 46, усиливающаяся в ночное время и от температурных раздражителей (иррадиация в правое ухо и висок)",
+			anamnesisMorbi: "Зуб 46 ранее лечен по поводу среднего кариеса 2 года назад. Острые боли возникли 2 дня назад, интенсивность нарастает, прием НПВП купирует симптомы кратковременно",
+			anamnesisVitae: "Аллергологический анамнез: непереносимость антибиотиков пенициллинового ряда (крапивница). Сопутствующие заболевания: гипертоническая болезнь I стадии",
+			statusLocalis: "На жевательно-дистальной поверхности зуба 46 определяется глубокая кариозная полость, заполненная размягченным пигментированным дентином. Зондирование дна полости резко болезненно в проекции мезиально-щечного рога пульпы. Перкуссия зуба 46 слабо болезненна. Термодиагностика: холод вызывает резкую длительно не проходящую боль. ЭОД = 35 мкА",
+			diagnosisIcd10: "K04.0",
+			diagnosisDescription: "Острый очаговый пульпит зуба 46",
+			diagnosisTooth: "46",
+			odontogram: {
+				teeth: Array.from({ length: 32 }, (_, idx) => {
+					const toothNumber = idx < 16 ? 18 - (idx >= 8 ? idx - 8 + 10 : idx) : 38 - (idx >= 24 ? idx - 24 + 10 : idx - 16);
+					const actualTooth = ((Math.floor(idx / 8) + 1) * 10) + ((idx % 8) + 1);
+					if (actualTooth === 46) {
+						return {
+							toothNumber: 46,
+							statusCode: "pulpitis_acute",
+							surfaces: ["occlusal", "distal"],
+							mobility: 0,
+							notes: "Глубокая кариозная полость с поражением пульпы",
+						};
+					}
+					if (actualTooth === 16) {
+						return {
+							toothNumber: 16,
+							statusCode: "filled_satisfactory",
+							surfaces: ["occlusal"],
+							mobility: 0,
+							notes: "Светоотверждаемая пломба Ceram.X",
+						};
+					}
+					if (actualTooth === 38) {
+						return {
+							toothNumber: 38,
+							statusCode: "extracted_absent",
+							surfaces: [],
+							mobility: 0,
+							notes: "Удален 3 года назад",
+						};
+					}
+					return {
+						toothNumber: actualTooth,
+						statusCode: "healthy",
+						surfaces: [],
+						mobility: 0,
+						notes: "Интактен",
+					};
+				}),
+				dmftIndex: { decayedCount: 1, missingCount: 1, filledCount: 1, totalDmft: 3 },
+			},
+			periodontalChart: {
+				hygieneIndexOHIS: 1.2,
+				cpitnScores: [0, 1, 2, 1, 0, 1],
+				bleedingOnProbing: true,
+			},
+			treatmentProtocol: [
+				"1. Проводниковая торусальная и инфильтрационная анестезия Sol. Ubistesini 1:100000 1.7 мл",
+				"2. Препарирование кариозной полости зуба 46 с обильным водно-воздушным охлаждением",
+				"3. Раскрытие полости зуба, ампутация коронковой пульпы, экстирпация пульпы из 3 каналов (MB, ML, D)",
+				"4. Механическая обработка корневых каналов машинными файлами ProTaper Gold до размера F2",
+				"5. Медикаментозная обработка: 3% раствор гипохлорита натрия (NaOCl) с ультразвуковой активацией + 17% EDTA",
+				"6. Временная обтурация корневых каналов пастой на основе гидроксида кальция (Calcept) под герметичную дентин-повязку",
+				"7. Назначен повторный визит через 7 дней для постоянной обтурации методом вертикальной конденсации гуттаперчи",
+			],
+			prescriptions: [
+				{ drugName: "Нимесулид", dosage: "100 мг", frequency: "1 пакетик при выраженном болевом синдроме, не более 2 раз/сут после еды" },
+			],
+			version: 1,
+			isDraft: true,
+		};
+
+		// 2. Progressive Autosave Loop (simulating 5 incremental keystroke edits / revisions)
+		for (let rev = 1; rev <= 5; rev++) {
+			const revisionPayload = {
+				...fullMedicalCard043,
+				version: rev,
+				activeFieldEdited: `statusLocalis_step_${rev}`,
+				timestampTick: Date.now(),
+				lastAutosaveMessage: `Черновик 043/у сохранен автоматически на ${rev * 3} сек осмотра`,
+			};
+
+			const savedDraft = await saveForm043Draft(patientId, revisionPayload, orgId);
+			assert.ok(savedDraft, `Draft revision ${rev} must be saved`);
+			assert.strictEqual(savedDraft.data.version, rev);
+		}
+
+		// 3. Simulate Sudden Browser Crash / Process Termination / Power Outage
+		// Sever active IndexedDB in-memory instance without graceful teardown
+		resetOfflineDbConnection();
+
+		// 4. Doctor relaunches browser session -> Form 043/u Crash Recovery Handshake
+		const recoveredFromIdb = await loadForm043Draft<typeof fullMedicalCard043 & {
+			activeFieldEdited: string;
+			lastAutosaveMessage: string;
+		}>(patientId);
+
+		assert.ok(recoveredFromIdb, "Form 043/u draft must be 100% recovered after simulated browser crash");
+		assert.strictEqual(recoveredFromIdb.data.version, 5, "Must recover the latest autosaved revision (v5)");
+		assert.strictEqual(recoveredFromIdb.data.generalInfo.fullName, "Калинин Сергей Михайлович");
+		assert.strictEqual(recoveredFromIdb.data.diagnosisIcd10, "K04.0");
+		assert.strictEqual(recoveredFromIdb.data.diagnosisTooth, "46");
+		assert.strictEqual(recoveredFromIdb.data.treatmentProtocol.length, 7);
+		assert.strictEqual(recoveredFromIdb.data.odontogram.teeth.length, 32);
+		assert.strictEqual(recoveredFromIdb.data.odontogram.teeth.find((t) => t.toothNumber === 46)?.statusCode, "pulpitis_acute");
+		assert.strictEqual(recoveredFromIdb.data.odontogram.dmftIndex.totalDmft, 3);
+		assert.strictEqual(recoveredFromIdb.data.prescriptions[0]?.drugName, "Нимесулид");
+
+		// 5. Dual-Layer Redundancy Test: Simulating total IndexedDB failure / QuotaExceeded / Private Mode Block
+		// Mock IndexedDB throwing a hard error on open to force LocalStorage fallback path
+		const failingMockIdb = {
+			open: () => {
+				const req: { onerror?: ((err?: unknown) => void) | null; error?: Error } = {
+					error: new Error("QuotaExceededError: IndexedDB database storage quota exceeded"),
+				};
+				setTimeout(() => {
+					if (req.onerror) req.onerror(req.error);
+				}, 0);
+				return req;
+			},
+		};
+
+		const prevIdb = (globalThis as any).window.indexedDB;
+		(globalThis as any).window.indexedDB = failingMockIdb;
+		resetOfflineDbConnection();
+
+		try {
+			// Transparent recovery must fallback to localStorage copy without crashing or dropping fields
+			const recoveredFromLocalStorageFallback = await loadForm043Draft<typeof fullMedicalCard043 & {
+				activeFieldEdited: string;
+				lastAutosaveMessage: string;
+			}>(patientId);
+
+			assert.ok(recoveredFromLocalStorageFallback, "Draft must be recovered from localStorage fallback when IndexedDB fails");
+			assert.strictEqual(recoveredFromLocalStorageFallback.data.version, 5);
+			assert.strictEqual(recoveredFromLocalStorageFallback.data.generalInfo.fullName, "Калинин Сергей Михайлович");
+			assert.strictEqual(recoveredFromLocalStorageFallback.data.diagnosisIcd10, "K04.0");
+			assert.strictEqual(recoveredFromLocalStorageFallback.data.odontogram.teeth.find((t) => t.toothNumber === 46)?.statusCode, "pulpitis_acute");
+		} finally {
+			(globalThis as any).window.indexedDB = prevIdb;
+			resetOfflineDbConnection();
+		}
+
+		// 6. Doctor completes and signs Form 043/u -> Enqueue Mutation for Server Sync & Clean Draft Disposal
+		const finalMutation = await enqueueOfflineMutation({
+			entityType: "DIARY_043_DRAFT",
+			entityId: patientId,
+			action: "update",
+			payload: {
+				...recoveredFromIdb.data,
+				isDraft: false,
+				signedByDoctor: "Д-р Калинин С.М.",
+				signedAt: nowIsoWithMs(),
+			},
+			organizationId: orgId,
+			authorUserId: "doctor-kalinin-01",
+		});
+
+		assert.ok(finalMutation.mutationId, "Signed Form 043/u must be enqueued as offline mutation");
+		assert.strictEqual(finalMutation.status, "pending");
+		assert.strictEqual(finalMutation.entityType, "DIARY_043_DRAFT");
+		assert.ok(finalMutation.idempotencyKey?.includes("#"), "Must contain composite idempotency key");
+
+		// Clean up draft after sign-off (Anti-Ghosting Guard)
+		await deleteForm043Draft(patientId);
+
+		const draftAfterPurge = await loadForm043Draft(patientId);
+		assert.strictEqual(draftAfterPurge, null, "Zero ghost residue: Draft must be completely cleared after sign-off");
+
+		// Outbox must contain the pending mutation ready for seamless sync gateway drain
+		const pendingList = await getPendingOfflineMutations({ organizationId: orgId });
+		assert.strictEqual(pendingList.length, 1);
+		assert.strictEqual(pendingList[0]?.mutationId, finalMutation.mutationId);
+
+		// Clean up outbox
+		await updateOfflineMutationStatus(finalMutation.mutationId, "synced");
+		await clearSyncedOfflineMutations();
+		const finalPending = await getPendingOfflineMutations({ organizationId: orgId });
+		assert.strictEqual(finalPending.length, 0);
+	});
 });
+
 
