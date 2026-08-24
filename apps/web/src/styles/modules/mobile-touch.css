@@ -21,11 +21,45 @@ body {
 	box-sizing: border-box;
 }
 
+/* ── 1.1 Universal Double-Tap Zoom Protection (300ms Delay Elimination) ── */
+button,
+[role="button"],
+a,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+summary,
+.btn,
+.primary-button,
+.secondary-button,
+.ghost-button,
+.danger-button,
+.action-button,
+.quick-chip,
+.nav-tab,
+.view-switcher-button,
+.odontogram-tooth-btn,
+.tooth-cell {
+	touch-action: manipulation;
+}
+
 /* ── 2. PWA Notch & Safe Area Insets (iOS / Android Capacitor / PWA) ── */
+:root {
+	--sat: env(safe-area-inset-top, 0px);
+	--sab: env(safe-area-inset-bottom, 0px);
+	--sal: env(safe-area-inset-left, 0px);
+	--sar: env(safe-area-inset-right, 0px);
+}
+
 @supports (padding-top: env(safe-area-inset-top)) {
 	.app-header,
 	.top-bar,
-	.navbar {
+	.navbar,
+	.header-container,
+	.app-shell-header,
+	.drawer-header,
+	.modal-header,
+	.dialog-header {
 		padding-top: calc(env(safe-area-inset-top, 0px) + 6px);
 		padding-left: calc(env(safe-area-inset-left, 0px) + 8px);
 		padding-right: calc(env(safe-area-inset-right, 0px) + 8px);
@@ -33,7 +67,10 @@ body {
 
 	.app-bottom-nav,
 	.mobile-actions-bar,
-	.floating-bottom-bar {
+	.floating-bottom-bar,
+	.telephony-floating-widget,
+	.bottom-sheet,
+	.mobile-drawer-footer {
 		padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
 		padding-left: calc(env(safe-area-inset-left, 0px) + 8px);
 		padding-right: calc(env(safe-area-inset-right, 0px) + 8px);
