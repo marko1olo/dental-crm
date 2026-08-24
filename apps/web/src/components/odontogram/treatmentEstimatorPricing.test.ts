@@ -25,6 +25,7 @@ import { parse } from "@babel/parser";
 import { formatKopecksRu, parseKopecks, RU_MONEY_NBSP } from "@dental/shared";
 import type { PlanPriceCatalogItem } from "../plan/planPricing";
 import {
+	calculateTreatmentWarranty,
 	type EstimatorToothInput,
 	estimatorContractFrom,
 	estimatorDismissalKeys,
@@ -32,7 +33,9 @@ import {
 	estimatorItemForApi,
 	estimatorRowMoney,
 	estimatorSaveBlock,
+	estimatorStagesBreakdown,
 	estimatorTotals,
+	exportEstimatorToCashier54Fz,
 	isDeciduousFdiToothNumber,
 	type PlanItem,
 	planItemFromServer,
@@ -738,4 +741,191 @@ test("в коде сметы ни одному денежному полю не 
 		[],
 		`в коде зашиты деньги: ${offenders.join(", ")}`,
 	);
+});
+
+/* ─────────── 7. Клинические этапы, гарантии и экспорт в кассу 54-ФЗ ─────────── */
+
+test("смета группирует услуги по 5 клиническим этапам с копеечной точностью", () => {
+	const items: PlanItem[] = [
+		{
+			id: "item-1",
+			name: "Лечение глубокого кариеса",
+			toothNumber: 16,
+			priceId: "svc-1",
+			price: 4500,
+			quantity: 1,
+			discount: 500,
+			phase: 1,
+			category: "therapy",
+			suggestion: "caries",
+		},
+		{
+			id: "item-2",
+			name: "Инструментальная обработка каналов (пульпит)",
+			toothNumber: 16,
+			priceId: "svc-2",
+			price: 7000,
+			quantity: 1,
+			discount: 0,
+			phase: 1,
+			category: "therapy",
+			suggestion: "pulpitis",
+		},
+		{
+			id: "item-3",
+			name: "Установка дентального имплантата Straumann",
+			toothNumber: 26,
+			priceId: "svc-3",
+			price: 45000,
+			quantity: 1,
+			discount: 0,
+			phase: 2,
+			category: "surgery",
+			suggestion: "implant",
+		},
+		{
+			id: "item-4",
+			name: "Коронка из диоксида циркония на имплантате",
+			toothNumber: 26,
+			priceId: "svc-4",
+			price: 28000,
+			quantity: 1,
+			discount: 0,
+			phase: 3,
+			category: "prosthetics",
+			suggestion: "crown",
+		},
+		{
+			id: "item-5",
+			name: "Комплексная гигиена полости рта AirFlow",
+			priceId: "svc-5",
+			price: 6000,
+			quantity: 1,
+			discount: 1000,
+			phase: 1,
+			category: "hygiene",
+		},
+	];
+
+	const stages = estimatorStagesBreakdown(items, null);
+	assert.equal(stages.length, 5);
+
+	const therapyStage = stages.find((s) => s.stageId === "stage_1_therapy");
+	assert.ok(therapyStage);
+	assert.equal(therapyStage.items.length, 1);
+	assert.equal(therapyStage.payableRub, 4000); // 4500 - 500
+
+	const endoStage = stages.find((s) => s.stageId === "stage_2_endo");
+	assert.ok(endoStage);
+	assert.equal(endoStage.items.length, 1);
+	assert.equal(endoStage.payableRub, 7000);
+
+	const surgeryStage = stages.find((s) => s.stageId === "stage_3_surgery");
+	assert.ok(surgeryStage);
+	assert.equal(surgeryStage.items.length, 1);
+	assert.equal(surgeryStage.payableRub, 45000);
+
+	const orthoStage = stages.find((s) => s.stageId === "stage_4_orthopedics");
+	assert.ok(orthoStage);
+	assert.equal(orthoStage.items.length, 1);
+	assert.equal(orthoStage.payableRub, 28000);
+
+	const hygieneStage = stages.find((s) => s.stageId === "stage_5_hygiene");
+	assert.ok(hygieneStage);
+	assert.equal(hygieneStage.items.length, 1);
+	assert.equal(hygieneStage.payableRub, 5000); // 6000 - 1000
+});
+
+test("гарантийные обязательства определяют регламентные сроки 12/24/36 мес по СтАР", () => {
+	const cariesItem: PlanItem = {
+		name: "Лечение кариеса фотополимером Estelite",
+		priceId: "p-1",
+		price: 5000,
+		quantity: 1,
+		discount: 0,
+		phase: 1,
+		suggestion: "caries",
+	};
+	const cariesWarranty = calculateTreatmentWarranty(cariesItem);
+	assert.equal(cariesWarranty.warrantyMonths, 12);
+	assert.equal(cariesWarranty.serviceLifeMonths, 24);
+
+	const endoItem: PlanItem = {
+		name: "Эндодонтическое лечение пульпита (3 канала)",
+		priceId: "p-2",
+		price: 9000,
+		quantity: 1,
+		discount: 0,
+		phase: 1,
+		suggestion: "pulpitis",
+	};
+	const endoWarranty = calculateTreatmentWarranty(endoItem);
+	assert.equal(endoWarranty.warrantyMonths, 12);
+
+	const crownItem: PlanItem = {
+		name: "Коронка из диоксида циркония Prettau",
+		priceId: "p-3",
+		price: 32000,
+		quantity: 1,
+		discount: 0,
+		phase: 3,
+		suggestion: "crown",
+	};
+	const crownWarranty = calculateTreatmentWarranty(crownItem);
+	assert.equal(crownWarranty.warrantyMonths, 24);
+	assert.equal(crownWarranty.serviceLifeMonths, 60);
+
+	const implantItem: PlanItem = {
+		name: "Дентальный имплантат Nobel Conical",
+		priceId: "p-4",
+		price: 55000,
+		quantity: 1,
+		discount: 0,
+		phase: 2,
+		suggestion: "implant",
+	};
+	const implantWarranty = calculateTreatmentWarranty(implantItem);
+	assert.equal(implantWarranty.warrantyMonths, 36);
+	assert.equal(implantWarranty.isManufacturerLifetimeWarranty, true);
+});
+
+test("1-клик экспорт сметы в кассу 54-ФЗ формирует валидный пэйлоад с копейками", () => {
+	const items: PlanItem[] = [
+		{
+			id: "it-1",
+			name: "Пломбирование кариеса",
+			toothNumber: 15,
+			priceId: "pr-1",
+			price: 5000,
+			quantity: 1,
+			discount: 500,
+			phase: 1,
+			category: "therapy",
+		},
+		{
+			id: "it-2",
+			name: "Коронка E-Max",
+			toothNumber: 15,
+			priceId: "pr-2",
+			price: 25000,
+			quantity: 1,
+			discount: 0,
+			phase: 3,
+			category: "prosthetics",
+		},
+	];
+
+	const cashierExport = exportEstimatorToCashier54Fz(
+		items,
+		"patient-uuid-123",
+		"Иванов Иван Иванович",
+		10, // 10% общая скидка на услуги без персональной скидки
+	);
+
+	assert.equal(cashierExport.patientId, "patient-uuid-123");
+	assert.equal(cashierExport.items.length, 2);
+	assert.equal(cashierExport.items[0]?.priceRub, 4500); // 5000 - 500 (персональная скидка)
+	assert.equal(cashierExport.items[1]?.priceRub, 22500); // 25000 - 10% (общая скидка)
+	assert.equal(cashierExport.totalRub, 27000);
+	assert.equal(cashierExport.totalKopecks, 2_700_000);
 });
