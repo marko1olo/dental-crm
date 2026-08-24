@@ -4,12 +4,16 @@ export * from "./money.js";
 export * from "./fiscal/index.js";
 export * from "./utils/mdlpDataMatrix.js";
 export * from "./sanpin.js";
+export * from "./sanpin/index.js";
 export * from "./legal/legalContractsAndConsents.js";
 export * from "./documents/index.js";
 export * from "./pediatricDentition.js";
 export * from "./toothCanalsAndBilling804n.js";
+export * from "./perio/index.js";
 export * from "./emr/index.js";
 export * from "./sync/index.js";
+export * from "./finance/index.js";
+export * from "./imaging/index.js";
 
 import {
 	dailyDentistDiary037uPayloadSchema,
@@ -6068,6 +6072,425 @@ export function calculateDmsCoverage(
 	};
 }
 
+export const dmsGuaranteeLetterStatusSchema = z.enum([
+	"active",
+	"exhausted",
+	"expired",
+	"cancelled",
+]);
+export type DmsGuaranteeLetterStatus = z.infer<typeof dmsGuaranteeLetterStatusSchema>;
+
+export const dmsGuaranteeLetterSchema = z.object({
+	id: z.string().uuid().or(z.string().min(1)),
+	organizationId: z.string().uuid().optional(),
+	contractId: z.string().uuid().nullable().optional(),
+	patientId: z.string().uuid().or(z.string().min(1)),
+	patientFullName: z.string().trim().min(1),
+	patientBirthDate: z.string().nullable().optional(),
+	policyNumber: z.string().trim().min(1),
+	insurerKey: z.string().trim().optional(),
+	insurerName: z.string().trim().min(1),
+	letterNumber: z.string().trim().min(1),
+	issueDate: z.string().min(1),
+	validFrom: z.string().min(1),
+	validUntil: z.string().min(1),
+	maxCoverageRub: nonNegativeMoneyRubSchema,
+	usedAmountRub: nonNegativeMoneyRubSchema.default(0),
+	franchisePct: z.number().min(0).max(100).default(0),
+	franchiseType: z.enum(["percent", "fixed_rub"]).default("percent"),
+	franchiseFixedRub: nonNegativeMoneyRubSchema.default(0),
+	programExclusions: z.array(z.string()).default([]),
+	approvedServiceCodes: z.array(z.string()).default([]),
+	approvedTeethFdi: z.array(z.string()).default([]),
+	approvedDiagnosisCodes: z.array(z.string()).default([]),
+	curatorFullName: z.string().trim().nullable().optional(),
+	curatorPhone: z.string().trim().nullable().optional(),
+	notes: z.string().trim().default(""),
+	status: dmsGuaranteeLetterStatusSchema.default("active"),
+	createdAt: z.string().or(z.date()).optional(),
+	updatedAt: z.string().or(z.date()).optional(),
+});
+export type DmsGuaranteeLetter = z.infer<typeof dmsGuaranteeLetterSchema>;
+
+export const dmsGuaranteeLetterCreateSchema = dmsGuaranteeLetterSchema.omit({
+	id: true,
+	createdAt: true,
+	updatedAt: true,
+}).extend({
+	id: z.string().uuid().optional(),
+});
+export type DmsGuaranteeLetterCreate = z.infer<typeof dmsGuaranteeLetterCreateSchema>;
+
+export const dmsGuaranteeLetterUpdateSchema = dmsGuaranteeLetterSchema.partial().extend({
+	id: z.string().min(1),
+});
+export type DmsGuaranteeLetterUpdate = z.infer<typeof dmsGuaranteeLetterUpdateSchema>;
+
+export const dmsSplitCalculationItemSchema = z.object({
+	serviceId: z.string().min(1),
+	serviceCode: z.string().trim().optional(),
+	serviceName: z.string().trim().optional(),
+	category: z.enum([
+		"consultation",
+		"therapy",
+		"surgery",
+		"prosthetics",
+		"orthodontics",
+		"periodontology",
+		"hygiene",
+		"imaging",
+		"documents",
+		"other",
+	]).default("other"),
+	toothNumber: z.string().or(z.number()).optional(),
+	diagnosisCodeMkb10: z.string().optional(),
+	priceRub: nonNegativeMoneyRubSchema,
+	quantity: z.number().int().min(1).default(1),
+	discountRub: nonNegativeMoneyRubSchema.optional().default(0),
+	isExcluded: z.boolean().optional(),
+	isExplicitlyApproved: z.boolean().optional(),
+});
+export type DmsSplitCalculationItem = z.infer<typeof dmsSplitCalculationItemSchema>;
+
+export const dmsSplitLineResultSchema = z.object({
+	serviceId: z.string(),
+	serviceCode: z.string().optional(),
+	serviceName: z.string().optional(),
+	category: z.string(),
+	toothNumber: z.string().optional(),
+	quantity: z.number(),
+	unitPriceRub: z.number(),
+	discountRub: z.number(),
+	totalPriceRub: z.number(),
+	dmsCoveredRub: z.number(),
+	patientCoPayRub: z.number(),
+	effectiveCoveragePct: z.number(),
+	isApprovedByLetter: z.boolean(),
+	isExcludedByProgram: z.boolean(),
+	splitReason: z.string(),
+	status: z.enum(["full_dms", "co_payment", "patient_full"]),
+});
+export type DmsSplitLineResult = z.infer<typeof dmsSplitLineResultSchema>;
+
+export const dmsSplitCalculationResultSchema = z.object({
+	totalBillRub: z.number(),
+	totalDmsCoveredRub: z.number(),
+	totalPatientCoPayRub: z.number(),
+	letterApprovedLimitRub: z.number().nullable(),
+	letterUsedAmountRub: z.number(),
+	letterRemainingLimitRub: z.number().nullable(),
+	hasUnapprovedServices: z.boolean(),
+	hasExcludedServices: z.boolean(),
+	integrityInvariantHolds: z.boolean(),
+	lineItems: z.array(dmsSplitLineResultSchema),
+});
+export type DmsSplitCalculationResult = z.infer<typeof dmsSplitCalculationResultSchema>;
+
+/**
+ * Точный расчет распределения счетов по гарантийному письму ДМС с контролем лимитов,
+ * кодов 804н, согласованных зубов, франшиз и железным копеечным балансом.
+ */
+export function calculateDmsGuaranteeSplit(
+	letter: DmsGuaranteeLetter | null | undefined,
+	items: readonly DmsSplitCalculationItem[],
+	options: {
+		visitDate?: string;
+		contract?: Pick<
+			InsuranceContract,
+			| "coverageTherapyPct"
+			| "coverageSurgeryPct"
+			| "coverageOrthoPct"
+			| "coverageHygienePct"
+			| "annualLimitRub"
+		> | null;
+	} = {},
+): DmsSplitCalculationResult {
+	const lineResults: DmsSplitLineResult[] = [];
+	let totalBillKop = 0;
+	let totalCoveredKop = 0;
+	let totalCoPayKop = 0;
+
+	let hasUnapproved = false;
+	let hasExcluded = false;
+
+	const maxCoverageRub = letter ? letter.maxCoverageRub : null;
+	const usedAmountRub = letter ? letter.usedAmountRub : 0;
+	const letterMaxKop = maxCoverageRub != null ? Math.round(maxCoverageRub * 100) : null;
+	const letterUsedKop = Math.max(0, Math.round(usedAmountRub * 100));
+	let remainingLetterKop = letterMaxKop != null ? Math.max(0, letterMaxKop - letterUsedKop) : null;
+
+	const isLetterActive = letter ? letter.status === "active" : false;
+	const isExpired = letter && options.visitDate && letter.validUntil
+		? options.visitDate > letter.validUntil
+		: false;
+	const isNotStarted = letter && options.visitDate && letter.validFrom
+		? options.visitDate < letter.validFrom
+		: false;
+
+	for (const it of items) {
+		const unitPriceKop = Math.round(it.priceRub * 100);
+		const qty = Math.max(1, it.quantity);
+		const discountKop = Math.round((it.discountRub ?? 0) * 100);
+		const grossLineKop = unitPriceKop * qty;
+		const lineTotalKop = Math.max(0, grossLineKop - discountKop);
+		totalBillKop += lineTotalKop;
+
+		if (lineTotalKop === 0) {
+			lineResults.push({
+				serviceId: it.serviceId,
+				serviceCode: it.serviceCode,
+				serviceName: it.serviceName,
+				category: it.category,
+				toothNumber: it.toothNumber !== undefined ? String(it.toothNumber) : undefined,
+				quantity: qty,
+				unitPriceRub: it.priceRub,
+				discountRub: it.discountRub ?? 0,
+				totalPriceRub: 0,
+				dmsCoveredRub: 0,
+				patientCoPayRub: 0,
+				effectiveCoveragePct: 0,
+				isApprovedByLetter: true,
+				isExcludedByProgram: false,
+				splitReason: "Нулевая стоимость услуги",
+				status: "full_dms",
+			});
+			continue;
+		}
+
+		// 1. Проверка исключений
+		let isExcluded = Boolean(it.isExcluded);
+		if (letter?.programExclusions?.length && it.category) {
+			if (letter.programExclusions.includes(it.category)) {
+				isExcluded = true;
+			}
+		}
+		if (isExcluded && !it.isExplicitlyApproved) {
+			hasExcluded = true;
+			const coPayKop = lineTotalKop;
+			totalCoPayKop += coPayKop;
+			lineResults.push({
+				serviceId: it.serviceId,
+				serviceCode: it.serviceCode,
+				serviceName: it.serviceName,
+				category: it.category,
+				toothNumber: it.toothNumber !== undefined ? String(it.toothNumber) : undefined,
+				quantity: qty,
+				unitPriceRub: it.priceRub,
+				discountRub: it.discountRub ?? 0,
+				totalPriceRub: lineTotalKop / 100,
+				dmsCoveredRub: 0,
+				patientCoPayRub: coPayKop / 100,
+				effectiveCoveragePct: 0,
+				isApprovedByLetter: false,
+				isExcludedByProgram: true,
+				splitReason: "Исключение из программы ДМС (100% доплата пациентом)",
+				status: "patient_full",
+			});
+			continue;
+		}
+
+		// 2. Проверка активности и сроков гарантийного письма
+		if (letter) {
+			if (!isLetterActive || isExpired || isNotStarted) {
+				hasUnapproved = true;
+				const reason = !isLetterActive
+					? `Гарантийное письмо № ${letter.letterNumber} неактивно (${letter.status})`
+					: isExpired
+					? `Срок действия гарантийного письма № ${letter.letterNumber} истек (${letter.validUntil})`
+					: `Гарантийное письмо № ${letter.letterNumber} вступает в силу с ${letter.validFrom}`;
+				const coPayKop = lineTotalKop;
+				totalCoPayKop += coPayKop;
+				lineResults.push({
+					serviceId: it.serviceId,
+					serviceCode: it.serviceCode,
+					serviceName: it.serviceName,
+					category: it.category,
+					toothNumber: it.toothNumber !== undefined ? String(it.toothNumber) : undefined,
+					quantity: qty,
+					unitPriceRub: it.priceRub,
+					discountRub: it.discountRub ?? 0,
+					totalPriceRub: lineTotalKop / 100,
+					dmsCoveredRub: 0,
+					patientCoPayRub: coPayKop / 100,
+					effectiveCoveragePct: 0,
+					isApprovedByLetter: false,
+					isExcludedByProgram: false,
+					splitReason: reason,
+					status: "patient_full",
+				});
+				continue;
+			}
+
+			// 3. Проверка согласования услуги по 804н
+			let isServiceApproved = true;
+			if (letter.approvedServiceCodes && letter.approvedServiceCodes.length > 0) {
+				const sCode = (it.serviceCode || "").trim().toUpperCase();
+				isServiceApproved = letter.approvedServiceCodes.some((approved) => {
+					const app = approved.trim().toUpperCase();
+					return sCode === app || (sCode.length > 0 && sCode.startsWith(app));
+				});
+			}
+
+			// 4. Проверка согласования зуба (FDI)
+			let isToothApproved = true;
+			if (letter.approvedTeethFdi && letter.approvedTeethFdi.length > 0 && it.toothNumber) {
+				const tStr = String(it.toothNumber).replace(/[^0-9]/g, "");
+				isToothApproved = letter.approvedTeethFdi.some((approved) => {
+					const app = String(approved).replace(/[^0-9]/g, "");
+					return tStr === app;
+				});
+			}
+
+			if (!isServiceApproved || !isToothApproved) {
+				hasUnapproved = true;
+				const reason = !isServiceApproved
+					? `Услуга ${it.serviceCode || it.serviceName || ""} не входит в согласованный перечень 804н гарантийного письма № ${letter.letterNumber}`
+					: `Зуб ${it.toothNumber} не согласован гарантийным письмом № ${letter.letterNumber}`;
+				const coPayKop = lineTotalKop;
+				totalCoPayKop += coPayKop;
+				lineResults.push({
+					serviceId: it.serviceId,
+					serviceCode: it.serviceCode,
+					serviceName: it.serviceName,
+					category: it.category,
+					toothNumber: it.toothNumber !== undefined ? String(it.toothNumber) : undefined,
+					quantity: qty,
+					unitPriceRub: it.priceRub,
+					discountRub: it.discountRub ?? 0,
+					totalPriceRub: lineTotalKop / 100,
+					dmsCoveredRub: 0,
+					patientCoPayRub: coPayKop / 100,
+					effectiveCoveragePct: 0,
+					isApprovedByLetter: false,
+					isExcludedByProgram: false,
+					splitReason: reason,
+					status: "patient_full",
+				});
+				continue;
+			}
+		}
+
+		// 5. Расчет базового процента покрытия
+		let pct = 100;
+		if (options.contract) {
+			switch (it.category) {
+				case "therapy":
+					pct = Number(options.contract.coverageTherapyPct) || 0;
+					break;
+				case "surgery":
+					pct = Number(options.contract.coverageSurgeryPct) || 0;
+					break;
+				case "orthodontics":
+				case "prosthetics":
+					pct = Number(options.contract.coverageOrthoPct) || 0;
+					break;
+				case "hygiene":
+				case "periodontology":
+					pct = Number(options.contract.coverageHygienePct) || 0;
+					break;
+				case "consultation":
+				case "imaging":
+					pct = 100;
+					break;
+				case "documents":
+				case "other":
+				default:
+					pct = 0;
+					break;
+			}
+			pct = Math.min(100, Math.max(0, pct));
+		}
+
+		// 6. Франшиза гарантийного письма
+		let franchiseDeductionKop = 0;
+		if (letter) {
+			if (letter.franchiseType === "percent" && letter.franchisePct > 0) {
+				const clampedPct = Math.min(100, Math.max(0, letter.franchisePct));
+				franchiseDeductionKop = Math.round(lineTotalKop * (clampedPct / 100));
+			} else if (letter.franchiseType === "fixed_rub" && letter.franchiseFixedRub > 0) {
+				const fixedKop = Math.round(letter.franchiseFixedRub * 100);
+				franchiseDeductionKop = Math.min(lineTotalKop, fixedKop);
+			}
+		}
+
+		let candidateCoveredKop = Math.max(
+			0,
+			Math.round(lineTotalKop * (pct / 100)) - franchiseDeductionKop,
+		);
+
+		// 7. Ограничение лимитом письма
+		let splitReason = "100% покрытие по условиям программы ДМС";
+		let status: "full_dms" | "co_payment" | "patient_full" = "full_dms";
+
+		if (remainingLetterKop != null) {
+			if (candidateCoveredKop <= remainingLetterKop) {
+				remainingLetterKop -= candidateCoveredKop;
+				if (franchiseDeductionKop > 0 || pct < 100) {
+					status = "co_payment";
+					splitReason = franchiseDeductionKop > 0
+						? `Сооплата франшизы (${franchiseDeductionKop / 100} ₽)`
+						: `Частичное покрытие по тарифу (${pct}%)`;
+				}
+			} else if (remainingLetterKop > 0) {
+				const excessKop = candidateCoveredKop - remainingLetterKop;
+				candidateCoveredKop = remainingLetterKop;
+				remainingLetterKop = 0;
+				status = "co_payment";
+				splitReason = `Превышен остаток лимита ГП на ${excessKop / 100} ₽ (доплата пациентом)`;
+			} else {
+				candidateCoveredKop = 0;
+				status = "patient_full";
+				splitReason = "Лимит гарантийного письма полностью исчерпан";
+			}
+		} else if (franchiseDeductionKop > 0 || pct < 100) {
+			status = "co_payment";
+			splitReason = franchiseDeductionKop > 0
+				? `Сооплата франшизы (${franchiseDeductionKop / 100} ₽)`
+				: `Частичное покрытие по тарифу (${pct}%)`;
+		}
+
+		const itemCoPayKop = lineTotalKop - candidateCoveredKop;
+		totalCoveredKop += candidateCoveredKop;
+		totalCoPayKop += itemCoPayKop;
+
+		const effPct = lineTotalKop > 0 ? Math.round((candidateCoveredKop / lineTotalKop) * 100) : 0;
+
+		lineResults.push({
+			serviceId: it.serviceId,
+			serviceCode: it.serviceCode,
+			serviceName: it.serviceName,
+			category: it.category,
+			toothNumber: it.toothNumber !== undefined ? String(it.toothNumber) : undefined,
+			quantity: qty,
+			unitPriceRub: it.priceRub,
+			discountRub: it.discountRub ?? 0,
+			totalPriceRub: lineTotalKop / 100,
+			dmsCoveredRub: candidateCoveredKop / 100,
+			patientCoPayRub: itemCoPayKop / 100,
+			effectiveCoveragePct: effPct,
+			isApprovedByLetter: true,
+			isExcludedByProgram: false,
+			splitReason,
+			status,
+		});
+	}
+
+	const integrityInvariantHolds = totalCoveredKop + totalCoPayKop === totalBillKop;
+
+	return {
+		totalBillRub: totalBillKop / 100,
+		totalDmsCoveredRub: totalCoveredKop / 100,
+		totalPatientCoPayRub: totalCoPayKop / 100,
+		letterApprovedLimitRub: maxCoverageRub ?? null,
+		letterUsedAmountRub: usedAmountRub,
+		letterRemainingLimitRub: remainingLetterKop != null ? remainingLetterKop / 100 : null,
+		hasUnapprovedServices: hasUnapproved,
+		hasExcludedServices: hasExcluded,
+		integrityInvariantHolds,
+		lineItems: lineResults,
+	};
+}
+
 
 export const createPatientSchema = z.object({
 	fullName: z.string().trim().min(1).max(240),
@@ -11884,287 +12307,8 @@ export type UpdateMessageTemplateCatalogInput = z.infer<
  * 10. PSR / CPITN скрининг по 6 секстантам.
  */
 
-export const perioSiteMeasurementSchema = z.object({
-	/** Глубина зондирования кармана в миллиметрах (0..20 мм) */
-	probingDepthMm: z.number().int().min(0).max(20).default(0),
-	/** Положение десневого края (положительное = рецессия корня, отрицательное = гиперплазия/отёк) */
-	gingivalMarginMm: z.number().int().min(-15).max(15).default(0),
-	/** Кровоточивость при зондировании (BOP — признак активного воспаления) */
-	bleedingOnProbing: z.boolean().default(false),
-	/** Нагноение (Suppuration — гнойный экссудат) */
-	suppuration: z.boolean().default(false),
-	/** Зубной налёт на придесневой поверхности */
-	plaque: z.boolean().default(false),
-	/** Поддесневой зубной камень */
-	calculus: z.boolean().default(false),
-	/** Вычисленный клинический уровень прикрепления (CAL mm) */
-	calMm: z.number().int().optional(),
-});
-export type PerioSiteMeasurement = z.infer<typeof perioSiteMeasurementSchema>;
+// Note: Periodontal types, schemas, and mathematical calculations are modularized in ./perio/index.ts
 
-export const perioToothRecordSchema = z.object({
-	/** Номер зуба по FDI (11..48) */
-	toothNumber: fdiToothNumberSchema,
-	/** Зуб отсутствует (адентия, удалён) */
-	isMissing: z.boolean().default(false),
-	/** Имплантат (периимплантатное зондирование) */
-	isImplant: z.boolean().default(false),
-	/** Подвижность по Миллеру (0 = физиологическая, 1 = I ст., 2 = II ст., 3 = III ст.) */
-	mobility: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]).default(0),
-	/** Вовлечение бифуркации/трифуркации (0..4) */
-	furcation: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3), z.literal(4)]).default(0),
-	/** 6 анатомических точек зондирования */
-	distoBuccal: perioSiteMeasurementSchema.default({}),
-	midBuccal: perioSiteMeasurementSchema.default({}),
-	mesioBuccal: perioSiteMeasurementSchema.default({}),
-	distoLingual: perioSiteMeasurementSchema.default({}),
-	midLingual: perioSiteMeasurementSchema.default({}),
-	mesioLingual: perioSiteMeasurementSchema.default({}),
-});
-export type PerioToothRecord = z.infer<typeof perioToothRecordSchema>;
-
-export const perioChartSummarySchema = z.object({
-	totalTeethExamined: z.number().int().nonnegative(),
-	totalSitesProbed: z.number().int().nonnegative(),
-	/** Full Mouth Bleeding Score (FMBS) в процентах (0..100%) */
-	fmbsPercent: z.number().min(0).max(100),
-	/** Full Mouth Plaque Score (FMPS) в процентах (0..100%) */
-	fmpsPercent: z.number().min(0).max(100),
-	/** Число глубоких карманов (PD >= 5 мм) */
-	deepPocketsCount: z.number().int().nonnegative(),
-	/** Число умеренных карманов (PD == 4 мм) */
-	moderatePocketsCount: z.number().int().nonnegative(),
-	/** Число участков с нагноением */
-	sitesWithSuppurationCount: z.number().int().nonnegative(),
-	/** Число участков с зубным камнем */
-	sitesWithCalculusCount: z.number().int().nonnegative(),
-	/** Число подвижных зубов (подвижность >= 1) */
-	teethWithMobilityCount: z.number().int().nonnegative(),
-	/** Число зубов с поражением фуркации (фуркация >= 1) */
-	teethWithFurcationCount: z.number().int().nonnegative(),
-	/** Максимальная глубина кармана (мм) */
-	maxPocketDepthMm: z.number().int().nonnegative(),
-	/** Средняя глубина кармана (мм) */
-	meanPocketDepthMm: z.number().nonnegative(),
-	/** Максимальная потеря прикрепления (CAL мм) */
-	maxCalMm: z.number().int().nonnegative(),
-	/** Средняя потеря прикрепления (CAL мм) */
-	meanCalMm: z.number().nonnegative(),
-	/** Категория пародонтального риска (PRA: low, moderate, high) */
-	riskCategory: z.enum(["low", "moderate", "high"]),
-});
-export type PerioChartSummary = z.infer<typeof perioChartSummarySchema>;
-
-export const perioChartDataSchema = z.object({
-	id: z.string().uuid().optional(),
-	organizationId: z.string().uuid(),
-	patientId: z.string().uuid(),
-	visitId: z.string().uuid().optional().nullable(),
-	doctorId: z.string().uuid().optional().nullable(),
-	chartDate: z.string(),
-	teeth: z.array(perioToothRecordSchema),
-	summary: perioChartSummarySchema.optional(),
-	notes: z.string().optional().nullable(),
-});
-export type PerioChartData = z.infer<typeof perioChartDataSchema>;
-
-/**
- * Вычисляет клинический уровень прикрепления (Clinical Attachment Level):
- * CAL = Probing Depth (PD) + Gingival Margin (GM).
- */
-export function calculateClinicalAttachmentLevel(
-	probingDepthMm: number,
-	gingivalMarginMm: number,
-): number {
-	const pd = Number.isFinite(probingDepthMm) ? Math.max(0, Math.round(probingDepthMm)) : 0;
-	const gm = Number.isFinite(gingivalMarginMm) ? Math.round(gingivalMarginMm) : 0;
-	return Math.max(0, pd + gm);
-}
-
-const PERIO_SITE_KEYS = [
-	"distoBuccal",
-	"midBuccal",
-	"mesioBuccal",
-	"distoLingual",
-	"midLingual",
-	"mesioLingual",
-] as const;
-
-/**
- * Чистая математическая функция расчёта пародонтальных индексов (FMBS, FMPS, CAL, PRA).
- */
-export function calculatePerioIndices(teeth: PerioToothRecord[]): PerioChartSummary {
-	let examinedTeeth = 0;
-	let totalSites = 0;
-	let bopSites = 0;
-	let plaqueSites = 0;
-	let suppurationSites = 0;
-	let calculusSites = 0;
-	let deepPockets = 0;
-	let moderatePockets = 0;
-	let mobileTeeth = 0;
-	let furcationTeeth = 0;
-
-	let maxPd = 0;
-	let sumPd = 0;
-	let maxCal = 0;
-	let sumCal = 0;
-
-	for (const tooth of teeth) {
-		if (tooth.isMissing) continue;
-		examinedTeeth++;
-
-		if (tooth.mobility && tooth.mobility > 0) mobileTeeth++;
-		if (tooth.furcation && tooth.furcation > 0) furcationTeeth++;
-
-		for (const siteKey of PERIO_SITE_KEYS) {
-			const site = tooth[siteKey] ?? {
-				probingDepthMm: 0,
-				gingivalMarginMm: 0,
-				bleedingOnProbing: false,
-				suppuration: false,
-				plaque: false,
-				calculus: false,
-			};
-			totalSites++;
-
-			const pd = site.probingDepthMm ?? 0;
-			const gm = site.gingivalMarginMm ?? 0;
-			const cal = calculateClinicalAttachmentLevel(pd, gm);
-
-			if (pd > maxPd) maxPd = pd;
-			sumPd += pd;
-
-			if (cal > maxCal) maxCal = cal;
-			sumCal += cal;
-
-			if (pd >= 5) deepPockets++;
-			else if (pd >= 4) moderatePockets++;
-
-			if (site.bleedingOnProbing) bopSites++;
-			if (site.plaque) plaqueSites++;
-			if (site.suppuration) suppurationSites++;
-			if (site.calculus) calculusSites++;
-		}
-	}
-
-	const fmbsPercent = totalSites > 0 ? Math.round((bopSites / totalSites) * 1000) / 10 : 0;
-	const fmpsPercent = totalSites > 0 ? Math.round((plaqueSites / totalSites) * 1000) / 10 : 0;
-	const meanPocketDepthMm = totalSites > 0 ? Math.round((sumPd / totalSites) * 10) / 10 : 0;
-	const meanCalMm = totalSites > 0 ? Math.round((sumCal / totalSites) * 10) / 10 : 0;
-
-	// Оценка риска по Lang & Tonetti (Periodontal Risk Assessment)
-	let riskCategory: "low" | "moderate" | "high" = "low";
-	if (
-		fmbsPercent >= 30 ||
-		deepPockets >= 9 ||
-		mobileTeeth >= 3 ||
-		furcationTeeth >= 2 ||
-		suppurationSites >= 3
-	) {
-		riskCategory = "high";
-	} else if (
-		fmbsPercent >= 15 ||
-		deepPockets >= 4 ||
-		moderatePockets >= 10 ||
-		mobileTeeth >= 1 ||
-		furcationTeeth >= 1
-	) {
-		riskCategory = "moderate";
-	}
-
-	return {
-		totalTeethExamined: examinedTeeth,
-		totalSitesProbed: totalSites,
-		fmbsPercent,
-		fmpsPercent,
-		deepPocketsCount: deepPockets,
-		moderatePocketsCount: moderatePockets,
-		sitesWithSuppurationCount: suppurationSites,
-		sitesWithCalculusCount: calculusSites,
-		teethWithMobilityCount: mobileTeeth,
-		teethWithFurcationCount: furcationTeeth,
-		maxPocketDepthMm: maxPd,
-		meanPocketDepthMm,
-		maxCalMm: maxCal,
-		meanCalMm,
-		riskCategory,
-	};
-}
-
-/**
- * Расчёт кодов PSR / CPITN по 6 секстантам:
- * S1: 17..14, S2: 13..23, S3: 24..27, S4: 37..34, S5: 33..43, S6: 44..47.
- */
-export const PSR_SEXTANTS = [
-	{ name: "S1", label: "Верхний правый дистальный (17-14)", teeth: [17, 16, 15, 14] },
-	{ name: "S2", label: "Верхний фронтальный (13-23)", teeth: [13, 12, 11, 21, 22, 23] },
-	{ name: "S3", label: "Верхний левый дистальный (24-27)", teeth: [24, 25, 26, 27] },
-	{ name: "S4", label: "Нижний левый дистальный (37-34)", teeth: [37, 36, 35, 34] },
-	{ name: "S5", label: "Нижний фронтальный (33-43)", teeth: [33, 32, 31, 41, 42, 43] },
-	{ name: "S6", label: "Нижний правый дистальный (44-47)", teeth: [44, 45, 46, 47] },
-] as const;
-
-export type PsrSextantResult = {
-	code: 0 | 1 | 2 | 3 | 4;
-	asterisk: boolean;
-	highestPocketDepthMm: number;
-	teethCount: number;
-};
-
-export function calculatePsrSextants(
-	teeth: PerioToothRecord[],
-): Record<string, PsrSextantResult> {
-	const results: Record<string, PsrSextantResult> = {};
-	const toothMap = new Map<number, PerioToothRecord>();
-	for (const t of teeth) {
-		toothMap.set(t.toothNumber, t);
-	}
-
-	for (const sextant of PSR_SEXTANTS) {
-		let maxCode: 0 | 1 | 2 | 3 | 4 = 0;
-		let hasAsterisk = false;
-		let maxPd = 0;
-		let validTeeth = 0;
-
-		for (const toothNum of sextant.teeth) {
-			const t = toothMap.get(toothNum);
-			if (!t || t.isMissing) continue;
-			validTeeth++;
-
-			if ((t.mobility && t.mobility >= 2) || (t.furcation && t.furcation >= 1)) {
-				hasAsterisk = true;
-			}
-
-			for (const siteKey of PERIO_SITE_KEYS) {
-				const site = t[siteKey];
-				if (!site) continue;
-
-				const pd = site.probingDepthMm ?? 0;
-				if (pd > maxPd) maxPd = pd;
-
-				if (pd >= 6) {
-					if (maxCode < 4) maxCode = 4;
-				} else if (pd >= 4) {
-					if (maxCode < 3) maxCode = 3;
-				} else if (site.calculus) {
-					if (maxCode < 2) maxCode = 2;
-				} else if (site.bleedingOnProbing) {
-					if (maxCode < 1) maxCode = 1;
-				}
-			}
-		}
-
-		results[sextant.name] = {
-			code: maxCode,
-			asterisk: hasAsterisk,
-			highestPocketDepthMm: maxPd,
-			teethCount: validTeeth,
-		};
-	}
-
-	return results;
-}
 
 // ─── Loyalty Programs, Bonus Ledger & Referral Architecture ──────────────────
 

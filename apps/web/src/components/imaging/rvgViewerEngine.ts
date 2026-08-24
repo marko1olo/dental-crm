@@ -1,0 +1,88 @@
+/**
+ * DENTE CRM — Client-side RVG & DICOM Radiography Viewer Engine
+ */
+
+import {
+	DEFAULT_DICOM_VIEWPORT_STATE,
+	EMBOSS_SHADOW_KERNEL_3X3,
+	SHARPEN_KERNEL_3X3,
+	apply2DConvolutionFilter,
+	buildDicomTonalLUT,
+	calculate1FingerPan,
+	calculate2FingerWindowLevel,
+	calculatePinchCenter,
+	calculatePinchDistance,
+	calculatePinchZoom,
+	calibrateMmPerPixel,
+	disposeWebGlRenderingContext,
+	measureBoneHeightAndWidth,
+	measureDistanceMm,
+	measureRootCanalWorkingLength,
+	type CalibratedRulerMeasurement,
+	type DicomImageMetadata,
+	type DicomViewportState,
+	type ImagingActiveTool,
+	type Point2D,
+} from "@dental/shared";
+
+export {
+	DEFAULT_DICOM_VIEWPORT_STATE,
+	EMBOSS_SHADOW_KERNEL_3X3,
+	SHARPEN_KERNEL_3X3,
+	apply2DConvolutionFilter,
+	buildDicomTonalLUT,
+	calculate1FingerPan,
+	calculate2FingerWindowLevel,
+	calculatePinchCenter,
+	calculatePinchDistance,
+	calculatePinchZoom,
+	calibrateMmPerPixel,
+	disposeWebGlRenderingContext,
+	measureBoneHeightAndWidth,
+	measureDistanceMm,
+	measureRootCanalWorkingLength,
+	type CalibratedRulerMeasurement,
+	type DicomImageMetadata,
+	type DicomViewportState,
+	type ImagingActiveTool,
+	type Point2D,
+};
+
+export const DENTAL_RADIOGRAPHY_PRESETS = [
+	{
+		id: "bone_structure",
+		labelRu: "Костная ткань / Остеоинтеграция",
+		windowWidth: 2000,
+		windowCenter: 500,
+		gamma: 1.0,
+		sharpen: 25,
+		emboss: false,
+	},
+	{
+		id: "caries_enamel",
+		labelRu: "Эмаль / Скрытый апроксимальный кариес",
+		windowWidth: 4000,
+		windowCenter: 1500,
+		gamma: 1.2,
+		sharpen: 40,
+		emboss: true,
+	},
+	{
+		id: "endo_apex",
+		labelRu: "Эндодонтия / Апекс и периодонтальная щель",
+		windowWidth: 1500,
+		windowCenter: 300,
+		gamma: 0.9,
+		sharpen: 30,
+		emboss: false,
+	},
+	{
+		id: "soft_tissue",
+		labelRu: "Мягкие ткани / Десна",
+		windowWidth: 400,
+		windowCenter: 40,
+		gamma: 1.0,
+		sharpen: 0,
+		emboss: false,
+	},
+] as const;
