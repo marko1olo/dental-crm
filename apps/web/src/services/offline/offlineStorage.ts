@@ -10,10 +10,16 @@
  */
 
 import {
+	calibrateClockSkew,
 	computePayloadHash,
 	createCompositeIdempotencyKey,
 	generateUuidV7,
+	getAdjustedNowIso,
+	getAdjustedNowMs,
+	getGlobalClockSkew,
 	isUuidV7,
+	resetGlobalClockSkew,
+	setGlobalClockSkew,
 } from "@dental/shared";
 import { logger } from "../../utils/logger";
 import type {
@@ -25,6 +31,17 @@ import type {
 	OfflineQueueMetrics,
 } from "./types";
 
+export {
+	calibrateClockSkew,
+	generateUuidV7,
+	getAdjustedNowIso,
+	getAdjustedNowMs,
+	getGlobalClockSkew,
+	isUuidV7,
+	resetGlobalClockSkew,
+	setGlobalClockSkew,
+};
+
 export const OFFLINE_DB_NAME = "dente-crm-offline-outbox";
 export const OFFLINE_DB_VERSION = 2;
 export const MUTATIONS_STORE_NAME = "mutations";
@@ -34,10 +51,7 @@ export const CLINICAL_CACHE_STORE_NAME = "clinical_cache";
 export const LOCAL_STORAGE_MUTATIONS_KEY = "dente_offline_mutations_v1";
 export const LOCAL_STORAGE_DRAFTS_PREFIX = "dente_offline_draft_v1:";
 
-
 let dbPromiseInstance: Promise<IDBDatabase> | null = null;
-
-export { generateUuidV7, isUuidV7 };
 
 /**
  * Генерация UUID v7 (RFC 9562) с миллисекундной упорядоченностью
@@ -48,10 +62,11 @@ export function generateMutationUuid(): string {
 }
 
 /**
- * Текущая временная метка ISO с миллисекундами
+ * Текущая временная метка ISO с миллисекундами, откалиброванная
+ * по серверному времени (Clock Skew Compensation).
  */
-export function nowIsoWithMs(): string {
-	return new Date().toISOString();
+export function nowIsoWithMs(localTimeMs: number = Date.now()): string {
+	return getAdjustedNowIso(localTimeMs);
 }
 
 /**
@@ -238,9 +253,8 @@ function removeLocalStorageDraft(draftKey: string): void {
 export async function enqueueOfflineMutation<T = unknown>(
 	input: EnqueueMutationInput<T>,
 ): Promise<OfflineMutation<T>> {
-	const now = new Date();
-	const timestamp = input.timestamp || now.toISOString();
-	const timestampMs = new Date(timestamp).getTime() || now.getTime();
+	const timestamp = input.timestamp || getAdjustedNowIso();
+	const timestampMs = new Date(timestamp).getTime() || getAdjustedNowMs();
 	const mutationId = input.mutationId || generateMutationUuid();
 	const payloadHash = computePayloadHash(input.payload);
 	const idempotencyKey =

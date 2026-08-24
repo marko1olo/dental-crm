@@ -13,9 +13,15 @@
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, test } from "node:test";
 import {
+	calibrateClockSkew,
 	computePayloadHash,
 	createCompositeIdempotencyKey,
+	getAdjustedNowIso,
+	getAdjustedNowMs,
+	getGlobalClockSkew,
 	mergeFieldLevelCrdt,
+	resetGlobalClockSkew,
+	setGlobalClockSkew,
 } from "@dental/shared";
 import {
 	calculateBackoffDelay,
@@ -257,6 +263,7 @@ describe("Offline-First & Multi-Level Sync Engine: Industrial Stress & Chaos Sui
 	let mockDbHolder: ReturnType<typeof setupMockIndexedDb>;
 
 	beforeEach(() => {
+		resetGlobalClockSkew();
 		resetOfflineDbConnection();
 		localStorageMap.clear();
 		mockDbHolder = setupMockIndexedDb();
@@ -284,6 +291,7 @@ describe("Offline-First & Multi-Level Sync Engine: Industrial Stress & Chaos Sui
 	});
 
 	afterEach(() => {
+		resetGlobalClockSkew();
 		resetOfflineDbConnection();
 		if (originalWindowDesc) {
 			Object.defineProperty(globalThis, "window", originalWindowDesc);
@@ -1041,6 +1049,82 @@ describe("Offline-First & Multi-Level Sync Engine: Industrial Stress & Chaos Sui
 		} finally {
 			globalThis.fetch = originalFetch;
 		}
+	});
+
+	// ── 12. Client Clock Skew Calibration & CMOS Battery Drift Protection for CRDT LWW ──
+	test("STRESS 12: Client Clock Skew Calibration & CMOS Battery Drift Protection for CRDT LWW", async () => {
+		const orgId = "org-clock-skew-test";
+
+		// 1. Initial baseline: zero skew
+		resetGlobalClockSkew();
+		assert.strictEqual(getGlobalClockSkew(), 0);
+
+		// 2. Simulate workstation with dead CMOS battery:
+		// Client local clock is 2 hours in the past (e.g. 10:00 vs real server time 12:00)
+		const nowLocalMs = Date.now();
+		const simulatedServerIso = new Date(nowLocalMs + 2 * 60 * 60 * 1000).toISOString(); // +2 hours
+		const expectedSkewMs = 2 * 60 * 60 * 1000;
+
+		// 3. Calibrate client clock against server timestamp
+		const calculatedSkew = calibrateClockSkew(simulatedServerIso, nowLocalMs);
+		assert.strictEqual(calculatedSkew, expectedSkewMs);
+		assert.strictEqual(getGlobalClockSkew(), expectedSkewMs);
+
+		// 4. Verify getAdjustedNowMs and getAdjustedNowIso reflect calibrated server time
+		const adjustedMs = getAdjustedNowMs(nowLocalMs);
+		assert.strictEqual(adjustedMs, nowLocalMs + expectedSkewMs);
+
+		const adjustedIso = getAdjustedNowIso(nowLocalMs);
+		assert.strictEqual(new Date(adjustedIso).getTime(), adjustedMs);
+
+		// 5. Enqueue offline mutation on this workstation:
+		// Must use adjusted calibrated timestamp instead of uncalibrated local clock
+		const mut = await enqueueOfflineMutation({
+			entityType: "DIARY_043_DRAFT",
+			entityId: "visit-clock-skew-1",
+			payload: {
+				anamnesis: "Диагностирован острый пульпит 24 зуба",
+				diagnosisIcd10: "K04.0",
+			},
+			organizationId: orgId,
+		});
+
+		assert.ok(mut.timestampMs >= nowLocalMs + expectedSkewMs - 1000, "Mutation timestampMs must include calibrated skew");
+
+		// 6. Test CRDT Merge protection:
+		// An existing server record from 30 minutes ago (nowLocalMs + 1.5 hours in server time)
+		// Without calibration, local doctor's edit (at 10:00) would LOSE to server's edit from 11:30!
+		// With calibration, local doctor's edit (at 12:00 server-aligned) correctly WINS over 11:30!
+		const olderServerTimestamp = new Date(nowLocalMs + 1.5 * 60 * 60 * 1000).toISOString();
+		const serverEntity = {
+			id: "visit-clock-skew-1",
+			anamnesis: "Старая запись анамнеза (11:30)",
+			diagnosisIcd10: "K02.1",
+		};
+		const serverVector = {
+			anamnesis: { updatedAt: olderServerTimestamp, version: 1 },
+			diagnosisIcd10: { updatedAt: olderServerTimestamp, version: 1 },
+		};
+
+		const crdtResult = mergeFieldLevelCrdt<{ id: string; anamnesis: string; diagnosisIcd10: string }>({
+			entityKind: "visit_diary",
+			entityId: "visit-clock-skew-1",
+			serverEntity,
+			serverVector,
+			clientPatch: mut.payload as Record<string, unknown>,
+			clientUpdatedAt: mut.timestamp,
+			clientVector: {
+				anamnesis: { updatedAt: mut.timestamp, version: 1 },
+				diagnosisIcd10: { updatedAt: mut.timestamp, version: 1 },
+			},
+		});
+
+		// Doctor's calibrated edit must win LWW resolution
+		assert.strictEqual(crdtResult.mergedEntity.anamnesis, "Диагностирован острый пульпит 24 зуба");
+		assert.strictEqual(crdtResult.mergedEntity.diagnosisIcd10, "K04.0");
+		assert.strictEqual(crdtResult.conflicts.length, 2);
+		assert.strictEqual(crdtResult.conflicts[0]?.winner, "client");
+		assert.strictEqual(crdtResult.conflicts[1]?.winner, "client");
 	});
 });
 

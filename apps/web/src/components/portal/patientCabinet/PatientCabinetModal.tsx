@@ -77,6 +77,8 @@ import {
 	type TreatmentPlanTier,
 } from "./patientCabinetEngine";
 import { SignaturePadCanvas, MobileSelfCheckinModal } from "../selfCheckin";
+import { PatientFriendlyOdontogram } from "../../patient-portal/PatientFriendlyOdontogram";
+import { TreatmentPlanStageCard } from "../../patient-portal/TreatmentPlanStageCard";
 import { DEMO_PATIENT_CABINET } from "./patientCabinetPresets";
 import "./patientCabinet.css";
 
@@ -898,6 +900,22 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 					{/* TAB 3: ПЛАНЫ ЛЕЧЕНИЯ (TREATMENT PLANS & 3-TIER COMPARISON) */}
 					{activeTab === "plans" && (
 						<div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+							{/* Patient-Friendly 2D Tooth Chart with Clear Colors */}
+							<div className="pc-card">
+								<div className="pc-card-header">
+									<div>
+										<h3 className="pc-card-title">
+											<Sparkles size={18} style={{ color: "var(--pc-primary)" }} />
+											<span>Интерактивная зубная карта пациента (Здоров / Лечение / Требует внимания)</span>
+										</h3>
+										<p style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)", margin: "2px 0 0 0" }}>
+											Нажмите на любой зуб для подробного и понятного описания состояния и гарантии:
+										</p>
+									</div>
+								</div>
+								<PatientFriendlyOdontogram />
+							</div>
+
 							{/* 3-Tier Treatment Plan Comparison */}
 							{data.threeTierModel && (
 								<div className="pc-card" style={{ background: "var(--pc-surface)" }} data-testid="three-tier-plan-container">
@@ -1290,6 +1308,111 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 											</div>
 										);
 									})}
+								</div>
+							</section>
+
+							{/* Section 3: Statutory Prescriptions (Order 1094n Form 107-1/u) */}
+							<section style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+								<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+									<h3 className="pc-card-title">
+										<FileText size={18} style={{ color: "var(--pc-primary)" }} />
+										<span>Электронные рецепты на лекарства (Приказ Минздрава № 1094н, форма № 107-1/у)</span>
+									</h3>
+									<span style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)" }}>
+										С QR-кодом для аптеки
+									</span>
+								</div>
+
+								<div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+									<div className="pc-card" style={{ background: "var(--pc-surface)" }}>
+										<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "10px" }}>
+											<div>
+												<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+													<strong style={{ fontSize: "0.9375rem" }}>Амоксициллин 500 мг (капсулы №20)</strong>
+													<span className="pc-status-badge paid">
+														<CheckCircle2 size={12} />
+														<span>Действителен (60 дней)</span>
+													</span>
+												</div>
+												<p style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)", margin: "4px 0 0 0" }}>
+													Rp.: Amoxicillini 500 mg &bull; Внутрь по 1 капсуле 3 раза в день через 8 ч, курс 5–7 дней
+												</p>
+											</div>
+
+											<button
+												type="button"
+												className="pc-btn-primary"
+												style={{ minHeight: "36px", padding: "6px 14px", fontSize: "0.8125rem" }}
+												onClick={() => showToast("Официальный рецепт 107-1/у с QR-кодом и МДЛП сохранен в PDF!")}
+											>
+												<Download size={14} />
+												<span>Скачать рецепт (PDF)</span>
+											</button>
+										</div>
+									</div>
+
+									<div className="pc-card" style={{ background: "var(--pc-surface)" }}>
+										<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "10px" }}>
+											<div>
+												<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+													<strong style={{ fontSize: "0.9375rem" }}>Ибупрофен 400 мг (таблетки №20)</strong>
+													<span className="pc-status-badge paid">
+														<CheckCircle2 size={12} />
+														<span>Действителен (60 дней)</span>
+													</span>
+												</div>
+												<p style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)", margin: "4px 0 0 0" }}>
+													Rp.: Ibuprofeni 400 mg &bull; При зубной боли по 1 таб. после еды (макс. 3 таб./сутки)
+												</p>
+											</div>
+
+											<button
+												type="button"
+												className="pc-btn-primary"
+												style={{ minHeight: "36px", padding: "6px 14px", fontSize: "0.8125rem" }}
+												onClick={() => showToast("Официальный рецепт 107-1/у сохранен в PDF!")}
+											>
+												<Download size={14} />
+												<span>Скачать рецепт (PDF)</span>
+											</button>
+										</div>
+									</div>
+								</div>
+							</section>
+
+							{/* Section 4: Tax Deduction Certificate 13% (Order FNS KND 1151156) */}
+							<section style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+								<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+									<h3 className="pc-card-title">
+										<DollarSign size={18} style={{ color: "var(--pc-primary)" }} />
+										<span>Налоговый вычет 13% за лечение (Справка ФНС КНД 1151156)</span>
+									</h3>
+									<span style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)" }}>
+										Возврат до 19 500 ₽ в год
+									</span>
+								</div>
+
+								<div className="pc-card" style={{ background: "var(--pc-surface)" }}>
+									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+										<div>
+											<strong style={{ fontSize: "0.9375rem" }}>
+												Справка об оплате медицинских услуг за 2024–2026 гг.
+											</strong>
+											<p style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)", margin: "4px 0 0 0" }}>
+												Автоматически рассчитывает все фискальные чеки, код услуги 1 (обычное лечение) и код 2 (дорогостоящая имплантация).
+											</p>
+										</div>
+
+										<button
+											type="button"
+											className="pc-btn-primary"
+											style={{ minHeight: "36px", padding: "6px 14px", fontSize: "0.8125rem" }}
+											onClick={() => showToast("Справка КНД 1151156 с реестром фискальных чеков сформирована!")}
+										>
+											<Download size={14} />
+											<span>Сформировать для ФНС (1 клик)</span>
+										</button>
+									</div>
 								</div>
 							</section>
 						</div>

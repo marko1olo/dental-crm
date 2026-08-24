@@ -2,14 +2,17 @@ import type {
 	Appointment,
 	AppointmentReadiness,
 	Dashboard,
+	DentalSpecialty,
 	ScheduleSuggestion,
 } from "@dental/shared";
 import type { ChangeEvent } from "react";
 import { useCallback, useMemo, useState } from "react";
+import { Clock } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { AppointmentQuickActions } from "./AppointmentQuickActions";
 import { WaitlistMatchesBlock } from "./WaitlistMatchesBlock";
+import { specialtyLabels } from "../../workspaceUiLabels";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
@@ -121,6 +124,12 @@ export function AppointmentCard(props: AppointmentCardProps) {
 	const appointmentPatient = (dashboard?.patients ?? []).find(
 		(p) => p?.id === appointment?.patientId,
 	);
+	const patientBalance = useMemo(() => {
+		const raw = (appointmentPatient as { balance?: number | string | null } | undefined)?.balance;
+		if (raw === undefined || raw === null || raw === "") return null;
+		const num = Number(raw);
+		return Number.isFinite(num) ? num : null;
+	}, [appointmentPatient]);
 	const appointmentPatientName =
 		typeof patientName === "function"
 			? patientName(dashboard?.patients ?? [], appointment?.patientId ?? null)
@@ -230,6 +239,56 @@ export function AppointmentCard(props: AppointmentCardProps) {
 		],
 	);
 
+	const handleShiftAppointmentTime = useCallback(
+		async (minutes: number) => {
+			if (appointmentHasOpenVisit) {
+				showToast("Нельзя сдвинуть время: открыт активный визит", "error");
+				return;
+			}
+			const curStart = new Date(appointment.startsAt).getTime();
+			const curEnd = new Date(appointment.endsAt).getTime();
+			const durationMs = curEnd - curStart;
+			const newStartMs = curStart + minutes * 60000;
+			const newEndMs = newStartMs + durationMs;
+			const newStartIso = new Date(newStartMs).toISOString();
+			const newEndIso = new Date(newEndMs).toISOString();
+
+			updateAppointmentScheduleDraft(appointment.id, "startsAt", newStartIso);
+			updateAppointmentScheduleDraft(appointment.id, "endsAt", newEndIso);
+			setIsQuickStatusUpdating(true);
+			try {
+				const success = await saveAppointmentSchedule(appointment.id);
+				if (success) {
+					showToast(
+						`Запись «${appointmentPatientName}» сдвинута на +${minutes} мин (${formatTime(newStartIso)} - ${formatTime(newEndIso)})`,
+						"success",
+						3500,
+					);
+				} else {
+					updateAppointmentScheduleDraft(appointment.id, "startsAt", appointment.startsAt);
+					updateAppointmentScheduleDraft(appointment.id, "endsAt", appointment.endsAt);
+					showToast("Не удалось сдвинуть время записи", "error");
+				}
+			} catch {
+				updateAppointmentScheduleDraft(appointment.id, "startsAt", appointment.startsAt);
+				updateAppointmentScheduleDraft(appointment.id, "endsAt", appointment.endsAt);
+				showToast("Ошибка при сдвиге времени записи", "error");
+			} finally {
+				setIsQuickStatusUpdating(false);
+			}
+		},
+		[
+			appointment.id,
+			appointment.startsAt,
+			appointment.endsAt,
+			appointmentHasOpenVisit,
+			appointmentPatientName,
+			formatTime,
+			saveAppointmentSchedule,
+			updateAppointmentScheduleDraft,
+		],
+	);
+
 	const handleCardKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
 		const targetTag = (e.target as HTMLElement).tagName.toLowerCase();
 		if (targetTag === "input" || targetTag === "textarea" || targetTag === "select") {
@@ -311,14 +370,38 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						boxSizing: "border-box",
 					}}
 				>
-					<div className="appointment-card-header border-b border-slate-200 dark:border-slate-800 pb-2 mb-1 flex justify-between items-center gap-2 min-w-0 flex-wrap">
-						<div className="appointment-card-time font-semibold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2 shrink-0">
+					<div className="appointment-card-header border-b border-[var(--line)] pb-2 mb-1 flex justify-between items-center gap-2 min-w-0 flex-wrap">
+						<div className="appointment-card-time font-semibold text-sm text-[var(--ink)] flex items-center gap-2 shrink-0">
 							{appointment?.startsAt ? formatTime(appointment.startsAt) : ""}
-							<span className="font-normal text-slate-500 dark:text-slate-400">
+							<span className="font-normal text-[var(--muted)]">
 								{appointment?.endsAt ? ` - ${formatTime(appointment.endsAt)}` : ""}
 							</span>
 						</div>
 						<div className="flex items-center gap-1.5 flex-wrap min-w-0">
+							{patientBalance !== null ? (
+								patientBalance < 0 ? (
+									<span
+										className="px-2 py-0.5 rounded-lg text-xs font-bold bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30"
+										title={`Задолженность пациента: ${Math.abs(patientBalance).toLocaleString("ru-RU")} ₽`}
+									>
+										Долг: {Math.abs(patientBalance).toLocaleString("ru-RU")} ₽
+									</span>
+								) : patientBalance > 0 ? (
+									<span
+										className="px-2 py-0.5 rounded-lg text-xs font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
+										title={`Аванс/депозит пациента: ${patientBalance.toLocaleString("ru-RU")} ₽`}
+									>
+										Аванс: {patientBalance.toLocaleString("ru-RU")} ₽
+									</span>
+								) : (
+									<span
+										className="px-2 py-0.5 rounded-lg text-xs font-medium bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20"
+										title="Баланс пациента: 0 ₽"
+									>
+										Баланс: 0 ₽
+									</span>
+								)
+							) : null}
 							<span
 								className={`appointment-card-status status-pill status-${displayStatus ?? ""} max-w-full truncate`}
 								title={appointmentLabels?.[displayStatus] ?? String(displayStatus ?? "")}
@@ -388,11 +471,28 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								{appointment?.reason || "Причина не указана"}
 							</span>
 							<span
-								className="chip chip-doctor max-w-full truncate"
-								title={appointmentDoctor?.fullName ? `Врач: ${appointmentDoctor.fullName}` : "Врач не назначен"}
+								className="chip chip-doctor max-w-full truncate inline-flex items-center gap-1"
+								title={
+									appointmentDoctor?.fullName
+										? `Врач: ${appointmentDoctor.fullName}${
+												appointmentDoctor.specialties?.length
+													? ` (${appointmentDoctor.specialties.map((s) => specialtyLabels[s as DentalSpecialty] || s).join(", ")})`
+													: ""
+											}`
+										: "Врач не назначен"
+								}
 								style={{ maxWidth: "100%" }}
 							>
-								{appointmentDoctor?.fullName || "Врач не назначен"}
+								<span>{appointmentDoctor?.fullName || "Врач не назначен"}</span>
+								{appointmentDoctor?.specialties &&
+									appointmentDoctor.specialties.length > 0 && (
+										<span className="text-xs font-semibold opacity-75">
+											•{" "}
+											{appointmentDoctor.specialties
+												.map((s) => specialtyLabels[s as DentalSpecialty] || s)
+												.join(", ")}
+										</span>
+									)}
 							</span>
 							<span
 								className="chip chip-assistant max-w-full truncate"
@@ -458,6 +558,31 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							<WaitlistMatchesBlock appointmentId={appointment.id} compact />
 						</div>
 					) : null}
+
+					{/* Кнопки быстрого сдвига времени при опозданиях (+15 мин, +30 мин, +45 мин) */}
+					<div className="appointment-delay-shift-bar flex items-center justify-between gap-2 p-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs flex-wrap">
+						<span className="font-bold text-amber-800 dark:text-amber-200 flex items-center gap-1.5 shrink-0">
+							<Clock size={14} className="text-amber-600 shrink-0" />
+							Пациент опаздывает:
+						</span>
+						<div className="flex items-center gap-1.5 flex-wrap">
+							{[15, 30, 45].map((m) => (
+								<button
+									key={m}
+									type="button"
+									disabled={isQuickStatusUpdating || appointmentHasOpenVisit}
+									onClick={(e) => {
+										e.stopPropagation();
+										void handleShiftAppointmentTime(m);
+									}}
+									className="min-h-[36px] px-3 py-1.5 rounded-lg border border-amber-500/40 bg-[var(--paper,#ffffff)] hover:bg-amber-500/20 text-amber-900 dark:text-amber-100 text-xs font-bold transition-all cursor-pointer disabled:opacity-40 shadow-xs select-none active:scale-95"
+									title={`Сдвинуть время визита на +${m} минут позже`}
+								>
+									+{m} мин
+								</button>
+							))}
+						</div>
+					</div>
 
 					{/* Быстрые действия по статусу приёма */}
 					<AppointmentQuickActions
@@ -573,7 +698,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								}}
 							>
 								<div className="min-w-0">
-									<span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">
+									<span className="text-xs font-semibold text-[var(--muted)] block mb-2">
 										Пациент
 									</span>
 									{useManualSelects ||
@@ -909,7 +1034,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 											id={`appointment-collision-${appointment?.id ?? ""}`}
 											role="alert"
 										>
-											<strong style={{ color: "var(--color-rose-600, #e11d48)" }}>
+											<strong style={{ color: "var(--bad-fg)" }}>
 												⛔ {collision.message}
 											</strong>
 										</div>

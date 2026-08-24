@@ -33,6 +33,48 @@ function parseIsoTimestamp(isoString?: string | null | undefined): number {
 }
 
 /**
+ * Global Clock Skew Calibration State & Utilities for CRDT LWW
+ *
+ * `clockSkewMs = serverTimeMs - clientLocalTimeMs`
+ * When clockSkewMs is added to local timestamp, we get the calibrated server-aligned timestamp.
+ */
+let currentClockSkewMs = 0;
+
+export function setGlobalClockSkew(skewMs: number): void {
+	currentClockSkewMs = Number.isFinite(skewMs) ? skewMs : 0;
+}
+
+export function getGlobalClockSkew(): number {
+	return currentClockSkewMs;
+}
+
+export function calibrateClockSkew(
+	serverIsoOrMs: string | number,
+	clientLocalTimeMs: number = Date.now(),
+): number {
+	const serverMs =
+		typeof serverIsoOrMs === "number"
+			? serverIsoOrMs
+			: new Date(serverIsoOrMs).getTime();
+	if (Number.isNaN(serverMs) || serverMs <= 0) return currentClockSkewMs;
+	const skew = serverMs - clientLocalTimeMs;
+	setGlobalClockSkew(skew);
+	return skew;
+}
+
+export function getAdjustedNowMs(localTimeMs: number = Date.now()): number {
+	return localTimeMs + currentClockSkewMs;
+}
+
+export function getAdjustedNowIso(localTimeMs: number = Date.now()): string {
+	return new Date(getAdjustedNowMs(localTimeMs)).toISOString();
+}
+
+export function resetGlobalClockSkew(): void {
+	currentClockSkewMs = 0;
+}
+
+/**
  * Deterministic Field-Level Last-Write-Wins (LWW) CRDT & Three-Way Merging.
  *
  * Guaranteed Invariants:
@@ -57,7 +99,7 @@ export function mergeFieldLevelCrdt<T extends Record<string, unknown>>(
 		authorUserId,
 	} = options;
 
-	const nowIso = new Date().toISOString();
+	const nowIso = getAdjustedNowIso();
 
 	// Case 1: Entity does not exist on server yet (New entity creation)
 	if (!serverEntity) {

@@ -17,6 +17,7 @@ import {
 	type SyncMutationEnvelope,
 	type SyncPushBatchRequest,
 	type SyncPushBatchResponse,
+	calibrateClockSkew,
 	computePayloadHash,
 	createCompositeIdempotencyKey,
 } from "@dental/shared";
@@ -93,6 +94,11 @@ export function mapToSyncEntityKind(
 			return "visit";
 		case "CASH_RECEIPT_DRAFT":
 			return "payment";
+		case "APPOINTMENT_BOOKING_DRAFT":
+			return "appointment";
+		case "TREATMENT_PLAN_DRAFT":
+			return "treatment_item";
+		case "PATIENT_DRAFT":
 		case "GENERIC":
 			return "patient";
 		case "patient":
@@ -110,6 +116,7 @@ export function mapToSyncEntityKind(
 			return "patient";
 	}
 }
+
 
 /**
  * Преобразование действия мутации к SyncMutationAction
@@ -389,6 +396,9 @@ export class OfflineSyncService {
 		// 4. Разбор ответа сервера или обработка полного сбоя отправки
 		if (serverResponse && Array.isArray(serverResponse.results)) {
 			result.serverTime = serverResponse.serverTime;
+			if (serverResponse.serverTime) {
+				calibrateClockSkew(serverResponse.serverTime);
+			}
 			const resultsMap = new Map(
 				serverResponse.results.map((r) => [r.mutationId, r]),
 			);
