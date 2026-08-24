@@ -45,13 +45,22 @@ export interface MobileBiometricAuthResult {
 	error?: string | undefined;
 }
 
+export type HapticFeedbackType =
+	| "light"
+	| "medium"
+	| "heavy"
+	| "selection"
+	| "success"
+	| "warning"
+	| "error";
+
 export interface MobileNativeApi {
 	isMobileApp: boolean;
 	platform: "android" | "ios" | "web";
 	appVersion: string;
 	scanBarcode: () => Promise<MobileScanResult>;
 	authenticateBiometric: (promptMessage?: string | undefined) => Promise<MobileBiometricAuthResult>;
-	hapticFeedback: (type?: "light" | "medium" | "heavy" | "success" | "error" | undefined) => void;
+	hapticFeedback: (type?: HapticFeedbackType | undefined) => void;
 	shareFile: (filePath: string, title?: string | undefined) => Promise<{ success: boolean; error?: string | undefined }>;
 	setSecureSecret?: (key: string, value: string) => Promise<{ success: boolean; error?: string | undefined }>;
 	getSecureSecret?: (key: string) => Promise<{ success: boolean; value?: string | undefined; error?: string | undefined }>;
@@ -310,25 +319,55 @@ export async function authenticateBiometricStaff(
 }
 
 /**
- * Safe haptic feedback trigger for touch-first operations.
+ * Safe haptic feedback trigger for touch-first clinical operations.
+ * - `light` / `selection`: 15ms tap for tooth formula clicks, status toggles, keypad entries.
+ * - `medium`: 35ms pulse for modal transitions, tab switching.
+ * - `heavy`: 60ms pulse for destructive confirmations.
+ * - `success`: [30ms, 50ms, 30ms] double-tick for DataMatrix/Passport scan, payment confirmation.
+ * - `warning`: [40ms, 60ms, 40ms] warning buzz for allergy alerts, unsaved drafts.
+ * - `error`: [80ms, 50ms, 80ms, 50ms, 100ms] triple vibration for lockout, wrong PIN, validation failure.
  */
-export function triggerHaptic(type: "light" | "medium" | "heavy" | "success" | "error" = "light"): void {
+export function triggerHaptic(type: HapticFeedbackType = "light"): void {
 	if (typeof window === "undefined") return;
 
 	const api = getMobileNativeApi();
-	if (api) {
-		api.hapticFeedback(type);
-		return;
+	if (api?.hapticFeedback) {
+		try {
+			api.hapticFeedback(type);
+			return;
+		} catch {
+			// Fall through to Web Vibration API
+		}
 	}
 
 	// Web Vibration API fallback
-	if ("vibrate" in navigator) {
+	if (typeof navigator !== "undefined" && "vibrate" in navigator && typeof navigator.vibrate === "function") {
 		try {
-			if (type === "success") navigator.vibrate([30, 50, 30]);
-			else if (type === "error") navigator.vibrate([100, 50, 100]);
-			else navigator.vibrate(25);
+			switch (type) {
+				case "light":
+				case "selection":
+					navigator.vibrate(15);
+					break;
+				case "medium":
+					navigator.vibrate(35);
+					break;
+				case "heavy":
+					navigator.vibrate(60);
+					break;
+				case "success":
+					navigator.vibrate([30, 50, 30]);
+					break;
+				case "warning":
+					navigator.vibrate([40, 60, 40]);
+					break;
+				case "error":
+					navigator.vibrate([80, 50, 80, 50, 100]);
+					break;
+				default:
+					navigator.vibrate(20);
+			}
 		} catch {
-			// Ignore vibration errors
+			// Ignore vibration restrictions on web
 		}
 	}
 }

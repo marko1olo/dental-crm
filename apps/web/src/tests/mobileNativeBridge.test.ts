@@ -79,10 +79,45 @@ test("Mobile Android (.APK) & GS1 DataMatrix Verification Suite", async (t) => {
 		assert.ok(result.error?.includes("Android (.apk)"));
 	});
 
-	await t.test("triggerHaptic does not throw in headless environment", () => {
-		assert.doesNotThrow(() => triggerHaptic("success"));
-		assert.doesNotThrow(() => triggerHaptic("error"));
-		assert.doesNotThrow(() => triggerHaptic("heavy"));
+	await t.test("triggerHaptic dispatches distinct vibration feedback patterns across platforms", () => {
+		// Headless / Browser safe invocation
+		assert.doesNotThrow(() => triggerHaptic("light")); // tooth formula tap
+		assert.doesNotThrow(() => triggerHaptic("selection")); // menu select
+		assert.doesNotThrow(() => triggerHaptic("medium")); // modal open
+		assert.doesNotThrow(() => triggerHaptic("heavy")); // delete action
+		assert.doesNotThrow(() => triggerHaptic("success")); // GS1 DataMatrix / Passport OCR scan
+		assert.doesNotThrow(() => triggerHaptic("warning")); // clinical allergy warning
+		assert.doesNotThrow(() => triggerHaptic("error")); // auth lockout / PIN failure
+
+		// Test delegation to MobileNativeApi
+		const receivedHaptics: string[] = [];
+		const mockHapticApi: MobileNativeApi = {
+			isMobileApp: true,
+			platform: "android",
+			appVersion: "1.0.0",
+			scanBarcode: async () => ({ success: true }),
+			authenticateBiometric: async () => ({ success: true, authenticated: true }),
+			hapticFeedback: (type) => {
+				receivedHaptics.push(type || "light");
+			},
+			shareFile: async () => ({ success: true }),
+		};
+
+		const original = (globalThis as any).window;
+		(globalThis as any).window = {
+			denteMobileNative: mockHapticApi,
+		};
+
+		try {
+			triggerHaptic("light");
+			triggerHaptic("success");
+			triggerHaptic("warning");
+			triggerHaptic("error");
+
+			assert.deepEqual(receivedHaptics, ["light", "success", "warning", "error"]);
+		} finally {
+			(globalThis as any).window = original;
+		}
 	});
 
 	await t.test("saveSecureToken and getSecureToken store and retrieve session tokens safely", async () => {
