@@ -1,15 +1,37 @@
 /**
- * DENTE CRM — Patient-Friendly 2D Odontogram & Human-Readable Tooth Explanations
+ * DENTE CRM — Patient-Friendly 2D Odontogram & Interactive Dental Health Index
+ * (DOMAIN: PATIENT PORTAL & CLINICAL TRANSPARENCY)
+ *
  * Color-coded representation for ordinary patients:
  * - Green: Healed / Healthy (Вылечен / Здоров)
  * - Yellow: In treatment (В процессе лечения)
- * - Red: Needs treatment (Требует лечения)
+ * - Red: Needs treatment (Требует внимания / лечения)
  * - Gray: Missing / Implant (Отсутствует / Имплантат)
+ *
+ * Features:
+ * - Interactive Dental Health / Sanitation Index:
+ *   «Индекс санации: X% • Вылечено Y зубов • Требуют внимания Z зубов»
+ * - Interactive filter chips: All, Healthy, In Treatment, Needs Attention, Implants
+ * - Anti-anxiety human explanations reducing patient fear
  */
 
-import { Check, CheckCircle2, Heart, HelpCircle, Info, Sparkles, X } from "lucide-react";
+import {
+	AlertCircle,
+	AlertTriangle,
+	Award,
+	Check,
+	CheckCircle2,
+	Filter,
+	Heart,
+	HelpCircle,
+	Info,
+	ShieldCheck,
+	Sparkles,
+	X,
+	Zap,
+} from "lucide-react";
 import type React from "react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 export type PatientToothStatus = "healthy" | "in_treatment" | "needs_treatment" | "missing_or_implant";
 
@@ -21,6 +43,19 @@ export interface PatientToothInfo {
 	readonly procedureDescriptionRu?: string | undefined;
 	readonly plannedStageTitleRu?: string | undefined;
 	readonly warrantyActive?: boolean | undefined;
+}
+
+export interface DentalHealthIndexResult {
+	readonly totalTeeth: number;
+	readonly healthyCount: number;
+	readonly inTreatmentCount: number;
+	readonly needsTreatmentCount: number;
+	readonly missingOrImplantCount: number;
+	readonly sanitationPercent: number; // 0..100%
+	readonly formattedIndexRu: string; // "Индекс санации: 78% • Вылечено 22 зуба • Требуют внимания 2 зуба"
+	readonly badgeStatus: "excellent" | "good" | "needs_attention";
+	readonly statusLabelRu: string;
+	readonly encouragingNoteRu: string;
 }
 
 export const HUMAN_TOOTH_NAMES: Record<string, string> = {
@@ -104,16 +139,67 @@ export const DEFAULT_PATIENT_TEETH: readonly PatientToothInfo[] = [
 	{ fdiCode: "38", status: "healthy", humanNameRu: "Нижний левый зуб мудрости", clinicalStateRu: "Здоров" },
 ];
 
+/**
+ * Calculates the patient's Dental Health & Sanitation Index.
+ * Formula: % of healthy, cured and restored teeth vs total teeth in chart.
+ */
+export function calculateDentalHealthIndex(
+	teeth: readonly PatientToothInfo[] = DEFAULT_PATIENT_TEETH,
+): DentalHealthIndexResult {
+	const totalTeeth = teeth.length || 32;
+	const healthyCount = teeth.filter((t) => t.status === "healthy").length;
+	const inTreatmentCount = teeth.filter((t) => t.status === "in_treatment").length;
+	const needsTreatmentCount = teeth.filter((t) => t.status === "needs_treatment").length;
+	const missingOrImplantCount = teeth.filter((t) => t.status === "missing_or_implant").length;
+
+	// Санированные зубы = здоровые/вылеченные + качественно замещенные имплантами
+	const sanitatedTeeth = healthyCount + missingOrImplantCount;
+	const sanitationPercent = Math.min(100, Math.max(0, Math.round((sanitatedTeeth / totalTeeth) * 100)));
+
+	let badgeStatus: "excellent" | "good" | "needs_attention" = "good";
+	let statusLabelRu = "Хороший уровень санации";
+	let encouragingNoteRu = "Лечение идет по плану! После завершения текущего плана индекс достигнет 100%.";
+
+	if (sanitationPercent >= 90) {
+		badgeStatus = "excellent";
+		statusLabelRu = "Отличный уровень санации";
+		encouragingNoteRu = "Полость рта практически полностью санирована! Соблюдайте профгигиену 1 раз в 6 месяцев для сохранения гарантии.";
+	} else if (sanitationPercent < 70) {
+		badgeStatus = "needs_attention";
+		statusLabelRu = "Требуется плановая санация";
+		encouragingNoteRu = "Не переживайте! Все процедуры проводятся 100% безболезненно под контролем дентального микроскопа.";
+	}
+
+	return {
+		totalTeeth,
+		healthyCount,
+		inTreatmentCount,
+		needsTreatmentCount,
+		missingOrImplantCount,
+		sanitationPercent,
+		formattedIndexRu: `Индекс санации: ${sanitationPercent}% • Вылечено ${healthyCount} зубов • Требуют внимания ${needsTreatmentCount} зубов`,
+		badgeStatus,
+		statusLabelRu,
+		encouragingNoteRu,
+	};
+}
+
 export interface PatientFriendlyOdontogramProps {
 	readonly teeth?: readonly PatientToothInfo[] | undefined;
 	readonly onSelectTooth?: ((tooth: PatientToothInfo) => void) | undefined;
+	readonly showHealthIndexHeader?: boolean | undefined;
 }
 
 export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps> = ({
 	teeth = DEFAULT_PATIENT_TEETH,
 	onSelectTooth,
+	showHealthIndexHeader = true,
 }) => {
 	const [selectedTooth, setSelectedTooth] = useState<PatientToothInfo | null>(null);
+	const [statusFilter, setStatusFilter] = useState<"all" | PatientToothStatus>("all");
+
+	// Dental health index calculations
+	const healthIndex = useMemo(() => calculateDentalHealthIndex(teeth), [teeth]);
 
 	const upperRight = teeth.filter((t) => ["18", "17", "16", "15", "14", "13", "12", "11"].includes(t.fdiCode));
 	const upperLeft = teeth.filter((t) => ["21", "22", "23", "24", "25", "26", "27", "28"].includes(t.fdiCode));
@@ -143,12 +229,14 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 	const renderToothButton = (tooth: PatientToothInfo) => {
 		const color = getStatusColor(tooth.status);
 		const isSelected = selectedTooth?.fdiCode === tooth.fdiCode;
+		const isDimmed = statusFilter !== "all" && tooth.status !== statusFilter;
 
 		return (
 			<button
 				key={tooth.fdiCode}
 				type="button"
 				onClick={() => handleToothClick(tooth)}
+				data-testid={`tooth-btn-${tooth.fdiCode}`}
 				style={{
 					minWidth: "36px",
 					width: "36px",
@@ -164,10 +252,12 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 					cursor: "pointer",
 					padding: "2px",
 					boxShadow: isSelected ? "0 0 0 3px rgba(13, 148, 136, 0.5)" : "0 1px 2px rgba(0, 0, 0, 0.2)",
-					transition: "all 0.15s ease",
+					transition: "all 0.2s ease",
 					touchAction: "manipulation",
 					userSelect: "none",
 					flexShrink: 0,
+					opacity: isDimmed ? 0.35 : 1,
+					transform: isSelected ? "scale(1.08)" : isDimmed ? "scale(0.95)" : "scale(1)",
 				}}
 				title={`${tooth.fdiCode}: ${tooth.humanNameRu}`}
 			>
@@ -181,45 +271,241 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 	};
 
 	return (
-		<div style={{ display: "flex", flexDirection: "column", gap: "14px", width: "100%", maxWidth: "100%", boxSizing: "border-box" }}>
-			{/* Color Legend */}
+		<div
+			className="patient-friendly-odontogram"
+			data-testid="patient-friendly-odontogram"
+			style={{ display: "flex", flexDirection: "column", gap: "14px", width: "100%", maxWidth: "100%", boxSizing: "border-box" }}
+		>
+			{/* 1. INTERACTIVE DENTAL HEALTH & SANITATION INDEX CARD */}
+			{showHealthIndexHeader && (
+				<div
+					className="pc-card dental-health-index-card"
+					data-testid="dental-health-index-card"
+					style={{
+						backgroundColor: "var(--pc-surface, #1e293b)",
+						border: "1.5px solid var(--pc-primary, #0d9488)",
+						borderRadius: "12px",
+						padding: "14px 16px",
+						display: "flex",
+						flexDirection: "column",
+						gap: "10px",
+					}}
+				>
+					{/* Top Index Headline */}
+					<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+						<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+							<ShieldCheck size={20} style={{ color: "var(--pc-primary, #0d9488)", flexShrink: 0 }} />
+							<div>
+								<strong style={{ fontSize: "15px", color: "var(--pc-text-main, #f8fafc)" }}>
+									Интерактивный индекс здоровья зубов
+								</strong>
+								<div style={{ fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
+									{healthIndex.statusLabelRu} &bull; Клиническая формула FDI (32 зуба)
+								</div>
+							</div>
+						</div>
+
+						<span
+							data-testid="sanitation-percent-badge"
+							style={{
+								backgroundColor:
+									healthIndex.sanitationPercent >= 90
+										? "var(--pc-success-light, rgba(16, 185, 129, 0.15))"
+										: "var(--pc-primary-light, rgba(13, 148, 136, 0.15))",
+								color: healthIndex.sanitationPercent >= 90 ? "var(--pc-success, #10b981)" : "var(--pc-primary, #0d9488)",
+								border: `1.5px solid ${healthIndex.sanitationPercent >= 90 ? "var(--pc-success, #10b981)" : "var(--pc-primary, #0d9488)"}`,
+								padding: "4px 10px",
+								borderRadius: "12px",
+								fontWeight: 800,
+								fontSize: "13px",
+							}}
+						>
+							Санация: {healthIndex.sanitationPercent}%
+						</span>
+					</div>
+
+					{/* Exact Metric String: «Индекс санации: X% • Вылечено Y зубов • Требуют внимания Z зубов» */}
+					<div
+						data-testid="dental-health-summary-banner"
+						style={{
+							backgroundColor: "var(--pc-bg, #0f172a)",
+							border: "1px solid var(--pc-border, #334155)",
+							borderRadius: "8px",
+							padding: "10px 12px",
+							fontSize: "13px",
+							fontWeight: 700,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "space-between",
+							flexWrap: "wrap",
+							gap: "8px",
+						}}
+					>
+						<span style={{ color: "var(--pc-text-main, #f8fafc)" }}>
+							{healthIndex.formattedIndexRu}
+							{healthIndex.inTreatmentCount > 0 ? ` • В процессе ${healthIndex.inTreatmentCount}` : ""}
+						</span>
+
+						<span style={{ fontSize: "11px", color: "var(--pc-success, #10b981)", fontWeight: 600 }}>
+							Цель: 100% санация
+						</span>
+					</div>
+
+					{/* Progress Meter Bar */}
+					<div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+						<div className="pc-progress-bar-bg" style={{ height: "10px", borderRadius: "5px" }}>
+							<div
+								className="pc-progress-bar-fill"
+								style={{
+									width: `${healthIndex.sanitationPercent}%`,
+									backgroundColor: healthIndex.sanitationPercent >= 90 ? "var(--pc-success, #10b981)" : "var(--pc-primary, #0d9488)",
+									transition: "width 0.4s ease",
+								}}
+							/>
+						</div>
+						<div style={{ fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)", lineHeight: "1.3" }}>
+							{healthIndex.encouragingNoteRu}
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* 2. INTERACTIVE STATUS FILTER CHIPS */}
 			<div
 				style={{
 					display: "flex",
 					flexWrap: "wrap",
-					gap: "10px",
-					padding: "8px 12px",
-					backgroundColor: "var(--pc-surface, #1e293b)",
-					borderRadius: "8px",
-					fontSize: "12px",
+					gap: "6px",
 					justifyContent: "center",
+					padding: "8px",
+					backgroundColor: "var(--pc-surface, #1e293b)",
+					borderRadius: "10px",
 					border: "1px solid var(--pc-border, #334155)",
 				}}
 			>
-				<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-					<span style={{ width: "12px", height: "12px", borderRadius: "3px", backgroundColor: "#10b981" }} />
-					<span>Здоров / Вылечен</span>
-				</div>
-				<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-					<span style={{ width: "12px", height: "12px", borderRadius: "3px", backgroundColor: "#f59e0b" }} />
-					<span>В процессе лечения</span>
-				</div>
-				<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-					<span style={{ width: "12px", height: "12px", borderRadius: "3px", backgroundColor: "#ef4444" }} />
-					<span>Требует лечения</span>
-				</div>
-				<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-					<span style={{ width: "12px", height: "12px", borderRadius: "3px", backgroundColor: "#64748b" }} />
-					<span>Имплантат / Удален</span>
-				</div>
+				<button
+					type="button"
+					onClick={() => setStatusFilter("all")}
+					data-testid="filter-teeth-all"
+					style={{
+						padding: "6px 12px",
+						minHeight: "36px",
+						borderRadius: "8px",
+						border: statusFilter === "all" ? "1.5px solid var(--pc-primary, #0d9488)" : "1px solid var(--pc-border, #334155)",
+						backgroundColor: statusFilter === "all" ? "var(--pc-primary-light, rgba(13, 148, 136, 0.15))" : "transparent",
+						color: "var(--pc-text-main, #f8fafc)",
+						fontSize: "12px",
+						fontWeight: statusFilter === "all" ? 700 : 500,
+						cursor: "pointer",
+						touchAction: "manipulation",
+					}}
+				>
+					Все зубы ({healthIndex.totalTeeth})
+				</button>
+
+				<button
+					type="button"
+					onClick={() => setStatusFilter("healthy")}
+					data-testid="filter-teeth-healthy"
+					style={{
+						padding: "6px 12px",
+						minHeight: "36px",
+						borderRadius: "8px",
+						border: statusFilter === "healthy" ? "1.5px solid #10b981" : "1px solid var(--pc-border, #334155)",
+						backgroundColor: statusFilter === "healthy" ? "rgba(16, 185, 129, 0.15)" : "transparent",
+						color: "#10b981",
+						fontSize: "12px",
+						fontWeight: statusFilter === "healthy" ? 700 : 500,
+						cursor: "pointer",
+						touchAction: "manipulation",
+						display: "flex",
+						alignItems: "center",
+						gap: "4px",
+					}}
+				>
+					<span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#10b981" }} />
+					<span>Здоровы / Вылечены ({healthIndex.healthyCount})</span>
+				</button>
+
+				<button
+					type="button"
+					onClick={() => setStatusFilter("in_treatment")}
+					data-testid="filter-teeth-in_treatment"
+					style={{
+						padding: "6px 12px",
+						minHeight: "36px",
+						borderRadius: "8px",
+						border: statusFilter === "in_treatment" ? "1.5px solid #f59e0b" : "1px solid var(--pc-border, #334155)",
+						backgroundColor: statusFilter === "in_treatment" ? "rgba(245, 158, 11, 0.15)" : "transparent",
+						color: "#f59e0b",
+						fontSize: "12px",
+						fontWeight: statusFilter === "in_treatment" ? 700 : 500,
+						cursor: "pointer",
+						touchAction: "manipulation",
+						display: "flex",
+						alignItems: "center",
+						gap: "4px",
+					}}
+				>
+					<span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#f59e0b" }} />
+					<span>В процессе ({healthIndex.inTreatmentCount})</span>
+				</button>
+
+				<button
+					type="button"
+					onClick={() => setStatusFilter("needs_treatment")}
+					data-testid="filter-teeth-needs_treatment"
+					style={{
+						padding: "6px 12px",
+						minHeight: "36px",
+						borderRadius: "8px",
+						border: statusFilter === "needs_treatment" ? "1.5px solid #ef4444" : "1px solid var(--pc-border, #334155)",
+						backgroundColor: statusFilter === "needs_treatment" ? "rgba(239, 68, 68, 0.15)" : "transparent",
+						color: "#ef4444",
+						fontSize: "12px",
+						fontWeight: statusFilter === "needs_treatment" ? 700 : 500,
+						cursor: "pointer",
+						touchAction: "manipulation",
+						display: "flex",
+						alignItems: "center",
+						gap: "4px",
+					}}
+				>
+					<span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#ef4444" }} />
+					<span>Требуют внимания ({healthIndex.needsTreatmentCount})</span>
+				</button>
+
+				<button
+					type="button"
+					onClick={() => setStatusFilter("missing_or_implant")}
+					data-testid="filter-teeth-missing_or_implant"
+					style={{
+						padding: "6px 12px",
+						minHeight: "36px",
+						borderRadius: "8px",
+						border: statusFilter === "missing_or_implant" ? "1.5px solid #64748b" : "1px solid var(--pc-border, #334155)",
+						backgroundColor: statusFilter === "missing_or_implant" ? "rgba(100, 116, 139, 0.15)" : "transparent",
+						color: "var(--pc-text-muted, #94a3b8)",
+						fontSize: "12px",
+						fontWeight: statusFilter === "missing_or_implant" ? 700 : 500,
+						cursor: "pointer",
+						touchAction: "manipulation",
+						display: "flex",
+						alignItems: "center",
+						gap: "4px",
+					}}
+				>
+					<span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#64748b" }} />
+					<span>Имплантат / Замещен ({healthIndex.missingOrImplantCount})</span>
+				</button>
 			</div>
 
 			{/* Mobile scroll hint */}
 			<div style={{ fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)", textAlign: "center" }}>
-				<span>↔ Прокрутите влево/вправо для просмотра всех зубов формулы</span>
+				<span>↔ Прокрутите влево/вправо для просмотра всех зубов формулы (нажмите на зуб для расшифровки)</span>
 			</div>
 
-			{/* Dental Arch Display */}
+			{/* 3. DENTAL ARCH DISPLAY */}
 			<div
 				style={{
 					padding: "14px",
@@ -263,17 +549,18 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 				</div>
 			</div>
 
-			{/* Selected Tooth Detail Box */}
+			{/* 4. SELECTED TOOTH DETAIL BOX & REASSURANCE */}
 			{selectedTooth && (
 				<div
+					data-testid={`selected-tooth-details-${selectedTooth.fdiCode}`}
 					style={{
 						padding: "14px",
-						borderRadius: "8px",
+						borderRadius: "10px",
 						backgroundColor: "var(--pc-surface, #1e293b)",
-						border: "1px solid var(--pc-primary, #0d9488)",
+						border: "1.5px solid var(--pc-primary, #0d9488)",
 						display: "flex",
 						flexDirection: "column",
-						gap: "6px",
+						gap: "8px",
 					}}
 				>
 					<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -281,16 +568,17 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 							<strong style={{ fontSize: "14px", color: "var(--pc-primary, #0d9488)" }}>
 								{selectedTooth.humanNameRu} (№{selectedTooth.fdiCode})
 							</strong>
-							<div style={{ fontSize: "13px", marginTop: "2px" }}>
-								<strong>Состояние:</strong> {selectedTooth.clinicalStateRu}
+							<div style={{ fontSize: "13px", marginTop: "2px", color: "var(--pc-text-main, #f8fafc)" }}>
+								<strong>Текущее состояние:</strong> {selectedTooth.clinicalStateRu}
 							</div>
 						</div>
 						<button
 							type="button"
 							onClick={() => setSelectedTooth(null)}
-							style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer" }}
+							aria-label="Закрыть информацию о зубе"
+							style={{ background: "transparent", border: "none", color: "var(--pc-text-muted, #94a3b8)", cursor: "pointer" }}
 						>
-							<X size={16} />
+							<X size={18} />
 						</button>
 					</div>
 
@@ -301,13 +589,34 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 					)}
 
 					{selectedTooth.warrantyActive && (
-						<div style={{ fontSize: "12px", color: "#10b981", display: "flex", alignItems: "center", gap: "4px", marginTop: "2px" }}>
+						<div style={{ fontSize: "12px", color: "#10b981", display: "flex", alignItems: "center", gap: "4px" }}>
 							<Sparkles size={14} />
-							<span>Действует гарантийный сертификат качества клиники</span>
+							<span>Действует гарантийный сертификат качества клиники DENTE</span>
 						</div>
 					)}
+
+					{/* Anti-anxiety reassurance note */}
+					<div
+						style={{
+							backgroundColor: "var(--pc-bg, #0f172a)",
+							borderRadius: "6px",
+							padding: "8px 10px",
+							fontSize: "11px",
+							color: "var(--pc-text-muted, #94a3b8)",
+							display: "flex",
+							alignItems: "center",
+							gap: "6px",
+						}}
+					>
+						<Heart size={14} style={{ color: "var(--pc-primary, #0d9488)", flexShrink: 0 }} />
+						<span>
+							Все манипуляции выполняются под 100% анестезией Septanest с мягкой гелевой премедикацией места укола. <strong>Никакой боли.</strong>
+						</span>
+					</div>
 				</div>
 			)}
 		</div>
 	);
 };
+
+export default PatientFriendlyOdontogram;

@@ -14,6 +14,8 @@ import {
 	formatKopecksToRub,
 	formatRubles,
 	formatRussianDateIso,
+	generateDetailedReceiptHtml,
+	generatePatientTaxCertificate1151156,
 	generatePepIntegrityHash,
 	generateQrCodeSvg,
 	generateSbpQrPayload,
@@ -262,3 +264,33 @@ describe("Patient Personal Portal - Summary Aggregator & Preset Profiles", () =>
 		assert.equal(PATIENT_CABINET_PRESET_DMITRY.invoices[0]?.status, "unpaid");
 	});
 });
+
+describe("Patient Personal Portal - Statutory Tax Deduction (KND 1151156) & 54-FZ Detailed Receipt", () => {
+	it("generates statutory FNS NDFL Tax Deduction Certificate (КНД 1151156) with Code 1 and Code 2", () => {
+		const html = generatePatientTaxCertificate1151156(PATIENT_CABINET_PRESET_ALEXEY, 2026);
+
+		assert.ok(html.includes("КНД 1151156"), "Should contain statutory form code KND 1151156");
+		assert.ok(html.includes("СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ"), "Should contain statutory title");
+		assert.ok(html.includes("ООО «Стоматологическая клиника ДЕНТЕ»"), "Should include clinic name");
+		assert.ok(html.includes("7841098765"), "Should include clinic INN");
+		assert.ok(html.includes("Воронов"), "Should include patient family name");
+		assert.ok(html.includes("Алексей"), "Should include patient given name");
+		assert.ok(html.includes("2026"), "Should include tax year 2026");
+	});
+
+	it("generates detailed 54-FZ fiscal receipt with 804n statutory nomenclature items and QR code", () => {
+		const paidInvoice = PATIENT_CABINET_PRESET_ALEXEY.invoices.find((i) => i.status === "paid");
+		assert.ok(paidInvoice);
+
+		const receiptHtml = generateDetailedReceiptHtml(paidInvoice, PATIENT_CABINET_PRESET_ALEXEY);
+
+		assert.ok(receiptHtml.includes("КАССОВЫЙ ЧЕК / ПРИХОД 54-ФЗ"), "Should contain 54-FZ header");
+		assert.ok(receiptHtml.includes("ООО «Стоматологическая клиника ДЕНТЕ»"), "Should contain clinic name");
+		assert.ok(receiptHtml.includes("ИНН: 7841098765"), "Should contain clinic INN");
+		assert.ok(receiptHtml.includes("Воронов Алексей Владимирович"), "Should contain patient name");
+		assert.ok(receiptHtml.includes(paidInvoice.invoiceNumber), "Should contain invoice number");
+		assert.ok(receiptHtml.includes("Код 804н:"), "Should list statutory 804n nomenclature codes");
+		assert.ok(receiptHtml.includes("<svg"), "Should contain fiscal verification QR code SVG");
+	});
+});
+

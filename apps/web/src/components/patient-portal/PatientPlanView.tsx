@@ -6,7 +6,9 @@
  * - Crystal clear progress bar: "Выполнено X из Y этапов • Оплачено: Z ₽ • Остаток: N ₽"
  * - Anti-hidden-fee guarantee: "Все включено" (анестезия, снимки, изоляция, полировка 0 ₽)
  * - 3-Tier Treatment Plan comparison (Базовый / Стандарт / Премиум)
- * - Interactive 2D Tooth Chart with clear human explanations
+ * - Interactive 2D Tooth Chart with Dental Health Index («Индекс санации: X% • Вылечено Y зубов • Требуют внимания Z зубов»)
+ * - Patient Comfort & Painless Care Standards (Анти-страх, аппликационный гель, седация, стоп-сигнал рукой)
+ * - 1-Click Tax Deduction Certificate Download (КНД 1151156) with 13% refund calculation
  * - Comprehensive Clinic Guarantee Obligations (1–2 года на пломбы, 2–5 лет на коронки, пожизненно на импланты)
  * - Emergency SOS & WhatsApp hotline for post-treatment pain with self-triage instructions
  * - 1-Click SBP Stage Payment
@@ -24,6 +26,7 @@ import {
 	Clock,
 	CreditCard,
 	DollarSign,
+	Download,
 	ExternalLink,
 	Heart,
 	HelpCircle,
@@ -36,6 +39,7 @@ import {
 	Shield,
 	ShieldAlert,
 	ShieldCheck,
+	Smile,
 	Sparkles,
 	Zap,
 } from "lucide-react";
@@ -44,12 +48,20 @@ import { useMemo, useState } from "react";
 import {
 	formatRubles,
 	formatRussianDateIso,
+	generatePatientTaxCertificate1151156,
+	downloadPatientTaxCertificate1151156,
+	type PatientPersonalCabinetData,
 	type PatientTreatmentPlan,
 	type ThreeTierTreatmentPlanModel,
 	type TreatmentPlanStage,
 	type TreatmentPlanTier,
 } from "../portal/patientCabinet/patientCabinetEngine.js";
-import { PatientFriendlyOdontogram, type PatientToothInfo } from "./PatientFriendlyOdontogram.js";
+import {
+	PatientFriendlyOdontogram,
+	type PatientToothInfo,
+	DEFAULT_PATIENT_TEETH,
+	calculateDentalHealthIndex,
+} from "./PatientFriendlyOdontogram.js";
 import { TreatmentPlanStageCard } from "./TreatmentPlanStageCard.js";
 
 export interface PatientPlanViewProps {
@@ -58,9 +70,12 @@ export interface PatientPlanViewProps {
 	readonly patientName?: string | undefined;
 	readonly cardNumber?: string | undefined;
 	readonly phone?: string | undefined;
+	readonly birthDate?: string | undefined;
+	readonly fullCabinetData?: PatientPersonalCabinetData | undefined;
 	readonly onPayStageSbp?: ((stage: TreatmentPlanStage) => void) | undefined;
 	readonly onBookAppointment?: (() => void) | undefined;
 	readonly onRescheduleAppointment?: (() => void) | undefined;
+	readonly onDownloadTaxCertificate?: (() => void) | undefined;
 	readonly emergencyPhone?: string | undefined;
 	readonly emergencyWhatsappNumber?: string | undefined;
 }
@@ -126,15 +141,45 @@ export const POST_TREATMENT_TRIAGE_FAQ = [
 	},
 ] as const;
 
+export const PATIENT_COMFORT_STANDARDS = [
+	{
+		id: "no_needle_pain",
+		titleRu: "Анестезия без боли от иглы",
+		descriptionRu: "Перед уколом десна обрабатывается охлаждающим гелем со вкусом вишни или мяты. Момент укола совершенно не чувствуется.",
+		iconColor: "#10b981",
+	},
+	{
+		id: "total_control",
+		titleRu: "Полный контроль пациента (Стоп-сигнал)",
+		descriptionRu: "Если вы хотите передохнуть, прополоскать рот или задать вопрос — просто поднимите левую руку. Врач сразу же остановит работу.",
+		iconColor: "#0d9488",
+	},
+	{
+		id: "cofferdam_safety",
+		titleRu: "Изоляция коффердамом",
+		descriptionRu: "Латексная завеса изолирует зуб: растворы не попадают на язык и в горло, вам не нужно держать рот напряженным, можно спокойно сглатывать слюну.",
+		iconColor: "#6366f1",
+	},
+	{
+		id: "microscope_precision",
+		titleRu: "Лечение под микроскопом",
+		descriptionRu: "30-кратное увеличение позволяет врачу удалять только пораженные ткани, сохраняя максимум живой структуры вашего зуба.",
+		iconColor: "#f59e0b",
+	},
+] as const;
+
 export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 	plan,
 	threeTierModel,
-	patientName = "Пациент",
-	cardNumber = "10492",
-	phone = "+7 (999) 000-00-00",
+	patientName = "Воронов Алексей Владимирович",
+	cardNumber = "043-8842",
+	phone = "+7 (999) 123-45-67",
+	birthDate = "1984-05-14",
+	fullCabinetData,
 	onPayStageSbp,
 	onBookAppointment,
 	onRescheduleAppointment,
+	onDownloadTaxCertificate,
 	emergencyPhone = "+7 (800) 555-35-35",
 	emergencyWhatsappNumber = "79991234567",
 }) => {
@@ -184,6 +229,14 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 	const remainingCostRub = Math.max(0, totalCostRub - paidCostRub);
 	const progressPercent = stagesCount > 0 ? Math.round((completedStagesCount / stagesCount) * 100) : 0;
 
+	// Dental health index
+	const healthIndex = useMemo(() => calculateDentalHealthIndex(DEFAULT_PATIENT_TEETH), []);
+
+	// Estimated tax refund 13%
+	const estimatedTaxRefundRub = useMemo(() => {
+		return Math.round(paidCostRub * 0.13);
+	}, [paidCostRub]);
+
 	// WhatsApp pre-filled emergency URL
 	const whatsappUrl = useMemo(() => {
 		const cleanNumber = emergencyWhatsappNumber.replace(/\D/g, "");
@@ -192,6 +245,59 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 		);
 		return `https://wa.me/${cleanNumber}?text=${text}`;
 	}, [emergencyWhatsappNumber, patientName, cardNumber]);
+
+	// 1-Click Tax Certificate Download Handler
+	const handleTaxDownload = () => {
+		if (onDownloadTaxCertificate) {
+			onDownloadTaxCertificate();
+			return;
+		}
+		if (fullCabinetData) {
+			downloadPatientTaxCertificate1151156(fullCabinetData, 2026);
+		} else {
+			// Fallback minimal cabinet payload
+			const fallbackData: PatientPersonalCabinetData = {
+				patientId: "pat-fallback",
+				fullName: patientName,
+				phone,
+				birthDate,
+				cardNumber,
+				curatingDoctor: "Д-р Смирнов А. В.",
+				loyaltyBonusBalance: 10000,
+				loyaltyTierRu: "Золотой (10%)",
+				cashbackEarnedRub: 15000,
+				invoices: [
+					{
+						id: "inv-paid-sample",
+						invoiceNumber: "СЧ-2026/074",
+						issueDateIso: "2026-08-10",
+						dueDateIso: "2026-08-10",
+						titleRu: "Оплата этапов плана лечения",
+						totalAmountRub: paidCostRub,
+						paidAmountRub: paidCostRub,
+						remainingAmountRub: 0,
+						status: "paid",
+						paidAtIso: "2026-08-10T12:00:00Z",
+						fiscalReceiptNumber: "ФД-982410",
+						items: [
+							{
+								code: "A16.07.002",
+								titleRu: "Стоматологическое лечение и реставрация зубов",
+								quantity: 1,
+								priceRub: paidCostRub,
+								totalRub: paidCostRub,
+							},
+						],
+					},
+				],
+				appointments: [],
+				treatmentPlans: plan ? [plan] : [],
+				warranties: [],
+				consents: [],
+			};
+			downloadPatientTaxCertificate1151156(fallbackData, 2026);
+		}
+	};
 
 	return (
 		<div
@@ -348,19 +454,21 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 						</h3>
 					</div>
 
-					<span
-						style={{
-							backgroundColor: "var(--pc-primary-light, rgba(13, 148, 136, 0.15))",
-							color: "var(--pc-primary, #0d9488)",
-							border: "1px solid var(--pc-primary, #0d9488)",
-							padding: "4px 10px",
-							borderRadius: "12px",
-							fontWeight: 800,
-							fontSize: "13px",
-						}}
-					>
-						{progressPercent}% готово
-					</span>
+					<div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+						<span
+							style={{
+								backgroundColor: "var(--pc-primary-light, rgba(13, 148, 136, 0.15))",
+								color: "var(--pc-primary, #0d9488)",
+								border: "1px solid var(--pc-primary, #0d9488)",
+								padding: "4px 10px",
+								borderRadius: "12px",
+								fontWeight: 800,
+								fontSize: "13px",
+							}}
+						>
+							{progressPercent}% плана выполнено
+						</span>
+					</div>
 				</div>
 
 				{/* Primary Metric Banner: "Выполнено X из Y этапов • Оплачено: Z ₽ • Остаток: N ₽" */}
@@ -435,7 +543,76 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 				</div>
 			</div>
 
-			{/* 2.1. NEXT APPOINTMENT & RESCHEDULE BAR */}
+			{/* 2.1. 1-CLICK TAX DEDUCTION 13% QUICK WIDGET (ORDER FNS KND 1151156) */}
+			{paidCostRub > 0 && (
+				<div
+					className="pc-card tax-deduction-quick-card"
+					data-testid="tax-deduction-quick-card"
+					style={{
+						backgroundColor: "var(--pc-surface, #1e293b)",
+						border: "1px solid var(--pc-border, #334155)",
+						borderRadius: "12px",
+						padding: "14px 16px",
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "center",
+						flexWrap: "wrap",
+						gap: "12px",
+					}}
+				>
+					<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+						<div
+							style={{
+								width: "36px",
+								height: "36px",
+								borderRadius: "8px",
+								backgroundColor: "rgba(16, 185, 129, 0.15)",
+								color: "var(--pc-success, #10b981)",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								flexShrink: 0,
+							}}
+						>
+							<DollarSign size={20} />
+						</div>
+						<div>
+							<div style={{ fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
+								Возврат 13% от оплаченного лечения (ФНС КНД 1151156):
+							</div>
+							<strong style={{ fontSize: "14px", color: "var(--pc-success, #10b981)" }}>
+								~{formatRubles(estimatedTaxRefundRub)} к возврату на карту
+							</strong>
+						</div>
+					</div>
+
+					<button
+						type="button"
+						onClick={handleTaxDownload}
+						data-testid="plan-view-download-tax-btn"
+						style={{
+							minHeight: "44px",
+							padding: "8px 16px",
+							borderRadius: "8px",
+							backgroundColor: "var(--pc-primary, #0d9488)",
+							color: "#ffffff",
+							border: "none",
+							fontSize: "13px",
+							fontWeight: 700,
+							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "6px",
+							touchAction: "manipulation",
+						}}
+					>
+						<Download size={16} />
+						<span>Скачать справку КНД 1151156 (1 клик)</span>
+					</button>
+				</div>
+			)}
+
+			{/* 2.2. NEXT APPOINTMENT & RESCHEDULE BAR */}
 			<div
 				className="pc-card next-visit-card"
 				data-testid="next-visit-card"
@@ -472,7 +649,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 							Следующий визит по плану лечения:
 						</div>
 						<strong style={{ fontSize: "14px", color: "var(--pc-text-main, #f8fafc)" }}>
-							Среда, 2 сентября в 11:00 &bull; Врач: Смирнова Е. В.
+							Пятница, 28 августа в 14:30 &bull; Врач: Смирнов А. В.
 						</strong>
 					</div>
 				</div>
@@ -613,7 +790,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 				</div>
 			)}
 
-			{/* 4. INTERACTIVE DENTAL ODONTOGRAM */}
+			{/* 4. INTERACTIVE DENTAL ODONTOGRAM WITH SANITATION HEALTH INDEX */}
 			<div
 				className="pc-card odontogram-container-card"
 				data-testid="interactive-odontogram-card"
@@ -630,7 +807,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 				<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
 					<div>
 						<h4 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--pc-text-main, #f8fafc)" }}>
-							Интерактивная зубная формула пациента
+							Интерактивная зубная формула и индекс санации
 						</h4>
 						<p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
 							Нажмите на любой зуб для расшифровки диагноза, проведенного лечения и гарантийного сертификата:
@@ -638,7 +815,58 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 					</div>
 				</div>
 
-				<PatientFriendlyOdontogram />
+				<PatientFriendlyOdontogram showHealthIndexHeader={true} />
+			</div>
+
+			{/* 4.1. PATIENT COMFORT & PAINLESS CARE STANDARDS (ANTI-ANXIETY) */}
+			<div
+				className="pc-card patient-comfort-standards-card"
+				data-testid="patient-comfort-standards"
+				style={{
+					backgroundColor: "var(--pc-surface, #1e293b)",
+					borderRadius: "12px",
+					border: "1.5px solid rgba(13, 148, 136, 0.3)",
+					padding: "16px",
+					display: "flex",
+					flexDirection: "column",
+					gap: "12px",
+				}}
+			>
+				<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+					<Heart size={20} style={{ color: "var(--pc-primary, #0d9488)" }} />
+					<div>
+						<h4 style={{ margin: 0, fontSize: "15px", fontWeight: 800, color: "var(--pc-text-main, #f8fafc)" }}>
+							Бережная стоматология: лечение без боли и страха
+						</h4>
+						<p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
+							Стандарты заботы DENTE для 100% спокойствия пациента во время приема:
+						</p>
+					</div>
+				</div>
+
+				<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px" }}>
+					{PATIENT_COMFORT_STANDARDS.map((std) => (
+						<div
+							key={std.id}
+							style={{
+								backgroundColor: "var(--pc-bg, #0f172a)",
+								border: "1px solid var(--pc-border, #334155)",
+								borderRadius: "8px",
+								padding: "10px 12px",
+								display: "flex",
+								flexDirection: "column",
+								gap: "4px",
+							}}
+						>
+							<strong style={{ fontSize: "13px", color: std.iconColor }}>
+								{std.titleRu}
+							</strong>
+							<p style={{ margin: 0, fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)", lineHeight: "1.4" }}>
+								{std.descriptionRu}
+							</p>
+						</div>
+					))}
+				</div>
 			</div>
 
 			{/* 5. STAGES LIST WITH TRANSPARENT CARDS */}
@@ -824,3 +1052,5 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 		</div>
 	);
 };
+
+export default PatientPlanView;

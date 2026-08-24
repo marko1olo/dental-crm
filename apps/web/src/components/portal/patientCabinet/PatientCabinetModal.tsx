@@ -54,17 +54,23 @@ import {
 import {
 	calculateCabinetSummary,
 	calculateCheckupDaysRemaining,
+	calculateDentalHealthIndex,
 	calculateWarrantyValidity,
+	downloadDetailedReceipt,
+	downloadPatientTaxCertificate1151156,
 	filterAppointments,
 	filterInvoices,
 	formatKopecksToRub,
 	formatRubles,
 	formatRussianDateIso,
+	generatePatientTaxCertificate1151156,
 	generateSbpQrPayload,
 	generateSmsOtp,
+	openPrintWindow,
 	processSbpPayment,
 	signConsentWithPep,
 	verifySmsOtp,
+	type DentalHealthIndexResult,
 	type PatientAppointment,
 	type PatientCabinetSummary,
 	type PatientInvoiceItem,
@@ -184,6 +190,19 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	const summary: PatientCabinetSummary = useMemo(() => {
 		return calculateCabinetSummary(data);
 	}, [data]);
+
+	// Индекс здоровья зубов
+	const healthIndex: DentalHealthIndexResult = useMemo(() => {
+		return calculateDentalHealthIndex();
+	}, []);
+
+	// Расчет суммы к возврату по налоговому вычету 13% (КНД 1151156)
+	const estimatedTaxRefundRub = useMemo(() => {
+		const paidSum = data.invoices
+			.filter((i) => i.status === "paid")
+			.reduce((sum, i) => sum + i.paidAmountRub, 0);
+		return Math.round(paidSum * 0.13);
+	}, [data.invoices]);
 
 	// Отфильтрованные списки
 	const filteredInvoices = useMemo(() => {
@@ -636,6 +655,77 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 								)}
 							</div>
 
+							{/* Interactive Dental Health & Sanitation Index Card */}
+							<div
+								className="pc-card dental-health-index-card"
+								data-testid="pc-overview-health-index"
+								style={{
+									borderColor: "var(--pc-primary)",
+									backgroundColor: "var(--pc-surface)",
+									borderRadius: "var(--pc-radius-md)",
+									padding: "14px 16px",
+									display: "flex",
+									flexDirection: "column",
+									gap: "10px",
+								}}
+							>
+								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+									<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+										<ShieldCheck size={20} style={{ color: "var(--pc-primary)" }} />
+										<div>
+											<strong style={{ fontSize: "0.9375rem" }}>Интерактивный индекс здоровья зубов</strong>
+											<div style={{ fontSize: "0.75rem", color: "var(--pc-text-muted)" }}>
+												{healthIndex.statusLabelRu} &bull; Клиническая формула FDI (32 зуба)
+											</div>
+										</div>
+									</div>
+
+									<span
+										className="pc-status-badge paid"
+										style={{ fontWeight: 800, fontSize: "0.8125rem", padding: "4px 10px" }}
+									>
+										Санация: {healthIndex.sanitationPercent}%
+									</span>
+								</div>
+
+								<div
+									style={{
+										backgroundColor: "var(--pc-bg)",
+										border: "1px solid var(--pc-border)",
+										borderRadius: "var(--pc-radius-sm)",
+										padding: "8px 12px",
+										fontSize: "0.8125rem",
+										fontWeight: 700,
+										color: "var(--pc-text-main)",
+										display: "flex",
+										justifyContent: "space-between",
+										alignItems: "center",
+										flexWrap: "wrap",
+										gap: "6px",
+									}}
+								>
+									<span>{healthIndex.formattedIndexRu}</span>
+									<button
+										type="button"
+										className="pc-btn-secondary"
+										style={{ padding: "4px 8px", fontSize: "0.75rem" }}
+										onClick={() => setActiveTab("plans")}
+									>
+										Показать формулу
+									</button>
+								</div>
+
+								<div className="pc-progress-bar-bg" style={{ height: "8px", borderRadius: "4px" }}>
+									<div
+										className="pc-progress-bar-fill"
+										style={{
+											width: `${healthIndex.sanitationPercent}%`,
+											backgroundColor: healthIndex.sanitationPercent >= 90 ? "var(--pc-success)" : "var(--pc-primary)",
+										}}
+									/>
+								</div>
+							</div>
+
 							{/* Summary Metrics Grid */}
 							<div className="pc-summary-grid">
 								<div className="pc-metric-card">
@@ -910,25 +1000,38 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 														</button>
 													</>
 												) : (
-													<>
+													<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
 														{inv.fiscalReceiptNumber && (
 															<span style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)" }}>
 																Чек 54-ФЗ № {inv.fiscalReceiptNumber}
 															</span>
 														)}
+														<button
+															type="button"
+															className="pc-btn-primary"
+															data-testid={`download-receipt-btn-${inv.id}`}
+															onClick={() => {
+																downloadDetailedReceipt(inv, data);
+																showToast(`Детализированный чек 54-ФЗ № ${inv.invoiceNumber} сохранен!`);
+															}}
+															style={{ minHeight: "36px", padding: "6px 12px", fontSize: "0.8125rem" }}
+														>
+															<Download size={14} />
+															<span>Детализированный чек (54-ФЗ)</span>
+														</button>
 														{inv.fiscalReceiptUrl && (
 															<a
 																href={inv.fiscalReceiptUrl}
 																target="_blank"
 																rel="noreferrer"
 																className="pc-btn-secondary"
-																style={{ textDecoration: "none" }}
+																style={{ textDecoration: "none", minHeight: "36px", padding: "6px 12px", fontSize: "0.8125rem" }}
 															>
 																<ExternalLink size={14} />
-																<span>Электронный чек ФНС</span>
+																<span>ФНС</span>
 															</a>
 														)}
-													</>
+													</div>
 												)}
 											</div>
 										</div>
@@ -946,8 +1049,14 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 							patientName={data.fullName}
 							cardNumber={data.cardNumber}
 							phone={data.phone}
+							birthDate={data.birthDate}
+							fullCabinetData={data}
 							onPayStageSbp={handlePayStageWithSbp}
 							onBookAppointment={() => setActiveTab("appointments")}
+							onDownloadTaxCertificate={() => {
+								downloadPatientTaxCertificate1151156(data, 2026);
+								showToast("Официальная справка для налогового вычета (КНД 1151156) сохранена!");
+							}}
 							onRescheduleAppointment={() => {
 								const upcoming = data.appointments.find((a) => a.status === "scheduled");
 								if (upcoming) {
@@ -1191,7 +1300,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 										<span>Налоговый вычет 13% за лечение (Справка ФНС КНД 1151156)</span>
 									</h3>
 									<span style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)" }}>
-										Возврат до 19 500 ₽ в год
+										Возврат до 19 500 ₽ в год (ст. 219 НК РФ)
 									</span>
 								</div>
 
@@ -1199,22 +1308,41 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
 										<div>
 											<strong style={{ fontSize: "0.9375rem" }}>
-												Справка об оплате медицинских услуг за 2024–2026 гг.
+												Справка об оплате медицинских услуг за 2026 год (КНД 1151156)
 											</strong>
 											<p style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)", margin: "4px 0 0 0" }}>
-												Автоматически рассчитывает все фискальные чеки, код услуги 1 (обычное лечение) и код 2 (дорогостоящая имплантация).
+												Включает все фискальные чеки (Код 1: обычное лечение, Код 2: дорогостоящая имплантация). Расчетный возврат 13%: <strong style={{ color: "var(--pc-success)" }}>~{formatRubles(estimatedTaxRefundRub)}</strong>.
 											</p>
 										</div>
 
-										<button
-											type="button"
-											className="pc-btn-primary"
-											style={{ minHeight: "44px", padding: "8px 16px", fontSize: "0.875rem", touchAction: "manipulation" }}
-											onClick={() => showToast("Справка КНД 1151156 с реестром фискальных чеков сформирована!")}
-										>
-											<Download size={16} />
-											<span>Сформировать для ФНС (1 клик)</span>
-										</button>
+										<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+											<button
+												type="button"
+												className="pc-btn-primary"
+												data-testid="download-tax-knd-btn"
+												style={{ minHeight: "44px", padding: "8px 16px", fontSize: "0.875rem", touchAction: "manipulation" }}
+												onClick={() => {
+													downloadPatientTaxCertificate1151156(data, 2026);
+													showToast("Официальная справка КНД 1151156 сформирована и скачана!");
+												}}
+											>
+												<Download size={16} />
+												<span>Скачать справку (КНД 1151156)</span>
+											</button>
+											<button
+												type="button"
+												className="pc-btn-secondary"
+												data-testid="print-tax-knd-btn"
+												style={{ minHeight: "44px", padding: "8px 16px", fontSize: "0.875rem", touchAction: "manipulation" }}
+												onClick={() => {
+													const html = generatePatientTaxCertificate1151156(data, 2026);
+													openPrintWindow(html);
+												}}
+											>
+												<Eye size={16} />
+												<span>Печать / Просмотр</span>
+											</button>
+										</div>
 									</div>
 								</div>
 							</section>

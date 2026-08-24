@@ -1,5 +1,5 @@
 /**
- * Unit Test Suite for Patient Plan View, Clinical Transparency & Emergency Pain Triage
+ * Unit Test Suite for Patient Plan View, Clinical Transparency, Dental Health Index & Emergency Pain Triage
  * (DOMAIN: PATIENT PORTAL & CLINICAL TRANSPARENCY)
  */
 
@@ -11,8 +11,14 @@ import {
 } from "../components/patient-portal/TreatmentPlanStageCard.js";
 import {
 	CLINIC_GUARANTEE_ITEMS,
+	PATIENT_COMFORT_STANDARDS,
 	POST_TREATMENT_TRIAGE_FAQ,
 } from "../components/patient-portal/PatientPlanView.js";
+import {
+	calculateDentalHealthIndex,
+	DEFAULT_PATIENT_TEETH,
+	type PatientToothInfo,
+} from "../components/patient-portal/PatientFriendlyOdontogram.js";
 import {
 	DEMO_PATIENT_CABINET,
 	PATIENT_CABINET_PRESET_ALEXEY,
@@ -23,6 +29,7 @@ describe("Patient Treatment Plan - Dual Service Naming & Terminology Transparenc
 		const result = formatDualServiceName("A16.07.002.001", "Наложение пломбы светового отверждения");
 		assert.equal(result.humanTitleRu, "Лечение кариеса и светоотверждаемая пломба");
 		assert.ok(result.explanationRu.includes("Бережное удаление кариеса"));
+		assert.ok(result.sensationRu.includes("100% безболезненно"));
 		assert.ok(result.defaultWarrantyRu.includes("1–2 года"));
 	});
 
@@ -30,6 +37,7 @@ describe("Patient Treatment Plan - Dual Service Naming & Terminology Transparenc
 		const result = formatDualServiceName("A16.07.004", "Эндодонтическое лечение корневого канала");
 		assert.equal(result.humanTitleRu, "Лечение корневых каналов под микроскопом");
 		assert.ok(result.explanationRu.includes("под дентальным микроскопом"));
+		assert.ok(result.sensationRu.includes("коффердам"));
 		assert.ok(result.defaultWarrantyRu.includes("1 год"));
 	});
 
@@ -57,6 +65,61 @@ describe("Patient Treatment Plan - Dual Service Naming & Terminology Transparenc
 		const result = formatDualServiceName("A16.07.001", "Удаление постоянного зуба сложное");
 		assert.equal(result.humanTitleRu, "Атравматичное удаление зуба с сохранением костной ткани");
 		assert.ok(result.explanationRu.includes("сохранением лунки"));
+	});
+});
+
+describe("Patient Treatment Plan - Interactive Dental Health & Sanitation Index", () => {
+	it("accurately calculates sanitation percent, healthy, in-treatment and needs-attention counts", () => {
+		const index = calculateDentalHealthIndex(DEFAULT_PATIENT_TEETH);
+
+		assert.equal(index.totalTeeth, 32);
+		assert.ok(index.healthyCount > 0);
+		assert.ok(index.inTreatmentCount > 0);
+		assert.ok(index.needsTreatmentCount > 0);
+		assert.ok(index.missingOrImplantCount > 0);
+
+		// Verify calculation: (healthy + missingOrImplant) / total
+		const expectedPercent = Math.round(((index.healthyCount + index.missingOrImplantCount) / 32) * 100);
+		assert.equal(index.sanitationPercent, expectedPercent);
+
+		// Formatted exact string check: «Индекс санации: X% • Вылечено Y зубов • Требуют внимания Z зубов»
+		assert.ok(index.formattedIndexRu.startsWith(`Индекс санации: ${index.sanitationPercent}%`));
+		assert.ok(index.formattedIndexRu.includes(`Вылечено ${index.healthyCount} зубов`));
+		assert.ok(index.formattedIndexRu.includes(`Требуют внимания ${index.needsTreatmentCount} зубов`));
+	});
+
+	it("evaluates 100% sanitized mouth correctly with excellent badge status", () => {
+		const allHealthyTeeth: PatientToothInfo[] = DEFAULT_PATIENT_TEETH.map((t) => ({
+			...t,
+			status: "healthy",
+		}));
+
+		const index = calculateDentalHealthIndex(allHealthyTeeth);
+		assert.equal(index.sanitationPercent, 100);
+		assert.equal(index.healthyCount, 32);
+		assert.equal(index.inTreatmentCount, 0);
+		assert.equal(index.needsTreatmentCount, 0);
+		assert.equal(index.badgeStatus, "excellent");
+		assert.match(index.statusLabelRu, /Отличный/);
+	});
+});
+
+describe("Patient Treatment Plan - Patient Comfort & Anti-Anxiety Standards", () => {
+	it("contains statutory and psychological comfort standards", () => {
+		assert.ok(PATIENT_COMFORT_STANDARDS.length >= 4);
+
+		const noNeedle = PATIENT_COMFORT_STANDARDS.find((s) => s.id === "no_needle_pain");
+		assert.ok(noNeedle);
+		assert.match(noNeedle.descriptionRu, /охлаждающим гелем/);
+
+		const stopSign = PATIENT_COMFORT_STANDARDS.find((s) => s.id === "total_control");
+		assert.ok(stopSign);
+		assert.match(stopSign.descriptionRu, /поднимите левую руку/);
+
+		const cofferdam = PATIENT_COMFORT_STANDARDS.find((s) => s.id === "cofferdam_safety");
+		assert.ok(cofferdam);
+		assert.match(cofferdam.titleRu, /коффердам/i);
+		assert.match(cofferdam.descriptionRu, /Латексная завеса/);
 	});
 });
 
@@ -165,4 +228,3 @@ describe("Patient Treatment Plan - Reschedule Request Validation", () => {
 		assert.ok(payload.requestedAtIso.length > 0);
 	});
 });
-
