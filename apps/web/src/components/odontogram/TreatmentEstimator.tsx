@@ -8,7 +8,10 @@ import {
 	FileText,
 	Loader2,
 	PenTool,
+	Printer,
+	Receipt,
 	Save,
+	ShieldCheck,
 	Trash2,
 } from "lucide-react";
 import type React from "react";
@@ -31,8 +34,11 @@ import { showToast } from "../GlobalToast.js";
 import { PanelLoadFailure } from "../PanelLoadFailure";
 import { SignaturePad } from "../SignaturePad";
 import { TreatmentPlanModule } from "../treatment-plans/TreatmentPlanModule";
+import type { TreatmentPlanItem } from "../treatment-plans/types";
+import { FiscalReceipt54FzModal } from "../finance/FiscalReceipt54FzModal";
 import type { ToothData } from "./ToothChart";
 import {
+	calculateTreatmentWarranty,
 	type EstimatorContract,
 	estimatorContractFrom,
 	estimatorDismissalKeys,
@@ -41,6 +47,7 @@ import {
 	estimatorRowMoney,
 	estimatorSaveBlock,
 	estimatorTotals,
+	exportEstimatorToCashier54Fz,
 	isDeciduousFdiToothNumber,
 	type PlanItem,
 	planItemFromServer,
@@ -185,6 +192,15 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 	const [plannerTab, setPlannerTab] = useState<"comprehensive_804n" | "manual_lines">(
 		"comprehensive_804n",
 	);
+	const [isFiscalModalOpen, setIsFiscalModalOpen] = useState(false);
+
+	const treatmentPlanItemsForFiscalModal = useMemo(() => {
+		return exportEstimatorToCashier54Fz(
+			items,
+			patientId,
+			patient?.fullName || "Пациент",
+		).items;
+	}, [items, patientId, patient?.fullName]);
 
 	useEffect(() => {
 		if (!insuranceContractId) {
@@ -751,18 +767,29 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 										<div key={globalIdx} className="plan-item-card">
 											<div className="plan-item-row">
 												<div className="plan-item-info">
-													<div className="plan-item-header">
-														{item.toothNumber && (
-															// Молочный зуб определяет общее правило FDI, а не порог
-															// «> 50», списанный здесь во второй раз: по нему зуб 99
-															// (опечатка, а не зуб) считался молочным.
-															<span
-																className={`tooth-badge ${isDeciduousFdiToothNumber(item.toothNumber) ? "baby" : "adult"}`}
-															>
-																[{item.toothNumber}]
-															</span>
-														)}
-														<span className="plan-item-name">{item.name}</span>
+													<div className="plan-item-header flex items-center justify-between gap-2 flex-wrap">
+														<div className="flex items-center gap-1.5 flex-wrap">
+															{item.toothNumber && (
+																<span
+																	className={`tooth-badge ${isDeciduousFdiToothNumber(item.toothNumber) ? "baby" : "adult"}`}
+																>
+																	[{item.toothNumber}]
+																</span>
+															)}
+															<span className="plan-item-name font-bold">{item.name}</span>
+														</div>
+														{(() => {
+															const warranty = calculateTreatmentWarranty(item);
+															return (
+																<span
+																	className="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 shrink-0 flex items-center gap-1"
+																	title={warranty.termsDescription}
+																>
+																	<ShieldCheck size={12} className="text-blue-500 shrink-0" />
+																	<span>Гарантия {warranty.warrantyMonths} мес.</span>
+																</span>
+															);
+														})()}
 													</div>
 													<div className="plan-item-price-quantity">
 														{(() => {
@@ -786,7 +813,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 																		    услуги прайса и строка с испорченной суммой требуют от
 																		    человека разных действий, и написать «нет в вашем
 																		    прайсе» над сохранённой строкой было бы неправдой. */}
-																		<span className="text-[10px] font-normal bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">
+																		<span className="text-xs font-semibold bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">
 																			{item.issue
 																				? "нет в вашем прайсе"
 																				: "сумма в плане не читается"}
@@ -801,7 +828,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 																return (
 																	<span className="text-rose-500 font-semibold flex items-center gap-1.5 flex-wrap">
 																		<span>{rub(rowMoney.unitKopecks)}</span>
-																		<span className="text-[10px] bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/25">
+																		<span className="text-xs font-bold bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/25">
 																			Вне покрытия ДМС
 																		</span>
 																	</span>
@@ -819,7 +846,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 																		<span className="text-teal-500 dark:text-teal-400 font-bold">
 																			{rub(rowMoney.unitPayableKopecks)}
 																		</span>
-																		<span className="text-[10px] bg-teal-500/10 text-teal-500 dark:text-teal-400 px-1.5 py-0.5 rounded border border-teal-500/20">
+																		<span className="text-xs font-bold bg-teal-500/10 text-teal-500 dark:text-teal-400 px-1.5 py-0.5 rounded border border-teal-500/20">
 																			Со-оплата {rowMoney.copayPct}%
 																		</span>
 																	</span>
@@ -834,7 +861,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 																		<span className="text-teal-500 dark:text-teal-400 font-bold">
 																			{rub(rowMoney.unitPayableKopecks)}
 																		</span>
-																		<span className="text-[10px] bg-teal-500/10 text-teal-500 dark:text-teal-400 px-1.5 py-0.5 rounded border border-teal-500/20">
+																		<span className="text-xs font-bold bg-teal-500/10 text-teal-500 dark:text-teal-400 px-1.5 py-0.5 rounded border border-teal-500/20">
 																			ДМС 100%
 																		</span>
 																	</span>
@@ -900,19 +927,46 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 			    этом сказано рядом с суммой, а не спрятано. Молча просуммировать
 			    известное и выдать это за итог — то же самое, что выдумать цену. */}
 			{plannerTab === "manual_lines" && (
-				<div className="flex flex-wrap justify-between items-center gap-x-4 gap-y-1 px-6 py-4 border-t border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-100/30 dark:bg-zinc-900/30">
-					<div className="text-sm font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
-						{totals.incompleteRows > 0
-							? "Итого, без непосчитанного:"
-							: "Итого по плану:"}
+				<div className="flex flex-wrap justify-between items-center gap-x-4 gap-y-3 px-6 py-4 border-t border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-100/30 dark:bg-zinc-900/30">
+					<div className="flex items-center gap-2 flex-wrap">
+						<button
+							type="button"
+							onClick={() => window.print()}
+							className="min-h-[44px] px-3.5 py-2 inline-flex items-center gap-1.5 text-xs font-bold rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-colors cursor-pointer"
+						>
+							<Printer size={14} />
+							<span>Печать сметы</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => {
+								if (treatmentPlanItemsForFiscalModal.length === 0) {
+									showToast("В смете нет позиций с подтвержденной ценой", "warning", 3000);
+									return;
+								}
+								setIsFiscalModalOpen(true);
+							}}
+							disabled={treatmentPlanItemsForFiscalModal.length === 0}
+							className="min-h-[44px] px-4 py-2 inline-flex items-center gap-1.5 text-xs font-bold rounded-xl bg-teal-600 hover:bg-teal-500 text-white shadow-md shadow-teal-600/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+						>
+							<Receipt size={14} />
+							<span>В кассу (54-ФЗ)</span>
+						</button>
 					</div>
+
 					<div className="flex flex-col items-end min-w-0">
+						<div className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
+							{totals.incompleteRows > 0
+								? "Итого, без непосчитанного:"
+								: "Итого по плану:"}
+						</div>
 						{totals.pricedRows === 0 && totals.incompleteRows > 0 ? (
 							<div className="text-xl font-bold text-amber-700 dark:text-amber-300">
 								Считать пока нечего
 							</div>
 						) : (
-							<div className="text-xl font-bold text-slate-900 dark:text-zinc-100 flex items-baseline gap-1">
+							<div className="text-xl font-bold text-slate-900 dark:text-zinc-100 flex items-baseline gap-1 font-mono">
 								{rub(totals.payableKopecks)}
 							</div>
 						)}
@@ -925,6 +979,22 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 						)}
 					</div>
 				</div>
+			)}
+
+			{isFiscalModalOpen && (
+				<FiscalReceipt54FzModal
+					isOpen={isFiscalModalOpen}
+					items={treatmentPlanItemsForFiscalModal}
+					patientId={patientId}
+					patientName={patient?.fullName || "Пациент"}
+					patientPhone={patient?.phone || undefined}
+					patientDepositRub={Number(patient?.depositRub) || 0}
+					onClose={() => setIsFiscalModalOpen(false)}
+					onReceiptFiscalized={(receiptNum) => {
+						showToast(`Чек №${receiptNum} успешно фискализирован`, "success", 4000);
+						setIsFiscalModalOpen(false);
+					}}
+				/>
 			)}
 
 			{showSignModal &&

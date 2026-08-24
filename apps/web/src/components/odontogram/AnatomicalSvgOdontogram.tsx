@@ -31,25 +31,6 @@ import {
 } from "./ClassicGostOdontogram";
 import "./odontogram.css";
 
-export interface AnatomicalSvgOdontogramProps {
-	teethData: ToothData[];
-	pediatricMode?: boolean | undefined;
-	mixedDentition?: boolean | undefined;
-	topTeeth?: number[] | undefined;
-	bottomTeeth?: number[] | undefined;
-	selectedTeeth?: number[] | undefined;
-	onToothClick: (num: number, rect: DOMRect, surface?: string | undefined) => void;
-	onQuickStateChange?: ((targets: number[], state: ToothState) => void) | undefined;
-	useSurfaces?: boolean | undefined;
-	hideHeader?: boolean | undefined;
-	hideLegend?: boolean | undefined;
-	showWisdomTeeth?: boolean | undefined;
-	showPulpAndCanals?: boolean | undefined;
-	showPeriapicalHalos?: boolean | undefined;
-	showPeriodontalBoneLoss?: boolean | undefined;
-	className?: string | undefined;
-}
-
 const TOP_TEETH = [
 	18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28,
 ];
@@ -310,9 +291,9 @@ const AnatomicalToothSVG = ({
 	rootResorption?: RootResorptionStage | undefined;
 	isSelected?: boolean | undefined;
 	onClick: (e: React.MouseEvent, num: number, surface?: string) => void;
-	onQuickStateChange?: ((targets: number[], state: ToothState) => void) | undefined;
+	onQuickStateChange?: ((targets: number[], state: ToothState, surfaces?: readonly string[] | undefined) => void) | undefined;
 	pediatricMode?: boolean | undefined;
-	surfaces?: string[] | undefined;
+	surfaces?: readonly string[] | undefined;
 	useSurfaces?: boolean | undefined;
 	showPulpAndCanals?: boolean | undefined;
 	showPeriapicalHalos?: boolean | undefined;
@@ -1031,7 +1012,7 @@ export interface ToothWrapperProps {
 		num: number,
 		surface?: string,
 	) => void;
-	onQuickStateChange?: ((targets: number[], state: ToothState) => void) | undefined;
+	onQuickStateChange?: ((targets: number[], state: ToothState, surfaces?: readonly string[] | undefined) => void) | undefined;
 	useSurfaces?: boolean | undefined;
 	isTop: boolean;
 	scale?: number | undefined;
@@ -1183,16 +1164,16 @@ const ToothWrapper: React.FC<ToothWrapperProps> = ({
 
 			<span
 				className={`tooth-number-badge ${isSelected ? "selected" : ""}`}
-				style={{ fontSize: scale < 0.85 ? "10px" : undefined }}
+				style={{ fontSize: "12px" }}
 			>
 				<span
 					className="tooth-status-dot"
 					style={{ backgroundColor: colors.badgeColor }}
 				/>
-				<span className="tooth-number-text">{number}</span>
+				<span className="tooth-number-text font-black">{number}</span>
 				{mobility !== undefined && mobility > 0 && (
 					<span
-						className="ml-0.5 px-1 py-0.2 rounded text-[8px] font-black bg-indigo-600 text-white shadow-2xs leading-none"
+						className="ml-0.5 px-1 py-0.2 rounded text-xs font-black bg-indigo-600 text-white shadow-2xs leading-none"
 						title={`Подвижность по Миллеру: ${mobility} ст.`}
 					>
 						M{mobility}
@@ -1200,7 +1181,7 @@ const ToothWrapper: React.FC<ToothWrapperProps> = ({
 				)}
 				{furcation !== undefined && furcation > 0 && (
 					<span
-						className={`ml-0.5 px-1 py-0.2 rounded text-[8px] font-black text-white shadow-2xs leading-none ${
+						className={`ml-0.5 px-1 py-0.2 rounded text-xs font-black text-white shadow-2xs leading-none ${
 							furcation >= 3 ? "bg-rose-600" : "bg-amber-500"
 						}`}
 						title={`Поражение фуркации: ${furcation} ст.`}
@@ -1210,7 +1191,7 @@ const ToothWrapper: React.FC<ToothWrapperProps> = ({
 				)}
 				{effectiveResorption > 0 && (
 					<span
-						className="ml-0.5 px-1 py-0.2 rounded text-[8px] font-black text-white shadow-2xs leading-none"
+						className="ml-0.5 px-1 py-0.2 rounded text-xs font-black text-white shadow-2xs leading-none"
 						style={{ backgroundColor: ROOT_RESORPTION_STAGES[effectiveResorption]?.badgeColor ?? "#f59e0b" }}
 						title={`Физиологическая резорбция корня: ${ROOT_RESORPTION_STAGES[effectiveResorption]?.nameRu ?? `${effectiveResorption}%`}`}
 					>
@@ -1223,8 +1204,9 @@ const ToothWrapper: React.FC<ToothWrapperProps> = ({
 };
 
 	return (
-		<button
-			type="button"
+		<div
+			role="button"
+			tabIndex={0}
 			className={`tooth-svg-wrapper group ${isTop ? "top" : "bottom"} ${
 				isSelected ? "selected ring-2 ring-indigo-500/70" : ""
 			}`}
@@ -1234,7 +1216,7 @@ const ToothWrapper: React.FC<ToothWrapperProps> = ({
 			onClick={(e) => {
 				if (activeStamp && onQuickStateChange) {
 					const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-					onQuickStateChange(targets, activeStamp);
+					onQuickStateChange(targets, activeStamp, surfaces);
 					return;
 				}
 				onClick(e, number);
@@ -1244,7 +1226,7 @@ const ToothWrapper: React.FC<ToothWrapperProps> = ({
 					e.preventDefault();
 					if (activeStamp && onQuickStateChange) {
 						const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-						onQuickStateChange(targets, activeStamp);
+						onQuickStateChange(targets, activeStamp, surfaces);
 						return;
 					}
 					onClick(e as unknown as React.MouseEvent, number);
@@ -1264,7 +1246,7 @@ const ToothWrapper: React.FC<ToothWrapperProps> = ({
 					const navDir = dirMap[e.key];
 					if (navDir) {
 						const nextTooth = getNextFocusedTooth(number, navDir, pediatricMode);
-						const nextEl = document.querySelector<HTMLButtonElement>(`[data-tooth-id="${nextTooth}"]`);
+						const nextEl = document.querySelector<HTMLElement>(`[data-tooth-id="${nextTooth}"]`);
 						nextEl?.focus();
 					}
 					return;
@@ -1275,7 +1257,7 @@ const ToothWrapper: React.FC<ToothWrapperProps> = ({
 				if (quickState && onQuickStateChange) {
 					e.preventDefault();
 					const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-					onQuickStateChange(targets, quickState);
+					onQuickStateChange(targets, quickState, surfaces);
 				}
 			}}
 		>
@@ -1299,7 +1281,6 @@ const ToothWrapper: React.FC<ToothWrapperProps> = ({
 				rootResorptionStage={effectiveResorption}
 				isSelected={isSelected}
 				onClick={onClick}
-				onQuickStateChange={onQuickStateChange}
 				pediatricMode={pediatricMode}
 				surfaces={surfaces}
 				useSurfaces={useSurfaces}
@@ -1308,7 +1289,7 @@ const ToothWrapper: React.FC<ToothWrapperProps> = ({
 				showPeriodontalBoneLoss={showPeriodontalBoneLoss}
 			/>
 			{!isTop && renderNumberBadge()}
-		</button>
+		</div>
 	);
 };
 
@@ -1340,7 +1321,7 @@ export interface AnatomicalSvgOdontogramProps {
 	selectedTeeth?: number[] | undefined;
 	activeStamp?: ToothState | null | undefined;
 	onToothClick: (num: number, rect: DOMRect, surface?: string | undefined) => void;
-	onQuickStateChange?: ((targets: number[], state: ToothState) => void) | undefined;
+	onQuickStateChange?: ((targets: number[], state: ToothState, surfaces?: readonly string[] | undefined) => void) | undefined;
 	useSurfaces?: boolean | undefined;
 	hideHeader?: boolean | undefined;
 	hideLegend?: boolean | undefined;
@@ -1422,7 +1403,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 		const observer = new ResizeObserver(recalculate);
 		observer.observe(element);
 		return () => observer.disconnect();
-	}, [topTeethList, bottomTeethList]);
+	}, []);
 
 	// High-speed keyboard triggers: instant 1-key assigning without opening sub-menus
 	useEffect(() => {
@@ -1440,7 +1421,11 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = (
 				const quickState = getToothStateFromHotkey(e.key);
 				if (quickState) {
 					e.preventDefault();
-					onQuickStateChange(selectedTeeth, quickState);
+					const singleTooth =
+						selectedTeeth.length === 1
+							? (teethData ?? []).find((t) => t.toothNumber === selectedTeeth[0])
+							: undefined;
+					onQuickStateChange(selectedTeeth, quickState, singleTooth?.surfaces);
 					return;
 				}
 			}

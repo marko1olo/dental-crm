@@ -79,6 +79,7 @@ import {
 import { SignaturePadCanvas, MobileSelfCheckinModal } from "../selfCheckin";
 import { PatientFriendlyOdontogram } from "../../patient-portal/PatientFriendlyOdontogram";
 import { TreatmentPlanStageCard } from "../../patient-portal/TreatmentPlanStageCard";
+import { PatientPlanView } from "../../patient-portal/PatientPlanView";
 import { DEMO_PATIENT_CABINET } from "./patientCabinetPresets";
 import "./patientCabinet.css";
 
@@ -717,42 +718,67 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 							) : null}
 
 							{/* Active Treatment Plans Mini-Progress */}
-							{data.treatmentPlans.length > 0 && (
-								<div className="pc-card">
-									<div className="pc-card-header">
-										<h3 className="pc-card-title">
-											<Percent size={18} style={{ color: "var(--pc-primary)" }} />
-											<span>Текущий план лечения: {data.treatmentPlans[0]?.titleRu}</span>
-										</h3>
-										<button
-											type="button"
-											className="pc-btn-secondary"
-											onClick={() => setActiveTab("plans")}
-										>
-											<span>Подробнее</span>
-										</button>
-									</div>
+							{data.treatmentPlans.length > 0 && (() => {
+								const currentPlan = data.treatmentPlans[0];
+								if (!currentPlan) return null;
+								const compStages = currentPlan.stages.filter((s) => s.status === "completed").length;
+								const totalStages = currentPlan.stages.length;
 
-									{data.treatmentPlans[0] && (
-										<div>
-											<div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "6px" }}>
-												<span style={{ fontSize: "1.25rem", fontWeight: 800, color: "var(--pc-primary)" }}>
-													{data.treatmentPlans[0].progressPercent}% выполнено
-												</span>
-												<span style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)" }}>
-													Оплачено {formatRubles(data.treatmentPlans[0].paidCostRub)} из {formatRubles(data.treatmentPlans[0].totalCostRub)}
-												</span>
+								return (
+									<div className="pc-card">
+										<div className="pc-card-header">
+											<h3 className="pc-card-title">
+												<Percent size={18} style={{ color: "var(--pc-primary)" }} />
+												<span>Текущий план лечения: {currentPlan.titleRu}</span>
+											</h3>
+											<button
+												type="button"
+												className="pc-btn-secondary"
+												onClick={() => setActiveTab("plans")}
+											>
+												<span>Подробнее</span>
+											</button>
+										</div>
+
+										<div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+											<div
+												style={{
+													backgroundColor: "var(--pc-bg, #0f172a)",
+													border: "1px solid var(--pc-border, #334155)",
+													borderRadius: "8px",
+													padding: "10px 12px",
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "space-between",
+													flexWrap: "wrap",
+													gap: "8px",
+													fontSize: "0.875rem",
+												}}
+											>
+												<strong style={{ color: "var(--pc-text-main)" }}>
+													Выполнено {compStages} из {totalStages} этапов ({currentPlan.progressPercent}%)
+												</strong>
+												<div style={{ display: "flex", gap: "10px", fontSize: "0.8125rem", flexWrap: "wrap" }}>
+													<span style={{ color: "var(--pc-success)", fontWeight: 700 }}>
+														Оплачено: {formatRubles(currentPlan.paidCostRub)}
+													</span>
+													<span style={{ color: "var(--pc-text-muted)" }}>&bull;</span>
+													<span style={{ color: currentPlan.remainingDueRub > 0 ? "var(--pc-warning)" : "var(--pc-success)", fontWeight: 700 }}>
+														{currentPlan.remainingDueRub > 0 ? `Остаток: ${formatRubles(currentPlan.remainingDueRub)}` : "Оплачено полностью"}
+													</span>
+												</div>
 											</div>
+
 											<div className="pc-progress-bar-bg">
 												<div
 													className="pc-progress-bar-fill"
-													style={{ width: `${data.treatmentPlans[0].progressPercent}%` }}
+													style={{ width: `${currentPlan.progressPercent}%` }}
 												/>
 											</div>
 										</div>
-									)}
-								</div>
-							)}
+									</div>
+								);
+							})()}
 						</>
 					)}
 
@@ -899,261 +925,15 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 
 					{/* TAB 3: ПЛАНЫ ЛЕЧЕНИЯ (TREATMENT PLANS & 3-TIER COMPARISON) */}
 					{activeTab === "plans" && (
-						<div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-							{/* Patient-Friendly 2D Tooth Chart with Clear Colors */}
-							<div className="pc-card">
-								<div className="pc-card-header">
-									<div>
-										<h3 className="pc-card-title">
-											<Sparkles size={18} style={{ color: "var(--pc-primary)" }} />
-											<span>Интерактивная зубная карта пациента (Здоров / Лечение / Требует внимания)</span>
-										</h3>
-										<p style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)", margin: "2px 0 0 0" }}>
-											Нажмите на любой зуб для подробного и понятного описания состояния и гарантии:
-										</p>
-									</div>
-								</div>
-								<PatientFriendlyOdontogram />
-							</div>
-
-							{/* 3-Tier Treatment Plan Comparison */}
-							{data.threeTierModel && (
-								<div className="pc-card" style={{ background: "var(--pc-surface)" }} data-testid="three-tier-plan-container">
-									<div className="pc-card-header">
-										<div>
-											<h3 className="pc-card-title">
-												<Percent size={18} style={{ color: "var(--pc-primary)" }} />
-												<span>3-Tier Сравнение планов реабилитации (Базовый / Стандарт / Премиум)</span>
-											</h3>
-											<p style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)", margin: "2px 0 0 0" }}>
-												Выберите класс материалов и технологий лечения:
-											</p>
-										</div>
-										<span className="pc-status-badge paid">
-											Выбран: {data.threeTierModel.tiers.find((t) => t.tierId === selectedTierTab)?.tierNameRu}
-										</span>
-									</div>
-
-									{/* Tier Tabs */}
-									<div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px" }}>
-										{data.threeTierModel.tiers.map((tier) => {
-											const isSelected = selectedTierTab === tier.tierId;
-											return (
-												<button
-													key={tier.tierId}
-													type="button"
-													className={`pc-btn-secondary ${isSelected ? "active" : ""}`}
-													style={{
-														flex: 1,
-														minWidth: "160px",
-														padding: "10px 14px",
-														display: "flex",
-														flexDirection: "column",
-														alignItems: "flex-start",
-														gap: "4px",
-														borderColor: isSelected ? "var(--pc-primary)" : "var(--pc-border)",
-														background: isSelected ? "var(--pc-primary-light)" : "var(--pc-surface)",
-													}}
-													onClick={() => setSelectedTierTab(tier.tierId)}
-													data-testid={`tier-tab-${tier.tierId}`}
-												>
-													<strong style={{ fontSize: "0.875rem", color: isSelected ? "var(--pc-primary)" : "var(--pc-text-main)" }}>
-														{tier.tierNameRu}
-													</strong>
-													<span style={{ fontSize: "1.0625rem", fontWeight: 800, color: "var(--pc-text-main)" }}>
-														{formatRubles(tier.totalCostRub)}
-													</span>
-													<span style={{ fontSize: "0.75rem", color: "var(--pc-text-muted)" }}>
-														Гарантия: {tier.warrantyMonths} мес. • Срок: {tier.durationWeeks} нед.
-													</span>
-												</button>
-											);
-										})}
-									</div>
-
-									{/* Selected Tier Details & Stages */}
-									{(() => {
-										const currentTier = data.threeTierModel?.tiers.find((t) => t.tierId === selectedTierTab);
-										if (!currentTier) return null;
-
-										return (
-											<div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "10px" }}>
-												<div style={{ background: "var(--pc-surface)", border: "1px solid var(--pc-border)", borderRadius: "var(--pc-radius-sm)", padding: "10px 14px" }}>
-													<strong style={{ fontSize: "0.8125rem", color: "var(--pc-primary)" }}>
-														Ключевые особенности уровня {currentTier.tierNameRu}:
-													</strong>
-													<ul style={{ margin: "4px 0 0 0", paddingLeft: "20px", fontSize: "0.8125rem", color: "var(--pc-text-main)" }}>
-														{currentTier.benefits.map((b, bIdx) => (
-															<li key={bIdx}>{b}</li>
-														))}
-													</ul>
-												</div>
-
-												<div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-													<strong style={{ fontSize: "0.875rem" }}>Этапы и онлайн-оплата:</strong>
-													{currentTier.stages.map((stage) => {
-														const isCompleted = stage.status === "completed";
-														const isInProgress = stage.status === "in_progress";
-
-														return (
-															<div key={stage.id} className="pc-plan-stage-item">
-																<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
-																	<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-																		<span
-																			style={{
-																				width: "22px",
-																				height: "22px",
-																				borderRadius: "50%",
-																				background: isCompleted ? "var(--pc-success)" : isInProgress ? "var(--pc-warning)" : "var(--pc-border)",
-																				color: "#ffffff",
-																				fontSize: "0.75rem",
-																				fontWeight: 800,
-																				display: "flex",
-																				alignItems: "center",
-																				justifyContent: "center",
-																			}}
-																		>
-																			{isCompleted ? "✓" : stage.orderIndex}
-																		</span>
-																		<div>
-																			<strong style={{ fontSize: "0.875rem" }}>{stage.titleRu}</strong>
-																			{stage.teethFdi.length > 0 && (
-																				<div style={{ fontSize: "0.75rem", color: "var(--pc-primary)" }}>
-																					Зубы: {stage.teethFdi.join(", ")}
-																				</div>
-																			)}
-																		</div>
-																	</div>
-
-																	<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-																		<span style={{ fontSize: "0.9375rem", fontWeight: 800 }}>
-																			{formatRubles(stage.costRub)}
-																		</span>
-																		<span
-																			className={`pc-status-badge ${isCompleted ? "paid" : isInProgress ? "unpaid" : ""}`}
-																			style={{ fontSize: "0.6875rem" }}
-																		>
-																			{isCompleted ? "Оплачен & Завершен" : isInProgress ? "В работе" : "Запланирован"}
-																		</span>
-																		{!isCompleted && (
-																			<button
-																				type="button"
-																				className="pc-btn-primary"
-																				style={{ minHeight: "32px", padding: "4px 10px", fontSize: "0.75rem" }}
-																				onClick={() => handlePayStageWithSbp(stage)}
-																				data-testid={`pay-stage-sbp-${stage.id}`}
-																			>
-																				<CreditCard size={12} />
-																				<span>Оплатить СБП</span>
-																			</button>
-																		)}
-																	</div>
-																</div>
-
-																<ul style={{ margin: "6px 0 0 0", paddingLeft: "24px", fontSize: "0.75rem", color: "var(--pc-text-muted)" }}>
-																	{stage.procedures.map((proc, pIdx) => (
-																		<li key={pIdx}>{proc}</li>
-																	))}
-																</ul>
-															</div>
-														);
-													})}
-												</div>
-											</div>
-										);
-									})()}
-								</div>
-							)}
-
-							{/* Standard Treatment Plans list */}
-							{data.treatmentPlans.map((plan) => (
-								<div key={plan.id} className="pc-card" data-testid={`plan-card-${plan.id}`}>
-									<div className="pc-card-header">
-										<div>
-											<h3 className="pc-card-title">
-												<Percent size={18} style={{ color: "var(--pc-primary)" }} />
-												<span>{plan.titleRu} ({plan.planNumber})</span>
-											</h3>
-											<p style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)", margin: "2px 0 0 0" }}>
-												Куратор: {plan.curatingDoctor} &bull; Составлен: {formatRussianDateIso(plan.createdAtIso)}
-											</p>
-										</div>
-
-										<div style={{ textAlign: "right" }}>
-											<div style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--pc-primary)" }}>
-												{formatRubles(plan.totalCostRub)}
-											</div>
-											<div style={{ fontSize: "0.75rem", color: "var(--pc-text-muted)" }}>
-												Остаток: {formatRubles(plan.remainingDueRub)}
-											</div>
-										</div>
-									</div>
-
-									{/* Overall Progress Bar */}
-									<div>
-										<div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8125rem", marginBottom: "4px" }}>
-											<strong>Общий прогресс реабилитации</strong>
-											<span>{plan.progressPercent}%</span>
-										</div>
-										<div className="pc-progress-bar-bg">
-											<div className="pc-progress-bar-fill" style={{ width: `${plan.progressPercent}%` }} />
-										</div>
-									</div>
-
-									{/* Stages list */}
-									<div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" }}>
-										{plan.stages.map((stage) => {
-											const isCompleted = stage.status === "completed";
-											const isInProgress = stage.status === "in_progress";
-
-											return (
-												<div key={stage.id} className="pc-plan-stage-item">
-													<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-														<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-															<span
-																style={{
-																	width: "20px",
-																	height: "20px",
-																	borderRadius: "50%",
-																	background: isCompleted ? "var(--pc-success)" : isInProgress ? "var(--pc-warning)" : "var(--pc-border)",
-																	color: "#ffffff",
-																	fontSize: "0.6875rem",
-																	fontWeight: 800,
-																	display: "flex",
-																	alignItems: "center",
-																	justifyContent: "center",
-																}}
-															>
-																{isCompleted ? "✓" : stage.orderIndex}
-															</span>
-															<strong style={{ fontSize: "0.875rem" }}>{stage.titleRu}</strong>
-														</div>
-
-														<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-															<span style={{ fontSize: "0.8125rem", fontWeight: 700 }}>
-																{formatRubles(stage.costRub)}
-															</span>
-															<span
-																className={`pc-status-badge ${isCompleted ? "paid" : isInProgress ? "unpaid" : ""}`}
-																style={{ fontSize: "0.6875rem" }}
-															>
-																{isCompleted ? "Выполнен" : isInProgress ? "В процессе" : "Запланирован"}
-															</span>
-														</div>
-													</div>
-
-													<ul style={{ margin: "4px 0 0 0", paddingLeft: "24px", fontSize: "0.75rem", color: "var(--pc-text-muted)" }}>
-														{stage.procedures.map((proc, pIdx) => (
-															<li key={pIdx}>{proc}</li>
-														))}
-													</ul>
-												</div>
-											);
-										})}
-									</div>
-								</div>
-							))}
-						</div>
+						<PatientPlanView
+							plan={data.treatmentPlans[0]}
+							threeTierModel={data.threeTierModel}
+							patientName={data.fullName}
+							cardNumber={data.cardNumber}
+							phone={data.phone}
+							onPayStageSbp={handlePayStageWithSbp}
+							onBookAppointment={() => setActiveTab("appointments")}
+						/>
 					)}
 
 					{/* TAB 4: ДОКУМЕНТЫ И ИДС (DOCUMENTS & CONSENTS & WARRANTIES) */}

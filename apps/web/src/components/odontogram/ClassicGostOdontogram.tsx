@@ -469,7 +469,7 @@ export interface ClassicGostOdontogramProps {
 	bottomTeeth?: number[] | undefined;
 	selectedTeeth?: number[] | undefined;
 	onToothClick: (num: number, rect: DOMRect, surface?: string) => void;
-	onQuickStateChange?: ((targets: number[], state: ToothState) => void) | undefined;
+	onQuickStateChange?: ((targets: number[], state: ToothState, surfaces?: readonly string[] | undefined) => void) | undefined;
 	useSurfaces?: boolean | undefined;
 	hideHeader?: boolean | undefined;
 	hideLegend?: boolean | undefined;
@@ -610,7 +610,7 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 					const quickState = getToothStateFromHotkey(e.key);
 					if (quickState && onQuickStateChange) {
 						e.preventDefault();
-						onQuickStateChange([toothNumber], quickState);
+						onQuickStateChange([toothNumber], quickState, surfaces ? [...surfaces] : undefined);
 					}
 				}}
 				className={`gost-cell-tooth relative flex flex-col items-center justify-between min-w-[44px] sm:min-w-[50px] min-h-[56px] p-1.5 sm:p-2 rounded-xl border transition-all duration-150 select-none text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/50 shrink-0 ${

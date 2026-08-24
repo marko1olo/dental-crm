@@ -834,7 +834,7 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 					<div>
 						<h3 className="text-sm font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
 							<span>Живая смета лечения</span>
-							<span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 font-mono font-bold border border-cyan-500/20">
+							<span className="text-xs px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 font-mono font-bold border border-cyan-500/20">
 								{baseItems.length} поз.
 							</span>
 						</h3>
@@ -857,7 +857,7 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 
 			{/* Category Sub-total Badges */}
 			{Object.keys(categoryBreakdown).length > 0 && (
-				<div className="px-3 py-2 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--border,#cbd5e1)] flex flex-wrap items-center gap-1.5 text-[11px]">
+				<div className="px-3 py-2 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--border,#cbd5e1)] flex flex-wrap items-center gap-1.5 text-xs">
 					<span className="text-[var(--muted,#64748b)] font-semibold flex items-center gap-1">
 						<Layers size={12} /> Разделы:
 					</span>
@@ -878,7 +878,7 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 			{/* 1-Click Discount Toolbar */}
 			{baseItems.length > 0 && (
 				<div className="px-3.5 py-2 bg-[var(--paper-strong,var(--paper,#ffffff))] border-b border-[var(--border,#cbd5e1)] flex items-center justify-between gap-2 text-xs">
-					<span className="text-[11px] font-semibold text-[var(--muted,#64748b)] flex items-center gap-1">
+					<span className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1">
 						<Percent size={12} /> Скидка:
 					</span>
 
@@ -888,7 +888,7 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 								key={pct}
 								type="button"
 								onClick={() => handleSetQuickDiscount(pct)}
-								className={`min-h-[44px] px-2.5 py-1 rounded-md font-mono text-[11px] font-bold border transition-all cursor-pointer ${
+								className={`min-h-[44px] px-2.5 py-1 rounded-md font-mono text-xs font-bold border transition-all cursor-pointer ${
 									!isDiscountCustom && discountPercent === pct
 										? "bg-teal-600 text-white border-teal-700 shadow-xs"
 										: "bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] border-[var(--border,#cbd5e1)] hover:text-[var(--ink,#0f172a)]"
@@ -926,10 +926,10 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 										<span className="text-xs font-black text-cyan-700 dark:text-cyan-300 bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20 font-mono">
 											#{item.toothNumber}
 										</span>
-										<span className="text-[10px] text-[var(--muted,#64748b)] font-mono">
+										<span className="text-xs text-[var(--muted,#64748b)] font-mono font-semibold">
 											{item.code}
 										</span>
-										<span className="text-[10px] px-1.5 py-0.2 rounded-md bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] font-medium border border-[var(--border,#cbd5e1)]">
+										<span className="text-xs px-1.5 py-0.2 rounded-md bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] font-bold border border-[var(--border,#cbd5e1)]">
 											{item.category}
 										</span>
 									</div>
@@ -948,7 +948,7 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 											>
 												<Minus size={13} />
 											</button>
-											<span className="text-[12px] font-mono font-bold px-1.5">
+											<span className="text-xs font-mono font-bold px-1.5">
 												{item.quantity}
 											</span>
 											<button
@@ -965,7 +965,7 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 										<button
 											type="button"
 											onClick={() => handleExcludeItem(itemKey)}
-											className="min-h-[44px] px-2 text-[11px] text-rose-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer ml-1"
+											className="min-h-[44px] px-2 text-xs font-bold text-rose-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer ml-1"
 											title="Исключить из сметы"
 										>
 											<Trash2 size={12} />
@@ -979,7 +979,7 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 										{itemSubtotal.toLocaleString("ru-RU")} ₽
 									</span>
 									{item.quantity > 1 && (
-										<div className="text-[10px] text-[var(--muted,#64748b)] font-mono">
+										<div className="text-xs text-[var(--muted,#64748b)] font-mono font-semibold">
 											{item.price.toLocaleString("ru-RU")} ₽/ед.
 										</div>
 									)}

@@ -65,6 +65,10 @@ import {
 	type PlanPriceCatalogItem,
 	type PlanServiceRule,
 } from "../plan/planPricing";
+import type {
+	TreatmentPlanItem,
+	TreatmentPlanStageKind,
+} from "../treatment-plans/types";
 
 /**
  * Ключ автоподбора. Это НЕ идентификатор услуги прайса и на сервер он не
@@ -1253,5 +1257,323 @@ export function estimatorItemForApi(
 		discount: item.discount,
 		phase: item.phase,
 		...(item.isAuto !== undefined ? { isAuto: item.isAuto } : {}),
+	};
+}
+
+/* ─────────────────────────── ЭТАПЫ И ГАРАНТИИ ─────────────────────────── */
+
+export type TreatmentStageId =
+	| "stage_1_therapy"
+	| "stage_2_endo"
+	| "stage_3_surgery"
+	| "stage_4_orthopedics"
+	| "stage_5_hygiene";
+
+export interface TreatmentStageSummary {
+	readonly stageId: TreatmentStageId;
+	readonly titleRu: string;
+	readonly descriptionRu: string;
+	readonly phase: number;
+	readonly items: readonly PlanItem[];
+	readonly grossKopecks: Kopecks;
+	readonly discountKopecks: Kopecks;
+	readonly payableKopecks: Kopecks;
+	readonly dmsCoveredKopecks: Kopecks;
+	readonly grossRub: number;
+	readonly payableRub: number;
+	readonly incompleteRowsCount: number;
+}
+
+export function resolveStageIdForItem(item: PlanItem): TreatmentStageId {
+	const nameLower = (item.name || "").toLowerCase();
+	const cat = (item.category || "").toLowerCase();
+
+	if (
+		nameLower.includes("гигиен") ||
+		nameLower.includes("чистк") ||
+		nameLower.includes("airflow") ||
+		cat === "hygiene"
+	) {
+		return "stage_5_hygiene";
+	}
+
+	if (
+		nameLower.includes("коронк") ||
+		nameLower.includes("протез") ||
+		nameLower.includes("e.max") ||
+		nameLower.includes("циркон") ||
+		nameLower.includes("вкладк") ||
+		nameLower.includes("винир") ||
+		nameLower.includes("абатмент") ||
+		cat === "prosthetics" ||
+		item.suggestion === "crown" ||
+		item.phase === 3
+	) {
+		return "stage_4_orthopedics";
+	}
+
+	if (
+		nameLower.includes("имплант") ||
+		nameLower.includes("шаблон") ||
+		nameLower.includes("удален") ||
+		nameLower.includes("синус") ||
+		nameLower.includes("хирург") ||
+		cat === "surgery" ||
+		item.suggestion === "implant" ||
+		item.suggestion === "implantGuide" ||
+		item.phase === 2
+	) {
+		return "stage_3_surgery";
+	}
+
+	if (
+		nameLower.includes("пульпит") ||
+		nameLower.includes("периодонтит") ||
+		nameLower.includes("канал") ||
+		nameLower.includes("обтурац") ||
+		nameLower.includes("эндодонт") ||
+		item.suggestion === "pulpitis" ||
+		item.suggestion === "periodontitis"
+	) {
+		return "stage_2_endo";
+	}
+
+	return "stage_1_therapy";
+}
+
+export const STAGE_DEFINITIONS: Record<
+	TreatmentStageId,
+	{ titleRu: string; descriptionRu: string; phase: number }
+> = {
+	stage_1_therapy: {
+		titleRu: "Этап I: Терапевтическая санация (кариес, реставрации)",
+		descriptionRu: "Лечение кариозных поражений, эстетическая реставрация композитами светового отверждения",
+		phase: 1,
+	},
+	stage_2_endo: {
+		titleRu: "Этап II: Эндодонтическое лечение (каналы)",
+		descriptionRu: "Инструментальная и антисептическая обработка каналов, 3D-обтурация гуттаперчей",
+		phase: 1,
+	},
+	stage_3_surgery: {
+		titleRu: "Этап III: Хирургический этап (имплантация и костная пластика)",
+		descriptionRu: "Атравматичное удаление, установка дентальных имплантатов по навигационному шаблону",
+		phase: 2,
+	},
+	stage_4_orthopedics: {
+		titleRu: "Этап IV: Ортопедическая реабилитация (протезирование)",
+		descriptionRu: "Восстановление анатомии и функции коронками из диоксида циркония и керамики E.max",
+		phase: 3,
+	},
+	stage_5_hygiene: {
+		titleRu: "Этап V: Профессиональная гигиена и пародонтология",
+		descriptionRu: "Снятие над- и поддесневых зубных отложений ультразвуком и AirFlow, реминерализация",
+		phase: 1,
+	},
+};
+
+export function estimatorStagesBreakdown(
+	items: readonly PlanItem[],
+	contract: EstimatorContract,
+): readonly TreatmentStageSummary[] {
+	const stageMap = new Map<TreatmentStageId, PlanItem[]>();
+	for (const id of Object.keys(STAGE_DEFINITIONS) as TreatmentStageId[]) {
+		stageMap.set(id, []);
+	}
+
+	for (const it of items) {
+		const stageId = resolveStageIdForItem(it);
+		const list = stageMap.get(stageId) ?? [];
+		list.push(it);
+		stageMap.set(stageId, list);
+	}
+
+	return (Object.keys(STAGE_DEFINITIONS) as TreatmentStageId[]).map((stageId) => {
+		const def = STAGE_DEFINITIONS[stageId];
+		const stageItems = stageMap.get(stageId) ?? [];
+
+		let grossKopecks = 0 as Kopecks;
+		let discountKopecks = 0 as Kopecks;
+		let payableKopecks = 0 as Kopecks;
+		let incompleteRowsCount = 0;
+
+		for (const it of stageItems) {
+			const m = estimatorRowMoney(it, contract);
+			if (!m.known) {
+				incompleteRowsCount += 1;
+				continue;
+			}
+			grossKopecks = (grossKopecks + m.lineKopecks) as Kopecks;
+			const disc = safeKopecks(it.discount) ?? (0 as Kopecks);
+			discountKopecks = (discountKopecks + disc) as Kopecks;
+			payableKopecks = (payableKopecks + m.payableKopecks) as Kopecks;
+		}
+
+		const dmsCoveredKopecks = Math.max(0, grossKopecks - payableKopecks) as Kopecks;
+
+		return {
+			stageId,
+			titleRu: def.titleRu,
+			descriptionRu: def.descriptionRu,
+			phase: def.phase,
+			items: stageItems,
+			grossKopecks,
+			discountKopecks,
+			payableKopecks,
+			dmsCoveredKopecks,
+			grossRub: Math.round(grossKopecks / 100),
+			payableRub: Math.round(payableKopecks / 100),
+			incompleteRowsCount,
+		};
+	});
+}
+
+export interface TreatmentWarrantyInfo {
+	readonly warrantyMonths: number;
+	readonly serviceLifeMonths: number;
+	readonly categoryRu: string;
+	readonly termsDescription: string;
+	readonly isManufacturerLifetimeWarranty?: boolean;
+}
+
+export function calculateTreatmentWarranty(item: PlanItem): TreatmentWarrantyInfo {
+	const nameLower = (item.name || "").toLowerCase();
+	const cat = (item.category || "").toLowerCase();
+
+	if (nameLower.includes("имплант") || item.suggestion === "implant") {
+		return {
+			warrantyMonths: 36,
+			serviceLifeMonths: 120,
+			categoryRu: "Дентальная имплантация",
+			termsDescription: "Гарантия клиники на остеоинтеграцию 3 года при условии прохождения профгигиены каждые 6 мес. Пожизненная гарантия производителя на титановый имплантат.",
+			isManufacturerLifetimeWarranty: true,
+		};
+	}
+
+	if (
+		nameLower.includes("коронк") ||
+		nameLower.includes("протез") ||
+		nameLower.includes("e.max") ||
+		nameLower.includes("циркон") ||
+		nameLower.includes("винир") ||
+		cat === "prosthetics" ||
+		item.suggestion === "crown"
+	) {
+		return {
+			warrantyMonths: 24,
+			serviceLifeMonths: 60,
+			categoryRu: "Ортопедическая конструкция",
+			termsDescription: "Гарантия на целостность коронки/вкладки 24 месяца в соответствии с клиническими рекомендациями СтАР.",
+		};
+	}
+
+	if (
+		nameLower.includes("пульпит") ||
+		nameLower.includes("периодонтит") ||
+		nameLower.includes("канал") ||
+		item.suggestion === "pulpitis" ||
+		item.suggestion === "periodontitis"
+	) {
+		return {
+			warrantyMonths: 12,
+			serviceLifeMonths: 36,
+			categoryRu: "Эндодонтическое лечение",
+			termsDescription: "Гарантия 12 месяцев при обязательном последующем покрытии зуба коронкой/вкладкой в течение 3 месяцев.",
+		};
+	}
+
+	if (
+		nameLower.includes("кариес") ||
+		nameLower.includes("пломб") ||
+		item.suggestion === "caries"
+	) {
+		return {
+			warrantyMonths: 12,
+			serviceLifeMonths: 24,
+			categoryRu: "Терапевтическая реставрация",
+			termsDescription: "Гарантия 12 месяцев на краевое прилегание и стабильность цвета фотополимерной пломбы по ГОСТ Р 52623.4-2015.",
+		};
+	}
+
+	return {
+		warrantyMonths: 6,
+		serviceLifeMonths: 12,
+		categoryRu: "Стоматологическая процедура",
+		termsDescription: "Стандартный гарантийный срок согласно Положению об оказании медицинских услуг клиники.",
+	};
+}
+
+export interface Cashier54FzExportPayload {
+	readonly patientId: string;
+	readonly patientName: string;
+	readonly items: readonly TreatmentPlanItem[];
+	readonly totalRub: number;
+	readonly totalKopecks: Kopecks;
+	readonly discountPercent: number;
+	readonly createdAtIso: string;
+}
+
+export function exportEstimatorToCashier54Fz(
+	items: readonly PlanItem[],
+	patientId: string,
+	patientName: string,
+	discountPercent = 0,
+): Cashier54FzExportPayload {
+	const validItems = items.filter((it) => it.price !== null && it.price > 0);
+	const mapped: TreatmentPlanItem[] = validItems.map((it, idx) => {
+		const unitPrice = it.price ?? 0;
+		const qty = it.quantity || 1;
+		const gross = unitPrice * qty;
+		const disc = it.discount || (discountPercent > 0 ? Math.round((gross * discountPercent) / 100) : 0);
+		const netPrice = Math.max(0, gross - disc);
+		const stageId = resolveStageIdForItem(it);
+		const stageKind: TreatmentPlanStageKind =
+			stageId === "stage_3_surgery"
+				? "stage_2_surgery"
+				: stageId === "stage_4_orthopedics"
+					? "stage_3_orthopedics"
+					: "stage_1_therapy";
+
+		const category =
+			it.category ||
+			(stageId === "stage_3_surgery"
+				? "Хирургия"
+				: stageId === "stage_4_orthopedics"
+					? "Ортопедия"
+					: "Терапия");
+
+		return {
+			id: it.id || `est-item-${idx + 1}`,
+			name: it.name,
+			category,
+			priceRub: netPrice,
+			unitPriceRub: unitPrice,
+			discountRub: disc,
+			quantity: qty,
+			phase: it.phase,
+			code804n:
+				it.category === "surgery"
+					? "A16.07.054.001"
+					: it.category === "prosthetics"
+						? "A16.07.004.001"
+						: "A16.07.002.001",
+			...(it.toothNumber !== undefined ? { toothNumber: it.toothNumber } : {}),
+			stageKind,
+			...(it.priceId ? { priceId: it.priceId } : {}),
+			...(it.isAuto !== undefined ? { isAuto: it.isAuto } : {}),
+		};
+	});
+
+	const totalRub = mapped.reduce((acc, i) => acc + i.priceRub, 0);
+	const totalKopecks = parseKopecks(totalRub);
+
+	return {
+		patientId,
+		patientName,
+		items: mapped,
+		totalRub,
+		totalKopecks,
+		discountPercent,
+		createdAtIso: new Date().toISOString(),
 	};
 }

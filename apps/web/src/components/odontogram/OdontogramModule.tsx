@@ -39,6 +39,7 @@ import { VoiceDictationOverlay } from "./VoiceDictationOverlay";
 import {
 	getToothAnatomicalNameRu,
 	generateSoapFromOdontogramFinding,
+	generateSoapFromOdontogramStates,
 } from "../../lib/clinicalProtocols043";
 import "./odontogram.css";
 import { usePerspectiveStore } from "../../store/perspectiveStore";
@@ -167,6 +168,7 @@ export const OdontogramModule = ({
 		y: number;
 		position: "top" | "bottom";
 		caretOffset: number;
+		surfaces?: string[];
 	} | null>(null);
 	const [historyTooth, setHistoryTooth] = useState<number | null>(null);
 	const [endoTooth, setEndoTooth] = useState<number | null>(null);
@@ -274,22 +276,7 @@ export const OdontogramModule = ({
 
 	// Load states from API
 	const updateToothState = useCallback(
-		async (toothNumbers: number[], state: ToothState) => {
-			/* БЫЛО: снимок «до» делался как `previousTeethData = [...prev]` внутри
-		   обновления состояния, а новое состояние проставлялось мутацией
-		   `item.state = state`. Копия массива поверхностная — объекты зубов в
-		   ней те же самые, поэтому снимок менялся вместе с состоянием. Откат
-		   `setTeethData(previousTeethData)` возвращал уже НОВОЕ значение.
-
-		   Проверено в браузере, scratch/verify-odontogram-rollback.mjs: при
-		   ответе 500 на сохранение в базе оставался «Caries», всплывало
-		   «Изменения отменены», а на схеме стояло «отсутствует». Формула
-		   расходилась с базой, и интерфейс об этом врал. Врач мог закрыть
-		   приём или распечатать схему с состоянием, которого в карте нет.
-
-		   Снимок берётся до отправки, из ref с актуальным состоянием, и
-		   глубоко копируется. Новое состояние собирается новыми объектами,
-		   без мутации прежних. */
+		async (toothNumbers: number[], state: ToothState, surfacesOverride?: readonly string[] | undefined) => {
 			const previousTeethData: ToothData[] = teethDataRef.current.map(
 				(tooth) => ({
 					...tooth,
@@ -297,18 +284,44 @@ export const OdontogramModule = ({
 				}),
 			);
 
+			let apiSurfaces: string[] | undefined =
+				surfacesOverride !== undefined
+					? surfacesOverride.length > 0
+						? [...surfacesOverride]
+						: undefined
+					: activeSurfaces.length > 0
+						? [...activeSurfaces]
+						: undefined;
+
 			setTeethData((prev) => {
 				const next = prev.map((tooth) => {
 					if (!toothNumbers.includes(tooth.toothNumber)) return tooth;
 					const updated: ToothData = { ...tooth, state };
-					if (activeSurfaces.length > 0) updated.surfaces = [...activeSurfaces];
-					else delete updated.surfaces;
+					if (surfacesOverride !== undefined) {
+						if (surfacesOverride.length > 0) {
+							updated.surfaces = [...surfacesOverride];
+						} else {
+							delete updated.surfaces;
+						}
+					} else if (activeSurfaces.length > 0) {
+						updated.surfaces = [...activeSurfaces];
+					} else if (state === "Healthy" || state === "Missing") {
+						delete updated.surfaces;
+					} else if (tooth.surfaces && tooth.surfaces.length > 0) {
+						// Сохраняем уже выбранные поверхности (M, O, D) при быстрой смене диагноза
+						updated.surfaces = [...tooth.surfaces];
+						if (!apiSurfaces) apiSurfaces = [...tooth.surfaces];
+					}
 					return updated;
 				});
 				for (const t of toothNumbers) {
 					if (next.some((tooth) => tooth.toothNumber === t)) continue;
 					const newItem: ToothData = { toothNumber: t, state };
-					if (activeSurfaces.length > 0) newItem.surfaces = [...activeSurfaces];
+					if (surfacesOverride && surfacesOverride.length > 0) {
+						newItem.surfaces = [...surfacesOverride];
+					} else if (activeSurfaces.length > 0) {
+						newItem.surfaces = [...activeSurfaces];
+					}
 					next.push(newItem);
 				}
 				return next;
@@ -329,7 +342,7 @@ export const OdontogramModule = ({
 						body: JSON.stringify({
 							toothNumbers,
 							state,
-							surfaces: activeSurfaces.length > 0 ? activeSurfaces : undefined,
+							surfaces: apiSurfaces && apiSurfaces.length > 0 ? apiSurfaces : undefined,
 						}),
 					},
 				);
@@ -700,129 +713,27 @@ export const OdontogramModule = ({
 				y,
 				position: isUpperJaw ? "bottom" : "top",
 				caretOffset,
+				surfaces: currentSurfaces,
 			});
 		}
 	};
 
 	return (
-		<div className="flex flex-col gap-6 w-full p-4 sm:p-6 bg-[var(--odontogram-paper,#ffffff)] dark:bg-zinc-950/40 backdrop-blur-md border border-[var(--odontogram-border,#cbd5e1)] dark:border-zinc-800/50 rounded-2xl shadow-xl text-[var(--odontogram-ink,#0f172a)] dark:text-zinc-100">
+		<div className="flex flex-col gap-1.5 w-full text-[var(--odontogram-ink,#0f172a)]">
 			<div
-				className="w-full min-w-0 flex flex-col gap-6 relative"
+				className="w-full min-w-0 flex flex-col gap-1.5 relative"
 				ref={containerRef}
 			>
-				<div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-zinc-100/60 dark:bg-zinc-900/60 border-b border-zinc-200/60 dark:border-zinc-800/60 rounded-t-xl">
-					<div className="flex flex-wrap items-center gap-2 sm:gap-4 min-w-0">
-						<label className="flex items-center gap-2 cursor-pointer select-none min-w-0">
-							<input
-								type="checkbox"
-								checked={isPediatricMode}
-								onChange={(e) => setIsPediatricMode(e.target.checked)}
-								className="accent-indigo-500 rounded cursor-pointer shrink-0"
-							/>
-							<span className="text-xs sm:text-sm font-medium whitespace-nowrap min-w-0">Детский прикус</span>
-						</label>
-						<button
-							type="button"
-							onClick={() => setIsPediatricModalOpen(true)}
-							className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 rounded-lg transition-colors shrink-0 cursor-pointer select-none min-w-0"
-							title="Сменный прикус: сроки прорезывания, стадии резорбции корней и Кариограмма Браттхолла"
-						>
-							<Sparkles className="w-3.5 h-3.5 shrink-0" />
-							<span className="whitespace-nowrap min-w-0">Сменный прикус / Кариограмма</span>
-						</button>
-						<label
-							className={`flex items-center gap-2 cursor-pointer select-none transition-colors min-w-0 ${
-								isMultiSelectMode ? "text-indigo-600 dark:text-indigo-400 font-semibold" : ""
-							}`}
-						>
-							<input
-								type="checkbox"
-								checked={isMultiSelectMode}
-								onChange={(e) => {
-									setIsMultiSelectMode(e.target.checked);
-									if (!e.target.checked && selectedTeeth.length === 0)
-										setMenuConfig(null);
-								}}
-								className="accent-indigo-500 rounded cursor-pointer shrink-0"
-							/>
-							<span className="text-xs sm:text-sm font-medium whitespace-nowrap min-w-0">Групповой выбор (Shift)</span>
-						</label>
-					</div>
-
-					<div className="flex flex-wrap items-center gap-2 min-w-0">
-						<button
-							type="button"
-							onClick={() => setIsPerioOpen((prev) => !prev)}
-							className={`flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg border transition-all shrink-0 cursor-pointer select-none min-w-0 ${
-								isPerioOpen
-									? "bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-500/40 shadow-xs"
-									: "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20 hover:bg-teal-500/20"
-							}`}
-							title="Открыть / скрыть пародонтологическую карту PSR / 6 точек зондирования"
-						>
-							<Activity className="w-4 h-4 shrink-0" />
-							<span className="whitespace-nowrap min-w-0">{isPerioOpen ? "Скрыть пародонтограмму" : "Пародонтограмма"}</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={() => setIsEstimatorOpen((prev) => !prev)}
-							className={`flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg border transition-all shrink-0 cursor-pointer select-none min-w-0 ${
-								isEstimatorOpen
-									? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40 shadow-xs"
-									: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
-							}`}
-							title="Открыть / скрыть смету и расчет плана лечения"
-						>
-							<Calculator className="w-4 h-4 shrink-0" />
-							<span className="whitespace-nowrap min-w-0">{isEstimatorOpen ? "Скрыть смету" : "Смета лечения"}</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={loadDiagnocatReport}
-							disabled={diagnocatLoading}
-							className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 rounded-lg transition-colors shrink-0 cursor-pointer select-none min-w-0"
-						>
-							<Stethoscope className="w-4 h-4 shrink-0" />
-							<span className="whitespace-nowrap min-w-0">{diagnocatLoading ? "Загрузка..." : "Diagnocat Анализ"}</span>
-						</button>
-					</div>
-				</div>
-				{/* Состояние формулы проговаривается словами. Пустая формула
-				    выглядит как «все зубы здоровы», а это утверждение о пациенте,
-				    которого система в этот момент не знает. */}
+				{/* Accessibility loading announcement without causing CLS layout shift */}
 				{teethLoad.phase === "loading" && (
 					<div
 						role="status"
 						aria-live="polite"
-						style={{
-							display: "flex",
-							alignItems: "center",
-							gap: 8,
-							padding: "8px 12px",
-							borderRadius: 8,
-							fontSize: 13,
-							fontWeight: 600,
-							color: "var(--ink-2, var(--ink))",
-							background: "var(--paper-soft, transparent)",
-						}}
+						className="sr-only"
 					>
 						{panelStateText(TEETH_SUBJECT, { phase: "loading" }).title}
 					</div>
 				)}
-				{/*
-				  Отказ чтения формулы — общим видом отказа панели, с причиной по коду
-				  ответа и кнопкой повтора там, где повтор осмыслен.
-
-				  БЫЛО: одна фраза на все случаи — «Зубная формула не загрузилась.
-				  Данные на схеме неполные — обновите страницу.» Обновление страницы
-				  соберёт тот же запрос и получит тот же отказ: при 403 нужно войти в
-				  смену, при 404 — сообщить администратору, что программа обновлена не
-				  полностью. Обещание, которое не может сработать, врача уводит в
-				  сторону, а схема под сообщением при этом показывает пустую формулу,
-				  то есть «все зубы здоровы».
-				*/}
 				{teethLoad.phase === "failed" && (
 					<PanelLoadFailure
 						subject={TEETH_SUBJECT}
@@ -835,11 +746,52 @@ export const OdontogramModule = ({
 					pediatricMode={isPediatricMode}
 					selectedTeeth={selectedTeeth}
 					onToothClick={handleToothClick}
-					onQuickStateChange={(targets, state) => {
-						void updateToothState(targets, state);
+					onQuickStateChange={(targets, state, surfaces) => {
+						void updateToothState(targets, state, surfaces ? [...surfaces] : undefined);
+						try {
+							const findings = targets.map((num) => {
+								const existing = teethData.find((t) => t.toothNumber === num);
+								const toothSurfaces =
+									surfaces && surfaces.length > 0
+										? surfaces
+										: existing?.surfaces && existing.surfaces.length > 0
+											? existing.surfaces
+											: undefined;
+								return toothSurfaces && toothSurfaces.length > 0
+									? { toothNumber: num, state, surfaces: toothSurfaces }
+									: { toothNumber: num, state };
+							});
+							const soap =
+								findings.length > 1
+									? generateSoapFromOdontogramStates(findings)
+									: generateSoapFromOdontogramFinding(findings[0]!);
+							window.dispatchEvent(
+								new CustomEvent("dente-apply-soap-protocol", {
+									detail: {
+										finding: findings[0],
+										soap,
+										mode: "smart_append",
+									},
+								}),
+							);
+						} catch {
+							// Safe event dispatch fallback
+						}
 					}}
 					useSurfaces={odontogramUseSurfaces}
 					onOpenVoiceDictation={() => setIsVoiceOpen(true)}
+					onOpenPediatricModal={() => setIsPediatricModalOpen(true)}
+					onTogglePerio={() => setIsPerioOpen((prev) => !prev)}
+					isPerioOpen={isPerioOpen}
+					onToggleEstimator={() => setIsEstimatorOpen((prev) => !prev)}
+					isEstimatorOpen={isEstimatorOpen}
+					onLoadDiagnocat={loadDiagnocatReport}
+					diagnocatLoading={diagnocatLoading}
+					isMultiSelectMode={isMultiSelectMode}
+					onToggleMultiSelect={(enabled) => {
+						setIsMultiSelectMode(enabled);
+						if (!enabled && selectedTeeth.length === 0) setMenuConfig(null);
+					}}
 				/>
 
 				{/* Floating Tooth Action Popup anchored directly to the clicked tooth */}
@@ -856,7 +808,7 @@ export const OdontogramModule = ({
 									left: 0,
 									right: 0,
 									bottom: 0,
-									zIndex: 9998,
+									zIndex: 99998,
 									background: "transparent",
 									border: "none",
 									padding: 0,
@@ -877,9 +829,10 @@ export const OdontogramModule = ({
 								className="tooth-radial-menu"
 								style={
 									{
+										position: "fixed",
 										left: menuConfig.x,
 										top: menuConfig.y,
-										zIndex: 9999,
+										zIndex: 99999,
 									} as React.CSSProperties
 								}
 								onClick={(e) => e.stopPropagation()}
@@ -935,7 +888,7 @@ export const OdontogramModule = ({
 											: `Зуб #${menuConfig.toothNumber}`}
 									</div>
 									{selectedTeeth.length === 1 && (
-										<div className="text-[11px] text-[var(--odontogram-ink-muted,#64748b)]">
+										<div className="text-xs font-semibold text-[var(--odontogram-ink-muted,#64748b)]">
 											{getToothAnatomicalNameRu(menuConfig.toothNumber)}
 										</div>
 									)}
@@ -947,7 +900,37 @@ export const OdontogramModule = ({
 										key={action.state}
 										type="button"
 										onClick={() => {
-											void updateToothState(selectedTeeth, action.state);
+											const num = menuConfig.toothNumber;
+											const targets =
+												selectedTeeth.length > 0 && selectedTeeth.includes(num)
+													? selectedTeeth
+													: [num];
+											void updateToothState(targets, action.state);
+											try {
+												const toothSurfaces =
+													activeSurfaces.length > 0 ? activeSurfaces : undefined;
+												const findingPayload =
+													toothSurfaces && toothSurfaces.length > 0
+														? {
+																toothNumber: num,
+																state: action.state,
+																surfaces: toothSurfaces,
+															}
+														: { toothNumber: num, state: action.state };
+												const soap =
+													generateSoapFromOdontogramFinding(findingPayload);
+												window.dispatchEvent(
+													new CustomEvent("dente-apply-soap-protocol", {
+														detail: {
+															finding: findingPayload,
+															soap,
+															mode: "smart_append",
+														},
+													}),
+												);
+											} catch {
+												// Safe event dispatch fallback
+											}
 											setMenuConfig(null);
 										}}
 										className={`flex items-center justify-center min-h-[48px] p-3 rounded-xl border transition-all duration-200 font-black text-sm sm:text-base cursor-pointer select-none active:scale-95 text-center leading-tight break-words min-w-0 ${action.className}`}
@@ -985,16 +968,31 @@ export const OdontogramModule = ({
 										const num = menuConfig.toothNumber;
 										const currentTooth = teethData.find((t) => t.toothNumber === num);
 										const st: ToothState = currentTooth?.state || "Healthy";
+										const toothSurfaces = (activeSurfaces.length > 0 ? activeSurfaces : undefined);
 										const anatomicalName = getToothAnatomicalNameRu(num);
-										const soap = generateSoapFromOdontogramFinding({
-											toothNumber: num,
-											state: st,
-										});
+										const findingPayload = toothSurfaces && toothSurfaces.length > 0
+											? { toothNumber: num, state: st, surfaces: toothSurfaces }
+											: { toothNumber: num, state: st };
+										const soap = generateSoapFromOdontogramFinding(findingPayload);
 										const clipText = `Зуб ${num} (${anatomicalName}): ${soap.diagnosisIcd10Label}.\n${soap.statusLocalis}\n${soap.treatmentDescription}`;
-										navigator.clipboard?.writeText?.(clipText);
-										showToast(`Протокол для зуба #${num} скопирован для Формы 043/у`, "success");
+										try {
+											navigator.clipboard?.writeText?.(clipText);
+										} catch {
+											// ignore clipboard permission
+										}
+										window.dispatchEvent(
+											new CustomEvent("dente-apply-soap-protocol", {
+												detail: {
+													finding: findingPayload,
+													soap,
+													mode: "smart_append",
+												},
+											}),
+										);
+										showToast(`Протокол для зуба #${num} внесён в Дневник 043/у`, "success");
 										setMenuConfig(null);
 									}}
+
 									className="col-span-2 flex items-center justify-center min-h-[48px] p-3 rounded-xl border transition-all duration-200 font-bold text-sm bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/25 hover:bg-teal-500/20 cursor-pointer min-w-0 text-center leading-tight"
 								>
 									<Sparkles className="w-4 h-4 inline mr-2 shrink-0" />

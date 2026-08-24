@@ -72,16 +72,16 @@ export const PerioKeypad: React.FC<PerioKeypadProps> = ({
 	const currentSiteInfo = siteLabels[activeSiteKey];
 
 	return (
-		<div className="perio-keypad-container bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-xs space-y-4">
+		<div className="perio-keypad-container bg-[var(--paper)] border border-[var(--line)] rounded-xl p-4 shadow-xs space-y-4">
 			{/* Top Active Target Header */}
-			<div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+			<div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] pb-3">
 				<div className="flex items-center gap-3">
 					<span className="px-3 py-1.5 bg-teal-600 text-white font-mono font-black text-base rounded-lg shadow-xs">
 						#{activeToothNumber}
 					</span>
 					<div>
 						<div className="flex items-center gap-2">
-							<span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+							<span className="text-sm font-bold text-[var(--ink)]">
 								{currentSiteInfo.short} — {currentSiteInfo.full}
 							</span>
 							<span
@@ -94,12 +94,12 @@ export const PerioKeypad: React.FC<PerioKeypadProps> = ({
 								{currentSiteInfo.isBuccal ? "Щёчно / Вестибулярно" : "Язычно / Нёбно"}
 							</span>
 						</div>
-						<div className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-4 mt-1">
+						<div className="text-xs text-[var(--muted)] flex items-center gap-4 mt-1">
 							<span>
-								Глубина PD: <strong className="text-slate-900 dark:text-slate-100 font-bold">{probingDepthMm} мм</strong>
+								Глубина PD: <strong className="text-[var(--ink)] font-bold">{probingDepthMm} мм</strong>
 							</span>
 							<span>
-								Рецессия GM: <strong className="text-slate-900 dark:text-slate-100 font-bold">{gingivalMarginMm} мм</strong>
+								Рецессия GM: <strong className="text-[var(--ink)] font-bold">{gingivalMarginMm} мм</strong>
 							</span>
 							<span>
 								Потеря CAL: <strong className="text-teal-600 dark:text-teal-400 font-extrabold">{calMm} мм</strong>
@@ -115,7 +115,7 @@ export const PerioKeypad: React.FC<PerioKeypadProps> = ({
 					className={`min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer border ${
 						autoAdvance
 							? "bg-teal-500/15 border-teal-500/50 text-teal-700 dark:text-teal-300 ring-2 ring-teal-500/40"
-							: "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100"
+							: "bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
 					}`}
 					title="Автоматический переход к следующей точке при вводе глубины кармана"
 				>
@@ -129,9 +129,9 @@ export const PerioKeypad: React.FC<PerioKeypadProps> = ({
 
 			{/* 12-Millimeter Depth Quick Keypad (Touch Target >= 48px) */}
 			<div>
-				<div className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center justify-between">
+				<div className="text-xs font-bold text-[var(--ink)] mb-2 flex items-center justify-between">
 					<span>Ввод глубины кармана (Probing Depth 1–12 мм):</span>
-					<span className="text-xs font-medium text-slate-500 dark:text-slate-400">1 тап (Florida Probe)</span>
+					<span className="text-xs font-medium text-[var(--muted)]">1 тап (Florida Probe)</span>
 				</div>
 				<div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-2">
 					{DEPTH_BUTTONS.map((depth) => {
@@ -155,7 +155,7 @@ export const PerioKeypad: React.FC<PerioKeypadProps> = ({
 											? "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-900/60 hover:bg-rose-100"
 											: isModerate
 												? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-900/60 hover:bg-amber-100"
-												: "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
+												: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-strong)]"
 								}`}
 								aria-label={`Глубина кармана ${depth} мм`}
 							>
@@ -171,7 +171,7 @@ export const PerioKeypad: React.FC<PerioKeypadProps> = ({
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
 				{/* 4 Clinical Indicators */}
 				<div className="space-y-2">
-					<div className="text-xs font-bold text-slate-700 dark:text-slate-300">
+					<div className="text-xs font-bold text-[var(--ink)]">
 						Клинические маркеры воспаления:
 					</div>
 					<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -182,7 +182,7 @@ export const PerioKeypad: React.FC<PerioKeypadProps> = ({
 							className={`min-h-[50px] px-2.5 py-1.5 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer border ${
 								bleedingOnProbing
 									? "bg-rose-600 text-white border-rose-700 shadow-sm ring-2 ring-rose-500/50"
-									: "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400"
+									: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-strong)]"
 							}`}
 							title="Кровоточивость при зондировании (BOP)"
 						>
@@ -200,7 +200,7 @@ export const PerioKeypad: React.FC<PerioKeypadProps> = ({
 							className={`min-h-[50px] px-2.5 py-1.5 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer border ${
 								suppuration
 									? "bg-amber-600 text-white border-amber-700 shadow-sm ring-2 ring-amber-500/50"
-									: "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400"
+									: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-strong)]"
 							}`}
 							title="Гноетечение из кармана (Suppuration / Pus)"
 						>
@@ -218,7 +218,7 @@ export const PerioKeypad: React.FC<PerioKeypadProps> = ({
 							className={`min-h-[50px] px-2.5 py-1.5 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer border ${
 								plaque
 									? "bg-yellow-500 text-slate-950 border-yellow-600 shadow-sm ring-2 ring-yellow-400/50"
-									: "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400"
+									: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-strong)]"
 							}`}
 							title="Зубная бляшка / налёт (Plaque)"
 						>
@@ -236,7 +236,7 @@ export const PerioKeypad: React.FC<PerioKeypadProps> = ({
 							className={`min-h-[50px] px-2.5 py-1.5 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer border ${
 								calculus
 									? "bg-slate-700 text-white border-slate-800 shadow-sm ring-2 ring-slate-600/50"
-									: "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400"
+									: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-strong)]"
 							}`}
 							title="Поддесневой зубной камень (Calculus)"
 						>
@@ -251,7 +251,7 @@ export const PerioKeypad: React.FC<PerioKeypadProps> = ({
 
 				{/* Gingival Margin Recession Steppers */}
 				<div className="space-y-2">
-					<div className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+					<div className="text-xs font-bold text-[var(--ink)] flex items-center justify-between">
 						<span>Уровень десневого края (GM):</span>
 						<span className="text-teal-600 dark:text-teal-400 font-black text-sm">{gingivalMarginMm} мм</span>
 					</div>
@@ -259,7 +259,7 @@ export const PerioKeypad: React.FC<PerioKeypadProps> = ({
 						<button
 							type="button"
 							onClick={() => onGingivalMarginChange(Math.max(-5, gingivalMarginMm - 1))}
-							className="min-h-[48px] min-w-[48px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer font-bold active:scale-95 shadow-2xs"
+							className="min-h-[48px] min-w-[48px] bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl flex items-center justify-center text-[var(--ink)] hover:bg-[var(--paper-strong)] cursor-pointer font-bold active:scale-95 shadow-2xs"
 							title="Уменьшить GM (гиперплазия / ложный карман)"
 						>
 							<Minus className="w-5 h-5" />
@@ -274,7 +274,7 @@ export const PerioKeypad: React.FC<PerioKeypadProps> = ({
 									className={`min-h-[48px] rounded-xl text-sm font-black transition-all cursor-pointer border ${
 										gingivalMarginMm === val
 											? "bg-teal-600 text-white border-teal-700 shadow-xs"
-											: "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100"
+											: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-strong)]"
 									}`}
 								>
 									{val > 0 ? `+${val}` : val}
@@ -285,7 +285,7 @@ export const PerioKeypad: React.FC<PerioKeypadProps> = ({
 						<button
 							type="button"
 							onClick={() => onGingivalMarginChange(Math.min(12, gingivalMarginMm + 1))}
-							className="min-h-[48px] min-w-[48px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer font-bold active:scale-95 shadow-2xs"
+							className="min-h-[48px] min-w-[48px] bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl flex items-center justify-center text-[var(--ink)] hover:bg-[var(--paper-strong)] cursor-pointer font-bold active:scale-95 shadow-2xs"
 							title="Увеличить GM (рецессия десны)"
 						>
 							<Plus className="w-5 h-5" />
@@ -295,12 +295,12 @@ export const PerioKeypad: React.FC<PerioKeypadProps> = ({
 			</div>
 
 			{/* Navigation Buttons (Touch Target >= 44px) */}
-			<div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 dark:border-slate-800 pt-3">
+			<div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--line)] pt-3">
 				<div className="flex items-center gap-2">
 					<button
 						type="button"
 						onClick={onPrevTooth}
-						className="min-h-[44px] px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+						className="min-h-[44px] px-3.5 bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--paper-strong)] text-[var(--ink)] rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
 					>
 						<ChevronLeft className="w-4 h-4" />
 						<span>Пред. зуб</span>
@@ -308,7 +308,7 @@ export const PerioKeypad: React.FC<PerioKeypadProps> = ({
 					<button
 						type="button"
 						onClick={onPrevSite}
-						className="min-h-[44px] px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+						className="min-h-[44px] px-3.5 bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--paper-strong)] text-[var(--ink)] rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
 					>
 						<ArrowLeft className="w-4 h-4" />
 						<span>Пред. точка</span>

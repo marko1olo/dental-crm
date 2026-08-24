@@ -49,12 +49,14 @@ describe("Odontogram Touch Target Calibration for Clinical Tablets", () => {
 		const match = cssContent.match(radialBtnRegex);
 		assert.ok(match, "radial-item-btn block must exist");
 		const block = match[0];
+		const minH = parseInt(block.match(/min-height:\s*(\d+)px/)?.[1] || "0", 10);
+		const minW = parseInt(block.match(/min-width:\s*(\d+)px/)?.[1] || "0", 10);
 		assert.ok(
-			block.includes("min-height: 44px"),
+			minH >= 44,
 			"radial-item-btn must have min-height >= 44px",
 		);
 		assert.ok(
-			block.includes("min-width: 44px"),
+			minW >= 44,
 			"radial-item-btn must have min-width >= 44px",
 		);
 		assert.ok(

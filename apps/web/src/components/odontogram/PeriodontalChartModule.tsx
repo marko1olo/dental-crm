@@ -410,11 +410,28 @@ export function PeriodontalChartModule({
 	const handleInsertProtocol = () => {
 		if (onInsertToProtocol) {
 			onInsertToProtocol(protocol043Text);
-			showToast(
-				"Протокол пародонтологического обследования успешно вставлен в карту 043/у!",
-				"success",
-			);
 		}
+		try {
+			window.dispatchEvent(
+				new CustomEvent("dente-apply-soap-protocol", {
+					detail: {
+						soap: {
+							diagnosisIcd10: diagnosis.icd10Code,
+							statusLocalis: protocol043Text,
+							treatmentDescription:
+								"• Комплексная профессиональная гигиена полости рта (УЗ-скейлинг + AirFlow + полировка).\n• Индивидуальный подбор средств гигиены и межзубных ёршиков.\n• Контрольный пародонтальный осмотр через 3–6 месяцев.",
+						},
+						mode: "smart_append",
+					},
+				}),
+			);
+		} catch {
+			// ignore event dispatch error
+		}
+		showToast(
+			"Протокол пародонтологического обследования успешно вставлен в карту 043/у!",
+			"success",
+		);
 	};
 
 	const currentTooth: PerioToothRecord =

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
 	Activity,
 	AlertCircle,
@@ -16,6 +17,7 @@ import {
 	type CariogramInput,
 	DEFAULT_CARIOGRAM_INPUT,
 	generateCariogramPieChartSlices,
+	generatePediatricCariogramDiaryText,
 	isPrimaryTooth,
 	PRIMARY_TO_PERMANENT_SUCCESSOR_MAP,
 	RESORPTION_STAGE_DEFINITIONS,
@@ -81,6 +83,38 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 			),
 		[cariogramResult.sectors],
 	);
+
+	const handleInsertCariogramTo043 = () => {
+		const teethStatesMap = (teethData ?? []).reduce(
+			(acc, t) => ({ ...acc, [t.toothNumber]: t.state }),
+			{} as Record<number, string>,
+		);
+		const text = generatePediatricCariogramDiaryText({
+			patientAgeYears: selectedAge,
+			cariogramInput,
+			teethStates: teethStatesMap,
+		});
+		try {
+			window.dispatchEvent(
+				new CustomEvent("dente-apply-soap-protocol", {
+					detail: {
+						soap: {
+							diagnosisIcd10: "Z01.2",
+							statusLocalis: text,
+							treatmentDescription: `• Индивидуальный план профилактики кариеса (Шанс избежать: ${cariogramResult.chanceOfAvoidingCariesPercent}%, Риск: ${cariogramResult.riskCategoryNameRu}).\n• ${cariogramResult.preventiveProgram.professionalHygieneRu}\n• ${cariogramResult.preventiveProgram.fluorideVarnishProtocolRu}\n• ${cariogramResult.preventiveProgram.homeCareProtocolRu}\n• ${cariogramResult.preventiveProgram.dietaryGuidanceRu}`,
+						},
+						mode: "smart_append",
+					},
+				}),
+			);
+		} catch {
+			// ignore event dispatch error
+		}
+		showToast(
+			"Протокол Cariogram успешно перенесён в медицинскую карту 043/у!",
+			"success",
+		);
+	};
 
 	// Keyboard Navigation and Fast Hotkeys
 	useEffect(() => {
@@ -201,15 +235,15 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 
 	if (!isOpen) return null;
 
-	return (
+	const modalContent = (
 		<div
-			className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto"
+			className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="pediatric-modal-title"
 		>
 			<div
-				className="relative flex flex-col w-full max-w-5xl max-h-[92vh] bg-[var(--odontogram-paper,var(--paper,#ffffff))] text-[var(--odontogram-ink,var(--ink,#0f172a))] rounded-3xl border border-[var(--odontogram-border,var(--line,#cbd5e1))] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+				className="relative flex flex-col w-full max-w-5xl max-h-[92vh] bg-[var(--odontogram-paper,var(--paper,#ffffff))] text-[var(--odontogram-ink,var(--ink,#0f172a))] rounded-3xl border border-[var(--odontogram-border,var(--line,#cbd5e1))] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 my-auto"
 				onClick={(e) => e.stopPropagation()}
 			>
 				{/* Modal Header */}
@@ -665,6 +699,17 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 												<span>{cariogramResult.preventiveProgram.dietaryGuidanceRu}</span>
 											</div>
 										</div>
+
+										<div className="pt-2">
+											<button
+												type="button"
+												onClick={handleInsertCariogramTo043}
+												className="w-full min-h-[48px] flex items-center justify-center gap-2.5 px-6 py-3 rounded-2xl bg-teal-600 hover:bg-teal-500 text-white text-sm sm:text-base font-bold shadow-lg shadow-teal-600/20 transition-all cursor-pointer active:scale-[0.98]"
+											>
+												<Sparkles className="w-5 h-5 shrink-0" />
+												<span>Вставить протокол Cariogram в карту 043/у (1 клик)</span>
+											</button>
+										</div>
 									</div>
 								</div>
 							</div>
@@ -1049,4 +1094,9 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 			</div>
 		</div>
 	);
+
+	if (typeof document !== "undefined") {
+		return createPortal(modalContent, document.body);
+	}
+	return modalContent;
 };

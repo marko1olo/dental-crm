@@ -1,10 +1,12 @@
 import React, { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
+	AlertTriangle,
 	Coins,
 	Crown,
 	Flame,
 	Hammer,
+	Layers,
 	Sparkles,
 	Trash2,
 	Wrench,
@@ -30,7 +32,10 @@ export interface RadialToothMenuProps {
 	toothNumber: number;
 	anchorRect: { x: number; y: number; width: number; height: number };
 	currentState?: ToothState | undefined;
-	onSelectState: (state: ToothState) => void;
+	iropz?: number | undefined;
+	surfaces?: readonly string[] | undefined;
+	onSelectState: (state: ToothState, surfaces?: readonly string[]) => void;
+	onSelectSurfaces?: (surfaces: readonly string[]) => void;
 	onOpenEndo?: () => void;
 	onAddToInvoice?: () => void;
 	onClose: () => void;
@@ -40,7 +45,10 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 	toothNumber,
 	anchorRect,
 	currentState = "Healthy",
+	iropz,
+	surfaces,
 	onSelectState,
+	onSelectSurfaces,
 	onOpenEndo,
 	onAddToInvoice,
 	onClose,
@@ -140,7 +148,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 			const parsedState = getToothStateFromHotkey(e.key);
 			if (parsedState) {
 				e.preventDefault();
-				onSelectState(parsedState);
+				onSelectState(parsedState, surfaces);
 				onClose();
 				return;
 			}
@@ -148,7 +156,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 			const matched = items.find((it) => it.hotkey === keyUpper);
 			if (matched && matched.state) {
 				e.preventDefault();
-				onSelectState(matched.state);
+				onSelectState(matched.state, surfaces);
 				onClose();
 			}
 		};
@@ -165,7 +173,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 			window.removeEventListener("keydown", handleKeyDown);
 			window.removeEventListener("mousedown", handleClickOutside);
 		};
-	}, [onClose, onSelectState, items]);
+	}, [onClose, onSelectState, items, surfaces]);
 
 	const rawCenterX = anchorRect.x + anchorRect.width / 2;
 	const rawCenterY = anchorRect.y + anchorRect.height / 2;
@@ -219,7 +227,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 						transform: "translate(-50%, -50%)",
 					}}
 				>
-					<span className="text-[11px] uppercase font-black text-teal-600 dark:text-teal-400 tracking-wider">Зуб</span>
+					<span className="text-xs uppercase font-black text-teal-600 dark:text-teal-400 tracking-wider">Зуб</span>
 					<span className="text-3xl font-black leading-none text-[var(--odontogram-ink)]">{toothNumber}</span>
 					<button
 						type="button"
@@ -245,7 +253,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 								key={item.id}
 								type="button"
 								onClick={() => {
-									if (item.state) onSelectState(item.state);
+									if (item.state) onSelectState(item.state, surfaces);
 									onClose();
 								}}
 								style={{
@@ -283,13 +291,84 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 					})}
 				</div>
 
+				{/* Black classification cavity 1-touch macros */}
+				<div
+					className="absolute flex items-center gap-1.5 pointer-events-auto bg-[var(--odontogram-paper)]/95 backdrop-blur-xl px-3.5 py-1.5 rounded-full border border-[var(--odontogram-border)] shadow-xl z-20"
+					style={{
+						left: "50%",
+						top: `calc(50% - ${radius + 52}px)`,
+						transform: "translate(-50%, 0)",
+					}}
+				>
+					<span className="text-xs uppercase font-black text-amber-600 dark:text-amber-400 px-1">Блэк:</span>
+					<button
+						type="button"
+						onClick={() => {
+							onSelectState("Caries", ["M", "O", "D"]);
+							onClose();
+						}}
+						className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30"
+						title="Медиально-окклюзионно-дистальная полость (II класс)"
+					>
+						[MOD]
+					</button>
+					<button
+						type="button"
+						onClick={() => {
+							onSelectState("Caries", ["M", "O"]);
+							onClose();
+						}}
+						className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30"
+						title="Медиально-окклюзионная полость (II класс)"
+					>
+						[MO]
+					</button>
+					<button
+						type="button"
+						onClick={() => {
+							onSelectState("Caries", ["O", "D"]);
+							onClose();
+						}}
+						className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30"
+						title="Окклюзионно-дистальная полость (II класс)"
+					>
+						[OD]
+					</button>
+					<button
+						type="button"
+						onClick={() => {
+							onSelectState("Caries", ["V"]);
+							onClose();
+						}}
+						className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30"
+						title="Пришеечная полость (V класс)"
+					>
+						[V класс]
+					</button>
+				</div>
+
+				{/* IROPZ > 0.6 Smart Orthopedic Warning Banner */}
+				{(Boolean(iropz && iropz > 0.6) || currentState === "Pulpitis" || currentState === "Periodontitis") && (
+					<div
+						className="absolute flex items-center gap-2 pointer-events-auto bg-amber-500/20 text-amber-900 dark:text-amber-200 px-3.5 py-1.5 rounded-full border border-amber-500/40 shadow-xl z-20 text-xs font-bold whitespace-nowrap"
+						style={{
+							left: "50%",
+							top: `calc(50% + ${radius + 10}px)`,
+							transform: "translate(-50%, 0)",
+						}}
+					>
+						<AlertTriangle size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+						<span>ИРОПЗ &gt; 0.6: Рекомендовано ортопедическое восстановление (коронка Z51.8)</span>
+					</div>
+				)}
+
 				{/* Quick Action Footer Controls - centered below the radial disc */}
 				{Boolean(onOpenEndo || onAddToInvoice) && (
 					<div
 						className="absolute flex items-center gap-3 pointer-events-auto bg-[var(--odontogram-paper)] backdrop-blur-xl px-4 py-2 rounded-full border border-[var(--odontogram-border)] shadow-2xl z-20"
 						style={{
 							left: "50%",
-							top: `calc(50% + ${radius + 52}px)`,
+							top: `calc(50% + ${radius + 56}px)`,
 							transform: "translate(-50%, 0)",
 						}}
 					>

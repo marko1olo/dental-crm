@@ -1,19 +1,34 @@
 /**
  * DENTE CRM — Patient-Friendly Treatment Plan Stage Card
  * Features:
- * - Dual service naming: prominent human-friendly title + statutory Order 804n code
- * - "Все включено" (All Inclusive) indicator for anesthesia, RVG scans, isolation
+ * - Prominent human-friendly title + statutory Order 804n code
+ * - Transparent "Все включено" (All Inclusive) cost breakdown: 0 ₽ for anesthesia, RVG scans, cofferdam isolation
+ * - Stage warranty obligation badge (1–2 years for fillings/therapy, 2–5 years for crowns/prosthetics)
+ * - Plain-Russian procedure explanation reducing patient anxiety
  * - 1-Click SBP Stage Payment button
  */
 
-import { Check, CheckCircle2, Clock, CreditCard, Heart, ShieldCheck, Sparkles } from "lucide-react";
+import {
+	Check,
+	CheckCircle2,
+	Clock,
+	CreditCard,
+	FileText,
+	Heart,
+	HelpCircle,
+	Info,
+	ShieldCheck,
+	Sparkles,
+} from "lucide-react";
 import type React from "react";
+import { useState } from "react";
 import { formatRubles } from "../portal/patientCabinet/patientCabinetEngine.js";
 
 export interface DualServiceItem {
 	readonly code804n: string;
 	readonly humanTitleRu: string;
 	readonly technicalTitleRu: string;
+	readonly explanationRu?: string | undefined;
 	readonly quantity: number;
 	readonly priceRub: number;
 	readonly totalRub: number;
@@ -26,89 +41,220 @@ export interface PatientTreatmentStageProps {
 		readonly id: string;
 		readonly orderIndex: number;
 		readonly titleRu: string;
+		readonly categoryRu?: string | undefined;
 		readonly teethFdi: readonly string[];
 		readonly costRub: number;
 		readonly status: "completed" | "in_progress" | "planned";
 		readonly procedures: readonly string[];
+		readonly targetDateRu?: string | undefined;
+		readonly warrantyMonths?: number | undefined;
 	};
 	readonly onPaySbp?: (() => void) | undefined;
+	readonly showDetailedBreakdown?: boolean | undefined;
 }
 
-export function formatDualServiceName(code: string, rawTitle: string): { humanTitleRu: string; statutoryCode804n: string } {
-	// If title already has clean human mapping
-	if (code.startsWith("A16.07.002") || rawTitle.toLowerCase().includes("пломб") || rawTitle.toLowerCase().includes("кариес")) {
-		return { humanTitleRu: "Лечение кариеса и светоотверждаемая пломба", statutoryCode804n: code || "A16.07.002.001" };
+export interface DualServiceFormatResult {
+	readonly humanTitleRu: string;
+	readonly statutoryCode804n: string;
+	readonly explanationRu: string;
+	readonly defaultWarrantyRu: string;
+}
+
+/**
+ * Maps statutory Ministry of Health 804n nomenclature codes and dental jargon
+ * into clear, transparent, and reassuring Russian terms for patients.
+ */
+export function formatDualServiceName(code: string, rawTitle: string): DualServiceFormatResult {
+	const lower = rawTitle.toLowerCase();
+
+	// 1. Caries & Fillings
+	if (code.startsWith("A16.07.002") || lower.includes("пломб") || lower.includes("кариес") || lower.includes("реставрац")) {
+		return {
+			humanTitleRu: "Лечение кариеса и светоотверждаемая пломба",
+			statutoryCode804n: code || "A16.07.002.001",
+			explanationRu: "Бережное удаление кариеса, антисептическая обработка и восстановление анатомической формы зуба прочным нанокомпозитом.",
+			defaultWarrantyRu: "Гарантия 1–2 года",
+		};
 	}
-	if (code.startsWith("A16.07.004") || rawTitle.toLowerCase().includes("канал") || rawTitle.toLowerCase().includes("пульпит")) {
-		return { humanTitleRu: "Лечение корневых каналов под микроскопом", statutoryCode804n: code || "A16.07.004" };
+
+	// 2. Root Canals & Endodontics / Pulpitis / Periodontitis
+	if (code.startsWith("A16.07.004") || lower.includes("канал") || lower.includes("пульпит") || lower.includes("периодонтит") || lower.includes("эндодонт")) {
+		return {
+			humanTitleRu: "Лечение корневых каналов под микроскопом",
+			statutoryCode804n: code || "A16.07.004.001",
+			explanationRu: "Высокоточное 3D-очищение и герметичное пломбирование каналов зуба под дентальным микроскопом с контролем визиографа.",
+			defaultWarrantyRu: "Диспансерное наблюдение 1 год",
+		};
 	}
-	if (code.startsWith("A16.07.006") || rawTitle.toLowerCase().includes("коронк") || rawTitle.toLowerCase().includes("циркони")) {
-		return { humanTitleRu: "Установка коронки из диоксида циркония", statutoryCode804n: code || "A16.07.006" };
+
+	// 3. Crowns & Orthopedics / Zirconia / E.max
+	if (code.startsWith("A16.07.006") || lower.includes("коронк") || lower.includes("циркони") || lower.includes("e.max") || lower.includes("металлокерам")) {
+		return {
+			humanTitleRu: "Установка эстетической коронки (диоксид циркония / E.max)",
+			statutoryCode804n: code || "A16.07.006.001",
+			explanationRu: "Изготовление и постоянная фиксация сверхпрочной монолитной коронки, точно повторяющей цвет и анатомию естественного зуба.",
+			defaultWarrantyRu: "Гарантия 2–5 лет",
+		};
 	}
-	if (code.startsWith("A16.07.054") || rawTitle.toLowerCase().includes("имплант")) {
-		return { humanTitleRu: "Установка дентального имплантата под ключ", statutoryCode804n: code || "A16.07.054" };
+
+	// 4. Veneers & Esthetics
+	if (code.startsWith("A16.07.003") || lower.includes("винир") || lower.includes("люминир") || lower.includes("накладк")) {
+		return {
+			humanTitleRu: "Керамический винир E.max (индивидуальная эстетика)",
+			statutoryCode804n: code || "A16.07.003",
+			explanationRu: "Тончайшая керамическая пластинка для создания безупречной зоны улыбки, исправления формы и цвета зуба.",
+			defaultWarrantyRu: "Гарантия 2–5 лет",
+		};
 	}
-	if (code.startsWith("A16.07.051") || rawTitle.toLowerCase().includes("гигиен") || rawTitle.toLowerCase().includes("air-flow")) {
-		return { humanTitleRu: "Профессиональная комплексная гигиена и Air-Flow", statutoryCode804n: code || "A16.07.051" };
+
+	// 5. Implants & Surgery
+	if (code.startsWith("A16.07.054") || lower.includes("имплант") || lower.includes("dentium") || lower.includes("straumann")) {
+		return {
+			humanTitleRu: "Установка дентального имплантата под ключ",
+			statutoryCode804n: code || "A16.07.054",
+			explanationRu: "Установка премиального титанового имплантата с пожизненной гарантией производителя по 3D-навигационному шаблону.",
+			defaultWarrantyRu: "Пожизненная гарантия на титан + 3 года на работу",
+		};
 	}
-	return { humanTitleRu: rawTitle, statutoryCode804n: code || "Номенклатура 804н" };
+
+	// 6. Professional Hygiene & Air-Flow
+	if (code.startsWith("A16.07.051") || lower.includes("гигиен") || lower.includes("air-flow") || lower.includes("чистк") || lower.includes("ультразвук")) {
+		return {
+			humanTitleRu: "Комплексная гигиена (УЗ + Air-Flow + реминерализация)",
+			statutoryCode804n: code || "A16.07.051",
+			explanationRu: "Удаление твердого зубного камня ультразвуком, снятие мягкого налета порошком Air-Flow и укрепление эмали фторлаком.",
+			defaultWarrantyRu: "Рекомендованный интервал 6 мес.",
+		};
+	}
+
+	// 7. Extractions
+	if (code.startsWith("A16.07.001") || lower.includes("удален") || lower.includes("экстракц") || lower.includes("мудрост")) {
+		return {
+			humanTitleRu: "Атравматичное удаление зуба с сохранением костной ткани",
+			statutoryCode804n: code || "A16.07.001",
+			explanationRu: "Безболезненное извлечение зуба с бережным сохранением лунки и костных стенок для комфортного заживления.",
+			defaultWarrantyRu: "Бесплатный контрольный осмотр",
+		};
+	}
+
+	// 8. Inlays / Onlays
+	if (code.startsWith("A16.07.005") || lower.includes("вкладк")) {
+		return {
+			humanTitleRu: "Керамическая культевая / восстановительная вкладка",
+			statutoryCode804n: code || "A16.07.005",
+			explanationRu: "Лабораторная керамическая микро-вставка для восстановления сильно разрушенного зуба перед установкой коронки.",
+			defaultWarrantyRu: "Гарантия 2 года",
+		};
+	}
+
+	return {
+		humanTitleRu: rawTitle,
+		statutoryCode804n: code || "Номенклатура МЗ РФ 804н",
+		explanationRu: "Медицинская манипуляция по клиническим протоколам СтАР и Минздрава РФ.",
+		defaultWarrantyRu: "Гарантия клиники DENTE",
+	};
 }
 
 export const TreatmentPlanStageCard: React.FC<PatientTreatmentStageProps> = ({
 	stage,
 	onPaySbp,
+	showDetailedBreakdown = true,
 }) => {
 	const isCompleted = stage.status === "completed";
 	const isInProgress = stage.status === "in_progress";
 
+	// Determine warranty label
+	const warrantyText = stage.warrantyMonths
+		? `Гарантия ${Math.round(stage.warrantyMonths / 12)} ${stage.warrantyMonths >= 24 ? "года" : "год"} (${stage.warrantyMonths} мес.)`
+		: stage.titleRu.toLowerCase().includes("коронк") || stage.titleRu.toLowerCase().includes("ортопед")
+			? "Гарантия 2–5 лет"
+			: stage.titleRu.toLowerCase().includes("имплант")
+				? "Пожизненная гарантия на титан"
+				: "Гарантия 1–2 года";
+
 	return (
 		<div
+			className="treatment-plan-stage-card"
+			data-testid={`stage-card-${stage.id}`}
 			style={{
-				padding: "14px",
-				borderRadius: "10px",
+				padding: "16px",
+				borderRadius: "12px",
 				backgroundColor: "var(--pc-surface, #1e293b)",
-				border: `1px solid ${isCompleted ? "#10b981" : isInProgress ? "#f59e0b" : "var(--pc-border, #334155)"}`,
+				border: `1.5px solid ${isCompleted ? "var(--pc-success, #10b981)" : isInProgress ? "var(--pc-warning, #f59e0b)" : "var(--pc-border, #334155)"}`,
 				display: "flex",
 				flexDirection: "column",
-				gap: "10px",
+				gap: "12px",
+				transition: "all 0.2s ease",
+				boxShadow: isInProgress ? "0 4px 12px rgba(245, 158, 11, 0.15)" : "none",
 			}}
 		>
-			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "8px" }}>
-				<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+			{/* Stage Header */}
+			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "10px" }}>
+				<div style={{ display: "flex", alignItems: "flex-start", gap: "12px", flex: 1, minWidth: "220px" }}>
 					<span
 						style={{
-							width: "26px",
-							height: "26px",
+							width: "30px",
+							height: "30px",
+							minWidth: "30px",
 							borderRadius: "50%",
-							backgroundColor: isCompleted ? "#10b981" : isInProgress ? "#f59e0b" : "#475569",
+							backgroundColor: isCompleted ? "var(--pc-success, #10b981)" : isInProgress ? "var(--pc-warning, #f59e0b)" : "#475569",
 							color: "#ffffff",
 							fontWeight: 800,
-							fontSize: "12px",
+							fontSize: "13px",
 							display: "flex",
 							alignItems: "center",
 							justifyContent: "center",
+							boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
 						}}
 					>
-						{isCompleted ? "✓" : stage.orderIndex}
+						{isCompleted ? <Check size={16} strokeWidth={3} /> : stage.orderIndex}
 					</span>
-					<div>
-						<strong style={{ fontSize: "15px" }}>{stage.titleRu}</strong>
+
+					<div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+						<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+							<strong style={{ fontSize: "15px", color: "var(--pc-text-main, #f8fafc)" }}>
+								{stage.titleRu}
+							</strong>
+							<span
+								className={`pc-status-badge ${isCompleted ? "paid" : isInProgress ? "unpaid" : ""}`}
+								style={{ fontSize: "11px", padding: "2px 8px" }}
+							>
+								{isCompleted ? "✓ Завершен" : isInProgress ? "⏳ В процессе лечения" : "📅 Запланирован"}
+							</span>
+						</div>
+
 						{stage.teethFdi.length > 0 && (
-							<div style={{ fontSize: "12px", color: "var(--pc-primary, #0d9488)", marginTop: "2px" }}>
-								Зубы: {stage.teethFdi.join(", ")}
+							<div style={{ fontSize: "12px", color: "var(--pc-primary, #0d9488)", fontWeight: 600 }}>
+								Область лечения: зубы № {stage.teethFdi.join(", ")}
+							</div>
+						)}
+
+						{stage.targetDateRu && (
+							<div style={{ fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)" }}>
+								Ориентировочный срок: {stage.targetDateRu}
 							</div>
 						)}
 					</div>
 				</div>
 
-				<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-					<span style={{ fontSize: "16px", fontWeight: 800 }}>{formatRubles(stage.costRub)}</span>
+				{/* Price & Payment Action */}
+				<div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", justifyContent: "flex-end" }}>
+					<div style={{ textAlign: "right" }}>
+						<span style={{ fontSize: "17px", fontWeight: 800, color: "var(--pc-text-main, #f8fafc)" }}>
+							{formatRubles(stage.costRub)}
+						</span>
+						<div style={{ fontSize: "11px", color: "var(--pc-success, #10b981)", fontWeight: 600 }}>
+							Фиксированная цена
+						</div>
+					</div>
+
 					{!isCompleted && onPaySbp && (
 						<button
 							type="button"
 							onClick={onPaySbp}
+							data-testid={`pay-stage-btn-${stage.id}`}
 							style={{
-								padding: "8px 16px",
+								padding: "10px 16px",
 								minHeight: "44px",
 								borderRadius: "8px",
 								border: "none",
@@ -121,6 +267,7 @@ export const TreatmentPlanStageCard: React.FC<PatientTreatmentStageProps> = ({
 								alignItems: "center",
 								gap: "6px",
 								touchAction: "manipulation",
+								boxShadow: "0 2px 6px rgba(13, 148, 136, 0.3)",
 							}}
 						>
 							<CreditCard size={16} />
@@ -130,22 +277,38 @@ export const TreatmentPlanStageCard: React.FC<PatientTreatmentStageProps> = ({
 				</div>
 			</div>
 
-			{/* All-Inclusive Guarantee Badge */}
+			{/* All-Inclusive & Warranty Badge Container */}
 			<div
 				style={{
-					backgroundColor: "rgba(13, 148, 136, 0.1)",
-					border: "1px solid rgba(13, 148, 136, 0.3)",
-					borderRadius: "6px",
-					padding: "6px 10px",
-					fontSize: "11px",
-					color: "var(--pc-primary, #0d9488)",
 					display: "flex",
-					alignItems: "center",
+					flexDirection: "column",
 					gap: "6px",
+					backgroundColor: "rgba(13, 148, 136, 0.08)",
+					border: "1px solid rgba(13, 148, 136, 0.25)",
+					borderRadius: "8px",
+					padding: "8px 12px",
+					fontSize: "12px",
+					color: "var(--pc-text-main, #f8fafc)",
 				}}
 			>
-				<ShieldCheck size={14} />
-				<span>Всё включено: анестезия, снимки визиографа, изоляция коффердамом и гарантия клиники</span>
+				<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "6px" }}>
+					<div style={{ display: "flex", alignItems: "center", gap: "6px", color: "var(--pc-primary, #0d9488)", fontWeight: 700 }}>
+						<ShieldCheck size={16} />
+						<span>Всё включено (без доплат на кассе):</span>
+					</div>
+
+					<div style={{ display: "flex", alignItems: "center", gap: "4px", color: "var(--pc-success, #10b981)", fontWeight: 700, fontSize: "11px" }}>
+						<Sparkles size={13} />
+						<span>{warrantyText}</span>
+					</div>
+				</div>
+
+				<div style={{ display: "flex", flexWrap: "wrap", gap: "10px", fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)" }}>
+					<span>✓ Анестезия (0 ₽ • включено)</span>
+					<span>✓ Снимки RVG (0 ₽ • включено)</span>
+					<span>✓ Коффердам (0 ₽ • включено)</span>
+					<span>✓ Шлифовка и полировка (0 ₽ • включено)</span>
+				</div>
 			</div>
 
 			{/* Procedures list with dual names */}
@@ -156,19 +319,27 @@ export const TreatmentPlanStageCard: React.FC<PatientTreatmentStageProps> = ({
 						<div
 							key={pIdx}
 							style={{
-								padding: "6px 10px",
+								padding: "8px 12px",
 								backgroundColor: "var(--pc-bg, #0f172a)",
-								borderRadius: "6px",
+								borderRadius: "8px",
+								border: "1px solid var(--pc-border, #334155)",
 								display: "flex",
-								justifyContent: "space-between",
-								alignItems: "center",
+								flexDirection: "column",
+								gap: "3px",
 							}}
 						>
-							<div>
-								<div style={{ fontSize: "13px", fontWeight: 600 }}>{dual.humanTitleRu}</div>
-								<div style={{ fontSize: "10px", color: "var(--pc-text-muted, #94a3b8)" }}>
-									Код Минздрава: {dual.statutoryCode804n} &bull; {proc}
+							<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+								<div style={{ fontSize: "13px", fontWeight: 700, color: "var(--pc-text-main, #f8fafc)" }}>
+									{dual.humanTitleRu}
 								</div>
+							</div>
+
+							<div style={{ fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)", lineHeight: "1.4" }}>
+								{dual.explanationRu}
+							</div>
+
+							<div style={{ fontSize: "10px", color: "var(--pc-text-muted, #64748b)", marginTop: "2px" }}>
+								Минздрав 804н: {dual.statutoryCode804n} &bull; {proc}
 							</div>
 						</div>
 					);
@@ -177,3 +348,4 @@ export const TreatmentPlanStageCard: React.FC<PatientTreatmentStageProps> = ({
 		</div>
 	);
 };
+

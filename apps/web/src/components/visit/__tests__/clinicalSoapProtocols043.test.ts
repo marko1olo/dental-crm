@@ -6,6 +6,8 @@ import {
 	ANESTHESIA_QUICK_PRESETS,
 	appendAnesthesiaToSoap,
 	appendRecommendationToSoap,
+	calculateCompositeRestorationWarranty,
+	appendCompositeWarrantyToSoap,
 	formatSurfacesRu,
 	generateSoapFromOdontogramFinding,
 	generateSoapFromOdontogramStates,
@@ -88,6 +90,9 @@ describe("Clinical SOAP Diary & Form 043/u Protocols (clinicalProtocols043)", ()
 			assert.match(soap.treatmentDescription, /наногибридным светоотверждаемым композитом/i); // composite layer
 			assert.match(soap.treatmentDescription, /шлифовка и финишная полировка/i); // polishing
 			assert.match(soap.treatmentDescription, /Окклюзионная коррекция/i);
+			assert.match(soap.treatmentDescription, /Гарантийные обязательства/i);
+			assert.match(soap.treatmentDescription, /Гарантийный срок на световую композитную реставрацию/i);
+			assert.match(soap.recommendations ?? "", /Гарантийный срок на реставрацию: 18 мес/i);
 		});
 
 		it("Pulpitis (K04.0): includes devitalization / extirpation, canal instrumentation, Calcept / gutta-percha obturation", () => {
@@ -110,6 +115,10 @@ describe("Clinical SOAP Diary & Form 043/u Protocols (clinicalProtocols043)", ()
 			assert.match(soap.statusLocalis, /ЭОД — 25-45 мкА/i);
 
 			// Check all mandatory endo steps
+			assert.match(
+				soap.treatmentDescription,
+				/Артикаин 4% с эпинефрином 1:100 000 \/ 1:200 000, 1.7 мл/i,
+			);
 			assert.match(
 				soap.treatmentDescription,
 				/Витальная экстирпация пульпы.*девитализация/i,
@@ -143,6 +152,10 @@ describe("Clinical SOAP Diary & Form 043/u Protocols (clinicalProtocols043)", ()
 			assert.match(soap.statusLocalis, /периапикальный очаг/i);
 
 			// Check all mandatory perio/re-treatment steps
+			assert.match(
+				soap.treatmentDescription,
+				/Артикаин 4% с эпинефрином 1:100 000 \/ 1:200 000, 1.7 мл/i,
+			);
 			assert.match(
 				soap.treatmentDescription,
 				/распломбировка и ревизия корневых каналов/i,
@@ -279,7 +292,7 @@ describe("Clinical SOAP Diary & Form 043/u Protocols (clinicalProtocols043)", ()
 			// 5. Treatment (P) should contain all clinical protocols and post-op recommendations
 			assert.match(soap.treatmentDescription ?? "", /• Зуб 16: Препарирование кариозной полости/i);
 			assert.match(soap.treatmentDescription ?? "", /• Зуб 24: Зуб 24: Эндодонтическое лечение/i);
-			assert.match(soap.treatmentDescription ?? "", /• Зуб 36: Анестезия.*распломбировка/i);
+			assert.match(soap.treatmentDescription ?? "", /• Зуб 36:.*распломбировка/i);
 			assert.match(
 				soap.treatmentDescription ?? "",
 				/• Зуб 48: Инфильтрационная и проводниковая анестезия/i,
@@ -410,6 +423,72 @@ describe("Clinical SOAP Diary & Form 043/u Protocols (clinicalProtocols043)", ()
 			for (const [complaint, expectedIcd10] of Object.entries(COMPLAINT_ICD10_MAP)) {
 				assert.ok(expectedIcd10.length >= 3, `МКБ-10 для ${complaint} корректен`);
 			}
+		});
+
+		it("автоматически подставляет пресет анестезии Артикаин с эпинефрином при Пульпите и Периодонтите", () => {
+			// Pulpitis K04.0
+			const soapPulpitis = generateSoapFromOdontogramFinding({
+				toothNumber: 15,
+				state: "Pulpitis",
+				surfaces: ["O", "D"],
+			});
+			assert.match(
+				soapPulpitis.treatmentDescription,
+				/Инфильтрационная\/проводниковая анестезия \(Артикаин 4% с эпинефрином 1:100 000 \/ 1:200 000, 1\.7 мл\)/i,
+			);
+
+			// Periodontitis K04.5
+			const soapPerio = generateSoapFromOdontogramFinding({
+				toothNumber: 46,
+				state: "Periodontitis",
+				subType: "chronic",
+			});
+			assert.match(
+				soapPerio.treatmentDescription,
+				/Инфильтрационная\/проводниковая анестезия \(Артикаин 4% с эпинефрином 1:100 000 \/ 1:200 000, 1\.7 мл\)/i,
+			);
+		});
+
+		it("рассчитывает гарантийный срок на композитную реставрацию (12–24 мес) и срок службы (24–36 мес)", () => {
+			// 1 surface -> 24 mos warranty, 36 mos service life
+			const w1 = calculateCompositeRestorationWarranty({ toothNumber: 16, surfaces: ["O"] });
+			assert.equal(w1.warrantyMonths, 24);
+			assert.equal(w1.serviceLifeMonths, 36);
+			assert.match(w1.warrantyTextRu, /24 мес/);
+			assert.match(w1.warrantyTextRu, /36 мес/);
+
+			// 2 surfaces -> 18 mos warranty, 36 mos service life
+			const w2 = calculateCompositeRestorationWarranty({ toothNumber: 24, surfaces: ["M", "O"] });
+			assert.equal(w2.warrantyMonths, 18);
+			assert.equal(w2.serviceLifeMonths, 36);
+
+			// 3+ surfaces (MOD) -> 12 mos warranty, 24 mos service life
+			const w3 = calculateCompositeRestorationWarranty({ toothNumber: 36, surfaces: ["M", "O", "D"] });
+			assert.equal(w3.warrantyMonths, 12);
+			assert.equal(w3.serviceLifeMonths, 24);
+
+			// High caries risk -> 12 mos warranty
+			const wHighRisk = calculateCompositeRestorationWarranty({ toothNumber: 11, surfaces: ["V"], cariesRisk: "high" });
+			assert.equal(wHighRisk.warrantyMonths, 12);
+			assert.equal(wHighRisk.serviceLifeMonths, 24);
+
+			// appendCompositeWarrantyToSoap
+			const diary: DiaryState = {
+				anamnesis: "",
+				statusLocalis: "",
+				diagnosisIcd10: "K02.1",
+				diagnosisTooth: "16",
+				treatmentDescription: "Препарирование, пломба композитом.",
+				complications: "",
+				comorbidities: "",
+			};
+			const withWarranty = appendCompositeWarrantyToSoap(diary, { toothNumber: 16, surfaces: ["O"] });
+			assert.match(withWarranty.treatmentDescription, /Гарантийные обязательства:/);
+			assert.match(withWarranty.treatmentDescription, /24 мес/);
+
+			// Deduplication
+			const twice = appendCompositeWarrantyToSoap(withWarranty, { toothNumber: 16, surfaces: ["O"] });
+			assert.equal(twice.treatmentDescription, withWarranty.treatmentDescription);
 		});
 	});
 });

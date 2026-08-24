@@ -1200,5 +1200,128 @@ describe("Offline-First & Multi-Level Sync Engine: Industrial Stress & Chaos Sui
 		assert.strictEqual(pluralizeMutations(111), "111 мутаций");
 		assert.strictEqual(pluralizeMutations(500), "500 мутаций");
 	});
+
+	// ── 15. Two Dental Chairs Concurrent Multi-Field CRDT Resolution & Power Outage 3s Autosave Recovery ──
+	test("STRESS 15: Two Dental Chairs Concurrent Multi-Field CRDT Resolution & Power Outage 3s Autosave Recovery", async () => {
+		const orgId = "org-dual-chairs";
+		const patientId = "patient-dual-chair-101";
+
+		// 1. Initial baseline clinical card state
+		const baseCard = {
+			id: patientId,
+			fullName: "Морозов Александр Павлович",
+			anamnesis: "Первичный осмотр",
+			status16: "Здоров",
+			status15: "Здоров",
+			status48: "Здоров",
+			treatmentPlan: "Санация полости рта",
+			notes: "Аллергоанамнез без особенностей",
+		};
+
+		const baseVector = {
+			fullName: { updatedAt: "2026-08-24T09:00:00.000Z", version: 1 },
+			anamnesis: { updatedAt: "2026-08-24T09:00:00.000Z", version: 1 },
+			status16: { updatedAt: "2026-08-24T09:00:00.000Z", version: 1 },
+			status15: { updatedAt: "2026-08-24T09:00:00.000Z", version: 1 },
+			status48: { updatedAt: "2026-08-24T09:00:00.000Z", version: 1 },
+			treatmentPlan: { updatedAt: "2026-08-24T09:00:00.000Z", version: 1 },
+			notes: { updatedAt: "2026-08-24T09:00:00.000Z", version: 1 },
+		};
+
+		// 2. Chair 1 (Therapist Dr. Ivanova at 09:15:00) edits therapy fields
+		const chair1Patch = {
+			anamnesis: "Острая пульсирующая боль в области 15 зуба, усиливается от горячего",
+			status15: "Пульпит острый очаговый",
+			status16: "Кариес эмали жевательной поверхности",
+		};
+		const chair1Vector = {
+			anamnesis: { updatedAt: "2026-08-24T09:15:00.000Z", version: 2 },
+			status15: { updatedAt: "2026-08-24T09:15:00.000Z", version: 2 },
+			status16: { updatedAt: "2026-08-24T09:15:00.000Z", version: 2 },
+		};
+
+		// 3. Chair 2 (Surgeon Dr. Petrov at 09:18:00) edits surgery fields
+		const chair2Patch = {
+			status48: "Дистопия, ретенция 48 зуба",
+			treatmentPlan: "Эндодонтическое лечение 15 зуба + удаление 48 зуба",
+			notes: "Проведена инфильтрационная анестезия Sol. Ultracaini 1.7ml",
+		};
+		const chair2Vector = {
+			status48: { updatedAt: "2026-08-24T09:18:00.000Z", version: 2 },
+			treatmentPlan: { updatedAt: "2026-08-24T09:18:00.000Z", version: 2 },
+			notes: { updatedAt: "2026-08-24T09:18:00.000Z", version: 2 },
+		};
+
+		// 4. Merge Chair 1 edits into baseline
+		const mergeRes1 = mergeFieldLevelCrdt<typeof baseCard>({
+			entityKind: "patient",
+			entityId: patientId,
+			serverEntity: baseCard,
+			serverVector: baseVector,
+			clientPatch: chair1Patch,
+			clientVector: chair1Vector,
+			clientUpdatedAt: "2026-08-24T09:15:00.000Z",
+			clientId: "chair-1-therapist",
+		});
+
+		// 5. Merge Chair 2 edits into state updated by Chair 1
+		const mergeRes2 = mergeFieldLevelCrdt<typeof baseCard>({
+			entityKind: "patient",
+			entityId: patientId,
+			serverEntity: mergeRes1.mergedEntity,
+			serverVector: mergeRes1.updatedVector,
+			clientPatch: chair2Patch,
+			clientVector: chair2Vector,
+			clientUpdatedAt: "2026-08-24T09:18:00.000Z",
+			clientId: "chair-2-surgeon",
+		});
+
+		// Verify 100% preservation of all fields from both chairs
+		const finalCard = mergeRes2.mergedEntity;
+		assert.strictEqual(finalCard.fullName, "Морозов Александр Павлович");
+		assert.strictEqual(finalCard.anamnesis, "Острая пульсирующая боль в области 15 зуба, усиливается от горячего");
+		assert.strictEqual(finalCard.status15, "Пульпит острый очаговый");
+		assert.strictEqual(finalCard.status16, "Кариес эмали жевательной поверхности");
+		assert.strictEqual(finalCard.status48, "Дистопия, ретенция 48 зуба");
+		assert.strictEqual(finalCard.treatmentPlan, "Эндодонтическое лечение 15 зуба + удаление 48 зуба");
+		assert.strictEqual(finalCard.notes, "Проведена инфильтрационная анестезия Sol. Ultracaini 1.7ml");
+
+		// 6. Simulate 3-second continuous autosave of Form 043/u draft during clinical exam
+		for (let sec = 3; sec <= 15; sec += 3) {
+			await saveForm043Draft(
+				patientId,
+				{
+					...finalCard,
+					examSeconds: sec,
+					diaryProgress: `Врач заполнил протокол на ${sec} сек осмотра`,
+				},
+				orgId,
+			);
+		}
+
+		// 7. Simulate Sudden Power Outage / Crash / Reboot:
+		// Reset connection instance to emulate fresh restart
+		resetOfflineDbConnection();
+
+		// 8. Restore Form 043/u Draft after reboot:
+		const restoredDraft = await loadForm043Draft<{
+			id: string;
+			fullName: string;
+			status15: string;
+			status48: string;
+			examSeconds: number;
+			diaryProgress: string;
+		}>(patientId);
+
+		assert.ok(restoredDraft, "Form 043/u draft must survive sudden power outage and reboot");
+		assert.strictEqual(restoredDraft.data.examSeconds, 15, "Latest 3-second autosave must be preserved");
+		assert.strictEqual(restoredDraft.data.status15, "Пульпит острый очаговый");
+		assert.strictEqual(restoredDraft.data.status48, "Дистопия, ретенция 48 зуба");
+
+		// Cleanup draft upon successful sign-off
+		await deleteForm043Draft(patientId);
+		const afterCleanup = await loadForm043Draft(patientId);
+		assert.strictEqual(afterCleanup, null);
+	});
 });
 

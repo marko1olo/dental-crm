@@ -85,7 +85,7 @@ export interface ToothChartProps {
 	selectedTeeth?: number[] | undefined;
 	activeStamp?: ToothState | null | undefined;
 	onToothClick: (num: number, rect: DOMRect, surface?: string | undefined) => void;
-	onQuickStateChange?: ((targets: number[], state: ToothState) => void) | undefined;
+	onQuickStateChange?: ((targets: number[], state: ToothState, surfaces?: readonly string[] | undefined) => void) | undefined;
 	useSurfaces?: boolean | undefined;
 	hideHeader?: boolean | undefined;
 	hideLegend?: boolean | undefined;
@@ -757,9 +757,9 @@ const ToothSVG = ({
 	selectedTeeth?: number[] | undefined;
 	activeStamp?: ToothState | null | undefined;
 	onClick: (e: React.MouseEvent, num: number, surface?: string) => void;
-	onQuickStateChange?: ((targets: number[], state: ToothState) => void) | undefined;
+	onQuickStateChange?: ((targets: number[], state: ToothState, surfaces?: readonly string[] | undefined) => void) | undefined;
 	pediatricMode?: boolean | undefined;
-	surfaces?: string[] | undefined;
+	surfaces?: readonly string[] | undefined;
 	useSurfaces?: boolean | undefined;
 	showPulpAndCanals?: boolean | undefined;
 	showPeriapicalHalos?: boolean | undefined;
@@ -1420,7 +1420,7 @@ const ToothSVG = ({
 						onClick={(e) => {
 							e.stopPropagation();
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-							onQuickStateChange(targets, "Caries");
+							onQuickStateChange(targets, "Caries", surfaces);
 						}}
 						className="px-2.5 py-1 min-h-[34px] rounded-lg bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
 						title="Кариес"
@@ -1433,7 +1433,7 @@ const ToothSVG = ({
 						onClick={(e) => {
 							e.stopPropagation();
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-							onQuickStateChange(targets, "Filled");
+							onQuickStateChange(targets, "Filled", surfaces);
 						}}
 						className="px-2.5 py-1 min-h-[34px] rounded-lg bg-emerald-500/15 hover:bg-emerald-500 text-emerald-800 dark:text-emerald-300 hover:text-white border border-emerald-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
 						title="Пломба"
@@ -1446,7 +1446,7 @@ const ToothSVG = ({
 						onClick={(e) => {
 							e.stopPropagation();
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-							onQuickStateChange(targets, "Pulpitis");
+							onQuickStateChange(targets, "Pulpitis", surfaces);
 						}}
 						className="px-2.5 py-1 min-h-[34px] rounded-lg bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
 						title="Пульпит"
@@ -1459,7 +1459,7 @@ const ToothSVG = ({
 						onClick={(e) => {
 							e.stopPropagation();
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-							onQuickStateChange(targets, "Crown");
+							onQuickStateChange(targets, "Crown", surfaces);
 						}}
 						className="px-2.5 py-1 min-h-[34px] rounded-lg bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
 						title="Коронка"
@@ -1472,7 +1472,7 @@ const ToothSVG = ({
 						onClick={(e) => {
 							e.stopPropagation();
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-							onQuickStateChange(targets, "Missing");
+							onQuickStateChange(targets, "Missing", surfaces);
 						}}
 						className="px-2.5 py-1 min-h-[34px] rounded-lg bg-red-600/15 hover:bg-red-600 text-red-800 dark:text-red-300 hover:text-white border border-red-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
 						title="Удален"
@@ -1485,12 +1485,12 @@ const ToothSVG = ({
 						onClick={(e) => {
 							e.stopPropagation();
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-							onQuickStateChange(targets, "Healthy");
+							onQuickStateChange(targets, "Healthy", surfaces);
 						}}
-						className="px-2.5 py-1 min-h-[34px] rounded-lg bg-teal-500/15 hover:bg-teal-500 text-teal-800 dark:text-teal-300 hover:text-white border border-teal-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
-						title="Здоров"
+						className="px-2.5 py-1 min-h-[34px] rounded-lg bg-slate-500/15 hover:bg-slate-500 text-slate-800 dark:text-slate-300 hover:text-white border border-slate-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
+						title="Здоров (Интактный)"
 					>
-						<span className="w-2 h-2 rounded-full bg-teal-400 inline-block shadow-xs" />
+						<span className="w-2 h-2 rounded-full bg-slate-400 inline-block shadow-xs" />
 						<span>Здоров</span>
 					</button>
 				</div>
@@ -1498,13 +1498,13 @@ const ToothSVG = ({
 
 			<span
 				className={`tooth-number-badge ${isSelected ? "selected" : ""}`}
-				style={{ fontSize: scale < 0.85 ? "10px" : undefined }}
+				style={{ fontSize: "12px" }}
 			>
 				<span
 					className="tooth-status-dot"
 					style={{ backgroundColor: colors.badgeColor }}
 				/>
-				<span className="tooth-number-text">{number}</span>
+				<span className="tooth-number-text font-black">{number}</span>
 			</span>
 		</div>
 	);
@@ -1522,7 +1522,7 @@ const ToothSVG = ({
 			onClick={(e) => {
 				if (activeStamp && onQuickStateChange) {
 					const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-					onQuickStateChange(targets, activeStamp);
+					onQuickStateChange(targets, activeStamp, surfaces);
 					return;
 				}
 				onClick(e, number);
@@ -1532,7 +1532,7 @@ const ToothSVG = ({
 					e.preventDefault();
 					if (activeStamp && onQuickStateChange) {
 						const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-						onQuickStateChange(targets, activeStamp);
+						onQuickStateChange(targets, activeStamp, surfaces);
 						return;
 					}
 					onClick(e as unknown as React.MouseEvent, number);
@@ -1563,7 +1563,7 @@ const ToothSVG = ({
 				if (quickState && onQuickStateChange) {
 					e.preventDefault();
 					const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-					onQuickStateChange(targets, quickState);
+					onQuickStateChange(targets, quickState, surfaces);
 				}
 			}}
 		>
@@ -1922,7 +1922,11 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 				const quickState = getToothStateFromHotkey(e.key);
 				if (quickState) {
 					e.preventDefault();
-					onQuickStateChange(selectedTeeth, quickState);
+					const singleTooth =
+						selectedTeeth.length === 1
+							? (teethData ?? []).find((t) => t.toothNumber === selectedTeeth[0])
+							: undefined;
+					onQuickStateChange(selectedTeeth, quickState, singleTooth?.surfaces);
 					return;
 				}
 			}

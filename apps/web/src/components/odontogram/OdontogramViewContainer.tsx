@@ -6,6 +6,7 @@ import {
 	EyeOff,
 	FileText,
 	Mic,
+	Paintbrush,
 	Radio,
 	Sparkles,
 	Stethoscope,
@@ -68,7 +69,7 @@ export interface OdontogramViewContainerProps {
 	bottomTeeth?: number[] | undefined;
 	selectedTeeth?: number[] | undefined;
 	onToothClick: (num: number, rect: DOMRect, surface?: string) => void;
-	onQuickStateChange?: ((targets: number[], state: ToothState) => void) | undefined;
+	onQuickStateChange?: ((targets: number[], state: ToothState, surfaces?: readonly string[] | undefined) => void) | undefined;
 	useSurfaces?: boolean | undefined;
 	hideHeader?: boolean | undefined;
 	hideLegend?: boolean | undefined;
@@ -134,12 +135,14 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 	const [useSurfaces, setUseSurfaces] = useState<boolean>(initialUseSurfaces);
 	const [isLiveInvoiceOpen, setIsLiveInvoiceOpen] = useState<boolean>(false);
 	const [isFastExtractMode, setIsFastExtractMode] = useState<boolean>(false);
+	const [activeStampTool, setActiveStampTool] = useState<ToothState | null>(null);
 
 	// 3. Radial Menu Active Anchor
 	const [radialMenuData, setRadialMenuData] = useState<{
 		toothNumber: number;
 		rect: { x: number; y: number; width: number; height: number };
 		currentState?: ToothState | undefined;
+		surfaces?: string[] | undefined;
 	} | null>(null);
 
 	const handleModeSwitch = useCallback(
@@ -162,9 +165,14 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 		[setStoreMode, onViewModeChange],
 	);
 
-	// Intercept tooth click: in Fast Extract mode -> instant Missing, else call onToothClick or fallback to radial
+	// Intercept tooth click: in Stamp mode -> instant State change; in Fast Extract mode -> instant Missing; else call onToothClick or fallback to radial
 	const handleToothClickIntercept = useCallback(
 		(num: number, rect: DOMRect, surface?: string) => {
+			if (activeStampTool) {
+				onQuickStateChange?.([num], activeStampTool);
+				return;
+			}
+
 			if (isFastExtractMode) {
 				onQuickStateChange?.([num], "Missing");
 				return;
@@ -185,15 +193,33 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 					height: rect.height,
 				},
 				currentState: currentTooth?.state,
+				surfaces: currentTooth?.surfaces ? [...currentTooth.surfaces] : undefined,
 			});
 		},
-		[isFastExtractMode, onQuickStateChange, teethData, onToothClick],
+		[activeStampTool, isFastExtractMode, onQuickStateChange, teethData, onToothClick],
 	);
 
+	// Global Escape hotkey to exit Stamp tool
+	useEffect(() => {
+		const handleGlobalKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape" && activeStampTool) {
+				setActiveStampTool(null);
+			}
+		};
+		window.addEventListener("keydown", handleGlobalKeyDown);
+		return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+	}, [activeStampTool]);
+
 	const handleRadialSelectState = useCallback(
-		(state: ToothState) => {
+		(state: ToothState, surfaces?: readonly string[]) => {
 			if (!radialMenuData) return;
-			onQuickStateChange?.([radialMenuData.toothNumber], state);
+			const finalSurfaces =
+				surfaces !== undefined
+					? surfaces
+					: state !== "Healthy" && state !== "Missing"
+						? radialMenuData.surfaces
+						: undefined;
+			onQuickStateChange?.([radialMenuData.toothNumber], state, finalSurfaces ? [...finalSurfaces] : undefined);
 			setRadialMenuData(null);
 		},
 		[radialMenuData, onQuickStateChange],
@@ -288,6 +314,96 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 								/>
 								<span className="whitespace-nowrap">Группа</span>
 							</label>
+						)}
+					</div>
+
+					<div className="h-5 w-[1px] bg-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0 mx-0.5 hidden sm:block" />
+
+					{/* Center Group: Batch Stamp / Brush Mode Selector */}
+					<div
+						className="flex items-center gap-1 shrink-0 p-1 rounded-xl bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)]"
+						role="group"
+						aria-label="Режим штампа патологий"
+					>
+						<div className="flex items-center gap-1.5 px-2 text-xs font-bold text-[var(--odontogram-ink-muted,#64748b)] shrink-0">
+							<Paintbrush size={15} className={activeStampTool ? "text-indigo-600 dark:text-indigo-400 animate-pulse" : ""} />
+							<span className="hidden md:inline font-black">Штамп:</span>
+						</div>
+						<button
+							type="button"
+							onClick={() => setActiveStampTool((prev) => (prev === "Caries" ? null : "Caries"))}
+							className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+								activeStampTool === "Caries"
+									? "bg-amber-500 text-white font-black shadow-xs ring-2 ring-amber-400"
+									: "bg-amber-500/10 text-amber-800 dark:text-amber-200 hover:bg-amber-500/20 border border-amber-500/20"
+							}`}
+							title="Штамп: Кариес (Клик по зубу без меню)"
+							data-testid="stamp-caries-btn"
+						>
+							Кариес (К)
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveStampTool((prev) => (prev === "Filled" ? null : "Filled"))}
+							className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+								activeStampTool === "Filled"
+									? "bg-teal-600 text-white font-black shadow-xs ring-2 ring-teal-400"
+									: "bg-teal-500/10 text-teal-800 dark:text-teal-200 hover:bg-teal-500/20 border border-teal-500/20"
+							}`}
+							title="Штамп: Пломба (Клик по зубу без меню)"
+							data-testid="stamp-filled-btn"
+						>
+							Пломба (П)
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveStampTool((prev) => (prev === "Pulpitis" ? null : "Pulpitis"))}
+							className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+								activeStampTool === "Pulpitis"
+									? "bg-rose-600 text-white font-black shadow-xs ring-2 ring-rose-400"
+									: "bg-rose-500/10 text-rose-800 dark:text-rose-200 hover:bg-rose-500/20 border border-rose-500/20"
+							}`}
+							title="Штамп: Пульпит (Клик по зубу без меню)"
+							data-testid="stamp-pulpitis-btn"
+						>
+							Пульпит (Ф)
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveStampTool((prev) => (prev === "Crown" ? null : "Crown"))}
+							className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+								activeStampTool === "Crown"
+									? "bg-blue-600 text-white font-black shadow-xs ring-2 ring-blue-400"
+									: "bg-blue-500/10 text-blue-800 dark:text-blue-200 hover:bg-blue-500/20 border border-blue-500/20"
+							}`}
+							title="Штамп: Коронка (Клик по зубу без меню)"
+							data-testid="stamp-crown-btn"
+						>
+							Коронка (Ц)
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveStampTool((prev) => (prev === "Missing" ? null : "Missing"))}
+							className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+								activeStampTool === "Missing"
+									? "bg-rose-700 text-white font-black shadow-xs ring-2 ring-rose-500"
+									: "bg-rose-500/10 text-rose-800 dark:text-rose-200 hover:bg-rose-500/20 border border-rose-500/20"
+							}`}
+							title="Штамп: Удален (Клик по зубу без меню)"
+							data-testid="stamp-missing-btn"
+						>
+							Удален (0)
+						</button>
+						{activeStampTool && (
+							<button
+								type="button"
+								onClick={() => setActiveStampTool(null)}
+								className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-all cursor-pointer shrink-0 border border-[var(--odontogram-border-subtle,#e2e8f0)]"
+								title="Сбросить режим штампа (Esc)"
+								data-testid="stamp-reset-btn"
+							>
+								Сброс
+							</button>
 						)}
 					</div>
 
@@ -454,6 +570,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 					toothNumber={radialMenuData.toothNumber}
 					anchorRect={radialMenuData.rect}
 					currentState={radialMenuData.currentState}
+					surfaces={radialMenuData.surfaces}
 					onSelectState={handleRadialSelectState}
 					onAddToInvoice={() => setIsLiveInvoiceOpen(true)}
 					onClose={() => setRadialMenuData(null)}

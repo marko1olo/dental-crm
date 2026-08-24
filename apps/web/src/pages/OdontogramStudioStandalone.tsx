@@ -115,16 +115,17 @@ export const OdontogramStudioStandalone: React.FC = () => {
 
 	// Update single or multiple teeth
 	const updateToothState = useCallback(
-		(toothNumbers: number[], state: ToothState, surfaces?: string[]) => {
+		(toothNumbers: number[], state: ToothState, surfaces?: readonly string[] | undefined) => {
 			if (toothNumbers.length === 0) return;
 			setTeethData((prev) => {
 				const set = new Set(toothNumbers);
-				return prev.map((t) => {
+				return prev.map((t): ToothData => {
 					if (set.has(t.toothNumber)) {
+						const updatedSurfaces = surfaces ? [...surfaces] : state === "Healthy" ? [] : t.surfaces ? [...t.surfaces] : undefined;
 						return {
 							...t,
 							state,
-							surfaces: surfaces ?? (state === "Healthy" ? [] : (t.surfaces ?? [])),
+							...(updatedSurfaces !== undefined ? { surfaces: updatedSurfaces } : {}),
 						};
 					}
 					return t;
