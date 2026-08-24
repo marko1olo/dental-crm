@@ -939,3 +939,104 @@ export function validateClinicalActionButtonErgonomics(params: {
 		issues,
 	};
 }
+
+/**
+ * Safe Touch Gesture and Momentum Scroll configuration for clinical mobile views.
+ */
+export interface SafeSwipeOptions {
+	/** Minimum distance in pixels required to trigger swipe (default: 48px) */
+	minDistancePx?: number;
+	/** Maximum diagonal deviation angle in degrees (default: 35 deg) */
+	maxAngleDeg?: number;
+	/** Prevent default gesture behaviour */
+	preventDefault?: boolean;
+	/** Callback for left swipe */
+	onSwipeLeft?: () => void;
+	/** Callback for right swipe */
+	onSwipeRight?: () => void;
+	/** Callback for top swipe */
+	onSwipeUp?: () => void;
+	/** Callback for bottom swipe */
+	onSwipeDown?: () => void;
+}
+
+/**
+ * Attaches a touch gesture handler that distinguishes intentional horizontal/vertical swipes
+ * from natural list inertia momentum scrolling, preventing accidental screen dismissal or page bounce.
+ */
+export function registerSafeSwipeGesture(
+	element: HTMLElement | Window | Document,
+	options: SafeSwipeOptions,
+): () => void {
+	if (!element || typeof element.addEventListener !== "function") {
+		return () => {};
+	}
+
+	let startX = 0;
+	let startY = 0;
+	let startTime = 0;
+	const minDistance = options.minDistancePx ?? 48;
+	const maxAngle = options.maxAngleDeg ?? 35;
+
+	const handleTouchStart = (e: TouchEvent | Event) => {
+		const touchEvent = e as TouchEvent;
+		if (touchEvent.touches && touchEvent.touches.length === 1) {
+			const touch = touchEvent.touches[0];
+			if (touch) {
+				startX = touch.clientX;
+				startY = touch.clientY;
+				startTime = Date.now();
+			}
+		}
+	};
+
+	const handleTouchEnd = (e: TouchEvent | Event) => {
+		const touchEvent = e as TouchEvent;
+		if (touchEvent.changedTouches && touchEvent.changedTouches.length === 1) {
+			const touch = touchEvent.changedTouches[0];
+			if (!touch) return;
+			const deltaX = touch.clientX - startX;
+			const deltaY = touch.clientY - startY;
+			const elapsedMs = Date.now() - startTime;
+
+			// Ignore if gesture took too long (> 600ms is slow drag, not swipe)
+			if (elapsedMs > 600) return;
+
+			const absX = Math.abs(deltaX);
+			const absY = Math.abs(deltaY);
+
+			// Check horizontal swipe
+			if (absX >= minDistance && absX > absY) {
+				const angleDeg = Math.atan2(absY, absX) * (180 / Math.PI);
+				if (angleDeg <= maxAngle) {
+					if (deltaX > 0 && options.onSwipeRight) {
+						if (options.preventDefault && e.cancelable) e.preventDefault();
+						options.onSwipeRight();
+					} else if (deltaX < 0 && options.onSwipeLeft) {
+						if (options.preventDefault && e.cancelable) e.preventDefault();
+						options.onSwipeLeft();
+					}
+				}
+			} else if (absY >= minDistance && absY > absX) {
+				const angleDeg = Math.atan2(absX, absY) * (180 / Math.PI);
+				if (angleDeg <= maxAngle) {
+					if (deltaY > 0 && options.onSwipeDown) {
+						if (options.preventDefault && e.cancelable) e.preventDefault();
+						options.onSwipeDown();
+					} else if (deltaY < 0 && options.onSwipeUp) {
+						if (options.preventDefault && e.cancelable) e.preventDefault();
+						options.onSwipeUp();
+					}
+				}
+			}
+		}
+	};
+
+	element.addEventListener("touchstart", handleTouchStart, { passive: true });
+	element.addEventListener("touchend", handleTouchEnd, { passive: !options.preventDefault });
+
+	return () => {
+		element.removeEventListener("touchstart", handleTouchStart);
+		element.removeEventListener("touchend", handleTouchEnd);
+	};
+}

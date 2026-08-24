@@ -301,3 +301,48 @@
 		padding: 12px 20px;
 	}
 }
+
+/* ============================================================
+   РАУНД 82: МОМЕНТУМ-СКРОЛЛ И ПЛАВНЫЕ ТАЧ-ЖЕСТЫ НА МОБИЛЬНЫХ
+   -webkit-overflow-scrolling: touch для плавной инерционной прокрутки;
+   overscroll-behavior: contain для изоляции скролла списков/модалок
+   и защиты от случайного закрытия экрана при свайпе.
+   ============================================================ */
+
+.patient-list-container,
+.patients-list-wrap,
+.patient-timeline-list,
+.patient-timeline-scroll,
+.emk-tabs-container,
+.emk-content-scroll,
+.visit-diary-scroll,
+.visit-sub-nav-tabs,
+.modal-body,
+.modal-content-scroll,
+.drawer-body,
+.sheet-content,
+.timeline-container,
+.leads-kanban-column-body,
+.documents-registry-table-wrap,
+.schedule-day-column-scroll,
+.schedule-grid-viewport,
+.cabinet-portal-scroll,
+.smart-ai-booking-scroll,
+.catalog-pricelist-table-wrap {
+	-webkit-overflow-scrolling: touch;
+	overscroll-behavior: contain;
+	scroll-behavior: smooth;
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+	html,
+	body {
+		overscroll-behavior-y: none;
+	}
+
+	.modal-backdrop,
+	.drawer-backdrop {
+		overscroll-behavior: contain;
+		touch-action: pan-y;
+	}
+}
