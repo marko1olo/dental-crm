@@ -37,6 +37,7 @@ import {
 import { ClassicGostOdontogram } from "./ClassicGostOdontogram";
 import { RadialToothMenu } from "./RadialToothMenu";
 import { OdontogramLiveInvoice } from "./OdontogramLiveInvoice";
+import { ToothContextDrawer } from "../diagnostic/ToothContextDrawer";
 
 export interface OdontogramViewOption {
 	mode: OdontogramViewMode;
@@ -152,6 +153,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 	const [isFastExtractMode, setIsFastExtractMode] = useState<boolean>(false);
 	const [activeStampTool, setActiveStampTool] = useState<ToothState | null>(null);
 	const [isConfirmSanitationModalOpen, setIsConfirmSanitationModalOpen] = useState<boolean>(false);
+	const [contextDrawerTooth, setContextDrawerTooth] = useState<number | null>(null);
 
 	// 3. Radial Menu Active Anchor
 	const [radialMenuData, setRadialMenuData] = useState<{
@@ -183,7 +185,24 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 
 	// Intercept tooth click: in Stamp mode -> instant State change; in Fast Extract mode -> instant Missing; else call onToothClick or fallback to radial
 	const handleToothClickIntercept = useCallback(
-		(num: number, rect: DOMRect, surface?: string) => {
+		(num: number, rect?: DOMRect | null, surface?: string) => {
+			const safeRect: DOMRect =
+				rect && typeof rect.left === "number" && typeof rect.top === "number"
+					? rect
+					: typeof DOMRect !== "undefined"
+						? new DOMRect(0, 0, 0, 0)
+						: ({
+								x: 0,
+								y: 0,
+								width: 0,
+								height: 0,
+								top: 0,
+								right: 0,
+								bottom: 0,
+								left: 0,
+								toJSON: () => ({}),
+							} as DOMRect);
+
 			if (activeStampTool) {
 				onQuickStateChange?.([num], activeStampTool);
 				return;
@@ -195,7 +214,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 			}
 
 			if (onToothClick) {
-				onToothClick(num, rect, surface);
+				onToothClick(num, safeRect, surface);
 				return;
 			}
 
@@ -203,10 +222,10 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 			setRadialMenuData({
 				toothNumber: num,
 				rect: {
-					x: rect.left,
-					y: rect.top,
-					width: rect.width,
-					height: rect.height,
+					x: safeRect.left,
+					y: safeRect.top,
+					width: safeRect.width,
+					height: safeRect.height,
 				},
 				currentState: currentTooth?.state,
 				surfaces: currentTooth?.surfaces ? [...currentTooth.surfaces] : undefined,
@@ -344,7 +363,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									const targetUpper = pediatricMode ? PEDIATRIC_TOP_TEETH : TOP_TEETH;
 									if (onSelectTeethGroup) onSelectTeethGroup(targetUpper);
 								}}
-								className="min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg text-xs font-black bg-[var(--odontogram-paper,#ffffff)] text-[var(--odontogram-ink,#0f172a)] hover:bg-indigo-500/15 hover:text-indigo-700 dark:hover:text-indigo-300 border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer shrink-0"
+								className="min-h-[44px] min-w-[48px] px-3 py-1.5 rounded-lg text-[13px] font-black bg-[var(--odontogram-paper,#ffffff)] text-[var(--odontogram-ink,#0f172a)] hover:bg-indigo-500/15 hover:text-indigo-700 dark:hover:text-indigo-300 border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer shrink-0"
 								title="Выбрать все зубы верхней челюсти (18–28)"
 								data-testid="select-upper-jaw-btn"
 							>
@@ -356,7 +375,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									const targetLower = pediatricMode ? PEDIATRIC_BOTTOM_TEETH : BOTTOM_TEETH;
 									if (onSelectTeethGroup) onSelectTeethGroup(targetLower);
 								}}
-								className="min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg text-xs font-black bg-[var(--odontogram-paper,#ffffff)] text-[var(--odontogram-ink,#0f172a)] hover:bg-indigo-500/15 hover:text-indigo-700 dark:hover:text-indigo-300 border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer shrink-0"
+								className="min-h-[44px] min-w-[48px] px-3 py-1.5 rounded-lg text-[13px] font-black bg-[var(--odontogram-paper,#ffffff)] text-[var(--odontogram-ink,#0f172a)] hover:bg-indigo-500/15 hover:text-indigo-700 dark:hover:text-indigo-300 border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer shrink-0"
 								title="Выбрать все зубы нижней челюсти (38–48)"
 								data-testid="select-lower-jaw-btn"
 							>
@@ -368,7 +387,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									const targetMolars = pediatricMode ? PEDIATRIC_MOLARS : ADULT_MOLARS;
 									if (onSelectTeethGroup) onSelectTeethGroup([...targetMolars]);
 								}}
-								className="min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg text-xs font-black bg-[var(--odontogram-paper,#ffffff)] text-[var(--odontogram-ink,#0f172a)] hover:bg-indigo-500/15 hover:text-indigo-700 dark:hover:text-indigo-300 border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer shrink-0"
+								className="min-h-[44px] min-w-[48px] px-3 py-1.5 rounded-lg text-[13px] font-black bg-[var(--odontogram-paper,#ffffff)] text-[var(--odontogram-ink,#0f172a)] hover:bg-indigo-500/15 hover:text-indigo-700 dark:hover:text-indigo-300 border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer shrink-0"
 								title="Выбрать все моляры (18–16, 26–28, 48–46, 36–38)"
 								data-testid="select-molars-btn"
 							>
@@ -385,7 +404,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									);
 									if (onSelectTeethGroup) onSelectTeethGroup(inverted);
 								}}
-								className="min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg text-xs font-black bg-[var(--odontogram-paper,#ffffff)] text-[var(--odontogram-ink,#0f172a)] hover:bg-indigo-500/15 hover:text-indigo-700 dark:hover:text-indigo-300 border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer shrink-0"
+								className="min-h-[44px] min-w-[48px] px-3 py-1.5 rounded-lg text-[13px] font-black bg-[var(--odontogram-paper,#ffffff)] text-[var(--odontogram-ink,#0f172a)] hover:bg-indigo-500/15 hover:text-indigo-700 dark:hover:text-indigo-300 border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer shrink-0"
 								title="Инвертировать текущий выбор зубов"
 								data-testid="invert-selection-btn"
 							>
@@ -395,7 +414,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 								<button
 									type="button"
 									onClick={() => setIsConfirmSanitationModalOpen(true)}
-									className="min-h-[44px] px-2.5 py-1.5 rounded-lg text-xs font-black bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/30 border border-emerald-500/30 transition-all cursor-pointer shrink-0"
+									className="min-h-[44px] px-3 py-1.5 rounded-lg text-[13px] font-black bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/30 border border-emerald-500/30 transition-all cursor-pointer shrink-0"
 									title="Тотальная санация: пометить все зубы здоровыми (Healthy) в 1 клик с подтверждением"
 									data-testid="total-sanitation-btn"
 								>
@@ -481,6 +500,19 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							data-testid="stamp-missing-btn"
 						>
 							Удален (0)
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveStampTool((prev) => (prev === "Healthy" ? null : "Healthy"))}
+							className={`min-h-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none shrink-0 ${
+								activeStampTool === "Healthy"
+									? "bg-emerald-600 text-white font-black shadow-xs ring-2 ring-emerald-400"
+									: "bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/20 border border-emerald-500/20"
+							}`}
+							title="Штамп: Здоров / Интактный (Клик по зубу без меню)"
+							data-testid="stamp-healthy-btn"
+						>
+							Здоров (З)
 						</button>
 						{activeStampTool && (
 							<button
@@ -720,6 +752,21 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 						</div>
 					</div>
 				</div>
+			)}
+
+			{/* Tier 2 Context Drawer for Selected Tooth */}
+			{contextDrawerTooth !== null && (
+				<ToothContextDrawer
+					isOpen={contextDrawerTooth !== null}
+					onClose={() => setContextDrawerTooth(null)}
+					toothNumber={contextDrawerTooth}
+					toothData={teethData?.find((t) => t.toothNumber === contextDrawerTooth)}
+					onUpdateTooth={(num, updates) => {
+						if (updates.state) {
+							onQuickStateChange?.([num], updates.state, updates.surfaces);
+						}
+					}}
+				/>
 			)}
 		</div>
 	);
