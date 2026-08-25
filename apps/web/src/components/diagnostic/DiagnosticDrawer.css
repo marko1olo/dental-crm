@@ -1,0 +1,433 @@
+/**
+ * DENTE CRM — Diagnostic HUD & Dev Drawer Styles
+ */
+
+.dente-diagnostic-trigger {
+	position: fixed;
+	bottom: 20px;
+	right: 20px;
+	z-index: 9990;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 44px;
+	min-width: 44px;
+	padding: 8px 14px;
+	border-radius: 9999px;
+	background: var(--paper-strong, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.12));
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	backdrop-filter: blur(12px);
+	user-select: none;
+}
+
+.dente-diagnostic-trigger:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
+	border-color: var(--brand-primary, #0284c7);
+}
+
+.dente-diagnostic-trigger:active {
+	transform: translateY(0);
+}
+
+.dente-diagnostic-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 20px;
+	height: 20px;
+	padding: 0 6px;
+	border-radius: 10px;
+	background: #ef4444;
+	color: #ffffff;
+	font-size: 11px;
+	font-weight: 700;
+}
+
+/* Backdrop */
+.dente-diagnostic-backdrop {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.45);
+	backdrop-filter: blur(4px);
+	z-index: 9995;
+	display: flex;
+	justify-content: flex-end;
+	animation: denteFadeIn 0.2s ease-out;
+}
+
+/* Drawer Shell */
+.dente-diagnostic-drawer {
+	width: 100%;
+	max-width: 820px;
+	height: 100%;
+	background: var(--paper, #f8fafc);
+	color: var(--ink, #0f172a);
+	display: flex;
+	flex-direction: column;
+	box-shadow: -8px 0 32px rgba(0, 0, 0, 0.2);
+	z-index: 9996;
+	animation: denteSlideLeft 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+	overflow: hidden;
+}
+
+/* Header */
+.dente-diagnostic-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 20px;
+	background: var(--paper-strong, #ffffff);
+	border-bottom: 1px solid var(--glass-border, rgba(0, 0, 0, 0.08));
+}
+
+.dente-diagnostic-title-group {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.dente-diagnostic-title {
+	font-size: 16px;
+	font-weight: 700;
+	margin: 0;
+	color: var(--ink, #0f172a);
+}
+
+.dente-diagnostic-env-tag {
+	padding: 2px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	background: rgba(2, 132, 199, 0.1);
+	color: var(--brand-primary, #0284c7);
+}
+
+.dente-diagnostic-close-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 44px;
+	min-height: 44px;
+	border-radius: 8px;
+	background: transparent;
+	border: none;
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dente-diagnostic-close-btn:hover {
+	background: rgba(0, 0, 0, 0.06);
+	color: var(--ink, #0f172a);
+}
+
+/* Tab Navigation */
+.dente-diagnostic-tabs {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 8px 16px;
+	background: var(--paper-strong, #ffffff);
+	border-bottom: 1px solid var(--glass-border, rgba(0, 0, 0, 0.08));
+	overflow-x: auto;
+}
+
+.dente-diagnostic-tab-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 44px;
+	padding: 8px 16px;
+	border-radius: 6px;
+	border: none;
+	background: transparent;
+	color: var(--muted, #64748b);
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.dente-diagnostic-tab-btn:hover {
+	color: var(--ink, #0f172a);
+	background: rgba(0, 0, 0, 0.04);
+}
+
+.dente-diagnostic-tab-btn.active {
+	background: var(--brand-primary, #0284c7);
+	color: #ffffff;
+}
+
+/* Toolbar & Filters */
+.dente-diagnostic-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	padding: 12px 20px;
+	background: var(--paper-strong, #ffffff);
+	border-bottom: 1px solid var(--glass-border, rgba(0, 0, 0, 0.08));
+}
+
+.dente-diagnostic-search-box {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex: 1;
+	min-width: 200px;
+	min-height: 44px;
+	padding: 0 12px;
+	border-radius: 8px;
+	background: var(--paper, #f1f5f9);
+	border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.08));
+}
+
+.dente-diagnostic-search-input {
+	flex: 1;
+	border: none;
+	background: transparent;
+	font-size: 13px;
+	color: var(--ink, #0f172a);
+	outline: none;
+}
+
+.dente-diagnostic-filter-group {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.dente-diagnostic-select {
+	min-height: 44px;
+	padding: 0 12px;
+	border-radius: 8px;
+	background: var(--paper, #f1f5f9);
+	border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.08));
+	color: var(--ink, #0f172a);
+	font-size: 13px;
+	outline: none;
+	cursor: pointer;
+}
+
+.dente-diagnostic-action-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 44px;
+	padding: 8px 14px;
+	border-radius: 8px;
+	border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
+	background: var(--paper, #f1f5f9);
+	color: var(--ink, #0f172a);
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: background 0.15s ease;
+}
+
+.dente-diagnostic-action-btn:hover {
+	background: rgba(0, 0, 0, 0.08);
+}
+
+.dente-diagnostic-primary-btn {
+	background: var(--brand-primary, #0284c7);
+	color: #ffffff;
+	border: none;
+}
+
+.dente-diagnostic-primary-btn:hover {
+	background: #0369a1;
+}
+
+/* Content Area */
+.dente-diagnostic-content {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+/* Log & Network Rows */
+.dente-diagnostic-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.dente-diagnostic-card {
+	padding: 12px 14px;
+	border-radius: 8px;
+	background: var(--paper-strong, #ffffff);
+	border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.08));
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	font-size: 13px;
+	transition: border-color 0.15s ease;
+}
+
+.dente-diagnostic-card:hover {
+	border-color: rgba(2, 132, 199, 0.4);
+}
+
+.dente-diagnostic-card-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.dente-diagnostic-card-left {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.dente-diagnostic-time {
+	font-size: 11px;
+	color: var(--muted, #64748b);
+	font-variant-numeric: tabular-nums;
+}
+
+.dente-diagnostic-module {
+	font-size: 11px;
+	font-weight: 600;
+	padding: 2px 6px;
+	border-radius: 4px;
+	background: rgba(0, 0, 0, 0.05);
+	color: var(--muted, #64748b);
+}
+
+.dente-diagnostic-pill {
+	font-size: 11px;
+	font-weight: 700;
+	padding: 2px 8px;
+	border-radius: 4px;
+	text-transform: uppercase;
+}
+
+.dente-diagnostic-pill-debug { background: #e2e8f0; color: #475569; }
+.dente-diagnostic-pill-info { background: #e0f2fe; color: #0284c7; }
+.dente-diagnostic-pill-warn { background: #fef3c7; color: #d97706; }
+.dente-diagnostic-pill-error { background: #fee2e2; color: #dc2626; }
+.dente-diagnostic-pill-audit { background: #f3e8ff; color: #9333ea; }
+
+.dente-diagnostic-pill-status-ok { background: #dcfce7; color: #16a34a; }
+.dente-diagnostic-pill-status-warn { background: #fef3c7; color: #d97706; }
+.dente-diagnostic-pill-status-err { background: #fee2e2; color: #dc2626; }
+
+.dente-diagnostic-message {
+	font-size: 13px;
+	color: var(--ink, #0f172a);
+	word-break: break-word;
+	line-height: 1.4;
+}
+
+.dente-diagnostic-code-block {
+	margin-top: 6px;
+	padding: 8px 12px;
+	border-radius: 6px;
+	background: #0f172a;
+	color: #38bdf8;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 12px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+/* System Report Grid */
+.dente-diagnostic-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 12px;
+}
+
+.dente-diagnostic-metric-card {
+	padding: 16px;
+	border-radius: 8px;
+	background: var(--paper-strong, #ffffff);
+	border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.08));
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.dente-diagnostic-metric-label {
+	font-size: 12px;
+	color: var(--muted, #64748b);
+	font-weight: 500;
+}
+
+.dente-diagnostic-metric-value {
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+.dente-diagnostic-empty {
+	padding: 48px 20px;
+	text-align: center;
+	color: var(--muted, #64748b);
+	font-size: 14px;
+}
+
+/* Animations */
+@keyframes denteFadeIn {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+
+@keyframes denteSlideLeft {
+	from { transform: translateX(100%); }
+	to { transform: translateX(0); }
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .dente-diagnostic-trigger {
+	background: #1e293b;
+	color: #f8fafc;
+	border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .dente-diagnostic-drawer {
+	background: #0f172a;
+	color: #f8fafc;
+}
+
+[data-theme="dark"] .dente-diagnostic-header,
+[data-theme="dark"] .dente-diagnostic-tabs,
+[data-theme="dark"] .dente-diagnostic-toolbar,
+[data-theme="dark"] .dente-diagnostic-card,
+[data-theme="dark"] .dente-diagnostic-metric-card {
+	background: #1e293b;
+	border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .dente-diagnostic-search-box,
+[data-theme="dark"] .dente-diagnostic-select,
+[data-theme="dark"] .dente-diagnostic-action-btn {
+	background: #0f172a;
+	border-color: rgba(255, 255, 255, 0.1);
+	color: #f8fafc;
+}
+
+[data-theme="dark"] .dente-diagnostic-title,
+[data-theme="dark"] .dente-diagnostic-message,
+[data-theme="dark"] .dente-diagnostic-metric-value {
+	color: #f8fafc;
+}

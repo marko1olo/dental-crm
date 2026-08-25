@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export * from "./money.js";
 export * from "./fiscal/index.js";
+export * from "./mdlp/index.js";
 export * from "./utils/mdlpDataMatrix.js";
 export * from "./sanpin.js";
 export * from "./sanpin/index.js";
@@ -14,6 +15,12 @@ export * from "./emr/index.js";
 export * from "./sync/index.js";
 export * from "./finance/index.js";
 export * from "./imaging/index.js";
+export * from "./cda/index.js";
+export * from "./logging/index.js";
+
+
+
+import { procedureSpecificConsentProcedureSchema } from "./legal/legalContractsAndConsents.js";
 
 import {
 	dailyDentistDiary037uPayloadSchema,
@@ -5263,22 +5270,6 @@ export const informedConsentPayloadSchema = z.object({
 });
 export type InformedConsentPayload = z.infer<
 	typeof informedConsentPayloadSchema
->;
-
-export const procedureSpecificConsentProcedureSchema = z.enum([
-	"local_anesthesia",
-	"therapy_endo_restoration",
-	"sedation",
-	"surgery_extraction",
-	"implantation_bone_graft",
-	"prosthetics",
-	"orthodontics",
-	"hygiene_whitening",
-	"periodontology",
-	"other",
-]);
-export type ProcedureSpecificConsentProcedure = z.infer<
-	typeof procedureSpecificConsentProcedureSchema
 >;
 
 export const procedureSpecificConsentPayloadSchema = z.object({
@@ -13876,7 +13867,9 @@ export class DentalInteractionMatrixEngine {
 	}
 }
 
-export * from "./fiscal/index.js";
+
+
+
 
 
 

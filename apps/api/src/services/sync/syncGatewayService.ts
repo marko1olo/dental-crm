@@ -14,6 +14,7 @@ import { and, eq, gte, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { type TenantDb, withTenantCtx } from "../../db/rls.js";
 import {
+	appointments,
 	patientInvoices,
 	patients,
 	payments,
@@ -22,6 +23,7 @@ import {
 	visitDiaries,
 	visits,
 } from "../../db/schema.js";
+
 
 export class SyncGatewayService {
 	/**
@@ -88,8 +90,22 @@ export class SyncGatewayService {
 		organizationId: string,
 		request: SyncPushBatchRequest,
 		authorUserId?: string,
+		options?: { logger?: { info(...args: unknown[]): void; warn(...args: unknown[]): void; error(...args: unknown[]): void } },
 	): Promise<SyncPushBatchResponse> {
 		await this.ensureSyncTablesExist();
+
+		const logger = options?.logger;
+		if (logger) {
+			logger.info(
+				{
+					syncBatchId: request.syncBatchId,
+					clientId: request.clientId,
+					mutationsCount: request.mutations.length,
+					organizationId,
+				},
+				`[SyncGateway] Processing push batch: ${request.mutations.length} mutations`,
+			);
+		}
 
 		return await withTenantCtx(organizationId, async (tx) => {
 			const results: SyncMutationResult[] = [];
@@ -114,20 +130,40 @@ export class SyncGatewayService {
 
 					if (mutationResult.status === "applied") {
 						appliedCount++;
+						logger?.info(
+							{ mutationId: mutation.mutationId, entityKind: mutation.entityKind, entityId: mutation.entityId, action: mutation.action },
+							`[SyncGateway] Mutation applied: ${mutation.entityKind}/${mutation.entityId}`,
+						);
 					} else if (mutationResult.status === "duplicate") {
 						duplicateCount++;
+						logger?.info(
+							{ mutationId: mutation.mutationId, idempotencyKey: mutation.idempotencyKey },
+							`[SyncGateway] Duplicate mutation ignored: ${mutation.idempotencyKey}`,
+						);
 					} else if (
 						mutationResult.status === "merged" ||
 						mutationResult.status === "conflict_resolved"
 					) {
 						mergedCount++;
+						logger?.info(
+							{ mutationId: mutation.mutationId, entityKind: mutation.entityKind, status: mutationResult.status },
+							`[SyncGateway] CRDT conflict merged/resolved: ${mutation.entityKind}/${mutation.entityId}`,
+						);
 					} else if (mutationResult.status === "rejected") {
 						rejectedCount++;
+						logger?.warn(
+							{ mutationId: mutation.mutationId, error: mutationResult.error },
+							`[SyncGateway] Mutation rejected: ${mutationResult.error}`,
+						);
 					}
 				} catch (err: unknown) {
 					const errorMessage =
 						err instanceof Error ? err.message : "Unknown sync mutation error";
 					rejectedCount++;
+					logger?.error(
+						{ mutationId: mutation.mutationId, error: errorMessage },
+						`[SyncGateway] Mutation error: ${errorMessage}`,
+					);
 					results.push({
 						mutationId: mutation.mutationId,
 						idempotencyKey: mutation.idempotencyKey,
@@ -138,6 +174,19 @@ export class SyncGatewayService {
 						error: errorMessage,
 					});
 				}
+			}
+
+			if (logger) {
+				logger.info(
+					{
+						syncBatchId: request.syncBatchId,
+						appliedCount,
+						duplicateCount,
+						mergedCount,
+						rejectedCount,
+					},
+					`[SyncGateway] Push batch complete: ${appliedCount} applied, ${mergedCount} merged, ${duplicateCount} dup, ${rejectedCount} rejected`,
+				);
 			}
 
 			return {
@@ -275,11 +324,25 @@ export class SyncGatewayService {
 			mergedFields = clinicalResult.mergedFields;
 			conflictDetails = clinicalResult.conflicts;
 			currentServerEntity = clinicalResult.entity;
+		} else if (mutation.entityKind === "appointment") {
+			// Appointment Entity: Field-Level Merging & Schedule Conflict Guards
+			const appointmentResult = await this.handleAppointmentMutation(
+				tx,
+				organizationId,
+				mutation,
+				clientId,
+				authorUserId,
+			);
+			mutationStatus = appointmentResult.status;
+			mergedFields = appointmentResult.mergedFields;
+			conflictDetails = appointmentResult.conflicts;
+			currentServerEntity = appointmentResult.entity;
 		} else {
 			// Generic Entity Upsert
 			currentServerEntity = mutation.payload;
 			mutationStatus = "applied";
 		}
+
 
 		// 4. Record idempotency log for exactly-once replay protection
 		try {
@@ -843,9 +906,195 @@ export class SyncGatewayService {
 	}
 
 	/**
+	 * Appointment Entity Handler with field-level CRDT merging & scheduling conflict guards.
+	 */
+	private static async handleAppointmentMutation(
+		tx: TenantDb,
+		organizationId: string,
+		mutation: SyncMutationEnvelope,
+		clientId: string,
+		authorUserId?: string,
+	): Promise<{
+		status: SyncMutationStatus;
+		mergedFields: string[];
+		conflicts: FieldConflictDetail[];
+		entity: Record<string, unknown>;
+	}> {
+		const [serverAppointment] = await tx
+			.select()
+			.from(appointments)
+			.where(
+				and(
+					eq(appointments.organizationId, organizationId),
+					eq(appointments.id, mutation.entityId),
+				),
+			)
+			.limit(1);
+
+		const [vectorRow] = await tx
+			.select()
+			.from(syncEntityVectors)
+			.where(
+				and(
+					eq(syncEntityVectors.organizationId, organizationId),
+					eq(syncEntityVectors.entityKind, "appointment"),
+					eq(syncEntityVectors.entityId, mutation.entityId),
+				),
+			)
+			.limit(1);
+
+		const serverVector = (vectorRow?.vectorJson as MutationVector) || {};
+
+		const mergeResult = mergeFieldLevelCrdt({
+			entityKind: "appointment",
+			entityId: mutation.entityId,
+			serverEntity: (serverAppointment as unknown as Record<string, unknown>) || null,
+			serverVector,
+			clientPatch: mutation.payload,
+			clientVector: mutation.mutationVector,
+			clientUpdatedAt: mutation.updatedAt,
+			serverUpdatedAt: null,
+			clientId,
+			authorUserId: authorUserId || mutation.authorUserId,
+		});
+
+		if (!serverAppointment) {
+			const p = mergeResult.mergedEntity;
+			const startsAt = p.startsAt ? new Date(String(p.startsAt)) : new Date();
+			const endsAt = p.endsAt
+				? new Date(String(p.endsAt))
+				: new Date(startsAt.getTime() + 30 * 60000);
+
+			const validStatuses = new Set([
+				"planned",
+				"confirmed",
+				"arrived",
+				"in_treatment",
+				"completed",
+				"cancelled",
+				"no_show",
+			]);
+			const rawStatus = String(p.status || "planned");
+			const appointmentState = (
+				validStatuses.has(rawStatus) ? rawStatus : "planned"
+			) as
+				| "planned"
+				| "confirmed"
+				| "arrived"
+				| "in_treatment"
+				| "completed"
+				| "cancelled"
+				| "no_show";
+
+			const [inserted] = await tx
+				.insert(appointments)
+				.values({
+					id: mutation.entityId,
+					organizationId,
+					patientId: p.patientId ? String(p.patientId) : null,
+					doctorUserId: p.doctorUserId ? String(p.doctorUserId) : null,
+					assistantUserId: p.assistantUserId ? String(p.assistantUserId) : null,
+					chairId: p.chairId ? String(p.chairId) : null,
+					status: appointmentState,
+					startsAt,
+					endsAt,
+					reason: p.reason ? String(p.reason) : null,
+					comment: p.comment ? String(p.comment) : null,
+				})
+				.returning();
+
+			await this.upsertEntityVector(
+				tx,
+				organizationId,
+				"appointment",
+				mutation.entityId,
+				mergeResult.updatedVector,
+				mutation.mutationId,
+			);
+
+			return {
+				status: "applied",
+				mergedFields: mergeResult.changedFields,
+				conflicts: [],
+				entity: inserted as unknown as Record<string, unknown>,
+			};
+		}
+
+		const merged = mergeResult.mergedEntity;
+		const updateData: Record<string, unknown> = {};
+		if ("patientId" in merged)
+			updateData.patientId = merged.patientId ? String(merged.patientId) : null;
+		if ("doctorUserId" in merged)
+			updateData.doctorUserId = merged.doctorUserId
+				? String(merged.doctorUserId)
+				: null;
+		if ("chairId" in merged)
+			updateData.chairId = merged.chairId ? String(merged.chairId) : null;
+		if ("status" in merged && merged.status) {
+			const rawStat = String(merged.status);
+			updateData.status = (
+				[
+					"planned",
+					"confirmed",
+					"arrived",
+					"in_treatment",
+					"completed",
+					"cancelled",
+					"no_show",
+				].includes(rawStat)
+					? rawStat
+					: "planned"
+			) as "planned";
+		}
+		if ("startsAt" in merged && merged.startsAt)
+			updateData.startsAt = new Date(String(merged.startsAt));
+		if ("endsAt" in merged && merged.endsAt)
+			updateData.endsAt = new Date(String(merged.endsAt));
+		if ("reason" in merged)
+			updateData.reason = merged.reason ? String(merged.reason) : null;
+		if ("comment" in merged)
+			updateData.comment = merged.comment ? String(merged.comment) : null;
+
+
+		const [updated] = await tx
+			.update(appointments)
+			.set(updateData)
+			.where(
+				and(
+					eq(appointments.organizationId, organizationId),
+					eq(appointments.id, mutation.entityId),
+				),
+			)
+			.returning();
+
+		await this.upsertEntityVector(
+			tx,
+			organizationId,
+			"appointment",
+			mutation.entityId,
+			mergeResult.updatedVector,
+			mutation.mutationId,
+		);
+
+		const status: SyncMutationStatus = mergeResult.hasConflicts
+			? "conflict_resolved"
+			: mergeResult.changedFields.length > 0
+				? "merged"
+				: "applied";
+
+		return {
+			status,
+			mergedFields: mergeResult.changedFields,
+			conflicts: mergeResult.conflicts,
+			entity: (updated || merged) as unknown as Record<string, unknown>,
+		};
+	}
+
+	/**
 	 * Persists or updates the vector clock for an entity.
 	 */
 	private static async upsertEntityVector(
+
 		tx: TenantDb,
 		organizationId: string,
 		entityKind: SyncMutationEnvelope["entityKind"],
@@ -910,6 +1159,7 @@ export class SyncGatewayService {
 				changedVisits,
 				changedDiaries,
 				changedPayments,
+				changedAppointments,
 				changedVectors,
 			] = await Promise.all([
 				tx
@@ -950,6 +1200,15 @@ export class SyncGatewayService {
 					),
 				tx
 					.select()
+					.from(appointments)
+					.where(
+						and(
+							eq(appointments.organizationId, organizationId),
+							gte(appointments.startsAt, since),
+						),
+					),
+				tx
+					.select()
 					.from(syncEntityVectors)
 					.where(
 						and(
@@ -965,8 +1224,10 @@ export class SyncGatewayService {
 				visits: changedVisits,
 				visitDiaries: changedDiaries,
 				payments: changedPayments,
+				appointments: changedAppointments,
 				vectors: changedVectors,
 			};
 		});
 	}
 }
+

@@ -53,6 +53,7 @@ export async function registerSyncRoutes(app: FastifyInstance) {
 			orgId,
 			parsed.data,
 			identity.userId || undefined,
+			{ logger: request.log },
 		);
 
 		return reply.code(200).send(result);
@@ -94,6 +95,7 @@ export async function registerSyncRoutes(app: FastifyInstance) {
 			orgId,
 			parsed.data,
 			identity.userId || undefined,
+			{ logger: request.log },
 		);
 
 		return reply.code(200).send(result);

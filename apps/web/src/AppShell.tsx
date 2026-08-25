@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from "react";
 import { BootErrorBoundary } from "./bootErrorBoundary";
 import { GlobalToast } from "./components/GlobalToast";
+import { DiagnosticDrawer } from "./components/diagnostic/DiagnosticDrawer";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 
@@ -48,6 +49,8 @@ export function AppShell() {
 				<DentalWorkspace />
 			</Suspense>
 			<GlobalToast />
+			<DiagnosticDrawer />
 		</BootErrorBoundary>
 	);
 }
+

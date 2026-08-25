@@ -124,6 +124,7 @@ import { startCommunicationDispatchWorker } from "./services/communications/disp
 import { getProxyAgent } from "./speech/keyPool.js";
 import { ensureSshTunnel } from "./speech/tunnel.js";
 import { repairMojibakeText } from "./text/repairMojibake.js";
+import { requestLoggingPlugin } from "./observability/index.js";
 import { registerRouteNotFoundHandler } from "./utils/routeNotFound.js";
 import { startWatchdog } from "./watchdog.js";
 
@@ -441,7 +442,7 @@ export async function createDenteApiApp(
 
 	await app.register(cors, {
 		origin: webOrigins,
-		// Заголовки авторизации должны явно проходить преflight-проверку.
+		// Заголовки авторизации и correlation-id должны явно проходить преflight-проверку.
 		allowedHeaders: [
 			"content-type",
 			"authorization",
@@ -450,14 +451,21 @@ export async function createDenteApiApp(
 			"x-dente-admin-secret",
 			"x-organization-id",
 			"x-requested-with",
+			"x-correlation-id",
+			"x-request-id",
 		],
 		exposedHeaders: [
 			"retry-after",
 			"x-ratelimit-limit",
 			"x-ratelimit-remaining",
+			"x-correlation-id",
+			"x-request-id",
 		],
 		maxAge: 600,
 	});
+
+	// Сквозное структурированное логирование, Correlation ID и замер латентности
+	await app.register(requestLoggingPlugin);
 
 	await app.register(helmet, {
 		contentSecurityPolicy: false,
