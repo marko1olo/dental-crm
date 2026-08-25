@@ -38,7 +38,7 @@ export interface AppointmentModalProps {
 			comment: string;
 		},
 	) => Promise<boolean>;
-	repeatAppointment: (appointment: Appointment) => void;
+	repeatAppointment?: (appointment: Appointment) => void;
 	copyAppointmentToBuffer?: (appointment: Appointment) => void;
 	patientName: (
 		patients: Dashboard["patients"],
@@ -212,6 +212,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 	if (!isOpen || !appointment) return null;
 
 	const currentPatientName = patientName(dashboard.patients, patientId);
+	const isNewAppointment = Boolean(appointment?.id?.startsWith("new"));
 
 	const modalContent = (
 		<div
@@ -237,7 +238,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 						</div>
 						<div>
 							<h3 className="text-base font-bold text-[var(--ink)] m-0">
-								Детали записи: {currentPatientName}
+								{isNewAppointment ? `Запись на следующий этап: ${currentPatientName}` : `Детали записи: ${currentPatientName}`}
 							</h3>
 							<p className="text-xs text-[var(--muted)] m-0 mt-0.5">
 								{startsAtLocal ? `${startsAtLocal.slice(0, 10)} ${startsAtLocal.slice(11, 16)} - ${endsAtLocal.slice(11, 16)}` : ""}
@@ -245,6 +246,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 						</div>
 					</div>
 					<div className="flex items-center gap-2">
+						{repeatAppointment && !isNewAppointment && (
 						<button
 							type="button"
 							onClick={() => repeatAppointment(appointment)}
@@ -254,7 +256,8 @@ export function AppointmentModal(props: AppointmentModalProps) {
 							<Repeat size={15} />
 							<span className="hidden sm:inline">Повторить</span>
 						</button>
-						{copyAppointmentToBuffer && (
+						)}
+						{copyAppointmentToBuffer && !isNewAppointment && (
 							<button
 								type="button"
 								onClick={() => copyAppointmentToBuffer(appointment)}
@@ -501,7 +504,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 						className="flex-1 min-h-[48px] px-6 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-extrabold rounded-xl text-sm sm:text-base transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
 					>
 						<Check size={18} />
-						<span>{isSaving ? "Сохраняю…" : "Сохранить изменения"}</span>
+						<span>{isSaving ? "Сохраняю…" : isNewAppointment ? "Записать на приём" : "Сохранить изменения"}</span>
 					</button>
 				</div>
 			</div>

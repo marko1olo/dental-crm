@@ -62,7 +62,8 @@ export function VisitDiagnosticsTab(props?: {
 	const [isMedicalTourismModalOpen, setIsMedicalTourismModalOpen] = useState<boolean>(false);
 
 	const [photoAttachments, setPhotoAttachments] = useState<ClinicalPhotoAttachment[]>([]);
-	const [selectedToothForPhoto, setSelectedToothForPhoto] = useState<number>(16);
+	const initialToothNumber = Number(ctx?.dashboard?.activeVisit?.diagnosisTooth) || 16;
+	const [selectedToothForPhoto, setSelectedToothForPhoto] = useState<number>(initialToothNumber);
 	const [selectedPhotoType, setSelectedPhotoType] = useState<"before" | "after" | "process" | "intraoral_macro" | "face_portrait">("before");
 	const [photoComment, setPhotoComment] = useState<string>("");
 
@@ -461,7 +462,7 @@ export function VisitDiagnosticsTab(props?: {
 			<EndoCanalLogModal
 				isOpen={isEndoLogModalOpen}
 				onClose={() => setIsEndoLogModalOpen(false)}
-				toothNumber={16}
+				toothNumber={selectedToothForPhoto || initialToothNumber || 16}
 				patientId={visitPatientId ?? activePatient?.id}
 				onInsertToProtocol={(text) => {
 					if (props?.onInsertToProtocol) {

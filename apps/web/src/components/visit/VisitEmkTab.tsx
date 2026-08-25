@@ -1,5 +1,6 @@
 import {
 	AlertTriangle,
+	Calendar,
 	Check,
 	Copy,
 	Download,
@@ -22,6 +23,7 @@ import {
 import React from "react";
 import { visitDraftQualityLabels } from "../../AppConstants";
 import {
+	denteAdminSecretRequestHeaders,
 	visitDraftMissingFieldLabel,
 	visitDraftSignalLabel,
 	visitNoteFormFromVisit,
@@ -38,6 +40,8 @@ import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 import { CompletedServicesChecklist } from "./CompletedServicesChecklist";
 import { EgiszMultipleDiagnosesWidget } from "./EgiszMultipleDiagnosesWidget";
 import { EgiszCdaExportModal } from "../egisz/EgiszCdaExportModal";
+import { AppointmentModal } from "../schedule/AppointmentModal";
+import type { Appointment } from "@dental/shared";
 import { PrescriptionModal } from "./PrescriptionModal";
 import { PatientBillingModal } from "../finance/PatientBillingModal";
 import { InformedConsentModal } from "../consents/InformedConsentModal";
@@ -171,6 +175,41 @@ export function VisitEmkTab() {
 	const [completionResult, setCompletionResult] = React.useState<ClinicalVisitCompletionResult | null>(null);
 	const [isCompletingVisit, setIsCompletingVisit] = React.useState<boolean>(false);
 	const [isSbpQrModalOpen, setIsSbpQrModalOpen] = React.useState<boolean>(false);
+	const [isNextVisitModalOpen, setIsNextVisitModalOpen] = React.useState<boolean>(false);
+	const [nextVisitAppointment, setNextVisitAppointment] = React.useState<Appointment | null>(null);
+	const [activeSelectedTooth, setActiveSelectedTooth] = React.useState<number | null>(null);
+
+	const handleOpenNextVisitBooking = React.useCallback((daysAhead = 5) => {
+		const staffList = Array.isArray(dashboard?.clinicSettings?.staff) ? dashboard.clinicSettings.staff : [];
+		const chairsList = Array.isArray(dashboard?.clinicSettings?.chairs) ? dashboard.clinicSettings.chairs : [];
+		const activeDoc = staffList.find((s: any) => s.active && (s.role === "doctor" || s.role === "owner")) || appLogic?.activeDoctor;
+		const activeChair = chairsList.find((c: any) => c.active) || chairsList[0];
+		const patientId = realVisitFieldId(activePatient?.id || dashboard?.activeVisit?.patientId) || "";
+
+		const d = new Date();
+		d.setDate(d.getDate() + daysAhead);
+		d.setHours(10, 0, 0, 0);
+		const startsAt = d.toISOString();
+		const dEnd = new Date(d.getTime() + 45 * 60 * 1000);
+		const endsAt = dEnd.toISOString();
+
+		const diagText = visitNoteForm?.diagnosis ? ` (${visitNoteForm.diagnosis})` : "";
+		const draftAppt: Appointment = {
+			id: `new-stage-${Date.now()}`,
+			organizationId: dashboard?.activeVisit?.organizationId || "org-1",
+			patientId,
+			doctorUserId: dashboard?.activeVisit?.doctorUserId || activeDoc?.id || "",
+			assistantUserId: null,
+			chairId: dashboard?.activeVisit?.chairId || activeChair?.id || "",
+			startsAt,
+			endsAt,
+			status: "planned",
+			reason: `Следующий этап лечения${diagText}`,
+			comment: `Назначено в 1 клик из ЭМК визита от ${new Date().toLocaleDateString("ru-RU")}`,
+		};
+		setNextVisitAppointment(draftAppt);
+		setIsNextVisitModalOpen(true);
+	}, [dashboard, appLogic, activePatient, visitNoteForm]);
 
 	const handleCompleteVisitAndGenerateReceipt = React.useCallback(async () => {
 		setIsCompletingVisit(true);
@@ -652,6 +691,16 @@ export function VisitEmkTab() {
 				<div className="flex items-center gap-2.5 flex-wrap">
 					<button
 						type="button"
+						onClick={() => handleOpenNextVisitBooking(5)}
+						className="min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-blue-600 hover:bg-blue-500 text-white shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer active:scale-98"
+						data-testid="btn-schedule-next-stage"
+						title="Записать пациента на следующий этап лечения через 5-7 дней"
+					>
+						<span className="text-base">📅</span>
+						<span>Записать на след. этап (+5 дней)</span>
+					</button>
+					<button
+						type="button"
 						onClick={handleCompleteVisitAndGenerateReceipt}
 						disabled={isCompletingVisit}
 						className="min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-black bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-white shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer active:scale-98"
@@ -693,6 +742,16 @@ export function VisitEmkTab() {
 						</div>
 					</div>
 					<div className="flex items-center gap-2 flex-wrap">
+						<button
+							type="button"
+							onClick={() => handleOpenNextVisitBooking(5)}
+							className="min-h-[44px] px-4 py-2 text-xs sm:text-sm font-extrabold rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-xs transition-all cursor-pointer inline-flex items-center gap-2 active:scale-98"
+							data-testid="btn-completion-schedule-next-visit"
+							title="Записать на повторный приём через 5-7 дней"
+						>
+							<Calendar size={16} />
+							<span>📅 След. приём (+5 дней)</span>
+						</button>
 						<button
 							type="button"
 							onClick={() => setIsSbpQrModalOpen(true)}
@@ -760,82 +819,103 @@ export function VisitEmkTab() {
 
 			{/* Быстрые клинические протоколы SOAP + МКБ-10 (1 клик) */}
 			<ClinicalQuickPresetsBar
-				onSelectPreset={(preset) => {
+				activeTooth={activeSelectedTooth}
+				onSelectActiveTooth={(tooth) => setActiveSelectedTooth(tooth)}
+				onSelectPreset={(preset, chosenTooth) => {
 					if (!updateVisitNoteField) return;
-					const currComplaint = visitNoteForm.complaint || "";
-					const currAnamnesis = visitNoteForm.anamnesis || "";
-					const currStatus = visitNoteForm.objectiveStatus || "";
-					const currPlan = visitNoteForm.treatmentPlan || "";
+					const targetTooth = chosenTooth || activeSelectedTooth || (typeof visitNoteForm?.diagnosis === "string" ? visitNoteForm.diagnosis.match(/\b([1-4][1-8]|5[1-5]|6[1-5]|7[1-5]|8[1-5])\b/)?.[0] : null) || preset.defaultTooth || 16;
+					const cleanComplaint = preset.complaint || preset.anamnesis;
+					const cleanAnamnesis = preset.anamnesis;
+					const formattedStatus = preset.category !== "hygiene" && targetTooth ? `Зуб ${targetTooth}: ${preset.statusLocalis}` : preset.statusLocalis;
+					const formattedDiagnosis = preset.icd10Label
+						? `${preset.icd10} ${preset.icd10Label}${preset.category !== "hygiene" && targetTooth ? ` (Зуб ${targetTooth})` : ""}`
+						: `${preset.icd10} ${preset.title}${preset.category !== "hygiene" && targetTooth ? ` (Зуб ${targetTooth})` : ""}`;
 
-					updateVisitNoteField(
-						"complaint",
-						appendClinicalText(currComplaint, preset.anamnesis, " "),
-					);
-					updateVisitNoteField(
-						"anamnesis",
-						appendClinicalText(currAnamnesis, preset.anamnesis, " "),
-					);
-					updateVisitNoteField(
-						"objectiveStatus",
-						appendClinicalText(currStatus, preset.statusLocalis, "\n\n"),
-					);
-					updateVisitNoteField(
-						"diagnosis",
-						preset.icd10Label
-							? `${preset.icd10} ${preset.icd10Label}`
-							: `${preset.icd10} ${preset.title}`,
-					);
+					let chosenAnesDrug = preset.anesthetic?.drugKey || "ultracain_ds_forte";
+					let anesText = "";
 
-					// Синхронный подбор услуги из прайса клиники для сметы и чек-листа выполненного
-					const keywordsMap: Record<string, string[]> = {
-						acute_pain_pulpitis: ["пульпит", "эндо", "канал"],
-						pulpitis_acute: ["пульпит", "эндо", "канал"],
-						aching_pain_periodontitis: ["периодонтит", "эндо", "канал"],
-						periodontitis_chronic: ["периодонтит", "эндо", "канал"],
-						perio_srp_curettage: ["пародонт", "кюретаж", "srp", "вектор", "гингивит"],
-						thermal_reaction_caries: ["кариес", "пломб"],
-						caries_medium: ["кариес", "пломб"],
-						caries_deep: ["кариес", "пломб"],
-						filling_restoration: ["пломб", "реставраци"],
-						ortho_crown_prep: ["коронка"],
-						surgery_extraction_simple: ["удаление"],
-						hygiene_complex: ["гигиен", "чистк", "air-flow"],
-						hygiene_and_caries_mixed: ["гигиен", "чистк", "кариес", "пломб"],
-					};
-					const kws = keywordsMap[preset.id] ?? [preset.category];
-					const catalogList = Array.isArray(dashboard?.serviceCatalog)
-						? (dashboard?.serviceCatalog as Array<{ title?: string; active?: boolean; basePriceRub?: number }>)
-						: [];
-					const matchedCatalogService = catalogList.find(
-						(s) => s.active && kws.some((kw) => s.title?.toLowerCase().includes(kw)),
-					);
+					const hasCardioOrHypertension = anesthesiaRisk.hasHypertensionRisk || (activePatient as any)?.medicalAlerts?.some((a: string) => /гипертон|давлен|сердц|ссз|аритми/i.test(a));
+					const hasSulfiteRisk = Array.isArray((activePatient as any)?.allergies) && (activePatient as any).allergies.some((a: string) => /сульфит|метабисульфит/i.test(a));
 
-					let fullPlanText = appendClinicalText(currPlan, preset.treatmentDescription, "\n\n");
-					if (matchedCatalogService && typeof matchedCatalogService.basePriceRub === "number") {
-						const billLine = `Выполнено: ${matchedCatalogService.title} — ${matchedCatalogService.basePriceRub.toLocaleString("ru-RU")} ₽`;
-						if (!fullPlanText.includes(matchedCatalogService.title ?? "")) {
-							fullPlanText = `${fullPlanText}\n\n${billLine}`;
+					if (preset.category !== "hygiene") {
+						if (hasCardioOrHypertension || hasSulfiteRisk) {
+							chosenAnesDrug = "scandonest_3";
+							setSelectedAnesDrugKey("scandonest_3");
+							setSelectedCarpulesCount(1.0);
+							anesText = "Инфильтрационная/проводниковая анестезия: Sol. Scandonest 3% (Мепивакаин 3% без вазоконстриктора) — 1.7 мл (по кардио-соматическому профилю пациента).";
+							showToast("⚠️ Выбран Скандонест 3% (без адреналина) по соматическому профилю пациента", "warning", 4000);
+						} else {
+							setSelectedAnesDrugKey(chosenAnesDrug);
+							setSelectedCarpulesCount(preset.anesthetic?.carpulesCount || 1.0);
+							anesText = chosenAnesDrug === "ultracain_ds"
+								? "Инфильтрационная/проводниковая анестезия: Sol. Ultracaini D-S 1:200 000 — 1.7 мл."
+								: "Инфильтрационная/проводниковая анестезия: Sol. Ultracaini D-S Forte 1:100 000 — 1.7 мл.";
 						}
 					}
+
+					let billLine = "";
+					if (preset.service804n) {
+						billLine = `Выполнено: [Код 804н ${preset.service804n.code804n}] ${preset.service804n.title} — ${preset.service804n.basePriceRub.toLocaleString("ru-RU")} ₽`;
+					}
+					const fullPlanText = [anesText, preset.treatmentDescription, billLine].filter(Boolean).join("\n\n");
+
+					updateVisitNoteField("complaint", cleanComplaint);
+					updateVisitNoteField("anamnesis", cleanAnamnesis);
+					updateVisitNoteField("objectiveStatus", formattedStatus);
+					updateVisitNoteField("diagnosis", formattedDiagnosis);
 					updateVisitNoteField("treatmentPlan", fullPlanText);
 
-					// Синхронизация с Дневником 043/у
-					try {
-						window.dispatchEvent(
-							new CustomEvent("dente-apply-soap-protocol", {
-								detail: {
-									soap: {
-										anamnesis: preset.anamnesis,
-										statusLocalis: preset.statusLocalis,
-										diagnosisIcd10: preset.icd10,
-										treatmentDescription: fullPlanText,
+					// Синхронизация с Одонтограммой и Дневником 043/у
+					if (preset.toothState && targetTooth) {
+						const toothNum = Number(targetTooth);
+						try {
+							window.dispatchEvent(
+								new CustomEvent("clinical-finding-detected", {
+									detail: {
+										toothNumber: toothNum,
+										finding: preset.toothState,
 									},
-									mode: "smart_append",
-								},
-							}),
-						);
-					} catch {
-						// ignore event dispatch error
+								}),
+							);
+							window.dispatchEvent(
+								new CustomEvent("dente-odontogram-update", {
+									detail: {
+										patientId: realVisitFieldId(activePatient?.id),
+										states: [{ toothNumber: toothNum, state: preset.toothState }],
+									},
+								}),
+							);
+							window.dispatchEvent(
+								new CustomEvent("dente-apply-soap-protocol", {
+									detail: {
+										finding: { toothNumber: toothNum, state: preset.toothState },
+										soap: {
+											anamnesis: cleanAnamnesis,
+											statusLocalis: formattedStatus,
+											diagnosisIcd10: preset.icd10,
+											diagnosisTooth: String(toothNum),
+											treatmentDescription: fullPlanText,
+										},
+										mode: "clean_replace",
+									},
+								}),
+							);
+							const patId = realVisitFieldId(activePatient?.id);
+							if (patId) {
+								fetch(`/api/patients/${patId}/tooth-states/batch`, {
+									method: "POST",
+									headers: denteAdminSecretRequestHeaders({
+										"Content-Type": "application/json",
+									}),
+									body: JSON.stringify({
+										toothNumbers: [toothNum],
+										state: preset.toothState,
+									}),
+								}).catch(() => {});
+							}
+						} catch {
+							// safe event dispatch
+						}
 					}
 				}}
 				isLocked={Boolean(dashboard?.activeVisit?.status === "signed")}
@@ -1523,7 +1603,7 @@ export function VisitEmkTab() {
 												onClick={() => {
 													if (!updateVisitNoteField) return;
 													const curr = visitNoteForm.treatmentPlan || "";
-													const targetTooth = typeof visitNoteForm?.diagnosis === "string" ? visitNoteForm.diagnosis.match(/\b\d{2}\b/)?.[0] || 46 : 46;
+													const targetTooth = activeSelectedTooth || (typeof visitNoteForm?.diagnosis === "string" ? visitNoteForm.diagnosis.match(/\b([1-4][1-8]|5[1-5]|6[1-5]|7[1-5]|8[1-5])\b/)?.[0] : null) || 16;
 													const endoText = formatEndoProtocolQuickSnippet({
 														toothNumber: targetTooth,
 														canals: [

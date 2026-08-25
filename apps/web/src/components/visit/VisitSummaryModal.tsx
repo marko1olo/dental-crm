@@ -1,5 +1,6 @@
 import {
 	Activity,
+	Calendar,
 	AlertTriangle,
 	CheckCircle2,
 	Clock,
@@ -24,6 +25,11 @@ import { createPortal } from "react-dom";
 import { getIcdColor, ICD10_DICTIONARY } from "../../lib/icd10";
 import type { DiaryState } from "../useVisitDiaryLogic";
 import { DocumentCustomizerModal } from "../documents/DocumentCustomizerModal";
+import { AppointmentModal } from "../schedule/AppointmentModal";
+import type { Appointment } from "@dental/shared";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
+import { showToast } from "../GlobalToast";
 import { PremiumDocumentPrintSheet } from "../documents/PremiumDocumentPrintSheet";
 import {
 	EmrProtocolGeneratorModal,
@@ -112,6 +118,7 @@ export interface VisitSummaryModalProps {
 	onOpenRadiologyReferral?: () => void;
 	onOpenEgiszExport?: () => void;
 	onApplySynthesizedDiary?: (diary: VisitDiaryEntry043) => void;
+	onScheduleNextVisit?: () => void;
 }
 
 function formatPatientFullName(
@@ -144,7 +151,11 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 	onOpenRadiologyReferral,
 	onOpenEgiszExport,
 	onApplySynthesizedDiary,
+	onScheduleNextVisit,
 }) => {
+	const appLogic = useAppLogicContext() as any;
+	const [isNextStageModalOpen, setIsNextStageModalOpen] = useState(false);
+	const [nextVisitDraft, setNextVisitDraft] = useState<Appointment | null>(null);
 	const [zoomImage, setZoomImage] = useState<{
 		url: string;
 		title?: string;
@@ -306,9 +317,44 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--ok-fg)] text-white text-[10px]">3</span>
 							<span>Шаг 3: Печать Формы 043/у</span>
 						</div>
-						<div className="ml-auto flex items-center gap-1 text-[var(--muted)] text-[11px]">
-							<Save size={12} className="text-[var(--ok-fg)]" />
-							<span>💾 Дневник 043/у сохранен автоматически</span>
+						<div className="ml-auto flex items-center gap-2">
+							<button
+								type="button"
+								onClick={() => {
+									if (onScheduleNextVisit) {
+										onScheduleNextVisit();
+									} else {
+										const d = new Date();
+										d.setDate(d.getDate() + 5);
+										d.setHours(10, 0, 0, 0);
+										const draft: Appointment = {
+											id: `new-stage-${Date.now()}`,
+											organizationId: appLogic?.dashboard?.activeVisit?.organizationId || "org-1",
+											patientId: patient?.id || "",
+											doctorUserId: (appLogic?.dashboard?.clinicSettings?.staff || []).find((s: any) => s.active && (s.role === "doctor" || s.role === "owner"))?.id || "",
+											assistantUserId: null,
+											chairId: (appLogic?.dashboard?.clinicSettings?.chairs || []).find((c: any) => c.active)?.id || "",
+											startsAt: d.toISOString(),
+											endsAt: new Date(d.getTime() + 45 * 60 * 1000).toISOString(),
+											status: "planned",
+											reason: `Следующий этап лечения: ${diary.diagnosisIcd10 || "Стоматологический приём"}`,
+											comment: `Назначено из сводки визита от ${new Date().toLocaleDateString("ru-RU")}`,
+										};
+										setNextVisitDraft(draft);
+										setIsNextStageModalOpen(true);
+									}
+								}}
+								className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[38px] rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-black shadow-xs transition-all cursor-pointer touch-manipulation active:scale-95"
+								title="Записать пациента на следующий этап через 5-7 дней"
+								data-testid="ribbon-schedule-next-stage-btn"
+							>
+								<Calendar size={13} />
+								<span>📅 Записать на след. этап (+5 дней)</span>
+							</button>
+							<div className="flex items-center gap-1 text-[var(--muted)] text-[11px]">
+								<Save size={12} className="text-[var(--ok-fg)]" />
+								<span>💾 Автосохранено</span>
+							</div>
 						</div>
 					</div>
 
@@ -438,6 +484,39 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 								</div>
 							</div>
 						</div>
+						<button
+							type="button"
+							onClick={() => {
+								if (onScheduleNextVisit) {
+									onScheduleNextVisit();
+								} else {
+									const d = new Date();
+									d.setDate(d.getDate() + 5);
+									d.setHours(10, 0, 0, 0);
+									const draft: Appointment = {
+										id: `new-stage-${Date.now()}`,
+										organizationId: appLogic?.dashboard?.activeVisit?.organizationId || "org-1",
+										patientId: patient?.id || "",
+										doctorUserId: (appLogic?.dashboard?.clinicSettings?.staff || []).find((s: any) => s.active && (s.role === "doctor" || s.role === "owner"))?.id || "",
+										assistantUserId: null,
+										chairId: (appLogic?.dashboard?.clinicSettings?.chairs || []).find((c: any) => c.active)?.id || "",
+										startsAt: d.toISOString(),
+										endsAt: new Date(d.getTime() + 45 * 60 * 1000).toISOString(),
+										status: "planned",
+										reason: `Следующий этап лечения: ${diary.diagnosisIcd10 || "Стоматологический приём"}`,
+										comment: `Назначено из сводки визита от ${new Date().toLocaleDateString("ru-RU")}`,
+									};
+									setNextVisitDraft(draft);
+									setIsNextStageModalOpen(true);
+								}
+							}}
+							className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-extrabold shadow-md transition-all cursor-pointer touch-manipulation active:scale-[0.98]"
+							title="Записать пациента на следующий этап лечения через 5-7 дней"
+							data-testid="summary-schedule-next-stage-btn"
+						>
+							<Calendar className="w-4 h-4" />
+							<span>📅 След. этап (+5 дней)</span>
+						</button>
 						<button
 							type="button"
 							onClick={() => setIsProtocolGeneratorOpen(true)}
@@ -790,6 +869,71 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 			/>
 
 			{/* Document Customizer Drawer Modal */}
+			{/* Quick Next Visit Scheduler Modal */}
+			<AppointmentModal
+				isOpen={isNextStageModalOpen}
+				appointment={nextVisitDraft}
+				dashboard={appLogic?.dashboard || { patients: [patient].filter(Boolean), clinicSettings: { staff: [], chairs: [] } }}
+				onClose={() => setIsNextStageModalOpen(false)}
+				onSave={async (appointmentId, draft) => {
+					try {
+						const res = await fetch("/api/appointments", {
+							method: "POST",
+							headers: appLogic?.auth?.scheduleMutationHeaders
+								? appLogic.auth.scheduleMutationHeaders({ "Content-Type": "application/json" })
+								: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+							body: JSON.stringify({
+								patientId: draft.patientId,
+								doctorUserId: draft.doctorUserId,
+								assistantUserId: draft.assistantUserId,
+								chairId: draft.chairId,
+								startsAt: draft.startsAt,
+								endsAt: draft.endsAt,
+								status: draft.status,
+								reason: draft.reason,
+								comment: draft.comment,
+								clientMutationId: `next-visit-${Date.now()}`,
+							}),
+						});
+						if (!res.ok) {
+							showToast("Не удалось записать пациента на прием", "error");
+							return false;
+						}
+						const nextDash = await res.json();
+						if (appLogic?.setDashboard) appLogic.setDashboard(nextDash);
+						showToast("Пациент успешно записан на следующий этап!", "success", 4000);
+						setIsNextStageModalOpen(false);
+						return true;
+					} catch {
+						showToast("Ошибка сохранения записи", "error");
+						return false;
+					}
+				}}
+				patientName={(patients, pid) => {
+					const found = (patients || []).find((p: any) => p.id === pid);
+					return found?.fullName || patientName || "Пациент";
+				}}
+				formatTime={(iso) => (iso ? iso.slice(11, 16) : "10:00")}
+				toDateTimeLocalValue={(iso) => {
+					if (!iso) return "";
+					return iso.slice(0, 16);
+				}}
+				fromDateTimeLocalValue={(val) => {
+					if (!val) return new Date().toISOString();
+					return new Date(val).toISOString();
+				}}
+				appointmentLabels={{
+					planned: "Запланирован",
+					confirmed: "Подтвержден",
+					arrived: "Пришел",
+					in_treatment: "В кресле",
+					completed: "Завершен",
+					cancelled: "Отменен",
+					no_show: "Не явился",
+				}}
+				activeVisitLockedAppointmentStatuses={new Set()}
+			/>
+
 			<DocumentCustomizerModal
 				isOpen={isCustomizerOpen}
 				onClose={() => setIsCustomizerOpen(false)}
