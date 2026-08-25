@@ -55,8 +55,10 @@ import { actionFailureToast } from "../lib/panelStateText";
  * файлу, включая комментарии, и на цитате прежнего кода он справедливо падает.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { countLabel, money } from "../AppHelpers";
+import { DoctorPayrollModal } from "../components/finance/payroll/DoctorPayrollModal";
+import type { DoctorCompletedServiceItem } from "../components/finance/payroll/payrollEngine";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 
 /** Состояние расчёта по врачу. Значения приходят с сервера как есть. */
@@ -69,7 +71,53 @@ type DoctorPayoutState =
 /** Что известно про себестоимость материалов врача за период. */
 type DoctorPayoutMaterialsState = "counted" | "no_movements" | "cost_missing";
 
-type DoctorPayoutRow = {
+export type DoctorPayoutVisitService = {
+	readonly id: string;
+	readonly title: string;
+	readonly order804nCode: string | null;
+	readonly toothCode: string | null;
+	readonly priceRub: number;
+	readonly quantity: number;
+};
+
+export type DoctorPayoutVisitMaterial = {
+	readonly id: string;
+	readonly name: string;
+	readonly quantity: number;
+	readonly unit: string;
+	readonly unitCostRub: number;
+	readonly totalCostRub: number;
+};
+
+export type DoctorPayoutVisit = {
+	readonly visitId: string;
+	readonly appointmentId: string | null;
+	readonly paidAt: string;
+	readonly visitDate: string;
+	readonly patientId: string;
+	readonly patientName: string;
+	readonly medicalCardNumber: string;
+	readonly revenueRub: number;
+	readonly paymentCount: number;
+	readonly services: DoctorPayoutVisitService[];
+	readonly materials: DoctorPayoutVisitMaterial[];
+};
+
+export type DoctorPayoutLabOrder = {
+	readonly id: string;
+	readonly orderNumber: string;
+	readonly toothFdi: string | null;
+	readonly restorationType: string;
+	readonly material: string | null;
+	readonly patientName: string;
+	readonly status: string;
+	readonly completedAt: string | null;
+	readonly priceRub: number;
+	readonly withheldRub: number;
+	readonly deductionPct: number;
+};
+
+export type DoctorPayoutRow = {
 	doctorUserId: string;
 	doctorName: string;
 	role: string;
@@ -80,8 +128,12 @@ type DoctorPayoutRow = {
 	materialMovements: number;
 	materialMovementsUnpriced: number;
 	materialsState: DoctorPayoutMaterialsState;
+	labCostRub?: number;
+	labOrdersCount?: number;
+	withheldLabRub?: number | null;
 	commissionPct: number | null;
 	materialDeductionPct: number | null;
+	labDeductionPct?: number | null;
 	rateEffectiveFrom: string | null;
 	rateRowCount: number;
 	state: DoctorPayoutState;
@@ -89,22 +141,26 @@ type DoctorPayoutRow = {
 	withheldMaterialRub: number | null;
 	payoutRub: number | null;
 	note: string;
+	visits?: DoctorPayoutVisit[];
+	labOrders?: DoctorPayoutLabOrder[];
 };
 
-type DoctorPayoutTotals = {
+export type DoctorPayoutTotals = {
 	revenueRub: number;
 	paymentCount: number;
 	attributableRevenueRub: number;
 	unattributedRevenueRub: number;
 	materialCostRub: number;
+	labCostRub?: number;
 	accruedRub: number;
 	withheldMaterialRub: number;
+	withheldLabRub?: number;
 	payoutRub: number;
 	doctorsCounted: number;
 	doctorsWithoutRate: number;
 };
 
-type DoctorPayoutReport = {
+export type DoctorPayoutReport = {
 	/** "all" — все врачи клиники, "own" — только свои строки. */
 	scope: "all" | "own";
 	period: { from: string; to: string };
@@ -293,6 +349,13 @@ export function DoctorPayoutDashboard() {
 	const [rateSave, setRateSave] = useState<CommissionSaveState>({
 		kind: "idle",
 	});
+
+	// Drill-down and payroll modal states
+	const [expandedDoctorId, setExpandedDoctorId] = useState<string | null>(null);
+	const [activeSubTabs, setActiveSubTabs] = useState<Record<string, "visits" | "lab">>({});
+	const [searchFilters, setSearchFilters] = useState<Record<string, string>>({});
+	const [visitPages, setVisitPages] = useState<Record<string, number>>({});
+	const [payrollModalDoctor, setPayrollModalDoctor] = useState<DoctorPayoutRow | null>(null);
 
 	/*
 	 * authRef: useAppLogic returns a new auth object each render. Putting auth
@@ -576,7 +639,7 @@ export function DoctorPayoutDashboard() {
 							<table className="ops-table">
 								<caption className="sr-only">
 									Выплаты врачам за {monthLabel}: касса, ставка, удержание за
-									материалы и сумма к выплате
+									материалы, лабораторию и сумма к выплате
 								</caption>
 								<thead>
 									<tr>
@@ -585,180 +648,602 @@ export function DoctorPayoutDashboard() {
 										<th scope="col">Ставка</th>
 										<th scope="col">Начислено</th>
 										<th scope="col">Материалы</th>
-										<th scope="col">Удержано</th>
+										<th scope="col">Удержано за ЗТЛ</th>
 										<th scope="col">К выплате</th>
+										<th scope="col">Детали</th>
 									</tr>
 								</thead>
 								<tbody>
-									{(report?.rows ?? []).map((row) => (
-										<tr key={row.doctorUserId}>
-											<td className="ops-strong" data-label="Врач">
-												{row.doctorName}
-												{row.isActive ? null : (
-													<>
-														{" "}
-														<span className="ops-state ops-state--muted">
-															уволен
-														</span>
-													</>
-												)}
-											</td>
-											<td className="ops-num" data-label="Касса">
-												{money(row.revenueRub)}
-												<br />
-												<span className="ops-note">
-													{countLabel(
-														row.paymentCount,
-														"оплата",
-														"оплаты",
-														"оплат",
-													)}
-												</span>
-											</td>
-											{/*
-												Ставка отсутствующая печатается СЛОВАМИ. Ноль на этом месте
-												читается как «врач работает бесплатно» и ведёт к выплате
-												нуля вместо разговора о проценте.
-											*/}
-											<td className="ops-num" data-label="Ставка">
-												{editingRateFor === row.doctorUserId ? (
-													<form
-														className="ops-field"
-														onSubmit={(event) => {
-															event.preventDefault();
-															void saveRate(row.doctorUserId, rateDraft);
-														}}
-													>
-														<label htmlFor={`rate-${row.doctorUserId}`}>
-															Процент от кассы для {row.doctorName}
-														</label>
-														<input
-															id={`rate-${row.doctorUserId}`}
-															type="number"
-															inputMode="decimal"
-															min={0}
-															max={100}
-															step={0.01}
-															value={rateDraft}
-															onChange={(event) =>
-																setRateDraft(event.target.value)
-															}
-														/>
-														<button
-															className="primary-button"
-															type="submit"
-															disabled={rateSave.kind === "saving"}
-														>
-															{rateSave.kind === "saving"
-																? "Сохраняю…"
-																: "Сохранить"}
-														</button>
-														<button
-															className="secondary-button"
-															type="button"
-															onClick={() => {
-																setEditingRateFor(null);
-																setRateDraft("");
-																setRateSave({ kind: "idle" });
-															}}
-														>
-															Отмена
-														</button>
-													</form>
-												) : (
-													<>
-														{row.commissionPct === null ? (
-															<span className="ops-state ops-state--warn">
-																не задана
-															</span>
-														) : (
-															percentLabel(row.commissionPct)
-														)}
-														{canEditRates ? (
+									{(report?.rows ?? []).map((row) => {
+										const isExpanded = expandedDoctorId === row.doctorUserId;
+										const activeTab = activeSubTabs[row.doctorUserId] ?? "visits";
+										const search = (searchFilters[row.doctorUserId] ?? "").toLowerCase().trim();
+										const allVisits = row.visits ?? [];
+										const filteredVisits = search
+											? allVisits.filter(
+													(v) =>
+														v.patientName.toLowerCase().includes(search) ||
+														v.medicalCardNumber.toLowerCase().includes(search) ||
+														v.services.some(
+															(s) =>
+																s.title.toLowerCase().includes(search) ||
+																(s.order804nCode &&
+																	s.order804nCode.toLowerCase().includes(search)) ||
+																(s.toothCode && s.toothCode.includes(search)),
+														),
+												)
+											: allVisits;
+										const currentPage = visitPages[row.doctorUserId] ?? 1;
+										const pageSize = 10;
+										const totalPages = Math.max(1, Math.ceil(filteredVisits.length / pageSize));
+										const pagedVisits = filteredVisits.slice(
+											(currentPage - 1) * pageSize,
+											currentPage * pageSize,
+										);
+
+										return (
+											<Fragment key={row.doctorUserId}>
+												<tr>
+													<td className="ops-strong" data-label="Врач">
+														{row.doctorName}
+														{row.isActive ? null : (
 															<>
-																<br />
+																{" "}
+																<span className="ops-state ops-state--muted">
+																	уволен
+																</span>
+															</>
+														)}
+													</td>
+													<td className="ops-num" data-label="Касса">
+														{money(row.revenueRub)}
+														<br />
+														<span className="ops-note">
+															{countLabel(
+																row.paymentCount,
+																"оплата",
+																"оплаты",
+																"оплат",
+															)}
+														</span>
+													</td>
+													{/*
+														Ставка отсутствующая печатается СЛОВАМИ. Ноль на этом месте
+														читается как «врач работает бесплатно» и ведёт к выплате
+														нуля вместо разговора о проценте.
+													*/}
+													<td className="ops-num" data-label="Ставка">
+														{editingRateFor === row.doctorUserId ? (
+															<form
+																className="ops-field"
+																onSubmit={(event) => {
+																	event.preventDefault();
+																	void saveRate(row.doctorUserId, rateDraft);
+																}}
+															>
+																<label htmlFor={`rate-${row.doctorUserId}`}>
+																	Процент от кассы для {row.doctorName}
+																</label>
+																<input
+																	id={`rate-${row.doctorUserId}`}
+																	type="number"
+																	inputMode="decimal"
+																	min={0}
+																	max={100}
+																	step={0.01}
+																	value={rateDraft}
+																	onChange={(event) =>
+																		setRateDraft(event.target.value)
+																	}
+																/>
+																<button
+																	className="primary-button"
+																	type="submit"
+																	disabled={rateSave.kind === "saving"}
+																>
+																	{rateSave.kind === "saving"
+																		? "Сохраняю…"
+																		: "Сохранить"}
+																</button>
 																<button
 																	className="secondary-button"
 																	type="button"
 																	onClick={() => {
-																		setEditingRateFor(row.doctorUserId);
-																		// Прежнее значение подставляется в поле: чаще
-																		// правят на несколько пунктов, а не вводят
-																		// заново. Пустое поле у заданной ставки
-																		// выглядело бы как «ставки нет».
-																		setRateDraft(
-																			row.commissionPct === null
-																				? ""
-																				: String(row.commissionPct),
-																		);
+																		setEditingRateFor(null);
+																		setRateDraft("");
 																		setRateSave({ kind: "idle" });
 																	}}
 																>
-																	{row.commissionPct === null
-																		? "Задать ставку"
-																		: "Изменить"}
+																	Отмена
 																</button>
+															</form>
+														) : (
+															<>
+																{row.commissionPct === null ? (
+																	<span className="ops-state ops-state--warn">
+																		не задана
+																	</span>
+																) : (
+																	percentLabel(row.commissionPct)
+																)}
+																{canEditRates ? (
+																	<>
+																		<br />
+																		<button
+																			className="secondary-button"
+																			type="button"
+																			onClick={() => {
+																				setEditingRateFor(row.doctorUserId);
+																				setRateDraft(
+																					row.commissionPct === null
+																						? ""
+																						: String(row.commissionPct),
+																				);
+																				setRateSave({ kind: "idle" });
+																			}}
+																		>
+																			{row.commissionPct === null
+																				? "Задать ставку"
+																				: "Изменить"}
+																		</button>
+																	</>
+																) : null}
 															</>
-														) : null}
-													</>
-												)}
-											</td>
-											<td className="ops-num" data-label="Начислено">
-												{row.accruedRub === null ? "—" : money(row.accruedRub)}
-											</td>
-											{/*
-												«0,00 ₽» и «списаний не было» — разные утверждения. Первое
-												читается как «материалов не расходовали», и клиника молча
-												переплатит врачу.
-											*/}
-											<td className="ops-num" data-label="Материалы">
-												{row.materialsState === "no_movements" ? (
-													<span className="ops-state ops-state--muted">
-														не списывались
-													</span>
-												) : (
-													<>
-														{money(row.materialCostRub)}
-														{row.materialsState === "cost_missing" ? (
+														)}
+													</td>
+													<td className="ops-num" data-label="Начислено">
+														{row.accruedRub === null ? "—" : money(row.accruedRub)}
+													</td>
+													{/*
+														«0,00 ₽» и «списаний не было» — разные утверждения. Первое
+														читается как «материалов не расходовали», и клиника молча
+														переплатит врачу.
+													*/}
+													<td className="ops-num" data-label="Материалы">
+														{row.materialsState === "no_movements" ? (
+															<span className="ops-state ops-state--muted">
+																не списывались
+															</span>
+														) : (
+															<>
+																{money(row.materialCostRub)}
+																{row.materialsState === "cost_missing" ? (
+																	<>
+																		<br />
+																		<span className="ops-state ops-state--warn">
+																			без цены: {row.materialMovementsUnpriced}
+																		</span>
+																	</>
+																) : null}
+															</>
+														)}
+														{row.withheldMaterialRub !== null && row.withheldMaterialRub > 0 ? (
 															<>
 																<br />
-																<span className="ops-state ops-state--warn">
-																	без цены: {row.materialMovementsUnpriced}
+																<span className="ops-note">
+																	удержано {money(row.withheldMaterialRub)}
 																</span>
 															</>
 														) : null}
-													</>
-												)}
-											</td>
-											<td className="ops-num" data-label="Удержано">
-												{row.withheldMaterialRub === null
-													? "—"
-													: money(row.withheldMaterialRub)}
-												{row.materialDeductionPct === null ? null : (
-													<>
-														<br />
-														<span className="ops-note">
-															{percentLabel(row.materialDeductionPct)}{" "}
-															себестоимости
-														</span>
-													</>
-												)}
-											</td>
-											<td className="ops-num ops-strong" data-label="К выплате">
-												{row.payoutRub === null ? (
-													"—"
-												) : row.payoutRub < 0 ? (
-													// Отрицательную выплату нельзя обнулять: это долг врача
-													// клинике, и спрятав знак, клиника теряет деньги.
-													<span className="ops-state ops-state--bad">
-														{money(row.payoutRub)}
-													</span>
-												) : (
-													money(row.payoutRub)
-												)}
-											</td>
-										</tr>
-									))}
+													</td>
+													<td className="ops-num" data-label="Удержано за ЗТЛ">
+														{row.withheldLabRub != null && row.withheldLabRub > 0 ? (
+															<>
+																{money(row.withheldLabRub)}
+																<br />
+																<span className="ops-note">
+																	{countLabel(
+																		row.labOrdersCount ?? 0,
+																		"наряд",
+																		"наряда",
+																		"нарядов",
+																	)}{" "}
+																	на {money(row.labCostRub ?? 0)}
+																</span>
+															</>
+														) : (row.labOrdersCount ?? 0) === 0 ? (
+															<span className="ops-state ops-state--muted">
+																нет нарядов
+															</span>
+														) : (
+															<>
+																0,00 ₽
+																<br />
+																<span className="ops-note">без удержания</span>
+															</>
+														)}
+													</td>
+													<td className="ops-num ops-strong" data-label="К выплате">
+														{row.payoutRub === null ? (
+															"—"
+														) : row.payoutRub < 0 ? (
+															<span className="ops-state ops-state--bad">
+																{money(row.payoutRub)}
+															</span>
+														) : (
+															money(row.payoutRub)
+														)}
+													</td>
+													<td className="ops-num" data-label="Детали">
+														<button
+															type="button"
+															className="secondary-button ops-expand-btn"
+															onClick={() =>
+																setExpandedDoctorId((prev) =>
+																	prev === row.doctorUserId ? null : row.doctorUserId,
+																)
+															}
+															aria-expanded={isExpanded}
+															aria-label={`Детализация по врачу ${row.doctorName}`}
+														>
+															{isExpanded ? "Свернуть ▲" : "Детализация ▼"}
+														</button>
+													</td>
+												</tr>
+
+												{/* ── Интерактивный Drill-Down (Раскрытие строки врача) ── */}
+												{isExpanded ? (
+													<tr className="ops-drilldown-row">
+														<td
+															colSpan={8}
+															className="ops-drilldown-cell"
+															data-label="Детализация"
+														>
+															<div className="ops-drilldown-container">
+																{/* 1. Карточка прозрачной формулы расчета */}
+																<div className="ops-formula-card">
+																	<div className="ops-formula-card__header">
+																		<h4>Прозрачный расчет зарплаты: {row.doctorName}</h4>
+																		<button
+																			type="button"
+																			className="secondary-button"
+																			onClick={() => setPayrollModalDoctor(row)}
+																		>
+																			Расчетный листок Т-51
+																		</button>
+																	</div>
+																	<div className="ops-formula-summary">
+																		<div className="ops-formula-equation">
+																			<strong>Формула:</strong> К выплате = (Выручка × % ставки) − Материалы − ЗТЛ + Премии
+																		</div>
+																		<div className="ops-formula-grid">
+																			<div className="ops-formula-item">
+																				<span className="ops-formula-item__label">1. Касса (Выручка)</span>
+																				<span className="ops-formula-item__val">{money(row.revenueRub)}</span>
+																				<span className="ops-formula-item__sub">
+																					{countLabel(row.paymentCount, "оплата", "оплаты", "оплат")}
+																				</span>
+																			</div>
+																			<div className="ops-formula-item">
+																				<span className="ops-formula-item__label">2. Ставка врача</span>
+																				<span className="ops-formula-item__val">{percentLabel(row.commissionPct)}</span>
+																				<span className="ops-formula-item__sub">
+																					начислено {money(row.accruedRub ?? 0)}
+																				</span>
+																			</div>
+																			<div className="ops-formula-item">
+																				<span className="ops-formula-item__label">3. Списано материалов</span>
+																				<span className="ops-formula-item__val ops-formula-item__val--minus">
+																					− {money(row.withheldMaterialRub ?? 0)}
+																				</span>
+																				<span className="ops-formula-item__sub">
+																					себест. {money(row.materialCostRub)} ({row.materialDeductionPct ?? 100}%)
+																				</span>
+																			</div>
+																			<div className="ops-formula-item">
+																				<span className="ops-formula-item__label">4. Удержано за ЗТЛ</span>
+																				<span className="ops-formula-item__val ops-formula-item__val--minus">
+																					− {money(row.withheldLabRub ?? 0)}
+																				</span>
+																				<span className="ops-formula-item__sub">
+																					{countLabel(row.labOrdersCount ?? 0, "наряд", "наряда", "нарядов")} на {money(row.labCostRub ?? 0)}
+																				</span>
+																			</div>
+																			<div className="ops-formula-item ops-formula-item--total">
+																				<span className="ops-formula-item__label">ИТОГО К ВЫПЛАТЕ</span>
+																				<span className="ops-formula-item__val ops-formula-item__val--total">
+																					{money(row.payoutRub ?? 0)}
+																				</span>
+																				<span className="ops-formula-item__sub">
+																					{row.payoutRub && row.payoutRub < 0
+																						? "долг врача клинике"
+																						: "начислено к выплате"}
+																				</span>
+																			</div>
+																		</div>
+																	</div>
+																</div>
+
+																{/* 2. Переключатель вкладок реестров */}
+																<div className="ops-drilldown-tabs" role="tablist">
+																	<button
+																		type="button"
+																		role="tab"
+																		className={`ops-drilldown-tab ${activeTab === "visits" ? "ops-drilldown-tab--active" : ""}`}
+																		onClick={() =>
+																			setActiveSubTabs((prev) => ({
+																				...prev,
+																				[row.doctorUserId]: "visits",
+																			}))
+																		}
+																	>
+																		Реестр смен и приемов ({row.visits?.length ?? 0})
+																	</button>
+																	<button
+																		type="button"
+																		role="tab"
+																		className={`ops-drilldown-tab ${activeTab === "lab" ? "ops-drilldown-tab--active" : ""}`}
+																		onClick={() =>
+																			setActiveSubTabs((prev) => ({
+																				...prev,
+																				[row.doctorUserId]: "lab",
+																			}))
+																		}
+																	>
+																		Заказ-наряды лаборатории ЗТЛ ({row.labOrders?.length ?? 0})
+																	</button>
+																</div>
+
+																{/* 3. Контент Вкладки 1: Приемы */}
+																{activeTab === "visits" ? (
+																	<div>
+																		<div className="ops-field">
+																			<label htmlFor={`search-visits-${row.doctorUserId}`}>
+																				Поиск по приемам врача
+																			</label>
+																			<input
+																				id={`search-visits-${row.doctorUserId}`}
+																				type="text"
+																				placeholder="Поиск по ФИО пациента, номеру карты или услуге…"
+																				value={searchFilters[row.doctorUserId] ?? ""}
+																				onChange={(e) =>
+																					setSearchFilters((prev) => ({
+																						...prev,
+																						[row.doctorUserId]: e.target.value,
+																					}))
+																				}
+																			/>
+																		</div>
+
+																		{filteredVisits.length === 0 ? (
+																			<p className="ops-empty">
+																				{search
+																					? "По запросу ничего не найдено."
+																					: "За выбранный месяц у врача нет оплаченных визитов."}
+																			</p>
+																		) : (
+																			<>
+																				<div className="ops-subtable-wrap">
+																					<table className="ops-subtable">
+																						<thead>
+																							<tr>
+																								<th scope="col">Дата и время</th>
+																								<th scope="col">Пациент и карта</th>
+																								<th scope="col">Оказанные услуги (804н / Зуб)</th>
+																								<th scope="col">Списанные материалы</th>
+																								<th scope="col">Сумма оплаты</th>
+																							</tr>
+																						</thead>
+																						<tbody>
+																							{pagedVisits.map((visit) => (
+																								<tr key={visit.visitId}>
+																									<td data-label="Дата и время" className="ops-num">
+																										{new Date(visit.paidAt).toLocaleDateString("ru-RU")}{" "}
+																										{new Date(visit.paidAt).toLocaleTimeString("ru-RU", {
+																											hour: "2-digit",
+																											minute: "2-digit",
+																										})}
+																									</td>
+																									<td data-label="Пациент и карта">
+																										<strong>{visit.patientName}</strong>
+																										<br />
+																										<span className="ops-note">
+																											Карта: {visit.medicalCardNumber}
+																										</span>
+																									</td>
+																									<td data-label="Оказанные услуги">
+																										{visit.services.length === 0 ? (
+																											<span className="ops-note">
+																												услуги не детализированы
+																											</span>
+																										) : (
+																											<ul className="ops-item-list">
+																												{visit.services.map((srv) => (
+																													<li key={srv.id} className="ops-item-entry">
+																														{srv.order804nCode ? (
+																															<span className="ops-badge-804n">
+																																{srv.order804nCode}
+																															</span>
+																														) : null}
+																														{srv.toothCode ? (
+																															<span className="ops-badge-tooth">
+																																Зуб {srv.toothCode}
+																															</span>
+																														) : null}
+																														{srv.title} —{" "}
+																														<strong>
+																															{srv.quantity > 1
+																																? `${srv.quantity} × `
+																																: ""}
+																															{money(srv.priceRub)}
+																														</strong>
+																													</li>
+																												))}
+																											</ul>
+																										)}
+																									</td>
+																									<td data-label="Списанные материалы">
+																										{visit.materials.length === 0 ? (
+																											<span className="ops-state ops-state--muted">
+																												нет списаний
+																											</span>
+																										) : (
+																											<ul className="ops-item-list">
+																												{visit.materials.map((mat) => (
+																													<li key={mat.id} className="ops-item-entry">
+																														{mat.name}: {mat.quantity} {mat.unit}{" "}
+																														({money(mat.totalCostRub)})
+																													</li>
+																												))}
+																											</ul>
+																										)}
+																									</td>
+																									<td
+																										data-label="Сумма оплаты"
+																										className="ops-num ops-strong"
+																									>
+																										{money(visit.revenueRub)}
+																									</td>
+																								</tr>
+																							))}
+																						</tbody>
+																					</table>
+																				</div>
+
+																				{totalPages > 1 ? (
+																					<div className="ops-pagination">
+																						<button
+																							type="button"
+																							className="ops-pagination-button"
+																							disabled={currentPage <= 1}
+																							onClick={() =>
+																								setVisitPages((prev) => ({
+																									...prev,
+																									[row.doctorUserId]: Math.max(
+																										1,
+																										currentPage - 1,
+																									),
+																								}))
+																							}
+																						>
+																							Предыдущая
+																						</button>
+																						<span className="ops-note">
+																							Страница {currentPage} из {totalPages} (всего{" "}
+																							{filteredVisits.length}{" "}
+																							{countLabel(
+																								filteredVisits.length,
+																								"прием",
+																								"приема",
+																								"приемов",
+																							)}
+																							)
+																						</span>
+																						<button
+																							type="button"
+																							className="ops-pagination-button"
+																							disabled={currentPage >= totalPages}
+																							onClick={() =>
+																								setVisitPages((prev) => ({
+																									...prev,
+																									[row.doctorUserId]: Math.min(
+																										totalPages,
+																										currentPage + 1,
+																									),
+																								}))
+																							}
+																						>
+																							Следующая
+																						</button>
+																					</div>
+																				) : null}
+																			</>
+																		)}
+																	</div>
+																) : (
+																	/* 4. Контент Вкладки 2: ЗТЛ */
+																	<div>
+																		{(row.labOrders ?? []).length === 0 ? (
+																			<p className="ops-empty">
+																				За выбранный месяц у врача нет завершенных заказ-нарядов в зуботехническую лабораторию.
+																			</p>
+																		) : (
+																			<div className="ops-subtable-wrap">
+																				<table className="ops-subtable">
+																					<thead>
+																						<tr>
+																							<th scope="col">№ Наряда</th>
+																							<th scope="col">Зуб (FDI)</th>
+																							<th scope="col">Вид конструкции / Материал</th>
+																							<th scope="col">Пациент</th>
+																							<th scope="col">Статус / Дата</th>
+																							<th scope="col">Стоимость ЗТЛ</th>
+																							<th scope="col">Удержано с врача</th>
+																						</tr>
+																					</thead>
+																					<tbody>
+																						{(row.labOrders ?? []).map((order) => (
+																							<tr key={order.id}>
+																								<td data-label="№ Наряда" className="ops-num">
+																									<strong>№ {order.orderNumber}</strong>
+																								</td>
+																								<td data-label="Зуб (FDI)">
+																									<span className="ops-badge-tooth">
+																										{order.toothFdi || "—"}
+																									</span>
+																								</td>
+																								<td data-label="Конструкция">
+																									<strong>{order.restorationType}</strong>
+																									{order.material ? (
+																										<>
+																											<br />
+																											<span className="ops-note">
+																												{order.material}
+																											</span>
+																										</>
+																									) : null}
+																								</td>
+																								<td data-label="Пациент">{order.patientName}</td>
+																								<td data-label="Статус">
+																									<span className="ops-state ops-state--ok">
+																										{order.status === "completed"
+																											? "Сдан"
+																											: order.status === "received"
+																												? "Получен"
+																												: order.status}
+																									</span>
+																									{order.completedAt ? (
+																										<>
+																											<br />
+																											<span className="ops-note">
+																												{new Date(
+																													order.completedAt,
+																												).toLocaleDateString("ru-RU")}
+																											</span>
+																										</>
+																									) : null}
+																								</td>
+																								<td
+																									data-label="Стоимость ЗТЛ"
+																									className="ops-num"
+																								>
+																									{money(order.priceRub)}
+																								</td>
+																								<td
+																									data-label="Удержано"
+																									className="ops-num ops-strong"
+																								>
+																									{money(order.withheldRub)}
+																									<br />
+																									<span className="ops-note">
+																										({order.deductionPct}%)
+																									</span>
+																								</td>
+																							</tr>
+																						))}
+																					</tbody>
+																				</table>
+																			</div>
+																		)}
+																	</div>
+																)}
+															</div>
+														</td>
+													</tr>
+												) : null}
+											</Fragment>
+										);
+									})}
 								</tbody>
 							</table>
 						</div>
@@ -836,6 +1321,14 @@ export function DoctorPayoutDashboard() {
 								<span className="ops-metric__label">удержано за материалы</span>
 							</li>
 							<li className="ops-metric">
+								<span className="ops-metric__value">
+									{nothingComputed
+										? "—"
+										: money(report.totals.withheldLabRub ?? 0)}
+								</span>
+								<span className="ops-metric__label">удержано за ЗТЛ (Лаборатория)</span>
+							</li>
+							<li className="ops-metric">
 								{/*
 									В режиме «только свои» касса складывается по видимым строкам,
 									чтобы подпись «моя касса за месяц» подтверждалась ровно теми
@@ -911,8 +1404,77 @@ export function DoctorPayoutDashboard() {
 					</>
 				)
 			) : null}
+
+			{payrollModalDoctor ? (
+				<DoctorPayrollModal
+					isOpen={Boolean(payrollModalDoctor)}
+					onClose={() => setPayrollModalDoctor(null)}
+					initialDoctorId={payrollModalDoctor.doctorUserId}
+					initialServices={doctorServicesForPayrollModal(payrollModalDoctor)}
+					initialBasePercentage={payrollModalDoctor.commissionPct ?? undefined}
+					doctorsList={[
+						{
+							id: payrollModalDoctor.doctorUserId,
+							name: payrollModalDoctor.doctorName,
+							specialtyId: "therapist",
+						},
+					]}
+				/>
+			) : null}
 		</>
 	);
 }
 
+function doctorServicesForPayrollModal(
+	row: DoctorPayoutRow,
+): DoctorCompletedServiceItem[] {
+	if (!row.visits || row.visits.length === 0) {
+		return [];
+	}
+	const items: DoctorCompletedServiceItem[] = [];
+	for (const v of row.visits) {
+		if (v.services.length === 0) {
+			items.push({
+				id: `visit-${v.visitId}`,
+				dateIso: v.paidAt.slice(0, 10),
+				patientName: v.patientName,
+				medicalCardNumber: v.medicalCardNumber,
+				serviceNameRu: "Оказанные стоматологические услуги",
+				category: "therapy",
+				grossRevenueKop: Math.round(v.revenueRub * 100),
+				labCostKop: 0,
+				materialCostKop: Math.round(
+					v.materials.reduce((s, m) => s + m.totalCostRub, 0) * 100,
+				),
+			});
+		} else {
+			const visitMaterialTotalRub = v.materials.reduce(
+				(s, m) => s + m.totalCostRub,
+				0,
+			);
+			const perServiceMatRub =
+				v.services.length > 0
+					? visitMaterialTotalRub / v.services.length
+					: 0;
+			for (const srv of v.services) {
+				items.push({
+					id: `srv-${srv.id}`,
+					dateIso: v.paidAt.slice(0, 10),
+					patientName: v.patientName,
+					medicalCardNumber: v.medicalCardNumber,
+					serviceNameRu: srv.title,
+					order804nCode: srv.order804nCode ?? undefined,
+					toothCode: srv.toothCode ?? undefined,
+					category: "therapy",
+					grossRevenueKop: Math.round(srv.priceRub * srv.quantity * 100),
+					labCostKop: 0,
+					materialCostKop: Math.round(perServiceMatRub * 100),
+				});
+			}
+		}
+	}
+	return items;
+}
+
 export default DoctorPayoutDashboard;
+

@@ -1061,3 +1061,252 @@
 	margin-left: 4px;
 	font-size: 0.85em;
 }
+
+/* ── Детализация выплат врачам (Drill-Down) ─────────────────────────────── */
+
+.ops-expand-btn {
+	min-height: 44px;
+	padding: 8px 12px;
+	font-size: 12px;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.ops-drilldown-row {
+	background: var(--paper-soft);
+}
+
+.ops-drilldown-cell {
+	padding: 16px !important;
+	border-bottom: 2px solid var(--teal) !important;
+}
+
+.ops-drilldown-container {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+/* Карточка прозрачной формулы расчета */
+.ops-formula-card {
+	padding: 14px 16px;
+	border-radius: 12px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+}
+
+.ops-formula-card__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-bottom: 12px;
+}
+
+.ops-formula-card__header h4 {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.ops-formula-summary {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.ops-formula-equation {
+	padding: 8px 12px;
+	border-radius: 8px;
+	background: var(--paper-soft);
+	border: 1px dashed var(--line-strong);
+	font-size: 12.5px;
+	color: var(--ink-2);
+	font-family: inherit;
+}
+
+.ops-formula-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+	gap: 10px;
+}
+
+.ops-formula-item {
+	display: flex;
+	flex-direction: column;
+	padding: 10px;
+	border-radius: 10px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	gap: 2px;
+}
+
+.ops-formula-item--total {
+	border-color: var(--teal);
+	background: var(--teal-soft);
+}
+
+.ops-formula-item__label {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--muted);
+}
+
+.ops-formula-item__val {
+	font-size: 14px;
+	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+	color: var(--ink);
+}
+
+.ops-formula-item__val--minus {
+	color: var(--warn-fg);
+}
+
+.ops-formula-item__val--total {
+	color: var(--teal-ink);
+}
+
+.ops-formula-item__sub {
+	font-size: 10.5px;
+	color: var(--muted);
+}
+
+/* Вкладки переключения реестров */
+.ops-drilldown-tabs {
+	display: flex;
+	gap: 8px;
+	border-bottom: 1px solid var(--line);
+	padding-bottom: 8px;
+	flex-wrap: wrap;
+}
+
+.ops-drilldown-tab {
+	min-height: 44px;
+	padding: 8px 16px;
+	border-radius: 10px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all var(--transition-fast);
+}
+
+.ops-drilldown-tab:hover {
+	background: var(--paper-soft);
+	border-color: var(--line-strong);
+}
+
+.ops-drilldown-tab--active {
+	background: var(--teal);
+	color: var(--on-teal);
+	border-color: var(--teal);
+}
+
+/* Вложенные таблицы детализации */
+.ops-subtable-wrap {
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	overflow-x: auto;
+	background: var(--paper);
+}
+
+.ops-subtable {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 12px;
+}
+
+.ops-subtable th {
+	padding: 8px 10px;
+	background: var(--paper-soft);
+	border-bottom: 1px solid var(--line);
+	color: var(--muted);
+	font-weight: 600;
+	text-align: left;
+	white-space: nowrap;
+}
+
+.ops-subtable td {
+	padding: 8px 10px;
+	border-bottom: 1px solid var(--line);
+	color: var(--ink);
+	vertical-align: top;
+}
+
+.ops-subtable tr:last-child td {
+	border-bottom: none;
+}
+
+/* Бейджи 804н и зубов */
+.ops-badge-804n {
+	display: inline-block;
+	padding: 2px 6px;
+	border-radius: 6px;
+	font-size: 10.5px;
+	font-family: inherit;
+	font-weight: 600;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--muted);
+	margin-right: 4px;
+}
+
+.ops-badge-tooth {
+	display: inline-block;
+	padding: 2px 6px;
+	border-radius: 6px;
+	font-size: 10.5px;
+	font-weight: 700;
+	background: var(--teal-soft);
+	border: 1px solid var(--teal);
+	color: var(--teal-ink);
+	margin-right: 4px;
+}
+
+.ops-item-list {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.ops-item-entry {
+	font-size: 11.5px;
+	line-height: 1.4;
+}
+
+/* Пагинация */
+.ops-pagination {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 4px;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.ops-pagination-button {
+	min-height: 44px;
+	min-width: 44px;
+	padding: 8px 14px;
+	border-radius: 10px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.ops-pagination-button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+

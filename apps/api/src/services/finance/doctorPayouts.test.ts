@@ -11,6 +11,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
 	computeDoctorPayout,
+	extractMedicalCardNumber,
+	humanizeRestorationType,
 	MAX_PAYOUT_PERIOD_DAYS,
 	materialsStateOf,
 	payoutRowNote,
@@ -291,5 +293,56 @@ test("возвраты за период (сторно) уменьшают на�
 	assert.equal(result.refundClawbackRub, 6000); // 30% от 20 000 ₽ возврата
 	assert.equal(result.payoutRub, 21000); // 24000 - 3000 = 21000
 });
+
+test("extractMedicalCardNumber корректно извлекает номер карты или формирует стандартный код", () => {
+	const fromAdminCard = extractMedicalCardNumber("123e4567-e89b-12d3-a456-426614174000", {
+		cardNumber: "043/у-2026/891",
+	});
+	assert.equal(fromAdminCard, "043/у-2026/891");
+
+	const fromMedCard = extractMedicalCardNumber("123e4567-e89b-12d3-a456-426614174000", {
+		medicalCardNumber: "043/у-99",
+	});
+	assert.equal(fromMedCard, "043/у-99");
+
+	const fromOms = extractMedicalCardNumber("123e4567-e89b-12d3-a456-426614174000", {
+		insurancePolicyNumber: "1234567890123456",
+	});
+	assert.equal(fromOms, "ОМС 1234567890123456");
+
+	const fallback = extractMedicalCardNumber("123e4567-e89b-12d3-a456-426614174000", null);
+	assert.equal(fallback, "043/у-123E45");
+});
+
+test("humanizeRestorationType возвращает понятное русское наименование зуботехнической конструкции", () => {
+	assert.equal(humanizeRestorationType("crown_zirconia", null), "Коронка из диоксида циркония");
+	assert.equal(humanizeRestorationType("crown_emax", null), "Безметалловая коронка E.max");
+	assert.equal(humanizeRestorationType("aligners_setup", null), "Сетап элайнеров");
+	assert.equal(humanizeRestorationType("crown_monolithic", "zirconia"), "Коронка монолитная (CAD/CAM)");
+	assert.equal(humanizeRestorationType(null, "E.max CAD"), "E.max CAD");
+	assert.equal(humanizeRestorationType(null, null), "Зуботехническая конструкция");
+});
+
+test("полная прозрачная формула: (Выручка × Ставка) - Материалы - ЗТЛ", () => {
+	// Врач ортопед: Выручка 200 000 ₽, Ставка 25%, Списано материалов 5 000 ₽ (100%), Заказы ЗТЛ 30 000 ₽ (100%)
+	const result = computeDoctorPayout({
+		revenueRub: 200000,
+		commissionPct: 25, // 50 000 ₽ начислено
+		materialCostRub: 5000,
+		materialMovements: 3,
+		materialDeductionPct: 100, // 5 000 ₽ вычет
+		labCostRub: 30000,
+		labOrdersCount: 4,
+		labDeductionPct: 100, // 30 000 ₽ вычет
+	});
+
+	assert.equal(result.state, "computed");
+	assert.equal(result.accruedRub, 50000);
+	assert.equal(result.withheldMaterialRub, 5000);
+	assert.equal(result.withheldLabRub, 30000);
+	// 50 000 - 5 000 - 30 000 = 15 000 ₽
+	assert.equal(result.payoutRub, 15000);
+});
+
 
 

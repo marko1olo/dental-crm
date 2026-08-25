@@ -17,6 +17,8 @@ export interface DoctorCompletedServiceItem {
 	readonly patientName: string;
 	readonly medicalCardNumber: string;
 	readonly serviceNameRu: string;
+	readonly order804nCode?: string | undefined;
+	readonly toothCode?: string | undefined;
 	readonly category: "therapy" | "orthopedics" | "surgery" | "orthodontics" | "hygiene" | "retail_hygiene";
 	readonly grossRevenueKop: number;
 	readonly labCostKop: number;

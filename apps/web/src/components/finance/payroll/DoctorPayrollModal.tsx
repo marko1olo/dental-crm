@@ -26,8 +26,13 @@ import "./doctorPayroll.css";
 export interface DoctorPayrollModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly clinicName?: string;
-	readonly doctorsList?: readonly { readonly id: string; readonly name: string; readonly specialtyId: string }[];
+	readonly clinicName?: string | undefined;
+	readonly doctorsList?: readonly { readonly id: string; readonly name: string; readonly specialtyId: string }[] | undefined;
+	readonly initialDoctorId?: string | undefined;
+	readonly initialServices?: readonly DoctorCompletedServiceItem[] | undefined;
+	readonly initialPeriodStart?: string | undefined;
+	readonly initialPeriodEnd?: string | undefined;
+	readonly initialBasePercentage?: number | undefined;
 }
 
 const SAMPLE_DOCTORS = [
@@ -44,7 +49,9 @@ const SAMPLE_SERVICES: readonly DoctorCompletedServiceItem[] = [
 		dateIso: "2026-08-18",
 		patientName: "Смирнова Екатерина Васильевна",
 		medicalCardNumber: "043/у-2026/891",
-		serviceNameRu: "Лечение пульпита 3-канального моляра (зуб 16)",
+		serviceNameRu: "Лечение пульпита 3-канального моляра",
+		order804nCode: "A16.07.002.001",
+		toothCode: "16",
 		category: "therapy",
 		grossRevenueKop: 1850000, // 18,500 RUB
 		labCostKop: 0,
@@ -55,7 +62,9 @@ const SAMPLE_SERVICES: readonly DoctorCompletedServiceItem[] = [
 		dateIso: "2026-08-19",
 		patientName: "Кузнецов Дмитрий Анатольевич",
 		medicalCardNumber: "043/у-2026/742",
-		serviceNameRu: "Эстетическая реставрация фронтального зуба (зуб 11, Estelite Asteria)",
+		serviceNameRu: "Эстетическая реставрация фронтального зуба (Estelite Asteria)",
+		order804nCode: "A16.07.003",
+		toothCode: "11",
 		category: "therapy",
 		grossRevenueKop: 920000, // 9,200 RUB
 		labCostKop: 0,
@@ -64,20 +73,37 @@ const SAMPLE_SERVICES: readonly DoctorCompletedServiceItem[] = [
 	{
 		id: "srv-3",
 		dateIso: "2026-08-20",
+		patientName: "Сидорова Светлана Сергеевна",
+		medicalCardNumber: "043/у-2026/512",
+		serviceNameRu: "Коронка из диоксида циркония CAD/CAM (Prettau)",
+		order804nCode: "A16.07.004.002",
+		toothCode: "24",
+		category: "orthopedics",
+		grossRevenueKop: 2800000, // 28,000 RUB
+		labCostKop: 750000, // 7,500 RUB ЗТЛ
+		materialCostKop: 150000, // 1,500 RUB
+	},
+	{
+		id: "srv-4",
+		dateIso: "2026-08-20",
 		patientName: "Иванова Мария Сергеевна",
 		medicalCardNumber: "043/у-2026/904",
 		serviceNameRu: "Комплексная профессиональная гигиена Air-Flow + УЗ",
+		order804nCode: "A16.07.051",
+		toothCode: "18-48",
 		category: "hygiene",
 		grossRevenueKop: 650000, // 6,500 RUB
 		labCostKop: 0,
 		materialCostKop: 40000,
 	},
 	{
-		id: "srv-4",
+		id: "srv-5",
 		dateIso: "2026-08-21",
 		patientName: "Попов Артем Сергеевич",
 		medicalCardNumber: "043/у-2026/651",
 		serviceNameRu: "Продажа набора Curaprox Ortho 5460",
+		order804nCode: "—",
+		toothCode: undefined,
 		category: "retail_hygiene",
 		grossRevenueKop: 180000, // 1,800 RUB
 		labCostKop: 0,
@@ -90,17 +116,34 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 	onClose,
 	clinicName = "ООО «Денте Стоматология»",
 	doctorsList = SAMPLE_DOCTORS,
+	initialDoctorId,
+	initialServices,
+	initialPeriodStart = "2026-08-01",
+	initialPeriodEnd = "2026-08-31",
+	initialBasePercentage,
 }) => {
-	const [selectedDoctorId, setSelectedDoctorId] = useState(doctorsList[0]?.id || "doc-1");
-	const [periodStart, setPeriodStart] = useState("2026-08-01");
-	const [periodEnd, setPeriodEnd] = useState("2026-08-31");
-	const [customPercent, setCustomPercent] = useState<number | undefined>(undefined);
+	const [selectedDoctorId, setSelectedDoctorId] = useState(initialDoctorId || doctorsList[0]?.id || "doc-1");
+	const [periodStart, setPeriodStart] = useState(initialPeriodStart);
+	const [periodEnd, setPeriodEnd] = useState(initialPeriodEnd);
+	const [customPercent, setCustomPercent] = useState<number | undefined>(initialBasePercentage);
 	const [manualAdjustmentRub, setManualAdjustmentRub] = useState<number>(0);
+
+	// Sync when initial values change
+	React.useEffect(() => {
+		if (initialDoctorId) setSelectedDoctorId(initialDoctorId);
+		if (initialPeriodStart) setPeriodStart(initialPeriodStart);
+		if (initialPeriodEnd) setPeriodEnd(initialPeriodEnd);
+		if (initialBasePercentage !== undefined) setCustomPercent(initialBasePercentage);
+	}, [initialDoctorId, initialPeriodStart, initialPeriodEnd, initialBasePercentage]);
 
 	const activeDoc = useMemo(() => {
 		const found = doctorsList.find((d) => d.id === selectedDoctorId);
 		return found ?? doctorsList[0] ?? SAMPLE_DOCTORS[0]!;
 	}, [doctorsList, selectedDoctorId]);
+
+	const servicesToUse = useMemo(() => {
+		return initialServices && initialServices.length > 0 ? initialServices : SAMPLE_SERVICES;
+	}, [initialServices]);
 
 	const payrollResult: DoctorPayrollResult = useMemo(() => {
 		if (!isOpen) {
@@ -133,11 +176,11 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 			specialtyId: activeDoc.specialtyId,
 			periodStartIso: periodStart,
 			periodEndIso: periodEnd,
-			services: SAMPLE_SERVICES,
+			services: servicesToUse,
 			customBasePercentage: customPercent,
 			manualAdjustmentKop: Math.round(manualAdjustmentRub * 100),
 		});
-	}, [isOpen, activeDoc, periodStart, periodEnd, customPercent, manualAdjustmentRub]);
+	}, [isOpen, activeDoc, periodStart, periodEnd, servicesToUse, customPercent, manualAdjustmentRub]);
 
 	if (!isOpen) return null;
 
@@ -277,7 +320,7 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 					{/* Service Breakdown Table */}
 					<div className="flex flex-col gap-2">
 						<h3 className="text-xs font-bold text-[var(--ink,#0f172a)] uppercase tracking-wider">
-							Детализация выполненных нарядов за период:
+							Детализация выполненных нарядов и приемов за период:
 						</h3>
 						<div className="border border-[var(--line,#e2e8f0)] rounded-xl overflow-hidden">
 							<div className="overflow-x-auto">
@@ -286,14 +329,15 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 										<tr>
 											<th className="p-2.5 font-semibold">Дата</th>
 											<th className="p-2.5 font-semibold">Пациент</th>
-											<th className="p-2.5 font-semibold">Услуга</th>
-											<th className="p-2.5 font-semibold text-right">Сумма</th>
-											<th className="p-2.5 font-semibold text-right">Расход</th>
-											<th className="p-2.5 font-semibold text-right">Врачу</th>
+											<th className="p-2.5 font-semibold">Услуга / Код 804н / Зуб</th>
+											<th className="p-2.5 font-semibold text-right">Выручка</th>
+											<th className="p-2.5 font-semibold text-right">Материалы</th>
+											<th className="p-2.5 font-semibold text-right">ЗТЛ</th>
+											<th className="p-2.5 font-semibold text-right">Начислено</th>
 										</tr>
 									</thead>
 									<tbody className="divide-y divide-[var(--line,#e2e8f0)]">
-										{SAMPLE_SERVICES.map((srv) => {
+										{servicesToUse.map((srv) => {
 											const net = srv.grossRevenueKop - srv.labCostKop - srv.materialCostKop;
 											const earned = Math.round((net * payrollResult.baseCommissionPercent) / 100);
 											return (
@@ -301,14 +345,31 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 													<td className="p-2.5 font-medium whitespace-nowrap">{srv.dateIso}</td>
 													<td className="p-2.5 font-medium">
 														<div>{srv.patientName}</div>
-														<div className="text-[10px] text-[var(--muted,#64748b)]">{srv.medicalCardNumber}</div>
+														<div className="text-[10px] text-[var(--muted,#64748b)]">Карта: {srv.medicalCardNumber}</div>
 													</td>
-													<td className="p-2.5 text-[var(--ink,#0f172a)]">{srv.serviceNameRu}</td>
+													<td className="p-2.5 text-[var(--ink,#0f172a)]">
+														<div className="font-medium">{srv.serviceNameRu}</div>
+														<div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+															{srv.order804nCode && (
+																<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)]">
+																	804н: {srv.order804nCode}
+																</span>
+															)}
+															{srv.toothCode && (
+																<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--teal-soft,#f0fdfa)] border border-[var(--teal,#0d9488)]/20 text-[var(--teal,#0d9488)]">
+																	Зуб {srv.toothCode}
+																</span>
+															)}
+														</div>
+													</td>
 													<td className="p-2.5 font-bold text-right whitespace-nowrap">
 														{(srv.grossRevenueKop / 100).toLocaleString("ru-RU")} ₽
 													</td>
-													<td className="p-2.5 text-rose-600 text-right whitespace-nowrap">
-														{( (srv.labCostKop + srv.materialCostKop) / 100).toLocaleString("ru-RU")} ₽
+													<td className="p-2.5 text-rose-600 dark:text-rose-400 text-right whitespace-nowrap">
+														{srv.materialCostKop > 0 ? `- ${(srv.materialCostKop / 100).toLocaleString("ru-RU")} ₽` : "—"}
+													</td>
+													<td className="p-2.5 text-amber-600 dark:text-amber-400 text-right whitespace-nowrap font-medium">
+														{srv.labCostKop > 0 ? `- ${(srv.labCostKop / 100).toLocaleString("ru-RU")} ₽` : "—"}
 													</td>
 													<td className="p-2.5 font-bold text-[var(--teal,#0d9488)] text-right whitespace-nowrap">
 														{(earned / 100).toLocaleString("ru-RU")} ₽
