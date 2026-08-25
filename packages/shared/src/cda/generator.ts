@@ -10,6 +10,9 @@ import { generateSemd101Xml } from "./generator101.js";
 import { generateSemd104Xml } from "./generator104.js";
 import { generateSemd130Xml } from "./generator130.js";
 import { cdaSemd101Schema, cdaSemd104Schema, cdaSemd130Schema } from "./schemas.js";
+
+export const generateSemd043uXml = generateSemd101Xml;
+export const generateSemd108Xml = generateSemd101Xml;
 import type {
 	CdaDocumentParams,
 	CdaGenerationResult,

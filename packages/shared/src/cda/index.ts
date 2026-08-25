@@ -11,6 +11,7 @@ export * from "./types.js";
 export * from "./schemas.js";
 export {
 	canonicalizeCdaXml,
+	computeCdaDocumentFingerprint,
 	computeCdaSha256Hex,
 	escapeCdaXml,
 	escapeXml,
