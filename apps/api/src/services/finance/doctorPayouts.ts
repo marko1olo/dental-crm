@@ -53,15 +53,20 @@
  */
 
 import { Decimal } from "decimal.js";
-import { and, eq, gte, inArray, isNotNull, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNotNull, lte, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	appointments,
 	doctorCommissions,
+	inventoryItems,
 	inventoryTransactions,
+	labItems,
 	labOrders,
+	patients,
 	payments,
+	serviceCatalogItems,
+	treatmentItems,
 	users,
 	visits,
 } from "../../db/schema.js";
@@ -168,6 +173,52 @@ export type DoctorPayoutMaterialsState =
 	/** Списания есть, но часть без цены или без количества: себестоимость занижена. */
 	| "cost_missing";
 
+export type DoctorPayoutVisitService = {
+	readonly id: string;
+	readonly title: string;
+	readonly order804nCode: string | null;
+	readonly toothCode: string | null;
+	readonly priceRub: number;
+	readonly quantity: number;
+};
+
+export type DoctorPayoutVisitMaterial = {
+	readonly id: string;
+	readonly name: string;
+	readonly quantity: number;
+	readonly unit: string;
+	readonly unitCostRub: number;
+	readonly totalCostRub: number;
+};
+
+export type DoctorPayoutVisit = {
+	readonly visitId: string;
+	readonly appointmentId: string | null;
+	readonly paidAt: string;
+	readonly visitDate: string;
+	readonly patientId: string;
+	readonly patientName: string;
+	readonly medicalCardNumber: string;
+	readonly revenueRub: number;
+	readonly paymentCount: number;
+	readonly services: DoctorPayoutVisitService[];
+	readonly materials: DoctorPayoutVisitMaterial[];
+};
+
+export type DoctorPayoutLabOrder = {
+	readonly id: string;
+	readonly orderNumber: string;
+	readonly toothFdi: string | null;
+	readonly restorationType: string;
+	readonly material: string | null;
+	readonly patientName: string;
+	readonly status: string;
+	readonly completedAt: string | null;
+	readonly priceRub: number;
+	readonly withheldRub: number;
+	readonly deductionPct: number;
+};
+
 export type DoctorPayoutRow = {
 	readonly doctorUserId: string;
 	readonly doctorName: string;
@@ -206,6 +257,11 @@ export type DoctorPayoutRow = {
 
 	/** Причина и действие человеческим языком — для показа как есть. */
 	readonly note: string;
+
+	/** Детальный реестр приемов и смен (Drill-Down). */
+	readonly visits?: DoctorPayoutVisit[];
+	/** Детальный реестр заказ-нарядов лаборатории (ЗТЛ). */
+	readonly labOrders?: DoctorPayoutLabOrder[];
 };
 
 export type DoctorPayoutTotals = {
@@ -915,11 +971,281 @@ const METHOD_NOTE =
  * вовсе — ни в строки, ни в контрольную сумму, — и это правильно: отчёт
  * отвечает на вопрос о состоянии кассы на один момент времени.
  */
+/**
+ * Номер медицинской карты пациента (форма 043/у).
+ */
+export function extractMedicalCardNumber(
+	patientId: string,
+	adminProfile: unknown,
+): string {
+	if (adminProfile && typeof adminProfile === "object") {
+		const prof = adminProfile as Record<string, unknown>;
+		if (typeof prof.cardNumber === "string" && prof.cardNumber.trim()) {
+			return prof.cardNumber.trim();
+		}
+		if (typeof prof.medicalCardNumber === "string" && prof.medicalCardNumber.trim()) {
+			return prof.medicalCardNumber.trim();
+		}
+		if (typeof prof.insurancePolicyNumber === "string" && prof.insurancePolicyNumber.trim()) {
+			return `ОМС ${prof.insurancePolicyNumber.trim()}`;
+		}
+	}
+	const shortId = patientId.replace(/-/g, "").slice(0, 6).toUpperCase();
+	return `043/у-${shortId}`;
+}
+
+/**
+ * Читаемое наименование зуботехнической конструкции.
+ */
+export function humanizeRestorationType(
+	restorationType?: string | null,
+	material?: string | null,
+): string {
+	const map: Record<string, string> = {
+		crown_monolithic: "Коронка монолитная (CAD/CAM)",
+		crown_zirconia: "Коронка из диоксида циркония",
+		crown_emax: "Безметалловая коронка E.max",
+		crown_metal_ceramic: "Металлокерамическая коронка",
+		crown_temporary: "Временная фрезерованная коронка (PMMA)",
+		veneer: "Керамический винир",
+		inlay_onlay: "Вкладка / Накладка (Inlay/Onlay)",
+		bridge_pontic: "Мостовидный протез",
+		implant_abutment: "Индивидуальный циркониевый абатмент",
+		aligners_setup: "Сетап элайнеров",
+		clasp_denture: "Бюгельный протез на замках",
+		full_denture: "Полный съемный пластиночный протез",
+	};
+	if (restorationType && map[restorationType]) {
+		return map[restorationType];
+	}
+	return restorationType || material || "Зуботехническая конструкция";
+}
+
+async function fetchDoctorPayoutDrillDownDetails(scope: DoctorPayoutScope) {
+	const { organizationId, from, to, onlyDoctorUserId } = scope;
+
+	const paidVisitsDetails = await db
+		.select({
+			paymentId: payments.id,
+			paymentAmountRub: payments.amountRub,
+			paidAt: payments.paidAt,
+			visitId: visits.id,
+			visitCreatedAt: visits.createdAt,
+			appointmentId: appointments.id,
+			appointmentStartTime: appointments.startsAt,
+			doctorUserId: appointments.doctorUserId,
+			patientId: patients.id,
+			patientName: patients.fullName,
+			administrativeProfile: patients.administrativeProfile,
+		})
+		.from(payments)
+		.innerJoin(
+			visits,
+			and(
+				eq(payments.visitId, visits.id),
+				eq(visits.organizationId, organizationId),
+			),
+		)
+		.innerJoin(
+			appointments,
+			and(
+				eq(visits.appointmentId, appointments.id),
+				eq(appointments.organizationId, organizationId),
+			),
+		)
+		.innerJoin(
+			patients,
+			and(
+				eq(visits.patientId, patients.id),
+				eq(patients.organizationId, organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(payments.organizationId, organizationId),
+				eq(payments.status, "paid"),
+				gte(payments.paidAt, from),
+				lte(payments.paidAt, to),
+				isNotNull(appointments.doctorUserId),
+				onlyDoctorUserId ? eq(appointments.doctorUserId, onlyDoctorUserId) : undefined,
+			),
+		)
+		.orderBy(desc(payments.paidAt));
+
+	const rawVisitIds = paidVisitsDetails
+		.map((v) => v.visitId)
+		.filter((id): id is string => Boolean(id));
+	const uniqueVisitIds = Array.from(new Set(rawVisitIds));
+
+	let visitServices: Array<{
+		id: string;
+		visitId: string | null;
+		title: string;
+		order804nCode: string | null;
+		toothCode: string | null;
+		priceRub: unknown;
+		quantity: unknown;
+	}> = [];
+
+	let visitMaterials: Array<{
+		id: string;
+		visitId: string | null;
+		quantityChanged: unknown;
+		unitCostRub: unknown;
+		itemId: string | null;
+		name: string | null;
+		unit: string | null;
+	}> = [];
+
+	if (uniqueVisitIds.length > 0) {
+		visitServices = await db
+			.select({
+				id: treatmentItems.id,
+				visitId: treatmentItems.visitId,
+				title: treatmentItems.title,
+				order804nCode: serviceCatalogItems.order804nCode,
+				toothCode: treatmentItems.toothCode,
+				priceRub: treatmentItems.priceRub,
+				quantity: treatmentItems.quantity,
+			})
+			.from(treatmentItems)
+			.leftJoin(
+				serviceCatalogItems,
+				and(
+					eq(treatmentItems.serviceId, serviceCatalogItems.id),
+					eq(serviceCatalogItems.organizationId, organizationId),
+				),
+			)
+			.where(
+				and(
+					eq(treatmentItems.organizationId, organizationId),
+					inArray(treatmentItems.visitId, uniqueVisitIds),
+				),
+			);
+
+		visitMaterials = await db
+			.select({
+				id: inventoryTransactions.id,
+				visitId: inventoryTransactions.visitId,
+				quantityChanged: inventoryTransactions.quantityChanged,
+				unitCostRub: inventoryTransactions.unitCostRub,
+				itemId: inventoryTransactions.itemId,
+				name: inventoryItems.name,
+				unit: inventoryItems.unit,
+			})
+			.from(inventoryTransactions)
+			.leftJoin(
+				inventoryItems,
+				and(
+					or(
+						eq(inventoryTransactions.itemId, inventoryItems.id),
+						eq(inventoryTransactions.inventoryItemId, inventoryItems.id),
+					),
+					eq(inventoryItems.organizationId, organizationId),
+				),
+			)
+			.where(
+				and(
+					eq(inventoryTransactions.organizationId, organizationId),
+					eq(inventoryTransactions.transactionType, "auto_deduct"),
+					inArray(inventoryTransactions.visitId, uniqueVisitIds),
+				),
+			);
+	}
+
+	const rawLabOrders = await db
+		.select({
+			id: labOrders.id,
+			doctorId: labOrders.doctorId,
+			doctorName: labOrders.doctorName,
+			patientId: labOrders.patientId,
+			patientName: patients.fullName,
+			secureToken: labOrders.secureToken,
+			toothFdi: labOrders.toothFdi,
+			material: labOrders.material,
+			status: labOrders.status,
+			priceRub: labOrders.priceRub,
+			clinicalNotes: labOrders.clinicalNotes,
+			dueDate: labOrders.dueDate,
+			completedAt: labOrders.completedAt,
+			createdAt: labOrders.createdAt,
+		})
+		.from(labOrders)
+		.leftJoin(
+			patients,
+			and(
+				eq(labOrders.patientId, patients.id),
+				eq(patients.organizationId, organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(labOrders.organizationId, organizationId),
+				isNotNull(labOrders.doctorId),
+				inArray(labOrders.status, ["received", "completed"]),
+				gte(
+					sql`coalesce(${labOrders.completedAt}, ${labOrders.createdAt})`,
+					from,
+				),
+				lte(
+					sql`coalesce(${labOrders.completedAt}, ${labOrders.createdAt})`,
+					to,
+				),
+				onlyDoctorUserId ? eq(labOrders.doctorId, onlyDoctorUserId) : undefined,
+			),
+		)
+		.orderBy(
+			desc(sql`coalesce(${labOrders.completedAt}, ${labOrders.createdAt})`),
+		);
+
+	const rawLabOrderIds = rawLabOrders.map((o) => o.id);
+	let rawLabItems: Array<{
+		id: string;
+		labOrderId: string;
+		toothFdi: number;
+		restorationType: string;
+		material: string;
+		priceRub: unknown;
+	}> = [];
+
+	if (rawLabOrderIds.length > 0) {
+		rawLabItems = await db
+			.select({
+				id: labItems.id,
+				labOrderId: labItems.labOrderId,
+				toothFdi: labItems.toothFdi,
+				restorationType: labItems.restorationType,
+				material: labItems.material,
+				priceRub: labItems.priceRub,
+			})
+			.from(labItems)
+			.where(
+				and(
+					eq(labItems.organizationId, organizationId),
+					inArray(labItems.labOrderId, rawLabOrderIds),
+				),
+			);
+	}
+
+	return {
+		paidVisitsDetails,
+		visitServices,
+		visitMaterials,
+		rawLabOrders,
+		rawLabItems,
+	};
+}
+
 export async function doctorPayouts(
 	scope: DoctorPayoutScope,
 ): Promise<DoctorPayoutReport> {
-	const snapshotRows = await withTenantCtx(scope.organizationId, async () =>
-		buildDoctorPayoutAggregateQuery(scope),
+	const [snapshotRows, drillDown] = await withTenantCtx(
+		scope.organizationId,
+		async () => {
+			const aggregates = await buildDoctorPayoutAggregateQuery(scope);
+			const details = await fetchDoctorPayoutDrillDownDetails(scope);
+			return [aggregates, details];
+		},
 	);
 
 	/*
@@ -980,6 +1306,115 @@ export async function doctorPayouts(
 		);
 		const rateRowCount = Number(row.rateRowCount ?? 0);
 
+		// Build visits registry for this doctor
+		const doctorVisitPayments = drillDown.paidVisitsDetails.filter(
+			(v) => v.doctorUserId === row.doctorUserId,
+		);
+
+		// Group payments by visitId
+		const visitsMap = new Map<string, DoctorPayoutVisit>();
+		for (const v of doctorVisitPayments) {
+			const paymentRub = moneyFromDb(v.paymentAmountRub, "сумма оплаты визита");
+			const existing = visitsMap.get(v.visitId);
+			if (existing) {
+				visitsMap.set(v.visitId, {
+					...existing,
+					revenueRub: roundMoney(new Decimal(existing.revenueRub).plus(paymentRub)),
+					paymentCount: existing.paymentCount + 1,
+				});
+			} else {
+				const servicesForVisit = drillDown.visitServices
+					.filter((srv) => srv.visitId === v.visitId)
+					.map((srv) => ({
+						id: srv.id,
+						title: srv.title,
+						order804nCode: srv.order804nCode ?? "A16.07.002",
+						toothCode: srv.toothCode ?? null,
+						priceRub: moneyFromDb(srv.priceRub, "цена услуги 804н"),
+						quantity: Number(srv.quantity ?? 1),
+					}));
+
+				const materialsForVisit = drillDown.visitMaterials
+					.filter((mat) => mat.visitId === v.visitId)
+					.map((mat) => {
+						const qty = Math.abs(Number(mat.quantityChanged ?? 0));
+						const unitCost = moneyFromDb(mat.unitCostRub, "себестоимость материала");
+						return {
+							id: mat.id,
+							name: mat.name ?? "Расходный материал",
+							quantity: qty,
+							unit: mat.unit ?? "шт",
+							unitCostRub: unitCost,
+							totalCostRub: roundMoney(new Decimal(qty).times(unitCost)),
+						};
+					});
+
+				const visitIso = v.appointmentStartTime
+					? new Date(v.appointmentStartTime).toISOString()
+					: new Date(v.visitCreatedAt).toISOString();
+				const paidIso = v.paidAt
+					? new Date(v.paidAt).toISOString()
+					: visitIso;
+
+				visitsMap.set(v.visitId, {
+					visitId: v.visitId,
+					appointmentId: v.appointmentId,
+					paidAt: paidIso,
+					visitDate: visitIso,
+					patientId: v.patientId,
+					patientName: v.patientName,
+					medicalCardNumber: extractMedicalCardNumber(v.patientId, v.administrativeProfile),
+					revenueRub: paymentRub,
+					paymentCount: 1,
+					services: servicesForVisit,
+					materials: materialsForVisit,
+				});
+			}
+		}
+
+		const doctorVisitsList = Array.from(visitsMap.values()).sort(
+			(a, b) => new Date(b.paidAt).getTime() - new Date(a.paidAt).getTime(),
+		);
+
+		// Build lab orders registry for this doctor
+		const doctorRawLabOrders = drillDown.rawLabOrders.filter(
+			(order) => order.doctorId === row.doctorUserId,
+		);
+
+		const labPct = isUsablePercent(labDeductionPct)
+			? labDeductionPct
+			: (isUsablePercent(commissionPct) ? commissionPct : 100);
+
+		const doctorLabOrdersList: DoctorPayoutLabOrder[] = doctorRawLabOrders.map((order) => {
+			const itemsForOrder = drillDown.rawLabItems.filter(
+				(item) => item.labOrderId === order.id,
+			);
+			const price = moneyFromDb(order.priceRub, "стоимость наряда ЗТЛ");
+			const withheld = percentOfMoney(price, labPct);
+			const tooth = itemsForOrder.length > 0
+				? itemsForOrder.map((item) => String(item.toothFdi)).join(", ")
+				: (order.toothFdi || "—");
+			const restoration = itemsForOrder.length > 0
+				? itemsForOrder.map((item) => humanizeRestorationType(item.restorationType, item.material)).join("; ")
+				: humanizeRestorationType(null, order.material);
+
+			return {
+				id: order.id,
+				orderNumber: order.secureToken
+					? order.secureToken.slice(0, 8).toUpperCase()
+					: order.id.slice(0, 8).toUpperCase(),
+				toothFdi: tooth,
+				restorationType: restoration,
+				material: order.material,
+				patientName: order.patientName ?? "Пациент",
+				status: order.status,
+				completedAt: order.completedAt ? new Date(order.completedAt).toISOString() : null,
+				priceRub: price,
+				withheldRub: withheld,
+				deductionPct: labPct,
+			};
+		});
+
 		return {
 			doctorUserId: row.doctorUserId,
 			doctorName: row.doctorName,
@@ -1013,6 +1448,8 @@ export async function doctorPayouts(
 				payoutRub: computed.payoutRub,
 				revenueRub,
 			}),
+			visits: doctorVisitsList,
+			labOrders: doctorLabOrdersList,
 		};
 	});
 

@@ -955,6 +955,16 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 												>
 													+ в Нал
 												</button>
+												{patientDepositRub > 0 && (
+													<button
+														type="button"
+														onClick={() => setAdvanceOffsetAmount((prev) => +(prev + summary.remainingRub).toFixed(2))}
+														className="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-amber-100 hover:bg-amber-200 dark:bg-amber-950/60 dark:hover:bg-amber-900 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700 cursor-pointer"
+														title="Добавить весь остаток в Депозит"
+													>
+														+ в Депозит
+													</button>
+												)}
 											</div>
 										)}
 									</div>

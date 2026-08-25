@@ -15,6 +15,15 @@ export interface CheckoutSplitItem {
 	readonly amountKop: number;
 }
 
+export interface FastCheckoutSplitState {
+	readonly cardRub: number;
+	readonly cashRub: number;
+	readonly sbpRub: number;
+	readonly depositRub: number;
+	readonly loyaltyRub: number;
+	readonly dmsRub?: number | undefined;
+}
+
 export interface FastCheckoutInput {
 	readonly orderId: string;
 	readonly totalBillKop: number;
@@ -23,6 +32,7 @@ export interface FastCheckoutInput {
 	readonly patientEmail?: string | undefined;
 	readonly patientPhone?: string | undefined;
 	readonly taxSystem?: "usn_income_outcome" | "patent" | "osno" | undefined;
+	readonly idempotencyKey?: string | undefined;
 }
 
 export interface TreatmentPlanStageOption {
@@ -173,6 +183,7 @@ export interface FastCheckoutValidationResult {
 export interface Ffd12FiscalPayload {
 	readonly ffdVersion: "1.2";
 	readonly orderId: string;
+	readonly idempotencyKey?: string | undefined;
 	readonly totalSumKop: number;
 	readonly paymentMethodTag1214: number; // Тег 1214 (Признак способа расчета)
 	readonly paymentSubjectTag1212: number; // Тег 1212 (Признак предмета расчета)
@@ -186,6 +197,158 @@ export interface Ffd12FiscalPayload {
 	readonly clientContact?: string | undefined;
 	readonly taxSystem: string;
 	readonly calculationType: 1;
+}
+
+/**
+ * Converts rubles split state to strongly-typed kopeck payments list.
+ */
+export function splitStateToCheckoutPayments(
+	split: Partial<FastCheckoutSplitState>,
+): CheckoutSplitItem[] {
+	const items: CheckoutSplitItem[] = [];
+	const cardKop = Math.round(Math.max(0, split.cardRub ?? 0) * 100);
+	const cashKop = Math.round(Math.max(0, split.cashRub ?? 0) * 100);
+	const sbpKop = Math.round(Math.max(0, split.sbpRub ?? 0) * 100);
+	const depositKop = Math.round(Math.max(0, split.depositRub ?? 0) * 100);
+	const loyaltyKop = Math.round(Math.max(0, split.loyaltyRub ?? 0) * 100);
+	const dmsKop = Math.round(Math.max(0, split.dmsRub ?? 0) * 100);
+
+	if (cardKop > 0) items.push({ method: "bank_card", amountKop: cardKop });
+	if (cashKop > 0) items.push({ method: "cash", amountKop: cashKop });
+	if (sbpKop > 0) items.push({ method: "sbp_qr", amountKop: sbpKop });
+	if (depositKop > 0) items.push({ method: "patient_deposit", amountKop: depositKop });
+	if (loyaltyKop > 0) items.push({ method: "loyalty_points", amountKop: loyaltyKop });
+	if (dmsKop > 0) items.push({ method: "dms_insurance", amountKop: dmsKop });
+
+	return items;
+}
+
+/**
+ * Converts payments list back to split state in rubles with 2-decimal rounding.
+ */
+export function paymentsToSplitState(
+	payments: readonly CheckoutSplitItem[],
+): FastCheckoutSplitState {
+	let cardRub = 0;
+	let cashRub = 0;
+	let sbpRub = 0;
+	let depositRub = 0;
+	let loyaltyRub = 0;
+	let dmsRub = 0;
+
+	for (const p of payments) {
+		const rub = p.amountKop / 100;
+		switch (p.method) {
+			case "bank_card":
+				cardRub += rub;
+				break;
+			case "cash":
+				cashRub += rub;
+				break;
+			case "sbp_qr":
+				sbpRub += rub;
+				break;
+			case "patient_deposit":
+				depositRub += rub;
+				break;
+			case "loyalty_points":
+				loyaltyRub += rub;
+				break;
+			case "dms_insurance":
+				dmsRub += rub;
+				break;
+		}
+	}
+
+	return {
+		cardRub: +cardRub.toFixed(2),
+		cashRub: +cashRub.toFixed(2),
+		sbpRub: +sbpRub.toFixed(2),
+		depositRub: +depositRub.toFixed(2),
+		loyaltyRub: +loyaltyRub.toFixed(2),
+		dmsRub: +dmsRub.toFixed(2),
+	};
+}
+
+/**
+ * Calculates remaining unallocated kopecks between total bill and current payments.
+ */
+export function calculateSplitRemainingKop(
+	totalBillKop: number,
+	payments: readonly CheckoutSplitItem[],
+): number {
+	const totalPaidKop = payments.reduce((acc, p) => acc + Math.max(0, p.amountKop), 0);
+	return totalBillKop - totalPaidKop;
+}
+
+/**
+ * 1-Click Remainder Balancer: allocates whatever is left directly to targetMethod.
+ */
+export function balanceRemainderToSplitMethod(params: {
+	readonly totalBillKop: number;
+	readonly currentPayments: readonly CheckoutSplitItem[];
+	readonly targetMethod: CheckoutPaymentMethodType;
+}): readonly CheckoutSplitItem[] {
+	const sanitizedTotal = Math.max(0, params.totalBillKop);
+	const otherPayments = params.currentPayments.filter((p) => p.method !== params.targetMethod);
+	const otherSumKop = otherPayments.reduce((acc, p) => acc + Math.max(0, p.amountKop), 0);
+	const remainingForTargetKop = Math.max(0, sanitizedTotal - otherSumKop);
+
+	const result: CheckoutSplitItem[] = [...otherPayments];
+	if (remainingForTargetKop > 0) {
+		result.push({
+			method: params.targetMethod,
+			amountKop: remainingForTargetKop,
+		});
+	}
+	return result;
+}
+
+export interface CashChangeCalculation {
+	readonly cashTenderedKop: number;
+	readonly cashRequiredKop: number;
+	readonly changeDueKop: number;
+	readonly isUnderpaid: boolean;
+	readonly missingKop: number;
+}
+
+/**
+ * Exact cash change calculation down to kopecks.
+ */
+export function calculateCashChangeKop(
+	cashTenderedKop: number,
+	cashRequiredKop: number,
+): CashChangeCalculation {
+	const sanitizedTendered = Math.max(0, cashTenderedKop);
+	const sanitizedRequired = Math.max(0, cashRequiredKop);
+
+	if (sanitizedRequired === 0) {
+		return {
+			cashTenderedKop: sanitizedTendered,
+			cashRequiredKop: 0,
+			changeDueKop: sanitizedTendered,
+			isUnderpaid: false,
+			missingKop: 0,
+		};
+	}
+
+	if (sanitizedTendered >= sanitizedRequired) {
+		return {
+			cashTenderedKop: sanitizedTendered,
+			cashRequiredKop: sanitizedRequired,
+			changeDueKop: sanitizedTendered - sanitizedRequired,
+			isUnderpaid: false,
+			missingKop: 0,
+		};
+	}
+
+	return {
+		cashTenderedKop: sanitizedTendered,
+		cashRequiredKop: sanitizedRequired,
+		changeDueKop: 0,
+		isUnderpaid: true,
+		missingKop: sanitizedRequired - sanitizedTendered,
+	};
 }
 
 export function validateCheckoutSplit(input: FastCheckoutInput): FastCheckoutValidationResult {
@@ -242,6 +405,7 @@ export function generate54FzFiscalPayload(
 	options?: {
 		paymentMethodTag1214?: number | undefined;
 		paymentSubjectTag1212?: number | undefined;
+		idempotencyKey?: string | undefined;
 	},
 ): Ffd12FiscalPayload {
 	let cashKop = 0;
@@ -276,6 +440,7 @@ export function generate54FzFiscalPayload(
 	return {
 		ffdVersion: "1.2",
 		orderId: input.orderId,
+		idempotencyKey: options?.idempotencyKey ?? input.idempotencyKey ?? undefined,
 		totalSumKop: input.totalBillKop,
 		paymentMethodTag1214: options?.paymentMethodTag1214 ?? (advancePrepaymentKop > 0 ? 4 : 4),
 		paymentSubjectTag1212: options?.paymentSubjectTag1212 ?? 4,

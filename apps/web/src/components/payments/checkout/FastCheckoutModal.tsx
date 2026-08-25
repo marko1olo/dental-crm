@@ -24,6 +24,8 @@ import {
 	convertRubToForeignCurrency,
 	type SupportedCurrency,
 	CBR_CURRENCIES,
+	buildFiscalReceiptPayloadSignature,
+	createFiscalCompositeIdempotencyKey,
 } from "@dental/shared";
 import {
 	CHECKOUT_PAYMENT_METHODS,
@@ -34,6 +36,9 @@ import {
 	generate54FzFiscalPayload,
 	calculateStageAdvanceAmount,
 	DEFAULT_TREATMENT_STAGES,
+	splitStateToCheckoutPayments,
+	calculateSplitRemainingKop,
+	calculateCashChangeKop,
 	type CheckoutSplitItem,
 	type Ffd12FiscalPayload,
 	type TreatmentPlanStageOption,
@@ -72,7 +77,16 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	const [activeMethod, setActiveMethod] = useState<CheckoutPaymentMethodType>(
 		initialPaymentMethod ?? "sbp_qr"
 	);
+
+	// Split Payment State (amounts in Rubles)
+	const [cardAmountRub, setCardAmountRub] = useState<number>(0);
+	const [cashAmountRub, setCashAmountRub] = useState<number>(0);
+	const [sbpAmountRub, setSbpAmountRub] = useState<number>(0);
+	const [depositAmountRub, setDepositAmountRub] = useState<number>(0);
+	const [loyaltyAmountRub, setLoyaltyAmountRub] = useState<number>(0);
+	const [dmsAmountRub, setDmsAmountRub] = useState<number>(0);
 	const [cashTenderedRub, setCashTenderedRub] = useState<number>(0);
+
 	const [isPrinting, setIsPrinting] = useState<boolean>(false);
 	const [isOfflineBuffered, setIsOfflineBuffered] = useState<boolean>(false);
 	const [pendingOfflineCount, setPendingOfflineCount] = useState<number>(0);
@@ -105,6 +119,10 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	}, [baseStageAmountKop, stagePaymentMode, advanceAlreadyPaidRub]);
 
 	const effectiveBillKop = stageCalc.requiredAmountKop;
+	const targetBillKop = stagePaymentMode === "advance_offset_tag1215"
+		? baseStageAmountKop
+		: effectiveBillKop;
+	const targetBillRub = targetBillKop / 100;
 
 	const foreignCalc = useMemo(() => {
 		return convertRubToForeignCurrency({
@@ -114,33 +132,54 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 		});
 	}, [effectiveBillKop, selectedForeignCurrency]);
 
-	const [payments, setPayments] = useState<readonly CheckoutSplitItem[]>([
-		{ method: "sbp_qr", amountKop: initialTotalBillKop },
-	]);
-
-	// Keep payments in sync when effectiveBillKop, activeMethod or stagePaymentMode changes
+	// Sync split payments when modal opens or stage/mode changes
 	useEffect(() => {
+		if (!isOpen) return;
+
+		setCardAmountRub(0);
+		setCashAmountRub(0);
+		setSbpAmountRub(0);
+		setDepositAmountRub(0);
+		setLoyaltyAmountRub(0);
+		setDmsAmountRub(0);
+		setCashTenderedRub(0);
+
 		if (stagePaymentMode === "advance_offset_tag1215") {
-			const split: CheckoutSplitItem[] = [];
-			if (stageCalc.advanceOffsetTag1215Kop > 0) {
-				split.push({
-					method: "patient_deposit", // Зачет аванса (Тег 1215)
-					amountKop: stageCalc.advanceOffsetTag1215Kop,
-				});
+			const offsetRub = stageCalc.advanceOffsetTag1215Kop / 100;
+			const reqRub = stageCalc.requiredAmountKop / 100;
+			setDepositAmountRub(offsetRub);
+
+			if (activeMethod === "cash") {
+				setCashAmountRub(reqRub);
+				setCashTenderedRub(reqRub);
+			} else if (activeMethod === "sbp_qr") {
+				setSbpAmountRub(reqRub);
+			} else if (activeMethod === "loyalty_points") {
+				setLoyaltyAmountRub(reqRub);
+			} else if (activeMethod === "dms_insurance") {
+				setDmsAmountRub(reqRub);
+			} else {
+				setCardAmountRub(reqRub);
 			}
-			if (stageCalc.requiredAmountKop > 0) {
-				split.push({
-					method: activeMethod === "patient_deposit" ? "bank_card" : activeMethod,
-					amountKop: stageCalc.requiredAmountKop,
-				});
-			}
-			setPayments(split);
 		} else {
-			setPayments([{ method: activeMethod, amountKop: effectiveBillKop }]);
+			if (activeMethod === "cash") {
+				setCashAmountRub(targetBillRub);
+				setCashTenderedRub(targetBillRub);
+			} else if (activeMethod === "sbp_qr") {
+				setSbpAmountRub(targetBillRub);
+			} else if (activeMethod === "patient_deposit") {
+				setDepositAmountRub(targetBillRub);
+			} else if (activeMethod === "loyalty_points") {
+				setLoyaltyAmountRub(targetBillRub);
+			} else if (activeMethod === "dms_insurance") {
+				setDmsAmountRub(targetBillRub);
+			} else {
+				setCardAmountRub(targetBillRub);
+			}
 		}
 	}, [
-		effectiveBillKop,
-		activeMethod,
+		isOpen,
+		targetBillKop,
 		stagePaymentMode,
 		stageCalc.advanceOffsetTag1215Kop,
 		stageCalc.requiredAmountKop,
@@ -157,22 +196,43 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 		return unsubscribe;
 	}, []);
 
+	const payments = useMemo<readonly CheckoutSplitItem[]>(() => {
+		return splitStateToCheckoutPayments({
+			cardRub: cardAmountRub,
+			cashRub: cashAmountRub,
+			sbpRub: sbpAmountRub,
+			depositRub: depositAmountRub,
+			loyaltyRub: loyaltyAmountRub,
+			dmsRub: dmsAmountRub,
+		});
+	}, [cardAmountRub, cashAmountRub, sbpAmountRub, depositAmountRub, loyaltyAmountRub, dmsAmountRub]);
+
+	const remainingKop = useMemo(() => {
+		return calculateSplitRemainingKop(targetBillKop, payments);
+	}, [targetBillKop, payments]);
+
+	const remainingRub = useMemo(() => {
+		return +(remainingKop / 100).toFixed(2);
+	}, [remainingKop]);
+
+	const cashChange = useMemo(() => {
+		return calculateCashChangeKop(
+			Math.round(cashTenderedRub * 100),
+			Math.round(cashAmountRub * 100)
+		);
+	}, [cashTenderedRub, cashAmountRub]);
+
 	const validation = useMemo(() => {
 		return validateCheckoutSplit({
 			orderId,
-			totalBillKop:
-				stagePaymentMode === "advance_offset_tag1215"
-					? baseStageAmountKop
-					: effectiveBillKop,
+			totalBillKop: targetBillKop,
 			payments,
 			cashTenderedKop: Math.round(cashTenderedRub * 100),
 			patientPhone,
 		});
 	}, [
 		orderId,
-		stagePaymentMode,
-		baseStageAmountKop,
-		effectiveBillKop,
+		targetBillKop,
 		payments,
 		cashTenderedRub,
 		patientPhone,
@@ -187,42 +247,119 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 
 	const handleSingle100Percent = (method: CheckoutPaymentMethodType) => {
 		setActiveMethod(method);
+		setCardAmountRub(0);
+		setCashAmountRub(0);
+		setSbpAmountRub(0);
+		setDepositAmountRub(0);
+		setLoyaltyAmountRub(0);
+		setDmsAmountRub(0);
+		setCashTenderedRub(0);
+
 		if (stagePaymentMode === "advance_offset_tag1215") {
-			const split: CheckoutSplitItem[] = [];
-			if (stageCalc.advanceOffsetTag1215Kop > 0) {
-				split.push({
-					method: "patient_deposit",
-					amountKop: stageCalc.advanceOffsetTag1215Kop,
-				});
+			const offsetRub = stageCalc.advanceOffsetTag1215Kop / 100;
+			const reqRub = stageCalc.requiredAmountKop / 100;
+			setDepositAmountRub(offsetRub);
+
+			if (method === "cash") {
+				setCashAmountRub(reqRub);
+				setCashTenderedRub(reqRub);
+			} else if (method === "sbp_qr") {
+				setSbpAmountRub(reqRub);
+			} else if (method === "loyalty_points") {
+				setLoyaltyAmountRub(reqRub);
+			} else if (method === "dms_insurance") {
+				setDmsAmountRub(reqRub);
+			} else {
+				setCardAmountRub(reqRub);
 			}
-			if (stageCalc.requiredAmountKop > 0) {
-				split.push({
-					method,
-					amountKop: stageCalc.requiredAmountKop,
-				});
-			}
-			setPayments(split);
 		} else {
-			setPayments([{ method, amountKop: effectiveBillKop }]);
+			if (method === "cash") {
+				setCashAmountRub(targetBillRub);
+				setCashTenderedRub(targetBillRub);
+			} else if (method === "sbp_qr") {
+				setSbpAmountRub(targetBillRub);
+			} else if (method === "patient_deposit") {
+				setDepositAmountRub(targetBillRub);
+			} else if (method === "loyalty_points") {
+				setLoyaltyAmountRub(targetBillRub);
+			} else if (method === "dms_insurance") {
+				setDmsAmountRub(targetBillRub);
+			} else {
+				setCardAmountRub(targetBillRub);
+			}
 		}
 	};
 
+	const handleAddRemainingToCard = () => {
+		if (remainingRub <= 0) return;
+		setCardAmountRub((prev) => +(prev + remainingRub).toFixed(2));
+	};
+
+	const handleAddRemainingToCash = () => {
+		if (remainingRub <= 0) return;
+		const nextCash = +(cashAmountRub + remainingRub).toFixed(2);
+		setCashAmountRub(nextCash);
+		if (cashTenderedRub < nextCash) {
+			setCashTenderedRub(nextCash);
+		}
+	};
+
+	const handleAddRemainingToSbp = () => {
+		if (remainingRub <= 0) return;
+		setSbpAmountRub((prev) => +(prev + remainingRub).toFixed(2));
+	};
+
+	const handleAddRemainingToDeposit = () => {
+		if (remainingRub <= 0) return;
+		setDepositAmountRub((prev) => +(prev + remainingRub).toFixed(2));
+	};
+
+	const handleAddRemainingToLoyalty = () => {
+		if (remainingRub <= 0) return;
+		setLoyaltyAmountRub((prev) => +(prev + remainingRub).toFixed(2));
+	};
+
 	const handleExecutePayment = async () => {
-		if (!validation.isValid) return;
+		if (!validation.isValid || isPrinting) return;
 		setIsPrinting(true);
+
+		// Statutory composite Idempotency-Key: <uuid>#<sha256(canonicalPayloadSignature)>
+		const rawUuid = crypto.randomUUID();
+		const signature = buildFiscalReceiptPayloadSignature({
+			patientId: orderId,
+			operationType: "income",
+			taxationSystem: "usn_income",
+			totalKopecks: targetBillKop,
+			cashKopecks: Math.round(cashAmountRub * 100),
+			electronicCardKopecks: Math.round(cardAmountRub * 100),
+			sbpKopecks: Math.round(sbpAmountRub * 100),
+			prepaidKopecks: Math.round((depositAmountRub + loyaltyAmountRub) * 100),
+			items: [
+				{
+					name: "Стоматологические услуги по плану лечения",
+					priceKopecks: targetBillKop,
+					quantity: 1,
+					amountKopecks: targetBillKop,
+					subject: "service",
+					method: "full_payment",
+					vatRate: "vat_none",
+				},
+			],
+		});
+		const compositeIdempotencyKey = createFiscalCompositeIdempotencyKey(rawUuid, signature);
+
 		const payload = generate54FzFiscalPayload(
 			{
 				orderId,
-				totalBillKop:
-					stagePaymentMode === "advance_offset_tag1215"
-						? baseStageAmountKop
-						: effectiveBillKop,
+				totalBillKop: targetBillKop,
 				payments,
 				patientPhone,
+				idempotencyKey: compositeIdempotencyKey,
 			},
 			{
 				paymentMethodTag1214: stageCalc.ffdTag1214,
 				paymentSubjectTag1212: stageCalc.ffdTag1212,
+				idempotencyKey: compositeIdempotencyKey,
 			}
 		);
 
@@ -234,13 +371,13 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 						operationType: "income",
 						customerContact: patientPhone || "",
 						cashierFullName: "Кассир",
-						totalRub: effectiveBillKop / 100,
+						totalRub: targetBillRub,
 						items: [
 							{
 								name: "Стоматологические услуги по плану лечения",
-								priceRub: effectiveBillKop / 100,
+								priceRub: targetBillRub,
 								quantity: 1,
-								amountRub: effectiveBillKop / 100,
+								amountRub: targetBillRub,
 								paymentMethod: "full_payment",
 								paymentSubject: "service",
 							},
@@ -250,7 +387,8 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 						prepaidRub: payload.paymentsDistribution.advancePrepaymentKop / 100,
 						taxationSystem: "usn_income_expense",
 					},
-					"Офлайн-режим (потеря интернет-соединения)"
+					"Офлайн-режим (потеря интернет-соединения)",
+					compositeIdempotencyKey
 				);
 				setIsOfflineBuffered(true);
 				showToast(
@@ -274,13 +412,13 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 					operationType: "income",
 					customerContact: patientPhone || "",
 					cashierFullName: "Сидорова Анна Павловна",
-					totalRub: effectiveBillKop / 100,
+					totalRub: targetBillRub,
 					items: [
 						{
 							name: "Стоматологические услуги по плану лечения",
-							priceRub: effectiveBillKop / 100,
+							priceRub: targetBillRub,
 							quantity: 1,
-							amountRub: effectiveBillKop / 100,
+							amountRub: targetBillRub,
 							paymentMethod: "full_payment",
 							paymentSubject: "service",
 						},
@@ -290,7 +428,8 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 					prepaidRub: payload.paymentsDistribution.advancePrepaymentKop / 100,
 					taxationSystem: "usn_income_expense",
 				},
-				"Аварийный сбой связи с ККТ"
+				"Аварийный сбой связи с ККТ",
+				compositeIdempotencyKey
 			);
 			setIsOfflineBuffered(true);
 			showToast(
@@ -506,29 +645,219 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 						</div>
 					</div>
 
+					{/* Split Payment Inputs & 1-Click Remainder Balancer */}
+					<div className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] space-y-3" data-testid="split-payment-section">
+						<div className="flex flex-wrap items-center justify-between gap-2">
+							<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
+								<Layers size={14} className="text-teal-600" />
+								Разделение оплаты (Сплит 54-ФЗ):
+							</span>
+
+							{/* 1-Click Remainder Balancer Buttons */}
+							{remainingRub > 0 ? (
+								<div className="flex items-center gap-1.5 flex-wrap">
+									<span className="text-xs text-[var(--muted,#64748b)]">
+										Остаток <strong className="font-mono text-amber-600 dark:text-amber-400">{remainingRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</strong>:
+									</span>
+									<button
+										type="button"
+										onClick={handleAddRemainingToCard}
+										className="min-h-[44px] px-2.5 py-1 rounded-xl text-xs font-bold bg-blue-500/15 hover:bg-blue-500/25 text-blue-700 dark:text-blue-300 border border-blue-500/30 transition-all cursor-pointer select-none active:scale-95"
+										title="Заполнить остаток картой"
+										data-testid="split-fill-card-btn"
+									>
+										+ на Карту
+									</button>
+									<button
+										type="button"
+										onClick={handleAddRemainingToCash}
+										className="min-h-[44px] px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 transition-all cursor-pointer select-none active:scale-95"
+										title="Заполнить остаток наличными"
+										data-testid="split-fill-cash-btn"
+									>
+										+ в Нал
+									</button>
+									<button
+										type="button"
+										onClick={handleAddRemainingToSbp}
+										className="min-h-[44px] px-2.5 py-1 rounded-xl text-xs font-bold bg-purple-500/15 hover:bg-purple-500/25 text-purple-700 dark:text-purple-300 border border-purple-500/30 transition-all cursor-pointer select-none active:scale-95"
+										title="Заполнить остаток через СБП"
+										data-testid="split-fill-sbp-btn"
+									>
+										+ в СБП
+									</button>
+									<button
+										type="button"
+										onClick={handleAddRemainingToDeposit}
+										className="min-h-[44px] px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30 transition-all cursor-pointer select-none active:scale-95"
+										title="Заполнить остаток из депозита"
+										data-testid="split-fill-deposit-btn"
+									>
+										+ в Депозит
+									</button>
+									<button
+										type="button"
+										onClick={handleAddRemainingToLoyalty}
+										className="min-h-[44px] px-2.5 py-1 rounded-xl text-xs font-bold bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 transition-all cursor-pointer select-none active:scale-95"
+										title="Заполнить остаток баллами"
+										data-testid="split-fill-loyalty-btn"
+									>
+										+ в Бонусы
+									</button>
+								</div>
+							) : remainingRub === 0 ? (
+								<div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+									<Check size={14} className="text-emerald-600" />
+									<span>Чек сбалансирован (100%)</span>
+								</div>
+							) : (
+								<div className="flex items-center gap-1.5 text-xs font-bold text-rose-600">
+									<AlertCircle size={14} />
+									<span>Переплата: {Math.abs(remainingRub).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span>
+								</div>
+							)}
+						</div>
+
+						{/* Quick Split Input Fields Grid */}
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+							{/* Card (Tag 1081) */}
+							<div className="p-2.5 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] space-y-1">
+								<label className="text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
+									<CreditCard size={14} className="text-blue-600" />
+									<span>Карта (Тег 1081)</span>
+								</label>
+								<div className="relative">
+									<input
+										type="number"
+										min={0}
+										step="0.01"
+										value={cardAmountRub || ""}
+										onChange={(e) => setCardAmountRub(Math.max(0, parseFloat(e.target.value) || 0))}
+										className="w-full px-3 py-2 text-sm font-bold font-mono bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#cbd5e1)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+										placeholder="0.00 ₽"
+										data-testid="split-input-card"
+									/>
+									<span className="absolute right-3 top-2 text-xs text-[var(--muted,#64748b)]">₽</span>
+								</div>
+							</div>
+
+							{/* Cash (Tag 1031) */}
+							<div className="p-2.5 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] space-y-1">
+								<label className="text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
+									<Banknote size={14} className="text-emerald-600" />
+									<span>Наличные (Тег 1031)</span>
+								</label>
+								<div className="relative">
+									<input
+										type="number"
+										min={0}
+										step="0.01"
+										value={cashAmountRub || ""}
+										onChange={(e) => {
+											const val = Math.max(0, parseFloat(e.target.value) || 0);
+											setCashAmountRub(val);
+											if (cashTenderedRub < val) {
+												setCashTenderedRub(val);
+											}
+										}}
+										className="w-full px-3 py-2 text-sm font-bold font-mono bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#cbd5e1)] rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+										placeholder="0.00 ₽"
+										data-testid="split-input-cash"
+									/>
+									<span className="absolute right-3 top-2 text-xs text-[var(--muted,#64748b)]">₽</span>
+								</div>
+							</div>
+
+							{/* SBP QR (Tag 1081) */}
+							<div className="p-2.5 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] space-y-1">
+								<label className="text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
+									<QrCode size={14} className="text-purple-600" />
+									<span>СБП QR (Тег 1081)</span>
+								</label>
+								<div className="relative">
+									<input
+										type="number"
+										min={0}
+										step="0.01"
+										value={sbpAmountRub || ""}
+										onChange={(e) => setSbpAmountRub(Math.max(0, parseFloat(e.target.value) || 0))}
+										className="w-full px-3 py-2 text-sm font-bold font-mono bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#cbd5e1)] rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none"
+										placeholder="0.00 ₽"
+										data-testid="split-input-sbp"
+									/>
+									<span className="absolute right-3 top-2 text-xs text-[var(--muted,#64748b)]">₽</span>
+								</div>
+							</div>
+
+							{/* Deposit / Prepayment (Tag 1215) */}
+							<div className="p-2.5 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] space-y-1">
+								<label className="text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
+									<Coins size={14} className="text-amber-600" />
+									<span>Депозит / Аванс (Тег 1215)</span>
+								</label>
+								<div className="relative">
+									<input
+										type="number"
+										min={0}
+										step="0.01"
+										value={depositAmountRub || ""}
+										onChange={(e) => setDepositAmountRub(Math.max(0, parseFloat(e.target.value) || 0))}
+										className="w-full px-3 py-2 text-sm font-bold font-mono bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#cbd5e1)] rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"
+										placeholder="0.00 ₽"
+										data-testid="split-input-deposit"
+									/>
+									<span className="absolute right-3 top-2 text-xs text-[var(--muted,#64748b)]">₽</span>
+								</div>
+							</div>
+
+							{/* Loyalty / Bonus Points (Tag 1216) */}
+							<div className="p-2.5 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] space-y-1">
+								<label className="text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
+									<Sparkles size={14} className="text-indigo-600" />
+									<span>Бонусные баллы (Тег 1216)</span>
+								</label>
+								<div className="relative">
+									<input
+										type="number"
+										min={0}
+										step="0.01"
+										value={loyaltyAmountRub || ""}
+										onChange={(e) => setLoyaltyAmountRub(Math.max(0, parseFloat(e.target.value) || 0))}
+										className="w-full px-3 py-2 text-sm font-bold font-mono bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#cbd5e1)] rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+										placeholder="0.00 ₽"
+										data-testid="split-input-loyalty"
+									/>
+									<span className="absolute right-3 top-2 text-xs text-[var(--muted,#64748b)]">₽</span>
+								</div>
+							</div>
+						</div>
+					</div>
+
 					{/* SBP QR Display Panel */}
-					{activeMethod === "sbp_qr" && (
+					{(sbpAmountRub > 0 || activeMethod === "sbp_qr") && (
 						<div className="p-4 rounded-2xl bg-teal-500/5 border border-teal-500/30 flex flex-col items-center justify-center text-center gap-2.5">
 							<div className="w-36 h-36 rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] p-3 shadow-md flex items-center justify-center border border-teal-500/30">
 								<QrCode className="w-full h-full text-teal-600 dark:text-teal-400" />
 							</div>
 							<div className="text-xs text-[var(--ink)]">
 								<p className="font-bold m-0 text-[var(--ink)]">Отсканируйте камерой телефона или в приложении любого банка</p>
-								<p className="text-[var(--muted)] m-0 mt-0.5">Сумма: {(effectiveBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽ • Без комиссии для пациента (Тег 1081)</p>
+								<p className="text-[var(--muted)] m-0 mt-0.5">
+									Сумма СБП: {( (sbpAmountRub > 0 ? sbpAmountRub : targetBillRub) ).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽ • Без комиссии для пациента (Тег 1081)
+								</p>
 							</div>
 						</div>
 					)}
 
-					{/* Cash Quick Tender Buttons */}
-					{activeMethod === "cash" && (
+					{/* Cash Quick Tender Buttons & Change Calculator */}
+					{(cashAmountRub > 0 || activeMethod === "cash") && (
 						<div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/30 flex flex-col gap-3">
 							<div className="flex items-center justify-between">
 								<span className="text-xs font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
 									<Coins size={16} className="text-emerald-600" />
-									Быстрый расчет сдачи с купюр:
+									Быстрый расчет сдачи с наличных:
 								</span>
 								<span className="text-xs text-[var(--muted,#64748b)]">
-									К оплате: {(effectiveBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+									К оплате налом: {( (cashAmountRub > 0 ? cashAmountRub : targetBillRub) ).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 								</span>
 							</div>
 							<div className="flex items-center gap-2 flex-wrap">
@@ -544,7 +873,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								))}
 								<button
 									type="button"
-									onClick={() => setCashTenderedRub(effectiveBillKop / 100)}
+									onClick={() => setCashTenderedRub(cashAmountRub > 0 ? cashAmountRub : targetBillRub)}
 									className="min-h-[44px] px-4 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-sm font-bold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer transition-all active:scale-95"
 								>
 									Без сдачи
@@ -564,13 +893,13 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 									<div className="text-[var(--muted,#64748b)]">
 										Внесено: <span className="font-mono text-[var(--ink,#0f172a)]">{cashTenderedRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span>
 									</div>
-									{cashTenderedRub >= effectiveBillKop / 100 ? (
+									{!cashChange.isUnderpaid ? (
 										<div className="text-emerald-700 dark:text-emerald-300 font-mono text-sm">
-											Сдача: {((cashTenderedRub * 100 - effectiveBillKop) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+											Сдача: {(cashChange.changeDueKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 										</div>
 									) : (
 										<div className="text-amber-600 font-mono">
-											Не хватает: {((effectiveBillKop - cashTenderedRub * 100) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+											Не хватает: {(cashChange.missingKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 										</div>
 									)}
 								</div>
