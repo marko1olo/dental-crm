@@ -117,3 +117,21 @@ export function computeCdaSha256Hex(xml: string): string {
 	const canonical = canonicalizeCdaXml(xml);
 	return sha256Hex(canonical);
 }
+
+/**
+ * Computes canonical XML digest fingerprint for UKEP GOST R 34.10 / CAdES-BES signing.
+ */
+export function computeCdaDocumentFingerprint(xml: string): {
+	canonicalXml: string;
+	sha256Hex: string;
+	byteLength: number;
+} {
+	const canonicalXml = canonicalizeCdaXml(xml);
+	const sha256 = sha256Hex(canonicalXml);
+	const byteLength = Buffer.byteLength(canonicalXml, "utf8");
+	return {
+		canonicalXml,
+		sha256Hex: sha256,
+		byteLength,
+	};
+}

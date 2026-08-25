@@ -5,7 +5,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-export type SemdDocKind = "101" | "104" | "130" | "302" | "303";
+export type SemdDocKind = "101" | "104" | "130" | "302" | "303" | "043u" | "108";
 
 export interface PersonName {
 	first: string;
@@ -145,10 +145,10 @@ export interface TaxpayerInfo {
 	relationToPatient: "1" | "2" | "3" | "4";
 }
 
-// ─── Параметры для генерации СЭМД 101: Протокол консультации стоматолога ───
+// ─── Параметры для генерации СЭМД 101 / 043/у: Протокол консультации стоматолога ───
 
 export interface CdaSemd101Params {
-	docKind: "101";
+	docKind: "101" | "043u" | "108";
 	documentId: string;
 	documentVersion?: number | undefined;
 	documentTime?: Date | undefined;
@@ -264,6 +264,9 @@ export interface CdaSemd130Params {
 	totalExpensiveTreatmentKopecks: number; // Код 2
 	totalSumKopecks: number;
 }
+
+export type CdaSemd043uParams = CdaSemd101Params;
+export type CdaSemd108Params = CdaSemd101Params;
 
 export type CdaDocumentParams =
 	| CdaSemd101Params

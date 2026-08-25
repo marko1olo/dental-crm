@@ -139,10 +139,10 @@ export const taxpayerInfoSchema = z.object({
 	relationToPatient: z.enum(["1", "2", "3", "4"]).default("1"),
 });
 
-// ─── СЭМД 101: Протокол консультации стоматолога ───────────────────────────
+// ─── СЭМД 101 / 043/у: Протокол консультации стоматолога ───────────────────
 
 export const cdaSemd101Schema = z.object({
-	docKind: z.literal("101").default("101"),
+	docKind: z.enum(["101", "043u", "108"]).default("101"),
 	documentId: z.string().min(1),
 	documentVersion: z.number().int().positive().optional().default(1),
 	documentTime: z.preprocess((v) => {
@@ -255,7 +255,10 @@ export const cdaSemd130Schema = z.object({
 	totalSumKopecks: z.number().int().positive(),
 });
 
-export const cdaDocumentParamsSchema = z.discriminatedUnion("docKind", [
+export const cdaSemd043uSchema = cdaSemd101Schema;
+export const cdaSemd108Schema = cdaSemd101Schema;
+
+export const cdaDocumentParamsSchema = z.union([
 	cdaSemd101Schema,
 	cdaSemd104Schema,
 	cdaSemd130Schema,

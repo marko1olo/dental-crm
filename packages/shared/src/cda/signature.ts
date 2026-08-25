@@ -44,6 +44,28 @@ export function buildEgiszRemdPackage(params: {
 	return egiszRemdPackageSchema.parse(pkg);
 }
 
+export const buildEgiszRemdSubmissionPackage = buildEgiszRemdPackage;
+
+/**
+ * Prepares payload and base64 digest for CryptoPro Browser plug-in UKEP signing.
+ */
+export function prepareUkepSigningPayload(xml: string): {
+	rawXml: string;
+	canonicalXml: string;
+	sha256Hex: string;
+	base64Content: string;
+} {
+	const canonicalXml = canonicalizeCdaXml(xml);
+	const sha256Hex = computeCdaSha256Hex(canonicalXml);
+	const base64Content = Buffer.from(canonicalXml, "utf8").toString("base64");
+	return {
+		rawXml: xml,
+		canonicalXml,
+		sha256Hex,
+		base64Content,
+	};
+}
+
 /**
  * Generates an authentic demonstration GOST R 34.10-2012 UKEP signature container for unit tests & development.
  */
