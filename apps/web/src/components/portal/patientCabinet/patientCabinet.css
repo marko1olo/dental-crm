@@ -1005,4 +1005,49 @@
 	font-weight: 800;
 }
 
+/* ============================================================
+   РАУНД 85: QR-КОД БЫСТРОЙ РЕГИСТРАЦИИ НА РЕСЕПШЕНЕ (375PX)
+   ============================================================ */
+
+.pc-reception-qr-card {
+	border: 2px solid var(--pc-primary);
+	background: linear-gradient(
+		135deg,
+		var(--pc-surface) 0%,
+		var(--pc-primary-light) 100%
+	);
+	border-radius: var(--pc-radius-md);
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.pc-next-visit-time {
+	font-size: 20px !important;
+	font-weight: 800 !important;
+	color: var(--pc-primary) !important;
+	letter-spacing: 0.02em;
+	line-height: 1.2;
+}
+
+.pc-next-visit-room {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--pc-primary);
+	background: var(--pc-primary-light);
+	padding: 4px 10px;
+	border-radius: 6px;
+}
+
+@media (max-width: 480px) {
+	.pc-reception-qr-card {
+		padding: 12px;
+	}
+
+	.pc-reception-qr-card button {
+		width: 100%;
+		justify-content: center;
+	}
+}
+
+
 

@@ -64,6 +64,7 @@ import {
 	formatRubles,
 	formatRussianDateIso,
 	generatePatientTaxCertificate1151156,
+	generateReceptionCheckinQrPayload,
 	generateSbpQrPayload,
 	generateSmsOtp,
 	openPrintWindow,
@@ -132,6 +133,9 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 
 	// Состояние мобильного самочекина
 	const [isSelfCheckinOpen, setIsSelfCheckinOpen] = useState(false);
+
+	// Состояние QR-кода быстрой регистрации на ресепшене
+	const [isReceptionQrOpen, setIsReceptionQrOpen] = useState(false);
 
 	// Выбранный уровень 3-Tier плана лечения
 	const [selectedTierTab, setSelectedTierTab] = useState<"basic" | "standard" | "premium">(
@@ -516,6 +520,102 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 					{/* TAB 1: ОБЗОР (OVERVIEW) */}
 					{activeTab === "overview" && (
 						<>
+							{/* Reception Quick Check-in QR Banner */}
+							<div
+								className="pc-card pc-reception-qr-card"
+								data-testid="reception-qr-banner"
+								style={{
+									border: "2px solid var(--pc-primary)",
+									background: "linear-gradient(135deg, var(--pc-surface) 0%, var(--pc-primary-light, rgba(13, 148, 136, 0.1)) 100%)",
+									borderRadius: "var(--pc-radius-md)",
+									padding: "16px",
+									display: "flex",
+									flexDirection: "column",
+									gap: "12px",
+								}}
+							>
+								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+									<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+										<div
+											style={{
+												width: "44px",
+												height: "44px",
+												borderRadius: "12px",
+												background: "var(--pc-primary)",
+												color: "#ffffff",
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												flexShrink: 0,
+												boxShadow: "0 4px 12px rgba(13, 148, 136, 0.35)",
+											}}
+										>
+											<QrCode size={24} />
+										</div>
+										<div>
+											<h3 style={{ margin: 0, fontSize: "1.0625rem", fontWeight: 800, color: "var(--pc-text-main)" }}>
+												QR-код для ресепшена
+											</h3>
+											<p style={{ margin: "2px 0 0 0", fontSize: "0.8125rem", color: "var(--pc-text-muted)" }}>
+												Покажите администратору при входе для быстрой отметки о прибытии
+											</p>
+										</div>
+									</div>
+
+									<button
+										type="button"
+										className="pc-btn-primary"
+										style={{
+											minHeight: "48px",
+											padding: "12px 20px",
+											fontSize: "0.9375rem",
+											fontWeight: 800,
+											display: "inline-flex",
+											alignItems: "center",
+											gap: "8px",
+											touchAction: "manipulation",
+										}}
+										onClick={() => setIsReceptionQrOpen(true)}
+										data-testid="btn-show-reception-qr"
+									>
+										<Sparkles size={18} />
+										<span>Показать администратору</span>
+									</button>
+								</div>
+
+								{summary.nextAppointment && (
+									<div
+										style={{
+											backgroundColor: "var(--pc-bg)",
+											border: "1px solid var(--pc-border)",
+											borderRadius: "var(--pc-radius-sm)",
+											padding: "10px 14px",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "space-between",
+											flexWrap: "wrap",
+											gap: "8px",
+										}}
+									>
+										<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+											<div className="pc-next-visit-time">
+												{summary.nextAppointment.timeRu}
+											</div>
+											<div style={{ fontSize: "0.875rem", color: "var(--pc-text-main)" }}>
+												<div><strong>{summary.nextAppointment.dateIso}</strong> &bull; {summary.nextAppointment.titleRu}</div>
+												<div style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)" }}>
+													Врач: {summary.nextAppointment.doctorName}
+												</div>
+											</div>
+										</div>
+
+										<div className="pc-next-visit-room">
+											{summary.nextAppointment.roomNumber}
+										</div>
+									</div>
+								)}
+							</div>
+
 							{/* Urgent Alerts: Unpaid Invoices or Pending Consents */}
 							{summary.unpaidInvoicesCount > 0 && (
 								<div className="pc-alert-banner warning">
@@ -777,10 +877,22 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 											<Calendar size={18} style={{ color: "var(--pc-primary)" }} />
 											<span>Ближайший запланированный прием</span>
 										</h3>
-										<span className="pc-status-badge paid">
-											<Check size={14} />
-											<span>Запись подтверждена</span>
-										</span>
+										<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+											<span className="pc-status-badge paid">
+												<Check size={14} />
+												<span>Запись подтверждена</span>
+											</span>
+											<button
+												type="button"
+												className="pc-btn-primary"
+												style={{ minHeight: "48px", padding: "8px 16px", fontSize: "0.875rem", fontWeight: 700 }}
+												onClick={() => setIsReceptionQrOpen(true)}
+												data-testid="next-appt-qr-btn"
+											>
+												<QrCode size={16} />
+												<span>Показать администратору</span>
+											</button>
+										</div>
 									</div>
 
 									<div style={{ display: "flex", gap: "16px", alignItems: "flex-start", flexWrap: "wrap" }}>
@@ -792,16 +904,23 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 											/>
 										)}
 
-										<div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
-											<strong style={{ fontSize: "1.0625rem", color: "var(--pc-text-main)" }}>
-												{summary.nextAppointment.dateIso} в {summary.nextAppointment.timeRu} &bull; {summary.nextAppointment.titleRu}
-											</strong>
+										<div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+											<div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+												<span className="pc-next-visit-time">
+													{summary.nextAppointment.timeRu}
+												</span>
+												<strong style={{ fontSize: "1.0625rem", color: "var(--pc-text-main)" }}>
+													{summary.nextAppointment.dateIso} &bull; {summary.nextAppointment.titleRu}
+												</strong>
+											</div>
 											<div style={{ fontSize: "0.875rem", color: "var(--pc-text-muted)" }}>
 												Врач: <strong>{summary.nextAppointment.doctorName}</strong> ({summary.nextAppointment.doctorSpecialtyRu})
 											</div>
-											<div style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)", display: "flex", alignItems: "center", gap: "4px" }}>
+											<div style={{ fontSize: "0.875rem", color: "var(--pc-text-muted)", display: "flex", alignItems: "center", gap: "6px" }}>
 												<MapPin size={14} />
-												<span>{summary.nextAppointment.clinicName} &bull; {summary.nextAppointment.roomNumber}</span>
+												<strong style={{ color: "var(--pc-text-main)" }}>
+													{summary.nextAppointment.clinicName} &bull; {summary.nextAppointment.roomNumber}
+												</strong>
 											</div>
 										</div>
 									</div>
@@ -1858,6 +1977,158 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 									</div>
 								</form>
 							</div>
+						</div>
+					</div>
+				)}
+				{/* MODAL 5: QR-КОД БЫСТРОЙ РЕГИСТРАЦИИ НА РЕСЕПШЕНЕ (375PX) */}
+				{isReceptionQrOpen && (
+					<div
+						className="pc-modal-backdrop"
+						data-testid="reception-qr-modal"
+						style={{
+							position: "fixed",
+							inset: 0,
+							backgroundColor: "rgba(0, 0, 0, 0.85)",
+							backdropFilter: "blur(8px)",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							zIndex: 99999,
+							padding: "16px",
+							overscrollBehavior: "contain",
+							touchAction: "pan-y",
+						}}
+						onClick={(e) => {
+							if (e.target === e.currentTarget) setIsReceptionQrOpen(false);
+						}}
+					>
+						<div
+							className="pc-modal-content"
+							style={{
+								backgroundColor: "#ffffff",
+								color: "#0f172a",
+								borderRadius: "24px",
+								padding: "24px",
+								width: "100%",
+								maxWidth: "380px",
+								boxShadow: "0 25px 60px -15px rgba(0, 0, 0, 0.5)",
+								display: "flex",
+								flexDirection: "column",
+								alignItems: "center",
+								textAlign: "center",
+								gap: "16px",
+								boxSizing: "border-box",
+							}}
+						>
+							<div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+								<div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#0d9488", fontWeight: 800, fontSize: "0.875rem" }}>
+									<Sparkles size={18} />
+									<span>МАКСИМАЛЬНАЯ ЯРКОСТЬ</span>
+								</div>
+								<button
+									type="button"
+									onClick={() => setIsReceptionQrOpen(false)}
+									style={{
+										background: "none",
+										border: "none",
+										fontSize: "24px",
+										cursor: "pointer",
+										color: "#64748b",
+										minHeight: "48px",
+										minWidth: "48px",
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+									}}
+									aria-label="Закрыть"
+								>
+									✕
+								</button>
+							</div>
+
+							<div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+								<h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 900, color: "#0f172a" }}>
+									{data.fullName}
+								</h3>
+								<div style={{ fontSize: "0.875rem", color: "#64748b", fontWeight: 600 }}>
+									Карта пациента № {data.cardNumber}
+								</div>
+							</div>
+
+							{/* High-Contrast Pure White & Black QR Matrix */}
+							<div
+								style={{
+									background: "#ffffff",
+									padding: "16px",
+									borderRadius: "16px",
+									border: "3px solid #0f172a",
+									boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
+									display: "flex",
+									justifyContent: "center",
+									alignItems: "center",
+								}}
+								dangerouslySetInnerHTML={{
+									__html: generateReceptionCheckinQrPayload(data).qrCodeSvg,
+								}}
+							/>
+
+							{summary.nextAppointment && (
+								<div
+									style={{
+										width: "100%",
+										background: "#f0fdfa",
+										border: "1px solid #99f6e4",
+										borderRadius: "12px",
+										padding: "12px 14px",
+										display: "flex",
+										flexDirection: "column",
+										gap: "4px",
+										textAlign: "left",
+									}}
+								>
+									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+										<span style={{ fontSize: "0.75rem", fontWeight: 800, color: "#0f766e", textTransform: "uppercase" }}>
+											Ближайший прием
+										</span>
+										<span className="pc-next-visit-time" style={{ color: "#0f766e" }}>
+											{summary.nextAppointment.timeRu}
+										</span>
+									</div>
+									<div style={{ fontSize: "0.875rem", fontWeight: 700, color: "#0f172a" }}>
+										{summary.nextAppointment.dateIso} &bull; {summary.nextAppointment.titleRu}
+									</div>
+									<div style={{ fontSize: "0.8125rem", color: "#334155" }}>
+										Врач: <strong>{summary.nextAppointment.doctorName}</strong>
+									</div>
+									<div style={{ fontSize: "0.875rem", fontWeight: 800, color: "#0d9488", marginTop: "2px" }}>
+										📍 {summary.nextAppointment.roomNumber}
+									</div>
+								</div>
+							)}
+
+							<p style={{ margin: 0, fontSize: "0.8125rem", color: "#64748b", lineHeight: 1.4 }}>
+								Поднесите экран к сканеру на стойке ресепшена или покажите администратору для мгновенной отметки о прибытии.
+							</p>
+
+							<button
+								type="button"
+								onClick={() => setIsReceptionQrOpen(false)}
+								style={{
+									width: "100%",
+									minHeight: "48px",
+									backgroundColor: "#0d9488",
+									color: "#ffffff",
+									border: "none",
+									borderRadius: "12px",
+									fontSize: "1rem",
+									fontWeight: 800,
+									cursor: "pointer",
+									boxShadow: "0 4px 14px rgba(13, 148, 136, 0.4)",
+									touchAction: "manipulation",
+								}}
+							>
+								Готово
+							</button>
 						</div>
 					</div>
 				)}

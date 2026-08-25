@@ -83,7 +83,7 @@ const steps = [
 	},
 	{
 		name: "14. Patient Personal Cabinet & 375px Mobile Portal Ergonomics Suite",
-		cmd: "node --import tsx --import ./testCssStub.mjs --test src/tests/patientCabinetMobile375.test.ts src/tests/portalTimeline.test.ts src/tests/portalSelfCheckin.test.ts src/tests/mobileErgonomicsRound84.test.ts",
+		cmd: "node --import tsx --import ./testCssStub.mjs --test src/tests/patientCabinetMobile375.test.ts src/tests/portalTimeline.test.ts src/tests/portalSelfCheckin.test.ts src/tests/mobileErgonomicsRound84.test.ts src/tests/patientPortalReceptionQr85.test.ts",
 		cwd: path.join(projectRoot, "apps/web"),
 	},
 ];
