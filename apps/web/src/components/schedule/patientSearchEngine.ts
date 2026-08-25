@@ -1,13 +1,14 @@
 /**
  * patientSearchEngine.ts — Fast live patient search with phone fragment, name tokenization,
- * match highlighting, and 150ms debounce scoring for Reception and Schedule.
+ * fuzzy Levenshtein scoring, match highlighting, and 150ms debounce scoring for Reception and Schedule.
  */
 
 import type { Patient } from "@dental/shared";
 import {
-	matchesPatientSearch,
+	fuzzyMatchToken,
 	normalizeCyrillicText,
 	normalizePhoneToNational,
+	scorePatientSearch,
 	type PatientSearchableFields,
 } from "../../utils/patientSearchUtils";
 
@@ -26,11 +27,14 @@ export interface PatientSearchResultItem {
 	readonly fullNameHighlights: SearchMatchHighlightPart[];
 	readonly phoneHighlights: SearchMatchHighlightPart[];
 	readonly cardHighlights?: SearchMatchHighlightPart[] | undefined;
-	readonly matchedBy: "phone" | "name" | "card" | "rep_phone" | "birth_date";
+	readonly matchedBy: "phone" | "name" | "card" | "rep_phone" | "birth_date" | "fuzzy_name";
+	readonly isFuzzy?: boolean | undefined;
+	readonly suggestedName?: string | undefined;
 }
 
 /**
  * Splits text into matched and non-matched chunks for <mark> visual highlighting.
+ * Handles exact substrings, phone digit sequences, and fuzzy matched tokens.
  */
 export function highlightSearchMatches(
 	text: string | null | undefined,
@@ -43,7 +47,7 @@ export function highlightSearchMatches(
 	const normalizedSource = text.toLowerCase().replaceAll("ё", "е");
 	const normalizedQ = q.toLowerCase().replaceAll("ё", "е");
 
-	// Exact substring matching
+	// 1. Exact substring matching
 	const index = normalizedSource.indexOf(normalizedQ);
 	if (index >= 0) {
 		const parts: SearchMatchHighlightPart[] = [];
@@ -60,13 +64,12 @@ export function highlightSearchMatches(
 		return parts;
 	}
 
-	// Digit matching for phone numbers
+	// 2. Digit matching for phone numbers
 	const queryDigits = q.replace(/\D/g, "");
 	if (queryDigits.length >= 3) {
 		const digitsInSource = text.replace(/\D/g, "");
 		const digitIndex = digitsInSource.indexOf(queryDigits);
 		if (digitIndex >= 0) {
-			// Find character boundaries in formatted string
 			let digitCounter = 0;
 			let startCharIdx = -1;
 			let endCharIdx = -1;
@@ -102,9 +105,9 @@ export function highlightSearchMatches(
 		}
 	}
 
-	// Tokenized word prefix matching
-	const tokens = normalizedQ.split(/\s+/).filter(Boolean);
-	for (const token of tokens) {
+	// 3. Tokenized word prefix & fuzzy matching
+	const queryTokens = normalizedQ.split(/\s+/).filter(Boolean);
+	for (const token of queryTokens) {
 		const tokenIdx = normalizedSource.indexOf(token);
 		if (tokenIdx >= 0) {
 			const parts: SearchMatchHighlightPart[] = [];
@@ -122,6 +125,34 @@ export function highlightSearchMatches(
 		}
 	}
 
+	// 4. Fuzzy token highlight
+	const words = text.split(/(\s+)/);
+	let hasFuzzyWord = false;
+	const parts: SearchMatchHighlightPart[] = [];
+
+	for (const word of words) {
+		if (!word || /^\s+$/.test(word)) {
+			parts.push({ text: word, isMatch: false });
+			continue;
+		}
+
+		let wordIsMatch = false;
+		for (const qTok of queryTokens) {
+			const fMatch = fuzzyMatchToken(qTok, word);
+			if (fMatch.isMatch) {
+				wordIsMatch = true;
+				hasFuzzyWord = true;
+				break;
+			}
+		}
+
+		parts.push({ text: word, isMatch: wordIsMatch });
+	}
+
+	if (hasFuzzyWord) {
+		return parts;
+	}
+
 	return [{ text, isMatch: false }];
 }
 
@@ -135,7 +166,7 @@ export type PatientWithSearchableData = Patient & {
 };
 
 /**
- * Fast search index execution across patients collection.
+ * Fast search index execution across patients collection with scored ranking.
  */
 export function searchPatientsQuick(
 	patients: readonly Patient[],
@@ -150,67 +181,36 @@ export function searchPatientsQuick(
 			fullNameHighlights: [{ text: patient.fullName || "Пациент", isMatch: false }],
 			phoneHighlights: [{ text: patient.phone || "—", isMatch: false }],
 			matchedBy: "name",
+			isFuzzy: false,
 		}));
 	}
-
-	const queryDigits = query.replace(/\D/g, "");
-	const queryNational = normalizePhoneToNational(query);
-	const normalizedQuery = normalizeCyrillicText(query);
 
 	const results: PatientSearchResultItem[] = [];
 
 	for (const patient of patients) {
 		const patientWithData = patient as SearchablePatient;
-		if (!matchesPatientSearch(patientWithData, query)) {
+		const scored = scorePatientSearch(patientWithData, query);
+		if (!scored.isMatch) {
 			continue;
 		}
 
-		let score = 0;
-		let matchedBy: PatientSearchResultItem["matchedBy"] = "name";
-
-		const patientPhoneDigits = (patient.phone ?? "").replace(/\D/g, "");
-		const patientNational = normalizePhoneToNational(patient.phone);
-		const normalizedName = normalizeCyrillicText(patient.fullName);
 		const cardNumber = patientWithData.cardNumber ?? undefined;
-
-		// Scoring
-		if (queryDigits.length >= 10 && patientNational === queryNational) {
-			score += 100;
-			matchedBy = "phone";
-		} else if (queryDigits.length >= 4 && patientPhoneDigits.endsWith(queryDigits)) {
-			score += 80;
-			matchedBy = "phone";
-		} else if (queryDigits.length >= 3 && patientPhoneDigits.includes(queryDigits)) {
-			score += 60;
-			matchedBy = "phone";
-		} else if (normalizedName.startsWith(normalizedQuery)) {
-			score += 90;
-			matchedBy = "name";
-		} else if (normalizedName.includes(normalizedQuery)) {
-			score += 70;
-			matchedBy = "name";
-		} else if (
-			cardNumber &&
-			normalizeCyrillicText(cardNumber).includes(normalizedQuery)
-		) {
-			score += 50;
-			matchedBy = "card";
-		} else {
-			score += 40;
-		}
 
 		results.push({
 			patient,
-			score,
+			score: scored.score,
 			fullNameHighlights: highlightSearchMatches(patient.fullName, query),
 			phoneHighlights: highlightSearchMatches(patient.phone, query),
 			cardHighlights: cardNumber ? highlightSearchMatches(cardNumber, query) : undefined,
-			matchedBy,
+			matchedBy: scored.matchedBy,
+			isFuzzy: scored.isFuzzy,
+			suggestedName: scored.suggestedName,
 		});
 	}
 
-	// Sort by highest score first, then by name
+	// Sort by highest score first (exact and phone/card matches at the top), then by name
 	return results
 		.sort((a, b) => b.score - a.score || (a.patient.fullName || "").localeCompare(b.patient.fullName || "", "ru"))
 		.slice(0, limit);
 }
+

@@ -23,6 +23,10 @@ import {
 	normalizeCyrillicText,
 	normalizePhoneToNational,
 } from "../../utils/patientSearchUtils";
+import {
+	searchPatientsQuick,
+	type PatientSearchResultItem,
+} from "./patientSearchEngine";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { showToast } from "../GlobalToast";
 import { specialtyLabels } from "../../workspaceUiLabels";
@@ -138,6 +142,9 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 	const [newPatientBirthDate, setNewPatientBirthDate] = useState<string>("");
 	const [isCreatingPatient, setIsCreatingPatient] = useState<boolean>(false);
 
+	// Dirty state guard confirmation
+	const [showDirtyConfirm, setShowDirtyConfirm] = useState<boolean>(false);
+
 	// Submission state
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 	const [submitError, setSubmitError] = useState<string | null>(null);
@@ -230,6 +237,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		setNewPatientFullName("");
 		setNewPatientPhone("");
 		setNewPatientBirthDate("");
+		setShowDirtyConfirm(false);
 
 		const isCito = Boolean(
 			initialSlot?.isCitoEmergency ||
@@ -248,6 +256,30 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			setReason(initialSlot?.reason || "Осмотр");
 			setComment("");
 			setStatus("planned");
+
+			// Restore saved draft if opening a blank booking
+			if (!initialSlot?.patientId && !initialSlot?.reason) {
+				try {
+					const rawDraft = localStorage.getItem("dente_quick_booking_draft");
+					if (rawDraft) {
+						const saved = JSON.parse(rawDraft);
+						if (saved && typeof saved === "object") {
+							if (saved.comment) setComment(saved.comment);
+							if (saved.reason) setReason(saved.reason);
+							if (saved.durationMinutes) setDurationMinutes(saved.durationMinutes);
+							if (saved.doctorUserId && !initialSlot?.doctorUserId) setDoctorUserId(saved.doctorUserId);
+							if (saved.chairId && !initialSlot?.chairId) setChairId(saved.chairId);
+							if (saved.patientId) {
+								setPatientId(saved.patientId);
+								if (saved.selectedPatient) {
+									setSelectedPatient(saved.selectedPatient);
+									setSearchQuery(saved.selectedPatient.fullName || "");
+								}
+							}
+						}
+					}
+				} catch {}
+			}
 		}
 
 		setSubmitError(null);
@@ -267,36 +299,41 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		isSoloDoctor,
 	]);
 
-	// Filtered patients for typeahead
-	const filteredPatients = useMemo(() => {
+	// Check if form has uncommitted user modifications (dirty guard)
+	const isDirty = useMemo(() => {
+		if (comment.trim().length > 0) return true;
+		if (newPatientFullName.trim().length > 0 || newPatientPhone.trim().length > 0) return true;
+		if (patientId && patientId !== (initialSlot?.patientId || "")) return true;
+		const initialReason = initialSlot?.reason || (initialSlot?.isCitoEmergency ? "CITO! Острая боль" : "Осмотр");
+		if (reason.trim() !== initialReason.trim()) return true;
+		return false;
+	}, [comment, newPatientFullName, newPatientPhone, patientId, initialSlot, reason]);
+
+	// Filtered patients for typeahead (Levenshtein fuzzy scoring & ranking)
+	const searchResults = useMemo(() => {
 		const q = searchQuery.trim();
 		if (!q) {
-			return patients.filter((p) => p.status === "active").slice(0, 8);
+			return patients
+				.filter((p) => p.status === "active")
+				.slice(0, 8)
+				.map((p) => ({
+					patient: p,
+					score: 0,
+					fullNameHighlights: [{ text: p.fullName, isMatch: false }],
+					phoneHighlights: [{ text: p.phone || "—", isMatch: false }],
+					matchedBy: "name" as const,
+					isFuzzy: false,
+				}));
 		}
-
-		// 1. Matches by standard search (name + phone)
-		const matching = patients.filter((p) => {
-			if (p.status !== "active") return false;
-			if (matchesPatientSearch(p, q)) return true;
-
-			// 2. Additional birthdate matching
-			if (p.birthDate) {
-				const cleanQuery = q.replace(/[^0-9.]/g, "");
-				if (cleanQuery.length >= 2 && p.birthDate.includes(cleanQuery)) {
-					return true;
-				}
-				// Formatted DD.MM.YYYY matching
-				const [year, month, day] = p.birthDate.split("-");
-				if (day && month && year) {
-					const formatted = `${day}.${month}.${year}`;
-					if (formatted.includes(cleanQuery)) return true;
-				}
-			}
-			return false;
-		});
-
-		return matching.slice(0, 10);
+		return searchPatientsQuick(patients, q, 10);
 	}, [patients, searchQuery]);
+
+	// Duplication Guard: check if new patient name already exists in clinic database
+	const potentialDuplicates = useMemo(() => {
+		const name = newPatientFullName.trim();
+		if (name.length < 3) return [];
+		return searchPatientsQuick(patients, name, 3).filter((item) => item.score >= 35);
+	}, [patients, newPatientFullName]);
 
 	// Recalculate endsAt based on startsAtLocal and durationMinutes
 	const endsAtLocal = useMemo(() => {
@@ -521,6 +558,11 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 				if (created) onAppointmentCreated(created);
 			}
 
+			// Clear saved draft on successful booking creation
+			try {
+				localStorage.removeItem("dente_quick_booking_draft");
+			} catch {}
+
 			onClose();
 		} catch (err) {
 			logger.error("Quick booking submission failed", err);
@@ -532,11 +574,66 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		}
 	};
 
+	// Save draft to localStorage and close
+	const handleSaveDraftAndClose = useCallback(() => {
+		try {
+			const draftData = {
+				patientId,
+				selectedPatient,
+				doctorUserId,
+				assistantUserId,
+				chairId,
+				startsAtLocal,
+				durationMinutes,
+				reason,
+				comment,
+				savedAt: new Date().toISOString(),
+			};
+			localStorage.setItem("dente_quick_booking_draft", JSON.stringify(draftData));
+			showToast("Черновик записи сохранен", "info");
+		} catch {}
+		setShowDirtyConfirm(false);
+		onClose();
+	}, [
+		patientId,
+		selectedPatient,
+		doctorUserId,
+		assistantUserId,
+		chairId,
+		startsAtLocal,
+		durationMinutes,
+		reason,
+		comment,
+		onClose,
+	]);
+
+	// Discard draft and close
+	const handleDiscardDraftAndClose = useCallback(() => {
+		try {
+			localStorage.removeItem("dente_quick_booking_draft");
+		} catch {}
+		setShowDirtyConfirm(false);
+		onClose();
+	}, [onClose]);
+
+	// Soft close request with dirty state guard
+	const handleRequestClose = useCallback(() => {
+		if (isDirty) {
+			setShowDirtyConfirm(true);
+		} else {
+			onClose();
+		}
+	}, [isDirty, onClose]);
+
 	// Keyboard handler for drawer (Escape to close, Ctrl+Enter to submit)
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === "Escape") {
 			e.stopPropagation();
-			onClose();
+			if (showDirtyConfirm) {
+				setShowDirtyConfirm(false);
+			} else {
+				handleRequestClose();
+			}
 		} else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
 			e.preventDefault();
 			void handleSubmitBooking();
@@ -558,7 +655,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			<button
 				type="button"
 				className="absolute inset-0 cursor-default"
-				onClick={onClose}
+				onClick={handleRequestClose}
 				aria-label="Закрыть быструю запись"
 			/>
 
@@ -588,7 +685,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 					</div>
 					<button
 						type="button"
-						onClick={onClose}
+						onClick={handleRequestClose}
 						className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] transition-colors cursor-pointer"
 						aria-label="Закрыть"
 					>
@@ -718,16 +815,16 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 											if (e.key === "ArrowDown") {
 												e.preventDefault();
 												setHighlightedIndex((prev) =>
-													prev < filteredPatients.length - 1 ? prev + 1 : 0,
+													prev < searchResults.length - 1 ? prev + 1 : 0,
 												);
 											} else if (e.key === "ArrowUp") {
 												e.preventDefault();
 												setHighlightedIndex((prev) =>
-													prev > 0 ? prev - 1 : filteredPatients.length - 1,
+													prev > 0 ? prev - 1 : searchResults.length - 1,
 												);
-											} else if (e.key === "Enter" && filteredPatients[highlightedIndex]) {
+											} else if (e.key === "Enter" && searchResults[highlightedIndex]) {
 												e.preventDefault();
-												const picked = filteredPatients[highlightedIndex];
+												const picked = searchResults[highlightedIndex]?.patient;
 												if (picked) selectPatient(picked);
 											} else if (e.key === "Escape") {
 												setIsTypeaheadOpen(false);
@@ -749,32 +846,48 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 										}}
 										role="listbox"
 									>
-										{filteredPatients.length > 0 ? (
-											filteredPatients.map((p, idx) => (
-												<button
-													key={p.id}
-													type="button"
-													onClick={() => selectPatient(p)}
-													className={`w-full p-3 text-left flex items-center justify-between transition-colors min-h-[44px] cursor-pointer ${
-														idx === highlightedIndex
-															? "bg-[var(--teal-surface)] text-[var(--ink)]"
-															: "bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)]"
-													}`}
-													role="option"
-													aria-selected={idx === highlightedIndex}
-												>
-													<div className="min-w-0">
-														<div className="text-sm font-semibold text-[var(--ink)] truncate">
-															{p.fullName}
+										{searchResults.length > 0 ? (
+											searchResults.map((item, idx) => {
+												const p = item.patient;
+												return (
+													<button
+														key={p.id}
+														type="button"
+														onClick={() => selectPatient(p)}
+														className={`w-full p-3 text-left flex items-center justify-between transition-colors min-h-[44px] cursor-pointer ${
+															idx === highlightedIndex
+																? "bg-[var(--teal-surface)] text-[var(--ink)]"
+																: "bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)]"
+														}`}
+														role="option"
+														aria-selected={idx === highlightedIndex}
+														data-testid={`quick-booking-patient-option-${p.id}`}
+													>
+														<div className="min-w-0 flex-1">
+															<div className="flex items-center gap-2 flex-wrap">
+																<span className="text-sm font-semibold text-[var(--ink)] truncate">
+																	{p.fullName}
+																</span>
+																{item.isFuzzy && (
+																	<span
+																		className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1 shrink-0"
+																		title="Нечеткое совпадение по опечатке"
+																		data-testid="quick-booking-fuzzy-badge"
+																	>
+																		<Sparkles size={10} className="text-amber-500" />
+																		<span>Возможно: {item.suggestedName || p.fullName}</span>
+																	</span>
+																)}
+															</div>
+															<div className="text-xs text-[var(--muted)] flex gap-2 mt-0.5">
+																{p.phone && <span>{p.phone}</span>}
+																{p.birthDate && <span>д.р. {p.birthDate}</span>}
+															</div>
 														</div>
-														<div className="text-xs text-[var(--muted)] flex gap-2 mt-0.5">
-															{p.phone && <span>{p.phone}</span>}
-															{p.birthDate && <span>д.р. {p.birthDate}</span>}
-														</div>
-													</div>
-													<Check size={14} className="text-[var(--teal)] opacity-0 group-hover:opacity-100 shrink-0" />
-												</button>
-											))
+														<Check size={14} className="text-[var(--teal)] opacity-0 group-hover:opacity-100 shrink-0" />
+													</button>
+												);
+											})
 										) : (
 											<div className="p-4 text-center text-xs text-[var(--muted)]">
 												<span>Пациент не найден в базе.</span>
@@ -801,7 +914,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 							</div>
 						)}
 
-						{/* Inline New Patient Form */}
+						{/* Inline New Patient Form with Duplication Guard */}
 						{showInlineNewPatient && (
 							<form
 								onSubmit={handleCreateInlinePatient}
@@ -820,6 +933,45 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 										Отмена
 									</button>
 								</div>
+
+								{/* Anti-Duplicate Warning if similar patient exists */}
+								{potentialDuplicates.length > 0 && (
+									<div
+										className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-100 text-xs space-y-2"
+										data-testid="inline-patient-duplicate-warning"
+									>
+										<div className="flex items-start gap-2">
+											<AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+											<div className="space-y-0.5">
+												<p className="font-bold m-0">
+													Похожий пациент уже есть в базе:
+												</p>
+												<p className="m-0 text-[var(--muted)]">
+													Во избежание дублирования карт выберите существующего пациента:
+												</p>
+											</div>
+										</div>
+										<div className="space-y-1 pl-6">
+											{potentialDuplicates.map((item) => (
+												<button
+													key={item.patient.id}
+													type="button"
+													onClick={() => selectPatient(item.patient)}
+													className="w-full text-left p-2 rounded-lg bg-[var(--paper)] border border-amber-500/30 hover:border-amber-500 hover:bg-amber-500/10 transition-colors flex items-center justify-between gap-2 cursor-pointer"
+												>
+													<span className="font-bold text-[var(--ink)]">
+														{item.patient.fullName}
+														{item.patient.phone ? ` (${item.patient.phone})` : ""}
+													</span>
+													<span className="text-[11px] text-[var(--teal)] font-semibold shrink-0">
+														Выбрать карту &rarr;
+													</span>
+												</button>
+											))}
+										</div>
+									</div>
+								)}
+
 								<div className="space-y-2">
 									<div>
 										<label className="text-xs font-semibold text-[var(--muted)] block mb-1">
@@ -1060,7 +1212,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 				<div className="p-4 sm:p-5 pb-6 sm:pb-5 border-t border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between gap-3 shrink-0">
 					<button
 						type="button"
-						onClick={onClose}
+						onClick={handleRequestClose}
 						disabled={isSubmitting}
 						className="min-h-[44px] px-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-semibold transition-colors disabled:opacity-50 cursor-pointer"
 					>
@@ -1077,6 +1229,55 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 						<span>{isSubmitting ? "Сохраняю запись…" : "Создать запись (Ctrl+Enter)"}</span>
 					</button>
 				</div>
+
+				{/* Soft Dirty State Guard Confirmation Dialog */}
+				{showDirtyConfirm && (
+					<div
+						className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+						role="alertdialog"
+						aria-labelledby="dirty-confirm-title"
+						aria-describedby="dirty-confirm-desc"
+						data-testid="quick-booking-dirty-confirm-dialog"
+					>
+						<div
+							className="bg-[var(--paper)] border border-[var(--line-strong)] rounded-2xl p-5 max-w-sm w-full shadow-2xl space-y-4 animate-in zoom-in-95 duration-150 text-[var(--ink)]"
+							style={{ backgroundColor: "var(--paper)" }}
+						>
+							<div className="flex items-start gap-3">
+								<div className="p-2.5 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 shrink-0">
+									<AlertTriangle size={20} />
+								</div>
+								<div className="space-y-1">
+									<h4 id="dirty-confirm-title" className="text-sm font-bold text-[var(--ink)] m-0">
+										Сохранить черновик записи?
+									</h4>
+									<p id="dirty-confirm-desc" className="text-xs text-[var(--muted)] m-0 leading-relaxed">
+										Вы изменили параметры записи. Сохранить черновик для последующего быстрого восстановления или сбросить?
+									</p>
+								</div>
+							</div>
+
+							<div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--line)]">
+								<button
+									type="button"
+									onClick={handleDiscardDraftAndClose}
+									className="min-h-[44px] px-3.5 py-2 text-xs font-bold rounded-xl border border-[var(--line)] text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+									data-testid="quick-booking-discard-draft-btn"
+								>
+									Сбросить
+								</button>
+								<button
+									type="button"
+									onClick={handleSaveDraftAndClose}
+									className="min-h-[44px] px-4 py-2 text-xs font-bold rounded-xl bg-[var(--teal-dark)] text-[var(--on-teal)] hover:brightness-110 active:brightness-95 transition-all shadow-xs cursor-pointer"
+									data-testid="quick-booking-save-draft-btn"
+								>
+									Да, сохранить
+								</button>
+							</div>
+						</div>
+					</div>
+				)}
 			</div>
 		</div>
 	);

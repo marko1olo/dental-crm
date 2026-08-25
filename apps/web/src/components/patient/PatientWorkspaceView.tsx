@@ -10,6 +10,7 @@ import { DmsRegistryExportModal } from "../insurance/DmsRegistryExportModal";
 import { LoyaltyProgramModal } from "../loyalty/program/LoyaltyProgramModal";
 
 import { PatientAllergySafetyBanner } from "./PatientAllergySafetyBanner";
+import { PatientDuplicateAlert } from "../patients/PatientDuplicateAlert";
 
 export interface PatientWorkspaceViewProps {
 	patientId: string;
@@ -259,6 +260,9 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 						patientName={patientName}
 						showModalButton={true}
 					/>
+
+					{/* Patient Duplicate Alert Guard */}
+					<PatientDuplicateAlert patientId={patientId} />
 
 					<div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] pb-4">
 						<div className="flex items-center gap-2">

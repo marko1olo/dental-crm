@@ -16,6 +16,7 @@ import {
 	MessageSquare,
 	Phone,
 	Search,
+	Sparkles,
 	User,
 	UserCheck,
 	UserX,
@@ -218,6 +219,17 @@ export function PatientSearchModal({
 												<User className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
 												<RenderHighlightedParts parts={item.fullNameHighlights} />
 											</span>
+
+											{item.isFuzzy && (
+												<span
+													className="px-2 py-0.5 rounded-lg text-xs font-bold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 shrink-0 inline-flex items-center gap-1"
+													title="Возможно опечатка в запросе"
+													data-testid="fuzzy-match-badge"
+												>
+													<Sparkles className="w-3 h-3 text-amber-500 shrink-0" />
+													<span>Возможно, вы имели в виду: {item.suggestedName || patient.fullName}</span>
+												</span>
+											)}
 
 											{balance < 0 ? (
 												<span

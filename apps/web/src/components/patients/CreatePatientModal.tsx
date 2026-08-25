@@ -1,7 +1,8 @@
 import type { ChangeEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { FileText, Plus, UserPlus, X } from "lucide-react";
+import { AlertTriangle, FileText, Plus, UserPlus, X } from "lucide-react";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { DictationHints } from "../../DictationHints";
 import { parsePatientDictationLocal } from "../../lib/smartPatientParser";
 import {
@@ -15,6 +16,7 @@ import {
 	formatRussianPassport,
 	formatSnils,
 } from "../../utils/inputSanitation";
+import { searchPatientsQuick } from "../schedule/patientSearchEngine";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 import type { PatientCoreDraft } from "../../PatientsView";
 
@@ -42,9 +44,19 @@ export function CreatePatientModal({
 		setNewPatientName,
 		setNewPatientPhone,
 		setNewPatientBirthDate,
+		setSelectedPatientId,
 		patientAdministrativeProfileDraft,
 		setPatientAdministrativeProfileDraft,
 	} = usePatientStore();
+
+	const appLogic = useAppLogicContext();
+	const patients = appLogic?.dashboard?.patients ?? [];
+
+	const potentialDuplicates = useMemo(() => {
+		const name = (newPatientName ?? "").trim();
+		if (name.length < 3) return [];
+		return searchPatientsQuick(patients, name, 3).filter((item) => item.score >= 35);
+	}, [patients, newPatientName]);
 
 	const [showSmartPreview, setShowSmartPreview] = useState(false);
 	const [smartParsedData, setSmartParsedData] = useState<ReturnType<
@@ -244,6 +256,48 @@ export function CreatePatientModal({
 								onClose={() => setShowSmartPreview(false)}
 							/>
 						</div>
+
+						{/* Anti-Duplicate Warning in Patient Creation */}
+						{potentialDuplicates.length > 0 && (
+							<div
+								className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-100 text-xs space-y-2 mt-2"
+								data-testid="create-patient-duplicate-warning"
+							>
+								<div className="flex items-start gap-2">
+									<AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+									<div className="space-y-0.5">
+										<p className="font-bold m-0">
+											Похожий пациент уже зарегистрирован:
+										</p>
+										<p className="m-0 text-[var(--muted)]">
+											Во избежание дублирования карт вы можете открыть существующую карту:
+										</p>
+									</div>
+								</div>
+								<div className="space-y-1 pl-6">
+									{potentialDuplicates.map((item) => (
+										<button
+											key={item.patient.id}
+											type="button"
+											onClick={() => {
+												setSelectedPatientId(item.patient.id);
+												onClose();
+											}}
+											className="w-full text-left p-2 rounded-lg bg-[var(--paper)] border border-amber-500/30 hover:border-amber-500 hover:bg-amber-500/10 transition-colors flex items-center justify-between gap-2 cursor-pointer"
+										>
+											<span className="font-bold text-[var(--ink)]">
+												{item.patient.fullName}
+												{item.patient.phone ? ` · ${item.patient.phone}` : ""}
+												{item.patient.birthDate ? ` · д.р. ${item.patient.birthDate}` : ""}
+											</span>
+											<span className="text-[11px] text-[var(--teal)] font-semibold shrink-0">
+												Открыть карту &rarr;
+											</span>
+										</button>
+									))}
+								</div>
+							</div>
+						)}
 					</div>
 
 					{/* Phone & Birth Date grid */}
