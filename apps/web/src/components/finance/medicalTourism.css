@@ -40,12 +40,12 @@
 }
 
 .medtour-currency-card:hover {
-	border-color: var(--teal);
+	border-color: var(--brand-primary, var(--teal));
 }
 
 .medtour-currency-card.active {
 	background-color: var(--teal-soft, rgba(20, 184, 166, 0.08));
-	border-color: var(--teal);
+	border-color: var(--brand-primary, var(--teal));
 }
 
 .medtour-quote-sheet {

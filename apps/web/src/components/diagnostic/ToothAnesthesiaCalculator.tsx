@@ -120,7 +120,7 @@ export const ToothAnesthesiaCalculator: React.FC<ToothAnesthesiaCalculatorProps>
 		<div className="dente-warm-tool-card" data-testid="tooth-anesthesia-calculator">
 			<div className="dente-warm-tool-header">
 				<div className="dente-warm-tool-title-group">
-					<Syringe size={18} color="var(--brand-primary, #0284c7)" />
+					<Syringe size={18} color="var(--brand-primary, var(--teal))" />
 					<h3 className="dente-warm-tool-title">
 						Экспресс-калькулятор местной анестезии (МДД по весу)
 					</h3>
@@ -135,7 +135,7 @@ export const ToothAnesthesiaCalculator: React.FC<ToothAnesthesiaCalculatorProps>
 			{/* Risk Alerts */}
 			{(hasCardioRisk || hasSulfiteAllergy || hasAsthma || isPregnant) && (
 				<div className="dente-somatic-alert-strip">
-					<ShieldAlert size={16} color="#ea580c" />
+					<ShieldAlert size={16} color="var(--warn-fg, #ea580c)" />
 					<div className="dente-somatic-alert-text">
 						{hasCardioRisk && <span>• Риск ССЗ: рекомендован Скандонест (без адреналина). </span>}
 						{hasSulfiteAllergy && <span>• Аллергия на сульфиты: эпинефрин запрещен. </span>}
@@ -149,7 +149,7 @@ export const ToothAnesthesiaCalculator: React.FC<ToothAnesthesiaCalculatorProps>
 			<div className="dente-anesthesia-params-grid">
 				<div>
 					<label className="dente-field-label">
-						{`Вес пациента: `}<strong>{`${patientWeightKg} кг`}</strong> {isPediatric && <span style={{ color: "#d97706" }}>(ребенок)</span>}
+						{`Вес пациента: `}<strong>{`${patientWeightKg} кг`}</strong> {isPediatric && <span style={{ color: "var(--warn-fg, #d97706)" }}>(ребенок)</span>}
 					</label>
 					<div className="dente-presets-chips-row">
 						{WEIGHT_PRESETS.map((w) => (

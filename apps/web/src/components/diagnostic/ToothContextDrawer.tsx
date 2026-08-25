@@ -226,7 +226,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 							className={`dente-accordion-trigger ${activeSection === "surfaces_endo" ? "expanded" : ""}`}
 						>
 							<div className="trigger-left">
-								<Layers size={16} color="var(--teal, #0d9488)" />
+								<Layers size={16} color="var(--brand-primary, var(--teal))" />
 								<span className="trigger-title">1. Анатомия поверхностей (MOD) & Эндодонтия</span>
 							</div>
 							<div className="trigger-right">
@@ -257,7 +257,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 							className={`dente-accordion-trigger ${activeSection === "anesthesia" ? "expanded" : ""}`}
 						>
 							<div className="trigger-left">
-								<Syringe size={16} color="#0284c7" />
+								<Syringe size={16} color="var(--brand-primary, var(--teal))" />
 								<span className="trigger-title">2. Экспресс-анестезия по весу пациента (МДД)</span>
 							</div>
 							<div className="trigger-right">
@@ -293,7 +293,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 							className={`dente-accordion-trigger ${activeSection === "kraft_sanpin" ? "expanded" : ""}`}
 						>
 							<div className="trigger-left">
-								<PackageCheck size={16} color="#059669" />
+								<PackageCheck size={16} color="var(--brand-primary, var(--teal))" />
 								<span className="trigger-title">3. Привязка крафт-пакета автоклава СанПиН</span>
 							</div>
 							<div className="trigger-right">
@@ -321,7 +321,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 							className={`dente-accordion-trigger ${activeSection === "rvg_xray" ? "expanded" : ""}`}
 						>
 							<div className="trigger-left">
-								<Scan size={16} color="#38bdf8" />
+								<Scan size={16} color="var(--brand-primary, var(--teal))" />
 								<span className="trigger-title">4. Прицельный снимок визиографа (200×200 RVG)</span>
 							</div>
 							<div className="trigger-right">
@@ -350,7 +350,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 							className={`dente-accordion-trigger ${activeSection === "family_loyalty" ? "expanded" : ""}`}
 						>
 							<div className="trigger-left">
-								<Wallet size={16} color="#0d9488" />
+								<Wallet size={16} color="var(--brand-primary, var(--teal))" />
 								<span className="trigger-title">5. Семейный депозит & Кешбэк (Сплит 54-ФЗ)</span>
 							</div>
 							<div className="trigger-right">

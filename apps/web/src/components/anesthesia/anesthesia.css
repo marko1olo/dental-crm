@@ -55,9 +55,9 @@
 	font-weight: 600;
 	padding: 0.25rem 0.5rem;
 	border-radius: 6px;
-	background: rgba(16, 185, 129, 0.12);
-	color: var(--ok-fg, #10b981);
-	border: 1px solid rgba(16, 185, 129, 0.3);
+	background: var(--ok-bg, rgba(16, 185, 129, 0.12));
+	color: var(--ok-fg);
+	border: 1px solid var(--ok-bg, rgba(16, 185, 129, 0.3));
 }
 
 .anesthesia-modal-body {
@@ -90,14 +90,14 @@
 }
 
 .anesthesia-drug-card:hover {
-	border-color: var(--brand-500, #3b82f6);
+	border-color: var(--brand-primary, var(--teal));
 	transform: translateY(-1px);
 }
 
 .anesthesia-drug-card.selected {
-	border-color: var(--brand-500, #3b82f6);
-	background: rgba(59, 130, 246, 0.08);
-	box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+	border-color: var(--brand-primary, var(--teal));
+	background: var(--teal-soft, rgba(59, 130, 246, 0.08));
+	box-shadow: 0 0 0 2px var(--teal-soft, rgba(59, 130, 246, 0.2));
 }
 
 .drug-card-header {
@@ -131,9 +131,9 @@
 }
 
 .drug-epi-pill.no-epi {
-	background: rgba(16, 185, 129, 0.15);
-	color: var(--ok-fg, #10b981);
-	border: 1px solid rgba(16, 185, 129, 0.3);
+	background: var(--ok-bg, rgba(16, 185, 129, 0.15));
+	color: var(--ok-fg);
+	border: 1px solid var(--ok-bg, rgba(16, 185, 129, 0.3));
 }
 
 /* Safety Meter */
@@ -163,11 +163,11 @@
 }
 
 .safety-meter-bar-fill.safe {
-	background: var(--ok-fg, #10b981);
+	background: var(--brand-primary, var(--teal));
 }
 
 .safety-meter-bar-fill.caution {
-	background: #84cc16;
+	background: var(--warn-fg, #84cc16);
 }
 
 .safety-meter-bar-fill.warning {
@@ -234,9 +234,9 @@
 }
 
 .anesthesia-alert-box.safe {
-	background: rgba(16, 185, 129, 0.12);
-	color: var(--ok-fg, #10b981);
-	border: 1px solid rgba(16, 185, 129, 0.3);
+	background: var(--ok-bg, rgba(16, 185, 129, 0.12));
+	color: var(--ok-fg);
+	border: 1px solid var(--ok-bg, rgba(16, 185, 129, 0.3));
 }
 
 /* Diary Box */
@@ -275,23 +275,23 @@
 }
 
 .anesthesia-btn-primary {
-	background: var(--brand-500, #3b82f6);
-	color: #ffffff;
-	border-color: var(--brand-500, #3b82f6);
+	background: var(--brand-primary, var(--teal));
+	color: var(--on-teal, #ffffff);
+	border-color: var(--brand-primary, var(--teal));
 }
 
 .anesthesia-btn-primary:hover {
-	background: #2563eb;
+	background: var(--teal-dark, #0f766e);
 }
 
 .anesthesia-btn-ok {
-	background: var(--ok-fg, #10b981);
+	background: var(--ok-fg);
 	color: #ffffff;
-	border-color: var(--ok-fg, #10b981);
+	border-color: var(--ok-fg);
 }
 
 .anesthesia-btn-ok:hover {
-	background: #059669;
+	background: var(--teal-dark, #0f766e);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -325,7 +325,7 @@
 }
 
 .anesthesia-icon-accent {
-	color: var(--brand-500, #3b82f6);
+	color: var(--brand-primary, var(--teal));
 }
 
 .anesthesia-cardio-tag {
@@ -372,7 +372,7 @@
 
 .anesthesia-btn-customize:hover {
 	color: var(--ink, #0f172a);
-	border-color: var(--brand-500, #3b82f6);
+	border-color: var(--brand-primary, var(--teal));
 }
 
 .anesthesia-quick-presets-grid {
@@ -397,8 +397,8 @@
 }
 
 .anesthesia-quick-btn:hover {
-	border-color: var(--brand-500, #3b82f6);
-	background: var(--paper-soft, #f1f5f9);
+	border-color: var(--brand-primary, var(--teal));
+	background: var(--teal-soft, #f1f5f9);
 }
 
 .anesthesia-quick-btn.strong:hover {
@@ -406,12 +406,12 @@
 }
 
 .anesthesia-quick-btn.safe_cardio:hover {
-	border-color: var(--ok-fg, #10b981);
+	border-color: var(--brand-primary, var(--teal));
 }
 
 .anesthesia-quick-btn.recommended {
-	border-color: var(--ok-fg, #10b981);
-	background: rgba(16, 185, 129, 0.08);
+	border-color: var(--brand-primary, var(--teal));
+	background: var(--teal-soft, rgba(16, 185, 129, 0.08));
 }
 
 .anesthesia-quick-btn.risky {
@@ -436,9 +436,9 @@
 	gap: 0.5rem;
 	padding: 0.5rem 0.75rem;
 	border-radius: 6px;
-	background: rgba(16, 185, 129, 0.15);
-	color: var(--ok-fg, #10b981);
-	border: 1px solid rgba(16, 185, 129, 0.3);
+	background: var(--ok-bg, rgba(16, 185, 129, 0.15));
+	color: var(--ok-fg);
+	border: 1px solid var(--ok-bg, rgba(16, 185, 129, 0.3));
 	font-size: 0.8125rem;
 	font-weight: 600;
 }
@@ -482,7 +482,7 @@
 	font-size: 0.75rem;
 	font-weight: 600;
 	border-radius: 6px;
-	background: var(--ok-fg, #10b981);
+	background: var(--brand-primary, var(--teal));
 	color: #ffffff;
 	border: none;
 	cursor: pointer;

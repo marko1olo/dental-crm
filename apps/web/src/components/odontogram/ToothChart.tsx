@@ -1457,10 +1457,10 @@ const ToothSVG = ({
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Filled", surfaces);
 						}}
-						className="px-2.5 py-1 min-h-[34px] rounded-lg bg-emerald-500/15 hover:bg-emerald-500 text-emerald-800 dark:text-emerald-300 hover:text-white border border-emerald-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
+						className="px-2.5 py-1 min-h-[34px] rounded-lg bg-[var(--teal-soft,rgba(13,148,136,0.15))] hover:bg-[var(--teal)] text-[var(--teal)] hover:text-[var(--on-teal,#ffffff)] border border-[var(--teal)]/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
 						title="Пломба"
 					>
-						<span className="w-2 h-2 rounded-full bg-emerald-500 inline-block shadow-xs" />
+						<span className="w-2 h-2 rounded-full bg-[var(--teal)] inline-block shadow-xs" />
 						<span>Пломба</span>
 					</button>
 					<button
@@ -1483,10 +1483,10 @@ const ToothSVG = ({
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Crown", surfaces);
 						}}
-						className="px-2.5 py-1 min-h-[34px] rounded-lg bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
+						className="px-2.5 py-1 min-h-[34px] rounded-lg bg-[var(--brand-500,#3b82f6)]/15 hover:bg-[var(--brand-500,#3b82f6)] text-[var(--brand-500,#3b82f6)] hover:text-white border border-[var(--brand-500,#3b82f6)]/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
 						title="Коронка"
 					>
-						<span className="w-2 h-2 rounded-full bg-blue-500 inline-block shadow-xs" />
+						<span className="w-2 h-2 rounded-full bg-[var(--brand-500,#3b82f6)] inline-block shadow-xs" />
 						<span>Коронка</span>
 					</button>
 					<button
@@ -2169,10 +2169,10 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 							<span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm" /> Периодонтит
 						</span>
 						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-teal-500 shadow-sm" /> Пломба
+							<span className="w-2.5 h-2.5 rounded-full bg-[var(--teal,#0d9488)] shadow-sm" /> Пломба
 						</span>
 						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm" /> Коронка
+							<span className="w-2.5 h-2.5 rounded-full bg-[var(--brand-500,#3b82f6)] shadow-sm" /> Коронка
 						</span>
 						<span className="tooth-chart-legend-item">
 							<span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm" /> Имплант

@@ -131,7 +131,7 @@ export function AnesthesiaProtocolModal({
 				{/* Header */}
 				<div className="anesthesia-modal-header">
 					<div className="anesthesia-header-title">
-						<Syringe size={22} color="var(--brand-500, #3b82f6)" />
+						<Syringe size={22} color="var(--brand-primary, var(--teal))" />
 						<span>Протокол местной анестезии & Калькулятор безопасности доз</span>
 						<span className="anesthesia-header-badge">СтАР / Минздрав РФ</span>
 					</div>
@@ -339,7 +339,7 @@ export function AnesthesiaProtocolModal({
 								<Activity size={16} />
 								Шкала токсической и кардиоваскулярной безопасности:
 							</span>
-							<span style={{ fontSize: '0.8125rem', fontWeight: 700, color: calcResult.safetyZone === 'safe' ? 'var(--ok, #10b981)' : calcResult.safetyZone === 'caution' ? '#84cc16' : calcResult.safetyZone === 'warning' ? 'var(--warn, #f59e0b)' : 'var(--bad, #ef4444)' }}>
+							<span style={{ fontSize: '0.8125rem', fontWeight: 700, color: calcResult.safetyZone === 'safe' ? 'var(--ok-fg)' : calcResult.safetyZone === 'caution' ? 'var(--warn-fg, #84cc16)' : calcResult.safetyZone === 'warning' ? 'var(--warn-fg)' : 'var(--bad-fg)' }}>
 								{calcResult.safetyZone === 'safe' && 'БЕЗОПАСНО (ЗЕЛЕНАЯ ЗОНА)'}
 								{calcResult.safetyZone === 'caution' && 'ВНИМАНИЕ (ЖЕЛТАЯ ЗОНА)'}
 								{calcResult.safetyZone === 'warning' && 'ПРЕДЕЛ (ОРАНЖЕВАЯ ЗОНА)'}
@@ -415,7 +415,7 @@ export function AnesthesiaProtocolModal({
 								checked={aspirationConfirmed}
 								onChange={e => setAspirationConfirmed(e.target.checked)}
 							/>
-							<ShieldCheck size={18} color={aspirationConfirmed ? 'var(--ok, #10b981)' : 'var(--muted, #64748b)'} />
+							<ShieldCheck size={18} color={aspirationConfirmed ? 'var(--ok-fg)' : 'var(--muted, #64748b)'} />
 							Аспирационная проба отрицательна — кровь в карпуле отсутствует (проверка сосудистого русла)
 						</label>
 					</div>
@@ -432,7 +432,7 @@ export function AnesthesiaProtocolModal({
 								className="anesthesia-btn"
 								style={{ minHeight: '32px', padding: '0.125rem 0.5rem', fontSize: '0.75rem' }}
 							>
-								{isCopied ? <Check size={14} color="var(--ok, #10b981)" /> : <Copy size={14} />}
+								{isCopied ? <Check size={14} color="var(--ok-fg)" /> : <Copy size={14} />}
 								{isCopied ? 'Скопировано!' : 'Скопировать текст'}
 							</button>
 						</div>
@@ -453,7 +453,7 @@ export function AnesthesiaProtocolModal({
 						<button
 							type="button"
 							onClick={handleApply}
-							className="anesthesia-btn autoclave-btn-primary"
+							className="anesthesia-btn anesthesia-btn-primary"
 						>
 							<CheckCircle2 size={16} />
 							Применить протокол анестезии

@@ -187,7 +187,7 @@ export const ToothSanpinKraftBinding: React.FC<ToothSanpinKraftBindingProps> = (
 		<div className="dente-warm-tool-card" data-testid="tooth-sanpin-kraft-binding">
 			<div className="dente-warm-tool-header">
 				<div className="dente-warm-tool-title-group">
-					<PackageCheck size={18} color="#059669" />
+					<PackageCheck size={18} color="var(--brand-primary, var(--teal))" />
 					<h3 className="dente-warm-tool-title">
 						1-Клик привязка крафт-пакета автоклава (СанПиН 3.3686-21)
 					</h3>
@@ -278,7 +278,7 @@ export const ToothSanpinKraftBinding: React.FC<ToothSanpinKraftBindingProps> = (
 						</div>
 						<div className="dente-meta-row">
 							<span className="meta-label">Срок годности:</span>
-							<span className="meta-val font-bold" style={{ color: "#059669" }}>
+							<span className="meta-val font-bold" style={{ color: "var(--ok-fg)" }}>
 								{currentPackage.expDate} (осталось {currentPackage.daysRemaining} сут.)
 							</span>
 						</div>

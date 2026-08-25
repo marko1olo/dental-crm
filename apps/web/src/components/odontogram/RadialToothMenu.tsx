@@ -92,9 +92,9 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 			label: "Пломба",
 			shortLabel: "Пломба",
 			state: "Filled",
-			icon: <Wrench size={16} className="text-teal-200" />,
+			icon: <Wrench size={16} className="text-[var(--teal-soft,#99f6e4)]" />,
 			color: "from-teal-500 to-emerald-700",
-			bgGradient: "linear-gradient(135deg, #0d9488 0%, #047857 100%)",
+			bgGradient: "linear-gradient(135deg, var(--teal, #0d9488) 0%, var(--teal-dark, #047857) 100%)",
 			hotkey: "П",
 		},
 		{
@@ -102,9 +102,9 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 			label: "Коронка",
 			shortLabel: "Коронка",
 			state: "Crown",
-			icon: <Crown size={16} className="text-blue-200" />,
+			icon: <Crown size={16} className="text-[var(--info-fg,#93c5fd)]" />,
 			color: "from-blue-600 to-indigo-800",
-			bgGradient: "linear-gradient(135deg, #2563eb 0%, #3730a3 100%)",
+			bgGradient: "linear-gradient(135deg, var(--brand-500, #2563eb) 0%, var(--brand-600, #3730a3) 100%)",
 			hotkey: "Ц",
 		},
 		{
@@ -132,9 +132,9 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 			label: "Здоров",
 			shortLabel: "Здоров",
 			state: "Healthy",
-			icon: <Sparkles size={16} className="text-emerald-200" />,
+			icon: <Sparkles size={16} className="text-[var(--ok-fg,#a7f3d0)]" />,
 			color: "from-emerald-600 to-teal-700",
-			bgGradient: "linear-gradient(135deg, #059669 0%, #0f766e 100%)",
+			bgGradient: "linear-gradient(135deg, var(--ok-fg, #059669) 0%, var(--teal-dark, #0f766e) 100%)",
 			hotkey: "З",
 		},
 	];
@@ -221,14 +221,14 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 
 				{/* Center Tooth Hub - centered at container origin */}
 				<div
-					className="absolute flex flex-col items-center justify-center w-24 h-24 rounded-full bg-[var(--odontogram-surface)] border-2 border-teal-500 shadow-2xl text-[var(--odontogram-ink)] z-20 pointer-events-auto"
+					className="absolute flex flex-col items-center justify-center w-24 h-24 rounded-full bg-[var(--odontogram-surface)] border-2 border-[var(--teal,#0d9488)] shadow-2xl text-[var(--odontogram-ink)] z-20 pointer-events-auto"
 					style={{
 						left: "50%",
 						top: "50%",
 						transform: "translate(-50%, -50%)",
 					}}
 				>
-					<span className="text-xs uppercase font-black text-teal-600 dark:text-teal-400 tracking-wider">Зуб</span>
+					<span className="text-xs uppercase font-black text-[var(--teal,#0d9488)] tracking-wider">Зуб</span>
 					<span className="text-3xl font-black leading-none text-[var(--odontogram-ink)]">{toothNumber}</span>
 					<button
 						type="button"
@@ -457,7 +457,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 									gap: "8px",
 									background: "transparent",
 								}}
-								className="min-h-[48px] min-w-[48px] text-[14px] font-black text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/15 px-4 py-2 rounded-xl transition-colors cursor-pointer border-0"
+								className="min-h-[48px] min-w-[48px] text-[14px] font-black text-[var(--teal,#0d9488)] hover:bg-[var(--teal-soft,rgba(13,148,136,0.15))] px-4 py-2 rounded-xl transition-colors cursor-pointer border-0"
 							>
 								<Coins size={18} />
 								<span>В смету</span>

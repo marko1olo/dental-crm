@@ -76,7 +76,7 @@ export const PerioKeypad: React.FC<PerioKeypadProps> = ({
 			{/* Top Active Target Header */}
 			<div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] pb-3">
 				<div className="flex items-center gap-3">
-					<span className="px-3 py-1.5 bg-teal-600 text-white font-mono font-black text-base rounded-lg shadow-xs">
+					<span className="px-3 py-1.5 bg-[var(--teal)] text-[var(--on-teal,#ffffff)] font-mono font-black text-base rounded-lg shadow-xs">
 						#{activeToothNumber}
 					</span>
 					<div>
@@ -102,7 +102,7 @@ export const PerioKeypad: React.FC<PerioKeypadProps> = ({
 								Рецессия GM: <strong className="text-[var(--ink)] font-bold">{gingivalMarginMm} мм</strong>
 							</span>
 							<span>
-								Потеря CAL: <strong className="text-teal-600 dark:text-teal-400 font-extrabold">{calMm} мм</strong>
+								Потеря CAL: <strong className="text-[var(--teal)] font-extrabold">{calMm} мм</strong>
 							</span>
 						</div>
 					</div>
@@ -114,15 +114,15 @@ export const PerioKeypad: React.FC<PerioKeypadProps> = ({
 					onClick={onAutoAdvanceToggle}
 					className={`min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer border ${
 						autoAdvance
-							? "bg-teal-500/15 border-teal-500/50 text-teal-700 dark:text-teal-300 ring-2 ring-teal-500/40"
+							? "bg-[var(--teal-soft,rgba(13,148,136,0.15))] border-[var(--teal)]/50 text-[var(--teal)] ring-2 ring-[var(--teal)]/40"
 							: "bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
 					}`}
 					title="Автоматический переход к следующей точке при вводе глубины кармана"
 				>
-					<Zap className={`w-4 h-4 ${autoAdvance ? "text-teal-600 dark:text-teal-400 animate-bounce" : ""}`} />
+					<Zap className={`w-4 h-4 ${autoAdvance ? "text-[var(--teal)] animate-bounce" : ""}`} />
 					<span>Авто-шаг (Auto-advance)</span>
 					<span
-						className={`w-2.5 h-2.5 rounded-full ${autoAdvance ? "bg-teal-500" : "bg-slate-400"}`}
+						className={`w-2.5 h-2.5 rounded-full ${autoAdvance ? "bg-[var(--teal)]" : "bg-slate-400"}`}
 					/>
 				</button>
 			</div>
@@ -150,7 +150,7 @@ export const PerioKeypad: React.FC<PerioKeypadProps> = ({
 											? "bg-rose-600 text-white border-rose-700 shadow-md ring-2 ring-rose-500/60 scale-105 z-10"
 											: isModerate
 												? "bg-amber-500 text-white border-amber-600 shadow-md ring-2 ring-amber-500/60 scale-105 z-10"
-												: "bg-teal-600 text-white border-teal-700 shadow-md ring-2 ring-teal-500/60 scale-105 z-10"
+												: "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] border-[var(--teal-dark,var(--teal))] shadow-md ring-2 ring-[var(--teal)]/60 scale-105 z-10"
 										: isSevere
 											? "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-900/60 hover:bg-rose-100"
 											: isModerate
@@ -253,7 +253,7 @@ export const PerioKeypad: React.FC<PerioKeypadProps> = ({
 				<div className="space-y-2">
 					<div className="text-xs font-bold text-[var(--ink)] flex items-center justify-between">
 						<span>Уровень десневого края (GM):</span>
-						<span className="text-teal-600 dark:text-teal-400 font-black text-sm">{gingivalMarginMm} мм</span>
+						<span className="text-[var(--teal)] font-black text-sm">{gingivalMarginMm} мм</span>
 					</div>
 					<div className="flex items-center gap-2">
 						<button
@@ -273,7 +273,7 @@ export const PerioKeypad: React.FC<PerioKeypadProps> = ({
 									onClick={() => onGingivalMarginChange(val)}
 									className={`min-h-[48px] rounded-xl text-sm font-black transition-all cursor-pointer border ${
 										gingivalMarginMm === val
-											? "bg-teal-600 text-white border-teal-700 shadow-xs"
+											? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] border-[var(--teal-dark,var(--teal))] shadow-xs"
 											: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-strong)]"
 									}`}
 								>
@@ -319,7 +319,7 @@ export const PerioKeypad: React.FC<PerioKeypadProps> = ({
 					<button
 						type="button"
 						onClick={onNextSite}
-						className="min-h-[44px] px-4 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs active:scale-95"
+						className="min-h-[44px] px-4 bg-[var(--teal)] hover:opacity-90 text-[var(--on-teal,#ffffff)] rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs active:scale-95"
 					>
 						<span>След. точка</span>
 						<ArrowRight className="w-4 h-4" />

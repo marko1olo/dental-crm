@@ -455,7 +455,7 @@ export function PeriodontalChartModule({
 			<div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
 				<div>
 					<h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-						<Layers className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+						<Layers className="w-5 h-5 text-[var(--teal)] shrink-0" />
 						<span>Пародонтологическая карта (Florida Probe / 6-Point Charting & PRA)</span>
 					</h3>
 					<p className="text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -471,8 +471,8 @@ export function PeriodontalChartModule({
 							onClick={() => setViewMode("detail")}
 							className={`min-h-[44px] px-3.5 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
 								viewMode === "detail"
-									? "bg-white dark:bg-slate-700 text-teal-700 dark:text-teal-300 shadow-xs"
-									: "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+									? "bg-[var(--paper,#ffffff)] text-[var(--teal)] shadow-xs"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 						>
 							<Tablet className="w-4 h-4" />
@@ -483,8 +483,8 @@ export function PeriodontalChartModule({
 							onClick={() => setViewMode("grid")}
 							className={`min-h-[44px] px-3.5 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
 								viewMode === "grid"
-									? "bg-white dark:bg-slate-700 text-teal-700 dark:text-teal-300 shadow-xs"
-									: "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+									? "bg-[var(--paper,#ffffff)] text-[var(--teal)] shadow-xs"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 						>
 							<Grid className="w-4 h-4" />
@@ -495,8 +495,8 @@ export function PeriodontalChartModule({
 							onClick={() => setViewMode("pra")}
 							className={`min-h-[44px] px-3.5 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
 								viewMode === "pra"
-									? "bg-white dark:bg-slate-700 text-teal-700 dark:text-teal-300 shadow-xs"
-									: "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+									? "bg-[var(--paper,#ffffff)] text-[var(--teal)] shadow-xs"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 						>
 							<Radar className="w-4 h-4" />
@@ -508,7 +508,7 @@ export function PeriodontalChartModule({
 						type="button"
 						onClick={handleSaveChart}
 						disabled={saving || loading}
-						className="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-lg text-xs font-black shadow-sm transition-colors cursor-pointer active:scale-95"
+						className="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 bg-[var(--teal)] hover:opacity-90 disabled:opacity-50 text-[var(--on-teal,#ffffff)] rounded-lg text-xs font-black shadow-sm transition-all cursor-pointer active:scale-95"
 					>
 						<Save className="w-4 h-4" />
 						<span>{saving ? "Сохранение..." : "Сохранить карту"}</span>
@@ -525,10 +525,10 @@ export function PeriodontalChartModule({
 					<span
 						className={`text-xl font-black ${
 							summary.fmbsPercent <= 10
-								? "text-emerald-600 dark:text-emerald-400"
+								? "text-[var(--ok-fg,#10b981)]"
 								: summary.fmbsPercent <= 25
-									? "text-amber-600 dark:text-amber-400"
-									: "text-rose-600 dark:text-rose-400"
+									? "text-[var(--warn-fg,#f59e0b)]"
+									: "text-[var(--bad-fg,#ef4444)]"
 						}`}
 					>
 						{summary.fmbsPercent}%
@@ -542,8 +542,8 @@ export function PeriodontalChartModule({
 					<span
 						className={`text-xl font-black ${
 							summary.fmpsPercent <= 20
-								? "text-emerald-600 dark:text-emerald-400"
-								: "text-amber-600 dark:text-amber-400"
+								? "text-[var(--ok-fg,#10b981)]"
+								: "text-[var(--warn-fg,#f59e0b)]"
 						}`}
 					>
 						{summary.fmpsPercent}%
@@ -557,7 +557,7 @@ export function PeriodontalChartModule({
 					<span
 						className={`text-xl font-black ${
 							summary.deepPocketsCount > 0
-								? "text-rose-600 dark:text-rose-400"
+								? "text-[var(--bad-fg,#ef4444)]"
 								: "text-slate-800 dark:text-slate-200"
 						}`}
 					>
@@ -581,10 +581,10 @@ export function PeriodontalChartModule({
 					<span
 						className={`text-xl font-black ${
 							blAgeRatio > 1.0
-								? "text-rose-600 dark:text-rose-400"
+								? "text-[var(--bad-fg,#ef4444)]"
 								: blAgeRatio >= 0.5
-									? "text-amber-600 dark:text-amber-400"
-									: "text-teal-600 dark:text-teal-400"
+									? "text-[var(--warn-fg,#f59e0b)]"
+									: "text-[var(--teal)]"
 						}`}
 					>
 						{blAgeRatio}
@@ -598,10 +598,10 @@ export function PeriodontalChartModule({
 					<span
 						className={`text-xs font-black px-2.5 py-1 rounded-full inline-block mt-0.5 uppercase ${
 							praResult.overallRisk === "low"
-								? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-300/50"
+								? "bg-[var(--ok-bg,rgba(16,185,129,0.15))] text-[var(--ok-fg,#10b981)] border border-[var(--ok-fg,rgba(16,185,129,0.3))]"
 								: praResult.overallRisk === "moderate"
-									? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-300/50"
-									: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-300/50"
+									? "bg-[var(--warn-bg,rgba(245,158,11,0.15))] text-[var(--warn-fg,#f59e0b)] border border-[var(--warn-fg,rgba(245,158,11,0.3))]"
+									: "bg-[var(--bad-bg,rgba(239,68,68,0.15))] text-[var(--bad-fg,#ef4444)] border border-[var(--bad-fg,rgba(239,68,68,0.3))]"
 						}`}
 					>
 						{praResult.overallRisk === "low"
@@ -635,7 +635,7 @@ export function PeriodontalChartModule({
 			<div className="space-y-2">
 				<div className="flex items-center justify-between">
 					<span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-						<Info className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+						<Info className="w-4 h-4 text-[var(--teal)]" />
 						<span>Скрининг пародонта PSR / CPITN по 6 секстантам (ВОЗ)</span>
 					</span>
 				</div>
@@ -679,7 +679,7 @@ export function PeriodontalChartModule({
 				<div className="space-y-4">
 					<div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-700 pb-3">
 						<div className="flex items-center gap-2">
-							<Radar className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+							<Radar className="w-6 h-6 text-[var(--teal)] shrink-0" />
 							<div>
 								<h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
 									Диаграмма оценки пародонтального риска (PRA Spider Diagram по Lang & Tonetti / ВОЗ)
@@ -693,10 +693,10 @@ export function PeriodontalChartModule({
 						<span
 							className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider ${
 								praResult.overallRisk === "low"
-									? "bg-emerald-500 text-white shadow-xs"
+									? "bg-[var(--ok-fg,#10b981)] text-white shadow-xs"
 									: praResult.overallRisk === "moderate"
-										? "bg-amber-500 text-white shadow-xs"
-										: "bg-rose-600 text-white shadow-xs"
+										? "bg-[var(--warn-fg,#f59e0b)] text-white shadow-xs"
+										: "bg-[var(--bad-fg,#ef4444)] text-white shadow-xs"
 							}`}
 						>
 							{praResult.overallRiskLabelRu}
@@ -708,7 +708,7 @@ export function PeriodontalChartModule({
 						{/* Patient Age */}
 						<div className="space-y-1">
 							<label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-								<User className="w-3.5 h-3.5 text-teal-600" />
+								<User className="w-3.5 h-3.5 text-[var(--teal)]" />
 								<span>Возраст пациента:</span>
 							</label>
 							<input
@@ -852,16 +852,16 @@ export function PeriodontalChartModule({
 							</svg>
 
 							<div className="flex items-center gap-3 text-xs font-bold mt-2">
-								<span className="flex items-center gap-1 text-emerald-600">
-									<span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+								<span className="flex items-center gap-1 text-[var(--ok-fg,#10b981)]">
+									<span className="w-2.5 h-2.5 rounded-full bg-[var(--ok-fg,#10b981)]" />
 									Низкий
 								</span>
-								<span className="flex items-center gap-1 text-amber-600">
-									<span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+								<span className="flex items-center gap-1 text-[var(--warn-fg,#f59e0b)]">
+									<span className="w-2.5 h-2.5 rounded-full bg-[var(--warn-fg,#f59e0b)]" />
 									Средний
 								</span>
-								<span className="flex items-center gap-1 text-rose-600">
-									<span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+								<span className="flex items-center gap-1 text-[var(--bad-fg,#ef4444)]">
+									<span className="w-2.5 h-2.5 rounded-full bg-[var(--bad-fg,#ef4444)]" />
 									Высокий
 								</span>
 							</div>
@@ -877,7 +877,7 @@ export function PeriodontalChartModule({
 									<div>
 										<div className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
 											<span>{v.nameRu}</span>
-											<span className="text-xs font-bold text-teal-700 dark:text-teal-300">
+											<span className="text-xs font-bold text-[var(--teal)]">
 												[{v.valueDisplay}]
 											</span>
 										</div>
@@ -889,10 +889,10 @@ export function PeriodontalChartModule({
 									<span
 										className={`px-3 py-1 rounded-md text-xs font-black uppercase ${
 											v.riskLevel === "low"
-												? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-300/40"
+												? "bg-[var(--ok-bg,rgba(16,185,129,0.15))] text-[var(--ok-fg,#10b981)] border border-[var(--ok-fg,rgba(16,185,129,0.4))]"
 												: v.riskLevel === "moderate"
-													? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-300/40"
-													: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-300/40"
+													? "bg-[var(--warn-bg,rgba(245,158,11,0.15))] text-[var(--warn-fg,#f59e0b)] border border-[var(--warn-fg,rgba(245,158,11,0.4))]"
+													: "bg-[var(--bad-bg,rgba(239,68,68,0.15))] text-[var(--bad-fg,#ef4444)] border border-[var(--bad-fg,rgba(239,68,68,0.4))]"
 										}`}
 									>
 										{v.riskLevel === "low"
@@ -918,7 +918,7 @@ export function PeriodontalChartModule({
 							}}
 							className={`min-h-[44px] px-4 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-2 ${
 								activeArch === "upper"
-									? "bg-teal-600 text-white shadow-xs"
+									? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-xs"
 									: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
 							}`}
 						>
@@ -932,7 +932,7 @@ export function PeriodontalChartModule({
 							}}
 							className={`min-h-[44px] px-4 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-2 ${
 								activeArch === "lower"
-									? "bg-teal-600 text-white shadow-xs"
+									? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-xs"
 									: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
 							}`}
 						>
@@ -967,7 +967,7 @@ export function PeriodontalChartModule({
 									onClick={() => setActiveToothNumber(t.toothNumber)}
 									className={`relative flex-shrink-0 min-w-[52px] min-h-[58px] py-2 px-2.5 rounded-xl border text-center transition-all cursor-pointer select-none ${
 										t.toothNumber === activeToothNumber
-											? "border-teal-500 ring-2 ring-teal-500/50 bg-teal-500/15 shadow-sm"
+											? "border-[var(--teal)] ring-2 ring-[var(--teal)]/50 bg-[var(--teal-soft,rgba(13,148,136,0.15))] shadow-sm"
 											: t.isMissing
 												? "border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/40 opacity-40"
 												: "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-400"
@@ -1052,7 +1052,7 @@ export function PeriodontalChartModule({
 					value={chartNotes}
 					onChange={(e) => setChartNotes(e.target.value)}
 					placeholder="Например: Генерализованный пародонтит III ст., стадия B. Показан SRP (Scaling & Root Planing), вектор-терапия, повторный ре-осмотр через 6 недель."
-					className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs font-medium text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 outline-none"
+					className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs font-medium text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-[var(--teal)] outline-none"
 				/>
 			</div>
 
@@ -1060,11 +1060,11 @@ export function PeriodontalChartModule({
 			<div className="p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/70 rounded-xl space-y-3">
 				<div className="flex flex-wrap items-center justify-between gap-2">
 					<div className="flex items-center gap-2">
-						<FileText className="w-5 h-5 text-teal-600 dark:text-teal-400 shrink-0" />
+						<FileText className="w-5 h-5 text-[var(--teal)] shrink-0" />
 						<div>
 							<h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
 								<span>Протокол для Дневника Формы 043/у (Приказ МЗ РФ №834н)</span>
-								<span className="px-2.5 py-0.5 rounded text-xs font-black bg-teal-600/15 text-teal-700 dark:text-teal-300 border border-teal-500/30">
+								<span className="px-2.5 py-0.5 rounded text-xs font-black bg-[var(--teal-soft,rgba(13,148,136,0.15))] text-[var(--teal)] border border-[var(--teal)]/30">
 									{diagnosis.icd10Code}
 								</span>
 							</h4>
@@ -1083,8 +1083,8 @@ export function PeriodontalChartModule({
 						>
 							{copiedProtocol ? (
 								<>
-									<Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-									<span className="text-emerald-700 dark:text-emerald-300 font-black">Скопировано!</span>
+									<Check className="w-4 h-4 text-[var(--ok-fg,#10b981)]" />
+									<span className="text-[var(--ok-fg,#10b981)] font-black">Скопировано!</span>
 								</>
 							) : (
 								<>
@@ -1098,7 +1098,7 @@ export function PeriodontalChartModule({
 							<button
 								type="button"
 								onClick={handleInsertProtocol}
-								className="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black bg-teal-600 hover:bg-teal-700 text-white transition-colors shadow-2xs cursor-pointer active:scale-95"
+								className="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black bg-[var(--teal)] hover:opacity-90 text-[var(--on-teal,#ffffff)] transition-all shadow-2xs cursor-pointer active:scale-95"
 								title="Вставить протокол напрямую в активный дневник приёма"
 							>
 								<CheckCircle2 className="w-4 h-4" />

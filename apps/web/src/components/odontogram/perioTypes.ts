@@ -318,26 +318,26 @@ export function getProbingDepthColor(depthMm: number): {
 } {
 	if (depthMm <= 3) {
 		return {
-			textColor: "text-emerald-700 dark:text-emerald-300",
-			bgColor: "bg-emerald-50 dark:bg-emerald-950/40",
-			borderColor: "border-emerald-200 dark:border-emerald-800",
+			textColor: "text-[var(--ok-fg,#10b981)]",
+			bgColor: "bg-[var(--ok-bg,rgba(16,185,129,0.1))]",
+			borderColor: "border-[var(--ok-fg,rgba(16,185,129,0.3))]",
 			labelRu: "Норма (1-3 мм)",
 			isDeep: false,
 		};
 	}
 	if (depthMm <= 5) {
 		return {
-			textColor: "text-amber-700 dark:text-amber-300",
-			bgColor: "bg-amber-50 dark:bg-amber-950/40",
-			borderColor: "border-amber-200 dark:border-amber-800",
+			textColor: "text-[var(--warn-fg,#d97706)]",
+			bgColor: "bg-[var(--warn-bg,rgba(245,158,11,0.1))]",
+			borderColor: "border-[var(--warn-fg,rgba(245,158,11,0.3))]",
 			labelRu: "Умеренный карман (4-5 мм)",
 			isDeep: false,
 		};
 	}
 	return {
-		textColor: "text-rose-700 dark:text-rose-300",
-		bgColor: "bg-rose-50 dark:bg-rose-950/50",
-		borderColor: "border-rose-300 dark:border-rose-800",
+		textColor: "text-[var(--bad-fg,#ef4444)]",
+		bgColor: "bg-[var(--bad-bg,rgba(239,68,68,0.1))]",
+		borderColor: "border-[var(--bad-fg,rgba(239,68,68,0.3))]",
 		labelRu: "Глубокий карман (≥ 6 мм)",
 		isDeep: true,
 	};

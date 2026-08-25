@@ -69,7 +69,7 @@ export const ODONTOGRAM_VIEW_MODES: readonly OdontogramViewOption[] = [
 		mode: "classic_gost",
 		label: "ГОСТ 043/у",
 		shortLabel: "ГОСТ 043/у",
-		icon: <FileText size={14} className="text-emerald-500 shrink-0" />,
+		icon: <FileText size={14} className="text-[var(--teal)] shrink-0" />,
 		tooltip: "Табличная форма карты стоматологического больного (Минздрав РФ)",
 		badge: "МЗ РФ",
 	},
@@ -414,7 +414,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 								<button
 									type="button"
 									onClick={() => setIsConfirmSanitationModalOpen(true)}
-									className="min-h-[44px] px-3 py-1.5 rounded-lg text-[13px] font-black bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/30 border border-emerald-500/30 transition-all cursor-pointer shrink-0"
+									className="min-h-[44px] px-3 py-1.5 rounded-lg text-[13px] font-black bg-[var(--ok-bg,rgba(16,185,129,0.15))] text-[var(--ok-fg,#10b981)] hover:opacity-90 border border-[var(--ok-fg,rgba(16,185,129,0.3))] transition-all cursor-pointer shrink-0"
 									title="Тотальная санация: пометить все зубы здоровыми (Healthy) в 1 клик с подтверждением"
 									data-testid="total-sanitation-btn"
 								>
@@ -454,8 +454,8 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							onClick={() => setActiveStampTool((prev) => (prev === "Filled" ? null : "Filled"))}
 							className={`min-h-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none shrink-0 ${
 								activeStampTool === "Filled"
-									? "bg-teal-600 text-white font-black shadow-xs ring-2 ring-teal-400"
-									: "bg-teal-500/10 text-teal-800 dark:text-teal-200 hover:bg-teal-500/20 border border-teal-500/20"
+									? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] font-black shadow-xs ring-2 ring-[var(--teal)]/60"
+									: "bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal)] hover:opacity-90 border border-[var(--teal)]/30"
 							}`}
 							title="Штамп: Пломба (Клик по зубу без меню)"
 							data-testid="stamp-filled-btn"
@@ -480,8 +480,8 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							onClick={() => setActiveStampTool((prev) => (prev === "Crown" ? null : "Crown"))}
 							className={`min-h-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none shrink-0 ${
 								activeStampTool === "Crown"
-									? "bg-blue-600 text-white font-black shadow-xs ring-2 ring-blue-400"
-									: "bg-blue-500/10 text-blue-800 dark:text-blue-200 hover:bg-blue-500/20 border border-blue-500/20"
+									? "bg-[var(--brand-500,#3b82f6)] text-white font-black shadow-xs ring-2 ring-[var(--brand-500,#3b82f6)]/60"
+									: "bg-[var(--brand-500,#3b82f6)]/10 text-[var(--brand-500,#3b82f6)] hover:bg-[var(--brand-500,#3b82f6)]/20 border border-[var(--brand-500,#3b82f6)]/30"
 							}`}
 							title="Штамп: Коронка (Клик по зубу без меню)"
 							data-testid="stamp-crown-btn"
@@ -506,8 +506,8 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							onClick={() => setActiveStampTool((prev) => (prev === "Healthy" ? null : "Healthy"))}
 							className={`min-h-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none shrink-0 ${
 								activeStampTool === "Healthy"
-									? "bg-emerald-600 text-white font-black shadow-xs ring-2 ring-emerald-400"
-									: "bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/20 border border-emerald-500/20"
+									? "bg-[var(--ok-fg,#10b981)] text-white font-black shadow-xs ring-2 ring-[var(--ok-fg,#10b981)]/60"
+									: "bg-[var(--ok-bg,rgba(16,185,129,0.1))] text-[var(--ok-fg,#10b981)] hover:opacity-90 border border-[var(--ok-fg,rgba(16,185,129,0.3))]"
 							}`}
 							title="Штамп: Здоров / Интактный (Клик по зубу без меню)"
 							data-testid="stamp-healthy-btn"
@@ -551,12 +551,12 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 								onClick={onTogglePerio}
 								className={`min-h-[48px] flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-bold rounded-xl border transition-all shrink-0 whitespace-nowrap cursor-pointer select-none ${
 									isPerioOpen
-										? "bg-teal-500/20 text-teal-800 dark:text-teal-200 border-teal-500/50 shadow-xs font-black"
-										: "bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30 hover:bg-teal-500/20"
+										? "bg-[var(--teal-soft,rgba(13,148,136,0.2))] text-[var(--teal)] border-[var(--teal)]/50 shadow-xs font-black"
+										: "bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--teal)] border-[var(--teal)]/30 hover:bg-[var(--teal-soft,rgba(13,148,136,0.2))]"
 								}`}
 								title="Открыть / скрыть пародонтологическую карту PSR / 6 точек зондирования"
 							>
-								<Activity size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+								<Activity size={16} className="text-[var(--teal)] shrink-0" />
 								<span>Пародонтограмма</span>
 							</button>
 						)}
@@ -567,10 +567,10 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 								type="button"
 								onClick={onLoadDiagnocat}
 								disabled={diagnocatLoading}
-								className="min-h-[48px] flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/30 hover:bg-blue-500/20 rounded-xl transition-colors shrink-0 whitespace-nowrap cursor-pointer select-none"
+								className="min-h-[48px] flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-bold bg-[var(--brand-500,#3b82f6)]/10 text-[var(--brand-500,#3b82f6)] border border-[var(--brand-500,#3b82f6)]/30 hover:bg-[var(--brand-500,#3b82f6)]/20 rounded-xl transition-colors shrink-0 whitespace-nowrap cursor-pointer select-none"
 								title="Загрузить отчёт Diagnocat AI"
 							>
-								<Stethoscope size={16} className="text-blue-500 shrink-0" />
+								<Stethoscope size={16} className="text-[var(--brand-500,#3b82f6)] shrink-0" />
 								<span>{diagnocatLoading ? "Загрузка..." : "Diagnocat"}</span>
 							</button>
 						)}
@@ -634,8 +634,8 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							}}
 							className={`min-h-[48px] flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap border transition-all shrink-0 cursor-pointer ${
 								(isEstimatorOpen ?? isLiveInvoiceOpen)
-									? "bg-emerald-600 text-white border-emerald-700 shadow-sm font-black"
-									: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20"
+									? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] border-[var(--teal-dark,var(--teal))] shadow-sm font-black"
+									: "bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--teal)] border-[var(--teal)]/30 hover:bg-[var(--teal-soft,rgba(13,148,136,0.2))]"
 							}`}
 							title="Открыть живой калькулятор сметы лечения"
 						>
@@ -728,7 +728,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							<button
 								type="button"
 								onClick={() => setIsConfirmSanitationModalOpen(false)}
-								className="flex-1 min-h-[52px] px-6 py-3 rounded-2xl text-base font-black bg-emerald-600 hover:bg-emerald-500 text-white transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md hover:scale-[1.01] active:scale-[0.99]"
+								className="flex-1 min-h-[52px] px-6 py-3 rounded-2xl text-base font-black bg-[var(--teal)] hover:opacity-90 text-[var(--on-teal,#ffffff)] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md hover:scale-[1.01] active:scale-[0.99]"
 								data-testid="btn-cancel-sanitation"
 							>
 								<X size={20} />

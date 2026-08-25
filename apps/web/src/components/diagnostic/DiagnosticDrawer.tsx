@@ -239,7 +239,7 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 						{/* Header */}
 						<div className="dente-diagnostic-header">
 							<div className="dente-diagnostic-title-group">
-								<Activity size={20} color="var(--brand-primary, #0284c7)" />
+								<Activity size={20} color="var(--brand-primary, var(--teal))" />
 								<h2 className="dente-diagnostic-title">Диагностика и Observability</h2>
 								<span className="dente-diagnostic-env-tag">
 									{import.meta.env?.MODE || "development"}
@@ -491,7 +491,7 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 														<div className="dente-diagnostic-card-left">
 															<span
 																className="dente-diagnostic-pill"
-																style={{ background: "#0284c7", color: "#fff" }}
+																style={{ background: "var(--brand-primary, var(--teal))", color: "#fff" }}
 															>
 																{net.method}
 															</span>

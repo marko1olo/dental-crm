@@ -151,7 +151,7 @@ export function ToothHistoryChronicle({
 						className="tooth-media-section mb-4 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/80 backdrop-blur-xs"
 					>
 						<div className="flex items-center gap-2 mb-2">
-							<Camera className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+							<Camera className="w-4 h-4 text-[var(--teal)] shrink-0" />
 							<h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200">
 								Снимки зуба ({toothMedia.length})
 							</h4>
@@ -193,7 +193,7 @@ export function ToothHistoryChronicle({
 											<span
 												className={`px-1 py-0.2 rounded text-[9px] font-medium ${
 													m.syncStatus === "synced"
-														? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300"
+														? "bg-[var(--ok-bg,rgba(16,185,129,0.1))] text-[var(--ok-fg,#10b981)]"
 														: "bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300"
 												}`}
 											>
@@ -243,9 +243,9 @@ export function ToothHistoryChronicle({
 								<div key={keyId} className="timeline-item">
 									<div className="timeline-icon">
 										{evt.kind === "diary" ? (
-											<FileText className="w-4 h-4 text-emerald-500" />
+											<FileText className="w-4 h-4 text-[var(--ok-fg,#10b981)]" />
 										) : evt.kind === "plan" ? (
-											<Calendar className="w-4 h-4 text-blue-500" />
+											<Calendar className="w-4 h-4 text-[var(--brand-500,#3b82f6)]" />
 										) : evt.kind === "state_change" ? (
 											<Activity className="w-4 h-4 text-amber-500" />
 										) : (

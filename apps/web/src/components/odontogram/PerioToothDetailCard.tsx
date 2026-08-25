@@ -44,7 +44,7 @@ export const PerioToothDetailCard: React.FC<PerioToothDetailCardProps> = ({
 				onClick={() => onSiteSelect(siteKey)}
 				className={`min-h-[68px] p-2.5 rounded-xl border text-left transition-all cursor-pointer relative select-none ${
 					isSelected
-						? "bg-teal-500/15 border-teal-500 ring-2 ring-teal-500/50 shadow-xs"
+						? "bg-[var(--teal-soft,rgba(13,148,136,0.15))] border-[var(--teal)] ring-2 ring-[var(--teal)]/50 shadow-xs"
 						: `${color.bgColor} ${color.borderColor} hover:border-slate-400 dark:hover:border-slate-600`
 				}`}
 				aria-label={`${label}, глубина ${site.probingDepthMm} мм, потеря CAL ${cal} мм`}
@@ -99,7 +99,7 @@ export const PerioToothDetailCard: React.FC<PerioToothDetailCardProps> = ({
 					</div>
 					<div>
 						<span className="text-xs font-bold text-slate-500 dark:text-slate-400 block">CAL</span>
-						<span className="text-sm font-black text-teal-700 dark:text-teal-400">
+						<span className="text-sm font-black text-[var(--teal)]">
 							{cal}
 						</span>
 					</div>
@@ -113,7 +113,7 @@ export const PerioToothDetailCard: React.FC<PerioToothDetailCardProps> = ({
 			{/* Header: Tooth Info & System States */}
 			<div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
 				<div className="flex items-center gap-3">
-					<div className="w-12 h-12 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 flex items-center justify-center text-teal-700 dark:text-teal-300 font-mono font-black text-xl shadow-xs">
+					<div className="w-12 h-12 rounded-xl bg-[var(--teal-soft,rgba(13,148,136,0.1))] border border-[var(--teal)]/30 flex items-center justify-center text-[var(--teal)] font-mono font-black text-xl shadow-xs">
 						#{tooth.toothNumber}
 					</div>
 					<div>
@@ -131,7 +131,7 @@ export const PerioToothDetailCard: React.FC<PerioToothDetailCardProps> = ({
 									onChange={(e) =>
 										onUpdateTooth((t) => ({ ...t, isMissing: e.target.checked }))
 									}
-									className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-4 h-4 cursor-pointer"
+									className="rounded border-slate-300 text-[var(--teal)] focus:ring-[var(--teal)] w-4 h-4 cursor-pointer"
 								/>
 								<span>Отсутствует</span>
 							</label>
@@ -143,7 +143,7 @@ export const PerioToothDetailCard: React.FC<PerioToothDetailCardProps> = ({
 									onChange={(e) =>
 										onUpdateTooth((t) => ({ ...t, isImplant: e.target.checked }))
 									}
-									className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-4 h-4 cursor-pointer"
+									className="rounded border-slate-300 text-[var(--teal)] focus:ring-[var(--teal)] w-4 h-4 cursor-pointer"
 								/>
 								<span>Имплантат</span>
 							</label>
@@ -206,7 +206,7 @@ export const PerioToothDetailCard: React.FC<PerioToothDetailCardProps> = ({
 														? "bg-rose-600 text-white shadow-xs"
 														: grade >= 1
 															? "bg-amber-500 text-white shadow-xs"
-															: "bg-teal-600 text-white shadow-xs"
+															: "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-xs"
 													: "text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
 											}`}
 											title={detail.descriptionRu}

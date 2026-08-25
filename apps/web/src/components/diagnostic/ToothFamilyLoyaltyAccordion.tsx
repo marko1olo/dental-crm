@@ -91,7 +91,7 @@ export const ToothFamilyLoyaltyAccordion: React.FC<ToothFamilyLoyaltyAccordionPr
 		<div className="dente-warm-tool-card" data-testid="tooth-family-loyalty-accordion">
 			<div className="dente-warm-tool-header">
 				<div className="dente-warm-tool-title-group">
-					<Wallet size={18} color="#0d9488" />
+					<Wallet size={18} color="var(--brand-primary, var(--teal))" />
 					<h3 className="dente-warm-tool-title">
 						Семейный депозит и бонусы лояльности (Сплит 54-ФЗ)
 					</h3>
@@ -105,7 +105,7 @@ export const ToothFamilyLoyaltyAccordion: React.FC<ToothFamilyLoyaltyAccordionPr
 			<div className="dente-wallet-kpi-grid">
 				<div className="dente-kpi-card">
 					<div className="dente-kpi-head">
-						<Users size={15} color="#0d9488" />
+						<Users size={15} color="var(--brand-primary, var(--teal))" />
 						<span>Семейный депозит:</span>
 					</div>
 					<div className="dente-kpi-val">{money(familyBalanceRub)}</div>
@@ -209,7 +209,7 @@ export const ToothFamilyLoyaltyAccordion: React.FC<ToothFamilyLoyaltyAccordionPr
 					</div>
 					<div className="dente-split-row">
 						<span>Семейный депозит:</span>
-						<span style={{ color: "#059669" }}>- {money(depositDeductionRub)}</span>
+						<span style={{ color: "var(--ok-fg)" }}>- {money(depositDeductionRub)}</span>
 					</div>
 					<div className="dente-split-row">
 						<span>Бонусы кешбэка:</span>

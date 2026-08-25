@@ -64,11 +64,11 @@ export const RESTORATIVE_MATERIALS: ReadonlyArray<{ id: RestorativeMaterialKey; 
 ];
 
 export const TOOTH_STATES: ReadonlyArray<{ id: ToothState; label: string; color: string }> = [
-	{ id: "Healthy", label: "Здоров", color: "var(--teal, #0d9488)" },
+	{ id: "Healthy", label: "Здоров", color: "var(--brand-primary, var(--teal))" },
 	{ id: "Caries", label: "Кариес", color: "#ef4444" },
 	{ id: "Pulpitis", label: "Пульпит", color: "#dc2626" },
 	{ id: "Periodontitis", label: "Периодонтит", color: "#ea580c" },
-	{ id: "Filled", label: "Пломба", color: "#10b981" },
+	{ id: "Filled", label: "Пломба", color: "var(--brand-primary, var(--teal))" },
 	{ id: "Crown", label: "Коронка", color: "#2563eb" },
 	{ id: "Implant", label: "Имплантат", color: "#64748b" },
 	{ id: "Missing", label: "Удален", color: "#e11d48" },
@@ -208,7 +208,7 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 		<div className="dente-warm-tool-card" data-testid="tooth-surfaces-endo-matrix">
 			<div className="dente-warm-tool-header">
 				<div className="dente-warm-tool-title-group">
-					<Layers size={18} color="var(--teal, #0d9488)" />
+					<Layers size={18} color="var(--brand-primary, var(--teal))" />
 					<h3 className="dente-warm-tool-title">
 						Анатомический статус и матрица поверхностей (MOD)
 					</h3>

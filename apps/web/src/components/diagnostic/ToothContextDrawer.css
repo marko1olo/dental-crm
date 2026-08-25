@@ -52,9 +52,9 @@
 	min-width: 48px;
 	min-height: 48px;
 	border-radius: 12px;
-	background: rgba(13, 148, 136, 0.12);
-	border: 1.5px solid var(--teal, #0d9488);
-	color: var(--teal, #0d9488);
+	background: var(--teal-soft, rgba(13, 148, 136, 0.12));
+	border: 1.5px solid var(--brand-primary, var(--teal));
+	color: var(--brand-primary, var(--teal));
 }
 
 .dente-tooth-fdi-badge .fdi-label {
@@ -98,11 +98,11 @@
 	text-transform: uppercase;
 }
 
-.dente-tooth-state-pill.state-healthy { background: rgba(16, 185, 129, 0.15); color: #059669; }
+.dente-tooth-state-pill.state-healthy { background: var(--ok-bg, rgba(16, 185, 129, 0.15)); color: var(--ok-fg, #059669); }
 .dente-tooth-state-pill.state-caries { background: rgba(239, 68, 68, 0.15); color: #dc2626; }
 .dente-tooth-state-pill.state-pulpitis { background: rgba(220, 38, 38, 0.18); color: #b91c1c; }
 .dente-tooth-state-pill.state-periodontitis { background: rgba(234, 88, 12, 0.15); color: #ea580c; }
-.dente-tooth-state-pill.state-filled { background: rgba(13, 148, 136, 0.15); color: #0f766e; }
+.dente-tooth-state-pill.state-filled { background: var(--teal-soft, rgba(13, 148, 136, 0.15)); color: var(--brand-primary, var(--teal)); }
 .dente-tooth-state-pill.state-crown { background: rgba(37, 99, 235, 0.15); color: #2563eb; }
 .dente-tooth-state-pill.state-implant { background: rgba(100, 116, 139, 0.15); color: #475569; }
 .dente-tooth-state-pill.state-missing { background: rgba(225, 29, 72, 0.15); color: #e11d48; }
@@ -167,7 +167,7 @@
 }
 
 .dente-quick-tab-btn.active {
-	background: var(--teal, #0d9488);
+	background: var(--brand-primary, var(--teal));
 	color: #ffffff;
 }
 
@@ -196,7 +196,7 @@
 }
 
 .dente-accordion-item:hover {
-	border-color: rgba(13, 148, 136, 0.4);
+	border-color: var(--brand-primary, var(--teal));
 }
 
 .dente-accordion-trigger {
@@ -221,7 +221,7 @@
 
 .dente-accordion-trigger.expanded {
 	border-bottom: 1px solid var(--line, #e2e8f0);
-	background: rgba(13, 148, 136, 0.03);
+	background: var(--teal-soft, rgba(13, 148, 136, 0.03));
 }
 
 .dente-accordion-trigger .trigger-left {
@@ -291,10 +291,10 @@
 	color: var(--muted, #64748b);
 }
 
-.dente-warm-tag.ok { background: rgba(16, 185, 129, 0.12); color: #059669; }
+.dente-warm-tag.ok { background: var(--ok-bg, rgba(16, 185, 129, 0.12)); color: var(--ok-fg, #059669); }
 .dente-warm-tag.warning { background: rgba(245, 158, 11, 0.15); color: #d97706; }
 .dente-warm-tag.error { background: rgba(239, 68, 68, 0.15); color: #dc2626; }
-.dente-warm-tag.info { background: rgba(56, 189, 248, 0.15); color: #0284c7; }
+.dente-warm-tag.info { background: var(--teal-soft, rgba(56, 189, 248, 0.15)); color: var(--brand-primary, var(--teal)); }
 
 /* Status Chips Grid */
 .dente-status-chips-grid {
@@ -322,7 +322,7 @@
 }
 
 .dente-touch-chip:hover {
-	border-color: var(--teal, #0d9488);
+	border-color: var(--brand-primary, var(--teal));
 }
 
 .dente-touch-chip.active {
@@ -350,7 +350,7 @@
 .dente-text-action-btn {
 	background: transparent;
 	border: none;
-	color: var(--teal, #0d9488);
+	color: var(--brand-primary, var(--teal));
 	font-size: 12px;
 	font-weight: 700;
 	cursor: pointer;
@@ -410,7 +410,7 @@
 }
 
 .dente-surface-tile:hover {
-	border-color: var(--teal, #0d9488);
+	border-color: var(--brand-primary, var(--teal));
 }
 
 .dente-surface-tile.selected {
@@ -453,8 +453,8 @@
 }
 
 .dente-macro-chip:hover {
-	border-color: var(--teal, #0d9488);
-	background: rgba(13, 148, 136, 0.08);
+	border-color: var(--brand-primary, var(--teal));
+	background: var(--teal-soft, rgba(13, 148, 136, 0.08));
 }
 
 /* Materials Grid */
@@ -491,13 +491,13 @@
 }
 
 .dente-material-btn:hover {
-	border-color: var(--teal, #0d9488);
+	border-color: var(--brand-primary, var(--teal));
 }
 
 .dente-material-btn.selected {
-	background: rgba(13, 148, 136, 0.12);
-	border-color: var(--teal, #0d9488);
-	color: var(--teal, #0d9488);
+	background: var(--teal-soft, rgba(13, 148, 136, 0.12));
+	border-color: var(--brand-primary, var(--teal));
+	color: var(--brand-primary, var(--teal));
 }
 
 /* Endo Section */
@@ -637,9 +637,9 @@
 }
 
 .dente-weight-chip.active {
-	background: var(--brand-primary, #0284c7);
+	background: var(--brand-primary, var(--teal));
 	color: #ffffff;
-	border-color: var(--brand-primary, #0284c7);
+	border-color: var(--brand-primary, var(--teal));
 }
 
 .dente-range-slider {
@@ -695,13 +695,13 @@
 }
 
 .dente-drug-card:hover {
-	border-color: var(--brand-primary, #0284c7);
+	border-color: var(--brand-primary, var(--teal));
 }
 
 .dente-drug-card.selected {
-	background: rgba(2, 132, 199, 0.12);
-	border-color: var(--brand-primary, #0284c7);
-	color: var(--brand-primary, #0284c7);
+	background: var(--teal-soft, rgba(2, 132, 199, 0.12));
+	border-color: var(--brand-primary, var(--teal));
+	color: var(--brand-primary, var(--teal));
 }
 
 .dente-drug-card.risky {
@@ -741,7 +741,7 @@
 }
 
 .dente-carpule-chip.active {
-	background: var(--brand-primary, #0284c7);
+	background: var(--brand-primary, var(--teal));
 	color: #ffffff;
 }
 
@@ -786,7 +786,7 @@
 
 .dente-gauge-bar-fill {
 	height: 100%;
-	background: #10b981;
+	background: var(--brand-primary, var(--teal));
 	transition: width 0.2s ease;
 }
 
@@ -836,7 +836,7 @@
 	min-height: 44px;
 	padding: 6px 14px;
 	border-radius: 6px;
-	background: #059669;
+	background: var(--brand-primary, var(--teal));
 	color: #ffffff;
 	border: none;
 	font-size: 12px;
@@ -863,12 +863,12 @@
 }
 
 .dente-package-card:hover {
-	border-color: #059669;
+	border-color: var(--brand-primary, var(--teal));
 }
 
 .dente-package-card.selected {
-	border-color: #059669;
-	background: rgba(5, 150, 105, 0.08);
+	border-color: var(--brand-primary, var(--teal));
+	background: var(--teal-soft, rgba(5, 150, 105, 0.08));
 }
 
 .dente-package-card-head {
@@ -896,8 +896,8 @@
 
 .dente-package-expiry-row .days-badge {
 	font-weight: 800;
-	color: #059669;
-	background: rgba(5, 150, 105, 0.15);
+	color: var(--ok-fg, #059669);
+	background: var(--ok-bg, rgba(5, 150, 105, 0.15));
 	padding: 2px 6px;
 	border-radius: 4px;
 }
@@ -908,7 +908,7 @@
 	gap: 4px;
 	font-size: 10px;
 	font-weight: 800;
-	color: #059669;
+	color: var(--ok-fg, #059669);
 	margin-top: 4px;
 }
 
@@ -979,7 +979,7 @@
 .dente-rvg-grid-overlay {
 	position: absolute;
 	inset: 0;
-	border: 1px solid rgba(56, 189, 248, 0.2);
+	border: 1px solid var(--teal-soft, rgba(56, 189, 248, 0.2));
 }
 
 .dente-rvg-scale-bar {
@@ -987,7 +987,7 @@
 	bottom: 6px;
 	right: 8px;
 	background: rgba(0, 0, 0, 0.6);
-	color: #38bdf8;
+	color: var(--brand-primary, var(--teal));
 	font-family: monospace;
 	font-size: 9px;
 	padding: 1px 4px;
@@ -1023,9 +1023,9 @@
 }
 
 .dente-rvg-ctrl-btn.active {
-	background: #0284c7;
+	background: var(--brand-primary, var(--teal));
 	color: #ffffff;
-	border-color: #0284c7;
+	border-color: var(--brand-primary, var(--teal));
 }
 
 .dente-rvg-slider-row {
@@ -1105,9 +1105,9 @@
 }
 
 .dente-payer-chip.selected {
-	background: rgba(13, 148, 136, 0.12);
-	border-color: var(--teal, #0d9488);
-	color: var(--teal, #0d9488);
+	background: var(--teal-soft, rgba(13, 148, 136, 0.12));
+	border-color: var(--brand-primary, var(--teal));
+	color: var(--brand-primary, var(--teal));
 }
 
 .dente-deductions-setup-box {
@@ -1250,7 +1250,7 @@
 	min-height: 44px;
 	padding: 8px 16px;
 	border-radius: 8px;
-	background: var(--teal, #0d9488);
+	background: var(--brand-primary, var(--teal));
 	color: #ffffff;
 	border: none;
 	font-size: 13px;
@@ -1264,7 +1264,7 @@
 }
 
 .dente-primary-action-btn:hover {
-	background: #0f766e;
+	background: var(--teal-dark, #0f766e);
 }
 
 .dente-secondary-btn {

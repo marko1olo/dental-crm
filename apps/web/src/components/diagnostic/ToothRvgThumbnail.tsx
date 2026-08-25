@@ -68,9 +68,9 @@ export const ToothRvgThumbnail: React.FC<ToothRvgThumbnailProps> = ({
 				</g>
 				${rootsSvg}
 				${crownSvg}
-				<text x="10" y="24" fill="#38bdf8" font-family="monospace" font-size="12" font-weight="bold">RVG #${toothNumber}</text>
+				<text x="10" y="24" fill="#94a3b8" font-family="monospace" font-size="12" font-weight="bold">RVG #${toothNumber}</text>
 				<text x="10" y="190" fill="#94a3b8" font-family="sans-serif" font-size="10">Apex 0.0 OK</text>
-				<text x="140" y="190" fill="#22c55e" font-family="monospace" font-size="10">21.5mm</text>
+				<text x="140" y="190" fill="#94a3b8" font-family="monospace" font-size="10">21.5mm</text>
 			</svg>
 		`;
 
@@ -105,7 +105,7 @@ export const ToothRvgThumbnail: React.FC<ToothRvgThumbnailProps> = ({
 		<div className="dente-warm-tool-card" data-testid="tooth-rvg-thumbnail">
 			<div className="dente-warm-tool-header">
 				<div className="dente-warm-tool-title-group">
-					<Scan size={18} color="#38bdf8" />
+					<Scan size={18} color="var(--brand-primary, var(--teal))" />
 					<h3 className="dente-warm-tool-title">
 						Прицельный снимок визиографа (RVG 200×200)
 					</h3>

@@ -66,7 +66,7 @@ export const PerioFullMouthGrid: React.FC<PerioFullMouthGridProps> = ({
 				onClick={() => onSelectToothAndSite(toothNum, siteKey)}
 				className={`p-1.5 text-center font-mono cursor-pointer transition-all border-r border-slate-200 dark:border-slate-800 relative select-none ${
 					isSelected
-						? "bg-teal-500/25 ring-2 ring-teal-500 font-black scale-105 z-10 text-teal-900 dark:text-teal-100"
+						? "bg-[var(--teal-soft,rgba(13,148,136,0.25))] ring-2 ring-[var(--teal)] font-black scale-105 z-10 text-[var(--teal)]"
 						: `${color.bgColor} hover:bg-slate-200/80 dark:hover:bg-slate-700/80`
 				}`}
 				title={`Зуб ${toothNum} (${short}): PD=${site.probingDepthMm}мм, GM=${site.gingivalMarginMm}мм, CAL=${cal}мм`}
@@ -105,7 +105,7 @@ export const PerioFullMouthGrid: React.FC<PerioFullMouthGridProps> = ({
 									onClick={() => onSelectToothAndSite(num, "midBuccal")}
 									className={`min-h-[44px] p-2 text-center font-mono text-xs font-black cursor-pointer border-r border-slate-200 dark:border-slate-700 ${
 										isSelected
-											? "bg-teal-600 text-white shadow-xs"
+											? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-xs"
 											: tooth?.isMissing
 												? "opacity-40"
 												: "hover:bg-slate-200 dark:hover:bg-slate-700"
@@ -231,15 +231,15 @@ export const PerioFullMouthGrid: React.FC<PerioFullMouthGridProps> = ({
 					</tr>
 
 					{/* Buccal Clinical Attachment Level (CAL) */}
-					<tr className="bg-teal-50/30 dark:bg-teal-950/20 font-bold">
-						<td className="p-2 font-bold text-teal-700 dark:text-teal-400 sticky left-0 bg-teal-50/90 dark:bg-teal-950 z-10 text-xs">
+					<tr className="bg-[var(--teal-soft,rgba(13,148,136,0.1))] font-bold">
+						<td className="p-2 font-bold text-[var(--teal)] sticky left-0 bg-[var(--paper,#ffffff)] z-10 text-xs">
 							Потеря CAL (мм)
 						</td>
 						{teethNumbers.map((num) => {
 							const t = teethMap.get(num);
 							return (
 								<React.Fragment key={num}>
-									<td className="p-1.5 text-center font-mono text-xs text-teal-700 dark:text-teal-400 border-r border-slate-200 dark:border-slate-800 font-black">
+									<td className="p-1.5 text-center font-mono text-xs text-[var(--teal)] border-r border-slate-200 dark:border-slate-800 font-black">
 										{t && !t.isMissing
 											? calculateClinicalAttachmentLevel(
 													t.distoBuccal.probingDepthMm,
@@ -247,7 +247,7 @@ export const PerioFullMouthGrid: React.FC<PerioFullMouthGridProps> = ({
 												)
 											: "—"}
 									</td>
-									<td className="p-1.5 text-center font-mono text-xs text-teal-700 dark:text-teal-400 border-r border-slate-200 dark:border-slate-800 font-black">
+									<td className="p-1.5 text-center font-mono text-xs text-[var(--teal)] border-r border-slate-200 dark:border-slate-800 font-black">
 										{t && !t.isMissing
 											? calculateClinicalAttachmentLevel(
 													t.midBuccal.probingDepthMm,
@@ -255,7 +255,7 @@ export const PerioFullMouthGrid: React.FC<PerioFullMouthGridProps> = ({
 												)
 											: "—"}
 									</td>
-									<td className="p-1.5 text-center font-mono text-xs text-teal-700 dark:text-teal-400 border-r border-slate-200 dark:border-slate-800 font-black">
+									<td className="p-1.5 text-center font-mono text-xs text-[var(--teal)] border-r border-slate-200 dark:border-slate-800 font-black">
 										{t && !t.isMissing
 											? calculateClinicalAttachmentLevel(
 													t.mesioBuccal.probingDepthMm,
@@ -313,15 +313,15 @@ export const PerioFullMouthGrid: React.FC<PerioFullMouthGridProps> = ({
 					</tr>
 
 					{/* Lingual Clinical Attachment Level (CAL) */}
-					<tr className="bg-teal-50/30 dark:bg-teal-950/20 font-bold">
-						<td className="p-2 font-bold text-teal-700 dark:text-teal-400 sticky left-0 bg-teal-50/90 dark:bg-teal-950 z-10 text-xs">
+					<tr className="bg-[var(--teal-soft,rgba(13,148,136,0.1))] font-bold">
+						<td className="p-2 font-bold text-[var(--teal)] sticky left-0 bg-[var(--paper,#ffffff)] z-10 text-xs">
 							Потеря CAL (мм)
 						</td>
 						{teethNumbers.map((num) => {
 							const t = teethMap.get(num);
 							return (
 								<React.Fragment key={num}>
-									<td className="p-1.5 text-center font-mono text-xs text-teal-700 dark:text-teal-400 border-r border-slate-200 dark:border-slate-800 font-black">
+									<td className="p-1.5 text-center font-mono text-xs text-[var(--teal)] border-r border-slate-200 dark:border-slate-800 font-black">
 										{t && !t.isMissing
 											? calculateClinicalAttachmentLevel(
 													t.distoLingual.probingDepthMm,
@@ -329,7 +329,7 @@ export const PerioFullMouthGrid: React.FC<PerioFullMouthGridProps> = ({
 												)
 											: "—"}
 									</td>
-									<td className="p-1.5 text-center font-mono text-xs text-teal-700 dark:text-teal-400 border-r border-slate-200 dark:border-slate-800 font-black">
+									<td className="p-1.5 text-center font-mono text-xs text-[var(--teal)] border-r border-slate-200 dark:border-slate-800 font-black">
 										{t && !t.isMissing
 											? calculateClinicalAttachmentLevel(
 													t.midLingual.probingDepthMm,
@@ -337,7 +337,7 @@ export const PerioFullMouthGrid: React.FC<PerioFullMouthGridProps> = ({
 												)
 											: "—"}
 									</td>
-									<td className="p-1.5 text-center font-mono text-xs text-teal-700 dark:text-teal-400 border-r border-slate-200 dark:border-slate-800 font-black">
+									<td className="p-1.5 text-center font-mono text-xs text-[var(--teal)] border-r border-slate-200 dark:border-slate-800 font-black">
 										{t && !t.isMissing
 											? calculateClinicalAttachmentLevel(
 													t.mesioLingual.probingDepthMm,
