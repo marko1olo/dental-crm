@@ -222,7 +222,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 				{/* Header */}
 				<div className="flex items-center justify-between px-6 py-4 border-b border-[var(--line)] bg-[var(--paper-soft)]">
 					<div className="flex items-center gap-3">
-						<div className="flex items-center justify-center w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-500">
+						<div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal,var(--brand-primary))]">
 							<Scan className="w-5 h-5" />
 						</div>
 						<div>
@@ -263,8 +263,8 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 											onClick={() => setStudyType(type.id)}
 											className={`flex items-start justify-between p-3 min-h-[48px] rounded-xl border text-left transition-all cursor-pointer touch-manipulation ${
 												isSelected
-													? "bg-teal-500/10 border-teal-500/40 text-[var(--ink)] shadow-sm ring-1 ring-teal-500/30"
-													: "bg-[var(--paper-soft)] border-[var(--line)] hover:border-teal-500/30 text-[var(--muted)] hover:text-[var(--ink)]"
+													? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--ink)] shadow-sm ring-1 ring-[var(--teal)]"
+													: "bg-[var(--paper-soft)] border-[var(--line)] hover:border-[var(--teal,var(--brand-primary))]/30 text-[var(--muted)] hover:text-[var(--ink)]"
 											}`}
 											data-testid={`study-type-${type.id}`}
 										>
@@ -279,7 +279,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 											<div
 												className={`flex items-center justify-center w-5 h-5 rounded-md shrink-0 mt-0.5 border ${
 													isSelected
-														? "bg-teal-500 border-teal-500 text-white"
+														? "bg-[var(--teal-fill,var(--teal))] border-[var(--teal)] text-[var(--on-teal,white)]"
 														: "border-[var(--line)]"
 												}`}
 											>
@@ -306,7 +306,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 											onClick={() => setStudyGoal(goal.id)}
 											className={`p-3 min-h-[48px] rounded-xl border text-left text-xs sm:text-sm font-bold transition-all cursor-pointer touch-manipulation flex items-center ${
 												isSelected
-													? "bg-teal-500/10 border-teal-500/40 text-teal-700 dark:text-teal-300 ring-1 ring-teal-500/30"
+													? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal,var(--brand-primary))] ring-1 ring-[var(--teal)]"
 													: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
 											}`}
 											data-testid={`study-goal-${goal.id}`}
@@ -332,7 +332,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 								value={targetTeeth}
 								onChange={(e) => setTargetTeeth(e.target.value)}
 								placeholder="16, 26, 36..."
-								className="w-full min-h-[48px] px-3.5 py-2.5 text-sm font-bold rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] font-mono focus:outline-none focus:border-teal-500"
+								className="w-full min-h-[48px] px-3.5 py-2.5 text-sm font-bold rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] font-mono focus:outline-none focus:border-[var(--teal,var(--brand-primary))]"
 							/>
 						</div>
 					</div>
@@ -356,7 +356,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 									</div>
 									<div>Направляющая медицинская организация</div>
 								</div>
-								<div className="text-right font-bold text-teal-700">
+								<div className="text-right font-bold text-[var(--teal,var(--brand-primary))]">
 									<div>НАПРАВЛЕНИЕ</div>
 									<div>на рентген-диагностику</div>
 								</div>
@@ -371,14 +371,14 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 								</div>
 								<div>
 									Диагноз (МКБ-10):{" "}
-									<strong className="text-teal-700">
+									<strong className="text-[var(--teal,var(--brand-primary))]">
 										{diary.diagnosisIcd10 || "K04.0"}
 									</strong>
 								</div>
 							</div>
 
-							<div className="p-2.5 rounded-lg border border-teal-200 bg-teal-50/50 flex flex-col gap-1 text-xs">
-								<div className="font-bold text-teal-900">
+							<div className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col gap-1 text-xs">
+								<div className="font-bold text-[var(--ink)]">
 									Вид исследования:{" "}
 									{dentalRadiologyStudyLabels[studyType]}
 								</div>

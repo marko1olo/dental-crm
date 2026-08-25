@@ -60,17 +60,17 @@ describe("Periodontal Probing, Furcation & Form 043/u Engine", () => {
 		// Normal sulcus (1-3mm)
 		const normal = getProbingDepthColor(2);
 		assert.equal(normal.isDeep, false);
-		assert.match(normal.textColor, /emerald/);
+		assert.match(normal.textColor, /ok-fg/);
 
 		// Moderate pocket (4-5mm)
 		const moderate = getProbingDepthColor(5);
 		assert.equal(moderate.isDeep, false);
-		assert.match(moderate.textColor, /amber/);
+		assert.match(moderate.textColor, /warn-fg/);
 
 		// Severe deep pocket (6-12mm)
 		const severe = getProbingDepthColor(8);
 		assert.equal(severe.isDeep, true);
-		assert.match(severe.textColor, /rose/);
+		assert.match(severe.textColor, /bad-fg/);
 
 		// Extreme pocket
 		const extreme = getProbingDepthColor(12);

@@ -288,7 +288,7 @@ export const CompletedServicesChecklist: React.FC = () => {
 								type="checkbox"
 								checked={marked}
 								onChange={() => toggle(item)}
-								className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-teal-600 focus:ring-teal-500"
+								className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-[var(--teal,var(--brand-primary))] focus:ring-[var(--teal,var(--brand-primary))]"
 							/>
 							<span className="flex-1">
 								{serviceTitleOf(item)}

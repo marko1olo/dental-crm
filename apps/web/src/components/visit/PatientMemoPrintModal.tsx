@@ -154,13 +154,13 @@ export function PatientMemoPrintModal({
 				{/* Modal Header */}
 				<div className="flex items-start justify-between gap-3 border-b border-[var(--line)] pb-3.5">
 					<div className="flex items-center gap-3">
-						<div className="w-10 h-10 rounded-xl bg-teal-500/15 text-teal-700 dark:text-teal-400 flex items-center justify-center shrink-0 border border-teal-500/25">
+						<div className="w-10 h-10 rounded-xl bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] flex items-center justify-center shrink-0 border border-[var(--teal-soft)]">
 							<FileText size={22} />
 						</div>
 						<div>
 							<h3 id="patient-memo-modal-title" className="text-base font-extrabold text-[var(--ink)] m-0 flex items-center gap-2">
 								<span>Послеоперационные памятки пациенту (1-клик печать А4/А5)</span>
-								<span className="text-[11px] font-bold px-2 py-0.5 rounded bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/25">
+								<span className="text-[11px] font-bold px-2 py-0.5 rounded bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)]">
 									Форма 043/у
 								</span>
 							</h3>
@@ -190,8 +190,8 @@ export function PatientMemoPrintModal({
 								onClick={() => setSelectedMemoId(memo.id)}
 								className={`p-3 rounded-xl border text-left transition-all min-h-[48px] flex items-start gap-2.5 cursor-pointer touch-manipulation ${
 									isSelected
-										? "bg-teal-500/10 border-teal-500 text-[var(--ink)] shadow-xs ring-1 ring-teal-500/30"
-										: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-teal-500/40"
+										? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--ink)] shadow-xs ring-1 ring-[var(--teal)]"
+										: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))]/40"
 								}`}
 								data-testid={`btn-memo-tab-${memo.id}`}
 							>
@@ -233,7 +233,7 @@ export function PatientMemoPrintModal({
 									key={idx}
 									className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] leading-relaxed flex items-start gap-2"
 								>
-									<span className="font-mono font-bold text-teal-600 dark:text-teal-400 shrink-0">
+									<span className="font-mono font-bold text-[var(--teal,var(--brand-primary))] shrink-0">
 										{idx + 1}.
 									</span>
 									<span>{rule}</span>
@@ -265,7 +265,7 @@ export function PatientMemoPrintModal({
 							data-testid="btn-copy-memo-text"
 							title="Скопировать текст памятки для отправки в WhatsApp / Telegram"
 						>
-							{isCopied ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />}
+							{isCopied ? <Check size={16} className="text-[var(--ok-fg)]" /> : <Copy size={16} />}
 							<span>{isCopied ? "Скопировано!" : "Скопировать текст"}</span>
 						</button>
 
@@ -273,10 +273,10 @@ export function PatientMemoPrintModal({
 							<button
 								type="button"
 								onClick={handleApplySoap}
-								className="min-h-[48px] px-4 py-2 text-xs sm:text-sm font-bold rounded-xl border border-teal-500/30 bg-teal-500/10 text-teal-800 dark:text-teal-200 hover:bg-teal-500/20 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+								className="min-h-[48px] px-4 py-2 text-xs sm:text-sm font-bold rounded-xl border border-[var(--teal,var(--line))]/30 bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-soft,var(--paper-soft))] active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
 								data-testid="btn-apply-memo-soap"
 							>
-								<Sparkles size={16} className="text-teal-600 dark:text-teal-400" />
+								<Sparkles size={16} className="text-[var(--teal,var(--brand-primary))]" />
 								<span>В протокол 043/у</span>
 							</button>
 						)}
@@ -293,7 +293,7 @@ export function PatientMemoPrintModal({
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="min-h-[48px] px-5 py-2.5 text-xs sm:text-sm font-black rounded-xl bg-teal-600 hover:bg-teal-500 text-white shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+							className="min-h-[48px] px-5 py-2.5 text-xs sm:text-sm font-black rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-95"
 							data-testid="btn-print-active-memo"
 						>
 							<Printer size={18} />

@@ -312,13 +312,13 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 			? new Date(lockedAt).toLocaleString("ru-RU")
 			: null;
 		return (
-			<div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-				<ShieldCheck className="w-4 h-4 text-emerald-500" />
+			<div className="flex items-center gap-2 px-3 py-2 bg-[var(--ok-bg)] border border-[var(--ok-fg)]/20 rounded-xl">
+				<ShieldCheck className="w-4 h-4 text-[var(--ok-fg)]" />
 				<div>
-					<div className="text-xs font-medium text-emerald-400">
+					<div className="text-xs font-medium text-[var(--ok-fg)]">
 						Подписано и защищено от правок
 					</div>
-					<div className="text-xs text-emerald-500/80">
+					<div className="text-xs text-[var(--ok-fg)]/80">
 						{signedAtText ?? "время подписания уточняется"}
 					</div>
 				</div>
@@ -350,10 +350,10 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 					aria-labelledby="crypto-signer-modal-title"
 				>
 					<div className="bg-[var(--paper)] border border-[var(--line)] rounded-2xl w-full max-w-md p-6 shadow-2xl relative overflow-hidden text-[var(--ink)]">
-						<div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal-500 to-emerald-500"></div>
+						<div className="absolute top-0 left-0 w-full h-1 bg-[var(--teal)]"></div>
 
 						<h3 id="crypto-signer-modal-title" className="text-xl font-bold text-[var(--ink)] mb-2 flex items-center gap-2">
-							<ShieldCheck className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+							<ShieldCheck className="w-6 h-6 text-[var(--teal,var(--brand-primary))]" />
 							Подписание дневника
 						</h3>
 						<p className="text-[var(--muted)] text-sm mb-6">
@@ -412,7 +412,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 									autoComplete="off"
 									maxLength={4}
 									disabled={lockInProgress}
-									className="w-full bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl px-4 py-3 text-[var(--ink)] text-center text-2xl tracking-[1em] focus:ring-2 focus:ring-teal-500 focus:outline-none disabled:opacity-60"
+									className="w-full bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl px-4 py-3 text-[var(--ink)] text-center text-2xl tracking-[1em] focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none disabled:opacity-60"
 									value={pinCode}
 									onChange={(e) => {
 										setPinCode(e.target.value.replace(/\D/g, ""));
@@ -512,7 +512,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 											type="password"
 											autoComplete="off"
 											disabled={lockInProgress}
-											className="w-full bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl px-4 py-3 text-[var(--ink)] focus:ring-2 focus:ring-teal-500 focus:outline-none disabled:opacity-60"
+											className="w-full bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl px-4 py-3 text-[var(--ink)] focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none disabled:opacity-60"
 											value={pinCode}
 											onChange={(e) => {
 												setPinCode(e.target.value);
@@ -583,7 +583,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 										? CRYPTO_SIGNING_UNAVAILABLE_TEXT
 										: undefined
 								}
-								className="flex-1 px-4 py-2.5 bg-teal-600 hover:bg-teal-500 text-white font-medium rounded-xl transition-colors shadow-lg shadow-teal-500/20 disabled:opacity-60 flex items-center justify-center gap-2"
+								className="flex-1 px-4 py-2.5 bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] font-medium rounded-xl transition-colors shadow-lg disabled:opacity-60 flex items-center justify-center gap-2"
 							>
 								{lockInProgress ? (
 									"Подписываю…"

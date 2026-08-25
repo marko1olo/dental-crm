@@ -845,14 +845,14 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					</div>
 					<div className="visit-focus-actions">
 						<button
-							className="primary-button min-h-[44px] px-3 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+							className="primary-button min-h-[44px] px-3 py-2 focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none transition-colors"
 							type="button"
 							onClick={() => scrollToVisitArea(".dictation-box")}
 						>
 							<Mic aria-hidden="true" /> Диктовка
 						</button>
 						<button
-							className="secondary-button min-h-[44px] px-3 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+							className="secondary-button min-h-[44px] px-3 py-2 focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none transition-colors"
 							type="button"
 							onClick={openVisitWarningAction}
 						>
@@ -2649,8 +2649,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									width: "40px",
 									height: "40px",
 									borderRadius: "10px",
-									backgroundColor: "var(--teal-light, #e0f2fe)",
-									color: "var(--teal, #0284c7)",
+									backgroundColor: "var(--teal-surface, var(--teal-soft))",
+									color: "var(--teal, var(--brand-primary))",
 								}}
 							>
 								<ShieldCheck size={22} />
@@ -2689,8 +2689,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								data-testid="price-validator-trigger-btn"
 								className="primary-button min-h-[44px] px-3.5 py-2 inline-flex items-center gap-2"
 								style={{
-									backgroundColor: "var(--teal, #0284c7)",
-									color: "#ffffff",
+									backgroundColor: "var(--teal-fill, var(--teal))",
+									color: "var(--on-teal, #ffffff)",
 									fontWeight: 600,
 									fontSize: "0.85rem",
 									borderRadius: "8px",

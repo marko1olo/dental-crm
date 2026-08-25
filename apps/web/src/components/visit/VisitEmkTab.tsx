@@ -654,7 +654,7 @@ export function VisitEmkTab() {
 						type="button"
 						onClick={handleCompleteVisitAndGenerateReceipt}
 						disabled={isCompletingVisit}
-						className="min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-black bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer active:scale-98"
+						className="min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-black bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-white shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer active:scale-98"
 						data-testid="btn-complete-visit-checkout"
 						title="1-клик сохранение дневника Формы 043/у, автоматическая сборка сметы и передача чека на кассу"
 					>
@@ -671,14 +671,14 @@ export function VisitEmkTab() {
 			{completionResult && (
 				<div
 					data-testid="visit-completion-banner"
-					className="my-3 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border-2 border-emerald-500/50 flex items-center justify-between gap-4 flex-wrap shadow-sm animate-in fade-in slide-in-from-top-2"
+					className="my-3 p-4 rounded-2xl bg-[var(--ok-bg)] border-2 border-[var(--ok-fg)]/50 flex items-center justify-between gap-4 flex-wrap shadow-sm animate-in fade-in slide-in-from-top-2"
 				>
 					<div className="flex items-center gap-3">
-						<div className="w-11 h-11 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-xl shrink-0 shadow-xs">
+						<div className="w-11 h-11 rounded-xl bg-[var(--ok-fg)] text-white flex items-center justify-center font-black text-xl shrink-0 shadow-xs">
 							✓
 						</div>
 						<div>
-							<div className="text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+							<div className="text-xs font-bold text-[var(--ok-fg)] uppercase tracking-wider flex items-center gap-1.5">
 								<span>🏁</span>
 								<span>Приём завершён • Дневник 043/у зафиксирован</span>
 							</div>
@@ -696,7 +696,7 @@ export function VisitEmkTab() {
 						<button
 							type="button"
 							onClick={() => setIsSbpQrModalOpen(true)}
-							className="min-h-[44px] px-4 py-2 text-xs sm:text-sm font-extrabold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-all cursor-pointer inline-flex items-center gap-2"
+							className="min-h-[44px] px-4 py-2 text-xs sm:text-sm font-extrabold rounded-xl bg-[var(--ok-fg)] hover:opacity-90 text-white shadow-xs transition-all cursor-pointer inline-flex items-center gap-2"
 							data-testid="btn-pay-sbp-qr"
 						>
 							<QrCode size={16} />
@@ -1018,15 +1018,15 @@ export function VisitEmkTab() {
 							badgeClass: "bg-rose-500/10 text-rose-800 dark:text-rose-300 border-rose-500/30",
 						},
 						treatmentPlan: {
-							dotColor: "bg-teal-500",
+							dotColor: "bg-[var(--teal,var(--brand-primary))]",
 							badge: "P · Протокол лечения",
-							badgeClass: "bg-teal-500/10 text-teal-800 dark:text-teal-300 border-teal-500/30",
+							badgeClass: "bg-[var(--teal-surface)] text-[var(--teal)] border-[var(--teal-soft)]",
 						},
 					};
 					const meta = FIELD_META[field.key] || {
-						dotColor: "bg-teal-500",
+						dotColor: "bg-[var(--teal,var(--brand-primary))]",
 						badge: field.label,
-						badgeClass: "bg-teal-500/10 text-teal-800 dark:text-teal-300 border-teal-500/30",
+						badgeClass: "bg-[var(--teal-surface)] text-[var(--teal)] border-[var(--teal-soft)]",
 					};
 
 					return (
@@ -1065,9 +1065,9 @@ export function VisitEmkTab() {
 											key={chip}
 											type="button"
 											onClick={() => handleChipClick(chip)}
-											className="quick-chip min-h-[48px] min-w-0 px-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-strong)] hover:border-teal-500/50 hover:text-teal-700 dark:hover:text-teal-300 active:scale-95 transition-all cursor-pointer touch-manipulation break-words shadow-2xs inline-flex items-center gap-1.5"
+											className="quick-chip min-h-[48px] min-w-0 px-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-strong)] hover:border-[var(--teal,var(--brand-primary))]/50 hover:text-[var(--teal,var(--brand-primary))] active:scale-95 transition-all cursor-pointer touch-manipulation break-words shadow-2xs inline-flex items-center gap-1.5"
 										>
-											<span className="text-teal-600 dark:text-teal-400 font-extrabold">+</span>
+											<span className="text-[var(--teal,var(--brand-primary))] font-extrabold">+</span>
 											<span>{chip}</span>
 										</button>
 									))}
@@ -1075,10 +1075,10 @@ export function VisitEmkTab() {
 							)}
 							{field.key === "treatmentPlan" && (
 								<>
-									<div className="flex flex-col gap-3 p-4 rounded-2xl border border-teal-500/30 bg-teal-500/5 dark:bg-teal-950/20 shadow-xs">
-										<div className="flex items-center justify-between gap-2 flex-wrap border-b border-teal-500/20 pb-2.5">
+									<div className="flex flex-col gap-3 p-4 rounded-2xl border border-[var(--teal,var(--line))]/30 bg-[var(--teal-surface)] shadow-xs">
+										<div className="flex items-center justify-between gap-2 flex-wrap border-b border-[var(--teal,var(--line))]/20 pb-2.5">
 											<div className="flex items-center gap-2">
-												<div className="w-7 h-7 rounded-lg bg-teal-500/20 text-teal-700 dark:text-teal-300 flex items-center justify-center font-bold text-sm">
+												<div className="w-7 h-7 rounded-lg bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)] flex items-center justify-center font-bold text-sm">
 													💉
 												</div>
 												<div>
@@ -1093,10 +1093,10 @@ export function VisitEmkTab() {
 											<button
 												type="button"
 												onClick={() => setIsAnesthesiaProtocolModalOpen(true)}
-												className="text-xs font-bold px-3 py-1.5 rounded-lg border border-teal-500/30 bg-[var(--paper)] text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-colors inline-flex items-center gap-1.5 cursor-pointer touch-manipulation"
+												className="text-xs font-bold px-3 py-1.5 rounded-lg border border-[var(--teal,var(--line))]/30 bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-soft,var(--paper-soft))] transition-colors inline-flex items-center gap-1.5 cursor-pointer touch-manipulation"
 												data-testid="btn-open-anesthesia-protocol-modal"
 											>
-												<Sparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+												<Sparkles className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
 												<span>Расширенный калькулятор СтАР</span>
 											</button>
 										</div>
@@ -1112,8 +1112,8 @@ export function VisitEmkTab() {
 													onClick={() => setSelectedAnesDrugKey("ultracain_ds_forte")}
 													className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer touch-manipulation min-h-[48px] flex items-start justify-between gap-2 ${
 														selectedAnesDrugKey === "ultracain_ds_forte"
-															? "bg-teal-500/15 border-teal-500 text-[var(--ink)] ring-1 ring-teal-500/40 shadow-2xs"
-															: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-teal-500/40"
+															? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--ink)] ring-1 ring-[var(--teal)] shadow-2xs"
+															: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))]/40"
 													}`}
 													data-testid="btn-anes-ultracain-ds-forte"
 												>
@@ -1135,8 +1135,8 @@ export function VisitEmkTab() {
 													onClick={() => setSelectedAnesDrugKey("ultracain_ds")}
 													className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer touch-manipulation min-h-[48px] flex items-start justify-between gap-2 ${
 														selectedAnesDrugKey === "ultracain_ds"
-															? "bg-teal-500/15 border-teal-500 text-[var(--ink)] ring-1 ring-teal-500/40 shadow-2xs"
-															: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-teal-500/40"
+															? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--ink)] ring-1 ring-[var(--teal)] shadow-2xs"
+															: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))]/40"
 													}`}
 													data-testid="btn-anes-ultracain-ds"
 												>
@@ -1148,7 +1148,7 @@ export function VisitEmkTab() {
 															1:200 000 · 1.7 мл (68 мг)
 														</div>
 													</div>
-													<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-500/15 text-teal-800 dark:text-teal-300 shrink-0">
+													<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)] shrink-0">
 														1:200k
 													</span>
 												</button>
@@ -1158,20 +1158,20 @@ export function VisitEmkTab() {
 													onClick={() => setSelectedAnesDrugKey("scandonest_3")}
 													className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer touch-manipulation min-h-[48px] flex items-start justify-between gap-2 ${
 														selectedAnesDrugKey === "scandonest_3"
-															? "bg-emerald-500/15 border-emerald-500 text-[var(--ink)] ring-1 ring-emerald-500/40 shadow-2xs"
-															: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-emerald-500/40"
+															? "bg-[var(--ok-bg)] border-[var(--ok-fg)] text-[var(--ink)] ring-1 ring-[var(--ok-fg)]/40 shadow-2xs"
+															: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--ok-fg)]/40"
 													}`}
 													data-testid="btn-anes-scandonest-3"
 												>
 													<div className="min-w-0">
-														<div className="text-xs font-extrabold truncate text-emerald-800 dark:text-emerald-300">
+														<div className="text-xs font-extrabold truncate text-[var(--ok-fg)]">
 															Скандонест 3%
 														</div>
 														<div className="text-[11px] opacity-80">
 															Без адреналина · 1.7 мл
 														</div>
 													</div>
-													<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 shrink-0">
+													<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--ok-bg)] text-[var(--ok-fg)] border border-[var(--ok-fg)]/30 shrink-0">
 														Группа риска
 													</span>
 												</button>
@@ -1193,7 +1193,7 @@ export function VisitEmkTab() {
 															onClick={() => setSelectedCarpulesCount(cCount)}
 															className={`px-3 py-1.5 rounded-lg text-xs font-extrabold border transition-all cursor-pointer touch-manipulation min-h-[38px] ${
 																selectedCarpulesCount === cCount
-																	? "bg-teal-600 text-white border-teal-600 shadow-2xs"
+																	? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal)] shadow-2xs"
 																	: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
 															}`}
 															data-testid={`btn-carpules-${cCount}`}
@@ -1208,7 +1208,7 @@ export function VisitEmkTab() {
 											<div className="space-y-1.5">
 												<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] flex items-center justify-between">
 													<span>3. Масса тела пациента:</span>
-													<strong className="text-teal-700 dark:text-teal-300">{patientWeightKg} кг</strong>
+													<strong className="text-[var(--teal,var(--brand-primary))]">{patientWeightKg} кг</strong>
 												</label>
 												<div className="flex items-center gap-2">
 													<input
@@ -1218,7 +1218,7 @@ export function VisitEmkTab() {
 														step={1}
 														value={patientWeightKg}
 														onChange={(e) => setPatientWeightKg(parseInt(e.target.value) || 70)}
-														className="w-full accent-teal-600 cursor-pointer"
+														className="w-full accent-[var(--teal,var(--brand-primary))] cursor-pointer"
 														data-testid="input-patient-weight-slider"
 													/>
 													<input
@@ -1240,7 +1240,7 @@ export function VisitEmkTab() {
 												<div className="flex items-center gap-2">
 													<span className={`w-2.5 h-2.5 rounded-full shrink-0 ${
 														liveAnesCalc.safetyLevel === "safe"
-															? "bg-emerald-500"
+															? "bg-[var(--ok-fg)]"
 															: liveAnesCalc.safetyLevel === "caution"
 																? "bg-lime-500"
 																: liveAnesCalc.safetyLevel === "warning"
@@ -1271,7 +1271,7 @@ export function VisitEmkTab() {
 													);
 													showToast(`Анестезия (${liveAnesCalc.drugName}, ${selectedCarpulesCount} карп.) внесена в лечение`, "success", 3000);
 												}}
-												className="min-h-[44px] px-4 py-2 text-xs sm:text-sm font-extrabold rounded-xl bg-teal-600 hover:bg-teal-500 text-white shadow-2xs active:scale-95 transition-all cursor-pointer inline-flex items-center gap-2 shrink-0 touch-manipulation"
+												className="min-h-[44px] px-4 py-2 text-xs sm:text-sm font-extrabold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-2xs active:scale-95 transition-all cursor-pointer inline-flex items-center gap-2 shrink-0 touch-manipulation"
 												data-testid="btn-apply-anesthesia-to-plan"
 											>
 												<span>💉</span>
@@ -1308,7 +1308,7 @@ export function VisitEmkTab() {
 									</div>
 
 									{/* ⚡ ЭНДОДОНТИЯ: Таблица учета корневых каналов, апекслокатор, мастер-файлы и силеры */}
-									<div className="flex flex-col gap-3 p-3.5 rounded-xl border border-teal-500/30 bg-teal-500/5 dark:bg-teal-950/20">
+									<div className="flex flex-col gap-3 p-3.5 rounded-xl border border-[var(--teal,var(--line))]/30 bg-[var(--teal-surface)]">
 										<div className="flex items-center justify-between gap-2 flex-wrap">
 											<div className="flex items-center gap-2">
 												<span className="text-base">⚡</span>
@@ -1319,7 +1319,7 @@ export function VisitEmkTab() {
 											<button
 												type="button"
 												onClick={() => setIsEndoModalOpen(true)}
-												className="min-h-[38px] px-3.5 py-1.5 text-xs font-extrabold rounded-lg bg-teal-600 hover:bg-teal-500 text-white shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-[0.98]"
+												className="min-h-[38px] px-3.5 py-1.5 text-xs font-extrabold rounded-lg bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-[0.98]"
 												data-testid="btn-open-full-endo-modal"
 											>
 												<FileText size={14} />
@@ -1354,7 +1354,7 @@ export function VisitEmkTab() {
 														}}
 														className={`px-3 py-1.5 rounded-lg text-xs font-extrabold border transition-all cursor-pointer touch-manipulation min-h-[38px] ${
 															selectedEndoCanalKey === c.key
-																? "bg-teal-600 text-white border-teal-600 shadow-2xs"
+																? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal)] shadow-2xs"
 																: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
 														}`}
 														data-testid={`btn-endo-canal-${c.key}`}
@@ -1371,7 +1371,7 @@ export function VisitEmkTab() {
 											<div className="space-y-1.5">
 												<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] flex items-center justify-between">
 													<span>2. Длина по апекслокатору (WL):</span>
-													<strong className="text-teal-700 dark:text-teal-300 font-mono text-xs">{endoWorkingLengthMm} мм (Apex 0.0)</strong>
+													<strong className="text-[var(--teal,var(--brand-primary))] font-mono text-xs">{endoWorkingLengthMm} мм (Apex 0.0)</strong>
 												</label>
 												<div className="flex items-center gap-2">
 													<input
@@ -1381,7 +1381,7 @@ export function VisitEmkTab() {
 														step={0.5}
 														value={endoWorkingLengthMm}
 														onChange={(e) => setEndoWorkingLengthMm(parseFloat(e.target.value) || 21.5)}
-														className="w-full accent-teal-600 cursor-pointer"
+														className="w-full accent-[var(--teal,var(--brand-primary))] cursor-pointer"
 														data-testid="input-endo-wl-slider"
 													/>
 													<input
@@ -1403,7 +1403,7 @@ export function VisitEmkTab() {
 															onClick={() => setEndoWorkingLengthMm(len)}
 															className={`px-2 py-0.5 rounded text-[11px] font-semibold border cursor-pointer ${
 																endoWorkingLengthMm === len
-																	? "bg-teal-500/20 border-teal-500 text-teal-700 dark:text-teal-300"
+																	? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal,var(--brand-primary))]"
 																	: "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)]"
 															}`}
 														>
@@ -1439,7 +1439,7 @@ export function VisitEmkTab() {
 																}}
 																className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer touch-manipulation min-h-[38px] ${
 																	isSel
-																		? "bg-teal-600 text-white border-teal-600 shadow-2xs"
+																		? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal)] shadow-2xs"
 																		: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
 																}`}
 																data-testid={`btn-maf-${opt.maf.replace('#','')}-${opt.taper.replace('.','')}`}
@@ -1472,7 +1472,7 @@ export function VisitEmkTab() {
 															onClick={() => setEndoSealer(s.key)}
 															className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer touch-manipulation min-h-[38px] ${
 																endoSealer === s.key
-																	? "bg-teal-600 text-white border-teal-600 shadow-2xs"
+																	? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal)] shadow-2xs"
 																	: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
 															}`}
 															data-testid={`btn-sealer-${s.key.replace(/\s+/g, '')}`}
@@ -1501,7 +1501,7 @@ export function VisitEmkTab() {
 															onClick={() => setEndoObturation(m.key)}
 															className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer touch-manipulation min-h-[38px] ${
 																endoObturation === m.key
-																	? "bg-teal-600 text-white border-teal-600 shadow-2xs"
+																	? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal)] shadow-2xs"
 																	: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
 															}`}
 															data-testid={`btn-obturation-${m.key.slice(0, 5)}`}
@@ -1543,7 +1543,7 @@ export function VisitEmkTab() {
 													updateVisitNoteField("treatmentPlan", appendClinicalText(curr, endoText, "\n\n"));
 													showToast(`Эндо-протокол (Канал ${selectedEndoCanalKey}, ${endoWorkingLengthMm} мм) внесен в карту`, "success", 3000);
 												}}
-												className="min-h-[44px] px-4 py-2 text-xs sm:text-sm font-extrabold rounded-xl bg-teal-600 hover:bg-teal-500 text-white shadow-2xs active:scale-95 transition-all cursor-pointer inline-flex items-center gap-2 shrink-0 touch-manipulation"
+												className="min-h-[44px] px-4 py-2 text-xs sm:text-sm font-extrabold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-2xs active:scale-95 transition-all cursor-pointer inline-flex items-center gap-2 shrink-0 touch-manipulation"
 												data-testid="btn-apply-endo-to-plan"
 											>
 												<span>⚡</span>
@@ -1581,7 +1581,7 @@ export function VisitEmkTab() {
 												>
 													<span className="text-indigo-600 dark:text-indigo-400 font-extrabold">+</span>
 													<span>{srv.shortLabel}</span>
-													<span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-black">
+													<span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-[var(--ok-bg)] text-[var(--ok-fg)] font-black">
 														{srv.basePriceRub.toLocaleString("ru-RU")} ₽
 													</span>
 												</button>
@@ -1597,7 +1597,7 @@ export function VisitEmkTab() {
 								onChange={(event) =>
 									updateVisitNoteField?.(field.key, event.target.value)
 								}
-								className="min-h-[120px] rounded-xl p-3.5 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] placeholder:text-[var(--muted)] resize-y w-full outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/25 font-sans text-sm leading-relaxed"
+								className="min-h-[120px] rounded-xl p-3.5 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] placeholder:text-[var(--muted)] resize-y w-full outline-none focus:border-[var(--teal,var(--brand-primary))] focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))]/25 font-sans text-sm leading-relaxed"
 							/>
 						</div>
 					);
@@ -1642,7 +1642,7 @@ export function VisitEmkTab() {
 
 			<div className="ai-draft mt-4 p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col gap-3">
 				<div className="flex items-center gap-3">
-					<div className="flex items-center justify-center w-8 h-8 rounded-xl bg-teal-500/10 text-teal-700 dark:text-teal-400 border border-teal-500/25 shrink-0">
+					<div className="flex items-center justify-center w-8 h-8 rounded-xl bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)] shrink-0">
 						<ShieldCheck aria-hidden="true" size={20} />
 					</div>
 					<p className="m-0 text-xs sm:text-sm font-medium text-[var(--ink)] leading-relaxed">
@@ -1675,7 +1675,7 @@ export function VisitEmkTab() {
 
 					{draft || isVisitNoteDirty ? (
 						<button
-							className="primary-button min-h-[50px] px-6 py-3 text-sm sm:text-base font-extrabold rounded-xl bg-teal-600 hover:bg-teal-500 text-white shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+							className="primary-button min-h-[50px] px-6 py-3 text-sm sm:text-base font-extrabold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
 							type="button"
 							onClick={() => {
 								if (!visitNoteReadyToAccept) {
@@ -1810,7 +1810,7 @@ export function VisitEmkTab() {
 				<div className="flex items-center justify-between gap-4 flex-wrap mb-4">
 					<div>
 						<h4 className="m-0 text-sm font-extrabold text-[var(--ink)] flex items-center gap-2">
-							<FileCode className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+							<FileCode className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
 							Минздрав РФ & ЕГИСЗ РЭМД (CDA R2) & Рецепты 107-1/у
 						</h4>
 						<p className="m-0 text-xs text-[var(--muted)]">
@@ -1829,13 +1829,13 @@ export function VisitEmkTab() {
 							Печать 043/у
 						</button>
 						<button
-							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer text-[var(--ok-fg)] border-[var(--ok-fg)]/30 hover:bg-[var(--ok-bg)]"
 							type="button"
 							onClick={() => setIsInformedConsentModalOpen(true)}
 							data-testid="btn-print-informed-consent-1051n"
 							title="Официальный бланк информированного добровольного согласия (ИДС) по Приказу Минздрава РФ № 1051н"
 						>
-							<ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+							<ShieldCheck className="w-4 h-4 text-[var(--ok-fg)]" />
 							Печать ИДС (Приказ № 1051н)
 						</button>
 						<button
@@ -1848,7 +1848,7 @@ export function VisitEmkTab() {
 							Рецепт (Форма 107-1/у)
 						</button>
 						<button
-							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer text-teal-800 dark:text-teal-200 border-teal-300 dark:border-teal-800 hover:bg-teal-50 dark:hover:bg-teal-950/40"
+							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer text-[var(--teal,var(--brand-primary))] border-[var(--teal,var(--line))]/30 hover:bg-[var(--teal-soft,var(--paper-soft))]"
 							type="button"
 							onClick={() => {
 								setSelectedMemoIdForPrint("surgery_extraction");
@@ -1857,21 +1857,21 @@ export function VisitEmkTab() {
 							data-testid="btn-open-patient-memo-modal"
 							title="Послеоперационные памятки пациенту (Удаление, Анестезия, Эндодонтия) с 1-клик печатью А4/А5"
 						>
-							<FileText className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+							<FileText className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
 							Памятка пациенту (А4/А5)
 						</button>
 						<button
-							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer text-teal-800 dark:text-teal-200 border-teal-300 dark:border-teal-800 hover:bg-teal-50 dark:hover:bg-teal-950/40"
+							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer text-[var(--teal,var(--brand-primary))] border-[var(--teal,var(--line))]/30 hover:bg-[var(--teal-soft,var(--paper-soft))]"
 							type="button"
 							onClick={() => setIsBillingActModalOpen(true)}
 							data-testid="btn-open-billing-act-modal"
 							title="Акт выполненных работ и гарантийный талон (А4) по Приказу Минздрава № 804н и Закону РФ № 2300-1"
 						>
-							<FileCheck className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+							<FileCheck className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
 							Акт и гарантийный талон (А4)
 						</button>
 						<button
-							className="primary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] bg-teal-600 hover:bg-teal-500 text-white rounded-xl shadow-xs touch-manipulation cursor-pointer"
+							className="primary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] rounded-xl shadow-xs touch-manipulation cursor-pointer"
 							type="button"
 							onClick={() => setIsEgiszModalOpen(true)}
 							data-testid="btn-open-egisz-cda-modal"
@@ -1895,7 +1895,7 @@ export function VisitEmkTab() {
 				{/* 1-клик быстрые кнопки печати послеоперационных памяток */}
 				<div className="flex items-center gap-2 flex-wrap pt-2.5 border-t border-[var(--line)]/70 mb-2">
 					<span className="text-xs font-extrabold text-[var(--muted)] flex items-center gap-1">
-						<Printer className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+						<Printer className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
 						1-клик печать памятки пациенту:
 					</span>
 					<button
@@ -1904,7 +1904,7 @@ export function VisitEmkTab() {
 							setSelectedMemoIdForPrint("surgery_extraction");
 							setIsPatientMemoModalOpen(true);
 						}}
-						className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-teal-500 hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs"
+						className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs"
 						data-testid="btn-quick-memo-surgery"
 					>
 						<span>🧊</span>
@@ -1916,7 +1916,7 @@ export function VisitEmkTab() {
 							setSelectedMemoIdForPrint("anesthesia_caries");
 							setIsPatientMemoModalOpen(true);
 						}}
-						className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-teal-500 hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs"
+						className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs"
 						data-testid="btn-quick-memo-caries"
 					>
 						<span>🦷</span>
@@ -1928,7 +1928,7 @@ export function VisitEmkTab() {
 							setSelectedMemoIdForPrint("endodontics");
 							setIsPatientMemoModalOpen(true);
 						}}
-						className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-teal-500 hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs"
+						className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs"
 						data-testid="btn-quick-memo-endo"
 					>
 						<span>⚡</span>
@@ -2114,11 +2114,11 @@ export function VisitEmkTab() {
 							htmlFor="visit-tray-barcode-input"
 							className="text-xs sm:text-sm font-bold text-[var(--ink)] flex items-center gap-1.5"
 						>
-							<ScanLine className="w-4 h-4 text-teal-600" />
+							<ScanLine className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
 							Привязка простерилизованного лотка (СанПиН)
 						</label>
 						{linkedBarcode ? (
-							<span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-300 dark:border-emerald-800 flex items-center gap-1">
+							<span className="text-xs font-bold text-[var(--ok-fg)] bg-[var(--ok-bg)] px-2.5 py-1 rounded-lg border border-[var(--ok-fg)]/30 flex items-center gap-1">
 								<span>✓</span>
 								<span>Лоток {linkedBarcode} привязан</span>
 							</span>
@@ -2129,7 +2129,7 @@ export function VisitEmkTab() {
 						<input
 							id="visit-tray-barcode-input"
 							type="text"
-							className="flex-1 text-xs sm:text-sm px-3.5 py-2.5 min-h-[48px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono"
+							className="flex-1 text-xs sm:text-sm px-3.5 py-2.5 min-h-[48px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] font-mono"
 							placeholder="Отсканируйте или введите штрихкод лотка (напр. TRAY-2026-001)"
 							value={trayBarcode}
 							onChange={(e) => setTrayBarcode(e.target.value)}
@@ -2189,7 +2189,7 @@ export function VisitEmkTab() {
 								<button
 									type="button"
 									onClick={() => setIsConfirmSwitchModalOpen(false)}
-									className="flex-1 min-h-[52px] px-6 py-3 rounded-2xl text-base font-black bg-emerald-600 hover:bg-emerald-500 text-white transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md hover:scale-[1.01] active:scale-[0.99]"
+									className="flex-1 min-h-[52px] px-6 py-3 rounded-2xl text-base font-black bg-[var(--ok-fg)] hover:opacity-90 text-white transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md hover:scale-[1.01] active:scale-[0.99]"
 									data-testid="btn-cancel-discard"
 								>
 									<X size={20} />
@@ -2320,7 +2320,7 @@ export function VisitEmkTab() {
 										</div>
 
 										<div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
-											<span className="text-sm sm:text-base font-mono font-black text-emerald-600 dark:text-emerald-400">
+											<span className="text-sm sm:text-base font-mono font-black text-[var(--ok-fg)]">
 												{srv.basePriceRub.toLocaleString("ru-RU")} ₽
 											</span>
 											<button
@@ -2365,7 +2365,7 @@ export function VisitEmkTab() {
 				>
 					<div className="bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4 text-center">
 						<div className="flex items-center justify-between border-b border-[var(--line)] pb-3">
-							<div className="flex items-center gap-2 text-emerald-600 font-extrabold text-sm sm:text-base">
+							<div className="flex items-center gap-2 text-[var(--ok-fg)] font-extrabold text-sm sm:text-base">
 								<span>⚡</span>
 								<h3 id="sbp-qr-modal-title" className="m-0 text-base font-extrabold text-[var(--ink)]">
 									Оплата через СБП (QR-код)
@@ -2381,7 +2381,7 @@ export function VisitEmkTab() {
 							</button>
 						</div>
 
-						<div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-900 dark:text-emerald-200 font-medium">
+						<div className="p-3 rounded-xl bg-[var(--ok-bg)] border border-[var(--ok-fg)]/30 text-xs text-[var(--ok-fg)] font-medium">
 							Пациент сканирует QR-код камерой смартфона или в приложении любого банка РФ (0% комиссии)
 						</div>
 
@@ -2406,7 +2406,7 @@ export function VisitEmkTab() {
 
 						<div className="space-y-1">
 							<div className="text-xs text-[var(--muted)]">Сумма к оплате:</div>
-							<div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+							<div className="text-2xl font-black text-[var(--ok-fg)] font-mono">
 								{completionResult.totalNetRub.toLocaleString("ru-RU")} ₽
 							</div>
 							<div className="text-[11px] text-[var(--muted)]">
@@ -2421,7 +2421,7 @@ export function VisitEmkTab() {
 									showToast("Оплата по СБП успешно подтверждена!", "success", 4000);
 									setIsSbpQrModalOpen(false);
 								}}
-								className="flex-1 min-h-[48px] px-4 py-2.5 rounded-xl text-sm font-extrabold bg-emerald-600 hover:bg-emerald-500 text-white transition-all cursor-pointer flex items-center justify-center gap-1.5"
+								className="flex-1 min-h-[48px] px-4 py-2.5 rounded-xl text-sm font-extrabold bg-[var(--ok-fg)] hover:opacity-90 text-white transition-all cursor-pointer flex items-center justify-center gap-1.5"
 								data-testid="btn-confirm-sbp-paid"
 							>
 								<span>✓</span>
@@ -2543,7 +2543,7 @@ export function VisitEmkTab() {
 
 					{/* P - Plan & Treatment */}
 					<div className="border border-slate-300 rounded-md overflow-hidden" style={{ pageBreakInside: "avoid", breakInside: "avoid" }}>
-						<div className="bg-slate-100 px-3 py-1.5 font-bold text-xs uppercase tracking-wide border-b border-slate-300 text-teal-900 flex items-center gap-1.5">
+						<div className="bg-slate-100 px-3 py-1.5 font-bold text-xs uppercase tracking-wide border-b border-slate-300 text-slate-900 flex items-center gap-1.5">
 							<span>P · Протокол оказанной медицинской помощи, лечение и назначения (Plan)</span>
 						</div>
 						<div className="p-2.5 text-xs text-slate-900 whitespace-pre-wrap">

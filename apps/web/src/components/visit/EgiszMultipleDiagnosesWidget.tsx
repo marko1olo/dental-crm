@@ -52,7 +52,7 @@ export function EgiszMultipleDiagnosesWidget() {
 		<div className="rounded-xl border border-[var(--line)] p-3.5 bg-[var(--paper-soft)] space-y-2 text-xs">
 			<div className="flex items-center justify-between">
 				<span className="font-semibold text-[var(--ink)] flex items-center gap-1.5">
-					<Stethoscope className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+					<Stethoscope className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
 					Сопутствующие диагнозы ЕГИСЗ (СЭМД CDA R2)
 				</span>
 				<button
@@ -90,7 +90,7 @@ export function EgiszMultipleDiagnosesWidget() {
 							className="flex items-center justify-between p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-xs"
 						>
 							<div className="flex items-center gap-2">
-								<span className="font-mono font-bold px-1.5 py-0.5 rounded bg-teal-100 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300">
+								<span className="font-mono font-bold px-1.5 py-0.5 rounded bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)]">
 									{item.icdCode}
 								</span>
 								<span className="text-[var(--ink)] font-medium">

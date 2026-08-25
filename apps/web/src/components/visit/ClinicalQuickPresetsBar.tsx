@@ -420,13 +420,13 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 		>
 			<div className="flex items-center justify-between flex-wrap gap-2">
 				<div className="flex items-center gap-2.5">
-					<div className="flex items-center justify-center w-8 h-8 rounded-xl bg-teal-500/10 text-teal-700 dark:text-teal-400 border border-teal-500/25">
+					<div className="flex items-center justify-center w-8 h-8 rounded-xl bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)]">
 						<Zap size={18} />
 					</div>
 					<div>
 						<h4 className="text-sm font-extrabold text-[var(--ink)] flex items-center gap-2">
 							<span>Быстрые клинические протоколы (1 клик)</span>
-							<span className="text-xs px-2 py-0.5 rounded-md font-mono font-black bg-teal-500/15 text-teal-800 dark:text-teal-300 border border-teal-500/30">
+							<span className="text-xs px-2 py-0.5 rounded-md font-mono font-black bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)]">
 								SOAP + МКБ-10
 							</span>
 						</h4>
@@ -465,7 +465,7 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 						const isSurgery = preset.id === "surgery_extraction_simple";
 
 						const bgGradient = isHygiene
-							? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/30 hover:bg-emerald-500/25"
+							? "bg-[var(--ok-bg)] text-[var(--ok-fg)] border border-[var(--ok-fg)]/30 hover:opacity-90"
 							: isCaries
 								? "bg-blue-500/15 text-blue-800 dark:text-blue-200 border-blue-500/30 hover:bg-blue-500/25"
 								: isPulpitis
@@ -486,7 +486,7 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 							>
 								<div className="flex items-center justify-between w-full gap-1.5">
 									<div className="flex items-center gap-1.5 min-w-0">
-										{isHygiene && <Sparkles size={17} className="text-emerald-600 dark:text-emerald-400 shrink-0" />}
+										{isHygiene && <Sparkles size={17} className="text-[var(--ok-fg)] shrink-0" />}
 										{isCaries && <Stethoscope size={17} className="text-blue-600 dark:text-blue-400 shrink-0" />}
 										{isPulpitis && <Flame size={17} className="text-rose-600 dark:text-rose-400 shrink-0" />}
 										{isPerio && <HeartPulse size={17} className="text-amber-600 dark:text-amber-400 shrink-0" />}
@@ -523,7 +523,7 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 								onClick={() => setActiveCategory(cat.id)}
 								className={`min-h-[48px] px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap touch-manipulation ${
 									activeCategory === cat.id
-										? "bg-teal-600 text-white shadow-xs"
+										? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] shadow-xs"
 										: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 							>
@@ -545,7 +545,7 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 									? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20 hover:bg-rose-500/20"
 									: preset.category === "orthopedics"
 										? "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20 hover:bg-purple-500/20"
-										: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20 hover:bg-emerald-500/20";
+										: "bg-[var(--ok-bg)] text-[var(--ok-fg)] border border-[var(--ok-fg)]/20 hover:opacity-90";
 
 						return (
 							<button

@@ -173,13 +173,13 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 				}}
 			>
 				<div className="flex items-center gap-2.5">
-					<div className="flex items-center justify-center w-8 h-8 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
+					<div className="flex items-center justify-center w-8 h-8 rounded-xl bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]">
 						<Syringe size={18} />
 					</div>
 					<div>
 						<h4 className="text-sm font-bold text-[var(--ink)] flex items-center gap-2">
 							<span>Калькулятор анестезии и дозировок</span>
-							<span className="text-xs px-2 py-0.5 rounded-full font-mono font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20">
+							<span className="text-xs px-2 py-0.5 rounded-full font-mono font-bold bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]">
 								{calc.drug.commercialName} · {calc.totalVolumeMl} мл
 							</span>
 							{hasActiveSomaticRisks && (
@@ -198,7 +198,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 					<div
 						className={`text-xs px-2.5 py-1 rounded-lg font-mono font-bold flex items-center gap-1 border ${
 							calc.safetyLevel === "safe"
-								? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
+								? "bg-[var(--ok-bg)] text-[var(--ok-fg)] border-[var(--ok-fg)]/30"
 								: calc.safetyLevel === "caution"
 									? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30"
 									: calc.safetyLevel === "warning"
@@ -325,7 +325,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 												? "bg-orange-500/10 text-orange-900 dark:text-orange-200 border-orange-500/30"
 												: alert.severity === "caution"
 													? "bg-amber-500/10 text-amber-900 dark:text-amber-200 border-amber-500/30"
-													: "bg-emerald-500/10 text-emerald-900 dark:text-emerald-200 border-emerald-500/30"
+													: "bg-[var(--ok-bg)] text-[var(--ok-fg)] border-[var(--ok-fg)]/30"
 									}`}
 								>
 									<div className="flex items-start gap-2.5">
@@ -337,7 +337,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 											) : alert.severity === "caution" ? (
 												<Info size={18} className="text-amber-600 dark:text-amber-400" />
 											) : (
-												<ShieldCheck size={18} className="text-emerald-600 dark:text-emerald-400" />
+												<ShieldCheck size={18} className="text-[var(--ok-fg)]" />
 											)}
 										</div>
 										<div>
@@ -350,7 +350,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 										<button
 											type="button"
 											onClick={() => setDrugKey(alert.recommendedDrugKey!)}
-											className="min-h-[44px] px-3 py-2 rounded-xl font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:opacity-100 shrink-0 text-xs shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+											className="min-h-[44px] px-3 py-2 rounded-xl font-bold bg-[var(--teal)] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:opacity-100 shrink-0 text-xs shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
 										>
 											<Zap size={14} />
 											<span>{alert.recommendedAction ?? "Выбрать рекомендованный"}</span>
@@ -379,8 +379,8 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 										onClick={() => setDrugKey(k)}
 										className={`min-h-[52px] p-2.5 rounded-xl text-left border transition-all flex flex-col justify-between cursor-pointer ${
 											isSelected
-												? "border-teal-500 bg-teal-500/10 shadow-sm ring-1 ring-teal-500"
-												: "border-[var(--border)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)]"
+												? "border-[var(--teal)] bg-[var(--teal-surface)] text-[var(--ink)] shadow-sm ring-1 ring-[var(--teal)]"
+												: "border-[var(--border)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
 										}`}
 									>
 										<div className="flex items-center justify-between w-full">
@@ -389,14 +389,14 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 											</span>
 											{d.isAdrenalineFree ? (
 												<span
-													className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold flex items-center gap-0.5"
+													className="text-xs px-1.5 py-0.5 rounded bg-[var(--ok-bg)] text-[var(--ok-fg)] font-bold flex items-center gap-0.5"
 													title="Без адреналина — безопасно для сердца и сульфит-аллергиков"
 												>
 													<Heart size={11} /> БЕЗ АДР.
 												</span>
 											) : d.vasoconstrictorRatio === "1:200000" ? (
 												<span
-													className="text-xs px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-700 dark:text-teal-300 font-bold flex items-center gap-0.5"
+													className="text-xs px-1.5 py-0.5 rounded bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] font-bold flex items-center gap-0.5"
 													title="1:200 000 — предпочтителен при беременности"
 												>
 													<Baby size={11} /> 1:200k
@@ -433,7 +433,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 											onClick={() => setMethodKey(m)}
 											className={`min-h-[48px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer touch-manipulation ${
 												isSelected
-													? "border-teal-500 bg-teal-500/15 text-teal-800 dark:text-teal-200 font-extrabold shadow-xs"
+													? "border-[var(--teal)] bg-[var(--teal-surface)] text-[var(--ink)] font-extrabold shadow-xs ring-1 ring-[var(--teal)]"
 													: "border-[var(--border)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
 											}`}
 										>
@@ -455,7 +455,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 									value={toothNumber}
 									onChange={(e) => setToothNumber(e.target.value)}
 									placeholder="например 16, 36"
-									className="min-h-[48px] w-full px-3.5 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm sm:text-base font-bold outline-none focus:border-teal-500"
+									className="min-h-[48px] w-full px-3.5 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm sm:text-base font-bold outline-none focus:border-[var(--teal)]"
 								/>
 							</div>
 
@@ -467,7 +467,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 									type="time"
 									value={anesthesiaTime}
 									onChange={(e) => setAnesthesiaTime(e.target.value)}
-									className="min-h-[48px] w-full px-3.5 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm sm:text-base font-bold outline-none focus:border-teal-500"
+									className="min-h-[48px] w-full px-3.5 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm sm:text-base font-bold outline-none focus:border-[var(--teal)]"
 								/>
 							</div>
 						</div>
@@ -601,7 +601,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 											? "text-rose-600 font-extrabold"
 											: calc.safetyPercentage > 75
 												? "text-orange-500"
-												: "text-teal-700 dark:text-teal-300"
+												: "text-[var(--teal)]"
 									}`}
 								>
 									{calc.safetyPercentage}% от суточного лимита
@@ -614,7 +614,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 											? "bg-rose-500"
 											: calc.safetyPercentage > 75
 												? "bg-orange-500"
-												: "bg-teal-500"
+												: "bg-[var(--teal)]"
 									}`}
 									style={{ width: `${Math.min(100, calc.safetyPercentage)}%` }}
 								/>
@@ -646,7 +646,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 								type="checkbox"
 								checked={aspirationTestPassed}
 								onChange={(e) => setAspirationTestPassed(e.target.checked)}
-								className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 border-[var(--border)]"
+								className="w-4 h-4 rounded text-[var(--teal)] focus:ring-[var(--teal)] border-[var(--border)]"
 							/>
 							<span className="font-semibold text-[var(--ink)]">
 								Аспирационная проба отрицательная (сосуд не поврежден)
@@ -658,7 +658,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 								type="checkbox"
 								checked={reactionNormal}
 								onChange={(e) => setReactionNormal(e.target.checked)}
-								className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 border-[var(--border)]"
+								className="w-4 h-4 rounded text-[var(--teal)] focus:ring-[var(--teal)] border-[var(--border)]"
 							/>
 							<span className="font-semibold text-[var(--ink)]">
 								Самочувствие нормальное, без токсических реакций
@@ -672,7 +672,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 							<span className="text-xs font-bold text-[var(--muted)]">
 								Формируемая запись для дневника 043/у (SOAP / План лечения):
 							</span>
-							<span className="text-xs text-teal-700 dark:text-teal-400 font-mono font-bold">
+							<span className="text-xs text-[var(--teal)] font-mono font-bold">
 								СтАР-совместимо
 							</span>
 						</div>
@@ -685,7 +685,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 								type="button"
 								onClick={handleApply}
 								disabled={isLocked}
-								className="min-h-[50px] px-6 py-3 rounded-xl text-xs sm:text-sm font-black bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:opacity-100 shadow-md shadow-teal-600/20 cursor-pointer transition-all flex items-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation active:scale-[0.98]"
+								className="min-h-[50px] px-6 py-3 rounded-xl text-xs sm:text-sm font-black bg-[var(--teal)] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:opacity-100 shadow-md cursor-pointer transition-all flex items-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation active:scale-[0.98]"
 								title="Внести протокол анестезии в план лечения дневника 043/у"
 							>
 								<Syringe size={17} />

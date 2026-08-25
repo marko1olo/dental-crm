@@ -710,7 +710,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						className="vde-043__btn"
 						title="Сформировать направление на КЛКТ / ОПТГ / ТРГ"
 					>
-						<Scan className="w-4 h-4 text-teal-500" />
+						<Scan className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
 						Направление КЛКТ/ОПТГ
 					</button>
 					<button
@@ -720,7 +720,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						className="vde-043__btn"
 						title="Экспорт и валидация СЭМД ЕГИСЗ (HL7 CDA R2)"
 					>
-						<ShieldCheck className="w-4 h-4 text-emerald-600" />
+						<ShieldCheck className="w-4 h-4 text-[var(--ok-fg)]" />
 						СЭМД ЕГИСЗ
 					</button>
 					<button
@@ -811,14 +811,14 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						<button
 							type="button"
 							onClick={handleInsertPerioStatus}
-							className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[48px] rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 text-xs sm:text-sm font-bold transition-all shrink-0 shadow-xs touch-manipulation hover:border-emerald-500 min-w-0 break-words cursor-pointer"
+							className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[48px] rounded-xl bg-[var(--ok-bg)] hover:opacity-90 text-[var(--ok-fg)] border border-[var(--ok-fg)]/30 text-xs sm:text-sm font-bold transition-all shrink-0 shadow-xs touch-manipulation min-w-0 break-words cursor-pointer"
 							title="Вставить протокол пародонтологического обследования PSR и индексы 043/у (AAP/EFP 2018)"
 							data-testid="insert-perio-043-btn"
 						>
-							<span className="font-mono text-xs px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-700 dark:text-emerald-200 font-black shrink-0">
+							<span className="font-mono text-xs px-1.5 py-0.5 rounded-md bg-[var(--ok-bg)] text-[var(--ok-fg)] border border-[var(--ok-fg)]/30 font-black shrink-0">
 								PSR
 							</span>
-							<Activity className="w-4 h-4 text-emerald-600 shrink-0" />
+							<Activity className="w-4 h-4 text-[var(--ok-fg)] shrink-0" />
 							<span className="min-w-0 break-words">Пародонтологический статус (PSR + 043/у)</span>
 						</button>
 						<button
@@ -957,17 +957,17 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 			{/* ── Ненавязчивый СтАР Автопилот: Мягкая плашка-чип предложения протокола ── */}
 			{pendingSoapSuggestion && !fieldsDisabled && (
 				<div
-					className="p-3.5 rounded-2xl bg-teal-500/10 dark:bg-teal-950/40 border-2 border-teal-500/40 text-[var(--ink)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md animate-in fade-in slide-in-from-top-2 duration-200"
+					className="p-3.5 rounded-2xl bg-[var(--teal-surface)] border-2 border-[var(--teal)] text-[var(--ink)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md animate-in fade-in slide-in-from-top-2 duration-200"
 					data-testid="soap-suggestion-banner"
 				>
 					<div className="flex items-center gap-3 min-w-0">
-						<div className="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-700 dark:text-teal-300 flex items-center justify-center shrink-0">
-							<Sparkles size={22} className="text-teal-600 dark:text-teal-400" />
+						<div className="w-10 h-10 rounded-xl bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)] flex items-center justify-center shrink-0">
+							<Sparkles size={22} className="text-[var(--teal,var(--brand-primary))]" />
 						</div>
 						<div className="min-w-0">
 							<div className="text-sm sm:text-base font-black text-[var(--ink)] flex items-center gap-2 flex-wrap">
 								<span>Подставить шаблон СтАР в дневник?</span>
-								<span className="text-xs px-2 py-0.5 rounded-md font-mono font-bold bg-teal-500/20 text-teal-800 dark:text-teal-200 truncate">
+								<span className="text-xs px-2 py-0.5 rounded-md font-mono font-bold bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)] truncate">
 									{pendingSoapSuggestion.title}
 								</span>
 							</div>
@@ -981,7 +981,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						<button
 							type="button"
 							onClick={applyPendingSoapSuggestion}
-							className="min-h-[48px] px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm sm:text-base shadow-sm transition-all flex items-center gap-2 cursor-pointer touch-manipulation active:scale-[0.98]"
+							className="min-h-[48px] px-5 py-2.5 rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] font-black text-sm sm:text-base shadow-sm transition-all flex items-center gap-2 cursor-pointer touch-manipulation active:scale-[0.98]"
 							data-testid="btn-apply-soap-suggestion"
 							title="Внести структурированный протокол СтАР в дневник приёма"
 						>
@@ -1250,7 +1250,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							data-testid="patient-recommendations-bar"
 						>
 							<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5">
-								<Sparkles className="w-3.5 h-3.5 text-teal-500" />
+								<Sparkles className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
 								1-Click Рекомендации пациенту:
 							</span>
 							<div className="flex flex-wrap items-center gap-1.5">
@@ -1264,11 +1264,11 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 											);
 											scheduleDebouncedSave();
 										}}
-										className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[48px] rounded-xl bg-[var(--paper)] hover:bg-teal-500/10 border border-[var(--line)] hover:border-teal-500/30 text-xs sm:text-sm font-bold text-[var(--ink)] transition-colors shadow-xs touch-manipulation min-w-0 break-words cursor-pointer"
+										className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[48px] rounded-xl bg-[var(--paper)] hover:bg-[var(--teal-surface)] border border-[var(--line)] hover:border-[var(--teal)] text-xs sm:text-sm font-bold text-[var(--ink)] transition-colors shadow-xs touch-manipulation min-w-0 break-words cursor-pointer"
 										title={rec.text}
 										data-testid={`rec-btn-${rec.id}`}
 									>
-										<Plus className="w-3.5 h-3.5 text-teal-500 shrink-0" />
+										<Plus className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))] shrink-0" />
 										<span className="min-w-0 break-words">{rec.label}</span>
 									</button>
 								))}

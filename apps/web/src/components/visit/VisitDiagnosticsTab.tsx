@@ -140,10 +140,10 @@ export function VisitDiagnosticsTab(props?: {
 			{/* Orthodontic Cephalometric (TRG) Analysis Module Card */}
 			<div
 				data-testid="visit-ceph-diagnostic-card"
-				className="p-4 rounded-xl bg-gradient-to-r from-teal-50/80 to-cyan-50/80 dark:from-teal-950/40 dark:to-cyan-950/40 border border-teal-200 dark:border-teal-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 shadow-sm"
+				className="p-4 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal,var(--line))]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 shadow-sm"
 			>
 				<div className="flex items-center gap-3">
-					<div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+					<div className="w-10 h-10 rounded-xl bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] flex items-center justify-center shrink-0 shadow-sm">
 						<Activity size={20} />
 					</div>
 					<div>
@@ -151,7 +151,7 @@ export function VisitDiagnosticsTab(props?: {
 							<strong className="text-sm font-bold text-slate-900 dark:text-white">
 								Цефалометрический анализ ТРГ (Телерентгенография)
 							</strong>
-							<span className="text-xs font-bold text-teal-800 dark:text-teal-300 bg-teal-100 dark:bg-teal-950 px-2 py-0.5 rounded border border-teal-500/30">
+							<span className="text-xs font-bold text-[var(--teal,var(--brand-primary))] bg-[var(--teal-surface)] px-2 py-0.5 rounded border border-[var(--teal-soft)]">
 								Форма 043/у
 							</span>
 						</div>
@@ -165,7 +165,7 @@ export function VisitDiagnosticsTab(props?: {
 					type="button"
 					onClick={() => setIsCephModalOpen(true)}
 					data-testid="open-visit-ceph-modal-btn"
-					className="px-4 py-2.5 min-h-[44px] rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shrink-0 shadow-md shadow-teal-600/20 active:scale-95 transition-all cursor-pointer border border-teal-500/30 touch-manipulation"
+					className="px-4 py-2.5 min-h-[44px] rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] font-bold text-xs flex items-center justify-center gap-1.5 shrink-0 shadow-md active:scale-95 transition-all cursor-pointer border border-[var(--teal-soft)] touch-manipulation"
 				>
 					<Activity size={15} />
 					<span>Открыть анализ ТРГ</span>
@@ -425,7 +425,7 @@ export function VisitDiagnosticsTab(props?: {
 				<button
 					type="button"
 					onClick={() => setIsRadiologyModalOpen(true)}
-					className="flex items-center gap-2 px-4 py-2.5 min-h-[48px] text-xs sm:text-sm font-bold rounded-xl bg-teal-600 hover:bg-teal-500 text-white cursor-pointer transition-all shadow-sm active:scale-95 touch-manipulation"
+					className="flex items-center gap-2 px-4 py-2.5 min-h-[48px] text-xs sm:text-sm font-bold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] cursor-pointer transition-all shadow-sm active:scale-95 touch-manipulation"
 					data-testid="btn-open-radiology-referral-modal"
 				>
 					<Scan size={16} />

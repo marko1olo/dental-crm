@@ -287,7 +287,7 @@ export function EmkControlBoard({ dashboard }: any) {
 								</button>
 								<button
 									type="button"
-									className="primary-button focus:outline-none focus:ring-2 focus:ring-teal-600"
+									className="primary-button focus:outline-none focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))]"
 									onClick={() => updateStatus(visit.id, "approved")}
 									disabled={submittingId === visit.id}
 									aria-busy={submittingId === visit.id}

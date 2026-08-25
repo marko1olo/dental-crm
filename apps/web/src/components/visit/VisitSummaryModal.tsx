@@ -292,22 +292,22 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 				<div className="flex-1 overflow-y-auto p-6 space-y-6">
 					{/* Step-by-Step Guidance Ribbon & Autosave Status */}
 					<div className="flex items-center gap-2 p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs flex-wrap">
-						<div className="flex items-center gap-1.5 font-bold text-teal-700 dark:text-teal-300">
-							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-teal-600 text-white text-[10px]">1</span>
+						<div className="flex items-center gap-1.5 font-bold text-[var(--teal,var(--brand-primary))]">
+							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] text-[10px]">1</span>
 							<span>Шаг 1: Проверка диагноза и данных</span>
 						</div>
 						<ArrowRight size={12} className="text-[var(--muted)]" />
-						<div className="flex items-center gap-1.5 font-bold text-teal-700 dark:text-teal-300">
-							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-teal-600 text-white text-[10px]">2</span>
+						<div className="flex items-center gap-1.5 font-bold text-[var(--teal,var(--brand-primary))]">
+							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] text-[10px]">2</span>
 							<span>Шаг 2: Протокол 043/у (1 клик)</span>
 						</div>
 						<ArrowRight size={12} className="text-[var(--muted)]" />
-						<div className="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-300">
-							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px]">3</span>
+						<div className="flex items-center gap-1.5 font-bold text-[var(--ok-fg)]">
+							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--ok-fg)] text-white text-[10px]">3</span>
 							<span>Шаг 3: Печать Формы 043/у</span>
 						</div>
 						<div className="ml-auto flex items-center gap-1 text-[var(--muted)] text-[11px]">
-							<Save size={12} className="text-emerald-600" />
+							<Save size={12} className="text-[var(--ok-fg)]" />
 							<span>💾 Дневник 043/у сохранен автоматически</span>
 						</div>
 					</div>
@@ -373,10 +373,10 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 							{(diary.statusLocalis?.includes("ПРОТОКОЛ ПАРОДОНТОЛОГИЧЕСКОГО") ||
 								diary.diagnosisIcd10?.startsWith("K05")) && (
 								<span
-									className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-semibold min-w-0 break-words"
+									className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl bg-[var(--ok-bg)] text-[var(--ok-fg)] border border-[var(--ok-fg)]/30 text-xs font-semibold min-w-0 break-words"
 									data-testid="summary-badge-perio"
 								>
-									<Activity className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+									<Activity className="w-3.5 h-3.5 text-[var(--ok-fg)] shrink-0" />
 									<span className="min-w-0 break-words">Пародонтологический протокол (PSR + AAP/EFP 2018)</span>
 								</span>
 							)}
@@ -424,9 +424,9 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 					)}
 
 					{/* 1-Click EMR Form 043/u Clinical Diary Synthesis Quick Banner */}
-					<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl border border-teal-500/30 bg-gradient-to-r from-teal-500/10 via-emerald-500/10 to-teal-500/5">
+					<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl border border-[var(--teal,var(--line))]/30 bg-[var(--teal-surface)]">
 						<div className="flex items-center gap-3">
-							<div className="flex items-center justify-center w-10 h-10 rounded-xl bg-teal-600 text-white shadow-sm shrink-0">
+							<div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] shadow-sm shrink-0">
 								<Sparkles className="w-5 h-5" />
 							</div>
 							<div>
@@ -441,7 +441,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsProtocolGeneratorOpen(true)}
-							className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-md transition-all shrink-0 cursor-pointer"
+							className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] text-xs font-bold shadow-md transition-all shrink-0 cursor-pointer"
 							data-testid="summary-synthesize-protocol-btn"
 						>
 							<Sparkles className="w-4 h-4" />
@@ -630,7 +630,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 													className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold w-fit min-w-0 break-words ${
 														snap.nerveDistanceMm < 2.0
 															? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/30"
-															: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+															: "bg-[var(--ok-bg)] text-[var(--ok-fg)] border border-[var(--ok-fg)]/30"
 													}`}
 												>
 													{snap.nerveDistanceMm < 2.0 ? (
@@ -689,17 +689,17 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsProtocolGeneratorOpen(true)}
-							className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl border border-teal-500/40 bg-teal-500/15 text-teal-800 dark:text-teal-200 text-sm font-bold hover:bg-teal-500/25 transition-colors cursor-pointer"
+							className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl border border-[var(--teal,var(--line))]/40 bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] text-sm font-bold hover:bg-[var(--teal-soft,var(--paper-soft))] transition-colors cursor-pointer"
 							title="Сформировать дневник 043/у по МКБ-10 и формуле зубов"
 							data-testid="summary-open-protocol-generator-btn"
 						>
-							<Sparkles className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+							<Sparkles className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
 							<span>⚡ Протокол 043/у (1 клик)</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setIsCustomizerOpen(true)}
-							className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl border border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-teal-300 text-sm font-bold hover:bg-teal-500/20 transition-colors cursor-pointer"
+							className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl border border-[var(--teal,var(--line))]/30 bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] text-sm font-bold hover:bg-[var(--teal-soft,var(--paper-soft))] transition-colors cursor-pointer"
 							title="Настроить фирменный бланк клиники, цвета, логотип и реквизиты"
 							data-testid="summary-customize-branding-btn"
 						>
@@ -727,7 +727,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 									onClose();
 									onOpenRadiologyReferral();
 								}}
-								className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl border border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-teal-300 text-sm font-bold hover:bg-teal-500/20 transition-colors cursor-pointer"
+								className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl border border-[var(--teal,var(--line))]/30 bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] text-sm font-bold hover:bg-[var(--teal-soft,var(--paper-soft))] transition-colors cursor-pointer"
 								data-testid="summary-radiology-btn"
 							>
 								<Scan className="w-4 h-4" />
@@ -741,7 +741,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 									onClose();
 									onOpenEgiszExport();
 								}}
-								className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-sm font-bold hover:bg-emerald-500/20 transition-colors cursor-pointer"
+								className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl border border-[var(--ok-fg)]/30 bg-[var(--ok-bg)] text-[var(--ok-fg)] text-sm font-bold hover:opacity-90 transition-colors cursor-pointer"
 								data-testid="summary-egisz-btn"
 							>
 								<ShieldCheck className="w-4 h-4" />
