@@ -273,7 +273,9 @@ export async function registerSberPosWebhookRoutes(app: FastifyInstance) {
 			}
 
 			const input = parsed.data;
+
 			const idempotencyKey =
+				(request.headers["idempotency-key"] as string) ||
 				(request.headers["x-idempotency-key"] as string) ||
 				input.clientMutationId ||
 				crypto.randomUUID();

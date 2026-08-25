@@ -567,14 +567,24 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 			"billing payment create",
 		);
 		if (!orgId) return;
-		const input: CreatePaymentInput = parsedInput.data;
-		if (!input.clientMutationId) {
+		const rawInput: CreatePaymentInput = parsedInput.data;
+		const headerIdempotencyKey =
+			(request.headers["idempotency-key"] as string | undefined) ||
+			(request.headers["x-idempotency-key"] as string | undefined);
+		const effectiveMutationId =
+			rawInput.clientMutationId?.trim() || headerIdempotencyKey?.trim();
+
+		if (!effectiveMutationId) {
 			return reply.code(400).send({
 				error: "BillingValidationError",
 				message:
-					"Ключ операции (clientMutationId) обязателен для предотвращения двойных списаний.",
+					"Ключ операции (clientMutationId или заголовок Idempotency-Key) обязателен для предотвращения двойных списаний.",
 			});
 		}
+		const input: CreatePaymentInput = {
+			...rawInput,
+			clientMutationId: effectiveMutationId,
+		};
 		const existingPayment = await findPaymentByClientMutationIdInDb(
 			orgId,
 			input.clientMutationId,

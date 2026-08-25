@@ -39,7 +39,12 @@ export class FiscalQueueRetryWorker {
 			.where(
 				and(
 					eq(fiscalReceiptQueue.organizationId, organizationId),
-					inArray(fiscalReceiptQueue.status, ["pending_print", "hardware_offline"]),
+					inArray(fiscalReceiptQueue.status, [
+						"pending_print",
+						"hardware_offline",
+						"offline_pending",
+						"printing",
+					]),
 				),
 			)
 			.orderBy(fiscalReceiptQueue.createdAt);

@@ -457,8 +457,13 @@ export async function registerSbpQrRoutes(app: FastifyInstance) {
 
 		const fiscalReceiptNumber = `FD-${Date.now().toString().slice(-6)}`;
 		const now = new Date();
+		const headerIdempotencyKey =
+			(request.headers["idempotency-key"] as string | undefined) ||
+			(request.headers["x-idempotency-key"] as string | undefined);
 		const effectiveMutationId =
-			input.clientMutationId || `fiscal:${fiscalReceiptNumber}`;
+			input.clientMutationId?.trim() ||
+			headerIdempotencyKey?.trim() ||
+			`fiscal:${fiscalReceiptNumber}`;
 
 		const itemizedFfd12Tags = input.items.map((item) => ({
 			name: item.name,

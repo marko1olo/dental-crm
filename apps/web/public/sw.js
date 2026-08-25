@@ -24,7 +24,7 @@ function isForbiddenRuntimeResponse(url) {
 function isCacheableShellAsset(url) {
 	if (SHELL_ASSETS.includes(url.pathname)) return true;
 	// Cache static bundles, styles, icons, fonts, odontogram SVG schemas, auth art, shaders, wasm, and workers
-	return /^\/(?:assets|auth-art|fonts|icons|workers|wasm|odontogram|images|static)\/[-A-Za-z0-9_./]+(?:\.js|\.css|\.svg|\.png|\.webp|\.avif|\.woff2?|\.ttf|\.otf|\.wasm|\.json)$/.test(
+	return /^\/(?:assets|auth-art|fonts|icons|workers|wasm|odontogram|images|static)\/[-A-Za-z0-9_./]+(?:\.js|\.mjs|\.css|\.svg|\.png|\.webp|\.avif|\.woff2?|\.ttf|\.otf|\.wasm|\.json|\.webmanifest|\.ico)$/.test(
 		url.pathname,
 	);
 }

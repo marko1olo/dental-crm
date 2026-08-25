@@ -16,3 +16,26 @@ Deeply survey and analyze the existing codebase for Requirements R3 and R4:
    - Inspect Axial, Sagittal, Coronal MPR synchronized crosshair panning and HU density sampling.
 
 Write a complete, structured analysis report to `C:/Clinic_MVP/dental-crm/.agents/survey_explorer_2/report.md` including exact file paths, current implementation status, gaps, and precise technical implementation recommendations. Then send a message to parent with summary and file path.
+
+## 2026-08-25T15:33:35Z
+You are the Network & Hardware Explorer for DENTE Dental CRM.
+Working directory: C:\Clinic_MVP\dental-crm\.agents\survey_explorer_2
+
+Your task is to conduct a complete, in-depth architectural reconnaissance and survey of Requirements R2 and R3:
+- Read C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md and C:\Clinic_MVP\dental-crm\.agents\AGENTS.md.
+- Investigate packages/shared, packages/api, and packages/web for:
+  1. 3-Tier Network Architecture:
+     - Tier 1 (Cloud): Fastify API + PostgreSQL 18 sync protocols and endpoints.
+     - Tier 2 (LAN Mesh): Local Wi-Fi P2P mutation broker between doctor tablets and admin PC when external internet fails.
+     - Tier 3 (Offline Single-node): IndexedDB / local memory buffer with CRDT LWW conflict-free merge for appointments and cash transactions.
+  2. Cross-Platform & Hardware Portability:
+     - Web PWA: Service Worker offline caching of critical assets for cold boot.
+     - Desktop Windows EXE: Kiosk fullscreen mode, global USB 2D DataMatrix barcode scanner interceptor (unfocused background listening), ESC/POS direct thermal printing.
+     - Mobile Android APK: Responsive layout for 375-414px, inertial scrolling, haptic feedback on odontogram interactions.
+  3. Existing sync logic, offline stores, service workers, hardware adapters, and their test suites.
+
+Output requirements:
+- Maintain progress in C:\Clinic_MVP\dental-crm\.agents\survey_explorer_2\progress.md
+- Write detailed survey and feature inventory in C:\Clinic_MVP\dental-crm\.agents\survey_explorer_2\analysis.md
+- Write final handoff in C:\Clinic_MVP\dental-crm\.agents\survey_explorer_2\handoff.md following Handoff Protocol (Observation, Logic Chain, Caveats, Conclusion, Verification Method).
+- Notify caller via send_message when done.

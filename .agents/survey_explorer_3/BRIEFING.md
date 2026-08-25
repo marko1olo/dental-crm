@@ -1,42 +1,49 @@
-# BRIEFING — 2026-08-15T01:35:40Z
+# BRIEFING — 2026-08-25T15:38:35Z
 
 ## Mission
-Survey & analyze R5 (4-State Visual Verification & Touch Ergonomics >=44px) and Test & Quality Gate Infrastructure for Dental CRM.
+Conduct architectural reconnaissance and deep survey of Requirements R4 (Visual Theming & WCAG) and R5 (Financial Reliability & Idempotency / 54-FZ) for DENTE Dental CRM.
 
 ## 🔒 My Identity
 - Archetype: explorer
-- Roles: UI Standards & Test Suite Explorer
-- Working directory: C:/Clinic_MVP/dental-crm/.agents/survey_explorer_3
-- Original parent: aedec96e-7c44-4c86-8386-61e96b462692
-- Milestone: baseline-survey
+- Roles: Theming & Financial Explorer
+- Working directory: C:\Clinic_MVP\dental-crm\.agents\survey_explorer_3
+- Original parent: 6a66f79d-fdbf-43b8-b82a-2700d5984395
+- Milestone: Requirements R4 & R5 Survey & Architecture Audit
 
 ## 🔒 Key Constraints
-- Read-only investigation — do NOT implement or modify source code
-- Focus on R5 (theme tokens, dark mode, touch ergonomics) and Test & Quality Gate Infrastructure
-- All findings must have exact file paths, line numbers, and evidence
-- UTF-8 clean output, no Cyrillic mojibake
+- Read-only investigation — do NOT implement production code
+- Adhere strictly to 100% reading policy (Zero-skimming)
+- Full evidence chains with exact line numbers and paths
+- Check compliance against 10 themes, token checks, idempotency, bank rounding, single atomic transactions
 
 ## Current Parent
-- Conversation ID: aedec96e-7c44-4c86-8386-61e96b462692
-- Updated: 2026-08-15T01:35:40Z
+- Conversation ID: 6a66f79d-fdbf-43b8-b82a-2700d5984395
+- Updated: 2026-08-25T15:38:35Z
 
 ## Investigation State
 - **Explored paths**:
-  - `apps/web/src/styles/` (`main.css`, `dente-redesign.css`, `token-aliases.css`, `touch-targets.css`, `contrast-fixes.css`)
-  - `apps/web/src/tests/` (`themeContrastGuard.test.ts`)
-  - `apps/web/src/VisitNoteDraftPanel.tsx`, `SmartParsePreview.tsx`, `OdontogramModule.tsx`, `ToothChart.tsx`, `TreatmentEstimator.tsx`
-  - `scripts/` (`check-encoding.mjs`, `check-applogic-stub-overrides.mjs`, `check-fetch-response-guard.mjs`, `check-dynamic-imports.mjs`, `check-env-contract.mjs`, `check-tracked-ignored.mjs`, `check-guarded-route-headers.mjs`, `check-css-tokens.mjs`, `check-route-callers.mjs`)
-  - `package.json` across root, `apps/web`, `apps/api`, `packages/shared`
+  - `packages/shared/src/fiscal/` (`kopecksArithmetic.ts`, `taxDeduction.ts`, `chaosFinancialBilling.test.ts`, etc.)
+  - `apps/web/src/styles/` (`main.css`, `token-aliases.css`, `tailwind.css`, `modules/mobile-touch.css`)
+  - `apps/web/src/lib/` (`themeClasses.ts`), `apps/web/src/store/` (`themeStore.ts`)
+  - `apps/web/src/tests/` (`themeClasses.test.ts`, `themeTokenSpecificity.test.ts`)
+  - `apps/api/src/routes/` (`billing.ts`, `fiscal/fiscalReceiptRoutes.ts`, `finance_family.ts`)
+  - `apps/api/src/db/` (`billingQuery.ts`, `visitsQuery.ts`, `schema/billing.ts`, `schema/inventory.ts`, `schema/fiscal.ts`)
+  - `apps/api/src/services/inventory/` (`materialDeduction.ts`)
+  - `apps/api/src/tests/routes/` (`financialIdempotencyStress.test.ts`, `fiscalQueueDisconnectionStress.test.ts`)
+  - `apps/api/drizzle/` (`0131_payments_amount_kopecks.sql`, `0137_money_columns_kopecks.sql`, `0171_fiscal_receipt_queue.sql`, etc.)
+  - `scripts/` (`check-css-tokens.mjs`, `check-encoding.mjs`, `multi-theme-full-crm-audit.mjs`, etc.)
 - **Key findings**:
-  - Test suites: `@dental/shared` passes 100% (185/185), `@dental/api` passes 100% (925/925), `@dental/web` passes 99.85% (1,317/1,319, 2 test assertion drifts in `themeContrastGuard.test.ts`).
-  - Compiler: `npm run typecheck` passes 100% across all 6 stages.
-  - Iron Gate: `check:encoding` passes 2,388 files cleanly. `check-guarded-route-headers` flags 1 call in `UrgentScheduleRequestsWidget.tsx:48`. `check-css-tokens` flags missing `--ink-soft` and `--warn-line`.
-  - Zero purple on dark theme: 10 files identified with purple/violet/indigo styling to be refactored.
-- **Unexplored areas**: None within R5 & Test Gate survey scope.
+  - R4 (10 Themes & WCAG): 10 themes implemented; 108 CSS files with 374 tokens verified with 0 unresolvable variables; 3717 files with 0 mojibake; Tailwind `@custom-variant dark` eliminates white box defects in dark themes; multi-viewport (390px, 1024px, 1440px) configured.
+  - R5 (54-FZ & Financial): `POST /api/billing/payments` and `POST /api/fiscal/receipts` enforce `Idempotency-Key` / composite `<UUID>#<SHA256>` with 409 conflict handling and database constraint recovery (`23505`); IEEE-754 Banker's Rounding (`roundHalfEven`) and Hamilton Largest Remainder discount distribution eliminate floating point drift; `createPaymentInDb` and `deductMaterialsForVisit` execute in ACID transactions with deadlock-free sorted row locking (`FOR UPDATE`).
+- **Unexplored areas**: None within scope.
 
 ## Key Decisions Made
-- Fully documented all findings in `report.md` and `handoff.md`. Ready for handoff to orchestrator.
+- Completed thorough architectural survey and verified with real script runs (`check-css-tokens.mjs`, `check-encoding.mjs`, `@dental/shared` test suite).
+- Authored detailed `analysis.md` and 5-component `handoff.md`.
 
 ## Artifact Index
-- C:/Clinic_MVP/dental-crm/.agents/survey_explorer_3/report.md — Comprehensive Survey Report
-- C:/Clinic_MVP/dental-crm/.agents/survey_explorer_3/handoff.md — 5-Component Handoff
+- `DISPATCH.md` — Original dispatch request
+- `BRIEFING.md` — Situational awareness and state
+- `progress.md` — Liveness and step tracking
+- `analysis.md` — Detailed survey, architecture audit, code references
+- `handoff.md` — 5-component handoff report

@@ -233,24 +233,24 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 							<button
 								type="button"
 								onClick={() => setHasCardiovascularRisk((prev) => !prev)}
-								className={`min-h-[44px] px-3 py-2 rounded-xl text-left border text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
+								className={`min-h-[50px] px-3.5 py-2.5 rounded-xl text-left border text-xs font-semibold transition-all flex items-center justify-between cursor-pointer touch-manipulation ${
 									hasCardiovascularRisk
 										? "border-rose-500 bg-rose-500/10 text-rose-800 dark:text-rose-200 ring-1 ring-rose-500"
 										: "border-[var(--border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
 								}`}
 							>
-								<div className="flex items-center gap-2">
-									<Heart size={16} className={hasCardiovascularRisk ? "text-rose-500" : "text-[var(--muted)]"} />
-									<div>
-										<div className="font-bold">Гипертония / ССЗ</div>
-										<div className="text-xs text-[var(--muted)]">МКБ I10–I15 / ИБС</div>
+								<div className="flex items-center gap-2.5 min-w-0">
+									<Heart size={18} className={hasCardiovascularRisk ? "text-rose-500 shrink-0" : "text-[var(--muted)] shrink-0"} />
+									<div className="min-w-0">
+										<div className="font-bold text-xs sm:text-sm truncate">Гипертония / ССЗ</div>
+										<div className="text-xs text-[var(--muted)] truncate">МКБ I10–I15 / ИБС</div>
 									</div>
 								</div>
 								<input
 									type="checkbox"
 									checked={hasCardiovascularRisk}
 									onChange={() => {}}
-									className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-[var(--border)] pointer-events-none"
+									className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-[var(--border)] pointer-events-none shrink-0"
 									tabIndex={-1}
 									aria-hidden="true"
 								/>
@@ -260,24 +260,24 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 							<button
 								type="button"
 								onClick={() => setHasSulfiteOrAsthma((prev) => !prev)}
-								className={`min-h-[44px] px-3 py-2 rounded-xl text-left border text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
+								className={`min-h-[50px] px-3.5 py-2.5 rounded-xl text-left border text-xs font-semibold transition-all flex items-center justify-between cursor-pointer touch-manipulation ${
 									hasSulfiteOrAsthma
 										? "border-purple-500 bg-purple-500/10 text-purple-800 dark:text-purple-200 ring-1 ring-purple-500"
 										: "border-[var(--border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
 								}`}
 							>
-								<div className="flex items-center gap-2">
-									<Wind size={16} className={hasSulfiteOrAsthma ? "text-purple-500" : "text-[var(--muted)]"} />
-									<div>
-										<div className="font-bold">Астма / Сульфиты</div>
-										<div className="text-xs text-[var(--muted)]">Риск бронхоспазма</div>
+								<div className="flex items-center gap-2.5 min-w-0">
+									<Wind size={18} className={hasSulfiteOrAsthma ? "text-purple-500 shrink-0" : "text-[var(--muted)] shrink-0"} />
+									<div className="min-w-0">
+										<div className="font-bold text-xs sm:text-sm truncate">Астма / Сульфиты</div>
+										<div className="text-xs text-[var(--muted)] truncate">Риск бронхоспазма</div>
 									</div>
 								</div>
 								<input
 									type="checkbox"
 									checked={hasSulfiteOrAsthma}
 									onChange={() => {}}
-									className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-[var(--border)] pointer-events-none"
+									className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-[var(--border)] pointer-events-none shrink-0"
 									tabIndex={-1}
 									aria-hidden="true"
 								/>
@@ -287,24 +287,24 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 							<button
 								type="button"
 								onClick={() => setIsPregnantOrLactating((prev) => !prev)}
-								className={`min-h-[44px] px-3 py-2 rounded-xl text-left border text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
+								className={`min-h-[50px] px-3.5 py-2.5 rounded-xl text-left border text-xs font-semibold transition-all flex items-center justify-between cursor-pointer touch-manipulation ${
 									isPregnantOrLactating
 										? "border-blue-500 bg-blue-500/10 text-blue-800 dark:text-blue-200 ring-1 ring-blue-500"
 										: "border-[var(--border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
 								}`}
 							>
-								<div className="flex items-center gap-2">
-									<Baby size={16} className={isPregnantOrLactating ? "text-blue-500" : "text-[var(--muted)]"} />
-									<div>
-										<div className="font-bold">Беременность / Лактация</div>
-										<div className="text-xs text-[var(--muted)]">Плод / маточный кровоток</div>
+								<div className="flex items-center gap-2.5 min-w-0">
+									<Baby size={18} className={isPregnantOrLactating ? "text-blue-500 shrink-0" : "text-[var(--muted)] shrink-0"} />
+									<div className="min-w-0">
+										<div className="font-bold text-xs sm:text-sm truncate">Беременность / Лактация</div>
+										<div className="text-xs text-[var(--muted)] truncate">Плод / маточный кровоток</div>
 									</div>
 								</div>
 								<input
 									type="checkbox"
 									checked={isPregnantOrLactating}
 									onChange={() => {}}
-									className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-[var(--border)] pointer-events-none"
+									className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-[var(--border)] pointer-events-none shrink-0"
 									tabIndex={-1}
 									aria-hidden="true"
 								/>
@@ -431,9 +431,9 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 											key={m}
 											type="button"
 											onClick={() => setMethodKey(m)}
-											className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+											className={`min-h-[48px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer touch-manipulation ${
 												isSelected
-													? "border-teal-500 bg-teal-500/15 text-teal-800 dark:text-teal-200 font-bold"
+													? "border-teal-500 bg-teal-500/15 text-teal-800 dark:text-teal-200 font-extrabold shadow-xs"
 													: "border-[var(--border)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
 											}`}
 										>
@@ -455,7 +455,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 									value={toothNumber}
 									onChange={(e) => setToothNumber(e.target.value)}
 									placeholder="например 16, 36"
-									className="min-h-[44px] w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:border-teal-500"
+									className="min-h-[48px] w-full px-3.5 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm sm:text-base font-bold outline-none focus:border-teal-500"
 								/>
 							</div>
 
@@ -467,55 +467,55 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 									type="time"
 									value={anesthesiaTime}
 									onChange={(e) => setAnesthesiaTime(e.target.value)}
-									className="min-h-[44px] w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:border-teal-500"
+									className="min-h-[48px] w-full px-3.5 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm sm:text-base font-bold outline-none focus:border-teal-500"
 								/>
 							</div>
 						</div>
 					</div>
 
 					{/* Weight & Carpule Dosage Calculator */}
-					<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--border)] space-y-3">
+					<div className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--border)] space-y-3.5">
 						<div className="flex flex-wrap items-center justify-between gap-4">
 							{/* Age / Category & Weight Selector */}
 							<div className="flex flex-wrap items-center gap-2">
 								{/* Pediatric / Adult Mode Toggle */}
-								<div className="inline-flex rounded-xl border border-[var(--border)] p-0.5 bg-[var(--paper)]">
+								<div className="inline-flex rounded-xl border border-[var(--border)] p-1 bg-[var(--paper)]">
 									<button
 										type="button"
 										onClick={() => setIsPediatricMode(false)}
-										className={`px-2.5 py-1 text-xs rounded-lg font-bold flex items-center gap-1 transition-all ${
+										className={`min-h-[44px] px-3.5 py-2 text-xs sm:text-sm rounded-lg font-extrabold flex items-center gap-1.5 transition-all touch-manipulation cursor-pointer ${
 											!isPediatricMode
 												? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-xs"
 												: "text-[var(--muted)] hover:text-[var(--ink)]"
 										}`}
 									>
-										<User size={12} />
+										<User size={15} />
 										<span>Взрослый (7 мг/кг)</span>
 									</button>
 									<button
 										type="button"
 										onClick={() => setIsPediatricMode(true)}
-										className={`px-2.5 py-1 text-xs rounded-lg font-bold flex items-center gap-1 transition-all ${
+										className={`min-h-[44px] px-3.5 py-2 text-xs sm:text-sm rounded-lg font-extrabold flex items-center gap-1.5 transition-all touch-manipulation cursor-pointer ${
 											isPediatricMode
 												? "bg-amber-500 text-white shadow-xs"
 												: "text-[var(--muted)] hover:text-[var(--ink)]"
 										}`}
 									>
-										<Baby size={12} />
+										<Baby size={15} />
 										<span>Детский (5 мг/кг)</span>
 									</button>
 								</div>
 
 								<span className="text-xs font-bold text-[var(--ink)] ml-2">Вес:</span>
-								<div className="flex items-center gap-1">
+								<div className="flex items-center gap-1.5">
 									{(isPediatricMode ? [15, 20, 25, 30, 40] : [50, 60, 70, 80, 90]).map((w) => (
 										<button
 											key={w}
 											type="button"
 											onClick={() => setPatientWeightKg(w)}
-											className={`min-h-[38px] px-2.5 py-1 text-xs rounded-lg border font-mono font-medium transition-all ${
+											className={`min-h-[48px] min-w-[54px] px-3 py-2 text-xs sm:text-sm rounded-xl border font-mono font-bold transition-all touch-manipulation cursor-pointer ${
 												patientWeightKg === w
-													? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] border-[var(--teal)] font-bold"
+													? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] border-[var(--teal)] shadow-xs"
 													: "bg-[var(--paper)] text-[var(--ink)] border-[var(--border)] hover:bg-[var(--paper-strong)]"
 											}`}
 										>
@@ -523,7 +523,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 										</button>
 									))}
 								</div>
-								<div className="flex items-center gap-1 ml-1">
+								<div className="flex items-center gap-1.5 ml-1">
 									<input
 										type="number"
 										min={5}
@@ -534,14 +534,14 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 												Math.max(5, Math.min(250, Number(e.target.value) || 70)),
 											)
 										}
-										className="w-16 min-h-[38px] px-2 py-1 text-xs rounded-lg border border-[var(--border)] bg-[var(--paper)] text-[var(--ink)] font-mono font-bold text-center"
+										className="w-20 min-h-[48px] px-2.5 py-2 text-sm sm:text-base rounded-xl border border-[var(--border)] bg-[var(--paper)] text-[var(--ink)] font-mono font-black text-center"
 									/>
-									<span className="text-xs text-[var(--muted)]">кг</span>
+									<span className="text-xs font-bold text-[var(--muted)]">кг</span>
 								</div>
 							</div>
 
 							{/* Carpules Stepper */}
-							<div className="flex items-center gap-2">
+							<div className="flex items-center gap-2.5">
 								<span className="text-xs font-bold text-[var(--ink)]">Количество карпул:</span>
 								<div className="flex items-center gap-1 bg-[var(--paper)] border border-[var(--border)] rounded-xl p-1">
 									<button
@@ -551,12 +551,12 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 												Math.max(0.5, Math.round((c - 0.5) * 10) / 10),
 											)
 										}
-										className="min-h-[36px] min-w-[36px] flex items-center justify-center p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
+										className="min-h-[48px] min-w-[48px] flex items-center justify-center p-2 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer touch-manipulation active:scale-95"
 										title="Уменьшить на 0.5 карпулы"
 									>
-										<Minus size={14} />
+										<Minus size={18} />
 									</button>
-									<span className="w-12 text-center text-sm font-mono font-bold text-[var(--ink)]">
+									<span className="w-14 text-center text-base font-mono font-black text-[var(--ink)]">
 										{carpulesCount} к.
 									</span>
 									<button
@@ -566,13 +566,13 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 												Math.min(10, Math.round((c + 0.5) * 10) / 10),
 											)
 										}
-										className="min-h-[36px] min-w-[36px] flex items-center justify-center p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
+										className="min-h-[48px] min-w-[48px] flex items-center justify-center p-2 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer touch-manipulation active:scale-95"
 										title="Увеличить на 0.5 карпулы"
 									>
-										<Plus size={14} />
+										<Plus size={18} />
 									</button>
 								</div>
-								<span className="text-xs font-mono text-[var(--muted)]">
+								<span className="text-xs font-mono font-medium text-[var(--muted)]">
 									({calc.totalVolumeMl} мл / {calc.totalDoseMg} мг
 									{calc.totalEpinephrineMg > 0 ? ` / ${calc.totalEpinephrineMg} мг адр.` : ""}
 									)
@@ -581,7 +581,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 						</div>
 
 						{/* Visual Toxicity & Epinephrine Progress Gauge */}
-						<div className="space-y-1 pt-1">
+						<div className="space-y-1.5 pt-1">
 							<div className="flex items-center justify-between text-xs">
 								<span className="text-[var(--muted)] flex items-center gap-2">
 									<span>
@@ -595,20 +595,26 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 										</span>
 									)}
 								</span>
-								<span className="font-mono font-bold text-[var(--ink)]">
-									{calc.safetyPercentage}%
+								<span
+									className={`font-mono font-black ${
+										calc.safetyPercentage > 100
+											? "text-rose-600 font-extrabold"
+											: calc.safetyPercentage > 75
+												? "text-orange-500"
+												: "text-teal-700 dark:text-teal-300"
+									}`}
+								>
+									{calc.safetyPercentage}% от суточного лимита
 								</span>
 							</div>
 							<div className="w-full h-2.5 rounded-full bg-[var(--paper)] border border-[var(--border)] overflow-hidden">
 								<div
 									className={`h-full rounded-full transition-all duration-300 ${
-										calc.safetyLevel === "safe"
-											? "bg-emerald-500"
-											: calc.safetyLevel === "caution"
-												? "bg-amber-500"
-												: calc.safetyLevel === "warning"
-													? "bg-orange-500"
-													: "bg-rose-600"
+										calc.safetyPercentage > 100
+											? "bg-rose-500"
+											: calc.safetyPercentage > 75
+												? "bg-orange-500"
+												: "bg-teal-500"
 									}`}
 									style={{ width: `${Math.min(100, calc.safetyPercentage)}%` }}
 								/>
@@ -616,16 +622,16 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 
 							{calc.warningMessage && (
 								<div
-									className={`text-xs p-2 rounded-lg flex items-center gap-2 mt-2 ${
+									className={`text-xs p-2.5 rounded-xl flex items-center gap-2 mt-2 font-medium ${
 										calc.safetyLevel === "danger"
-											? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/30"
-											: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30"
+											? "bg-rose-500/10 text-rose-800 dark:text-rose-200 border border-rose-500/30"
+											: "bg-amber-500/10 text-amber-800 dark:text-amber-200 border border-amber-500/30"
 									}`}
 								>
 									{calc.safetyLevel === "danger" ? (
-										<AlertOctagon size={16} className="shrink-0" />
+										<AlertOctagon size={16} className="shrink-0 text-rose-600 dark:text-rose-400" />
 									) : (
-										<AlertTriangle size={16} className="shrink-0" />
+										<AlertTriangle size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
 									)}
 									<span>{calc.warningMessage}</span>
 								</div>
@@ -635,42 +641,42 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 
 					{/* Clinical Safety Checks */}
 					<div className="flex flex-wrap items-center gap-4 text-xs">
-						<label className="flex items-center gap-2 cursor-pointer select-none">
+						<label className="flex items-center gap-2.5 cursor-pointer select-none">
 							<input
 								type="checkbox"
 								checked={aspirationTestPassed}
 								onChange={(e) => setAspirationTestPassed(e.target.checked)}
 								className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 border-[var(--border)]"
 							/>
-							<span className="font-medium text-[var(--ink)]">
+							<span className="font-semibold text-[var(--ink)]">
 								Аспирационная проба отрицательная (сосуд не поврежден)
 							</span>
 						</label>
 
-						<label className="flex items-center gap-2 cursor-pointer select-none">
+						<label className="flex items-center gap-2.5 cursor-pointer select-none">
 							<input
 								type="checkbox"
 								checked={reactionNormal}
 								onChange={(e) => setReactionNormal(e.target.checked)}
 								className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 border-[var(--border)]"
 							/>
-							<span className="font-medium text-[var(--ink)]">
+							<span className="font-semibold text-[var(--ink)]">
 								Самочувствие нормальное, без токсических реакций
 							</span>
 						</label>
 					</div>
 
 					{/* Live SOAP Preview & 1-Click Action Button */}
-					<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--border)] space-y-2.5">
+					<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--border)] space-y-2.5">
 						<div className="flex items-center justify-between">
 							<span className="text-xs font-bold text-[var(--muted)]">
 								Формируемая запись для дневника 043/у (SOAP / План лечения):
 							</span>
-							<span className="text-xs text-teal-700 dark:text-teal-400 font-mono">
+							<span className="text-xs text-teal-700 dark:text-teal-400 font-mono font-bold">
 								СтАР-совместимо
 							</span>
 						</div>
-						<p className="text-xs text-[var(--ink)] italic bg-[var(--paper)] p-2.5 rounded-lg border border-[var(--border)]">
+						<p className="text-xs text-[var(--ink)] italic bg-[var(--paper)] p-3 rounded-lg border border-[var(--border)] font-medium">
 							{soapText}
 						</p>
 
@@ -679,10 +685,10 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 								type="button"
 								onClick={handleApply}
 								disabled={isLocked}
-								className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:opacity-100 shadow-md shadow-teal-600/20 cursor-pointer transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+								className="min-h-[50px] px-6 py-3 rounded-xl text-xs sm:text-sm font-black bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:opacity-100 shadow-md shadow-teal-600/20 cursor-pointer transition-all flex items-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation active:scale-[0.98]"
 								title="Внести протокол анестезии в план лечения дневника 043/у"
 							>
-								<Syringe size={15} />
+								<Syringe size={17} />
 								<span>Внести анестезию в дневник (1 клик)</span>
 							</button>
 						</div>

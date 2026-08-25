@@ -151,7 +151,17 @@ export async function registerFiscalReceiptRoutes(
 			});
 		}
 
-		const data = parsed.data;
+		const rawData = parsed.data;
+		const headerIdempotencyKey =
+			(request.headers["idempotency-key"] as string | undefined) ||
+			(request.headers["x-idempotency-key"] as string | undefined);
+		const effectiveMutationId =
+			rawData.clientMutationId?.trim() || headerIdempotencyKey?.trim() || undefined;
+
+		const data = {
+			...rawData,
+			clientMutationId: effectiveMutationId,
+		};
 
 		// ─────────────────────────────────────────────────────────────────────────
 		// IDEMPOTENCY CHECK (<UUID>#<SHA256(PAYLOAD)>): SINGLE EXECUTION GUARANTEE
@@ -274,7 +284,17 @@ export async function registerFiscalReceiptRoutes(
 			});
 		}
 
-		const data = parsed.data;
+		const rawData = parsed.data;
+		const headerIdempotencyKey =
+			(request.headers["idempotency-key"] as string | undefined) ||
+			(request.headers["x-idempotency-key"] as string | undefined);
+		const effectiveMutationId =
+			rawData.clientMutationId?.trim() || headerIdempotencyKey?.trim() || undefined;
+
+		const data = {
+			...rawData,
+			clientMutationId: effectiveMutationId,
+		};
 
 		// Idempotency check for refund
 		if (data.clientMutationId && data.clientMutationId.trim().length > 0) {
@@ -402,7 +422,16 @@ export async function registerFiscalReceiptRoutes(
 		const orgId = ctx.organizationId;
 
 		const querySchema = z.object({
-			status: z.enum(["pending_print", "hardware_offline", "printed", "failed", "all"]).optional(),
+			status: z
+				.enum([
+					"pending_print",
+					"hardware_offline",
+					"offline_pending",
+					"printed",
+					"failed",
+					"all",
+				])
+				.optional(),
 			limit: z.coerce.number().int().min(1).max(100).default(50),
 		});
 
@@ -415,7 +444,11 @@ export async function registerFiscalReceiptRoutes(
 				? undefined
 				: requestedStatus
 					? eq(fiscalReceiptQueue.status, requestedStatus)
-					: inArray(fiscalReceiptQueue.status, ["pending_print", "hardware_offline"]);
+					: inArray(fiscalReceiptQueue.status, [
+							"pending_print",
+							"hardware_offline",
+							"offline_pending",
+						]);
 
 		const conditions = [eq(fiscalReceiptQueue.organizationId, orgId)];
 		if (statusFilter) {

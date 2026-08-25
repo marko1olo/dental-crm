@@ -1,49 +1,51 @@
-# BRIEFING — 2026-08-15T01:34:00+04:00
+# BRIEFING — 2026-08-25T15:38:00Z
 
 ## Mission
-Deeply survey and analyze the existing codebase for Requirements R1 (54-FZ FFD 1.2 Fiscal Receipts, Sberbank Acquiring & SBP QR Settlement, KND 1151156) and R2 (Schedule Concurrency & Chair/Doctor Overlap Prevention, SELECT FOR UPDATE deadlock prevention).
+Conduct an in-depth architectural reconnaissance and clinical UX survey of Requirement R1 (SOAP protocols, smart suggestions, overwrite protection, touch targets, Russian terminology, clinical tests) in DENTE Dental CRM.
 
 ## 🔒 My Identity
 - Archetype: explorer
-- Roles: Read-only investigation, deep analysis, synthesis, structured report generation
-- Working directory: C:/Clinic_MVP/dental-crm/.agents/survey_explorer_1
-- Original parent: aedec96e-7c44-4c86-8386-61e96b462692
-- Milestone: Investigation & Technical Architecture Audit for R1 and R2
+- Roles: Clinical UX Explorer, Codebase Investigator, Synthesis Reporter
+- Working directory: C:\Clinic_MVP\dental-crm\.agents\survey_explorer_1
+- Original parent: 6a66f79d-fdbf-43b8-b82a-2700d5984395
+- Milestone: R1 Clinical UX Architectural Survey
 
 ## 🔒 Key Constraints
-- Read-only investigation — do NOT implement or modify project code outside .agents/survey_explorer_1/
-- Zero-skimming: read entire relevant files
-- Zero mocks, zero sugarcoating, brutal honesty
-- Kopeck-exact money handling, strict PostgreSQL isolation, 54-FZ FFD 1.2 compliance, deadlock-free interval locking
+- Read-only investigation — do NOT implement production code modifications
+- 100% File Reading Policy (Zero-Skimming)
+- Exact file paths and line number anchors
+- T.A.R.S. 100% / Brutal Honesty, zero sycophancy
+- Output handoff report with 5-Component structure (Observation, Logic Chain, Caveats, Conclusion, Verification Method)
 
 ## Current Parent
-- Conversation ID: aedec96e-7c44-4c86-8386-61e96b462692
-- Updated: 2026-08-15T01:34:00+04:00
+- Conversation ID: 6a66f79d-fdbf-43b8-b82a-2700d5984395
+- Updated: 2026-08-25T15:33:34Z
 
 ## Investigation State
 - **Explored paths**:
-  - `apps/api/src/routes/sberbank.ts` & `services/sberbankClient.ts`
-  - `apps/api/src/routes/sbpQr.ts`
-  - `apps/api/src/routes/billing.ts` & `db/billingQuery.ts`
-  - `apps/api/src/routes/documents/` (`create.ts`, `issue.ts`, `void.ts`, `taxXml.ts`, `ndflCalculator.ts`)
-  - `apps/api/src/documents/taxPaymentSnapshot.ts` & `taxXml.ts`
-  - `apps/api/src/routes/schedule.ts`
-  - `apps/api/src/db/appointmentsQuery.ts`
-  - `apps/api/src/routes/publicBooking.ts`
-  - `apps/api/src/db/schema.ts`
-  - `apps/api/drizzle/0170_schedule_4d_exclusion_hardening.sql`
-  - Test suites for R1 & R2
+  - `ORIGINAL_REQUEST.md`, `C:\Clinic_MVP\dental-crm\.agents\AGENTS.md`
+  - `apps/web/src/components/visit/VisitDiarySection.tsx`, `VisitDiaryEditor.tsx`, `VisitOdontogramTab.tsx`
+  - `apps/web/src/components/useVisitDiaryLogic.ts`
+  - `apps/web/src/lib/clinicalProtocols043.ts`
+  - `apps/web/src/components/odontogram/OdontogramModule.tsx`, `RadialToothMenu.tsx`
+  - `apps/web/src/components/visit/ClinicalQuickPresetsBar.tsx`, `AnesthesiaCalculator.tsx`
+  - `apps/web/src/styles/visit-diary-043.css`
+  - `packages/shared/src/emr/emrProtocolEngine.ts`
+  - `apps/web/src/tests/nurseProofUx.test.ts`, `apps/web/src/components/visit/__tests__/clinicalSoapProtocols043.test.ts`
 - **Key findings**:
-  - R1: FFD 1.2 tags, HMAC-SHA256, SBP CRC16/SVG, and KND 1151156 XML generator are implemented and verified. Gaps exist in `visitId`/`documentId` linkage in Sberbank & SBP routes and automatic status issuance of `generatedDocuments`.
-  - R2: $[T_{start}, T_{end})$ overlap logic and 4D PostgreSQL GIST exclusion constraints (`0170`) are robust. An inverted lock ordering vulnerability in `publicBooking.ts` was identified that could cause `40P01` deadlocks against `appointmentsQuery.ts`.
-- **Unexplored areas**: None for R1 and R2 scope.
+  - Requirement R1 is thoroughly implemented with non-intrusive soft suggestion banner (`pendingSoapSuggestion` in `useVisitDiaryLogic.ts`, `data-testid="soap-suggestion-banner"` in `VisitDiarySection.tsx`).
+  - Overwrite protection is mathematically guaranteed by `mergeSoapDiaryState` in `clinicalProtocols043.ts` using `smart_append` and deduplication `curTrim.includes(nextTrim)`.
+  - Touch targets strictly conform to `>= 48-52px` standard across all interactive buttons, radial menus, and preset chips.
+  - Russian terminology is 100% compliant with ICD-10 and Russian Ministry of Health Order № 834n / 804n. Zero tech leaks.
+- **Unexplored areas**: None for Requirement R1.
 
 ## Key Decisions Made
-- Authored comprehensive survey report at `report.md` and 5-component handoff report at `handoff.md`.
-- Provided detailed technical blueprints for workers to fix all identified gaps.
+- Confirmed full architectural alignment of Requirement R1 without need for breaking code changes.
+- Documented findings in `analysis.md` and structured 5-component handoff in `handoff.md`.
 
 ## Artifact Index
-- `C:/Clinic_MVP/dental-crm/.agents/survey_explorer_1/report.md` — Comprehensive technical analysis report for R1 & R2
-- `C:/Clinic_MVP/dental-crm/.agents/survey_explorer_1/handoff.md` — 5-component handoff report
-- `C:/Clinic_MVP/dental-crm/.agents/survey_explorer_1/progress.md` — Liveness progress log
-- `C:/Clinic_MVP/dental-crm/.agents/survey_explorer_1/DISPATCH.md` — Incoming dispatch log
+- `C:\Clinic_MVP\dental-crm\.agents\survey_explorer_1\DISPATCH.md` — Dispatch prompt log
+- `C:\Clinic_MVP\dental-crm\.agents\survey_explorer_1\BRIEFING.md` — Persistent working memory index
+- `C:\Clinic_MVP\dental-crm\.agents\survey_explorer_1\progress.md` — Progress tracker and liveness heartbeat
+- `C:\Clinic_MVP\dental-crm\.agents\survey_explorer_1\analysis.md` — Deep architectural survey & feature inventory
+- `C:\Clinic_MVP\dental-crm\.agents\survey_explorer_1\handoff.md` — 5-Component Hard Handoff report

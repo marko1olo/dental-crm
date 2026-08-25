@@ -47,7 +47,7 @@ const familyPaymentSchema = z.object({
 	// баланс, вычитал и вставлял платёж, не проверяя, не сделал ли он это уже.
 	// Блокировка .for("update") защищает только от одновременных запросов,
 	// но не от повторной отправки.
-	clientMutationId: z.string().min(1).max(128),
+	clientMutationId: z.string().min(1).max(128).optional(),
 });
 
 /**
@@ -78,7 +78,7 @@ const familyTopupSchema = z.object({
 	comment: z.string().trim().max(500).optional(),
 	// Тот же ключ идемпотентности, что и при оплате: повтор после обрыва связи
 	// не должен зачислить деньги дважды.
-	clientMutationId: z.string().min(1).max(128),
+	clientMutationId: z.string().min(1).max(128).optional(),
 });
 
 class FamilyFinanceError extends Error {
@@ -571,7 +571,23 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 					"Проверьте оплату с семейного счёта: нужны patientId, familyGroupId и сумма больше нуля с точностью до копейки.",
 			});
 		}
-		const payload = payParsed.data;
+		const headerIdempotencyKey =
+			(req.headers["idempotency-key"] as string | undefined) ||
+			(req.headers["x-idempotency-key"] as string | undefined);
+		const effectiveMutationId =
+			payParsed.data.clientMutationId?.trim() || headerIdempotencyKey?.trim();
+
+		if (!effectiveMutationId) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message:
+					"Ключ операции (clientMutationId или заголовок Idempotency-Key) обязателен для предотвращения двойных списаний.",
+			});
+		}
+		const payload = {
+			...payParsed.data,
+			clientMutationId: effectiveMutationId,
+		};
 
 		try {
 			const result = await db.transaction(async (tx) => {
@@ -613,16 +629,18 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 				// ранее созданный платёж. Проверка внутри транзакции и после
 				// блокировки строки семьи, чтобы два параллельных повтора не
 				// проскочили одновременно.
-				const [duplicate] = await tx
-					.select()
-					.from(payments)
-					.where(
-						and(
-							eq(payments.organizationId, organizationId),
-							eq(payments.clientMutationId, payload.clientMutationId),
-						),
-					)
-					.limit(1);
+				const [duplicate] = payload.clientMutationId
+					? await tx
+							.select()
+							.from(payments)
+							.where(
+								and(
+									eq(payments.organizationId, organizationId),
+									eq(payments.clientMutationId, payload.clientMutationId),
+								),
+							)
+							.limit(1)
+					: [undefined];
 				if (duplicate) {
 					if (
 						parseKopecks(duplicate.amountRub) !==
@@ -749,7 +767,23 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 					"Проверьте сумму пополнения: нужна сумма больше нуля с точностью до копейки.",
 			});
 		}
-		const payload = parsed.data;
+		const headerIdempotencyKey =
+			(req.headers["idempotency-key"] as string | undefined) ||
+			(req.headers["x-idempotency-key"] as string | undefined);
+		const effectiveMutationId =
+			parsed.data.clientMutationId?.trim() || headerIdempotencyKey?.trim();
+
+		if (!effectiveMutationId) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message:
+					"Ключ операции (clientMutationId или заголовок Idempotency-Key) обязателен для предотвращения повторного пополнения.",
+			});
+		}
+		const payload = {
+			...parsed.data,
+			clientMutationId: effectiveMutationId,
+		};
 
 		try {
 			const result = await db.transaction(async (tx) => {
@@ -788,16 +822,18 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 				}
 
 				// Повтор с тем же ключом не зачисляет деньги второй раз.
-				const [duplicate] = await tx
-					.select()
-					.from(payments)
-					.where(
-						and(
-							eq(payments.organizationId, organizationId),
-							eq(payments.clientMutationId, payload.clientMutationId),
-						),
-					)
-					.limit(1);
+				const [duplicate] = payload.clientMutationId
+					? await tx
+							.select()
+							.from(payments)
+							.where(
+								and(
+									eq(payments.organizationId, organizationId),
+									eq(payments.clientMutationId, payload.clientMutationId),
+								),
+							)
+							.limit(1)
+					: [undefined];
 				if (duplicate) {
 					if (
 						parseKopecks(duplicate.amountRub) !==

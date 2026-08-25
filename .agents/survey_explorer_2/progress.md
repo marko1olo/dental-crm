@@ -1,26 +1,20 @@
-# Progress — survey_explorer_2 (R3 & R4 Investigation)
+# Progress Tracker — survey_explorer_2 (Network & Hardware Explorer)
 
-Last visited: 2026-08-15T01:33:45+04:00
+Last visited: 2026-08-25T19:33:35+04:00
 
-## Status: COMPLETED
+## Status: IN PROGRESS
+Current Phase: Phase 1 — Project Authority & Spec Reading
 
-### Completed Steps:
-- [x] Initialized workspace and briefing
-- [x] Read ORIGINAL_REQUEST.md and AGENTS.md
-- [x] Surveyed R3: Form 043/u Clinical Diary & Odontogram Auto-Generation
-  - [x] Inspected `apps/web/src/lib/clinicalProtocols043.ts`
-  - [x] Inspected `apps/web/src/VisitView.tsx`, `VisitDiaryEditor.tsx`, `useVisitDiaryLogic.ts`, `VisitOdontogramTab.tsx`, `OdontogramModule.tsx`
-  - [x] Analyzed FDI tooth numbering to Russian nomenclature (`getToothAnatomicalNameRu`, `formatSurfacesRu`, `normalizeFdiToothList`)
-  - [x] Inspected SOAP diary generators for ICD-10 codes (K02.0/K02.1 Caries, K04.0 Pulpitis, K04.4/K04.5 Periodontitis, K05.1/K05.3 Gingivitis, K08.1 Missing, Crown Z51.8, Healthy Z01.2)
-  - [x] Inspected `smart_append` merge strategy & manual note preservation
-  - [x] Inspected UKEP / PEP electronic signature workflow & document sealing
-- [x] Surveyed R4: DICOM / CT MPR Viewer Precision & Nerve Clearance
-  - [x] Inspected `apps/web/src/components/dicom/` (`Cornerstone3DViewer.tsx`, `PanoramicRendererWindow.tsx`, `panoramicArch.ts`, `BoneQualityPanel.tsx`)
-  - [x] Inspected `apps/web/src/utils/dicom/` (`clinicalImplants.ts`, `boneQualityEngine.ts`, `fdiMapper.ts`)
-  - [x] Analyzed 3D distance between implant cylinder axis & mandibular nerve canal (`distanceSegmentToSegment3D`)
-  - [x] Inspected visual warning badges (`COLLISION`, `DANGER`, `CAUTION`, `SAFE`)
-  - [x] Inspected MPR crosshair synchronization & HU density sampling (`trilinearInterpolate`, `calculateImplantBoneDensity`)
-- [x] Verified unit tests pass (1,319/1,319 passed)
-- [x] Generated comprehensive analysis report in `report.md`
-- [x] Generated handoff report in `handoff.md`
-- [x] Communicated findings to parent agent
+## Planned Steps:
+1. [x] Initialize briefing, dispatch, progress files.
+2. [ ] Read `C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md` and `C:\Clinic_MVP\dental-crm\.agents\AGENTS.md`.
+3. [ ] Read `C:\Clinic_MVP\dental-crm\.agents\ARCHITECTURE.md` and related docs.
+4. [ ] Survey Tier 1 (Cloud): Fastify API + PostgreSQL 18 sync protocols and endpoints in `packages/api` and `packages/shared`.
+5. [ ] Survey Tier 2 (LAN Mesh): Local Wi-Fi P2P mutation broker between doctor tablets and admin PC.
+6. [ ] Survey Tier 3 (Offline Single-node): IndexedDB / local memory buffer with CRDT LWW conflict-free merge for appointments and cash transactions.
+7. [ ] Survey Web PWA: Service Worker offline caching of critical assets for cold boot.
+8. [ ] Survey Desktop Windows EXE: Kiosk fullscreen mode, global USB 2D DataMatrix barcode scanner interceptor, ESC/POS direct thermal printing.
+9. [ ] Survey Mobile Android APK: Responsive layout for 375-414px, inertial scrolling, haptic feedback on odontogram interactions.
+10. [ ] Inventory existing test suites for all the above areas.
+11. [ ] Write comprehensive `analysis.md` and `handoff.md`.
+12. [ ] Send message to caller with handoff summary.

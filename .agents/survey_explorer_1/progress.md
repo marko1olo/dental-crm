@@ -1,12 +1,16 @@
-# Progress Log — survey_explorer_1
+# Survey Explorer 1 Progress
 
-Last visited: 2026-08-15T01:34:00+04:00
+Last visited: 2026-08-25T15:38:00Z
+Status: COMPLETED
 
-- [x] Initialized DISPATCH.md, BRIEFING.md, progress.md
-- [x] Read authority files: ORIGINAL_REQUEST.md, AGENTS.md
-- [x] Surveyed R1 (Sberbank acquiring, SBP QR, Payments, Invoices, Documents, FFD 1.2 fiscalization, KND 1151156)
-- [x] Surveyed R2 (Appointments, Public Booking, Chair/Doctor interval overlap logic, locking & deadlock prevention)
-- [x] Synthesized findings, identified gaps & vulnerabilities, produced concrete architecture/code recommendations
-- [x] Verified zero type errors via `npm run typecheck` across all workspaces
-- [x] Wrote report.md and handoff.md
-- [x] Sent completion message to parent
+## Steps
+- [x] Workspace and briefing initialization
+- [x] Read and analyze ORIGINAL_REQUEST.md & .agents/AGENTS.md
+- [x] Map out all SOAP / clinical record editing components in `apps/web` & `packages/shared`
+- [x] Investigate Autopilot / smart suggestions mechanisms (SOAP auto-fill, diagnosis suggestions, СтАР templates)
+- [x] Investigate overwrite protection logic & non-intrusive soft chips/badges ("Применить" / "✕ Не надо")
+- [x] Audit touch targets sizing across clinical UI (>= 48-52px for gloves on tablets)
+- [x] Russian terminology audit (check technical leaks: undefined, null, NaN, [object Object], Error: ...)
+- [x] Audit existing unit/integration tests for clinical forms
+- [x] Write analysis.md & handoff.md
+- [x] Deliver report to orchestrator parent via send_message

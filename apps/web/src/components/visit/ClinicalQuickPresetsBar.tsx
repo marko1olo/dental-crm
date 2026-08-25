@@ -450,10 +450,10 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 				)}
 			</div>
 
-			{/* ── ТОП-5 ЭКСПРЕСС-СЦЕНАРИЕВ (КРУПНЫЕ КНОПКИ >= 48px) ── */}
+			{/* ── ТОП-5 ЭКСПРЕСС-СЦЕНАРИЕВ (КРУПНЫЕ КНОПКИ >= 52px) ── */}
 			<div className="space-y-1.5">
 				<div className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
-					<Sparkles size={13} className="text-amber-500" />
+					<Sparkles size={14} className="text-amber-500" />
 					<span>Главные экспресс-сценарии приема:</span>
 				</div>
 				<div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
@@ -480,24 +480,24 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 								type="button"
 								onClick={() => handlePresetClick(preset)}
 								disabled={isLocked}
-								className={`min-h-[50px] px-3.5 py-2.5 rounded-xl text-sm font-extrabold border transition-all flex flex-col items-start justify-center gap-1 cursor-pointer shadow-xs active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation text-left ${bgGradient}`}
+								className={`min-h-[52px] px-3.5 py-2.5 rounded-xl text-sm sm:text-base font-extrabold border transition-all flex flex-col items-start justify-center gap-1 cursor-pointer shadow-xs active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation text-left ${bgGradient}`}
 								title={`${preset.title} · МКБ-10: ${preset.icd10}`}
 								data-testid={`express-preset-${preset.id}`}
 							>
 								<div className="flex items-center justify-between w-full gap-1.5">
 									<div className="flex items-center gap-1.5 min-w-0">
-										{isHygiene && <Sparkles size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />}
-										{isCaries && <Stethoscope size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />}
-										{isPulpitis && <Flame size={16} className="text-rose-600 dark:text-rose-400 shrink-0" />}
-										{isPerio && <HeartPulse size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />}
-										{isSurgery && <Bone size={16} className="text-purple-600 dark:text-purple-400 shrink-0" />}
-										<span className="truncate">{preset.shortBadge}</span>
+										{isHygiene && <Sparkles size={17} className="text-emerald-600 dark:text-emerald-400 shrink-0" />}
+										{isCaries && <Stethoscope size={17} className="text-blue-600 dark:text-blue-400 shrink-0" />}
+										{isPulpitis && <Flame size={17} className="text-rose-600 dark:text-rose-400 shrink-0" />}
+										{isPerio && <HeartPulse size={17} className="text-amber-600 dark:text-amber-400 shrink-0" />}
+										{isSurgery && <Bone size={17} className="text-purple-600 dark:text-purple-400 shrink-0" />}
+										<span className="truncate font-black">{preset.shortBadge}</span>
 									</div>
 									<span className="text-xs font-mono px-1.5 py-0.5 rounded bg-[var(--paper)] text-[var(--ink)] border border-[var(--border)] font-bold shrink-0">
 										{preset.icd10}
 									</span>
 								</div>
-								<span className="text-xs font-normal text-[var(--muted)] truncate w-full">
+								<span className="text-xs font-medium text-[var(--muted)] truncate w-full">
 									{isHygiene ? "Осмотр, Air-Flow, фторирование" : isCaries ? "Кариес → Пломба + Гарантия" : isPulpitis ? "Анестезия + Экстирпация + Каналы" : isPerio ? "Распломбировка + Calcept" : "Удаление + Гемостаз + Швы"}
 								</span>
 							</button>
@@ -509,7 +509,7 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 			{/* ── КАТЕГОРИИ И ПОЛНЫЙ КАТАЛОГ ШАБЛОНОВ ── */}
 			<div className="space-y-2 pt-1 border-t border-[var(--border)]">
 				<div className="flex items-center justify-between gap-2 flex-wrap">
-					<div className="flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper)] border border-[var(--border)] overflow-x-auto flex-nowrap">
+					<div className="flex items-center gap-1 p-1 rounded-xl bg-[var(--paper)] border border-[var(--border)] overflow-x-auto flex-nowrap">
 						{[
 							{ id: "all", label: "Все шаблоны" },
 							{ id: "therapy", label: "Терапия" },
@@ -521,7 +521,7 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 								key={cat.id}
 								type="button"
 								onClick={() => setActiveCategory(cat.id)}
-								className={`min-h-[44px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+								className={`min-h-[48px] px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap touch-manipulation ${
 									activeCategory === cat.id
 										? "bg-teal-600 text-white shadow-xs"
 										: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"

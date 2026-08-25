@@ -1016,38 +1016,83 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		[isLocked, isRevising, scheduleDebouncedSave],
 	);
 
-	// ── Global 1-Click Fast-Track Protocol Dispatch Listener
+	// ── Non-intrusive SOAP suggestions banner state (Autopilot without screen takeover)
+	const [pendingSoapSuggestion, setPendingSoapSuggestion] = useState<{
+		id: string;
+		title: string;
+		source: string;
+		soap: Partial<DiaryState>;
+		finding?: OdontogramFindingInput | undefined;
+		mode?: MergeStrategy | undefined;
+	} | null>(null);
+
+	const applyPendingSoapSuggestion = useCallback(() => {
+		if (!pendingSoapSuggestion) return;
+		if (isLocked && !isRevising) {
+			showToast("Дневник подписан — изменения заблокированы.", "info");
+			return;
+		}
+		const { soap, mode = "smart_append", title } = pendingSoapSuggestion;
+		setDiary((prev) => mergeSoapDiaryState(prev, soap, { strategy: mode }));
+		if (soap.diagnosisIcd10) {
+			const icd = soap.diagnosisIcd10;
+			setIcdSearch((c) => (c.trim() ? c : icd));
+		}
+		setPendingSoapSuggestion(null);
+		scheduleDebouncedSave();
+		showToast(`Применен протокол СтАР: «${title}»`, "success", 4000);
+	}, [pendingSoapSuggestion, isLocked, isRevising, scheduleDebouncedSave]);
+
+	const dismissPendingSoapSuggestion = useCallback(() => {
+		setPendingSoapSuggestion(null);
+	}, []);
+
+	// ── Global 1-Click Fast-Track Protocol Dispatch Listener (Non-intrusive by default)
 	useEffect(() => {
 		const handleGlobalSoapEvent = (e: Event) => {
 			const customEvt = e as CustomEvent<{
 				soap?: Partial<DiaryState>;
 				finding?: OdontogramFindingInput;
 				mode?: MergeStrategy;
+				immediate?: boolean;
 			}>;
 			if (!customEvt.detail) return;
-			const { soap, finding, mode = "smart_append" } = customEvt.detail;
+			const { soap, finding, mode = "smart_append", immediate = false } = customEvt.detail;
 
 			if (isLocked && !isRevising) {
 				return;
 			}
 
-			if (soap) {
-				setDiary((prev) => mergeSoapDiaryState(prev, soap, { strategy: mode }));
-				if (soap.diagnosisIcd10) {
-					const icd = soap.diagnosisIcd10;
+			const targetSoap = soap || (finding ? generateSoapFromOdontogramFinding(finding) : undefined);
+			if (!targetSoap) return;
+
+			const title = finding
+				? `Зуб ${finding.toothNumber} (${targetSoap.diagnosisIcd10 || "СтАР"})`
+				: targetSoap.diagnosisIcd10 || "Клинический протокол СтАР";
+			const source = finding ? `Зубная формула (Зуб ${finding.toothNumber})` : "Клинический автопилот";
+
+			if (immediate) {
+				setDiary((prev) => mergeSoapDiaryState(prev, targetSoap, { strategy: mode }));
+				if (targetSoap.diagnosisIcd10) {
+					const icd = targetSoap.diagnosisIcd10;
 					setIcdSearch((c) => (c.trim() ? c : icd));
 				}
 				scheduleDebouncedSave();
-			} else if (finding) {
-				const generated = generateSoapFromOdontogramFinding(finding);
-				setDiary((prev) =>
-					mergeSoapDiaryState(prev, generated, { strategy: mode }),
+				showToast(
+					`Протокол для ${finding ? `зуба #${finding.toothNumber}` : "приема"} внесен в дневник 043/у`,
+					"success",
+					4000,
 				);
-				if (generated.diagnosisIcd10) {
-					const icd = generated.diagnosisIcd10;
-					setIcdSearch((c) => (c.trim() ? c : icd));
-				}
-				scheduleDebouncedSave();
+			} else {
+				// Non-intrusive suggestion chip: allows doctor or nurse to preview and click "Применить" or "Скрыть"
+				setPendingSoapSuggestion({
+					id: `sugg-${Date.now()}`,
+					title,
+					source,
+					soap: targetSoap as Partial<DiaryState>,
+					...(finding ? { finding } : {}),
+					...(mode ? { mode } : {}),
+				});
 			}
 		};
 
@@ -1976,6 +2021,9 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		icdRef,
 		applyOdontogramFinding,
 		applySoapProtocol,
+		pendingSoapSuggestion,
+		applyPendingSoapSuggestion,
+		dismissPendingSoapSuggestion,
 		scheduleDebouncedSave,
 		populateFromOdontogram,
 		applyAnesthesiaPreset,

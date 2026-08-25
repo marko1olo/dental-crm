@@ -118,15 +118,15 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	gap: 0.4rem;
-	min-height: 44px;
-	padding: 0.45rem 0.9rem;
+	gap: 0.45rem;
+	min-height: 48px;
+	padding: 0.55rem 1rem;
 	border-radius: 0.75rem;
 	border: 1px solid var(--line);
 	background: var(--paper-soft);
 	color: var(--ink);
-	font-size: 0.875rem;
-	font-weight: 500;
+	font-size: 0.9375rem;
+	font-weight: 600;
 	cursor: pointer;
 	transition:
 		background 0.15s,
@@ -153,7 +153,7 @@
 	background: var(--teal-fill, var(--teal, #0d9488));
 	border-color: var(--teal-dark, #0f766e);
 	color: var(--on-teal, #fff);
-	font-weight: 600;
+	font-weight: 700;
 }
 
 .vde-043__btn--primary:hover:not(:disabled) {
@@ -199,14 +199,15 @@
 .vde-043__btn--print {
 	background: var(--paper-soft);
 	color: var(--ink);
+	font-weight: 700;
 }
 
-/* Icon-only controls (ICD clear, etc.) — keep ≥44×44 touch target */
+/* Icon-only controls (ICD clear, etc.) — keep ≥48×48 touch target */
 .vde-043__btn--icon {
-	min-width: 44px;
-	min-height: 44px;
-	width: 44px;
-	height: 44px;
+	min-width: 48px;
+	min-height: 48px;
+	width: 48px;
+	height: 48px;
 	padding: 0;
 	flex-shrink: 0;
 }
@@ -216,24 +217,24 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	min-width: 44px;
-	min-height: 44px;
+	min-width: 48px;
+	min-height: 48px;
 }
 
 .vde-043__label-mic button,
 .vde-043__label-mic [role="button"] {
-	min-width: 44px;
-	min-height: 44px;
+	min-width: 48px;
+	min-height: 48px;
 }
 
 .vde-043__badge {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.4rem;
-	min-height: 40px;
-	padding: 0.45rem 1rem;
+	min-height: 48px;
+	padding: 0.55rem 1.1rem;
 	border-radius: 0.75rem;
-	font-size: 0.8125rem;
+	font-size: 0.875rem;
 	font-weight: 700;
 	border: 1px solid transparent;
 }

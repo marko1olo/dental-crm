@@ -1,22 +1,21 @@
-## 2026-08-15T01:31:01+04:00
+## 2026-08-25T15:33:34Z
+<USER_REQUEST>
+You are the Clinical UX Explorer for DENTE Dental CRM.
+Working directory: C:\Clinic_MVP\dental-crm\.agents\survey_explorer_1
 
-You are the Backend Finance & Concurrency Explorer for Clinic MVP / DENTE Dental CRM.
-Your working directory is `C:/Clinic_MVP/dental-crm/.agents/survey_explorer_1`.
-You MUST read:
-- `C:/Clinic_MVP/dental-crm/.agents/ORIGINAL_REQUEST.md`
-- `C:/Clinic_MVP/dental-crm/.agents/AGENTS.md` (Mandate 8b, zero mocks, zero skimming, kopeck-exact money)
+Your task is to conduct a complete, in-depth architectural reconnaissance and survey of Requirement R1:
+- Read C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md and C:\Clinic_MVP\dental-crm\.agents\AGENTS.md.
+- Investigate packages/web and packages/shared for:
+  1. SOAP protocols (Subjective, Objective, Assessment, Plan) and clinical record editing components.
+  2. Autopilot / smart suggestions mechanisms (auto-filling SOAP fields, diagnosis suggestions, template insertion like "Подставить шаблон СтАР?").
+  3. Overwrite protection logic: verify how existing manual inputs in complaints/anamnesis are handled and how non-intrusive soft chips/badges with "Применить" and "✕ Не надо" are implemented or need to be designed.
+  4. Touch targets sizing across clinical UI (ensuring >= 48-52px for medical gloves on tablets).
+  5. Russian terminology audit: check for technical leaks (undefined, null, NaN, [object Object], Error: ...).
+  6. Existing unit/integration tests for clinical forms.
 
-Your mission:
-Deeply survey and analyze the existing codebase for Requirements R1 and R2:
-1. **R1: 54-FZ FFD 1.2 Fiscal Receipts, Sberbank Acquiring & SBP QR Settlement**:
-   - Inspect `apps/api/src/routes/sberbank.ts`, `apps/api/src/routes/sbpQr.ts`, `apps/api/src/routes/payments/`, `apps/api/src/routes/documents/`, `apps/api/src/db/schema.ts`.
-   - Analyze webhook & callback idempotency, signature verification, transition to `deposited`/`confirmed`.
-   - Check transactional linking to `visitId` and `documentId`, updating `generatedDocuments` status to `issued`, decrementing patient visit balance.
-   - Check 54-FZ FFD 1.2 tag compliance: Tag 1054 (признак расчета), Tag 1212 (признак предмета расчета), Tag 1214 (признак способа расчета), Tag 1199 (ставка НДС), Tag 2108 (мера количества предмета расчета).
-   - Check Tax Deduction Certificate («Справка для налогового вычета по форме КНД 1151156», Art. 219 NK RF) implementation and document generation.
-2. **R2: Schedule Concurrency & Chair / Doctor Overlap Prevention**:
-   - Inspect `apps/api/src/routes/appointments/`, `apps/api/src/db/appointmentsQuery.ts`, `apps/api/src/routes/publicBooking.ts`.
-   - Analyze interval overlap logic $[T_{start}, T_{end})$ for physical chair (`chairId`) and doctor (`doctorUserId`).
-   - Check PostgreSQL row-level locking (`SELECT ... FOR UPDATE`) ordering by `chairId` / `doctorUserId` to prevent `40P01` deadlocks.
-
-Write a complete, structured analysis report to `C:/Clinic_MVP/dental-crm/.agents/survey_explorer_1/report.md` including exact file paths, current implementation status, gaps, and precise technical implementation recommendations. Then send a message to parent with summary and file path.
+Output requirements:
+- Maintain progress in C:\Clinic_MVP\dental-crm\.agents\survey_explorer_1\progress.md
+- Write detailed survey and feature inventory in C:\Clinic_MVP\dental-crm\.agents\survey_explorer_1\analysis.md
+- Write final handoff in C:\Clinic_MVP\dental-crm\.agents\survey_explorer_1\handoff.md following Handoff Protocol (Observation, Logic Chain, Caveats, Conclusion, Verification Method).
+- Notify caller via send_message when done.
+</USER_REQUEST>
