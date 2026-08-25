@@ -55,14 +55,17 @@ import {
 	calculateCabinetSummary,
 	calculateCheckupDaysRemaining,
 	calculateDentalHealthIndex,
+	calculatePatientTaxDeduction,
 	calculateWarrantyValidity,
 	downloadDetailedReceipt,
 	downloadPatientTaxCertificate1151156,
 	filterAppointments,
 	filterInvoices,
+	formatFdiToothPlainRussian,
 	formatKopecksToRub,
 	formatRubles,
 	formatRussianDateIso,
+	generatePatientDentalPassport,
 	generatePatientTaxCertificate1151156,
 	generateReceptionCheckinQrPayload,
 	generateSbpQrPayload,
@@ -74,9 +77,12 @@ import {
 	type DentalHealthIndexResult,
 	type PatientAppointment,
 	type PatientCabinetSummary,
+	type PatientDentalPassport,
+	type PatientDentalPassportEntry,
 	type PatientInvoiceItem,
 	type PatientPersonalCabinetData,
 	type PatientStatutoryConsent,
+	type PatientTaxDeductionCalculation,
 	type PatientTreatmentPlan,
 	type PatientWarrantyCard,
 	type SbpQrPayload,
@@ -92,6 +98,7 @@ import {
 	type CareRecommendationItem,
 	type FriendlyBillingBreakdown,
 } from "./patientCareInstructionsEngine";
+import { TaxDeductionCertificateModal } from "../../finance/TaxDeductionCertificateModal";
 import { SignaturePadCanvas, MobileSelfCheckinModal } from "../selfCheckin";
 import { PatientFriendlyOdontogram } from "../../patient-portal/PatientFriendlyOdontogram";
 import { TreatmentPlanStageCard } from "../../patient-portal/TreatmentPlanStageCard";
@@ -120,13 +127,17 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	const [data, setData] = useState<PatientPersonalCabinetData>(initialData || DEMO_PATIENT_CABINET);
 
 	// Активный таб
-	const [activeTab, setActiveTab] = useState<"overview" | "invoices" | "plans" | "documents" | "appointments" | "care">("overview");
+	const [activeTab, setActiveTab] = useState<"overview" | "invoices" | "plans" | "documents" | "appointments" | "care" | "passport">("overview");
 
 	// Режим отображения счетов: понятный (без латыни) или стандартный
 	const [billingViewMode, setBillingViewMode] = useState<"friendly" | "standard">("friendly");
 
 	// Состояние модального окна QR памятки для телефона
 	const [isCareMemoQrOpen, setIsCareMemoQrOpen] = useState(false);
+
+	// Налоговый вычет 13%: выбранный год и модальное окно заказа справки КНД 1151156
+	const [selectedTaxYear, setSelectedTaxYear] = useState<number>(2026);
+	const [isTaxModalOpen, setIsTaxModalOpen] = useState(false);
 
 	// Фильтры
 	const [invoiceFilter, setInvoiceFilter] = useState<"all" | "unpaid" | "paid">("all");
@@ -215,13 +226,17 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 		return calculateDentalHealthIndex();
 	}, []);
 
-	// Расчет суммы к возврату по налоговому вычету 13% (КНД 1151156)
-	const estimatedTaxRefundRub = useMemo(() => {
-		const paidSum = data.invoices
-			.filter((i) => i.status === "paid")
-			.reduce((sum, i) => sum + i.paidAmountRub, 0);
-		return Math.round(paidSum * 0.13);
-	}, [data.invoices]);
+	// Расчет суммы к возврату по налоговому вычету 13% (ст. 219 НК РФ, КНД 1151156)
+	const taxDeductionCalc: PatientTaxDeductionCalculation = useMemo(() => {
+		return calculatePatientTaxDeduction(data.invoices, selectedTaxYear);
+	}, [data.invoices, selectedTaxYear]);
+
+	const estimatedTaxRefundRub = taxDeductionCalc.totalRefundRub;
+
+	// Зубной паспорт пациента с карточками каждого пролеченного зуба на понятном русском языке
+	const dentalPassport: PatientDentalPassport = useMemo(() => {
+		return generatePatientDentalPassport(data);
+	}, [data]);
 
 	// Отфильтрованные списки
 	const filteredInvoices = useMemo(() => {
@@ -548,6 +563,19 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 					>
 						<Heart size={16} />
 						<span>Памятка после приёма</span>
+					</button>
+
+					<button
+						type="button"
+						className={`pc-tab-btn ${activeTab === "passport" ? "active" : ""}`}
+						onClick={() => setActiveTab("passport")}
+						data-testid="tab-dental-passport"
+					>
+						<ShieldCheck size={16} />
+						<span>Зубной паспорт</span>
+						{dentalPassport.entries.length > 0 && (
+							<span className="pc-tab-counter">{dentalPassport.entries.length}</span>
+						)}
 					</button>
 
 					<button
@@ -1146,6 +1174,183 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 									</div>
 								);
 							})()}
+
+							{/* Section: Tax Deduction 13% (NDFL Refund) Interactive Widget */}
+							<div className="pc-tax-deduction-widget" data-testid="overview-tax-deduction-widget">
+								<div className="pc-tax-header">
+									<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+										<div
+											style={{
+												width: "44px",
+												height: "44px",
+												borderRadius: "12px",
+												background: "var(--pc-primary)",
+												color: "#ffffff",
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												flexShrink: 0,
+												boxShadow: "0 4px 12px rgba(13, 148, 136, 0.35)",
+											}}
+										>
+											<DollarSign size={24} />
+										</div>
+										<div>
+											<h3 style={{ margin: 0, fontSize: "1.0625rem", fontWeight: 800, color: "var(--pc-text-main)" }}>
+												Возврат 13% НДФЛ от государства (ст. 219 НК РФ)
+											</h3>
+											<p style={{ margin: "2px 0 0 0", fontSize: "0.8125rem", color: "var(--pc-text-muted)" }}>
+												Официальная справка по форме КНД 1151156 с реквизитами клиники для налогового вычета
+											</p>
+										</div>
+									</div>
+
+									{/* Year Selector */}
+									<div style={{ display: "flex", gap: "4px", background: "var(--pc-surface)", padding: "4px", borderRadius: "var(--pc-radius-sm)", border: "1px solid var(--pc-border)" }}>
+										{[2026, 2025, 2024].map((year) => (
+											<button
+												key={year}
+												type="button"
+												className={`pc-btn-secondary ${selectedTaxYear === year ? "active" : ""}`}
+												style={{
+													padding: "4px 10px",
+													fontSize: "0.8125rem",
+													fontWeight: selectedTaxYear === year ? 800 : 500,
+													background: selectedTaxYear === year ? "var(--pc-primary)" : "transparent",
+													color: selectedTaxYear === year ? "#ffffff" : "var(--pc-text-main)",
+												}}
+												onClick={() => setSelectedTaxYear(year)}
+											>
+												{year} год
+											</button>
+										))}
+									</div>
+								</div>
+
+								{/* Header Banner Pill */}
+								<div className="pc-tax-banner-pill" data-testid="tax-refund-header-banner">
+									<span>💰</span>
+									<span>{taxDeductionCalc.headerBannerTextRu}</span>
+								</div>
+
+								{/* Stat Boxes Grid */}
+								<div className="pc-tax-calc-grid">
+									<div className="pc-tax-stat-box">
+										<span className="pc-tax-stat-label">Обычное лечение (Код 01)</span>
+										<span className="pc-tax-stat-value">{formatRubles(taxDeductionCalc.code01SpentRub)}</span>
+										<span className="pc-tax-stat-refund">
+											<CheckCircle2 size={14} />
+											<span>Возврат 13%: {formatRubles(taxDeductionCalc.code01RefundRub)}</span>
+										</span>
+										<span style={{ fontSize: "0.6875rem", color: "var(--pc-text-muted)" }}>
+											{taxDeductionCalc.isCode01Capped
+												? "Достигнут лимит 150 000 ₽ / год (макс. 19 500 ₽)"
+												: "Лимит до 150 000 ₽ / год (макс. 19 500 ₽)"}
+										</span>
+									</div>
+
+									<div className="pc-tax-stat-box">
+										<span className="pc-tax-stat-label">Имплантация & Хирургия (Код 02)</span>
+										<span className="pc-tax-stat-value">{formatRubles(taxDeductionCalc.code02SpentRub)}</span>
+										<span className="pc-tax-stat-refund">
+											<CheckCircle2 size={14} />
+											<span>Возврат 13%: {formatRubles(taxDeductionCalc.code02RefundRub)}</span>
+										</span>
+										<span style={{ fontSize: "0.6875rem", color: "var(--pc-success)", fontWeight: 700 }}>
+											Без ограничений по сумме (13% от всех затрат)
+										</span>
+									</div>
+
+									<div className="pc-tax-stat-box highlight">
+										<span className="pc-tax-stat-label" style={{ color: "var(--pc-primary)" }}>ИТОГО ВЫПЛАТА НА КАРТУ</span>
+										<span className="pc-tax-stat-value" style={{ color: "var(--pc-primary)", fontSize: "1.375rem" }}>
+											{formatRubles(taxDeductionCalc.totalRefundRub)}
+										</span>
+										<div style={{ display: "flex", gap: "6px", marginTop: "4px", flexWrap: "wrap" }}>
+											<button
+												type="button"
+												className="pc-btn-primary"
+												data-testid="order-tax-certificate-btn"
+												style={{ minHeight: "44px", padding: "8px 14px", fontSize: "0.8125rem", fontWeight: 800, flex: 1, touchAction: "manipulation" }}
+												onClick={() => {
+													downloadPatientTaxCertificate1151156(data, selectedTaxYear);
+													showToast(`Официальная справка КНД 1151156 за ${selectedTaxYear} год сформирована!`);
+												}}
+											>
+												<Download size={14} />
+												<span>📑 Заказать справку КНД 1151156 с печатью в 1 клик</span>
+											</button>
+										</div>
+									</div>
+								</div>
+
+								{/* Step-by-Step 3-step Guide */}
+								<div style={{ marginTop: "4px" }}>
+									<strong style={{ fontSize: "0.875rem", color: "var(--pc-text-main)", display: "block", marginBottom: "8px" }}>
+										Как получить возврат 13% от государства:
+									</strong>
+									<div className="pc-tax-steps-grid">
+										{taxDeductionCalc.guideSteps.map((step) => (
+											<div key={step.stepNumber} className="pc-tax-step-card" data-testid={`tax-step-${step.stepNumber}`}>
+												<div className="pc-tax-step-title">
+													<span>{step.icon}</span>
+													<span>{step.titleRu}</span>
+												</div>
+												<p className="pc-tax-step-desc">{step.descriptionRu}</p>
+											</div>
+										))}
+									</div>
+								</div>
+							</div>
+
+							{/* Section: Dental Passport Preview Card */}
+							<div className="pc-card" style={{ borderColor: "var(--pc-primary)", background: "var(--pc-surface)" }}>
+								<div className="pc-card-header">
+									<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+										<ShieldCheck size={20} style={{ color: "var(--pc-primary)" }} />
+										<div>
+											<h3 className="pc-card-title">
+												<span>Интерактивный «Зубной паспорт пациента»</span>
+											</h3>
+											<p style={{ margin: "2px 0 0 0", fontSize: "0.8125rem", color: "var(--pc-text-muted)" }}>
+												Карточки каждого пролеченного зуба понятным языком: материалы, врачи и гарантия
+											</p>
+										</div>
+									</div>
+
+									<button
+										type="button"
+										className="pc-btn-primary"
+										style={{ minHeight: "40px", padding: "8px 16px", fontSize: "0.8125rem", fontWeight: 700 }}
+										onClick={() => setActiveTab("passport")}
+										data-testid="btn-open-dental-passport"
+									>
+										<ShieldCheck size={16} />
+										<span>Открыть паспорт ({dentalPassport.entries.length} зубов)</span>
+									</button>
+								</div>
+
+								<div className="pc-dental-passport-grid">
+									{dentalPassport.entries.slice(0, 3).map((entry) => (
+										<div key={entry.toothFdi} className="pc-dental-passport-card" data-testid={`overview-passport-tooth-${entry.toothFdi}`}>
+											<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+												<div className="pc-tooth-badge">{entry.toothFdi}</div>
+												<div>
+													<strong style={{ fontSize: "0.875rem", color: "var(--pc-text-main)", display: "block" }}>
+														Зуб №{entry.toothFdi}
+													</strong>
+													<span style={{ fontSize: "0.75rem", color: "var(--pc-text-muted)", textTransform: "capitalize" }}>
+														{entry.anatomyRu}
+													</span>
+												</div>
+											</div>
+											<div className="pc-plain-summary-box" style={{ fontSize: "0.75rem" }}>
+												{entry.plainSummaryRu}
+											</div>
+										</div>
+									))}
+								</div>
+							</div>
 						</>
 					)}
 
@@ -1635,55 +1840,79 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 
 							{/* Section 4: Tax Deduction Certificate 13% (Order FNS KND 1151156) */}
 							<section style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-								<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+								<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
 									<h3 className="pc-card-title">
 										<DollarSign size={18} style={{ color: "var(--pc-primary)" }} />
 										<span>Налоговый вычет 13% за лечение (Справка ФНС КНД 1151156)</span>
 									</h3>
 									<span style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)" }}>
-										Возврат до 19 500 ₽ в год (ст. 219 НК РФ)
+										Код 01 (до 19 500 ₽) &bull; Код 02 (13% без лимита)
 									</span>
 								</div>
 
-								<div className="pc-card" style={{ background: "var(--pc-surface)" }}>
-									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+								<div className="pc-tax-deduction-widget" data-testid="documents-tax-deduction-widget">
+									<div className="pc-tax-header">
 										<div>
-											<strong style={{ fontSize: "0.9375rem" }}>
-												Справка об оплате медицинских услуг за 2026 год (КНД 1151156)
+											<strong style={{ fontSize: "0.9375rem", color: "var(--pc-text-main)", display: "block" }}>
+												Справка об оплате медицинских услуг за {selectedTaxYear} год (КНД 1151156)
 											</strong>
-											<p style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)", margin: "4px 0 0 0" }}>
-												Включает все фискальные чеки (Код 1: обычное лечение, Код 2: дорогостоящая имплантация). Расчетный возврат 13%: <strong style={{ color: "var(--pc-success)" }}>~{formatRubles(estimatedTaxRefundRub)}</strong>.
+											<p style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)", margin: "2px 0 0 0" }}>
+												Включает все фискальные чеки клиники для представления в налоговые органы
 											</p>
 										</div>
 
-										<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-											<button
-												type="button"
-												className="pc-btn-primary"
-												data-testid="download-tax-knd-btn"
-												style={{ minHeight: "44px", padding: "8px 16px", fontSize: "0.875rem", touchAction: "manipulation" }}
-												onClick={() => {
-													downloadPatientTaxCertificate1151156(data, 2026);
-													showToast("Официальная справка КНД 1151156 сформирована и скачана!");
-												}}
-											>
-												<Download size={16} />
-												<span>Скачать справку (КНД 1151156)</span>
-											</button>
-											<button
-												type="button"
-												className="pc-btn-secondary"
-												data-testid="print-tax-knd-btn"
-												style={{ minHeight: "44px", padding: "8px 16px", fontSize: "0.875rem", touchAction: "manipulation" }}
-												onClick={() => {
-													const html = generatePatientTaxCertificate1151156(data, 2026);
-													openPrintWindow(html);
-												}}
-											>
-												<Eye size={16} />
-												<span>Печать / Просмотр</span>
-											</button>
+										<div style={{ display: "flex", gap: "4px" }}>
+											{[2026, 2025, 2024].map((year) => (
+												<button
+													key={year}
+													type="button"
+													className={`pc-btn-secondary ${selectedTaxYear === year ? "active" : ""}`}
+													style={{
+														padding: "4px 8px",
+														fontSize: "0.75rem",
+														background: selectedTaxYear === year ? "var(--pc-primary)" : "transparent",
+														color: selectedTaxYear === year ? "#ffffff" : "var(--pc-text-main)",
+													}}
+													onClick={() => setSelectedTaxYear(year)}
+												>
+													{year}
+												</button>
+											))}
 										</div>
+									</div>
+
+									<div className="pc-tax-banner-pill">
+										<span>💰</span>
+										<span>{taxDeductionCalc.headerBannerTextRu}</span>
+									</div>
+
+									<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+										<button
+											type="button"
+											className="pc-btn-primary"
+											data-testid="order-tax-certificate-doc-btn"
+											style={{ minHeight: "44px", padding: "8px 16px", fontSize: "0.875rem", fontWeight: 800, touchAction: "manipulation" }}
+											onClick={() => {
+												downloadPatientTaxCertificate1151156(data, selectedTaxYear);
+												showToast(`Официальная справка КНД 1151156 за ${selectedTaxYear} год скачана!`);
+											}}
+										>
+											<Download size={16} />
+											<span>📑 Заказать справку КНД 1151156 с печатью в 1 клик</span>
+										</button>
+										<button
+											type="button"
+											className="pc-btn-secondary"
+											data-testid="print-tax-knd-btn"
+											style={{ minHeight: "44px", padding: "8px 16px", fontSize: "0.875rem", touchAction: "manipulation" }}
+											onClick={() => {
+												const html = generatePatientTaxCertificate1151156(data, selectedTaxYear);
+												openPrintWindow(html);
+											}}
+										>
+											<Eye size={16} />
+											<span>Печать / Просмотр</span>
+										</button>
 									</div>
 								</div>
 							</section>
@@ -1991,6 +2220,119 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 										</a>
 									</div>
 								</div>
+							</div>
+						</div>
+					)}
+
+					{/* TAB: ЗУБНОЙ ПАСПОРТ (DENTAL PASSPORT) */}
+					{activeTab === "passport" && (
+						<div style={{ display: "flex", flexDirection: "column", gap: "16px" }} data-testid="dental-passport-tab-view">
+							<div
+								style={{
+									display: "flex",
+									justifyContent: "space-between",
+									alignItems: "center",
+									flexWrap: "wrap",
+									gap: "12px",
+									background: "var(--pc-surface)",
+									padding: "16px 20px",
+									borderRadius: "var(--pc-radius-lg)",
+									border: "1.5px solid var(--pc-border)",
+								}}
+							>
+								<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+									<div
+										style={{
+											width: "44px",
+											height: "44px",
+											borderRadius: "12px",
+											background: "var(--pc-primary)",
+											color: "#ffffff",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											flexShrink: 0,
+											boxShadow: "0 4px 12px rgba(13, 148, 136, 0.35)",
+										}}
+									>
+										<ShieldCheck size={24} />
+									</div>
+									<div>
+										<h3 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 800, color: "var(--pc-text-main)" }}>
+											Зубной паспорт пациента — {dentalPassport.patientName}
+										</h3>
+										<p style={{ margin: "2px 0 0 0", fontSize: "0.8125rem", color: "var(--pc-text-muted)" }}>
+											Медкарта №{dentalPassport.cardNumber} &bull; Пролечено зубов: <strong>{dentalPassport.totalTreatedTeethCount}</strong> &bull; Активных гарантий: <strong>{dentalPassport.activeGuaranteesCount}</strong>
+										</p>
+									</div>
+								</div>
+
+								<span className="pc-status-badge paid" style={{ fontSize: "0.875rem", padding: "6px 12px" }}>
+									🛡️ Гарантия DENTE активна
+								</span>
+							</div>
+
+							{/* Teeth Cards Grid */}
+							<div className="pc-dental-passport-grid">
+								{dentalPassport.entries.map((entry) => (
+									<div
+										key={entry.toothFdi}
+										className="pc-dental-passport-card"
+										data-testid={`dental-passport-tooth-${entry.toothFdi}`}
+									>
+										<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px" }}>
+											<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+												<div className="pc-tooth-badge">{entry.toothFdi}</div>
+												<div>
+													<strong style={{ fontSize: "0.9375rem", color: "var(--pc-text-main)", display: "block" }}>
+														Зуб №{entry.toothFdi}
+													</strong>
+													<span style={{ fontSize: "0.75rem", color: "var(--pc-text-muted)", textTransform: "capitalize" }}>
+														{entry.anatomyRu}
+													</span>
+												</div>
+											</div>
+
+											{entry.isWarrantyActive && (
+												<span className="pc-status-badge paid" style={{ fontSize: "0.6875rem" }}>
+													Гарантия {entry.warrantyMonths} мес.
+												</span>
+											)}
+										</div>
+
+										{/* Plain Russian Callout */}
+										<div className="pc-plain-summary-box">
+											{entry.plainSummaryRu}
+										</div>
+
+										{/* Details */}
+										<div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.8125rem", color: "var(--pc-text-muted)" }}>
+											<div>
+												<strong style={{ color: "var(--pc-text-main)" }}>Процедура:</strong> {entry.procedureTitleRu}
+											</div>
+											<div>
+												<strong style={{ color: "var(--pc-text-main)" }}>Материал:</strong> {entry.materialName}
+											</div>
+											{entry.vitaShade && (
+												<div>
+													<strong style={{ color: "var(--pc-text-main)" }}>Оттенок VITA:</strong> {entry.vitaShade}
+												</div>
+											)}
+											{entry.lotNumber && (
+												<div>
+													<strong style={{ color: "var(--pc-text-main)" }}>Серийный номер:</strong>{" "}
+													<span style={{ fontFamily: "monospace" }}>{entry.lotNumber}</span>
+												</div>
+											)}
+											<div>
+												<strong style={{ color: "var(--pc-text-main)" }}>Врач:</strong> {entry.doctorName} &bull; {entry.treatmentDateRu}
+											</div>
+											<div>
+												<strong style={{ color: "var(--pc-text-main)" }}>Гарантия до:</strong> {entry.warrantyValidUntilRu}
+											</div>
+										</div>
+									</div>
+								))}
 							</div>
 						</div>
 					)}
@@ -2646,6 +2988,16 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 							</div>
 						</div>
 					</div>
+				)}
+
+				{/* Tax Deduction Certificate (KND 1151156) Ordering Modal */}
+				{isTaxModalOpen && (
+					<TaxDeductionCertificateModal
+						isOpen={isTaxModalOpen}
+						onClose={() => setIsTaxModalOpen(false)}
+						patientName={data.fullName}
+						patientBirthDate={data.birthDate}
+					/>
 				)}
 			</div>
 		</div>

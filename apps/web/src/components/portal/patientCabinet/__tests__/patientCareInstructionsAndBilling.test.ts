@@ -17,6 +17,11 @@ import {
 	generateFriendlyBillingWhatsAppMessage,
 	DEFAULT_CARIES_RECOMMENDATIONS,
 } from "../patientCareInstructionsEngine";
+import {
+	calculatePatientTaxDeduction,
+	generatePatientDentalPassport,
+	formatFdiToothPlainRussian,
+} from "../patientCabinetEngine";
 
 describe("Patient Care Instructions & Friendly Billing Engine", () => {
 	describe("generateCareMemo", () => {
@@ -223,6 +228,140 @@ describe("Patient Care Instructions & Friendly Billing Engine", () => {
 			assert.ok(msg.includes("Лечение кариеса и пломбирование"));
 			assert.ok(msg.includes("Обезболивание (анестезия)"));
 			assert.ok(msg.includes(breakdown.totalAmountRubFormatted));
+		});
+	});
+
+	describe("calculatePatientTaxDeduction", () => {
+		it("calculates 13% tax refund with 150,000 RUB limit for Code 01 and no limit for Code 02", () => {
+			const invoices = [
+				{
+					id: "inv-1",
+					invoiceNumber: "СЧ-001",
+					issueDateIso: "2026-03-10",
+					dueDateIso: "2026-03-10",
+					titleRu: "Терапевтическое лечение",
+					totalAmountRub: 200000,
+					paidAmountRub: 200000,
+					remainingAmountRub: 0,
+					status: "paid" as const,
+					items: [
+						{
+							code: "A16.07.002",
+							titleRu: "Лечение кариеса",
+							quantity: 1,
+							priceRub: 200000,
+							totalRub: 200000,
+							toothFdi: "16",
+						},
+					],
+				},
+				{
+					id: "inv-2",
+					invoiceNumber: "СЧ-002",
+					issueDateIso: "2026-05-15",
+					dueDateIso: "2026-05-15",
+					titleRu: "Дентальная имплантация Osstem",
+					totalAmountRub: 100000,
+					paidAmountRub: 100000,
+					remainingAmountRub: 0,
+					status: "paid" as const,
+					items: [
+						{
+							code: "A16.07.054.001",
+							titleRu: "Внутрикостная дентальная имплантация Osstem",
+							quantity: 1,
+							priceRub: 100000,
+							totalRub: 100000,
+							toothFdi: "26",
+						},
+					],
+				},
+			];
+
+			const result = calculatePatientTaxDeduction(invoices, 2026);
+
+			assert.equal(result.taxYear, 2026);
+			assert.equal(result.totalSpentRub, 300000);
+			assert.equal(result.code01SpentRub, 200000);
+			assert.equal(result.isCode01Capped, true, "Code 01 should be capped at 150,000 RUB");
+			assert.equal(result.code01EligibleRub, 150000);
+			assert.equal(result.code01RefundRub, 19500, "13% of 150,000 is 19,500 RUB");
+
+			assert.equal(result.code02SpentRub, 100000);
+			assert.equal(result.code02RefundRub, 13000, "13% of 100,000 is 13,000 RUB (no limit)");
+
+			assert.equal(result.totalRefundRub, 32500, "19,500 + 13,000 = 32,500 RUB");
+			assert.ok(result.headerBannerTextRu.includes("Потрачено на лечение:"));
+			assert.ok(result.headerBannerTextRu.includes("Возврат от налоговой:"));
+			assert.equal(result.guideSteps.length, 3);
+			assert.ok(result.guideSteps[0]?.titleRu.includes("1. Скачайте готовую справку у нас"));
+			assert.ok(result.guideSteps[1]?.titleRu.includes("2. Прикрепите в ЛК nalog.ru"));
+			assert.ok(result.guideSteps[2]?.titleRu.includes("3. Получите деньги на карту"));
+		});
+	});
+
+	describe("generatePatientDentalPassport & formatFdiToothPlainRussian", () => {
+		it("formats tooth FDI 16 into plain Russian anatomy and builds detailed passport cards", () => {
+			const tooth16Info = formatFdiToothPlainRussian("16");
+			assert.equal(tooth16Info.quadrantRu, "верхний правый");
+			assert.equal(tooth16Info.toothTypeRu, "жевательный");
+			assert.equal(tooth16Info.anatomyRu, "верхний правый жевательный");
+
+			const tooth21Info = formatFdiToothPlainRussian("21");
+			assert.equal(tooth21Info.quadrantRu, "верхний левый");
+			assert.equal(tooth21Info.toothTypeRu, "центральный резец");
+
+			const mockData = {
+				patientId: "p-1",
+				fullName: "Алексей Смирнов",
+				phone: "+7 999 123-45-67",
+				cardNumber: "043-1234",
+				curatingDoctor: "Д-р Кузнецов П. С.",
+				loyaltyBonusBalance: 5000,
+				loyaltyTierRu: "Золотой (10%)" as const,
+				cashbackEarnedRub: 10000,
+				invoices: [],
+				appointments: [],
+				treatmentPlans: [],
+				consents: [],
+				warranties: [
+					{
+						certificateId: "WAR-01",
+						issueDateIso: "2026-06-15",
+						expirationDateIso: "2028-06-15",
+						adjustedWarrantyMonths: 24,
+						doctorName: "Д-р Смирнов А. В.",
+						status: "active" as const,
+						verificationUrl: "https://dente.ru/war/01",
+						nextCheckupDueDateIso: "2026-12-15",
+						checkupIntervalMonths: 6,
+						checkupScheduleCount: 4,
+						items: [
+							{
+								toothFdi: "16",
+								workTitleRu: "Световая пломба Filtek Ultimate",
+								materialName: "Filtek Ultimate",
+								manufacturer: "3M ESPE",
+								lotNumber: "LOT-9988",
+							},
+						],
+					},
+				],
+			};
+
+			const passport = generatePatientDentalPassport(mockData);
+
+			assert.equal(passport.patientName, "Алексей Смирнов");
+			assert.equal(passport.totalTreatedTeethCount, 1);
+			assert.equal(passport.activeGuaranteesCount, 1);
+			assert.equal(passport.entries.length, 1);
+
+			const entry16 = passport.entries[0]!;
+			assert.equal(entry16.toothFdi, "16");
+			assert.equal(entry16.anatomyRu, "верхний правый жевательный");
+			assert.equal(entry16.warrantyMonths, 24);
+			assert.equal(entry16.isWarrantyActive, true);
+			assert.ok(entry16.plainSummaryRu.includes("Зуб 16: верхний правый жевательный — установлена пломба Filtek Ultimate, гарантия 24 мес."));
 		});
 	});
 });

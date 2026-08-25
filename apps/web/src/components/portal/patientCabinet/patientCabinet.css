@@ -1213,6 +1213,181 @@
 	}
 }
 
+/* ============================================================================
+   TAX DEDUCTION 13% (NDFL REFUND) WIDGET & DENTAL PASSPORT STYLES
+   ============================================================================ */
+
+.pc-tax-deduction-widget {
+	background: linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%);
+	border: 1.5px solid rgba(13, 148, 136, 0.35);
+	border-radius: var(--pc-radius-lg);
+	padding: 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	box-shadow: 0 4px 16px rgba(13, 148, 136, 0.08);
+	box-sizing: border-box;
+}
+
+.pc-tax-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+
+.pc-tax-banner-pill {
+	background: var(--pc-primary);
+	color: #ffffff;
+	padding: 8px 14px;
+	border-radius: 9999px;
+	font-size: 0.875rem;
+	font-weight: 800;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3);
+}
+
+.pc-tax-calc-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 12px;
+}
+
+.pc-tax-stat-box {
+	background: var(--pc-surface);
+	border: 1px solid var(--pc-border);
+	border-radius: var(--pc-radius-md);
+	padding: 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.pc-tax-stat-box.highlight {
+	border-color: var(--pc-primary);
+	background: rgba(13, 148, 136, 0.04);
+}
+
+.pc-tax-stat-label {
+	font-size: 0.75rem;
+	color: var(--pc-text-muted);
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.pc-tax-stat-value {
+	font-size: 1.25rem;
+	font-weight: 900;
+	color: var(--pc-text-main);
+	line-height: 1.2;
+}
+
+.pc-tax-stat-refund {
+	font-size: 0.8125rem;
+	font-weight: 800;
+	color: var(--pc-success);
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.pc-tax-steps-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 12px;
+}
+
+.pc-tax-step-card {
+	background: var(--pc-surface);
+	border: 1px solid var(--pc-border);
+	border-radius: var(--pc-radius-md);
+	padding: 12px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.pc-tax-step-title {
+	font-size: 0.875rem;
+	font-weight: 800;
+	color: var(--pc-text-main);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.pc-tax-step-desc {
+	font-size: 0.75rem;
+	color: var(--pc-text-muted);
+	line-height: 1.4;
+	margin: 0;
+}
+
+/* Dental Passport Grid & Cards */
+.pc-dental-passport-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: 14px;
+}
+
+.pc-dental-passport-card {
+	background: var(--pc-surface);
+	border: 1.5px solid var(--pc-border);
+	border-radius: var(--pc-radius-lg);
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	transition: all 0.2s ease;
+}
+
+.pc-dental-passport-card:hover {
+	border-color: var(--pc-primary);
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.pc-tooth-badge {
+	width: 42px;
+	height: 42px;
+	border-radius: 10px;
+	background: var(--pc-primary-light);
+	color: var(--pc-primary);
+	font-size: 1.125rem;
+	font-weight: 900;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.pc-plain-summary-box {
+	background: rgba(13, 148, 136, 0.06);
+	border-left: 3px solid var(--pc-primary);
+	padding: 8px 12px;
+	border-radius: 0 6px 6px 0;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	color: var(--pc-text-main);
+	line-height: 1.4;
+}
+
+@media (max-width: 480px) {
+	.pc-tax-calc-grid,
+	.pc-tax-steps-grid,
+	.pc-dental-passport-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.pc-tax-deduction-widget {
+		padding: 14px;
+	}
+}
+
+
 
 
 
