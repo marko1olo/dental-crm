@@ -12,6 +12,9 @@ import { generateQrCodeSvg } from "./patientCabinetEngine.js";
 // ============================================================================
 
 export type CareCategory =
+	| "cold"
+	| "meds"
+	| "food"
 	| "immediate"
 	| "medication"
 	| "nutrition"
