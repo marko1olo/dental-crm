@@ -363,11 +363,11 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 							onClick={() => handleStartOperation("sberpay_qr")}
 							className={"min-h-[48px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer " + (
 								operation === "sberpay_qr"
-									? "border-emerald-600 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 shadow-sm"
-									: "border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-emerald-400"
+									? "border-[var(--ok-fg,#059669)] bg-[var(--ok-bg,#f0fdf4)] text-[var(--ok-fg,#059669)] shadow-sm"
+									: "border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--ok-fg,#059669)]"
 							)}
 						>
-							<QrCode className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+							<QrCode className="w-4 h-4 text-[var(--teal,#0d9488)]" />
 							<span className="text-xs">SberPay QR</span>
 						</button>
 
@@ -376,11 +376,11 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 							onClick={() => handleStartOperation("biometry_facepay")}
 							className={"min-h-[48px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer " + (
 								operation === "biometry_facepay"
-									? "border-emerald-600 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 shadow-sm"
-									: "border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-emerald-400"
+									? "border-[var(--ok-fg,#059669)] bg-[var(--ok-bg,#f0fdf4)] text-[var(--ok-fg,#059669)] shadow-sm"
+									: "border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--ok-fg,#059669)]"
 							)}
 						>
-							<Smile className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+							<Smile className="w-4 h-4 text-[var(--brand-primary,#0d9488)]" />
 							<span className="text-xs">FacePay Улыбкой</span>
 						</button>
 
@@ -389,11 +389,11 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 							onClick={() => handleStartOperation("refund")}
 							className={"min-h-[48px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer " + (
 								operation === "refund"
-									? "border-amber-600 bg-amber-500/15 text-amber-700 dark:text-amber-300 shadow-sm"
-									: "border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-amber-400"
+									? "border-[var(--warn-fg,#d97706)] bg-[var(--warn-bg,#fef3c7)] text-[var(--warn-fg,#d97706)] shadow-sm"
+									: "border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--warn-fg,#d97706)]"
 							)}
 						>
-							<RotateCcw className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+							<RotateCcw className="w-4 h-4 text-[var(--warn-fg,#d97706)]" />
 							<span className="text-xs">Возврат</span>
 						</button>
 
@@ -402,11 +402,11 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 							onClick={() => handleStartOperation("void")}
 							className={"min-h-[48px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer " + (
 								operation === "void"
-									? "border-rose-600 bg-rose-500/15 text-rose-700 dark:text-rose-300 shadow-sm"
-									: "border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-rose-400"
+									? "border-[var(--bad-fg,#dc2626)] bg-[var(--bad-bg,#fee2e2)] text-[var(--bad-fg,#dc2626)] shadow-sm"
+									: "border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--bad-fg,#dc2626)]"
 							)}
 						>
-							<Ban className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+							<Ban className="w-4 h-4 text-[var(--bad-fg,#dc2626)]" />
 							<span className="text-xs">Отмена</span>
 						</button>
 
@@ -415,11 +415,11 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 							onClick={() => handleStartOperation("settlement")}
 							className={"min-h-[48px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer " + (
 								operation === "settlement"
-									? "border-indigo-600 bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 shadow-sm"
-									: "border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-indigo-400"
+									? "border-[var(--brand-primary,#0d9488)] bg-[var(--brand-primary-soft,#f0fdfa)] text-[var(--brand-primary,#0d9488)] shadow-sm"
+									: "border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--brand-primary,#0d9488)]"
 							)}
 						>
-							<FileText className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+							<FileText className="w-4 h-4 text-[var(--brand-primary,#0d9488)]" />
 							<span className="text-xs">Сверка итогов (Z)</span>
 						</button>
 					</div>
@@ -522,7 +522,7 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 										<button
 											type="button"
 											onClick={handleSimulateClientAction}
-											className="min-h-[44px] px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+											className="min-h-[44px] px-5 rounded-xl bg-[var(--ok-fg,#059669)] hover:opacity-90 text-[var(--on-teal,#ffffff)] text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
 										>
 											<Check className="w-4 h-4" />
 											<span>
@@ -557,7 +557,7 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 										<button
 											type="button"
 											onClick={() => handleStartOperation("sberpay_qr")}
-											className="min-h-[44px] px-3.5 py-2 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-700 dark:text-teal-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer hover:bg-teal-500/20 transition-colors"
+											className="min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--teal-soft,#f0fdfa)] border border-[var(--teal,#0d9488)]/30 text-[var(--teal,#0d9488)] font-bold text-xs flex items-center gap-1.5 cursor-pointer hover:opacity-90 transition-colors"
 										>
 											<QrCode size={16} />
 											<span>SberPay / СБП QR</span>
@@ -637,7 +637,7 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 										title="Распечатать чек на терминале"
 										className="w-8 h-8 rounded-lg border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] disabled:opacity-40"
 									>
-										<Printer className={"w-4 h-4 " + (isPrinting ? "animate-spin text-emerald-600" : "")} />
+										<Printer className={"w-4 h-4 " + (isPrinting ? "animate-spin text-[var(--ok-fg,#059669)]" : "")} />
 									</button>
 								</div>
 							</div>
@@ -668,7 +668,7 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 								type="button"
 								onClick={handlePrintSlip}
 								disabled={isPrinting}
-								className="h-11 px-4 rounded-xl border border-emerald-500/40 bg-[var(--paper,#ffffff)] text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 flex items-center gap-2 cursor-pointer shadow-sm"
+								className="h-11 px-4 rounded-xl border border-[var(--ok-fg,#059669)]/40 bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ok-fg,#059669)] hover:bg-[var(--ok-bg,#f0fdf4)] flex items-center gap-2 cursor-pointer shadow-sm"
 							>
 								<Printer className={"w-4 h-4 " + (isPrinting ? "animate-spin" : "")} />
 								<span>{isPrinting ? "Печать чека..." : "Печать банковского чека"}</span>

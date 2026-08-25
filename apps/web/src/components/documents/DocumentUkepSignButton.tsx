@@ -317,7 +317,7 @@ export function DocumentUkepSignButton({
 						href="https://cryptopro.ru/products/cades/plugin"
 						target="_blank"
 						rel="noopener noreferrer"
-						className="inline-block text-xs font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
+						className="inline-block text-xs font-semibold text-[var(--ok-fg,#059669)] hover:opacity-80"
 					>
 						Инструкция по установке плагина →
 					</a>
@@ -391,7 +391,7 @@ export function DocumentUkepSignButton({
 					value={selectedThumbprint}
 					onChange={(e) => setSelectedThumbprint(e.target.value)}
 					disabled={isSigning}
-					className="w-full text-xs bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded px-2 py-1.5 mb-3 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+					className="w-full text-xs bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded px-2 py-1.5 mb-3 focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
 				>
 					{certificates.map((cert) => {
 						const expiry = new Date(cert.validTo).toLocaleDateString("ru-RU");

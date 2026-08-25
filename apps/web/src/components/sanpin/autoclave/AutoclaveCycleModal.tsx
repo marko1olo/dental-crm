@@ -243,7 +243,7 @@ export function AutoclaveCycleModal({
 							{/* Statutory Verification Protocol Summary Card */}
 							<div style={{ background: 'var(--paper-strong, #f8fafc)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--line, #e2e8f0)' }}>
 								<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, color: 'var(--ink, #0f172a)', marginBottom: '0.75rem' }}>
-									<ShieldCheck size={18} className="text-emerald-600" />
+									<ShieldCheck size={18} className="text-[var(--ok-fg,#059669)]" />
 									Контрольные нормативы СанПиН 3.3686-21
 								</div>
 								<div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem' }}>

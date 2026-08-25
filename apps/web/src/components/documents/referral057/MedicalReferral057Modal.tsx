@@ -316,7 +316,7 @@ export const MedicalReferral057Modal: React.FC<MedicalReferral057ModalProps> = (
 								<h2 className="text-base sm:text-lg font-bold text-[var(--ink,#0f172a)] dark:text-white leading-tight">
 									Направление на госпитализацию и обследование (Форма № 057/у-04)
 								</h2>
-								<span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-teal-500/15 text-teal-600 dark:text-teal-400 border border-teal-500/30">
+								<span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30">
 									Приказ МЗ РФ № 255
 								</span>
 							</div>
@@ -359,7 +359,7 @@ export const MedicalReferral057Modal: React.FC<MedicalReferral057ModalProps> = (
 										>
 											<span className="text-xs font-bold text-[var(--ink,#0f172a)] dark:text-white flex items-center justify-between">
 												{prof.shortBadgeRu}
-												{isActive && <Check className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />}
+												{isActive && <Check className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />}
 											</span>
 											<span className="text-[11px] text-[var(--muted,#64748b)] line-clamp-1">
 												{prof.targetSpecialtyRu}
@@ -484,7 +484,7 @@ export const MedicalReferral057Modal: React.FC<MedicalReferral057ModalProps> = (
 										<h4 className="text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
 											Принимающая медицинская организация (п. 1 формы 057/у-04)
 										</h4>
-										<span className="text-[11px] text-teal-600 font-semibold">
+										<span className="text-[11px] text-[var(--teal,#0d9488)] font-semibold">
 											Реестр партнеров
 										</span>
 									</div>
@@ -837,7 +837,7 @@ export const MedicalReferral057Modal: React.FC<MedicalReferral057ModalProps> = (
 								<div className="ref057-form-section">
 									<div className="flex items-center justify-between">
 										<h4 className="text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5">
-											<Sparkles className="w-3.5 h-3.5 text-teal-600" />
+											<Sparkles className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
 											Шаблоны диагнозов и обоснований ({currentProfileDef.labelRu})
 										</h4>
 									</div>
@@ -850,7 +850,7 @@ export const MedicalReferral057Modal: React.FC<MedicalReferral057ModalProps> = (
 												className="ref057-chip"
 												title={tpl.detailedDiagnosisRu}
 											>
-												<strong className="text-teal-600 dark:text-teal-400 font-mono">
+												<strong className="text-[var(--teal,#0d9488)] font-mono">
 													[{tpl.code}]
 												</strong>{" "}
 												{tpl.titleRu}
@@ -985,7 +985,7 @@ export const MedicalReferral057Modal: React.FC<MedicalReferral057ModalProps> = (
 											onClick={handleAddDiagnosticTest}
 											className="ref057-btn-secondary py-1.5 px-3 text-xs"
 										>
-											<Plus className="w-4 h-4 text-teal-600" />
+											<Plus className="w-4 h-4 text-[var(--teal,#0d9488)]" />
 											Добавить строку
 										</button>
 									</div>
@@ -1030,7 +1030,7 @@ export const MedicalReferral057Modal: React.FC<MedicalReferral057ModalProps> = (
 																type="text"
 																value={t.testResult}
 																onChange={(e) => handleUpdateDiagnosticTest(idx, "testResult", e.target.value)}
-																className={`ref057-input py-1 px-2 text-xs ${t.isAbnormal ? "text-red-600 font-bold border-red-500" : ""}`}
+																className={`ref057-input py-1 px-2 text-xs ${t.isAbnormal ? "text-[var(--bad-fg,#ef4444)] font-bold border-[var(--bad-fg,#ef4444)]" : ""}`}
 															/>
 														</td>
 														<td className="py-2 px-2 text-center">
@@ -1039,7 +1039,7 @@ export const MedicalReferral057Modal: React.FC<MedicalReferral057ModalProps> = (
 																	type="checkbox"
 																	checked={!!t.isAbnormal}
 																	onChange={(e) => handleUpdateDiagnosticTest(idx, "isAbnormal", e.target.checked)}
-																	className="w-4 h-4 rounded text-red-600 cursor-pointer"
+																	className="w-4 h-4 rounded text-[var(--bad-fg,#ef4444)] cursor-pointer"
 																	title="Отклонение от нормы (патологический результат)"
 																/>
 															</label>
@@ -1048,7 +1048,7 @@ export const MedicalReferral057Modal: React.FC<MedicalReferral057ModalProps> = (
 															<button
 																type="button"
 																onClick={() => handleRemoveDiagnosticTest(idx)}
-																className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center text-red-500 hover:text-red-700 hover:bg-red-500/10 rounded-lg cursor-pointer transition-colors"
+																className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center text-[var(--bad-fg,#ef4444)] hover:opacity-80 hover:bg-[var(--bad-bg,#fee2e2)] rounded-lg cursor-pointer transition-colors"
 																title="Удалить строку"
 																aria-label="Удалить исследование"
 															>
@@ -1062,12 +1062,12 @@ export const MedicalReferral057Modal: React.FC<MedicalReferral057ModalProps> = (
 									</div>
 
 									{/* Pre-Op Checklist Reference (Anti-Card-in-Card Flat Segment) */}
-									<div className="mt-3 p-3.5 rounded-xl bg-teal-500/10 border border-teal-500/30">
-										<h5 className="text-[11px] font-bold text-teal-800 dark:text-teal-200 uppercase mb-1 flex items-center gap-1.5">
-											<ShieldCheck className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+									<div className="mt-3 p-3.5 rounded-xl bg-[var(--teal-soft,#f0fdfa)] border border-[var(--teal,#0d9488)]/30">
+										<h5 className="text-[11px] font-bold text-[var(--teal-dark,var(--teal))] uppercase mb-1 flex items-center gap-1.5">
+											<ShieldCheck className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
 											Нормативный чек-лист для профиля «{currentProfileDef.labelRu}»
 										</h5>
-										<ul className="text-[11px] text-teal-900 dark:text-teal-100 list-disc pl-4 space-y-0.5">
+										<ul className="text-[11px] text-[var(--ink,#0f172a)] list-disc pl-4 space-y-0.5">
 											{currentProfileDef.preOpTestsChecklist.map((item, i) => (
 												<li key={i}>{item}</li>
 											))}
@@ -1190,13 +1190,13 @@ export const MedicalReferral057Modal: React.FC<MedicalReferral057ModalProps> = (
 						>
 							{validationResult.isValid ? (
 								<div className="flex items-center gap-2">
-									<CheckCircle2 className="w-4 h-4 text-emerald-600" />
+									<CheckCircle2 className="w-4 h-4 text-[var(--ok-fg,#059669)]" />
 									<span>Все нормативные поля бланка № 057/у-04 корректно заполнены. Готово к печати.</span>
 								</div>
 							) : (
 								<div className="flex flex-col gap-1">
 									<div className="flex items-center gap-1.5">
-										<AlertCircle className="w-4 h-4 text-red-600" />
+										<AlertCircle className="w-4 h-4 text-[var(--bad-fg,#ef4444)]" />
 										<span>Требуется устранить ошибки валидации ({validationResult.errors.length}):</span>
 									</div>
 									<ul className="text-[11px] list-disc pl-5">
@@ -1213,7 +1213,7 @@ export const MedicalReferral057Modal: React.FC<MedicalReferral057ModalProps> = (
 					<div className="ref057-preview-pane">
 						<div className="ref057-preview-toolbar">
 							<div className="flex items-center gap-2">
-								<FileText className="w-4 h-4 text-teal-400" />
+								<FileText className="w-4 h-4 text-[var(--teal,#0d9488)]" />
 								<span className="text-xs font-bold uppercase tracking-wider">
 									Предпросмотр бланка A4 (Приказ № 255)
 								</span>
@@ -1419,7 +1419,7 @@ export const MedicalReferral057Modal: React.FC<MedicalReferral057ModalProps> = (
 							className="ref057-btn-secondary"
 							title="Скачать официальный HTML бланк A4"
 						>
-							<Download className="w-4 h-4 text-teal-600" />
+							<Download className="w-4 h-4 text-[var(--teal,#0d9488)]" />
 							Скачать HTML (A4)
 						</button>
 
@@ -1429,7 +1429,7 @@ export const MedicalReferral057Modal: React.FC<MedicalReferral057ModalProps> = (
 							className="ref057-btn-secondary"
 							title="Экспорт структурированного JSON направления"
 						>
-							<FileSpreadsheet className="w-4 h-4 text-indigo-600" />
+							<FileSpreadsheet className="w-4 h-4 text-[var(--teal,#0d9488)]" />
 							Экспорт JSON
 						</button>
 
@@ -1447,7 +1447,7 @@ export const MedicalReferral057Modal: React.FC<MedicalReferral057ModalProps> = (
 						<button
 							type="button"
 							onClick={handleSave}
-							className="h-11 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+							className="h-11 px-5 rounded-xl bg-[var(--ok-fg,#059669)] hover:opacity-90 text-[var(--on-teal,#ffffff)] font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
 						>
 							<Check className="w-4 h-4" />
 							Сохранить направление в карте

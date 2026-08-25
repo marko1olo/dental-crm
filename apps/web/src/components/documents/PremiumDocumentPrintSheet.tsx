@@ -356,7 +356,7 @@ export const PremiumDocumentPrintSheet: React.FC<PremiumDocumentPrintSheetProps>
 								<span>Документ зарегистрирован в МИС ДЕНТЕ</span>
 							)}
 							{hasCryptoSignature && (
-								<span className="text-emerald-700 font-bold block">✓ Подписано УКЭП</span>
+								<span className="text-[var(--ok-fg,#059669)] font-bold block">✓ Подписано УКЭП</span>
 							)}
 						</div>
 					</div>

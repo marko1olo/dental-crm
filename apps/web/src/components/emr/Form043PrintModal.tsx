@@ -903,7 +903,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 													onOpenCmoAudit?.();
 												}}
 											>
-												<ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+												<ShieldCheck className="w-3.5 h-3.5 text-[var(--ok-fg,#059669)]" />
 												<span>Экспертиза ЭМК (Начмед / ВК)</span>
 											</button>
 										</div>
@@ -976,7 +976,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 												onOpenCmoAudit?.();
 											}}
 										>
-											<ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+											<ShieldCheck className="w-3.5 h-3.5 text-[var(--ok-fg,#059669)]" />
 											<span>Экспертиза ЭМК (Начмед / ВК)</span>
 										</button>
 									</div>
@@ -987,7 +987,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 										</div>
 										<div>
 											<div className="emr043-field-label">Исход лечения:</div>
-											<div className="emr043-field-value font-bold text-emerald-700">{formData.epicrisis.treatmentOutcomeLabel}</div>
+											<div className="emr043-field-value font-bold text-[var(--ok-fg,#059669)]">{formData.epicrisis.treatmentOutcomeLabel}</div>
 										</div>
 										<div>
 											<div className="emr043-field-label">Диспансерная группа:</div>
@@ -1013,7 +1013,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
 										<div>
 											<div style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 700, fontSize: "13px" }}>
-												<ShieldCheck className="w-4 h-4 text-emerald-600" />
+												<ShieldCheck className="w-4 h-4 text-[var(--ok-fg,#059669)]" />
 												<span>Заключение врачебной комиссии и службы КЭР (Приказ № 203н)</span>
 											</div>
 											<div style={{ fontSize: "12px", color: "var(--muted, #64748b)", marginTop: "4px" }}>

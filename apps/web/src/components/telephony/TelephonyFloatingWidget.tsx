@@ -440,7 +440,7 @@ export function TelephonyFloatingWidget({
 				>
 					<div
 						className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
-							activeCall ? "bg-white/20 text-white" : "bg-teal-500/10 text-teal-400"
+							activeCall ? "bg-white/20 text-white" : "bg-[var(--teal-surface)] text-[var(--teal)]"
 						}`}
 					>
 						{activeCall ? (
@@ -476,7 +476,7 @@ export function TelephonyFloatingWidget({
 					{/* Header Topbar */}
 					<div className="flex items-center justify-between px-4 py-3 border-b border-[var(--line,#334155)] bg-[var(--paper-soft,rgba(30,41,59,0.6))]">
 						<div className="flex items-center gap-2 min-w-0">
-							<div className="w-8 h-8 rounded-lg bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 flex-shrink-0">
+							<div className="w-8 h-8 rounded-lg bg-[var(--teal-surface)] border border-[var(--teal-soft)] flex items-center justify-center text-[var(--teal)] flex-shrink-0">
 								{activeCall ? <PhoneCall size={16} /> : <Headphones size={16} />}
 							</div>
 							<div className="min-w-0">
@@ -489,7 +489,7 @@ export function TelephonyFloatingWidget({
 											: "SIP Софтфон клиники"}
 									</h4>
 									{activeCall && (
-										<span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-teal-950 text-teal-300 border border-teal-800/60">
+										<span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]">
 											{formatDurationTimer(elapsedSeconds)}
 										</span>
 									)}
@@ -549,7 +549,7 @@ export function TelephonyFloatingWidget({
 							onClick={() => setActiveTab("call")}
 							className={`flex-1 min-h-[44px] py-2.5 text-center transition-colors border-b-2 inline-flex items-center justify-center gap-1.5 ${
 								activeTab === "call"
-									? "border-teal-500 text-teal-400 bg-teal-500/10 font-bold"
+									? "border-[var(--teal)] text-[var(--teal)] bg-[var(--teal-surface)] font-bold"
 									: "border-transparent text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)]"
 							}`}
 						>
@@ -562,7 +562,7 @@ export function TelephonyFloatingWidget({
 							onClick={() => setActiveTab("dialer")}
 							className={`flex-1 min-h-[44px] py-2.5 text-center transition-colors border-b-2 inline-flex items-center justify-center gap-1.5 ${
 								activeTab === "dialer"
-									? "border-teal-500 text-teal-400 bg-teal-500/10 font-bold"
+									? "border-[var(--teal)] text-[var(--teal)] bg-[var(--teal-surface)] font-bold"
 									: "border-transparent text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)]"
 							}`}
 						>
@@ -575,7 +575,7 @@ export function TelephonyFloatingWidget({
 							onClick={() => setActiveTab("history")}
 							className={`flex-1 min-h-[44px] py-2.5 text-center transition-colors border-b-2 inline-flex items-center justify-center gap-1.5 ${
 								activeTab === "history"
-									? "border-teal-500 text-teal-400 bg-teal-500/10 font-bold"
+									? "border-[var(--teal)] text-[var(--teal)] bg-[var(--teal-surface)] font-bold"
 									: "border-transparent text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)]"
 							}`}
 						>
@@ -627,10 +627,10 @@ export function TelephonyFloatingWidget({
 
 										{/* Upcoming Appointment & WhatsApp Reminder */}
 										{upcomingAppointment && (
-											<div className="p-2.5 rounded-xl bg-teal-950/30 border border-teal-500/30 flex flex-col gap-2">
+											<div className="p-2.5 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] flex flex-col gap-2">
 												<div className="flex items-center justify-between text-xs">
-													<div className="flex items-center gap-1.5 font-bold text-teal-300">
-														<CalendarCheck size={14} className="text-teal-400" />
+													<div className="flex items-center gap-1.5 font-bold text-[var(--teal)]">
+														<CalendarCheck size={14} className="text-[var(--teal)]" />
 														<span>
 															{upcomingAppointment.isToday
 																? "Запись сегодня"
@@ -657,7 +657,7 @@ export function TelephonyFloatingWidget({
 
 										{/* Audio Recording Player Strip with Waveform & Speed Toggles */}
 										{activeCall.recordingUrl && (
-											<div className="p-3 rounded-xl bg-slate-950/70 border border-teal-500/20 flex flex-col gap-2">
+											<div className="p-3 rounded-xl bg-slate-950/70 border border-[var(--teal-soft)] flex flex-col gap-2">
 												<audio
 													ref={audioRef}
 													src={activeCall.recordingUrl}
@@ -670,7 +670,7 @@ export function TelephonyFloatingWidget({
 														<button
 															type="button"
 															onClick={togglePlayAudio}
-															className="min-h-[44px] min-w-[44px] w-11 h-11 rounded-xl bg-teal-600 hover:bg-teal-500 active:scale-95 text-white flex items-center justify-center transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+															className="min-h-[44px] min-w-[44px] w-11 h-11 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white flex items-center justify-center transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 															title={isPlayingAudio ? "Пауза" : "Воспроизвести запись"}
 															aria-label={isPlayingAudio ? "Пауза" : "Воспроизвести запись"}
 														>
@@ -683,7 +683,6 @@ export function TelephonyFloatingWidget({
 															onClick={() => handleSkipAudio(-10)}
 															className="min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 inline-flex items-center justify-center transition-colors"
 															title="Назад на 10 сек"
-															aria-label="Назад на 10 секунд"
 														>
 															<RotateCcw size={16} />
 														</button>
@@ -694,14 +693,9 @@ export function TelephonyFloatingWidget({
 															onClick={() => handleSkipAudio(10)}
 															className="min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 inline-flex items-center justify-center transition-colors"
 															title="Вперед на 10 сек"
-															aria-label="Вперед на 10 секунд"
 														>
 															<RotateCw size={16} />
 														</button>
-
-														<span className="font-mono text-xs text-slate-300 font-semibold pl-1">
-															{formatDurationTimer(audioCurrentTime)} / {formatDurationTimer(audioDuration)}
-														</span>
 													</div>
 
 													{/* Speed toggles >= 44x44px */}
@@ -713,7 +707,7 @@ export function TelephonyFloatingWidget({
 																onClick={() => setPlaybackSpeed(s)}
 																className={`min-h-[44px] min-w-[44px] px-2 py-1 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center ${
 																	playbackSpeed === s
-																		? "bg-teal-600 text-white shadow-xs"
+																		? "bg-[var(--teal)] text-white shadow-xs"
 																		: "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
 																}`}
 																title={`Скорость ${s}x`}
@@ -745,7 +739,7 @@ export function TelephonyFloatingWidget({
 																key={idx}
 																style={{ height: `${barHeight}px` }}
 																className={`flex-1 rounded-full transition-colors ${
-																	isPast ? "bg-teal-400 shadow-xs" : "bg-slate-700"
+																	isPast ? "bg-[var(--teal)] shadow-xs" : "bg-slate-700"
 																}`}
 															/>
 														);
@@ -761,7 +755,7 @@ export function TelephonyFloatingWidget({
 													<button
 														type="button"
 														onClick={() => setShowTranscript((prev) => !prev)}
-														className="text-xs font-bold text-teal-400 hover:text-teal-300 inline-flex items-center gap-1.5 min-h-[36px] py-1 transition-colors"
+														className="text-xs font-bold text-[var(--teal)] hover:opacity-90 inline-flex items-center gap-1.5 min-h-[36px] py-1 transition-colors"
 													>
 														<Sparkles size={13} className="text-amber-400" />
 														<span>{showTranscript ? "Скрыть расшифровку" : "Расшифровка речи (AI STT)"}</span>
@@ -789,7 +783,7 @@ export function TelephonyFloatingWidget({
 																onClick={() => handleSeekToUtterance(u.startTimeSeconds)}
 																className={`p-2 rounded-lg cursor-pointer transition-all border ${
 																	audioCurrentTime >= u.startTimeSeconds && audioCurrentTime <= u.endTimeSeconds
-																		? "bg-teal-950/60 border-teal-500/40 shadow-xs"
+																		? "bg-[var(--teal-surface)] border-[var(--teal-soft)] shadow-xs"
 																		: "bg-slate-900/60 border-slate-800 hover:bg-slate-900"
 																}`}
 																title="Кликните для перехода к реплике"
@@ -799,8 +793,8 @@ export function TelephonyFloatingWidget({
 																		<span
 																			className={`px-1.5 py-0.2 rounded text-[9px] font-semibold ${
 																				u.speaker === "operator"
-																					? "bg-teal-950 text-teal-300 border border-teal-800/60"
-																					: "bg-indigo-950 text-indigo-300 border border-indigo-800/60"
+																					? "bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]"
+																					: "bg-[var(--info-bg,rgba(2,132,199,0.1))] text-[var(--info-fg,#0284c7)] border border-[var(--info-fg,rgba(2,132,199,0.3))]"
 																			}`}
 																		>
 																			{u.speaker === "operator" ? "Оператор" : "Пациент"}
@@ -830,9 +824,9 @@ export function TelephonyFloatingWidget({
 													<button
 														type="button"
 														onClick={() => setShowTransferPanel((prev) => !prev)}
-														className="text-[11px] font-bold text-teal-400 hover:text-teal-300 inline-flex items-center gap-1.5 min-h-[36px]"
+														className="text-[11px] font-bold text-[var(--teal)] hover:opacity-90 inline-flex items-center gap-1.5 min-h-[36px]"
 													>
-														<PhoneForwarded size={13} className="text-teal-500" />
+														<PhoneForwarded size={13} className="text-[var(--teal)]" />
 														<span>{showTransferPanel ? "Скрыть перевод" : "Перевод звонка (SIP Transfer)"}</span>
 													</button>
 													{showTransferPanel && (
@@ -842,7 +836,7 @@ export function TelephonyFloatingWidget({
 																onClick={() => setTransferType("blind")}
 																className={`px-2 py-1 rounded font-bold transition-all ${
 																	transferType === "blind"
-																		? "bg-teal-600 text-white shadow-xs"
+																		? "bg-[var(--teal)] text-white shadow-xs"
 																		: "text-slate-400 hover:text-slate-200"
 																}`}
 															>
@@ -853,7 +847,7 @@ export function TelephonyFloatingWidget({
 																onClick={() => setTransferType("attended")}
 																className={`px-2 py-1 rounded font-bold transition-all ${
 																	transferType === "attended"
-																		? "bg-teal-600 text-white shadow-xs"
+																		? "bg-[var(--teal)] text-white shadow-xs"
 																		: "text-slate-400 hover:text-slate-200"
 																}`}
 															>
@@ -882,9 +876,9 @@ export function TelephonyFloatingWidget({
 																			"info",
 																		);
 																	}}
-																	className="min-h-[44px] px-1 py-1 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-teal-500/20 border border-[var(--line,#334155)] text-[var(--ink,#f8fafc)] text-[10px] font-bold text-center flex flex-col items-center justify-center transition-all active:scale-95 shadow-xs"
+																	className="min-h-[44px] px-1 py-1 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--teal-soft)] border border-[var(--line,#334155)] text-[var(--ink,#f8fafc)] text-[10px] font-bold text-center flex flex-col items-center justify-center transition-all active:scale-95 shadow-xs"
 																>
-																	<span className="font-mono text-teal-400">{item.ext}</span>
+																	<span className="font-mono text-[var(--teal)]">{item.ext}</span>
 																	<span className="text-[9px] font-normal text-[var(--muted,#94a3b8)] truncate w-full">
 																		{item.label.split(" ")[1]}
 																	</span>
@@ -915,7 +909,7 @@ export function TelephonyFloatingWidget({
 												<button
 													type="button"
 													onClick={() => handleQuickBook("consultation")}
-													className="min-h-[44px] p-2 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 text-teal-300 text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight active:scale-95"
+													className="min-h-[44px] p-2 rounded-xl bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] border border-[var(--teal-soft)] text-[var(--teal)] text-[11px] font-bold transition-all text-center flex flex-col items-center justify-center leading-tight active:scale-95"
 												>
 													<span>📅 Консультация</span>
 													<span className="text-[9px] opacity-80">15:00</span>
@@ -978,7 +972,7 @@ export function TelephonyFloatingWidget({
 														acceptCall();
 													}
 												}}
-												className="flex-1 min-h-[48px] px-4 py-3 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 active:scale-95 text-white text-sm font-bold transition-all inline-flex items-center justify-center gap-2 shadow-lg shadow-teal-950/40 focus:outline-none focus:ring-2 focus:ring-teal-400"
+												className="flex-1 min-h-[48px] px-4 py-3 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white text-sm font-bold transition-all inline-flex items-center justify-center gap-2 shadow-lg shadow-teal-950/40 focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 											>
 												<UserCheck size={18} />
 												<span>{resolvedPatient ? "Открыть карту" : "Создать"}</span>
@@ -987,7 +981,7 @@ export function TelephonyFloatingWidget({
 									</>
 								) : (
 									<div className="py-8 px-4 text-center space-y-3">
-										<div className="w-14 h-14 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center mx-auto">
+										<div className="w-14 h-14 rounded-2xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)] flex items-center justify-center mx-auto">
 											<Phone size={24} />
 										</div>
 										<div>
@@ -1001,7 +995,7 @@ export function TelephonyFloatingWidget({
 										<button
 											type="button"
 											onClick={() => setActiveTab("dialer")}
-											className="min-h-[44px] px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-all inline-flex items-center gap-2"
+											className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--teal)] hover:opacity-90 text-white text-xs font-bold transition-all inline-flex items-center gap-2"
 										>
 											<PhoneOutgoing size={14} />
 											<span>Набрать номер</span>
@@ -1055,7 +1049,7 @@ export function TelephonyFloatingWidget({
 											key={k.d}
 											type="button"
 											onClick={() => handleDialDigit(k.d)}
-											className="min-h-[48px] py-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-teal-500/20 active:scale-95 border border-[var(--line,#334155)] hover:border-teal-500/40 text-[var(--ink,#f8fafc)] transition-all flex flex-col items-center justify-center select-none"
+											className="min-h-[48px] py-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--teal-soft)] active:scale-95 border border-[var(--line,#334155)] hover:border-[var(--teal)] text-[var(--ink,#f8fafc)] transition-all flex flex-col items-center justify-center select-none"
 										>
 											<span className="text-base font-black leading-none">{k.d}</span>
 											{k.sub && (
@@ -1072,7 +1066,7 @@ export function TelephonyFloatingWidget({
 									type="button"
 									onClick={handleStartOutgoingCall}
 									disabled={!dialNumber.trim()}
-									className="w-full min-h-[48px] py-3 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 disabled:opacity-50 disabled:pointer-events-none active:scale-98 text-white text-sm font-bold transition-all inline-flex items-center justify-center gap-2 shadow-lg shadow-teal-950/40"
+									className="w-full min-h-[48px] py-3 rounded-xl bg-[var(--teal)] hover:opacity-90 disabled:opacity-50 disabled:pointer-events-none active:scale-98 text-white text-sm font-bold transition-all inline-flex items-center justify-center gap-2 shadow-lg shadow-teal-950/40"
 									aria-label="Совершить исходящий вызов"
 								>
 									<PhoneCall size={18} />
@@ -1131,7 +1125,7 @@ export function TelephonyFloatingWidget({
 														setDialNumber(item.phone);
 														setActiveTab("dialer");
 													}}
-													className="min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-teal-400 hover:bg-teal-500/10 transition-colors inline-flex items-center justify-center"
+													className="min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-[var(--teal)] hover:bg-[var(--teal-soft)] transition-colors inline-flex items-center justify-center"
 													title="Перезвонить"
 													aria-label={`Перезвонить ${item.phone}`}
 												>

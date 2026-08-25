@@ -739,7 +739,7 @@ export function FnsNdflXmlModal({
 											parseKopecks(calculationResult.estimatedTaxRefundRub),
 										)}
 									</div>
-									<div className="text-[10px] text-emerald-700 dark:text-emerald-400">
+									<div className="text-[10px] text-[var(--ok-fg,#059669)]">
 										По ст. 219 НК РФ
 									</div>
 								</div>
@@ -813,7 +813,7 @@ export function FnsNdflXmlModal({
 														<button
 															type="button"
 															onClick={() => handleRemoveReceipt(r.id)}
-															className="text-rose-500 hover:text-rose-700 p-1"
+															className="text-[var(--bad-fg,#ef4444)] hover:opacity-80 p-1"
 															title="Удалить"
 														>
 															<Trash2 size={14} />
@@ -1053,11 +1053,11 @@ export function FnsNdflXmlModal({
 				<div className="fns-ndfl-footer">
 					<div className="flex items-center gap-2">
 						{calculationResult.isValidForSubmission ? (
-							<span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1.5 rounded-xl border border-emerald-500/30">
+							<span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--ok-fg,#059669)] bg-[var(--ok-bg,#f0fdf4)] px-3 py-1.5 rounded-xl border border-[var(--ok-fg,#059669)]/30">
 								<CheckCircle2 size={16} /> Готово к выгрузке
 							</span>
 						) : (
-							<span className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 px-3 py-1.5 rounded-xl border border-rose-500/30">
+							<span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--bad-fg,#ef4444)] bg-[var(--bad-bg,#fef2f2)] px-3 py-1.5 rounded-xl border border-[var(--bad-fg,#ef4444)]/30">
 								<AlertTriangle size={16} /> Есть ошибки заполнения
 							</span>
 						)}

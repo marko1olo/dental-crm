@@ -1362,7 +1362,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 											{formatMoneyRu(taxDeductionBreakdown.code01Rub)}
 										</span>
 									</div>
-									<div className="flex justify-between items-baseline text-xs text-teal-600 dark:text-teal-400 font-semibold">
+									<div className="flex justify-between items-baseline text-xs text-[var(--teal,#0d9488)] font-semibold">
 										<span>Возврат 13% (до 19 500 ₽):</span>
 										<span className="font-mono font-bold">
 											{formatMoneyRu(taxDeductionBreakdown.code01Refund13Rub)}
@@ -1373,10 +1373,10 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 								{/* Code 02 */}
 								<div className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] space-y-2">
 									<div className="flex items-center justify-between">
-										<span className="px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-mono font-bold text-xs">
+										<span className="px-2.5 py-1 rounded-lg bg-[var(--brand-primary-soft,#f0fdfa)] text-[var(--brand-primary,#0d9488)] font-mono font-bold text-xs">
 											КОД 02 — Дорогостоящее лечение
 										</span>
-										<span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
+										<span className="text-xs font-bold text-[var(--brand-primary,#0d9488)]">
 											БЕЗ ЛИМИТА (ст. 219 НК)
 										</span>
 									</div>
@@ -1389,7 +1389,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 											{formatMoneyRu(taxDeductionBreakdown.code02Rub)}
 										</span>
 									</div>
-									<div className="flex justify-between items-baseline text-xs text-indigo-600 dark:text-indigo-400 font-semibold">
+									<div className="flex justify-between items-baseline text-xs text-[var(--brand-primary,#0d9488)] font-semibold">
 										<span>Возврат 13% (со всей суммы):</span>
 										<span className="font-mono font-bold">
 											{formatMoneyRu(taxDeductionBreakdown.code02Refund13Rub)}
@@ -1401,7 +1401,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 							{/* Taxpayer / Payer Form */}
 							<div className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] space-y-4">
 								<h4 className="font-bold text-xs uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5">
-									<FileCheck size={16} className="text-teal-600" />
+									<FileCheck size={16} className="text-[var(--teal,#0d9488)]" />
 									Реквизиты справки КНД 1151156 для налогового органа:
 								</h4>
 
@@ -1471,7 +1471,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 								<button
 									type="button"
 									onClick={() => window.print()}
-									className="min-h-[48px] px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-indigo-600 text-white hover:bg-indigo-700 flex items-center gap-2 cursor-pointer transition-colors shadow-md"
+									className="min-h-[48px] px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-[var(--brand-primary,#0d9488)] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-2 cursor-pointer transition-colors shadow-md"
 								>
 									<Printer size={16} />
 									<span>Печать справки КНД 1151156</span>
@@ -1486,7 +1486,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 							{/* Act Controls */}
 							<div className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] space-y-3">
 								<h4 className="font-bold text-xs uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5">
-									<FileText size={16} className="text-emerald-600" />
+									<FileText size={16} className="text-[var(--ok-fg,#059669)]" />
 									Реквизиты Акта сдачи-приемки выполненных медицинских работ:
 								</h4>
 								<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1643,7 +1643,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 								<button
 									type="button"
 									onClick={() => window.print()}
-									className="min-h-[48px] px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-emerald-600 text-white hover:bg-emerald-700 flex items-center gap-2 cursor-pointer transition-colors shadow-md"
+									className="min-h-[48px] px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-[var(--ok-fg,#059669)] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-2 cursor-pointer transition-colors shadow-md"
 								>
 									<Printer size={16} />
 									<span>Печать Акта выполненных работ</span>

@@ -249,13 +249,13 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 				{/* Top Header */}
 				<div className="p-4 sm:p-5 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between bg-[var(--paper-soft,#f8fafc)] timesheet-no-print">
 					<div className="flex items-center gap-3">
-						<div className="w-10 h-10 rounded-xl bg-teal-500/15 text-teal-600 dark:text-teal-400 flex items-center justify-center border border-teal-500/30">
+						<div className="w-10 h-10 rounded-xl bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] flex items-center justify-center border border-[var(--teal,#0d9488)]/30">
 							<Calendar className="w-5 h-5" />
 						</div>
 						<div>
 							<h2 className="text-base sm:text-lg font-bold text-[var(--ink,#0f172a)] flex items-center gap-2">
 								Табель учета рабочего времени
-								<span className="text-xs font-medium px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20">
+								<span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/20">
 									Форма Т-13
 								</span>
 							</h2>
@@ -322,7 +322,7 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 						<select
 							value={selectedEmployeeId}
 							onChange={(e) => setSelectedEmployeeId(e.target.value)}
-							className="h-9 px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-xs font-bold text-[var(--ink,#0f172a)] focus:ring-2 focus:ring-teal-500 focus:outline-none"
+							className="h-9 px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-xs font-bold text-[var(--ink,#0f172a)] focus:ring-2 focus:ring-[var(--teal,#0d9488)] focus:outline-none"
 						>
 							{DEFAULT_EMPLOYEES.map((emp) => (
 								<option key={emp.id} value={emp.id}>
@@ -339,13 +339,13 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 							onClick={handleExportCsv}
 							className="h-9 px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line,#e2e8f0)] text-xs font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5 transition-colors cursor-pointer"
 						>
-							<Download className="w-3.5 h-3.5 text-teal-600" />
+							<Download className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
 							Экспорт Т-13 (CSV)
 						</button>
 						<button
 							type="button"
 							onClick={() => window.print()}
-							className="h-9 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+							className="h-9 px-3 rounded-xl bg-[var(--teal,#0d9488)] hover:opacity-90 text-[var(--on-teal,#ffffff)] text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
 						>
 							<Printer className="w-3.5 h-3.5" />
 							Печать
@@ -359,7 +359,7 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 					<div className="grid grid-cols-2 sm:grid-cols-4 gap-3 timesheet-no-print">
 						<div className="timesheet-stat-card">
 							<span className="text-[11px] font-medium text-[var(--muted,#64748b)]">Отработано дней</span>
-							<span className="text-base sm:text-lg font-black text-teal-600 dark:text-teal-400">
+							<span className="text-base sm:text-lg font-black text-[var(--teal,#0d9488)]">
 								{activeResult.monthTotalSummary.daysWorked} дней
 							</span>
 							<span className="text-[10px] text-[var(--muted,#64748b)]">
@@ -405,7 +405,7 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 								Учет ежедневных смен и явок ({activeEmployee.name}, таб. № {activeEmployee.tabNumber}):
 							</h3>
 							<div className="flex items-center gap-2 text-[11px] text-[var(--muted,#64748b)]">
-								<span className="inline-block w-2.5 h-2.5 rounded bg-teal-500/20 border border-teal-500"></span> Явка (Я)
+								<span className="inline-block w-2.5 h-2.5 rounded bg-[var(--teal-soft,#f0fdfa)] border border-[var(--teal,#0d9488)]"></span> Явка (Я)
 								<span className="inline-block w-2.5 h-2.5 rounded bg-blue-500/20 border border-blue-500"></span> Отпуск (ОТ)
 								<span className="inline-block w-2.5 h-2.5 rounded bg-rose-500/20 border border-rose-500"></span> Больничный (Б)
 								<span className="inline-block w-2.5 h-2.5 rounded bg-neutral-400/20 border border-neutral-400"></span> Выходной (В)
@@ -432,7 +432,7 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 													</th>
 												);
 											})}
-											<th className="p-2 font-bold min-w-[60px] bg-teal-500/10 text-teal-700 dark:text-teal-300 border-l border-[var(--line,#e2e8f0)]">
+											<th className="p-2 font-bold min-w-[60px] bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border-l border-[var(--line,#e2e8f0)]">
 												Итого
 											</th>
 										</tr>
@@ -456,7 +456,7 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 														key={dayNum}
 														className={`p-1 border-l border-[var(--line,#e2e8f0)] ${
 															isWork
-																? "bg-teal-500/10 text-teal-800 dark:text-teal-200 font-extrabold"
+																? "bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] font-extrabold"
 																: isVacation
 																	? "bg-blue-500/10 text-blue-800 dark:text-blue-200 font-bold"
 																	: isSick
@@ -482,7 +482,7 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 													</td>
 												);
 											})}
-											<td className="p-2 font-black text-teal-700 dark:text-teal-300 bg-teal-500/5 border-l border-[var(--line,#e2e8f0)]">
+											<td className="p-2 font-black text-[var(--teal,#0d9488)] bg-[var(--teal-soft,#f0fdfa)] border-l border-[var(--line,#e2e8f0)]">
 												{activeResult.monthTotalSummary.daysWorked} дн
 											</td>
 										</tr>
@@ -546,7 +546,7 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 											key={res.employeeId}
 											onClick={() => setSelectedEmployeeId(res.employeeId)}
 											className={`hover:bg-[var(--paper-soft,#f8fafc)] transition-colors cursor-pointer ${
-												res.employeeId === activeEmployee.id ? "bg-teal-500/5 font-semibold" : ""
+												res.employeeId === activeEmployee.id ? "bg-[var(--teal-soft,#f0fdfa)] font-semibold" : ""
 											}`}
 										>
 											<td className="p-2.5 font-mono text-[var(--muted,#64748b)]">{res.employeeTabNumber}</td>
@@ -558,7 +558,7 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 											<td className="p-2.5 text-center">
 												{res.secondHalfSummary.daysWorked} дн / {res.secondHalfSummary.totalHoursWorked} ч
 											</td>
-											<td className="p-2.5 text-center font-bold text-teal-600 dark:text-teal-400">
+											<td className="p-2.5 text-center font-bold text-[var(--teal,#0d9488)]">
 												{res.monthTotalSummary.daysWorked}
 											</td>
 											<td className="p-2.5 text-center font-bold text-blue-600 dark:text-blue-400">
@@ -589,13 +589,13 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 							onClick={handleExportCsv}
 							className="h-10 px-4 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 transition-colors cursor-pointer"
 						>
-							<Download className="w-4 h-4 text-teal-600" />
+							<Download className="w-4 h-4 text-[var(--teal,#0d9488)]" />
 							Выгрузить форму Т-13 в CSV
 						</button>
 						<button
 							type="button"
 							onClick={() => window.print()}
-							className="h-10 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+							className="h-10 px-4 rounded-xl bg-[var(--teal,#0d9488)] hover:opacity-90 text-[var(--on-teal,#ffffff)] text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
 						>
 							<Printer className="w-4 h-4" />
 							Печать формы Т-13

@@ -223,7 +223,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 			<div className="bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] w-full max-w-4xl max-h-[92vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
 				{/* Toast Notification */}
 				{toastMsg && (
-					<div className="bg-teal-600 text-white px-4 py-2 text-xs font-bold flex items-center justify-between shrink-0">
+					<div className="bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] px-4 py-2 text-xs font-bold flex items-center justify-between shrink-0">
 						<span>✓ {toastMsg}</span>
 						<button type="button" onClick={() => setToastMsg(null)} className="text-white hover:opacity-80">✕</button>
 					</div>
@@ -232,7 +232,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 				{/* Top Header */}
 				<div className="flex items-center justify-between px-6 py-4 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 					<div className="flex items-center gap-3">
-						<div className="w-10 h-10 rounded-2xl bg-teal-600/15 text-teal-600 dark:text-teal-400 flex items-center justify-center border border-teal-600/25 shrink-0">
+						<div className="w-10 h-10 rounded-2xl bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] flex items-center justify-center border border-[var(--teal,#0d9488)]/25 shrink-0">
 							<FileCheck className="w-5 h-5" />
 						</div>
 						<div>
@@ -240,7 +240,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								<h3 className="text-base font-extrabold text-[var(--ink)] m-0">
 									Акт выполненных работ & Гарантийный талон (А4)
 								</h3>
-								<span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-teal-100 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800 uppercase">
+								<span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 uppercase">
 									Официальный бланк
 								</span>
 							</div>
@@ -254,7 +254,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="px-4 py-2 min-h-[44px] rounded-xl text-xs sm:text-sm font-bold bg-teal-600 hover:bg-teal-500 text-white shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+							className="px-4 py-2 min-h-[44px] rounded-xl text-xs sm:text-sm font-bold bg-[var(--teal,#0d9488)] hover:opacity-90 text-[var(--on-teal,#ffffff)] shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95"
 							data-testid="btn-print-billing-act"
 						>
 							<Printer className="w-4 h-4" />
@@ -278,7 +278,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						onClick={() => setActiveTab("friendly")}
 						className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
 							activeTab === "friendly"
-								? "bg-teal-600 text-white shadow-xs"
+								? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
 								: "text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 						data-testid="btn-tab-friendly-bill"
@@ -291,7 +291,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						onClick={() => setActiveTab("preview")}
 						className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
 							activeTab === "preview"
-								? "bg-teal-600 text-white shadow-xs"
+								? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
 								: "text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 						data-testid="btn-tab-preview-act"
@@ -304,7 +304,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						onClick={() => setActiveTab("details")}
 						className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
 							activeTab === "details"
-								? "bg-teal-600 text-white shadow-xs"
+								? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
 								: "text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 						data-testid="btn-tab-details-act"
@@ -317,10 +317,10 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						{patient?.phone && (
 							<a
 								href={`tel:+${patient.phone.replace(/\D/g, "")}`}
-								className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 flex items-center gap-1 cursor-pointer transition-colors"
+								className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--ok-bg,#f0fdf4)] border border-[var(--ok-fg,#059669)]/30 text-[var(--ok-fg,#059669)] hover:opacity-90 flex items-center gap-1 cursor-pointer transition-colors"
 								title="Позвонить пациенту"
 							>
-								<Phone className="w-3 h-3 text-emerald-600" />
+								<Phone className="w-3 h-3 text-[var(--ok-fg,#059669)]" />
 								<span>📞 Позвонить</span>
 							</a>
 						)}
@@ -345,9 +345,9 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 				</div>
 
 				{/* Loyalty Discount & Presets Toolbar */}
-				<div className="px-6 py-3 border-b border-[var(--line)] bg-indigo-50/50 dark:bg-indigo-950/20 flex flex-wrap items-center justify-between gap-2.5 shrink-0 text-xs">
-					<div className="flex items-center gap-2 font-bold text-indigo-950 dark:text-indigo-200">
-						<Percent className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+				<div className="px-6 py-3 border-b border-[var(--line)] bg-[var(--paper-soft)] flex flex-wrap items-center justify-between gap-2.5 shrink-0 text-xs">
+					<div className="flex items-center gap-2 font-bold text-[var(--ink)]">
+						<Percent className="w-4 h-4 text-[var(--brand-primary,#0d9488)]" />
 						<span>Скидка и лояльность:</span>
 					</div>
 
@@ -359,8 +359,8 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								onClick={() => setDiscountPreset(preset.id)}
 								className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
 									discountPreset === preset.id
-										? "bg-indigo-600 text-white shadow-xs"
-										: "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-indigo-400"
+										? "bg-[var(--brand-primary,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
+										: "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-[var(--brand-primary,#0d9488)]"
 								}`}
 								title={preset.description}
 							>
@@ -378,7 +378,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								value={customDiscountPercent || ""}
 								onChange={(e) => setCustomDiscountPercent(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
 								placeholder="0%"
-								className="w-20 px-2 py-1 text-xs font-bold bg-white dark:bg-slate-900 border border-indigo-300 dark:border-indigo-700 rounded-lg"
+								className="w-20 px-2 py-1 text-xs font-bold bg-white dark:bg-slate-900 border border-[var(--line)] rounded-lg"
 							/>
 							<span>%</span>
 						</div>
@@ -393,15 +393,15 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								value={customDiscountRub || ""}
 								onChange={(e) => setCustomDiscountRub(Math.max(0, parseFloat(e.target.value) || 0))}
 								placeholder="0 ₽"
-								className="w-24 px-2 py-1 text-xs font-bold bg-white dark:bg-slate-900 border border-indigo-300 dark:border-indigo-700 rounded-lg"
+								className="w-24 px-2 py-1 text-xs font-bold bg-white dark:bg-slate-900 border border-[var(--line)] rounded-lg"
 							/>
 							<span>₽</span>
 						</div>
 					)}
 
 					{discountResult.totalDiscountRub > 0 && (
-						<div className="px-3 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-extrabold flex items-center gap-1">
-							<Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+						<div className="px-3 py-1 rounded-xl bg-[var(--ok-bg,#f0fdf4)] border border-[var(--ok-fg,#059669)]/30 text-[var(--ok-fg,#059669)] font-extrabold flex items-center gap-1">
+							<Sparkles className="w-3.5 h-3.5 text-[var(--ok-fg,#059669)]" />
 							<span>{discountResult.savingsText} ({discountResult.effectivePercent}%)</span>
 						</div>
 					)}
@@ -416,7 +416,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								<div className="flex items-center justify-between flex-wrap gap-3">
 									<div className="max-w-xl">
 										<div className="flex items-center gap-2">
-											<Sparkles className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+											<Sparkles className="w-5 h-5 text-[var(--teal,#0d9488)]" />
 											<h4 className="text-base font-extrabold text-[var(--ink)] m-0">
 												Понятная расшифровка счета для пациента
 											</h4>
@@ -465,7 +465,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 														<h4 className="text-sm sm:text-base font-extrabold text-[var(--ink)] m-0">
 															{grp.categoryGroupRu}
 														</h4>
-														<span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-teal-100 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800">
+														<span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30">
 															{grp.percentageOfTotal}% от счета
 														</span>
 													</div>
@@ -476,7 +476,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 											</div>
 
 											<div className="text-right">
-												<div className="text-base sm:text-lg font-black text-teal-700 dark:text-teal-400 font-mono">
+												<div className="text-base sm:text-lg font-black text-[var(--teal,#0d9488)] font-mono">
 													{grp.subtotalRub.toLocaleString("ru-RU")} ₽
 												</div>
 											</div>
@@ -608,8 +608,8 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 
 								{/* Warranty Box */}
 								<div className="border border-black p-2.5 rounded-lg bg-slate-50 space-y-1.5">
-									<div className="font-sans font-bold text-xs uppercase flex items-center gap-1.5 text-emerald-900">
-										<ShieldCheck className="w-4 h-4 text-emerald-700 inline" />
+									<div className="font-sans font-bold text-xs uppercase flex items-center gap-1.5 text-[var(--ok-fg,#059669)]">
+										<ShieldCheck className="w-4 h-4 text-[var(--ok-fg,#059669)] inline" />
 										<span>2. Гарантийный талон и обязательства клиники (СтАР & Закон РФ № 2300-1):</span>
 									</div>
 									<table className="w-full border-collapse border border-slate-400 text-[10px] bg-white">
@@ -626,7 +626,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 												<tr key={idx}>
 													<td className="border border-slate-400 p-1 font-bold">{w.categoryName}</td>
 													<td className="border border-slate-400 p-1 text-center font-mono">{w.teethDisplay}</td>
-													<td className="border border-slate-400 p-1 text-emerald-800 font-bold">{w.warrantyPeriodText}</td>
+													<td className="border border-slate-400 p-1 text-[var(--ok-fg,#059669)] font-bold">{w.warrantyPeriodText}</td>
 													<td className="border border-slate-400 p-1">{w.serviceLifeText}</td>
 												</tr>
 											))}
@@ -647,7 +647,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 											<span>/ {actParams.doctor.fullName} /</span>
 										</div>
 										<div className="flex items-center gap-3 mt-2">
-											<div className="border-2 border-emerald-600 text-emerald-700 font-black text-xs px-2 py-0.5 rounded-sm uppercase transform -rotate-3">
+											<div className="border-2 border-[var(--ok-fg,#059669)] text-[var(--ok-fg,#059669)] font-black text-xs px-2 py-0.5 rounded-sm uppercase transform -rotate-3">
 												✓ ОПЛАЧЕНО
 											</div>
 											<div className="w-16 h-16 rounded-full border border-dashed border-slate-400 flex items-center justify-center text-[9px] text-slate-500 text-center">
@@ -674,19 +674,19 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						<div className="space-y-4">
 							<div className="p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-3">
 								<div className="flex items-center gap-2 font-bold text-sm text-[var(--ink)]">
-									<Award className="w-4 h-4 text-teal-600" />
+									<Award className="w-4 h-4 text-[var(--teal,#0d9488)]" />
 									<span>Гарантийные условия по позициям счета:</span>
 								</div>
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
 									{summary.warrantyTerms.map((term, idx) => (
 										<div key={idx} className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] space-y-1.5">
 											<div className="flex items-center justify-between gap-2">
-												<strong className="text-teal-700 dark:text-teal-300">{term.categoryName}</strong>
+												<strong className="text-[var(--teal,#0d9488)]">{term.categoryName}</strong>
 												<span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 border border-[var(--line)]">
 													{term.teethDisplay}
 												</span>
 											</div>
-											<div className="text-emerald-700 dark:text-emerald-400 font-semibold">
+											<div className="text-[var(--ok-fg,#059669)] font-semibold">
 												Гарантия: {term.warrantyPeriodText}
 											</div>
 											<div className="text-[var(--muted)]">Срок службы: {term.serviceLifeText}</div>
@@ -724,7 +724,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 				{/* Bottom Footer Actions */}
 				<div className="flex items-center justify-between px-6 py-3 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 					<div className="text-xs text-[var(--muted)] font-medium">
-						Итоговая сумма: <strong className="text-base text-teal-700 dark:text-teal-300 font-mono">{friendlyBreakdown.totalAmountRubFormatted}</strong>
+						Итоговая сумма: <strong className="text-base text-[var(--teal,#0d9488)] font-mono">{friendlyBreakdown.totalAmountRubFormatted}</strong>
 					</div>
 					<div className="flex items-center gap-2">
 						<button
@@ -739,7 +739,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="px-5 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-extrabold bg-teal-600 hover:bg-teal-500 text-white shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+							className="px-5 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--teal,#0d9488)] hover:opacity-90 text-[var(--on-teal,#ffffff)] shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95"
 						>
 							<Printer className="w-4 h-4" />
 							<span>Печать (А4)</span>
@@ -768,7 +768,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							onClick={(e) => e.stopPropagation()}
 						>
 							<div className="flex items-center justify-between w-full">
-								<div className="flex items-center gap-2 text-teal-700 font-bold text-sm">
+								<div className="flex items-center gap-2 text-[var(--teal,#0d9488)] font-bold text-sm">
 									<Smartphone className="w-4 h-4" />
 									<span>Сохранить счет на телефон</span>
 								</div>
@@ -793,7 +793,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 
 							<div>
 								<div className="text-xs text-slate-500 font-medium">Сумма к оплате:</div>
-								<div className="text-xl font-black text-teal-700 font-mono">
+								<div className="text-xl font-black text-[var(--teal,#0d9488)] font-mono">
 									{friendlyBreakdown.totalAmountRubFormatted}
 								</div>
 							</div>
@@ -805,7 +805,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							<button
 								type="button"
 								onClick={() => setIsQrOpen(false)}
-								className="w-full py-2.5 rounded-xl font-bold bg-teal-600 text-white shadow-md hover:bg-teal-500 cursor-pointer min-h-[44px]"
+								className="w-full py-2.5 rounded-xl font-bold bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-md hover:opacity-90 cursor-pointer min-h-[44px]"
 							>
 								Готово
 							</button>

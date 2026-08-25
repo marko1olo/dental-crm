@@ -337,7 +337,7 @@ export function DmsRegistryExportModal({
 				{/* Header */}
 				<div className="dms-modal-header">
 					<h2 className="dms-modal-title">
-						<FileSpreadsheet className="text-emerald-600 dark:text-emerald-400" size={24} />
+						<FileSpreadsheet className="text-[var(--ok-fg,#059669)]" size={24} />
 						Реестр медицинских услуг ДМС и двусторонний акт сдачи-приемки
 					</h2>
 					<button
@@ -424,7 +424,7 @@ export function DmsRegistryExportModal({
 
 						<div className="dms-stat-card" style={{ borderColor: "#10b981", background: "rgba(16, 185, 129, 0.04)" }}>
 							<span className="dms-stat-label">К оплате страховой (ДМС)</span>
-							<span className="dms-stat-value text-emerald-600 dark:text-emerald-400">
+							<span className="dms-stat-value text-[var(--ok-fg,#059669)]">
 								{formatRubKopecks(summary.totalDmsCoveredRub)}
 							</span>
 							<span style={{ fontSize: "0.75rem", color: "#10b981", fontWeight: 600 }}>
@@ -434,7 +434,7 @@ export function DmsRegistryExportModal({
 
 						<div className="dms-stat-card" style={{ borderColor: "#f59e0b", background: "rgba(245, 158, 11, 0.04)" }}>
 							<span className="dms-stat-label">Оплачено пациентами (Copay)</span>
-							<span className="dms-stat-value text-amber-600 dark:text-amber-400">
+							<span className="dms-stat-value text-[var(--warn-fg,#d97706)]">
 								{formatRubKopecks(summary.totalPatientPaidRub)}
 							</span>
 							<span style={{ fontSize: "0.75rem", color: "#f59e0b", fontWeight: 600 }}>
@@ -446,7 +446,7 @@ export function DmsRegistryExportModal({
 					{/* Балансовая проверка */}
 					<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderRadius: "12px", background: summary.isBalanced ? "rgba(16, 185, 129, 0.08)" : "rgba(239, 68, 68, 0.08)", border: `1px solid ${summary.isBalanced ? "rgba(16, 185, 129, 0.3)" : "rgba(239, 68, 68, 0.3)"}` }}>
 						<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-							<CheckCircle2 size={18} className={summary.isBalanced ? "text-emerald-600" : "text-red-600"} />
+							<CheckCircle2 size={18} className={summary.isBalanced ? "text-[var(--ok-fg,#059669)]" : "text-[var(--bad-fg,#dc2626)]"} />
 							<span style={{ fontSize: "0.875rem", fontWeight: 700, color: summary.isBalanced ? "#059669" : "#dc2626" }}>
 								{summary.isBalanced
 									? `Копеечный баланс сошелся на 100%: ${formatRubKopecks(summary.totalDmsCoveredRub)} (ДМС) + ${formatRubKopecks(summary.totalPatientPaidRub)} (Пациенты) = ${formatRubKopecks(summary.totalAmountRub)} (Итого)`

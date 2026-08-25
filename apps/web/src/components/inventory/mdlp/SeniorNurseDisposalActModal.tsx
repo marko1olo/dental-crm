@@ -139,7 +139,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 			>
 				<header className="mdlp-modal-header">
 					<div className="mdlp-modal-title" id="mdlp-act-title">
-						<FileText size={24} className="text-teal-600 shrink-0" />
+						<FileText size={24} className="text-[var(--teal,#0d9488)] shrink-0" />
 						<div>
 							<div className="font-bold text-lg leading-tight">
 								Акт списания медикаментов и анестетиков (Старшая медсестра)

@@ -764,7 +764,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 
 						{/* Printable Physical Sheet Mockup */}
 						<div
-							className="print-paper-sheet p-6 md:p-8 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs shadow-xl font-serif leading-relaxed flex flex-col gap-3.5 selection:bg-teal-100"
+							className="print-paper-sheet p-6 md:p-8 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs shadow-xl font-serif leading-relaxed flex flex-col gap-3.5 selection:bg-[var(--teal-soft,#ccfbf1)]"
 							data-paper-sheet="true"
 						>
 							{/* Header */}
@@ -879,7 +879,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 				{/* ── Modal Footer ── */}
 				<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 sm:px-6 py-3.5 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 					<div className="flex items-center gap-2 text-xs text-[var(--muted)]">
-						<FileCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+						<FileCheck className="w-4 h-4 text-[var(--ok-fg,#059669)] shrink-0" />
 						<span className="leading-tight">Соответствует Приказу № 1051н и ст. 20 323-ФЗ.</span>
 					</div>
 					<div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">

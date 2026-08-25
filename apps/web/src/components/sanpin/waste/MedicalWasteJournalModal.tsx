@@ -286,7 +286,7 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 				{/* Header */}
 				<header className="waste-modal-header">
 					<div className="waste-header-title" id="waste-modal-title">
-						<ShieldAlert size={24} className="text-teal-600" />
+						<ShieldAlert size={24} className="text-[var(--teal,#0d9488)]" />
 						<div>
 							<div className="font-bold text-lg leading-tight">
 								Учет и Обезвреживание Медицинских Отходов
@@ -384,7 +384,7 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 													>
 														Класс {cls.letterCode}
 													</span>
-													{isSelected && <CheckCircle2 size={18} className="text-teal-600" />}
+													{isSelected && <CheckCircle2 size={18} className="text-[var(--teal,#0d9488)]" />}
 												</div>
 												<div className="font-bold text-sm text-ink">{cls.nameRu}</div>
 												<div className="text-xs text-muted leading-tight">
@@ -439,7 +439,7 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 										Вес брутто по весам (кг)
 									</label>
 									<div className="flex items-center gap-2">
-										<Scale size={20} className="text-teal-600" />
+										<Scale size={20} className="text-[var(--teal,#0d9488)]" />
 										<input
 											id="waste-gross-weight"
 											type="number"
@@ -527,7 +527,7 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 							{/* Штрихкод и кнопка фиксации */}
 							<div className="p-4 rounded-xl border border-line bg-paper-soft flex items-center justify-between flex-wrap gap-3">
 								<div className="flex items-center gap-3">
-									<Barcode size={28} className="text-teal-600" />
+									<Barcode size={28} className="text-[var(--teal,#0d9488)]" />
 									<div>
 										<div className="text-xs text-muted">Сгенерированный штрихкод СанПиН</div>
 										<div className="font-mono font-bold text-ink text-sm">{barcode}</div>
@@ -700,7 +700,7 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 							</div>
 
 							{/* Сводка партии */}
-							<div className="p-4 rounded-xl border border-teal-glow bg-teal-surface flex items-center justify-between">
+							<div className="p-4 rounded-xl border border-[var(--teal,#0d9488)]/30 bg-[var(--teal-soft,#f0fdfa)] flex items-center justify-between">
 								<div>
 									<div className="text-xs font-semibold text-muted uppercase">Партия к передаче</div>
 									<div className="text-lg font-black text-ink">

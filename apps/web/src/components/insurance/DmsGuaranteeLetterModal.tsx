@@ -523,7 +523,7 @@ export function DmsGuaranteeLetterModal({
 					{/* 3. Исключения страховой программы */}
 					<div className="dms-card">
 						<h3 className="dms-card-title">
-							<AlertTriangle size={18} className="text-amber-600" />
+							<AlertTriangle size={18} className="text-[var(--warn-fg,#d97706)]" />
 							3. Исключения из программы ДМС (100% доплата пациента)
 						</h3>
 						<p style={{ fontSize: "0.8125rem", color: "var(--muted, #64748b)", margin: "0 0 12px 0" }}>
@@ -554,7 +554,7 @@ export function DmsGuaranteeLetterModal({
 					{/* 4. Согласованные услуги Номенклатуры 804н и диагнозы МКБ-10 */}
 					<div className="dms-card">
 						<h3 className="dms-card-title">
-							<CheckCircle2 size={18} className="text-sky-600" />
+							<CheckCircle2 size={18} className="text-[var(--brand-primary,#0d9488)]" />
 							4. Номенклатура Минздрава 804н: Согласованные услуги и диагнозы МКБ-10
 						</h3>
 
@@ -646,7 +646,7 @@ export function DmsGuaranteeLetterModal({
 					{/* 5. Интерактивный калькулятор-симулятор доплаты (Live Copay Preview) */}
 					<div className="dms-card" style={{ background: "rgba(2, 132, 199, 0.03)", borderColor: "rgba(2, 132, 199, 0.2)" }}>
 						<h3 className="dms-card-title">
-							<Calculator size={18} className="text-sky-600" />
+							<Calculator size={18} className="text-[var(--brand-primary,#0d9488)]" />
 							5. Проверка распределения сумм (Live Copay Simulator)
 						</h3>
 
@@ -695,13 +695,13 @@ export function DmsGuaranteeLetterModal({
 							</div>
 							<div className="dms-stat-card" style={{ borderColor: "#10b981" }}>
 								<span className="dms-stat-label">Покрыто ДМС</span>
-								<span className="dms-stat-value text-emerald-600 dark:text-emerald-400">
+								<span className="dms-stat-value text-[var(--ok-fg,#059669)]">
 									{formatRubKopecks(simulationResult.dmsCoveredRub)}
 								</span>
 							</div>
 							<div className="dms-stat-card" style={{ borderColor: "#f59e0b" }}>
 								<span className="dms-stat-label">Доплата пациента (Copay)</span>
-								<span className="dms-stat-value text-amber-600 dark:text-amber-400">
+								<span className="dms-stat-value text-[var(--warn-fg,#d97706)]">
 									{formatRubKopecks(simulationResult.patientPaidRub)}
 								</span>
 							</div>

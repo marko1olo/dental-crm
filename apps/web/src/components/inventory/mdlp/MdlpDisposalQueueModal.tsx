@@ -241,7 +241,7 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 				{/* Шапка модального окна */}
 				<header className="mdlp-modal-header">
 					<div className="mdlp-modal-title" id="mdlp-queue-title">
-						<PackageCheck size={26} className="text-teal-600 shrink-0" />
+						<PackageCheck size={26} className="text-[var(--teal,#0d9488)] shrink-0" />
 						<div>
 							<div className="font-bold text-lg leading-tight">
 								Списание анестетиков и медикаментов в Честный ЗНАК (МДЛП
@@ -269,15 +269,15 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 				<div className="mdlp-modal-body">
 					{/* Блок успешного списания */}
 					{successDoc && (
-						<div className="p-4 rounded-lg bg-teal-50 border border-teal-200 text-teal-900 flex flex-col gap-2">
+						<div className="p-4 rounded-lg bg-[var(--teal-soft,#f0fdfa)] border border-[var(--teal,#0d9488)]/30 text-[var(--teal-dark,#0f766e)] flex flex-col gap-2">
 							<div className="flex items-center gap-2 font-bold text-base">
-								<CheckCircle2 size={20} className="text-teal-600" />
+								<CheckCircle2 size={20} className="text-[var(--teal,#0d9488)]" />
 								<span>
 									Препараты успешно списаны по Схеме 10560 (Документ:{" "}
 									{successDoc.docNum})!
 								</span>
 							</div>
-							<div className="text-xs text-teal-800">
+							<div className="text-xs text-[var(--teal,#0d9488)]">
 								Сформирован официальный XML-пакет для передачи в ИС МДЛП
 								(Честный ЗНАК). Списано карпул: {successDoc.items.length} шт.
 							</div>
@@ -545,9 +545,9 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 														<span
 															className={`text-xs font-semibold px-2 py-0.5 rounded ${
 																it.isExpired
-																	? "bg-red-100 text-red-900 font-bold"
+																	? "bg-[var(--bad-bg,#fee2e2)] text-[var(--bad-fg,#dc2626)] font-bold"
 																	: it.isExpiringSoon
-																		? "bg-amber-100 text-amber-900 font-bold"
+																		? "bg-[var(--warn-bg,#fef3c7)] text-[var(--warn-fg,#d97706)] font-bold"
 																		: "text-muted"
 															}`}
 														>
@@ -616,7 +616,7 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 							<span className="text-xs font-semibold text-muted uppercase block mb-0.5">
 								Общая сумма
 							</span>
-							<span className="text-lg font-black text-teal-700">
+							<span className="text-lg font-black text-[var(--teal,#0d9488)]">
 								{stats.totalCostRub.toFixed(2)} ₽
 							</span>
 						</div>

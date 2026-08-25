@@ -651,7 +651,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							className={`consent-method-card ${verificationMethod === "tablet_stylus" ? "active" : ""}`}
 							onClick={() => setVerificationMethod("tablet_stylus")}
 						>
-							<PenTool size={22} className="text-teal-600" />
+							<PenTool size={22} className="text-[var(--teal,#0d9488)]" />
 							<div>
 								<div className="font-bold text-sm">Сенсорная подпись (Стилус / Палец)</div>
 								<div className="text-xs text-muted">Непосредственный росчерк на экране планшета</div>
@@ -663,7 +663,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							className={`consent-method-card ${verificationMethod === "sms_otp" ? "active" : ""}`}
 							onClick={() => setVerificationMethod("sms_otp")}
 						>
-							<Smartphone size={22} className="text-teal-600" />
+							<Smartphone size={22} className="text-[var(--teal,#0d9488)]" />
 							<div>
 								<div className="font-bold text-sm">SMS / OTP подтверждение</div>
 								<div className="text-xs text-muted">Одноразовый 6-значный код верификации</div>
@@ -745,7 +745,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 						<div className="consent-otp-box">
 							<div className="flex items-center justify-between">
 								<div className="flex items-center gap-2">
-									<KeyRound size={20} className="text-teal-600" />
+									<KeyRound size={20} className="text-[var(--teal,#0d9488)]" />
 									<span className="font-bold text-sm">Код подтверждения из SMS</span>
 								</div>
 								{substitutionContext.phone && (
@@ -799,7 +799,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 					{/* Панель криптографической целостности SHA-256 */}
 					<div className="consent-integrity-card">
 						<div className="flex items-center gap-2">
-							<Lock size={16} className="text-teal-700" />
+							<Lock size={16} className="text-[var(--teal,#0d9488)]" />
 							<span className="font-semibold text-xs text-muted">Цифровой отпечаток SHA-256:</span>
 							<span className="consent-integrity-hash">{integrityRecord.hash.slice(0, 16)}...</span>
 						</div>

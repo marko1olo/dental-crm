@@ -521,11 +521,11 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 							<span>На проверке: <strong>{summaryReport.pendingCount}</strong></span>
 						</div>
 						<div className="cmo-audit-stat-pill">
-							<Award size={14} className="text-teal-600" />
+							<Award size={14} className="text-[var(--teal,#0d9488)]" />
 							<span>Средний балл: <strong>{summaryReport.averageQualityScore}%</strong></span>
 						</div>
 						<div className="cmo-audit-stat-pill">
-							<CheckCircle2 size={14} className="text-green-600" />
+							<CheckCircle2 size={14} className="text-[var(--ok-fg,#059669)]" />
 							<span>С первого раза: <strong>{summaryReport.firstPassRateAvg}%</strong></span>
 						</div>
 
@@ -696,7 +696,7 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 										<div className="cmo-audit-section">
 											<div className="cmo-audit-section-title">
 												<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-													<ShieldCheck size={16} className="text-teal-600" />
+													<ShieldCheck size={16} className="text-[var(--teal,#0d9488)]" />
 													<span>Автоматический аудит по Приказу № 203н и стандартам ЕГИСЗ</span>
 												</div>
 												<span style={{ fontSize: "12px", color: "var(--muted)" }}>
@@ -730,7 +730,7 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 										<div className="cmo-audit-section">
 											<div className="cmo-audit-section-title">
 												<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-													<Activity size={16} className="text-teal-600" />
+													<Activity size={16} className="text-[var(--teal,#0d9488)]" />
 													<span>Клинический дневник приема (SOAP протокол)</span>
 												</div>
 												{selectedRecord.cardData.visitDiaries[0]?.isSignedWithUkep && (
@@ -763,7 +763,7 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 										<div className="cmo-audit-section">
 											<div className="cmo-audit-section-title">
 												<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-													<FileText size={16} className="text-teal-600" />
+													<FileText size={16} className="text-[var(--teal,#0d9488)]" />
 													<span>Прикрепленная документация и согласование с актом</span>
 												</div>
 											</div>
@@ -804,7 +804,7 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 										<div className="cmo-audit-section">
 											<div className="cmo-audit-section-title">
 												<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-													<MessageSquare size={16} className="text-teal-600" />
+													<MessageSquare size={16} className="text-[var(--teal,#0d9488)]" />
 													<span>Замечания эксперта КЭР ({selectedRecord.cmoRemarks.length})</span>
 												</div>
 												<button

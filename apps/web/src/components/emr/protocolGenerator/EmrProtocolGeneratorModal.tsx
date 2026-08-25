@@ -299,7 +299,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 					{/* ── Верхний заголовок тулбара ── */}
 					<header className="flex items-center justify-between px-6 py-4 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]">
 						<div className="flex items-center gap-3">
-							<div className="flex items-center justify-center w-11 h-11 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/30 shrink-0">
+							<div className="flex items-center justify-center w-11 h-11 rounded-xl bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 shrink-0">
 								<Sparkles className="w-6 h-6" />
 							</div>
 							<div>
@@ -307,7 +307,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 									<h2 className="text-base sm:text-lg font-bold text-[var(--ink,#0f172a)]">
 										Генератор протоколов 043/у (Минздрав РФ № 834н)
 									</h2>
-									<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+									<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--ok-bg,#f0fdf4)] text-[var(--ok-fg,#059669)] border border-[var(--ok-fg,#059669)]/30">
 										<ShieldCheck className="w-3.5 h-3.5" />
 										1-Click СтАР
 									</span>
@@ -332,22 +332,22 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 
 					{/* ── Step-by-Step Guidance Ribbon & Autosave Status ── */}
 					<div className="mx-4 sm:mx-6 mt-4 p-2.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] flex items-center gap-2 text-xs flex-wrap">
-						<div className="flex items-center gap-1.5 font-bold text-teal-700 dark:text-teal-300">
-							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-teal-600 text-white text-[10px]">1</span>
+						<div className="flex items-center gap-1.5 font-bold text-[var(--teal,#0d9488)]">
+							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] text-[10px]">1</span>
 							<span>Шаг 1: Выберите пресет МКБ-10 и зуб</span>
 						</div>
 						<ChevronRight size={14} className="text-[var(--muted,#64748b)]" />
-						<div className="flex items-center gap-1.5 font-bold text-teal-700 dark:text-teal-300">
-							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-teal-600 text-white text-[10px]">2</span>
+						<div className="flex items-center gap-1.5 font-bold text-[var(--teal,#0d9488)]">
+							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] text-[10px]">2</span>
 							<span>Шаг 2: Экспертиза 043/у</span>
 						</div>
 						<ChevronRight size={14} className="text-[var(--muted,#64748b)]" />
-						<div className="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-300">
-							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px]">3</span>
+						<div className="flex items-center gap-1.5 font-bold text-[var(--ok-fg,#059669)]">
+							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--ok-fg,#059669)] text-[var(--on-teal,#ffffff)] text-[10px]">3</span>
 							<span>Шаг 3: Внесите в карту</span>
 						</div>
 						<div className="ml-auto flex items-center gap-1 text-[var(--muted,#64748b)] text-[11px]">
-							<ShieldCheck size={13} className="text-emerald-600" />
+							<ShieldCheck size={13} className="text-[var(--ok-fg,#059669)]" />
 							<span>💾 Готов к синхронизации с Формой 043/у</span>
 						</div>
 					</div>
@@ -372,7 +372,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 												onClick={() => setSelectedPresetCode(preset.id)}
 												className={`flex flex-col items-start p-3 min-h-[64px] rounded-xl border text-left transition-all cursor-pointer ${
 													isSelected
-														? "border-teal-500 bg-teal-500/10 text-[var(--ink,#0f172a)] shadow-sm ring-2 ring-teal-500/30"
+														? "border-[var(--teal,#0d9488)] bg-[var(--teal-soft,#f0fdfa)] text-[var(--ink,#0f172a)] shadow-sm ring-2 ring-[var(--teal,#0d9488)]/30"
 														: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong,#f1f5f9)] text-[var(--muted,#64748b)]"
 												}`}
 												data-testid={`preset-btn-${preset.id}`}
@@ -382,7 +382,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 														<span>{preset.icon}</span>
 														<span>{preset.code}</span>
 													</span>
-													{isSelected && <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />}
+													{isSelected && <CheckCircle2 className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />}
 												</div>
 												<div className="text-xs font-medium text-[var(--ink,#0f172a)] mt-0.5 line-clamp-1">
 													{preset.title}
@@ -467,7 +467,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 															}}
 															className={`px-3 py-2 min-h-[44px] rounded-xl text-xs font-bold border transition-colors ${
 																targetTooth === String(t.toothNumber)
-																	? "bg-teal-500 text-white border-teal-600"
+																	? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] border-[var(--teal-dark,var(--teal))]"
 																	: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-strong,#f1f5f9)]"
 															}`}
 														>
@@ -495,7 +495,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 													title={surf.label}
 													className={`flex flex-col items-center justify-center p-2 min-h-[44px] rounded-xl border text-xs font-bold transition-all cursor-pointer ${
 														active
-															? "bg-teal-600 text-white border-teal-700 shadow-sm"
+															? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] border-[var(--teal-dark,var(--teal))] shadow-sm"
 															: "bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-strong,#f1f5f9)]"
 													}`}
 												>
@@ -642,7 +642,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 								<button
 									type="button"
 									onClick={handleBatchSynthesizeFromFormula}
-									className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl border border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-teal-300 text-xs font-bold hover:bg-teal-500/20 transition-colors"
+									className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl border border-[var(--teal,#0d9488)]/30 bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] text-xs font-bold hover:opacity-90 transition-colors"
 								>
 									<Layers className="w-4 h-4" />
 									<span>Синтезировать дневники по всей зубной формуле ({odontogramTeeth.filter((t) => t.statusCode !== "healthy" && t.statusCode !== "extracted_absent").length} зубов)</span>
@@ -660,7 +660,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 										onClick={() => setActiveTab("preview")}
 										className={`px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-bold transition-colors ${
 											activeTab === "preview"
-												? "bg-teal-600 text-white"
+												? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
 												: "text-[var(--muted,#64748b)] hover:bg-[var(--paper-strong,#f1f5f9)]"
 										}`}
 									>
@@ -671,7 +671,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 										onClick={() => setActiveTab("soap_cards")}
 										className={`px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-bold transition-colors ${
 											activeTab === "soap_cards"
-												? "bg-teal-600 text-white"
+												? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
 												: "text-[var(--muted,#64748b)] hover:bg-[var(--paper-strong,#f1f5f9)]"
 										}`}
 									>
@@ -682,7 +682,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 										onClick={() => setActiveTab("compliance")}
 										className={`px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-bold transition-colors ${
 											activeTab === "compliance"
-												? "bg-teal-600 text-white"
+												? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
 												: "text-[var(--muted,#64748b)] hover:bg-[var(--paper-strong,#f1f5f9)]"
 										}`}
 									>
@@ -691,8 +691,8 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 								</div>
 
 								{/* Статус соответствия */}
-								<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
-									<CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+								<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-[var(--ok-bg,#f0fdf4)] text-[var(--ok-fg,#059669)] border border-[var(--ok-fg,#059669)]/30">
+									<CheckCircle2 className="w-3.5 h-3.5 text-[var(--ok-fg,#059669)]" />
 									100% Приказ № 834н
 								</span>
 							</div>
@@ -735,7 +735,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 													Зондирование: {synthesizedDiary.probingTenderness || "безболезненно"}
 												</span>
 												{synthesizedDiary.eodMicroamperes !== null && synthesizedDiary.eodMicroamperes !== undefined && (
-													<span className="px-2 py-0.5 rounded bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] font-bold text-teal-600">
+													<span className="px-2 py-0.5 rounded bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] font-bold text-[var(--teal,#0d9488)]">
 														ЭОД: {synthesizedDiary.eodMicroamperes} мкА
 													</span>
 												)}
@@ -756,8 +756,8 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 										</div>
 
 										{/* P */}
-										<div className="p-3.5 rounded-xl border border-teal-500/30 bg-teal-500/5 space-y-2">
-											<div className="font-bold text-teal-700 dark:text-teal-300 uppercase tracking-wider text-[11px]">
+										<div className="p-3.5 rounded-xl border border-[var(--teal,#0d9488)]/30 bg-[var(--teal-soft,#f0fdfa)] space-y-2">
+											<div className="font-bold text-[var(--teal,#0d9488)] uppercase tracking-wider text-[11px]">
 												P (Plan & Procedure) — Протокол вмешательства
 											</div>
 											<p className="text-xs text-[var(--ink,#0f172a)] whitespace-pre-wrap leading-relaxed font-mono bg-[var(--paper,#ffffff)] p-3 rounded-lg border border-[var(--line,#e2e8f0)]">
@@ -785,9 +785,9 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 								{/* Вкладка 3: Аудит соответствия */}
 								{activeTab === "compliance" && (
 									<div className="space-y-3">
-										<div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-200">
+										<div className="p-4 rounded-xl bg-[var(--ok-bg,#f0fdf4)] border border-[var(--ok-fg,#059669)]/30 text-[var(--ok-fg,#059669)]">
 											<div className="font-bold text-sm flex items-center gap-2">
-												<CheckCircle2 className="w-5 h-5 text-emerald-600" />
+												<CheckCircle2 className="w-5 h-5 text-[var(--ok-fg,#059669)]" />
 												<span>Оценка нормативного соответствия: {complianceReport.complianceScore} / 100 баллов</span>
 											</div>
 											<p className="text-xs mt-1 leading-relaxed">
@@ -798,19 +798,19 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 										<div className="grid grid-cols-2 gap-2">
 											<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)]">
 												<div className="font-semibold text-[var(--ink,#0f172a)]">МКБ-10 классификатор</div>
-												<div className="text-xs text-emerald-600 font-medium">✓ Валидный код ({synthesizedDiary.assessmentIcd10Code})</div>
+												<div className="text-xs text-[var(--ok-fg,#059669)] font-medium">✓ Валидный код ({synthesizedDiary.assessmentIcd10Code})</div>
 											</div>
 											<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)]">
 												<div className="font-semibold text-[var(--ink,#0f172a)]">Зубная формула FDI</div>
-												<div className="text-xs text-emerald-600 font-medium">✓ Валидный номер ({synthesizedDiary.toothNumber})</div>
+												<div className="text-xs text-[var(--ok-fg,#059669)] font-medium">✓ Валидный номер ({synthesizedDiary.toothNumber})</div>
 											</div>
 											<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)]">
 												<div className="font-semibold text-[var(--ink,#0f172a)]">Дозировка анестетика</div>
-												<div className="text-xs text-emerald-600 font-medium">✓ Безопасная терапевтическая доза</div>
+												<div className="text-xs text-[var(--ok-fg,#059669)] font-medium">✓ Безопасная терапевтическая доза</div>
 											</div>
 											<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)]">
 												<div className="font-semibold text-[var(--ink,#0f172a)]">Подпись и реквизиты</div>
-												<div className="text-xs text-emerald-600 font-medium">✓ {synthesizedDiary.doctorFullName}</div>
+												<div className="text-xs text-[var(--ok-fg,#059669)] font-medium">✓ {synthesizedDiary.doctorFullName}</div>
 											</div>
 										</div>
 									</div>
@@ -824,7 +824,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 									onClick={handleCopyToClipboard}
 									className="inline-flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-xs font-bold hover:bg-[var(--paper-strong,#f1f5f9)] transition-colors"
 								>
-									{isCopied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+									{isCopied ? <Check className="w-4 h-4 text-[var(--ok-fg,#059669)]" /> : <Copy className="w-4 h-4" />}
 									<span>{isCopied ? "Скопировано в буфер!" : "Копировать SOAP текст"}</span>
 								</button>
 

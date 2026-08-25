@@ -158,13 +158,13 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 				{/* Header */}
 				<div className="p-4 sm:p-5 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between bg-[var(--paper-soft,#f8fafc)]">
 					<div className="flex items-center gap-3">
-						<div className="w-10 h-10 rounded-xl bg-teal-500/15 text-teal-600 dark:text-teal-400 flex items-center justify-center border border-teal-500/30">
+						<div className="w-10 h-10 rounded-xl bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] flex items-center justify-center border border-[var(--teal,#0d9488)]/30">
 							<Calculator className="w-5 h-5" />
 						</div>
 						<div>
 							<h2 className="text-base sm:text-lg font-bold text-[var(--ink,#0f172a)] flex items-center gap-2">
 								Сдельная зарплата и расчетный листок
-								<span className="text-xs font-medium px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20">
+								<span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/20">
 									Т-51 / НДФЛ 13%
 								</span>
 							</h2>
@@ -188,13 +188,13 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 					<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
 						<div className="flex flex-col gap-1">
 							<label className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1.5">
-								<User className="w-3.5 h-3.5 text-teal-600" />
+								<User className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
 								Врач / Специалист:
 							</label>
 							<select
 								value={selectedDoctorId}
 								onChange={(e) => setSelectedDoctorId(e.target.value)}
-								className="h-10 px-3 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-teal-500"
+								className="h-10 px-3 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)]"
 							>
 								{doctorsList.map((doc) => (
 									<option key={doc.id} value={doc.id}>
@@ -206,7 +206,7 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 
 						<div className="flex flex-col gap-1">
 							<label className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1.5">
-								<Calendar className="w-3.5 h-3.5 text-teal-600" />
+								<Calendar className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
 								Начало периода:
 							</label>
 							<input
@@ -219,7 +219,7 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 
 						<div className="flex flex-col gap-1">
 							<label className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1.5">
-								<Calendar className="w-3.5 h-3.5 text-teal-600" />
+								<Calendar className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
 								Конец периода:
 							</label>
 							<input
@@ -255,17 +255,17 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 
 						<div className="payroll-stat-card">
 							<span className="text-[11px] font-medium text-[var(--muted,#64748b)]">Ставка + KPI</span>
-							<span className="text-base sm:text-lg font-black text-teal-600 dark:text-teal-400">
+							<span className="text-base sm:text-lg font-black text-[var(--teal,#0d9488)]">
 								{payrollResult.baseCommissionPercent}% {payrollResult.kpiBonusPercent > 0 ? `+ ${payrollResult.kpiBonusPercent}%` : ""}
 							</span>
-							<span className="text-[10px] text-teal-700 dark:text-teal-300 truncate">
+							<span className="text-[10px] text-[var(--teal,#0d9488)] truncate">
 								{payrollResult.kpiTierBadgeRu}
 							</span>
 						</div>
 
-						<div className="payroll-stat-card border-teal-500/40 bg-teal-500/5">
-							<span className="text-[11px] font-bold text-teal-700 dark:text-teal-300">Итого на руки (нетто)</span>
-							<span className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400">
+						<div className="payroll-stat-card border-[var(--teal,#0d9488)]/40 bg-[var(--teal-soft,#f0fdfa)]">
+							<span className="text-[11px] font-bold text-[var(--teal,#0d9488)]">Итого на руки (нетто)</span>
+							<span className="text-base sm:text-lg font-black text-[var(--ok-fg,#059669)]">
 								{(payrollResult.netPayoutToDoctorKop / 100).toLocaleString("ru-RU")} ₽
 							</span>
 							<span className="text-[10px] text-[var(--muted,#64748b)]">
@@ -310,7 +310,7 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 													<td className="p-2.5 text-rose-600 text-right whitespace-nowrap">
 														{( (srv.labCostKop + srv.materialCostKop) / 100).toLocaleString("ru-RU")} ₽
 													</td>
-													<td className="p-2.5 font-bold text-teal-600 text-right whitespace-nowrap">
+													<td className="p-2.5 font-bold text-[var(--teal,#0d9488)] text-right whitespace-nowrap">
 														{(earned / 100).toLocaleString("ru-RU")} ₽
 													</td>
 												</tr>
@@ -334,13 +334,13 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 							onClick={handleDownloadCsv}
 							className="h-10 px-4 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 transition-colors cursor-pointer"
 						>
-							<Download className="w-4 h-4 text-teal-600" />
+							<Download className="w-4 h-4 text-[var(--teal,#0d9488)]" />
 							Экспорт Т-51 (CSV)
 						</button>
 						<button
 							type="button"
 							onClick={() => window.print()}
-							className="h-10 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+							className="h-10 px-4 rounded-xl bg-[var(--teal,#0d9488)] hover:opacity-90 text-[var(--on-teal,#ffffff)] text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
 						>
 							<FileText className="w-4 h-4" />
 							Печать расчетного листка

@@ -87,10 +87,10 @@ export function NdflCalculatorModal({
 			>
 				<div className="flex items-center justify-between pb-2 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
 					<h2 className="text-lg font-bold flex items-center gap-2 m-0 text-[var(--ink,#0f172a)] dark:text-white">
-						<Calculator size={20} className="text-teal-600 dark:text-teal-400" />
+						<Calculator size={20} className="text-[var(--teal,#0d9488)]" />
 						Справка об оплате мед. услуг (НДФЛ 13%)
 					</h2>
-					<span className="text-[10px] font-bold uppercase tracking-wider text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/70 px-2.5 py-0.5 rounded-full border border-teal-500/30">
+					<span className="text-[10px] font-bold uppercase tracking-wider text-[var(--teal,#0d9488)] bg-[var(--teal-soft,#f0fdfa)] px-2.5 py-0.5 rounded-full border border-[var(--teal,#0d9488)]/30">
 						КНД 1151156
 					</span>
 				</div>
@@ -105,7 +105,7 @@ export function NdflCalculatorModal({
 								setTargetPatientId(e.target.value);
 								setResult(null);
 							}}
-							className="mt-1 p-2.5 min-h-[44px] rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:outline-none focus:border-teal-500"
+							className="mt-1 p-2.5 min-h-[44px] rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:outline-none focus:border-[var(--teal,#0d9488)]"
 						>
 							{dashboard.patients.map((p) => (
 								<option key={p.id} value={p.id}>
@@ -123,7 +123,7 @@ export function NdflCalculatorModal({
 							type="date"
 							value={startDate}
 							onChange={(e) => setStartDate(e.target.value)}
-							className="mt-1 p-2 min-h-[44px] rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:outline-none focus:border-teal-500"
+							className="mt-1 p-2 min-h-[44px] rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:outline-none focus:border-[var(--teal,#0d9488)]"
 						/>
 					</label>
 					<label className="flex flex-col text-xs font-semibold text-[var(--muted,#64748b)] dark:text-slate-400">
@@ -132,7 +132,7 @@ export function NdflCalculatorModal({
 							type="date"
 							value={endDate}
 							onChange={(e) => setEndDate(e.target.value)}
-							className="mt-1 p-2 min-h-[44px] rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:outline-none focus:border-teal-500"
+							className="mt-1 p-2 min-h-[44px] rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs focus:outline-none focus:border-[var(--teal,#0d9488)]"
 						/>
 					</label>
 				</div>
@@ -141,7 +141,7 @@ export function NdflCalculatorModal({
 					type="button"
 					onClick={handleCalculate}
 					disabled={loading}
-					className="w-full min-h-[44px] bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md shadow-teal-600/20 cursor-pointer active:scale-95 transition-all"
+					className="w-full min-h-[44px] bg-[var(--teal,#0d9488)] hover:opacity-90 text-[var(--on-teal,#ffffff)] font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer active:scale-95 transition-all"
 				>
 					{loading ? "Вычисление фискальных сумм..." : "Рассчитать суммы по чекам 54-ФЗ"}
 				</button>
@@ -161,22 +161,22 @@ export function NdflCalculatorModal({
 								</div>
 							</div>
 						) : (
-							<div className="p-4 rounded-2xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 text-xs space-y-3 shadow-sm">
-								<div className="flex items-center justify-between pb-1.5 border-b border-emerald-200/50 dark:border-emerald-800/50">
-									<h3 className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 m-0">
+							<div className="p-4 rounded-2xl border border-[var(--ok-fg,#059669)]/30 bg-[var(--ok-bg,#f0fdf4)] text-[var(--ok-fg,#059669)] text-xs space-y-3 shadow-sm">
+								<div className="flex items-center justify-between pb-1.5 border-b border-[var(--ok-fg,#059669)]/20">
+									<h3 className="text-xs font-bold uppercase tracking-wider text-[var(--ok-fg,#059669)] m-0">
 										Суммы расходов (Приказ ФНС ЕА-7-11/824@):
 									</h3>
-									<span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded">
+									<span className="text-[10px] font-bold text-[var(--ok-fg,#059669)] bg-[var(--paper,#ffffff)] px-2 py-0.5 rounded border border-[var(--ok-fg,#059669)]/20">
 										13% возврат
 									</span>
 								</div>
 
-								<div className="flex justify-between items-center py-1 border-b border-emerald-200/40 dark:border-emerald-800/40">
+								<div className="flex justify-between items-center py-1 border-b border-[var(--ok-fg,#059669)]/20">
 									<div>
 										<div className="font-semibold text-slate-800 dark:text-slate-200">Код 1 (Обычное лечение):</div>
 										<div className="text-[10px] text-slate-500 dark:text-slate-400">Лимит базы вычета: 150 000 ₽ / год</div>
 									</div>
-									<strong className="font-bold text-sm text-emerald-700 dark:text-emerald-300">
+									<strong className="font-bold text-sm text-[var(--ok-fg,#059669)]">
 										{formatKopecksRu(parseKopecks(result.code1TotalRub))}
 									</strong>
 								</div>
@@ -186,7 +186,7 @@ export function NdflCalculatorModal({
 										<div className="font-semibold text-slate-800 dark:text-slate-200">Код 2 (Дорогостоящее лечение):</div>
 										<div className="text-[10px] text-slate-500 dark:text-slate-400">Имплантация, костная пластика (без лимита)</div>
 									</div>
-									<strong className="font-bold text-sm text-emerald-700 dark:text-emerald-300">
+									<strong className="font-bold text-sm text-[var(--ok-fg,#059669)]">
 										{formatKopecksRu(parseKopecks(result.code2TotalRub))}
 									</strong>
 								</div>

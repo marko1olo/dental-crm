@@ -45,7 +45,7 @@ export const Order804nFiscalReceiptPrint: React.FC<Order804nFiscalReceiptPrintPr
 			<div className="py-3 space-y-1.5 border-b border-dashed border-[var(--border,#cbd5e1)] text-xs">
 				<div className="flex justify-between items-center gap-2">
 					<span className="font-bold text-[var(--ink,#0f172a)]">{receiptTitle}</span>
-					<span className="font-bold text-teal-700 dark:text-teal-300">№ {receipt.receiptNumber}</span>
+					<span className="font-bold text-[var(--teal,#0d9488)]">№ {receipt.receiptNumber}</span>
 				</div>
 				<div className="flex justify-between">
 					<span className="text-[var(--muted,#64748b)]">ДАТА / ВРЕМЯ:</span>
@@ -132,7 +132,7 @@ export const Order804nFiscalReceiptPrint: React.FC<Order804nFiscalReceiptPrintPr
 							</div>
 							<div className="flex justify-between text-xs text-[var(--muted,#64748b)]">
 								<span>НДС: БЕЗ НДС (ст. 149 НК)</span>
-								<span className="font-semibold text-indigo-600 dark:text-indigo-400">ВЫЧЕТ: КОД 0{it.taxDeductionCategory}</span>
+								<span className="font-semibold text-[var(--brand-primary,#0d9488)]">ВЫЧЕТ: КОД 0{it.taxDeductionCategory}</span>
 							</div>
 						</div>
 					))}
@@ -143,7 +143,7 @@ export const Order804nFiscalReceiptPrint: React.FC<Order804nFiscalReceiptPrintPr
 			<div className="py-3 space-y-2 border-b border-dashed border-[var(--border,#cbd5e1)]">
 				<div className="flex justify-between items-baseline font-black text-sm sm:text-base text-[var(--ink,#0f172a)] pt-1">
 					<span>{receipt.operationType === "income_return" ? "ИТОГО К ВОЗВРАТУ:" : "ИТОГО К ОПЛАТЕ:"}</span>
-					<span className="font-black text-emerald-600 dark:text-emerald-400 text-base sm:text-lg">
+					<span className="font-black text-[var(--ok-fg,#059669)] text-base sm:text-lg">
 						={receipt.totalRub.toLocaleString("ru-RU")} ₽
 					</span>
 				</div>
@@ -161,7 +161,7 @@ export const Order804nFiscalReceiptPrint: React.FC<Order804nFiscalReceiptPrintPr
 										<span>ПОЛУЧЕНО НАЛИЧНЫМИ:</span>
 										<span>{receipt.payments.receivedCashRub.toLocaleString("ru-RU")} ₽</span>
 									</div>
-									<div className="flex justify-between text-emerald-700 dark:text-emerald-400 font-bold">
+									<div className="flex justify-between text-[var(--ok-fg,#059669)] font-bold">
 										<span>СДАЧА:</span>
 										<span>{receipt.payments.changeRub.toLocaleString("ru-RU")} ₽</span>
 									</div>
@@ -178,13 +178,13 @@ export const Order804nFiscalReceiptPrint: React.FC<Order804nFiscalReceiptPrintPr
 					{receipt.payments.sbpRub > 0 && (
 						<div className="flex justify-between">
 							<span className="text-[var(--muted,#64748b)]">СБП / ПЛАТИ QR (Тег 1081):</span>
-							<span className="font-bold text-teal-700 dark:text-teal-300">{receipt.payments.sbpRub.toLocaleString("ru-RU")} ₽</span>
+							<span className="font-bold text-[var(--teal,#0d9488)]">{receipt.payments.sbpRub.toLocaleString("ru-RU")} ₽</span>
 						</div>
 					)}
 					{receipt.payments.insuranceRub > 0 && (
-						<div className="flex justify-between text-indigo-900 dark:text-indigo-200 bg-indigo-50/70 dark:bg-indigo-950/40 px-2 py-1 rounded-lg border border-indigo-200 dark:border-indigo-800/60">
+						<div className="flex justify-between text-[var(--brand-primary,#0d9488)] bg-[var(--brand-primary-soft,#f0fdfa)] px-2 py-1 rounded-lg border border-[var(--brand-primary,#0d9488)]/20">
 							<span>ДМС СТРАХОВАЯ {receipt.guaranteeLetterNumber ? `(ГП №${receipt.guaranteeLetterNumber})` : "(БЕЗНАЛ)"}:</span>
-							<span className="font-bold text-indigo-700 dark:text-indigo-300">{receipt.payments.insuranceRub.toLocaleString("ru-RU")} ₽</span>
+							<span className="font-bold text-[var(--brand-primary,#0d9488)]">{receipt.payments.insuranceRub.toLocaleString("ru-RU")} ₽</span>
 						</div>
 					)}
 					{receipt.payments.insuranceRub > 0 && receipt.payments.patientCoPayRub > 0 && (
@@ -234,7 +234,7 @@ export const Order804nFiscalReceiptPrint: React.FC<Order804nFiscalReceiptPrintPr
 				</div>
 				<div className="flex justify-between">
 					<span>СПРАВКА ДЛЯ ФНС (КНД 1151156):</span>
-					<span className="font-bold text-indigo-700 dark:text-indigo-300">
+					<span className="font-bold text-[var(--brand-primary,#0d9488)]">
 						{receipt.taxDeductionCategory === "2"
 							? "КОД 02 (Дорогостоящее)"
 							: "КОД 01 (Стандартное)"}
@@ -253,7 +253,7 @@ export const Order804nFiscalReceiptPrint: React.FC<Order804nFiscalReceiptPrintPr
 							href={receipt.ofdUrl}
 							target="_blank"
 							rel="noopener noreferrer"
-							className="text-xs text-teal-600 dark:text-teal-400 hover:underline break-all block font-semibold"
+							className="text-xs text-[var(--teal,#0d9488)] hover:underline break-all block font-semibold"
 						>
 							{receipt.ofdUrl}
 						</a>
