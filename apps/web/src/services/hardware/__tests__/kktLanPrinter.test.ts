@@ -207,4 +207,63 @@ describe("KktLanPrinterService — Direct LAN TCP KKT Printing (54-ФЗ)", () =>
 		assert.equal(health.latencyMs, 14);
 		assert.equal(health.modelName, "АТОЛ 27Ф (LAN)");
 	});
+
+	it("should trip circuit breaker to OPEN after repeated network failures and fast-fail subsequent requests", async () => {
+		KktLanPrinterService.resetCircuitBreaker();
+
+		const mockNativeApi: DesktopNativeApi = {
+			isDesktop: true,
+			platform: "win32",
+			version: "0.1.0",
+			listSerialPorts: async () => [],
+			listTwainDevices: async () => [],
+			acquireTwainImage: async () => ({ success: true }),
+			printFiscalReceiptTcp: async () => ({
+				success: false,
+				error: "Сетевой сбой: Connection refused",
+			}),
+			watchLocalDicomFolder: async () => ({ success: true }),
+			unwatchLocalDicomFolder: async () => ({ success: true }),
+		};
+
+		// @ts-expect-error mock window
+		globalThis.window = { denteDesktopNative: mockNativeApi };
+
+		const payload: FiscalReceiptPrintPayload = {
+			operationType: "income",
+			customerContact: "+79991234567",
+			cashierFullName: "Иванова А. С.",
+			items: [{ name: "Осмотр", priceRub: 500, quantity: 1, amountRub: 500 }],
+			totalRub: 500,
+		};
+
+		// 1. Initial state: CLOSED
+		let telemetry = KktLanPrinterService.getCircuitBreakerTelemetry();
+		assert.equal(telemetry.state, "CLOSED");
+		assert.equal(telemetry.consecutiveFailures, 0);
+
+		// 2. Perform 5 consecutive failed prints to reach threshold
+		for (let i = 0; i < KktLanPrinterService.FAILURE_THRESHOLD; i++) {
+			await KktLanPrinterService.printReceipt(payload);
+		}
+
+		telemetry = KktLanPrinterService.getCircuitBreakerTelemetry();
+		assert.equal(telemetry.state, "OPEN");
+		assert.equal(telemetry.consecutiveFailures, 5);
+		assert.ok(telemetry.lastFailureTime);
+		assert.ok(telemetry.nextAllowedAttemptTime);
+
+		// 3. Fast-fail while OPEN
+		const fastFailResult = await KktLanPrinterService.printReceipt(payload);
+		assert.equal(fastFailResult.success, false);
+		assert.equal(fastFailResult.status, "hardware_offline");
+		assert.match(fastFailResult.error || "", /Circuit Breaker OPEN/i);
+
+		// 4. Reset
+		KktLanPrinterService.resetCircuitBreaker();
+		const resetTelemetry = KktLanPrinterService.getCircuitBreakerTelemetry();
+		assert.equal(resetTelemetry.state, "CLOSED");
+		assert.equal(resetTelemetry.consecutiveFailures, 0);
+	});
 });
+

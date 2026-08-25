@@ -19,7 +19,7 @@
 	--elev: #ffffff;
 	--ink: #0f1e1b;
 	--ink-2: #3f544f;
-	--muted: #5d746f;
+	--muted: #475569;
 	--line: #e2eae7;
 	--line-strong: #cbd9d4;
 	--teal: #0d9488;
@@ -100,7 +100,7 @@
 	--elev: #15211f;
 	--ink: #e9f2ef;
 	--ink-2: #b9c9c4;
-	--muted: #7e948e;
+	--muted: #cbd5e1;
 	--line: rgba(150, 180, 172, 0.14);
 	--line-strong: rgba(150, 180, 172, 0.28);
 	--teal: #2dd4bf;
@@ -232,7 +232,7 @@
 	--elev: #ffffff;
 	--ink: #134e4a;
 	--ink-2: #115e59;
-	--muted: #0f766e;
+	--muted: #115e59;
 	--line: #99f6e4;
 	--line-strong: #5eead4;
 	--teal: #0f766e;
@@ -799,26 +799,50 @@ select:focus {
 .topbar {
 	display: flex;
 	align-items: center;
-	gap: 14px;
-	padding: 12px 24px;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 10px 24px;
 	background: var(--paper);
 	border-bottom: 1px solid var(--line);
 	flex-shrink: 0;
+	min-height: 60px;
+	box-sizing: border-box;
+}
+.topbar-context {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	flex-wrap: nowrap;
+	min-width: 0;
+}
+.topbar-clinic {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
 }
 .topbar h1 {
-	margin: 1px 0 0;
-	font-size: 18px;
+	margin: 0;
+	font-size: 16px;
 	font-weight: 700;
 	color: var(--ink);
-	white-space: normal;
-	word-break: break-word;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 	line-height: 1.25;
 }
 .topbar .eyebrow {
-	margin: 0;
-	font-size: 11px;
-	font-weight: 600;
+	margin: 0 0 2px;
+	font-size: 10.5px;
+	font-weight: 700;
 	letter-spacing: 0.08em;
+	color: var(--muted);
+	white-space: nowrap;
+}
+.topbar-selectors {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	flex-shrink: 0;
 }
 .top-actions {
 	display: flex;
@@ -921,13 +945,17 @@ select:focus {
 		padding: 14px 14px 100px;
 	}
 }
+.workspace-role-switcher {
+	position: relative;
+	display: inline-block;
+}
 .workspace-role-switcher summary {
 	display: inline-flex;
 	align-items: center;
-	gap: 7px;
-	padding: 6px 12px;
+	gap: 6px;
+	padding: 4px 10px;
 	border: 1px solid var(--line);
-	border-radius: 999px;
+	border-radius: 8px;
 	background: var(--paper-soft);
 	color: var(--ink-2);
 	font-size: 12px;
@@ -935,23 +963,27 @@ select:focus {
 	cursor: pointer;
 	list-style: none;
 	white-space: nowrap;
-	transition: all 0.15s;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	user-select: none;
 }
 .workspace-role-switcher summary:hover {
 	border-color: var(--teal-ring);
 	color: var(--ink);
+	background: var(--paper);
 }
-.workspace-role-switcher summary::before {
-	content: "";
-	width: 7px;
-	height: 7px;
-	border-radius: 50%;
-	background: var(--teal);
-	flex-shrink: 0;
+.workspace-role-switcher summary::-webkit-details-marker {
+	display: none;
 }
 .workspace-role-switcher summary strong {
 	color: var(--ink);
 	font-weight: 600;
+}
+.workspace-role-switcher .switcher-chevron {
+	transition: transform 0.15s ease;
+	flex-shrink: 0;
+}
+.workspace-role-switcher[open] .switcher-chevron {
+	transform: rotate(180deg);
 }
 .role-switcher-options {
 	position: absolute;
@@ -1959,9 +1991,9 @@ textarea:focus {
 
 	/* Пациенты — принудительно одна колонка (override inline style) */
 	.patients-main-grid {
-		display: flex;
-		flex-direction: column;
-		gap: 12px;
+		display: flex !important;
+		flex-direction: column !important;
+		gap: 12px !important;
 		margin-top: 12px;
 	}
 

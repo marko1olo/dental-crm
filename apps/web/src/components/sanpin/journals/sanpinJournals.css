@@ -237,6 +237,64 @@
 	gap: 1.25rem;
 }
 
+/* Quick 1-Click Action Bar */
+.sanpin-quick-actions-bar {
+	padding: 1rem 1.25rem;
+	border-radius: 0.6rem;
+	background: var(--paper-subtle, #f8fafc);
+	border: 1px solid var(--glass-border, #cbd5e1);
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+[data-theme="dark"] .sanpin-quick-actions-bar {
+	background: rgba(30, 41, 59, 0.5);
+	border-color: #334155;
+}
+
+.sanpin-quick-actions-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+}
+
+.sanpin-quick-actions-title {
+	font-weight: 800;
+	font-size: 0.95rem;
+	color: var(--brand-primary, #2563eb);
+}
+
+[data-theme="dark"] .sanpin-quick-actions-title {
+	color: #60a5fa;
+}
+
+.sanpin-quick-preset-grid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.6rem;
+}
+
+.sanpin-preset-btn {
+	font-size: 0.825rem;
+	padding: 0.5rem 0.85rem;
+	max-width: 100%;
+	text-align: left;
+	white-space: normal !important;
+	word-break: break-word !important;
+	overflow-wrap: break-word !important;
+	line-height: 1.35;
+	height: auto;
+	min-height: 44px;
+}
+
+.sanpin-preset-text {
+	line-height: 1.3;
+	word-break: break-word;
+}
+
 /* Control Bar (Search, Actions, Filters) */
 .sanpin-toolbar {
 	display: flex;
@@ -619,6 +677,66 @@
 [data-theme="dark"] .sanpin-inner-modal-footer {
 	background: rgba(30, 41, 59, 0.4);
 	border-top-color: #334155;
+}
+
+/* Mobile responsive layout */
+@media (max-width: 768px) {
+	.sanpin-studio-modal-overlay {
+		padding: 0 !important;
+		align-items: flex-start !important;
+	}
+
+	.sanpin-studio-modal {
+		width: 100vw !important;
+		height: 100dvh !important;
+		max-height: 100dvh !important;
+		border-radius: 0 !important;
+		border: none !important;
+	}
+
+	.sanpin-studio-header {
+		padding: 0.75rem 1rem !important;
+		flex-wrap: wrap !important;
+		gap: 0.5rem !important;
+	}
+
+	.sanpin-studio-title-box h2 {
+		font-size: 1.05rem !important;
+	}
+
+	.sanpin-kpi-deck {
+		display: none !important;
+	}
+
+	.sanpin-nav-bar {
+		padding: 0.25rem 0.5rem 0 !important;
+		overflow-x: auto !important;
+		flex-wrap: nowrap !important;
+		-webkit-overflow-scrolling: touch !important;
+	}
+
+	.sanpin-nav-item {
+		padding: 0.5rem 0.85rem !important;
+		font-size: 0.825rem !important;
+		flex-shrink: 0 !important;
+		white-space: nowrap !important;
+		min-height: 44px !important;
+	}
+
+	.sanpin-tab-viewport {
+		padding: 0.75rem !important;
+		padding-bottom: 5rem !important;
+	}
+
+	.sanpin-quick-actions-bar {
+		flex-direction: column !important;
+		align-items: stretch !important;
+	}
+
+	.sanpin-filter-bar {
+		flex-direction: column !important;
+		align-items: stretch !important;
+	}
 }
 
 /* Print Rules */

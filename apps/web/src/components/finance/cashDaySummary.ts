@@ -79,6 +79,10 @@ export interface CashDaySummary {
 	 * по ней и пришли, и ушли (см. ветку «refunded» в summarizeCashDay).
 	 */
 	cashRub: number;
+	/** Сколько безналичных оплат картой (эквайринг) за день. */
+	cardRub: number;
+	/** Сколько безналичных оплат через СБП / онлайн за день. */
+	sbpRub: number;
 	/** Из принятого — авансы на семейный счёт (в журнале это статус «planned»). */
 	advanceRub: number;
 	/** Оплачено с семейных счетов: выручка дня, но новых денег не приносит. */
@@ -95,6 +99,7 @@ export interface CashDaySummary {
 	/** Разбивка пришедших денег по способам, без нулевых строк. */
 	byMethod: CashDayMethodRow[];
 }
+
 
 /**
  * Сложение денег без хвостов плавающей точки.
@@ -226,10 +231,15 @@ export function summarizeCashDay(
 		};
 	});
 
+	const cardKopecks = (totals.get("card")?.kopecks ?? 0) + (totals.get("bank_transfer")?.kopecks ?? 0);
+	const sbpKopecks = totals.get("online")?.kopecks ?? 0;
+
 	return {
 		receivedRub: Number(kopecksToNumericString(receivedKopecks)),
 		receivedCount,
 		cashRub: Number(kopecksToNumericString(cashKopecks)),
+		cardRub: Number(kopecksToNumericString(cardKopecks)),
+		sbpRub: Number(kopecksToNumericString(sbpKopecks)),
 		advanceRub: Number(kopecksToNumericString(advanceKopecks)),
 		familyWalletRub: Number(kopecksToNumericString(familyWalletKopecks)),
 		refundedRub: Number(kopecksToNumericString(refundedKopecks)),
@@ -237,3 +247,4 @@ export function summarizeCashDay(
 		byMethod,
 	};
 }
+

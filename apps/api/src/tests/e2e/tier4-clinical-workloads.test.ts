@@ -112,11 +112,14 @@ describe("Tier 4: Real-World Clinical Workload Scenarios & Edge Environments", (
 		try {
 			await purgeFixtureOrganizations([ORG_ID]);
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.insert(organizations).values({
-					id: ORG_ID,
-					name: "Стоматологический Комплекс Премиум ДЕНТЕ",
-					inn: "7701112233",
-				});
+				await db
+					.insert(organizations)
+					.values({
+						id: ORG_ID,
+						name: "Стоматологический Комплекс Премиум ДЕНТЕ",
+						inn: "7701112233",
+					})
+					.onConflictDoNothing();
 				await db.insert(clinics).values({
 					id: CLINIC_ID,
 					organizationId: ORG_ID,

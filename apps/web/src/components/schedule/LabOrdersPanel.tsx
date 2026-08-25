@@ -566,7 +566,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 				{loadError ? (
 					<div
 						role="alert"
-						className="border border-rose-300 dark:border-rose-500/40 bg-rose-50 dark:bg-rose-500/10 rounded-xl p-3 text-[13px] text-rose-900 dark:text-rose-200 space-y-2"
+						className="border border-rose-300 dark:border-rose-500/40 bg-rose-50 dark:bg-rose-500/10 rounded-xl p-3 text-sm text-rose-900 dark:text-rose-200 space-y-2"
 					>
 						<p className="font-semibold m-0">{loadError}</p>
 						<p className="m-0 text-rose-800 dark:text-rose-100/90">
@@ -639,7 +639,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 											Цвет: {order.colorVita || "не указан"}
 										</span>
 										<span
-											className={`px-2 py-0.5 rounded-full border text-[10px] font-bold tracking-wide uppercase ${statusColors[order.status]}`}
+											className={`px-2 py-0.5 rounded-full border text-xs font-bold tracking-wide uppercase ${statusColors[order.status]}`}
 										>
 											{statusLabels[order.status]}
 										</span>
@@ -657,7 +657,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 										чтобы спутать было нечем.
 									*/}
 									{order.dueDate && (
-										<div className="text-[11px] text-slate-400 flex items-center gap-1">
+										<div className="text-xs text-slate-400 flex items-center gap-1">
 											<Calendar className="w-3.5 h-3.5 text-teal-400/80" />
 											Срок:{" "}
 											{new Date(order.dueDate).toLocaleDateString("ru-RU", {
@@ -700,7 +700,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 												e.target.value as LabOrder["status"],
 											)
 										}
-										className="py-1.5 px-2.5 min-h-[36px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-200 focus:outline-none focus:border-teal-500 text-xs"
+										className="py-1.5 px-2.5 min-h-[44px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-200 focus:outline-none focus:border-teal-500 text-xs"
 										title="Изменить статус заказа ЗТЛ"
 									>
 										{clinicStatusFlow.map((s) => (
@@ -719,7 +719,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 									<button
 										type="button"
 										onClick={() => copyPortalLink(order.secureToken)}
-										className="py-1.5 px-2.5 min-h-[36px] bg-teal-50 dark:bg-teal-500/10 hover:bg-teal-100 dark:hover:bg-teal-500/20 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-500/20 rounded-lg font-semibold transition-colors flex items-center gap-1 text-xs"
+										className="py-1.5 px-2.5 min-h-[44px] bg-teal-50 dark:bg-teal-500/10 hover:bg-teal-100 dark:hover:bg-teal-500/20 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-500/20 rounded-lg font-semibold transition-colors flex items-center gap-1 text-xs cursor-pointer"
 									>
 										<Link className="w-3.5 h-3.5" />
 										Ссылка технику
@@ -729,7 +729,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 										disabled={deletingId === order.id}
 										aria-busy={deletingId === order.id}
 										onClick={() => handleDeleteOrder(order.id)}
-										className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+										className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
 									>
 										<Trash2 className="w-3.5 h-3.5" />
 									</button>

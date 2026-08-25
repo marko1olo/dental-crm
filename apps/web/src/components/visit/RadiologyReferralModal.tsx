@@ -271,7 +271,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 												<span className="text-xs font-bold text-[var(--ink)]">
 													{type.label}
 												</span>
-												<span className="text-[11px] text-[var(--muted)] line-clamp-1">
+												<span className="text-xs text-[var(--muted)] line-clamp-1">
 													{type.desc}
 												</span>
 											</div>
@@ -348,7 +348,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 						</div>
 
 						<div className="p-4 rounded-xl border border-[var(--line)] bg-white text-slate-900 text-xs shadow-inner font-sans leading-relaxed flex flex-col gap-3">
-							<div className="border-b border-slate-300 pb-2 text-[10px] text-slate-600 flex justify-between">
+							<div className="border-b border-slate-300 pb-2 text-xs text-slate-600 flex justify-between">
 								<div>
 									<div className="font-bold text-slate-900 uppercase">
 										{clinic}
@@ -361,7 +361,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 								</div>
 							</div>
 
-							<div className="border-b border-slate-200 pb-2 flex flex-col gap-0.5 text-[11px]">
+							<div className="border-b border-slate-200 pb-2 flex flex-col gap-0.5 text-xs">
 								<div>
 									Пациент: <strong>{patientName}</strong> (д.р. {patientBirth})
 								</div>
@@ -376,7 +376,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 								</div>
 							</div>
 
-							<div className="p-2.5 rounded-lg border border-teal-200 bg-teal-50/50 flex flex-col gap-1 text-[11px]">
+							<div className="p-2.5 rounded-lg border border-teal-200 bg-teal-50/50 flex flex-col gap-1 text-xs">
 								<div className="font-bold text-teal-900">
 									Вид исследования:{" "}
 									{dentalRadiologyStudyLabels[studyType]}
@@ -391,12 +391,12 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 								)}
 							</div>
 
-							<div className="border-t border-slate-300 pt-2 text-[10px] flex justify-between items-end text-slate-500">
+							<div className="border-t border-slate-300 pt-2 text-xs flex justify-between items-end text-slate-500">
 								<div>
 									<div>Принцип ALARA / СанПиН соблюдён</div>
 									<div className="mt-4">Подпись врача: ______________</div>
 								</div>
-								<div className="w-12 h-12 rounded-full border border-dashed border-slate-400 flex items-center justify-center font-bold text-[9px]">
+								<div className="w-12 h-12 rounded-full border border-dashed border-slate-400 flex items-center justify-center font-bold text-xs">
 									М.П.
 								</div>
 							</div>

@@ -3617,7 +3617,7 @@ function paymentInvoice(
 		const totalWords = legalMoneyInWordsRu(payload.totalAmountRub);
 		const payerContact =
 			compactParts([payload.payerPhone, payload.payerEmail]) ||
-			"контакт не указан";
+			"по данным карты пациента";
 		const serviceRows = payload.serviceLines
 			.map(
 				(line, index) => `<tr>

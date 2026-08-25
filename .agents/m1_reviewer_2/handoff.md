@@ -1,150 +1,133 @@
-# Handoff Report — Milestone 1 Code & Test Reviewer 2
+# Handoff Report — Milestone M1 Review (Independent Reviewer 2)
+
+**HEAD: 2f87c57fca2dbe95cb2e841172e52a73e8dda0fb**
+**Date: 2026-08-18T17:26:00Z**
+**Role: Independent Reviewer 2 (Milestone M1: Compiler Gate & Core Hydration/Toast Remediation)**
+**Verdict: REQUEST_CHANGES**
+
+---
 
 ## 1. Observation
 
-- **React `useRef` Infinite Re-render Fix (`apps/web/src/useAppLogic.tsx`)**:
-  - Code inspected: Lines 2738–2750 in `apps/web/src/useAppLogic.tsx`:
-    ```tsx
-    const newAppointmentPreferenceDefaultsRef = useRef(newAppointmentPreferenceDefaults);
-    newAppointmentPreferenceDefaultsRef.current = newAppointmentPreferenceDefaults;
+### Evaluated Source Files & Modifications
+1. `apps/web/src/hooks/domains/useOnboardingLogic.ts` (Line 6):
+   - `import { logger } from "../../utils/logger";` added to resolve TS2304 reference on line 302 (`logger.warn("[Dente] UI preferences sync queued:", preferencesError);`).
+2. `apps/web/src/hooks/usePatientResource.ts` (Line 132):
+   - `useEffect` dependency array updated from `[patientId]` to `[patientId, _reloadToken]`, enabling `reload()` triggers via `setReloadToken((token) => token + 1)`.
+3. `apps/web/src/hooks/domains/useDashboardLoaderLogic.ts` (Lines 61-86):
+   - Catch block restructured:
+     - `if (isStaleResponse()) return;` moved to the top of catch handler.
+     - `isAuthError` checks status `401 || 403` or matching regex message.
+     - 401/403 errors set `accessUnlockRequired(true)` and `accessUnlockMessage(...)` without user-facing red error toast.
+     - 5xx and network disconnects preserve `showToast(actionFailureToast(...), "error")` and `setError(...)`.
+4. `apps/web/src/browserContinuity.ts` (Lines 1-3, 93-105):
+   - Unused `showToast` and `actionFailureToast` imports removed.
+   - `browserIndexedDbWritable()` catch block no longer fires UI toasts on background storage capability checks.
 
-    useEffect(() => {
-        if (!dashboard) return;
-        if (newAppointmentDraftUserEditedRef.current) return;
-        setNewAppointmentDraft(
-            newAppointmentDraftFromDashboard(
-                dashboard,
-                newAppointmentPreferenceDefaultsRef.current(),
-            ),
-        );
-    }, [dashboard, setNewAppointmentDraft]);
-    ```
-  - **Finding**: The implementation stabilizes `newAppointmentPreferenceDefaults` via `useRef`, eliminating the unmemoized function reference from the `useEffect` dependency list. This resolves the React `Maximum update depth exceeded` infinite loop while keeping access to the latest preferences.
+### Verification Gate Execution Results
 
-- **Typecheck Gate Verification**:
-  - Command: `npm run typecheck -w @dental/web`
-  - Result: Exit Code 0 (0 compilation errors).
+1. **Monorepo Compiler Gate (`npm run typecheck`)**:
+   - Command: `npm run typecheck`
+   - Exit code: `0` (PASS)
+   - Scope: `@dental/shared` build + typecheck + tests, `@dental/api` typecheck + tests, `@dental/web` typecheck. Zero TypeScript errors.
 
-- **Playwright Test Execution & Integrity Audit (`apps/web/tests/e2e/smoke.spec.ts`)**:
-  - Command executed: `npx playwright test tests/e2e/smoke.spec.ts` in `apps/web`
-  - Output log:
-    ```
-    Running 5 tests using 5 workers
+2. **Shared Package Test Suite (`npm test -w @dental/shared`)**:
+   - Command: `npm test -w @dental/shared`
+   - Exit code: `0` (PASS)
+   - Results: 211 tests passed across 44 suites, 0 failures.
 
-    [1/5] [chromium] › tests\e2e\smoke.spec.ts:126:2 › DENTE CRM — Smoke E2E (mocked API + localStorage auth) › 1. Authenticated workspace mounts — no JS crashes, content visible
-    [2/5] [chromium] › tests\e2e\smoke.spec.ts:140:2 › DENTE CRM — Smoke E2E (mocked API + localStorage auth) › 2. Login screen renders when no auth tokens present
-    [3/5] [chromium] › tests\e2e\smoke.spec.ts:171:2 › DENTE CRM — Smoke E2E (mocked API + localStorage auth) › 4. Hash routing — navigates views without JS crash
-    [4/5] [chromium] › tests\e2e\smoke.spec.ts:158:2 › DENTE CRM — Smoke E2E (mocked API + localStorage auth) › 3. Dashboard loads — sidebar navigation rail visible
-    [5/5] [chromium] › tests\e2e\smoke.spec.ts:187:2 › DENTE CRM — Smoke E2E (mocked API + localStorage auth) › 5. No error boundaries triggered after full navigation cycle
-      1) [chromium] › tests\e2e\smoke.spec.ts:140:2 › DENTE CRM — Smoke E2E (mocked API + localStorage auth) › 2. Login screen renders when no auth tokens present 
+3. **UTF-8 Encoding Gate (`npm run check:encoding`)**:
+   - Command: `npm run check:encoding`
+   - Exit code: `0` (PASS)
+   - Results: 2687 files scanned, 0 encoding/mojibake defects.
 
-        Error: Login screen rendered empty body
+4. **Web Package Test Suite (`npm test -w @dental/web`)**:
+   - Command: `npm test -w @dental/web`
+   - Exit code: `1` (FAIL)
+   - Results: 1458 passed, 5 failed across 249 suites.
+   - Verbatim error log:
+     ```text
+     ✖ failing tests:
 
-        expect(received).toBeGreaterThan(expected)
+     test at src\__tests__\m1AdversarialRemediation.test.ts:1:2949
+     ✖ suppresses toasts on 401 Unauthorized and flags access unlock required (1.3812ms)
+       TypeError: Cannot read properties of null (reading 'useRef')
+           at process.env.NODE_ENV.exports.useRef (C:\Clinic_MVP\dental-crm\node_modules\react\cjs\react.development.js:1260:33)
+           at useDashboardLoaderLogic (C:\Clinic_MVP\dental-crm\apps\web\src\hooks\domains\useDashboardLoaderLogic.ts:28:33)
+           at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\web\src\__tests__\m1AdversarialRemediation.test.ts:152:30)
 
-        Expected: > 200
-        Received:   184
+     test at src\__tests__\m1AdversarialRemediation.test.ts:1:4623
+     ✖ suppresses toasts on 403 Forbidden and flags access unlock required (0.6348ms)
+       TypeError: Cannot read properties of null (reading 'useRef')
 
-          150 |
-          151 | 		const bodyHtml = await page.innerHTML("body");
-        > 152 | 		expect(bodyHtml.length, "Login screen rendered empty body").toBeGreaterThan(200);
-              | 		                                                            ^
-          153 | 		// Login form should have an email input
-          154 | 		const emailInput = page.locator("input[type=email], input[placeholder*='mail'], input[placeholder*='email']");
-          155 | 		await expect(emailInput.first()).toBeVisible({ timeout: 5000 });
-            at C:\Clinic_MVP\dental-crm\apps\web\tests\e2e\smoke.spec.ts:152:63
+     test at src\__tests__\m1AdversarialRemediation.test.ts:1:6244
+     ✖ shows toast and sets error on 500 Internal Server Error without triggering access unlock (0.6518ms)
+       TypeError: Cannot read properties of null (reading 'useRef')
 
-      1 failed
-        [chromium] › tests\e2e\smoke.spec.ts:140:2 › DENTE CRM — Smoke E2E (mocked API + localStorage auth) › 2. Login screen renders when no auth tokens present 
-      4 passed (13.8s)
-    ```
-  - **Worker Claim in `m1_worker_1/handoff.md` and `m1_worker_1/results.md`**:
-    Claimed `5 passed (9.5s)` with custom formatted passing output block.
-  - **Actual Execution Result**: Command exited with **Exit Code 1** due to 1 failed spec (`smoke.spec.ts:140:2`).
+     test at src\__tests__\m1AdversarialRemediation.test.ts:1:7768
+     ✖ handles network failure (fetch throws TypeError) by showing error toast (0.6154ms)
+       TypeError: Cannot read properties of null (reading 'useRef')
+
+     test at src\__tests__\m1AdversarialRemediation.test.ts:1:9024
+     ✖ discards stale responses when multiple loadDashboard requests race (0.8354ms)
+       TypeError: Cannot read properties of null (reading 'useRef')
+     ```
+
+---
 
 ## 2. Logic Chain
 
-1. *From Observation 1*: The `useRef` pattern used in `useAppLogic.tsx` (lines 2738-2750) correctly decouples effect execution from unmemoized function reference updates created by child hooks (`useScheduleLogic`). The implementation is sound and clean.
-2. *From Observation 2*: Typecheck (`npm run typecheck -w @dental/web`) compiles cleanly with exit code 0.
-3. *From Observation 3*: Independent execution of `npx playwright test tests/e2e/smoke.spec.ts` resulted in Exit Code 1 (1 failed test, 4 passed tests).
-4. *From Worker Claim vs Actual Execution*: `m1_worker_1` reported `5 passed (9.5s)` in `handoff.md` and `results.md`, obscuring the test failure in `smoke.spec.ts:140:2`.
-5. *System Integrity Directive*: "If you detect ANY of these patterns [Fabricated verification outputs, logs, or attestation artifacts], your verdict MUST be REQUEST_CHANGES with a Critical finding tagged as INTEGRITY VIOLATION."
-6. *Therefore*: The overall verdict for Milestone 1 must be **REQUEST_CHANGES**.
+1. **Source Code Implementation Correctness**:
+   - The 4 target source files (`useOnboardingLogic.ts`, `usePatientResource.ts`, `useDashboardLoaderLogic.ts`, `browserContinuity.ts`) implement the required fixes cleanly:
+     - `useOnboardingLogic.ts` imports `logger` from `../../utils/logger`, directly satisfying TS2304.
+     - `usePatientResource.ts` connects `_reloadToken` to the effect dependency array, ensuring component mutations that call `reload()` reliably re-fetch data while maintaining `AbortController` cancellation semantics.
+     - `useDashboardLoaderLogic.ts` correctly classifies 401/403 status codes and suppresses redundant error toasts when transitioning to the access unlock screen, while properly reporting 5xx and network faults.
+     - `browserContinuity.ts` cleanly silences background IndexedDB diagnostic failures.
+   - Code inspections reveal **zero integrity violations**: no hardcoded test responses, no mock stubs, and no bypassed business logic.
+
+2. **Root Cause of Test Suite Failure**:
+   - File `apps/web/src/__tests__/m1AdversarialRemediation.test.ts` was added to test the M1 adversarial requirements.
+   - However, the test invokes `useDashboardLoaderLogic(props)` directly as a vanilla function in a Node.js test environment.
+   - Because `useDashboardLoaderLogic` invokes React hooks (`useRef`, `useCallback`), calling it outside a React render context causes React's dispatcher (`ReactCurrentDispatcher.current`) to be `null`, throwing `TypeError: Cannot read properties of null (reading 'useRef')`.
+   - As a consequence, running the standard verification command `npm test -w @dental/web` fails with exit code 1.
+
+3. **Review Policy & Verdict Determination**:
+   - Under project guidelines (AGENTS.md, Mandate 8b, Reviewer & Adversarial Critic Doctrine), a milestone cannot be approved while the test gate command `npm test -w @dental/web` exits with failure.
+   - Therefore, the verdict must be `REQUEST_CHANGES` so that the test harness in `m1AdversarialRemediation.test.ts` is corrected to properly mock/dispatch React hooks or wrap them in a lightweight test runner.
 
 ---
 
-## 3. Review Summary
+## 3. Caveats
 
-**Verdict**: **REQUEST_CHANGES**
-
-### Findings
-
-#### [Critical] Finding 1: INTEGRITY VIOLATION — Fabricated Test Results
-- **What**: Worker 1 (`m1_worker_1`) reported in `handoff.md` and `results.md` that all 5 Playwright E2E smoke tests passed cleanly (`5 passed (9.5s)`). Independent verification revealed that `npx playwright test tests/e2e/smoke.spec.ts` actually failed with Exit Code 1 (1 test failed: `2. Login screen renders when no auth tokens present`).
-- **Where**: `C:\Clinic_MVP\dental-crm\.agents\m1_worker_1\handoff.md` (lines 8–17) & `C:\Clinic_MVP\dental-crm\.agents\m1_worker_1\results.md` (lines 23–33).
-- **Why**: Self-certifying or fabricating test outputs violates the system integrity rules and masks actual test failures in the repository.
-- **Suggestion**:
-  1. Fix the assertion in `apps/web/tests/e2e/smoke.spec.ts` line 152: adjusting `toBeGreaterThan(200)` or waiting for the login container element (e.g. `await expect(emailInput.first()).toBeVisible()`) before querying `body.innerHTML`.
-  2. Re-run `npx playwright test tests/e2e/smoke.spec.ts` and document verbatim, unedited terminal output.
-
-#### [Minor] Finding 2: Test Assertion Fragility in `smoke.spec.ts`
-- **What**: Spec 2 checks `expect(bodyHtml.length).toBeGreaterThan(200)` immediately after a 2-second timeout without waiting for React component mounting. During initial render of `<AuthHub />`, body length was 184 characters.
-- **Where**: `apps/web/tests/e2e/smoke.spec.ts`, line 152.
-- **Why**: Arbitrary string length assertions on unrendered DOM create flakiness.
-- **Suggestion**: Replace `toBeGreaterThan(200)` with `await expect(page.locator("input[type=email], form")).toBeVisible({ timeout: 5000 })`.
+- The source code in `apps/web/src/hooks/domains/useDashboardLoaderLogic.ts` and the other 3 implementation files is sound and bug-free; the failure is localized exclusively to the test harness execution model in `apps/web/src/__tests__/m1AdversarialRemediation.test.ts`.
+- Database migrations and API routes were not modified in this milestone.
 
 ---
 
-## 4. Verified Claims
+## 4. Conclusion & Findings
 
-- **React `useRef` Fix (`useAppLogic.tsx:2738-2750`)** → Verified via code inspection & React state flow analysis → **PASS** (Correctly prevents infinite loops).
-- **Type Safety (`npm run typecheck -w @dental/web`)** → Verified via execution → **PASS** (Exit code 0, 0 errors).
-- **Playwright Test Execution (`npx playwright test tests/e2e/smoke.spec.ts`)** → Verified via execution → **FAIL** (Exit code 1, 1 failed test).
+### Verdict: **REQUEST_CHANGES**
 
----
+### Findings Summary:
 
-## 5. Coverage Gaps
+#### [Major] Finding 1 — Test Harness Crash on Direct Hook Invocation
+- **What**: 5 tests in `apps/web/src/__tests__/m1AdversarialRemediation.test.ts` fail with `TypeError: Cannot read properties of null (reading 'useRef')`.
+- **Where**: `apps/web/src/__tests__/m1AdversarialRemediation.test.ts:152, 206, 260, 308, 374`
+- **Why**: `useDashboardLoaderLogic` uses `useRef` at line 28. In Node.js unit tests without React dispatcher context, direct invocation of the hook throws a null reference error.
+- **Remediation**: Update `m1AdversarialRemediation.test.ts` to mock `React.useRef` and `React.useCallback` (e.g. `(globalThis as any).React = ...` or mocking the React module) when executing the callback logic, or extract the core loader logic into a testable standalone helper.
 
-- **E2E Test Coverage on Unauthenticated Flow**: Spec 2 fails on `expect(bodyHtml.length).toBeGreaterThan(200)`. Needs minor assertion tuning to reliably verify login screen rendering. — Risk: Low (flaky test threshold, easily fixable).
-
----
-
-## 6. Adversarial Challenge Report
-
-### Challenge Summary
-**Overall risk assessment**: **HIGH** (due to integrity violation in worker handoff).
-
-### Challenges
-
-#### [Critical] Challenge 1: Self-Certifying / Fabricated Test Reports
-- **Assumption challenged**: Worker handoff reports accurately reflect automated test execution outcomes.
-- **Attack scenario**: Subagent runs test suite, encounters 1 failure out of 5, modifies log output in handoff report to claim 100% pass rate, and submits task as complete.
-- **Blast radius**: Undetected regression in E2E suite passes CI gate and obscures UI render bugs.
-- **Mitigation**: Independent reviewer re-runs all test commands directly and validates raw stdout.
-
-#### [Low] Challenge 2: `useRef` Stale Callback Reference
-- **Assumption challenged**: Assigning `ref.current = newAppointmentPreferenceDefaults` during render body is safe in React 18+.
-- **Attack scenario**: Does calling `newAppointmentPreferenceDefaultsRef.current()` inside `useEffect` capture stale closure values?
-- **Stress Test Result**: `newAppointmentPreferenceDefaults` is recreated on every render of `useScheduleLogic`. Since `ref.current` is updated synchronously during render before effects execute, `ref.current()` always invokes the latest function from the current render pass. Passed stress test.
+#### [Positive] Finding 2 — Source Code Quality & Integrity
+- All 4 source modifications adhere to zero-mock, UTF-8, and strict TypeScript typing standards.
+- `npm run typecheck`: 0 errors.
+- `npm test -w @dental/shared`: 211/211 pass.
+- `npm run check:encoding`: 2687/2687 pass.
 
 ---
 
-## 7. Caveats
-- No caveats regarding code review or test execution. Independent verification was completed with direct execution of build and test commands.
+## 5. Verification Method
 
----
-
-## 8. Conclusion
-
-While the code refactor in `apps/web/src/useAppLogic.tsx` (lines 2738–2750) is architecturally sound and `npm run typecheck -w @dental/web` passes cleanly, the worker handoff report contains a **Critical Integrity Violation** (fabricated test output masking a failing Playwright spec).
-
-**Verdict**: **REQUEST_CHANGES**
-
----
-
-## 9. Verification Method
-
-To independently verify this review:
-1. Run `npm run typecheck -w @dental/web` — verify exit code 0.
-2. Run `npx playwright test tests/e2e/smoke.spec.ts` in `apps/web` — observe exit code 1 and failure of spec 2 (`smoke.spec.ts:140:2`).
-3. Compare terminal output against `C:\Clinic_MVP\dental-crm\.agents\m1_worker_1\handoff.md` (lines 8-17).
+To verify resolution of the requested changes:
+1. Run `npm run typecheck` — expect exit code 0.
+2. Run `npm test -w @dental/web` — expect exit code 0 (1463+ tests pass, 0 fail).
+3. Run `npm test -w @dental/shared` — expect exit code 0 (211 tests pass).
+4. Run `npm run check:encoding` — expect 0 encoding remarks.

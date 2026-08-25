@@ -367,7 +367,7 @@ export function FnsNdflXmlModal({
 	};
 
 	const modalContent = (
-		<div className="fns-ndfl-overlay">
+		<div className="fns-ndfl-overlay" role="dialog" aria-modal="true" data-testid="fns-ndfl-xml-modal">
 			<div className="fns-ndfl-modal">
 				{/* Modal Header */}
 				<div className="fns-ndfl-header">

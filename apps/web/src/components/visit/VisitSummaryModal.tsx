@@ -15,6 +15,8 @@ import {
 	User,
 	X,
 	ZoomIn,
+	ArrowRight,
+	Save,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useState, useMemo } from "react";
@@ -288,6 +290,28 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 
 				{/* Modal Scrollable Content */}
 				<div className="flex-1 overflow-y-auto p-6 space-y-6">
+					{/* Step-by-Step Guidance Ribbon & Autosave Status */}
+					<div className="flex items-center gap-2 p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs flex-wrap">
+						<div className="flex items-center gap-1.5 font-bold text-teal-700 dark:text-teal-300">
+							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-teal-600 text-white text-[10px]">1</span>
+							<span>Шаг 1: Проверка диагноза и данных</span>
+						</div>
+						<ArrowRight size={12} className="text-[var(--muted)]" />
+						<div className="flex items-center gap-1.5 font-bold text-teal-700 dark:text-teal-300">
+							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-teal-600 text-white text-[10px]">2</span>
+							<span>Шаг 2: Протокол 043/у (1 клик)</span>
+						</div>
+						<ArrowRight size={12} className="text-[var(--muted)]" />
+						<div className="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-300">
+							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px]">3</span>
+							<span>Шаг 3: Печать Формы 043/у</span>
+						</div>
+						<div className="ml-auto flex items-center gap-1 text-[var(--muted)] text-[11px]">
+							<Save size={12} className="text-emerald-600" />
+							<span>💾 Дневник 043/у сохранен автоматически</span>
+						</div>
+					</div>
+
 					{/* Patient & Doctor Meta Grid */}
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs">
 						<div className="space-y-1">

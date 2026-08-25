@@ -1,8 +1,12 @@
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { after, before, describe, it } from "node:test";
+
+const repoRoot = existsSync(join(process.cwd(), "package.json")) && existsSync(join(process.cwd(), "apps"))
+	? process.cwd()
+	: join(process.cwd(), "../..");
 import {
 	SbpQrEngine,
 	createFiscalReceiptPayloadSchema,
@@ -110,11 +114,14 @@ describe("Tier 2: Boundary & Corner Cases (Stress & Edge-Condition Testing)", ()
 		try {
 			await purgeFixtureOrganizations([ORG_ID]);
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.insert(organizations).values({
-					id: ORG_ID,
-					name: "Клиника Tier 2 Граничных Тестов",
-					inn: "7709876543",
-				});
+				await db
+					.insert(organizations)
+					.values({
+						id: ORG_ID,
+						name: "Клиника Tier 2 Граничных Тестов",
+						inn: "7709876543",
+					})
+					.onConflictDoNothing();
 				await db.insert(clinics).values({
 					id: CLINIC_ID,
 					organizationId: ORG_ID,
@@ -199,7 +206,7 @@ describe("Tier 2: Boundary & Corner Cases (Stress & Edge-Condition Testing)", ()
 	// ==========================================
 	describe("Feature 1: UI 4-State Visual & CSS Boundaries", () => {
 		const tokenAliasesPath = join(
-			process.cwd(),
+			repoRoot,
 			"apps/web/src/styles/token-aliases.css",
 		);
 
@@ -238,7 +245,7 @@ describe("Tier 2: Boundary & Corner Cases (Stress & Edge-Condition Testing)", ()
 	// ==========================================
 	describe("Feature 2: Mobile Touch Targets Boundaries", () => {
 		const touchTargetsCssPath = join(
-			process.cwd(),
+			repoRoot,
 			"apps/web/src/styles/touch-targets.css",
 		);
 
@@ -1222,7 +1229,7 @@ describe("Tier 2: Boundary & Corner Cases (Stress & Edge-Condition Testing)", ()
 	describe("Feature 10: Repository Gates & Integrity Boundaries", () => {
 		it("10.1 check-css-tokens gate fails-closed if CSS file has unmatched var()", () => {
 			const checkCssScript = readFileSync(
-				join(process.cwd(), "scripts/check-css-tokens.mjs"),
+				join(repoRoot, "scripts/check-css-tokens.mjs"),
 				"utf8",
 			);
 			assert.ok(checkCssScript.includes("process.exit(1)"));
@@ -1230,7 +1237,7 @@ describe("Tier 2: Boundary & Corner Cases (Stress & Edge-Condition Testing)", ()
 
 		it("10.2 check-encoding gate fails-closed on invalid byte sequences", () => {
 			const checkEncodingScript = readFileSync(
-				join(process.cwd(), "scripts/check-encoding.mjs"),
+				join(repoRoot, "scripts/check-encoding.mjs"),
 				"utf8",
 			);
 			assert.ok(checkEncodingScript.includes("process.exit(1)"));
@@ -1238,7 +1245,7 @@ describe("Tier 2: Boundary & Corner Cases (Stress & Edge-Condition Testing)", ()
 
 		it("10.3 check-dynamic-imports gate fails-closed on missing dynamic target files", () => {
 			const checkDynScript = readFileSync(
-				join(process.cwd(), "scripts/check-dynamic-imports.mjs"),
+				join(repoRoot, "scripts/check-dynamic-imports.mjs"),
 				"utf8",
 			);
 			assert.ok(checkDynScript.includes("process.exit(1)"));
@@ -1246,7 +1253,7 @@ describe("Tier 2: Boundary & Corner Cases (Stress & Edge-Condition Testing)", ()
 
 		it("10.4 check-env-contract gate verifies environment keys fail-closed when undocumented", () => {
 			const checkEnvScript = readFileSync(
-				join(process.cwd(), "scripts/check-env-contract.mjs"),
+				join(repoRoot, "scripts/check-env-contract.mjs"),
 				"utf8",
 			);
 			assert.ok(checkEnvScript.includes("process.exit(1)"));
@@ -1254,7 +1261,7 @@ describe("Tier 2: Boundary & Corner Cases (Stress & Edge-Condition Testing)", ()
 
 		it("10.5 confirms zero mock interfaces in production billing and schedule route files", () => {
 			const billingRoute = readFileSync(
-				join(process.cwd(), "apps/api/src/routes/billing.ts"),
+				join(repoRoot, "apps/api/src/routes/billing.ts"),
 				"utf8",
 			);
 			assert.doesNotMatch(billingRoute, /mock|Mock|Dummy/i);

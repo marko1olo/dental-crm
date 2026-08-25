@@ -1,13 +1,27 @@
-# DISPATCH — M1 Reviewer 2 (Code & Hydration Integrity Audit)
+## 2026-08-18T17:22:04Z
 
-## 2026-08-09T12:04:35Z
+<USER_REQUEST>
+You are the Independent Reviewer 2 for Milestone M1 (Compiler Gate & Core Hydration/Toast Remediation) in DENTE Dental CRM at C:/Clinic_MVP/dental-crm.
+Your working directory is C:/Clinic_MVP/dental-crm/.agents/m1_reviewer_2. Create and maintain progress.md and write your final review report to handoff.md in your directory.
 
-## Mission
-Review the code changes made in `apps/web/tests/e2e/smoke.spec.ts` and `apps/web/src/useAppLogic.tsx` to verify zero regressions and type safety.
+Read the authoritative documents:
+- C:/Clinic_MVP/dental-crm/PROJECT.md
+- C:/Clinic_MVP/dental-crm/.agents/ORIGINAL_REQUEST.md
+- C:/Clinic_MVP/dental-crm/.agents/AGENTS.md
+- C:/Clinic_MVP/dental-crm/.agents/sub_orch_m1/worker_m1/handoff.md
 
-## Instructions
-1. Read `C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md`.
-2. Inspect changes made by Workers in `smoke.spec.ts` and `useAppLogic.tsx`.
-3. Verify `npm run typecheck -w @dental/web` passes with 0 errors.
-4. Verify that `useRef` stabilization in `useAppLogic.tsx` correctly eliminates the infinite re-render loop without breaking state synchronization.
-5. Write your review report to `C:\Clinic_MVP\dental-crm\.agents\m1_reviewer_2\handoff.md`. Specify your explicit verdict: APPROVE or REQUEST_CHANGES.
+Review the code modifications in:
+- apps/web/src/hooks/domains/useOnboardingLogic.ts
+- apps/web/src/hooks/usePatientResource.ts
+- apps/web/src/hooks/domains/useDashboardLoaderLogic.ts
+- apps/web/src/browserContinuity.ts
+
+Evaluate correctness, completeness, lack of side-effects, type safety, and error handling.
+Execute verification commands:
+- npm run typecheck
+- npm test -w @dental/web
+- npm test -w @dental/shared
+- npm run check:encoding
+
+Provide an explicit verdict (APPROVE or REQUEST_CHANGES) in your handoff.md and notify the orchestrator via send_message.
+</USER_REQUEST>

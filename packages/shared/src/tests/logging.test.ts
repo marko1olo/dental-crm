@@ -9,7 +9,7 @@ import {
 	isValidCorrelationId,
 	sanitizePayload,
 	sanitizeString,
-} from "../index.js";
+} from "../logging/index.js";
 
 describe("Observability & Logging Utilities", () => {
 	describe("Correlation ID Generator & Validator", () => {

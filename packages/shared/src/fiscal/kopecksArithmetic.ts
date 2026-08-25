@@ -27,6 +27,23 @@ export function kopecksToRub(kopecks: number): number {
 	return Math.round(kopecks) / 100;
 }
 
+/**
+ * Banker's Rounding (Round Half to Even) to eliminate cumulative rounding bias.
+ * Standard round-to-even algorithm per IEEE-754 and statutory financial arithmetic.
+ */
+export function roundHalfEven(value: number): number {
+	if (!Number.isFinite(value)) {
+		throw new Error("Значение для округления должно быть конечным числом.");
+	}
+	const floor = Math.floor(value);
+	const diff = value - floor;
+	// Handle floating point precision near exact .5
+	if (Math.abs(diff - 0.5) < 1e-9) {
+		return floor % 2 === 0 ? floor : floor + 1;
+	}
+	return Math.round(value);
+}
+
 export { kopecksToNumericString };
 
 export interface MultiTenderSplitInput {
@@ -156,27 +173,36 @@ export function distributeDiscountProportionally(
 		return items.map(() => 0);
 	}
 
-	const itemGrossAmounts = items.map((i) => Math.round(i.priceKopecks * i.quantity));
+	const itemGrossAmounts = items.map((i) =>
+		Math.max(0, Math.round((i.priceKopecks || 0) * (i.quantity || 1))),
+	);
 	const totalGross = itemGrossAmounts.reduce((sum, amt) => sum + amt, 0);
 
-	if (totalGross <= 0 || totalDiscountKopecks >= totalGross) {
-		// 100% discount
+	const safeDiscountKopecks = Math.max(0, Math.round(totalDiscountKopecks));
+
+	if (totalGross <= 0 || safeDiscountKopecks >= totalGross) {
+		// 100% discount or zero gross
 		return [...itemGrossAmounts];
 	}
 
 	// Step 1: calculate exact fractional discount shares
-	const shares = itemGrossAmounts.map((amt) => (amt * totalDiscountKopecks) / totalGross);
+	const shares = itemGrossAmounts.map((amt) => (amt * safeDiscountKopecks) / totalGross);
 	const floorDiscounts = shares.map((s) => Math.floor(s));
 	const allocatedSoFar = floorDiscounts.reduce((sum, d) => sum + d, 0);
-	let remainderKopecks = totalDiscountKopecks - allocatedSoFar;
+	let remainderKopecks = safeDiscountKopecks - allocatedSoFar;
 
-	// Step 2: rank items by fractional remainder descending
+	// Step 2: rank items by fractional remainder descending (tie-breaker: highest gross item)
 	const indexedRemainders = shares.map((s, idx) => ({
 		index: idx,
 		remainder: s - Math.floor(s),
+		gross: itemGrossAmounts[idx] ?? 0,
 	}));
 
-	indexedRemainders.sort((a, b) => b.remainder - a.remainder);
+	indexedRemainders.sort((a, b) => {
+		const diff = b.remainder - a.remainder;
+		if (Math.abs(diff) > 1e-9) return diff;
+		return b.gross - a.gross;
+	});
 
 	// Step 3: distribute remaining pennies to highest fractional parts
 	const finalDiscounts = [...floorDiscounts];

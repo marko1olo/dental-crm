@@ -849,21 +849,23 @@ export async function listOfflineDrafts(filter?: {
 					return false;
 				return true;
 			})
-			.sort((a, b) => b.updatedAtMs - a.updatedAtMs);
 	} catch (err) {
-		if (typeof window === "undefined" || !window.localStorage) return [];
-		const list: OfflineDraft[] = [];
-		try {
-			for (let i = 0; i < window.localStorage.length; i++) {
-				const key = window.localStorage.key(i);
-				if (key?.startsWith(LOCAL_STORAGE_DRAFTS_PREFIX)) {
-					const draftKey = key.slice(LOCAL_STORAGE_DRAFTS_PREFIX.length);
-					const d = getLocalStorageDraft(draftKey);
-					if (d) list.push(d);
+		const list: OfflineDraft[] = Array.from(inMemoryDraftsMap.values());
+		if (typeof window !== "undefined" && window.localStorage) {
+			try {
+				for (let i = 0; i < window.localStorage.length; i++) {
+					const key = window.localStorage.key(i);
+					if (key?.startsWith(LOCAL_STORAGE_DRAFTS_PREFIX)) {
+						const draftKey = key.slice(LOCAL_STORAGE_DRAFTS_PREFIX.length);
+						const d = getLocalStorageDraft(draftKey);
+						if (d && !list.some((existing) => existing.draftKey === d.draftKey)) {
+							list.push(d);
+						}
+					}
 				}
+			} catch {
+				// ignore
 			}
-		} catch {
-			// ignore
 		}
 		return list
 			.filter((d) => {
@@ -876,7 +878,7 @@ export async function listOfflineDrafts(filter?: {
 					return false;
 				return true;
 			})
-			.sort((a, b) => b.updatedAtMs - a.updatedAtMs);
+			.sort((a, b) => (b.updatedAtMs || 0) - (a.updatedAtMs || 0));
 	}
 }
 
@@ -1369,6 +1371,182 @@ export async function purgeSyncedDraftsAndOldCache(): Promise<{
 
 	return { purgedDrafts, purgedCache };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 9. Patient Data Fast Cache in IndexedDB (Zero Blank Screen / Instant Offline Retrieval)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface PatientClinicalCacheRecord<T = unknown> {
+	cacheKey: string;
+	entityKind: string;
+	entityId: string;
+	data: T;
+	cachedAtMs: number;
+	cachedAtIso: string;
+	organizationId?: string | undefined;
+}
+
+const inMemoryClinicalCacheMap = new Map<string, PatientClinicalCacheRecord<unknown>>();
+export const LOCAL_STORAGE_CLINICAL_CACHE_PREFIX = "dente_clinical_cache_v1:";
+
+function getLocalStorageClinicalCache<T>(cacheKey: string): PatientClinicalCacheRecord<T> | null {
+	const raw = getFromLocalStorageSafe(`${LOCAL_STORAGE_CLINICAL_CACHE_PREFIX}${cacheKey}`);
+	if (!raw) return null;
+	try {
+		const parsed = JSON.parse(raw);
+		return parsed && typeof parsed === "object" ? parsed : null;
+	} catch {
+		return null;
+	}
+}
+
+function saveLocalStorageClinicalCache<T>(record: PatientClinicalCacheRecord<T>): void {
+	saveToLocalStorageSafe(
+		`${LOCAL_STORAGE_CLINICAL_CACHE_PREFIX}${record.cacheKey}`,
+		JSON.stringify(record),
+	);
+}
+
+function removeLocalStorageClinicalCache(cacheKey: string): void {
+	removeFromLocalStorageSafe(`${LOCAL_STORAGE_CLINICAL_CACHE_PREFIX}${cacheKey}`);
+}
+
+/**
+ * Сохранение снапшота данных пациента (карточка 043/у, визиты, одонтограмма, план лечения) в быстрый IndexedDB кэш
+ */
+export async function savePatientClinicalCache<T = unknown>(
+	cacheKey: string,
+	entityKind: string,
+	entityId: string,
+	data: T,
+	organizationId?: string | undefined,
+): Promise<PatientClinicalCacheRecord<T>> {
+	const nowMs = Date.now();
+	const record: PatientClinicalCacheRecord<T> = {
+		cacheKey,
+		entityKind,
+		entityId,
+		data,
+		cachedAtMs: nowMs,
+		cachedAtIso: new Date(nowMs).toISOString(),
+		organizationId,
+	};
+
+	inMemoryClinicalCacheMap.set(cacheKey, record as PatientClinicalCacheRecord<unknown>);
+	saveLocalStorageClinicalCache(record);
+
+	try {
+		await withIdbTransactionRetry(async (db) => {
+			return new Promise<void>((resolve, reject) => {
+				const tx = db.transaction(CLINICAL_CACHE_STORE_NAME, "readwrite");
+				const store = tx.objectStore(CLINICAL_CACHE_STORE_NAME);
+				const req = store.put(record);
+				req.onsuccess = () => resolve();
+				req.onerror = () =>
+					reject(req.error ?? new Error("Failed to save clinical cache to IDB"));
+			});
+		});
+	} catch (err) {
+		logger.warn(`[OfflineStorage] Failed to put clinical cache in IDB for ${cacheKey}`, err);
+	}
+	return record;
+}
+
+/**
+ * Загрузка снапшота данных пациента из быстрого IndexedDB кэша (< 500 мс холодный старт)
+ */
+export async function getPatientClinicalCache<T = unknown>(
+	cacheKey: string,
+): Promise<T | null> {
+	let idbResult: T | null = null;
+	try {
+		idbResult = await withIdbTransactionRetry(async (db) => {
+			return new Promise<T | null>((resolve, reject) => {
+				const tx = db.transaction(CLINICAL_CACHE_STORE_NAME, "readonly");
+				const store = tx.objectStore(CLINICAL_CACHE_STORE_NAME);
+				const req = store.get(cacheKey);
+				req.onsuccess = () => {
+					const result = req.result as PatientClinicalCacheRecord<T> | undefined;
+					resolve(result?.data ?? null);
+				};
+				req.onerror = () =>
+					reject(req.error ?? new Error("Failed to read clinical cache from IDB"));
+			});
+		});
+	} catch {
+		// fallback to localStorage & in-memory
+	}
+
+	if (idbResult !== null && idbResult !== undefined) {
+		return idbResult;
+	}
+
+	const localRecord = getLocalStorageClinicalCache<T>(cacheKey);
+	if (localRecord?.data !== undefined && localRecord?.data !== null) {
+		return localRecord.data;
+	}
+
+	const memRecord = inMemoryClinicalCacheMap.get(cacheKey) as PatientClinicalCacheRecord<T> | undefined;
+	return memRecord?.data ?? null;
+}
+
+/**
+ * Получение всех закэшированных записей по типу сущности (например 'patient', 'visit', 'treatment_plan')
+ */
+export async function listPatientClinicalCache<T = unknown>(
+	entityKind?: string,
+	organizationId?: string,
+): Promise<Array<PatientClinicalCacheRecord<T>>> {
+	let all: Array<PatientClinicalCacheRecord<T>> = [];
+	try {
+		all = await withIdbTransactionRetry(async (db) => {
+			return new Promise<Array<PatientClinicalCacheRecord<T>>>((resolve, reject) => {
+				const tx = db.transaction(CLINICAL_CACHE_STORE_NAME, "readonly");
+				const store = tx.objectStore(CLINICAL_CACHE_STORE_NAME);
+				const req = store.getAll();
+				req.onsuccess = () => {
+					const list = (req.result as Array<PatientClinicalCacheRecord<T>>) || [];
+					resolve(list);
+				};
+				req.onerror = () =>
+					reject(req.error ?? new Error("Failed to list clinical cache from IDB"));
+			});
+		});
+	} catch {
+		const memRecords = Array.from(inMemoryClinicalCacheMap.values()) as Array<PatientClinicalCacheRecord<T>>;
+		all = memRecords;
+	}
+
+	return all.filter((item) => {
+		if (entityKind && item.entityKind !== entityKind) return false;
+		if (organizationId && item.organizationId && item.organizationId !== organizationId) return false;
+		return true;
+	});
+}
+
+/**
+ * Удаление записи клинического кэша
+ */
+export async function deletePatientClinicalCache(cacheKey: string): Promise<void> {
+	inMemoryClinicalCacheMap.delete(cacheKey);
+	removeLocalStorageClinicalCache(cacheKey);
+	try {
+		await withIdbTransactionRetry(async (db) => {
+			return new Promise<void>((resolve, reject) => {
+				const tx = db.transaction(CLINICAL_CACHE_STORE_NAME, "readwrite");
+				const store = tx.objectStore(CLINICAL_CACHE_STORE_NAME);
+				const req = store.delete(cacheKey);
+				req.onsuccess = () => resolve();
+				req.onerror = () =>
+					reject(req.error ?? new Error("Failed to delete clinical cache from IDB"));
+			});
+		});
+	} catch (err) {
+		logger.warn(`[OfflineStorage] Failed to delete clinical cache for ${cacheKey}`, err);
+	}
+}
+
+
 
 
 

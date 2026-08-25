@@ -61,10 +61,22 @@ export interface DentalFastPrescriptionSet {
 
 export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[] = [
 	{
-		id: "amoxi_nimesil",
-		label: "💊 Амоксиклав + Нимесил",
+		id: "amoxi_1000_nimesil",
+		label: "💊 Амоксиклав 1000 мг + Нимесил 100 мг",
 		desc: "Антибиотик 875/125 мг + НПВС 100 мг (Периодонтит / Хирургия)",
 		drugIds: ["amoxiclav_875_125", "nimesulide_100"],
+	},
+	{
+		id: "nimesil_100",
+		label: "💊 Нимесил 100 мг (НПВП)",
+		desc: "Rp: Gran. Nimesulidi 100 mg / По 1 пак. 2 раза в день при болях",
+		drugIds: ["nimesulide_100"],
+	},
+	{
+		id: "chlorhex_005",
+		label: "🧴 Хлоргексидин 0.05% (Антисептик)",
+		desc: "Rp: Sol. Chlorhexidini bigluconatis 0.05% / Ротовые ванночки 3 раза в день",
+		drugIds: ["chlorhexidine_005"],
 	},
 	{
 		id: "ibuprofen_400",
@@ -89,12 +101,6 @@ export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[]
 		label: "💊 Амоксициллин 500 мг (Флемоксин)",
 		desc: "Rp: Amoxicillini 500mg, D.t.d. N 20 in caps., S. по 1 капс 3 раза в день",
 		drugIds: ["amoxicillin_500"],
-	},
-	{
-		id: "nimesil_100",
-		label: "💊 Нимесил 100 мг (Саше)",
-		desc: "Купирование острой зубной боли",
-		drugIds: ["nimesulide_100"],
 	},
 	{
 		id: "cholisal",
@@ -135,6 +141,7 @@ export interface PrescriptionPrintModalProps {
 	readonly clinicOgrn?: string | null;
 	readonly clinicInn?: string | null;
 	readonly medicalLicenseNumber?: string | null;
+	readonly initialSelectedDrugIds?: readonly string[] | undefined;
 	readonly onPrescriptionCreated?: (prescription: any) => void;
 }
 
@@ -151,7 +158,8 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 	clinicPhone,
 	clinicOgrn,
 	clinicInn,
-	medicalLicenseNumber,
+	medicalLicenseNumber = "ЛО41-01137-77/00368421",
+	initialSelectedDrugIds,
 	onPrescriptionCreated,
 }) => {
 	const [activeForm, setActiveForm] = useState<PrescriptionFormType>("107-1u");
@@ -191,14 +199,18 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		const today = new Date().toISOString().slice(0, 10);
 		setPrescriptionDate(today);
 
-		const icd = (diary?.diagnosisIcd10 || "K02.1").toUpperCase();
-		const matching = DENTAL_PRESCRIPTION_DRUG_CATALOG.filter((d) =>
-			d.recommendedForIcd10.some((code) => icd.startsWith(code)),
-		);
-		if (matching.length > 0) {
-			setSelectedDrugIds(matching.slice(0, 2).map((d) => d.id));
+		if (initialSelectedDrugIds && initialSelectedDrugIds.length > 0) {
+			setSelectedDrugIds([...initialSelectedDrugIds]);
 		} else {
-			setSelectedDrugIds(["nimesulide_100"]);
+			const icd = (diary?.diagnosisIcd10 || "K02.1").toUpperCase();
+			const matching = DENTAL_PRESCRIPTION_DRUG_CATALOG.filter((d) =>
+				d.recommendedForIcd10.some((code) => icd.startsWith(code)),
+			);
+			if (matching.length > 0) {
+				setSelectedDrugIds(matching.slice(0, 2).map((d) => d.id));
+			} else {
+				setSelectedDrugIds(["nimesulide_100"]);
+			}
 		}
 
 		const year = new Date().getFullYear();
@@ -226,7 +238,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isOpen, diary?.diagnosisIcd10, activeForm, patient?.address, patient?.snils, patient?.omsPolicy, onClose]);
+	}, [isOpen, diary?.diagnosisIcd10, activeForm, patient?.address, patient?.snils, patient?.omsPolicy, initialSelectedDrugIds, onClose]);
 
 	const patientName = patient?.fullName || "Иванов Иван Иванович";
 	const patientBirth = patient?.birthDate || "1988-05-14";

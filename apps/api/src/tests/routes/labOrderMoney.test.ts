@@ -14,6 +14,7 @@ import { after, before, describe, test } from "node:test";
 import { sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
+import { withSuperuserBypass } from "../../db/rls.js";
 import { organizations, patients, users } from "../../db/schema.js";
 import { registerLabRoutes } from "../../routes/lab.js";
 import { authTokenSecret } from "../../security/authSecret.js";
@@ -31,7 +32,7 @@ const ORGANIZATION_ID = fixtureUuid(NAMESPACE, 1);
 const DOCTOR_ID = fixtureUuid(NAMESPACE, 2);
 const PATIENT_ID = fixtureUuid(NAMESPACE, 3);
 
-describe("цена заказа ЗТЛ — деньги с точностью до копейки", () => {
+describe("цена заказа ЗТЛ — деньги с точностью до копейки", { concurrency: 1 }, () => {
 	let app: FastifyInstance;
 	let staffToken = "";
 	let databaseReady = true;
@@ -71,22 +72,31 @@ describe("цена заказа ЗТЛ — деньги с точностью д
 		 * без контекста отвергается кодом 42501.
 		 */
 		await withFixtureTenant(ORGANIZATION_ID, async () => {
-			await db.insert(organizations).values({
-				id: ORGANIZATION_ID,
-				name: "Клиника сторожа денег ЗТЛ",
-			});
-			await db.insert(users).values({
-				id: DOCTOR_ID,
-				organizationId: ORGANIZATION_ID,
-				fullName: "Врач сторожа денег ЗТЛ",
-				role: "doctor",
-			});
-			await db.insert(patients).values({
-				id: PATIENT_ID,
-				organizationId: ORGANIZATION_ID,
-				fullName: "Пациент заказа ЗТЛ",
-				status: "active",
-			});
+			await db
+				.insert(organizations)
+				.values({
+					id: ORGANIZATION_ID,
+					name: "Клиника сторожа денег ЗТЛ",
+				})
+				.onConflictDoNothing();
+			await db
+				.insert(users)
+				.values({
+					id: DOCTOR_ID,
+					organizationId: ORGANIZATION_ID,
+					fullName: "Врач сторожа денег ЗТЛ",
+					role: "doctor",
+				})
+				.onConflictDoNothing();
+			await db
+				.insert(patients)
+				.values({
+					id: PATIENT_ID,
+					organizationId: ORGANIZATION_ID,
+					fullName: "Пациент заказа ЗТЛ",
+					status: "active",
+				})
+				.onConflictDoNothing();
 		});
 
 		staffToken = signToken(
@@ -133,8 +143,8 @@ describe("цена заказа ЗТЛ — деньги с точностью д
 		 * отдаёт ноль строк — проверка «отклонённый заказ не записался» зеленела бы,
 		 * даже если бы заказ на самом деле лёг в базу.
 		 */
-		const count = await withFixtureTenant(ORGANIZATION_ID, async () =>
-			db.execute<{ n: number }>(sql`
+		const count = await withFixtureTenant(ORGANIZATION_ID, async (tx) =>
+			tx.execute<{ n: number }>(sql`
 				select count(*)::int as n from lab_orders
 				 where organization_id = ${ORGANIZATION_ID}::uuid
 				   and patient_id = ${PATIENT_ID}::uuid
@@ -164,8 +174,8 @@ describe("цена заказа ЗТЛ — деньги с точностью д
 		);
 		assert.ok(saved.json.id, "маршрут не вернул id заказа");
 
-		const row = await withFixtureTenant(ORGANIZATION_ID, async () =>
-			db.execute<{ price_rub: string }>(sql`
+		const row = await withFixtureTenant(ORGANIZATION_ID, async (tx) =>
+			tx.execute<{ price_rub: string }>(sql`
 				select price_rub::text as price_rub from lab_orders
 				 where id = ${String(saved.json.id)}::uuid
 			`),

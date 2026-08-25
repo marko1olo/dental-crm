@@ -76,7 +76,7 @@ import { CmoEmrAuditModal } from "../components/emr/audit/CmoEmrAuditModal";
 import { FnsNdflXmlModal } from "../components/documents/ndflXml/index";
 import { TreatmentPlanPriceValidatorModal } from "../components/treatment-plans/validation/TreatmentPlanPriceValidatorModal";
 import { SberPosTerminalModal } from "../components/payments/sberPos/SberPosTerminalModal";
-import { PatientCabinetModal } from "../components/portal/patientCabinet/PatientCabinetModal";
+import { PatientPortalModal } from "../components/portal/PatientPortalModal";
 import { EgiszRemdXmlModal } from "../components/egisz/remdXml/EgiszRemdXmlModal";
 import { LabWorkOrderModal } from "../components/lab/orders/LabWorkOrderModal";
 import { SanpinJournalsModal } from "../components/sanpin/journals/SanpinJournalsModal";
@@ -1578,244 +1578,309 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 			</main>
 
 			{/* Render Modals */}
-			<PediatricMixedDentitionModal
-				isOpen={isPediatricOpen}
-				onClose={() => setIsPediatricOpen(false)}
-				initialAge={7.5}
-			/>
+			{isPediatricOpen && (
+				<PediatricMixedDentitionModal
+					isOpen={isPediatricOpen}
+					onClose={() => setIsPediatricOpen(false)}
+					initialAge={7.5}
+				/>
+			)}
 
-			<FiscalReceipt54FzModal
-				isOpen={isFiscalOpen}
-				onClose={() => setIsFiscalOpen(false)}
-				items={SAMPLE_TREATMENT_ITEMS}
-				patientId="PAT-2026-0891"
-				patientName="Смирнова Екатерина Васильевна"
-				patientDepositRub={5000}
-			/>
+			{isFiscalOpen && (
+				<FiscalReceipt54FzModal
+					isOpen={isFiscalOpen}
+					onClose={() => setIsFiscalOpen(false)}
+					items={SAMPLE_TREATMENT_ITEMS}
+					patientId="PAT-2026-0891"
+					patientName="Смирнова Екатерина Васильевна"
+					patientDepositRub={5000}
+				/>
+			)}
 
-			<PrescriptionModal
-				isOpen={isPrescriptionOpen}
-				onClose={() => setIsPrescriptionOpen(false)}
-				patient={SAMPLE_PATIENT}
-				diary={SAMPLE_DIARY}
-				doctorName="Д-р Смирнов Алексей Петрович"
-				doctorSpecialty="Врач-стоматолог терапевт-эндодонтист"
-				clinicName="ООО «Денте Стоматология»"
-			/>
+			{isPrescriptionOpen && (
+				<PrescriptionModal
+					isOpen={isPrescriptionOpen}
+					onClose={() => setIsPrescriptionOpen(false)}
+					patient={SAMPLE_PATIENT}
+					diary={SAMPLE_DIARY}
+					doctorName="Д-р Смирнов Алексей Петрович"
+					doctorSpecialty="Врач-стоматолог терапевт-эндодонтист"
+					clinicName="ООО «Денте Стоматология»"
+				/>
+			)}
 
-			<RadiologyReferralModal
-				isOpen={isRadiologyOpen}
-				onClose={() => setIsRadiologyOpen(false)}
-				patient={SAMPLE_PATIENT}
-				doctorName="Д-р Смирнов Алексей Петрович"
-				doctorSpecialty="Врач-стоматолог терапевт-эндодонтист"
-				clinicName="ООО «Денте Стоматология»"
-			/>
+			{isRadiologyOpen && (
+				<RadiologyReferralModal
+					isOpen={isRadiologyOpen}
+					onClose={() => setIsRadiologyOpen(false)}
+					patient={SAMPLE_PATIENT}
+					doctorName="Д-р Смирнов Алексей Петрович"
+					doctorSpecialty="Врач-стоматолог терапевт-эндодонтист"
+					clinicName="ООО «Денте Стоматология»"
+				/>
+			)}
 
-			<TreatmentPlanCompletedActPrint
-				isOpen={isActPrintOpen}
-				onClose={() => setIsActPrintOpen(false)}
-				actData={SAMPLE_COMPLETED_ACT}
-			/>
+			{isActPrintOpen && (
+				<TreatmentPlanCompletedActPrint
+					isOpen={isActPrintOpen}
+					onClose={() => setIsActPrintOpen(false)}
+					actData={SAMPLE_COMPLETED_ACT}
+				/>
+			)}
 
-			<InformedConsentModal
-				isOpen={isConsentOpen}
-				onClose={() => setIsConsentOpen(false)}
-				patient={SAMPLE_PATIENT}
-				diary={SAMPLE_DIARY}
-				doctorName="Д-р Смирнов Алексей Петрович"
-				doctorSpecialty="Врач-стоматолог терапевт-эндодонтист"
-				clinicName="ООО «Денте Стоматология»"
-			/>
+			{isConsentOpen && (
+				<InformedConsentModal
+					isOpen={isConsentOpen}
+					onClose={() => setIsConsentOpen(false)}
+					patient={SAMPLE_PATIENT}
+					diary={SAMPLE_DIARY}
+					doctorName="Д-р Смирнов Алексей Петрович"
+					doctorSpecialty="Врач-стоматолог терапевт-эндодонтист"
+					clinicName="ООО «Денте Стоматология»"
+				/>
+			)}
 
-			<RadiologyViewerModal
-				isOpen={isViewerOpen}
-				onClose={() => setIsViewerOpen(false)}
-				study={SAMPLE_STUDY}
-			/>
+			{isViewerOpen && (
+				<RadiologyViewerModal
+					isOpen={isViewerOpen}
+					onClose={() => setIsViewerOpen(false)}
+					study={SAMPLE_STUDY}
+				/>
+			)}
 
-			<DoctorPayrollModal
-				isOpen={isPayrollOpen}
-				onClose={() => setIsPayrollOpen(false)}
-				clinicName="ООО «Денте Стоматология»"
-			/>
+			{isPayrollOpen && (
+				<DoctorPayrollModal
+					isOpen={isPayrollOpen}
+					onClose={() => setIsPayrollOpen(false)}
+					clinicName="ООО «Денте Стоматология»"
+				/>
+			)}
 
-			<FastCheckoutModal
-				isOpen={isFastCheckoutOpen}
-				onClose={() => setIsFastCheckoutOpen(false)}
-				totalBillKop={1960000}
-				patientName="Смирнова Екатерина Васильевна"
-			/>
+			{isFastCheckoutOpen && (
+				<FastCheckoutModal
+					isOpen={isFastCheckoutOpen}
+					onClose={() => setIsFastCheckoutOpen(false)}
+					totalBillKop={1960000}
+					patientName="Смирнова Екатерина Васильевна"
+				/>
+			)}
 
-			<MedicalPrescriptionModal
-				isOpen={isMedicalPrescriptionOpen}
-				onClose={() => setIsMedicalPrescriptionOpen(false)}
-				patientName="Смирнова Екатерина Васильевна"
-			/>
+			{isMedicalPrescriptionOpen && (
+				<MedicalPrescriptionModal
+					isOpen={isMedicalPrescriptionOpen}
+					onClose={() => setIsMedicalPrescriptionOpen(false)}
+					patientName="Смирнова Екатерина Васильевна"
+				/>
+			)}
 
-			<CephalometricAnalysisModal
-				isOpen={isCephOpen}
-				onClose={() => setIsCephOpen(false)}
-				patientName="Смирнова Екатерина Васильевна"
-			/>
+			{isCephOpen && (
+				<CephalometricAnalysisModal
+					isOpen={isCephOpen}
+					onClose={() => setIsCephOpen(false)}
+					patientName="Смирнова Екатерина Васильевна"
+				/>
+			)}
 
-			<ImplantIsqProtocolModal
-				isOpen={isIsqOpen}
-				onClose={() => setIsIsqOpen(false)}
-				initialToothNumber={36}
-				initialImplantSystem="Straumann BLX Roxolid SLActive"
-				surgeonName="Д-р Ковалев С. П. (Хирург-имплантолог)"
-			/>
+			{isIsqOpen && (
+				<ImplantIsqProtocolModal
+					isOpen={isIsqOpen}
+					onClose={() => setIsIsqOpen(false)}
+					initialToothNumber={36}
+					initialImplantSystem="Straumann BLX Roxolid SLActive"
+					surgeonName="Д-р Ковалев С. П. (Хирург-имплантолог)"
+				/>
+			)}
 
-			<DentalLabOrderModal
-				isOpen={isLabOrderOpen}
-				onClose={() => setIsLabOrderOpen(false)}
-				patientName="Смирнова Екатерина Васильевна"
-				doctorName="Д-р Смирнов Алексей Петрович"
-				initialToothFdi="16"
-			/>
+			{isLabOrderOpen && (
+				<DentalLabOrderModal
+					isOpen={isLabOrderOpen}
+					onClose={() => setIsLabOrderOpen(false)}
+					patientName="Смирнова Екатерина Васильевна"
+					doctorName="Д-р Смирнов Алексей Петрович"
+					initialToothFdi="16"
+				/>
+			)}
 
-			<ClinicalPhotoProtocolModal
-				isOpen={isPhotoProtocolOpen}
-				onClose={() => setIsPhotoProtocolOpen(false)}
-				patientName="Смирнова Екатерина Васильевна"
-				doctorName="Д-р Смирнов Алексей Петрович"
-				clinicName="ООО «Денте Стоматология»"
-			/>
+			{isPhotoProtocolOpen && (
+				<ClinicalPhotoProtocolModal
+					isOpen={isPhotoProtocolOpen}
+					onClose={() => setIsPhotoProtocolOpen(false)}
+					patientName="Смирнова Екатерина Васильевна"
+					doctorName="Д-р Смирнов Алексей Петрович"
+					clinicName="ООО «Денте Стоматология»"
+				/>
+			)}
 
-			<PatientRecallManagerModal
-				isOpen={isRecallOpen}
-				onClose={() => setIsRecallOpen(false)}
-				clinicName="ООО «Денте Стоматология»"
-			/>
+			{isRecallOpen && (
+				<PatientRecallManagerModal
+					isOpen={isRecallOpen}
+					onClose={() => setIsRecallOpen(false)}
+					clinicName="ООО «Денте Стоматология»"
+				/>
+			)}
 
-			<AutoclaveCycleModal
-				isOpen={isAutoclaveOpen}
-				onClose={() => setIsAutoclaveOpen(false)}
-				operatorName="Смирнова О. И. (Медицинская сестра ЦСО)"
-			/>
+			{isAutoclaveOpen && (
+				<AutoclaveCycleModal
+					isOpen={isAutoclaveOpen}
+					onClose={() => setIsAutoclaveOpen(false)}
+					operatorName="Смирнова О. И. (Медицинская сестра ЦСО)"
+				/>
+			)}
 
-			<InsurancePreAuthModal
-				isOpen={isInsuranceOpen}
-				onClose={() => setIsInsuranceOpen(false)}
-				patient={{
-					fullName: "Смирнова Екатерина Васильевна",
-					birthDate: "1988-06-14",
-					policyNumber: "7700-482910-2026",
-					insurerId: "sogaz",
-				}}
-			/>
+			{isInsuranceOpen && (
+				<InsurancePreAuthModal
+					isOpen={isInsuranceOpen}
+					onClose={() => setIsInsuranceOpen(false)}
+					patient={{
+						fullName: "Смирнова Екатерина Васильевна",
+						birthDate: "1988-06-14",
+						policyNumber: "7700-482910-2026",
+						insurerId: "sogaz",
+					}}
+				/>
+			)}
 
-			<LabStlViewerModal
-				isOpen={isLabStlOpen}
-				onClose={() => setIsLabStlOpen(false)}
-				modelName="Crown_16_Anatomical.stl"
-				toothFdi="16"
-			/>
+			{isLabStlOpen && (
+				<LabStlViewerModal
+					isOpen={isLabStlOpen}
+					onClose={() => setIsLabStlOpen(false)}
+					modelName="Crown_16_Anatomical.stl"
+					toothFdi="16"
+				/>
+			)}
 
-			<TreatmentPlanComparatorModal
-				isOpen={isPlanComparatorOpen}
-				onClose={() => setIsPlanComparatorOpen(false)}
-				patientName="Смирнова Екатерина Васильевна"
-				doctorName="Д-р Смирнов Алексей Петрович"
-				clinicName="ООО «Денте Стоматология»"
-			/>
+			{isPlanComparatorOpen && (
+				<TreatmentPlanComparatorModal
+					isOpen={isPlanComparatorOpen}
+					onClose={() => setIsPlanComparatorOpen(false)}
+					patientName="Смирнова Екатерина Васильевна"
+					doctorName="Д-р Смирнов Алексей Петрович"
+					clinicName="ООО «Денте Стоматология»"
+				/>
+			)}
 
-			<WarehouseTransferModal
-				isOpen={isTransferOpen}
-				onClose={() => setIsTransferOpen(false)}
-			/>
+			{isTransferOpen && (
+				<WarehouseTransferModal
+					isOpen={isTransferOpen}
+					onClose={() => setIsTransferOpen(false)}
+				/>
+			)}
 
-			<ClinicalWriteoffModal
-				isOpen={isClinicalWriteoffOpen}
-				onClose={() => setIsClinicalWriteoffOpen(false)}
-			/>
+			{isClinicalWriteoffOpen && (
+				<ClinicalWriteoffModal
+					isOpen={isClinicalWriteoffOpen}
+					onClose={() => setIsClinicalWriteoffOpen(false)}
+					patientName={SAMPLE_PATIENT.fullName}
+					doctorFullName="Д-р Смирнов Алексей Петрович"
+					assistantFullName="Медсестра Петрова Е. С."
+				/>
+			)}
 
-			<SanpinJournalsModal
-				isOpen={isSanpinJournalsOpen}
-				onClose={() => setIsSanpinJournalsOpen(false)}
-			/>
+			{isSanpinJournalsOpen && (
+				<SanpinJournalsModal
+					isOpen={isSanpinJournalsOpen}
+					onClose={() => setIsSanpinJournalsOpen(false)}
+				/>
+			)}
 
-			<PatientPortalTimelineModal
-				isOpen={isPortalOpen}
-				onClose={() => setIsPortalOpen(false)}
-			/>
+			{isPortalOpen && (
+				<PatientPortalTimelineModal
+					isOpen={isPortalOpen}
+					onClose={() => setIsPortalOpen(false)}
+				/>
+			)}
 
-			<ImplantPlanningModal
-				isOpen={isImplantPlanningOpen}
-				onClose={() => setIsImplantPlanningOpen(false)}
-				initialToothFdi={46}
-				patientName="Смирнова Екатерина Васильевна"
-			/>
+			{isImplantPlanningOpen && (
+				<ImplantPlanningModal
+					isOpen={isImplantPlanningOpen}
+					onClose={() => setIsImplantPlanningOpen(false)}
+					initialToothFdi={46}
+					patientName="Смирнова Екатерина Васильевна"
+				/>
+			)}
 
-			<VoiceDictationAssistantModal
-				isOpen={isVoiceAssistantOpen}
-				onClose={() => setIsVoiceAssistantOpen(false)}
-				activeToothNumber={46}
-			/>
+			{isVoiceAssistantOpen && (
+				<VoiceDictationAssistantModal
+					isOpen={isVoiceAssistantOpen}
+					onClose={() => setIsVoiceAssistantOpen(false)}
+					activeToothNumber={46}
+				/>
+			)}
 
-			<InformedConsent323FzModal
-				isOpen={isConsent323Open}
-				onClose={() => setIsConsent323Open(false)}
-				initialTemplateKey="CONSENT_THERAPY"
-				patient={{
-					fullName: "Смирнова Екатерина Васильевна",
-					birthDate: "1988-06-14",
-					passport: "4512 789456",
-					phone: "+7 (999) 123-45-67",
-					cardNumber: "К-8492",
-				}}
-				doctorName="Д-р Смирнов Алексей Петрович"
-				clinicName="ООО «Денте Стоматология»"
-			/>
+			{isConsent323Open && (
+				<InformedConsent323FzModal
+					isOpen={isConsent323Open}
+					onClose={() => setIsConsent323Open(false)}
+					initialTemplateKey="CONSENT_THERAPY"
+					patient={{
+						fullName: "Смирнова Екатерина Васильевна",
+						birthDate: "1988-06-14",
+						passport: "4512 789456",
+						phone: "+7 (999) 123-45-67",
+						cardNumber: "К-8492",
+					}}
+					doctorName="Д-р Смирнов Алексей Петрович"
+					clinicName="ООО «Денте Стоматология»"
+				/>
+			)}
 
-			<AnesthesiaProtocolModal
-				isOpen={isAnesthesiaProtocolOpen}
-				onClose={() => setIsAnesthesiaProtocolOpen(false)}
-				initialToothNumber={46}
-				initialPatientWeightKg={70}
-				initialPatientAgeYears={35}
-			/>
+			{isAnesthesiaProtocolOpen && (
+				<AnesthesiaProtocolModal
+					isOpen={isAnesthesiaProtocolOpen}
+					onClose={() => setIsAnesthesiaProtocolOpen(false)}
+					initialToothNumber={46}
+					initialPatientWeightKg={70}
+					initialPatientAgeYears={35}
+				/>
+			)}
 
-			<MedicalWasteJournalModal
-				isOpen={isMedicalWasteOpen}
-				onClose={() => setIsMedicalWasteOpen(false)}
-			/>
+			{isMedicalWasteOpen && (
+				<MedicalWasteJournalModal
+					isOpen={isMedicalWasteOpen}
+					onClose={() => setIsMedicalWasteOpen(false)}
+				/>
+			)}
 
-			<EmergencyRescueModal
-				isOpen={isEmergencyRescueOpen}
-				onClose={() => setIsEmergencyRescueOpen(false)}
-				initialPatientName={SAMPLE_PATIENT.fullName}
-				initialPatientAgeYears={38}
-				initialPatientWeightKg={70}
-				clinicName="Стоматологическая клиника «ДЕНТЕ»"
-				clinicAddress="г. Москва, ул. Клиническая, д. 10, стр. 2"
-				cabinetNumber="1"
-				doctorFullName="Д-р Смирнов Алексей Петрович"
-				assistantFullName="Медсестра Петрова Е. С."
-			/>
+			{isEmergencyRescueOpen && (
+				<EmergencyRescueModal
+					isOpen={isEmergencyRescueOpen}
+					onClose={() => setIsEmergencyRescueOpen(false)}
+					initialPatientName={SAMPLE_PATIENT.fullName}
+					initialPatientAgeYears={38}
+					initialPatientWeightKg={70}
+					clinicName="Стоматологическая клиника «ДЕНТЕ»"
+					clinicAddress="г. Москва, ул. Клиническая, д. 10, стр. 2"
+					cabinetNumber="1"
+					doctorFullName="Д-р Смирнов Алексей Петрович"
+					assistantFullName="Медсестра Петрова Е. С."
+				/>
+			)}
 
-			<WarrantyPassportModal
-				isOpen={isWarrantyPassportOpen}
-				onClose={() => setIsWarrantyPassportOpen(false)}
-				patient={{
-					fullName: SAMPLE_PATIENT.fullName,
-					birthDate: SAMPLE_PATIENT.birthDate,
-					cardNumber: SAMPLE_PATIENT.cardNumber,
-					phone: SAMPLE_PATIENT.phone,
-				}}
-				doctorName="Д-р Смирнов Алексей Петрович"
-				doctorSpecialty="Врач-стоматолог терапевт-ортопед"
-				clinicName="ООО «Стоматологическая клиника ДЕНТЕ»"
-				clinicAddress="г. Москва, ул. Клиническая, д. 10, стр. 2"
-				clinicPhone="+7 (495) 777-88-99"
-				clinicLicenseNumber="ЛО-77-01-019842"
-			/>
+			{isWarrantyPassportOpen && (
+				<WarrantyPassportModal
+					isOpen={isWarrantyPassportOpen}
+					onClose={() => setIsWarrantyPassportOpen(false)}
+					patient={{
+						fullName: SAMPLE_PATIENT.fullName,
+						birthDate: SAMPLE_PATIENT.birthDate,
+						cardNumber: SAMPLE_PATIENT.cardNumber,
+						phone: SAMPLE_PATIENT.phone,
+					}}
+					doctorName="Д-р Смирнов Алексей Петрович"
+					doctorSpecialty="Врач-стоматолог терапевт-ортопед"
+					clinicName="ООО «Стоматологическая клиника ДЕНТЕ»"
+					clinicAddress="г. Москва, ул. Клиническая, д. 10, стр. 2"
+					clinicPhone="+7 (495) 777-88-99"
+					clinicLicenseNumber="ЛО-77-01-019842"
+				/>
+			)}
 
-			<CmoEmrAuditModal
-				isOpen={isCmoEmrAuditOpen}
-				onClose={() => setIsCmoEmrAuditOpen(false)}
-			/>
+			{isCmoEmrAuditOpen && (
+				<CmoEmrAuditModal
+					isOpen={isCmoEmrAuditOpen}
+					onClose={() => setIsCmoEmrAuditOpen(false)}
+				/>
+			)}
 
 			{isFnsNdflXmlOpen && (
 				<FnsNdflXmlModal
@@ -1823,95 +1888,108 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				/>
 			)}
 
-			<TreatmentPlanPriceValidatorModal
-				isOpen={isPlanPriceValidatorOpen}
-				onClose={() => setIsPlanPriceValidatorOpen(false)}
-			/>
+			{isPlanPriceValidatorOpen && (
+				<TreatmentPlanPriceValidatorModal
+					isOpen={isPlanPriceValidatorOpen}
+					onClose={() => setIsPlanPriceValidatorOpen(false)}
+				/>
+			)}
 
-			<SberPosTerminalModal
-				isOpen={isSberPosOpen}
-				onClose={() => setIsSberPosOpen(false)}
-			/>
+			{isSberPosOpen && (
+				<SberPosTerminalModal
+					isOpen={isSberPosOpen}
+					onClose={() => setIsSberPosOpen(false)}
+				/>
+			)}
 
-			<PatientCabinetModal
-				isOpen={isPatientCabinetOpen}
-				onClose={() => setIsPatientCabinetOpen(false)}
-			/>
+			{isPatientCabinetOpen && (
+				<PatientPortalModal
+					isOpen={isPatientCabinetOpen}
+					onClose={() => setIsPatientCabinetOpen(false)}
+				/>
+			)}
 
-			<EgiszRemdXmlModal
-				isOpen={isEgiszRemdOpen}
-				onClose={() => setIsEgiszRemdOpen(false)}
-			/>
+			{isEgiszRemdOpen && (
+				<EgiszRemdXmlModal
+					isOpen={isEgiszRemdOpen}
+					onClose={() => setIsEgiszRemdOpen(false)}
+				/>
+			)}
 
-			<LabWorkOrderModal
-				isOpen={isLabWorkOrderOpen}
-				onClose={() => setIsLabWorkOrderOpen(false)}
-				patientName={SAMPLE_PATIENT.fullName}
-				patientChartNumber={SAMPLE_PATIENT.cardNumber}
-			/>
+			{isLabWorkOrderOpen && (
+				<LabWorkOrderModal
+					isOpen={isLabWorkOrderOpen}
+					onClose={() => setIsLabWorkOrderOpen(false)}
+					patientName={SAMPLE_PATIENT.fullName}
+					patientChartNumber={SAMPLE_PATIENT.cardNumber}
+				/>
+			)}
 
-			<SanpinJournalsModal
-				isOpen={isSanpinJournalsOpen}
-				onClose={() => setIsSanpinJournalsOpen(false)}
-			/>
+			{isDmsManagerOpen && (
+				<DmsInsuranceManagerModal
+					isOpen={isDmsManagerOpen}
+					onClose={() => setIsDmsManagerOpen(false)}
+				/>
+			)}
 
-			<ClinicalWriteoffModal
-				isOpen={isClinicalWriteoffOpen}
-				onClose={() => setIsClinicalWriteoffOpen(false)}
-				patientName={SAMPLE_PATIENT.fullName}
-				doctorFullName="Д-р Смирнов Алексей Петрович"
-				assistantFullName="Медсестра Петрова Е. С."
-			/>
+			{isKraftBarcodeOpen && (
+				<KraftPackageBarcodeModal
+					isOpen={isKraftBarcodeOpen}
+					onClose={() => setIsKraftBarcodeOpen(false)}
+				/>
+			)}
 
-			<DmsInsuranceManagerModal
-				isOpen={isDmsManagerOpen}
-				onClose={() => setIsDmsManagerOpen(false)}
-			/>
+			{isServicePricelistOpen && (
+				<ServicePricelistManagerModal
+					isOpen={isServicePricelistOpen}
+					onClose={() => setIsServicePricelistOpen(false)}
+				/>
+			)}
 
-			<KraftPackageBarcodeModal
-				isOpen={isKraftBarcodeOpen}
-				onClose={() => setIsKraftBarcodeOpen(false)}
-			/>
+			{isLoyaltyProgramOpen && (
+				<LoyaltyProgramModal
+					isOpen={isLoyaltyProgramOpen}
+					onClose={() => setIsLoyaltyProgramOpen(false)}
+					patientName={SAMPLE_PATIENT.fullName}
+					medicalCardNumber={SAMPLE_PATIENT.cardNumber}
+				/>
+			)}
 
-			<ServicePricelistManagerModal
-				isOpen={isServicePricelistOpen}
-				onClose={() => setIsServicePricelistOpen(false)}
-			/>
+			{isReferral057Open && (
+				<MedicalReferral057Modal
+					isOpen={isReferral057Open}
+					onClose={() => setIsReferral057Open(false)}
+					patient={{
+						fullName: SAMPLE_PATIENT.fullName,
+						birthDate: SAMPLE_PATIENT.birthDate,
+						phone: SAMPLE_PATIENT.phone,
+						omsPolicyNumber: "7700001234567890",
+					}}
+				/>
+			)}
 
-			<LoyaltyProgramModal
-				isOpen={isLoyaltyProgramOpen}
-				onClose={() => setIsLoyaltyProgramOpen(false)}
-				patientName={SAMPLE_PATIENT.fullName}
-				medicalCardNumber={SAMPLE_PATIENT.cardNumber}
-			/>
+			{isSickLeaveElnOpen && (
+				<SickLeaveElnModal
+					isOpen={isSickLeaveElnOpen}
+					onClose={() => setIsSickLeaveElnOpen(false)}
+					initialPatientName={SAMPLE_PATIENT.fullName}
+					initialPatientBirthDate={SAMPLE_PATIENT.birthDate}
+				/>
+			)}
 
-			<MedicalReferral057Modal
-				isOpen={isReferral057Open}
-				onClose={() => setIsReferral057Open(false)}
-				patient={{
-					fullName: SAMPLE_PATIENT.fullName,
-					birthDate: SAMPLE_PATIENT.birthDate,
-					phone: SAMPLE_PATIENT.phone,
-					omsPolicyNumber: "7700001234567890",
-				}}
-			/>
+			{isAutoclaveLog257Open && (
+				<AutoclaveLog257Modal
+					isOpen={isAutoclaveLog257Open}
+					onClose={() => setIsAutoclaveLog257Open(false)}
+				/>
+			)}
 
-			<SickLeaveElnModal
-				isOpen={isSickLeaveElnOpen}
-				onClose={() => setIsSickLeaveElnOpen(false)}
-				initialPatientName={SAMPLE_PATIENT.fullName}
-				initialPatientBirthDate={SAMPLE_PATIENT.birthDate}
-			/>
-
-			<AutoclaveLog257Modal
-				isOpen={isAutoclaveLog257Open}
-				onClose={() => setIsAutoclaveLog257Open(false)}
-			/>
-
-			<DoctorShiftRosterModal
-				isOpen={isDoctorShiftRosterOpen}
-				onClose={() => setIsDoctorShiftRosterOpen(false)}
-			/>
+			{isDoctorShiftRosterOpen && (
+				<DoctorShiftRosterModal
+					isOpen={isDoctorShiftRosterOpen}
+					onClose={() => setIsDoctorShiftRosterOpen(false)}
+				/>
+			)}
 		</div>
 	);
 };

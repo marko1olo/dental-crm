@@ -13,6 +13,7 @@ import {
 	Clock,
 	Download,
 	Droplets,
+	FileBadge,
 	FileSpreadsheet,
 	FileText,
 	Filter,
@@ -62,6 +63,8 @@ import {
 	generateGeneralCleaningJournalPrintHtml,
 	generatePsoJournalPrintHtml,
 	generatePsoRecordId,
+	generateSanpinConsolidatedInspectionHtml,
+	exportSanpinConsolidatedArchiveToCsv,
 	validateCleaningScheduleCompliance,
 	type BactericidalEquipmentRecord,
 	type BactericidalSessionRecord,
@@ -757,6 +760,165 @@ export function SanpinJournalsModal({
 	// PRINT & EXPORT HANDLERS
 	// ─────────────────────────────────────────────────────────────────────────────
 
+	const handlePrintConsolidatedBinder = () => {
+		const html = generateSanpinConsolidatedInspectionHtml({
+			clinicInfo,
+			periodLabelRu: `за текущий отчетный период (${new Date().toLocaleDateString("ru-RU")})`,
+			psoRecords,
+			form257Records: [
+				{
+					id: "F257-20260822-01",
+					date: "2026-08-22",
+					cycleNumber: 14,
+					sterilizerId: "autoclave-01",
+					sterilizerCode: "АВТОКЛАВ-01",
+					sterilizerBrandModel: "Euronda E9 Next (Класс B)",
+					sterilizerSerialNumber: "SN-EUR-99824",
+					regimeId: "b_134_universal",
+					regimeNameRu: "134°C Универсальный (фракционированный вакуум)",
+					targetTemperatureCelsius: 134,
+					targetPressureBar: 2.1,
+					targetExposureMinutes: 5,
+					actualTemperatureCelsius: 134.5,
+					actualPressureBar: 2.15,
+					actualExposureMinutes: 5.5,
+					itemsDescriptionRu: "Стоматологические наконечники, боры, терапевтические наборы (крафт-пакеты)",
+					packsCount: 18,
+					packagingType: "kraft_pouch",
+					packagingNameRu: "Пакеты комбинированные самоклеящиеся 100х200",
+					shelfLifeDays: 50,
+					chamberPoints: [
+						{ pointIndex: 1, code: "KT-1", nameRu: "Верхний левый угол", indicatorId: "medtest-134", indicatorTradeNameRu: "Медтест 134/5", status: "passed", initialColorRu: "Желтый", actualColorRu: "Темно-коричневый" },
+						{ pointIndex: 2, code: "KT-2", nameRu: "Верхний правый угол", indicatorId: "medtest-134", indicatorTradeNameRu: "Медтест 134/5", status: "passed", initialColorRu: "Желтый", actualColorRu: "Темно-коричневый" },
+						{ pointIndex: 3, code: "KT-3", nameRu: "Центр камеры", indicatorId: "medtest-134", indicatorTradeNameRu: "Медтест 134/5", status: "passed", initialColorRu: "Желтый", actualColorRu: "Темно-коричневый" },
+						{ pointIndex: 4, code: "KT-4", nameRu: "Нижний левый угол", indicatorId: "medtest-134", indicatorTradeNameRu: "Медтест 134/5", status: "passed", initialColorRu: "Желтый", actualColorRu: "Темно-коричневый" },
+						{ pointIndex: 5, code: "KT-5", nameRu: "Точка стока конденсата", indicatorId: "medtest-134", indicatorTradeNameRu: "Медтест 134/5", status: "passed", initialColorRu: "Желтый", actualColorRu: "Темно-коричневый" },
+					],
+					areAllPointsPassed: true,
+					chemicalIndicatorNameRu: "Медтест 134/5 (5 класс)",
+					isCyclePassed: true,
+					status: "sterile_passed",
+					operatorStaffFullName: clinicInfo.headNurse,
+					operatorStaffPosition: "Медсестра ЦСО",
+					headNurseSignatureFullName: clinicInfo.headNurse,
+					isHeadNurseVerified: true,
+					verificationTimestamp: new Date().toISOString(),
+					digitalStampHash: "STAMP-AUTOCLAVE-01-20260822-VERIFIED-ECP",
+					createdAt: new Date().toISOString(),
+				},
+			],
+			bactericidalSessions,
+			generalCleanings: cleaningRecords,
+			temperatureLogs: [
+				{
+					id: "temp-01",
+					measurementDate: "2026-08-22",
+					measurementPeriod: "morning",
+					equipmentName: "Фармацевтический холодильник Pozis ХФ-250",
+					location: "ЦСО / Процедурный кабинет",
+					meterDeviceName: "Термометр ТМН-1",
+					meterSerialNumber: "SN-90412",
+					temperatureCelsius: 4.2,
+					relativeHumidityPercent: 55,
+					targetTempMinCelsius: 2,
+					targetTempMaxCelsius: 8,
+					isWithinNorm: true,
+					operatorStaffFullName: clinicInfo.headNurse,
+				},
+			],
+		});
+
+		const printWindow = window.open("", "_blank");
+		if (printWindow) {
+			printWindow.document.write(html);
+			printWindow.document.close();
+			printWindow.focus();
+			setTimeout(() => {
+				printWindow.print();
+			}, 250);
+		}
+	};
+
+	const handleExportConsolidatedCsv = () => {
+		const csv = exportSanpinConsolidatedArchiveToCsv({
+			clinicInfo,
+			periodLabelRu: `за текущий отчетный период (${new Date().toLocaleDateString("ru-RU")})`,
+			psoRecords,
+			form257Records: [
+				{
+					id: "F257-20260822-01",
+					date: "2026-08-22",
+					cycleNumber: 14,
+					sterilizerId: "autoclave-01",
+					sterilizerCode: "АВТОКЛАВ-01",
+					sterilizerBrandModel: "Euronda E9 Next (Класс B)",
+					sterilizerSerialNumber: "SN-EUR-99824",
+					regimeId: "b_134_universal",
+					regimeNameRu: "134°C Универсальный (фракционированный вакуум)",
+					targetTemperatureCelsius: 134,
+					targetPressureBar: 2.1,
+					targetExposureMinutes: 5,
+					actualTemperatureCelsius: 134.5,
+					actualPressureBar: 2.15,
+					actualExposureMinutes: 5.5,
+					itemsDescriptionRu: "Стоматологические наконечники, боры, терапевтические наборы (крафт-пакеты)",
+					packsCount: 18,
+					packagingType: "kraft_pouch",
+					packagingNameRu: "Пакеты комбинированные самоклеящиеся 100х200",
+					shelfLifeDays: 50,
+					chamberPoints: [
+						{ pointIndex: 1, code: "KT-1", nameRu: "Верхний левый угол", indicatorId: "medtest-134", indicatorTradeNameRu: "Медтест 134/5", status: "passed", initialColorRu: "Желтый", actualColorRu: "Темно-коричневый" },
+						{ pointIndex: 2, code: "KT-2", nameRu: "Верхний правый угол", indicatorId: "medtest-134", indicatorTradeNameRu: "Медтест 134/5", status: "passed", initialColorRu: "Желтый", actualColorRu: "Темно-коричневый" },
+						{ pointIndex: 3, code: "KT-3", nameRu: "Центр камеры", indicatorId: "medtest-134", indicatorTradeNameRu: "Медтест 134/5", status: "passed", initialColorRu: "Желтый", actualColorRu: "Темно-коричневый" },
+						{ pointIndex: 4, code: "KT-4", nameRu: "Нижний левый угол", indicatorId: "medtest-134", indicatorTradeNameRu: "Медтест 134/5", status: "passed", initialColorRu: "Желтый", actualColorRu: "Темно-коричневый" },
+						{ pointIndex: 5, code: "KT-5", nameRu: "Точка стока конденсата", indicatorId: "medtest-134", indicatorTradeNameRu: "Медтест 134/5", status: "passed", initialColorRu: "Желтый", actualColorRu: "Темно-коричневый" },
+					],
+					areAllPointsPassed: true,
+					chemicalIndicatorNameRu: "Медтест 134/5 (5 класс)",
+					isCyclePassed: true,
+					status: "sterile_passed",
+					operatorStaffFullName: clinicInfo.headNurse,
+					operatorStaffPosition: "Медсестра ЦСО",
+					headNurseSignatureFullName: clinicInfo.headNurse,
+					isHeadNurseVerified: true,
+					verificationTimestamp: new Date().toISOString(),
+					digitalStampHash: "STAMP-AUTOCLAVE-01-20260822-VERIFIED-ECP",
+					createdAt: new Date().toISOString(),
+				},
+			],
+			bactericidalSessions,
+			generalCleanings: cleaningRecords,
+			temperatureLogs: [
+				{
+					id: "temp-01",
+					measurementDate: "2026-08-22",
+					measurementPeriod: "morning",
+					equipmentName: "Фармацевтический холодильник Pozis ХФ-250",
+					location: "ЦСО / Процедурный кабинет",
+					meterDeviceName: "Термометр ТМН-1",
+					meterSerialNumber: "SN-90412",
+					temperatureCelsius: 4.2,
+					relativeHumidityPercent: 55,
+					targetTempMinCelsius: 2,
+					targetTempMaxCelsius: 8,
+					isWithinNorm: true,
+					operatorStaffFullName: clinicInfo.headNurse,
+				},
+			],
+		});
+
+		const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement("a");
+		link.setAttribute("href", url);
+		link.setAttribute("download", "SanPiN_Consolidated_Production_Control_Archive.csv");
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		URL.revokeObjectURL(url);
+		showToast("Сводный архив СанПиН (CSV) успешно экспортирован", "success");
+	};
+
 	const handlePrintCurrentTab = () => {
 		let html = "";
 		if (activeTab === "pso") {
@@ -880,22 +1042,46 @@ export function SanpinJournalsModal({
 							</div>
 						</div>
 					</div>
-					<div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+						<button
+							type="button"
+							onClick={handlePrintConsolidatedBinder}
+							className="sanpin-action-btn sanpin-action-btn-primary"
+							style={{
+								background: "linear-gradient(135deg, #4338ca 0%, #3730a3 100%)",
+								borderColor: "#3730a3",
+								color: "#fff",
+								fontWeight: 700,
+							}}
+							title="Генератор сшива журналов «Сводный журнал производственного контроля СанПиН за период» (А4 Альбомная с титульным листом и заверительной надписью)"
+							data-testid="modal-print-consolidated-binder-btn"
+						>
+							<FileBadge size={16} /> Сводный сшив СанПиН (А4)
+						</button>
+						<button
+							type="button"
+							onClick={handleExportConsolidatedCsv}
+							className="sanpin-action-btn sanpin-action-btn-secondary"
+							title="1-клик экспорт в единый многостраничный CSV/Excel архив с разделителями страниц"
+							data-testid="modal-export-consolidated-csv-btn"
+						>
+							<Download size={16} color="var(--brand-primary)" /> Сводный CSV архив
+						</button>
 						<button
 							type="button"
 							onClick={handlePrintCurrentTab}
 							className="sanpin-action-btn sanpin-action-btn-secondary"
-							title="Печать официальной формы А4"
+							title="Печать официальной формы А4 текущей вкладки"
 						>
-							<Printer size={16} /> Печать А4
+							<Printer size={16} /> Печать вкладки
 						</button>
 						<button
 							type="button"
 							onClick={handleExportCsv}
 							className="sanpin-action-btn sanpin-action-btn-secondary"
-							title="Экспорт в CSV"
+							title="Экспорт текущей вкладки в CSV"
 						>
-							<Download size={16} /> Экспорт CSV
+							<Download size={16} /> CSV вкладки
 						</button>
 						<button
 							type="button"
@@ -1001,19 +1187,9 @@ export function SanpinJournalsModal({
 					{activeTab === "pso" && (
 						<>
 							{/* Quick 1-Click Batch Logger Bar */}
-							<div
-								style={{
-									padding: "1rem 1.25rem",
-									borderRadius: "0.6rem",
-									background: "rgba(37, 99, 235, 0.06)",
-									border: "1.5px solid rgba(37, 99, 235, 0.25)",
-									display: "flex",
-									flexDirection: "column",
-									gap: "0.75rem",
-								}}
-							>
-								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-									<div style={{ fontWeight: 800, fontSize: "0.95rem", color: "var(--brand-primary, #2563eb)" }}>
+							<div className="sanpin-quick-actions-bar">
+								<div className="sanpin-quick-actions-head">
+									<div className="sanpin-quick-actions-title">
 										⚡ Быстрая фиксация отрицательных проб ПСО (1-Click СанПиН 3.3686-21):
 									</div>
 									<button
@@ -1024,7 +1200,7 @@ export function SanpinJournalsModal({
 										<Plus size={16} /> Внести подробную пробу ПСО
 									</button>
 								</div>
-								<div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
+								<div className="sanpin-quick-preset-grid">
 									{DENTAL_INSTRUMENT_CATEGORIES.map((cat) => {
 										const req = calculatePsoSampleRequirements(cat.defaultBatchSize);
 										return (
@@ -1032,12 +1208,11 @@ export function SanpinJournalsModal({
 												key={cat.id}
 												type="button"
 												onClick={() => handleQuickPsoSuccess(cat)}
-												className="sanpin-action-btn sanpin-action-btn-secondary"
-												style={{ fontSize: "0.825rem", padding: "0.45rem 0.85rem" }}
+												className="sanpin-action-btn sanpin-action-btn-secondary sanpin-preset-btn"
 												title={`Автоматически зафиксировать норму ПСО для ${cat.categoryNameRu} (${cat.defaultBatchSize} шт., ${req.minSampleCount} проб)`}
 											>
 												<CheckCircle2 size={14} color="#059669" />
-												{cat.categoryNameRu} ({req.minSampleCount} проб)
+												<span className="sanpin-preset-text">{cat.categoryNameRu} ({req.minSampleCount} проб)</span>
 											</button>
 										);
 									})}

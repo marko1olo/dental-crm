@@ -28,6 +28,7 @@ import type {
 	Form148_1u04lPayload,
 } from "./forms107_1u.js";
 import type { RadiologyReferralPayload } from "./formsRadiologyReferral.js";
+import { generateQrCodeSvg } from "../fiscal/qrGenerator.js";
 
 /** Общие CSS стили для печати медицинских документов на листах А4 по ГОСТ Р 7.0.97-2016 */
 export const CLINICAL_DOCUMENT_PRINT_STYLES = `
@@ -572,7 +573,7 @@ export function renderForm043uHtml(payload: FullForm043uPayload | any): string {
 		intensityLevel: "low",
 	};
 
-	const diaries = payload.soapDiaries || [];
+	const diaries = payload.soapDiaries || payload.diaries || [];
 	const diariesHtml = diaries.length > 0
 		? diaries.map((d: any, index: number) => `
       <div style="border:1px solid #cbd5e1; padding:8px 10px; margin-bottom:10px; border-radius:4px; page-break-inside:avoid; break-inside:avoid;">
@@ -580,11 +581,13 @@ export function renderForm043uHtml(payload: FullForm043uPayload | any): string {
           <strong>Запись № ${index + 1} от ${escapeHtml(d.entryDate || d.visitDate || cardOpened)}</strong>
           <span>Врач: <strong>${escapeHtml(d.doctorFullName || doctorName)}</strong> (${escapeHtml(d.doctorSpecialty || doctorSpecialty)})</span>
         </div>
-        <p style="margin:3px 0;"><strong>Клинический диагноз по МКБ-10 (A):</strong> <span style="color:#0369a1; font-weight:bold;">${escapeHtml(d.assessmentDiagnosisText || d.diagnosisDetailed || d.assessmentDiagnosis || "K02.1 Кариес дентина")}</span></p>
+        <p style="margin:3px 0;"><strong>Клинический диагноз по МКБ-10 (A):</strong> <span style="color:#0369a1; font-weight:bold;">${escapeHtml(d.clinicalDiagnosisIcd10 || d.assessmentDiagnosisText || d.diagnosisDetailed || d.assessmentDiagnosis || "K02.1 Кариес дентина")}</span></p>
         <p style="margin:3px 0;"><strong>Жалобы (S):</strong> ${escapeHtml(d.subjectiveComplaints || d.subjectiveComplaint || "Кратковременные боли от термических раздражителей.")}</p>
         <p style="margin:3px 0;"><strong>Объективно / Status localis (O):</strong> ${escapeHtml(d.objectiveStatusLocalis || d.objectiveStatus || "Глубокая кариозная полость на жевательной поверхности, дентин пигментирован, зондирование дна безболезненно, перкуссия отрицательна, ЭОД 4 мкА.")}</p>
-        <p style="margin:3px 0;"><strong>Протокол лечения (P):</strong> ${escapeHtml(d.procedureProtocol || d.planAndTreatment || "Инфильтрационная анестезия Sol. Ubistesini 4% 1.7 мл. Препарирование кариозной полости, изоляция коффердам, медикаментозная обработка 2% хлоргексидином, лечебная прокладка Dycal, изолирующая прокладка SDR, пломба светоотверждаемым нанокомпозитом Ceram.x Spectra ST. Шлифовка, полировка.")}</p>
-        <div style="text-align:right; font-size:7.5pt; color:#64748b; margin-top:4px;">Подпись врача: _________________ / ${escapeHtml(d.doctorFullName || doctorName)} /</div>
+        <p style="margin:3px 0;"><strong>Протокол лечения (P / 804н):</strong> ${escapeHtml(d.treatmentProtocol804n || d.procedureProtocol || d.planAndTreatment || "Инфильтрационная анестезия Sol. Ubistesini 4% 1.7 мл. Препарирование кариозной полости, изоляция коффердам, медикаментозная обработка 2% хлоргексидином, лечебная прокладка Dycal, изолирующая прокладка SDR, пломба светоотверждаемым нанокомпозитом Ceram.x Spectra ST. Шлифовка, полировка.")}</p>
+        ${d.usedMaterials ? `<p style="margin:3px 0; font-size:8pt; color:#475569;"><strong>Использованные материалы:</strong> ${escapeHtml(d.usedMaterials)}</p>` : ""}
+        ${d.homeCareRecommendations ? `<p style="margin:3px 0; font-size:8pt; color:#475569;"><strong>Рекомендации:</strong> ${escapeHtml(d.homeCareRecommendations)}</p>` : ""}
+        <div style="text-align:right; font-size:7.5pt; color:#64748b; margin-top:4px;">Подпись врача: _________________ / ${escapeHtml(d.doctorFullName || doctorName)} / <span class="stamp-seal">М.П.</span></div>
       </div>
     `).join("")
 		: `
@@ -614,7 +617,7 @@ export function renderForm043uHtml(payload: FullForm043uPayload | any): string {
     <div class="clinic-info">
       <div class="clinic-title">${escapeHtml(clinicName)}</div>
       <div>${escapeHtml(clinicAddress)}</div>
-      <div>ОГРН: ${escapeHtml(clinicOgrn)} | ИНН: ${escapeHtml(clinicInn)}</div>
+      <div>ОГРН: ${escapeHtml(clinicOgrn)} | ИНН: ${escapeHtml(clinicInn)} | Лицензия: № ${escapeHtml(payload.organization?.medicalLicenseNumber || payload.clinicMedicalLicenseNumber || payload.medicalLicenseNumber || "ЛО41-01137-77/00368421")}</div>
     </div>
     <div class="doc-requisites">
       <div class="form-badge">МИНЗДРАВ РОССИИ</div>
@@ -2162,21 +2165,27 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
     ` : ""}
 
     <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:8px;">
-      <div style="width:52%;">
+      <div style="width:40%;">
         <div style="font-size:7pt; color:#64748b; margin-bottom:12px;">Подпись и личная печать врача:</div>
         <div style="border-bottom:1px solid #0f172a; width:90%; height:1px;"></div>
         <div style="font-size:7.5pt; margin-top:2px;">/ ${escapeHtml(doctorName)} /</div>
       </div>
-      <div style="width:44%; display:flex; flex-direction:column; align-items:center;">
-        <div style="display:flex; gap:8px; align-items:center;">
-          <div style="width:46px; height:46px; border:1px dashed #94a3b8; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:7.5pt; color:#64748b; font-weight:bold;">
+      <div style="width:28%; display:flex; flex-direction:column; align-items:center;">
+        <div style="width:64px; height:64px; border:1px solid #cbd5e1; padding:2px; background:#fff;">
+          ${generateQrCodeSvg(payload.qrVerificationUrl || `https://egisz.rosminzdrav.ru/rx/verify?id=${encodeURIComponent(recNum)}&org=${encodeURIComponent(clinicOgrn)}&date=${encodeURIComponent(recDate)}`, { size: 60, margin: 1, title: `QR-код рецепта № ${recNum}` })}
+        </div>
+        <div style="font-size:5.5pt; color:#64748b; margin-top:2px; text-align:center;">QR для аптеки / ЕГИСЗ</div>
+      </div>
+      <div style="width:30%; display:flex; flex-direction:column; align-items:center;">
+        <div style="display:flex; gap:6px; align-items:center;">
+          <div style="width:42px; height:42px; border:1px dashed #94a3b8; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:7pt; color:#64748b; font-weight:bold;">
             М.П.
           </div>
-          <div style="width:52px; height:52px; border:1.5px dashed #0284c7; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:7pt; color:#0369a1; font-weight:bold; text-align:center; line-height:1.1;">
+          <div style="width:46px; height:46px; border:1.5px dashed #0284c7; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:6.5pt; color:#0369a1; font-weight:bold; text-align:center; line-height:1.1;">
             Для<br>рецептов
           </div>
         </div>
-        <div style="font-size:6pt; color:#64748b; margin-top:2px; text-align:center;">Печать медицинской организации «Для рецептов»</div>
+        <div style="font-size:5.5pt; color:#64748b; margin-top:2px; text-align:center;">Печать медицинской организации «Для рецептов»</div>
       </div>
     </div>
 
@@ -2301,20 +2310,26 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
     </div>
 
     <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:6px;">
-      <div style="width:48%;">
+      <div style="width:38%;">
         <div>Подпись и личная печать врача: ____________________</div>
         <div style="font-size:7pt; color:#64748b; margin-bottom:4px;">/ ${escapeHtml(doctorName)} /</div>
         <div style="margin-top:4px;">Подпись зав. отделением: ____________________</div>
         <div style="font-size:7pt; color:#64748b;">/ ${escapeHtml(headOfDept)} /</div>
       </div>
-      <div style="width:50%; display:flex; justify-content:flex-end; gap:6px; align-items:center;">
-        <div style="width:44px; height:44px; border:1px dashed #0f172a; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:7pt; font-weight:bold; text-align:center;">
+      <div style="width:20%; display:flex; flex-direction:column; align-items:center;">
+        <div style="width:58px; height:58px; border:1px solid #cbd5e1; padding:2px; background:#fff;">
+          ${generateQrCodeSvg(payload.qrVerificationUrl || `https://egisz.rosminzdrav.ru/rx/verify?id=${encodeURIComponent(recNum)}&pku=1&org=${encodeURIComponent(clinicOgrn)}&date=${encodeURIComponent(recDate)}`, { size: 54, margin: 1, title: `QR-код ПКУ № ${recNum}` })}
+        </div>
+        <div style="font-size:5pt; color:#64748b; margin-top:1px; text-align:center;">QR ЕГИСЗ / ПКУ</div>
+      </div>
+      <div style="width:40%; display:flex; justify-content:flex-end; gap:5px; align-items:center;">
+        <div style="width:38px; height:38px; border:1px dashed #0f172a; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:6.5pt; font-weight:bold; text-align:center;">
           М.П.<br>Врача
         </div>
-        <div style="width:48px; height:48px; border:1.5px dashed #0284c7; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:6.5pt; color:#0369a1; font-weight:bold; text-align:center; line-height:1.1;">
+        <div style="width:42px; height:42px; border:1.5px dashed #0284c7; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:6pt; color:#0369a1; font-weight:bold; text-align:center; line-height:1.1;">
           Для<br>рецептов
         </div>
-        <div style="width:46px; height:46px; border:1.5px dashed #b91c1c; clip-path:polygon(50% 0%, 0% 100%, 100% 100%); display:flex; align-items:center; justify-content:center; font-size:6pt; color:#b91c1c; font-weight:bold; text-align:center; padding-top:10px;">
+        <div style="width:40px; height:40px; border:1.5px dashed #b91c1c; clip-path:polygon(50% 0%, 0% 100%, 100% 100%); display:flex; align-items:center; justify-content:center; font-size:5.5pt; color:#b91c1c; font-weight:bold; text-align:center; padding-top:8px;">
           СПЕЦ.<br>ПЕЧАТЬ
         </div>
       </div>

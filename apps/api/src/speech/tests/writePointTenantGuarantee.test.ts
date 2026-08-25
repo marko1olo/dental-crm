@@ -140,8 +140,8 @@ function durableRowFilter(recordingId: string, organizationId: string) {
  * задаётся явно и является частью проверяемого утверждения.
  */
 async function readDurableRow(recordingId: string, organizationId: string) {
-	const [row] = await withFixtureTenant(organizationId, async () =>
-		db
+	const [row] = await withFixtureTenant(organizationId, async (tx) =>
+		tx
 			.select({
 				organizationId: aiJobs.organizationId,
 				visitId: aiJobs.visitId,
@@ -165,8 +165,8 @@ async function countRowsVisibleTo(
 	recordingId: string,
 	viewerOrganizationId: string,
 ): Promise<number> {
-	const rows = await withFixtureTenant(viewerOrganizationId, async () =>
-		db
+	const rows = await withFixtureTenant(viewerOrganizationId, async (tx) =>
+		tx
 			.select({ id: aiJobs.id })
 			.from(aiJobs)
 			.where(
@@ -225,34 +225,34 @@ before(async () => {
 
 	// Клиник две, а `app.current_tenant` хранит ровно одного арендатора: общий
 	// `values([А, Б])` отвергался бы кодом 42501 на второй строке.
-	await withFixtureTenant(ORG_A, async () => {
-		await db
+	await withFixtureTenant(ORG_A, async (tx) => {
+		await tx
 			.insert(organizations)
 			.values({ id: ORG_A, name: "Клиника точки записи А" });
-		await db.insert(patients).values({
+		await tx.insert(patients).values({
 			id: PATIENT_A,
 			organizationId: ORG_A,
 			fullName: "Зотова Лидия Андреевна",
 			birthDate: "1981-09-08",
 		});
-		await db.insert(visits).values({
+		await tx.insert(visits).values({
 			id: VISIT_A,
 			organizationId: ORG_A,
 			patientId: PATIENT_A,
 			status: "draft",
 		});
 	});
-	await withFixtureTenant(ORG_B, async () => {
-		await db
+	await withFixtureTenant(ORG_B, async (tx) => {
+		await tx
 			.insert(organizations)
 			.values({ id: ORG_B, name: "Клиника точки записи Б" });
-		await db.insert(patients).values({
+		await tx.insert(patients).values({
 			id: PATIENT_B,
 			organizationId: ORG_B,
 			fullName: "Ершов Никита Валерьевич",
 			birthDate: "1990-01-22",
 		});
-		await db.insert(visits).values({
+		await tx.insert(visits).values({
 			id: VISIT_B,
 			organizationId: ORG_B,
 			patientId: PATIENT_B,
@@ -285,7 +285,7 @@ after(async () => {
 	}
 });
 
-describe("гарантия тенант-контекста в точке записи диктовки", () => {
+describe("гарантия тенант-контекста в точке записи диктовки", { concurrency: 1 }, () => {
 	/**
 	 * ГЛАВНАЯ ПРОВЕРКА. Вызывающий даёт обход и НЕ даёт тенант-контекста — ровно
 	 * первая строка таблицы замеров. До правки запись отвергалась кодом 42501,

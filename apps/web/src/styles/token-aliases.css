@@ -60,6 +60,7 @@
 	--paper-light: var(--paper-soft);
 	--border-default: var(--line-strong);
 	--border-subtle: var(--line);
+	--border-soft: var(--line);
 
 	/* Тени */
 	--shadow: var(--shadow-1);

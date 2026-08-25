@@ -31,6 +31,7 @@ export type MutationEntityType =
 	| "treatment_plan"
 	| "visit"
 	| "patient"
+	| "patient_card_043"
 	| "payment"
 	| "appointment"
 	| "pricelist"

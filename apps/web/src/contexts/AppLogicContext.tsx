@@ -67,3 +67,7 @@ export function useAppLogicContext(): AppLogicContextType {
 	}
 	return context;
 }
+
+export function useOptionalAppLogicContext(): AppLogicContextType | null {
+	return useContext(AppLogicContext);
+}

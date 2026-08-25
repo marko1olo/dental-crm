@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { after, before, describe, test } from "node:test";
-import Fastify, { type FastifyInstance } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import {
 	chairs,
@@ -19,6 +19,7 @@ import {
 	purgeFixtureOrganizations,
 	withFixtureTenant,
 } from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 const NAMESPACE = "scheduleConcurrencyRace";
 const ORG_ID = fixtureUuid(NAMESPACE, 1);
@@ -48,7 +49,7 @@ describe("Schedule Concurrency Race & 4D Collision Prevention", () => {
 
 	before(async () => {
 		process.env[SECRET_VARIABLE] = adminSecret;
-		app = Fastify({ logger: false });
+		app = createTenantTestApp();
 		await registerScheduleRoutes(app);
 		await app.ready();
 
@@ -59,17 +60,17 @@ describe("Schedule Concurrency Race & 4D Collision Prevention", () => {
 
 		try {
 			await purgeFixtureOrganizations([ORG_ID]);
-			await withFixtureTenant(ORG_ID, async () => {
-				await db.insert(organizations).values({
+			await withFixtureTenant(ORG_ID, async (tx) => {
+				await tx.insert(organizations).values({
 					id: ORG_ID,
 					name: "Клиника конкурентного расписания",
 				});
-				await db.insert(clinics).values({
+				await tx.insert(clinics).values({
 					id: CLINIC_ID,
 					organizationId: ORG_ID,
 					name: "Главный филиал",
 				});
-				await db.insert(users).values([
+				await tx.insert(users).values([
 					{
 						id: DOCTOR_1_ID,
 						organizationId: ORG_ID,
@@ -99,7 +100,7 @@ describe("Schedule Concurrency Race & 4D Collision Prevention", () => {
 						isActive: true,
 					},
 				]);
-				await db.insert(chairs).values([
+				await tx.insert(chairs).values([
 					{
 						id: CHAIR_1_ID,
 						organizationId: ORG_ID,
@@ -115,7 +116,7 @@ describe("Schedule Concurrency Race & 4D Collision Prevention", () => {
 						isActive: true,
 					},
 				]);
-				await db.insert(patients).values([
+				await tx.insert(patients).values([
 					{
 						id: PATIENT_1_ID,
 						organizationId: ORG_ID,

@@ -341,7 +341,7 @@ export const EgiszRemdXmlModal: React.FC<EgiszRemdXmlModalProps> = ({
 	};
 
 	return createPortal(
-		<div className="egisz-modal-backdrop" onClick={onClose}>
+		<div className="egisz-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" data-testid="egisz-remd-xml-modal">
 			<div
 				className="egisz-modal-container"
 				onClick={(e) => e.stopPropagation()}

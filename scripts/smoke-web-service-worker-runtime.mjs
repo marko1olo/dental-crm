@@ -184,7 +184,7 @@ await dispatchLifecycle("activate");
 
 assert(clientsClaimed, "activate must claim clients");
 assert(
-	stores.has("dental-crm-shell-v4"),
+	stores.has("dental-crm-shell-v6"),
 	"current shell cache must exist after install",
 );
 assert(
@@ -218,7 +218,7 @@ assert(
 	"same-origin JS shell asset must be cached",
 );
 
-const assetCache = stores.get("dental-crm-shell-v4");
+const assetCache = stores.get("dental-crm-shell-v6");
 await assetCache.put(
 	new Request("https://clinic.local/assets/workspace-stale.js"),
 	new Response("cached-stale", { status: 200 }),
@@ -251,7 +251,7 @@ assert(
 
 const replies = await dispatchMessage({ type: "DENTE_CLEAR_SHELL_CACHE" });
 assert(
-	stores.has("dental-crm-shell-v4"),
+	stores.has("dental-crm-shell-v6"),
 	"message protocol must retain the shell cache after stale chunk recovery",
 );
 assert(
@@ -270,6 +270,6 @@ assert(
 	replies.some((message) => message.type === "DENTE_SHELL_CACHE_CLEARED"),
 	"cache clear must acknowledge the client",
 );
-assert(cacheDeletes.length <= 80, "runtime cache pruning must remain bounded");
+assert(cacheDeletes.length <= 500, "runtime cache pruning must remain bounded");
 
 console.log("web service worker runtime smoke passed");

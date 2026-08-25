@@ -1,7 +1,27 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
+import { Search, Sparkles, X } from "lucide-react";
 import "./PatientJourneyTimeline.css";
 import type { Dashboard } from "@dental/shared";
 import { money } from "../AppHelpers";
+
+function highlightMatch(text: string, query: string): React.ReactNode {
+	if (!query.trim() || !text) return text;
+	const trimmed = query.trim();
+	const regex = new RegExp(`(${trimmed.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+	const parts = text.split(regex);
+	return parts.map((part, i) =>
+		regex.test(part) ? (
+			<mark
+				key={i}
+				className="bg-amber-300 dark:bg-amber-500/40 text-amber-950 dark:text-amber-100 rounded px-1 font-bold"
+			>
+				{part}
+			</mark>
+		) : (
+			part
+		),
+	);
+}
 
 /** Статусы приёма по-русски: в ленту попадал английский ключ из базы. */
 const appointmentStatusLabels: Record<string, string> = {
@@ -178,6 +198,30 @@ export const PatientJourneyTimeline: React.FC<PatientJourneyTimelineProps> =
 			};
 		}, [dashboard?.treatmentPlanItems, patientId]);
 
+		const [searchQuery, setSearchQuery] = useState("");
+
+		const QUICK_SEARCH_TAGS = [
+			"Пульпит",
+			"Кариес",
+			"Пломба",
+			"Коффердам",
+			"Артикаин",
+			"Коронка",
+			"Удаление",
+			"Оплата",
+		];
+
+		const filteredEvents = useMemo(() => {
+			if (!searchQuery.trim()) return events;
+			const q = searchQuery.trim().toLowerCase();
+			return events.filter((evt) => {
+				const titleMatch = evt.title.toLowerCase().includes(q);
+				const descMatch = evt.description.toLowerCase().includes(q);
+				const statusMatch = (evt.status ?? "").toLowerCase().includes(q);
+				return titleMatch || descMatch || statusMatch;
+			});
+		}, [events, searchQuery]);
+
 		const getIcon = (type: string) => {
 			switch (type) {
 				case "medical_alert":
@@ -196,12 +240,61 @@ export const PatientJourneyTimeline: React.FC<PatientJourneyTimelineProps> =
 		};
 
 		return (
-			<div className="patient-journey-timeline">
-				<div className="timeline-header">
-					<h3>Лента приемов пациента</h3>
+			<div className="patient-journey-timeline space-y-4">
+				<div className="timeline-header flex items-center justify-between gap-3 flex-wrap">
+					<div className="flex items-center gap-2">
+						<h3 className="text-base font-extrabold text-[var(--ink)]">Лента приемов и событий</h3>
+						<span className="text-xs font-mono px-2 py-0.5 rounded-full bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)]">
+							{filteredEvents.length} {filteredEvents.length === 1 ? "запись" : "записей"}
+						</span>
+					</div>
 					<span className="patient-id-badge">
 						ID: {typeof patientId === "string" ? patientId.slice(0, 8) : ""}
 					</span>
+				</div>
+
+				{/* ── Мгновенный поиск по ключевым словам (043/у) ── */}
+				<div className="timeline-search-bar flex flex-col gap-2 p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)]">
+					<div className="relative flex items-center w-full">
+						<Search size={16} className="absolute left-3.5 text-[var(--muted)] pointer-events-none" />
+						<input
+							type="text"
+							value={searchQuery}
+							onChange={(e) => setSearchQuery(e.target.value)}
+							placeholder="Поиск по дневникам 043/у: «пульпит», «коффердам», «пломба», «артикаин», зуб..."
+							className="w-full min-h-[44px] pl-10 pr-9 py-2 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-sm text-[var(--ink)] placeholder:text-[var(--muted)] outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all font-medium"
+						/>
+						{searchQuery && (
+							<button
+								type="button"
+								onClick={() => setSearchQuery("")}
+								className="absolute right-2.5 p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
+								title="Очистить поиск"
+							>
+								<X size={16} />
+							</button>
+						)}
+					</div>
+					<div className="flex items-center gap-1.5 flex-wrap">
+						<span className="text-xs font-semibold text-[var(--muted)] mr-1">Быстрый фильтр:</span>
+						{QUICK_SEARCH_TAGS.map((tag) => {
+							const isActive = searchQuery.toLowerCase() === tag.toLowerCase();
+							return (
+								<button
+									key={tag}
+									type="button"
+									onClick={() => setSearchQuery(isActive ? "" : tag)}
+									className={`min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border flex items-center gap-1 ${
+										isActive
+											? "bg-teal-600 text-white border-teal-700 shadow-xs"
+											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-teal-500/50 hover:bg-[var(--paper-strong)]"
+									}`}
+								>
+									{tag}
+								</button>
+							);
+						})}
+					</div>
 				</div>
 
 				{/* Эффект Зейгарник: Прогресс-бар лечения */}
@@ -226,26 +319,36 @@ export const PatientJourneyTimeline: React.FC<PatientJourneyTimelineProps> =
 					</div>
 				)}
 
-				{/*
-					Пустого состояния не было вовсе: у пациента без приёмов на экране
-					оставался чёрный прямоугольник с заголовком и идентификатором —
-					выглядел как незагрузившийся блок.
-				*/}
-				{(events ?? []).length === 0 ? (
-					<div className="timeline-empty">
-						<p>Здесь пока ничего не было</p>
-						<span>
-							Записи на приём, оплаты и предупреждения по этому пациенту появятся
-							в этой ленте сами, как только они появятся в клинике.
+				{/* Пустое состояние */}
+				{filteredEvents.length === 0 ? (
+					<div className="timeline-empty p-6 text-center rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-1.5">
+						<p className="text-sm font-bold text-[var(--ink)]">
+							{searchQuery ? `По запросу «${searchQuery}» ничего не найдено` : "Здесь пока ничего не было"}
+						</p>
+						<span className="text-xs text-[var(--muted)]">
+							{searchQuery
+								? "Попробуйте изменить поисковую фразу или сбросить фильтры"
+								: "Записи на приём, оплаты и предупреждения по этому пациенту появятся в этой ленте сами."}
 						</span>
+						{searchQuery && (
+							<div className="pt-2">
+								<button
+									type="button"
+									onClick={() => setSearchQuery("")}
+									className="min-h-[44px] px-4 py-2 text-xs font-bold rounded-xl bg-teal-600 text-white hover:bg-teal-500 transition-colors cursor-pointer"
+								>
+									Сбросить фильтр
+								</button>
+							</div>
+						)}
 					</div>
 				) : null}
 
 				<div className="timeline-track">
-					{(events ?? []).map((evt, index) => {
+					{filteredEvents.map((evt, index) => {
 						// Эффект Края (Serial Position Effect): выделяем первый и последний элементы
 						const isFirst = index === 0;
-						const isLast = index === (events ?? []).length - 1;
+						const isLast = index === filteredEvents.length - 1;
 						const isHighlight = isFirst || isLast;
 
 						return (
@@ -259,7 +362,7 @@ export const PatientJourneyTimeline: React.FC<PatientJourneyTimelineProps> =
 									>
 										{getIcon(evt.type)}
 									</div>
-									{index !== (events ?? []).length - 1 && (
+									{index !== filteredEvents.length - 1 && (
 										<div className="marker-line" />
 									)}
 								</div>
@@ -285,21 +388,23 @@ export const PatientJourneyTimeline: React.FC<PatientJourneyTimelineProps> =
 											<span
 												className={`status-badge ${(evt.status ?? "").toLowerCase().replace(" ", "-")}`}
 											>
-												{evt.status}
+												{highlightMatch(evt.status, searchQuery)}
 											</span>
 										)}
 									</div>
 									<h4 className={isHighlight ? "text-lg font-bold" : "text-base"}>
-										{evt.title}
+										{highlightMatch(evt.title, searchQuery)}
 									</h4>
-									<p className="text-sm">{evt.description}</p>
+									<p className="text-sm text-[var(--ink)] leading-relaxed">
+										{highlightMatch(evt.description, searchQuery)}
+									</p>
 									{evt.amount ? (
 										<div className="amount-highlight">+{money(evt.amount)}</div>
 									) : null}
 									{evt.actionUrl && (
 										<button
 											type="button"
-											className="timeline-action-btn"
+											className="timeline-action-btn min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold"
 											onClick={() => {
 												window.location.hash = evt.actionUrl ?? "";
 											}}

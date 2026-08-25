@@ -1,24 +1,20 @@
-# Dispatch: Challenger M1-1
+## 2026-08-18T17:29:17Z
+You are Challenger 1 for Milestone 1 in Clinic MVP (DENTE).
+Your working directory is `C:/Clinic_MVP/dental-crm/.agents/challenger_m1_1`.
 
-## Mission
-Empirically stress-test UI changes in Milestone M1 (Requirement R1).
-Test:
-1. Touch target compliance: check elements on mobile viewport for >= 44x44px.
-2. Linter string leak: verify 0 occurrences of `biome-ignore` or `eslint-disable` in rendered DOM.
-3. Intrusive toasts: verify that simulated offline/prefetch failures in widgets do NOT call `showToast(..., "error")`.
-4. Dark theme contrast: verify dark mode variables and zero `#fff` hardcodes in `.smart-field`, `.drawer-content`, `.smart-details`.
+You MUST read before starting:
+1. `C:/Clinic_MVP/dental-crm/.agents/ORIGINAL_REQUEST.md`
+2. `C:/Clinic_MVP/dental-crm/PROJECT.md`
+3. `C:/Clinic_MVP/dental-crm/.agents/AGENTS.md`
+4. `C:/Clinic_MVP/dental-crm/.agents/worker_m1/handoff.md`
 
-Write report and verdict to `C:\Clinic_MVP\dental-crm\.agents\challenger_m1_1\handoff.md`.
+Your Mission:
+Adversarially challenge the cryptographic SHA-256 hash chain in `apps/api/src/services/egisz/EgiszAuditService.ts`:
+1. Test extreme payloads: deeply nested JSON objects, unicode strings with Cyrillic and emojis, circular-like structures, numerical precision, null/undefined properties, array sorting vs object key sorting.
+2. Test adversarial tampering scenarios: single byte modifications in payload, timestamp drift, sequence number skipping, fake genesis block, cross-tenant replay.
+3. Run existing tests and verify integrity:
+   - `node --import tsx --test apps/api/src/services/egisz/EgiszAuditService.test.ts`
+   - `npm run typecheck`
+4. Document findings with proof and conclude with verdict: `APPROVE` or `REJECT`.
 
-## 2026-08-14T16:01:44Z
-You are Challenger M1-1 for DENTE CRM.
-Working directory: C:\Clinic_MVP\dental-crm\.agents\challenger_m1_1
-Read the dispatch file at C:\Clinic_MVP\dental-crm\.agents\challenger_m1_1\DISPATCH.md, and authority files C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md, C:\Clinic_MVP\dental-crm\.agents\AGENTS.md, C:\Clinic_MVP\dental-crm\.agents\orchestrator_r9\PROJECT.md, and C:\Clinic_MVP\dental-crm\.agents\worker_m1_ui\handoff.md.
-
-Task:
-Empirically challenge and stress-test the UI changes in Milestone M1:
-1. Verify 0 occurrences of linter leak strings in rendered JSX.
-2. Verify touch targets on mobile viewports are >= 44x44px.
-3. Test dark theme contrast and verify no #fff whiteout overrides in dark mode.
-4. Run tests and static gates.
-Write your findings and verdict (APPROVE or CHALLENGE_FAILED) to C:\Clinic_MVP\dental-crm\.agents\challenger_m1_1\handoff.md and send a message back to parent when complete.
+Write your report to `C:/Clinic_MVP/dental-crm/.agents/challenger_m1_1/handoff.md` and send a completion message.

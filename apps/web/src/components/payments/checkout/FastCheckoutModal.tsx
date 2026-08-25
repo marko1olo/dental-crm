@@ -13,6 +13,9 @@ import {
 	WifiOff,
 	Layers,
 	RefreshCw,
+	ArrowRight,
+	Save,
+	Zap,
 } from "lucide-react";
 import {
 	CHECKOUT_PAYMENT_METHODS,
@@ -21,10 +24,12 @@ import {
 import {
 	validateCheckoutSplit,
 	generate54FzFiscalPayload,
+	calculateStageAdvanceAmount,
 	DEFAULT_TREATMENT_STAGES,
 	type CheckoutSplitItem,
 	type Ffd12FiscalPayload,
 	type TreatmentPlanStageOption,
+	type StagePaymentMode,
 } from "./fastCheckoutEngine";
 import { FiscalReceiptQueueManager } from "../../../services/hardware/fiscalReceiptQueueManager";
 import { showToast } from "../../GlobalToast";
@@ -52,6 +57,8 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	onPaymentComplete,
 }) => {
 	const [selectedStageId, setSelectedStageId] = useState<string>("full_plan");
+	const [stagePaymentMode, setStagePaymentMode] = useState<StagePaymentMode>("full");
+	const [advanceAlreadyPaidRub, setAdvanceAlreadyPaidRub] = useState<number>(15000);
 	const [activeMethod, setActiveMethod] = useState<CheckoutPaymentMethodType>("sbp_qr");
 	const [cashTenderedRub, setCashTenderedRub] = useState<number>(0);
 	const [isPrinting, setIsPrinting] = useState<boolean>(false);
@@ -59,8 +66,8 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	const [pendingOfflineCount, setPendingOfflineCount] = useState<number>(0);
 	const [isFlushingQueue, setIsFlushingQueue] = useState<boolean>(false);
 
-	// Compute effective bill in kopecks from selected stage or fallback
-	const effectiveBillKop = useMemo(() => {
+	// Compute base stage amount in kopecks from selected stage or fallback
+	const baseStageAmountKop = useMemo(() => {
 		if (selectedStageId === "full_plan") {
 			return initialTotalBillKop;
 		}
@@ -68,14 +75,48 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 		return stage ? stage.amountKop : initialTotalBillKop;
 	}, [selectedStageId, initialTotalBillKop, stages]);
 
+	// Compute advance & 54-FZ Tag 1215 calculation
+	const stageCalc = useMemo(() => {
+		return calculateStageAdvanceAmount(
+			baseStageAmountKop,
+			stagePaymentMode,
+			Math.round(advanceAlreadyPaidRub * 100)
+		);
+	}, [baseStageAmountKop, stagePaymentMode, advanceAlreadyPaidRub]);
+
+	const effectiveBillKop = stageCalc.requiredAmountKop;
+
 	const [payments, setPayments] = useState<readonly CheckoutSplitItem[]>([
 		{ method: "sbp_qr", amountKop: initialTotalBillKop },
 	]);
 
-	// Keep payments in sync when effectiveBillKop or activeMethod changes
+	// Keep payments in sync when effectiveBillKop, activeMethod or stagePaymentMode changes
 	useEffect(() => {
-		setPayments([{ method: activeMethod, amountKop: effectiveBillKop }]);
-	}, [effectiveBillKop, activeMethod]);
+		if (stagePaymentMode === "advance_offset_tag1215") {
+			const split: CheckoutSplitItem[] = [];
+			if (stageCalc.advanceOffsetTag1215Kop > 0) {
+				split.push({
+					method: "patient_deposit", // Зачет аванса (Тег 1215)
+					amountKop: stageCalc.advanceOffsetTag1215Kop,
+				});
+			}
+			if (stageCalc.requiredAmountKop > 0) {
+				split.push({
+					method: activeMethod === "patient_deposit" ? "bank_card" : activeMethod,
+					amountKop: stageCalc.requiredAmountKop,
+				});
+			}
+			setPayments(split);
+		} else {
+			setPayments([{ method: activeMethod, amountKop: effectiveBillKop }]);
+		}
+	}, [
+		effectiveBillKop,
+		activeMethod,
+		stagePaymentMode,
+		stageCalc.advanceOffsetTag1215Kop,
+		stageCalc.requiredAmountKop,
+	]);
 
 	// Subscribe to offline fiscal queue manager
 	useEffect(() => {
@@ -91,12 +132,23 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	const validation = useMemo(() => {
 		return validateCheckoutSplit({
 			orderId,
-			totalBillKop: effectiveBillKop,
+			totalBillKop:
+				stagePaymentMode === "advance_offset_tag1215"
+					? baseStageAmountKop
+					: effectiveBillKop,
 			payments,
 			cashTenderedKop: Math.round(cashTenderedRub * 100),
 			patientPhone,
 		});
-	}, [orderId, effectiveBillKop, payments, cashTenderedRub, patientPhone]);
+	}, [
+		orderId,
+		stagePaymentMode,
+		baseStageAmountKop,
+		effectiveBillKop,
+		payments,
+		cashTenderedRub,
+		patientPhone,
+	]);
 
 	if (!isOpen) return null;
 
@@ -107,18 +159,44 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 
 	const handleSingle100Percent = (method: CheckoutPaymentMethodType) => {
 		setActiveMethod(method);
-		setPayments([{ method, amountKop: effectiveBillKop }]);
+		if (stagePaymentMode === "advance_offset_tag1215") {
+			const split: CheckoutSplitItem[] = [];
+			if (stageCalc.advanceOffsetTag1215Kop > 0) {
+				split.push({
+					method: "patient_deposit",
+					amountKop: stageCalc.advanceOffsetTag1215Kop,
+				});
+			}
+			if (stageCalc.requiredAmountKop > 0) {
+				split.push({
+					method,
+					amountKop: stageCalc.requiredAmountKop,
+				});
+			}
+			setPayments(split);
+		} else {
+			setPayments([{ method, amountKop: effectiveBillKop }]);
+		}
 	};
 
 	const handleExecutePayment = async () => {
 		if (!validation.isValid) return;
 		setIsPrinting(true);
-		const payload = generate54FzFiscalPayload({
-			orderId,
-			totalBillKop: effectiveBillKop,
-			payments,
-			patientPhone,
-		});
+		const payload = generate54FzFiscalPayload(
+			{
+				orderId,
+				totalBillKop:
+					stagePaymentMode === "advance_offset_tag1215"
+						? baseStageAmountKop
+						: effectiveBillKop,
+				payments,
+				patientPhone,
+			},
+			{
+				paymentMethodTag1214: stageCalc.ffdTag1214,
+				paymentSubjectTag1212: stageCalc.ffdTag1212,
+			}
+		);
 
 		try {
 			// If offline or simulated KKT issue, enqueue safely
@@ -236,6 +314,28 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 
 				{/* Body Content */}
 				<div className="p-4 sm:p-5 overflow-y-auto flex flex-col gap-5 flex-1">
+					{/* Step-by-Step Guidance Ribbon & Autosave Status */}
+					<div className="flex items-center gap-2 p-2.5 rounded-xl bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-xs flex-wrap">
+						<div className="flex items-center gap-1.5 font-bold text-teal-700 dark:text-teal-300">
+							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-teal-600 text-white text-[10px]">1</span>
+							<span>Шаг 1: Способ оплаты</span>
+						</div>
+						<ArrowRight size={12} className="text-[var(--muted,#64748b)]" />
+						<div className="flex items-center gap-1.5 font-bold text-teal-700 dark:text-teal-300">
+							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-teal-600 text-white text-[10px]">2</span>
+							<span>Шаг 2: Проверка суммы</span>
+						</div>
+						<ArrowRight size={12} className="text-[var(--muted,#64748b)]" />
+						<div className={`flex items-center gap-1.5 font-bold ${validation.isValid ? "text-emerald-700 dark:text-emerald-300" : "text-amber-600"}`}>
+							<span className={`inline-flex items-center justify-center w-5 h-5 rounded-full ${validation.isValid ? "bg-emerald-600" : "bg-amber-500"} text-white text-[10px]`}>3</span>
+							<span>Шаг 3: Пробить чек 54-ФЗ</span>
+						</div>
+						<div className="ml-auto flex items-center gap-1 text-[var(--muted,#64748b)] text-[11px]">
+							<Save size={12} className="text-emerald-600" />
+							<span>💾 Готов к фискализации</span>
+						</div>
+					</div>
+
 					{/* Treatment Stage Selector */}
 					<div className="space-y-2">
 						<div className="flex items-center justify-between">
@@ -269,6 +369,80 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								);
 							})}
 						</div>
+					</div>
+
+					{/* Stage Advance Mode Selection (100% / Аванс 30% / Аванс 50% / Зачет аванса Тег 1215) */}
+					<div className="p-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] flex flex-col gap-2">
+						<div className="flex items-center justify-between flex-wrap gap-1">
+							<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
+								<Sparkles size={14} className="text-teal-600" />
+								Режим фискализации этапа (54-ФЗ):
+							</span>
+							<span className="text-[11px] font-mono font-bold text-teal-700 dark:text-teal-300">
+								Тег 1214: {stageCalc.ffdTag1214NameRu}
+							</span>
+						</div>
+						<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+							<button
+								type="button"
+								onClick={() => setStagePaymentMode("full")}
+								className={`min-h-[40px] px-2.5 py-1.5 rounded-xl border text-xs font-bold flex flex-col justify-center items-center transition-all cursor-pointer ${
+									stagePaymentMode === "full"
+										? "border-teal-600 bg-teal-500/15 text-teal-900 dark:text-teal-200 shadow-xs ring-1 ring-teal-500/30"
+										: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-teal-400"
+								}`}
+							>
+								<span>100% Оплата</span>
+								<span className="text-[10px] font-mono opacity-80">{(baseStageAmountKop / 100).toLocaleString("ru-RU")} ₽</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => setStagePaymentMode("advance_30")}
+								className={`min-h-[40px] px-2.5 py-1.5 rounded-xl border text-xs font-bold flex flex-col justify-center items-center transition-all cursor-pointer ${
+									stagePaymentMode === "advance_30"
+										? "border-amber-600 bg-amber-500/15 text-amber-900 dark:text-amber-200 shadow-xs ring-1 ring-amber-500/30"
+										: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-amber-400"
+								}`}
+							>
+								<span>Аванс 30%</span>
+								<span className="text-[10px] font-mono opacity-80">{Math.round(baseStageAmountKop * 0.3 / 100).toLocaleString("ru-RU")} ₽</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => setStagePaymentMode("advance_50")}
+								className={`min-h-[40px] px-2.5 py-1.5 rounded-xl border text-xs font-bold flex flex-col justify-center items-center transition-all cursor-pointer ${
+									stagePaymentMode === "advance_50"
+										? "border-amber-600 bg-amber-500/15 text-amber-900 dark:text-amber-200 shadow-xs ring-1 ring-amber-500/30"
+										: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-amber-400"
+								}`}
+							>
+								<span>Аванс 50%</span>
+								<span className="text-[10px] font-mono opacity-80">{Math.round(baseStageAmountKop * 0.5 / 100).toLocaleString("ru-RU")} ₽</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => setStagePaymentMode("advance_offset_tag1215")}
+								className={`min-h-[40px] px-2.5 py-1.5 rounded-xl border text-xs font-bold flex flex-col justify-center items-center transition-all cursor-pointer ${
+									stagePaymentMode === "advance_offset_tag1215"
+										? "border-purple-600 bg-purple-500/15 text-purple-900 dark:text-purple-200 shadow-xs ring-1 ring-purple-500/30"
+										: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-purple-400"
+								}`}
+							>
+								<span>Зачет аванса (1215)</span>
+								<span className="text-[10px] font-mono opacity-80">Доплата {(stageCalc.requiredAmountKop / 100).toLocaleString("ru-RU")} ₽</span>
+							</button>
+						</div>
+
+						{stagePaymentMode === "advance_offset_tag1215" && (
+							<div className="mt-1 p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-xs flex items-center justify-between flex-wrap gap-2 text-purple-950 dark:text-purple-100">
+								<div>
+									<strong>Зачет ранее внесенного аванса:</strong> {(stageCalc.advanceOffsetTag1215Kop / 100).toLocaleString("ru-RU")} ₽ по Тегу 1215 54-ФЗ
+								</div>
+								<div className="font-mono font-bold">
+									К доплате сейчас: {(stageCalc.requiredAmountKop / 100).toLocaleString("ru-RU")} ₽
+								</div>
+							</div>
+						)}
 					</div>
 
 					{/* 1-Click Method Tiles (Elevated to 56px) */}
@@ -397,11 +571,21 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 						</div>
 					)}
 
-					{/* Validation Alert */}
+					{/* Validation Alert with 1-Click Fix */}
 					{!validation.isValid && (
-						<div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
-							<AlertCircle className="w-4 h-4 shrink-0" />
-							<span>{validation.errorMessageRu}</span>
+						<div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs flex items-center justify-between flex-wrap gap-2">
+							<div className="flex items-center gap-2">
+								<AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+								<span><strong>Ошибка оплаты:</strong> {validation.errorMessageRu}</span>
+							</div>
+							<button
+								type="button"
+								onClick={() => handleSingle100Percent(activeMethod || "bank_card")}
+								className="px-3 py-1.5 min-h-[38px] rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1 cursor-pointer transition-all shadow-xs"
+								title="Сбросить суммы и применить 100% на выбранный способ"
+							>
+								<Zap size={13} /> ⚡ Исправить в 1 клик (100% {activeMethod ? CHECKOUT_PAYMENT_METHODS.find((m) => m.id === activeMethod)?.titleRu : "Картой"})
+							</button>
 						</div>
 					)}
 				</div>
@@ -416,7 +600,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							type="button"
 							onClick={handleExecutePayment}
 							disabled={!validation.isValid || isPrinting}
-							className="min-h-[48px] px-6 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-sm font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+							className="min-h-[52px] px-8 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 disabled:opacity-50 text-white text-base font-extrabold flex items-center gap-2.5 shadow-md hover:shadow-lg transition-all cursor-pointer select-none active:scale-98"
 						>
 							{isPrinting ? (
 								<>
@@ -426,7 +610,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							) : (
 								<>
 									<Check className="w-5 h-5" />
-									Пробить чек 54-ФЗ ({(effectiveBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽)
+									⚡ Пробить чек 54-ФЗ ({(effectiveBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽)
 								</>
 							)}
 						</button>

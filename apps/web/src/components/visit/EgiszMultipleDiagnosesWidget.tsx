@@ -49,9 +49,9 @@ export function EgiszMultipleDiagnosesWidget() {
 	}, [fetchDiagnoses]);
 
 	return (
-		<div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3 bg-slate-50/50 dark:bg-slate-900/50 space-y-2 text-xs">
+		<div className="rounded-xl border border-[var(--line)] p-3.5 bg-[var(--paper-soft)] space-y-2 text-xs">
 			<div className="flex items-center justify-between">
-				<span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+				<span className="font-semibold text-[var(--ink)] flex items-center gap-1.5">
 					<Stethoscope className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
 					Сопутствующие диагнозы ЕГИСЗ (СЭМД CDA R2)
 				</span>
@@ -59,7 +59,7 @@ export function EgiszMultipleDiagnosesWidget() {
 					type="button"
 					disabled={loading}
 					onClick={fetchDiagnoses}
-					className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+					className="p-1 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-strong)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
 					title="Обновить сопутствующие диагнозы"
 				>
 					<RefreshCw
@@ -69,35 +69,35 @@ export function EgiszMultipleDiagnosesWidget() {
 			</div>
 
 			{loading ? (
-				<p className="text-slate-500 dark:text-slate-400 italic text-[11px]">
+				<p className="text-[var(--muted)] italic text-xs">
 					Загрузка реестра диагнозов ЕГИСЗ...
 				</p>
 			) : error ? (
-				<div className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 p-2 rounded border border-rose-200 dark:border-rose-800 text-[11px]">
-					<AlertCircle className="w-3.5 h-3.5 shrink-0" />
+				<div className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 p-2.5 rounded-lg border border-rose-200 dark:border-rose-800 text-xs">
+					<AlertCircle className="w-4 h-4 shrink-0" />
 					<span>{error}</span>
 				</div>
 			) : items.length === 0 ? (
-				<div className="p-2 rounded bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-[11px]">
+				<div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)] text-xs">
 					Нет зарегистрированных сопутствующих диагнозов в ЕГИСЗ для клиники.
 					Основной диагноз приёма будет экспортирован в CDA R2.
 				</div>
 			) : (
-				<ul className="space-y-1 max-h-36 overflow-y-auto pr-1">
+				<ul className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
 					{items.map((item) => (
 						<li
 							key={item.id}
-							className="flex items-center justify-between p-1.5 rounded bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-[11px]"
+							className="flex items-center justify-between p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-xs"
 						>
 							<div className="flex items-center gap-2">
 								<span className="font-mono font-bold px-1.5 py-0.5 rounded bg-teal-100 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300">
 									{item.icdCode}
 								</span>
-								<span className="text-slate-800 dark:text-slate-200 font-medium">
+								<span className="text-[var(--ink)] font-medium">
 									{item.icdName}
 								</span>
 							</div>
-							<span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-semibold">
+							<span className="text-xs text-[var(--muted)] uppercase font-semibold">
 								{item.diagnosisType === "main"
 									? "Основной"
 									: item.diagnosisType === "complication"

@@ -114,4 +114,24 @@ export interface RadiographyScanEvent {
 	readonly modality: "IO" | "DX" | "PX" | "CT" | "CR";
 	readonly thumbnailDataUri?: string | undefined;
 	readonly previewReady: boolean;
+	readonly windowCenter?: number | undefined;
+	readonly windowWidth?: number | undefined;
+}
+
+export type CircuitBreakerState = "CLOSED" | "OPEN" | "HALF_OPEN";
+
+export interface CircuitBreakerTelemetry {
+	readonly state: CircuitBreakerState;
+	readonly consecutiveFailures: number;
+	readonly lastFailureTime: number | null;
+	readonly nextAllowedAttemptTime: number | null;
+}
+
+export interface QueueOverflowTelemetry {
+	readonly maxCapacity: number;
+	readonly currentSize: number;
+	readonly pendingCount: number;
+	readonly printedCount: number;
+	readonly failedCount: number;
+	readonly evictedPrintedCount: number;
 }

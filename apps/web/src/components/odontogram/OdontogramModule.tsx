@@ -1,5 +1,5 @@
 import { isValidFdiToothNumber } from "@dental/shared";
-import { Activity, Calculator, History, Mic, Sparkles, Stethoscope } from "lucide-react";
+import { Activity, Calculator, History, Mic, Printer, Sparkles, Stethoscope } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
@@ -38,6 +38,7 @@ import { TreatmentPlanModule } from "../treatment-plans/TreatmentPlanModule";
 import { VoiceDictationOverlay } from "./VoiceDictationOverlay";
 import {
 	getToothAnatomicalNameRu,
+	getToothFolkAndAnatomicalNameRu,
 	generateSoapFromOdontogramFinding,
 	generateSoapFromOdontogramStates,
 } from "../../lib/clinicalProtocols043";
@@ -143,7 +144,8 @@ export const OdontogramModule = ({
 	patientId: string;
 	pediatricMode?: boolean | undefined;
 }) => {
-	const { odontogramUseSurfaces } = useAppLogicContext();
+	const { odontogramUseSurfaces, activePatient, activeDoctor, auth } =
+		useAppLogicContext();
 	const [teethData, setTeethData] = useState<ToothData[]>(() =>
 		createDefaultAdultTeethData(),
 	);
@@ -186,6 +188,9 @@ export const OdontogramModule = ({
 	const [activeSurfaces, setActiveSurfaces] = useState<string[]>([]);
 	const [isVoiceOpen, setIsVoiceOpen] = useState(false);
 	const [diagnocatLoading, setDiagnocatLoading] = useState(false);
+	const [lastSavedAt, setLastSavedAt] = useState<string>(() =>
+		new Date().toLocaleTimeString("ru-RU"),
+	);
 
 	const loadDiagnocatReport = async () => {
 		setDiagnocatLoading(true);
@@ -741,6 +746,77 @@ export const OdontogramModule = ({
 						onRetry={() => setTeethReloadToken((token) => token + 1)}
 					/>
 				)}
+
+				{/* ── БАБУШКО-УСТОЙЧИВАЯ ШАПКА: ТУМБЛЕР ПРИКУСА + АВТОСОХРАНЕНИЕ + НАРОДНАЯ ПОДСКАЗКА ── */}
+				<div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] dark:bg-zinc-900/60 border border-[var(--line,#e2e8f0)] dark:border-zinc-800 shadow-2xs">
+					{/* Гигантский 1-клик тумблер прикуса (≥48px) */}
+					<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+						<button
+							type="button"
+							onClick={() => setIsPediatricMode(false)}
+							className={`flex-1 sm:flex-initial min-h-[48px] px-4 py-2.5 rounded-xl text-sm sm:text-base font-black transition-all cursor-pointer flex items-center justify-center gap-2 border ${
+								!isPediatricMode
+									? "bg-indigo-600 text-white border-indigo-700 shadow-md ring-2 ring-indigo-500/30 scale-[1.02]"
+									: "bg-[var(--paper,#ffffff)] dark:bg-zinc-800 text-[var(--ink-muted,#64748b)] border-[var(--line,#e2e8f0)] dark:border-zinc-700 hover:text-[var(--ink,#0f172a)]"
+							}`}
+							title="Постоянный прикус взрослого человека: зубы 11–48 (32 зуба)"
+							data-testid="switch-adult-dentition-btn"
+						>
+							<span className="text-lg">🦷</span>
+							<span>Взрослый прикус (11–48)</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => setIsPediatricMode(true)}
+							className={`flex-1 sm:flex-initial min-h-[48px] px-4 py-2.5 rounded-xl text-sm sm:text-base font-black transition-all cursor-pointer flex items-center justify-center gap-2 border ${
+								isPediatricMode
+									? "bg-amber-500 text-white border-amber-600 shadow-md ring-2 ring-amber-400/40 scale-[1.02]"
+									: "bg-[var(--paper,#ffffff)] dark:bg-zinc-800 text-[var(--ink-muted,#64748b)] border-[var(--line,#e2e8f0)] dark:border-zinc-700 hover:text-[var(--ink,#0f172a)]"
+							}`}
+							title="Детский сменный / молочный прикус: зубы 51–85 (20 зубов)"
+							data-testid="switch-pediatric-dentition-btn"
+						>
+							<span className="text-lg">👶</span>
+							<span>Детский прикус (51–85)</span>
+						</button>
+					</div>
+
+					<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+						{/* Кнопка 1-клик печати графической схемы зубов на A4 */}
+						<button
+							type="button"
+							onClick={() => window.print()}
+							className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-900 dark:bg-zinc-100 hover:bg-slate-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-xs active:scale-[0.98]"
+							title="Распечатать графическую одонтограмму со всеми патологиями на лист A4 для вклейки в амбулаторную карту"
+							data-testid="print-odontogram-a4-btn"
+						>
+							<Printer size={16} />
+							<span>Печать зубной формулы (А4)</span>
+						</button>
+
+						{/* Крупный понятный бейдж автосохранения на диск */}
+						<div
+							className="flex items-center gap-2 px-3.5 py-2 min-h-[44px] rounded-xl bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/30 text-emerald-800 dark:text-emerald-200 text-xs sm:text-sm font-bold shrink-0 self-start md:self-auto shadow-2xs"
+							title="Все отметки и диагнозы непрерывно сохраняются в локальное хранилище и базу данных клиники"
+						>
+							<span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse inline-block shadow-xs shrink-0" />
+							<span>🟢 Сохранено на диск ({lastSavedAt}) — данные в полной безопасности</span>
+						</div>
+					</div>
+				</div>
+
+				{/* Народная и анатомическая расшифровка выбранного зуба простым русским языком */}
+				<div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-500/10 dark:bg-indigo-950/30 border border-indigo-500/20 text-indigo-950 dark:text-indigo-200 text-xs sm:text-sm font-bold transition-all">
+					<span className="font-black text-indigo-600 dark:text-indigo-400 shrink-0">💡 Зуб:</span>
+					<span className="leading-snug">
+						{selectedTeeth.length === 1
+							? getToothFolkAndAnatomicalNameRu(selectedTeeth[0]!)
+							: selectedTeeth.length > 1
+								? `Выбрана группа из ${selectedTeeth.length} зубов: ${selectedTeeth.join(", ")}`
+								: "Нажмите на зуб или наведите курсор для отображения полного анатомического и народного названия (например: «16: Верхняя правая шестерка»)"}
+					</span>
+				</div>
+
 				<OdontogramViewContainer
 					teethData={teethData}
 					pediatricMode={isPediatricMode}
@@ -791,6 +867,10 @@ export const OdontogramModule = ({
 					onToggleMultiSelect={(enabled) => {
 						setIsMultiSelectMode(enabled);
 						if (!enabled && selectedTeeth.length === 0) setMenuConfig(null);
+					}}
+					onSelectTeethGroup={(targets) => {
+						setSelectedTeeth(targets);
+						setIsMultiSelectMode(true);
 					}}
 				/>
 
@@ -889,7 +969,7 @@ export const OdontogramModule = ({
 									</div>
 									{selectedTeeth.length === 1 && (
 										<div className="text-xs font-semibold text-[var(--odontogram-ink-muted,#64748b)]">
-											{getToothAnatomicalNameRu(menuConfig.toothNumber)}
+											{getToothFolkAndAnatomicalNameRu(menuConfig.toothNumber)}
 										</div>
 									)}
 								</div>
@@ -1187,6 +1267,171 @@ export const OdontogramModule = ({
 					);
 				}}
 			/>
+
+			{/* ── ПЕЧАТНАЯ ВЕРСИЯ ОДОНТОГРАММЫ ДЛЯ А4 (АМБУЛАТОРНАЯ КАРТА 043/У) ── */}
+			<div id="odontogram-print-a4" className="hidden print:block font-sans text-slate-900 bg-white p-6">
+				{/* Шапка клиники */}
+				<div className="border-b-2 border-slate-900 pb-3 mb-4 flex items-start justify-between gap-4">
+					<div>
+						<div className="text-base font-black text-slate-900 uppercase tracking-tight">
+							Стоматологическая клиника «DENTE»
+						</div>
+						<div className="text-xs font-semibold text-slate-700">
+							ООО «ДЕНТЕ МЕДИКАЛ ГРУПП» • Лицензия № ЛО41-01137-77/00368421 от 14.02.2023 г.
+						</div>
+						<div className="text-[11px] text-slate-500">
+							119048, г. Москва, ул. Стоматологическая, д. 24, корп. 1 • Тел: +7 (495) 777-88-99 • dente-clinic.ru
+						</div>
+						<h1 className="text-lg font-black tracking-tight text-slate-950 uppercase mt-2">
+							Клиническая зубная формула (Форма № 043/у)
+						</h1>
+						<p className="text-xs font-semibold text-slate-600">
+							Приказ Минздрава России от 15.12.2014 № 834н • Прикус: {isPediatricMode ? "Детский / сменный (зубы 51–85)" : "Постоянный взрослый (зубы 11–48)"}
+						</p>
+					</div>
+					<div className="text-right text-xs shrink-0">
+						<div className="font-bold text-slate-900">
+							Пациент: {activePatient?.fullName || "—"}
+						</div>
+						<div className="text-slate-600">
+							Дата рожд.: {activePatient?.birthDate || "—"}
+						</div>
+						<div className="text-slate-600">
+							№ Медкарты: {activePatient?.cardNumber || activePatient?.medicalCardNumber || activePatient?.id?.slice(0, 8) || "СТ-2026-0843"}
+						</div>
+						<div className="font-semibold text-slate-800 mt-1">
+							Дата печати: {new Date().toLocaleDateString("ru-RU")}
+						</div>
+					</div>
+				</div>
+
+				{/* Графическая схема зубов */}
+				<div className="my-4 flex justify-center scale-95 origin-top" style={{ pageBreakInside: "avoid", breakInside: "avoid" }}>
+					<ToothChart
+						teethData={teethData}
+						pediatricMode={isPediatricMode}
+						selectedTeeth={[]}
+						onToothClick={() => {}}
+						useSurfaces={odontogramUseSurfaces}
+					/>
+				</div>
+
+				{/* Легенда патологий и таблица выявленных диагнозов */}
+				<div className="mt-4 pt-3 border-t border-slate-200 text-xs" style={{ pageBreakInside: "avoid", breakInside: "avoid" }}>
+					<div className="mb-3">
+						<h3 className="font-bold text-slate-900 mb-1.5 uppercase text-[11px] tracking-wide">
+							Условные обозначения патологий и состояний зубов:
+						</h3>
+						<div className="flex flex-wrap items-center gap-3 text-[11px]">
+							<div className="flex items-center gap-1.5">
+								<span className="w-3 h-3 rounded-full bg-red-600 inline-block shrink-0 border border-slate-400" />
+								<span>Кариес (Caries)</span>
+							</div>
+							<div className="flex items-center gap-1.5">
+								<span className="w-3 h-3 rounded-full bg-rose-600 inline-block shrink-0 border border-slate-400" />
+								<span>Пульпит (Pulpitis)</span>
+							</div>
+							<div className="flex items-center gap-1.5">
+								<span className="w-3 h-3 rounded-full bg-orange-500 inline-block shrink-0 border border-slate-400" />
+								<span>Периодонтит (Periodontitis)</span>
+							</div>
+							<div className="flex items-center gap-1.5">
+								<span className="w-3 h-3 rounded-full bg-teal-600 inline-block shrink-0 border border-slate-400" />
+								<span>Пломба (Filled)</span>
+							</div>
+							<div className="flex items-center gap-1.5">
+								<span className="w-3 h-3 rounded-full bg-blue-600 inline-block shrink-0 border border-slate-400" />
+								<span>Коронка (Crown)</span>
+							</div>
+							<div className="flex items-center gap-1.5">
+								<span className="w-3 h-3 rounded-full bg-purple-600 inline-block shrink-0 border border-slate-400" />
+								<span>Имплантат (Implant)</span>
+							</div>
+							<div className="flex items-center gap-1.5">
+								<span className="w-3 h-3 rounded-full bg-indigo-600 inline-block shrink-0 border border-slate-400" />
+								<span>Имплантат в плане</span>
+							</div>
+							<div className="flex items-center gap-1.5">
+								<span className="w-3 h-3 rounded-full bg-slate-400 inline-block shrink-0 border border-slate-500" />
+								<span>Отсутствует (Missing)</span>
+							</div>
+							<div className="flex items-center gap-1.5">
+								<span className="w-3 h-3 rounded-full bg-emerald-600 inline-block shrink-0 border border-slate-400" />
+								<span>Здоров (Healthy)</span>
+							</div>
+						</div>
+					</div>
+
+					<div>
+						<h3 className="font-bold text-slate-900 mb-1.5 uppercase text-[11px] tracking-wide">
+							Таблица выявленных патологий и анатомический статус:
+						</h3>
+						{teethData.filter((t) => t.state && t.state !== "Healthy").length === 0 ? (
+							<div className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 text-xs italic">
+								Все зубы зубного ряда интактны (клинически здоровы, патологий не выявлено).
+							</div>
+						) : (
+							<table className="w-full border-collapse text-left text-xs border border-slate-300">
+								<thead>
+									<tr className="bg-slate-100 border-b border-slate-300 text-slate-900 font-bold">
+										<th className="py-1.5 px-2 border-r border-slate-300 w-16 text-center">Зуб FDI</th>
+										<th className="py-1.5 px-2 border-r border-slate-300">Народное / Обиходное название</th>
+										<th className="py-1.5 px-2 border-r border-slate-300">Анатомическое название</th>
+										<th className="py-1.5 px-2 border-r border-slate-300">Поверхности</th>
+										<th className="py-1.5 px-2">Клинический статус / Диагноз</th>
+									</tr>
+								</thead>
+								<tbody>
+									{teethData
+										.filter((t) => t.state && t.state !== "Healthy")
+										.map((t) => {
+											const folkAndAnat = getToothFolkAndAnatomicalNameRu(t.toothNumber);
+											const anatName = getToothAnatomicalNameRu(t.toothNumber);
+											return (
+												<tr key={t.toothNumber} className="border-b border-slate-200 even:bg-slate-50">
+													<td className="py-1.5 px-2 font-mono font-bold text-center border-r border-slate-200">{t.toothNumber}</td>
+													<td className="py-1.5 px-2 font-medium border-r border-slate-200">{folkAndAnat}</td>
+													<td className="py-1.5 px-2 text-slate-700 border-r border-slate-200">{anatName}</td>
+													<td className="py-1.5 px-2 text-slate-600 border-r border-slate-200">
+														{t.surfaces && t.surfaces.length > 0 ? t.surfaces.join(", ") : "—"}
+													</td>
+													<td className="py-1.5 px-2 font-bold text-slate-900">
+														{TOOTH_STATE_LABELS[t.state as ToothState] || t.state}
+													</td>
+												</tr>
+											);
+										})}
+								</tbody>
+							</table>
+						)}
+					</div>
+				</div>
+
+				{/* Блок подписи врача и печати */}
+				<div className="mt-8 pt-4 border-t-2 border-slate-300 flex items-end justify-between text-xs text-slate-800" style={{ pageBreakInside: "avoid", breakInside: "avoid" }}>
+					<div className="space-y-1">
+						<div>
+							Врач-стоматолог: _________________________ /{" "}
+							<strong>{activeDoctor?.fullName || auth?.currentUser?.name || "_________________________"}</strong>
+						</div>
+						<div className="text-[10px] text-slate-500">(подпись и личная печать врача)</div>
+					</div>
+
+					{/* Круглая печать («М.П. Клиники») */}
+					<div className="w-20 h-20 rounded-full border-2 border-dashed border-slate-400 flex flex-col items-center justify-center text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">
+						<span>М.П.</span>
+						<span className="text-[8px] font-normal">Клиники</span>
+					</div>
+
+					<div className="space-y-1 text-right">
+						<div>
+							Пациент: _________________________ /{" "}
+							<strong>{activePatient?.fullName || "_________________________"}</strong>
+						</div>
+						<div className="text-[10px] text-slate-500">(с состоянием зубной формулы ознакомлен)</div>
+					</div>
+				</div>
+			</div>
 		</div>
 	);
 };

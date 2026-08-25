@@ -54,13 +54,18 @@ export interface SbpSplitTenderResult {
 /**
  * Calculates standard CRC-16/CCITT-FALSE (Polynomial 0x1021, Init 0xFFFF)
  * required by EMVCo and NSPK QR specifications.
+ * Safely processes multi-byte UTF-8 streams and handles empty/huge payloads.
  */
 export function calculateCrc16Ccitt(data: string): string {
+	if (!data) {
+		return "FFFF";
+	}
 	let crc = 0xffff;
 	const poly = 0x1021;
+	const bytes = new TextEncoder().encode(data);
 
-	for (let i = 0; i < data.length; i++) {
-		const byte = data.charCodeAt(i) & 0xff;
+	for (let i = 0; i < bytes.length; i++) {
+		const byte = bytes[i]!;
 		crc ^= byte << 8;
 		for (let bit = 0; bit < 8; bit++) {
 			if ((crc & 0x8000) !== 0) {
@@ -84,11 +89,18 @@ function formatEmvTlv(tag: string, value: string): string {
 
 /**
  * Generates a compliant NSPK SBP dynamic QR payload with CRC16 checksum.
+ * Strictly requires sumRub > 0 and validates orderId.
  */
 export function generateDynamicSbpQrPayload(params: SbpDynamicQrParams): SbpDynamicQrResult {
-	const sumKopecks = Math.max(0, rubToKopecks(params.sumRub));
+	const sumKopecks = rubToKopecks(params.sumRub);
+	if (sumKopecks <= 0) {
+		throw new Error(
+			`Сумма динамического QR-кода СБП должна быть строго больше 0 копеек (получено: ${params.sumRub} ₽ / ${sumKopecks} коп.)`,
+		);
+	}
 	const sumRub = kopecksToRub(sumKopecks);
-	const qrId = `SBP-${params.orderId}-${Date.now().toString(36).toUpperCase()}`;
+	const orderId = params.orderId?.trim() || `ORD-${Date.now().toString(36).toUpperCase()}`;
+	const qrId = `SBP-${orderId}-${Date.now().toString(36).toUpperCase()}`;
 	const ttl = params.ttlMinutes ?? 15; // default 15 minutes
 	const expiresAtIso = new Date(Date.now() + ttl * 60 * 1000).toISOString();
 
@@ -96,7 +108,7 @@ export function generateDynamicSbpQrPayload(params: SbpDynamicQrParams): SbpDyna
 	const bankId = params.bankId || "100000000111";
 	const purpose =
 		params.purpose ||
-		`Оплата медицинских стоматологических услуг по заказу №${params.orderId} (${params.clinicName || "ООО ДЕНТЕ"})`;
+		`Оплата медицинских стоматологических услуг по заказу №${orderId} (${params.clinicName || "ООО ДЕНТЕ"})`;
 
 	// Standard NSPK URL for Fast Payments System
 	const baseUrl = `https://qr.nspk.ru/${qrId}?type=02&bank=${bankId}&sum=${sumKopecks}&cur=RUB`;
@@ -121,7 +133,7 @@ export function generateDynamicSbpQrPayload(params: SbpDynamicQrParams): SbpDyna
 		formatEmvTlv("60", "MOSCOW") + // Merchant City
 		formatEmvTlv(
 			"62",
-			formatEmvTlv("01", params.orderId) + formatEmvTlv("08", purpose.slice(0, 25)),
+			formatEmvTlv("01", orderId.slice(0, 25)) + formatEmvTlv("08", purpose.slice(0, 25)),
 		) + // Additional Data Field
 		"6304"; // Checksum Tag
 
@@ -133,7 +145,7 @@ export function generateDynamicSbpQrPayload(params: SbpDynamicQrParams): SbpDyna
 
 	return {
 		qrId,
-		orderId: params.orderId,
+		orderId,
 		sumRub,
 		sumKopecks,
 		sumFormattedRu: `${kopecksToNumericString(sumKopecks)} ₽`,

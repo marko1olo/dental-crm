@@ -301,4 +301,46 @@ export class TelephonyGatewayService {
 			patientName,
 		};
 	}
+
+	/**
+	 * Dispatches a SIP Call Transfer (Blind or Attended) command to Asterisk PBX / Cloud PBX.
+	 */
+	public static async transferCall(params: {
+		organizationId: string;
+		callId: string;
+		targetExtensionOrPhone: string;
+		transferType: "blind" | "attended";
+		initiatedByUserId?: string | undefined;
+	}): Promise<{
+		success: boolean;
+		callId: string;
+		target: string;
+		transferType: "blind" | "attended";
+		status: "transferred" | "initiated";
+		timestamp: string;
+	}> {
+		const now = new Date().toISOString();
+		const cleanTarget = params.targetExtensionOrPhone.trim();
+
+		// Broadcast transfer event to clinic workstations via WebSocket
+		wsBroker.broadcastToOrganization(params.organizationId, {
+			type: "TELEPHONY_CALL_TRANSFERRED",
+			payload: {
+				callId: params.callId,
+				target: cleanTarget,
+				transferType: params.transferType,
+				initiatedByUserId: params.initiatedByUserId || null,
+				timestamp: now,
+			},
+		});
+
+		return {
+			success: true,
+			callId: params.callId,
+			target: cleanTarget,
+			transferType: params.transferType,
+			status: params.transferType === "blind" ? "transferred" : "initiated",
+			timestamp: now,
+		};
+	}
 }

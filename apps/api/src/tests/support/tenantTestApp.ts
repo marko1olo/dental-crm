@@ -50,11 +50,8 @@ export function createTenantTestApp(): FastifyInstance {
 	// после, не обернёт ни одного уже зарегистрированного обработчика и молча
 	// ничего не сделает.
 	app.addHook("onRequest", async (request) => {
-		getRequestIdentity(request);
+		const identity = getRequestIdentity(request);
 		const carrier = request as unknown as Record<string, unknown>;
-		const identity = carrier.user as
-			| { organizationId?: string | null }
-			| undefined;
 		if (identity?.organizationId) {
 			carrier.tenantId = identity.organizationId;
 		}

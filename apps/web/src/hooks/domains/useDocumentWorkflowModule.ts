@@ -1891,10 +1891,11 @@ export function useDocumentWorkflowModule({
 		const treatmentLineTotalKopecks = (
 			item: (typeof activePlanItems)[number],
 		) => {
-			const unitKopecks = parseKopecks(item.unitPriceRub);
-			const quantity = Math.max(0, Math.round(item.quantity));
+			const rawItem = item as unknown as { unitPriceRub?: number; priceRub?: number };
+			const unitKopecks = parseKopecks(rawItem.unitPriceRub ?? rawItem.priceRub ?? 0);
+			const quantity = Math.max(0, Math.round(Number(item.quantity) || 1));
 			const subtotalKopecks = multiplyKopecks(unitKopecks, quantity);
-			const discountKopecks = parseKopecks(item.discountRub);
+			const discountKopecks = parseKopecks(item.discountRub ?? 0);
 			return Math.max(0, subtotalKopecks - discountKopecks);
 		};
 		const totalPlannedKopecks = sumKopecks(

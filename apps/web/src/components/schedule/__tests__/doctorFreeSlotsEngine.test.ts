@@ -8,6 +8,8 @@ import type { Appointment } from "@dental/shared";
 import {
 	calculateDailyChairDoctorTally,
 	findDoctorFreeSlots,
+	findNextDoctorFreeSlotAfterDays,
+	findQuickRepeatSlotsForDoctor,
 	getTimeOfDayCategory,
 } from "../doctorFreeSlotsEngine";
 
@@ -235,6 +237,105 @@ describe("Doctor Free Slots Engine Suite", () => {
 		assert.ok(doc1Stats);
 		assert.equal(doc1Stats?.appointmentsCount, 2);
 		assert.equal(doc1Stats?.totalRevenueRub, 12500);
+	});
+
+	it("findNextDoctorFreeSlotAfterDays — 1-Click finds nearest free slot for doctor after 7, 14, and 30 days", () => {
+		const chairs = [{ id: "chair-1", name: "Кабинет 1", active: true }];
+		// Reference date: 2026-08-25 (Tuesday)
+		// +7 days -> 2026-09-01 (Tuesday)
+		const slot7 = findNextDoctorFreeSlotAfterDays({
+			doctorId: "doc-1",
+			referenceDate: "2026-08-25",
+			daysOffset: 7,
+			durationMinutes: 60,
+			appointments: [],
+			chairs,
+			clinicStartHour: 9,
+			clinicEndHour: 18,
+			stepMinutes: 60,
+		});
+
+		assert.ok(slot7);
+		assert.equal(slot7?.date, "2026-09-01");
+		assert.equal(slot7?.startTime, "09:00");
+		assert.equal(slot7?.doctorId, "doc-1");
+
+		// +14 days -> 2026-09-08 (Tuesday)
+		const slot14 = findNextDoctorFreeSlotAfterDays({
+			doctorId: "doc-1",
+			referenceDate: "2026-08-25",
+			daysOffset: 14,
+			durationMinutes: 60,
+			appointments: [],
+			chairs,
+			clinicStartHour: 10,
+			clinicEndHour: 18,
+			stepMinutes: 60,
+		});
+
+		assert.ok(slot14);
+		assert.equal(slot14?.date, "2026-09-08");
+		assert.equal(slot14?.startTime, "10:00");
+
+		// +30 days (1 month) -> 2026-09-24
+		const slot30 = findNextDoctorFreeSlotAfterDays({
+			doctorId: "doc-1",
+			referenceDate: "2026-08-25",
+			daysOffset: 30,
+			durationMinutes: 60,
+			appointments: [],
+			chairs,
+			clinicStartHour: 9,
+			clinicEndHour: 18,
+		});
+
+		assert.ok(slot30);
+		assert.equal(slot30?.date, "2026-09-24");
+	});
+
+	it("findQuickRepeatSlotsForDoctor — Computes +7d, +14d, +30d slots in a single unified call", () => {
+		const chairs = [{ id: "chair-1", name: "Кабинет 1", active: true }];
+		const existingAppts: Appointment[] = [
+			// Occupy 2026-09-01 09:00-10:00
+			{
+				id: "appt-busy-1",
+				organizationId: "org-1",
+				patientId: "pat-1",
+				doctorUserId: "doc-1",
+				chairId: "chair-1",
+				startsAt: "2026-09-01T09:00:00Z",
+				endsAt: "2026-09-01T10:00:00Z",
+				status: "confirmed",
+				reason: null,
+				comment: null,
+			},
+		];
+
+		const repeatSlots = findQuickRepeatSlotsForDoctor({
+			doctorId: "doc-1",
+			referenceDate: "2026-08-25",
+			durationMinutes: 60,
+			appointments: existingAppts,
+			chairs,
+			clinicStartHour: 9,
+			clinicEndHour: 18,
+			stepMinutes: 60,
+		});
+
+		// slot7: 2026-09-01 at 09:00 is busy, so next slot is 10:00
+		assert.ok(repeatSlots.slot7Days);
+		assert.equal(repeatSlots.slot7Days?.date, "2026-09-01");
+		assert.equal(repeatSlots.slot7Days?.startTime, "10:00");
+
+		// slot14: 2026-09-08 at 09:00 is free
+		assert.ok(repeatSlots.slot14Days);
+		assert.equal(repeatSlots.slot14Days?.date, "2026-09-08");
+		assert.equal(repeatSlots.slot14Days?.startTime, "09:00");
+
+		// slot30: 2026-09-24 at 09:00 is free
+		assert.ok(repeatSlots.slot30Days);
+		assert.equal(repeatSlots.slot30Days?.date, "2026-09-24");
+		assert.equal(repeatSlots.slot30Days?.startTime, "09:00");
 	});
 });
 

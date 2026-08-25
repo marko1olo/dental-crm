@@ -72,7 +72,7 @@ export function VisitOdontogramTab(props?: {
 	return (
 		<div
 			data-testid="visit-odontogram-tab"
-			className="visit-odontogram-tab flex flex-col gap-6 w-full max-w-full my-2"
+			className="visit-odontogram-tab flex flex-col gap-2 w-full max-w-full my-0 p-0"
 		>
 			{/* Top Full-Width Section: Odontogram & Treatment Planning */}
 			<div className="w-full">

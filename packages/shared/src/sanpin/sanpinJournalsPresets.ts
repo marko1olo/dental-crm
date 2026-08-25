@@ -736,3 +736,97 @@ export function getCabinetReadinessPreset(type: DentalAppointmentType): CabinetR
 	const found = CABINET_READINESS_PRESETS.find((p) => p.type === type);
 	return found || CABINET_READINESS_PRESETS[0]!;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 6. МУЛЬТИ-АВТОКЛАВЫ И ОБОРУДОВАНИЕ СТЕРИЛИЗАЦИОННОЙ (MELAG, EURONDA, DGM, КАСПЕР)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface SterilizerHardwareDefinition {
+	readonly id: string;
+	readonly code: string; // "АК-01", "АК-02", "АК-03", "АК-04", "СХ-01"
+	readonly brandModelRu: string;
+	readonly manufacturerRu: string;
+	readonly deviceClass: "Class_B_autoclave" | "Class_S_autoclave" | "Dry_heat_sterilizer";
+	readonly chamberVolumeLiters: number;
+	readonly serialNumber: string;
+	readonly supportedRegimeIds: readonly string[];
+	readonly defaultIndicatorId: string;
+	readonly maxCyclesPerDay: number;
+	readonly descriptionRu: string;
+}
+
+export const CLINIC_AUTOCLAVE_MODELS: readonly SterilizerHardwareDefinition[] = [
+	{
+		id: "melag_vacuklav_23b",
+		code: "АК-01 (Melag)",
+		brandModelRu: "Melag Vacuklav 23B+ (Германия)",
+		manufacturerRu: "MELAG Medizintechnik, Германия",
+		deviceClass: "Class_B_autoclave",
+		chamberVolumeLiters: 23,
+		serialNumber: "MEL-2024-8842",
+		supportedRegimeIds: ["steam_134_5min", "steam_134_20min", "steam_121_20min"],
+		defaultIndicatorId: "vinar_intetest_5",
+		maxCyclesPerDay: 8,
+		descriptionRu: "Премиальный автоклав B-класса с фракционированным предварительным вакуумом и глубокой сушкой",
+	},
+	{
+		id: "euronda_e9_next",
+		code: "АК-02 (Euronda)",
+		brandModelRu: "Euronda E9 Next / E10 (Италия)",
+		manufacturerRu: "Euronda S.p.A., Италия",
+		deviceClass: "Class_B_autoclave",
+		chamberVolumeLiters: 24,
+		serialNumber: "EUR-2024-4190",
+		supportedRegimeIds: ["steam_134_5min", "steam_134_20min", "steam_121_20min"],
+		defaultIndicatorId: "vinar_intetest_5",
+		maxCyclesPerDay: 8,
+		descriptionRu: "Интеллектуальный B-автоклав с контролем проводимости воды и встроенным термопринтером этикеток",
+	},
+	{
+		id: "dgm_and_24",
+		code: "АК-03 (DGM)",
+		brandModelRu: "DGM AND-24 (Швейцария/Россия)",
+		manufacturerRu: "DGM Pharma-Apparate Handel AG",
+		deviceClass: "Class_B_autoclave",
+		chamberVolumeLiters: 24,
+		serialNumber: "DGM-2023-7123",
+		supportedRegimeIds: ["steam_134_5min", "steam_134_20min", "steam_121_20min"],
+		defaultIndicatorId: "medtest_is5_integrator",
+		maxCyclesPerDay: 6,
+		descriptionRu: "Высоконадежный автоклав B-класса для стерилизации полых и пористых инструментов в крафт-пакетах",
+	},
+	{
+		id: "kasper_23",
+		code: "АК-04 (Каспер)",
+		brandModelRu: "Каспер-Мед 23L Автоклав B-класс (Россия)",
+		manufacturerRu: "ООО «Каспер-Мед», Россия",
+		deviceClass: "Class_B_autoclave",
+		chamberVolumeLiters: 23,
+		serialNumber: "KAS-2024-1055",
+		supportedRegimeIds: ["steam_134_5min", "steam_134_20min", "steam_121_20min"],
+		defaultIndicatorId: "vinar_steritest_4",
+		maxCyclesPerDay: 6,
+		descriptionRu: "Отечественный B-автоклав с микропроцессорным управлением и тройным вакуумным циклом",
+	},
+	{
+		id: "tau_clave_3000",
+		code: "СХ-01 (Tau Clave)",
+		brandModelRu: "Tau Clave 3000 Сухожаровой шкаф (Италия)",
+		manufacturerRu: "Tau Steril, Италия",
+		deviceClass: "Dry_heat_sterilizer",
+		chamberVolumeLiters: 17,
+		serialNumber: "TAU-2022-3901",
+		supportedRegimeIds: ["dry_heat_180_60min"],
+		defaultIndicatorId: "vinar_steritest_4",
+		maxCyclesPerDay: 4,
+		descriptionRu: "Воздушный стерилизатор (180°C / 60 мин) для цельнометаллических щипцов и элеваторов",
+	},
+];
+
+export function getSterilizerHardware(idOrCode: string): SterilizerHardwareDefinition {
+	const found = CLINIC_AUTOCLAVE_MODELS.find(
+		(a) => a.id === idOrCode || a.code.toLowerCase().includes(idOrCode.toLowerCase()),
+	);
+	return found || CLINIC_AUTOCLAVE_MODELS[0]!;
+}
+

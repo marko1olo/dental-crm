@@ -18,25 +18,41 @@ export function normalizePhoneToNational(value: string | null | undefined): stri
  */
 export function normalizeCyrillicText(value: string | null | undefined): string {
 	return (value ?? "")
-		.trim()
 		.toLocaleLowerCase("ru-RU")
 		.replaceAll("ё", "е")
 		.replace(/[^a-zа-я0-9\s]/gi, " ")
-		.replace(/\s+/g, " ");
+		.replace(/\s+/g, " ")
+		.trim();
+}
+
+export interface PatientSearchableFields {
+	fullName?: string | null | undefined;
+	phone?: string | null | undefined;
+	birthDate?: string | null | undefined;
+	cardNumber?: string | null | undefined;
+	administrativeProfile?: {
+		legalRepresentativePhone?: string | null | undefined;
+		legalRepresentativeFullName?: string | null | undefined;
+	} | null | undefined;
 }
 
 /**
- * Проверяет соответствие пациента строке поиска (ФИО с перестановкой слов + телефон)
+ * Проверяет соответствие пациента строке поиска:
+ * 1. Поиск по номеру телефона (включая последние 4 цифры «9912», 3+ цифры, национальный формат);
+ * 2. Поиск по телефону законного представителя (для детей / опекаемых);
+ * 3. Поиск по номеру карты пациента;
+ * 4. Поиск по дате рождения (ГГГГ, ДД.ММ.ГГГГ);
+ * 5. Поиск по ФИО с токенизацией и перестановкой слов.
  */
 export function matchesPatientSearch(
-	patient: { fullName?: string | null; phone?: string | null } | null | undefined,
+	patient: PatientSearchableFields | null | undefined,
 	rawQuery: string,
 ): boolean {
 	if (!patient) return false;
 	const query = rawQuery.trim();
 	if (!query) return true;
 
-	// 1. Проверка по телефону
+	// 1. Проверка по номеру телефона пациента и представителя
 	const queryDigits = query.replace(/\D/g, "");
 	if (queryDigits.length >= 3) {
 		const patientPhoneDigits = (patient.phone ?? "").replace(/\D/g, "");
@@ -50,15 +66,64 @@ export function matchesPatientSearch(
 		) {
 			return true;
 		}
+
+		// Телефон законного представителя
+		const repPhone = patient.administrativeProfile?.legalRepresentativePhone;
+		if (repPhone) {
+			const repPhoneDigits = repPhone.replace(/\D/g, "");
+			const repNational = normalizePhoneToNational(repPhone);
+			if (
+				repPhoneDigits.includes(queryDigits) ||
+				(queryNational.length >= 3 && repNational.includes(queryNational))
+			) {
+				return true;
+			}
+		}
 	}
 
-	// 2. Проверка по ФИО с токенизацией
+	// 2. Проверка по номеру медицинской карты
+	if (patient.cardNumber) {
+		const normCard = normalizeCyrillicText(patient.cardNumber);
+		const normQuery = normalizeCyrillicText(query);
+		if (normCard.includes(normQuery)) {
+			return true;
+		}
+		const cardDigits = patient.cardNumber.replace(/\D/g, "");
+		if (queryDigits.length >= 2 && cardDigits && cardDigits.includes(queryDigits)) {
+			return true;
+		}
+	}
+
+	// 3. Проверка по дате рождения (YYYY-MM-DD или DD.MM.YYYY)
+	if (patient.birthDate && queryDigits.length >= 2) {
+		if (patient.birthDate.includes(queryDigits)) {
+			return true;
+		}
+		const [year, month, day] = patient.birthDate.split("-");
+		if (day && month && year) {
+			const formattedDot = `${day}.${month}.${year}`;
+			if (formattedDot.includes(query) || formattedDot.replace(/\D/g, "").includes(queryDigits)) {
+				return true;
+			}
+		}
+	}
+
+	// 4. Проверка по ФИО с токенизацией
 	const normalizedFullName = normalizeCyrillicText(patient.fullName);
 	const normalizedQuery = normalizeCyrillicText(query);
 	if (!normalizedQuery) return false;
 
 	if (normalizedFullName.includes(normalizedQuery)) {
 		return true;
+	}
+
+	// Проверка ФИО представителя
+	const repName = patient.administrativeProfile?.legalRepresentativeFullName;
+	if (repName) {
+		const normRepName = normalizeCyrillicText(repName);
+		if (normRepName.includes(normalizedQuery)) {
+			return true;
+		}
 	}
 
 	const queryTokens = normalizedQuery.split(" ").filter(Boolean);

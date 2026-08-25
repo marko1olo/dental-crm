@@ -1,10 +1,12 @@
 import {
 	type PaymentMethod,
+	calculateCashChange,
+	getCashPresetSuggestions,
 	parseKopecks,
 	percentageOfKopecks,
 	splitKopecks,
 } from "@dental/shared";
-import { Bot, CreditCard, UserRound } from "lucide-react";
+import { Banknote, Bot, Coins, CreditCard, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { money } from "./AppHelpers";
 import { SberPosTerminalModal } from "./components/payments/sberPos/SberPosTerminalModal";
@@ -402,7 +404,7 @@ function TaxPayerDetails({
 						</button>
 						{(["1", "2"] as const).map((code) => (
 							<button
-								className={`quick-chip ${taxDeductionCode === code ? "active" : ""}`}
+								className={`quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold ${taxDeductionCode === code ? "active" : ""}`}
 								key={code}
 								type="button"
 								aria-pressed={taxDeductionCode === code}
@@ -530,7 +532,7 @@ function InstallmentCalculator({
 						<div
 							style={{
 								display: "flex",
-								gap: "4px",
+								gap: "6px",
 								marginTop: "8px",
 								flexWrap: "wrap",
 							}}
@@ -539,7 +541,7 @@ function InstallmentCalculator({
 								<button
 									key={m}
 									type="button"
-									className={`quick-chip quick-chip--sm ${months === m ? "active" : ""}`}
+									className={`quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold ${months === m ? "active" : ""}`}
 									onClick={() => setMonths(m)}
 								>
 									{m} мес
@@ -575,7 +577,7 @@ function InstallmentCalculator({
 						<div
 							style={{
 								display: "flex",
-								gap: "4px",
+								gap: "6px",
 								marginTop: "8px",
 								flexWrap: "wrap",
 							}}
@@ -584,7 +586,7 @@ function InstallmentCalculator({
 								<button
 									key={p}
 									type="button"
-									className={`quick-chip quick-chip--sm ${downPaymentPercent === p ? "active" : ""}`}
+									className={`quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold ${downPaymentPercent === p ? "active" : ""}`}
 									onClick={() => setDownPaymentPercent(p)}
 								>
 									{p}%
@@ -594,14 +596,6 @@ function InstallmentCalculator({
 					</div>
 				</div>
 
-				{/* БЫЛО: border: 1px solid var(--brand-200). Имени --brand-200 нет ни в
-            одном файле стилей (проверка scripts/check-css-tokens.mjs инлайновые
-            стили в TSX не видит, поэтому и не поймала). Недействительное
-            значение в border-color не наследуется и не откатывается к каскаду —
-            берётся начальное currentColor, то есть цвет текста. Рамка вокруг
-            итоговой плашки рассрочки рисовалась почти чёрной вместо светлой
-            брендовой. Взят объявленный --brand-100 (бирюза темы, есть во всех
-            трёх темах): ближайший по смыслу к тому, что задумывали. */}
 				<div
 					style={{
 						display: "flex",
@@ -609,37 +603,27 @@ function InstallmentCalculator({
 						background: "var(--paper)",
 						padding: "16px",
 						borderRadius: "8px",
-						border: "1px solid var(--brand-100)",
+						border: "1px solid var(--line)",
 					}}
 				>
 					<div>
-						<div style={{ fontSize: "12px", color: "var(--slate-500)" }}>
+						<div style={{ fontSize: "12px", color: "var(--muted)" }}>
 							Сумма лечения
 						</div>
-						{/* Деньги — общим money(). Своё toLocaleString('ru-RU') печатало
-                «120 000,7 ₽» для суммы с копейками: полтинник в такой записи
-                читается как пять копеек. */}
 						<div style={{ fontSize: "16px", fontWeight: 600 }}>
 							{money(totalAmount)}
 						</div>
 					</div>
 					<div>
-						<div style={{ fontSize: "12px", color: "var(--slate-500)" }}>
+						<div style={{ fontSize: "12px", color: "var(--muted)" }}>
 							Первый взнос
 						</div>
-						{/* БЫЛО: color: var(--brand-600). В светлой теме это #0284c7, и на
-                фоне var(--paper) контраст 4.1 при пороге 4.5 — замерено,
-                scratch/audit-inline-colors.mjs. Начертание 16px/600 к крупному
-                тексту не относится, поэтому послабления нет.
-                Это денежная цифра: читаемость важнее акцента. Оставляем тот же
-                цвет, что у соседней «Суммы лечения» — они равноправны, а
-                выделен и без того «Ежемесячный платеж»: он крупнее и цветной. */}
 						<div style={{ fontSize: "16px", fontWeight: 600 }}>
 							{money(downPayment)}
 						</div>
 					</div>
 					<div style={{ textAlign: "right" }}>
-						<div style={{ fontSize: "12px", color: "var(--slate-500)" }}>
+						<div style={{ fontSize: "12px", color: "var(--muted)" }}>
 							Ежемесячный платеж
 						</div>
 						<div
@@ -651,13 +635,11 @@ function InstallmentCalculator({
 						>
 							{money(monthlyPayment)}
 						</div>
-						{/* Остаток от деления добирается последним месяцем, чтобы сумма
-                платежей в точности равнялась стоимости лечения. */}
 						{hasUnevenLastPayment && (
 							<div
 								style={{
 									fontSize: "12px",
-									color: "var(--slate-500)",
+									color: "var(--muted)",
 									marginTop: "2px",
 								}}
 							>
@@ -669,7 +651,7 @@ function InstallmentCalculator({
 				<div
 					style={{
 						fontSize: "12px",
-						color: "var(--slate-500)",
+						color: "var(--muted)",
 						marginTop: "12px",
 					}}
 				>
@@ -741,6 +723,7 @@ export function PaymentCapture({
 	const [smartParsedData, setSmartParsedData] = useState<any>(null);
 	const [showHints, setShowHints] = useState(false);
 	const [isSberPosModalOpen, setIsSberPosModalOpen] = useState(false);
+	const [receivedCash, setReceivedCash] = useState<string>("");
 
 	const handleSmartDictation = (text: string) => {
 		if (!text.trim()) return;
@@ -863,7 +846,7 @@ export function PaymentCapture({
 
 	return (
 		<div
-			className="payment-capture bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-4"
+			className="payment-capture bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-4"
 			id="payment-capture"
 		>
 			{feedback ? (
@@ -947,25 +930,25 @@ export function PaymentCapture({
 					</div>
 					<div
 						className="quick-chips-row"
-						style={{ marginBottom: "16px", flexWrap: "wrap" }}
+						style={{ marginBottom: "16px", flexWrap: "wrap", display: "flex", gap: "6px" }}
 					>
 						<button
 							type="button"
-							className="quick-chip quick-chip--sm"
+							className="quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold"
 							onClick={() => handleSmartDictation("5000 наличными")}
 						>
 							💰 5000 наличными
 						</button>
 						<button
 							type="button"
-							className="quick-chip quick-chip--sm"
+							className="quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold"
 							onClick={() => handleSmartDictation("15000 по карте")}
 						>
 							💳 15000 картой
 						</button>
 						<button
 							type="button"
-							className="quick-chip quick-chip--sm"
+							className="quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold"
 							onClick={() => handleSmartDictation("20000 сбп, вычет")}
 						>
 							🧾 20000 СБП + вычет
@@ -1004,33 +987,27 @@ export function PaymentCapture({
 					<div
 						className="quick-chips-row"
 						style={{
-							marginTop: "6px",
+							marginTop: "8px",
 							flexWrap: "wrap",
-							width: "max-content",
-							maxWidth: "260px",
+							display: "flex",
+							gap: "6px",
+							width: "100%",
 						}}
 					>
 						{remainingDebt > 0 && (
 							<button
 								type="button"
-								className="quick-chip"
-								/*
-								 * БЫЛО: String(Math.round(...)) округлял долг до целых рублей.
-								 * 1500,24 ₽ → 1500 (копейки зависали); 1500,70 ₽ → 1501 (лишние 30 коп.).
-								 * Поле суммы уже принимает копейки (normalizeRubAmountInput).
-								 * СТАЛО: rubAmountForInput — копейки целыми, формат поля верный.
-								 */
+								className="quick-chip min-h-[44px] px-4 font-bold text-sm"
 								onClick={() => onAmountChange(rubAmountForInput(remainingDebt))}
 							>
-								{/* Подпись money(remainingDebt) совпадает с тем, что уходит в поле. */}
 								Долг: {money(remainingDebt)}
 							</button>
 						)}
-						{[1000, 2000, 3000, 5000].map((val) => (
+						{[500, 1000, 2000, 3000, 5000].map((val) => (
 							<button
 								key={val}
 								type="button"
-								className="quick-chip quick-chip--sm"
+								className="quick-chip min-h-[44px] px-3.5 font-bold text-sm"
 								onClick={() => onAmountChange(String(val))}
 							>
 								{val} ₽
@@ -1042,12 +1019,12 @@ export function PaymentCapture({
 			<div
 				role="toolbar"
 				className="quick-chips-row"
-				style={{ marginBottom: "20px" }}
+				style={{ marginBottom: method === "cash" ? "12px" : "20px", display: "flex", gap: "6px", flexWrap: "wrap" }}
 				aria-label="Способ оплаты"
 			>
 				{visiblePaymentMethods.map((paymentMethod) => (
 					<button
-						className={`quick-chip ${method === paymentMethod ? "active" : ""}`}
+						className={`quick-chip min-h-[44px] px-4 text-xs sm:text-sm font-bold ${method === paymentMethod ? "active" : ""}`}
 						key={paymentMethod}
 						type="button"
 						aria-pressed={method === paymentMethod}
@@ -1057,6 +1034,83 @@ export function PaymentCapture({
 					</button>
 				))}
 			</div>
+
+			{method === "cash" && (normalizeRubAmountInput(amount) ?? 0) > 0 && (() => {
+				const requiredRub = normalizeRubAmountInput(amount) ?? 0;
+				const tenderedRub = normalizeRubAmountInput(receivedCash) ?? requiredRub;
+				const changeCalc = calculateCashChange(requiredRub, tenderedRub);
+				const presets = getCashPresetSuggestions(requiredRub);
+
+				return (
+					<div
+						className="p-4 mb-5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--teal)]/30 space-y-3"
+						data-testid="cash-change-hud"
+					>
+						<div className="flex items-center justify-between gap-2 flex-wrap">
+							<span className="text-xs sm:text-sm font-bold text-[var(--ink)] flex items-center gap-1.5">
+								<Coins size={18} className="text-[var(--teal-dark)]" />
+								Калькулятор сдачи (Наличные)
+							</span>
+							{changeCalc.changeRub > 0 ? (
+								<span className="font-mono font-black text-xs sm:text-sm px-3 py-1.5 rounded-lg bg-[var(--teal-dark)] text-white shadow-sm">
+									Сдача: {changeCalc.changeRub.toLocaleString("ru-RU")} ₽
+								</span>
+							) : changeCalc.isShortage ? (
+								<span className="font-mono font-bold text-xs sm:text-sm px-3 py-1.5 rounded-lg bg-amber-600 text-white shadow-sm">
+									Не хватает: {changeCalc.shortageRub.toLocaleString("ru-RU")} ₽
+								</span>
+							) : (
+								<span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+									Без сдачи
+								</span>
+							)}
+						</div>
+
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+							<div className="smart-field no-float">
+								<input
+									id="payment-tendered-cash-input"
+									inputMode="numeric"
+									pattern="[0-9\s]*"
+									placeholder={`${requiredRub} ₽`}
+									value={receivedCash}
+									onChange={(e) => setReceivedCash(e.target.value)}
+									className="text-right font-mono font-bold text-base min-h-[44px]"
+								/>
+								<label htmlFor="payment-tendered-cash-input">Получено купюрами (₽)</label>
+							</div>
+
+							<div className="space-y-1.5">
+								<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider block">
+									Быстрый выбор купюры:
+								</span>
+								<div className="flex flex-wrap gap-2">
+									<button
+										type="button"
+										className="min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--teal-dark)] text-white hover:brightness-110 active:brightness-95 shadow-sm cursor-pointer"
+										onClick={() => setReceivedCash(String(requiredRub))}
+									>
+										Без сдачи ({requiredRub.toLocaleString("ru-RU")} ₽)
+									</button>
+									{Array.from(new Set([500, 1000, 2000, 5000, ...presets]))
+										.filter((p) => p >= requiredRub)
+										.slice(0, 5)
+										.map((preset) => (
+											<button
+												key={preset}
+												type="button"
+												className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-mono font-bold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--paper-soft)] shadow-sm cursor-pointer"
+												onClick={() => setReceivedCash(String(preset))}
+											>
+												{preset.toLocaleString("ru-RU")} ₽
+											</button>
+										))}
+								</div>
+							</div>
+						</div>
+					</div>
+				);
+			})()}
 			<FiscalDetails
 				fiscalCashierName={fiscalCashierName}
 				fiscalDetailsOpen={fiscalDetailsOpen}
@@ -1165,6 +1219,11 @@ export function PaymentCapture({
 					patientName={patientDefaults?.fullName || payerFullName || "Пациент"}
 					orderId={`CHK-2026-${patientId ? patientId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 6).toUpperCase() : "891"}`}
 					initialOperation={method === "online" ? "sberpay_qr" : "sale"}
+					onSelectAlternativeMethod={(altMethod) => {
+						if (altMethod === "sbp") onMethodChange("online");
+						else if (altMethod === "deposit") onMethodChange("family_wallet");
+						else onMethodChange("cash");
+					}}
 					onTransactionSuccess={(response) => {
 						setIsSberPosModalOpen(false);
 						onAmountChange("");

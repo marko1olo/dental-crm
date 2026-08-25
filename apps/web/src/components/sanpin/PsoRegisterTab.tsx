@@ -9,6 +9,7 @@ import {
 	Award,
 	CheckCircle2,
 	Download,
+	FileSpreadsheet,
 	FlaskConical,
 	Plus,
 	Printer,
@@ -19,6 +20,7 @@ import {
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import { SanpinJournalsModal } from "./journals/SanpinJournalsModal";
 
 export function PsoRegisterTab() {
 	const [logs, setLogs] = useState<PsoCleaningLog[]>([]);
@@ -26,6 +28,7 @@ export function PsoRegisterTab() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [testFilter, setTestFilter] = useState<string>("all");
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [isJournalsModalOpen, setIsJournalsModalOpen] = useState(false);
 	const [stampedRows, setStampedRows] = useState<Record<string, boolean>>({});
 
 	// New entry form state
@@ -176,20 +179,22 @@ export function PsoRegisterTab() {
 					</select>
 				</div>
 
-				<div style={{ display: "flex", gap: "0.5rem" }}>
+				<div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
 					<button
 						type="button"
 						onClick={() => window.print()}
 						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.9rem" }}
+						style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.9rem", fontWeight: 600, cursor: "pointer" }}
+						title="Печать официальной формы 366/у"
 					>
 						<Printer size={16} /> Печать формы 366/у
 					</button>
+
 					<button
 						type="button"
 						onClick={() => setIsModalOpen(true)}
 						className="sanpin-btn sanpin-btn-primary"
-						style={{ minHeight: "44px", padding: "0.5rem 1.25rem", fontSize: "0.95rem", fontWeight: 700 }}
+						style={{ minHeight: "44px", padding: "0.5rem 1.25rem", fontSize: "0.95rem", fontWeight: 700, cursor: "pointer" }}
 					>
 						<Plus size={18} /> Внести пробу ПСО
 					</button>
@@ -530,6 +535,13 @@ export function PsoRegisterTab() {
 					</div>
 				</div>
 			)}
+
+			{/* SanPiN Disinfection & Sterilization Journals Studio Modal (PSO Form 366/u) */}
+			<SanpinJournalsModal
+				isOpen={isJournalsModalOpen}
+				onClose={() => setIsJournalsModalOpen(false)}
+				initialTab="pso"
+			/>
 		</div>
 	);
 }

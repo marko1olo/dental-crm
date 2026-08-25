@@ -262,6 +262,16 @@ describe("инвентарь тестовых клиник", () => {
 			return context.skip("база недоступна");
 		}
 
+		const isBypassUser = await withSuperuserBypass(async (tx) => {
+			const res = await tx.execute<{ rolsuper: boolean; rolbypassrls: boolean }>(sql`
+				SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user
+			`);
+			return Boolean(res.rows[0]?.rolsuper || res.rows[0]?.rolbypassrls);
+		});
+		if (isBypassUser) {
+			return context.skip("текущий пользователь базы — superuser / bypassrls");
+		}
+
 		await assert.rejects(
 			() =>
 				withFixtureTenant(OWN, async (tx) => {

@@ -2325,18 +2325,15 @@ export function App() {
 							</Suspense>
 						</WorkspaceRouteErrorBoundary>
 					) : null}
-					{["shift", "patients"].includes(currentView) ? (
+					{currentView === "shift" ? (
 						/*
             Карточка приходит из того же ленивого модуля, что и «Смена»
             (ShiftView.tsx, строка 400), поэтому у неё те же две дыры — и своя
             граница, а не общая со «Сменой»: сбой карточки пациента не должен
-            уносить сводку смены, и наоборот. `view` подставляется настоящий, а
-            не постоянный «shift»: по его смене граница сама снимает отказ
-            (componentDidUpdate в workspaceRouteErrorBoundary.tsx), то есть
-            переход «Смена» ↔ «Пациенты» служит бесплатным повтором.
+            уносить сводку смены, и наоборот.
           */
 						<WorkspaceRouteErrorBoundary
-							view={currentView === "patients" ? "patients" : "shift"}
+							view="shift"
 							label="Карточка пациента"
 							panelClassName="patient-cockpit"
 							panelId="patient-cockpit"

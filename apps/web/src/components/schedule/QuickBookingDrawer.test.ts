@@ -87,4 +87,35 @@ describe("QuickBookingDrawer", () => {
 		assert.ok(html.includes("Поиск по ФИО, телефону или дате рождения"), "должен быть placeholder поиска");
 		assert.ok(html.includes("+ Новый пациент"), "должна быть кнопка inline создания пациента");
 	});
+
+	it("renders CITO emergency header, badge, and express patient button when isCitoEmergency is true", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(QuickBookingDrawer, {
+				isOpen: true,
+				onClose: () => {},
+				dashboard: mockDashboard as Dashboard,
+				initialSlot: {
+					dateKey: "2026-08-20",
+					startTime: "14:00",
+					durationMinutes: 20,
+					reason: "CITO! Острая боль",
+					isCitoEmergency: true,
+				},
+			}),
+		);
+
+		assert.ok(
+			html.includes("Экстренный прием (CITO!)"),
+			"должен быть заголовок экстренного приема CITO",
+		);
+		assert.ok(
+			html.includes("Острая боль"),
+			"должен быть бейдж Острая боль",
+		);
+		assert.ok(
+			html.includes("+ Экспресс-пациент CITO"),
+			"должна быть кнопка быстрого создания пациента CITO",
+		);
+	});
 });
+

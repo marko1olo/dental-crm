@@ -323,7 +323,7 @@ export function PatientReclamationsWidget({
 				<button
 					type="button"
 					onClick={() => setIsAdding(true)}
-					className="shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+					className="shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 min-h-[44px] text-xs font-semibold cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-all inline-flex items-center justify-center"
 				>
 					+ Фиксировать
 				</button>
@@ -371,7 +371,7 @@ export function PatientReclamationsWidget({
 					<button
 						type="button"
 						onClick={() => setIsAdding(true)}
-						className="shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+						className="shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 min-h-[44px] text-xs font-semibold cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-all inline-flex items-center justify-center"
 					>
 						+ Фиксировать
 					</button>
@@ -396,7 +396,7 @@ export function PatientReclamationsWidget({
 							{reviewCount > 0 && (
 								/* БЫЛО: «3 открыт.» — обрубленное слово с точкой, которое
 								   ничего не согласует ни с одним числом. */
-								<span className="bg-rose-600 text-white px-2 py-0.5 rounded-full text-[11px] font-bold shadow">
+								<span className="bg-rose-600 text-white px-2.5 py-0.5 rounded-full text-xs font-bold shadow">
 									в работе: {reviewCount}
 								</span>
 							)}
@@ -504,7 +504,7 @@ export function PatientReclamationsWidget({
 							<div className="flex gap-3 justify-end mt-5">
 								<button
 									type="button"
-									className="ghost-button text-rose-700 dark:text-rose-400 hover:underline cursor-pointer"
+									className="ghost-button text-rose-700 dark:text-rose-400 hover:underline cursor-pointer min-h-[44px] px-3.5 py-2 inline-flex items-center justify-center"
 									onClick={() => setIsAdding(false)}
 								>
 									Отмена
@@ -513,7 +513,7 @@ export function PatientReclamationsWidget({
 									type="submit"
 									disabled={isSubmitting}
 									aria-busy={isSubmitting}
-									className="primary-button bg-rose-600 hover:bg-rose-700 text-white border-0 px-4 py-2 rounded-lg font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+									className="primary-button bg-rose-600 hover:bg-rose-700 text-white border-0 px-4 py-2 min-h-[44px] rounded-xl font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center"
 								>
 									{isSubmitting ? "Фиксация..." : "Зафиксировать в карту"}
 								</button>
@@ -562,7 +562,7 @@ export function PatientReclamationsWidget({
 												<button
 													type="button"
 													onClick={() => handleToggleStatus(rec.id, rec.status)}
-													className={`border-0 px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-all ${
+													className={`border-0 px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer flex items-center gap-1.5 min-h-[44px] transition-all ${
 														isUnderReview
 															? "bg-emerald-600 hover:bg-emerald-700 text-white"
 															: "bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200"
@@ -586,7 +586,7 @@ export function PatientReclamationsWidget({
 													disabled={deletingId === rec.id}
 													aria-busy={deletingId === rec.id}
 													onClick={() => handleDelete(rec.id)}
-													className="bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-600 p-1.5 rounded-md cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+													className="bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-600 p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 													title="Удалить безвозвратно"
 												>
 													<Trash2 size={16} />

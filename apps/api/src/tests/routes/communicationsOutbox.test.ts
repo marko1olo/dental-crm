@@ -54,30 +54,25 @@ function isMissingDatabase(error: unknown): boolean {
  * Порядок удаления — от зависимых строк к организации.
  */
 async function purgeFixtures(): Promise<void> {
-	/*
-	 * Уборка идёт под тенант-контекстом клиники: под FORCE RLS DELETE без
-	 * `app.current_tenant` своих строк не видит и снимает НОЛЬ, ошибкой это не
-	 * считается — сообщения прошлого прогона попали бы в журнал и в разбор.
-	 */
-	await withFixtureTenant(ORG_ID, async () => {
-		await db
+	await withFixtureTenant(ORG_ID, async (tx) => {
+		await tx
 			.delete(communicationOutbox)
 			.where(eq(communicationOutbox.organizationId, ORG_ID));
-		await db
+		await tx
 			.delete(patientCommunicationConsents)
 			.where(eq(patientCommunicationConsents.organizationId, ORG_ID));
-		await db
+		await tx
 			.delete(communicationTemplates)
 			.where(eq(communicationTemplates.organizationId, ORG_ID));
-		await db
+		await tx
 			.delete(communicationSettings)
 			.where(eq(communicationSettings.organizationId, ORG_ID));
-		await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-		await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+		await tx.delete(patients).where(eq(patients.organizationId, ORG_ID));
+		await tx.delete(organizations).where(eq(organizations.id, ORG_ID));
 	});
 }
 
-describe("маршруты сообщений пациентам", () => {
+describe("маршруты сообщений пациентам", { concurrency: 1 }, () => {
 	let app: FastifyInstance;
 	let databaseAvailable = true;
 	const originalEnv = { ...process.env };
@@ -109,16 +104,11 @@ describe("маршруты сообщений пациентам", () => {
 			// Сначала расчистить место за оборванным прогоном, потом сеять.
 			await purgeFixtures();
 
-			/*
-			 * Сев под тенант-контекстом: в WITH CHECK тенант-таблиц стоит только
-			 * `organization_id = current_tenant`, поэтому INSERT без контекста
-			 * отвергается кодом 42501 ещё до первой проверки.
-			 */
-			await withFixtureTenant(ORG_ID, async () => {
-				await db
+			await withFixtureTenant(ORG_ID, async (tx) => {
+				await tx
 					.insert(organizations)
 					.values({ id: ORG_ID, name: "Тестовая клиника (сообщения)" });
-				await db.insert(patients).values({
+				await tx.insert(patients).values({
 					id: PATIENT_ID,
 					organizationId: ORG_ID,
 					fullName: "Тестов Тест Тестович",
@@ -126,21 +116,7 @@ describe("маршруты сообщений пациентам", () => {
 					email: "test-patient@example.ru",
 				});
 
-				/*
-				 * Тихие часы выключены явно.
-				 *
-				 * БЕЗ ЭТОГО ТЕСТ ЗАВИСЕЛ ОТ ЧАСА ЗАПУСКА. По умолчанию тихие часы —
-				 * с 21:00 до 09:00 и служебные сообщения в них ОТКЛАДЫВАЮТСЯ. Поэтому
-				 * днём разбор очереди доходил до проверки шлюза и давал ожидаемое
-				 * «suppressed: шлюз не настроен», а вечером сообщение откладывалось до
-				 * утра и оставалось «queued» — три проверки в этом файле падали.
-				 * Найдено в 23:18: набор был зелёным ровно потому, что все прежние
-				 * прогоны шли днём.
-				 *
-				 * Проверка самих тихих часов живёт в тестах deliveryPolicy, где время
-				 * задаётся явным аргументом, а не берётся из часов машины.
-				 */
-				await db
+				await tx
 					.insert(communicationSettings)
 					.values({
 						organizationId: ORG_ID,
@@ -359,8 +335,8 @@ describe("маршруты сообщений пациентам", () => {
 		assert.equal(body.duplicate, true);
 		assert.equal(body.outboxId, outboxId);
 
-		const rows = await withFixtureTenant(ORG_ID, async () =>
-			db
+		const rows = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
 				.select({ id: communicationOutbox.id })
 				.from(communicationOutbox)
 				.where(
@@ -388,8 +364,8 @@ describe("маршруты сообщений пациентам", () => {
 		assert.ok(report.claimed >= 1, JSON.stringify(report));
 		assert.equal(report.sent, 0);
 
-		const [row] = await withFixtureTenant(ORG_ID, async () =>
-			db
+		const [row] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
 				.select()
 				.from(communicationOutbox)
 				.where(eq(communicationOutbox.id, outboxId)),
@@ -445,8 +421,8 @@ describe("маршруты сообщений пациентам", () => {
 			payload: { batchSize: 10 },
 		});
 
-		const [row] = await withFixtureTenant(ORG_ID, async () =>
-			db
+		const [row] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
 				.select()
 				.from(communicationOutbox)
 				.where(eq(communicationOutbox.id, secondId)),
@@ -490,8 +466,8 @@ describe("маршруты сообщений пациентам", () => {
 		});
 		assert.equal(retry.statusCode, 200, retry.body);
 
-		const [row] = await withFixtureTenant(ORG_ID, async () =>
-			db
+		const [row] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
 				.select()
 				.from(communicationOutbox)
 				.where(eq(communicationOutbox.id, outboxId)),
@@ -564,8 +540,8 @@ describe("маршруты сообщений пациентам", () => {
 	test("сообщение чужой организации не видно в журнале", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		const rows = await withFixtureTenant(ORG_ID, async () =>
-			db
+		const rows = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
 				.select({ organizationId: communicationOutbox.organizationId })
 				.from(communicationOutbox)
 				.where(

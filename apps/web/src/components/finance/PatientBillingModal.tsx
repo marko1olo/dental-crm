@@ -13,6 +13,8 @@ import {
 	FileCheck,
 	FileText,
 	Layers,
+	Percent,
+	Phone,
 	Printer,
 	QrCode,
 	Send,
@@ -27,6 +29,11 @@ import {
 	compileCompletedWorksAct,
 	generateCompletedActAndWarrantyHtml,
 } from "./invoiceEngine";
+import {
+	distributeLoyaltyDiscountAcrossItems,
+	LOYALTY_DISCOUNT_PRESETS,
+	type LoyaltyDiscountPreset,
+} from "./fiscal/fiscal54fzEngine";
 import {
 	groupServicesIntoFriendlyBlocks,
 	generateFriendlyBillingWhatsAppMessage,
@@ -73,9 +80,12 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 	const [copied, setCopied] = useState(false);
 	const [isQrOpen, setIsQrOpen] = useState(false);
 	const [toastMsg, setToastMsg] = useState<string | null>(null);
+	const [discountPreset, setDiscountPreset] = useState<LoyaltyDiscountPreset>("none");
+	const [customDiscountPercent, setCustomDiscountPercent] = useState<number>(0);
+	const [customDiscountRub, setCustomDiscountRub] = useState<number>(0);
 
-	// Default fallback services if none provided
-	const services: InvoiceServiceItem[] = useMemo(() => {
+	// Raw services before discount
+	const rawServices: InvoiceServiceItem[] = useMemo(() => {
 		if (initialServices.length > 0) return [...initialServices];
 		return [
 			{
@@ -107,6 +117,16 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 			},
 		];
 	}, [initialServices]);
+
+	const discountResult = useMemo(() => {
+		return distributeLoyaltyDiscountAcrossItems(rawServices, {
+			preset: discountPreset,
+			customPercent: customDiscountPercent,
+			customRub: customDiscountRub,
+		});
+	}, [rawServices, discountPreset, customDiscountPercent, customDiscountRub]);
+
+	const services: readonly InvoiceServiceItem[] = discountResult.items;
 
 	const friendlyBreakdown = useMemo(() => {
 		return groupServicesIntoFriendlyBlocks(services);
@@ -294,6 +314,16 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 					</button>
 
 					<div className="ml-auto flex items-center gap-2">
+						{patient?.phone && (
+							<a
+								href={`tel:+${patient.phone.replace(/\D/g, "")}`}
+								className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 flex items-center gap-1 cursor-pointer transition-colors"
+								title="Позвонить пациенту"
+							>
+								<Phone className="w-3 h-3 text-emerald-600" />
+								<span>📞 Позвонить</span>
+							</a>
+						)}
 						<button
 							type="button"
 							onClick={handleSendWhatsApp}
@@ -312,6 +342,69 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							<span>{copied ? "Скопировано!" : "Копировать"}</span>
 						</button>
 					</div>
+				</div>
+
+				{/* Loyalty Discount & Presets Toolbar */}
+				<div className="px-6 py-3 border-b border-[var(--line)] bg-indigo-50/50 dark:bg-indigo-950/20 flex flex-wrap items-center justify-between gap-2.5 shrink-0 text-xs">
+					<div className="flex items-center gap-2 font-bold text-indigo-950 dark:text-indigo-200">
+						<Percent className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+						<span>Скидка и лояльность:</span>
+					</div>
+
+					<div className="flex items-center gap-1.5 flex-wrap">
+						{LOYALTY_DISCOUNT_PRESETS.map((preset) => (
+							<button
+								key={preset.id}
+								type="button"
+								onClick={() => setDiscountPreset(preset.id)}
+								className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+									discountPreset === preset.id
+										? "bg-indigo-600 text-white shadow-xs"
+										: "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-indigo-400"
+								}`}
+								title={preset.description}
+							>
+								{preset.label}
+							</button>
+						))}
+					</div>
+
+					{discountPreset === "manual_percent" && (
+						<div className="flex items-center gap-1.5">
+							<input
+								type="number"
+								min={0}
+								max={100}
+								value={customDiscountPercent || ""}
+								onChange={(e) => setCustomDiscountPercent(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
+								placeholder="0%"
+								className="w-20 px-2 py-1 text-xs font-bold bg-white dark:bg-slate-900 border border-indigo-300 dark:border-indigo-700 rounded-lg"
+							/>
+							<span>%</span>
+						</div>
+					)}
+
+					{discountPreset === "manual_rub" && (
+						<div className="flex items-center gap-1.5">
+							<input
+								type="number"
+								min={0}
+								max={discountResult.totalGrossRub}
+								value={customDiscountRub || ""}
+								onChange={(e) => setCustomDiscountRub(Math.max(0, parseFloat(e.target.value) || 0))}
+								placeholder="0 ₽"
+								className="w-24 px-2 py-1 text-xs font-bold bg-white dark:bg-slate-900 border border-indigo-300 dark:border-indigo-700 rounded-lg"
+							/>
+							<span>₽</span>
+						</div>
+					)}
+
+					{discountResult.totalDiscountRub > 0 && (
+						<div className="px-3 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-extrabold flex items-center gap-1">
+							<Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+							<span>{discountResult.savingsText} ({discountResult.effectivePercent}%)</span>
+						</div>
+					)}
 				</div>
 
 				{/* Body Content */}

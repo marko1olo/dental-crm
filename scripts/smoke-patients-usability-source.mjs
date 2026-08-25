@@ -24,6 +24,10 @@ const patientsSource = [
 		"apps/web/src/components/patient/PatientAdministrativeForm.tsx",
 		"utf8",
 	),
+	readFileSync(
+		"apps/web/src/components/patients/CreatePatientModal.tsx",
+		"utf8",
+	),
 ].join("\n");
 const cssSource = readFileSync("apps/web/src/styles/main.css", "utf8");
 
@@ -35,11 +39,9 @@ function forbidIn(source, needle, message) {
 	if (source.includes(needle)) throw new Error(message);
 }
 
-requireIn(
-	appSource,
-	'lazy(() => import("./PatientsView")',
-	"App.tsx must lazy-load PatientsView.",
-);
+if (!/lazy\(\s*\(\)\s*=>\s*import\(\s*["']\.\/PatientsView["']\s*\)/.test(appSource)) {
+	throw new Error("App.tsx must lazy-load PatientsView.");
+}
 requireIn(
 	appSource,
 	"<PatientsView",
@@ -135,11 +137,9 @@ requireIn(
 	"aria-pressed={patientIsSelected}",
 	"Patient row open button must expose selected state.",
 );
-requireIn(
-	patientsSource,
-	"const weekdaySelected = patientAdministrativeProfileDraft.preferredAppointmentWeekdays.includes(day.value);",
-	"Patient weekday toggles must compute one selected state.",
-);
+if (!/const\s+weekdaySelected\s*=\s*patientAdministrativeProfileDraft\.preferredAppointmentWeekdays\.includes\(\s*day\.value,?\s*\);?/.test(patientsSource)) {
+	throw new Error("Patient weekday toggles must compute one selected state.");
+}
 requireIn(
 	patientsSource,
 	"aria-pressed={weekdaySelected}",

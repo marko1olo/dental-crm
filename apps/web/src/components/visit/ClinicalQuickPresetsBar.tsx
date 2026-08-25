@@ -6,6 +6,8 @@ import {
 	Crown,
 	Flame,
 	HeartPulse,
+	PlusCircle,
+	Search,
 	ShieldCheck,
 	Sparkles,
 	Stethoscope,
@@ -31,21 +33,21 @@ export const CLINICAL_PRESETS: ClinicalQuickPreset[] = [
 	// ── БЫСТРЫЕ КЛИНИЧЕСКИЕ SOAP ЧИПЫ (1 КЛИК)
 	{
 		id: "acute_pain_pulpitis",
-		title: "Острая боль (Острый пульпит)",
+		title: "Острая самопроизвольная боль (Пульпит K04.0)",
 		shortBadge: "Острая боль",
 		category: "therapy",
 		icd10: "K04.0",
-		icd10Label: "Пульпит (острый)",
+		icd10Label: "Пульпит необратимый",
 		anamnesis:
 			"Жалобы на острые самопроизвольные приступообразные боли в зубе, усиливающиеся в ночное время, с иррадиацией по ходу ветвей тройничного нерва.",
 		statusLocalis:
 			"Глубокая кариозная полость, сообщающаяся с полостью зуба. Зондирование вскрытой точки рога пульпы резко болезненно, сопровождается кровоточивостью. Перкуссия безболезненна. Термопроба резко положительна. ЭОД 35–45 мкА.",
 		treatmentDescription:
-			"Проводниковая/инфильтрационная анестезия (Артикаин 4% 1.7 мл). Препарирование кариозной полости, раскрытие полости зуба, создание прямого эндодонтического доступа. Коффердам. Витальная экстирпация пульпы. Определение рабочей длины (апекслокатор + визиография). Инструментальная механическая обработка каналов NiTi ротационными файлами с обильной ирригацией NaOCl 3% и ЭДТА 17% с УЗ-активацией. Высушивание бумажными штифтами. Временная лечебная паста Calcept (гидроксид кальция) / трехмерная обтурация каналов гуттаперчей с эпоксидным силером методом латеральной конденсации. Рентген-контроль. Герметичная реставрация.",
+			"Инфильтрационная/проводниковая анестезия (Артикаин 4% с эпинефрином 1:100 000 / 1:200 000, 1.7 мл). Препарирование кариозной полости, раскрытие полости зуба, создание прямого эндодонтического доступа. Коффердам. Витальная экстирпация пульпы. Определение рабочей длины (апекслокатор + визиография). Инструментальная механическая обработка каналов NiTi ротационными файлами с обильной ирригацией NaOCl 3% и ЭДТА 17% с УЗ-активацией. Высушивание бумажными штифтами. Временная лечебная паста Calcept (гидроксид кальция) / трехмерная обтурация каналов гуттаперчей с эпоксидным силером методом латеральной конденсации. Рентген-контроль. Герметичная реставрация.",
 	},
 	{
 		id: "aching_pain_periodontitis",
-		title: "Ноющие боли (Апикальный периодонтит)",
+		title: "Постоянные ноющие боли при накусывании (Периодонтит K04.5)",
 		shortBadge: "Ноющие боли",
 		category: "therapy",
 		icd10: "K04.5",
@@ -55,11 +57,11 @@ export const CLINICAL_PRESETS: ClinicalQuickPreset[] = [
 		statusLocalis:
 			"Зуб изменен в цвете, девитализирован / дефект пломбы. Зондирование устьев безболезненно. Перкуссия слабочувствительна/болезненна. ЭОД > 100 мкА. Рентгенография: очаг деструкции костной ткани у верхушки корня (периапикальный очаг).",
 		treatmentDescription:
-			"Анестезия (Артикаин 4% 1.7 мл). Распломбирование корневых каналов, ревизия, прохождение до физиологического апекса под контролем апекслокатора. Обильная медикаментозная дезинфекция (NaOCl 3%, 2% хлоргексидин, ЭДТА, ультразвук). Временная обтурация каналов гидроксидом кальция Calcept для стимуляции остеогенеза и подавления инфекции. Герметичная временная пломба (Cavit / СИЦ). Контрольный осмотр через 10-14 дней.",
+			"Инфильтрационная/проводниковая анестезия (Артикаин 4% с эпинефрином 1:100 000 / 1:200 000, 1.7 мл). Распломбирование корневых каналов, ревизия, прохождение до физиологического апекса под контролем апекслокатора. Обильная медикаментозная дезинфекция (NaOCl 3%, 2% хлоргексидин, ЭДТА, ультразвук). Временная обтурация каналов гидроксидом кальция Calcept для стимуляции остеогенеза и подавления инфекции. Герметичная временная пломба (Cavit / СИЦ). Контрольный осмотр через 10-14 дней.",
 	},
 	{
 		id: "thermal_reaction_caries",
-		title: "Реакция на холод/горячее (Кариес)",
+		title: "Кратковременные боли от холодного/горячего (Кариес K02.1)",
 		shortBadge: "Реакция на холод/горячее",
 		category: "therapy",
 		icd10: "K02.1",
@@ -69,11 +71,11 @@ export const CLINICAL_PRESETS: ClinicalQuickPreset[] = [
 		statusLocalis:
 			"Кариозная полость в пределах плащевого дентина. Дно и стенки плотные, пигментированные. Зондирование слабоболезненно по эмалево-дентинной границе. Перкуссия безболезненна. Холодовая проба быстропроходящая. ЭОД 6–8 мкА.",
 		treatmentDescription:
-			"Инфильтрационная анестезия (Артикаин 4% 1.7 мл). Препарирование кариозной полости, некрэктомия. Изоляция коффердамом. Антисептическая обработка 2% хлоргексидином. Кислотное травление эмали и дентина 37% ортофосфорной кислотой, нанесение адгезивной системы. Послойное моделирование нанокомпозитом светового отверждения с восстановлением анатомии. Шлифовка, полировка дисками и пастами до зеркального блеска.",
+			"Инфильтрационная анестезия (Артикаин 4% 1.7 мл). Препарирование кариозной полости, некрэктомия. Изоляция коффердамом. Антисептическая обработка 2% хлоргексидином. Кислотное травление эмали и дентина 37% ортофосфорной кислотой, нанесение адгезивной системы. Послойное моделирование нанокомпозитом светового отверждения с восстановлением анатомии. Шлифовка, полировка дисками и пастами до зеркального блеска.\n\nГарантийные обязательства: Гарантийный срок на световую композитную реставрацию — 24 мес. (срок службы: 36 мес.) при условии соблюдения индивидуальной гигиены и прохождения контрольного осмотра каждые 6 месяцев.",
 	},
 	{
 		id: "caries_medium",
-		title: "Средний кариес дентина",
+		title: "Кариес дентина (K02.1)",
 		shortBadge: "Кариес",
 		category: "therapy",
 		icd10: "K02.1",
@@ -83,11 +85,11 @@ export const CLINICAL_PRESETS: ClinicalQuickPreset[] = [
 		statusLocalis:
 			"Кариозная полость средней глубины в пределах плащевого дентина. Дно и стенки плотные, пигментированные. Зондирование слабоболезненно по эмалево-дентинной границе. Перкуссия безболезненна. Холодовая проба слабоположительная, быстропроходящая. ЭОД 6–8 мкА.",
 		treatmentDescription:
-			"Инфильтрационная/проводниковая анестезия (Артикаин 4% 1.7 мл). Препарирование кариозной полости, полная некрэктомия, формирование эмалевого фальца. Изоляция коффердамом. Антисептическая медикаментозная обработка 2% раствором хлоргексидина. Кислотное травление эмали и дентина 37% ортофосфорной кислотой (etching: эмаль 20 сек, дентин 10 сек), смывание водой, деликатное подсушивание воздухом. Нанесение адгезивной системы (adhesive: праймер + бонд), экспозиция 20 сек, фотополимеризация 20 сек. Послойное моделирование наногибридным светоотверждаемым композитом (composite layer) с восстановлением окклюзионных бугров, фиссур и контактного пункта. Шлифовка, полировка (polishing: диски, полиры, паста) до сухого зеркального блеска, контроль окклюзии по копирке.",
+			"Инфильтрационная/проводниковая анестезия (Артикаин 4% 1.7 мл). Препарирование кариозной полости, полная некрэктомия, формирование эмалевого фальца. Изоляция коффердамом. Антисептическая медикаментозная обработка 2% раствором хлоргексидина. Кислотное травление эмали и дентина 37% ортофосфорной кислотой (etching: эмаль 20 сек, дентин 10 сек), смывание водой, деликатное подсушивание воздухом. Нанесение адгезивной системы (adhesive: праймер + бонд), экспозиция 20 сек, фотополимеризация 20 сек. Послойное моделирование наногибридным светоотверждаемым композитом (composite layer) с восстановлением окклюзионных бугров, фиссур и контактного пункта. Шлифовка, полировка (polishing: диски, полиры, паста) до сухого зеркального блеска, контроль окклюзии по копирке.\n\nГарантийные обязательства: Гарантийный срок на световую композитную реставрацию — 24 мес. (срок службы: 36 мес.) при условии соблюдения индивидуальной гигиены и профосмотра каждые 6 месяцев.",
 	},
 	{
 		id: "pulpitis_acute",
-		title: "Острый пульпит (экстирпация)",
+		title: "Пульпит необратимый (K04.0)",
 		shortBadge: "Пульпит",
 		category: "therapy",
 		icd10: "K04.0",
@@ -97,25 +99,25 @@ export const CLINICAL_PRESETS: ClinicalQuickPreset[] = [
 		statusLocalis:
 			"Глубокая кариозная полость, сообщающаяся с полостью зуба. Зондирование вскрытой точки рога пульпы резко болезненно, с кровоточивостью. Перкуссия безболезненна. Термопроба резко положительна. ЭОД — 35-45 мкА.",
 		treatmentDescription:
-			"Проводниковая/инфильтрационная анестезия (Артикаин 4% 1.7 мл). Препарирование, раскрытие полости зуба, создание прямого эндодонтического доступа. Коффердам. Витальная экстирпация пульпы / девитализация. Определение рабочей длины (апекслокатор + визиография). Инструментальная механическая обработка каналов NiTi ротационными файлами (canal instrumentation) с обильной ирригацией NaOCl 3% и ЭДТА 17% с УЗ-активацией. Высушивание бумажными штифтами. Временная лечебная паста Calcept (гидроксид кальция) / трехмерная обтурация каналов гуттаперчей с эпоксидным силером (gutta-percha obturation) методом латеральной/вертикальной конденсации. Рентген-контроль. Восстановление коронки композитом.",
+			"Инфильтрационная/проводниковая анестезия (Артикаин 4% с эпинефрином 1:100 000 / 1:200 000, 1.7 мл). Препарирование, раскрытие полости зуба, создание прямого эндодонтического доступа. Коффердам. Витальная экстирпация пульпы / девитализация. Определение рабочей длины (апекслокатор + визиография). Инструментальная механическая обработка каналов NiTi ротационными файлами (canal instrumentation) с обильной ирригацией NaOCl 3% и ЭДТА 17% с УЗ-активацией. Высушивание бумажными штифтами. Временная лечебная паста Calcept (гидроксид кальция) / трехмерная обтурация каналов гуттаперчей с эпоксидным силером (gutta-percha obturation) методом латеральной/вертикальной конденсации. Рентген-контроль. Восстановление коронки композитом.",
 	},
 	{
 		id: "periodontitis_chronic",
-		title: "Хронический апикальный периодонтит",
+		title: "Хронический апикальный периодонтит (K04.5)",
 		shortBadge: "Периодонтит",
 		category: "therapy",
 		icd10: "K04.5",
 		icd10Label: "Хронический апикальный периодонтит",
 		anamnesis:
-			"Жалобы на чувство тяжести и дискомфорта при накусывании, изменение цвета зуба. Ранее лечен по поводу кариеса/пульпита.",
+			"Жалобы на постоянные ноющие боли, усиливающиеся при накусывании на зуб, чувство «выросшего» зуба, изменение цвета коронки.",
 		statusLocalis:
-			"Зуб изменен в цвете, девитализирован / дефект пломбы. Зондирование устьев безболезненно. Перкуссия слабочувствительна. ЭОД > 100 мкА. Рентгенография: очаг деструкции костной ткани у верхушки корня (периапикальный очаг).",
+			"Зуб изменен в цвете, девитализирован / дефект пломбы. Зондирование устьев безболезненно. Перкуссия слабочувствительна/болезненна. ЭОД > 100 мкА. Рентгенография: очаг деструкции костной ткани у верхушки корня (периапикальный очаг).",
 		treatmentDescription:
-			"Анестезия (Артикаин 4% 1.7 мл). Распломбирование корневых каналов, ревизия (canal desobturation), прохождение до физиологического апекса под контролем апекслокатора. Обильная медикаментозная дезинфекция (antiseptic irrigation: NaOCl 3%, 2% хлоргексидин, ЭДТА, ультразвук). Временная обтурация каналов гидроксидом кальция Calcept (calcium hydroxide) для стимуляции остеогенеза и подавления инфекции. Герметичная временная пломба (Cavit / СИЦ). Контрольный осмотр через 10-14 дней.",
+			"Инфильтрационная/проводниковая анестезия (Артикаин 4% с эпинефрином 1:100 000 / 1:200 000, 1.7 мл). Распломбирование корневых каналов, ревизия, прохождение до физиологического апекса под контролем апекслокатора. Обильная медикаментозная дезинфекция (NaOCl 3%, 2% хлоргексидин, ЭДТА, ультразвук). Временная обтурация каналов гидроксидом кальция Calcept для стимуляции остеогенеза и подавления инфекции. Герметичная временная пломба (Cavit / СИЦ). Контрольный осмотр через 10-14 дней.",
 	},
 	{
 		id: "filling_restoration",
-		title: "Пломба / Реставрация зуба",
+		title: "Пломба / Реставрация зуба (K02.1)",
 		shortBadge: "Пломба",
 		category: "therapy",
 		icd10: "K02.1",
@@ -125,11 +127,11 @@ export const CLINICAL_PRESETS: ClinicalQuickPreset[] = [
 		statusLocalis:
 			"Дефект старой реставрации, пигментация по границе пломба-зуб. Зондирование по краю слабочувствительно. Перкуссия безболезненна. ЭОД 6 мкА.",
 		treatmentDescription:
-			"Инфильтрационная анестезия (Артикаин 4% 1.7 мл). Удаление дефектной реставрации, некрэктомия, формирование фальца эмали. Коффердам. Антисептическая обработка 2% хлоргексидином. Адгезивный протокол (тотальное травление 37% H3PO4 + бонд). Послойное моделирование наногибридным композитом с восстановлением бугров и контактного пункта. Шлифовка дисками, полировка полирами и пастой до сухого блеска, окклюзионный контроль.",
+			"Инфильтрационная анестезия (Артикаин 4% 1.7 мл). Удаление дефектной реставрации, некрэктомия, формирование фальца эмали. Коффердам. Антисептическая обработка 2% хлоргексидином. Адгезивный протокол (тотальное травление 37% H3PO4 + бонд). Послойное моделирование наногибридным композитом с восстановлением бугров и контактного пункта. Шлифовка дисками, полировка полирами и пастой до сухого блеска, окклюзионный контроль.\n\nГарантийные обязательства: Гарантийный срок на световую композитную реставрацию — 24 мес. (срок службы: 36 мес.) при соблюдении гигиены и регулярном профосмотре 1 раз в 6 месяцев.",
 	},
 	{
 		id: "ortho_crown_prep",
-		title: "Коронка (Ортопедическое восстановление)",
+		title: "Ортопедическое восстановление (Z51.8)",
 		shortBadge: "Коронка",
 		category: "orthopedics",
 		icd10: "Z51.8",
@@ -143,11 +145,11 @@ export const CLINICAL_PRESETS: ClinicalQuickPreset[] = [
 	},
 	{
 		id: "surgery_extraction_simple",
-		title: "Удаление зуба (Хирургия)",
+		title: "Частичная вторичная адентия / Удаление (K08.1)",
 		shortBadge: "Удален",
 		category: "surgery",
 		icd10: "K08.1",
-		icd10Label: "Потеря зубов вследствие удаления",
+		icd10Label: "Частичная вторичная адентия",
 		anamnesis:
 			"Жалобы на полное разрушение коронковой части зуба, невозможность терапевтического и ортопедического восстановления, подвижность.",
 		statusLocalis:
@@ -157,7 +159,7 @@ export const CLINICAL_PRESETS: ClinicalQuickPreset[] = [
 	},
 	{
 		id: "hygiene_complex",
-		title: "Здоров / Профгигиена полости рта",
+		title: "Профгигиена полости рта и осмотр (Z01.2)",
 		shortBadge: "Здоров",
 		category: "hygiene",
 		icd10: "Z01.2",
@@ -171,8 +173,8 @@ export const CLINICAL_PRESETS: ClinicalQuickPreset[] = [
 	},
 	{
 		id: "caries_deep",
-		title: "Глубокий кариес дентина",
-		shortBadge: "Кариес (глуб.)",
+		title: "Глубокий кариес дентина (K02.1)",
+		shortBadge: "Глуб. кариес",
 		category: "therapy",
 		icd10: "K02.1",
 		icd10Label: "Кариес дентина (глубокий)",
@@ -181,7 +183,105 @@ export const CLINICAL_PRESETS: ClinicalQuickPreset[] = [
 		statusLocalis:
 			"Глубокая кариозная полость в пределах околопульпарного дентина. Дно плотное, пигментированное, зондирование дна болезненно. Перкуссия безболезненна. ЭОД — 18-20 мкА.",
 		treatmentDescription:
-			"Анестезия (Артикаин 4% 1:200 000 1.7 мл). Препарирование кариозной полости, щадящая некрэктомия. Изоляция коффердамом. Антисептическая обработка 2% хлоргексидином. Лечебная прокладка Ca(OH)2 точечно на дно, изолирующая прокладка СИЦ. Адгезивный протокол (etching + primer/bond), послойная реставрация нанокомпозитом светового отверждения (composite layer) с восстановлением окклюзионной анатомии. Шлифовка, полировка (polishing) до сухого блеска.",
+			"Анестезия (Артикаин 4% 1:200 000 1.7 мл). Препарирование кариозной полости, щадящая некрэктомия. Изоляция коффердамом. Антисептическая обработка 2% хлоргексидином. Лечебная прокладка Ca(OH)2 точечно на дно, изолирующая прокладка СИЦ. Адгезивный протокол (etching + primer/bond), послойная реставрация нанокомпозитом светового отверждения (composite layer) с восстановлением окклюзионной анатомии. Шлифовка, полировка (polishing) до сухого блеска.\n\nГарантийные обязательства: Гарантийный срок на световую композитную реставрацию — 24 мес. (срок службы: 36 мес.) при условии соблюдения гигиены и регулярного профосмотра.",
+	},
+	{
+		id: "endo_retreatment_caoh2",
+		title: "Эндодонтическое перелечивание (распломбировка + Ca(OH)2) (K04.5)",
+		shortBadge: "Перелечивание",
+		category: "therapy",
+		icd10: "K04.5",
+		icd10Label: "Хронический апикальный периодонтит (перелечивание)",
+		anamnesis:
+			"Жалобы на периодический дискомфорт и чувство тяжести/распирания в ранее леченом зубе при накусывании, изменение цвета коронки. Зуб депульпирован более 3 лет назад.",
+		statusLocalis:
+			"Коронковая часть зуба пломбирована / культевая вкладка. Зондирование устьев безболезненно. Перкуссия слабочувствительна. На прицельной рентгенограмме/КЛКТ: неполная обтурация корневых каналов, периапикальный очаг деструкции костной ткани.",
+		treatmentDescription:
+			"Инфильтрационная/проводниковая анестезия (Артикаин 4% с эпинефрином 1:100 000 / 1:200 000, 1.7 мл). Снятие старой реставрации, ревизия дна полости. Коффердам. Распломбирование корневых каналов эндодонтическими микромоторными ретриверами и растворителем. Извлечение старой гуттаперчи/силера. Ультразвуковая активация и обильная медикаментозная обработка: NaOCl 3% (экспозиция 20 мин), ЭДТА 17%. Просушивание бумажными штифтами. Временная плотная обтурация корневых каналов лечебной пастой гидроксида кальция Calcept для стерилизации и стимуляции остеорепарации. Герметичная изолирующая временная пломба (СИЦ). Контрольный снимок.",
+	},
+	{
+		id: "implant_healing_abutment",
+		title: "Хирургия имплантации (установка формирователя десны ФДМ) (K08.1)",
+		shortBadge: "ФДМ (2 этап)",
+		category: "surgery",
+		icd10: "K08.1",
+		icd10Label: "Второй хирургический этап дентальной имплантации",
+		anamnesis:
+			"Плановый визит на 2-й хирургический этап имплантации после периода остеоинтеграции (3-6 месяцев). Жалоб нет.",
+		statusLocalis:
+			"Слизистая оболочка в области ранее установленного имплантата бледно-розовая, без признаков воспаления. Пальпация безболезненна. Рентген-контроль: стабильная остеоинтеграция имплантата, краевая резорбция кости отсутствует.",
+		treatmentDescription:
+			"Инфильтрационная анестезия (Артикаин 4% 1:200 000 1.7 мл). Миниинвазивный разрез слизистой оболочки (punch / линейный разрез) над шахтой имплантата. Визуализация платформы имплантата, выкручивание винта-заглушки. Антисептическая обработка шахты 0.05% хлоргексидином. Подбор и закручивание формирователя десны (Gingiva Former D 4.5 mm, H 3.0 mm) с усилием 10–15 Нсм. Адаптация краев слизистой, наложение шва (Викрил 5-0). Назначены антисептические ротовые ванночки.",
+	},
+	{
+		id: "ortho_precision_impression_scan",
+		title: "Ортопедия (снятие прецизионного оттиска А-силикон / 3D сканирование) (Z51.8)",
+		shortBadge: "Слепок / 3D Скан",
+		category: "orthopedics",
+		icd10: "Z51.8",
+		icd10Label: "Ортопедический прием: получение оттисков / цифровое сканирование",
+		anamnesis:
+			"Плановый визит на ортопедический этап протезирования. Подготовка к изготовлению постоянных безметалловых конструкций.",
+		statusLocalis:
+			"Отпрепарированный зуб с циркулярным прецизионным уступом типа Chamfer (0.8–1.0 мм). Десневой край интактен, кровоточивость отсутствует.",
+		treatmentDescription:
+			"Анестезия при необходимости. Механическая и химическая ретракция десны двухниточной техникой (нить Ultrapak #000 + #0 с гелем ViscoStat Clear). Получение прецизионного двухслойного одноэтапного оттиска А-силиконовой массой высокой точности (Honigum / Express XT) / Цифровой интраоральный 3D скан челюстей сканером Medit/iTero с регистрацией окклюзионного прикуса. Перебазировка и фиксация временной коронки Protemp на безевгенольный цемент TempBond NE.",
+	},
+	{
+		id: "crown_adhesive_cementation",
+		title: "Постоянная адгезивная фиксация коронки (HF + силан + RelyX/Panavia) (Z51.8)",
+		shortBadge: "Фиксация коронки",
+		category: "orthopedics",
+		icd10: "Z51.8",
+		icd10Label: "Постоянная фиксация ортопедической конструкции",
+		anamnesis:
+			"Визит на постоянную фиксацию изготовленной керамической / циркониевой коронки. Временная коронка стабильна, жалоб нет.",
+		statusLocalis:
+			"Временная коронка снята, культя зуба очищена ультразвуком и глицином. Десна бледно-розовая, плотная.",
+		treatmentDescription:
+			"Примерка коронки из диоксида циркония / прессованной керамики E.max. Оценка краевого прилегания, проксимальных контактов и окклюзионных взаимоотношений по артикуляционной бумаге 40 мкм. Подготовка конструкции: пескоструйная обработка CoJet / оксидом алюминия 50 мкм, протравливание керамики 9% плавиковой кислотой (HF) 20 сек, промывание, ультразвуковая очистка в спирте, нанесение силана (Silane) и высушивание горячим воздухом. Подготовка культи: коффердам, очистка пастой без фтора, адгезивный праймер. Фиксация на композитный цемент двойного отверждения (RelyX Ultimate / Panavia V5). Удаление излишков цемента в гелевой фазе, фотополимеризация по 20 сек с каждой поверхности под слоем глицеринового геля (Oxyguard). Финишная полировка краев.",
+	},
+	{
+		id: "pediatric_primary_tooth_extraction",
+		title: "Удаление временного зуба при физиологической смене (K00.6 / K08.1)",
+		shortBadge: "Смена мол. зуба",
+		category: "surgery",
+		icd10: "K00.6",
+		icd10Label: "Физиологическая смена временного зуба / Резорбция корней",
+		anamnesis:
+			"Жалобы на подвижность временного зуба, дискомфорт при приеме твердой пищи, прорезывание постоянного зуба-преемника.",
+		statusLocalis:
+			"Временный зуб с физиологической резорбцией корней III степени (коронка подвижна II-III степени). Десна бледно-розовая. На рентгенограмме/визиографии: полное рассасывание корней временного зуба, зачаток постоянного зуба в фазе активного прорезывания.",
+		treatmentDescription:
+			"Аппликационная анестезия (гель Лидокаин 15% / Дисилан с фруктовым вкусом). Деликатная люксация и удаление подвижной коронки временного зуба детскими анатомическими щипцами. Ревизия лунки. Гемостаз марлевым тампоном (2-3 мин). Пациенту и родителям выдана памятка по уходу и подарок за смелость.",
+	},
+	{
+		id: "perio_srp_curettage",
+		title: "Хронический генерализованный пародонтит / Кюретаж + SRP (K05.3)",
+		shortBadge: "Пародонтит K05.3",
+		category: "therapy",
+		icd10: "K05.3",
+		icd10Label: "Хронический пародонтит",
+		anamnesis:
+			"Жалобы на кровоточивость десен при чистке зубов и приеме пищи, подвижность зубов, неприятный запах изо рта, оголение шеек зубов, застревание пищи в межзубных промежутках.",
+		statusLocalis:
+			"Десна отёчна, застойная гиперемия, цианотична. Обильные над- и поддесневые минерализованные зубные отложения. Глубина пародонтальных карманов > 4 мм с серозно-гнойным экссудатом при компрессии. Патологическая подвижность I-II степени. На рентгенограмме: деструкция костной ткани межальвеолярных перегородок до 1/3–1/2 длины корня.",
+		treatmentDescription:
+			"Аппликационная и инфильтрационная анестезия (Артикаин 4% с эпинефрином 1:100 000 1.7 мл). Ультразвуковой скейлинг с удалением массивных поддесневых отложений (ultrasonic scaling) и обработка аппаратом Air-Flow Perio (порошок глицин). Закрытый кюретаж пародонтальных карманов кюретами Грейси (Gracey 1/2, 7/8, 11/12, 13/14) с удалением поддесневого камня, грануляций и токсичного цемента корня (Scaling and Root Planing / SRP). Антисептическая медикаментозная обработка 0.05% раствором хлоргексидина биглюконата и 0.1% повидон-йодом. Инстилляция противовоспалительного пародонтального геля (Метрогил Дента / Холисал). Обучение контролируемой индивидуальной гигиене полости рта, подбор межзубных ершиков. Контрольный осмотр и повторная перио-оценка через 10-14 дней.",
+	},
+	{
+		id: "hygiene_and_caries_mixed",
+		title: "Комплексный приём: Профгигиена (Z01.2) + Лечение кариеса (K02.1)",
+		shortBadge: "Гигиена + Кариес",
+		category: "therapy",
+		icd10: "K02.1",
+		icd10Label: "Кариес дентина + Стоматологическое обследование и гигиена (Z01.2)",
+		anamnesis:
+			"Комплексный плановый визит: 1) Жалобы на темный налет и зубные отложения, кровоточивость десен при чистке. 2) Жалобы на кратковременную чувствительность от холодного/сладкого и застревание пищи в области причинного зуба.",
+		statusLocalis:
+			"1) Полость рта: обильные над- и поддесневые зубные отложения, пигментированный налет курильщика / чай / кофе. Десна умеренно отечна в области сосочков. 2) Причинный зуб: кариозная полость средней глубины в пределах плащевого дентина. Зондирование слабоболезненно по эмалево-дентинной границе. Холодовая проба быстропроходящая.",
+		treatmentDescription:
+			"1) Профессиональная гигиена полости рта: Ультразвуковой скейлинг с удалением минерализованных зубных отложений (ultrasonic scaling). Снятие пигментированного налета водно-порошкоструйным аппаратом Air-Flow (порошок глицина) (Air-Flow polishing). Полировка абразивной пастой Cleanic и щеточками. Межзубные контакты очищены флоссом. Глубокое фторирование эмали Clinpro White Varnish.\n\n2) Терапевтическое лечение кариеса: Инфильтрационная анестезия (Артикаин 4% 1.7 мл). Препарирование кариозной полости, полная некрэктомия. Изоляция коффердамом. Антисептическая обработка 2% хлоргексидином. Адгезивный протокол: кислотное травление эмали и дентина 37% H3PO4 (etching), нанесение адгезивной системы (adhesive: праймер + бонд). Послойное моделирование светоотверждаемым наногибридным композитом (composite layer) с восстановлением анатомической формы бугров. Шлифовка, полировка (polishing) до сухого зеркального блеска, контроль окклюзии.\n\nГарантийные обязательства: Гарантийный срок на световую композитную реставрацию — 24 мес. (срок службы: 36 мес.) при регулярном профосмотре 1 раз в 6 месяцев.",
 	},
 ];
 
@@ -189,13 +289,17 @@ export interface ClinicalQuickPresetsBarProps {
 	readonly onSelectPreset: (preset: ClinicalQuickPreset) => void;
 	readonly isLocked?: boolean;
 	readonly className?: string;
+	readonly onOpenPriceSearch?: () => void;
 }
 
 export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = ({
 	onSelectPreset,
 	isLocked = false,
 	className = "",
+	onOpenPriceSearch,
 }) => {
+	const [activeCategory, setActiveCategory] = React.useState<string>("all");
+
 	const handlePresetClick = (preset: ClinicalQuickPreset) => {
 		if (isLocked) {
 			showToast("Дневник подписан — вставка шаблона заблокирована", "info");
@@ -205,63 +309,183 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 		showToast(`Применен шаблон: «${preset.title}» (${preset.icd10})`, "success", 3000);
 	};
 
+	const filteredPresets = React.useMemo(() => {
+		if (activeCategory === "all") return CLINICAL_PRESETS;
+		return CLINICAL_PRESETS.filter((p) => p.category === activeCategory);
+	}, [activeCategory]);
+
+	// 5 топ-экспресс сценариев для мгновенного заполнения в 1 клик
+	const TOP_EXPRESS_PRESET_IDS = [
+		"hygiene_complex",
+		"caries_medium",
+		"pulpitis_acute",
+		"periodontitis_chronic",
+		"surgery_extraction_simple",
+	];
+
+	const topExpressPresets = React.useMemo(() => {
+		return TOP_EXPRESS_PRESET_IDS.map((id) =>
+			CLINICAL_PRESETS.find((p) => p.id === id),
+		).filter((p): p is ClinicalQuickPreset => Boolean(p));
+	}, []);
+
 	return (
 		<div
-			className={`clinical-quick-presets-bar p-3 rounded-2xl border border-[var(--border)] bg-[var(--paper-soft)] text-[var(--ink)] space-y-2.5 ${className}`.trim()}
+			className={`clinical-quick-presets-bar p-4 rounded-2xl border border-[var(--border)] bg-[var(--paper-soft)] text-[var(--ink)] space-y-3.5 ${className}`.trim()}
 			data-testid="clinical-quick-presets-bar"
 		>
-			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-2">
-					<div className="flex items-center justify-center w-7 h-7 rounded-lg bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border border-cyan-500/20">
-						<Zap size={15} />
+			<div className="flex items-center justify-between flex-wrap gap-2">
+				<div className="flex items-center gap-2.5">
+					<div className="flex items-center justify-center w-8 h-8 rounded-xl bg-teal-500/10 text-teal-700 dark:text-teal-400 border border-teal-500/25">
+						<Zap size={18} />
 					</div>
 					<div>
-						<h4 className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
+						<h4 className="text-sm font-extrabold text-[var(--ink)] flex items-center gap-2">
 							<span>Быстрые клинические протоколы (1 клик)</span>
-							<span className="text-[10px] px-1.5 py-0.2 rounded font-mono font-bold bg-cyan-500/10 text-cyan-700 dark:text-cyan-300">
+							<span className="text-xs px-2 py-0.5 rounded-md font-mono font-black bg-teal-500/15 text-teal-800 dark:text-teal-300 border border-teal-500/30">
 								SOAP + МКБ-10
 							</span>
 						</h4>
-						<p className="text-[11px] text-[var(--muted)]">
-							Мгновенное заполнение анамнеза, статуса и протокола лечения без лишних окон
+						<p className="text-xs text-[var(--muted)]">
+							Мгновенное заполнение жалоб, статуса, диагноза и протокола лечения для врача и медсестры
 						</p>
 					</div>
 				</div>
+
+				{onOpenPriceSearch && (
+					<button
+						type="button"
+						onClick={onOpenPriceSearch}
+						className="min-h-[48px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs transition-all flex items-center gap-2 cursor-pointer touch-manipulation active:scale-[0.98]"
+						title="Быстрый поиск и добавление процедур из прайса клиники в протокол и счет"
+						data-testid="btn-quick-add-from-pricelist"
+					>
+						<PlusCircle size={17} />
+						<span>+ Добавить из прайса</span>
+					</button>
+				)}
 			</div>
 
-			<div className="flex flex-wrap gap-1.5 min-w-0">
-				{CLINICAL_PRESETS.map((preset) => {
-					const categoryBadgeColor =
-						preset.category === "therapy"
-							? "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20 hover:bg-blue-500/20"
-							: preset.category === "surgery"
-								? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20 hover:bg-rose-500/20"
-								: preset.category === "orthopedics"
-									? "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20 hover:bg-purple-500/20"
-									: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20 hover:bg-emerald-500/20";
+			{/* ── ТОП-5 ЭКСПРЕСС-СЦЕНАРИЕВ (КРУПНЫЕ КНОПКИ >= 48px) ── */}
+			<div className="space-y-1.5">
+				<div className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+					<Sparkles size={13} className="text-amber-500" />
+					<span>Главные экспресс-сценарии приема:</span>
+				</div>
+				<div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+					{topExpressPresets.map((preset) => {
+						const isHygiene = preset.id === "hygiene_complex";
+						const isCaries = preset.id === "caries_medium";
+						const isPulpitis = preset.id === "pulpitis_acute";
+						const isPerio = preset.id === "periodontitis_chronic";
+						const isSurgery = preset.id === "surgery_extraction_simple";
 
-					return (
-						<button
-							key={preset.id}
-							type="button"
-							onClick={() => handlePresetClick(preset)}
-							disabled={isLocked}
-							className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center gap-2 cursor-pointer shadow-xs active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-w-0 ${categoryBadgeColor}`}
-							title={`${preset.title} · МКБ-10: ${preset.icd10}`}
-							data-testid={`quick-preset-${preset.id}`}
-						>
-							{preset.category === "therapy" && <Stethoscope size={14} className="shrink-0" />}
-							{preset.category === "surgery" && <Bone size={14} className="shrink-0" />}
-							{preset.category === "orthopedics" && <Crown size={14} className="shrink-0" />}
-							{preset.category === "hygiene" && <Sparkles size={14} className="shrink-0" />}
+						const bgGradient = isHygiene
+							? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/30 hover:bg-emerald-500/25"
+							: isCaries
+								? "bg-blue-500/15 text-blue-800 dark:text-blue-200 border-blue-500/30 hover:bg-blue-500/25"
+								: isPulpitis
+									? "bg-rose-500/15 text-rose-800 dark:text-rose-200 border-rose-500/30 hover:bg-rose-500/25"
+									: isPerio
+										? "bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/30 hover:bg-amber-500/25"
+										: "bg-purple-500/15 text-purple-800 dark:text-purple-200 border-purple-500/30 hover:bg-purple-500/25";
 
-							<span className="font-bold min-w-0">{preset.shortBadge}</span>
-							<span className="text-[10px] font-mono px-1 py-0.5 rounded bg-[var(--paper)] text-[var(--muted)] border border-[var(--border)] shrink-0">
-								{preset.icd10}
-							</span>
-						</button>
-					);
-				})}
+						return (
+							<button
+								key={`top-${preset.id}`}
+								type="button"
+								onClick={() => handlePresetClick(preset)}
+								disabled={isLocked}
+								className={`min-h-[50px] px-3.5 py-2.5 rounded-xl text-sm font-extrabold border transition-all flex flex-col items-start justify-center gap-1 cursor-pointer shadow-xs active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation text-left ${bgGradient}`}
+								title={`${preset.title} · МКБ-10: ${preset.icd10}`}
+								data-testid={`express-preset-${preset.id}`}
+							>
+								<div className="flex items-center justify-between w-full gap-1.5">
+									<div className="flex items-center gap-1.5 min-w-0">
+										{isHygiene && <Sparkles size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />}
+										{isCaries && <Stethoscope size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />}
+										{isPulpitis && <Flame size={16} className="text-rose-600 dark:text-rose-400 shrink-0" />}
+										{isPerio && <HeartPulse size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />}
+										{isSurgery && <Bone size={16} className="text-purple-600 dark:text-purple-400 shrink-0" />}
+										<span className="truncate">{preset.shortBadge}</span>
+									</div>
+									<span className="text-xs font-mono px-1.5 py-0.5 rounded bg-[var(--paper)] text-[var(--ink)] border border-[var(--border)] font-bold shrink-0">
+										{preset.icd10}
+									</span>
+								</div>
+								<span className="text-xs font-normal text-[var(--muted)] truncate w-full">
+									{isHygiene ? "Осмотр, Air-Flow, фторирование" : isCaries ? "Кариес → Пломба + Гарантия" : isPulpitis ? "Анестезия + Экстирпация + Каналы" : isPerio ? "Распломбировка + Calcept" : "Удаление + Гемостаз + Швы"}
+								</span>
+							</button>
+						);
+					})}
+				</div>
+			</div>
+
+			{/* ── КАТЕГОРИИ И ПОЛНЫЙ КАТАЛОГ ШАБЛОНОВ ── */}
+			<div className="space-y-2 pt-1 border-t border-[var(--border)]">
+				<div className="flex items-center justify-between gap-2 flex-wrap">
+					<div className="flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper)] border border-[var(--border)] overflow-x-auto flex-nowrap">
+						{[
+							{ id: "all", label: "Все шаблоны" },
+							{ id: "therapy", label: "Терапия" },
+							{ id: "surgery", label: "Хирургия" },
+							{ id: "orthopedics", label: "Ортопедия" },
+							{ id: "hygiene", label: "Гигиена" },
+						].map((cat) => (
+							<button
+								key={cat.id}
+								type="button"
+								onClick={() => setActiveCategory(cat.id)}
+								className={`min-h-[44px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+									activeCategory === cat.id
+										? "bg-teal-600 text-white shadow-xs"
+										: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+								}`}
+							>
+								{cat.label}
+							</button>
+						))}
+					</div>
+					<span className="text-xs font-semibold text-[var(--muted)]">
+						Показано: {filteredPresets.length} из {CLINICAL_PRESETS.length}
+					</span>
+				</div>
+
+				<div className="flex flex-wrap gap-2 min-w-0">
+					{filteredPresets.map((preset) => {
+						const categoryBadgeColor =
+							preset.category === "therapy"
+								? "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20 hover:bg-blue-500/20"
+								: preset.category === "surgery"
+									? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20 hover:bg-rose-500/20"
+									: preset.category === "orthopedics"
+										? "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20 hover:bg-purple-500/20"
+										: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20 hover:bg-emerald-500/20";
+
+						return (
+							<button
+								key={preset.id}
+								type="button"
+								onClick={() => handlePresetClick(preset)}
+								disabled={isLocked}
+								className={`min-h-[48px] px-4 py-2.5 rounded-xl text-sm font-bold border transition-all flex items-center gap-2 cursor-pointer shadow-xs active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-w-0 break-words touch-manipulation ${categoryBadgeColor}`}
+								title={`${preset.title} · МКБ-10: ${preset.icd10}`}
+								data-testid={`quick-preset-${preset.id}`}
+							>
+								{preset.category === "therapy" && <Stethoscope size={16} className="shrink-0" />}
+								{preset.category === "surgery" && <Bone size={16} className="shrink-0" />}
+								{preset.category === "orthopedics" && <Crown size={16} className="shrink-0" />}
+								{preset.category === "hygiene" && <Sparkles size={16} className="shrink-0" />}
+
+								<span className="font-extrabold min-w-0 break-words">{preset.shortBadge}</span>
+								<span className="text-xs font-mono px-2 py-0.5 rounded bg-[var(--paper)] text-[var(--muted)] border border-[var(--border)] shrink-0 font-bold">
+									{preset.icd10}
+								</span>
+							</button>
+						);
+					})}
+				</div>
 			</div>
 		</div>
 	);

@@ -248,20 +248,20 @@ export function AppointmentModal(props: AppointmentModalProps) {
 						<button
 							type="button"
 							onClick={() => repeatAppointment(appointment)}
-							className="min-h-[38px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-semibold flex items-center gap-1.5 transition-colors"
+							className="min-h-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
 							title="Повторить прием"
 						>
-							<Repeat size={14} />
+							<Repeat size={15} />
 							<span className="hidden sm:inline">Повторить</span>
 						</button>
 						{copyAppointmentToBuffer && (
 							<button
 								type="button"
 								onClick={() => copyAppointmentToBuffer(appointment)}
-								className="min-h-[38px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-semibold flex items-center gap-1.5 transition-colors"
+								className="min-h-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
 								title="Скопировать в буфер"
 							>
-								<Copy size={14} />
+								<Copy size={15} />
 								<span className="hidden sm:inline">В буфер</span>
 							</button>
 						)}
@@ -333,7 +333,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 								))}
 							</select>
 							{hasOpenVisit && (
-								<p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1">
+								<p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
 									Пациент закреплен: по этому приему открыт активный визит.
 								</p>
 							)}
@@ -490,7 +490,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 						type="button"
 						onClick={onClose}
 						disabled={isSaving}
-						className="min-h-[44px] px-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-semibold transition-colors"
+						className="min-h-[48px] px-5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-bold transition-colors cursor-pointer"
 					>
 						Отмена
 					</button>
@@ -498,9 +498,9 @@ export function AppointmentModal(props: AppointmentModalProps) {
 						type="button"
 						onClick={() => void handleSave()}
 						disabled={isSaving || collision.hasCollision}
-						className="flex-1 min-h-[44px] px-5 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+						className="flex-1 min-h-[48px] px-6 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-extrabold rounded-xl text-sm sm:text-base transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
 					>
-						<Check size={16} />
+						<Check size={18} />
 						<span>{isSaving ? "Сохраняю…" : "Сохранить изменения"}</span>
 					</button>
 				</div>

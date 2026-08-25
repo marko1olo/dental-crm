@@ -78,7 +78,7 @@ export class OiisGatewayClient {
 	 */
 	public async sendRemdDocument(pkg: EgiszRemdPackage): Promise<RemdSubmissionResponse> {
 		// 1. Pre-flight validation
-		if (!isValidSnils(pkg.metadata.patientSnils)) {
+		if (pkg.metadata.patientSnils && !isValidSnils(pkg.metadata.patientSnils)) {
 			return {
 				success: false,
 				transactionId: `ERR-${Date.now()}`,
@@ -97,7 +97,7 @@ export class OiisGatewayClient {
 				status: "Rejected",
 				errorMessage: "Отсутствует обязательная отсоединенная УКЭП врача-автора документа.",
 				validationIssues: [
-					{ code: "MISSING_DOCTOR_SIGNATURE", message: "УКЭП врача обязательна для СЭМД 108." },
+					{ code: "MISSING_DOCTOR_SIGNATURE", message: "УКЭП врача обязательна для регистрации СЭМД в РЭМД." },
 				],
 			};
 		}

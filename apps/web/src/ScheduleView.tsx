@@ -25,6 +25,7 @@ import { showToast } from "./components/GlobalToast";
 import { AppointmentCard } from "./components/schedule/AppointmentCard";
 import { AppointmentModal } from "./components/schedule/AppointmentModal";
 import { DayConfirmationsPanel } from "./components/schedule/DayConfirmationsPanel";
+import { DoctorFreeSlotsModal } from "./components/schedule/DoctorFreeSlotsModal";
 import { FreedSlotsPanel } from "./components/schedule/FreedSlotsPanel";
 import { NewAppointmentForm } from "./components/schedule/NewAppointmentForm";
 import {
@@ -285,6 +286,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	} = useSettingsStore();
 	const [showShiftAnalytics, setShowShiftAnalytics] = useState(false);
 	const [isRosterModalOpen, setIsRosterModalOpen] = useState(false);
+	const [isSmartAiOpen, setIsSmartAiOpen] = useState(false);
 	/**
 	 * Раскрыта ли форма со всеми полями записи.
 	 *
@@ -327,7 +329,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	 * безусловно, а при раскрытии копии их было два. То есть здесь не рост
 	 * нагрузки, а возврат к прежней с делением пополам.
 	 */
-	const [showConfirmationsPanel, setShowConfirmationsPanel] = useState(true);
+	const [showConfirmationsPanel, setShowConfirmationsPanel] = useState(false);
 	/** Открыта ли панель освободившихся окон и кандидатов из листа ожидания. */
 	const [showFreedSlotsPanel, setShowFreedSlotsPanel] = useState(false);
 	/** Открыта ли панель буфера расписания (копирование/вставка приёмов). */
@@ -339,6 +341,9 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	const [quickBookingOpen, setQuickBookingOpen] = useState(false);
 	const [quickBookingSlot, setQuickBookingSlot] =
 		useState<QuickBookingSlotInfo | null>(null);
+
+	/** Модальное окно свободных окон врачей (DoctorFreeSlotsModal) */
+	const [doctorFreeSlotsOpen, setDoctorFreeSlotsOpen] = useState(false);
 
 	/** Детальное модальное окно записи (AppointmentModal) */
 	const [modalAppointment, setModalAppointment] =
@@ -359,6 +364,67 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	);
 
 	const clinicToday = todayScheduleDate();
+
+	/**
+	 * 1-клик вставка экстренного слота для пациента с острой болью (CITO!)
+	 */
+	const handleEmergencyCitoBooking = useCallback(() => {
+		const staff = dashboard?.clinicSettings?.staff ?? [];
+		const activeDoctors = staff.filter(
+			(m) => m.active && (m.role === "doctor" || m.role === "owner"),
+		);
+		const dutyDoctor =
+			(scheduleDoctorFilterId
+				? activeDoctors.find((d) => d.id === scheduleDoctorFilterId)
+				: null) ||
+			activeDoctors.find(
+				(d) =>
+					d.specialties?.includes("therapist") ||
+					d.specialties?.includes("surgeon") ||
+					d.specialties?.includes("general"),
+			) ||
+			activeDoctors[0] ||
+			null;
+
+		const chairs = (dashboard?.clinicSettings?.chairs ?? []).filter((c) => c.active);
+		const chair =
+			(scheduleChairFilterId
+				? chairs.find((c) => c.id === scheduleChairFilterId)
+				: null) ||
+			chairs[0] ||
+			null;
+
+		const now = new Date();
+		const mins = now.getMinutes();
+		const roundedMins = Math.ceil(mins / 5) * 5;
+		now.setMinutes(roundedMins, 0, 0);
+		const hoursStr = String(now.getHours()).padStart(2, "0");
+		const minsStr = String(now.getMinutes()).padStart(2, "0");
+		const urgentTimeStr = `${hoursStr}:${minsStr}`;
+
+		const targetDate = scheduleDateFilter || clinicToday || todayScheduleDate();
+
+		setQuickBookingSlot({
+			dateKey: targetDate,
+			startTime: urgentTimeStr,
+			startsAt: `${targetDate}T${urgentTimeStr}:00.000Z`,
+			doctorUserId: dutyDoctor?.id || null,
+			chairId: chair?.id || null,
+			durationMinutes: 20,
+			reason: "CITO! Острая боль",
+			isCitoEmergency: true,
+		});
+		setQuickBookingOpen(true);
+		showToast("Экстренный прием CITO: выбран дежурный врач и срочный слот", "info", 3500);
+	}, [
+		dashboard?.clinicSettings?.staff,
+		dashboard?.clinicSettings?.chairs,
+		scheduleDoctorFilterId,
+		scheduleChairFilterId,
+		scheduleDateFilter,
+		clinicToday,
+		todayScheduleDate,
+	]);
 
 	/**
 	 * Сколько человек стоит в очереди. Число живёт на кнопке, потому что очередь
@@ -442,6 +508,16 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					durationMinutes: 30,
 				});
 				setQuickBookingOpen(true);
+				return;
+			}
+
+			if (
+				(e.key === "c" || e.key === "C" || e.key === "с" || e.key === "С") &&
+				!e.ctrlKey &&
+				!e.metaKey
+			) {
+				e.preventDefault();
+				handleEmergencyCitoBooking();
 				return;
 			}
 
@@ -1206,6 +1282,21 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				setScheduleDoctorFilterId={setScheduleDoctorFilterId}
 				scheduleChairFilterId={scheduleChairFilterId}
 				setScheduleChairFilterId={setScheduleChairFilterId}
+				scheduleViewMode={scheduleViewMode}
+				setScheduleViewMode={setScheduleViewMode}
+				isSmartAiOpen={isSmartAiOpen}
+				onToggleSmartAi={() => setIsSmartAiOpen((prev) => !prev)}
+				onOpenDoctorFreeSlots={() => setDoctorFreeSlotsOpen(true)}
+				onEmergencyCitoBooking={handleEmergencyCitoBooking}
+				onQuickBooking={() => {
+					setQuickBookingSlot({
+						dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
+						doctorUserId: scheduleDoctorFilterId || null,
+						chairId: scheduleChairFilterId || null,
+						durationMinutes: 30,
+					});
+					setQuickBookingOpen(true);
+				}}
 			/>
 			{scheduleAdminSecretNeeded ? (
 				<fieldset
@@ -1303,60 +1394,9 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				setUseManualSelects={setUseManualSelects}
 				showCreateForm={showCreateForm}
 				setShowCreateForm={setShowCreateForm}
+				isSmartAiOpen={isSmartAiOpen}
+				setIsSmartAiOpen={setIsSmartAiOpen}
 			/>
-			{/* Панель переключения вида расписания и быстрой записи */}
-			<div className="schedule-view-mode-bar flex flex-wrap items-center justify-between gap-3 mt-4 mb-3 p-2.5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] min-w-0 max-w-full">
-				<div className="flex items-center gap-1 bg-[var(--paper)] p-1 rounded-xl border border-[var(--line)] shrink-0 flex-wrap" role="tablist" aria-label="Вид расписания">
-					<button
-						type="button"
-						onClick={() => setScheduleViewMode("timeline")}
-						className={`min-h-[44px] sm:min-h-[36px] px-3.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
-							scheduleViewMode === "timeline"
-								? "bg-[var(--teal-dark)] text-white shadow-xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
-						role="tab"
-						aria-selected={scheduleViewMode === "timeline"}
-					>
-						<List size={14} />
-						<span className="truncate">Лента по дням</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => setScheduleViewMode("grid")}
-						className={`min-h-[44px] sm:min-h-[36px] px-3.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
-							scheduleViewMode === "grid"
-								? "bg-[var(--teal-dark)] text-white shadow-xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
-						role="tab"
-						aria-selected={scheduleViewMode === "grid"}
-					>
-						<LayoutGrid size={14} />
-						<span className="truncate">Сетка по креслам</span>
-					</button>
-				</div>
-
-				<div className="flex items-center gap-2 shrink-0">
-					<button
-						type="button"
-						onClick={() => {
-							setQuickBookingSlot({
-								dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
-								doctorUserId: scheduleDoctorFilterId || null,
-								chairId: scheduleChairFilterId || null,
-								durationMinutes: 30,
-							});
-							setQuickBookingOpen(true);
-						}}
-						className="primary-button min-h-[44px] sm:min-h-[36px] px-4 py-1.5 rounded-xl bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer shrink-0"
-						title="Быстрая 1-клик запись на прием (горячая клавиша N)"
-					>
-						<Sparkles size={14} />
-						<span className="truncate">+ Быстрая запись (N)</span>
-					</button>
-				</div>
-			</div>
 
 			{scheduleViewMode === "grid" ? (
 				<ScheduleGrid
@@ -1478,6 +1518,24 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					activeVisitLockedAppointmentStatuses
 				}
 				appointmentReadinessById={appointmentReadinessById}
+			/>
+
+			<DoctorFreeSlotsModal
+				isOpen={doctorFreeSlotsOpen}
+				onClose={() => setDoctorFreeSlotsOpen(false)}
+				dashboard={dashboard}
+				initialDoctorId={scheduleDoctorFilterId}
+				onSelectSlot={(slot) => {
+					setQuickBookingSlot({
+						dateKey: slot.date,
+						startTime: slot.startTime,
+						startsAt: `${slot.date}T${slot.startTime}:00.000Z`,
+						doctorUserId: slot.doctorId || scheduleDoctorFilterId || null,
+						chairId: slot.chairId || null,
+						durationMinutes: slot.durationMinutes,
+					});
+					setQuickBookingOpen(true);
+				}}
 			/>
 
 			{/* Schedule Utilities & Widgets Panel */}

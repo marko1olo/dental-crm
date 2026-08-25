@@ -97,6 +97,18 @@ async function removeFixtureRows(): Promise<void> {
 		await db.execute(
 			sql`delete from bi_analytics_snapshots where organization_id = ${ORG_ID}`,
 		);
+		await db.execute(
+			sql`delete from clinical_tasks where organization_id = ${ORG_ID}`,
+		);
+		await db.execute(
+			sql`delete from patient_consents where organization_id = ${ORG_ID}`,
+		);
+		await db.execute(
+			sql`delete from generated_documents where organization_id = ${ORG_ID}`,
+		);
+		await db.execute(
+			sql`delete from visits where organization_id = ${ORG_ID}`,
+		);
 		await db.delete(payments).where(eq(payments.organizationId, ORG_ID));
 		await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
 		await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));

@@ -316,6 +316,34 @@
       "when": 1787154118139,
       "tag": "0044_plain_stingray",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1787400000000,
+      "tag": "0178_generated_documents_cda_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1787400001000,
+      "tag": "0179_service_catalog_items_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1787400002000,
+      "tag": "0180_service_catalog_items_order_804n_code",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1787400003000,
+      "tag": "0181_inventory_transfer_items",
+      "breakpoints": true
     }
   ]
 }

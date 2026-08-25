@@ -1,14 +1,18 @@
-# Progress: Challenger M1-1
+# Progress — challenger_m1_1
 
-Last visited: 2026-08-14T16:02:00Z
+**Last visited**: 2026-08-18T17:33:30Z
+**Current Step**: Completed adversarial test suite, empirical benchmarks, and writing handoff.md.
 
-## Status
-Starting empirical challenge and stress-testing of Milestone M1.
-
-## Plan
-1. [ ] Check 1: Linter leak strings in JSX / DOM across modified files and codebase.
-2. [ ] Check 2: Mobile touch targets (>= 44x44px) in CSS rules and components.
-3. [ ] Check 3: Dark theme contrast, whiteout overrides (`#fff` in dark mode), and theme variables.
-4. [ ] Check 4: Intrusive toast silencing verification (inline fallbacks & error handling).
-5. [ ] Check 5: Run static gates (`npm run check:encoding`, `npm run typecheck`) and theme/unit tests.
-6. [ ] Formulate findings, stress-test edge cases, write handoff.md, and send message to parent.
+## Plan & Status
+- [x] Step 1: Initialize DISPATCH, BRIEFING, progress.
+- [x] Step 2: Read required authority documents:
+  - `C:/Clinic_MVP/dental-crm/.agents/ORIGINAL_REQUEST.md`
+  - `C:/Clinic_MVP/dental-crm/PROJECT.md`
+  - `C:/Clinic_MVP/dental-crm/.agents/AGENTS.md`
+  - `C:/Clinic_MVP/dental-crm/.agents/worker_m1/handoff.md`
+  - `apps/api/src/services/egisz/EgiszAuditService.ts`
+  - `apps/api/src/services/egisz/EgiszAuditService.test.ts`
+- [x] Step 3: Run base test suite & typecheck.
+- [x] Step 4: Construct and run comprehensive empirical adversarial test suites in `apps/api/src/services/egisz/EgiszAuditService.adversarial.test.ts` (39/39 tests total passing).
+- [x] Step 5: Document findings, edge case analysis, and blast radius.
+- [ ] Step 6: Produce handoff.md with verdict and send message to parent.

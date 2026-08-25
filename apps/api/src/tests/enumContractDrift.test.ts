@@ -822,16 +822,6 @@ const NO_CONTRACT_PAIR: readonly {
 			"именованного экспорта.",
 	},
 	{
-		exportName: "communicationCampaignStatus",
-		reason:
-			"Контракта НЕТ вовсе: ни campaignStatus, ни communicationCampaignStatus в packages/shared/src не " +
-			"встречается, безымянного литерала с набором draft/scheduled/running/completed/cancelled там тоже " +
-			"нет. Перечисление живое: им типизирована колонка status в db/communicationsSchema.ts, значения " +
-			"ставят services/communications/campaigns.ts и routes/communicationsOutbox.ts. До этой правки " +
-			"перепись не видела его ВОВСЕ — оно объявлено не в schema.ts. Долг ведущему: packages/shared вне " +
-			"зоны участка.",
-	},
-	{
 		exportName: "communicationConsentScope",
 		reason:
 			"Контракта НЕТ вовсе: значений service/marketing в packages/shared/src не встречается. Перечисление " +
@@ -873,6 +863,18 @@ const NO_CONTRACT_PAIR: readonly {
 			"paymentMethodSchema — ДРУГОЙ набор из семи значений, уже спаренный с pgEnum payment_method: в нём " +
 			"нет dms и installment_balance, зато есть лишние bank_transfer, online, insurance, other. Способ " +
 			"оплаты в кассовой книге — это деньги, и проверять его чужим набором нельзя. Долг ведущему.",
+	},
+	{
+		exportName: "clinicalTaskStatus",
+		reason:
+			"Контракта НЕТ вовсе: clinicalTaskStatus (pending/in_progress/completed/cancelled) типизирует клинические задачи " +
+			"в db/schema.ts. Долг ведущему: перенести контракт в packages/shared.",
+	},
+	{
+		exportName: "egiszOutboxStatus",
+		reason:
+			"Контракта НЕТ вовсе: egiszOutboxStatus (pending/signed/transmitted/accepted/rejected/failed) типизирует " +
+			"исходящие сообщения ЕГИСЗ в db/schema.ts. Долг ведущему: перенести контракт в packages/shared.",
 	},
 ];
 

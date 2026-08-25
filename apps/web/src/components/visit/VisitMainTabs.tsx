@@ -24,7 +24,7 @@ export function VisitMainTabs({
 }: VisitMainTabsProps): ReactElement {
 	return (
 		<div
-			className="visit-sub-nav-tabs flex items-center gap-2 my-4 overflow-x-auto whitespace-nowrap scrollbar-none w-full max-w-full pb-1 shrink-0 overscroll-x-contain"
+			className="visit-sub-nav-tabs flex items-center gap-2 my-2 sm:my-3 overflow-x-auto whitespace-nowrap scrollbar-none w-full max-w-full pb-1 shrink-0 overscroll-x-contain"
 			role="tablist"
 			aria-label="Разделы визита"
 		>

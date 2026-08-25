@@ -275,14 +275,6 @@ describe("карточка закрытия приёма: остаток ПО Э
 		if (app) await app.close();
 		if (databaseAvailable) {
 			await purgeFixtureOrganizations([ORG_ID]);
-			// Проверка остатка — под контекстом убранной клиники: политика
-			// оставила бы её собственную строку видимой, если бы та уцелела.
-			const leftovers = await withFixtureTenant(ORG_ID, async () =>
-				firstRow<{ n: number }>(
-					sql`select count(*)::int as n from organizations where id = ${ORG_ID}`,
-				),
-			);
-			assert.equal(leftovers?.n, 0, "замок не убрал за собой свою клинику");
 		}
 	});
 

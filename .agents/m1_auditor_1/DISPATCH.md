@@ -1,14 +1,24 @@
-# DISPATCH — M1 Auditor 1 (Forensic Integrity Verification)
+## 2026-08-18T17:22:04Z
+You are the Forensic Auditor for Milestone M1 in DENTE Dental CRM at C:/Clinic_MVP/dental-crm.
+Your working directory is C:/Clinic_MVP/dental-crm/.agents/m1_auditor_1. Create and maintain progress.md and write your final audit report to handoff.md in your directory.
 
-## 2026-08-09T12:04:35Z
+Read the authoritative documents:
+- C:/Clinic_MVP/dental-crm/PROJECT.md
+- C:/Clinic_MVP/dental-crm/.agents/ORIGINAL_REQUEST.md
+- C:/Clinic_MVP/dental-crm/.agents/AGENTS.md
+- C:/Clinic_MVP/dental-crm/.agents/sub_orch_m1/worker_m1/handoff.md
 
-## Mission
-Perform forensic integrity verification on Milestone 1 work products (Playwright test suite, screenshot generation, code changes).
+Conduct an exhaustive integrity forensic audit:
+1. Audit touched files: `apps/web/src/hooks/domains/useOnboardingLogic.ts`, `apps/web/src/hooks/usePatientResource.ts`, `apps/web/src/hooks/domains/useDashboardLoaderLogic.ts`, `apps/web/src/browserContinuity.ts`.
+2. Verify:
+   - ZERO hardcoded test outputs or dummy return values.
+   - ZERO mock interfaces or stub shortcuts in production code.
+   - ZERO test circumventions or altered test assertions to mask failures.
+   - 100% genuine implementations.
+3. Run verification:
+   - npm run typecheck
+   - npm test -w @dental/web
+   - npm test -w @dental/shared
+   - npm run check:encoding
 
-## Instructions
-1. Read `C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md`.
-2. Perform forensic audit against project integrity standards:
-   - Check if any test results, screenshot buffers, or verification strings were hardcoded or fake.
-   - Check if dummy/facade implementations were introduced.
-   - Verify live execution logs and output files in `C:\Users\Admin\.gemini\antigravity\brain\67e66496-7d3f-4df1-8f98-31bd016dcb96\`.
-3. Write your forensic audit report to `C:\Clinic_MVP\dental-crm\.agents\m1_auditor_1\handoff.md`. Specify your explicit verdict: CLEAN or INTEGRITY VIOLATION.
+Provide an explicit binary verdict (CLEAN or INTEGRITY VIOLATION) in handoff.md and notify the orchestrator via send_message.

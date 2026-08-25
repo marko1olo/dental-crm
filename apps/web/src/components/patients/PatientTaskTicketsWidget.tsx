@@ -253,7 +253,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 							{pendingCount > 0 && (
 								/* БЫЛО: «3 активн.» — обрубленное слово с точкой вместо
 								   согласования с числом. */
-								<span className="bg-sky-600 text-white px-2 py-0.5 rounded-full text-[11px] font-bold">
+								<span className="bg-sky-600 text-white px-2.5 py-0.5 rounded-full text-xs font-bold">
 									в работе: {pendingCount}
 								</span>
 							)}
@@ -263,7 +263,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 				<button
 					type="button"
 					onClick={() => setIsAdding(!isAdding)}
-					className={`border-0 rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-all ${
+					className={`border-0 rounded-xl px-3.5 py-2 min-h-[44px] text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-all ${
 						isAdding
 							? "bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200"
 							: "bg-sky-50 dark:bg-sky-950 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 hover:bg-sky-100 dark:hover:bg-sky-900"
@@ -367,7 +367,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 							<div className="flex gap-2 justify-end mt-4">
 								<button
 									type="button"
-									className="ghost-button text-slate-600 dark:text-slate-300 hover:underline cursor-pointer"
+									className="ghost-button text-slate-600 dark:text-slate-300 hover:underline cursor-pointer min-h-[44px] px-3.5 py-2 inline-flex items-center justify-center"
 									onClick={() => setIsAdding(false)}
 								>
 									Отмена
@@ -376,7 +376,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 									type="submit"
 									disabled={isSubmitting}
 									aria-busy={isSubmitting}
-									className="primary-button bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+									className="primary-button bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 min-h-[44px] rounded-xl font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center"
 								>
 									{isSubmitting ? "Создание..." : "Создать задачу"}
 								</button>
@@ -439,7 +439,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 									<button
 										type="button"
 										onClick={() => handleToggleStatus(ticket.id, ticket.status)}
-										className={`bg-transparent border-0 p-0 cursor-pointer transition-colors flex mt-0.5 ${
+										className={`bg-transparent border-0 p-0 cursor-pointer transition-colors flex mt-0.5 min-h-[44px] min-w-[44px] items-center justify-center ${
 											isPending
 												? "text-slate-400 dark:text-slate-500 hover:text-sky-600"
 												: "text-emerald-500"
@@ -493,7 +493,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 										disabled={deletingId === ticket.id}
 										aria-busy={deletingId === ticket.id}
 										onClick={() => handleDelete(ticket.id)}
-										className="bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-600 p-2 rounded-lg cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+										className="bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-600 p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 										title="Удалить задачу"
 									>
 										<Trash2 size={16} />

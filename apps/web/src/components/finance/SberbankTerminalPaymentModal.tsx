@@ -1,9 +1,8 @@
-import { ExternalLink } from "lucide-react";
+import { AlertCircle, Banknote, Coins, ExternalLink, QrCode, RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { money } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 
@@ -13,7 +12,10 @@ export type SberbankTerminalPaymentModalProps = {
 	amountInRubles: number;
 	onClose: () => void;
 	onSuccess: () => void;
+	onSelectAlternativeMethod?: (method: "sbp" | "cash" | "deposit") => void;
 };
+
+const TERMINAL_POLL_TIMEOUT_SEC = 60;
 
 export function SberbankTerminalPaymentModal({
 	isOpen,
@@ -21,6 +23,7 @@ export function SberbankTerminalPaymentModal({
 	amountInRubles,
 	onClose,
 	onSuccess,
+	onSelectAlternativeMethod,
 }: SberbankTerminalPaymentModalProps) {
 	const [status, setStatus] = useState<
 		"idle" | "initiating" | "polling" | "success" | "error"
@@ -28,19 +31,9 @@ export function SberbankTerminalPaymentModal({
 	const [orderId, setOrderId] = useState<string | null>(null);
 	const [formUrl, setFormUrl] = useState<string | null>(null);
 	const [errorMsg, setErrorMsg] = useState("");
+	const [secondsElapsed, setSecondsElapsed] = useState(0);
 	const { auth } = useAppLogicContext();
 
-	/*
-	 * СИНХРОННЫЙ ЗАМОК, А НЕ ФЛАГ СОСТОЯНИЯ. Состояние в React обновляется
-	 * асинхронно: между щелчком и перерисовкой с `disabled` есть окно, куда
-	 * проходит второй щелчок. Для кнопки, запускающей списание с карты, этого
-	 * окна достаточно, чтобы уйти двум запросам. `useRef` меняется синхронно и
-	 * закрывает окно; `status` остаётся для отрисовки.
-	 *
-	 * Клиентская защита — только удобство, а не гарантия. Настоящая защита от
-	 * повтора — ключ идемпотентности на стороне сервера; здесь его нет, потому
-	 * что нет и самой интеграции (см. ниже).
-	 */
 	const inFlight = useRef(false);
 
 	const initiatePayment = useCallback(async () => {
@@ -54,20 +47,8 @@ export function SberbankTerminalPaymentModal({
 		inFlight.current = true;
 		setStatus("initiating");
 		setErrorMsg("");
+		setSecondsElapsed(0);
 		try {
-			/*
-			 * АДРЕС ИСПРАВЛЕН. Здесь стоял `/api/sberbank/initiate` — маршрута с
-			 * таким путём НЕ СУЩЕСТВУЕТ во всём API (проверено поиском по
-			 * apps/api: объявлены только `/api/sberbank/pay` и
-			 * `/api/sberbank/status/:orderId`). Кнопка оплаты всегда получала
-			 * 404, а кнопка «Повторить» повторяла тот же 404.
-			 *
-			 * Настоящий маршрут отвечает 501: интеграции со Сбербанком в сборке
-			 * нет (ни одного обращения к API банка, ни переменных окружения, ни
-			 * тестов). Прежде он отвечал выдуманным успехом и помечал счёт
-			 * оплаченным без денег — это убрано. Здесь показываем врачу честную
-			 * причину вместо безымянного отказа.
-			 */
 			const res = await fetch("/api/sberbank/pay", {
 				method: "POST",
 				headers: {
@@ -89,7 +70,7 @@ export function SberbankTerminalPaymentModal({
 			const data = await res.json().catch(() => ({}));
 			if (!res.ok) {
 				throw new Error(
-					data.message || data.error || "Не удалось запустить оплату",
+					data.message || data.error || "Не удалось запустить оплату на терминале Сбербанк",
 				);
 			}
 
@@ -101,10 +82,9 @@ export function SberbankTerminalPaymentModal({
 		} catch (err) {
 			setStatus("error");
 			setErrorMsg(
-				err instanceof Error ? err.message : "Не удалось запустить терминал",
+				err instanceof Error ? err.message : "Не удалось запустить терминал Сбербанка (Arcus2/TTK)",
 			);
 		} finally {
-			// Снимать замок обязательно и на отказе, иначе «Повторить» мертва.
 			inFlight.current = false;
 		}
 	}, [amountInRubles, patientId, auth]);
@@ -121,27 +101,27 @@ export function SberbankTerminalPaymentModal({
 			setOrderId(null);
 			setFormUrl(null);
 			setErrorMsg("");
+			setSecondsElapsed(0);
 		}
 	}, [isOpen]);
 
+	// Polling and timeout countdown
 	useEffect(() => {
 		if (status !== "polling" || !orderId) return;
 
+		const timer = setInterval(() => {
+			setSecondsElapsed((prev) => {
+				if (prev >= TERMINAL_POLL_TIMEOUT_SEC) {
+					setStatus("error");
+					setErrorMsg("Время ожидания ответа эквайрингового терминала Сбербанк (Arcus2/TTK) истекло (Таймаут).");
+					return prev;
+				}
+				return prev + 1;
+			});
+		}, 1000);
+
 		const interval = setInterval(async () => {
 			try {
-				/*
-				 * ЗАГОЛОВКИ ЗДЕСЬ ОБЯЗАТЕЛЬНЫ. Запрос уходил голым, тогда как
-				 * маршрут закрыт `requirePermission(..., "finance.write")`, а
-				 * соседний вызов в этом же файле заголовки подставляет. Итог —
-				 * 403 на каждом опросе, и окно висело в «ожидании оплаты», пока
-				 * врач не закроет его вручную.
-				 *
-				 * `res.ok` проверяется отдельно: промис `fetch` на 403 и 500 не
-				 * отклоняется, поэтому без проверки тело отказа разбиралось как
-				 * состояние платежа, а `data.status` оказывался undefined —
-				 * ни ветка успеха, ни ветка отказа не срабатывали, и опрос шёл
-				 * вечно.
-				 */
 				const res = await fetch(`/api/sberbank/status/${orderId}`, {
 					headers:
 						auth && typeof auth.denteClinicalReadHeaders === "function"
@@ -149,8 +129,6 @@ export function SberbankTerminalPaymentModal({
 							: {},
 				});
 				if (!res.ok) {
-					// 404 / 500 во время опроса — не повод ронять модалку сразу:
-					// временная сетевая ошибка не значит, что платёж отклонён.
 					return;
 				}
 				const data = (await res.json().catch(() => ({}))) as {
@@ -177,6 +155,7 @@ export function SberbankTerminalPaymentModal({
 				if (isSuccess) {
 					setStatus("success");
 					clearInterval(interval);
+					clearInterval(timer);
 					showToast("Оплата через терминал успешно принята", "success");
 					setTimeout(() => {
 						onSuccess();
@@ -190,13 +169,17 @@ export function SberbankTerminalPaymentModal({
 							"Оплата отклонена банком или истекло время ожидания.",
 					);
 					clearInterval(interval);
+					clearInterval(timer);
 				}
 			} catch (err) {
 				logger.error("Sberbank status poll error", err);
 			}
 		}, 3000);
 
-		return () => clearInterval(interval);
+		return () => {
+			clearInterval(interval);
+			clearInterval(timer);
+		};
 	}, [status, orderId, auth, onSuccess, onClose]);
 
 	const handleClose = () => {
@@ -207,6 +190,13 @@ export function SberbankTerminalPaymentModal({
 			)
 		) {
 			return;
+		}
+		onClose();
+	};
+
+	const handleChooseAlternative = (method: "sbp" | "cash" | "deposit") => {
+		if (onSelectAlternativeMethod) {
+			onSelectAlternativeMethod(method);
 		}
 		onClose();
 	};
@@ -226,7 +216,7 @@ export function SberbankTerminalPaymentModal({
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50"
+			className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="sber-terminal-modal-title"
@@ -235,101 +225,135 @@ export function SberbankTerminalPaymentModal({
 			}}
 		>
 			<div
-				className="w-full max-w-md p-6 rounded-2xl shadow-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
+				className="w-full max-w-lg p-6 rounded-2xl shadow-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] space-y-4"
 			>
-				<h2
-					id="sber-terminal-modal-title"
-					className="text-xl font-bold mb-4 mt-0 text-[var(--ink)]"
-				>
-					Оплата через терминал Сбербанка
-				</h2>
-				<div className="text-base mb-5 text-[var(--muted)]">
-					Сумма к оплате: <strong className="text-[var(--ink)] font-bold">{money(amountInRubles)}</strong>
+				<div className="flex items-center justify-between border-b border-[var(--line,#e2e8f0)] pb-3">
+					<h2
+						id="sber-terminal-modal-title"
+						className="text-lg sm:text-xl font-bold m-0 text-[var(--ink,#0f172a)]"
+					>
+						Оплата через терминал Сбербанка
+					</h2>
+					<span className="px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+						Arcus2 / Pilot-NT
+					</span>
+				</div>
+
+				<div className="text-sm text-[var(--muted,#64748b)]">
+					Сумма к оплате:{" "}
+					<strong className="text-[var(--ink,#0f172a)] font-mono text-base font-bold">
+						{money(amountInRubles)}
+					</strong>
 				</div>
 
 				{status === "initiating" && (
-					<div style={{ color: "var(--teal, #0d9488)" }}>
-						Отправка запроса на терминал...
+					<div className="p-4 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-700 dark:text-teal-300 text-xs sm:text-sm font-semibold flex items-center gap-2">
+						<RotateCcw className="w-4 h-4 animate-spin shrink-0" />
+						<span>Отправка запроса на терминал Сбербанк...</span>
 					</div>
 				)}
 
 				{status === "polling" && (
-					<div style={{ marginBottom: "16px" }}>
-						<div style={{ color: "var(--teal, #0d9488)", fontWeight: "bold" }}>
-							Ожидание оплаты клиентом на терминале...
+					<div className="space-y-3 p-4 rounded-xl bg-teal-500/5 border border-teal-500/20">
+						<div className="flex items-center justify-between text-xs sm:text-sm">
+							<span className="text-teal-700 dark:text-teal-300 font-bold">
+								Ожидание оплаты клиентом на терминале...
+							</span>
+							<span className="font-mono text-xs text-[var(--muted,#64748b)]">
+								{TERMINAL_POLL_TIMEOUT_SEC - secondsElapsed}с
+							</span>
 						</div>
+
 						{formUrl && (
-							<div style={{ marginTop: "12px", marginBottom: "12px" }}>
+							<div className="pt-1">
 								<a
 									href={formUrl}
 									target="_blank"
 									rel="noopener noreferrer"
-									className="primary-button"
-									style={{
-										display: "inline-flex",
-										alignItems: "center",
-										gap: "8px",
-										textDecoration: "none",
-										minHeight: "44px",
-									}}
+									className="min-h-[44px] px-4 py-2.5 rounded-xl bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] text-xs font-bold inline-flex items-center gap-2 hover:opacity-90 transition-opacity"
 								>
 									<ExternalLink size={16} />
-									Открыть страницу оплаты / QR Сбербанк
+									<span>Открыть страницу оплаты / QR Сбербанк</span>
 								</a>
 							</div>
 						)}
-						<div
-							style={{
-								color: "var(--bad-fg, #ef4444)",
-								fontSize: "13px",
-								marginTop: "6px",
-							}}
-						>
-							Внимание: при закрытии окна во время оплаты транзакция на
-							терминале не отменяется.
-						</div>
+						<p className="text-xs text-rose-600 dark:text-rose-400 m-0">
+							Внимание: при закрытии окна во время оплаты транзакция на терминале не отменяется.
+						</p>
 					</div>
 				)}
 
 				{status === "success" && (
-					<div style={{ color: "var(--ok-fg, #10b981)", fontWeight: "bold" }}>
+					<div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold text-sm">
 						Оплата успешно проведена!
 					</div>
 				)}
 
 				{status === "error" && (
-					<div style={{ color: "var(--bad-fg, #ef4444)", marginBottom: "16px" }}>
-						Ошибка: {errorMsg}
+					<div className="space-y-4">
+						<div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs sm:text-sm space-y-1">
+							<div className="flex items-center gap-2 font-bold">
+								<AlertCircle size={18} className="shrink-0" />
+								<span>Сбой эквайринга Сбербанк</span>
+							</div>
+							<p className="m-0 text-xs">{errorMsg}</p>
+						</div>
+
+						{/* Automated Alternative Payment Suggestions HUD */}
+						<div className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] space-y-2.5">
+							<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] block">
+								Предложите пациенту альтернативный способ оплаты:
+							</span>
+
+							<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+								<button
+									type="button"
+									onClick={() => handleChooseAlternative("sbp")}
+									className="min-h-[44px] p-2 rounded-xl border border-teal-500/40 bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+								>
+									<QrCode size={16} className="shrink-0" />
+									<span>СБП / QR</span>
+								</button>
+
+								<button
+									type="button"
+									onClick={() => handleChooseAlternative("cash")}
+									className="min-h-[44px] p-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+								>
+									<Banknote size={16} className="shrink-0" />
+									<span>Наличные</span>
+								</button>
+
+								<button
+									type="button"
+									onClick={() => handleChooseAlternative("deposit")}
+									className="min-h-[44px] p-2 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+								>
+									<Coins size={16} className="shrink-0" />
+									<span>Депозит / Семья</span>
+								</button>
+							</div>
+						</div>
 					</div>
 				)}
 
-				<div
-					style={{
-						display: "flex",
-						justifyContent: "flex-end",
-						gap: "12px",
-						marginTop: "24px",
-					}}
-				>
+				<div className="flex justify-end gap-2 pt-2">
 					{status === "error" && (
 						<button
 							type="button"
-							className="primary-button"
-							style={{ minHeight: "44px" }}
+							className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] text-xs font-bold hover:opacity-90 cursor-pointer transition-all"
 							onClick={initiatePayment}
-							disabled={status !== "error"}
 						>
-							Повторить
+							Повторить запрос на терминал
 						</button>
 					)}
 					<button
 						type="button"
-						className="secondary-button"
-						style={{ minHeight: "44px" }}
+						className="min-h-[44px] px-4 py-2 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-xs font-bold hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer transition-all"
 						onClick={handleClose}
-						disabled={status === "initiating" || status === "success"}
+						disabled={status === "initiating"}
 					>
-						Отмена
+						Закрыть
 					</button>
 				</div>
 			</div>

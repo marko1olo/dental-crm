@@ -248,16 +248,22 @@ describe("воронка планов лечения на экране анал�
 				]);
 
 				type AppointmentStatus = (typeof appointments.status)["_"]["data"];
-				const startsAt = new Date();
+				const baseTime = Date.now();
+				let offset = 0;
 				await db.insert(appointments).values(
 					Object.entries(APPOINTMENTS_BY_STATUS).flatMap(([status, count]) =>
-						Array.from({ length: count }, () => ({
-							organizationId: ORG_ID,
-							patientId: PATIENT_ID,
-							status: status as AppointmentStatus,
-							startsAt,
-							endsAt: new Date(startsAt.getTime() + 30 * 60_000),
-						})),
+						Array.from({ length: count }, () => {
+							const slotStart = new Date(baseTime + offset * 3600_000);
+							const slotEnd = new Date(baseTime + offset * 3600_000 + 30 * 60_000);
+							offset++;
+							return {
+								organizationId: ORG_ID,
+								patientId: PATIENT_ID,
+								status: status as AppointmentStatus,
+								startsAt: slotStart,
+								endsAt: slotEnd,
+							};
+						}),
 					),
 				);
 			});

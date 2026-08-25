@@ -1,46 +1,62 @@
-# BRIEFING — 2026-08-08T21:03:00Z
+# BRIEFING — 2026-08-18T17:34:50Z
 
 ## Mission
-Adversarial challenge of Milestone 1 worker handoff, focusing on React Error Boundary checks in smoke.spec.ts and web typechecks.
+Adversarially re-challenge and verify Milestone M1 in DENTE Dental CRM after worker remediation (worker_m1_fix). Run empirical test suites, check type correctness, stress-test fixes, and issue verdict (CONFIRMED/FAILED).
 
 ## 🔒 My Identity
 - Archetype: EMPIRICAL CHALLENGER
 - Roles: critic, specialist
-- Working directory: C:\Clinic_MVP\dental-crm\.agents\m1_challenger_2
-- Original parent: e922dda7-e65d-472b-b0e5-727b9201e7c4
-- Milestone: Milestone 1
-- Instance: 2 of 2
+- Working directory: C:/Clinic_MVP/dental-crm/.agents/m1_challenger_2
+- Original parent: 38f38ce3-5ee7-4e3c-a670-421f2ce2e52a
+- Milestone: M1
+- Instance: 1 of 1
 
 ## 🔒 Key Constraints
-- Review-only — do NOT modify implementation code (report any failures as findings)
-- Empirical validation required: must run typechecks, test React Error Boundary logic empirically, verify smoke tests pass and fail when expected.
-
-## Attack Surface
-- **Hypotheses tested**: 
-  1. `npm run typecheck -w @dental/web` passes cleanly (CONFIRMED: Exit code 0).
-  2. `npx playwright test tests/e2e/smoke.spec.ts` passes 5/5 as claimed by worker 1 (DISPROVED: Fails on Spec 2, 1 failed, 4 passed).
-  3. React Error Boundary check in `smoke.spec.ts` test 5 correctly detects Error Boundary trigger states (DISPROVED: checks for non-existent strings "Something went wrong" / "Что-то пошло не так" instead of actual DENTE CRM Error Boundary text "не открылось" / "Раздел временно не открылся").
-- **Vulnerabilities found**: Broken test assertion oracle in `smoke.spec.ts` line 211-212; failing E2E spec 2 when auth tokens removed.
-- **Untested angles**: None within Milestone 1 scope.
+- Review-only — do NOT modify implementation code (report findings/failures)
+- Must execute verification code empirically via terminal/tests
+- Never trust worker claims without reproduction
+- Must check:
+  1. apps/web/src/__tests__/m1AdversarialRemediation.test.ts executes & passes
+  2. npm test -w @dental/web passes with 0 failures
+  3. npm run typecheck passes with 0 errors
+- Provide explicit verdict (CONFIRMED or FAILED)
 
 ## Current Parent
-- Conversation ID: e922dda7-e65d-472b-b0e5-727b9201e7c4
-- Updated: 2026-08-08T21:03:00Z
+- Conversation ID: 38f38ce3-5ee7-4e3c-a670-421f2ce2e52a
+- Updated: 2026-08-18T17:34:50Z
 
 ## Review Scope
-- **Files to review**: `C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md`, `C:\Clinic_MVP\dental-crm\.agents\m1_worker_1\handoff.md`, `apps/web/tests/e2e/smoke.spec.ts`, `apps/web/src/workspaceRouteErrorBoundary.tsx`, `apps/web/src/bootErrorBoundary.tsx`, `apps/web/src/components/ErrorBoundary.tsx`
-- **Interface contracts**: `C:\Clinic_MVP\dental-crm\.agents\AGENTS.md`
-- **Review criteria**: Error boundary crash testing empirical verification, zero error boundary crashes in normal execution, typecheck validity.
+- **Files reviewed**:
+  - C:/Clinic_MVP/dental-crm/PROJECT.md
+  - C:/Clinic_MVP/dental-crm/.agents/ORIGINAL_REQUEST.md
+  - C:/Clinic_MVP/dental-crm/.agents/AGENTS.md
+  - C:/Clinic_MVP/dental-crm/.agents/worker_m1_fix/handoff.md
+  - apps/web/src/__tests__/m1AdversarialRemediation.test.ts
+  - apps/web/src/hooks/domains/useDashboardLoaderLogic.ts
+  - apps/web/src/browserContinuity.ts
+- **Interface contracts**: PROJECT.md & AGENTS.md
+- **Review criteria**: Empirical test verification, zero mock violations, typecheck pass, encoding check pass
+
+## Attack Surface
+- **Hypotheses tested**:
+  - React Hook Dispatcher SSR evaluation in Node.js test environment (`renderHookProbe` via `react-dom/server` `renderToStaticMarkup`).
+  - Stale response rejection race condition on parallel `loadDashboard` calls.
+  - 401/403 session expiration toast suppression and unlock state activation.
+  - 500 server error and network drop toast generation without unlock corruption.
+  - IndexedDB and browser storage continuity in non-DOM/SSR contexts.
+- **Vulnerabilities found**: None in the remediated M1 web suite.
+- **Untested angles**: Full Playwright browser UI e2e run (outside M1 scope).
+
+## Loaded Skills
+- None explicitly requested as external skill dumps
 
 ## Key Decisions Made
-- Executed `npm run typecheck -w @dental/web` (Passed 0 errors).
-- Executed unit tests `src/tests/workspaceRouteErrorBoundary.test.ts` & `src/tests/moduleErrorBoundary.test.ts` (15/15 passed).
-- Executed E2E Playwright test `npx playwright test tests/e2e/smoke.spec.ts` (1 failed, 4 passed).
-- Discovered false-negative assertion flaw in `smoke.spec.ts` Error Boundary checks.
-- Rendered verdict: REQUEST_CHANGES.
+- Executed all required verification test suites directly in shell.
+- Confirmed `m1AdversarialRemediation.test.ts` (12/12 pass), `@dental/web` test suite (1463/1463 pass), and monorepo `npm run typecheck` (exit code 0).
+- Issued verdict: **CONFIRMED**.
 
 ## Artifact Index
-- C:\Clinic_MVP\dental-crm\.agents\m1_challenger_2\DISPATCH.md — incoming prompt log
-- C:\Clinic_MVP\dental-crm\.agents\m1_challenger_2\BRIEFING.md — context and state tracking
-- C:\Clinic_MVP\dental-crm\.agents\m1_challenger_2\progress.md — liveness heartbeat
-- C:\Clinic_MVP\dental-crm\.agents\m1_challenger_2\handoff.md — final handoff report
+- C:/Clinic_MVP/dental-crm/.agents/m1_challenger_2/DISPATCH.md
+- C:/Clinic_MVP/dental-crm/.agents/m1_challenger_2/BRIEFING.md
+- C:/Clinic_MVP/dental-crm/.agents/m1_challenger_2/progress.md
+- C:/Clinic_MVP/dental-crm/.agents/m1_challenger_2/handoff.md

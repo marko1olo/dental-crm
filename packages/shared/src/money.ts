@@ -33,3 +33,11 @@ export const nonNegativeMoneyRubSchema = moneyRubSchema.refine(
 		message: "сумма не может быть отрицательной",
 	},
 );
+
+/**
+ * Форматирует целые копейки в строку рублей с двумя знаками ("150.00").
+ */
+export function formatKopecksToRubles(kopecks: number): string {
+	if (!Number.isFinite(kopecks)) return "0.00";
+	return (Math.round(kopecks) / 100).toFixed(2);
+}

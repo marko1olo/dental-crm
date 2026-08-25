@@ -424,12 +424,12 @@ describe("контраст правок считается по палитре, 
 		// Пока это так, все цифры в комментариях считаются по main.css.
 		assert.equal(
 			winningToken("--muted", "light"),
-			"#64748b",
+			"#475569",
 			"светлый --muted сменил источник — цифры в комментариях устарели",
 		);
 		assert.equal(
 			winningToken("--muted", "dark"),
-			"#94a3b8",
+			"#cbd5e1",
 			"тёмный --muted сменил источник — цифры в комментариях устарели",
 		);
 		assert.equal(winningToken("--paper", "light"), "#ffffff");

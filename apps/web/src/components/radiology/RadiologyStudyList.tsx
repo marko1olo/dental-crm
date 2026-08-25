@@ -334,7 +334,7 @@ export const RadiologyStudyList: React.FC<RadiologyStudyListProps> = ({
 										>
 											<Activity className="w-4 h-4" />
 											<div className="flex flex-col">
-												<span className="text-[10px] uppercase font-bold tracking-wider opacity-80">
+												<span className="text-xs uppercase font-bold tracking-wider opacity-80">
 													Доза
 												</span>
 												<span className="text-sm font-bold tracking-tight">

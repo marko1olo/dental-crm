@@ -1,38 +1,63 @@
-# BRIEFING — 2026-08-09T12:05:10Z
+# BRIEFING — 2026-08-18T17:27:00Z
 
 ## Mission
-Empirically and adversarially verify the 121 PNG screenshot files in `C:\Users\Admin\.gemini\antigravity\brain\67e66496-7d3f-4df1-8f98-31bd016dcb96\`. Check MD5 hashes, sizes (>= 20 KB), and 4-state matrix coverage. Produce handoff report with verdict (APPROVE or REQUEST_CHANGES).
+Adversarially challenge and empirically verify Milestone M1 (Compiler Gate & Core Hydration/Toast Remediation) in DENTE Dental CRM.
 
 ## 🔒 My Identity
-- Archetype: empirical challenger
+- Archetype: challenger
 - Roles: critic, specialist
-- Working directory: C:\Clinic_MVP\dental-crm\.agents\m1_challenger_1
-- Original parent: 67e66496-7d3f-4df1-8f98-31bd016dcb96
-- Milestone: M1 Screenshot Audit & Verification
+- Working directory: C:/Clinic_MVP/dental-crm/.agents/m1_challenger_1
+- Original parent: 38f38ce3-5ee7-4e3c-a670-421f2ce2e52a
+- Milestone: M1
 - Instance: 1 of 1
 
 ## 🔒 Key Constraints
-- Review-only — do NOT modify implementation code
-- Run all verification code ourselves. Do NOT trust unverified claims.
-- Check exact size (>= 20 KB), duplicate MD5 hashes, and 4-state matrix coverage.
+- Review-only — do NOT modify implementation code (report findings/bugs, test harnesses for verification)
+- Empirical proof only — verify claims with executed code and tests
+- Zero-mock policy & zero-skimming policy
+- Clean up any temporary files
 
 ## Current Parent
-- Conversation ID: 67e66496-7d3f-4df1-8f98-31bd016dcb96
-- Updated: 2026-08-09T12:05:10Z
+- Conversation ID: 38f38ce3-5ee7-4e3c-a670-421f2ce2e52a
+- Updated: 2026-08-18T17:27:00Z
 
 ## Review Scope
-- **Target folder**: `C:\Users\Admin\.gemini\antigravity\brain\67e66496-7d3f-4df1-8f98-31bd016dcb96\`
-- **Original request**: `C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md`
-- **Dispatch instruction**: `C:\Clinic_MVP\dental-crm\.agents\m1_challenger_1\DISPATCH.md`
+- **Files to review**:
+  - `apps/web/src/hooks/usePatientResource.ts`
+  - `apps/web/src/hooks/domains/useDashboardLoaderLogic.ts`
+  - `apps/web/src/browserContinuity.ts`
+  - `apps/web/src/hooks/domains/useOnboardingLogic.ts`
+  - `apps/web/src/__tests__/m1AdversarialRemediation.test.ts`
+  - Worker handoff: `.agents/sub_orch_m1/worker_m1/handoff.md`
+- **Interface contracts**:
+  - `PROJECT.md`, `ORIGINAL_REQUEST.md`, `AGENTS.md`
+- **Review criteria**:
+  - Compiler cleanliness (`npm run typecheck`)
+  - Unit/integration test pass (`npm test -w @dental/web`)
+  - Resource cancellation & reload reactivity
+  - 401/403 silence vs 500/network error alerting
+  - IndexedDB continuity failure resilience without unhandled errors/toasts
+
+## Attack Surface
+- **Hypotheses tested**:
+  - H1: `usePatientResource.ts` re-triggers fetch on `_reloadToken` change and aborts previous in-flight requests (CONFIRMED).
+  - H2: `useDashboardLoaderLogic.ts` suppresses toasts and sets `accessUnlockRequired` on 401/403, and emits `showToast` on 500/network drops (CONFIRMED).
+  - H3: `browserContinuity.ts` `browserIndexedDbWritable()` returns false without unhandled exceptions or toasts in Node/SSR/quota-error environments (CONFIRMED).
+  - H4: Worker M1's claim that `npm test -w @dental/web` passes 1451/1451 tests (DISPROVEN: `m1AdversarialRemediation.test.ts` crashes with 5 `TypeError` exceptions due to calling React hooks directly in Node tests without a React render harness).
+- **Vulnerabilities found**:
+  - Test Suite Defect: `apps/web/src/__tests__/m1AdversarialRemediation.test.ts` fails `npm test -w @dental/web` with exit code 1.
+- **Untested angles**: None within M1 scope.
+
+## Loaded Skills
+- None loaded
 
 ## Key Decisions Made
-- Executed empirical verification script `verify_screenshots.cjs`.
-- Found file size check passes (all 121 PNGs >= 20 KB).
-- Found MD5 duplicate check CRITICAL FAIL (7 duplicate clusters across 107 files; only 21 unique PNG contents out of 121 files).
-- Found 4-state matrix coverage CRITICAL FAIL (16 views missing PC_Dark state).
-- Formulated verdict: `REQUEST_CHANGES`.
+- Executed empirical 3-stage stress test harness across all 4 files.
+- Discovered test failure in `m1AdversarialRemediation.test.ts`.
+- Formulated final verdict: Code Implementation CONFIRMED, Test Suite Gate FAILED.
 
 ## Artifact Index
-- `BRIEFING.md` — Agent working memory
-- `progress.md` — Liveness heartbeat
-- `handoff.md` — Final verification report and verdict (REQUEST_CHANGES)
+- `.agents/m1_challenger_1/BRIEFING.md` — persistent working memory
+- `.agents/m1_challenger_1/progress.md` — liveness heartbeat & task progress
+- `.agents/m1_challenger_1/DISPATCH.md` — incoming dispatches
+- `.agents/m1_challenger_1/handoff.md` — complete 5-component handoff report

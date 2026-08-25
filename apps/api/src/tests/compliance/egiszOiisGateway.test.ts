@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
 	buildEgiszRemdSubmissionPackage,
 	canonicalizeCdaXml,
+	type EgiszRemdPackage,
 } from "../../services/cda/signature.js";
 import {
 	OiisGatewayClient,
@@ -166,4 +167,44 @@ describe("EGISZ REMD Dental SEMD 108 & OIIS Gateway Client Tests", () => {
 		assert.equal(verification.valid, true);
 		assert.equal(verification.count, 1);
 	});
+
+	it("1.7 OiisGatewayClient handles SEMD 101, 104, 130 and foreign citizen documents without SNILS", async () => {
+		const client = new OiisGatewayClient({ isSandbox: true });
+
+		for (const docType of ["101", "104", "130"]) {
+			const pkg = {
+				documentId: `DOC-${docType}-TEST-001`,
+				documentVersion: 1,
+				xmlCanonicalPayload: `<ClinicalDocument xmlns="urn:hl7-org:v3"><code code="${docType}"/></ClinicalDocument>`,
+				doctorSignature: {
+					signatureBase64: "MIIBagYJKoZIhvcNAQcCoIIBWzCCAVcCAQExDzAN...",
+					certificateSerialNumber: "20267701001",
+					certificateSubject: "Лечащий врач",
+					signedAt: new Date().toISOString(),
+					algorithmOid: "1.2.643.7.1.1.1.1",
+				},
+				metadata: {
+					patientSnils: undefined, // Foreign citizen without SNILS
+					clinicOid: "1.2.643.5.1.13.13.12.2.77.1001",
+					docTypeNsiCode: docType,
+				},
+			};
+
+			const res = await client.sendRemdDocument(pkg as unknown as EgiszRemdPackage);
+			assert.equal(res.success, true, `SEMD ${docType} should be accepted`);
+			assert.equal(res.status, "Sent");
+			assert.ok(res.transactionId);
+		}
+	});
+
+	it("1.8 calculateEgiszRetryDelayMs implements exponential backoff delays", async () => {
+		const { calculateEgiszRetryDelayMs } = await import("../../services/egisz/EgiszOutboxDispatcher.js");
+
+		assert.equal(calculateEgiszRetryDelayMs(1), 5_000); // 5s
+		assert.equal(calculateEgiszRetryDelayMs(2), 30_000); // 30s
+		assert.equal(calculateEgiszRetryDelayMs(3), 300_000); // 5m
+		assert.equal(calculateEgiszRetryDelayMs(4), 3_600_000); // 1h
+		assert.equal(calculateEgiszRetryDelayMs(5), 86_400_000); // 24h
+	});
 });
+

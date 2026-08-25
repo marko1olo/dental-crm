@@ -1,5 +1,12 @@
 import { isValidFdiToothNumber } from "@dental/shared";
 import type { DiaryState } from "../components/useVisitDiaryLogic";
+import {
+	ANESTHESIA_DRUGS,
+	calculateAnesthesiaSafety,
+	checkAnesthesiaSomaticContraindications,
+	type AnesthesiaDrugKey,
+	type SomaticRiskProfile,
+} from "../components/visit/anesthesiaCalculatorEngine";
 
 /** Поверхности зуба по стандарту стоматологической карты */
 export type ToothSurfaceKey = "O" | "M" | "D" | "B" | "V" | "L" | "P";
@@ -115,12 +122,112 @@ export const PATIENT_RECOMMENDATIONS: readonly PatientRecommendationItem[] = [
 		text: "Замена зубной щетки на мягкую (Soft), деликатная гигиеническая чистка без травматизации оперированной / леченной зоны.",
 	},
 	{
+		id: "composite_warranty",
+		label: "🛡️ Гарантия на пломбу (12–24 мес)",
+		category: "general",
+		text: "Гарантийный срок на световую композитную реставрацию составляет 12–24 месяца (срок службы 24–36 месяцев) при условии соблюдения индивидуальной гигиены полости рта и прохождения профилактического осмотра не реже 1 раза в 6 месяцев.",
+	},
+	{
 		id: "followup_check",
 		label: "📅 Контрольный осмотр",
 		category: "general",
 		text: "Явка на контрольный осмотр через 7-10 дней. При возникновении непроходящей боли, отека или кровотечения — немедленно связаться с клиникой.",
 	},
 ];
+
+/** Конфигурация для расчета гарантийного срока реставрации */
+export interface RestorationWarrantyConfig {
+	readonly toothNumber?: number | string | undefined;
+	readonly surfacesCount?: number | undefined;
+	readonly surfaces?: readonly string[] | readonly ToothSurfaceKey[] | undefined;
+	readonly material?: "composite" | "gic" | "ceramic" | "amalgam" | string | undefined;
+	readonly cariesRisk?: "low" | "medium" | "high" | undefined;
+	readonly months?: number | undefined;
+	readonly serviceLifeMonths?: number | undefined;
+}
+
+/** Результат расчета гарантии на реставрацию */
+export interface RestorationWarrantyResult {
+	readonly warrantyMonths: number;
+	readonly serviceLifeMonths: number;
+	readonly warrantyTextRu: string;
+	readonly formattedWarrantyNote: string;
+}
+
+/**
+ * Автоматический расчет гарантийного срока на композитную реставрацию (12–24 мес)
+ * согласно клиническим рекомендациям СтАР и Закону РФ «О защите прав потребителей».
+ *
+ * Правила:
+ * - 1 поверхность (I, V класс): 24 мес (срок службы: 36 мес / 3 года)
+ * - 2 поверхности (II класс, MO/OD): 18 мес (срок службы: 36 мес)
+ * - 3+ поверхности (II класс MOD, IV класс, ИРОПЗ > 0.4): 12 мес (срок службы: 24 мес / 2 года)
+ * - Высокий кариесогенный риск: 12 мес (срок службы: 24 мес)
+ */
+export function calculateCompositeRestorationWarranty(
+	config?: RestorationWarrantyConfig,
+): RestorationWarrantyResult {
+	const numSurfaces = config?.surfaces?.length ?? config?.surfacesCount ?? 1;
+	const isHighRisk = config?.cariesRisk === "high";
+
+	let warrantyMonths = 24;
+	let serviceLifeMonths = 36;
+
+	if (numSurfaces >= 3 || isHighRisk) {
+		warrantyMonths = 12;
+		serviceLifeMonths = 24;
+	} else if (numSurfaces === 2) {
+		warrantyMonths = 18;
+		serviceLifeMonths = 36;
+	}
+
+	if (config?.months !== undefined) {
+		warrantyMonths = config.months;
+	}
+	if (config?.serviceLifeMonths !== undefined) {
+		serviceLifeMonths = config.serviceLifeMonths;
+	}
+
+	const toothSuffix = config?.toothNumber ? ` на зуб ${config.toothNumber}` : "";
+	const surfaceSuffix =
+		config?.surfaces && config.surfaces.length > 0
+			? ` (${config.surfaces.join(", ")})`
+			: "";
+	const warrantyTextRu = `Гарантийный срок на световую композитную реставрацию${toothSuffix}${surfaceSuffix}: ${warrantyMonths} мес. (срок службы: ${serviceLifeMonths} мес.).`;
+	const formattedWarrantyNote = `Гарантийные обязательства:\n- ${warrantyTextRu}\n- Условия сохранения гарантии: соблюдение индивидуальной гигиены полости рта, контрольный профилактический осмотр и проведение профессиональной гигиены не реже 1 раза в 6 месяцев.`;
+
+	return {
+		warrantyMonths,
+		serviceLifeMonths,
+		warrantyTextRu,
+		formattedWarrantyNote,
+	};
+}
+
+/**
+ * Неразрушающее добавление гарантийного срока в поле P (Лечение и рекомендации) SOAP-дневника.
+ */
+export function appendCompositeWarrantyToSoap(
+	diary: DiaryState,
+	warranty?: Partial<RestorationWarrantyConfig>,
+): DiaryState {
+	const cur = (diary.treatmentDescription ?? "").trim();
+	const res = calculateCompositeRestorationWarranty(warranty);
+	if (
+		cur.includes("Гарантийный срок на") ||
+		cur.includes("Гарантийные обязательства:")
+	) {
+		return diary;
+	}
+	const nextTreatment = cur
+		? `${cur}\n\n${res.formattedWarrantyNote}`
+		: res.formattedWarrantyNote;
+
+	return {
+		...diary,
+		treatmentDescription: nextTreatment,
+	};
+}
 
 /** Названия квадрантов зубов по FDI */
 const QUADRANT_NAMES: Record<number, string> = {
@@ -183,6 +290,61 @@ export function getToothAnatomicalNameRu(toothNumber: number): string {
 		: (PERMANENT_TOOTH_NAMES[pos] ?? "зуб");
 
 	return `${toothNumber} (${quadName} ${toothType})`;
+}
+
+/**
+ * Расшифровка номеров зубов простым русским языком (народное + анатомическое).
+ * Пример:
+ * - 16 -> "16: Верхняя правая шестерка (первый моляр)"
+ * - 11 -> "11: Верхняя правая единица (центральный резец)"
+ * - 38 -> "38: Нижний левый зуб мудрости (восьмерка)"
+ * - 55 -> "55: Верхняя правая молочная пятерка (второй моляр)"
+ */
+export function getToothFolkAndAnatomicalNameRu(toothNumber: number): string {
+	if (!isValidFdiToothNumber(toothNumber)) {
+		return `Зуб ${toothNumber}`;
+	}
+	const quadrant = Math.floor(toothNumber / 10);
+	const pos = toothNumber % 10;
+	const isPrimary = quadrant >= 5 && quadrant <= 8;
+
+	let locationPrefix = "";
+	switch (quadrant) {
+		case 1: locationPrefix = "Верхняя правая"; break;
+		case 2: locationPrefix = "Верхняя левая"; break;
+		case 3: locationPrefix = "Нижняя левая"; break;
+		case 4: locationPrefix = "Нижняя правая"; break;
+		case 5: locationPrefix = "Верхняя правая молочная"; break;
+		case 6: locationPrefix = "Верхняя левая молочная"; break;
+		case 7: locationPrefix = "Нижняя левая молочная"; break;
+		case 8: locationPrefix = "Нижняя правая молочная"; break;
+		default: locationPrefix = "Зуб"; break;
+	}
+
+	if (toothNumber === 18 || toothNumber === 28) {
+		return `${toothNumber}: ${quadrant === 1 ? "Верхний правый" : "Верхний левый"} зуб мудрости (восьмерка)`;
+	}
+	if (toothNumber === 38 || toothNumber === 48) {
+		return `${toothNumber}: ${quadrant === 4 ? "Нижний правый" : "Нижний левый"} зуб мудрости (восьмерка)`;
+	}
+
+	const folkNumbers: Record<number, string> = {
+		1: "единица",
+		2: "двойка",
+		3: "тройка",
+		4: "четверка",
+		5: "пятерка",
+		6: "шестерка",
+		7: "семерка",
+		8: "восьмерка",
+	};
+
+	const folkName = folkNumbers[pos] ?? "зуб";
+	const anatomicalType = isPrimary
+		? (PRIMARY_TOOTH_NAMES[pos] ?? "зуб")
+		: (PERMANENT_TOOTH_NAMES[pos] ?? "зуб");
+
+	return `${toothNumber}: ${locationPrefix} ${folkName} (${anatomicalType})`;
 }
 
 /**
@@ -273,13 +435,21 @@ export function generateSoapFromOdontogramFinding(
 					? `Зуб ${toothTitle}: Кариозное поражение на ${surfacesStr} поверхности. При осмотре: глубокая кариозная полость в пределах околопульпарного дентина, выполненная размягчённым пигментированным дентином. Зондирование дна болезненно. ЭОД — 15-20 мкА.`
 					: `Зуб ${toothTitle}: Кариозное поражение на ${surfacesStr} поверхности. При осмотре: кариозная полость средней глубины в пределах плащевого дентина. Дно и стенки плотные, пигментированные. Зондирование болезненно по эмалево-дентинной границе. Перкуссия безболезненна. ЭОД — 6-8 мкА.`;
 
+		const numSurfaces = finding.surfaces?.length ?? 1;
+		const warranty = calculateCompositeRestorationWarranty({
+			toothNumber: tooth,
+			surfaces: finding.surfaces,
+			surfacesCount: numSurfaces,
+			cariesRisk: isDeep ? "high" : "medium",
+		});
+
 		const treatmentDescription = isInitial
 			? `Зуб ${tooth}: Профессиональная гигиена и очищение поверхности. Медикаментозная антисептическая обработка. Аппликация реминерализирующей системы Icon / глубокое фторирование эмали фторлаком. Полировка.`
 			: isRoot
-				? `Анестезия (Артикаин 4% 1.7 мл). Препарирование пришеечной кариозной полости зуба ${tooth}, антисептическая обработка полости (хлоргексидин 2%). Реставрация светоотверждаемым стеклоиономерным цементом (СИЦ) / компомером с моделированием анатомической формы. Шлифовка, полировка, защитный лак.`
+				? `Анестезия (Артикаин 4% 1.7 мл). Препарирование пришеечной кариозной полости зуба ${tooth}, антисептическая обработка полости (хлоргексидин 2%). Реставрация светоотверждаемым стеклоиономерным цементом (СИЦ) / компомером с моделированием анатомической формы. Шлифовка, полировка, защитный лак.\n\n${warranty.formattedWarrantyNote}`
 				: isDeep
-					? `Препарирование кариозной полости зуба ${tooth} на ${surfacesStr} поверхности, полная щадящая некрэктомия. Изоляция коффердамом. Антисептическая медикаментозная обработка полости 2% раствором хлоргексидина биглюконата. Лечебная прокладка Ca(OH)2 точечно на дно, изолирующая прокладка СИЦ. Адгезивный протокол: кислотное травление 37% ортофосфорной кислотой (etching), нанесение адгезивной системы (adhesive: праймер + бонд), фотополимеризация 20 сек. Послойное моделирование наногибридным светоотверждаемым композитом (composite layer) с восстановлением окклюзионной анатомии и контактного пункта. Окклюзионная пришлифовка по копирке, шлифовка и полировка (polishing: диски, полиры, паста) до сухого зеркального блеска.`
-					: `Препарирование кариозной полости зуба ${tooth} на ${surfacesStr} поверхности, полная некрэктомия, формирование эмалевого фальца. Изоляция рабочего поля коффердамом. Медикаментозная антисептическая обработка 2% раствором хлоргексидина биглюконата. Кислотное травление эмали и дентина 37% ортофосфорной кислотой (etching: эмаль 20 сек, дентин 10 сек), тщательное смывание водой, деликатное подсушивание воздухом. Нанесение адгезивной системы (adhesive: праймер + бонд), экспозиция и втирание 20 сек, раздувание, фотополимеризация 20 сек. Послойное моделирование наногибридным светоотверждаемым композитом (composite layer) с восстановлением анатомических бугров, фиссур и контактного пункта. Окклюзионная коррекция по копирке, шлифовка и финишная полировка (polishing: алмазные боры, диски, силиконовые головки, полировочная паста) до сухого зеркального блеска.`;
+					? `Препарирование кариозной полости зуба ${tooth} на ${surfacesStr} поверхности, полная щадящая некрэктомия. Изоляция коффердамом. Антисептическая медикаментозная обработка полости 2% раствором хлоргексидина биглюконата. Лечебная прокладка Ca(OH)2 точечно на дно, изолирующая прокладка СИЦ. Адгезивный протокол: кислотное травление 37% ортофосфорной кислотой (etching), нанесение адгезивной системы (adhesive: праймер + бонд), фотополимеризация 20 сек. Послойное моделирование наногибридным светоотверждаемым композитом (composite layer) с восстановлением окклюзионной анатомии и контактного пункта. Окклюзионная пришлифовка по копирке, шлифовка и полировка (polishing: диски, полиры, паста) до сухого зеркального блеска.\n\n${warranty.formattedWarrantyNote}`
+					: `Препарирование кариозной полости зуба ${tooth} на ${surfacesStr} поверхности, полная некрэктомия, формирование эмалевого фальца. Изоляция рабочего поля коффердамом. Медикаментозная антисептическая обработка 2% раствором хлоргексидина биглюконата. Кислотное травление эмали и дентина 37% ортофосфорной кислотой (etching: эмаль 20 сек, дентин 10 сек), тщательное смывание водой, деликатное подсушивание воздухом. Нанесение адгезивной системы (adhesive: праймер + бонд), экспозиция и втирание 20 сек, раздувание, фотополимеризация 20 сек. Послойное моделирование наногибридным светоотверждаемым композитом (composite layer) с восстановлением анатомических бугров, фиссур и контактного пункта. Окклюзионная коррекция по копирке, шлифовка и финишная полировка (polishing: алмазные боры, диски, силиконовые головки, полировочная паста) до сухого зеркального блеска.\n\n${warranty.formattedWarrantyNote}`;
 
 		return {
 			toothNumber: tooth,
@@ -290,8 +460,7 @@ export function generateSoapFromOdontogramFinding(
 			anamnesis,
 			statusLocalis,
 			treatmentDescription,
-			recommendations:
-				"Не принимать пищу в течение 2 часов до окончания действия анестезии. Щадящая диета 2-3 дня. Контрольный осмотр при возникновении дискомфорта.",
+			recommendations: `Не принимать пищу в течение 2 часов до окончания действия анестезии. Щадящая диета 2-3 дня. Гарантийный срок на реставрацию: ${warranty.warrantyMonths} мес. Контрольный осмотр и профгигиена через 6 месяцев.`,
 		};
 	}
 
@@ -308,7 +477,7 @@ export function generateSoapFromOdontogramFinding(
 
 		const statusLocalis = `Зуб ${toothTitle}: Пульпит. На ${surfacesStr} поверхности определяется глубокая кариозная полость, заполненная размягчённым дентином, сообщающаяся с полостью зуба. Зондирование вскрытой точки рога пульпы резко болезненно, сопровождается кровоточивостью. Перкуссия зуба слабочувствительна. Термопроба резко положительна с длительным болевым последействием. ЭОД — 25-45 мкА. Рентгенограмма: глубокий дефект твердых тканей, периодонтальная щель без патологических изменений.`;
 
-		const treatmentDescription = `Зуб ${tooth}: Эндодонтическое лечение. Проводниковая/инфильтрационная анестезия (Артикаин 4% 1.7 мл). Препарирование кариозной полости, раскрытие полости зуба, создание прямолинейного эндодонтического доступа. Изоляция коффердамом. Витальная экстирпация пульпы / девитализация. Определение рабочей длины корневых каналов электронным апекслокатором и контрольной визиографией. Механическая инструментальная обработка каналов NiTi ротационными файлами (canal instrumentation) по методике Crown-Down с обильной медикаментозной ирригацией 3% гипохлоритом натрия (NaOCl) и 17% ЭДТА с ультразвуковой активацией. Высушивание стерильными бумажными штифтами. Временная лечебная паста Calcept (гидроксид кальция) под герметичную повязку / трехмерная обтурация каналов гуттаперчей с эпоксидным силером (gutta-percha obturation) методом латеральной/вертикальной конденсации. Рентген-контроль обтурации. Восстановление коронковой части зуба композитом.`;
+		const treatmentDescription = `Зуб ${tooth}: Эндодонтическое лечение. Инфильтрационная/проводниковая анестезия (Артикаин 4% с эпинефрином 1:100 000 / 1:200 000, 1.7 мл). Препарирование кариозной полости, раскрытие полости зуба, создание прямолинейного эндодонтического доступа. Изоляция коффердамом. Витальная экстирпация пульпы / девитализация. Определение рабочей длины корневых каналов электронным апекслокатором и контрольной визиографией. Механическая инструментальная обработка каналов NiTi ротационными файлами (canal instrumentation) по методике Crown-Down с обильной медикаментозной ирригацией 3% гипохлоритом натрия (NaOCl) и 17% ЭДТА с ультразвуковой активацией. Высушивание стерильными бумажными штифтами. Временная лечебная паста Calcept (гидроксид кальция) под герметичную повязку / трехмерная обтурация каналов гуттаперчей с эпоксидным силером (gutta-percha obturation) методом латеральной/вертикальной конденсации. Рентген-контроль обтурации. Восстановление коронковой части зуба композитом.`;
 
 		return {
 			toothNumber: tooth,
@@ -346,8 +515,8 @@ export function generateSoapFromOdontogramFinding(
 			: `Коронка зуба ${toothTitle} девитализирована, серый оттенок / дефект пломбы. Зондирование безболезненно. Перкуссия слабочувствительна или безболезненна. Пальпация по переходной складке безболезненна. ЭОД > 100 мкА. Рентгенограмма: у верхушки корня определяется очаг деструкции костной ткани с четкими/нечеткими контурами (периапикальный очаг).`;
 
 		const treatmentDescription = isAcute
-			? `Анестезия (Артикаин 4% 1.7 мл). Создание эндодонтического доступа зуба ${tooth}, раскрытие полости, эвакуация распада из корневых каналов для создания оттока экссудата. Изоляция коффердамом. Определение рабочей длины. Инструментальная обработка каналов, обильная антисептическая ирригация (antiseptic irrigation: 0.05% хлоргексидин, теплый физраствор). Временное введение противовоспалительной пасты под герметичную повязку. Назначены НПВС, щадящая диета. Повторный прием через 3–5 дней.`
-			: `Анестезия (Артикаин 4% 1.7 мл). Раскрытие полости зуба ${tooth}, удаление старого пломбировочного материала / распломбировка и ревизия корневых каналов (canal desobturation). Прохождение каналов до физиологического апекса под контролем апекслокатора. Механическая и медикаментозная антисептическая обработка (NaOCl 3%, 2% хлоргексидин, ЭДТА 17%, УЗ-активация — antiseptic irrigation). Временная обтурация корневых каналов пастой на основе гидроксида кальция Calcept (calcium hydroxide) с целью антисептического воздействия и стимуляции остеогенеза. Постановка герметичной временной пломбы (Cavit / СИЦ). Контрольный визит через 10-14 дней для постоянного пломбирования.`;
+			? `Инфильтрационная/проводниковая анестезия (Артикаин 4% с эпинефрином 1:100 000 / 1:200 000, 1.7 мл). Создание эндодонтического доступа зуба ${tooth}, раскрытие полости, эвакуация распада из корневых каналов для создания оттока экссудата. Изоляция коффердамом. Определение рабочей длины. Инструментальная обработка каналов, обильная антисептическая ирригация (antiseptic irrigation: 0.05% хлоргексидин, теплый физраствор). Временное введение противовоспалительной пасты под герметичную повязку. Назначены НПВС, щадящая диета. Повторный прием через 3–5 дней.`
+			: `Инфильтрационная/проводниковая анестезия (Артикаин 4% с эпинефрином 1:100 000 / 1:200 000, 1.7 мл). Раскрытие полости зуба ${tooth}, удаление старого пломбировочного материала / распломбировка и ревизия корневых каналов (canal desobturation). Прохождение каналов до физиологического апекса под контролем апекслокатора. Механическая и медикаментозная антисептическая обработка (NaOCl 3%, 2% хлоргексидин, ЭДТА 17%, УЗ-активация — antiseptic irrigation). Временная обтурация корневых каналов пастой на основе гидроксида кальция Calcept (calcium hydroxide) с целью антисептического воздействия и стимуляции остеогенеза. Постановка герметичной временной пломбы (Cavit / СИЦ). Контрольный визит через 10-14 дней для постоянного пломбирования.`;
 
 		return {
 			toothNumber: tooth,
@@ -371,7 +540,9 @@ export function generateSoapFromOdontogramFinding(
 		stateNorm === "hygiene"
 	) {
 		const isPeriodontitis =
-			stateNorm.includes("periodontitis") || stateNorm.startsWith("k05.3");
+			stateNorm.includes("periodontitis") ||
+			stateNorm.startsWith("k05.3") ||
+			(finding.pocketDepthMm !== undefined && finding.pocketDepthMm > 3);
 		const depth = finding.pocketDepthMm ?? (isPeriodontitis ? 4 : 2);
 		const icd =
 			finding.icd10Override ||
@@ -407,6 +578,36 @@ export function generateSoapFromOdontogramFinding(
 			treatmentDescription,
 			recommendations:
 				"«Белая диета» 48 часов (без кофе, чая, ягод, свеклы). Замена зубной щетки на новую. Профилактический осмотр через 6 месяцев.",
+		};
+	}
+
+	// 5a. УДАЛЕНИЕ ВРЕМЕННОГО ЗУБА / ФИЗИОЛОГИЧЕСКАЯ СМЕНА (K00.6 / Primary Teeth 51–85)
+	const isPrimary = tooth >= 51 && tooth <= 85;
+	if (
+		isPrimary &&
+		(stateNorm === "extraction" ||
+			stateNorm === "to_extract" ||
+			stateNorm === "missing" ||
+			stateNorm === "exfoliation" ||
+			stateNorm === "resorption" ||
+			stateNorm.startsWith("k00.6"))
+	) {
+		const icd = finding.icd10Override || "K00.6";
+		const icdLabel = "Нарушения прорезывания зубов (физиологическая смена временного зуба)";
+		const anamnesis = `Жалобы на подвижность временного зуба ${toothTitle}, дискомфорт при приеме твердой пищи, физиологическая смена зуба.`;
+		const statusLocalis = `Зуб ${toothTitle}: Временный зуб. Физиологическая резорбция корней III степени (сохранена только коронковая часть). Подвижность зуба II-III степени. Слизистая оболочка бледно-розовая, без воспаления. Зачаток постоянного зуба в фазе прорезывания.`;
+		const treatmentDescription = `Аппликационная анестезия десны (гель Лидокаин 15% / Дисилан со вкусом клубники). Бережная люксация и удаление подвижной коронки временного зуба ${tooth} детскими анатомическими щипцами. Ревизия лунки. Гемостаз марлевым шариком (2-3 мин). Устойчивый кровяной сгусток. Выданы рекомендации родителям и ребенку.`;
+		return {
+			toothNumber: tooth,
+			toothNameRu: toothTitle,
+			diagnosisIcd10: icd,
+			diagnosisIcd10Label: icdLabel,
+			diagnosisTooth: String(tooth),
+			anamnesis,
+			statusLocalis,
+			treatmentDescription,
+			recommendations:
+				"Не пить и не принимать пищу 1.5–2 часа. Не полоскать рот активно (сохранять сгусток). Щадящая диета 1-2 дня. Медаль/подарок за смелость.",
 		};
 	}
 
@@ -645,16 +846,16 @@ export const CLINICAL_FAST_PRESETS: readonly FastClinicalPreset[] = [
 		label: "Кариес дентина",
 		badge: "K02.1",
 		description:
-			"Анестезия, препарирование, медобработка, травление, адгезив, пломба композитом светового отверждения, полировка.",
+			"Анестезия, препарирование, медобработка, травление, адгезив, пломба композитом светового отверждения, полировка, гарантия 12–24 мес.",
 		defaultIcd10: "K02.1",
 		anamnesis:
 			"Жалобы на кратковременные боли от температурных (холодное, горячее) и химических (сладкое, кислое) раздражителей, застревание пищи в межзубном промежутке.",
 		statusLocalis:
 			"При осмотре: кариозная полость средней глубины в пределах дентина. Зондирование слабоболезненно по эмалево-дентинной границе, дно и стенки плотные, пигментированные. Перкуссия безболезненна. Холодовая проба слабоположительная, быстропроходящая. ЭОД 6–8 мкА.",
 		treatmentDescription:
-			"Инфильтрационная/проводниковая анестезия. Препарирование кариозной полости, полная некрэктомия, формирование эмалевого фальца. Изоляция рабочего поля коффердамом. Медикаментозная обработка 2% раствором хлоргексидина биглюконата. Кислотное травление эмали и дентина 37% ортофосфорной кислотой (etching: эмаль 20 сек, дентин 10 сек), смывание водой, деликатное подсушивание воздухом без пересушивания. Нанесение адгезивной системы (adhesive: праймер + бонд), экспозиция 20 сек, раздувание, фотополимеризация 20 сек. Послойное моделирование наногибридным светоотверждаемым композитом (composite layer) с восстановлением анатомической формы бугров, фиссур и контактного пункта. Окклюзионная коррекция по копирке, шлифовка и полировка (polishing: диски, полиры, паста) до сухого зеркального блеска.",
+			"Инфильтрационная/проводниковая анестезия (Артикаин 4% 1.7 мл). Препарирование кариозной полости, полная некрэктомия, формирование эмалевого фальца. Изоляция рабочего поля коффердамом. Медикаментозная обработка 2% раствором хлоргексидина биглюконата. Кислотное травление эмали и дентина 37% ортофосфорной кислотой (etching: эмаль 20 сек, дентин 10 сек), смывание водой, деликатное подсушивание воздухом без пересушивания. Нанесение адгезивной системы (adhesive: праймер + бонд), экспозиция 20 сек, раздувание, фотополимеризация 20 сек. Послойное моделирование наногибридным светоотверждаемым композитом (composite layer) с восстановлением анатомической формы бугров, фиссур и контактного пункта. Окклюзионная коррекция по копирке, шлифовка и полировка (polishing: диски, полиры, паста) до сухого зеркального блеска.\n\nГарантийные обязательства:\n- Гарантийный срок на световую композитную реставрацию: 24 мес. (срок службы: 36 мес.).\n- Условия сохранения гарантии: соблюдение индивидуальной гигиены полости рта, контрольный профилактический осмотр не реже 1 раза в 6 месяцев.",
 		recommendations:
-			"Не принимать пищу в течение 2 часов до окончания действия анестезии. Щадящая диета 2-3 дня. Контрольный осмотр при возникновении дискомфорта.",
+			"Не принимать пищу в течение 2 часов до окончания действия анестезии. Щадящая диета 2-3 дня. Гарантийный срок на реставрацию: 24 мес. Контрольный осмотр и профгигиена через 6 месяцев.",
 	},
 	{
 		id: "pulpitis",
@@ -668,7 +869,7 @@ export const CLINICAL_FAST_PRESETS: readonly FastClinicalPreset[] = [
 		statusLocalis:
 			"Глубокая кариозная полость, сообщающаяся с полостью зуба. Зондирование вскрытой точки рога пульпы резко болезненно, сопровождается кровоточивостью. Перкуссия слабочувствительна. Термопроба резко положительна с длительным последействием. ЭОД 25–45 мкА. Рентгенологически: глубокий дефект твердых тканей, периодонтальная щель без деструктивных изменений.",
 		treatmentDescription:
-			"Проводниковая/инфильтрационная анестезия (Артикаин 4% 1.7 мл). Препарирование, раскрытие полости зуба, создание прямого эндодонтического доступа. Изоляция коффердамом. Витальная экстирпация пульпы из корневых каналов / девитализация. Определение рабочей длины корневых каналов апекслокатором и контрольной рентгенографией. Механическая инструментальная обработка каналов NiTi ротационными файлами (canal instrumentation) с обильной ирригацией 3% гипохлоритом натрия (NaOCl) и 17% ЭДТА с ультразвуковой активацией. Высушивание стерильными бумажными штифтами. Временная лечебная паста Calcept (гидроксид кальция) под герметичную повязку / трехмерная обтурация каналов гуттаперчей с эпоксидным силером (gutta-percha obturation) методом латеральной/вертикальной конденсации. Рентген-контроль обтурации. Восстановление коронковой части зуба.",
+			"Инфильтрационная/проводниковая анестезия (Артикаин 4% с эпинефрином 1:100 000 / 1:200 000, 1.7 мл). Препарирование, раскрытие полости зуба, создание прямого эндодонтического доступа. Изоляция коффердамом. Витальная экстирпация пульпы из корневых каналов / девитализация. Определение рабочей длины корневых каналов апекслокатором и контрольной рентгенографией. Механическая инструментальная обработка каналов NiTi ротационными файлами (canal instrumentation) с обильной ирригацией 3% гипохлоритом натрия (NaOCl) и 17% ЭДТА с ультразвуковой активацией. Высушивание стерильными бумажными штифтами. Временная лечебная паста Calcept (гидроксид кальция) под герметичную повязку / трехмерная обтурация каналов гуттаперчей с эпоксидным силером (gutta-percha obturation) методом латеральной/вертикальной конденсации. Рентген-контроль обтурации. Восстановление коронковой части зуба.",
 		recommendations:
 			"При болях — НПВС (Нимесил 100 мг / Ибупрофен 400 мг) по 1 таб. после еды. Не жевать на причинную сторону 2-3 дня. Контрольный осмотр через 7-14 дней.",
 	},
@@ -684,7 +885,7 @@ export const CLINICAL_FAST_PRESETS: readonly FastClinicalPreset[] = [
 		statusLocalis:
 			"Зуб девитализирован, серый оттенок коронки / дефект пломбы. Полость зуба вскрыта, зондирование устьев каналов безболезненно. Перкуссия слабочувствительна. Пальпация по переходной складке безболезненна. ЭОД > 100 мкА. Рентгенограмма: очаг деструкции костной ткани в периапикальной области у верхушки корня (периапикальный очаг).",
 		treatmentDescription:
-			"Анестезия (Артикаин 4% 1.7 мл). Раскрытие полости зуба, удаление старого пломбировочного материала, распломбировка и ревизия корневых каналов (canal desobturation). Прохождение каналов до апекса под контролем апекслокатора. Механическая и медикаментозная антисептическая обработка (antiseptic irrigation: NaOCl 3%, 2% хлоргексидин, ЭДТА 17%, УЗ-активация). Временная обтурация каналов пастой на основе гидроксида кальция Calcept (calcium hydroxide) для мощного антисептического действия и стимуляции остеогенеза. Наложение временной герметичной пломбы (Cavit / СИЦ). Контрольный визит через 10–14 дней.",
+			"Инфильтрационная/проводниковая анестезия (Артикаин 4% с эпинефрином 1:100 000 / 1:200 000, 1.7 мл). Раскрытие полости зуба, удаление старого пломбировочного материала, распломбировка и ревизия корневых каналов (canal desobturation). Прохождение каналов до апекса под контролем апекслокатора. Механическая и медикаментозная антисептическая обработка (antiseptic irrigation: NaOCl 3%, 2% хлоргексидин, ЭДТА 17%, УЗ-активация). Временная обтурация каналов пастой на основе гидроксида кальция Calcept (calcium hydroxide) для мощного антисептического действия и стимуляции остеогенеза. Наложение временной герметичной пломбы (Cavit / СИЦ). Контрольный визит через 10–14 дней.",
 		recommendations:
 			"Щадящая диета, НПВС при боли (Нимесулид 100 мг), ротовые ванночки с 0.05% хлоргексидином. Явка на контрольный прием через 10-14 дней.",
 	},
@@ -729,7 +930,7 @@ export function appendRecommendationToSoap(
 	diary: DiaryState,
 	recommendationText: string,
 ): DiaryState {
-	const cur = (diary.treatmentDescription ?? "").trim();
+	const cur = ((diary as any).treatmentPlan || diary.treatmentDescription || "").trim();
 	const recTrim = (recommendationText ?? "").trim();
 	if (!recTrim) return diary;
 	if (cur.includes(recTrim)) return diary;
@@ -750,12 +951,6 @@ export function appendRecommendationToSoap(
 		treatmentDescription: nextTreatment,
 	};
 }
-
-import type {
-	AnesthesiaDrugKey,
-	SomaticRiskProfile,
-} from "../components/visit/anesthesiaCalculatorEngine";
-import { checkAnesthesiaSomaticContraindications } from "../components/visit/anesthesiaCalculatorEngine";
 
 /** Пресет быстрого протоколирования анестезии */
 export interface AnesthesiaQuickPreset {
@@ -896,6 +1091,50 @@ export function checkSomaticAnesthesiaCompatibility(
 		drugKey,
 		somaticProfile: profile,
 	});
+}
+
+/**
+ * Автоматический расчет предельно допустимой дозы анестетика
+ * (Артикаин 4% — макс. 5 мг/кг / 0.125 мл/кг) при указании массы тела ребенка (кг).
+ */
+export function calculatePediatricAnesthesiaLimit(
+	weightKg: number,
+	drugKey: AnesthesiaDrugKey = "ultracain_ds",
+): {
+	weightKg: number;
+	maxDoseMgPerKg: number;
+	maxSafeDoseMg: number;
+	maxSafeVolumeMl: number;
+	maxSafeCarpules: number;
+	formattedSafetyNote: string;
+} {
+	const weight = Math.max(
+		5,
+		Math.min(
+			100,
+			Number.isFinite(weightKg) && weightKg > 0 ? weightKg : 20,
+		),
+	);
+	const drug = ANESTHESIA_DRUGS[drugKey] ?? ANESTHESIA_DRUGS.ultracain_ds;
+	const maxDoseMgPerKg = drug.maxDoseMgPerKgPediatric ?? 5.0; // 5.0 мг/кг для Артикаина
+	const maxSafeDoseMg = Math.round(weight * maxDoseMgPerKg * 10) / 10;
+	// 4% раствор = 40 мг/мл -> 5 мг/кг / 40 мг/мл = 0.125 мл/кг
+	const mgPerMl = drug.concentrationPct * 10; // 40 мг/мл для 4%
+	const maxSafeVolumeMl =
+		Math.round((maxSafeDoseMg / mgPerMl) * 100) / 100;
+	const maxSafeCarpules =
+		Math.round((maxSafeVolumeMl / drug.volumeMlPerCarpule) * 10) / 10;
+
+	const formattedSafetyNote = `Расчет дозы анестетика по массе тела ребенка (${weight} кг):\n• Препарат: ${drug.commercialName} (${drug.activeSubstance})\n• Предельная педиатрическая доза: ${maxDoseMgPerKg} мг/кг (макс. ${maxSafeDoseMg} мг)\n• Предельный объем: ${maxSafeVolumeMl} мл (макс. ${maxSafeCarpules} карпулы по ${drug.volumeMlPerCarpule} мл)`;
+
+	return {
+		weightKg: weight,
+		maxDoseMgPerKg,
+		maxSafeDoseMg,
+		maxSafeVolumeMl,
+		maxSafeCarpules,
+		formattedSafetyNote,
+	};
 }
 
 /**
@@ -1054,3 +1293,881 @@ export function appendAnesthesiaToSoap(
 		treatmentDescription: `${anestheticText}\n${curTreatment}`,
 	};
 }
+
+/**
+ * 1-клик пресеты карпульной анестезии для клинического дневника 043/у.
+ */
+export interface CarpuleAnesthesiaPreset {
+	readonly key: string;
+	readonly title: string;
+	readonly shortLabel: string;
+	readonly description: string;
+	readonly text: string;
+	readonly hasAdrenaline: boolean;
+	readonly adrenalineRatio: "1:100000" | "1:200000" | "none";
+}
+
+export const CARPULE_ANESTHESIA_PRESETS: readonly CarpuleAnesthesiaPreset[] = [
+	{
+		key: "articaine_100k",
+		title: "Артикаин 4% + Адреналин 1:100 000",
+		shortLabel: "Артикаин 1:100k",
+		description: "Стандарт терапия / хирургия",
+		text: "Анестезия инфильтрационная/проводниковая (Артикаин 4% с адреналином 1:100 000, 1.7 мл). Обезболивание глубокое, наступило через 2-3 минуты.",
+		hasAdrenaline: true,
+		adrenalineRatio: "1:100000",
+	},
+	{
+		key: "articaine_200k",
+		title: "Артикаин 4% + Адреналин 1:200 000",
+		shortLabel: "Артикаин 1:200k",
+		description: "Сосудистый щадящий режим",
+		text: "Анестезия инфильтрационная/проводниковая (Артикаин 4% с адреналином 1:200 000, 1.7 мл). Щадящий кардиоваскулярный режим. Обезболивание наступило через 3 минуты.",
+		hasAdrenaline: true,
+		adrenalineRatio: "1:200000",
+	},
+	{
+		key: "scandonest_mepivacaine_3",
+		title: "Мепивакаин (Скандонест) 3% без вазоконстриктора",
+		shortLabel: "Скандонест 3% (без адреналина)",
+		description: "Для гипертоников, ССЗ, глаукомы, аллергии на сульфиты, беременных",
+		text: "Анестезия инфильтрационная/проводниковая (Мепивакаин 3% без вазоконстриктора, 1.7 мл). Препарат выбора при сопутствующей кардиоваскулярной патологии и гипертонии. Обезболивание адекватное.",
+		hasAdrenaline: false,
+		adrenalineRatio: "none",
+	},
+];
+
+export interface AnesthesiaRiskEvaluation {
+	readonly hasHypertensionRisk: boolean;
+	readonly detectedAnestheticWithAdrenaline: boolean;
+	readonly isWarningTriggered: boolean;
+	readonly warningMessage?: string | undefined;
+}
+
+/**
+ * Автоматическая оценка кардиоваскулярных рисков при выборе анестетика.
+ */
+export function evaluateAnesthesiaRisk(
+	anamnesisText?: string,
+	treatmentPlanText?: string,
+	patientMedicalAlerts?: readonly string[] | string,
+): AnesthesiaRiskEvaluation {
+	const textToSearch = [
+		anamnesisText || "",
+		Array.isArray(patientMedicalAlerts) ? patientMedicalAlerts.join(" ") : (patientMedicalAlerts || ""),
+	].join(" ").toLowerCase();
+
+	const HYPERTENSION_PATTERNS = [
+		/гипертон/i,
+		/гипертенз/i,
+		/i10/i,
+		/i11/i,
+		/i15/i,
+		/высокое\s*давлен/i,
+		/ад\s*(?:>|>=|выше|140|150|160|170|180)/i,
+		/артериальн.*давлен/i,
+		/ибс/i,
+		/стенокард/i,
+		/кардио/i,
+		/инфаркт/i,
+		/инсульт/i,
+		/аритми/i,
+	];
+
+	const hasHypertensionRisk = HYPERTENSION_PATTERNS.some((p) => p.test(textToSearch));
+
+	const treatmentLower = (treatmentPlanText || "").toLowerCase();
+	const ADRENALINE_PATTERNS = [
+		/1:100\s*000/i,
+		/1:200\s*000/i,
+		/1:100k/i,
+		/1:200k/i,
+		/адреналин/i,
+		/эпинефрин/i,
+		/форте/i,
+		/септанест/i,
+		/ультракаин\s*д-с/i,
+	];
+
+	const detectedAnestheticWithAdrenaline = ADRENALINE_PATTERNS.some((p) => p.test(treatmentLower));
+	const isWarningTriggered = hasHypertensionRisk && detectedAnestheticWithAdrenaline;
+
+	const warningMessage = isWarningTriggered
+		? "⚠️ Внимание: У пациента в анамнезе зафиксирована гипертония / риск ССЗ. Применение анестетика с адреналином требует осторожности (макс. 0.04 мг адреналина / 2 карпулы). Рекомендуется Мепивакаин (Скандонест) 3% без вазоконстриктора."
+		: undefined;
+
+	return {
+		hasHypertensionRisk,
+		detectedAnestheticWithAdrenaline,
+		isWarningTriggered,
+		warningMessage,
+	};
+}
+
+/** Результат расчета карпульной анестезии и дозировок по массе тела */
+export interface AnesthesiaCarpuleCalculation {
+	readonly drugKey: AnesthesiaDrugKey;
+	readonly drugName: string;
+	readonly activeSubstance: string;
+	readonly carpulesCount: number;
+	readonly patientWeightKg: number;
+	readonly isPediatric: boolean;
+	readonly volumeMl: number;
+	readonly activeDoseMg: number;
+	readonly maxSafeDoseMg: number;
+	readonly maxSafeCarpules: number;
+	readonly epinephrineMg: number;
+	readonly maxSafeEpinephrineMg: number;
+	readonly safetyPercentage: number;
+	readonly isOverdose: boolean;
+	readonly isCardioRestricted: boolean;
+	readonly safetyLevel: "safe" | "caution" | "warning" | "danger";
+	readonly warningMessage?: string | undefined;
+	readonly formattedSafetyNote: string;
+	readonly formattedTreatmentSnippet: string;
+}
+
+/**
+ * Автоматический расчет предельной безопасной дозы анестетика по весу пациента и числу карпул.
+ */
+export function calculateAnesthesiaCarpulesSafety(params: {
+	readonly drugKey?: string | undefined;
+	readonly carpulesCount?: number | undefined;
+	readonly patientWeightKg?: number | undefined;
+	readonly isPediatric?: boolean | undefined;
+	readonly patientAgeYears?: number | null | undefined;
+	readonly somaticProfile?: SomaticRiskProfile | undefined;
+	readonly toothNumber?: number | string | undefined;
+	readonly methodNameRu?: string | undefined;
+}): AnesthesiaCarpuleCalculation {
+	const rawKey = params.drugKey || "ultracain_ds";
+	const drugKey = (
+		rawKey === "articaine_100k"
+			? "ultracain_ds_forte"
+			: rawKey === "articaine_200k"
+				? "ultracain_ds"
+				: rawKey === "scandonest_mepivacaine_3"
+					? "scandonest_3"
+					: rawKey in ANESTHESIA_DRUGS
+						? rawKey
+						: "ultracain_ds"
+	) as AnesthesiaDrugKey;
+
+	const weight = Math.max(
+		10,
+		Math.min(
+			250,
+			Number.isFinite(params.patientWeightKg) && (params.patientWeightKg ?? 0) > 0
+				? (params.patientWeightKg ?? 70)
+				: 70,
+		),
+	);
+	const carpules = Math.max(
+		0.25,
+		Number.isFinite(params.carpulesCount) && (params.carpulesCount ?? 0) > 0
+			? (params.carpulesCount ?? 1)
+			: 1,
+	);
+
+	const safety = calculateAnesthesiaSafety({
+		drugKey,
+		patientWeightKg: weight,
+		carpulesCount: carpules,
+		patientAgeYears: params.patientAgeYears,
+		isPediatric: params.isPediatric,
+		somaticProfile: params.somaticProfile,
+	});
+
+	const toothSuffix = params.toothNumber ? ` в области зуба ${params.toothNumber}` : "";
+	const method = params.methodNameRu || "Инфильтрационная/проводниковая";
+	const formattedTreatmentSnippet = `Анестезия: ${method}${toothSuffix} — ${safety.drug.commercialName} (${safety.drug.activeSubstance}) ${carpules} карп. (${safety.totalVolumeMl} мл, ${safety.totalDoseMg} мг). Обезболивание глубокое, наступило через 2–3 мин.`;
+
+	const formattedSafetyNote = `Расчет дозировки: ${safety.drug.commercialName} • Введено: ${carpules} карп. (${safety.totalVolumeMl} мл / ${safety.totalDoseMg} мг) • Предел по весу ${weight} кг: макс. ${safety.maxSafeCarpules} карп. (${safety.maxSafeDoseMg} мг) • ${safety.safetyPercentage}% от предела безопасности.`;
+
+	return {
+		drugKey: safety.drug.key,
+		drugName: safety.drug.commercialName,
+		activeSubstance: safety.drug.activeSubstance,
+		carpulesCount: carpules,
+		patientWeightKg: weight,
+		isPediatric: safety.isPediatric,
+		volumeMl: safety.totalVolumeMl,
+		activeDoseMg: safety.totalDoseMg,
+		maxSafeDoseMg: safety.maxSafeDoseMg,
+		maxSafeCarpules: safety.maxSafeCarpules,
+		epinephrineMg: safety.totalEpinephrineMg,
+		maxSafeEpinephrineMg: safety.maxSafeEpinephrineMg,
+		safetyPercentage: safety.safetyPercentage,
+		isOverdose: safety.safetyRatio >= 1.0,
+		isCardioRestricted: safety.isCardioRestricted,
+		safetyLevel: safety.safetyLevel,
+		warningMessage: safety.warningMessage ?? undefined,
+		formattedSafetyNote,
+		formattedTreatmentSnippet,
+	};
+}
+
+/**
+ * Идентификаторы ключевых послеоперационных памяток пациенту.
+ */
+export type PostOpMemoId = "surgery_extraction" | "anesthesia_caries" | "endodontics";
+
+/**
+ * Структурированная послеоперационная памятка пациенту.
+ */
+export interface PostOpPatientMemo {
+	readonly id: PostOpMemoId;
+	readonly title: string;
+	readonly shortTitle: string;
+	readonly icon: string;
+	readonly badge: string;
+	readonly category: "surgery" | "therapy" | "endodontics";
+	readonly summary: string;
+	readonly keyRules: readonly string[];
+	readonly urgentTriggers: readonly string[];
+}
+
+/**
+ * Набор официальных послеоперационных клинических памяток пациенту.
+ */
+export const POST_OP_PATIENT_MEMOS: readonly PostOpPatientMemo[] = [
+	{
+		id: "surgery_extraction",
+		title: "Памятка пациенту после удаления зуба и хирургических манипуляций",
+		shortTitle: "Памятка: Удаление / Хирургия",
+		icon: "🧊",
+		badge: "Хирургия 043/у",
+		category: "surgery",
+		summary: "Правила послеоперационного ухода за лункой, режим холода, гигиена и приём НПВП.",
+		keyRules: [
+			"🚫 Не полоскать рот и лунку активно в первые 24–48 часов, чтобы не вымыть кровяной сгусток (основа заживления).",
+			"🧊 Холод местно: прикладывать сухой холод (лед через полотенце) к щеке на 15 минут с перерывами 30 минут в первые 3–4 часа.",
+			"🔥 Не греть щеку, исключить горячие ванны, сауны, бани и тяжелые физические нагрузки на 3–5 дней.",
+			"💊 Обезболивание: при возникновении болевого синдрома принять НПВП (Нимесил 100 мг или Ибупрофен 400 мг) по 1 таб. после еды.",
+			"🍲 Щадящая диета: негорячая, мягкая пища; жевать строго на противоположной (неоперированной) стороне 2–3 дня.",
+			"🩸 При умеренном промокании слюны кровью — прикусить стерильный марлевый тампон на 15–20 минут.",
+		],
+		urgentTriggers: [
+			"Непрекращающееся обильное кровотечение из лунки более 1–2 часов.",
+			"Повышение температуры тела выше 38.0 °C.",
+			"Нарастающий отек щеки, затрудненное открывание рта или глотание.",
+		],
+	},
+	{
+		id: "anesthesia_caries",
+		title: "Памятка пациенту после местной анестезии и лечения кариеса",
+		shortTitle: "Памятка: Анестезия / Кариес",
+		icon: "🦷",
+		badge: "Терапия 043/у",
+		category: "therapy",
+		summary: "Правила поведения во время действия анестетика, профилактика прикусывания щеки/губы и гарантия на пломбу.",
+		keyRules: [
+			"⏳ Не принимать пищу в течение 2–3 часов (до полного восстановления чувствительности губ, языка и щеки), чтобы случайно не прикусить мягкие ткани.",
+			"☕ Не пить слишком горячий чай, кофе или воду во время действия анестезии во избежание термического ожога слизистой.",
+			"🥜 Щадящий режим: избегать чрезмерно твердой пищи (орехи, сухари, грильяж) на вылеченный зуб в первые 1–2 дня.",
+			"⚖️ Окклюзионный контроль: если после отхода анестезии ощущается, что пломба завышает прикус или мешает — обратитесь в клинику для бесплатной быстрой шлифовки.",
+			"🛡️ Гарантийный срок на световую композитную реставрацию составляет 12–24 месяца (срок службы 24–36 месяцев) при регулярном профосмотре 1 раз в 6 месяцев.",
+		],
+		urgentTriggers: [
+			"Онемение не проходит более 6–8 часов после завершения приёма.",
+			"Острая самопроизвольная ночная боль в пролеченном зубе.",
+			"Аллергическая реакция (кожная сыпь, зуд, отек мягких тканей).",
+		],
+	},
+	{
+		id: "endodontics",
+		title: "Памятка пациенту после эндодонтического лечения (пломбирования корневых каналов)",
+		shortTitle: "Памятка: Эндодонтия / Каналы",
+		icon: "⚡",
+		badge: "Эндодонтия 043/у",
+		category: "endodontics",
+		summary: "Информация о естественной постпломбировочной чувствительности до 3–5 дней и уходе за зубом.",
+		keyRules: [
+			"📊 Норма ощущений: умеренная ноющая болезненность или чувство «распирания» при накусывании на зуб в течение 2–5 дней является естественной физиологической нормой после обработки каналов.",
+			"💊 Обезболивающая терапия: при выраженном дискомфорте принять НПВП (Нимесил 100 мг / Ибупрофен 400 мг / Кеторол) по 1 таб. после еды.",
+			"🛡️ Беречь зуб от перегрузки: не жевать твердую пищу на леченую сторону до окончательного ортопедического/терапевтического восстановления коронки.",
+			"🩹 Временная пломба: беречь герметичность повязки; при ее частичном сколе или выпадении незамедлительно связаться с клиникой.",
+			"📅 Обязательно явиться на плановый контрольный визит для постоянного пломбирования или покрытия коронкой.",
+		],
+		urgentTriggers: [
+			"Резкое пульсирующее нарастание боли, не снимаемое анальгетиками.",
+			"Появление припухлости (отека) десны или щеки в области пролеченного зуба.",
+			"Повышение температуры тела выше 37.5 °C.",
+		],
+	},
+];
+
+export interface PatientMemoRenderOptions {
+	readonly patientFullName?: string | null | undefined;
+	readonly patientBirthDate?: string | null | undefined;
+	readonly doctorFullName?: string | null | undefined;
+	readonly doctorSpecialty?: string | null | undefined;
+	readonly clinicName?: string | null | undefined;
+	readonly clinicPhone?: string | null | undefined;
+	readonly clinicAddress?: string | null | undefined;
+	readonly toothNumber?: string | number | null | undefined;
+	readonly visitDate?: string | null | undefined;
+}
+
+/**
+ * Получить структурированную памятку по идентификатору.
+ */
+export function getPostOpPatientMemo(id: PostOpMemoId | string): PostOpPatientMemo {
+	const found = POST_OP_PATIENT_MEMOS.find((m) => m.id === id);
+	return found ?? POST_OP_PATIENT_MEMOS[0]!;
+}
+
+/**
+ * Генерация форматированного текста памятки для мессенджеров (WhatsApp / Telegram / SMS) и дневника.
+ */
+export function generatePatientMemoText(
+	memoId: PostOpMemoId | string,
+	options?: PatientMemoRenderOptions,
+): string {
+	const memo = getPostOpPatientMemo(memoId);
+	const clinic = options?.clinicName || "Стоматологическая клиника «DENTE»";
+	const phone = options?.clinicPhone || "+7 (495) 777-88-99";
+	const toothStr = options?.toothNumber ? ` (Зуб ${options.toothNumber})` : "";
+	const dateStr = options?.visitDate || new Date().toLocaleDateString("ru-RU");
+
+	const lines = [
+		`📌 ${memo.title.toUpperCase()}${toothStr}`,
+		`Дата: ${dateStr} • Клиника: ${clinic}`,
+		"",
+		"КЛЮЧЕВЫЕ ПРАВИЛА И РЕКОМЕНДАЦИИ:",
+		...memo.keyRules.map((r, i) => `${i + 1}. ${r}`),
+		"",
+		"⚠️ СРОЧНО СВЯЗАТЬСЯ С КЛИНИКОЙ ПРИ:",
+		...memo.urgentTriggers.map((t) => `• ${t}`),
+		"",
+		`Телефон экстренной связи клиники: ${phone}`,
+	];
+
+	return lines.join("\n");
+}
+
+/**
+ * Неразрушающее добавление памятки в поле P (Лечение и рекомендации) SOAP-дневника.
+ */
+export function appendPatientMemoToSoap(
+	diary: DiaryState,
+	memoId: PostOpMemoId | string,
+): DiaryState {
+	const memo = getPostOpPatientMemo(memoId);
+	const snippet = `Выдана «${memo.title}». Пациент ознакомлен с правилами послеоперационного режима и ухода.`;
+	return appendRecommendationToSoap(diary, snippet);
+}
+
+/**
+ * Генерация печатной HTML-страницы А4/А5 памятки пациенту для быстрой печати в 1 клик.
+ */
+export function renderPatientMemoPrintHtml(
+	memoId: PostOpMemoId | string,
+	options?: PatientMemoRenderOptions,
+): string {
+	const memo = getPostOpPatientMemo(memoId);
+	const clinic = options?.clinicName || "Стоматологическая клиника «DENTE» (ООО «ДЕНТЕ МЕДИКАЛ ГРУПП»)";
+	const phone = options?.clinicPhone || "+7 (495) 777-88-99";
+	const address = options?.clinicAddress || "119048, г. Москва, ул. Стоматологическая, д. 24, корп. 1";
+	const patient = options?.patientFullName || "________________________________________";
+	const doctor = options?.doctorFullName || "Врач-стоматолог";
+	const specialty = options?.doctorSpecialty || "Стоматолог-терапевт / хирург";
+	const toothStr = options?.toothNumber ? `Зуб ${options.toothNumber}` : "Область вмешательства";
+	const dateStr = options?.visitDate || new Date().toLocaleDateString("ru-RU");
+
+	return `<div class="patient-memo-sheet" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0f172a; background: #ffffff; padding: 24px; max-width: 210mm; margin: 0 auto; line-height: 1.45; font-size: 12px;">
+	<div style="border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
+		<div>
+			<div style="font-size: 15px; font-weight: 900; text-transform: uppercase; color: #0f172a; letter-spacing: -0.01em;">${clinic}</div>
+			<div style="font-size: 11px; font-weight: 600; color: #475569; margin-top: 2px;">${address} • Тел: ${phone}</div>
+		</div>
+		<div style="text-align: right; font-size: 11px; shrink: 0;">
+			<div style="font-weight: 800; color: #0f766e;">${memo.badge}</div>
+			<div style="color: #64748b; margin-top: 2px;">Дата выдачи: <strong>${dateStr}</strong></div>
+		</div>
+	</div>
+
+	<div style="text-align: center; margin-bottom: 14px; padding: 8px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+		<div style="font-size: 20px; margin-bottom: 2px;">${memo.icon}</div>
+		<h1 style="font-size: 14px; font-weight: 900; text-transform: uppercase; margin: 0; color: #0f172a;">
+			${memo.title}
+		</h1>
+		<div style="font-size: 11px; color: #64748b; margin-top: 3px;">
+			${memo.summary}
+		</div>
+	</div>
+
+	<table style="width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 11px; border: 1px solid #cbd5e1; page-break-inside: avoid; break-inside: avoid;">
+		<tbody>
+			<tr style="border-bottom: 1px solid #cbd5e1;">
+				<td style="padding: 5px 8px; font-weight: 700; background: #f8fafc; width: 20%; border-right: 1px solid #cbd5e1;">Пациент:</td>
+				<td style="padding: 5px 8px; font-weight: 700; color: #0f172a; width: 45%; border-right: 1px solid #cbd5e1;">${patient}</td>
+				<td style="padding: 5px 8px; font-weight: 700; background: #f8fafc; width: 15%; border-right: 1px solid #cbd5e1;">Зона:</td>
+				<td style="padding: 5px 8px; font-weight: 700; color: #0f766e; width: 20%;">${toothStr}</td>
+			</tr>
+			<tr>
+				<td style="padding: 5px 8px; font-weight: 700; background: #f8fafc; border-right: 1px solid #cbd5e1;">Лечащий врач:</td>
+				<td style="padding: 5px 8px; font-weight: 600; border-right: 1px solid #cbd5e1;" colspan="3">${doctor} (${specialty})</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<div style="margin-bottom: 14px; page-break-inside: avoid; break-inside: avoid;">
+		<div style="font-size: 12px; font-weight: 900; text-transform: uppercase; color: #0f172a; margin-bottom: 8px; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 4px;">
+			Обязательные правила и рекомендации по уходу:
+		</div>
+		<div style="display: flex; flex-direction: column; gap: 6px;">
+			${memo.keyRules
+				.map(
+					(rule, idx) => `
+			<div style="display: flex; align-items: flex-start; gap: 8px; background: #f8fafc; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #0f766e;">
+				<span style="font-weight: 800; color: #0f766e; font-size: 11px;">${idx + 1}.</span>
+				<span style="font-size: 11px; color: #1e293b; line-height: 1.4;">${rule}</span>
+			</div>`,
+				)
+				.join("")}
+		</div>
+	</div>
+
+	<div style="margin-bottom: 16px; padding: 10px 12px; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 8px; page-break-inside: avoid; break-inside: avoid;">
+		<div style="font-size: 11px; font-weight: 900; color: #9f1239; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+			<span>⚠️ СРОЧНО СВЯЗАТЬСЯ С КЛИНИКОЙ (${phone}) ПРИ:</span>
+		</div>
+		<ul style="margin: 0; padding-left: 18px; font-size: 11px; color: #881337; line-height: 1.4;">
+			${memo.urgentTriggers.map((t) => `<li>${t}</li>`).join("")}
+		</ul>
+	</div>
+
+	<div style="margin-top: 20px; padding-top: 12px; border-top: 1.5px solid #cbd5e1; display: flex; justify-content: space-between; align-items: flex-end; font-size: 11px; page-break-inside: avoid; break-inside: avoid;">
+		<div>
+			<div style="font-weight: 700; color: #0f172a;">Памятку получил(а), рекомендации понятны:</div>
+			<div style="margin-top: 20px;">_________________________ / ${patient}</div>
+			<div style="font-size: 9px; color: #64748b; margin-top: 2px;">(подпись пациента)</div>
+		</div>
+
+		<div style="width: 60px; height: 60px; border: 1.5px dashed #94a3b8; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase;">
+			<span>М.П.</span>
+		</div>
+
+		<div style="text-align: right;">
+			<div style="font-weight: 700; color: #0f172a;">Врач-стоматолог:</div>
+			<div style="margin-top: 20px;">_________________________ / ${doctor}</div>
+			<div style="font-size: 9px; color: #64748b; margin-top: 2px;">(подпись и личная печать)</div>
+		</div>
+	</div>
+</div>`;
+}
+
+/**
+ * Запись измерения рабочей длины и параметров обтурации корневого канала (Форма 043/у).
+ */
+export interface EndoWorkingLengthEntry {
+	readonly id?: string | undefined;
+	readonly canalName: string;
+	readonly referencePoint?: string | undefined;
+	readonly workingLengthMm: number | string;
+	readonly masterApicalFile?: string | undefined;
+	readonly taper?: string | undefined;
+	readonly obturationTechnique?: string | undefined;
+	readonly sealer?: string | undefined;
+	readonly notes?: string | undefined;
+}
+
+/** Пресеты современных эндодонтических силеров */
+export interface EndoSealerOption {
+	readonly id: string;
+	readonly name: string;
+	readonly brand: string;
+	readonly category: "epoxy" | "bioceramic" | "calcium_hydroxide" | "zinc_oxide";
+	readonly description: string;
+}
+
+export const ENDO_SEALER_OPTIONS: readonly EndoSealerOption[] = [
+	{
+		id: "ah_plus",
+		name: "AH Plus (Dentsply)",
+		brand: "AH Plus",
+		category: "epoxy",
+		description: "Эпоксидный гидрофобный силер, золотой стандарт герметичности",
+	},
+	{
+		id: "bioroot_rcs",
+		name: "BioRoot RCS (Septodont)",
+		brand: "BioRoot RCS",
+		category: "bioceramic",
+		description: "Биоактивный трикальцийсиликатный биокерамический силер",
+	},
+	{
+		id: "total_fill",
+		name: "TotalFill BC Sealer (FKG)",
+		brand: "TotalFill BC",
+		category: "bioceramic",
+		description: "Премиальный нанобиокерамический инжектируемый силер",
+	},
+	{
+		id: "calcium_hydroxide",
+		name: "Каласепт / Metapex (Ca(OH)2)",
+		brand: "Каласепт",
+		category: "calcium_hydroxide",
+		description: "Временная антисептическая паста гидроксида кальция pH 12.5",
+	},
+];
+
+/** Методики обтурации корневых каналов */
+export interface EndoObturationMethodOption {
+	readonly id: string;
+	readonly name: string;
+	readonly shortLabel: string;
+	readonly description: string;
+}
+
+export const ENDO_OBTURATION_METHOD_OPTIONS: readonly EndoObturationMethodOption[] = [
+	{
+		id: "lateral_compaction",
+		name: "Латеральная компакция холодной гуттаперчи",
+		shortLabel: "Латеральная компакция",
+		description: "Классический метод холодной латеральной конденсации",
+	},
+	{
+		id: "vertical_condensation",
+		name: "Вертикальная конденсация разогретой гуттаперчи",
+		shortLabel: "Вертикальная конденсация",
+		description: "Трёхмерная обтурация разогретой термопластифицированной гуттаперчей",
+	},
+	{
+		id: "single_cone_bioceramic",
+		name: "Метод одного калиброванного штифта + биокерамика (BioRoot RCS)",
+		shortLabel: "Моноштифт + Биокерамика",
+		description: "Гидравлическая обтурация биокерамическим силером",
+	},
+	{
+		id: "continuous_wave",
+		name: "Метод непрерывной волны (System B / Elements)",
+		shortLabel: "Непрерывная волна",
+		description: "Горячая вертикальная конденсация непрерывной волной",
+	},
+	{
+		id: "temporary_caoh2",
+		name: "Временное пломбирование гидроксидом кальция",
+		shortLabel: "Временная Ca(OH)2",
+		description: "Межсеансовое антисептическое лечение деструктивных периодонтитов",
+	},
+];
+
+/**
+ * Генерация структурированной таблицы учета рабочей длины корневых каналов для Формы 043/у.
+ * Включает точные столбцы: Канал, Реперный ориентир, Длина (WL) в мм, Мастер-файл (MAF), Метод обтурации и Силер.
+ */
+export function generateEndoWorkingLengthTable(
+	canals: readonly EndoWorkingLengthEntry[],
+): string {
+	const header = [
+		"ТАБЛИЦА УЧЕТА РАБОЧЕЙ ДЛИНЫ КОРНЕВЫХ КАНАЛОВ (Форма 043/у):",
+		"┌──────────────┬─────────────────────────────┬─────────────┬─────────────┬──────────────────────────────────────────┐",
+		"│ Канал        │ Реперный ориентир           │ Длина (WL)  │ Мастер-файл │ Метод обтурации / Силер                  │",
+		"├──────────────┼─────────────────────────────┼─────────────┼─────────────┼──────────────────────────────────────────┤",
+	];
+
+	const rows = canals.map((c) => {
+		const mafMatch = String(c.masterApicalFile ?? "").match(/(?:ISO\s*\d+|#\d+|\d+)/i);
+		const mafClean = mafMatch ? mafMatch[0] : (c.masterApicalFile ?? "ISO 25");
+		const taperMatch = String(c.taper ?? "").match(/\.\d+/);
+		const taperClean = taperMatch ? taperMatch[0] : (c.taper ?? ".06");
+		const mafFormatted = `${mafClean}/${taperClean}`.trim();
+		let lengthStr = "—";
+		if (c.workingLengthMm !== undefined && c.workingLengthMm !== null && c.workingLengthMm !== "") {
+			const num = typeof c.workingLengthMm === "number" ? c.workingLengthMm : parseFloat(String(c.workingLengthMm));
+			lengthStr = !isNaN(num) ? `${num.toFixed(1)} мм` : `${c.workingLengthMm} мм`;
+		}
+		const obt = c.obturationTechnique
+			? `${c.obturationTechnique}${c.sealer ? ` + ${c.sealer}` : ""}`
+			: "Гуттаперча + AH Plus";
+
+		const colCanal = (c.canalName || "—").padEnd(12);
+		const colRef = (c.referencePoint || "Щечный бугор").slice(0, 27).padEnd(27);
+		const colWl = lengthStr.padEnd(11);
+		const colMaf = mafFormatted.padEnd(11);
+		const colObt = obt.slice(0, 40).padEnd(40);
+
+		return `│ ${colCanal} │ ${colRef} │ ${colWl} │ ${colMaf} │ ${colObt} │`;
+	});
+
+	const footer = "└──────────────┴─────────────────────────────┴─────────────┴─────────────┴──────────────────────────────────────────┘";
+
+	return [...header, ...rows, footer].join("\n");
+}
+
+/**
+ * Быстрое форматирование эндодонтического протокола с рабочей длиной каналов, апекслокатором и обтурацией.
+ */
+export function formatEndoProtocolQuickSnippet(params: {
+	readonly toothNumber?: number | string | undefined;
+	readonly canals: readonly EndoWorkingLengthEntry[];
+	readonly sealer?: string | undefined;
+	readonly obturationTechnique?: string | undefined;
+	readonly irrigation?: string | undefined;
+	readonly radiology?: string | undefined;
+}): string {
+	const toothStr = params.toothNumber ? `Зуб ${params.toothNumber}` : "Эндодонтический протокол";
+	const irrigation = params.irrigation || "3% NaOCl + 17% EDTA (ультразвуковая активация)";
+	const radiology = params.radiology || "Визиография: каналы обтурированы плотно до апекса";
+	const table = generateEndoWorkingLengthTable(params.canals);
+
+	const canalSummaries = params.canals.map((c) => {
+		let len = "—";
+		if (c.workingLengthMm !== undefined && c.workingLengthMm !== null && c.workingLengthMm !== "") {
+			const num = typeof c.workingLengthMm === "number" ? c.workingLengthMm : parseFloat(String(c.workingLengthMm));
+			len = !isNaN(num) ? `${num.toFixed(1)} мм` : `${c.workingLengthMm} мм`;
+		}
+		const maf = c.masterApicalFile || "#25";
+		const taper = c.taper || ".06";
+		const ref = c.referencePoint ? ` (репер: ${c.referencePoint})` : "";
+		return `• ${c.canalName}${ref}: WL=${len}, MAF=${maf}/${taper}`;
+	}).join("\n");
+
+	return [
+		`ЭНДОДОНТИЧЕСКИЙ ПРОТОКОЛ (${toothStr}):`,
+		"Коффердам. Доступ к устьям, NiTi инструментальная обработка, апекслокация (Apex 0.0).",
+		canalSummaries,
+		"",
+		table,
+		"",
+		`Ирригация: ${irrigation}.`,
+		`Обтурация: ${params.obturationTechnique || "Гуттаперча"} + ${params.sealer || "AH Plus"}.`,
+		`Рентген-контроль: ${radiology}.`,
+	].join("\n");
+}
+
+/**
+ * Неразрушающее добавление эндодонтического протокола в поле лечения SOAP-дневника.
+ */
+export function appendEndoProtocolToSoap(
+	diary: DiaryState,
+	endoSnippet: string,
+): DiaryState {
+	const cur = (diary.treatmentDescription ?? "").trim();
+	const endoTrim = (endoSnippet ?? "").trim();
+	if (!endoTrim) return diary;
+	if (cur.includes(endoTrim)) return diary;
+
+	const nextTreatment = cur ? `${cur}\n\n${endoTrim}` : endoTrim;
+	return {
+		...diary,
+		treatmentDescription: nextTreatment,
+	};
+}
+
+export {
+	type EndoCanalData,
+	generateEndoCanalsTable043,
+	formatEndoCanalsTable043,
+	generateEndoProtocol043,
+} from "../components/odontogram/EndoCanalLogModal";
+
+/**
+ * Клиническое фотоприложение к карте стоматологического пациента (Форма 043/у).
+ */
+export interface ClinicalPhotoAttachment {
+	readonly id: string;
+	readonly toothNumber?: number | undefined;
+	readonly photoType: "before" | "after" | "process" | "intraoral_macro" | "face_portrait";
+	readonly photoUrl: string;
+	readonly description?: string | undefined;
+	readonly capturedAtIso?: string | undefined;
+}
+
+/**
+ * Генерация структурированной ведомости фотоприложений («До / После») для формы 043/у.
+ */
+export function generatePhotoProtocolAttachmentsStatement(
+	photos: readonly ClinicalPhotoAttachment[],
+): string {
+	if (!photos || photos.length === 0) return "";
+
+	const typeLabels: Record<string, string> = {
+		before: "Исходная ситуация (До лечения)",
+		after: "Финальный результат (После лечения)",
+		process: "Этап лечения (Изоляция / Препарирование / Обтурация)",
+		intraoral_macro: "Внутриротовой макроснимок",
+		face_portrait: "Портретная фотография лица",
+	};
+
+	const header = "ВЕДОМОСТЬ ФОТОПРОТОКОЛА И ПРИЛОЖЕНИЙ (Форма 043/у):";
+	const lines = photos.map((p, idx) => {
+		const toothStr = p.toothNumber ? `Зуб ${p.toothNumber}` : "Общий вид зубного ряда";
+		const typeStr = typeLabels[p.photoType] || "Фотоснимок";
+		const descStr = p.description ? ` (${p.description})` : "";
+		const dateStr = p.capturedAtIso ? ` [${new Date(p.capturedAtIso).toLocaleDateString("ru-RU")}]` : "";
+		return `${idx + 1}. [${toothStr}] ${typeStr}${descStr}${dateStr}`;
+	});
+
+	return `${header}\n${lines.join("\n")}`;
+}
+
+/**
+ * Опции для формирования Информированного добровольного согласия (ИДС) по Приказу Минздрава РФ № 1051н.
+ */
+export interface InformedConsent1051nOptions {
+	readonly patientFullName?: string | null | undefined;
+	readonly patientBirthDate?: string | null | undefined;
+	readonly patientPassport?: string | null | undefined;
+	readonly patientAddress?: string | null | undefined;
+	readonly doctorFullName?: string | null | undefined;
+	readonly doctorSpecialty?: string | null | undefined;
+	readonly clinicName?: string | null | undefined;
+	readonly clinicLicense?: string | null | undefined;
+	readonly interventionType?: "therapy" | "surgery" | "anesthesia" | "general" | string | undefined;
+	readonly toothNumbers?: string | null | undefined;
+	readonly diagnosisIcd?: string | null | undefined;
+	readonly consentDate?: string | null | undefined;
+}
+
+/**
+ * Генерация текста официального бланка ИДС в соответствии со ст. 20 323-ФЗ и Приказом Минздрава России № 1051н.
+ */
+export function generateInformedConsent1051nText(
+	options: InformedConsent1051nOptions,
+): string {
+	const clinic =
+		options.clinicName || "Стоматологическая клиника «DENTE» (ООО «ДЕНТЕ МЕДИКАЛ ГРУПП»)";
+	const license =
+		options.clinicLicense ||
+		"№ ЛО41-01137-77/00368421 от 14.02.2023 г. выдана Департаментом здравоохранения города Москвы";
+	const patient = options.patientFullName || "________________________________________";
+	const birthDate = options.patientBirthDate || "____.____.________";
+	const passport = options.patientPassport || "документ, удостоверяющий личность: ____________________";
+	const doctor = options.doctorFullName || "________________________________________";
+	const date = options.consentDate || new Date().toLocaleDateString("ru-RU");
+	const diagnosis = options.diagnosisIcd ? ` по поводу: ${options.diagnosisIcd}` : "";
+	const teeth = options.toothNumbers ? ` в области зубов: ${options.toothNumbers}` : "";
+
+	return `ИНФОРМИРОВАННОЕ ДОБРОВОЛЬНОЕ СОГЛАСИЕ НА МЕДИЦИНСКОЕ ВМЕШАТЕЛЬСТВО
+(в соответствии со статьей 20 Федерального закона от 21.11.2011 № 323-ФЗ и Приказом Минздрава России от 12.11.2021 № 1051н)
+
+Медицинская организация: ${clinic}
+Лицензия: ${license}
+
+1. Я, ${patient}, дата рождения: ${birthDate} (${passport}), даю информированное добровольное согласие на проведение комплекса медицинских вмешательств${teeth}${diagnosis} лечащему врачу ${doctor}.
+2. Мне в доступной форме разъяснены цели, методы оказания медицинской помощи, связанный с ними риск, возможные варианты медицинских вмешательств, их последствия, в том числе вероятность развития осложнений, а также предполагаемые результаты оказания медицинской помощи.
+3. Согласие дано на следующие виды стоматологических вмешательств:
+   - Местная инфильтрационная, проводниковая или аппликационная анестезия;
+   - Препарирование твердых тканей зубов, медикаментозная обработка кариозных полостей и корневых каналов;
+   - Эндодонтическое и терапевтическое лечение, постановка светоотверждаемых пломб и реставраций;
+   - Хирургические манипуляции (при необходимости: удаление зубов, наложение швов, кюретаж лунки);
+   - Рентгенологические исследования (прицельная радиовизиография, ОПТГ, КЛКТ).
+4. Я подтверждаю, что сообщил(а) лечащему врачу полную информацию о наличии соматических заболеваний, аллергических реакций на лекарственные препараты и постоянном приеме медикаментов.
+5. Я поставлен(а) в известность о необходимости строгого соблюдения назначенного режима лечения, послеоперационного ухода и явки на контрольные осмотры.
+
+Дата оформления: ${date}
+
+Пациент (законный представитель): _________________________ / ${patient}
+(подпись)
+
+Врач-стоматолог: _________________________ / ${doctor}
+(подпись)
+
+М.П. Клиники`;
+}
+
+/**
+ * Генерация HTML-разметки официального печатного бланка ИДС А4 (Приказ № 1051н).
+ */
+export function generateInformedConsent1051nHtml(
+	options: InformedConsent1051nOptions,
+): string {
+	const clinic =
+		options.clinicName || "Стоматологическая клиника «DENTE» (ООО «ДЕНТЕ МЕДИКАЛ ГРУПП»)";
+	const license =
+		options.clinicLicense ||
+		"№ ЛО41-01137-77/00368421 от 14.02.2023 г. выдана Департаментом здравоохранения города Москвы";
+	const patient = options.patientFullName || "—";
+	const birthDate = options.patientBirthDate || "—";
+	const passport = options.patientPassport || "Паспорт гражданина РФ: _________________________";
+	const address = options.patientAddress || "__________________________________________________";
+	const doctor = options.doctorFullName || "—";
+	const specialty = options.doctorSpecialty || "Врач-стоматолог";
+	const date = options.consentDate || new Date().toLocaleDateString("ru-RU");
+	const diagnosis = options.diagnosisIcd ? ` по диагнозу: ${options.diagnosisIcd}` : "";
+	const teeth = options.toothNumbers ? ` в области зубов: ${options.toothNumbers}` : "";
+
+	return `<div class="informed-consent-a4-sheet" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0f172a; background: #ffffff; padding: 24px; max-width: 210mm; margin: 0 auto; line-height: 1.45; font-size: 12px;">
+	<div style="border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
+		<div>
+			<div style="font-size: 15px; font-weight: 900; text-transform: uppercase; color: #0f172a;">${clinic}</div>
+			<div style="font-size: 11px; font-weight: 600; color: #475569; margin-top: 2px;">Лицензия: ${license}</div>
+			<div style="font-size: 10px; color: #64748b;">119048, г. Москва, ул. Стоматологическая, д. 24, корп. 1 • Тел: +7 (495) 777-88-99</div>
+		</div>
+		<div style="text-align: right; font-size: 11px; shrink: 0;">
+			<div style="font-weight: 700; color: #0f172a;">Приказ Минздрава РФ № 1051н</div>
+			<div style="color: #64748b;">Ст. 20 323-ФЗ</div>
+			<div style="font-weight: 600; color: #0f766e; margin-top: 2px;">Дата: ${date}</div>
+		</div>
+	</div>
+
+	<div style="text-align: center; margin-bottom: 16px;">
+		<h1 style="font-size: 14px; font-weight: 900; text-transform: uppercase; margin: 0; color: #0f172a; letter-spacing: 0.02em;">
+			Информированное добровольное согласие на медицинское вмешательство
+		</h1>
+		<div style="font-size: 10px; color: #64748b; margin-top: 4px;">
+			(в соответствии со статьей 20 Федерального закона от 21.11.2011 № 323-ФЗ и Приказом Минздрава России от 12.11.2021 № 1051н)
+		</div>
+	</div>
+
+	<table style="width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 11px; border: 1px solid #cbd5e1;" style="page-break-inside: avoid; break-inside: avoid;">
+		<tbody>
+			<tr style="border-bottom: 1px solid #cbd5e1;">
+				<td style="padding: 6px 8px; font-weight: 700; background: #f8fafc; width: 25%; border-right: 1px solid #cbd5e1;">Пациент (ФИО):</td>
+				<td style="padding: 6px 8px; font-weight: 700; color: #0f172a; width: 40%; border-right: 1px solid #cbd5e1;">${patient}</td>
+				<td style="padding: 6px 8px; font-weight: 700; background: #f8fafc; width: 15%; border-right: 1px solid #cbd5e1;">Дата рождения:</td>
+				<td style="padding: 6px 8px; width: 20%;">${birthDate}</td>
+			</tr>
+			<tr style="border-bottom: 1px solid #cbd5e1;">
+				<td style="padding: 6px 8px; font-weight: 700; background: #f8fafc; border-right: 1px solid #cbd5e1;">Паспортные данные:</td>
+				<td style="padding: 6px 8px; border-right: 1px solid #cbd5e1;">${passport}</td>
+				<td style="padding: 6px 8px; font-weight: 700; background: #f8fafc; border-right: 1px solid #cbd5e1;">Адрес проживания:</td>
+				<td style="padding: 6px 8px;">${address}</td>
+			</tr>
+			<tr>
+				<td style="padding: 6px 8px; font-weight: 700; background: #f8fafc; border-right: 1px solid #cbd5e1;">Лечащий врач:</td>
+				<td style="padding: 6px 8px; font-weight: 600; border-right: 1px solid #cbd5e1;" colspan="3">${doctor} (${specialty})</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<div style="space-y: 8px; text-align: justify; font-size: 11px; color: #1e293b; page-break-inside: avoid; break-inside: avoid;">
+		<p style="margin: 0 0 8px 0;">
+			<strong>1.</strong> Я, вышеуказанный(ая) пациент(ка) (или законный представитель), даю информированное добровольное согласие на проведение стоматологического медицинского вмешательства${teeth}${diagnosis} врачу ${doctor} в клинике «${clinic}».
+		</p>
+		<p style="margin: 0 0 8px 0;">
+			<strong>2.</strong> Мне в доступной форме разъяснены цели, методы оказания медицинской помощи, связанный с ними риск, возможные варианты медицинских вмешательств, их последствия, в том числе вероятность развития осложнений, а также предполагаемые результаты оказания медицинской помощи.
+		</p>
+		<p style="margin: 0 0 8px 0;">
+			<strong>3.</strong> Медицинское вмешательство включает: местную анестезию (инфильтрационная/проводниковая), препарирование твердых тканей, терапевтическое/эндодонтическое лечение, реставрацию зубов композитными материалами, хирургические процедуры (удаление зубов/кюретаж при показаниях) и рентгенодиагностику.
+		</p>
+		<p style="margin: 0 0 8px 0;">
+			<strong>4.</strong> Я подтверждаю, что сообщил(а) врачу достоверные сведения о перенесенных заболеваниях, аллергических реакциях и принимаемых лекарствах. Я обязуюсь соблюдать предписанный режим лечения и гигиены.
+		</p>
+	</div>
+
+	<div style="margin-top: 24px; padding-top: 14px; border-top: 1.5px solid #cbd5e1; display: flex; justify-content: space-between; align-items: flex-end; font-size: 11px; page-break-inside: avoid; break-inside: avoid;">
+		<div>
+			<div style="font-weight: 700; color: #0f172a;">Пациент (законный представитель):</div>
+			<div style="margin-top: 24px;">_________________________ / ${patient}</div>
+			<div style="font-size: 9px; color: #64748b; margin-top: 2px;">(подпись и расшифровка)</div>
+		</div>
+
+		<div style="width: 70px; height: 70px; border: 1.5px dashed #94a3b8; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">
+			<span>М.П.</span>
+			<span style="font-size: 8px; font-weight: 400;">Клиники</span>
+		</div>
+
+		<div style="text-align: right;">
+			<div style="font-weight: 700; color: #0f172a;">Врач-стоматолог:</div>
+			<div style="margin-top: 24px;">_________________________ / ${doctor}</div>
+			<div style="font-size: 9px; color: #64748b; margin-top: 2px;">(подпись и личная печать)</div>
+		</div>
+	</div>
+</div>`;
+}
+
+

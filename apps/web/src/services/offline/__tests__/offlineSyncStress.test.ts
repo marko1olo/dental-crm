@@ -14,15 +14,28 @@ import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, test } from "node:test";
 import {
 	calibrateClockSkew,
+	compareVectorClocks,
 	computePayloadHash,
 	createCompositeIdempotencyKey,
+	createVectorClock,
+	determineSyncTierMode,
+	dominatesVectorClock,
 	getAdjustedNowIso,
 	getAdjustedNowMs,
 	getGlobalClockSkew,
+	incrementVectorClock,
 	mergeFieldLevelCrdt,
+	mergeOdontogramTeethCrdt,
+	mergeVectorClocks,
+	processMeshSyncExchange,
 	resetGlobalClockSkew,
+	resolveCashOperationCrdt,
+	resolveForm043DiaryCrdt,
+	resolveScheduleAppointmentCrdt,
 	setGlobalClockSkew,
+	vectorClockToString,
 } from "@dental/shared";
+
 import {
 	calculateBackoffDelay,
 	clearSyncedOfflineMutations,
@@ -50,7 +63,9 @@ import {
 	nowIsoWithMs,
 	OFFLINE_DB_VERSION,
 	offlineSyncService,
+	lanMeshReplicationService,
 	openOfflineOutboxDb,
+
 	resetOfflineDbConnection,
 	saveForm043Draft,
 	saveOdontogramDraft,
@@ -2563,7 +2578,240 @@ describe("Offline-First & Multi-Level Sync Engine: Industrial Stress & Chaos Sui
 		const remainingPending = await getPendingOfflineMutations({ organizationId: orgId });
 		assert.strictEqual(remainingPending.length, 0, "Outbox must have 0 pending items after drain");
 	});
+
+	// ── 30. Multi-Workstation Wi-Fi Mesh Discovery & Peer-to-Peer Replication ────
+	test("STRESS 30: Multi-Workstation Wi-Fi Mesh discovery and peer-to-peer replication between doctor tablets and reception PC without internet", async () => {
+		const orgId = "org-mesh-p2p-30";
+
+		// 1. Configure Mesh Service for Doctor Tablet 1
+		lanMeshReplicationService.configure({
+			nodeRole: "doctor_tablet",
+			nodeName: "Планшет Стоматолога 1 (Терапия)",
+			organizationId: orgId,
+		});
+
+		// 2. Discover / Register Reception Workstation Peer
+		const receptionPeer = {
+			nodeId: "reception-pc-01",
+			role: "reception_workstation" as const,
+			name: "ПК Ресепшн / Администратор",
+			baseUrl: "http://192.168.1.50:4100",
+			ipAddresses: ["192.168.1.50"],
+			port: 4100,
+			lastSeenIso: new Date().toISOString(),
+			status: "online" as const,
+			organizationId: orgId,
+		};
+		lanMeshReplicationService.registerPeerNode(receptionPeer);
+		assert.strictEqual(lanMeshReplicationService.getKnownPeers().length, 1);
+
+		// 3. Enqueue 5 clinical mutations on Doctor Tablet (Form 043/u, Odontogram 16/15, Appointment notes)
+		for (let i = 1; i <= 5; i++) {
+			await enqueueOfflineMutation({
+				entityType: i % 2 === 0 ? "DIARY_043_DRAFT" : "ODONTOGRAM_STATUS",
+				entityId: `pat-mesh-30-${i}`,
+				action: "update",
+				payload: {
+					anamnesis: `Запись осмотра на планшете #${i}`,
+					toothNumber: 15 + i,
+					status: "caries",
+					surfaces: ["O", "M"],
+				},
+				organizationId: orgId,
+			});
+		}
+
+		const pendingBefore = await getPendingOfflineMutations({ organizationId: orgId });
+		assert.strictEqual(pendingBefore.length, 5);
+
+		// 4. Mock Peer-to-Peer Exchange Endpoint on Reception PC
+		const mockPeerFetch = async (_url: string | URL | Request, init?: RequestInit) => {
+			const req = JSON.parse(String(init?.body || "{}"));
+			const results = (req.mutations || []).map((m: any) => ({
+				mutationId: m.mutationId,
+				idempotencyKey: m.idempotencyKey,
+				status: "applied",
+				entityKind: m.entityKind,
+				entityId: m.entityId,
+				appliedAt: new Date().toISOString(),
+			}));
+
+			return new Response(
+				JSON.stringify({
+					exchangeId: req.exchangeId,
+					responderNodeId: "reception-pc-01",
+					responderVectorClock: { "reception-pc-01": 10, [req.senderNodeId]: 5 },
+					processedMutationsCount: results.length,
+					appliedMutationsCount: results.length,
+					mergedMutationsCount: 0,
+					duplicateMutationsCount: 0,
+					returnMutations: [],
+					results,
+					responderTime: new Date().toISOString(),
+				}),
+				{ status: 200, headers: { "Content-Type": "application/json" } },
+			);
+		};
+
+		// 5. Execute P2P replication with Reception PC
+		const replicationRes = await lanMeshReplicationService.replicateWithPeer(
+			receptionPeer,
+			{ fetchImpl: mockPeerFetch as unknown as typeof fetch },
+		);
+
+		assert.ok(replicationRes, "P2P replication must succeed");
+		assert.strictEqual(replicationRes.appliedMutationsCount, 5);
+
+		// 6. Vector clock on Doctor Tablet must causally include reception clock
+		const updatedClock = lanMeshReplicationService.getVectorClock();
+		assert.strictEqual(updatedClock["reception-pc-01"], 10);
+
+		// 7. Outbox must be cleanly synced
+		const pendingAfter = await getPendingOfflineMutations({ organizationId: orgId });
+		assert.strictEqual(pendingAfter.length, 0);
+	});
+
+	// ── 31. 3-Tier Seamless Network Transition & Reconnection Wave ─────────────
+	test("STRESS 31: 3-Tier Seamless Network Transition (Autonomous Offline -> LAN Local Mesh -> Cloud PostgreSQL)", async () => {
+		const orgId = "org-3tier-31";
+
+		// 1. Initial State: Autonomous Offline (Flight mode / isolated tablet in field)
+		lanMeshReplicationService.setSyncTier("autonomous_offline");
+		assert.strictEqual(lanMeshReplicationService.getActiveTier(), "autonomous_offline");
+
+		// Enqueue 2 mutations while completely standalone
+		await enqueueOfflineMutation({
+			entityType: "patient",
+			entityId: "pat-field-1",
+			action: "create",
+			payload: { fullName: "Полевой Пациент 1" },
+			organizationId: orgId,
+		});
+		await enqueueOfflineMutation({
+			entityType: "DIARY_043_DRAFT",
+			entityId: "pat-field-1",
+			action: "update",
+			payload: { complaints: "Осмотр на выезде" },
+			organizationId: orgId,
+		});
+
+		assert.strictEqual((await getPendingOfflineMutations({ organizationId: orgId })).length, 2);
+
+		// 2. Transition Tier: Tablet enters clinic and connects to local Wi-Fi LAN
+		const localServer = {
+			serverName: "DENTE Local Clinic Server",
+			serverId: "clinic-lan-box-1",
+			baseUrl: "http://192.168.1.100:4100",
+			apiPort: 4100,
+			hostname: "clinic.local",
+			lanAddresses: ["192.168.1.100"],
+			version: "0.1.0",
+			status: "online" as const,
+			latencyMs: 2,
+			discoveredAt: new Date().toISOString(),
+		};
+
+		const tierAfterLan = lanMeshReplicationService.evaluateNetworkTier({
+			isOnline: false, // Cloud internet still dead
+			isCloudReachable: false,
+			lanServer: localServer,
+		});
+		assert.strictEqual(tierAfterLan, "lan_local_mesh");
+		assert.strictEqual(lanMeshReplicationService.getActiveTier(), "lan_local_mesh");
+
+		// 3. Transition Tier: WAN Internet restored -> Cloud PostgreSQL
+		const tierAfterCloud = lanMeshReplicationService.evaluateNetworkTier({
+			isOnline: true,
+			isCloudReachable: true,
+			lanServer: localServer,
+		});
+		assert.strictEqual(tierAfterCloud, "cloud_postgresql");
+		assert.strictEqual(lanMeshReplicationService.getActiveTier(), "cloud_postgresql");
+
+		// 4. Cloud Drain Gateway flushes all mutations safely
+		const mockCloudDrain = async (_url: string | URL | Request, init?: RequestInit) => {
+			const body = JSON.parse(String(init?.body || "{}"));
+			const results = body.mutations.map((m: any) => ({
+				mutationId: m.mutationId,
+				idempotencyKey: m.idempotencyKey,
+				status: "applied",
+				entityKind: m.entityKind,
+				entityId: m.entityId,
+				appliedAt: new Date().toISOString(),
+			}));
+			return new Response(
+				JSON.stringify({
+					syncBatchId: body.syncBatchId,
+					processedCount: results.length,
+					appliedCount: results.length,
+					duplicateCount: 0,
+					mergedCount: 0,
+					rejectedCount: 0,
+					results,
+					serverTime: new Date().toISOString(),
+				}),
+				{ status: 200, headers: { "Content-Type": "application/json" } },
+			);
+		};
+
+		const drainRes = await offlineSyncService.drainOutbox({
+			organizationId: orgId,
+			fetchImpl: mockCloudDrain as unknown as typeof fetch,
+		});
+
+		assert.strictEqual(drainRes.appliedCount, 2);
+		assert.strictEqual((await getPendingOfflineMutations({ organizationId: orgId })).length, 0);
+	});
+
+	// ── 32. Network Partition & Split-Brain Mesh Healing ──────────────────────
+	test("STRESS 32: Network Partition / Split-Brain Mesh healing across clinical tablet clusters", () => {
+		// Cluster A: 2 Tablets in Surgery Wing
+		const clusterAClock: Record<string, number> = { "tablet-surg-1": 4, "tablet-surg-2": 2 };
+		const surgeryDiary = {
+			id: "visit-split-99",
+			complaints: "Острая боль 36",
+			statusLocalis: "Удален зуб 36",
+			treatmentProtocol: ["Анестезия", "Удаление 36", "Наложение швов"],
+		};
+
+		// Cluster B: Reception PC + Orthodontics Tablet in Main Wing
+		const clusterBClock: Record<string, number> = { "rec-pc": 6, "tablet-ortho": 3 };
+		const receptionAppointment = {
+			id: "visit-split-99",
+			complaints: "Острая боль 36",
+			statusLocalis: "Контроль гемостаза",
+			treatmentProtocol: ["Анестезия", "Назначение антибиотикотерапии"],
+		};
+
+		// Network partition heals: Wi-Fi mesh reconnects
+		const healedClock = mergeVectorClocks(clusterAClock, clusterBClock);
+		assert.deepEqual(healedClock, {
+			"tablet-surg-1": 4,
+			"tablet-surg-2": 2,
+			"rec-pc": 6,
+			"tablet-ortho": 3,
+		});
+
+		// CRDT 3-way reconciliation
+		const resolved = resolveForm043DiaryCrdt({
+			existingDiary: surgeryDiary,
+			incomingDiary: receptionAppointment,
+			existingClock: clusterAClock,
+			incomingClock: clusterBClock,
+			existingUpdatedAt: "2026-08-25T11:00:00.000Z",
+			incomingUpdatedAt: "2026-08-25T11:15:00.000Z",
+			nodeId: "reception-pc",
+		});
+
+		assert.ok(resolved.resolvedDiary);
+		// All 4 distinct treatment steps across both split-brain clusters are union-merged!
+		const protocol = resolved.resolvedDiary.treatmentProtocol as string[];
+		assert.strictEqual(protocol.length, 4);
+		assert.ok(protocol.includes("Удаление 36"));
+		assert.ok(protocol.includes("Назначение антибиотикотерапии"));
+	});
 });
+
 
 
 

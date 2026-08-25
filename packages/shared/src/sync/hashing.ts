@@ -188,3 +188,67 @@ export function verifyPayloadHash(
 	const calculatedHash = computePayloadHash(payload);
 	return calculatedHash === targetHash;
 }
+
+let lastTimestampMs = 0;
+let sequenceCounter = 0;
+
+/**
+ * Generates an RFC 9562 compliant UUIDv7.
+ * Features:
+ * - 48-bit millisecond timestamp (lexicographically time-sortable)
+ * - 4-bit version (0x7)
+ * - 12-bit sequence / counter bits (strictly monotonic within same ms)
+ * - 2-bit RFC 4122 variant (0b10)
+ * - 62-bit cryptographic randomness
+ */
+export function generateUuidV7(): string {
+	const now = Date.now();
+	if (now === lastTimestampMs) {
+		sequenceCounter = (sequenceCounter + 1) & 0xfff;
+	} else {
+		lastTimestampMs = now;
+		sequenceCounter = 0;
+	}
+
+	const bytes = new Uint8Array(16);
+	if (
+		typeof crypto !== "undefined" &&
+		typeof crypto.getRandomValues === "function"
+	) {
+		crypto.getRandomValues(bytes);
+	} else {
+		for (let i = 0; i < 16; i++) {
+			bytes[i] = Math.floor(Math.random() * 256);
+		}
+	}
+
+	// 48-bit timestamp in ms
+	bytes[0] = Math.floor(now / 0x10000000000) & 0xff;
+	bytes[1] = Math.floor(now / 0x100000000) & 0xff;
+	bytes[2] = Math.floor(now / 0x1000000) & 0xff;
+	bytes[3] = Math.floor(now / 0x10000) & 0xff;
+	bytes[4] = Math.floor(now / 0x100) & 0xff;
+	bytes[5] = now & 0xff;
+
+	// Version 7 in 4 most significant bits of byte 6 + 4 bits from sequence counter
+	bytes[6] = 0x70 | ((sequenceCounter >> 8) & 0x0f);
+	// 8 bits from sequence counter in byte 7
+	bytes[7] = sequenceCounter & 0xff;
+
+	// Variant 10 in 2 most significant bits of byte 8
+	bytes[8] = ((bytes[8] ?? 0) & 0x3f) | 0x80;
+
+	const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+}
+
+
+/**
+ * Validates whether a given string is a valid UUIDv7.
+ */
+export function isUuidV7(uuid: string): boolean {
+	if (typeof uuid !== "string") return false;
+	const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+	return regex.test(uuid.trim());
+}
+

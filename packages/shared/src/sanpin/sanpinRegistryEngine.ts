@@ -2112,7 +2112,7 @@ export interface ConsolidatedSanpinJournalData {
 	readonly temperatureLogs: readonly TemperatureHumidityLogRecord[];
 }
 
-export function numberToRussianWords(num: number): string {
+export function integerToRussianWords(num: number): string {
 	const n = Math.max(0, Math.floor(num));
 	if (n === 0) return "ноль";
 
@@ -2154,7 +2154,7 @@ export function numberToRussianWords(num: number): string {
 		const hundred = Math.floor(n / 100);
 		const rest = n % 100;
 		if (rest === 0) return hundreds[hundred]!;
-		return `${hundreds[hundred]} ${numberToRussianWords(rest)}`;
+		return `${hundreds[hundred]} ${integerToRussianWords(rest)}`;
 	}
 
 	const thousands = Math.floor(n / 1000);
@@ -2164,13 +2164,15 @@ export function numberToRussianWords(num: number): string {
 	else if (thousands % 10 >= 2 && thousands % 10 <= 4 && (thousands % 100 < 10 || thousands % 100 >= 20))
 		thousandWord = "тысячи";
 
-	let thousandPrefix = numberToRussianWords(thousands);
+	let thousandPrefix = integerToRussianWords(thousands);
 	if (thousands % 10 === 1 && thousands % 100 !== 11) thousandPrefix = thousandPrefix.replace(/один$/, "одна");
 	if (thousands % 10 === 2 && thousands % 100 !== 12) thousandPrefix = thousandPrefix.replace(/два$/, "две");
 
 	if (rest === 0) return `${thousandPrefix} ${thousandWord}`;
-	return `${thousandPrefix} ${thousandWord} ${numberToRussianWords(rest)}`;
+	return `${thousandPrefix} ${thousandWord} ${integerToRussianWords(rest)}`;
 }
+
+export { integerToRussianWords as numberToRussianWords };
 
 export function formatRussianSheetsCount(count: number): {
 	readonly count: number;
@@ -2179,7 +2181,7 @@ export function formatRussianSheetsCount(count: number): {
 	readonly formattedRu: string;
 } {
 	const n = Math.max(1, Math.floor(Number(count) || 1));
-	const countInWords = numberToRussianWords(n);
+	const countInWords = integerToRussianWords(n);
 	const mod10 = n % 10;
 	const mod100 = n % 100;
 

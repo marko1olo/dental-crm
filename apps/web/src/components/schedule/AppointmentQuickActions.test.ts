@@ -106,7 +106,7 @@ describe("AppointmentQuickActions", () => {
 			}),
 		);
 
-		assert.ok(html.includes("min-h-[44px]"), "все кнопки быстрых действий должны иметь min-h-[44px]");
+		assert.ok(html.includes("min-h-[44px]") || html.includes("min-h-[48px]"), "все кнопки быстрых действий должны иметь min-h-[44px] или min-h-[48px]");
 		assert.ok(html.includes("Клавиша 1"), "кнопка Пришел должна содержать горячую клавишу 1");
 		assert.ok(html.includes("Клавиша 2"), "кнопка В кресле должна содержать горячую клавишу 2");
 		assert.ok(html.includes("Клавиша 3"), "кнопка Завершен должна содержать горячую клавишу 3");

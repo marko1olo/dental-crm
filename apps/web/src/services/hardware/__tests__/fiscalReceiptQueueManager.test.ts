@@ -199,4 +199,74 @@ describe("FiscalReceiptQueueManager — 54-FZ Offline Buffer & Auto-Retry Queue"
 		assert.equal(flushResult.failedCount, 0);
 		assert.equal(FiscalReceiptQueueManager.getPendingItems().length, 0);
 	});
+
+	it("should transition receipt to Dead Letter Queue (failed) after exceeding max retry limit", async () => {
+		const mockNativeApi: DesktopNativeApi = {
+			isDesktop: true,
+			platform: "win32",
+			version: "0.1.0",
+			listSerialPorts: async () => [],
+			listTwainDevices: async () => [],
+			acquireTwainImage: async () => ({ success: true }),
+			printFiscalReceiptTcp: async () => ({
+				success: false,
+				error: "ККТ выключена из сети",
+			}),
+			watchLocalDicomFolder: async () => ({ success: true }),
+			unwatchLocalDicomFolder: async () => ({ success: true }),
+		};
+
+		// @ts-expect-error mock window
+		globalThis.window = { denteDesktopNative: mockNativeApi };
+
+		const payload: FiscalReceiptPrintPayload = {
+			operationType: "income",
+			customerContact: "+79991112233",
+			cashierFullName: "Иванова А. С.",
+			items: [{ name: "Консультация", priceRub: 1000, quantity: 1, amountRub: 1000 }],
+			totalRub: 1000,
+			cashRub: 1000,
+		};
+
+		const item = FiscalReceiptQueueManager.enqueueReceipt(payload);
+
+		// Exhaust retries up to max limit (10)
+		for (let i = 0; i < FiscalReceiptQueueManager.MAX_RETRY_LIMIT; i++) {
+			await FiscalReceiptQueueManager.retryReceipt(item.id);
+		}
+
+		const items = FiscalReceiptQueueManager.getAllQueuedItems();
+		const failedItem = items.find((i) => i.id === item.id);
+		assert.ok(failedItem);
+		assert.equal(failedItem.status, "failed");
+		assert.match(failedItem.lastError || "", /карантин|лимит попыток/i);
+		assert.ok(failedItem.retryCount > FiscalReceiptQueueManager.MAX_RETRY_LIMIT);
+	});
+
+	it("should evict oldest printed receipts when queue reaches capacity", () => {
+		const payload: FiscalReceiptPrintPayload = {
+			operationType: "income",
+			customerContact: "+79991112233",
+			cashierFullName: "Иванова А. С.",
+			items: [{ name: "Консультация", priceRub: 1000, quantity: 1, amountRub: 1000 }],
+			totalRub: 1000,
+			cashRub: 1000,
+		};
+
+		// Mock a full queue with 1 printed item and fill to capacity
+		const item1 = FiscalReceiptQueueManager.enqueueReceipt(payload, "Reason", "q-oldest-1");
+		// @ts-expect-error mutate status for test
+		item1.status = "printed";
+
+		const telemetryInitial = FiscalReceiptQueueManager.getQueueTelemetry();
+		assert.equal(telemetryInitial.currentSize, 1);
+		assert.equal(telemetryInitial.maxCapacity, FiscalReceiptQueueManager.MAX_QUEUE_CAPACITY);
+
+		// Calculate backoff delay
+		const backoff0 = FiscalReceiptQueueManager.calculateBackoffDelay(0);
+		const backoff3 = FiscalReceiptQueueManager.calculateBackoffDelay(3);
+		assert.ok(backoff0 >= 1000 && backoff0 <= 1500);
+		assert.ok(backoff3 >= 8000 && backoff3 <= 9000);
+	});
 });
+

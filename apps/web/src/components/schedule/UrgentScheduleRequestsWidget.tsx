@@ -104,10 +104,10 @@ export function UrgentScheduleRequestsWidget() {
 			>
 				<span>{error}</span>
 				<button
-					className="secondary-button"
+					className="secondary-button min-h-[44px]"
 					type="button"
 					onClick={() => setReloadToken((t) => t + 1)}
-					style={{ minHeight: "28px", padding: "2px 10px", fontSize: "11px" }}
+					style={{ padding: "4px 12px", fontSize: "12px" }}
 				>
 					Повторить
 				</button>
@@ -153,7 +153,7 @@ export function UrgentScheduleRequestsWidget() {
 					<div className="font-semibold text-xs flex items-center justify-between">
 						<span>{r.patientName}</span>
 						<span
-							className="text-[11px] font-normal px-2 py-0.5 rounded border"
+							className="text-xs font-normal px-2 py-0.5 rounded border"
 							style={{
 								borderColor: "var(--bad-border, rgba(239, 68, 68, 0.3))",
 								background: "var(--bad-bg, rgba(239, 68, 68, 0.08))",
@@ -164,7 +164,7 @@ export function UrgentScheduleRequestsWidget() {
 						</span>
 					</div>
 					<div
-						className="text-[11px] space-y-0.5"
+						className="text-xs space-y-0.5"
 						style={{ color: "var(--muted)" }}
 					>
 						<div>
@@ -187,7 +187,7 @@ export function UrgentScheduleRequestsWidget() {
 					<button
 						type="button"
 						onClick={() => handleResolve(r.id)}
-						className="primary-button min-h-[40px] w-full text-xs font-semibold"
+						className="primary-button min-h-[44px] w-full text-xs font-semibold"
 					>
 						Отметить решённым
 					</button>

@@ -3,29 +3,22 @@
 .patients-panel {
 	display: flex;
 	flex-direction: column;
-	gap: 1.5rem;
-	padding: 1.5rem;
+	gap: 1.25rem;
+	padding: 1.25rem;
 	background: var(--bg);
 	min-height: 100vh;
 	color: var(--ink);
 }
 
-/* Modern Header */
+/* Modern Single-Tier Toolbar Header */
 .patients-header {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	/* Перенос вместо сжатия. Замер шрифтом поля: подсказка поиска занимает
-     225,29 px, подсказка создания — 242,51 px. Пока шапка была nowrap, на
-     промежуточных ширинах (окно около 1000 px) сжатие съедало место под текст и
-     подсказка обрезалась на середине слова: до правки — у поиска, после
-     перестановки пропорций обрезалась бы у создания. Перенос уводит зону
-     создания на вторую строку целиком, где ей хватает ширины, и заодно делает
-     границу между поиском и созданием ещё очевиднее. */
 	flex-wrap: wrap;
-	gap: 1rem;
+	gap: 0.85rem;
 	background: var(--paper);
-	padding: 1rem 1.5rem;
+	padding: 0.85rem 1.25rem;
 	border-radius: 14px;
 	box-shadow: var(--shadow-1);
 	border: 1px solid var(--line);
@@ -33,11 +26,13 @@
 
 .patients-search-box {
 	position: relative;
-	flex: 1;
-	max-width: 400px;
+	flex: 1 1 20rem;
+	max-width: 32rem;
+	display: flex;
+	align-items: center;
 }
 
-.patients-search-box svg {
+.patients-search-box svg.search-icon {
 	position: absolute;
 	left: 12px;
 	top: 50%;
@@ -45,14 +40,16 @@
 	color: var(--muted);
 	width: 18px;
 	height: 18px;
+	pointer-events: none;
 }
 
 .patients-search-box input {
 	width: 100%;
-	padding: 10px 12px 10px 40px;
+	padding: 10px 65px 10px 38px;
 	border: 1px solid var(--line-strong);
-	border-radius: 9px;
+	border-radius: 10px;
 	font-size: 0.95rem;
+	min-height: 44px;
 	transition: all 0.2s ease;
 	background: var(--paper-soft);
 	color: var(--ink);
@@ -65,25 +62,114 @@
 	box-shadow: 0 0 0 3px var(--teal-surface);
 }
 
-/* Smart Input Group */
-.smart-create-group {
+.patients-search-clear-btn {
+	position: absolute;
+	right: 40px;
+	top: 50%;
+	transform: translateY(-50%);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	border: none;
+	background: transparent;
+	color: var(--muted);
+	cursor: pointer;
+	border-radius: 50%;
+	transition: all 0.15s;
+}
+
+.patients-search-clear-btn:hover {
+	color: var(--ink);
+	background: var(--line);
+}
+
+.patients-search-shortcut-hint {
+	position: absolute;
+	right: 10px;
+	top: 50%;
+	transform: translateY(-50%);
+	font-size: 12px;
+	font-weight: 700;
+	font-family: monospace;
+	color: var(--muted);
+	background: var(--paper);
+	border: 1px solid var(--line);
+	padding: 2px 6px;
+	border-radius: 5px;
+	pointer-events: none;
+	line-height: 1;
+}
+
+.patients-header-actions {
 	display: flex;
 	align-items: center;
 	gap: 0.75rem;
-	flex: 2;
+	flex-wrap: wrap;
+}
+
+.patients-new-patient-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	min-height: 44px;
+	padding: 0 1.25rem;
+	font-weight: 700;
+	font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+	.patients-panel {
+		padding: 0.75rem;
+		gap: 0.75rem;
+	}
+	.patients-header {
+		flex-direction: column;
+		align-items: stretch;
+		padding: 0.75rem 1rem;
+		gap: 0.75rem;
+	}
+	.patients-search-box {
+		max-width: none;
+		flex: 0 0 auto;
+		width: 100%;
+	}
+	.patients-header-actions {
+		width: 100%;
+		justify-content: stretch;
+	}
+	.patients-header-actions > button {
+		flex: 1;
+		justify-content: center;
+	}
+}
+
+/* Smart Input Group (used inside modal & popups) */
+.smart-create-group {
+	display: flex;
+	align-items: flex-end;
+	gap: 0.75rem;
+	background: var(--teal-surface);
+	border: 1px solid var(--line-strong);
+	border-radius: 12px;
+	padding: 8px 12px;
 }
 
 .smart-input-wrapper {
 	position: relative;
 	flex: 1;
+	width: 100%;
 }
 
 .smart-input-wrapper input {
 	width: 100%;
-	padding: 10px 40px 10px 16px;
+	padding: 10px 44px 10px 14px;
 	border: 1px solid var(--line-strong);
 	border-radius: 9px;
 	font-size: 0.95rem;
+	min-height: 44px;
 	background: var(--paper-soft);
 	color: var(--ink);
 	transition: all 0.2s;
@@ -96,237 +182,469 @@
 	box-shadow: 0 0 0 3px var(--teal-surface);
 }
 
-/* ГРАНИЦА МЕЖДУ ПОИСКОМ И СОЗДАНИЕМ.
-
-   ЧТО БЫЛО. Шапка — один flex-ряд, в котором обе половины выглядели одинаково,
-   и различить их можно было только по placeholder, то есть до первого нажатия
-   клавиши. Замер в живом браузере (1440x900, тёмная тема,
-   scratch/patients-usability-shot.mjs): вычисленные стили двух полей совпадали
-   в 9 свойствах из 10 — padding, border, border-radius, background, font-size,
-   font-weight, color, box-shadow и радиус угла; различалась только ширина, и та
-   в пользу создания (541,55 px против 330,67 px). То есть шире выглядело поле,
-   которым пользуются реже.
-
-   Границы между половинами по замеру не было: premium.css выдаёт .patients-header,
-   .patients-search-box и .smart-create-group ОДНУ И ТУ ЖЕ стеклянную панель —
-   подложка rgba(16, 26, 25, 0.8) у всех трёх, рамка var(--glass-border)
-   = rgba(45, 212, 191, 0.15), радиус 16px и тень rgba(0,0,0,0.5) 0 16px 40px
-   на каждой. Три вложенные панели с одинаковой подложкой не разделяют ничего:
-   отличие фона между шапкой и группой создания было измерено как false, а рамка
-   при альфе 0.15 на почти чёрном фоне даёт линию около #2A3430 — она есть в
-   объявлении и не читается на экране. Рядом это давало ещё и два вложенных
-   контура вокруг поля поиска: рамка бокса радиусом 16px и рамка самого поля
-   радиусом 9px в одном пикселе друг от друга.
-
-   ЧТО ТЕПЕРЬ. Половины перестают быть зеркальными: поиск лежит прямо на шапке
-   без своей панели и получает больше ширины, а создание собрано в отдельную
-   очерченную зону со своей подложкой var(--teal-surface) и рамкой
-   var(--line-strong). Обе переменные полупрозрачные или заданы во всех трёх
-   темах, поэтому светлой плиты в тёмной теме не появляется — тот же приём и по
-   той же причине, что у .mode-readiness в main.css.
-
-   ПОЧЕМУ СЕЛЕКТОР ИЗ ДВУХ КЛАССОВ, А НЕ !important. premium.css подключается
-   ПОСЛЕ этого файла (apps/web/src/main.tsx), поэтому одноклассовое правило
-   здесь проиграло бы его сокращённому свойству border. Специфичность (0,2,0)
-   выигрывает независимо от порядка подключения, и это не гасит ничего, кроме
-   стеклянной панели ровно на этих двух узлах.
-
-   ПОЧЕМУ НЕ ПОДПИСИ И НЕ ОБЪЯСНЯЮЩИЙ АБЗАЦ. Видимые подписи полей и подпись
-   кнопки создания — это текст интерфейса, его место в разметке и в словаре
-   локали, а не в css: content с русской строкой здесь нарушил бы требование
-   i18n. Разметка живёт в apps/web/src/PatientsView.tsx. */
-.patients-header .patients-search-box,
-.patients-header .smart-create-group {
-	background: transparent;
-	border: none;
-	border-radius: 0;
-	box-shadow: none;
-	backdrop-filter: none;
-	-webkit-backdrop-filter: none;
-}
-
-.patients-header .patients-search-box {
-	/* Поиск открывают на каждом пациенте, создание — на новом человеке. Ширину
-     получает то, чем работают чаще: было flex 1 против flex 2, то есть шире
-     выглядело поле, которым пользуются реже. Основа и предел в rem — шапка
-     обязана переживать зум и высокое DPI. */
-	flex: 1 1 20rem;
-	max-width: 32rem;
-}
-
-.patients-header .smart-create-group {
-	/* Основа 26rem = 416 px: подсказка создания занимает 242,51 px, плюс место
-     под иконку микрофона, кнопку «Создать» и внутренние отступы зоны. Меньше —
-     и текст подсказки обрежется. */
-	flex: 1 1 26rem;
-	background: var(--teal-surface);
-	border: 1px solid var(--line-strong);
-	border-radius: 12px;
-	padding: 6px 8px;
-}
-
-@media (max-width: 768px) {
-	.patients-header {
-		flex-direction: column;
-		align-items: stretch;
-	}
-	.patients-search-box {
-		max-width: none;
-	}
-	.smart-create-group {
-		flex-direction: column;
-		align-items: stretch;
-	}
-	.smart-create-group button {
-		width: 100%;
-		justify-content: center;
-	}
-	/* В колонке половины стоят друг под другом, и без разделения это худший из
-     возможных вариантов: два одинаковых поля подряд, без подписей.
-
-     БОКОВЫХ ОТСТУПОВ У ЗОНЫ ЗДЕСЬ НЕТ НАМЕРЕННО. На телефоне каждый пиксель
-     ширины уходит под текст подсказки, а она и так на пределе: замер на окне 390
-     даёт 242,51 px текста против 224 px места внутри поля — подсказка создания
-     обрезается независимо от этой правки, потому что строка «ФИО, телефон, дата
-     рождения (Enter)» длиннее экрана телефона. Боковой отступ отнял бы ещё
-     20 px и обрезал бы сильнее. Границу в колонке несут подложка и верхняя
-     линия: ширину они не тратят. */
-	.patients-header .patients-search-box {
-		max-width: none;
-		flex: 0 0 auto;
-	}
-	.patients-header .smart-create-group {
-		flex: 0 0 auto;
-		padding: 0.75rem 0 0;
-		border: none;
-		border-top: 1px solid var(--line-strong);
-		border-radius: 0;
-	}
-}
-
-/* Patient List Grid */
-.patient-grid {
-	display: grid;
-	/* min(...): список пациентов открывают с планшета и телефона —
-     колонка обязана ужиматься до ширины контейнера. */
-	grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
-	gap: 1rem;
-	margin-bottom: 1rem;
-}
-
-.patient-card-item {
-	background: var(--paper);
+/* Concise Notices */
+.patients-clinic-wide-notice {
+	background: var(--paper-soft);
+	color: var(--ink);
 	border: 1px solid var(--line);
-	border-radius: 14px;
-	padding: 1.25rem;
+	border-left: 4px solid var(--teal);
+	border-radius: 8px;
+	padding: 8px 14px;
+	font-size: 12px;
+	font-weight: 600;
+	margin: 0 0 6px 0;
+	box-shadow: var(--shadow-1);
+}
+
+.quick-create-guidance {
+	background: var(--teal-surface);
+	color: var(--teal-dark);
+	border: 1px solid var(--line-strong);
+	border-radius: 8px;
+	padding: 8px 14px;
+	font-size: 12px;
+	font-weight: 600;
+	margin: 0 0 6px 0;
+}
+
+/* Patients Main Grid (Master-Detail) */
+.patients-main-grid {
+	display: grid;
+	grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+	gap: 1.25rem;
+	align-items: start;
+	width: 100%;
+	min-width: 0;
+}
+
+@media (max-width: 900px) {
+	.patients-main-grid {
+		display: flex !important;
+		flex-direction: column !important;
+		grid-template-columns: 1fr !important;
+	}
+}
+
+/* Patient List & Row Items */
+.patient-list {
 	display: flex;
 	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.patient-row {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 12px 14px;
+	min-height: 56px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
 	gap: 0.75rem;
-	transition: all 0.2s ease;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 	cursor: pointer;
-	position: relative;
-	min-height: 120px;
 	color: var(--ink);
 }
 
-.patient-card-item:hover {
+.patient-row:hover {
 	border-color: var(--teal-ring);
-	box-shadow: var(--shadow-2);
-	transform: translateY(-2px);
+	background: var(--paper-soft);
+	transform: translateY(-1px);
+	box-shadow: var(--shadow-1);
 }
 
-.patient-card-item.selected {
+.patient-row.selected {
 	border-color: var(--teal);
 	background: var(--teal-surface);
 	box-shadow: 0 0 0 1px var(--teal);
 }
 
-.patient-card-item h3 {
+.patient-row h3 {
 	margin: 0;
-	font-size: 1.1rem;
+	font-size: 0.95rem;
+	font-weight: 700;
+	color: var(--ink);
+	line-height: 1.3;
+}
+
+.patient-row p {
+	margin: 2px 0 0 0;
+	color: var(--muted);
+	font-size: 0.85rem;
+}
+
+.patient-row-meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 6px;
+	align-items: center;
+}
+
+.patient-row-meta .patient-risk-label {
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 700;
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+}
+
+.patient-row-meta .patient-row-chip {
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 700;
+	font-family: monospace;
+	background: var(--teal-surface);
+	color: var(--teal);
+	border: 1px solid var(--teal-ring);
+}
+
+.patient-row-meta .patient-next-action {
+	font-size: 12px;
 	font-weight: 700;
 	color: var(--ink);
 }
 
-.patient-card-item p {
-	margin: 0;
-	color: var(--muted);
-	font-size: 0.9rem;
-}
-
-.patient-card-meta {
-	margin-top: auto;
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	font-size: 0.85rem;
-}
-
-.patient-card-meta .risk-badge {
-	padding: 2px 8px;
-	border-radius: 12px;
-	font-weight: 600;
-}
-
 /* Detailed Patient Panel */
-.patient-detail-card {
+.patient-admin-panel {
 	background: var(--paper);
 	border: 1px solid var(--line);
-	border-radius: 14px;
+	border-radius: 16px;
 	padding: 1.5rem;
 	box-shadow: var(--shadow-1);
 	color: var(--ink);
-	backdrop-filter: var(--glass-blur);
-	transition:
-		box-shadow 0.2s ease,
-		border-color 0.2s ease;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
 }
 
-.patient-detail-card:hover {
-	box-shadow: var(--shadow-2);
-	border-color: var(--line-strong);
+.patient-core-form-grid,
+.patient-admin-form-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 0.85rem;
 }
 
-.patient-card-item:focus-visible,
-.patient-detail-card:focus-visible {
-	outline: 2px solid var(--teal);
-	outline-offset: 2px;
+@media (max-width: 768px) {
+	.patient-core-form-grid,
+	.patient-admin-form-grid {
+		grid-template-columns: 1fr !important;
+	}
+	.patient-core-form-grid .form-span-2,
+	.patient-admin-form-grid .form-span-2 {
+		grid-column: span 1 !important;
+	}
 }
 
-/* Группа виджетов под карточкой пациента (архив, история связи, журнал операций,
-   типы задач, дубли, дерево обращений).
+.patient-core-form-grid label,
+.patient-admin-form-grid label {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--muted);
+}
 
-   ЧТО БЫЛО. Сетка задавалась инлайном в PatientsView:
-   `repeat(auto-fit, minmax(min(280px, 100%), 1fr))`. На планшете в портрете
-   (окно 720) группе достаётся около 639px — ровно две дорожки по 280px, поэтому
-   она разворачивалась в две колонки по ~311px. Высота ряда в сетке равна высоте
-   самой высокой карточки, а карточки здесь различаются на порядок: «Дубли
-   карточек пациентов» в узкой дорожке перестраивается в стопку подпись/значение
-   (@container opsPanel в dente-operations.css) и вырастает на тысячи пикселей, а
-   стоящее рядом «Сквозное дерево связей обращений» — это заголовок и одна
-   карточка пустого состояния. Вторая дорожка растягивалась до высоты первой:
-   на снимке 720x1100 это пустая белая панель с рамкой во всю высоту экрана,
-   44 % ширины окна ничем.
+.patient-core-form-grid input,
+.patient-core-form-grid select,
+.patient-admin-form-grid input,
+.patient-admin-form-grid select {
+	min-height: 44px;
+	padding: 8px 12px;
+	border-radius: 9px;
+	border: 1px solid var(--line-strong);
+	background: var(--paper-soft);
+	color: var(--ink);
+	font-size: 0.95rem;
+	transition: all 0.2s;
+}
 
-   ЧТО ТЕПЕРЬ. Вторая колонка появляется только когда каждой дорожке достаётся не
-   меньше 30rem — ширины, на которой карточка-стопка держит подпись и значение в
-   одну строку каждую. В достижимом сейчас диапазоне ширин группы (260–320px в
-   колонке карточки пациента при окне >840px; 309–774px в одну колонку при окне
-   <=840px) двух таких дорожек не бывает нигде, то есть группа идёт одной
-   колонкой на всех трёх проверяемых ширинах — 390, 720 и 1440. Мёртвой ширины не
-   остаётся вовсе, а не «остаётся, но без рамки»: пустая дорожка не прячется, её
-   просто нет. Форма auto-fit сохранена намеренно и не является украшением: когда
-   группа получит ширину всей секции (сейчас она третьим ребёнком попадает в
-   узкую первую дорожку .patients-main-grid), колонки вернутся сами, без нового
-   breakpoint.
+.patient-core-form-grid input:focus,
+.patient-core-form-grid select:focus,
+.patient-admin-form-grid input:focus,
+.patient-admin-form-grid select:focus {
+	border-color: var(--teal);
+	outline: none;
+	background: var(--paper);
+	box-shadow: 0 0 0 2px var(--teal-surface);
+}
 
-   ПОЧЕМУ КЛАССОМ, А НЕ ИНЛАЙНОМ. Инлайн-стиль нельзя переопределить ни
-   media-, ни container-запросом без !important. Ровно из-за этого рядом, в
-   dente-redesign.css, инлайн у .patients-main-grid приходится глушить через
-   `display: flex !important`. Второй такой узел не нужен. */
+/* Collapsible Details Block */
+.patient-docs-collapsible {
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	background: var(--paper-soft);
+	overflow: hidden;
+}
+
+.patient-docs-collapsible summary {
+	padding: 12px 16px;
+	min-height: 48px;
+	background: var(--paper-soft);
+	color: var(--ink);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-weight: 700;
+	font-size: 14px;
+}
+
+.patient-docs-collapsible .settings-advanced-form {
+	padding: 16px;
+	background: var(--paper);
+	border-top: 1px solid var(--line);
+}
+
+/* Quick Chips */
+.quick-chip {
+	padding: 5px 10px;
+	min-height: 32px;
+	font-size: 12px;
+	font-weight: 600;
+	border-radius: 999px;
+	background: var(--paper-soft);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.quick-chip:hover {
+	background: var(--teal-surface);
+	border-color: var(--teal);
+	color: var(--teal-dark);
+}
+
+/* Widgets Grid */
 .patients-widgets-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(min(30rem, 100%), 1fr));
 	gap: 1rem;
-	margin-top: 1.5rem;
+	margin-top: 1rem;
+}
+
+/* Create Patient Modal Pop-up */
+.create-patient-modal-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 99999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(0, 0, 0, 0.65);
+	backdrop-filter: blur(8px);
+	padding: 1rem;
+}
+
+.create-patient-modal-card {
+	position: relative;
+	width: 100%;
+	max-width: 560px;
+	max-height: 90vh;
+	overflow-y: auto;
+	background: var(--paper);
+	border: 1px solid var(--line-strong, var(--line));
+	border-radius: 16px;
+	box-shadow: var(--shadow-2, 0 20px 25px -5px rgba(0, 0, 0, 0.3));
+	color: var(--ink);
+	display: flex;
+	flex-direction: column;
+	animation: modalFadeScale 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalFadeScale {
+	from {
+		opacity: 0;
+		transform: scale(0.96) translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1) translateY(0);
+	}
+}
+
+.create-patient-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1.25rem 1.5rem;
+	border-bottom: 1px solid var(--line);
+}
+
+.create-patient-modal-title-wrap {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.create-patient-modal-icon-badge {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	border-radius: 10px;
+	background: var(--teal-surface);
+	color: var(--teal);
+	border: 1px solid var(--teal-ring);
+	flex-shrink: 0;
+}
+
+.create-patient-modal-title {
+	margin: 0;
+	font-size: 1.15rem;
+	font-weight: 700;
+	color: var(--ink);
+	line-height: 1.3;
+}
+
+.create-patient-modal-subtitle {
+	margin: 2px 0 0 0;
+	font-size: 0.8rem;
+	color: var(--muted);
+	font-weight: 500;
+}
+
+.create-patient-modal-close-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	min-width: 36px;
+	min-height: 36px;
+	border-radius: 9px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--muted);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.create-patient-modal-close-btn:hover {
+	background: var(--paper);
+	color: var(--ink);
+	border-color: var(--line-strong);
+}
+
+.create-patient-modal-body {
+	padding: 1.5rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1.15rem;
+}
+
+.create-patient-form-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+	min-width: 0;
+}
+
+.create-patient-label-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+}
+
+.create-patient-label {
+	font-size: 0.8rem;
+	font-weight: 700;
+	color: var(--ink);
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+}
+
+.create-patient-smart-parse-btn {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--teal);
+	background: var(--teal-surface);
+	border: 1px solid var(--teal-ring);
+	border-radius: 6px;
+	padding: 2px 8px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.create-patient-smart-parse-btn:hover {
+	background: var(--teal);
+	color: #ffffff;
+}
+
+.create-patient-input {
+	width: 100%;
+	padding: 10px 14px;
+	border: 1px solid var(--line-strong);
+	border-radius: 10px;
+	font-size: 0.95rem;
+	min-height: 44px;
+	background: var(--paper-soft);
+	color: var(--ink);
+	transition: all 0.2s ease;
+	outline: none;
+}
+
+.create-patient-input:focus {
+	border-color: var(--teal);
+	background: var(--paper);
+	box-shadow: 0 0 0 3px var(--teal-surface);
+}
+
+.create-patient-grid-2 {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 1rem;
+}
+
+@media (max-width: 480px) {
+	.create-patient-grid-2 {
+		grid-template-columns: 1fr;
+	}
+}
+
+.create-patient-modal-footer {
+	padding: 1rem 1.5rem;
+	border-top: 1px solid var(--line);
+	background: var(--paper-soft);
+	border-radius: 0 0 16px 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.patient-create-modal-guidance {
+	margin: 0;
+	font-size: 0.8rem;
+	line-height: 1.4;
+}
+
+.create-patient-modal-actions {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0.75rem;
+}
+
+.create-patient-cancel-btn {
+	min-height: 44px;
+	padding: 0 1.25rem;
+	font-weight: 600;
+}
+
+.create-patient-submit-btn {
+	min-height: 44px;
+	padding: 0 1.5rem;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
 }

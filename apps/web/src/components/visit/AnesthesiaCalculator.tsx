@@ -168,12 +168,12 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 					<div>
 						<h4 className="text-sm font-bold text-[var(--ink)] flex items-center gap-2">
 							<span>Калькулятор анестезии и дозировок</span>
-							<span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20">
+							<span className="text-xs px-2 py-0.5 rounded-full font-mono font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20">
 								{calc.drug.commercialName} · {calc.totalVolumeMl} мл
 							</span>
 							{hasActiveSomaticRisks && (
-								<span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1">
-									<ShieldAlert size={10} /> Кросс-чек активен
+								<span className="text-xs px-2 py-0.5 rounded-full font-mono font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1">
+									<ShieldAlert size={12} /> Кросс-чек активен
 								</span>
 							)}
 						</h4>
@@ -232,7 +232,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 									<Heart size={16} className={hasCardiovascularRisk ? "text-rose-500" : "text-[var(--muted)]"} />
 									<div>
 										<div className="font-bold">Гипертония / ССЗ</div>
-										<div className="text-[10px] text-[var(--muted)]">МКБ I10–I15 / ИБС</div>
+										<div className="text-xs text-[var(--muted)]">МКБ I10–I15 / ИБС</div>
 									</div>
 								</div>
 								<input
@@ -259,7 +259,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 									<Wind size={16} className={hasSulfiteOrAsthma ? "text-purple-500" : "text-[var(--muted)]"} />
 									<div>
 										<div className="font-bold">Астма / Сульфиты</div>
-										<div className="text-[10px] text-[var(--muted)]">Риск бронхоспазма</div>
+										<div className="text-xs text-[var(--muted)]">Риск бронхоспазма</div>
 									</div>
 								</div>
 								<input
@@ -286,7 +286,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 									<Baby size={16} className={isPregnantOrLactating ? "text-blue-500" : "text-[var(--muted)]"} />
 									<div>
 										<div className="font-bold">Беременность / Лактация</div>
-										<div className="text-[10px] text-[var(--muted)]">Плод / маточный кровоток</div>
+										<div className="text-xs text-[var(--muted)]">Плод / маточный кровоток</div>
 									</div>
 								</div>
 								<input
@@ -378,21 +378,21 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 											</span>
 											{d.isAdrenalineFree ? (
 												<span
-													className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold flex items-center gap-0.5"
+													className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold flex items-center gap-0.5"
 													title="Без адреналина — безопасно для сердца и сульфит-аллергиков"
 												>
-													<Heart size={9} /> БЕЗ АДР.
+													<Heart size={11} /> БЕЗ АДР.
 												</span>
 											) : d.vasoconstrictorRatio === "1:200000" ? (
 												<span
-													className="text-[9px] px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-700 dark:text-teal-300 font-bold flex items-center gap-0.5"
+													className="text-xs px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-700 dark:text-teal-300 font-bold flex items-center gap-0.5"
 													title="1:200 000 — предпочтителен при беременности"
 												>
-													<Baby size={9} /> 1:200k
+													<Baby size={11} /> 1:200k
 												</span>
 											) : null}
 										</div>
-										<div className="flex items-center justify-between text-[10px] text-[var(--muted)] mt-1">
+										<div className="flex items-center justify-between text-xs text-[var(--muted)] mt-1">
 											<span>{d.vasoconstrictor}</span>
 											<span>{d.mgPerCarpule} мг/карп.</span>
 										</div>
@@ -578,7 +578,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 										<strong>{calc.maxSafeDoseMg} мг</strong> ({calc.maxSafeCarpules} карп.)
 									</span>
 									{calc.isCardioRestricted && (
-										<span className="px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-700 dark:text-rose-300 font-bold text-[10px]">
+										<span className="px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-700 dark:text-rose-300 font-bold text-xs">
 											Кардио-лимит (макс. {calc.maxSafeCarpules} к.)
 										</span>
 									)}
@@ -654,7 +654,7 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 							<span className="text-xs font-bold text-[var(--muted)]">
 								Формируемая запись для дневника 043/у (SOAP / План лечения):
 							</span>
-							<span className="text-[10px] text-teal-700 dark:text-teal-400 font-mono">
+							<span className="text-xs text-teal-700 dark:text-teal-400 font-mono">
 								СтАР-совместимо
 							</span>
 						</div>

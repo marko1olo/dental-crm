@@ -152,7 +152,7 @@ const getAnatomicalToothColors = (
 					fill: "url(#gold-crown-gradient)",
 					crownFill: "url(#gold-crown-gradient)",
 					rootFill: "url(#dente-root-dentin)",
-					stroke: "#b45309",
+					stroke: "#d97706",
 					opacity: "1",
 					badgeColor: "#f59e0b",
 					badgeBg: "rgba(245, 158, 11, 0.15)",
@@ -164,7 +164,7 @@ const getAnatomicalToothColors = (
 					fill: "url(#pfm-crown-gradient)",
 					crownFill: "url(#pfm-crown-gradient)",
 					rootFill: "url(#dente-root-dentin)",
-					stroke: "#1e3a8a",
+					stroke: "#3b82f6",
 					collarFill: "url(#pfm-metal-collar)",
 					opacity: "1",
 					badgeColor: "#2563eb",
@@ -177,7 +177,7 @@ const getAnatomicalToothColors = (
 					fill: "url(#ceramic-emax-gradient)",
 					crownFill: "url(#ceramic-emax-gradient)",
 					rootFill: "url(#dente-root-dentin)",
-					stroke: "#0284c7",
+					stroke: "#38bdf8",
 					opacity: "1",
 					badgeColor: "#38bdf8",
 					badgeBg: "rgba(56, 189, 248, 0.15)",
@@ -188,7 +188,7 @@ const getAnatomicalToothColors = (
 				fill: "url(#zirconia-crown-gradient)",
 				crownFill: "url(#zirconia-crown-gradient)",
 				rootFill: "url(#dente-root-dentin)",
-				stroke: "#1d4ed8",
+				stroke: "#60a5fa",
 				collarFill: "url(#dente-cervical-collar)",
 				opacity: "1",
 				badgeColor: "#3b82f6",
@@ -262,6 +262,7 @@ const AnatomicalToothSVG = ({
 	periapicalLesion,
 	rootResorptionStage,
 	rootResorption,
+	pocketDepth,
 	isSelected,
 	onClick,
 	onQuickStateChange,
@@ -289,6 +290,7 @@ const AnatomicalToothSVG = ({
 	periapicalLesion?: boolean | undefined;
 	rootResorptionStage?: RootResorptionStage | undefined;
 	rootResorption?: RootResorptionStage | undefined;
+	pocketDepth?: number | undefined;
 	isSelected?: boolean | undefined;
 	onClick: (e: React.MouseEvent, num: number, surface?: string) => void;
 	onQuickStateChange?: ((targets: number[], state: ToothState, surfaces?: readonly string[] | undefined) => void) | undefined;
@@ -551,6 +553,21 @@ const AnatomicalToothSVG = ({
 							strokeWidth="1.8"
 							strokeDasharray="3 2"
 							strokeLinecap="round"
+						/>
+					</g>
+				)}
+
+				{/* Periodontal Pocket Depth Indicator Line / Band (> 4 mm) */}
+				{pocketDepth !== undefined && pocketDepth > 4 && (
+					<g className="periodontal-pocket-depth-indicator">
+						<path
+							d={isTop ? "M 22 96 Q 50 102 78 96" : "M 22 64 Q 50 58 78 64"}
+							fill="none"
+							stroke={pocketDepth >= 6 ? "#ef4444" : "#f59e0b"}
+							strokeWidth={pocketDepth >= 6 ? "3.0" : "2.2"}
+							strokeDasharray={pocketDepth >= 6 ? undefined : "3 1.5"}
+							strokeLinecap="round"
+							className={pocketDepth >= 6 ? "animate-pulse" : undefined}
 						/>
 					</g>
 				)}
@@ -1056,8 +1073,12 @@ const ToothWrapper: React.FC<ToothWrapperProps> = ({
 		periapicalLesion,
 		rootResorptionStage,
 		rootResorption,
+		pocketDepth: directPocketDepth,
+		pocketDepthMm,
+		maxPocketDepth,
 	} = tooth;
 
+	const pocketDepth = directPocketDepth ?? pocketDepthMm ?? maxPocketDepth;
 	const furcation = furcationGrade ?? directFurcation;
 	const effectiveResorption = rootResorptionStage ?? rootResorption ?? 0;
 	const colors = getAnatomicalToothColors(state, material);
@@ -1189,6 +1210,16 @@ const ToothWrapper: React.FC<ToothWrapperProps> = ({
 						F{furcation}
 					</span>
 				)}
+				{pocketDepth !== undefined && pocketDepth > 4 && (
+					<span
+						className={`ml-0.5 px-1 py-0.2 rounded text-xs font-black text-white shadow-2xs leading-none ${
+							pocketDepth >= 6 ? "bg-rose-600 animate-pulse" : "bg-amber-500"
+						}`}
+						title={`Пародонтальный карман ${pocketDepth} мм (Риск пародонтита K05.3)`}
+					>
+						P{pocketDepth}
+					</span>
+				)}
 				{effectiveResorption > 0 && (
 					<span
 						className="ml-0.5 px-1 py-0.2 rounded text-xs font-black text-white shadow-2xs leading-none"
@@ -1278,6 +1309,7 @@ const ToothWrapper: React.FC<ToothWrapperProps> = ({
 				bopSites={bopSites}
 				suppurationSites={suppurationSites}
 				periapicalLesion={periapicalLesion}
+				pocketDepth={pocketDepth}
 				rootResorptionStage={effectiveResorption}
 				isSelected={isSelected}
 				onClick={onClick}

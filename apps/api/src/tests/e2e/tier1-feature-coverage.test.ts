@@ -1,8 +1,12 @@
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { after, before, describe, it } from "node:test";
+
+const repoRoot = existsSync(join(process.cwd(), "package.json")) && existsSync(join(process.cwd(), "apps"))
+	? process.cwd()
+	: join(process.cwd(), "../..");
 import {
 	SbpQrEngine,
 	createFiscalReceiptPayloadSchema,
@@ -109,11 +113,14 @@ describe("Tier 1: Feature Coverage (Isolated Feature Validation)", () => {
 		try {
 			await purgeFixtureOrganizations([ORG_ID]);
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.insert(organizations).values({
-					id: ORG_ID,
-					name: "Клиника Tier 1 Тестирования",
-					inn: "7701234567",
-				});
+				await db
+					.insert(organizations)
+					.values({
+						id: ORG_ID,
+						name: "Клиника Tier 1 Тестирования",
+						inn: "7701234567",
+					})
+					.onConflictDoNothing();
 				await db.insert(clinics).values({
 					id: CLINIC_ID,
 					organizationId: ORG_ID,
@@ -198,10 +205,10 @@ describe("Tier 1: Feature Coverage (Isolated Feature Validation)", () => {
 	// ==========================================
 	describe("Feature 1: UI 4-State Visual & CSS Tokens", () => {
 		const tokenAliasesPath = join(
-			process.cwd(),
+			repoRoot,
 			"apps/web/src/styles/token-aliases.css",
 		);
-		const mainCssPath = join(process.cwd(), "apps/web/src/styles/main.css");
+		const mainCssPath = join(repoRoot, "apps/web/src/styles/main.css");
 
 		it("1.1 defines violet color tokens (--violet-50, --violet-200, --violet-700) in :root (Light Theme)", () => {
 			const content = readFileSync(tokenAliasesPath, "utf8");
@@ -253,7 +260,7 @@ describe("Tier 1: Feature Coverage (Isolated Feature Validation)", () => {
 	// ==========================================
 	describe("Feature 2: Mobile Touch Targets (>=44px)", () => {
 		const touchTargetsCssPath = join(
-			process.cwd(),
+			repoRoot,
 			"apps/web/src/styles/touch-targets.css",
 		);
 
@@ -1154,14 +1161,14 @@ describe("Tier 1: Feature Coverage (Isolated Feature Validation)", () => {
 	// ==========================================
 	describe("Feature 10: Repository Gates & Integrity", () => {
 		it("10.1 check-css-tokens gate reports 0 undefined variables across all stylesheets", async () => {
-			const checkCssScript = join(process.cwd(), "scripts/check-css-tokens.mjs");
+			const checkCssScript = join(repoRoot, "scripts/check-css-tokens.mjs");
 			const content = readFileSync(checkCssScript, "utf8");
 			assert.ok(content.includes("check-css-tokens"));
 		});
 
 		it("10.2 check-encoding gate confirms 100% valid UTF-8 without mojibake", async () => {
 			const checkEncodingScript = join(
-				process.cwd(),
+				repoRoot,
 				"scripts/check-encoding.mjs",
 			);
 			const content = readFileSync(checkEncodingScript, "utf8");
@@ -1170,7 +1177,7 @@ describe("Tier 1: Feature Coverage (Isolated Feature Validation)", () => {
 
 		it("10.3 check-dynamic-imports confirms all dynamic lazy imports resolve to valid files", async () => {
 			const checkDynScript = join(
-				process.cwd(),
+				repoRoot,
 				"scripts/check-dynamic-imports.mjs",
 			);
 			const content = readFileSync(checkDynScript, "utf8");
@@ -1178,14 +1185,14 @@ describe("Tier 1: Feature Coverage (Isolated Feature Validation)", () => {
 		});
 
 		it("10.4 check-env-contract gate confirms all required environment variables are documented", async () => {
-			const checkEnvScript = join(process.cwd(), "scripts/check-env-contract.mjs");
+			const checkEnvScript = join(repoRoot, "scripts/check-env-contract.mjs");
 			const content = readFileSync(checkEnvScript, "utf8");
 			assert.ok(content.includes("check-env-contract") || content.includes("REQUIRED_ENV"));
 		});
 
 		it("10.5 confirms zero mocks and zero // TODO placeholders in production routes", async () => {
 			const sberbankRoute = readFileSync(
-				join(process.cwd(), "apps/api/src/routes/sberbank.ts"),
+				join(repoRoot, "apps/api/src/routes/sberbank.ts"),
 				"utf8",
 			);
 			assert.doesNotMatch(sberbankRoute, /\/\/\s*TODO/);

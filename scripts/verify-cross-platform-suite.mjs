@@ -86,6 +86,16 @@ const steps = [
 		cmd: "node --import tsx --import ./testCssStub.mjs --test src/tests/patientCabinetMobile375.test.ts src/tests/portalTimeline.test.ts src/tests/portalSelfCheckin.test.ts src/tests/mobileErgonomicsRound84.test.ts src/tests/patientPortalReceptionQr85.test.ts",
 		cwd: path.join(projectRoot, "apps/web"),
 	},
+	{
+		name: "15. Universal Portability, Service Worker Caching & Offline Cold-Start (<500ms) Suite",
+		cmd: "node --import tsx --import ./testCssStub.mjs --test src/tests/universalPortabilityAndOfflineSpeed.test.ts",
+		cwd: path.join(projectRoot, "apps/web"),
+	},
+	{
+		name: "16. Autonomous Local Backup (.dente), Encryption & Cache Integrity Suite",
+		cmd: "node --import tsx --import ./testCssStub.mjs --test ../../packages/shared/src/tests/denteBackup.test.ts src/tests/offlineBackupAndIntegrity.test.ts",
+		cwd: path.join(projectRoot, "apps/web"),
+	},
 ];
 
 let totalPassed = 0;
@@ -94,18 +104,14 @@ let totalFailed = 0;
 for (const step of steps) {
 	console.log(`\n▶ Running: ${step.name}...`);
 	try {
-		const output = execSync(step.cmd, {
+		execSync(step.cmd, {
 			cwd: step.cwd,
-			stdio: "pipe",
-			encoding: "utf8",
+			stdio: "inherit",
 		});
-		console.log(output.trim());
 		console.log(`✔ [PASS] ${step.name}`);
 		totalPassed++;
 	} catch (err) {
 		console.error(`✖ [FAIL] ${step.name}`);
-		if (err.stdout) console.error(err.stdout);
-		if (err.stderr) console.error(err.stderr);
 		totalFailed++;
 		process.exit(1);
 	}

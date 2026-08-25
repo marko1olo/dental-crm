@@ -128,4 +128,44 @@ describe("VisiographPacsWatcherService — Local Radiography Watch Folder & Inst
 		assert.equal(unwatchCalled, true);
 		assert.equal(VisiographPacsWatcherService.isCurrentlyWatching(), false);
 	});
+
+	it("should parse DICOM Part 10 preamble and detect 'DICM' magic signature", () => {
+		// Valid DICOM buffer: 128 bytes preamble + "DICM"
+		const validDicomBuffer = new Uint8Array(132);
+		validDicomBuffer[128] = "D".charCodeAt(0);
+		validDicomBuffer[129] = "I".charCodeAt(0);
+		validDicomBuffer[130] = "C".charCodeAt(0);
+		validDicomBuffer[131] = "M".charCodeAt(0);
+
+		const parsedValid = VisiographPacsWatcherService.parseDicomHeaderPreamble(validDicomBuffer);
+		assert.equal(parsedValid.isStandardDicom, true);
+		assert.equal(parsedValid.hasMagicPrefix, true);
+		assert.equal(parsedValid.detectedPreambleLength, 132);
+
+		// Non-DICOM buffer
+		const invalidBuffer = new Uint8Array(132);
+		const parsedInvalid = VisiographPacsWatcherService.parseDicomHeaderPreamble(invalidBuffer);
+		assert.equal(parsedInvalid.isStandardDicom, false);
+		assert.equal(parsedInvalid.hasMagicPrefix, false);
+
+		// Short buffer
+		const shortBuffer = new Uint8Array(64);
+		const parsedShort = VisiographPacsWatcherService.parseDicomHeaderPreamble(shortBuffer);
+		assert.equal(parsedShort.isStandardDicom, false);
+	});
+
+	it("should return correct diagnostic window presets for dental radiography", () => {
+		const boneWindow = VisiographPacsWatcherService.getDiagnosticWindowPresets("bone");
+		assert.equal(boneWindow.windowCenter, 300);
+		assert.equal(boneWindow.windowWidth, 1500);
+
+		const endoWindow = VisiographPacsWatcherService.getDiagnosticWindowPresets("endodontics");
+		assert.equal(endoWindow.windowCenter, 500);
+		assert.equal(endoWindow.windowWidth, 2000);
+
+		const softTissueWindow = VisiographPacsWatcherService.getDiagnosticWindowPresets("soft_tissue");
+		assert.equal(softTissueWindow.windowCenter, 40);
+		assert.equal(softTissueWindow.windowWidth, 400);
+	});
 });
+

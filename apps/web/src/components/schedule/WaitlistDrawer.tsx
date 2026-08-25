@@ -605,7 +605,7 @@ export function WaitlistDrawer(props: Props) {
 												)}
 											</div>
 											<span
-												className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${priorityColors[item.priorityLevel]}`}
+												className={`text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${priorityColors[item.priorityLevel]}`}
 											>
 												{priorityLabels[item.priorityLevel]}
 											</span>

@@ -788,7 +788,10 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					<span className="status-pill status-in_treatment">Черновик</span>
 				</div>
 
-				<section className="visit-focus-bar" aria-label="Быстрый фокус приема">
+				<section
+					className={`visit-focus-bar ${visitSubViewTab === "odontogram" ? "odontogram-compact" : ""}`}
+					aria-label="Быстрый фокус приема"
+				>
 					<div className="visit-focus-patient min-w-0">
 						<PatientAvatar fullName={activePatient.fullName} size={44} />
 						<div className="min-w-0">
@@ -927,7 +930,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				{odontogramTabWasOpened && (
 					<div
 						style={{
-							margin: "16px 0",
+							margin: "8px 0",
 							display: visitSubViewTab === "odontogram" ? undefined : "none",
 						}}
 						aria-hidden={visitSubViewTab !== "odontogram"}

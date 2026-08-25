@@ -223,47 +223,47 @@ export function LabOrdersPage() {
 
 			{/* Summary KPI Cards */}
 			<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-				<div className="p-3.5 bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
-					<span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Всего заказов</span>
-					<div className="text-xl font-black text-slate-900 dark:text-white font-mono">{metrics.total}</div>
+				<div className="p-3.5 bg-[var(--paper)] rounded-2xl border border-[var(--line)] shadow-sm space-y-1">
+					<span className="text-xs font-semibold text-[var(--muted)]">Всего заказов</span>
+					<div className="text-xl font-black text-[var(--ink)] font-mono">{metrics.total}</div>
 				</div>
 
 				<div className="p-3.5 bg-blue-50/50 dark:bg-blue-950/20 rounded-2xl border border-blue-200 dark:border-blue-800/40 shadow-sm space-y-1">
-					<span className="text-[11px] font-semibold text-blue-700 dark:text-blue-300">В производстве</span>
+					<span className="text-xs font-semibold text-blue-700 dark:text-blue-300">В производстве</span>
 					<div className="text-xl font-black text-blue-900 dark:text-blue-100 font-mono">{metrics.inProgress}</div>
 				</div>
 
 				<div className="p-3.5 bg-purple-50/50 dark:bg-purple-950/20 rounded-2xl border border-purple-200 dark:border-purple-800/40 shadow-sm space-y-1">
-					<span className="text-[11px] font-semibold text-purple-700 dark:text-purple-300">На примерке</span>
+					<span className="text-xs font-semibold text-purple-700 dark:text-purple-300">На примерке</span>
 					<div className="text-xl font-black text-purple-900 dark:text-purple-100 font-mono">{metrics.tryIn}</div>
 				</div>
 
 				<div className="p-3.5 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-200 dark:border-emerald-800/40 shadow-sm space-y-1">
-					<span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">Сдано работ</span>
+					<span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Сдано работ</span>
 					<div className="text-xl font-black text-emerald-900 dark:text-emerald-100 font-mono">{metrics.completed}</div>
 				</div>
 
-				<div className="p-3.5 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 col-span-2 sm:col-span-1 lg:col-span-1">
-					<span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Сумма ЗТЛ</span>
+				<div className="p-3.5 bg-[var(--paper-soft)] rounded-2xl border border-[var(--line)] shadow-sm space-y-1 col-span-2 sm:col-span-1 lg:col-span-1">
+					<span className="text-xs font-semibold text-[var(--muted)]">Сумма ЗТЛ</span>
 					<div className="text-lg font-black text-teal-600 dark:text-teal-400 font-mono">{money(metrics.totalCost)}</div>
 				</div>
 
 				<div className="p-3.5 bg-amber-50/50 dark:bg-amber-950/20 rounded-2xl border border-amber-200 dark:border-amber-800/40 shadow-sm space-y-1 col-span-2 sm:col-span-2 lg:col-span-1">
-					<span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300">Удержания с врачей</span>
+					<span className="text-xs font-semibold text-amber-700 dark:text-amber-300">Удержания с врачей</span>
 					<div className="text-lg font-black text-amber-900 dark:text-amber-200 font-mono">{money(metrics.doctorDeductions)}</div>
 				</div>
 			</div>
 
 			{/* Filters & Search Toolbar */}
-			<div className="flex flex-col sm:flex-row items-center gap-3 p-3 bg-white dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+			<div className="flex flex-col sm:flex-row items-center gap-3 p-3 bg-[var(--paper)] rounded-2xl border border-[var(--line)] shadow-sm">
 				<div className="relative flex-1 w-full">
-					<Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+					<Search className="w-4 h-4 text-[var(--muted)] absolute left-3 top-3" />
 					<input
 						type="text"
 						placeholder="Поиск по пациенту, врачу, зубу FDI или материалу..."
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
-						className="w-full h-10 pl-9 pr-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 focus:outline-none"
+						className="w-full h-10 pl-9 pr-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-2 focus:ring-teal-500 focus:outline-none"
 					/>
 				</div>
 
@@ -271,7 +271,7 @@ export function LabOrdersPage() {
 					<select
 						value={statusFilter}
 						onChange={(e) => setStatusFilter(e.target.value)}
-						className="h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 focus:outline-none"
+						className="h-10 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-2 focus:ring-teal-500 focus:outline-none"
 					>
 						<option value="all">Все статусы</option>
 						<option value="sent">Отправлен в ЗТЛ</option>
@@ -323,7 +323,7 @@ export function LabOrdersPage() {
 						return (
 							<div
 								key={order.id}
-								className="bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/70 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4"
+								className="bg-[var(--paper)] border border-[var(--line)] rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4"
 							>
 								<div className="space-y-3">
 									{/* Card Top */}
@@ -333,10 +333,10 @@ export function LabOrdersPage() {
 												{order.toothFdi || "—"}
 											</span>
 											<div>
-												<h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white m-0">
+												<h3 className="text-xs sm:text-sm font-bold text-[var(--ink)] m-0">
 													{order.patientName || "Пациент"}
 												</h3>
-												<span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+												<span className="text-xs text-[var(--muted)] block">
 													Врач: {order.doctorName || "Не указан"}
 												</span>
 											</div>
@@ -346,19 +346,19 @@ export function LabOrdersPage() {
 									</div>
 
 									{/* Tech Details */}
-									<div className="p-2.5 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-slate-800 text-xs space-y-1 text-slate-700 dark:text-slate-300">
+									<div className="p-2.5 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] text-xs space-y-1 text-[var(--ink)]">
 										<div className="flex justify-between">
-											<span className="text-slate-400">Материал:</span>
+											<span className="text-[var(--muted)]">Материал:</span>
 											<span className="font-semibold">{order.material || "Цирконий"}</span>
 										</div>
 										<div className="flex justify-between">
-											<span className="text-slate-400">Цвет VITA:</span>
+											<span className="text-[var(--muted)]">Цвет VITA:</span>
 											<span className="font-bold text-teal-600 dark:text-teal-400 font-mono">
 												{order.colorVita || "A2"}
 											</span>
 										</div>
 										{order.dueDate && (
-											<div className="flex justify-between text-slate-500">
+											<div className="flex justify-between text-[var(--muted)]">
 												<span>Срок сдачи:</span>
 												<span>{new Date(order.dueDate).toLocaleDateString("ru-RU")}</span>
 											</div>
@@ -367,17 +367,17 @@ export function LabOrdersPage() {
 
 									{/* Notes preview */}
 									{order.clinicalNotes && (
-										<p className="text-[11px] text-slate-500 dark:text-slate-400 italic line-clamp-2 m-0">
+										<p className="text-xs text-[var(--muted)] italic line-clamp-2 m-0">
 											{order.clinicalNotes}
 										</p>
 									)}
 								</div>
 
 								{/* Card Bottom: Financials & Action Buttons */}
-								<div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+								<div className="pt-3 border-t border-[var(--line)] flex items-center justify-between gap-2">
 									<div>
-										<span className="text-[10px] text-slate-400 block">Себестоимость ЗТЛ:</span>
-										<span className="text-sm font-black text-slate-900 dark:text-white font-mono">
+										<span className="text-xs text-[var(--muted)] block">Себестоимость ЗТЛ:</span>
+										<span className="text-sm font-black text-[var(--ink)] font-mono">
 											{order.priceRub != null ? money(order.priceRub) : "—"}
 										</span>
 									</div>
@@ -387,7 +387,7 @@ export function LabOrdersPage() {
 											<button
 												type="button"
 												onClick={() => copyPortalLink(order.secureToken)}
-												className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
+												className="p-2 rounded-lg border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink-2)] transition-colors"
 												title="Скопировать ссылку для зубного техника"
 											>
 												<Link className="w-3.5 h-3.5" />

@@ -162,6 +162,16 @@ export function formatCompletionRate(
 	return { text: `${rounded} %`, tone };
 }
 
+export function formatHours(hours: number | null | undefined): string {
+	if (!isRealNumber(hours)) return UNKNOWN_METRIC_TEXT;
+	return `${hours.toLocaleString("ru-RU", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} ч`;
+}
+
+export function formatPercent(percent: number | null | undefined): string {
+	if (!isRealNumber(percent)) return UNKNOWN_METRIC_TEXT;
+	return `${Math.round(percent)} %`;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Разбор ответа сервера                                              */
 /* ------------------------------------------------------------------ */
@@ -174,15 +184,73 @@ export interface AnalyticsKpis {
 }
 
 /**
- * Строка врача. `margin` и `completionRate` объявлены `number | null` — ровно
- * то, что отдаёт сервер. Прежнее `number` было ложью в типе, и именно поэтому
- * `npm run typecheck` был зелёным всё время, пока экран печатал «+null ₽».
+ * Строка врача: выручка, приёмы, средний чек, отработанные часы и доход в час.
+ * `margin` и `completionRate` объявлены `number | null` — ровно то, что отдаёт сервер.
  */
 export interface DoctorProfitabilityRow {
+	readonly doctorId?: string | null;
 	readonly name: string;
 	readonly revenue: number;
+	readonly appointmentsCount?: number;
+	readonly avgTicketRub?: number;
+	readonly workedHours?: number;
+	readonly hourlyRevenueRub?: number;
 	readonly margin: number | null;
 	readonly completionRate: number | null;
+}
+
+/**
+ * Точка загрузки кресла: процент занятости от фонда времени смены и минуты.
+ */
+export interface ChairUtilizationPoint {
+	readonly chairId?: string | null;
+	readonly name: string;
+	readonly value: number;
+	readonly occupiedMinutes?: number;
+	readonly availableMinutes?: number;
+	readonly utilizationPercent?: number;
+	readonly fill: string;
+}
+
+/**
+ * Уровень плана лечения (3-Tier Treatment Plan Acceptance).
+ */
+export interface TierAcceptanceItem {
+	readonly tier: "basic" | "optimum" | "premium" | string;
+	readonly label: string;
+	readonly totalPlans: number;
+	readonly acceptedPlans: number;
+	readonly acceptanceRatePercent: number;
+	readonly totalRub: number;
+}
+
+export interface TierAcceptanceData {
+	readonly totalConsultations: number;
+	readonly consultationToPlanConversionPercent: number;
+	readonly totalPlansCount: number;
+	readonly acceptedPlansCount: number;
+	readonly overallAcceptancePercent: number;
+	readonly tiers: readonly TierAcceptanceItem[];
+}
+
+/**
+ * Ячейка тепловой карты отмен и неявок по дням недели и часам.
+ */
+export interface NoShowHeatmapCell {
+	readonly dayOfWeek: number;
+	readonly dayName: string;
+	readonly hour: number;
+	readonly cancelledCount: number;
+	readonly noShowCount: number;
+	readonly totalLost: number;
+}
+
+export interface NoShowHeatmapData {
+	readonly totalCancelled: number;
+	readonly totalNoShow: number;
+	readonly peakDay: string | null;
+	readonly peakHour: number | null;
+	readonly cells: readonly NoShowHeatmapCell[];
 }
 
 /**
@@ -206,8 +274,10 @@ export interface AnalyticsDashboardData {
 	readonly kpis: AnalyticsKpis;
 	readonly cohortLtvJson: readonly CohortLtvPoint[];
 	readonly planFunnelJson: readonly NamedValuePoint[];
-	readonly chairUtilizationJson: readonly NamedValuePoint[];
+	readonly chairUtilizationJson: readonly ChairUtilizationPoint[];
 	readonly doctorProfitabilityJson: readonly DoctorProfitabilityRow[];
+	readonly tierAcceptance?: TierAcceptanceData | undefined;
+	readonly noShowHeatmap?: NoShowHeatmapData | undefined;
 	/**
 	 * Признак пустого периода от сервера (analytics.ts:267-271). Позволяет
 	 * отличить «за период ничего не было» от «запрос не удался» — это разные
@@ -267,6 +337,25 @@ function toNamedValuePoints(value: unknown): NamedValuePoint[] {
 	});
 }
 
+function toChairPoints(value: unknown): ChairUtilizationPoint[] {
+	if (!Array.isArray(value)) return [];
+	return value.flatMap((item) => {
+		const row = asRecord(item);
+		if (!row) return [];
+		return [
+			{
+				chairId: typeof row.chairId === "string" ? row.chairId : null,
+				name: typeof row.name === "string" ? row.name : "",
+				value: numberOr(row.value, 0),
+				occupiedMinutes: numberOr(row.occupiedMinutes, 0),
+				availableMinutes: numberOr(row.availableMinutes, 0),
+				utilizationPercent: numberOr(row.utilizationPercent, 0),
+				fill: typeof row.fill === "string" ? row.fill : "",
+			},
+		];
+	});
+}
+
 function toDoctorRows(value: unknown): DoctorProfitabilityRow[] {
 	if (!Array.isArray(value)) return [];
 	return value.flatMap((item) => {
@@ -274,8 +363,13 @@ function toDoctorRows(value: unknown): DoctorProfitabilityRow[] {
 		if (!row) return [];
 		return [
 			{
+				doctorId: typeof row.doctorId === "string" ? row.doctorId : null,
 				name: typeof row.name === "string" ? row.name : "",
 				revenue: numberOr(row.revenue, 0),
+				appointmentsCount: numberOr(row.appointmentsCount, 0),
+				avgTicketRub: numberOr(row.avgTicketRub, 0),
+				workedHours: numberOr(row.workedHours, 0),
+				hourlyRevenueRub: numberOr(row.hourlyRevenueRub, 0),
 				margin: nullableNumber(row.margin),
 				completionRate: nullableNumber(row.completionRate),
 			},
@@ -295,6 +389,64 @@ function toCohortPoints(value: unknown): CohortLtvPoint[] {
 			},
 		];
 	});
+}
+
+function toTierAcceptance(value: unknown): TierAcceptanceData | undefined {
+	const record = asRecord(value);
+	if (!record) return undefined;
+	const rawTiers = Array.isArray(record.tiers) ? record.tiers : [];
+	const tiers: TierAcceptanceItem[] = rawTiers.flatMap((item) => {
+		const row = asRecord(item);
+		if (!row) return [];
+		return [
+			{
+				tier: typeof row.tier === "string" ? row.tier : "optimum",
+				label: typeof row.label === "string" ? row.label : "",
+				totalPlans: numberOr(row.totalPlans, 0),
+				acceptedPlans: numberOr(row.acceptedPlans, 0),
+				acceptanceRatePercent: numberOr(row.acceptanceRatePercent, 0),
+				totalRub: numberOr(row.totalRub, 0),
+			},
+		];
+	});
+	return {
+		totalConsultations: numberOr(record.totalConsultations, 0),
+		consultationToPlanConversionPercent: numberOr(
+			record.consultationToPlanConversionPercent,
+			0,
+		),
+		totalPlansCount: numberOr(record.totalPlansCount, 0),
+		acceptedPlansCount: numberOr(record.acceptedPlansCount, 0),
+		overallAcceptancePercent: numberOr(record.overallAcceptancePercent, 0),
+		tiers,
+	};
+}
+
+function toNoShowHeatmap(value: unknown): NoShowHeatmapData | undefined {
+	const record = asRecord(value);
+	if (!record) return undefined;
+	const rawCells = Array.isArray(record.cells) ? record.cells : [];
+	const cells: NoShowHeatmapCell[] = rawCells.flatMap((item) => {
+		const row = asRecord(item);
+		if (!row) return [];
+		return [
+			{
+				dayOfWeek: numberOr(row.dayOfWeek, 1),
+				dayName: typeof row.dayName === "string" ? row.dayName : "",
+				hour: numberOr(row.hour, 8),
+				cancelledCount: numberOr(row.cancelledCount, 0),
+				noShowCount: numberOr(row.noShowCount, 0),
+				totalLost: numberOr(row.totalLost, 0),
+			},
+		];
+	});
+	return {
+		totalCancelled: numberOr(record.totalCancelled, 0),
+		totalNoShow: numberOr(record.totalNoShow, 0),
+		peakDay: typeof record.peakDay === "string" ? record.peakDay : null,
+		peakHour: typeof record.peakHour === "number" ? record.peakHour : null,
+		cells,
+	};
 }
 
 /**
@@ -362,8 +514,10 @@ export function parseDashboardPayload(
 	const kpisRow = asRecord(body.kpis);
 	const cohortLtvJson = toCohortPoints(body.cohortLtvJson);
 	const planFunnelJson = toNamedValuePoints(body.planFunnelJson);
-	const chairUtilizationJson = toNamedValuePoints(body.chairUtilizationJson);
+	const chairUtilizationJson = toChairPoints(body.chairUtilizationJson);
 	const doctorProfitabilityJson = toDoctorRows(body.doctorProfitabilityJson);
+	const tierAcceptance = toTierAcceptance(body.tierAcceptance);
+	const noShowHeatmap = toNoShowHeatmap(body.noShowHeatmap);
 
 	return {
 		ok: true,
@@ -378,6 +532,8 @@ export function parseDashboardPayload(
 			planFunnelJson,
 			chairUtilizationJson,
 			doctorProfitabilityJson,
+			tierAcceptance,
+			noShowHeatmap,
 			// Сервер присылает isEmpty; если поле отсутствует — считаем по факту,
 			// чтобы старый ответ не выглядел как заполненный дашборд без данных.
 			isEmpty:

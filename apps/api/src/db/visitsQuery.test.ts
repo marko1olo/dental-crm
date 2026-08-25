@@ -50,8 +50,10 @@ type IdRow = { readonly id: string };
 async function firstRow<T extends Record<string, unknown>>(
 	query: ReturnType<typeof sql>,
 ): Promise<T | null> {
-	const result = await db.execute(query);
-	return ((result.rows as T[])[0] ?? null) as T | null;
+	return withFixtureTenant(ORGANIZATION_ID, async (tx) => {
+		const result = await tx.execute(query);
+		return ((result.rows as T[])[0] ?? null) as T | null;
+	});
 }
 
 /** Единая заготовка черновика: тесту важны только заполненность полей. */
@@ -89,34 +91,34 @@ describe("acceptVisitDraftInDb: ответ по контракту и привя
 		// Весь сев — под контекстом своей клиники: в WITH CHECK тенант-таблиц стоит
 		// только `organization_id = current_tenant`, без дизъюнкта обхода, поэтому
 		// вставка без контекста отвергается кодом 42501.
-		await withFixtureTenant(ORGANIZATION_ID, async () => {
-			await db
+		await withFixtureTenant(ORGANIZATION_ID, async (tx) => {
+			await tx
 				.insert(organizations)
 				.values({
 					id: ORGANIZATION_ID,
 					name: "Сторож ответа acceptVisitDraftInDb",
 				})
 				.onConflictDoNothing();
-			await db.insert(patients).values({
+			await tx.insert(patients).values({
 				id: FILLED_PATIENT_ID,
 				organizationId: ORGANIZATION_ID,
 				fullName: `${PATIENT_MARK} 1`,
 				status: "active",
 			});
-			await db.insert(patients).values({
+			await tx.insert(patients).values({
 				id: EMPTY_PATIENT_ID,
 				organizationId: ORGANIZATION_ID,
 				fullName: `${PATIENT_MARK} 2`,
 				status: "active",
 			});
-			await db.insert(visits).values({
+			await tx.insert(visits).values({
 				id: FILLED_VISIT_ID,
 				organizationId: ORGANIZATION_ID,
 				patientId: FILLED_PATIENT_ID,
 				status: "draft",
 				revision: 1,
 			});
-			await db.insert(visits).values({
+			await tx.insert(visits).values({
 				id: EMPTY_VISIT_ID,
 				organizationId: ORGANIZATION_ID,
 				patientId: EMPTY_PATIENT_ID,
@@ -125,7 +127,7 @@ describe("acceptVisitDraftInDb: ответ по контракту и привя
 			});
 			// Непроверенный снимок ровно у ОДНОГО приёма: если карточка соберётся по
 			// общему состоянию, а не по приёму, оба приёма получат один и тот же пункт.
-			await db.insert(imagingStudies).values({
+			await tx.insert(imagingStudies).values({
 				id: IMAGING_STUDY_ID,
 				organizationId: ORGANIZATION_ID,
 				patientId: FILLED_PATIENT_ID,
@@ -243,9 +245,11 @@ describe("acceptVisitDraftInDb: ответ по контракту и привя
 		);
 
 		// Снимок, ждущий проверки, переносим на новый приём того же пациента.
-		await db.execute(
-			sql`update imaging_studies set visit_id = ${secondFilledVisit.id} where id = ${IMAGING_STUDY_ID}`,
-		);
+		await withFixtureTenant(ORGANIZATION_ID, async (tx) => {
+			await tx.execute(
+				sql`update imaging_studies set visit_id = ${secondFilledVisit.id} where id = ${IMAGING_STUDY_ID}`,
+			);
+		});
 
 		try {
 			const withImaging = await withFixtureTenant(ORGANIZATION_ID, async () =>

@@ -63,6 +63,23 @@ export class LanKktDriverService {
 	public static readonly DEFAULT_TIMEOUT_MS = 3000;
 
 	/**
+	 * Calculates exponential backoff with ceiling for offline queue retry attempts:
+	 * retry 0 -> 1000ms (1s)
+	 * retry 1 -> 2000ms (2s)
+	 * retry 2 -> 4000ms (4s)
+	 * retry 3 -> 8000ms (8s)
+	 * capped at maxBackoffMs (default 60000ms).
+	 */
+	public static calculateExponentialBackoff(
+		retryCount: number,
+		initialBackoffMs = 1000,
+		maxBackoffMs = 60000,
+	): number {
+		const exp = Math.min(Math.max(0, retryCount), 10);
+		return Math.min(maxBackoffMs, initialBackoffMs * Math.pow(2, exp));
+	}
+
+	/**
 	 * Resolves KKT configuration from environment or defaults.
 	 */
 	public static getDefaultConfig(): KktLanConfig {

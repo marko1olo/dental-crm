@@ -1,4 +1,20 @@
-import type { ProcedureSpecificConsentProcedure } from "../index.js";
+import { z } from "zod";
+
+export const procedureSpecificConsentProcedureSchema = z.enum([
+	"therapy_endo_restoration",
+	"local_anesthesia",
+	"sedation",
+	"surgery_extraction",
+	"implantation_bone_graft",
+	"prosthetics",
+	"orthodontics",
+	"hygiene_whitening",
+	"periodontology",
+	"other",
+]);
+export type ProcedureSpecificConsentProcedure = z.infer<
+	typeof procedureSpecificConsentProcedureSchema
+>;
 
 /**
  * ЮРИДИЧЕСКИЙ И КЛИНИЧЕСКИЙ ПАКЕТ ДОКУМЕНТАЦИИ ДЛЯ СТОМАТОЛОГИЧЕСКИХ КЛИНИК РФ
@@ -34,10 +50,21 @@ export interface WarrantyPresetItem {
 	urgentContactReasons: readonly string[];
 }
 
+export interface BaseInformedConsentPreset {
+	intervention: string;
+	diagnosisOrIndication: string;
+	expectedBenefit: string;
+	plannedAnesthesia: string;
+	materialOrMedicationNotes: string;
+	explainedRisks: readonly string[];
+	alternatives: readonly string[];
+	aftercareRequirements: readonly string[];
+}
+
 /**
  * 1. Базовое общее ИДС на первичный осмотр, консультацию и рентген-диагностику (ст. 20 323-ФЗ, 1051н).
  */
-export const BASE_INFORMED_CONSENT_PRESET = {
+export const BASE_INFORMED_CONSENT_PRESET: BaseInformedConsentPreset = {
 	intervention: "Первичный стоматологический осмотр, клиническая консультация и рентгенодиагностика (прицельная радиовизиография, ОПТГ, КЛКТ)",
 	diagnosisOrIndication: "Первичное обращение, профилактический осмотр, составление комплексного плана лечения, дифференциальная диагностика",
 	expectedBenefit: "Определение точного клинического диагноза, выявление скрытых кариозных полостей и воспалительных очагов в костной ткани, разработка плана лечения",

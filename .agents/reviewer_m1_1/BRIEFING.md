@@ -1,72 +1,58 @@
-# BRIEFING — 2026-08-14T20:02:00+04:00
+# BRIEFING — 2026-08-18T21:31:30Z
 
 ## Mission
-Independently review all UI changes in Milestone M1 (Requirement R1: Visual and Ergonomic Defects, Dark/Light 4-State, Mobile Touch Targets, DICOM/Panorex responsive, Silenced Mount Toasts, Neutral Finance Empty State).
+Perform independent quality review and adversarial critique of Milestone 1 (M1) work products: Drizzle schema additions (`apps/api/src/db/schema/clinical.ts`) and cryptographic SHA-256 audit trail service (`apps/api/src/services/egisz/EgiszAuditService.ts`, `apps/api/src/services/egisz/EgiszAuditService.test.ts`).
 
 ## 🔒 My Identity
-- Archetype: reviewer & critic
+- Archetype: reviewer_critic
 - Roles: reviewer, critic
-- Working directory: C:\Clinic_MVP\dental-crm\.agents\reviewer_m1_1
-- Original parent: e13da413-3819-467f-ad27-4d03982dd738
-- Milestone: M1 (R1 UI & Ergonomics Polish)
-- Instance: 1 of 2 (Reviewer M1-1)
+- Working directory: C:/Clinic_MVP/dental-crm/.agents/reviewer_m1_1
+- Original parent: 652b0f7c-875d-47a2-99ee-b79f32a60de3
+- Milestone: M1
+- Instance: 1 of 1
 
 ## 🔒 Key Constraints
-- Review-only — do NOT modify implementation code
-- Check for integrity violations (hardcoded test results, facade implementations, bypass shortcuts, self-certifying work)
-- Verify correctness, security, tenant isolation, test completeness, zero TODOs, zero mocks in production code
-- 100% full file comprehension on reviewed files
-- Verify 4-state visual compliance (Mobile Light, Mobile Dark, Desktop Light, Desktop Dark)
+- Review-only — do NOT modify implementation code directly
+- Strictly obey C:/Clinic_MVP/dental-crm/.agents/AGENTS.md and zero-skimming policy
+- Ban on sycophancy, sugarcoating, and fake proofs
+- Report real verified facts (ПРОВЕРЕНО / НЕ ПРОВЕРЕНО)
+- Issue clear verdict: APPROVE or REQUEST_CHANGES
 
 ## Current Parent
-- Conversation ID: e13da413-3819-467f-ad27-4d03982dd738
-- Updated: 2026-08-14T20:02:00+04:00
+- Conversation ID: 652b0f7c-875d-47a2-99ee-b79f32a60de3
+- Updated: 2026-08-18T21:31:30Z
 
 ## Review Scope
-- **Files reviewed**:
-  - `apps/web/src/VisitView.tsx`
-  - `apps/web/src/styles/main.css`
-  - `apps/web/src/styles/touch-targets.css`
-  - `apps/web/src/styles/shadow-analyst.css`
-  - `apps/web/src/components/dicom/Cornerstone3DViewer.tsx`
-  - `apps/web/src/components/dicom/PanoramicRendererWindow.tsx`
-  - `apps/web/src/FinancePlanning.tsx`
-  - `apps/web/src/tests/financeSummaryUnknownIsNotZero.test.tsx`
-  - 7 silenced toast widgets:
-    - `apps/web/src/components/schedule/UrgentScheduleRequestsWidget.tsx`
-    - `apps/web/src/components/schedule/NewAppointmentForm.tsx`
-    - `apps/web/src/components/visit/EgiszMultipleDiagnosesWidget.tsx`
-    - `apps/web/src/components/patients/PatientNoShowRisk.tsx`
-    - `apps/web/src/components/patients/PatientFamilyCard.tsx`
-    - `apps/web/src/components/workspace/RecentPatientHistoryWidget.tsx`
-    - `apps/web/src/useAppLogic.tsx`
-  - Touch target components:
-    - `apps/web/src/components/schedule/ScheduleSubNavTabs.tsx`
-    - `apps/web/src/components/communications/CallPlayer.tsx`
-    - `apps/web/src/components/dicom/BoneQualityPanel.tsx`
-    - `apps/web/src/components/schedule/WaitlistDrawer.tsx`
-    - `apps/web/src/components/schedule/LabOrdersPanel.tsx`
-- **Interface contracts**: `PROJECT.md`, `AGENTS.md`, `ORIGINAL_REQUEST.md`
-- **Review criteria**: Correctness, zero mock/facade, visual contrast, mobile ergonomics (>=44px), static verification (encoding, types, tests).
+- **Files to review**:
+  - `apps/api/src/db/schema/clinical.ts`
+  - `apps/api/src/services/egisz/EgiszAuditService.ts`
+  - `apps/api/src/services/egisz/EgiszAuditService.test.ts`
+- **Interface contracts**: `PROJECT.md` M1 specifications, `ORIGINAL_REQUEST.md` R6
+- **Review criteria**: Correctness, integrity, SQL types, compound indexes, multi-tenant isolation, concurrency locking (`SELECT ... FOR UPDATE`), RFC 8785 canonicalization, hash calculation, edge cases, test validity.
 
 ## Review Checklist
-- **Items reviewed**: In progress
-- **Verdict**: Pending
-- **Unverified claims**: Worker M1 claims for all 6 focus areas
+- **Items reviewed**:
+  - `apps/api/src/db/schema/clinical.ts` (lines 1-2096, 100% read)
+  - `apps/api/src/services/egisz/EgiszAuditService.ts` (lines 1-322, 100% read)
+  - `apps/api/src/services/egisz/EgiszAuditService.test.ts` (lines 1-514, 100% read)
+- **Verdict**: APPROVE
+- **Unverified claims**: none
 
 ## Attack Surface
-- **Hypotheses tested**: 
-  1. Did removing toasts hide critical error states from users?
-  2. Does the neutral `"—"` in FinancePlanning break calculation logic or mask genuine zero balances?
-  3. Does the DICOM MPR toolbar wrapping break layout on desktop or ultra-narrow mobile?
-  4. Are touch target updates truly >=44px or do inline style overrides clobber them?
-  5. Do CSS variables in dark mode meet WCAG AA contrast ratio?
-  6. Did removing linter leak cause any JSX syntax or render errors?
-- **Vulnerabilities found**: Pending analysis
-- **Untested angles**: Pending test execution
+- **Hypotheses tested**:
+  - RFC 8785 key sorting determinism with nested structures: PASS
+  - Delimiter and undefined property handling: PASS
+  - Tampering detection (payload, previousHash, currentHash, sequence break, genesis tampering, actor tampering): PASS
+  - Multi-tenant chain isolation: PASS
+  - Database row locking logic (`SELECT ... FOR UPDATE`): PASS
+- **Vulnerabilities found**: None.
+- **Untested angles**: Direct live PostgreSQL 18 cluster benchmark under 1,000 concurrent workers (deferred to E2E integration test suite in M8).
 
 ## Key Decisions Made
-- Starting independent review and verification.
+- Confirmed full compliance with requirements R1-R7 schema contracts and R6 cryptographic audit ledger.
+- Issued APPROVE verdict.
 
 ## Artifact Index
-- `C:/Clinic_MVP/dental-crm/.agents/reviewer_m1_1/handoff.md` — Final review report and verdict
+- `C:/Clinic_MVP/dental-crm/.agents/reviewer_m1_1/DISPATCH.md` — Inbound instructions log
+- `C:/Clinic_MVP/dental-crm/.agents/reviewer_m1_1/BRIEFING.md` — Persistent state and working memory
+- `C:/Clinic_MVP/dental-crm/.agents/reviewer_m1_1/handoff.md` — Complete 5-component review and adversarial challenge report

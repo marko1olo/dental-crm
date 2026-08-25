@@ -431,4 +431,10 @@ describe("Milestone 1: Offline 54-FZ KKT Fiscal Print Buffer (TASK-1.3)", () => 
 		assert.equal(pendingRes.statusCode, 200);
 		assert.equal(pendingRes.json().items.length, 0);
 	});
+
+	after(async () => {
+		delete process.env.KKM_FORCE_OFFLINE;
+		delete process.env.KKM_HARDWARE_TIMEOUT;
+		await app?.close();
+	});
 });

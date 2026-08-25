@@ -97,7 +97,7 @@ describe("ScheduleGrid", () => {
 		assert.ok(html.includes("title=\"Пришел\""), "должна быть кнопка статуса Пришел");
 		assert.ok(html.includes("title=\"В кресле\""), "должна быть кнопка статуса В кресле");
 		assert.ok(html.includes("title=\"Завершен\""), "должна быть кнопка статуса Завершен");
-		assert.ok(html.includes("min-h-[44px]"), "кнопки должны соответствовать touch target >=44px");
+		assert.ok(html.includes("min-h-[44px]") || html.includes("min-h-[48px]"), "кнопки должны соответствовать touch target >=44px");
 	});
 
 	it("renders amber collision warning badge when doctor is scheduled simultaneously in two chairs", () => {

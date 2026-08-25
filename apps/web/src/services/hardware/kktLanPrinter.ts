@@ -10,6 +10,7 @@
  * - 54-FZ (FFD 1.2) compliant formatting with kopeck-exact arithmetic and Chestny ZNAK
  */
 
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
 	checkDesktopKktStatusTcp,
 	isDesktopApp,
@@ -17,6 +18,8 @@ import {
 	type DesktopFiscalReceiptPayload,
 } from "../../native/desktopBridge.js";
 import type {
+	CircuitBreakerState,
+	CircuitBreakerTelemetry,
 	FiscalReceiptPrintPayload,
 	FiscalReceiptPrintResult,
 	KktDeviceHealthStatus,
@@ -24,6 +27,13 @@ import type {
 } from "./hardwareTypes.js";
 
 export class KktLanPrinterService {
+	public static readonly FAILURE_THRESHOLD = 5;
+	public static readonly RESET_TIMEOUT_MS = 15000;
+
+	private static consecutiveFailures = 0;
+	private static lastFailureTime: number | null = null;
+	private static circuitState: CircuitBreakerState = "CLOSED";
+
 	private static defaultConfig: KktLanPrinterConfig = {
 		host: "192.168.1.150",
 		port: 16732,
@@ -31,6 +41,60 @@ export class KktLanPrinterService {
 		timeoutMs: 3000,
 		cashierFullName: "Иванова А. С.",
 	};
+
+	/**
+	 * Returns current circuit breaker telemetry.
+	 */
+	public static getCircuitBreakerTelemetry(): CircuitBreakerTelemetry {
+		const nextAllowed = this.circuitState === "OPEN" && this.lastFailureTime
+			? this.lastFailureTime + this.RESET_TIMEOUT_MS
+			: null;
+
+		return {
+			state: this.circuitState,
+			consecutiveFailures: this.consecutiveFailures,
+			lastFailureTime: this.lastFailureTime,
+			nextAllowedAttemptTime: nextAllowed,
+		};
+	}
+
+	/**
+	 * Resets circuit breaker to closed state (useful for tests and manual recovery).
+	 */
+	public static resetCircuitBreaker(): void {
+		this.consecutiveFailures = 0;
+		this.lastFailureTime = null;
+		this.circuitState = "CLOSED";
+	}
+
+	/**
+	 * Checks if circuit breaker permits an outbound TCP/HTTP attempt.
+	 */
+	private static checkCircuitPermitted(): boolean {
+		if (this.circuitState === "CLOSED") return true;
+		if (this.circuitState === "HALF_OPEN") return true;
+
+		// OPEN state: check if reset timeout elapsed
+		if (this.lastFailureTime && Date.now() - this.lastFailureTime > this.RESET_TIMEOUT_MS) {
+			this.circuitState = "HALF_OPEN";
+			return true;
+		}
+
+		return false;
+	}
+
+	private static recordSuccess(): void {
+		this.consecutiveFailures = 0;
+		this.circuitState = "CLOSED";
+	}
+
+	private static recordFailure(): void {
+		this.consecutiveFailures++;
+		this.lastFailureTime = Date.now();
+		if (this.consecutiveFailures >= this.FAILURE_THRESHOLD) {
+			this.circuitState = "OPEN";
+		}
+	}
 
 	/**
 	 * Sets the default local clinic KKT network configuration.
@@ -55,6 +119,19 @@ export class KktLanPrinterService {
 		const cfg = { ...this.defaultConfig, ...overrideConfig };
 		const nowIso = new Date().toISOString();
 
+		if (!this.checkCircuitPermitted()) {
+			return {
+				online: false,
+				paperOk: false,
+				coverClosed: false,
+				fnPresent: false,
+				fnFiscalized: false,
+				latencyMs: 0,
+				error: "ККТ временно заблокирована защитой от сбоев (Circuit Breaker OPEN). Повторная проверка через несколько секунд.",
+				checkedAt: nowIso,
+			};
+		}
+
 		if (isDesktopApp()) {
 			try {
 				const status = await checkDesktopKktStatusTcp({
@@ -63,6 +140,13 @@ export class KktLanPrinterService {
 					protocol: cfg.protocol,
 					timeoutMs: cfg.timeoutMs,
 				});
+
+				if (status.online) {
+					this.recordSuccess();
+				} else {
+					this.recordFailure();
+				}
+
 				return {
 					online: status.online,
 					paperOk: status.paperOk,
@@ -77,6 +161,7 @@ export class KktLanPrinterService {
 					checkedAt: nowIso,
 				};
 			} catch (err: unknown) {
+				this.recordFailure();
 				const msg = err instanceof Error ? err.message : "Ошибка опроса ККТ";
 				return {
 					online: false,
@@ -94,11 +179,16 @@ export class KktLanPrinterService {
 		// Web Browser Fallback: call local API route /api/fiscal/devices/status
 		try {
 			const res = await fetch("/api/fiscal/devices/status", {
-				headers: { "Content-Type": "application/json" },
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 			});
 			if (res.ok) {
 				const data = await res.json();
 				if (data.status) {
+					if (data.status.online) {
+						this.recordSuccess();
+					} else {
+						this.recordFailure();
+					}
 					return {
 						online: Boolean(data.status.online),
 						paperOk: Boolean(data.status.paperOk),
@@ -118,6 +208,7 @@ export class KktLanPrinterService {
 			// Ignore network fetch error and return offline state
 		}
 
+		this.recordFailure();
 		return {
 			online: false,
 			paperOk: false,
@@ -197,6 +288,19 @@ export class KktLanPrinterService {
 
 		const ofdUrl = `https://ofd.ru/check?fn=${fnSerial}&fd=${fiscalDocNum}&fpd=${fiscalSign}&s=${payload.totalRub.toFixed(2)}&n=${payload.operationType === "income_return" ? "2" : "1"}`;
 
+		if (!this.checkCircuitPermitted()) {
+			return {
+				success: false,
+				status: "hardware_offline",
+				fiscalSign,
+				fiscalDocNum,
+				fnSerial,
+				qrString,
+				ofdVerificationUrl: ofdUrl,
+				error: "ККТ временно заблокирована защитой от сбоев (Circuit Breaker OPEN). Повторите позже.",
+			};
+		}
+
 		// 1. Direct Desktop Socket execution
 		if (isDesktopApp()) {
 			const desktopPayload: DesktopFiscalReceiptPayload = {
@@ -220,6 +324,7 @@ export class KktLanPrinterService {
 			});
 
 			if (desktopResult.success) {
+				this.recordSuccess();
 				return {
 					success: true,
 					status: "printed",
@@ -235,6 +340,7 @@ export class KktLanPrinterService {
 			}
 
 			// Hardware offline or out of paper
+			this.recordFailure();
 			return {
 				success: false,
 				status: "hardware_offline",
@@ -251,7 +357,7 @@ export class KktLanPrinterService {
 		try {
 			const res = await fetch("/api/fiscal/receipts", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({
 					clientMutationId: payload.clientMutationId || `kkt-${Date.now()}`,
 					patientId: payload.patientId,
@@ -287,6 +393,11 @@ export class KktLanPrinterService {
 			if (res.ok) {
 				const data = await res.json();
 				const isOffline = data.status === "hardware_offline";
+				if (isOffline) {
+					this.recordFailure();
+				} else {
+					this.recordSuccess();
+				}
 				return {
 					success: !isOffline,
 					status: data.status || "printed",
@@ -301,6 +412,7 @@ export class KktLanPrinterService {
 				};
 			}
 		} catch (err: unknown) {
+			this.recordFailure();
 			const errorMsg = err instanceof Error ? err.message : "Сетевой сбой отправки чека";
 			return {
 				success: false,
@@ -314,6 +426,7 @@ export class KktLanPrinterService {
 			};
 		}
 
+		this.recordFailure();
 		return {
 			success: false,
 			status: "hardware_offline",

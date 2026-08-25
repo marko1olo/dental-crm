@@ -47,16 +47,20 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 	const [horizonDays, setHorizonDays] = useState<7 | 14>(7);
 	const [durationMinutes, setDurationMinutes] = useState<number>(60);
 	const [timeOfDayFilter, setTimeOfDayFilter] = useState<TimeOfDayFilter>("all");
+	const [startDateOffsetDays, setStartDateOffsetDays] = useState<number>(0);
 
-	const todayIso = useMemo(() => {
+	const activeStartDateIso = useMemo(() => {
 		const now = new Date();
+		if (startDateOffsetDays > 0) {
+			now.setDate(now.getDate() + startDateOffsetDays);
+		}
 		return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-	}, []);
+	}, [startDateOffsetDays]);
 
 	const freeSlotsByDay = useMemo(() => {
 		return findDoctorFreeSlots({
 			doctorId: selectedDoctorId || undefined,
-			startDate: todayIso,
+			startDate: activeStartDateIso,
 			horizonDays,
 			durationMinutes,
 			timeOfDayFilter,
@@ -68,7 +72,7 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 		});
 	}, [
 		selectedDoctorId,
-		todayIso,
+		activeStartDateIso,
 		horizonDays,
 		durationMinutes,
 		timeOfDayFilter,
@@ -137,6 +141,35 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 											({specialtyLabels[doc.specialties[0] as DentalSpecialty] || doc.specialties[0]})
 										</span>
 									)}
+								</button>
+							))}
+						</div>
+					</div>
+
+					{/* Quick Repeat Jump Presets: [+ Через 7 дней], [+ Через 14 дней], [+ Через 1 месяц] */}
+					<div className="space-y-1.5">
+						<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider block">
+							Быстрый переход на повторный прием:
+						</span>
+						<div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+							{[
+								{ offset: 0, label: "📅 С сегодня" },
+								{ offset: 7, label: "+ Через 7 дней" },
+								{ offset: 14, label: "+ Через 14 дней" },
+								{ offset: 30, label: "+ Через 1 месяц (30 дн.)" },
+							].map((p) => (
+								<button
+									key={p.offset}
+									type="button"
+									onClick={() => setStartDateOffsetDays(p.offset)}
+									className={`min-h-[44px] px-3.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+										startDateOffsetDays === p.offset
+											? "bg-teal-700 text-white shadow-sm border border-teal-600"
+											: "border border-teal-600/30 bg-teal-50/50 dark:bg-teal-950/20 text-teal-800 dark:text-teal-300 hover:bg-teal-100/60 dark:hover:bg-teal-900/40"
+									}`}
+								>
+									<Calendar size={13} />
+									<span>{p.label}</span>
 								</button>
 							))}
 						</div>

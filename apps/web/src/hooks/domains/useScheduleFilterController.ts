@@ -62,7 +62,9 @@ export function useScheduleFilterController({
 				}
 				return true;
 			})
-			.sort((left, right) => left.startsAt.localeCompare(right.startsAt));
+			.sort((left, right) =>
+				(left.startsAt ?? "").localeCompare(right.startsAt ?? ""),
+			);
 	}, [
 		dashboard,
 		scheduleAssistantFilterId,

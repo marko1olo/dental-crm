@@ -10,3 +10,9 @@
 export * from "./types";
 export * from "./offlineStorage";
 export * from "./offlineSyncService";
+export * from "./lanMeshReplicationService";
+export * from "./offlineBackupService";
+export * from "./offlineIntegrityService";
+
+export * from "./lanP2PDispatcher";
+

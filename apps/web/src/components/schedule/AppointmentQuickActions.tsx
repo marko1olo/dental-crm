@@ -306,7 +306,7 @@ export function AppointmentQuickActions({
 							e.stopPropagation();
 							void handleAction(action.targetStatus, action.noteAppend);
 						}}
-						className={`quick-action-pill min-h-[44px] px-3 py-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer select-none active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed focus:ring-2 focus:ring-teal-500 focus:outline-none min-w-0 ${
+						className={`quick-action-pill min-h-[44px] sm:min-h-[48px] px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer select-none active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed focus:ring-2 focus:ring-teal-500 focus:outline-none min-w-0 ${
 							isCurrent ? action.activeClass : `${action.bgStyle} ${action.hoverClass}`
 						}`}
 						title={
@@ -339,7 +339,7 @@ export function AppointmentQuickActions({
 							e.stopPropagation();
 							handleSendWhatsApp("reminder_24h");
 						}}
-						className="quick-action-pill min-h-[44px] px-3.5 py-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:outline-none select-none min-w-0"
+						className="quick-action-pill min-h-[44px] sm:min-h-[48px] px-3.5 py-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:outline-none select-none min-w-0"
 						title={`Отправить напоминание за 24ч с памяткой в WhatsApp (${patientName})`}
 						aria-label={`WhatsApp напоминание: ${patientName}`}
 					>
@@ -359,11 +359,11 @@ export function AppointmentQuickActions({
 								e.stopPropagation();
 								handleCopySmsReminder("reminder_24h");
 							}}
-							className="min-h-[44px] px-2.5 py-1.5 rounded-lg border border-teal-500/30 bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 text-xs font-bold transition-all cursor-pointer flex items-center gap-1 touch-manipulation"
+							className="min-h-[44px] sm:min-h-[48px] px-3 py-2 rounded-xl border border-teal-500/30 bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1 touch-manipulation"
 							title={`Скопировать текст напоминания (SMS/мессенджер) для ${patientName}`}
 							aria-label={`Скопировать SMS: ${patientName}`}
 						>
-							<Copy size={13} className="shrink-0 text-teal-500" />
+							<Copy size={14} className="shrink-0 text-teal-500" />
 							<span>SMS</span>
 						</button>
 
@@ -373,11 +373,11 @@ export function AppointmentQuickActions({
 								e.stopPropagation();
 								handleSendWhatsApp("confirmation");
 							}}
-							className="min-h-[44px] px-2.5 py-1.5 rounded-lg border border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20 text-violet-700 dark:text-violet-300 text-xs font-bold transition-all cursor-pointer flex items-center gap-1 touch-manipulation"
+							className="min-h-[44px] sm:min-h-[48px] px-3 py-2 rounded-xl border border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20 text-violet-700 dark:text-violet-300 text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1 touch-manipulation"
 							title={`Отправить подтверждение визита в WhatsApp (${patientName})`}
 							aria-label={`WhatsApp подтверждение: ${patientName}`}
 						>
-							<CheckCircle2 size={13} className="shrink-0 text-violet-500" />
+							<CheckCircle2 size={14} className="shrink-0 text-violet-500" />
 							<span>Подтвердить</span>
 						</button>
 
@@ -387,11 +387,11 @@ export function AppointmentQuickActions({
 								e.stopPropagation();
 								handleSendWhatsApp("time_shift", 15);
 							}}
-							className="min-h-[44px] px-2.5 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-bold transition-all cursor-pointer flex items-center gap-1 touch-manipulation"
+							className="min-h-[44px] sm:min-h-[48px] px-3 py-2 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1 touch-manipulation"
 							title={`Отправить уведомление о переносе времени (+15 мин) в WhatsApp (${patientName})`}
 							aria-label={`WhatsApp перенос: ${patientName}`}
 						>
-							<Clock size={13} className="shrink-0 text-amber-500" />
+							<Clock size={14} className="shrink-0 text-amber-500" />
 							<span>Перенос</span>
 						</button>
 					</div>

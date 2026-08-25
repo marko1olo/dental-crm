@@ -15,6 +15,7 @@ import { existsSync, statSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { ImagingStudyKind } from "@dental/shared";
+import { createImagingStudyInDb } from "../../db/imagingQuery.js";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { imagingInstances, imagingSeries, imagingStudies } from "../../db/schema.js";
@@ -112,36 +113,36 @@ export class LocalPacsStorageService {
 		const studyUid = input.dicomStudyUid || `1.2.643.5.1.13.1.${Date.now()}.${Math.floor(Math.random() * 100000)}`;
 
 		// Insert or update imaging study in database with local storage_path
-		const [studyRow] = await db
-			.insert(imagingStudies)
-			.values({
-				organizationId: input.organizationId,
-				patientId: input.patientId,
-				visitId: input.visitId || null,
-				kind: input.kind,
-				title: input.title.trim() || `Снимок ${input.kind.toUpperCase()}`,
-				toothCode: input.toothCode || null,
-				region: input.region || null,
-				capturedAt: now,
-				sourceKind: "dicom_file",
-				sourceName: input.sourceName || "Local Station PACS",
-				status: "available", // Available immediately on local workstation
-				storagePath: input.localFilePath,
-				dicomStudyUid: studyUid,
-				aiSummary: input.localThumbnailDataUri ? "Снимок готов к приему. Локальный кэш сформирован." : null,
-			})
-			.returning();
+		const study = await createImagingStudyInDb(input.organizationId, {
+			patientId: input.patientId,
+			visitId: input.visitId || null,
+			kind: input.kind,
+			title: input.title.trim() || `Снимок ${input.kind.toUpperCase()}`,
+			toothCode: input.toothCode || null,
+			region: input.region || null,
+			capturedAt: capturedAtIso,
+			sourceKind: "dicom_file",
+			sourceName: input.sourceName || "Local Station PACS",
+			storagePath: input.localFilePath,
+			dicomStudyUid: studyUid,
+			aiSummary: input.localThumbnailDataUri ? "Снимок готов к приему. Локальный кэш сформирован." : null,
+		});
 
-		const studyId = studyRow?.id || `study-${Date.now()}`;
+		const studyId = study.id;
+
+		await db
+			.update(imagingStudies)
+			.set({ status: "available" })
+			.where(and(eq(imagingStudies.id, study.id), eq(imagingStudies.organizationId, input.organizationId)));
 
 		// If series/instance UIDs provided, insert into imagingSeries and imagingInstances
-		if (input.dicomSeriesUid && studyRow) {
+		if (input.dicomSeriesUid && study) {
 			try {
 				const [seriesRow] = await db
 					.insert(imagingSeries)
 					.values({
 						organizationId: input.organizationId,
-						studyId: studyRow.id,
+						studyId: study.id,
 						dicomSeriesUid: input.dicomSeriesUid,
 						modality: input.kind.toUpperCase(),
 						bodyPartExamined: input.region || "HEAD / JAW",
@@ -175,7 +176,7 @@ export class LocalPacsStorageService {
 			patientId: input.patientId,
 			visitId: input.visitId || null,
 			kind: input.kind,
-			title: studyRow?.title || input.title,
+			title: study.title || input.title,
 			toothCode: input.toothCode || null,
 			region: input.region || null,
 			localFilePath: input.localFilePath,

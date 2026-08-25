@@ -11,6 +11,7 @@ import {
 	extractCorrelationId,
 	generateCorrelationId,
 	sanitizePayload,
+	sanitizeString,
 } from "@dental/shared";
 import type {
 	FastifyInstance,
@@ -75,28 +76,31 @@ const requestLoggingPluginAsync: FastifyPluginAsync = async (
 		const identity = getRequestIdentity(request);
 		const ip = extractClientIp(request);
 		const statusCode = reply.statusCode;
+		const sanitizedUrl = sanitizeString(request.url);
+		const rawPath = request.routeOptions.url || request.url.split("?")[0] || "";
+		const sanitizedPath = sanitizeString(rawPath);
 
 		const logPayload = {
 			correlationId: request.correlationId,
 			method: request.method,
-			url: request.url,
-			path: request.routeOptions.url || request.url.split("?")[0],
+			url: sanitizedUrl,
+			path: sanitizedPath,
 			statusCode,
 			latencyMs,
 			ip,
 			organizationId: identity.organizationId ?? null,
 			userId: identity.userId ?? null,
 			userRole: identity.role ?? null,
-			userAgent: request.headers["user-agent"] ?? "unknown",
+			userAgent: sanitizeString(request.headers["user-agent"] ?? "unknown"),
 			dbQueryCount: request.dbQueryCount ?? 0,
 		};
 
 		if (statusCode >= 500) {
-			request.log.error(logPayload, `[HTTP] ${request.method} ${request.url} ${statusCode} (${latencyMs}ms)`);
+			request.log.error(logPayload, `[HTTP] ${request.method} ${sanitizedUrl} ${statusCode} (${latencyMs}ms)`);
 		} else if (statusCode >= 400) {
-			request.log.warn(logPayload, `[HTTP] ${request.method} ${request.url} ${statusCode} (${latencyMs}ms)`);
+			request.log.warn(logPayload, `[HTTP] ${request.method} ${sanitizedUrl} ${statusCode} (${latencyMs}ms)`);
 		} else {
-			request.log.info(logPayload, `[HTTP] ${request.method} ${request.url} ${statusCode} (${latencyMs}ms)`);
+			request.log.info(logPayload, `[HTTP] ${request.method} ${sanitizedUrl} ${statusCode} (${latencyMs}ms)`);
 		}
 	});
 
@@ -105,23 +109,25 @@ const requestLoggingPluginAsync: FastifyPluginAsync = async (
 		const identity = getRequestIdentity(request);
 		const sanitizedBody = request.body ? sanitizePayload(request.body) : undefined;
 		const sanitizedQuery = request.query ? sanitizePayload(request.query) : undefined;
+		const sanitizedUrl = sanitizeString(request.url);
+		const sanitizedErrorMsg = sanitizeString(error.message);
 
 		request.log.error(
 			{
 				correlationId: request.correlationId,
 				method: request.method,
-				url: request.url,
+				url: sanitizedUrl,
 				error: {
 					name: error.name,
-					message: error.message,
-					stack: error.stack,
+					message: sanitizedErrorMsg,
+					stack: error.stack ? sanitizeString(error.stack) : undefined,
 				},
 				organizationId: identity.organizationId ?? null,
 				userId: identity.userId ?? null,
 				query: sanitizedQuery,
 				body: sanitizedBody,
 			},
-			`[HTTP_ERROR] ${request.method} ${request.url} failed: ${error.message}`,
+			`[HTTP_ERROR] ${request.method} ${sanitizedUrl} failed: ${sanitizedErrorMsg}`,
 		);
 	});
 };

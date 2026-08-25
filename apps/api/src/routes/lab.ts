@@ -22,6 +22,7 @@ import {
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import {
 	getLabOrderByToken,
 	LAB_ORDER_CLINIC_TRANSITIONS,
@@ -39,13 +40,13 @@ import { wsBroker } from "../services/websocketBroker.js";
  */
 const labOrderPriceRubSchema = nonNegativeMoneyRubSchema
 	.refine((value) => value <= 100_000_000, {
-		message: "Цена заказа лаборатории не помещается в допустимый диапазон (до 100 000 000 руб.).",
+		message: "Цена заказа лаборатории не помещается в допустимый лимит (100 млн ₽).",
 	})
 	.optional()
 	.nullable();
 
 /**
- * Валидатор номера зуба или группы зубов по формуле FDI (ISO 3950).
+ * Валидация нотации зубов по стандарту FDI (ISO 3950).
  * Принимает как одиночный номер (напр. "16"), так и список через запятую ("16, 17", "11-21").
  */
 function validateFdiToothNotation(value: string | null | undefined): boolean {
@@ -107,39 +108,41 @@ export async function registerLabRoutes(app: FastifyInstance) {
 
 		const { patientId } = request.query as { patientId?: string };
 
-		const orders = await db
-			.select({
-				id: labOrders.id,
-				patientId: labOrders.patientId,
-				patientName: patients.fullName,
-				doctorId: labOrders.doctorId,
-				doctorName: users.fullName,
-				secureToken: labOrders.secureToken,
-				toothFdi: labOrders.toothFdi,
-				material: labOrders.material,
-				colorVita: labOrders.colorVita,
-				status: labOrders.status,
-				dueDate: labOrders.dueDate,
-				clinicalNotes: labOrders.clinicalNotes,
-				labComments: labOrders.labComments,
-				attachedImageUrl: labOrders.attachedImageUrl,
-				priceRub: labOrders.priceRub,
-				sentAt: labOrders.sentAt,
-				completedAt: labOrders.completedAt,
-				cancelledAt: labOrders.cancelledAt,
-				createdAt: labOrders.createdAt,
-				updatedAt: labOrders.updatedAt,
-			})
-			.from(labOrders)
-			.innerJoin(patients, eq(patients.id, labOrders.patientId))
-			.leftJoin(users, eq(users.id, labOrders.doctorId))
-			.where(
-				and(
-					eq(labOrders.organizationId, orgId),
-					patientId ? eq(labOrders.patientId, patientId) : undefined,
-				),
-			)
-			.orderBy(desc(labOrders.createdAt));
+		const orders = await withTenantCtx(orgId, async (tx) => {
+			return tx
+				.select({
+					id: labOrders.id,
+					patientId: labOrders.patientId,
+					patientName: patients.fullName,
+					doctorId: labOrders.doctorId,
+					doctorName: users.fullName,
+					secureToken: labOrders.secureToken,
+					toothFdi: labOrders.toothFdi,
+					material: labOrders.material,
+					colorVita: labOrders.colorVita,
+					status: labOrders.status,
+					dueDate: labOrders.dueDate,
+					clinicalNotes: labOrders.clinicalNotes,
+					labComments: labOrders.labComments,
+					attachedImageUrl: labOrders.attachedImageUrl,
+					priceRub: labOrders.priceRub,
+					sentAt: labOrders.sentAt,
+					completedAt: labOrders.completedAt,
+					cancelledAt: labOrders.cancelledAt,
+					createdAt: labOrders.createdAt,
+					updatedAt: labOrders.updatedAt,
+				})
+				.from(labOrders)
+				.innerJoin(patients, eq(patients.id, labOrders.patientId))
+				.leftJoin(users, eq(users.id, labOrders.doctorId))
+				.where(
+					and(
+						eq(labOrders.organizationId, orgId),
+						patientId ? eq(labOrders.patientId, patientId) : undefined,
+					),
+				)
+				.orderBy(desc(labOrders.createdAt));
+		});
 
 		return orders;
 	});
@@ -167,65 +170,78 @@ export async function registerLabRoutes(app: FastifyInstance) {
 
 		const data = parsed.data;
 
-		// Проверяем принадлежность пациента к организации
-		const [patient] = await db
-			.select({ id: patients.id })
-			.from(patients)
-			.where(
-				and(
-					eq(patients.id, data.patientId),
-					eq(patients.organizationId, orgId),
-				),
-			)
-			.limit(1);
+		const result = await withTenantCtx(orgId, async (tx) => {
+			// Проверяем принадлежность пациента к организации
+			const [patient] = await tx
+				.select({ id: patients.id })
+				.from(patients)
+				.where(
+					and(
+						eq(patients.id, data.patientId),
+						eq(patients.organizationId, orgId),
+					),
+				)
+				.limit(1);
 
-		if (!patient) {
+			if (!patient) {
+				return { kind: "patient_not_found" as const };
+			}
+
+			// Если указан врач — проверяем принадлежность к персоналу клиники
+			let doctorName: string | null = null;
+			if (data.doctorId) {
+				const [doctor] = await tx
+					.select({ id: users.id, fullName: users.fullName })
+					.from(users)
+					.where(
+						and(eq(users.id, data.doctorId), eq(users.organizationId, orgId)),
+					)
+					.limit(1);
+				if (!doctor) {
+					return { kind: "doctor_not_found" as const };
+				}
+				doctorName = doctor.fullName;
+			}
+
+			const secureToken = crypto.randomUUID();
+
+			const [createdOrder] = await tx
+				.insert(labOrders)
+				.values({
+					organizationId: orgId,
+					patientId: data.patientId,
+					doctorId: data.doctorId || null,
+					doctorName,
+					secureToken,
+					toothFdi: data.toothFdi || null,
+					material: data.material || null,
+					colorVita: data.colorVita ? data.colorVita.toUpperCase() : null,
+					dueDate: data.dueDate ? new Date(data.dueDate) : null,
+					clinicalNotes: data.clinicalNotes || null,
+					priceRub: data.priceRub != null ? data.priceRub : null,
+					status: "draft",
+				})
+				.returning();
+
+			return { kind: "ok" as const, order: createdOrder };
+		});
+
+		if (result.kind === "patient_not_found") {
 			return reply.code(404).send({
 				error: "PatientNotFound",
 				message: "Пациент не найден в вашей клинике.",
 			});
 		}
 
-		// Если указан врач — проверяем принадлежность к персоналу клиники
-		let doctorName: string | null = null;
-		if (data.doctorId) {
-			const [doctor] = await db
-				.select({ id: users.id, fullName: users.fullName })
-				.from(users)
-				.where(
-					and(eq(users.id, data.doctorId), eq(users.organizationId, orgId)),
-				)
-				.limit(1);
-			if (!doctor) {
-				return reply.code(404).send({
-					error: "DoctorNotFound",
-					message: "Врач не найден в вашей клинике.",
-				});
-			}
-			doctorName = doctor.fullName;
+		if (result.kind === "doctor_not_found") {
+			return reply.code(404).send({
+				error: "DoctorNotFound",
+				message: "Врач не найден в вашей клинике.",
+			});
 		}
 
-		const secureToken = crypto.randomUUID();
-
-		const [newOrder] = await db
-			.insert(labOrders)
-			.values({
-				organizationId: orgId,
-				patientId: data.patientId,
-				doctorId: data.doctorId || null,
-				doctorName,
-				secureToken,
-				toothFdi: data.toothFdi || null,
-				material: data.material || null,
-				colorVita: data.colorVita ? data.colorVita.toUpperCase() : null,
-				dueDate: data.dueDate ? new Date(data.dueDate) : null,
-				clinicalNotes: data.clinicalNotes || null,
-				priceRub: data.priceRub || null,
-				status: "draft",
-			})
-			.returning();
-
-		if (!newOrder) {
+		const savedOrder = result.order;
+		if (!savedOrder) {
 			return reply.code(500).send({
 				error: "LabOrderNotSaved",
 				message:
@@ -237,13 +253,14 @@ export async function registerLabRoutes(app: FastifyInstance) {
 		wsBroker.broadcastToOrganization(orgId, {
 			type: "LAB_ORDER_UPDATED",
 			payload: {
-				patientId: newOrder.patientId,
-				orderId: newOrder.id,
-				status: newOrder.status,
+				patientId: savedOrder.patientId,
+				orderId: savedOrder.id,
+				status: savedOrder.status,
 			},
 		});
 
-		return reply.code(201).send(newOrder);
+		reply.code(201);
+		return savedOrder;
 	});
 
 	/**
@@ -284,61 +301,78 @@ export async function registerLabRoutes(app: FastifyInstance) {
 
 		const updateData = parsed.data;
 
-		// Загружаем текущий заказ с проверкой принадлежности к клинике
-		const [currentOrder] = await db
-			.select()
-			.from(labOrders)
-			.where(and(eq(labOrders.id, id), eq(labOrders.organizationId, orgId)))
-			.limit(1);
+		const result = await withTenantCtx(orgId, async (tx) => {
+			// Загружаем текущий заказ с проверкой принадлежности к клинике
+			const [currentOrder] = await tx
+				.select()
+				.from(labOrders)
+				.where(and(eq(labOrders.id, id), eq(labOrders.organizationId, orgId)))
+				.limit(1);
 
-		if (!currentOrder) {
+			if (!currentOrder) {
+				return { kind: "not_found" as const };
+			}
+
+			// Проверка автомата состояний при смене статуса
+			if (updateData.status && updateData.status !== currentOrder.status) {
+				const currentStatus = currentOrder.status as LabOrderStatus;
+				const targetStatus = updateData.status as LabOrderStatus;
+				const allowed = LAB_ORDER_CLINIC_TRANSITIONS[currentStatus];
+
+				if (!allowed || !allowed.includes(targetStatus)) {
+					return {
+						kind: "invalid_transition" as const,
+						currentStatus,
+						targetStatus,
+					};
+				}
+			}
+
+			const now = new Date();
+			const auditFields: Partial<{
+				sentAt: Date;
+				completedAt: Date;
+				cancelledAt: Date;
+			}> = {};
+
+			if (updateData.status === "sent" && !currentOrder.sentAt) {
+				auditFields.sentAt = now;
+			} else if (updateData.status === "completed" && !currentOrder.completedAt) {
+				auditFields.completedAt = now;
+			} else if (updateData.status === "cancelled" && !currentOrder.cancelledAt) {
+				auditFields.cancelledAt = now;
+			}
+
+			const [updated] = await tx
+				.update(labOrders)
+				.set({
+					...updateData,
+					colorVita: updateData.colorVita ? updateData.colorVita.toUpperCase() : updateData.colorVita,
+					dueDate: updateData.dueDate ? new Date(updateData.dueDate) : updateData.dueDate === null ? null : undefined,
+					...auditFields,
+					updatedAt: now,
+				})
+				.where(and(eq(labOrders.id, id), eq(labOrders.organizationId, orgId)))
+				.returning();
+
+			return { kind: "ok" as const, updated };
+		});
+
+		if (result.kind === "not_found") {
 			return reply.code(404).send({
 				error: "LabOrderNotFound",
 				message: "Заказ ЗТЛ не найден.",
 			});
 		}
 
-		// Проверка автомата состояний при смене статуса
-		if (updateData.status && updateData.status !== currentOrder.status) {
-			const currentStatus = currentOrder.status as LabOrderStatus;
-			const targetStatus = updateData.status as LabOrderStatus;
-			const allowed = LAB_ORDER_CLINIC_TRANSITIONS[currentStatus];
-
-			if (!allowed || !allowed.includes(targetStatus)) {
-				return reply.code(409).send({
-					error: "InvalidStateTransition",
-					message: `Недопустимый переход статуса заказа ЗТЛ из «${currentStatus}» в «${targetStatus}».`,
-				});
-			}
+		if (result.kind === "invalid_transition") {
+			return reply.code(409).send({
+				error: "InvalidStateTransition",
+				message: `Недопустимый переход статуса заказа ЗТЛ из «${result.currentStatus}» в «${result.targetStatus}».`,
+			});
 		}
 
-		const now = new Date();
-		const auditFields: Partial<{
-			sentAt: Date;
-			completedAt: Date;
-			cancelledAt: Date;
-		}> = {};
-
-		if (updateData.status === "sent" && !currentOrder.sentAt) {
-			auditFields.sentAt = now;
-		} else if (updateData.status === "completed" && !currentOrder.completedAt) {
-			auditFields.completedAt = now;
-		} else if (updateData.status === "cancelled" && !currentOrder.cancelledAt) {
-			auditFields.cancelledAt = now;
-		}
-
-		const [updated] = await db
-			.update(labOrders)
-			.set({
-				...updateData,
-				colorVita: updateData.colorVita ? updateData.colorVita.toUpperCase() : updateData.colorVita,
-				dueDate: updateData.dueDate ? new Date(updateData.dueDate) : updateData.dueDate === null ? null : undefined,
-				...auditFields,
-				updatedAt: now,
-			})
-			.where(and(eq(labOrders.id, id), eq(labOrders.organizationId, orgId)))
-			.returning();
-
+		const updated = result.updated;
 		if (!updated) {
 			return reply.code(404).send({
 				error: "LabOrderNotFound",
@@ -373,31 +407,44 @@ export async function registerLabRoutes(app: FastifyInstance) {
 
 		const { id } = request.params as { id: string };
 
-		const [existing] = await db
-			.select()
-			.from(labOrders)
-			.where(and(eq(labOrders.id, id), eq(labOrders.organizationId, orgId)))
-			.limit(1);
+		const result = await withTenantCtx(orgId, async (tx) => {
+			const [existing] = await tx
+				.select()
+				.from(labOrders)
+				.where(and(eq(labOrders.id, id), eq(labOrders.organizationId, orgId)))
+				.limit(1);
 
-		if (!existing) {
+			if (!existing) {
+				return { kind: "not_found" as const };
+			}
+
+			if (existing.status !== "draft" && existing.status !== "cancelled") {
+				return { kind: "cannot_delete" as const, status: existing.status };
+			}
+
+			const [deleted] = await tx
+				.delete(labOrders)
+				.where(and(eq(labOrders.id, id), eq(labOrders.organizationId, orgId)))
+				.returning();
+
+			return { kind: "ok" as const, deleted };
+		});
+
+		if (result.kind === "not_found") {
 			return reply.code(404).send({
 				error: "LabOrderNotFound",
 				message: "Заказ ЗТЛ не найден.",
 			});
 		}
 
-		if (existing.status !== "draft" && existing.status !== "cancelled") {
+		if (result.kind === "cannot_delete") {
 			return reply.code(409).send({
 				error: "CannotDeleteActiveOrder",
-				message: `Нельзя удалить заказ со статусом «${existing.status}». Сначала отмените заказ.`,
+				message: `Нельзя удалить заказ со статусом «${result.status}». Сначала отмените заказ.`,
 			});
 		}
 
-		const [deleted] = await db
-			.delete(labOrders)
-			.where(and(eq(labOrders.id, id), eq(labOrders.organizationId, orgId)))
-			.returning();
-
+		const deleted = result.deleted;
 		if (!deleted) {
 			return reply.code(404).send({
 				error: "LabOrderNotFound",

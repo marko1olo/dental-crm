@@ -19,6 +19,7 @@ import { ProcedureMaterialDeductionModal } from "./inventory/ProcedureMaterialDe
 import { useInventoryLogic } from "./inventory/useInventoryLogic";
 import { WarehouseTransferModal } from "./inventory/transfers/WarehouseTransferModal";
 import { ClinicalWriteoffModal } from "./inventory/writeoff/ClinicalWriteoffModal";
+import { MdlpDisposalQueueModal } from "./inventory/mdlp/index.js";
 
 /**
  * Как показать срок годности расходника.
@@ -160,6 +161,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 	const [isDeductionModalOpen, setIsDeductionModalOpen] = useState(false);
 	const [isClinicalWriteoffOpen, setIsClinicalWriteoffOpen] = useState(false);
 	const [isWarehouseTransferOpen, setIsWarehouseTransferOpen] = useState(false);
+	const [isMdlpDisposalOpen, setIsMdlpDisposalOpen] = useState(false);
 
 	/*
 	 * ЭТО ЗНАЧЕНИЯ CSS, А НЕ ИМЕНА КЛАССОВ.
@@ -607,10 +609,20 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 				}}
 			>
 				<div>
-					<h1 className="text-2xl font-bold m-0 flex items-center gap-3 text-slate-900 dark:text-white">
-						<Package className="text-emerald-500" size={28} /> Склад материалов
+					<h1
+						style={{
+							margin: 0,
+							fontSize: "24px",
+							fontWeight: 700,
+							display: "flex",
+							alignItems: "center",
+							gap: "12px",
+							color: "var(--ink)",
+						}}
+					>
+						<Package style={{ color: "var(--teal)" }} size={28} /> Склад материалов
 					</h1>
-					<p className="text-slate-500 dark:text-slate-400 mt-1 mb-0 text-sm">
+					<p style={{ margin: "4px 0 0", fontSize: "14px", color: "var(--muted)" }}>
 						Учёт расходников, приход и списание
 					</p>
 				</div>
@@ -630,7 +642,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 					>
 						<span
 							style={{
-								fontSize: 11,
+								fontSize: 12,
 								color: "var(--muted)",
 								textTransform: "uppercase",
 								letterSpacing: 1,
@@ -656,7 +668,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 					>
 						<span
 							style={{
-								fontSize: 11,
+								fontSize: 12,
 								color: "var(--muted)",
 								textTransform: "uppercase",
 								letterSpacing: 1,
@@ -688,7 +700,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 						>
 							<span
 								style={{
-									fontSize: 11,
+									fontSize: 12,
 									color: "var(--muted)",
 									textTransform: "uppercase",
 									letterSpacing: 1,
@@ -820,7 +832,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								}}
 							/>
 						</div>
-						<div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+						<div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
 							<button
 								type="button"
 								className="secondary-button"
@@ -829,19 +841,21 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								style={{
 									display: "inline-flex",
 									alignItems: "center",
-									gap: 8,
-									padding: "10px 16px",
+									gap: 6,
+									padding: "8px 12px",
+									minHeight: "40px",
 									borderRadius: 8,
 									border: `1px solid ${borderColor}`,
 									background: paperSoftBg,
 									color: "var(--ink)",
 									fontWeight: 600,
-									fontSize: 14,
+									fontSize: 13,
 									cursor: "pointer",
+									whiteSpace: "nowrap",
 								}}
-								title="Клиническое списание расходников по нормам Приказа Минздрава 804н с генерацией актов 0504230, М-11 и ТОРГ-16"
+								title="Клиническое списание расходников по нормам Приказа Минздрава 804н (Акты 0504230, М-11 и ТОРГ-16)"
 							>
-								<PackageCheck size={18} className="text-teal-600" /> Списание материалов по наряду (Приказ 804н / ТОРГ-16 / М-11)
+								<PackageCheck size={16} className="text-teal-600" /> Списание по наряду (804н)
 							</button>
 							<button
 								type="button"
@@ -851,19 +865,45 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								style={{
 									display: "inline-flex",
 									alignItems: "center",
-									gap: 8,
-									padding: "10px 16px",
+									gap: 6,
+									padding: "8px 12px",
+									minHeight: "40px",
 									borderRadius: 8,
 									border: `1px solid ${borderColor}`,
 									background: paperSoftBg,
 									color: "var(--ink)",
 									fontWeight: 600,
-									fontSize: 14,
+									fontSize: 13,
 									cursor: "pointer",
+									whiteSpace: "nowrap",
 								}}
 								title="Межфилиальное перемещение ТМЦ по накладным ТОРГ-13"
 							>
-								<Truck size={18} /> Перемещение ТМЦ (ТОРГ-13)
+								<Truck size={16} /> Перемещение (ТОРГ-13)
+							</button>
+							<button
+								type="button"
+								className="secondary-button"
+								data-testid="mdlp-disposal-trigger"
+								onClick={() => setIsMdlpDisposalOpen(true)}
+								style={{
+									display: "inline-flex",
+									alignItems: "center",
+									gap: 6,
+									padding: "8px 12px",
+									minHeight: "40px",
+									borderRadius: 8,
+									border: `1px solid ${borderColor}`,
+									background: paperSoftBg,
+									color: "var(--ink)",
+									fontWeight: 600,
+									fontSize: 13,
+									cursor: "pointer",
+									whiteSpace: "nowrap",
+								}}
+								title="Официальный вывод из оборота лекарственных препаратов по Схеме 10560 ИС МДЛП (Честный ЗНАК)"
+							>
+								<Package size={16} className="text-teal-600" /> МДЛП (Схема 10560)
 							</button>
 							<button
 								type="button"
@@ -872,25 +912,39 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								style={{
 									display: "inline-flex",
 									alignItems: "center",
-									gap: 8,
-									padding: "10px 16px",
+									gap: 6,
+									padding: "8px 12px",
+									minHeight: "40px",
 									borderRadius: 8,
 									border: `1px solid ${borderColor}`,
 									background: paperSoftBg,
 									color: "var(--ink)",
 									fontWeight: 600,
-									fontSize: 14,
+									fontSize: 13,
 									cursor: "pointer",
+									whiteSpace: "nowrap",
 								}}
+								title="Списание расходных материалов по клиническим техкартам"
 							>
-								<Package size={18} /> Списание по техкартам
+								<Package size={16} /> Техкарты
 							</button>
 							<button
 								type="button"
 								className="primary-button"
 								onClick={openAddModal}
+								style={{
+									display: "inline-flex",
+									alignItems: "center",
+									gap: 6,
+									padding: "8px 14px",
+									minHeight: "40px",
+									borderRadius: 8,
+									fontWeight: 700,
+									fontSize: 13,
+									whiteSpace: "nowrap",
+								}}
 							>
-								<Plus size={18} /> Добавить позицию
+								<Plus size={16} /> + Добавить позицию
 							</button>
 						</div>
 					</div>
@@ -1309,8 +1363,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 															type="button"
 															onClick={() => openEditModal(item)}
 															style={{
-																background: "rgba(245, 158, 11, 0.1)",
-																color: "#d97706",
+																background: "var(--warn-bg, rgba(245, 158, 11, 0.1))",
+																color: "var(--warn-fg, #d97706)",
 																border: "none",
 																width: 32,
 																height: 32,
@@ -1330,8 +1384,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																handleDeleteItem(item.id, item.name)
 															}
 															style={{
-																background: "rgba(239, 68, 68, 0.1)",
-																color: "var(--tomato)",
+																background: "var(--bad-bg, rgba(239, 68, 68, 0.1))",
+																color: "var(--bad-fg, var(--tomato))",
 																border: "none",
 																width: 32,
 																height: 32,
@@ -1353,8 +1407,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																setAdjustAmount("");
 															}}
 															style={{
-																background: "rgba(59, 130, 246, 0.1)",
-																color: "#3b82f6",
+																background: "var(--teal-soft, rgba(20, 184, 166, 0.1))",
+																color: "var(--teal-dark, #0f766e)",
 																border: "none",
 																padding: "6px 12px",
 																borderRadius: 6,
@@ -1799,18 +1853,18 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 										flex: 1,
 										padding: "8px 0",
 										borderRadius: 8,
-										border: `1px solid ${adjustType === t ? (t === "in" ? "#3b82f6" : "var(--tomato)") : borderColor}`,
+										border: `1px solid ${adjustType === t ? (t === "in" ? "var(--teal)" : "var(--tomato)") : borderColor}`,
 										background:
 											adjustType === t
 												? t === "in"
-													? "rgba(59,130,246,0.12)"
-													: "rgba(239,68,68,0.12)"
+													? "var(--teal-soft, rgba(20, 184, 166, 0.12))"
+													: "var(--bad-bg, rgba(239, 68, 68, 0.12))"
 												: "transparent",
 										color:
 											adjustType === t
 												? t === "in"
-													? "#3b82f6"
-													: "var(--tomato)"
+													? "var(--teal-dark, #0f766e)"
+													: "var(--bad-fg, var(--tomato))"
 												: "var(--muted)",
 										fontWeight: 600,
 										cursor: "pointer",
@@ -1921,12 +1975,12 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									borderRadius: 8,
 									border: "none",
 									fontWeight: 600,
-									color: "#fff",
+									color: "var(--on-teal, #ffffff)",
 									cursor:
 										isAdjustingStock || adjustExceedsStock
 											? "not-allowed"
 											: "pointer",
-									background: adjustType === "in" ? "#3b82f6" : "var(--tomato)",
+									background: adjustType === "in" ? "var(--teal)" : "var(--tomato)",
 									fontSize: 15,
 									opacity: isAdjustingStock || adjustExceedsStock ? 0.6 : 1,
 								}}
@@ -1982,6 +2036,15 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 				onClose={() => setIsWarehouseTransferOpen(false)}
 				onDocumentSaved={async () => {
 					setIsWarehouseTransferOpen(false);
+					fetchItems();
+				}}
+			/>
+
+			<MdlpDisposalQueueModal
+				isOpen={isMdlpDisposalOpen}
+				onClose={() => setIsMdlpDisposalOpen(false)}
+				onConfirmDisposal={async () => {
+					setIsMdlpDisposalOpen(false);
 					fetchItems();
 				}}
 			/>

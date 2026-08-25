@@ -20,7 +20,7 @@ import {
 	exportSanpinConsolidatedArchiveToCsv,
 	generateTemperatureHumidityJournalPrintHtml,
 	exportTemperatureHumidityJournalToCsv,
-	numberToRussianWords,
+	integerToRussianWords,
 	formatRussianSheetsCount,
 	KRAFT_PACKAGE_MATERIALS,
 } from "../index.js";
@@ -411,13 +411,13 @@ describe("SanPiN Regulatory Engine & Shared Contracts", () => {
 	// ─── 8. Сводный сшив и экспорт для Роспотребнадзора ────────────────────────
 	describe("8. Consolidated SanPiN Binder & Supervisory Dossier Export", () => {
 		test("converts numbers to Russian words and declensions accurately", () => {
-			assert.strictEqual(numberToRussianWords(0), "ноль");
-			assert.strictEqual(numberToRussianWords(1), "один");
-			assert.strictEqual(numberToRussianWords(4), "четыре");
-			assert.strictEqual(numberToRussianWords(12), "двенадцать");
-			assert.strictEqual(numberToRussianWords(21), "двадцать один");
-			assert.strictEqual(numberToRussianWords(25), "двадцать пять");
-			assert.strictEqual(numberToRussianWords(124), "сто двадцать четыре");
+			assert.strictEqual(integerToRussianWords(0), "ноль");
+			assert.strictEqual(integerToRussianWords(1), "один");
+			assert.strictEqual(integerToRussianWords(4), "четыре");
+			assert.strictEqual(integerToRussianWords(12), "двенадцать");
+			assert.strictEqual(integerToRussianWords(21), "двадцать один");
+			assert.strictEqual(integerToRussianWords(25), "двадцать пять");
+			assert.strictEqual(integerToRussianWords(124), "сто двадцать четыре");
 
 			const sheets1 = formatRussianSheetsCount(1);
 			assert.strictEqual(sheets1.count, 1);

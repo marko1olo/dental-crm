@@ -1346,6 +1346,7 @@ export function generatePrescriptionPayloadFromSoap(options: {
 	};
 	readonly diagnosisIcd10?: string | null;
 	readonly treatmentText?: string | null;
+	readonly drugIds?: readonly string[];
 	readonly explicitDrugIds?: readonly string[];
 	readonly customSeriesNumber?: string;
 	readonly validityDays?: "15" | "30" | "60" | "365";
@@ -1359,10 +1360,11 @@ export function generatePrescriptionPayloadFromSoap(options: {
 		`РЕЦ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
 	let selectedDrugs: DentalPrescriptionDrugPreset[] = [];
+	const requestedDrugIds = options.drugIds || options.explicitDrugIds;
 
-	if (options.explicitDrugIds && options.explicitDrugIds.length > 0) {
+	if (requestedDrugIds && requestedDrugIds.length > 0) {
 		selectedDrugs = DENTAL_PRESCRIPTION_DRUG_CATALOG.filter((d) =>
-			options.explicitDrugIds!.includes(d.id),
+			requestedDrugIds.includes(d.id),
 		);
 	} else {
 		selectedDrugs = DENTAL_PRESCRIPTION_DRUG_CATALOG.filter((d) =>
@@ -1479,3 +1481,5 @@ export function generateForm148_1u88Payload(options: {
 		ukepSignature: options.ukepSignature || null,
 	};
 }
+
+export { generatePrescriptionPayloadFromSoap as generateForm107_1uPayload };

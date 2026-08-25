@@ -812,7 +812,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							title="Вставить протокол пародонтологического обследования PSR и индексы 043/у (AAP/EFP 2018)"
 							data-testid="insert-perio-043-btn"
 						>
-							<span className="font-mono text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-700 dark:text-emerald-200 font-bold shrink-0">
+							<span className="font-mono text-xs px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-700 dark:text-emerald-200 font-bold shrink-0">
 								PSR
 							</span>
 							<Activity className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -825,7 +825,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							title="Вставить протокол сменного прикуса, физиологической резорбции корней и Кариограммы Bratthall"
 							data-testid="insert-pediatric-cariogram-btn"
 						>
-							<span className="font-mono text-[10px] px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-700 dark:text-purple-200 font-bold shrink-0">
+							<span className="font-mono text-xs px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-700 dark:text-purple-200 font-bold shrink-0">
 								ДЕТИ
 							</span>
 							<Sparkles className="w-3.5 h-3.5 text-purple-600 shrink-0" />
@@ -840,7 +840,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 								title={preset.description}
 								data-testid={`preset-btn-${preset.id}`}
 							>
-								<span className="font-mono text-[10px] px-1.5 py-0.5 rounded-md bg-[var(--teal-surface)] text-[var(--teal-dark)] font-bold shrink-0">
+								<span className="font-mono text-xs px-1.5 py-0.5 rounded-md bg-[var(--teal-surface)] text-[var(--teal-dark)] font-bold shrink-0">
 									{preset.badge}
 								</span>
 								<span className="min-w-0 break-words">{preset.label}</span>
@@ -899,7 +899,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 								>
 									<Plus className="w-3 h-3 text-blue-500 shrink-0" />
 									<span className="min-w-0 break-words">{ane.label}</span>
-									<span className="text-[10px] text-[var(--muted)] shrink-0">
+									<span className="text-xs text-[var(--muted)] shrink-0">
 										({ane.volume})
 									</span>
 								</button>
@@ -1198,8 +1198,8 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							className="mt-2 p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col gap-1.5"
 							data-testid="patient-recommendations-bar"
 						>
-							<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5">
-								<Sparkles className="w-3 h-3 text-teal-500" />
+							<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5">
+								<Sparkles className="w-3.5 h-3.5 text-teal-500" />
 								1-Click Рекомендации пациенту:
 							</span>
 							<div className="flex flex-wrap items-center gap-1.5">

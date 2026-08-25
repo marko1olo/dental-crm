@@ -105,7 +105,7 @@ export async function uploadSingleMediaItem(
 
 	await updateMediaSyncStatus(mediaId, "syncing");
 
-	const uploadUrl = options.targetUploadUrl || "/api/media/upload";
+	const uploadUrl = options.targetUploadUrl || "/api/xray/scans";
 	const fetchFn = options.fetchImpl || (typeof fetch !== "undefined" ? fetch : undefined);
 
 	if (!fetchFn) {

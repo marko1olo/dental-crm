@@ -12,6 +12,59 @@
 import { logger } from "./logger";
 
 export type ConnectivityMode = "cloud_online" | "lan_online" | "offline";
+export type RttQuality = "good" | "moderate" | "poor" | "offline";
+
+/**
+ * Определение цветовой градации качества задержки сети:
+ * - 🟢 good: <= 100 мс (быстрый отклик)
+ * - 🟡 moderate: 100..400 мс (умеренная задержка)
+ * - 🔴 poor: > 400 мс (высокая задержка)
+ * - offline: нет соединения (0 мс)
+ */
+export function getRttQuality(rttMs: number | null, isOnline: boolean): RttQuality {
+	if (!isOnline || rttMs === null) return "offline";
+	if (rttMs <= 100) return "good";
+	if (rttMs <= 400) return "moderate";
+	return "poor";
+}
+
+/**
+ * Форматирование метки микро-индикатора:
+ * - «Облако (15 мс)»
+ * - «Локальный Wi-Fi (2 мс)»
+ * - «Офлайн (0 мс)»
+ */
+export function formatRttLabel(mode: ConnectivityMode, rttMs: number | null): string {
+	if (mode === "offline" || rttMs === null) {
+		return "Офлайн (0 мс)";
+	}
+	if (mode === "lan_online") {
+		return `Локальный Wi-Fi (${rttMs} мс)`;
+	}
+	return `Облако (${rttMs} мс)`;
+}
+
+/**
+ * Форматирование сетевого статуса кристально понятным русским языком для врачей и администраторов:
+ * - 🟢 «Связь отличная (Облако онлайн)» / «Связь стабильная (Облако онлайн)»
+ * - 🟡 «Работаем по локальной сети клиники (Wi-Fi)»
+ * - 🔴 «Нет интернета. Все записи сохраняются на этот компьютер, ничего не пропадет!»
+ */
+export function formatHumanStatusText(mode: ConnectivityMode, rttMs: number | null): string {
+	if (mode === "offline" || rttMs === null) {
+		return "Нет интернета. Все записи сохраняются на этот компьютер, ничего не пропадет!";
+	}
+	if (mode === "lan_online") {
+		return "Работаем по локальной сети клиники (Wi-Fi)";
+	}
+	if (rttMs <= 100) {
+		return "Связь отличная (Облако онлайн)";
+	}
+	if (rttMs <= 400) {
+		return "Связь стабильная (Облако онлайн)";
+	}
+	return "Медленный интернет (Облако онлайн)";
+}
 
 export interface NetworkState {
 	mode: ConnectivityMode;
@@ -23,11 +76,56 @@ export interface NetworkState {
 	isLan: boolean;
 }
 
+export function pluralizeOperations(count: number): string {
+	const abs = Math.abs(count) % 100;
+	const num = abs % 10;
+	if (abs > 10 && abs < 20) return `${count} операций`;
+	if (num > 1 && num < 5) return `${count} операции`;
+	if (num === 1) return `${count} операция`;
+	return `${count} операций`;
+}
+
+export function pluralizeChanges(count: number): string {
+	return pluralizeOperations(count);
+}
+
 export const NETWORK_STATE_LABELS: Record<ConnectivityMode, string> = {
-	cloud_online: "🟢 Онлайн (Облако)",
-	lan_online: "🟡 Локальная сеть клиники (LAN/Wi-Fi)",
-	offline: "🟠 Автономный офлайн",
+	cloud_online: "В сети (Облако DENTE)",
+	lan_online: "Локальная сеть клиники (Wi-Fi)",
+	offline: "Офлайн-режим • Данные сохранены в памяти",
 };
+
+export function getNetworkSyncStatusLabel(options: {
+	mode: ConnectivityMode;
+	isSyncing?: boolean | undefined;
+	pendingCount?: number | undefined;
+	rttMs?: number | null | undefined;
+}): string {
+	const { mode, isSyncing = false, pendingCount = 0, rttMs = null } = options;
+
+	if (isSyncing) {
+		return pendingCount > 0
+			? `Синхронизация... (${pluralizeOperations(pendingCount)} в очереди)`
+			: "Синхронизация...";
+	}
+
+	if (mode === "cloud_online") {
+		return rttMs !== null ? `В сети (Облако DENTE) · ${rttMs} мс` : "В сети (Облако DENTE)";
+	}
+
+	if (mode === "lan_online") {
+		const base = "Локальная сеть клиники (Wi-Fi)";
+		const rttPart = rttMs !== null ? ` · ${rttMs} мс` : "";
+		return pendingCount > 0
+			? `${base}${rttPart} • В очереди ${pluralizeOperations(pendingCount)}`
+			: `${base}${rttPart}`;
+	}
+
+	const baseOffline = "Офлайн-режим • Данные сохранены в памяти";
+	return pendingCount > 0
+		? `${baseOffline} • В очереди ${pluralizeOperations(pendingCount)}`
+		: baseOffline;
+}
 
 export const INITIAL_NETWORK_STATE: NetworkState = {
 	mode: "cloud_online",
@@ -38,6 +136,7 @@ export const INITIAL_NETWORK_STATE: NetworkState = {
 	isOnline: true,
 	isLan: false,
 };
+
 
 /**
  * Определение, является ли хост локальным или узлом локальной сети клиники
@@ -254,6 +353,9 @@ export function createNetworkMonitor(
 	// Периодический пинг
 	if (intervalMs > 0) {
 		timerId = setInterval(() => void runCheck(), intervalMs);
+		if (typeof (timerId as any)?.unref === "function") {
+			(timerId as any).unref();
+		}
 	}
 
 	return () => {

@@ -1236,4 +1236,55 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 		"/asterisk/ami-event",
 		handleAsteriskAmiEvent,
 	);
+
+	// --------------------------------------------------------------------------
+	// WebRTC SIP Call Transfer (Blind / Attended Transfer)
+	// --------------------------------------------------------------------------
+	const handleSipTransfer = async (
+		request: FastifyRequest<{
+			Params: { organizationId?: string };
+			Body: { callId?: string; targetExtensionOrPhone?: string; transferType?: "blind" | "attended" };
+		}>,
+		reply: FastifyReply,
+	) => {
+		if (!(await requireClinicalReadAccess(request, reply, "transfer sip call"))) {
+			return;
+		}
+		const orgId = await requireResolvedOrganizationId(request, reply, "transfer sip call");
+		if (!orgId) return;
+
+		const body = request.body || {};
+		const callId = (body.callId || "").trim();
+		const targetExtensionOrPhone = (body.targetExtensionOrPhone || "").trim();
+		const transferType = body.transferType === "attended" ? "attended" : "blind";
+
+		if (!callId || !targetExtensionOrPhone) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "callId and targetExtensionOrPhone are required for call transfer",
+			});
+		}
+
+		const identity = getRequestIdentity(request);
+		const result = await TelephonyGatewayService.transferCall({
+			organizationId: orgId,
+			callId,
+			targetExtensionOrPhone,
+			transferType,
+			initiatedByUserId: identity.userId ?? undefined,
+		});
+
+		return reply.status(200).send(result);
+	};
+
+	server.post<{
+		Params: { organizationId: string };
+		Body: { callId?: string; targetExtensionOrPhone?: string; transferType?: "blind" | "attended" };
+	}>("/:organizationId/sip/transfer", handleSipTransfer);
+
+	server.post<{
+		Params: { organizationId?: string };
+		Body: { callId?: string; targetExtensionOrPhone?: string; transferType?: "blind" | "attended" };
+	}>("/sip/transfer", handleSipTransfer);
 };
+

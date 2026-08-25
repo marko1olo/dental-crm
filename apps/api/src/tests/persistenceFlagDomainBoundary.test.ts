@@ -582,12 +582,22 @@ const DECLARED_MIXED_ROUTES: { route: string; reason: string }[] = [
 			"настоящего пациента не находятся.",
 	},
 	{
+		route: "odontogram.ts",
+		reason:
+			"clinicalQuery отдаёт клинические правила из памяти или базы, а rls.ts и schema.ts читают и пишут зубную формулу в базу.",
+	},
+	{
 		route: "patients.ts",
 		reason:
 			"ХУДШИЙ ИЗ ЗАМЕРЕННЫХ. GET /api/patients/<фикстура>/reclamations при =off отвечает 200 и ПУСТЫМ " +
 			"списком: охранник getPatientByIdFromDb читает память и пропускает, рекламации читаются из базы. " +
 			"Комментарий этого же маршрута (строки 592-593) прямо говорит, что пустой список врач прочитает " +
 			"как «осложнений не было». Все три игнорирующих модуля приходят ТОЛЬКО динамическим import().",
+	},
+	{
+		route: "telegram.ts",
+		reason:
+			"domainStateHydration переносит состояние из PostgreSQL в память или пропускает при =off, а rls.ts читает настройки бота из базы.",
 	},
 	{
 		route: "visits.ts",

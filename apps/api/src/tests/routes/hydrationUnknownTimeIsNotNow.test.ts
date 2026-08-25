@@ -205,7 +205,7 @@ before(async () => {
 			{
 				id: APPOINTMENT_BROKEN_ID,
 				organizationId: ORGANIZATION_ID,
-				patientId: PATIENT_OK_ID,
+				patientId: PATIENT_BROKEN_ID,
 				status: "planned",
 				startsAt: new Date(OK_STARTS_AT),
 				endsAt: new Date(OK_ENDS_AT),

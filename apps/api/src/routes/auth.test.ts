@@ -2,7 +2,7 @@ import assert from "node:assert";
 import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, describe, mock, test } from "node:test";
 import Fastify from "fastify";
-import { withSuperuserBypass } from "../db/rls.js";
+import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import * as rls from "../db/rls.js";
 import { organizations, users } from "../db/schema.js";
 import {
@@ -77,7 +77,7 @@ describe("auth routes", () => {
 			const password = "password123";
 			const passwordHash = await hashCredential(password);
 
-			await withSuperuserBypass(async (tx) => {
+			await withTenantCtx(orgId, async (tx) => {
 				await tx
 					.insert(organizations)
 					.values({
@@ -122,7 +122,7 @@ describe("auth routes", () => {
 			const orgId = nextOrgId();
 			const userId = fixtureUuid("auth.test.ts", testIndex++);
 
-			await withSuperuserBypass(async (tx) => {
+			await withTenantCtx(orgId, async (tx) => {
 				await tx
 					.insert(organizations)
 					.values({
@@ -185,7 +185,7 @@ describe("auth routes", () => {
 			const orgId = nextOrgId(false);
 			const userId = fixtureUuid("auth.test.ts", testIndex++);
 
-			await withSuperuserBypass(async (tx) => {
+			await withTenantCtx(orgId, async (tx) => {
 				await tx
 					.insert(organizations)
 					.values({
@@ -261,7 +261,7 @@ describe("auth routes", () => {
 			const password = "password123";
 			const passwordHash = await hashCredential(password);
 
-			await withSuperuserBypass(async (tx) => {
+			await withTenantCtx(orgId, async (tx) => {
 				await tx
 					.insert(organizations)
 					.values({
@@ -299,8 +299,12 @@ describe("auth routes", () => {
 			const response = await app.inject({
 				method: "POST",
 				url: "/api/auth/login",
-				payload: { email, password },
+				payload: {
+					email,
+					password,
+				},
 			});
+
 			assert.strictEqual(response.statusCode, 200);
 			assert.strictEqual(response.json().ok, true);
 			assert.ok(response.json().clinicToken);
@@ -319,7 +323,12 @@ describe("auth routes", () => {
 
 		test("нет демо-профиля в обход базы: неизвестный сотрудник -> 404", async () => {
 			const unknownUserId = fixtureUuid("auth.test.ts", 9998);
-			const staffToken = signToken({ userId: unknownUserId }, "test-secret", 60 * 60);
+			const unknownOrgId = fixtureUuid("auth.test.ts", 9997);
+			const staffToken = signToken(
+				{ userId: unknownUserId, organizationId: unknownOrgId },
+				"test-secret",
+				60 * 60,
+			);
 			const response = await app.inject({
 				method: "GET",
 				url: "/api/auth/user/me",
@@ -333,7 +342,7 @@ describe("auth routes", () => {
 			const orgId = nextOrgId();
 			const userId = fixtureUuid("auth.test.ts", testIndex++);
 
-			await withSuperuserBypass(async (tx) => {
+			await withTenantCtx(orgId, async (tx) => {
 				await tx
 					.insert(organizations)
 					.values({
@@ -364,7 +373,11 @@ describe("auth routes", () => {
 					});
 			});
 
-			const staffToken = signToken({ userId }, "test-secret", 60 * 60);
+			const staffToken = signToken(
+				{ userId, organizationId: orgId, role: "admin", fullName: "Jane" },
+				"test-secret",
+				60 * 60,
+			);
 			const response = await app.inject({
 				method: "GET",
 				url: "/api/auth/user/me",
@@ -417,7 +430,7 @@ describe("auth routes", () => {
 		}
 
 		async function seedSyntheticFixtures(): Promise<void> {
-			await withSuperuserBypass(async (tx) => {
+			await withTenantCtx(SYNTHETIC_ORG_ID, async (tx) => {
 				await tx
 					.insert(organizations)
 					.values({
@@ -435,6 +448,8 @@ describe("auth routes", () => {
 						isActive: true,
 					})
 					.onConflictDoNothing();
+			});
+			await withTenantCtx(FOREIGN_ORG_ID, async (tx) => {
 				await tx
 					.insert(organizations)
 					.values({

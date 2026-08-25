@@ -195,7 +195,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				(x) => x.value > 0,
 			);
 
-			// 2. Doctor Profitability — payments grouped by doctorUserId
+			// 2. Doctor Profitability — payments and appointments grouped by doctorUserId
 			const docProfRes = await db
 				.select({
 					doctorId: appointments.doctorUserId,
@@ -215,36 +215,99 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				)
 				.groupBy(appointments.doctorUserId);
 
+			const docApptRes = await db
+				.select({
+					doctorId: appointments.doctorUserId,
+					totalAppointments: sql<number>`count(*)::int`,
+					completedAppointments: sql<number>`coalesce(sum(case when ${appointments.status} in ('completed', 'arrived', 'in_treatment') then 1 else 0 end), 0)::int`,
+					totalMinutes: sql<number>`coalesce(sum(case when ${appointments.status} not in ('cancelled', 'no_show') then extract(epoch from (${appointments.endsAt} - ${appointments.startsAt})) / 60 else 0 end), 0)::int`,
+				})
+				.from(appointments)
+				.where(withDate(appointments.organizationId, appointments.startsAt))
+				.groupBy(appointments.doctorUserId);
+
+			const docApptMap = new Map(
+				docApptRes.map((d) => [d.doctorId ?? "unassigned", d]),
+			);
+
 			const allDocs = await db
 				.select({ id: users.id, fullName: users.fullName })
 				.from(users)
 				.where(eq(users.organizationId, orgId));
 			const docMap = new Map(allDocs.map((d) => [d.id, d.fullName]));
 
-			const doctorProfitabilityJson = docProfRes
-				.map((r) => {
-					const revenue = Number(r.revenue || 0);
+			const allDoctorIds = Array.from(
+				new Set([
+					...docProfRes.map((r) => r.doctorId),
+					...docApptRes.map((r) => r.doctorId),
+				]),
+			);
+
+			const doctorProfitabilityJson = allDoctorIds
+				.map((docId) => {
+					const prof = docProfRes.find(
+						(p) => (p.doctorId ?? null) === (docId ?? null),
+					);
+					const appt = docApptMap.get(docId ?? "unassigned");
+					const revenue = Number(prof?.revenue || 0);
+					const appointmentsCount = Number(appt?.totalAppointments || 0);
+					const completedCount = Number(appt?.completedAppointments || 0);
+					const workedMinutes = Number(appt?.totalMinutes || 0);
+					const workedHours = Math.round((workedMinutes / 60) * 10) / 10;
+					const avgTicketRub =
+						completedCount > 0
+							? Math.round(revenue / completedCount)
+							: appointmentsCount > 0
+								? Math.round(revenue / appointmentsCount)
+								: 0;
+					const hourlyRevenueRub =
+						workedMinutes > 0
+							? Math.round(revenue / (workedMinutes / 60))
+							: 0;
+					const completionRate =
+						appointmentsCount > 0
+							? Math.round((completedCount / appointmentsCount) * 100)
+							: null;
+
 					return {
-						name: r.doctorId
-							? docMap.get(r.doctorId) || "Врач клиники"
+						doctorId: docId ?? null,
+						name: docId
+							? docMap.get(docId) || "Врач клиники"
 							: "Общая касса",
 						revenue,
+						appointmentsCount,
+						avgTicketRub,
+						workedHours,
+						hourlyRevenueRub,
 						// БЫЛО: margin = 35% от выручки и completionRate = 85 — константы,
 						// выдаваемые за расчёт. Пока в БД нет данных о себестоимости
 						// материалов и проценте врача, возвращаем null: интерфейс покажет
 						// прочерк вместо правдоподобного, но выдуманного числа.
 						margin: null as number | null,
-						completionRate: null as number | null,
+						completionRate,
 					};
 				})
-				.filter((x) => x.revenue > 0)
+				.filter((x) => x.revenue > 0 || x.appointmentsCount > 0)
 				.sort((a, b) => b.revenue - a.revenue);
 
-			// 3. Chair Utilization
+			// 3. Chair Utilization (% времени в кресле от доступного рабочего времени смены)
+			const now = new Date();
+			const daysInPeriod = startDate
+				? Math.max(
+						1,
+						Math.ceil(
+							(now.getTime() - startDate.getTime()) /
+								(1000 * 60 * 60 * 24),
+						),
+					)
+				: 30;
+			const availableMinutesPerChair = daysInPeriod * 12 * 60; // 12-часовая рабочая смена
+
 			const chairUtilRes = await db
 				.select({
 					chairId: appointments.chairId,
-					count: sql<number>`count(*)`,
+					count: sql<number>`count(*)::int`,
+					occupiedMinutes: sql<number>`coalesce(sum(case when ${appointments.status} not in ('cancelled', 'no_show') then extract(epoch from (${appointments.endsAt} - ${appointments.startsAt})) / 60 else 0 end), 0)::int`,
 				})
 				.from(appointments)
 				.where(withDate(appointments.organizationId, appointments.startsAt))
@@ -256,19 +319,43 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				.where(eq(chairs.organizationId, orgId));
 			const chairMap = new Map(allChairs.map((c) => [c.id, c.name]));
 
-			const colors = ["#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#3b82f6"];
+			const colors = [
+				"#8b5cf6",
+				"#ec4899",
+				"#f59e0b",
+				"#10b981",
+				"#3b82f6",
+				"#06b6d4",
+				"#a855f7",
+			];
 			const chairUtilizationJson = chairUtilRes
-				.map((r, i) => ({
-					name: r.chairId
-						? chairMap.get(r.chairId) || "Кресло"
-						: "Основное кресло",
-					value: Number(r.count),
-					fill: colors[i % colors.length],
-				}))
+				.map((r, i) => {
+					const count = Number(r.count || 0);
+					const occupiedMinutes = Number(r.occupiedMinutes || 0);
+					const utilizationPercent =
+						availableMinutesPerChair > 0
+							? Math.min(
+									100,
+									Math.round(
+										(occupiedMinutes / availableMinutesPerChair) * 1000,
+									) / 10,
+								)
+							: 0;
+					return {
+						chairId: r.chairId ?? null,
+						name: r.chairId
+							? chairMap.get(r.chairId) || "Кресло"
+							: "Основное кресло",
+						value: count,
+						occupiedMinutes,
+						availableMinutes: availableMinutesPerChair,
+						utilizationPercent,
+						fill: colors[i % colors.length]!,
+					};
+				})
 				.filter((x) => x.value > 0);
 
 			// 4. Cohort LTV — payments grouped by patient creation month
-			const now = new Date();
 			const ltvStartDate = new Date(now);
 			ltvStartDate.setMonth(ltvStartDate.getMonth() - 12);
 
@@ -399,6 +486,238 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				.from(appointments)
 				.where(withDate(appointments.organizationId, appointments.startsAt));
 
+			// 5. 3-Tier Treatment Plan Acceptance Rate & Primary Consultation Conversion
+			const allPlans = await db
+				.select({
+					id: treatmentPlans.id,
+					name: treatmentPlans.name,
+					status: treatmentPlans.status,
+					totalPriceRub: treatmentPlans.totalPriceRub,
+					totalPrice: treatmentPlans.totalPrice,
+				})
+				.from(treatmentPlans)
+				.where(
+					withDate(treatmentPlans.organizationId, treatmentPlans.createdAt),
+				);
+
+			const [consultationApptRow] = await db
+				.select({
+					count: sql<number>`count(*)::int`,
+				})
+				.from(appointments)
+				.where(
+					and(
+						withDate(appointments.organizationId, appointments.startsAt),
+						sql`(${appointments.reason} ilike '%конс%' or ${appointments.reason} ilike '%первич%' or ${appointments.reason} is null)`,
+					),
+				);
+
+			const totalConsultations = Number(consultationApptRow?.count ?? 0);
+
+			type TierKey = "basic" | "optimum" | "premium";
+			const tierGroups: Record<
+				TierKey,
+				{
+					label: string;
+					totalPlans: number;
+					acceptedPlans: number;
+					totalRub: number;
+				}
+			> = {
+				basic: {
+					label: "Базовый (эконом)",
+					totalPlans: 0,
+					acceptedPlans: 0,
+					totalRub: 0,
+				},
+				optimum: {
+					label: "Оптимальный (стандарт)",
+					totalPlans: 0,
+					acceptedPlans: 0,
+					totalRub: 0,
+				},
+				premium: {
+					label: "Премиум (комплексный)",
+					totalPlans: 0,
+					acceptedPlans: 0,
+					totalRub: 0,
+				},
+			};
+
+			for (const plan of allPlans) {
+				const price = Number(plan.totalPriceRub || plan.totalPrice || 0);
+				const nameLower = (plan.name || "").toLowerCase();
+				let tier: TierKey = "optimum";
+				if (
+					nameLower.includes("премиум") ||
+					nameLower.includes("комплекс") ||
+					nameLower.includes("all-on") ||
+					price >= 150_000
+				) {
+					tier = "premium";
+				} else if (
+					nameLower.includes("базов") ||
+					nameLower.includes("эконом") ||
+					nameLower.includes("терапевт") ||
+					price < 50_000
+				) {
+					tier = "basic";
+				}
+
+				tierGroups[tier].totalPlans += 1;
+				const isAccepted =
+					plan.status === "Approved" ||
+					plan.status === "Active" ||
+					plan.status === "Completed";
+				if (isAccepted) {
+					tierGroups[tier].acceptedPlans += 1;
+					tierGroups[tier].totalRub += price;
+				}
+			}
+
+			const totalPlansCount = allPlans.length;
+			const acceptedPlansCount = Object.values(tierGroups).reduce(
+				(s, g) => s + g.acceptedPlans,
+				0,
+			);
+			const overallAcceptancePercent =
+				totalPlansCount > 0
+					? Math.round((acceptedPlansCount / totalPlansCount) * 100)
+					: 0;
+			const consultationToPlanConversionPercent =
+				totalConsultations > 0
+					? Math.min(
+							100,
+							Math.round((acceptedPlansCount / totalConsultations) * 100),
+						)
+					: acceptedPlansCount > 0
+						? 100
+						: 0;
+
+			const tierAcceptance = {
+				totalConsultations,
+				consultationToPlanConversionPercent,
+				totalPlansCount,
+				acceptedPlansCount,
+				overallAcceptancePercent,
+				tiers: (["basic", "optimum", "premium"] as const).map((key) => {
+					const group = tierGroups[key];
+					const acceptanceRatePercent =
+						group.totalPlans > 0
+							? Math.round((group.acceptedPlans / group.totalPlans) * 100)
+							: 0;
+					return {
+						tier: key,
+						label: group.label,
+						totalPlans: group.totalPlans,
+						acceptedPlans: group.acceptedPlans,
+						acceptanceRatePercent,
+						totalRub: group.totalRub,
+					};
+				}),
+			};
+
+			// 6. No-Show & Cancellation Heatmap
+			const noShowTimeBucket = inClinicZone(
+				appointments.startsAt,
+				cohortZone,
+			);
+			const dowExpr = sql`extract(isodow from ${noShowTimeBucket})::int`;
+			const hourExpr = sql`extract(hour from ${noShowTimeBucket})::int`;
+
+			const noShowRaw = await db
+				.select({
+					dayOfWeek: dowExpr,
+					hour: hourExpr,
+					status: appointments.status,
+					count: sql<number>`count(*)::int`,
+				})
+				.from(appointments)
+				.where(
+					and(
+						withDate(appointments.organizationId, appointments.startsAt),
+						sql`${appointments.status} in ('cancelled', 'no_show')`,
+					),
+				)
+				.groupBy(dowExpr, hourExpr, appointments.status);
+
+			const DAY_NAMES = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+			const DAY_FULL_NAMES = [
+				"Понедельник",
+				"Вторник",
+				"Среда",
+				"Четверг",
+				"Пятница",
+				"Суббота",
+				"Воскресенье",
+			];
+
+			const matrix = new Map<string, { cancelled: number; noShow: number }>();
+			let totalCancelled = 0;
+			let totalNoShow = 0;
+
+			for (const row of noShowRaw) {
+				const dow = Number(row.dayOfWeek || 1);
+				const hr = Number(row.hour || 0);
+				const cnt = Number(row.count || 0);
+				const key = `${dow}_${hr}`;
+				if (!matrix.has(key)) {
+					matrix.set(key, { cancelled: 0, noShow: 0 });
+				}
+				// biome-ignore lint/style/noNonNullAssertion: safe map access
+				const cell = matrix.get(key)!;
+				if (row.status === "cancelled") {
+					cell.cancelled += cnt;
+					totalCancelled += cnt;
+				} else if (row.status === "no_show") {
+					cell.noShow += cnt;
+					totalNoShow += cnt;
+				}
+			}
+
+			const heatmapCells: Array<{
+				dayOfWeek: number;
+				dayName: string;
+				hour: number;
+				cancelledCount: number;
+				noShowCount: number;
+				totalLost: number;
+			}> = [];
+
+			let peakLost = 0;
+			let peakDayIdx: number | null = null;
+			let peakHour: number | null = null;
+
+			for (let dow = 1; dow <= 7; dow++) {
+				for (let hr = 8; hr <= 21; hr++) {
+					const key = `${dow}_${hr}`;
+					const entry = matrix.get(key) || { cancelled: 0, noShow: 0 };
+					const totalLost = entry.cancelled + entry.noShow;
+					if (totalLost > peakLost) {
+						peakLost = totalLost;
+						peakDayIdx = dow - 1;
+						peakHour = hr;
+					}
+					heatmapCells.push({
+						dayOfWeek: dow,
+						dayName: DAY_NAMES[dow - 1] ?? `День ${dow}`,
+						hour: hr,
+						cancelledCount: entry.cancelled,
+						noShowCount: entry.noShow,
+						totalLost,
+					});
+				}
+			}
+
+			const noShowHeatmap = {
+				totalCancelled,
+				totalNoShow,
+				peakDay:
+					peakDayIdx !== null ? (DAY_FULL_NAMES[peakDayIdx] ?? null) : null,
+				peakHour,
+				cells: heatmapCells,
+			};
+
 			const data = {
 				kpis: {
 					totalPatients: Number(patientCountRow?.count ?? 0),
@@ -420,13 +739,18 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				planFunnelJson,
 				chairUtilizationJson,
 				doctorProfitabilityJson,
+				tierAcceptance,
+				noShowHeatmap,
 				// Явный признак пустого периода, чтобы интерфейс отличал "нет данных"
 				// от "все показатели равны нулю".
 				isEmpty:
 					!cohortLtvJson.length &&
 					!planFunnelJson.length &&
 					!chairUtilizationJson.length &&
-					!doctorProfitabilityJson.length,
+					!doctorProfitabilityJson.length &&
+					totalPlansCount === 0 &&
+					totalCancelled === 0 &&
+					totalNoShow === 0,
 			};
 
 			return { success: true, data };

@@ -569,8 +569,8 @@ export function AnalyticsDashboardView() {
 													<RadialBar
 														label={{
 															position: "insideStart",
-															fill: "#fff",
-															fontSize: 11,
+															fill: "var(--on-teal, #ffffff)",
+															fontSize: 12,
 														}}
 														background={{ fill: "var(--paper-soft, #f4f4f5)" }}
 														dataKey="value"

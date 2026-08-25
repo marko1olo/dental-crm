@@ -228,6 +228,14 @@ export function getClinicalProtocolTemplate(icd10Code: string, specialty?: Clini
 		requiresRubberDam: true,
 		requiresApexLocatorRvg: false,
 		statutoryOrderRef: "Приказ Минздрава РФ № 834н",
+		order804nServices: [
+			{
+				code: "A16.07.002.001",
+				nameRu: "Наложение пломбы из фотополимерного материала при лечении кариозных полостей",
+				isMandatory: true,
+			},
+			{ code: "A16.07.031", nameRu: "Препарирование твердых тканей зуба при лечении кариеса", isMandatory: true },
+		],
 	};
 }
 

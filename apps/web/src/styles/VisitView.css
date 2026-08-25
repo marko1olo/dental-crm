@@ -327,3 +327,162 @@
 .skeleton-wave:nth-child(3) {
 	animation-delay: 0.4s;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   SLEEK VISIT FOCUS BAR & ZERO CARD-IN-CARD NESTING
+   ═══════════════════════════════════════════════════════════════════ */
+.visit-panel {
+	border: none !important;
+	box-shadow: none !important;
+	background: transparent !important;
+	padding: 12px 0 0 0 !important;
+	margin: 0 !important;
+}
+
+.visit-panel > .panel-heading {
+	display: none !important;
+}
+
+.visit-focus-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 6px 12px;
+	border-radius: 14px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	min-height: 48px;
+	margin-top: 12px !important;
+	margin-bottom: 6px;
+	transition: all 0.2s ease;
+}
+
+.visit-focus-bar .visit-focus-patient {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+	flex: 1 1 auto;
+}
+
+.visit-focus-bar .visit-focus-status {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+	flex: 1 1 auto;
+}
+
+.visit-focus-bar .visit-focus-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.visit-focus-bar.odontogram-compact {
+	min-height: 38px !important;
+	max-height: 42px !important;
+	padding: 2px 10px !important;
+	margin-bottom: 4px !important;
+}
+
+.visit-focus-bar.odontogram-compact .visit-focus-patient .avatar {
+	width: 26px !important;
+	height: 26px !important;
+	min-width: 26px !important;
+	min-height: 26px !important;
+	font-size: 11px !important;
+}
+
+.visit-focus-bar.odontogram-compact .eyebrow {
+	display: none !important;
+}
+
+.visit-focus-bar.odontogram-compact .visit-focus-patient h3 {
+	font-size: 13px !important;
+	margin: 0 !important;
+	line-height: 1.2 !important;
+}
+
+.visit-focus-bar.odontogram-compact .visit-focus-actions button {
+	min-height: 30px !important;
+	padding: 3px 8px !important;
+	font-size: 12px !important;
+}
+
+@media (max-width: 768px) {
+	.visit-panel {
+		padding-top: 24px !important;
+	}
+
+	.visit-focus-bar,
+	.visit-focus-bar.odontogram-compact {
+		min-height: 38px !important;
+		max-height: 42px !important;
+		height: 38px !important;
+		padding: 2px 10px !important;
+		margin: 8px 0 8px 0 !important;
+		gap: 8px !important;
+		border-radius: 12px !important;
+		display: flex !important;
+		align-items: center !important;
+		justify-content: space-between !important;
+	}
+
+	.visit-focus-bar .visit-focus-patient {
+		display: flex !important;
+		align-items: center !important;
+		gap: 8px !important;
+		min-width: 0 !important;
+		flex: 1 1 auto !important;
+	}
+
+	.visit-focus-bar .visit-focus-patient .avatar {
+		width: 26px !important;
+		height: 26px !important;
+		min-width: 26px !important;
+		min-height: 26px !important;
+		font-size: 11px !important;
+		flex-shrink: 0 !important;
+	}
+
+	.visit-focus-bar .eyebrow,
+	.visit-focus-bar .visit-focus-patient p,
+	.visit-focus-bar .visit-focus-status {
+		display: none !important;
+	}
+
+	.visit-focus-bar .visit-focus-patient h3 {
+		font-size: 13px !important;
+		font-weight: 800 !important;
+		white-space: nowrap !important;
+		overflow: hidden !important;
+		text-overflow: ellipsis !important;
+		margin: 0 !important;
+		line-height: 1 !important;
+		color: var(--ink) !important;
+	}
+
+	.visit-focus-bar .visit-focus-actions {
+		display: flex !important;
+		align-items: center !important;
+		gap: 6px !important;
+		flex-shrink: 0 !important;
+	}
+
+	.visit-focus-bar .visit-focus-actions button {
+		min-height: 28px !important;
+		height: 28px !important;
+		padding: 2px 8px !important;
+		font-size: 11px !important;
+		font-weight: 700 !important;
+		border-radius: 8px !important;
+	}
+
+	.visit-panel .panel-heading {
+		display: none !important;
+	}
+}
+

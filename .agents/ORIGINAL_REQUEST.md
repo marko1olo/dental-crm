@@ -1,67 +1,44 @@
-# Original User Request
+# MISSION: BRUTAL UI ERGONOMICS & HEADER BLUNDER AUDIT
 
-## Initial Request — 2026-08-13T20:33:28+04:00
+Nurse-proof design audit for DENTE CRM views.
 
-You are the Project Orchestrator for `C:/Clinic_MVP/dental-crm`.
-Your working directory is `C:/Clinic_MVP/dental-crm/.agents/orchestrator_egisz`. Create this directory and maintain your BRIEFING.md, plan.md, and progress.md in it.
+## Follow-up — 2026-08-23T19:41:56Z
 
-The verbatim user request is recorded at `C:/Clinic_MVP/dental-crm/.agents/ORIGINAL_REQUEST.md`.
+/teamwork-preview
 
-Goal: Implement missing EGISZ routes for `GET /api/integrations/egisz-blank-permissions` and `POST /api/egisz/send`.
+Продолжай непрерывную оркестрацию роя Dente CRM! Сервер был перезапущен.
+Текущее состояние системы:
+1. `npm run check:encoding` -> 100% OK.
+2. `node scripts/check-css-tokens.mjs` -> 100% OK.
+3. `npm run typecheck` -> 100% OK во всех пакетах.
+4. `npm test` -> 100% PASS.
 
-Requirements:
-1. `GET /api/integrations/egisz-blank-permissions` in `apps/api/src/routes/egisz.ts`:
-   - Use `requireClinicalReadAccess(request, reply, "egisz permissions check")`.
-   - Extract `orgId` via `requireOrganizationId(request, reply)`.
-   - Query `db.select().from(schema.egiszBlankPermissions).where(eq(schema.egiszBlankPermissions.organizationId, orgId))` and return the rows in the format frontend (`apps/web/src`) expects. Check frontend to see if it expects array or `{ permissions }`.
-2. `POST /api/egisz/send` in `apps/api/src/routes/egisz.ts`:
-   - Use `requireClinicalMutationAccess(request, reply, "egisz send")`.
-   - Parse body with Zod `{ patientId: z.string().uuid(), visitId: z.string().uuid() }`.
-   - Insert into `schema.egiszLogs` with `status: "Pending"`.
-   - Return `{ success: true, logId: inserted.id }`.
-3. In `apps/api/src/tests/contract-breach-proofs.test.ts`, remove `todo` markers from:
-   - `(A) POST /api/egisz/send`
-   - `(A) GET /api/integrations/egisz-blank-permissions`
-   Do not touch other `todo` tests.
+Продолжай автономный контроль качества по Доменам 1–5, верифицируй эргономику, клинические сценарии и визуальные скриншоты.
 
-Ensure `tsc --noEmit` passes. NO MOCKS.
+## Follow-up — 2026-08-23T20:20:13Z
 
-Execute the work using specialist subagents, verify all quality gates, and report completion when done.
+/teamwork-preview
 
-## 2026-08-14T15:48:52Z
+Сервер перезапущен. Продолжай непрерывную оркестрацию роя Dente CRM в рамках Раунда 41!
+Все статические гейты и тесты подтверждены.
 
-# Teamwork Project Prompt
+## Follow-up — 2026-08-23T20:20:43Z
 
-Комплексный автономный аудит, устранение дефектов интерфейса (Dark/Light режимы на мобильных и десктопе), полировка финансового модуля (54-ФЗ, эквайринг Сбера, справки НДФЛ) и клинической карты 043/у в стоматологической CRM DENTE.
+[REVIVAL & CONTINUATION NOTICE — ROUND 41]
+Resume continuous swarm orchestration across all 5 clinical and operational domains immediately in C:\Clinic_MVP\dental-crm\.agents\orchestrator_r41!
 
-Working directory: C:\Clinic_MVP\dental-crm
-Integrity mode: development
+Confirmed static gates:
+- `npm run check:encoding` -> 100% OK
+- `node scripts/check-css-tokens.mjs` -> 100% OK
+- `npm run typecheck` -> 100% OK across all packages
+- `npm test` -> 100% PASS
 
-## Requirements
-
-### R1. Полная ликвидация визуальных и эргономических дефектов интерфейса
-Устранить все дефекты вёрстки во всех 4 состояниях (Mobile Light, Mobile Dark, Desktop Light, Desktop Dark) на экранах Расписания, Приема, Финансов и Снимков. Запретить слепящие белые блоки в темной теме, утечки служебных строк линтера, навязчивые фоновые тосты ошибок и кривые отступы. Интерактивные элементы на мобильных устройствах должны иметь минимальную область нажатия 44×44px.
-
-### R2. Финансовый модуль и кассовая дисциплина (54-ФЗ / Сбербанк)
-Обеспечить 100% копеечную точность расчетов, корректную обработку ответов интернет-эквайринга Сбербанка (включая оплату по QR/formUrl), безошибочное формирование справок для налогового вычета (КНД 1151156) и расчет выработки врачей.
-
-### R3. Электронная медкарта 043/у и коллизии расписания
-Обеспечить надежное автосохранение протоколов приёма, удобный интерфейс заполнения карты на приеме, предотвращение наложения врачей в креслах с блокировкой на уровне БД (FOR UPDATE + Exclusion Constraints).
-
-### R4. Просмотрщик КТ / DICOM срезов
-Обеспечить корректную работу MPR-реконструкции, Catmull-Rom проекцию зубной дуги (FDI) и точный расчет плотности кости по Хаунсфилду (HU) из активного кэша объема.
-
-## Acceptance Criteria
-
-### Визуальная безупречность (4-State Matrix)
-- 0 навязчивых фоновых тостов с ошибками при открытии страниц в оффлайне или при фоновом префетче.
-- 0 слепящих белых фонов в тёмной теме ([data-theme="dark"]).
-- Все интерактивные элементы на мобильном имеют высоту не менее 44px.
-- Финансовые карточки без выбранного пациента отображают нейтральное состояние без спама «не определено».
-
-### Статическая верификация и сборка
-- `npm run check:encoding` проходит на 100% (0 файлов с поврежденной кодировкой).
-- `npm run typecheck` (`shared`, `api`, `web`) завершается с кодом 0 (0 ошибок компиляции TypeScript).
-- The Iron Gate pre-commit проверки (`gitleaks`, `check:encoding`, `check:stub-overrides`, `check:fetch-response`, `check:dynamic-imports`) успешно пройдены.
-- Все изменения зафиксированы в `origin/main` согласно Mandate 8b.
-
+Your Mission:
+1. Autonomous quality control, clinical ergonomics polish, and verification across Domains 1–5:
+   - Domain 1: Clinical EMR 043/u & AAP/EFP Perio Chart, nurse-proof glove-touch ergonomics (140-160px tooth height, >= 44px buttons, zero clutter).
+   - Domain 2: 54-FZ Finance, fiscal QR codes, refund settlement, Form T-51 payroll.
+   - Domain 3: Inventory & Order 804n BOM write-offs, TORG-13/TORG-2.
+   - Domain 4: SanPiN 3.3686-21 Sterilization Form 257/u, TSPL/ZPL thermal label printers.
+   - Domain 5: Multi-Platform Topology & LAN CRDT Sync.
+2. Verify clinical ergonomics and capture 4-state visual confirmation screenshots (Mobile Light, Mobile Dark, PC Light, PC Dark).
+3. Report completion back to Sentinel with concrete empirical proofs for independent Victory Audit.

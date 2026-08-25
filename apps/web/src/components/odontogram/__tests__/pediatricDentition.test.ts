@@ -134,4 +134,62 @@ describe("Pediatric Dentition & Cariogram Engine", () => {
 		assert.equal(getToothDentitionType(16), "mixed_first_molar");
 		assert.equal(getToothDentitionType(11), "permanent");
 	});
+
+	it("correctly models physiological root resorption stages (I, II, III) and mobility", () => {
+		// Stage I: 1/3 root resorption (clipHeight 75%)
+		const stageI = getPrimaryToothResorptionVisual(54, 25);
+		assert.equal(stageI.clipHeightPercent, 75);
+		assert.equal(stageI.isExfoliated, false);
+		assert.match(stageI.descriptionRu, /апикальной трети|25%/i);
+
+		// Stage II: 1/2 root resorption (clipHeight 50%)
+		const stageII = getPrimaryToothResorptionVisual(61, 50);
+		assert.equal(stageII.clipHeightPercent, 50);
+		assert.equal(stageII.isExfoliated, false);
+		assert.match(stageII.descriptionRu, /1\/2|50%/i);
+
+		// Stage III: Complete root resorption / crown only (clipHeight 0..25%)
+		const stageIII = getPrimaryToothResorptionVisual(71, 75);
+		assert.equal(stageIII.clipHeightPercent, 25);
+		assert.match(stageIII.descriptionRu, /четверть|75%/i);
+
+		// Exfoliated / 100%
+		const exfoliated = getPrimaryToothResorptionVisual(85, 100);
+		assert.equal(exfoliated.clipHeightPercent, 0);
+		assert.equal(exfoliated.isExfoliated, true);
+	});
+
+	it("stress-tests mixed dentition (51–85 + 16/26/36/46) dual routing behavior", () => {
+		const mixedArchUpper = [16, 55, 54, 53, 52, 51, 61, 62, 63, 64, 65, 26];
+		const mixedArchLower = [46, 85, 84, 83, 82, 81, 71, 72, 73, 74, 75, 36];
+
+		// 1. Check upper arch partitioning
+		const permanentUpper = mixedArchUpper.filter((t) => !isPrimaryTooth(t));
+		const primaryUpper = mixedArchUpper.filter((t) => isPrimaryTooth(t));
+		assert.deepEqual(permanentUpper, [16, 26], "Permanent first molars must be recognized");
+		assert.equal(primaryUpper.length, 10, "10 deciduous teeth in upper mixed arch");
+
+		// 2. Check lower arch partitioning
+		const permanentLower = mixedArchLower.filter((t) => !isPrimaryTooth(t));
+		const primaryLower = mixedArchLower.filter((t) => isPrimaryTooth(t));
+		assert.deepEqual(permanentLower, [46, 36], "Permanent lower molars must be recognized");
+		assert.equal(primaryLower.length, 10, "10 deciduous teeth in lower mixed arch");
+
+		// 3. Verify that all 20 primary teeth in mixed dentition have valid physiological resorption values
+		for (const t of [...primaryUpper, ...primaryLower]) {
+			const resI = getPrimaryToothResorptionVisual(t, 25);
+			const resII = getPrimaryToothResorptionVisual(t, 50);
+			const resIII = getPrimaryToothResorptionVisual(t, 75);
+			assert.equal(resI.clipHeightPercent, 75);
+			assert.equal(resII.clipHeightPercent, 50);
+			assert.equal(resIII.clipHeightPercent, 25);
+		}
+
+		// 4. Verify permanent molars do not have resorption
+		for (const perm of [16, 26, 36, 46]) {
+			const res = getPrimaryToothResorptionVisual(perm, 50);
+			assert.equal(res.clipHeightPercent, 100);
+			assert.equal(res.isExfoliated, false);
+		}
+	});
 });

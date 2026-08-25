@@ -15,6 +15,7 @@ import v8 from "node:v8";
 import { sql } from "drizzle-orm";
 import type pg from "pg";
 import { db, pool } from "../../db/client.js";
+import { withSuperuserBypass } from "../../db/rls.js";
 import { systemBackgroundJobs, systemRamWatchdogs } from "../../db/schema.js";
 
 export type HealthStatus = "healthy" | "warning" | "critical";
@@ -586,15 +587,16 @@ export class ServerHealthWatchdog {
 		const mem = process.memoryUsage();
 		const toMb = (bytes: number) => (bytes / (1024 * 1024)).toFixed(2);
 
-		const targetDb = customDb ?? db;
-
-		await targetDb.insert(systemRamWatchdogs).values({
-			organizationId,
-			heapUsedMb: toMb(mem.heapUsed),
-			heapTotalMb: toMb(mem.heapTotal),
-			rssMb: toMb(mem.rss),
-			externalMb: toMb(mem.external),
-			gcCount: 0,
+		await withSuperuserBypass(async (tx) => {
+			const targetDb = customDb ?? tx;
+			await targetDb.insert(systemRamWatchdogs).values({
+				organizationId,
+				heapUsedMb: toMb(mem.heapUsed),
+				heapTotalMb: toMb(mem.heapTotal),
+				rssMb: toMb(mem.rss),
+				externalMb: toMb(mem.external),
+				gcCount: 0,
+			});
 		});
 	}
 }

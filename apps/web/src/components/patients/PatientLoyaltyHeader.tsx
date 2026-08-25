@@ -133,8 +133,9 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 					alignItems: "center",
 					gap: "6px",
 					background: `color-mix(in srgb, ${currentLoyalty.color} 10%, transparent)`,
-					padding: "4px 8px",
-					borderRadius: "6px",
+					padding: "6px 10px",
+					minHeight: "44px",
+					borderRadius: "8px",
 					border: `1px solid color-mix(in srgb, ${currentLoyalty.color} 30%, transparent)`,
 					cursor: saving ? "wait" : "pointer",
 					transition: "background 0.2s",
@@ -179,11 +180,11 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 					<span
 						title="Программа эту скидку не считает: назначьте её вручную при оплате"
 						style={{
-							fontSize: "11px",
+							fontSize: "12px",
 							fontWeight: 700,
 							background: currentLoyalty.color,
 							color: "#fff",
-							padding: "2px 4px",
+							padding: "2px 6px",
 							borderRadius: "4px",
 							marginLeft: "4px",
 						}}
@@ -235,7 +236,7 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 									key={tierKey}
 									type="button"
 									onClick={() => handleSetTier(tierKey)}
-									className={`flex items-center gap-2 px-3 py-2 rounded-md text-xs border-0 cursor-pointer text-left transition-colors ${
+									className={`flex items-center gap-2 px-3 py-2 rounded-md text-xs border-0 cursor-pointer text-left transition-colors min-h-[44px] ${
 										currentTier === tierKey
 											? "bg-slate-100 dark:bg-slate-800 font-semibold text-slate-900 dark:text-white"
 											: "bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 font-medium"
@@ -246,7 +247,7 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 									{config.discountPct > 0 && (
 										<span
 											style={{ color: config.color }}
-											className="text-[11px] font-bold"
+											className="text-xs font-bold"
 										>
 											-{config.discountPct}%
 										</span>
@@ -256,7 +257,7 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 							{/* Прямая оговорка там, где выбирают статус: без неё цифры «-5%,
 							    -10%, -15%» выглядят как готовый расчёт, а считать скидку
 							    придётся человеку при оплате. */}
-							<p className="m-0 mt-1 px-3 py-2 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800">
+							<p className="m-0 mt-1 px-3 py-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800">
 								Это пометка для сотрудников. Скидка сама в счёт не подставляется
 								— назначьте её вручную при оплате.
 							</p>

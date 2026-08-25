@@ -8,7 +8,7 @@ import path from "path";
 const API_BASE = "http://127.0.0.1:4100";
 const APP_BASE = "http://127.0.0.1:5173";
 const CHROME_PATH = "C:/Program Files/Google/Chrome/Application/chrome.exe";
-const OUT_DIR = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\37b8f253-5512-4e6a-af2e-6b6677f4c08f";
+const OUT_DIR = "C:/Users/Admin/.gemini/antigravity/brain/4c48b41b-9ba0-4dfe-bc6a-38e81664dc65/scratch/screenshots";
 
 // ─── 1. Auth & Data Provisioning ──────────────────────────────────────────────────
 
@@ -208,6 +208,9 @@ async function screenshot(page, name) {
 const TEST_SCENARIOS = [
   // 1. Core Screens
   { name: "schedule", url: `${APP_BASE}/#schedule`, perspective: "standard" },
+  { name: "patients", url: `${APP_BASE}/#patients`, perspective: "standard" },
+  { name: "finance", url: `${APP_BASE}/#finance`, perspective: "standard" },
+  { name: "scanner", url: `${APP_BASE}/#scanner`, perspective: "standard" },
   { name: "visit", url: `${APP_BASE}/#visit`, perspective: "standard" },
   { name: "settings", url: `${APP_BASE}/#settings`, perspective: "standard" },
 

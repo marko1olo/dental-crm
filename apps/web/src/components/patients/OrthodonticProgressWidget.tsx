@@ -436,7 +436,7 @@ export function OrthodonticProgressWidget({
 									и текст вместе и контраст не теряет. transition-all вместо
 									transition-colors потому, что brightness это фильтр, а не цвет.
 								*/
-								className="flex-1 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] rounded-lg p-2.5 font-semibold text-xs flex justify-center items-center gap-2 border-0 cursor-pointer transition-all"
+								className="flex-1 min-h-[44px] bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] rounded-xl p-2.5 font-semibold text-xs flex justify-center items-center gap-2 border-0 cursor-pointer transition-all"
 							>
 								{saving ? (
 									"Сохранение..."
@@ -451,7 +451,7 @@ export function OrthodonticProgressWidget({
 									type="button"
 									disabled={saving}
 									onClick={handleResetWidget}
-									className="px-4 py-2.5 rounded-lg border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-semibold text-xs cursor-pointer hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors"
+									className="px-4 py-2.5 min-h-[44px] rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-semibold text-xs cursor-pointer hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors inline-flex items-center justify-center"
 								>
 									Удалить
 								</button>
@@ -488,7 +488,7 @@ export function OrthodonticProgressWidget({
 									   в ночной теме срабатывает, но dark:text-teal-400 — это тоже
 									   стоковый холодный цвет, а не --teal. Токены меняются по теме сами,
 									   поэтому второй вариант больше не нужен. */
-									className="mt-2 bg-transparent border border-[var(--teal-ring)] text-[var(--teal-dark)] px-4 py-2 rounded-lg text-xs font-semibold cursor-pointer hover:bg-[var(--teal-surface)] transition-colors"
+									className="mt-2 min-h-[44px] bg-transparent border border-[var(--teal-ring)] text-[var(--teal-dark)] px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer hover:bg-[var(--teal-surface)] transition-colors inline-flex items-center justify-center"
 								>
 									{/* БЫЛО: «Добавить орто-трекер (JSONB)» — на кнопке, которую жмёт
 									    врач, стояло название типа данных в базе. */}
@@ -514,7 +514,7 @@ export function OrthodonticProgressWidget({
 									<button
 										type="button"
 										onClick={handleStartEdit}
-										className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer"
+										className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-semibold cursor-pointer inline-flex items-center justify-center"
 									>
 										Изменить
 									</button>

@@ -55,8 +55,8 @@ let stateWriteBytes = 0;
  * счёт не попадали.
  */
 function countStateWrites(): void {
-	mock.method(fs, "writeFileSync", ((
-		...parameters: Parameters<typeof fs.writeFileSync>
+	fs.writeFileSync = ((
+		...parameters: Parameters<typeof originalWriteFileSync>
 	) => {
 		const [file, data] = parameters;
 		if (file === stateTempFilePath) {
@@ -66,10 +66,10 @@ function countStateWrites(): void {
 		}
 		return (
 			originalWriteFileSync as (
-				...args: Parameters<typeof fs.writeFileSync>
+				...args: Parameters<typeof originalWriteFileSync>
 			) => void
 		)(...parameters);
-	}) as typeof fs.writeFileSync);
+	}) as typeof fs.writeFileSync;
 }
 
 function resetWriteCounters(): void {
@@ -99,7 +99,7 @@ function persistedStateFile(): {
 	return JSON.parse(fs.readFileSync(stateFilePath, "utf8"));
 }
 
-describe("слияние записей снимка состояния", () => {
+describe("слияние записей снимка состояния", { concurrency: 1 }, () => {
 	before(() => {
 		countStateWrites();
 	});
@@ -110,7 +110,7 @@ describe("слияние записей снимка состояния", () => 
 		process.env.DENTAL_STATE_FLUSH_DELAY_MS = "0";
 		flushPersistentStateNow();
 		process.env.DENTAL_STATE_PERSISTENCE = "off";
-		mock.restoreAll();
+		fs.writeFileSync = originalWriteFileSync;
 		for (const key of Object.keys(process.env)) {
 			if (!(key in environmentSnapshot)) delete process.env[key];
 		}
@@ -132,9 +132,6 @@ describe("слияние записей снимка состояния", () => 
 			"в синхронном режиме 20 действий обязаны дать 20 записей — иначе счётчик записей не работает и остальные утверждения ничего не стоят",
 		);
 		assert.ok(stateWriteBytes > 0, "записи должны иметь ненулевой объём");
-		console.log(
-			`  ДО (DENTAL_STATE_FLUSH_DELAY_MS=0): 20 действий -> ${stateWriteCount} записей, ${stateWriteBytes.toLocaleString("ru-RU")} Б`,
-		);
 	});
 
 	test("ПОСЛЕ: 20 действий подряд дают ОДНУ запись, и ни одной до ответа клиенту", async () => {
@@ -155,9 +152,6 @@ describe("слияние записей снимка состояния", () => 
 			stateWriteCount,
 			1,
 			"пачка из 20 действий обязана дать ровно одну запись",
-		);
-		console.log(
-			`  ПОСЛЕ (окно 60 мс): 20 действий -> ${stateWriteCount} запись, ${stateWriteBytes.toLocaleString("ru-RU")} Б`,
 		);
 	});
 
@@ -232,10 +226,6 @@ describe("слияние записей снимка состояния", () => 
 		assert.ok(
 			stateWriteCount <= actionCount,
 			`записей ${stateWriteCount} на ${actionCount} действий — одно действие не имеет права рождать больше одной записи`,
-		);
-		console.log(
-			`  поток: ${actionCount} действий за ${elapsedMs} мс -> ${stateWriteCount} записей ` +
-				`(окно ${windowMs} мс, влезло окон ${windowsElapsed})`,
 		);
 	});
 

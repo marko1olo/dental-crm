@@ -114,7 +114,7 @@ export function FinancePlanningOverview({
         ловит только нулевой вариант.
       */}
 			<section
-				className="finance-summary-grid bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-3 mb-4"
+				className="finance-summary-grid bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-3 mb-4"
 				aria-label="Финансовая сводка"
 				data-testid="finance-planning"
 			>
@@ -170,22 +170,22 @@ export function FinancePlanningOverview({
 				</article>
 			</section>
 
-			<section className="plan-scenarios" aria-label="Варианты плана лечения">
-				<div
-					className="panel-heading"
-					style={{
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-					}}
-				>
-					<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-						<h3>Варианты плана</h3>
-						<span className="status-pill status-confirmed">
-							{(scenarios ?? []).length}
-						</span>
-					</div>
-					{(scenarios ?? []).length > 0 && (
+			{(scenarios ?? []).length > 0 && (
+				<section className="plan-scenarios mb-4" aria-label="Варианты плана лечения">
+					<div
+						className="panel-heading"
+						style={{
+							display: "flex",
+							justifyContent: "space-between",
+							alignItems: "center",
+						}}
+					>
+						<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+							<h3>Варианты плана</h3>
+							<span className="status-pill status-confirmed">
+								{(scenarios ?? []).length}
+							</span>
+						</div>
 						<button
 							type="button"
 							className="text-button"
@@ -203,10 +203,8 @@ export function FinancePlanningOverview({
 								</>
 							)}
 						</button>
-					)}
-				</div>
-				{(scenarios ?? []).length ? (
-					showScenarios && (
+					</div>
+					{showScenarios && (
 						<div className="plan-scenario-grid">
 							{(scenarios ?? []).map((scenario) => (
 								<article
@@ -254,21 +252,9 @@ export function FinancePlanningOverview({
 								</article>
 							))}
 						</div>
-					)
-				) : (
-					<article className="finance-empty-state">
-						<ClipboardList aria-hidden="true" />
-						<p>
-							Вариантов плана пока нет. Добавьте услуги в план лечения, чтобы
-							пациенту было проще выбрать бюджетный, стандартный или клинический
-							сценарий.
-						</p>
-						<button className="text-button" type="button" onClick={onGoToVisit}>
-							Открыть прием
-						</button>
-					</article>
-				)}
-			</section>
+					)}
+				</section>
+			)}
 		</>
 	);
 }

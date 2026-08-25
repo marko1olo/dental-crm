@@ -397,11 +397,11 @@ describe("2. Sberbank POS Terminal & SberPay QR Webhook Integration Tests", () =
 		const amountKopecks = 450000; // 4,500.00 RUB
 
 		// Clean up and seed initial transaction in WAITING_FOR_CARD state
-		await withFixtureTenant(ORG_ID, async () => {
-			await db.delete(fiscalReceiptQueue).where(eq(fiscalReceiptQueue.organizationId, ORG_ID));
-			await db.delete(payments).where(and(eq(payments.organizationId, ORG_ID), eq(payments.clientMutationId, `sberpos:${orderId}`)));
-			await db.delete(sberbankTransactions).where(and(eq(sberbankTransactions.organizationId, ORG_ID), eq(sberbankTransactions.orderId, orderId)));
-			await db.insert(sberbankTransactions).values({
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			await tx.delete(fiscalReceiptQueue).where(eq(fiscalReceiptQueue.organizationId, ORG_ID));
+			await tx.delete(payments).where(and(eq(payments.organizationId, ORG_ID), eq(payments.clientMutationId, `sberpos:${orderId}`)));
+			await tx.delete(sberbankTransactions).where(and(eq(sberbankTransactions.organizationId, ORG_ID), eq(sberbankTransactions.orderId, orderId)));
+			await tx.insert(sberbankTransactions).values({
 				organizationId: ORG_ID,
 				patientId: PATIENT_ID,
 				visitId: VISIT_ID,
@@ -453,8 +453,8 @@ describe("2. Sberbank POS Terminal & SberPay QR Webhook Integration Tests", () =
 		assert.equal(settleBody.amountRub, 4500);
 
 		// Assert transaction status updated in DB
-		const [txRow] = await withFixtureTenant(ORG_ID, async () =>
-			db
+		const [txRow] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
 				.select()
 				.from(sberbankTransactions)
 				.where(eq(sberbankTransactions.orderId, orderId)),
@@ -462,8 +462,8 @@ describe("2. Sberbank POS Terminal & SberPay QR Webhook Integration Tests", () =
 		assert.equal(txRow?.status, "SETTLED");
 
 		// Assert payment record inserted into ledger
-		const [pRow] = await withFixtureTenant(ORG_ID, async () =>
-			db
+		const [pRow] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
 				.select()
 				.from(payments)
 				.where(
@@ -479,8 +479,8 @@ describe("2. Sberbank POS Terminal & SberPay QR Webhook Integration Tests", () =
 		assert.equal(pRow.status, "paid");
 
 		// Assert patient invoice automatically reconciled to "paid"
-		const [invRow] = await withFixtureTenant(ORG_ID, async () =>
-			db
+		const [invRow] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
 				.select()
 				.from(patientInvoices)
 				.where(
@@ -495,8 +495,8 @@ describe("2. Sberbank POS Terminal & SberPay QR Webhook Integration Tests", () =
 		assert.ok(invRow.paidAt);
 
 		// Assert generated document issued
-		const [docRow] = await withFixtureTenant(ORG_ID, async () =>
-			db
+		const [docRow] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
 				.select()
 				.from(generatedDocuments)
 				.where(
@@ -509,8 +509,8 @@ describe("2. Sberbank POS Terminal & SberPay QR Webhook Integration Tests", () =
 		assert.equal(docRow?.status, "issued");
 
 		// Assert 54-FZ FFD 1.2 receipt enqueued in fiscalReceiptQueue
-		const [queueItem] = await withFixtureTenant(ORG_ID, async () =>
-			db
+		const [queueItem] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
 				.select()
 				.from(fiscalReceiptQueue)
 				.where(
@@ -553,8 +553,8 @@ describe("2. Sberbank POS Terminal & SberPay QR Webhook Integration Tests", () =
 		assert.equal(body.status, "SETTLED");
 
 		// Assert payments count is still exactly 1
-		const pRows = await withFixtureTenant(ORG_ID, async () =>
-			db
+		const pRows = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
 				.select()
 				.from(payments)
 				.where(
@@ -590,8 +590,8 @@ describe("2. Sberbank POS Terminal & SberPay QR Webhook Integration Tests", () =
 		assert.equal(body.status, "REFUNDED");
 
 		// Verify payments record updated to refunded
-		const [pRow] = await withFixtureTenant(ORG_ID, async () =>
-			db
+		const [pRow] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
 				.select()
 				.from(payments)
 				.where(
@@ -602,5 +602,74 @@ describe("2. Sberbank POS Terminal & SberPay QR Webhook Integration Tests", () =
 				),
 		);
 		assert.equal(pRow?.status, "refunded");
+	});
+
+	test("f. Direct POS Terminal settlement (Status 00 / ActionCode 0) auto-queues 54-FZ income receipt with RRN and AuthCode", async (context) => {
+		if (!databaseAvailable) return context.skip("Database unavailable");
+
+		const orderId = "POS-DUAL-202";
+		const amountKopecks = 1250000; // 12,500.00 RUB
+		const rrn = "423891028471";
+		const authCode = "982310";
+
+		// Clean up and seed transaction in WAITING_FOR_CARD state
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			await tx.delete(fiscalReceiptQueue).where(eq(fiscalReceiptQueue.organizationId, ORG_ID));
+			await tx.delete(payments).where(and(eq(payments.organizationId, ORG_ID), eq(payments.clientMutationId, `sberpos:${orderId}`)));
+			await tx.delete(sberbankTransactions).where(and(eq(sberbankTransactions.organizationId, ORG_ID), eq(sberbankTransactions.orderId, orderId)));
+			await tx.insert(sberbankTransactions).values({
+				organizationId: ORG_ID,
+				patientId: PATIENT_ID,
+				visitId: VISIT_ID,
+				documentId: DOC_ID,
+				invoiceId: INVOICE_ID,
+				orderId,
+				amount: amountKopecks,
+				status: "WAITING_FOR_CARD",
+			});
+		});
+
+		// Simulate POS DualConnector callback with ActionCode 0 (Status 00 Approved)
+		const posCallbackPayload = {
+			orderId,
+			actionCode: "0",
+			amount: String(amountKopecks),
+			rrn,
+			authCode,
+			terminalId: "POS-TERM-88",
+			serviceTitle: "Установка имплантата Straumann A16.07.054",
+			medicalServiceCode804n: "A16.07.054",
+			customerContact: "+79997776655",
+		};
+		const checksum = generateSberPosHmac(posCallbackPayload, WEBHOOK_SECRET);
+
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/payments/sberbank/pos/webhook",
+			payload: { ...posCallbackPayload, checksum },
+		});
+
+		assert.equal(response.statusCode, 200);
+		const body = response.json();
+		assert.equal(body.success, true);
+		assert.equal(body.status, "SETTLED");
+
+		// Verify fiscal receipt was auto-queued for 54-FZ printing
+		const [queuedReceipt] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
+				.select()
+				.from(fiscalReceiptQueue)
+				.where(
+					and(
+						eq(fiscalReceiptQueue.organizationId, ORG_ID),
+						eq(fiscalReceiptQueue.paymentId, body.paymentId),
+					),
+				),
+		);
+		assert.ok(queuedReceipt);
+		assert.equal(queuedReceipt.status, "pending_print");
+		assert.equal(queuedReceipt.receiptType, "income");
+		const payload = queuedReceipt.payloadJson as Record<string, unknown>;
+		assert.equal(payload.tag1020_totalRub, "12500.00");
 	});
 });

@@ -3,9 +3,11 @@
  */
 
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { after, before, describe, it } from "node:test";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import {
 	organizations,
 	systemBackgroundJobs,
@@ -16,29 +18,26 @@ describe("TaskQueueService — PostgreSQL FOR UPDATE SKIP LOCKED Queue", () => {
 	let testOrgId: string;
 
 	before(async () => {
-		const org = (
-			await db
-				.insert(organizations)
-				.values({
-					name: "TaskQueue Test Clinic",
-				})
-				.returning()
-		)[0];
-		if (!org) {
-			throw new Error("Failed to create test organization");
-		}
-		testOrgId = org.id;
+		testOrgId = randomUUID();
+		await withTenantCtx(testOrgId, async (tx) => {
+			await tx.insert(organizations).values({
+				id: testOrgId,
+				name: "TaskQueue Test Clinic",
+			});
+		});
 	});
 
 	after(async () => {
 		TaskQueueService.clearHandlers();
 		if (testOrgId) {
-			await db
-				.delete(systemBackgroundJobs)
-				.where(eq(systemBackgroundJobs.organizationId, testOrgId));
-			await db
-				.delete(organizations)
-				.where(eq(organizations.id, testOrgId));
+			await withTenantCtx(testOrgId, async (tx) => {
+				await tx
+					.delete(systemBackgroundJobs)
+					.where(eq(systemBackgroundJobs.organizationId, testOrgId));
+				await tx
+					.delete(organizations)
+					.where(eq(organizations.id, testOrgId));
+			});
 		}
 	});
 

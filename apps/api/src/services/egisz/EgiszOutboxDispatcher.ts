@@ -24,6 +24,25 @@ export interface OutboxProcessResult {
 	}>;
 }
 
+/**
+ * Calculates exponential backoff delay in milliseconds for EGISZ REMD retry queue.
+ * Attempt 1: 5s, Attempt 2: 30s, Attempt 3: 5m, Attempt 4: 1h, Attempt 5+: 24h
+ */
+export function calculateEgiszRetryDelayMs(attempt: number): number {
+	switch (attempt) {
+		case 1:
+			return 5_000;
+		case 2:
+			return 30_000;
+		case 3:
+			return 5 * 60_000;
+		case 4:
+			return 60 * 60_000;
+		default:
+			return 24 * 60 * 60_000;
+	}
+}
+
 export class EgiszOutboxDispatcher {
 	private readonly client: OiisGatewayClient;
 
@@ -50,15 +69,22 @@ export class EgiszOutboxDispatcher {
 			.limit(limit);
 
 		const result: OutboxProcessResult = {
-			processedCount: pendingLogs.length,
+			processedCount: 0,
 			successCount: 0,
 			failedCount: 0,
 			results: [],
 		};
 
 		for (const log of pendingLogs) {
+			const logDetails = (log.errorDetails as Record<string, unknown>) || {};
+			const nextRetryAt = typeof logDetails.nextRetryAt === "string" ? new Date(logDetails.nextRetryAt) : null;
+			if (nextRetryAt && !Number.isNaN(nextRetryAt.getTime()) && nextRetryAt.getTime() > Date.now()) {
+				// Skip queue item whose exponential backoff interval has not elapsed
+				continue;
+			}
+
+			result.processedCount++;
 			try {
-				const logDetails = (log.errorDetails as Record<string, unknown>) || {};
 				const docPayload = logDetails.packagePayload as EgiszRemdPackage | undefined;
 
 				let submissionRes: RemdSubmissionResponse;
@@ -155,6 +181,11 @@ export class EgiszOutboxDispatcher {
 						transactionId: submissionRes.transactionId,
 					});
 				} else {
+					const prevRetry = typeof logDetails.retryCount === "number" ? logDetails.retryCount : 0;
+					const retryCount = prevRetry + 1;
+					const delayMs = calculateEgiszRetryDelayMs(retryCount);
+					const nextRetryAt = new Date(Date.now() + delayMs).toISOString();
+
 					await db
 						.update(egiszLogs)
 						.set({
@@ -162,6 +193,8 @@ export class EgiszOutboxDispatcher {
 							transactionId: submissionRes.transactionId,
 							errorDetails: {
 								...logDetails,
+								retryCount,
+								nextRetryAt,
 								errorMessage: submissionRes.errorMessage,
 								validationIssues: submissionRes.validationIssues,
 								failedAt: new Date().toISOString(),
@@ -180,11 +213,19 @@ export class EgiszOutboxDispatcher {
 				}
 			} catch (err: unknown) {
 				const errorMsg = err instanceof Error ? err.message : String(err);
+				const prevRetry = typeof logDetails.retryCount === "number" ? logDetails.retryCount : 0;
+				const retryCount = prevRetry + 1;
+				const delayMs = calculateEgiszRetryDelayMs(retryCount);
+				const nextRetryAt = new Date(Date.now() + delayMs).toISOString();
+
 				await db
 					.update(egiszLogs)
 					.set({
 						status: "Error",
 						errorDetails: {
+							...logDetails,
+							retryCount,
+							nextRetryAt,
 							errorMessage: errorMsg,
 							failedAt: new Date().toISOString(),
 						},

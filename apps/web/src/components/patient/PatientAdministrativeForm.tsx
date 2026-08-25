@@ -1,6 +1,12 @@
 import type { PatientAdministrativeProfile } from "@dental/shared";
 import React, { type ChangeEvent } from "react";
-import { formatPhoneNumber } from "../../utils/inputSanitation";
+import {
+	formatOmsPolicy,
+	formatPhoneNumber,
+	formatRussianPassport,
+	formatSnils,
+	formatTaxpayerInn,
+} from "../../utils/inputSanitation";
 
 /*
  * Реквизиты пациента: паспорт, ИНН, СНИЛС, представитель, получатель
@@ -101,7 +107,7 @@ export function PatientAdministrativeForm({
 					onChange={(event: TextFieldChangeEvent) =>
 						updatePatientAdministrativeProfileDraft(
 							"identityDocument",
-							event.target.value,
+							formatRussianPassport(event.target.value),
 						)
 					}
 					placeholder="Паспорт РФ 0000 000000"
@@ -117,7 +123,7 @@ export function PatientAdministrativeForm({
 					onChange={(event: TextFieldChangeEvent) =>
 						updatePatientAdministrativeProfileDraft(
 							"taxpayerInn",
-							event.target.value.replace(/[^\d]/g, "").slice(0, 12),
+							formatTaxpayerInn(event.target.value),
 						)
 					}
 					placeholder="10 или 12 цифр"
@@ -159,7 +165,7 @@ export function PatientAdministrativeForm({
 					onChange={(event: TextFieldChangeEvent) =>
 						updatePatientAdministrativeProfileDraft(
 							"insurancePolicyNumber",
-							event.target.value,
+							formatOmsPolicy(event.target.value),
 						)
 					}
 					placeholder="Номер полиса"
@@ -173,7 +179,10 @@ export function PatientAdministrativeForm({
 					pattern="[0-9 -]*"
 					value={patientAdministrativeProfileDraft.snils}
 					onChange={(event: TextFieldChangeEvent) =>
-						updatePatientAdministrativeProfileDraft("snils", event.target.value)
+						updatePatientAdministrativeProfileDraft(
+							"snils",
+							formatSnils(event.target.value),
+						)
 					}
 					placeholder="000-000-000 00"
 				/>
@@ -221,7 +230,7 @@ export function PatientAdministrativeForm({
 					onChange={(event: TextFieldChangeEvent) =>
 						updatePatientAdministrativeProfileDraft(
 							"legalRepresentativeIdentityDocument",
-							event.target.value,
+							formatRussianPassport(event.target.value),
 						)
 					}
 					placeholder="Паспорт / доверенность"

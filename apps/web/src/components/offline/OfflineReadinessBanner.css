@@ -1,0 +1,184 @@
+/**
+ * DENTE CRM — Offline Readiness Banner Styles
+ */
+
+.offline-readiness-banner {
+	display: flex;
+	flex-direction: column;
+	background: var(--paper-strong, #ffffff);
+	border: 1px solid var(--border, #e2e8f0);
+	border-left: 4px solid var(--primary, #0284c7);
+	border-radius: 8px;
+	padding: 12px 16px;
+	margin: 8px 12px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+	transition: all 0.2s ease-out;
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .offline-readiness-banner {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--border, #334155);
+	border-left-color: #38bdf8;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.offline-readiness-banner--dismissed {
+	display: none;
+}
+
+.offline-readiness-banner__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.offline-readiness-banner__title-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+	flex: 1 1 auto;
+}
+
+.offline-readiness-banner__icon-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	border-radius: 6px;
+	background: #e0f2fe;
+	color: #0284c7;
+	flex-shrink: 0;
+}
+
+[data-theme="dark"] .offline-readiness-banner__icon-badge {
+	background: #0369a1;
+	color: #e0f2fe;
+}
+
+.offline-readiness-banner__title {
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	margin: 0;
+	line-height: 1.3;
+}
+
+.offline-readiness-banner__subtitle {
+	font-size: 12px;
+	color: var(--muted, #64748b);
+	margin: 2px 0 0 0;
+}
+
+.offline-readiness-banner__actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.offline-readiness-banner__btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	min-height: 44px;
+	padding: 0 14px;
+	font-size: 13px;
+	font-weight: 600;
+	border-radius: 6px;
+	border: 1px solid transparent;
+	cursor: pointer;
+	transition: all 0.2s ease-out;
+	touch-action: manipulation;
+}
+
+.offline-readiness-banner__btn--primary {
+	background: #0284c7;
+	color: #ffffff;
+}
+
+.offline-readiness-banner__btn--primary:hover {
+	background: #0369a1;
+}
+
+.offline-readiness-banner__btn--secondary {
+	background: var(--paper, #f8fafc);
+	border-color: var(--border, #cbd5e1);
+	color: var(--ink, #0f172a);
+}
+
+.offline-readiness-banner__btn--secondary:hover {
+	background: var(--paper-subtle, #f1f5f9);
+}
+
+.offline-readiness-banner__btn--dismiss {
+	width: 44px;
+	height: 44px;
+	min-height: 44px;
+	padding: 0;
+	background: transparent;
+	border: none;
+	color: var(--muted, #94a3b8);
+	cursor: pointer;
+	border-radius: 6px;
+}
+
+.offline-readiness-banner__btn--dismiss:hover {
+	color: var(--ink, #0f172a);
+	background: var(--paper-subtle, #f1f5f9);
+}
+
+.offline-readiness-banner__details {
+	margin-top: 10px;
+	padding-top: 10px;
+	border-top: 1px dashed var(--border, #e2e8f0);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+	font-size: 12px;
+	color: var(--muted, #64748b);
+}
+
+.offline-readiness-banner__badges {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.offline-readiness-banner__badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 8px;
+	background: var(--paper, #f1f5f9);
+	border-radius: 4px;
+	font-weight: 500;
+	font-size: 11px;
+}
+
+[data-theme="dark"] .offline-readiness-banner__badge {
+	background: #334155;
+	color: #e2e8f0;
+}
+
+@media (max-width: 640px) {
+	.offline-readiness-banner__header {
+		flex-direction: column;
+		align-items: stretch;
+	}
+	.offline-readiness-banner__actions {
+		width: 100%;
+		justify-content: stretch;
+	}
+	.offline-readiness-banner__btn {
+		flex: 1 1 auto;
+	}
+}

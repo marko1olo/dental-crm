@@ -13,6 +13,7 @@ import {
 	SmartParsePreview,
 } from "../../SmartParsePreview";
 import { logger } from "../../utils/logger";
+import { matchesPatientSearch } from "../../utils/patientSearchUtils";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { showToast } from "../GlobalToast";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
@@ -37,17 +38,11 @@ export type NewAppointmentFormProps = {
 	/**
 	 * Раскрыта ли форма со всеми полями. Живёт СНАРУЖИ, в ScheduleView, и это не
 	 * стилистика.
-	 *
-	 * БЫЛО: признак был внутренним состоянием этого компонента, а снаружи лежала
-	 * его мёртвая копия. «Повторить» у записи и «Записать на приём» из листа
-	 * ожидания заполняли черновик и дёргали ту копию — на экране не менялось
-	 * НИЧЕГО. Администратор нажимал «Повторить», видел прежнее расписание и
-	 * считал кнопку сломанной, а черновик тем самым молча набирался: кнопка
-	 * «Создать запись» рядом становилась активной, и запись уходила в базу с
-	 * датой (через неделю), которую человек ни разу не видел на экране.
 	 */
 	showCreateForm: boolean;
 	setShowCreateForm: (value: boolean) => void;
+	isSmartAiOpen?: boolean;
+	setIsSmartAiOpen?: (value: boolean) => void;
 };
 
 export function NewAppointmentForm(props: NewAppointmentFormProps) {
@@ -66,6 +61,8 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 		setUseManualSelects,
 		showCreateForm,
 		setShowCreateForm,
+		isSmartAiOpen = false,
+		setIsSmartAiOpen,
 	} = props;
 
 	const [smartInputText, setSmartInputText] = useState("");
@@ -77,17 +74,9 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 
 	const filteredPatients = useMemo(() => {
 		const list = (dashboard.patients ?? []).filter((p) => p.status === "active");
-		const q = patientSearchQuery.trim().toLowerCase();
+		const q = patientSearchQuery.trim();
 		if (!q) return list;
-		return list.filter((p) => {
-			const nameMatch = (p.fullName ?? "").toLowerCase().includes(q);
-			const phoneMatch = (p.phone ?? "").includes(q);
-			const birthMatch = (p.birthDate ?? "").includes(q);
-			const cardMatch = (p as unknown as { cardNumber?: string | null })?.cardNumber
-				? (p as unknown as { cardNumber?: string | null }).cardNumber!.toLowerCase().includes(q)
-				: false;
-			return nameMatch || phoneMatch || birthMatch || cardMatch;
-		});
+		return list.filter((p) => matchesPatientSearch(p, q));
 	}, [dashboard.patients, patientSearchQuery]);
 	/*
     Чего надиктованная фраза требует, а форма создания записи сделать не может.
@@ -187,9 +176,12 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
     копий не различала «не выбрано» от «в клинике вообще нет»: клиника без
     кресел получала указание «выберите кресло» при пустом списке.
   */
+	const clinicMode = dashboard.clinicSettings?.profile?.mode;
+	const clinicTimezone = dashboard.clinicSettings?.profile?.timezone;
+
 	const newAppointmentMissingSteps = appointmentScheduleMissingFields(
 		newAppointmentDraft as AppointmentScheduleDraft,
-		dashboard.clinicSettings.profile.mode,
+		clinicMode,
 		dashboard.clinicSettings?.staff,
 		{ chairs: dashboard.clinicSettings?.chairs, patients: dashboard.patients },
 	);
@@ -203,10 +195,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 				chairs: dashboard.clinicSettings?.chairs,
 				patients: dashboard.patients,
 				formatTimeFn: (iso) =>
-					toDateTimeLocalValue(
-						iso,
-						dashboard.clinicSettings?.profile?.timezone,
-					).slice(11, 16),
+					toDateTimeLocalValue(iso, clinicTimezone).slice(11, 16),
 			},
 		);
 	}, [
@@ -214,7 +203,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 		dashboard.appointments,
 		dashboard.clinicSettings?.staff,
 		dashboard.clinicSettings?.chairs,
-		dashboard.clinicSettings?.profile?.timezone,
+		clinicTimezone,
 		dashboard.patients,
 		toDateTimeLocalValue,
 	]);
@@ -233,65 +222,58 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 			? "Запись не создана: сервер отказал и причины не назвал. Проверьте, что программа клиники запущена и есть сеть, затем повторите."
 			: null);
 
+	const isFormVisible = showCreateForm || isSmartAiOpen || smartInputText.trim().length > 0;
+	if (!isFormVisible) {
+		return null;
+	}
+
 	return (
 		<section
 			className="appointment-create-wrapper"
 			aria-label="Создание записи"
 		>
-			{/*
-        ЗДЕСЬ БЫЛА ВТОРАЯ, НЕВИДИМАЯ ФОРМА СОЗДАНИЯ ЗАПИСИ (.appointment-create-editor:
-        position absolute, opacity 0, ширина и высота 0). Убрана целиком, и вот почему.
-
-        1. Она оставалась в порядке обхода по Tab: opacity и нулевой размер фокус не
-           отключают. Администратор, работающий с клавиатуры, проваливался в восемь
-           полей, которых на экране нет, — программа чтения с экрана при этом
-           зачитывала «Начало записи», «Выберите пациента» и так далее.
-        2. Её кнопка «Сохранить новую запись» вызывала создание записи БЕЗ проверки
-           заполненности (в видимой форме та же кнопка заперта, пока не хватает
-           пациента, врача, кресла или времени). Нажатие пробелом на невидимой кнопке
-           отправляло на сервер недособранный черновик.
-        3. Все её поля дублируют видимую форму ниже, то есть это был второй путь
-           записи пациента в базу — с другим набором правил.
-        4. Ради неё же существовал маленький обман в справке: комментарий уверял, что
-           фокус сюда переводят намеренно. Это перестало быть правдой — focus-логика
-           в ScheduleView давно выбирает только ВИДИМЫЕ элементы управления.
-
-        Осиротевшее правило `.appointment-create-editor { margin: 12px 0 }` в
-        styles/main.css не тронуто: чужой файл, снимает ведущий.
-      */}
 			<div
 				className="smart-ai-booking"
 				style={{
 					background: "var(--paper)",
 					border: "1px solid var(--line)",
 					borderRadius: "14px",
-					padding: "16px",
+					padding: "14px 16px",
 					marginBottom: "12px",
 					display: "flex",
 					flexDirection: "column",
-					gap: "12px",
+					gap: "10px",
 					boxShadow: "var(--shadow-1)",
 					color: "var(--ink)",
 				}}
 			>
-				<div className="flex items-center gap-2">
-					<Bot size={18} className="text-sky-600 dark:text-sky-400 shrink-0" />
-					{/*
-            Латиница «(AI)» убрана: на русском экране она ничего не объясняет, а
-            подсказка в поле («Например: Петров на чистку завтра в 12:30») и так
-            показывает, что писать можно словами. Администратору важно название
-            способа, а не название технологии.
-          */}
-					<h4 className="font-semibold text-sm text-sky-600 dark:text-sky-400 m-0 leading-snug">
-						Записать словами: скажите или впишите
-					</h4>
+				<div className="flex items-center justify-between gap-2">
+					<div className="flex items-center gap-2">
+						<Bot size={18} className="text-sky-600 dark:text-sky-400 shrink-0" />
+						<h4 className="font-semibold text-sm text-sky-600 dark:text-sky-400 m-0 leading-snug">
+							Записать словами: скажите или впишите
+						</h4>
+					</div>
+					{setIsSmartAiOpen && (
+						<button
+							type="button"
+							onClick={() => {
+								setIsSmartAiOpen(false);
+								setShowCreateForm(false);
+							}}
+							className="text-button text-xs py-0.5 px-2 opacity-70 hover:opacity-100 cursor-pointer"
+							title="Скрыть форму"
+						>
+							✕ Скрыть
+						</button>
+					)}
 				</div>
 				<div className="relative flex-1">
 					<input
 						type="text"
 						aria-label="Записать словами: скажите или впишите"
 						value={smartInputText}
-						placeholder="Например: Петров на чистку завтра в 12:30 (Нажмите Enter)"
+						placeholder="Например: Петров на чистку завтра в 12:30"
 						onFocus={() => setShowHints(true)}
 						onBlur={() => setTimeout(() => setShowHints(false), 200)}
 						onChange={(e) => setSmartInputText(e.target.value)}
@@ -306,7 +288,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 								setShowHints(false);
 							}
 						}}
-						className="w-full p-3 pr-12 rounded-lg border border-slate-300 dark:border-slate-700 text-base outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-600 focus:border-transparent transition-all"
+						className="w-full p-2.5 sm:p-3 pr-14 min-h-[44px] rounded-xl border border-[var(--line)] text-sm sm:text-base outline-none bg-[var(--paper-soft)] text-[var(--ink)] focus:ring-2 focus:ring-[var(--teal)] focus:border-transparent transition-all"
 					/>
 					<SmartMicrophoneButton
 						context="schedule"
@@ -591,10 +573,10 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 										? "new-appointment-create-missing-short"
 										: undefined
 							}
-							className="primary-button px-4 py-2 min-h-[44px] bg-[var(--teal-dark)] hover:bg-[var(--teal)] text-white rounded-xl flex items-center text-sm font-semibold disabled:opacity-50 cursor-pointer focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors"
+							className="primary-button px-4 py-2 min-h-[44px] bg-[var(--teal-dark)] hover:bg-[var(--teal)] text-white rounded-xl flex items-center justify-center text-sm font-semibold whitespace-nowrap disabled:opacity-50 cursor-pointer focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors shrink-0"
 						>
-							<Plus size={16} aria-hidden="true" className="mr-1.5" /> Создать
-							запись
+							<Plus size={16} aria-hidden="true" className="mr-1.5 shrink-0" />
+							<span>Создать запись</span>
 						</button>
 					</div>
 				</div>
@@ -633,7 +615,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
           которая в разметке идёт раньше. Искать по классу, а не по порядку
           элементов, чтобы правка пережила перестановку блоков.
         */
-				<div className="appointment-editor appointment-manual-form mb-6 p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+				<div className="appointment-editor appointment-manual-form mb-6 p-4 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] text-[var(--ink)]">
 					<div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 mb-4">
 						<label>
 							Начало
@@ -641,14 +623,14 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 								type="datetime-local"
 								value={toDateTimeLocalValue(
 									newAppointmentDraft.startsAt,
-									dashboard.clinicSettings.profile.timezone,
+									clinicTimezone,
 								)}
 								onChange={(event: TextFieldChangeEvent) =>
 									updateNewAppointmentDraft(
 										"startsAt",
 										fromDateTimeLocalValue(
 											event.target.value,
-											dashboard.clinicSettings.profile.timezone,
+											clinicTimezone,
 										),
 									)
 								}
@@ -660,14 +642,14 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 								type="datetime-local"
 								value={toDateTimeLocalValue(
 									newAppointmentDraft.endsAt,
-									dashboard.clinicSettings.profile.timezone,
+									clinicTimezone,
 								)}
 								onChange={(event: TextFieldChangeEvent) =>
 									updateNewAppointmentDraft(
 										"endsAt",
 										fromDateTimeLocalValue(
 											event.target.value,
-											dashboard.clinicSettings.profile.timezone,
+											clinicTimezone,
 										),
 									)
 								}
@@ -680,11 +662,11 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 					<div className="grid grid-cols-[repeat(auto-fit,minmax(min(300px,100%),1fr))] gap-6 mb-4">
 						<div>
 							<div className="flex items-center justify-between mb-1.5">
-								<span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+								<span className="text-xs font-semibold text-[var(--muted)]">
 									Пациент (ФИО / Телефон / Д.Р.)
 								</span>
 								{(dashboard.patients ?? []).length > 6 && (
-									<span className="text-[11px] font-mono text-[var(--muted)]">
+									<span className="text-xs font-mono text-[var(--muted)]">
 										Найдено: {filteredPatients.length}
 									</span>
 								)}
@@ -697,7 +679,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 										value={patientSearchQuery}
 										onChange={(e) => setPatientSearchQuery(e.target.value)}
 										placeholder="Поиск пациента по имени, телефону (+7...) или году рождения..."
-										className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-none focus:border-teal-500"
+										className="w-full px-2.5 py-1.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs outline-none focus:ring-2 focus:ring-[var(--teal)]"
 									/>
 								</div>
 							)}
@@ -708,7 +690,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 									onChange={(e) =>
 										updateNewAppointmentDraft("patientId", e.target.value)
 									}
-									className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm outline-none"
+									className="w-full p-2 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
 								>
 									<option value="">-- Выберите пациента --</option>
 									{filteredPatients.map((p) => (
@@ -731,7 +713,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 										>
 											<span>{patient.fullName}</span>
 											{patient.phone && (
-												<span className="text-[10px] opacity-70 font-mono ml-1">
+												<span className="text-xs opacity-70 font-mono ml-1">
 													{patient.phone.slice(-4)}
 												</span>
 											)}
@@ -812,9 +794,9 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 							)}
 						</div>
 
-						{dashboard.clinicSettings.profile.mode !== "solo_doctor" && (
+						{clinicMode !== "solo_doctor" && (
 							<div>
-								<span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">
+								<span className="text-xs font-semibold text-[var(--muted)] block mb-2">
 									Ассистент
 								</span>
 								<div className="flex flex-wrap gap-1.5">
@@ -844,7 +826,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 						)}
 
 						<div>
-							<span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">
+							<span className="text-xs font-semibold text-[var(--muted)] block mb-2">
 								Кресло
 							</span>
 							<div className="flex flex-wrap gap-1.5">
@@ -866,7 +848,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 						</div>
 
 						<div>
-							<span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">
+							<span className="text-xs font-semibold text-[var(--muted)] block mb-2">
 								Статус
 							</span>
 							<div className="flex flex-wrap gap-1.5">

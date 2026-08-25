@@ -279,6 +279,67 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 }
 
 /**
+ * Генерация текстовой таблицы учета рабочей длины корневых каналов для Формы 043/у.
+ */
+export function generateEndoCanalsTable043(canals: readonly EndoCanalData[]): string {
+	const header = [
+		"┌──────────────┬─────────────────────────────┬─────────────┬─────────────┬──────────────────────────────┐",
+		"│ Канал        │ Реперный ориентир           │ Длина (WL)  │ Мастер-файл │ Метод обтурации / Силер      │",
+		"├──────────────┼─────────────────────────────┼─────────────┼─────────────┼──────────────────────────────┤",
+	];
+
+	const rows = canals.map((c) => {
+		const mafMatch = String(c.masterApicalFile).match(/(?:ISO\s*\d+|#\d+|\d+)/i);
+		const mafClean = mafMatch ? mafMatch[0] : c.masterApicalFile;
+		const taperMatch = String(c.taper).match(/\.\d+/);
+		const taperClean = taperMatch ? taperMatch[0] : c.taper;
+		const mafFormatted = `${mafClean || "—"}/${taperClean || ""}`.trim();
+		const lengthStr = c.workingLengthMm ? `${c.workingLengthMm} мм` : "—";
+		const obt = c.obturationTechnique
+			? `${c.obturationTechnique}${c.sealer ? ` + ${c.sealer}` : ""}`
+			: "—";
+
+		const colCanal = (c.canalName || "—").padEnd(12);
+		const colRef = (c.referencePoint || "—").slice(0, 27).padEnd(27);
+		const colWl = lengthStr.padEnd(11);
+		const colMaf = mafFormatted.padEnd(11);
+		const colObt = obt.slice(0, 28).padEnd(28);
+
+		return `│ ${colCanal} │ ${colRef} │ ${colWl} │ ${colMaf} │ ${colObt} │`;
+	});
+
+	const footer = "└──────────────┴─────────────────────────────┴─────────────┴─────────────┴──────────────────────────────┘";
+
+	return [
+		"ТАБЛИЦА УЧЕТА РАБОЧЕЙ ДЛИНЫ КОРНЕВЫХ КАНАЛОВ (ЭНДОДОНТИЯ 043/у):",
+		...header,
+		...rows,
+		footer,
+	].join("\n");
+}
+
+/**
+ * Форматирует полную таблицу корневых каналов с апекслокацией и рентген-контролем для Формы 043/у.
+ */
+export function formatEndoCanalsTable043(
+	canals: readonly EndoCanalData[],
+	options?: {
+		readonly apexLocatorModel?: string | undefined;
+		readonly radiologyControl?: string | undefined;
+	},
+): string {
+	const table = generateEndoCanalsTable043(canals);
+	const apex = options?.apexLocatorModel || "Электронный апекслокатор (Apex 0.0)";
+	const rad = options?.radiologyControl || "Контрольная визиография: каналы обтурированы гомогенно до физиологического апекса";
+
+	return [
+		table,
+		`Контроль рабочей длины: ${apex}`,
+		`Рентгенологический контроль: ${rad}`,
+	].join("\n");
+}
+
+/**
  * Генерация структурированного клинического текста для Формы 043/у (Приказ МЗ РФ 834н).
  */
 export function generateEndoProtocol043(params: {
@@ -304,18 +365,24 @@ export function generateEndoProtocol043(params: {
 		return `  • Канал ${c.canalName}${refStr}: WL = ${lengthStr} (апекслокатор), MAF = ${mafClean}/${taperClean}, обтурация: ${c.obturationTechnique}${sealerStr}${notesStr}`;
 	});
 
+	const table = generateEndoCanalsTable043(canals);
 	const irrigation =
 		params.irrigation ||
 		"3% NaOCl + 17% EDTA с ультразвуковой активацией (активный протокол ирригации)";
 	const radiology =
 		params.radiologyControl ||
 		"Контрольная визиография: корневые каналы обтурированы плотно, гомогенно до физиологического апекса, без выведения материала за верхушку.";
+	const apexLocatorText = params.apexLocator || "Электронный апекслокатор (Apex 0.0)";
 
 	return [
 		`ЭНДОДОНТИЧЕСКИЙ ПРОТОКОЛ (Зуб ${toothTitle}):`,
 		"Изоляция операционного поля: коффердам. Препарирование эндодонтического доступа, раскрытие устьев каналов.",
 		"Параметры инструментальной и медикаментозной обработки каналов:",
 		...canalLines,
+		"",
+		table,
+		"",
+		`Апекслокация и контроль длины: ${apexLocatorText}.`,
 		`Медикаментозная обработка: ${irrigation}. Высушивание бумажными штифтами.`,
 		`Рентгенологический контроль: ${radiology}`,
 	].join("\n");

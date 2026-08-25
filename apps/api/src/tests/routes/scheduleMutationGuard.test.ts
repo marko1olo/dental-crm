@@ -160,7 +160,7 @@ function discoverMutatingRoutes(source: string): DiscoveredRoute[] {
 const scheduleSource = readFileSync(SCHEDULE_ROUTE_FILE, "utf8");
 const MUTATING_ROUTES = discoverMutatingRoutes(scheduleSource);
 
-describe("периметр расписания закрыт секретом администратора на КАЖДОМ изменяющем маршруте", () => {
+describe("периметр расписания закрыт секретом администратора на КАЖДОМ изменяющем маршруте", { concurrency: 1 }, () => {
 	let app: FastifyInstance;
 	let clinicToken: string;
 	const adminSecret = randomBytes(24).toString("base64url");
@@ -272,9 +272,6 @@ describe("периметр расписания закрыт секретом а
 		assert.ok(
 			addresses.includes("POST /api/appointments"),
 			`создание приёма не найдено обходом, найдено: ${addresses.join(", ")}`,
-		);
-		console.log(
-			`изменяющие маршруты расписания под охраной: ${addresses.join(" | ")}`,
 		);
 	});
 

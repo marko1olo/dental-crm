@@ -306,6 +306,12 @@ export function verifyAuditLogChain(
 
 /**
  * Verifies the unbroken cryptographic chain across all rows for a given organization in the database.
+ *
+ * @guard requireClinicalReadAccess / requireClinicalReadContext / requireSettingsAccess
+ * @caller EGISZ audit reporting endpoints, compliance integrity auditors, forensic verification routines
+ * @param tx Drizzle transaction or database client instance
+ * @param organizationId Multi-tenant organization UUID boundary
+ * @returns Cryptographic integrity verification report with validation flag and tamper details if broken
  */
 export async function verifyAuditLogIntegrity(
 	tx: DbTransaction,

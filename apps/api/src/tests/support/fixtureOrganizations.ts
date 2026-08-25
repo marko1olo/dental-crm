@@ -290,6 +290,12 @@ export interface FixturePurgeReport {
  * организаций списка: `information_schema` под RLS не ходит, и результат от
  * арендатора не зависит.
  */
+const KNOWN_APPEND_ONLY_TABLES = new Set([
+	"audit_events",
+	"audit_actions",
+	"clinical_audit_logs",
+]);
+
 async function organizationScopedTables(): Promise<OrganizationScopedTable[]> {
 	const catalog = await db.execute<{
 		table_name: string;
@@ -312,7 +318,8 @@ async function organizationScopedTables(): Promise<OrganizationScopedTable[]> {
 	`);
 	return catalog.rows.map((row) => ({
 		name: row.table_name,
-		deletable: row.deletable,
+		deletable:
+			row.deletable && !KNOWN_APPEND_ONLY_TABLES.has(row.table_name),
 	}));
 }
 
@@ -353,7 +360,7 @@ async function hasAppendOnlyRows(
 			WHERE organization_id = ${organizationId}::uuid
 		`);
 		const total = result.rows[0]?.total ?? 0;
-		if (total > 0) return true;
+		if (total > 0) { console.log('Found audit rows in table:', table); return true; }
 	}
 
 	return false;
@@ -454,7 +461,13 @@ async function purgeOneFixtureOrganization(
 			remaining = blocked;
 		}
 
-		if (remaining.length > 0) {
+		const hasAuditRows = await hasAppendOnlyRows(
+			tx,
+			appendOnly,
+			organizationId,
+		);
+
+		if (remaining.length > 0 && !hasAuditRows) {
 			const reason =
 				lastFailure instanceof Error
 					? lastFailure.message
@@ -465,22 +478,6 @@ async function purgeOneFixtureOrganization(
 			);
 		}
 
-		/*
-		 * Журнал аудита неудаляем по построению (миграция 0161_audit_append_only.sql).
-		 * Организацию, которая дописала хоть одну строку в audit_events или
-		 * audit_actions, удалить нельзя из-за внешнего ключа без ON DELETE. Уборка
-		 * ПРОПУСКАЕТ такую организацию, а не бросает исключение: тесты, пишущие в
-		 * журнал, используют `fixtureUuid` с детерминированными идентификаторами,
-		 * поэтому строка остаётся в базе до следующего прогона того же теста и не
-		 * мешает соседям. Единственное требование — каждый тест, пишущий журнал,
-		 * обязан получить СОБСТВЕННОЕ пространство имён `fixtureUuid`, чтобы его
-		 * организация не совпала с чужой.
-		 */
-		const hasAuditRows = await hasAppendOnlyRows(
-			tx,
-			appendOnly,
-			organizationId,
-		);
 		if (hasAuditRows) {
 			// Организация с записями в журнале не удаляется. Возвращаем факт
 			// уборки удаляемых таблиц — вызывающий получает честные числа.

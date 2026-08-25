@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+	build2GisUrl,
 	buildSmsUrl,
 	buildWhatsAppUrl,
+	buildYandexMapsUrl,
 	generateAppointmentSmsMessage,
 	generateAppointmentWhatsAppMessage,
 	getPreparationInstructionForReason,
@@ -100,6 +102,106 @@ describe("generateAppointmentWhatsAppMessage Suite", () => {
 
 		const url2 = buildWhatsAppUrl("89991112233", "ДА");
 		assert.equal(url2, "https://wa.me/79991112233?text=%D0%94%D0%90");
+	});
+
+	it("generates correct navigation route URLs for Yandex Maps and 2GIS", () => {
+		const yandexUrl = buildYandexMapsUrl("г. Москва, ул. Ленина, д. 42");
+		assert.ok(yandexUrl.startsWith("https://yandex.ru/maps/?text="));
+		assert.ok(yandexUrl.includes("%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D0%B0"));
+
+		const gisUrl = build2GisUrl("г. Москва, ул. Ленина, д. 42");
+		assert.ok(gisUrl.startsWith("https://2gis.ru/search/"));
+	});
+
+	it("renders custom message template with dynamic tokens {clinicName}, {patientName}, {dateTime}, {doctorName}, {cabinetName}", () => {
+		const appointmentDate = new Date("2026-08-25T14:30:00");
+		const expectedTime = appointmentDate.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+		const text = generateAppointmentWhatsAppMessage({
+			patientName: "Иван Сергеевич",
+			doctorName: "Д-р Кузнецов",
+			doctorSpecialty: "терапевт",
+			appointmentStartsAt: appointmentDate.toISOString(),
+			clinicName: "Клиника DENTE",
+			clinicAddress: "ул. Тверская, д. 10",
+			cabinetName: "Кабинет 3",
+			customTemplate:
+				"Здравствуйте, {patientName}! Ждем вас в {clinicName} ({cabinetName}): {dateTime} к доктору {doctorName}.",
+		});
+
+		assert.ok(text.includes("Здравствуйте, Иван Сергеевич!"));
+		assert.ok(text.includes("Клиника DENTE (Кабинет 3)"));
+		assert.ok(text.includes(expectedTime));
+		assert.ok(text.includes("Д-р Кузнецов"));
+	});
+
+	it("generates 1-click visit confirmation message (type: confirmation)", () => {
+		const text = generateAppointmentWhatsAppMessage({
+			patientName: "Мария Петрова",
+			doctorName: "Д-р Смирнова А.В.",
+			appointmentStartsAt: "2026-08-25T16:00:00",
+			clinicName: "Клиника DENTE",
+			clinicAddress: "ул. Ленина, д. 5",
+			cabinetName: "Кабинет 2",
+			messageType: "confirmation",
+		});
+
+		assert.ok(text.includes("Здравствуйте, Мария Петрова!"));
+		assert.ok(text.includes("успешно подтверждена"));
+		assert.ok(text.includes("Д-р Смирнова А.В."));
+		assert.ok(text.includes("Кабинет 2"));
+		assert.ok(text.includes("ул. Ленина, д. 5"));
+	});
+
+	it("generates 1-click time shift message (type: time_shift)", () => {
+		const baseDate = new Date("2026-08-25T10:00:00");
+		const shiftedDate = new Date(baseDate.getTime() + 30 * 60000);
+		const expectedShiftedTime = shiftedDate.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+
+		const text = generateAppointmentWhatsAppMessage({
+			patientName: "Дмитрий",
+			doctorName: "Д-р Иванов",
+			appointmentStartsAt: baseDate.toISOString(),
+			clinicName: "Клиника DENTE",
+			shiftedMinutes: 30,
+			messageType: "time_shift",
+		});
+
+		assert.ok(text.includes("Здравствуйте, Дмитрий!"));
+		assert.ok(text.includes(`скорректировано на ${expectedShiftedTime}`));
+		assert.ok(text.includes("Д-р Иванов"));
+		assert.ok(text.includes("Приносим извинения"));
+	});
+
+	it("integrates +15, +30, +45 min time shifts and substitutes {newTime} and {shiftedMinutes}", () => {
+		const baseDate = new Date("2026-08-25T11:00:00");
+
+		for (const shift of [15, 30, 45]) {
+			const shiftedDate = new Date(baseDate.getTime() + shift * 60000);
+			const expectedShiftedTime = shiftedDate.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+
+			const text = generateAppointmentWhatsAppMessage({
+				patientName: "Анна",
+				doctorName: "Д-р Сидоров",
+				appointmentStartsAt: baseDate.toISOString(),
+				clinicName: "Клиника DENTE",
+				shiftedMinutes: shift,
+				customTemplate:
+					"Пациент {patientName}: прием перенесен на {newTime} (задержка {shiftedMinutes} мин).",
+			});
+
+			assert.ok(text.includes("Пациент Анна:"));
+			assert.ok(text.includes(`прием перенесен на ${expectedShiftedTime}`));
+			assert.ok(text.includes(`задержка ${shift} мин`));
+		}
+	});
+
+	it("formats WhatsApp URL safely without spaces, normalizing 10-digit, 11-digit and Russian phones", () => {
+		const url10 = buildWhatsAppUrl("9991234567", "Тестовое сообщение");
+		assert.equal(url10, "https://wa.me/79991234567?text=%D0%A2%D0%B5%D1%81%D1%82%D0%BE%D0%B2%D0%BE%D0%B5%20%D1%81%D0%BE%D0%BE%D0%B1%D1%89%D0%B5%D0%BD%D0%B8%D0%B5");
+
+		const urlFormatted = buildWhatsAppUrl("+7 (999) 765-43-21", "Прием перенесен на 15:30");
+		assert.equal(urlFormatted, "https://wa.me/79997654321?text=%D0%9F%D1%80%D0%B8%D0%B5%D0%BC%20%D0%BF%D0%B5%D1%80%D0%B5%D0%BD%D0%B5%D1%81%D0%B5%D0%BD%20%D0%BD%D0%B0%2015%3A30");
+		assert.ok(!urlFormatted.includes(" "));
 	});
 });
 

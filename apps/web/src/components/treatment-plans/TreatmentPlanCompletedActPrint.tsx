@@ -77,7 +77,7 @@ function formatMoneyExact(rub: number, kopecks?: Kopecks): string {
 /**
  * Склонение числительных в русском языке.
  */
-function pluralizeRu(count: number, formOne: string, formTwo: string, formFive: string): string {
+export function pluralizeRu(count: number, formOne: string, formTwo: string, formFive: string): string {
 	const absCount = Math.abs(count) % 100;
 	const remainder = absCount % 10;
 	if (absCount > 10 && absCount < 20) return formFive;
@@ -90,7 +90,7 @@ function pluralizeRu(count: number, formOne: string, formTwo: string, formFive: 
  * Преобразует сумму в рублях в строку прописью (стандарт бухгалтерских актов РФ).
  * Пример: 19600 руб. 00 коп. -> "Девятнадцать тысяч шестьсот рублей 00 копеек"
  */
-function numberToWordsRu(amountRub: number, amountKopecks: number = 0): string {
+export function numberToWordsRu(amountRub: number, amountKopecks: number = 0): string {
 	const whole = Math.trunc(Math.abs(amountRub));
 	const kop = Math.abs(amountKopecks) % 100;
 

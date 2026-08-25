@@ -49,15 +49,24 @@ class ClientLoggerService {
 		data?: unknown,
 		context?: LogContext,
 	): ClientLogEntry {
+		let sanitizedData: unknown = undefined;
+		if (data !== undefined) {
+			try {
+				sanitizedData = sanitizePayload(data);
+			} catch {
+				sanitizedData = "[UNSANITIZABLE_DATA]";
+			}
+		}
+
 		const entry: ClientLogEntry = {
 			id: generateUuidV7(),
 			timestamp: new Date().toISOString(),
 			level,
-			module: context?.module || "App",
+			module: context?.module ? sanitizeString(context.module) : "App",
 			message: sanitizeString(message),
-			data: data !== undefined ? sanitizePayload(data) : undefined,
-			stack: data instanceof Error ? data.stack : undefined,
-			correlationId: context?.correlationId,
+			data: sanitizedData,
+			stack: data instanceof Error ? (data.stack ? sanitizeString(data.stack) : undefined) : undefined,
+			correlationId: context?.correlationId ? sanitizeString(context.correlationId) : undefined,
 		};
 
 		this.systemLogs.push(entry);
@@ -365,7 +374,16 @@ class ClientLoggerService {
 		offlineQueueSummary?: DiagnosticReportPayload["offlineQueueSummary"],
 	): Promise<void> {
 		const report = await this.generateDiagnosticReport(sessionContext, offlineQueueSummary);
-		const jsonString = JSON.stringify(report, null, 2);
+		let jsonString: string;
+		try {
+			jsonString = JSON.stringify(sanitizePayload(report), null, 2);
+		} catch {
+			jsonString = JSON.stringify({
+				error: "Failed to serialize complete diagnostic report",
+				generatedAt: new Date().toISOString(),
+				appName: "DENTE Dental CRM",
+			}, null, 2);
+		}
 
 		if (typeof document !== "undefined") {
 			const blob = new Blob([jsonString], { type: "application/json" });

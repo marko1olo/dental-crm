@@ -42,6 +42,15 @@ export interface DiagnosticDrawerProps {
 	readonly showTriggerButton?: boolean;
 }
 
+function safeFormatJson(data: unknown, pretty = false): string {
+	if (data === undefined) return "";
+	try {
+		return pretty ? JSON.stringify(data, null, 2) : JSON.stringify(data);
+	} catch {
+		return String(data);
+	}
+}
+
 export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 	organizationId,
 	userId,
@@ -134,7 +143,7 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 				const matchesMessage = log.message.toLowerCase().includes(query);
 				const matchesModule = log.module.toLowerCase().includes(query);
 				const matchesCorrelation = log.correlationId?.toLowerCase().includes(query);
-				const matchesData = log.data ? JSON.stringify(log.data).toLowerCase().includes(query) : false;
+				const matchesData = log.data ? safeFormatJson(log.data).toLowerCase().includes(query) : false;
 				if (!matchesMessage && !matchesModule && !matchesCorrelation && !matchesData) {
 					return false;
 				}
@@ -436,7 +445,7 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 																</div>
 															)}
 															{log.data !== undefined && (
-																<div>{JSON.stringify(log.data, null, 2)}</div>
+																<div>{safeFormatJson(log.data, true)}</div>
 															)}
 														</div>
 													)}

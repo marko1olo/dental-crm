@@ -227,10 +227,12 @@ describe("в каталоге документов нет незамеченны
 		return found;
 	}
 
-	const documentFiles = sourceFiles(join(webSrc, "components", "documents"));
+	const documentFiles = sourceFiles(join(webSrc, "components", "documents")).filter(
+		(file) => !file.includes("__tests__") && !file.includes(".test."),
+	);
 	/** Импорт ищется по всему apps/web/src: компонент документов вправе подключить любой экран. */
 	const allWebFiles = sourceFiles(webSrc).filter(
-		(file) => !file.includes("/tests/") && !file.startsWith("tests/"),
+		(file) => !file.includes("/tests/") && !file.startsWith("tests/") && !file.includes("__tests__") && !file.includes(".test."),
 	);
 
 	it("каталог документов найден и виден целиком", () => {

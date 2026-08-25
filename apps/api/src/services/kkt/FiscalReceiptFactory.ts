@@ -255,7 +255,11 @@ export class FiscalReceiptFactory {
 			};
 		});
 
-		const totalElectronicKopecks = input.electronicCardKopecks + input.sbpKopecks;
+		const cashKopecks = input.cashKopecks ?? 0;
+		const electronicCardKopecks = input.electronicCardKopecks ?? 0;
+		const sbpKopecks = input.sbpKopecks ?? 0;
+		const prepaidKopecks = input.prepaidKopecks ?? 0;
+		const totalElectronicKopecks = electronicCardKopecks + sbpKopecks;
 
 		return {
 			tag1054_operationType: this.resolveTag1054(input.operationType),
@@ -266,13 +270,13 @@ export class FiscalReceiptFactory {
 			tag1020_totalRub: kopecksToNumericString(input.totalKopecks),
 			totalKopecks: input.totalKopecks,
 			payments: {
-				tag1031_cashRub: kopecksToNumericString(input.cashKopecks),
-				cashKopecks: input.cashKopecks,
+				tag1031_cashRub: kopecksToNumericString(cashKopecks),
+				cashKopecks,
 				tag1081_electronicRub: kopecksToNumericString(totalElectronicKopecks),
-				electronicCardKopecks: input.electronicCardKopecks,
-				sbpKopecks: input.sbpKopecks,
-				tag1215_prepaidAdvanceOffsetRub: kopecksToNumericString(input.prepaidKopecks),
-				prepaidKopecks: input.prepaidKopecks,
+				electronicCardKopecks,
+				sbpKopecks,
+				tag1215_prepaidAdvanceOffsetRub: kopecksToNumericString(prepaidKopecks),
+				prepaidKopecks,
 			},
 			items,
 			taxDeductionCategory: input.taxDeductionSummaryCode === "code_2_expensive_treatment" ? "2" : "1",

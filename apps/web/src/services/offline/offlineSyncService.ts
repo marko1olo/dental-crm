@@ -130,12 +130,125 @@ export class OfflineSyncService {
 	private static instance: OfflineSyncService | null = null;
 	private isDraining = false;
 	private listeners = new Set<SyncEventListener>();
+	private isLifecycleListening = false;
+	private cleanupLifecycleListeners: (() => void) | null = null;
+
+	constructor() {
+		this.initBrowserLifecycleListeners();
+	}
 
 	public static getInstance(): OfflineSyncService {
 		if (!OfflineSyncService.instance) {
 			OfflineSyncService.instance = new OfflineSyncService();
 		}
 		return OfflineSyncService.instance;
+	}
+
+	/**
+	 * Инициализация слушателей жизненного цикла браузера (visibilitychange, focus, online)
+	 * для автоматического мгновенного возобновления синхронизации при возврате во вкладку.
+	 */
+	public initBrowserLifecycleListeners(): () => void {
+		if (this.isLifecycleListening || typeof window === "undefined") {
+			return () => {};
+		}
+
+		this.isLifecycleListening = true;
+
+		const triggerAutoDrain = () => {
+			if (typeof navigator !== "undefined" && navigator.onLine === false) {
+				return;
+			}
+			if (this.isDraining) {
+				return;
+			}
+			void (async () => {
+				try {
+					const pending = await getPendingOfflineMutations();
+					if (pending.length > 0 && !this.isDraining) {
+						logger.info(
+							`[OfflineSyncService] Auto-draining ${pending.length} pending mutations on tab focus/visibility restore`,
+						);
+						await this.drainOutbox();
+					}
+				} catch (err) {
+					logger.warn(
+						"[OfflineSyncService] Auto-drain on visibility restore failed",
+						err,
+					);
+				}
+			})();
+		};
+
+		const onVisibilityChange = () => {
+			if (
+				typeof document !== "undefined" &&
+				document.visibilityState === "visible"
+			) {
+				triggerAutoDrain();
+			}
+		};
+
+		const onFocus = () => {
+			triggerAutoDrain();
+		};
+
+		const onOnline = () => {
+			triggerAutoDrain();
+		};
+
+		if (typeof document !== "undefined") {
+			document.addEventListener("visibilitychange", onVisibilityChange);
+		}
+		if (typeof window !== "undefined") {
+			window.addEventListener("focus", onFocus);
+			window.addEventListener("online", onOnline);
+		}
+
+		this.cleanupLifecycleListeners = () => {
+			this.isLifecycleListening = false;
+			if (typeof document !== "undefined") {
+				document.removeEventListener("visibilitychange", onVisibilityChange);
+			}
+			if (typeof window !== "undefined") {
+				window.removeEventListener("focus", onFocus);
+				window.removeEventListener("online", onOnline);
+			}
+		};
+
+		return this.cleanupLifecycleListeners;
+	}
+
+	/**
+	 * Очистка слушателей жизненного цикла браузера
+	 */
+	public cleanupBrowserLifecycleListeners(): void {
+		if (this.cleanupLifecycleListeners) {
+			this.cleanupLifecycleListeners();
+			this.cleanupLifecycleListeners = null;
+		}
+	}
+
+	/**
+	 * Проверка статуса энергосбережения (низкий заряд батареи <= 15% и discharging)
+	 */
+	public async isBatterySaverActive(): Promise<boolean> {
+		if (
+			typeof navigator === "undefined" ||
+			typeof (navigator as unknown as { getBattery?: () => Promise<unknown> }).getBattery !== "function"
+		) {
+			return false;
+		}
+		try {
+			const battery = await (navigator as unknown as {
+				getBattery: () => Promise<{ level?: number; charging?: boolean }>;
+			}).getBattery();
+			const level = typeof battery?.level === "number" ? battery.level : 1.0;
+			const charging = typeof battery?.charging === "boolean" ? battery.charging : true;
+			return !charging && level <= 0.15;
+		} catch {
+			return false;
+		}
 	}
 
 	/**
@@ -148,7 +261,10 @@ export class OfflineSyncService {
 		};
 	}
 
-	private emit(type: "progress" | "complete" | "conflict" | "error", data: unknown): void {
+	private emit(
+		type: "progress" | "complete" | "conflict" | "error" | "slow_drain",
+		data: unknown,
+	): void {
 		for (const listener of this.listeners) {
 			try {
 				listener({ type, data });
@@ -346,50 +462,66 @@ export class OfflineSyncService {
 		let lastError: Error | null = null;
 		let serverResponse: SyncPushBatchResponse | null = null;
 
-		for (let attempt = 0; attempt <= maxRetries; attempt++) {
-			try {
-				if (!fetchImpl) {
-					throw new Error("Fetch implementation is not available in environment");
-				}
+		let slowTimer: ReturnType<typeof setTimeout> | null = setTimeout(() => {
+			this.emit("slow_drain", {
+				elapsedMs: 3000,
+				batchSize: batch.length,
+				message:
+					"Идет сохранение... (3 сек) — продолжайте работу, система завершит отправку в фоне",
+			});
+		}, 3000);
 
-				const res = await fetchImpl(gatewayUrl, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						"x-dente-sync-client": clientId,
-						...headers,
-					},
-					body: JSON.stringify(batchRequest),
-				});
-
-				if (!res.ok) {
-					const errorText = await res.text().catch(() => "");
-					// 4xx ошибки валидации не имеют смысла к повтору — сразу фейлим
-					if (res.status >= 400 && res.status < 500 && res.status !== 429) {
-						throw new Error(`HTTP ${res.status}: ${errorText || res.statusText}`);
+		try {
+			for (let attempt = 0; attempt <= maxRetries; attempt++) {
+				try {
+					if (!fetchImpl) {
+						throw new Error("Fetch implementation is not available in environment");
 					}
-					// 5xx или 429 Rate-Limit — выбрасываем ошибку для ретрая
-					throw new Error(`Server error HTTP ${res.status}: ${errorText || res.statusText}`);
-				}
 
-				const data = (await res.json()) as SyncPushBatchResponse;
-				serverResponse = data;
-				break; // Успешно, выходим из цикла ретраев
-			} catch (err) {
-				lastError = err instanceof Error ? err : new Error(String(err));
-				logger.warn(
-					`[OfflineSyncService] Batch push attempt ${attempt + 1}/${maxRetries + 1} failed: ${lastError.message}`,
-				);
+					const res = await fetchImpl(gatewayUrl, {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							"x-dente-sync-client": clientId,
+							...headers,
+						},
+						body: JSON.stringify(batchRequest),
+					});
 
-				if (attempt < maxRetries) {
-					const delay = calculateBackoffDelay(
-						attempt,
-						baseBackoffMs,
-						maxBackoffMs,
-						jitter,
+					if (!res.ok) {
+						const errorText = await res.text().catch(() => "");
+						// 4xx ошибки валидации не имеют смысла к повтору — сразу фейлим
+						if (res.status >= 400 && res.status < 500 && res.status !== 429) {
+							throw new Error(`HTTP ${res.status}: ${errorText || res.statusText}`);
+						}
+						// 5xx или 429 Rate-Limit — выбрасываем ошибку для ретрая
+						throw new Error(`Server error HTTP ${res.status}: ${errorText || res.statusText}`);
+					}
+
+					const data = (await res.json()) as SyncPushBatchResponse;
+					serverResponse = data;
+					break; // Успешно, выходим из цикла ретраев
+				} catch (err) {
+					lastError = err instanceof Error ? err : new Error(String(err));
+					logger.warn(
+						`[OfflineSyncService] Batch push attempt ${attempt + 1}/${maxRetries + 1} failed: ${lastError.message}`,
 					);
-					await new Promise((resolve) => setTimeout(resolve, delay));
+
+					if (attempt < maxRetries) {
+						const delay = calculateBackoffDelay(
+							attempt,
+							baseBackoffMs,
+							maxBackoffMs,
+							jitter,
+						);
+						await new Promise((resolve) => setTimeout(resolve, delay));
+					}
 				}
+			}
+		} finally {
+			if (slowTimer) {
+				clearTimeout(slowTimer);
+				slowTimer = null;
 			}
 		}
 

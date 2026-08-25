@@ -1,6 +1,6 @@
 import { Award, Check, Copy, FileText } from "lucide-react";
 import type React from "react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { showToast } from "../GlobalToast";
 import type { ToothData, ToothState } from "./ToothChart";
@@ -546,12 +546,140 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 		}
 	};
 
+	const digitBufferRef = useRef<{ buffer: string; timer: any }>({
+		buffer: "",
+		timer: null,
+	});
+
+	// Global high-speed keyboard listener for GOST grid
+	useEffect(() => {
+		const handleGlobalKeyDown = (e: KeyboardEvent) => {
+			const target = e.target as HTMLElement | null;
+			if (
+				target instanceof HTMLInputElement ||
+				target instanceof HTMLTextAreaElement ||
+				target?.isContentEditable
+			) {
+				return;
+			}
+
+			// 1. Hotkey status assignment for selected teeth
+			if (selectedTeeth.length > 0 && onQuickStateChange) {
+				const quickState = getToothStateFromHotkey(e.key);
+				if (quickState) {
+					e.preventDefault();
+					const singleTooth =
+						selectedTeeth.length === 1
+							? (teethData ?? []).find((t) => t.toothNumber === selectedTeeth[0])
+							: undefined;
+					onQuickStateChange(selectedTeeth, quickState, singleTooth?.surfaces);
+					return;
+				}
+			}
+
+			// 2. Digit 1-8 tooth navigation (Quadrant-aware & 2-digit FDI typing)
+			if (/^[1-8]$/.test(e.key) && !e.ctrlKey && !e.altKey && !e.metaKey) {
+				const digit = Number.parseInt(e.key, 10);
+				const firstTooth = selectedTeeth[0];
+
+				if (digitBufferRef.current.timer) {
+					clearTimeout(digitBufferRef.current.timer);
+				}
+
+				const prevBuffer = digitBufferRef.current.buffer;
+				if (prevBuffer.length === 1) {
+					const firstDigit = Number.parseInt(prevBuffer, 10);
+					const fdiCandidate = firstDigit * 10 + digit;
+					digitBufferRef.current.buffer = "";
+					const targetBtn = document.querySelector<HTMLButtonElement>(
+						`[data-tooth-id="${fdiCandidate}"]`,
+					);
+					if (targetBtn) {
+						e.preventDefault();
+						targetBtn.focus();
+						targetBtn.click();
+						return;
+					}
+				}
+
+				const quadrant = firstTooth ? Math.floor(firstTooth / 10) : 1;
+				const isPediatricQuad = quadrant >= 5 && quadrant <= 8;
+				if (!isPediatricQuad || digit <= 5) {
+					const targetTooth = quadrant * 10 + digit;
+					const targetBtn = document.querySelector<HTMLButtonElement>(
+						`[data-tooth-id="${targetTooth}"]`,
+					);
+					if (targetBtn) {
+						e.preventDefault();
+						targetBtn.focus();
+						targetBtn.click();
+					}
+				}
+
+				digitBufferRef.current.buffer = e.key;
+				digitBufferRef.current.timer = setTimeout(() => {
+					digitBufferRef.current.buffer = "";
+				}, 750);
+				return;
+			}
+
+			// 3. Arrow Keys navigation
+			const firstTooth = selectedTeeth[0];
+			if (firstTooth !== undefined) {
+				const dirMap: Record<
+					string,
+					"left" | "right" | "up" | "down" | "home" | "end"
+				> = {
+					ArrowLeft: "left",
+					ArrowRight: "right",
+					ArrowUp: "up",
+					ArrowDown: "down",
+					Home: "home",
+					End: "end",
+				};
+				const navDir = dirMap[e.key];
+				if (navDir) {
+					e.preventDefault();
+					const nextTooth = getNextFocusedTooth(firstTooth, navDir, pediatricMode);
+					const nextEl = document.querySelector<HTMLButtonElement>(
+						`[data-tooth-id="${nextTooth}"]`,
+					);
+					if (nextEl) {
+						nextEl.focus();
+						nextEl.click();
+					}
+				}
+			} else if (
+				e.key === "ArrowLeft" ||
+				e.key === "ArrowRight" ||
+				e.key === "ArrowUp" ||
+				e.key === "ArrowDown"
+			) {
+				e.preventDefault();
+				const initialTooth = pediatricMode ? 55 : 18;
+				const initialEl = document.querySelector<HTMLButtonElement>(
+					`[data-tooth-id="${initialTooth}"]`,
+				);
+				if (initialEl) {
+					initialEl.focus();
+					initialEl.click();
+				}
+			}
+		};
+
+		window.addEventListener("keydown", handleGlobalKeyDown);
+		return () => {
+			window.removeEventListener("keydown", handleGlobalKeyDown);
+		};
+	}, [selectedTeeth, onQuickStateChange, pediatricMode, teethData]);
+
 	const renderToothCell = (toothNumber: number, isUpper: boolean) => {
 		const tooth = toothStateMap.get(toothNumber);
 		const state: ToothState = tooth ? tooth.state : "Healthy";
 		const gost = GOST_TOOTH_STATES[state] || GOST_TOOTH_STATES.Healthy;
 		const isSelected = selectedTeeth.includes(toothNumber);
 		const surfaces = tooth?.surfaces;
+		const pocketDepth = tooth?.pocketDepth ?? tooth?.pocketDepthMm ?? tooth?.maxPocketDepth;
 		const hasCanals =
 			tooth?.clinicalData &&
 			typeof tooth.clinicalData === "object" &&
@@ -566,7 +694,7 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 				key={toothNumber}
 				type="button"
 				data-tooth-id={toothNumber}
-				title={`${anatomicalName}: ${gost.nameRu}${surfaces && surfaces.length > 0 ? ` [${surfaces.join(",")}]` : ""}`}
+				title={`${anatomicalName}: ${gost.nameRu}${surfaces && surfaces.length > 0 ? ` [${surfaces.join(",")}]` : ""}${pocketDepth && pocketDepth > 4 ? ` | Карман: ${pocketDepth}мм` : ""}`}
 				aria-label={`Зуб ${toothNumber}, ${gost.nameRu}`}
 				aria-pressed={isSelected ? true : undefined}
 				onClick={(e) => {
@@ -616,7 +744,11 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 				className={`gost-cell-tooth relative flex flex-col items-center justify-between min-w-[44px] sm:min-w-[50px] min-h-[56px] p-1.5 sm:p-2 rounded-xl border transition-all duration-150 select-none text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/50 shrink-0 ${
 					isSelected
 						? "bg-indigo-500/15 border-indigo-500 shadow-md ring-2 ring-indigo-500/40"
-						: "bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] border-[var(--odontogram-border-subtle)] shadow-xs"
+						: pocketDepth && pocketDepth > 4
+							? pocketDepth >= 6
+								? "bg-rose-500/10 border-rose-500/60 ring-2 ring-rose-500/40 shadow-xs"
+								: "bg-amber-500/10 border-amber-500/50 ring-1 ring-amber-500/30 shadow-xs"
+							: "bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] border-[var(--odontogram-border-subtle)] shadow-xs"
 				}`}
 			>
 				{/* FDI Tooth Number */}
@@ -624,12 +756,24 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = ({
 					{toothNumber}
 				</span>
 
-				{/* GOST Code Badge */}
-				<span
-					className={`my-1 inline-flex items-center justify-center min-w-[28px] sm:min-w-[32px] h-[24px] sm:h-[26px] px-1.5 rounded font-black text-xs sm:text-sm border transition-colors shadow-xs ${gost.badgeBg} ${gost.badgeText} ${gost.badgeBorder}`}
-				>
-					{gost.abbr}
-				</span>
+				{/* GOST Code Badge + Pocket Depth Badge */}
+				<div className="flex items-center justify-center gap-1 my-1">
+					<span
+						className={`inline-flex items-center justify-center min-w-[28px] sm:min-w-[32px] h-[24px] sm:h-[26px] px-1.5 rounded font-black text-xs sm:text-sm border transition-colors shadow-xs ${gost.badgeBg} ${gost.badgeText} ${gost.badgeBorder}`}
+					>
+						{gost.abbr}
+					</span>
+					{pocketDepth !== undefined && pocketDepth > 4 && (
+						<span
+							className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded text-2xs font-black text-white shadow-2xs leading-none ${
+								pocketDepth >= 6 ? "bg-rose-600 animate-pulse" : "bg-amber-500"
+							}`}
+							title={`Пародонтальный карман ${pocketDepth} мм (Риск пародонтита K05.3)`}
+						>
+							P{pocketDepth}
+						</span>
+					)}
+				</div>
 
 				{/* Surfaces Chips or Canal Badge */}
 				<div className="flex flex-wrap items-center justify-center gap-0.5 min-h-[14px]">

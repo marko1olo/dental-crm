@@ -76,12 +76,52 @@ export class VisiographPacsWatcherService {
 	}
 
 	/**
+	 * Resolves diagnostic window presets (Window Center / Window Width) for dental radiography.
+	 */
+	public static getDiagnosticWindowPresets(preset: "bone" | "soft_tissue" | "endodontics"): { windowCenter: number; windowWidth: number } {
+		switch (preset) {
+			case "bone":
+				return { windowCenter: 300, windowWidth: 1500 };
+			case "endodontics":
+				return { windowCenter: 500, windowWidth: 2000 };
+			case "soft_tissue":
+			default:
+				return { windowCenter: 40, windowWidth: 400 };
+		}
+	}
+
+	/**
+	 * Inspects DICOM Part 10 file preamble (128 bytes preamble + 4 bytes 'DICM' magic at offset 128).
+	 */
+	public static parseDicomHeaderPreamble(buffer: Uint8Array): {
+		isStandardDicom: boolean;
+		hasMagicPrefix: boolean;
+		detectedPreambleLength: number;
+	} {
+		if (!buffer || buffer.length < 132) {
+			return { isStandardDicom: false, hasMagicPrefix: false, detectedPreambleLength: 0 };
+		}
+
+		// Check 'DICM' at byte offset 128..131
+		const magic = String.fromCharCode(buffer[128]!, buffer[129]!, buffer[130]!, buffer[131]!);
+		const hasMagicPrefix = magic === "DICM";
+
+		return {
+			isStandardDicom: hasMagicPrefix,
+			hasMagicPrefix,
+			detectedPreambleLength: hasMagicPrefix ? 132 : 0,
+		};
+	}
+
+	/**
 	 * Parses tooth code and modality hints from file name or metadata.
 	 */
 	public static parseScanMetadata(fileName: string): {
 		toothCode?: string | undefined;
 		patientId?: string | undefined;
 		modality: "IO" | "DX" | "PX" | "CT" | "CR";
+		windowCenter?: number | undefined;
+		windowWidth?: number | undefined;
 	} {
 		const lowerName = fileName.toLowerCase();
 
@@ -106,6 +146,9 @@ export class VisiographPacsWatcherService {
 			modality = "DX";
 		}
 
+		// Default dental windowing
+		const windowConfig = this.getDiagnosticWindowPresets(modality === "IO" ? "endodontics" : "bone");
+
 		// Patient ID extraction if present in filename: e.g. "P10293_tooth16.dcm" or "uuid_tooth16.dcm"
 		let patientId: string | undefined = undefined;
 		const patientMatch = fileName.match(/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}|pat[_\-]?[0-9a-z]+)/i);
@@ -113,7 +156,13 @@ export class VisiographPacsWatcherService {
 			patientId = patientMatch[1];
 		}
 
-		return { toothCode, patientId, modality };
+		return {
+			toothCode,
+			patientId,
+			modality,
+			windowCenter: windowConfig.windowCenter,
+			windowWidth: windowConfig.windowWidth,
+		};
 	}
 
 	/**
@@ -145,6 +194,8 @@ export class VisiographPacsWatcherService {
 			modality: rawEvent.modality || metadata.modality,
 			thumbnailDataUri,
 			previewReady: true,
+			windowCenter: metadata.windowCenter,
+			windowWidth: metadata.windowWidth,
 		};
 
 		this.recentScans.unshift(event);

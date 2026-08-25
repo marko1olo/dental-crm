@@ -97,8 +97,8 @@ async function revenueText(): Promise<string> {
 	// Сверка идёт под тенант-контекстом клиники: под FORCE RLS запрос без
 	// `app.current_tenant` не падает, а возвращает НОЛЬ строк, и выручка вышла бы
 	// «0.00» независимо от того, что в кассе на самом деле.
-	const result = await withFixtureTenant(ORGANIZATION_ID, async () =>
-		db.execute<{ paid: string }>(sql`
+	const result = await withFixtureTenant(ORGANIZATION_ID, async (tx) =>
+		tx.execute<{ paid: string }>(sql`
 			select coalesce(sum(amount_rub), 0)::numeric(12,2)::text as paid
 			  from payments
 			 where organization_id = ${ORGANIZATION_ID}::uuid and status = 'paid'
@@ -108,8 +108,8 @@ async function revenueText(): Promise<string> {
 }
 
 async function paymentStatus(paymentId: string): Promise<string> {
-	const result = await withFixtureTenant(ORGANIZATION_ID, async () =>
-		db.execute<{ status: string }>(sql`
+	const result = await withFixtureTenant(ORGANIZATION_ID, async (tx) =>
+		tx.execute<{ status: string }>(sql`
 			select status::text as status from payments
 			 where id = ${paymentId}::uuid and organization_id = ${ORGANIZATION_ID}::uuid
 		`),
@@ -131,7 +131,7 @@ function kopecksDelta(beforeText: string, afterText: string): number {
 	return toKopecks(beforeText) - toKopecks(afterText);
 }
 
-describe("выданное заявление на возврат снимает деньги с кассы", () => {
+describe("выданное заявление на возврат снимает деньги с кассы", { concurrency: 1 }, () => {
 	let app: FastifyInstance;
 	let headers: Record<string, string> = {};
 	let fullPaymentId = "";
@@ -272,15 +272,15 @@ describe("выданное заявление на возврат снимает
 		// Весь сев — под контекстом своей клиники: в WITH CHECK тенант-таблиц стоит
 		// только `organization_id = current_tenant`, без дизъюнкта обхода, поэтому
 		// вставка без контекста (и вставка под обходом RLS) отвергается кодом 42501.
-		await withFixtureTenant(ORGANIZATION_ID, async () => {
-			await db.execute(sql`
+		await withFixtureTenant(ORGANIZATION_ID, async (tx) => {
+			await tx.execute(sql`
 				insert into organizations (id, name)
 				values (${ORGANIZATION_ID}::uuid, ${"Сторож шва возврат → касса"})
 				on conflict (id) do nothing`);
-			await db.execute(sql`
+			await tx.execute(sql`
 				insert into clinics (id, organization_id, name, timezone)
 				values (${CLINIC_ID}::uuid, ${ORGANIZATION_ID}::uuid, ${"Кабинет сторожа возврата"}, 'Europe/Moscow')`);
-			await db.execute(sql`
+			await tx.execute(sql`
 				insert into users (id, organization_id, full_name, role, is_active)
 				values (${OWNER_ID}::uuid, ${ORGANIZATION_ID}::uuid, ${"Владелец сторожа возврата"}, 'owner', true)`);
 			/*
@@ -289,11 +289,11 @@ describe("выданное заявление на возврат снимает
 			 * по которым сторож выдачи считает документ незаполненным и отвечает 409, не
 			 * называя поле.
 			 */
-			await db.execute(sql`
+			await tx.execute(sql`
 				insert into patients (id, organization_id, full_name, birth_date, phone, status)
-				values (${PATIENT_FULL}::uuid, ${ORGANIZATION_ID}::uuid, ${"Пациент полного возврата"}, '1990-05-17', '+79000000021', 'active'),
-				       (${PATIENT_PARTIAL}::uuid, ${ORGANIZATION_ID}::uuid, ${"Пациент частичного возврата"}, '1988-02-03', '+79000000022', 'active')`);
-			await db.execute(sql`
+				values (${PATIENT_FULL}::uuid, ${ORGANIZATION_ID}::uuid, ${"Плательщик сторожа возврата"}, '1990-05-17', '+79000000021', 'active'),
+				       (${PATIENT_PARTIAL}::uuid, ${ORGANIZATION_ID}::uuid, ${"Плательщик сторожа возврата"}, '1988-02-03', '+79000000022', 'active')`);
+			await tx.execute(sql`
 				insert into visits (id, organization_id, patient_id, status)
 				values (${VISIT_FULL}::uuid, ${ORGANIZATION_ID}::uuid, ${PATIENT_FULL}::uuid, 'draft'),
 				       (${VISIT_PARTIAL}::uuid, ${ORGANIZATION_ID}::uuid, ${PATIENT_PARTIAL}::uuid, 'draft')`);
@@ -353,14 +353,14 @@ describe("выданное заявление на возврат снимает
 			visitId: VISIT_FULL,
 			amountRub: FULL_RECEIPT_RUB,
 			fiscalReceiptNumber: FULL_RECEIPT_NUMBER,
-			payerFullName: "Пациент полного возврата",
+			payerFullName: "Плательщик сторожа возврата",
 		});
 		partialPaymentId = await acceptPayment({
 			patientId: PATIENT_PARTIAL,
 			visitId: VISIT_PARTIAL,
 			amountRub: PARTIAL_RECEIPT_RUB,
 			fiscalReceiptNumber: PARTIAL_RECEIPT_NUMBER,
-			payerFullName: "Пациент частичного возврата",
+			payerFullName: "Плательщик сторожа возврата",
 		});
 	});
 
@@ -370,8 +370,8 @@ describe("выданное заявление на возврат снимает
 		// Счёт остатка — под тенант-контекстом: политика оставляет видимыми ровно
 		// строки этой клиники, поэтому уцелевший платёж был бы виден. Без контекста
 		// запрос вернул бы ноль в любом случае и подтвердил бы уборку, ничего не измерив.
-		const leftovers = await withFixtureTenant(ORGANIZATION_ID, async () =>
-			db.execute<{ n: number }>(sql`
+		const leftovers = await withFixtureTenant(ORGANIZATION_ID, async (tx) =>
+			tx.execute<{ n: number }>(sql`
 				select count(*)::int as n from payments where organization_id = ${ORGANIZATION_ID}::uuid
 			`),
 		);
@@ -383,274 +383,266 @@ describe("выданное заявление на возврат снимает
 		process.env = originalEnv;
 	});
 
-	test("черновик заявления кассы не касается: деньги ещё не выходили", async () => {
-		const revenueBefore = await revenueText();
-		assert.equal(
-			revenueBefore,
-			"900.00",
-			`в кассе не два посеянных чека: ${revenueBefore}`,
-		);
-
-		const draft = await createRefundDraft({
-			patientId: PATIENT_FULL,
-			visitId: VISIT_FULL,
-			paymentId: fullPaymentId,
-			amountRub: FULL_RECEIPT_RUB,
-			receiptNumber: FULL_RECEIPT_NUMBER,
-			title: "Заявление на возврат (сторож, полная сумма)",
-		});
-		assert.equal(
-			draft.statusCode,
-			201,
-			`черновик возврата не создан: ${draft.body}`,
-		);
-
-		assert.equal(
-			await paymentStatus(fullPaymentId),
-			"paid",
-			"ЧЕРНОВИК заявления снял деньги с кассы. Черновик можно изменить или удалить, " +
-				"деньги ещё не покидали ящик — снимать их с выручки без юридического основания нельзя.",
-		);
-		assert.equal(
-			await revenueText(),
-			revenueBefore,
-			"выручка изменилась от одного черновика",
-		);
-	});
-
-	test("ВЫДАЧА заявления на полный возврат уменьшает выручку РОВНО на сумму чека", async () => {
-		const revenueBefore = await revenueText();
-		const draft = await createRefundDraft({
-			patientId: PATIENT_FULL,
-			visitId: VISIT_FULL,
-			paymentId: fullPaymentId,
-			amountRub: FULL_RECEIPT_RUB,
-			receiptNumber: FULL_RECEIPT_NUMBER,
-			title: "Заявление на возврат (сторож, выдаётся)",
-		});
-		assert.equal(
-			draft.statusCode,
-			201,
-			`черновик возврата не создан: ${draft.body}`,
-		);
-		assert.equal(
-			await paymentStatus(fullPaymentId),
-			"paid",
-			"до выдачи платёж обязан быть «paid»",
-		);
-
-		const issued = await issueDocument(draft.json.id as string);
-		assert.equal(
-			issued.statusCode,
-			200,
-			`заявление на возврат не выдано: ${issued.body}`,
-		);
-
-		assert.equal(
-			await paymentStatus(fullPaymentId),
-			"refunded",
-			"заявление на возврат ВЫДАНО (HTTP 200), а payments.status остался «paid». Именно это и было " +
-				"сломано: возврат существовал как документ и не существовал как движение денег. Выручка " +
-				"`sum(amount_rub) where status = 'paid'` продолжает считать возвращённые пациенту деньги " +
-				"полученными — касса не сходится с ящиком, а налоговая справка соберёт возвращённую сумму " +
-				"как оплату пациента.",
-		);
-
-		const revenueAfter = await revenueText();
-		const delta = kopecksDelta(revenueBefore, revenueAfter);
-		assert.equal(
-			delta,
-			FULL_RECEIPT_RUB * 100,
-			`выручка уменьшилась не на ${FULL_RECEIPT_RUB}.00 ₽: было ${revenueBefore}, стало ${revenueAfter} ` +
-				`(разница ${delta} коп.). Касса обязана сойтись до копейки.`,
-		);
-		assert.equal(
-			revenueAfter,
-			"400.00",
-			`в кассе должен остаться только чек частичного пациента: ${revenueAfter}`,
-		);
-		console.log(
-			`  выручка: было ${revenueBefore} ₽ → стало ${revenueAfter} ₽ (−${delta / 100} ₽)`,
-		);
-	});
-
-	test("повторный возврат по тому же чеку по-прежнему отклоняется", async () => {
-		const revenueBefore = await revenueText();
-		const repeat = await createRefundDraft({
-			patientId: PATIENT_FULL,
-			visitId: VISIT_FULL,
-			paymentId: fullPaymentId,
-			amountRub: FULL_RECEIPT_RUB,
-			receiptNumber: FULL_RECEIPT_NUMBER,
-			title: "Второе заявление на возврат того же чека",
-		});
-		assert.equal(
-			repeat.statusCode,
-			409,
-			`второй возврат по чеку на ${FULL_RECEIPT_RUB}.00 ₽ принят (HTTP ${repeat.statusCode}). ` +
-				`Клиника выплатила бы ${FULL_RECEIPT_RUB * 2} ₽ по одному чеку — прямая утрата денег. ${repeat.body}`,
-		);
-		assert.equal(
-			await revenueText(),
-			revenueBefore,
-			"отклонённый возврат всё равно сдвинул выручку",
-		);
-	});
-
-	test("аннулирование выданного заявления возвращает деньги в выручку", async () => {
-		/*
-		 * ОБРАТНЫЙ ХОД ОБЯЗАТЕЛЕН, А НЕ ЖЕЛАТЕЛЕН. Учёт возвратов идёт только по
-		 * ВЫДАННЫМ заявлениям, поэтому аннулирование обнуляет учтённый возврат по
-		 * чеку. Без обратного хода платёж навсегда остался бы «refunded» при нулевом
-		 * учтённом возврате: деньги пропали бы из выручки без действующего основания,
-		 * а новый возврат по тому же чеку упирался бы в отказ «уже выполнен полный
-		 * возврат средств» — то есть чек стал бы невозвратным навсегда.
-		 */
-		// Поиск выданного заявления — тоже под контекстом клиники: без него список
-		// документов пуст, и «аннулировать нечего» стало бы ложным выводом.
-		const issuedRefund = await withFixtureTenant(ORGANIZATION_ID, async () =>
-			db.execute<{ id: string }>(sql`
-				select id::text as id from generated_documents
-				 where organization_id = ${ORGANIZATION_ID}::uuid
-				   and patient_id = ${PATIENT_FULL}::uuid
-				   and kind = 'payment_refund_correction_request'
-				   and status = 'issued'
-				 order by issued_at desc limit 1
-			`),
-		);
-		const refundDocumentId = (issuedRefund.rows as { id: string }[])[0]?.id;
-		assert.ok(
-			refundDocumentId,
-			"выданного заявления на возврат нет — аннулировать нечего",
-		);
-
-		assert.equal(
-			await paymentStatus(fullPaymentId),
-			"refunded",
-			"предпосылка теста не выполнена",
-		);
-		const revenueBefore = await revenueText();
-
-		const voided = await call(
-			"POST",
-			`/api/documents/${refundDocumentId}/void`,
-			{
-				voidAttestation: {
-					reasonCode: "payment_correction",
-					reasonText:
-						"Возврат отменён: деньги пациенту не выдавались, чек остаётся действующим.",
-					voidedAt: RECEIPT_DATE,
-					staffFullName: "Владелец сторожа возврата",
-					staffRole: "владелец клиники",
-					correctionDocumentId: null,
-					replacementRequired: false,
-					patientOrPayerNotified: true,
-					archivePreserved: true,
-					statusReviewed: true,
-				},
-			},
-		);
-		assert.equal(
-			voided.statusCode,
-			200,
-			`заявление на возврат не аннулировано: ${voided.body}`,
-		);
-
-		assert.equal(
-			await paymentStatus(fullPaymentId),
-			"paid",
-			"заявление на возврат аннулировано, а платёж остался «refunded». Учтённый возврат по чеку " +
-				"обнулился вместе с документом, значит деньги пропали из выручки без основания, а новый " +
-				"возврат по этому чеку заблокирован отказом «уже выполнен полный возврат средств».",
-		);
-		const revenueAfter = await revenueText();
-		assert.equal(
-			kopecksDelta(revenueAfter, revenueBefore),
-			FULL_RECEIPT_RUB * 100,
-			`выручка вернулась не на ${FULL_RECEIPT_RUB}.00 ₽: было ${revenueBefore}, стало ${revenueAfter}`,
-		);
-		console.log(
-			`  после аннулирования: выручка ${revenueBefore} ₽ → ${revenueAfter} ₽`,
-		);
-	});
-
-	test("частичный возврат оставляет чек в выручке, а последняя часть закрывает его до копейки", async () => {
-		let issuedSoFarKopecks = 0;
-		for (const [index, part] of PARTIAL_REFUND_PARTS.entries()) {
-			const isLastPart = index === PARTIAL_REFUND_PARTS.length - 1;
+	test("сквозной сценарий возврата и сверки кассы", async (t) => {
+		await t.test("черновик заявления кассы не касается: деньги ещё не выходили", async () => {
 			const revenueBefore = await revenueText();
+			assert.equal(
+				revenueBefore,
+				"900.00",
+				`в кассе не два посеянных чека: ${revenueBefore}`,
+			);
 
 			const draft = await createRefundDraft({
-				patientId: PATIENT_PARTIAL,
-				visitId: VISIT_PARTIAL,
-				paymentId: partialPaymentId,
-				amountRub: part,
-				receiptNumber: PARTIAL_RECEIPT_NUMBER,
-				title: `Заявление на частичный возврат ${index + 1} из ${PARTIAL_REFUND_PARTS.length}`,
+				patientId: PATIENT_FULL,
+				visitId: VISIT_FULL,
+				paymentId: fullPaymentId,
+				amountRub: FULL_RECEIPT_RUB,
+				receiptNumber: FULL_RECEIPT_NUMBER,
+				title: "Заявление на возврат (сторож, полная сумма)",
 			});
 			assert.equal(
 				draft.statusCode,
 				201,
-				`частичный возврат ${part} ₽ (часть ${index + 1}) отклонён при создании. Остаток по чеку обязан ` +
-					`считаться в целых копейках: из ${PARTIAL_RECEIPT_RUB}.00 ₽ уже возвращено ` +
-					`${issuedSoFarKopecks / 100} ₽, доступно ${(PARTIAL_RECEIPT_RUB * 100 - issuedSoFarKopecks) / 100} ₽. ` +
-					`Ответ: ${draft.body}`,
+				`черновик возврата не создан: ${draft.body}`,
+			);
+
+			assert.equal(
+				await paymentStatus(fullPaymentId),
+				"paid",
+				"ЧЕРНОВИК заявления снял деньги с кассы. Черновик можно изменить или удалить, " +
+					"деньги ещё не покидали ящик — снимать их с выручки без юридического основания нельзя.",
+			);
+			assert.equal(
+				await revenueText(),
+				revenueBefore,
+				"выручка изменилась от одного черновика",
+			);
+		});
+
+		await t.test("ВЫДАЧА заявления на полный возврат уменьшает выручку РОВНО на сумму чека", async () => {
+			const revenueBefore = await revenueText();
+			const draft = await createRefundDraft({
+				patientId: PATIENT_FULL,
+				visitId: VISIT_FULL,
+				paymentId: fullPaymentId,
+				amountRub: FULL_RECEIPT_RUB,
+				receiptNumber: FULL_RECEIPT_NUMBER,
+				title: "Заявление на возврат (сторож, выдаётся)",
+			});
+			assert.equal(
+				draft.statusCode,
+				201,
+				`черновик возврата не создан: ${draft.body}`,
+			);
+			assert.equal(
+				await paymentStatus(fullPaymentId),
+				"paid",
+				"до выдачи платёж обязан быть «paid»",
 			);
 
 			const issued = await issueDocument(draft.json.id as string);
 			assert.equal(
 				issued.statusCode,
 				200,
-				`частичный возврат ${part} ₽ не выдан: ${issued.body}`,
+				`заявление на возврат не выдано: ${issued.body}`,
 			);
-			issuedSoFarKopecks += Math.round(part * 100);
 
-			const status = await paymentStatus(partialPaymentId);
+			assert.equal(
+				await paymentStatus(fullPaymentId),
+				"refunded",
+				"заявление на возврат ВЫДАНО (HTTP 200), а payments.status остался «paid». Именно это и было " +
+					"сломано: возврат существовал как документ и не существовал как движение денег. Выручка " +
+					"`sum(amount_rub) where status = 'paid'` продолжает считать возвращённые пациенту деньги " +
+					"полученными — касса не сходится с ящиком, а налоговая справка соберёт возвращённую сумму " +
+					"как оплату пациента.",
+			);
+
 			const revenueAfter = await revenueText();
-			console.log(
-				`  часть ${index + 1}: возвращено ${issuedSoFarKopecks / 100} из ${PARTIAL_RECEIPT_RUB} ₽ → ` +
-					`статус ${status}, выручка ${revenueAfter} ₽`,
+			const delta = kopecksDelta(revenueBefore, revenueAfter);
+			assert.equal(
+				delta,
+				FULL_RECEIPT_RUB * 100,
+				`выручка уменьшилась не на ${FULL_RECEIPT_RUB}.00 ₽: было ${revenueBefore}, стало ${revenueAfter} ` +
+					`(разница ${delta} коп.). Касса обязана сойтись до копейки.`,
+			);
+			assert.equal(
+				revenueAfter,
+				"400.00",
+				`в кассе должен остаться только чек частичного пациента: ${revenueAfter}`,
+			);
+		});
+
+		await t.test("повторный возврат по тому же чеку по-прежнему отклоняется", async () => {
+			const revenueBefore = await revenueText();
+			const repeat = await createRefundDraft({
+				patientId: PATIENT_FULL,
+				visitId: VISIT_FULL,
+				paymentId: fullPaymentId,
+				amountRub: FULL_RECEIPT_RUB,
+				receiptNumber: FULL_RECEIPT_NUMBER,
+				title: "Второе заявление на возврат того же чека",
+			});
+			assert.equal(
+				repeat.statusCode,
+				409,
+				`второй возврат по чеку на ${FULL_RECEIPT_RUB}.00 ₽ принят (HTTP ${repeat.statusCode}). ` +
+					`Клиника выплатила бы ${FULL_RECEIPT_RUB * 2} ₽ по одному чеку — прямая утрата денег. ${repeat.body}`,
+			);
+			assert.equal(
+				await revenueText(),
+				revenueBefore,
+				"отклонённый возврат всё равно сдвинул выручку",
+			);
+		});
+
+		await t.test("аннулирование выданного заявления возвращает деньги в выручку", async () => {
+			/*
+			 * ОБРАТНЫЙ ХОД ОБЯЗАТЕЛЕН, А НЕ ЖЕЛАТЕЛЕН. Учёт возвратов идёт только по
+			 * ВЫДАННЫМ заявлениям, поэтому аннулирование обнуляет учтённый возврат по
+			 * чеку. Без обратного хода платёж навсегда остался бы «refunded» при нулевом
+			 * учтённом возврате: деньги пропали бы из выручки без действующего основания,
+			 * а новый возврат по тому же чеку упирался бы в отказ «уже выполнен полный
+			 * возврат средств» — то есть чек стал бы невозвратным навсегда.
+			 */
+			// Поиск выданного заявления — тоже под контекстом клиники: без него список
+			// документов пуст, и «аннулировать нечего» стало бы ложным выводом.
+			const issuedRefund = await withFixtureTenant(ORGANIZATION_ID, async () =>
+				db.execute<{ id: string }>(sql`
+					select id::text as id from generated_documents
+					 where organization_id = ${ORGANIZATION_ID}::uuid
+					   and patient_id = ${PATIENT_FULL}::uuid
+					   and kind = 'payment_refund_correction_request'
+					   and status = 'issued'
+					 order by issued_at desc limit 1
+				`),
+			);
+			const refundDocumentId = (issuedRefund.rows as { id: string }[])[0]?.id;
+			assert.ok(
+				refundDocumentId,
+				"выданного заявления на возврат нет — аннулировать нечего",
 			);
 
-			if (!isLastPart) {
-				assert.equal(
-					status,
-					"paid",
-					`ЧАСТИЧНЫЙ возврат (${issuedSoFarKopecks / 100} из ${PARTIAL_RECEIPT_RUB} ₽) пометил чек как ` +
-						"полностью возвращённый. В `payments` нет столбца, которым частичный возврат выражается: " +
-						"`status` — один флаг на всю строку, `amount_rub` — сумма исходного фискального чека. " +
-						"Пометить такой чек «refunded» значит убрать из выручки ВЕСЬ чек вместо возвращённой части " +
-						"и соврать налоговой справке о полном возврате.",
-				);
-				assert.equal(
-					revenueAfter,
-					revenueBefore,
-					`частичный возврат сдвинул выручку с ${revenueBefore} на ${revenueAfter}. Выразить частичный ` +
-						"возврат существующими столбцами нечем — он объявлен долгом и кассу не двигает.",
-				);
-			} else {
-				assert.equal(
-					status,
-					"refunded",
-					`последняя часть довела возврат до ${issuedSoFarKopecks / 100} ₽ = полной суммы чека ` +
-						`${PARTIAL_RECEIPT_RUB}.00 ₽, а чек остался в выручке. Причина этого класса отказа — сложение ` +
-						"рублей в плавающей точке: 100.10 + 100.10 + 100.10 + 99.70 даёт 399.99999999999994, то есть " +
-						"«почти покрыт», и полностью возвращённый чек остаётся в выручке НАВСЕГДА. Складывать " +
-						"обязано целые копейки.",
-				);
-				assert.equal(
-					kopecksDelta(revenueBefore, revenueAfter),
-					PARTIAL_RECEIPT_RUB * 100,
-					`закрытие чека убрало из выручки не ${PARTIAL_RECEIPT_RUB}.00 ₽: было ${revenueBefore}, ` +
-						`стало ${revenueAfter}`,
-				);
-			}
-		}
+			assert.equal(
+				await paymentStatus(fullPaymentId),
+				"refunded",
+				"предпосылка теста не выполнена",
+			);
+			const revenueBefore = await revenueText();
 
-		assert.equal(
-			issuedSoFarKopecks,
-			PARTIAL_RECEIPT_RUB * 100,
-			"сумма частей возврата не равна чеку — сценарий проверял не то, что заявлено",
-		);
+			const voided = await call(
+				"POST",
+				`/api/documents/${refundDocumentId}/void`,
+				{
+					voidAttestation: {
+						reasonCode: "payment_correction",
+						reasonText:
+							"Возврат отменён: деньги пациенту не выдавались, чек остаётся действующим.",
+						voidedAt: RECEIPT_DATE,
+						staffFullName: "Владелец сторожа возврата",
+						staffRole: "владелец клиники",
+						correctionDocumentId: null,
+						replacementRequired: false,
+						patientOrPayerNotified: true,
+						archivePreserved: true,
+						statusReviewed: true,
+					},
+				},
+			);
+			assert.equal(
+				voided.statusCode,
+				200,
+				`заявление на возврат не аннулировано: ${voided.body}`,
+			);
+
+			assert.equal(
+				await paymentStatus(fullPaymentId),
+				"paid",
+				"заявление на возврат аннулировано, а платёж остался «refunded». Учтённый возврат по чеку " +
+					"обнулился вместе с документом, значит деньги пропали из выручки без основания, а новый " +
+					"возврат по этому чеку заблокирован отказом «уже выполнен полный возврат средств».",
+			);
+			const revenueAfter = await revenueText();
+			assert.equal(
+				kopecksDelta(revenueAfter, revenueBefore),
+				FULL_RECEIPT_RUB * 100,
+				`выручка вернулась не на ${FULL_RECEIPT_RUB}.00 ₽: было ${revenueBefore}, стало ${revenueAfter}`,
+			);
+		});
+
+		await t.test("частичный возврат оставляет чек в выручке, а последняя часть закрывает его до копейки", async () => {
+			let issuedSoFarKopecks = 0;
+			for (const [index, part] of PARTIAL_REFUND_PARTS.entries()) {
+				const isLastPart = index === PARTIAL_REFUND_PARTS.length - 1;
+				const revenueBefore = await revenueText();
+
+				const draft = await createRefundDraft({
+					patientId: PATIENT_PARTIAL,
+					visitId: VISIT_PARTIAL,
+					paymentId: partialPaymentId,
+					amountRub: part,
+					receiptNumber: PARTIAL_RECEIPT_NUMBER,
+					title: `Заявление на частичный возврат ${index + 1} из ${PARTIAL_REFUND_PARTS.length}`,
+				});
+				assert.equal(
+					draft.statusCode,
+					201,
+					`частичный возврат ${part} ₽ (часть ${index + 1}) отклонён при создании. Остаток по чеку обязан ` +
+						`считаться в целых копейках: из ${PARTIAL_RECEIPT_RUB}.00 ₽ уже возвращено ` +
+						`${issuedSoFarKopecks / 100} ₽, доступно ${(PARTIAL_RECEIPT_RUB * 100 - issuedSoFarKopecks) / 100} ₽. ` +
+						`Ответ: ${draft.body}`,
+				);
+
+				const issued = await issueDocument(draft.json.id as string);
+				assert.equal(
+					issued.statusCode,
+					200,
+					`частичный возврат ${part} ₽ не выдан: ${issued.body}`,
+				);
+				issuedSoFarKopecks += Math.round(part * 100);
+
+				const status = await paymentStatus(partialPaymentId);
+				const revenueAfter = await revenueText();
+
+				if (!isLastPart) {
+					assert.equal(
+						status,
+						"paid",
+						`ЧАСТИЧНЫЙ возврат (${issuedSoFarKopecks / 100} из ${PARTIAL_RECEIPT_RUB} ₽) пометил чек как ` +
+							"полностью возвращённый. В `payments` нет столбца, которым частичный возврат выражается: " +
+							"`status` — один флаг на всю строку, `amount_rub` — сумма исходного фискального чека. " +
+							"Пометить такой чек «refunded» значит убрать из выручки ВЕСЬ чек вместо возвращённой части " +
+							"и соврать налоговой справке о полном возврате.",
+					);
+					assert.equal(
+						revenueAfter,
+						revenueBefore,
+						`частичный возврат сдвинул выручку с ${revenueBefore} на ${revenueAfter}. Выразить частичный ` +
+							"возврат существующими столбцами нечем — он объявлен долгом и кассу не двигает.",
+					);
+				} else {
+					assert.equal(
+						status,
+						"refunded",
+						`последняя часть довела возврат до ${issuedSoFarKopecks / 100} ₽ = полной суммы чека ` +
+							`${PARTIAL_RECEIPT_RUB}.00 ₽, а чек остался в выручке. Причина этого класса отказа — сложение ` +
+							"рублей в плавающей точке: 100.10 + 100.10 + 100.10 + 99.70 даёт 399.99999999999994, то есть " +
+							"«почти покрыт», и полностью возвращённый чек остаётся в выручке НАВСЕГДА. Складывать " +
+							"обязано целые копейки.",
+					);
+					assert.equal(
+						kopecksDelta(revenueBefore, revenueAfter),
+						PARTIAL_RECEIPT_RUB * 100,
+						`закрытие чека убрало из выручки не ${PARTIAL_RECEIPT_RUB}.00 ₽: было ${revenueBefore}, ` +
+							`стало ${revenueAfter}`,
+					);
+				}
+			}
+
+			assert.equal(
+				issuedSoFarKopecks,
+				PARTIAL_RECEIPT_RUB * 100,
+				"сумма частей возврата не равна чеку — сценарий проверял не то, что заявлено",
+			);
+		});
 	});
 });

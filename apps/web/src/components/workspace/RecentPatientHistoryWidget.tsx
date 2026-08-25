@@ -1,4 +1,4 @@
-import { ChevronRight, Clock } from "lucide-react";
+import { ChevronDown, ChevronRight, Clock } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -119,7 +119,7 @@ export const RecentPatientHistoryWidget: React.FC<{
 					}}
 				>
 					<Clock
-						size={14}
+						size={13}
 						aria-hidden="true"
 						style={{ color: "var(--teal)" }}
 					/>
@@ -130,6 +130,7 @@ export const RecentPatientHistoryWidget: React.FC<{
 					>
 						{patients.length}
 					</strong>
+					<ChevronDown size={13} className="switcher-chevron opacity-60" aria-hidden="true" />
 				</summary>
 				<div
 					className="role-switcher-options"
@@ -200,24 +201,67 @@ export const RecentPatientHistoryWidget: React.FC<{
 								key={pat.id}
 								type="button"
 								onClick={() => handleOpenPatient(pat.patientId || pat.id)}
-								className="flex items-center justify-between w-full px-3 py-2 rounded-lg border-none bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 text-left transition-colors cursor-pointer"
+								style={{
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "space-between",
+									width: "100%",
+									padding: "8px 10px",
+									borderRadius: "8px",
+									border: "none",
+									background: "transparent",
+									textAlign: "left",
+									cursor: "pointer",
+									transition: "background 0.15s ease",
+								}}
+								onMouseEnter={(e) => {
+									e.currentTarget.style.background = "var(--teal-surface)";
+								}}
+								onMouseLeave={(e) => {
+									e.currentTarget.style.background = "transparent";
+								}}
 							>
-								<div>
-									<div className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+								<div style={{ minWidth: 0 }}>
+									<div
+										style={{
+											fontSize: "12px",
+											fontWeight: 600,
+											color: "var(--ink)",
+											overflow: "hidden",
+											textOverflow: "ellipsis",
+											whiteSpace: "nowrap",
+										}}
+									>
 										{pat.patientName}
 									</div>
-									<div className="text-[11px] text-slate-500 dark:text-slate-400">
+									<div style={{ fontSize: "11px", color: "var(--muted)" }}>
 										{pat.phone}
 									</div>
 								</div>
-								<div className="flex items-center gap-1.5">
-									<span className="text-[10px] text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+								<div
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "6px",
+										flexShrink: 0,
+										marginLeft: "8px",
+									}}
+								>
+									<span
+										style={{
+											fontSize: "10px",
+											color: "var(--muted)",
+											background: "var(--paper-soft)",
+											padding: "2px 6px",
+											borderRadius: "4px",
+										}}
+									>
 										{new Date(pat.lastViewedAt).toLocaleTimeString([], {
 											hour: "2-digit",
 											minute: "2-digit",
 										})}
 									</span>
-									<ChevronRight size={14} className="text-slate-400" />
+									<ChevronRight size={14} style={{ color: "var(--muted)" }} />
 								</div>
 							</button>
 						))
@@ -230,48 +274,107 @@ export const RecentPatientHistoryWidget: React.FC<{
 	return (
 		<div
 			data-testid="recent-patient-history-widget"
-			className="p-4 rounded-xl border my-4 shadow-sm bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
+			className="panel"
+			style={{ padding: "16px", margin: "16px 0" }}
 		>
-			<div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
-				<div className="flex items-center space-x-2">
-					<Clock className="w-5 h-5 text-sky-500" />
-					<h3 className="font-semibold text-sky-600 dark:text-sky-400">
+			<div
+				style={{
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "space-between",
+					marginBottom: "12px",
+					paddingBottom: "8px",
+					borderBottom: "1px solid var(--line)",
+				}}
+			>
+				<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+					<Clock size={18} style={{ color: "var(--teal)" }} />
+					<h3
+						style={{
+							margin: 0,
+							fontSize: "15px",
+							fontWeight: 700,
+							color: "var(--ink)",
+						}}
+					>
 						Карточки, которые вы открывали недавно
 					</h3>
 				</div>
 			</div>
 
 			{loading ? (
-				<div className="text-sm py-4 text-slate-500 dark:text-slate-400">
+				<div style={{ fontSize: "13px", padding: "16px 0", color: "var(--muted)" }}>
 					Загрузка...
 				</div>
 			) : failed ? (
-				<div className="text-sm py-3 text-center text-slate-500 dark:text-slate-400">
+				<div
+					style={{
+						fontSize: "13px",
+						padding: "12px 0",
+						textAlign: "center",
+						color: "var(--bad-fg)",
+					}}
+				>
 					Не удалось прочитать историю. Обновите страницу.
 				</div>
 			) : patients.length === 0 ? (
-				<div className="text-sm py-3 text-center text-slate-500 dark:text-slate-400">
+				<div
+					style={{
+						fontSize: "13px",
+						padding: "12px 0",
+						textAlign: "center",
+						color: "var(--muted)",
+					}}
+				>
 					Здесь появятся карточки, которые вы открывали
 				</div>
 			) : (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+				<div
+					style={{
+						display: "grid",
+						gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+						gap: "12px",
+					}}
+				>
 					{patients.map((pat) => (
 						<div
 							key={pat.id}
-							className="p-3 rounded-lg border flex items-center justify-between bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700"
+							className="clickable-card"
+							style={{
+								padding: "12px",
+								display: "flex",
+								flexDirection: "row",
+								alignItems: "center",
+								justifyContent: "space-between",
+							}}
 						>
-							<div>
-								<div className="text-sm font-bold text-slate-900 dark:text-white">
+							<div style={{ minWidth: 0 }}>
+								<div
+									style={{
+										fontSize: "13px",
+										fontWeight: 700,
+										color: "var(--ink)",
+										overflow: "hidden",
+										textOverflow: "ellipsis",
+										whiteSpace: "nowrap",
+									}}
+								>
 									{pat.patientName}
 								</div>
-								<div className="text-xs text-slate-500 dark:text-slate-400">
+								<div style={{ fontSize: "12px", color: "var(--muted)" }}>
 									{pat.phone}
 								</div>
 							</div>
 							<button
 								type="button"
 								onClick={() => handleOpenPatient(pat.patientId || pat.id)}
-								className="text-xs bg-sky-600 hover:bg-sky-700 text-white font-semibold px-3 py-1.5 rounded-md border-none cursor-pointer transition-colors"
+								className="primary-button"
+								style={{
+									minHeight: "28px",
+									padding: "0 10px",
+									fontSize: "11px",
+									fontWeight: 600,
+								}}
 							>
 								Открыть
 							</button>

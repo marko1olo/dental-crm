@@ -258,6 +258,58 @@ export class LanKktDriverService {
 	}
 
 	/**
+	 * Maps statutory ATOL Driver v10 response error codes to Russian descriptions.
+	 */
+	public static mapAtolErrorCode(code: number): string {
+		switch (code) {
+			case 0:
+				return "Ошибок нет (OK)";
+			case 1:
+				return "Нет связи с фискальным регистратором (порт недоступен)";
+			case 2:
+				return "Закончилась чековая лента (Out of Paper)";
+			case 3:
+				return "Открыта крышка фискального регистратора";
+			case 4:
+				return "Смена превысила 24 часа (требуется снятие Z-отчета)";
+			case 5:
+				return "Ошибка фискального накопителя (ФН)";
+			case 6:
+				return "Неверный пароль кассира/администратора";
+			case 7:
+				return "Недопустимый режим налогообложения";
+			default:
+				return `Ошибка АТОЛ (код 0x${code.toString(16)})`;
+		}
+	}
+
+	/**
+	 * Maps Shtrikh-M protocol return codes to Russian descriptions.
+	 */
+	public static mapShtrikhErrorCode(code: number): string {
+		switch (code) {
+			case 0x00:
+				return "Ошибок нет (OK)";
+			case 0x01:
+				return "Выдача данных: нет данных";
+			case 0x02:
+				return "Команда не поддерживается в данном режиме";
+			case 0x03:
+				return "Ошибка контрольной ленты или датчика бумаги";
+			case 0x04:
+				return "Отсутствует бумага (Out of Paper)";
+			case 0x05:
+				return "Снята крышка принтера";
+			case 0x08:
+				return "Исчерпан ресурс фискального накопителя";
+			case 0x4a:
+				return "Ошибка контрольной суммы XOR пакета";
+			default:
+				return `Ошибка ШТРИХ-М (код 0x${code.toString(16)})`;
+		}
+	}
+
+	/**
 	 * Formats Shtrikh-M Command Packet (Protocol 1.x / 2.0).
 	 */
 	public static formatShtrikhMCommandPacket(

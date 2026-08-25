@@ -3,6 +3,8 @@ import test, { describe } from "node:test";
 import {
 	CANAL_NAME_OPTIONS,
 	type EndoCanalData,
+	formatEndoCanalsTable043,
+	generateEndoCanalsTable043,
 	generateEndoProtocol043,
 	getDefaultCanalsForTooth,
 	MAF_ISO_OPTIONS,
@@ -370,3 +372,69 @@ describe("EndoCanalLogModal — EMR Clinical Data & Canal Persistence", () => {
 		assert.ok(protocolText.includes("[Широкий апекс]"));
 	});
 });
+
+describe("EndoCanalLogModal — Structured Working Length Table (WL / MAF / Apex Locator)", () => {
+	test("generateEndoCanalsTable043 формирует корректную таблицу со всеми каналами (MB1, MB2, DB, P, ML, D)", () => {
+		const canals: EndoCanalData[] = [
+			{
+				id: "1",
+				canalName: "MB1",
+				referencePoint: "Медиально-щечный бугор",
+				workingLengthMm: 21.5,
+				masterApicalFile: "ISO 25",
+				taper: ".06",
+				obturationTechnique: "Гуттаперча",
+				sealer: "AH Plus",
+			},
+			{
+				id: "2",
+				canalName: "MB2",
+				referencePoint: "Медиально-щечный бугор",
+				workingLengthMm: 20.0,
+				masterApicalFile: "ISO 20",
+				taper: ".04",
+				obturationTechnique: "Гуттаперча",
+				sealer: "AH Plus",
+			},
+			{
+				id: "3",
+				canalName: "DB",
+				referencePoint: "Дистально-щечный бугор",
+				workingLengthMm: 20.5,
+				masterApicalFile: "ISO 25",
+				taper: ".06",
+				obturationTechnique: "Гуттаперча",
+				sealer: "AH Plus",
+			},
+			{
+				id: "4",
+				canalName: "P",
+				referencePoint: "Нёбный бугор",
+				workingLengthMm: 22.0,
+				masterApicalFile: "ISO 30",
+				taper: ".06",
+				obturationTechnique: "Биокерамика",
+				sealer: "BioRoot RCS",
+			},
+		];
+
+		const table = generateEndoCanalsTable043(canals);
+		assert.ok(table.includes("ТАБЛИЦА УЧЕТА РАБОЧЕЙ ДЛИНЫ КОРНЕВЫХ КАНАЛОВ"));
+		assert.ok(table.includes("MB1"));
+		assert.ok(table.includes("21.5 мм"));
+		assert.ok(table.includes("ISO 25/.06"));
+		assert.ok(table.includes("MB2"));
+		assert.ok(table.includes("20 мм") || table.includes("20.0 мм"));
+		assert.ok(table.includes("DB"));
+		assert.ok(table.includes("P"));
+		assert.ok(table.includes("BioRoot RCS"));
+
+		const fullProtocolTable = formatEndoCanalsTable043(canals, {
+			apexLocatorModel: "Raypex 6 (Apex 0.0)",
+			radiologyControl: "Визиография: каналы обтурированы гомогенно до физиологического апекса",
+		});
+		assert.ok(fullProtocolTable.includes("Raypex 6"));
+		assert.ok(fullProtocolTable.includes("Визиография"));
+	});
+});
+

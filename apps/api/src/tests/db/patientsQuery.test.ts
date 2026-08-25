@@ -98,6 +98,13 @@ describe("patientsQuery: сбой базы не подменяется памя�
 	});
 
 	test("updatePatientAdministrativeProfileInDb передаёт ошибку наружу", async (t) => {
+		t.mock.method(db, "select", () => ({
+			from: () => ({
+				where: () => ({
+					limit: async () => [{ administrativeProfile: null }],
+				}),
+			}),
+		}));
 		t.mock.method(db, "update", () => ({
 			set: () => ({
 				where: () => ({

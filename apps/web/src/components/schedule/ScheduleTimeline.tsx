@@ -321,8 +321,8 @@ export function ScheduleTimeline(props: ScheduleTimelineProps) {
 												: ""}
 										</span>
 									</div>
-									<span className="min-h-[32px] px-2.5 py-1 rounded-lg bg-[var(--teal-dark)] text-white text-[11px] font-bold flex items-center gap-1 opacity-90 group-hover:opacity-100 transition-opacity">
-										<Plus size={12} />
+									<span className="min-h-[36px] px-2.5 py-1 rounded-lg bg-[var(--teal-dark)] text-white text-xs font-bold flex items-center gap-1 opacity-90 group-hover:opacity-100 transition-opacity">
+										<Plus size={14} />
 										<span>Записать</span>
 									</span>
 								</div>

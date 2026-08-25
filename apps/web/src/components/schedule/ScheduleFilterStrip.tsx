@@ -47,6 +47,7 @@ export interface ScheduleFilterStripProps {
 	onSelectWholeWeek?: () => void;
 	onEmergencyCitoBooking?: () => void;
 	onOpenTomorrowReminders?: () => void;
+	onQuickBookRepeatOffset?: (daysOffset: 7 | 14 | 30) => void;
 }
 
 export function formatChairSpecialtyLabel(rawSpec?: string | null): string | null {
@@ -84,11 +85,24 @@ export function ScheduleFilterStrip({
 	onSelectWholeWeek,
 	onEmergencyCitoBooking,
 	onOpenTomorrowReminders,
+	onQuickBookRepeatOffset,
 }: ScheduleFilterStripProps): ReactElement {
 	const activeChairs = chairs.filter((chair) => chair?.active);
 	const displayChairs: readonly ScheduleChair[] = activeChairs.length > 0 ? activeChairs : DEFAULT_CLINIC_CHAIRS;
 	const todayIso = new Date().toISOString().slice(0, 10);
 	const tomorrowIso = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+
+	const handleRepeatBookingOffset = (days: 7 | 14 | 30) => {
+		if (onQuickBookRepeatOffset) {
+			onQuickBookRepeatOffset(days);
+		} else {
+			const target = new Date(scheduleDateFilter || todayIso);
+			target.setDate(target.getDate() + days);
+			const targetIso = target.toISOString().slice(0, 10);
+			setScheduleDateFilter(targetIso);
+			onOpenDoctorFreeSlots?.();
+		}
+	};
 
 	return (
 		<section
@@ -164,6 +178,40 @@ export function ScheduleFilterStrip({
 						title="Обзор на всю неделю"
 					>
 						<span>Вся неделя</span>
+					</button>
+				</div>
+
+				{/* 1-Click Fast Repeat Booking Presets: [+ Через 7 дней], [+ Через 14 дней], [+ Через 1 месяц] */}
+				<div className="hidden xl:inline-flex items-center gap-1 pl-1 border-l border-[var(--line)]">
+					<button
+						type="button"
+						onClick={() => handleRepeatBookingOffset(7)}
+						className="min-h-[44px] px-2 rounded-xl text-xs font-bold border border-teal-600/30 bg-teal-500/10 text-teal-800 dark:text-teal-300 hover:bg-teal-500/20 transition-all cursor-pointer flex items-center gap-1 shrink-0"
+						title="1-Клик: Быстрая повторная запись через 7 дней у того же врача"
+						aria-label="Записать через 7 дней"
+					>
+						<Calendar size={13} className="text-teal-600 dark:text-teal-400" />
+						<span>+ Через 7 дней</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => handleRepeatBookingOffset(14)}
+						className="min-h-[44px] px-2 rounded-xl text-xs font-bold border border-teal-600/30 bg-teal-500/10 text-teal-800 dark:text-teal-300 hover:bg-teal-500/20 transition-all cursor-pointer flex items-center gap-1 shrink-0"
+						title="1-Клик: Быстрая повторная запись через 14 дней у того же врача"
+						aria-label="Записать через 14 дней"
+					>
+						<Calendar size={13} className="text-teal-600 dark:text-teal-400" />
+						<span>+ Через 14 дней</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => handleRepeatBookingOffset(30)}
+						className="min-h-[44px] px-2 rounded-xl text-xs font-bold border border-teal-600/30 bg-teal-500/10 text-teal-800 dark:text-teal-300 hover:bg-teal-500/20 transition-all cursor-pointer flex items-center gap-1 shrink-0"
+						title="1-Клик: Быстрая повторная запись через 1 месяц (30 дней) у того же врача"
+						aria-label="Записать через 1 месяц"
+					>
+						<Calendar size={13} className="text-teal-600 dark:text-teal-400" />
+						<span>+ Через 1 месяц</span>
 					</button>
 				</div>
 			</div>

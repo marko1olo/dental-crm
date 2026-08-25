@@ -1,13 +1,19 @@
-# DISPATCH — M1 Challenger 1 (Adversarial Screenshot & MD5 Verification)
+## 2026-08-18T17:22:04Z
+<USER_REQUEST>
+You are the Adversarial Challenger for Milestone M1 (Compiler Gate & Core Hydration/Toast Remediation) in DENTE Dental CRM at C:/Clinic_MVP/dental-crm.
+Your working directory is C:/Clinic_MVP/dental-crm/.agents/m1_challenger_1. Create and maintain progress.md and write your final report to handoff.md in your directory.
 
-## 2026-08-09T12:04:35Z
+Read the authoritative documents:
+- C:/Clinic_MVP/dental-crm/PROJECT.md
+- C:/Clinic_MVP/dental-crm/.agents/ORIGINAL_REQUEST.md
+- C:/Clinic_MVP/dental-crm/.agents/AGENTS.md
+- C:/Clinic_MVP/dental-crm/.agents/sub_orch_m1/worker_m1/handoff.md
 
-## Mission
-Empirically and adversarially verify the generated screenshot matrix in `C:\Users\Admin\.gemini\antigravity\brain\67e66496-7d3f-4df1-8f98-31bd016dcb96\`.
+Perform adversarial verification:
+1. Stress test `usePatientResource.ts` reload behavior — verify that changing `_reloadToken` triggers fetch and correctly cancels previous in-flight requests.
+2. Stress test `useDashboardLoaderLogic.ts` error handling — verify that 401/403 status and message patterns suppress toasts and set `accessUnlockRequired`, while 500 / Network errors correctly trigger `showToast`.
+3. Stress test `browserContinuity.ts` — verify that failure in `browserIndexedDbWritable()` returns false without throwing unhandled exceptions or emitting toasts.
+4. Run compiler and unit tests: `npm run typecheck`, `npm test -w @dental/web`.
 
-## Instructions
-1. Read `C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md`.
-2. Inspect the 121 PNG screenshot files in `C:\Users\Admin\.gemini\antigravity\brain\67e66496-7d3f-4df1-8f98-31bd016dcb96\`.
-3. Compute MD5 hashes across all screenshot files. Verify that no duplicate twin screenshots exist across different views.
-4. Verify that screenshots span all 4 required states: Mobile Light, Mobile Dark, PC Light, PC Dark.
-5. Write your report to `C:\Clinic_MVP\dental-crm\.agents\m1_challenger_1\handoff.md`. Specify your explicit verdict: APPROVE or REQUEST_CHANGES.
+Provide an explicit verdict (CONFIRMED or FAILED) in your handoff.md and notify the orchestrator via send_message.
+</USER_REQUEST>

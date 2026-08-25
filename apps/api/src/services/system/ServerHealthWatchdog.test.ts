@@ -3,11 +3,13 @@
  */
 
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { after, before, describe, it } from "node:test";
 import { eq, sql } from "drizzle-orm";
 import Fastify, { type FastifyInstance } from "fastify";
 import type pg from "pg";
 import { db, pool } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	organizations,
 	systemBackgroundJobs,
@@ -311,17 +313,13 @@ describe("ServerHealthWatchdog — Integration with Database & HTTP Routes", () 
 
 	before(async () => {
 		// Создаем тестовую организацию в БД
-		const [org] = await db
-			.insert(organizations)
-			.values({
+		testOrgId = randomUUID();
+		await withTenantCtx(testOrgId, async (tx) => {
+			await tx.insert(organizations).values({
+				id: testOrgId,
 				name: "HealthWatchdog Test Clinic",
-			})
-			.returning();
-
-		if (!org) {
-			throw new Error("Failed to insert test organization");
-		}
-		testOrgId = org.id;
+			});
+		});
 
 		// Создаем тестовый Fastify сервер с зарегистрированными маршрутами health
 		testApp = Fastify({ logger: false });
@@ -334,25 +332,29 @@ describe("ServerHealthWatchdog — Integration with Database & HTTP Routes", () 
 			await testApp.close();
 		}
 		if (testOrgId) {
-			await db
-				.delete(systemRamWatchdogs)
-				.where(eq(systemRamWatchdogs.organizationId, testOrgId));
-			await db
-				.delete(systemBackgroundJobs)
-				.where(eq(systemBackgroundJobs.organizationId, testOrgId));
-			await db
-				.delete(organizations)
-				.where(eq(organizations.id, testOrgId));
+			await withTenantCtx(testOrgId, async (tx) => {
+				await tx
+					.delete(systemRamWatchdogs)
+					.where(eq(systemRamWatchdogs.organizationId, testOrgId));
+				await tx
+					.delete(systemBackgroundJobs)
+					.where(eq(systemBackgroundJobs.organizationId, testOrgId));
+				await tx
+					.delete(organizations)
+					.where(eq(organizations.id, testOrgId));
+			});
 		}
 	});
 
 	it("recordRamSnapshot() saves valid snapshot to system_ram_watchdogs", async () => {
 		await ServerHealthWatchdog.recordRamSnapshot(testOrgId);
 
-		const snapshots = await db
-			.select()
-			.from(systemRamWatchdogs)
-			.where(eq(systemRamWatchdogs.organizationId, testOrgId));
+		const snapshots = await withTenantCtx(testOrgId, async (tx) =>
+			tx
+				.select()
+				.from(systemRamWatchdogs)
+				.where(eq(systemRamWatchdogs.organizationId, testOrgId)),
+		);
 
 		assert.ok(snapshots.length >= 1);
 		const snap = snapshots[0];

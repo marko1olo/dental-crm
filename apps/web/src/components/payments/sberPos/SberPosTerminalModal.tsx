@@ -42,6 +42,7 @@ export interface SberPosTerminalModalProps {
 	readonly orderId?: string | undefined;
 	readonly initialOperation?: SberPosOperationType | undefined;
 	readonly onTransactionSuccess?: ((response: SberPosTransactionResponse) => void) | undefined;
+	readonly onSelectAlternativeMethod?: ((method: "sbp" | "cash" | "deposit") => void) | undefined;
 }
 
 export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
@@ -53,6 +54,7 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 	orderId = "CHK-2026-891",
 	initialOperation = "sale",
 	onTransactionSuccess,
+	onSelectAlternativeMethod,
 }) => {
 	const [operation, setOperation] = useState<SberPosOperationType>(initialOperation);
 	const [config, setConfig] = useState<SberPosTerminalConfig>(DEFAULT_SBER_TERMINAL_CONFIG);
@@ -509,7 +511,7 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 								<button
 									type="button"
 									onClick={() => handleStartOperation(operation)}
-									className="h-11 px-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5 transition-colors cursor-pointer"
+									className="min-h-[44px] px-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5 transition-colors cursor-pointer"
 								>
 									<RefreshCw className="w-3.5 h-3.5" />
 									<span>Повторить запрос (Retry)</span>
@@ -520,7 +522,7 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 										<button
 											type="button"
 											onClick={handleSimulateClientAction}
-											className="h-11 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+											className="min-h-[44px] px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
 										>
 											<Check className="w-4 h-4" />
 											<span>
@@ -535,7 +537,7 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 										<button
 											type="button"
 											onClick={handleSimulateDecline}
-											className="h-11 px-3 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-xs font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1 transition-colors cursor-pointer"
+											className="min-h-[44px] px-3.5 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-xs font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1 transition-colors cursor-pointer"
 										>
 											<AlertCircle className="w-3.5 h-3.5" />
 											<span>Симуляция: Отказ банка</span>
@@ -543,6 +545,52 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 									</>
 								)}
 							</div>
+
+							{/* Fallback: Automated Alternative Payment Suggestions upon Timeout / Decline */}
+							{(status === "pin_timeout" || status === "card_declined" || status === "communication_error") && (
+								<div className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-amber-500/30 space-y-2.5">
+									<div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 dark:text-amber-200">
+										<AlertCircle size={16} className="text-amber-600 shrink-0" />
+										<span>Таймаут или отказ терминала Сбербанк. Выберите альтернативную оплату:</span>
+									</div>
+									<div className="flex items-center gap-2 flex-wrap">
+										<button
+											type="button"
+											onClick={() => handleStartOperation("sberpay_qr")}
+											className="min-h-[44px] px-3.5 py-2 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-700 dark:text-teal-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer hover:bg-teal-500/20 transition-colors"
+										>
+											<QrCode size={16} />
+											<span>SberPay / СБП QR</span>
+										</button>
+										{onSelectAlternativeMethod && (
+											<>
+												<button
+													type="button"
+													onClick={() => {
+														onSelectAlternativeMethod("cash");
+														onClose();
+													}}
+													className="min-h-[44px] px-3.5 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer hover:bg-emerald-500/20 transition-colors"
+												>
+													<CreditCard size={16} />
+													<span>Наличные в кассу</span>
+												</button>
+												<button
+													type="button"
+													onClick={() => {
+														onSelectAlternativeMethod("deposit");
+														onClose();
+													}}
+													className="min-h-[44px] px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer hover:bg-amber-500/20 transition-colors"
+												>
+													<RotateCcw size={16} />
+													<span>Семейный баланс / депозит</span>
+												</button>
+											</>
+										)}
+									</div>
+								</div>
+							)}
 						</div>
 
 						{/* Bank Slip & Details (Right side: 5 cols) */}

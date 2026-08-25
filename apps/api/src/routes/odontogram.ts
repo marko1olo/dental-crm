@@ -12,6 +12,7 @@ import {
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { evaluateClinicalRulesInDb } from "../db/clinicalQuery.js";
+import { withTenantCtx } from "../db/rls.js";
 import {
 	patients,
 	serviceCatalogItems,
@@ -703,7 +704,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 				totalPriceKopecks = sumKopecks(lineKopecks);
 				const totalPriceText = debtNumericText(totalPriceKopecks);
 
-				planId = await db.transaction(async (tx) => {
+				planId = await withTenantCtx(organizationId, async (tx) => {
 					let savedPlanId = input.id ?? null;
 					if (savedPlanId) {
 						const [existing] = await tx
@@ -800,7 +801,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 						);
 					}
 
-					const ledgerPrefix = savedPlanId.slice(0, LEDGER_ID_PREFIX_LENGTH);
+					const ledgerPrefix = savedPlanId.slice(0, LEDGER_ID_PREFIX_LENGTH).toLowerCase();
 					const ownedRows = await tx
 						.select({
 							id: treatmentItems.id,
@@ -812,7 +813,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 							and(
 								eq(treatmentItems.organizationId, organizationId),
 								eq(treatmentItems.patientId, patientId),
-								sql`left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))}) = ${ledgerPrefix}`,
+								sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
 							),
 						);
 
@@ -919,6 +920,15 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 							const id = ledgerRowId(savedPlanId, slot);
 							slot += 1;
 
+							const lineTotalRub = rublesFromKopecks(
+								chargeLineKopecks({
+									patientId,
+									status: ledgerStatus,
+									unitPriceRub: item.price,
+									quantity: item.quantity,
+									discountRub: item.discount,
+								}),
+							);
 							const unitPriceRub = rublesFromKopecks(
 								chargeLineKopecks({
 									patientId,
@@ -942,7 +952,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 										: String(item.toothNumber),
 								title: item.name?.trim() || item.priceId,
 								quantity: String(item.quantity),
-								priceRub: unitPriceRub,
+								priceRub: lineTotalRub,
 								unitPriceRub,
 								discountRub: rublesFromKopecks(
 									chargeLineKopecks({
@@ -983,7 +993,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 			return reply.send({
 				success: true,
 				planId,
-				totalPrice: rublesFromKopecks(totalPriceKopecks),
+				totalPrice: numeric(rublesFromKopecks(totalPriceKopecks)),
 				plan: savedPlan ?? null,
 			});
 		},

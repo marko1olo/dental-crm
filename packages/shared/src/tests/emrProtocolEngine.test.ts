@@ -75,4 +75,33 @@ describe("Shared EMR Form 043/u Statutory Protocol Engine (Order № 834n)", () 
 		assert.strictEqual(report.isCompliant, true);
 		assert.strictEqual(report.complianceScore, 100);
 	});
+
+	it("verifies Order 804n service code mappings for all statutory protocol templates", () => {
+		const protocolKeys = Object.keys(STATUTORY_EMR_PROTOCOL_CATALOG);
+		assert.ok(protocolKeys.length >= 5);
+
+		for (const key of protocolKeys) {
+			const template = STATUTORY_EMR_PROTOCOL_CATALOG[key]!;
+			assert.ok(template.order804nServices, `Template ${key} must have order804nServices defined`);
+			assert.ok(template.order804nServices.length > 0, `Template ${key} must map to at least 1 Order 804n service code`);
+
+			for (const s of template.order804nServices) {
+				assert.match(s.code, /^A\d{2}\.\d{2}\.\d{3}(\.\d{3})?$/, `Service code ${s.code} in ${key} must follow Order 804n format`);
+				assert.ok(s.nameRu.length > 5, `Service name in ${key} must not be empty`);
+			}
+		}
+
+		// Caries: must map to A16.07.002
+		const caries = STATUTORY_EMR_PROTOCOL_CATALOG["K02.1"]!;
+		assert.ok(caries.order804nServices.some((s) => s.code.startsWith("A16.07.002")));
+
+		// Pulpitis: must map to A16.07.030 (root canal prep) and A16.07.008 (obturation)
+		const pulpitis = STATUTORY_EMR_PROTOCOL_CATALOG["K04.0"]!;
+		assert.ok(pulpitis.order804nServices.some((s) => s.code.startsWith("A16.07.030")));
+		assert.ok(pulpitis.order804nServices.some((s) => s.code.startsWith("A16.07.008")));
+
+		// Extraction: must map to A16.07.001
+		const extraction = STATUTORY_EMR_PROTOCOL_CATALOG["K08.1"]!;
+		assert.ok(extraction.order804nServices.some((s) => s.code.startsWith("A16.07.001")));
+	});
 });

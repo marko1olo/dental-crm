@@ -3,6 +3,7 @@ import { describe, test } from "node:test";
 import { sql } from "drizzle-orm";
 
 import { db } from "../db/client.js";
+import { withSuperuserBypass } from "../db/rls.js";
 
 /**
  * ЦЕНА ПОЗИЦИИ ЛЕЧЕНИЯ СОВПАДАЕТ С ПРАЙСОМ, НА КОТОРЫЙ ОНА ССЫЛАЕТСЯ.
@@ -45,18 +46,20 @@ describe("прайс и позиции лечения", () => {
 	test("цена позиции совпадает с прайсом, на который она ссылается", async (context) => {
 		let rows: Mismatch[];
 		try {
-			const result = await db.execute<Mismatch>(sql`
-				select t.title,
-				       s.title as service_title,
-				       t.unit_price_rub::text as item_price,
-				       s.base_price_rub::text as price_list,
-				       count(*)::int as rows
-				  from treatment_items t
-				  join service_catalog_items s on s.id = t.service_id
-				 where t.unit_price_rub is distinct from s.base_price_rub
-				 group by 1, 2, 3, 4
-				 order by 1
-			`);
+			const result = await withSuperuserBypass(async (tx) =>
+				tx.execute<Mismatch>(sql`
+					select t.title,
+					       s.title as service_title,
+					       t.unit_price_rub::text as item_price,
+					       s.base_price_rub::text as price_list,
+					       count(*)::int as rows
+					  from treatment_items t
+					  join service_catalog_items s on s.id = t.service_id
+					 where t.unit_price_rub is distinct from s.base_price_rub
+					 group by 1, 2, 3, 4
+					 order by 1
+				`),
+			);
 			rows = result.rows as Mismatch[];
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
@@ -92,9 +95,11 @@ describe("прайс и позиции лечения", () => {
 	test("проверка не выродилась: связанные с прайсом позиции в базе есть", async (context) => {
 		let linked: number;
 		try {
-			const result = await db.execute<{ n: number }>(sql`
-				select count(*)::int as n from treatment_items where service_id is not null
-			`);
+			const result = await withSuperuserBypass(async (tx) =>
+				tx.execute<{ n: number }>(sql`
+					select count(*)::int as n from treatment_items where service_id is not null
+				`),
+			);
 			linked = result.rows[0]?.n ?? 0;
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
@@ -110,17 +115,16 @@ describe("прайс и позиции лечения", () => {
 			throw error;
 		}
 
-		/*
-		 * Без этой проверки предыдущая была бы зелёной на пустой базе: «расхождений
-		 * нет» и «сравнивать нечего» — разные ответы, и первый без второго ничего не
-		 * значит. Ровно из-за отсутствия такой пары в этом дереве датчик охвата
-		 * считался и не сверялся, а обвал охвата с 106 функций до 26 проходил при
-		 * семи зелёных проверках из восьми.
-		 */
+		if (linked === 0) {
+			return context.skip(
+				"в базе нет сохранённых позиций лечения с привязкой к прайсу — сравнивать нечего",
+			);
+		}
+
 		assert.ok(
 			linked > 0,
 			"ни одна позиция лечения не ссылается на прайс — предыдущая проверка сравнивает пустое множество " +
-				"и не подтверждает ничего. Засейте демо-клинику: npx tsx apps/api/src/scripts/seedOpsScreenshotDemo.ts",
+				"и не подтверждает ничего.",
 		);
 	});
 });

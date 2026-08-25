@@ -164,7 +164,7 @@ function acceptPayload(
 	};
 }
 
-describe("подписание приёма оставляет след в audit_events на пути через базу", () => {
+describe("подписание приёма оставляет след в audit_events на пути через базу", { concurrency: 1 }, () => {
 	let app: FastifyInstance;
 	let staffToken = "";
 	const originalEnv = { ...process.env };
@@ -447,7 +447,6 @@ describe("подписание приёма оставляет след в audit
 			/audit_events/,
 			`строка лога не называет, ЧТО не записалось: ${complaint}`,
 		);
-		console.log(`  лог отказа журнала: ${complaint}`);
 		} finally {
 			console.error = realConsoleError;
 			if (ownInsert) Object.defineProperty(auditInsertPrototype, "insert", ownInsert);

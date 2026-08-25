@@ -330,6 +330,28 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 						</button>
 					</header>
 
+					{/* ── Step-by-Step Guidance Ribbon & Autosave Status ── */}
+					<div className="mx-4 sm:mx-6 mt-4 p-2.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] flex items-center gap-2 text-xs flex-wrap">
+						<div className="flex items-center gap-1.5 font-bold text-teal-700 dark:text-teal-300">
+							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-teal-600 text-white text-[10px]">1</span>
+							<span>Шаг 1: Выберите пресет МКБ-10 и зуб</span>
+						</div>
+						<ChevronRight size={14} className="text-[var(--muted,#64748b)]" />
+						<div className="flex items-center gap-1.5 font-bold text-teal-700 dark:text-teal-300">
+							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-teal-600 text-white text-[10px]">2</span>
+							<span>Шаг 2: Экспертиза 043/у</span>
+						</div>
+						<ChevronRight size={14} className="text-[var(--muted,#64748b)]" />
+						<div className="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-300">
+							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px]">3</span>
+							<span>Шаг 3: Внесите в карту</span>
+						</div>
+						<div className="ml-auto flex items-center gap-1 text-[var(--muted,#64748b)] text-[11px]">
+							<ShieldCheck size={13} className="text-emerald-600" />
+							<span>💾 Готов к синхронизации с Формой 043/у</span>
+						</div>
+					</div>
+
 					{/* ── Основная рабочая область (2 колонки: Настройки & Превью) ── */}
 					<div className="flex-1 overflow-y-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
 						{/* ── Левая колонка: Выбор пресетов и параметры вмешательства (5 колонок) ── */}
@@ -810,18 +832,18 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 									<button
 										type="button"
 										onClick={onClose}
-										className="inline-flex items-center justify-center px-4 py-2 min-h-[44px] rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-xs font-semibold hover:bg-[var(--paper-strong,#f1f5f9)] transition-colors"
+										className="inline-flex items-center justify-center px-4 py-2 min-h-[48px] rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-xs sm:text-sm font-bold hover:bg-[var(--paper-strong,#f1f5f9)] transition-colors cursor-pointer"
 									>
 										Отмена
 									</button>
 									<button
 										type="button"
 										onClick={handleApply}
-										className="inline-flex items-center justify-center gap-2 px-5 py-2 min-h-[44px] rounded-xl bg-teal-600 text-white text-xs font-bold hover:bg-teal-700 shadow-md transition-colors"
+										className="inline-flex items-center justify-center gap-2 px-6 py-2.5 min-h-[48px] rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-xs sm:text-sm font-extrabold shadow-md hover:shadow-lg transition-all cursor-pointer select-none active:scale-98"
 										data-testid="apply-emr-protocol-btn"
 									>
 										<Sparkles className="w-4 h-4" />
-										<span>Применить в дневник 043/у</span>
+										<span>⚡ Применить в дневник 043/у (1 клик)</span>
 									</button>
 								</div>
 							</div>

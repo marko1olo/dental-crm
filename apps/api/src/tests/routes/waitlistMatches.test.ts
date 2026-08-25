@@ -80,12 +80,15 @@ const WAIT_URGENT = fixtureUuid(FIXTURE, 0x43);
 
 const ORG_HEADERS = { "x-organization-id": ORG_ID };
 
-/** Завтра в 10:00 по местному времени — окно, которое освободилось. */
+/** Завтра в 10:00 по московскому времени (Europe/Moscow) — окно, которое освободилось. */
 function tomorrowAt(hour: number): Date {
-	const date = new Date();
-	date.setDate(date.getDate() + 1);
-	date.setHours(hour, 0, 0, 0);
-	return date;
+	const tomorrow = new Date();
+	tomorrow.setDate(tomorrow.getDate() + 1);
+	const y = tomorrow.getFullYear();
+	const m = String(tomorrow.getMonth() + 1).padStart(2, "0");
+	const d = String(tomorrow.getDate()).padStart(2, "0");
+	const h = String(hour).padStart(2, "0");
+	return new Date(`${y}-${m}-${d}T${h}:00:00+03:00`);
 }
 
 describe("подбор на освободившееся окно", () => {

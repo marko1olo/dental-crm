@@ -107,80 +107,98 @@ describe("Tier 3: Cross-Feature Interactions & Multi-Module Pipelines", () => {
 		try {
 			await purgeFixtureOrganizations([ORG_ID]);
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.insert(organizations).values({
-					id: ORG_ID,
-					name: "Клиника Интеграционного Тестирования Tier 3",
-					inn: "7705554433",
-				});
-				await db.insert(clinics).values({
-					id: CLINIC_ID,
-					organizationId: ORG_ID,
-					name: "Главное Тестовое Отделение",
-				});
-				await db.insert(users).values([
-					{
-						id: DOCTOR_1_ID,
+				await db
+					.insert(organizations)
+					.values({
+						id: ORG_ID,
+						name: "Клиника Интеграционного Тестирования Tier 3",
+						inn: "7705554433",
+					})
+					.onConflictDoNothing();
+				await db
+					.insert(clinics)
+					.values({
+						id: CLINIC_ID,
 						organizationId: ORG_ID,
-						fullName: "Доктор Интеграторов Илья",
-						role: "doctor",
+						name: "Главное Тестовое Отделение",
+					})
+					.onConflictDoNothing();
+				await db
+					.insert(users)
+					.values([
+						{
+							id: DOCTOR_1_ID,
+							organizationId: ORG_ID,
+							fullName: "Доктор Интеграторов Илья",
+							role: "doctor",
+							isActive: true,
+						},
+						{
+							id: DOCTOR_2_ID,
+							organizationId: ORG_ID,
+							fullName: "Доктор Коллаборации Олег",
+							role: "doctor",
+							isActive: true,
+						},
+						{
+							id: ASSISTANT_1_ID,
+							organizationId: ORG_ID,
+							fullName: "Ассистент Связная Ольга",
+							role: "assistant",
+							isActive: true,
+						},
+					])
+					.onConflictDoNothing();
+				await db
+					.insert(chairs)
+					.values([
+						{
+							id: CHAIR_1_ID,
+							organizationId: ORG_ID,
+							clinicId: CLINIC_ID,
+							name: "Кресло 1 (Интеграционное)",
+							isActive: true,
+						},
+						{
+							id: CHAIR_2_ID,
+							organizationId: ORG_ID,
+							clinicId: CLINIC_ID,
+							name: "Кресло 2 (Интеграционное)",
+							isActive: true,
+						},
+					])
+					.onConflictDoNothing();
+				await db
+					.insert(patients)
+					.values([
+						{
+							id: PATIENT_1_ID,
+							organizationId: ORG_ID,
+							fullName: "Пациент Сквозного Флоу Андрей",
+							status: "active",
+						},
+						{
+							id: PATIENT_2_ID,
+							organizationId: ORG_ID,
+							fullName: "Пациентка Семейного Флоу Ирина",
+							status: "active",
+						},
+					])
+					.onConflictDoNothing();
+				await db
+					.insert(doctorCommissions)
+					.values({
+						organizationId: ORG_ID,
+						userId: DOCTOR_1_ID,
+						specialty: "therapy",
+						serviceCategory: "therapy",
+						commissionPct: "30.00",
+						commissionPercent: "30.00",
+						materialCostDeductionPct: "100.00",
+						labCostDeductionPct: "30.00",
 						isActive: true,
-					},
-					{
-						id: DOCTOR_2_ID,
-						organizationId: ORG_ID,
-						fullName: "Доктор Коллаборации Олег",
-						role: "doctor",
-						isActive: true,
-					},
-					{
-						id: ASSISTANT_1_ID,
-						organizationId: ORG_ID,
-						fullName: "Ассистент Связная Ольга",
-						role: "assistant",
-						isActive: true,
-					},
-				]);
-				await db.insert(chairs).values([
-					{
-						id: CHAIR_1_ID,
-						organizationId: ORG_ID,
-						clinicId: CLINIC_ID,
-						name: "Кресло 1 (Интеграционное)",
-						isActive: true,
-					},
-					{
-						id: CHAIR_2_ID,
-						organizationId: ORG_ID,
-						clinicId: CLINIC_ID,
-						name: "Кресло 2 (Интеграционное)",
-						isActive: true,
-					},
-				]);
-				await db.insert(patients).values([
-					{
-						id: PATIENT_1_ID,
-						organizationId: ORG_ID,
-						fullName: "Пациент Сквозного Флоу Андрей",
-						status: "active",
-					},
-					{
-						id: PATIENT_2_ID,
-						organizationId: ORG_ID,
-						fullName: "Пациентка Семейного Флоу Ирина",
-						status: "active",
-					},
-				]);
-				await db.insert(doctorCommissions).values({
-					organizationId: ORG_ID,
-					userId: DOCTOR_1_ID,
-					specialty: "therapy",
-					serviceCategory: "therapy",
-					commissionPct: "30.00",
-					commissionPercent: "30.00",
-					materialCostDeductionPct: "100.00",
-					labCostDeductionPct: "30.00",
-					isActive: true,
-				});
+					})
+					.onConflictDoNothing();
 			});
 		} catch (error) {
 			if (!isDatabaseUnavailable(error)) throw error;

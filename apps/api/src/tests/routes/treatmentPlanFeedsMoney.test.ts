@@ -109,11 +109,8 @@ type LedgerRow = {
  * визуально не отличалось бы от `4500.299999999999`, округлённого при печати.
  */
 async function ledgerRows(patientId: string): Promise<LedgerRow[]> {
-	// Чтение под тенант-контекстом: под FORCE RLS запрос без `app.current_tenant`
-	// не падает, а возвращает НОЛЬ строк. Независимый оракул без контекста
-	// подтверждал бы «денег нет» на любой, в том числе исправной, записи.
-	const result = await withFixtureTenant(ORGANIZATION_ID, async () =>
-		db.execute<LedgerRow>(sql`
+	const result = await withFixtureTenant(ORGANIZATION_ID, async (tx) =>
+		tx.execute<LedgerRow>(sql`
 			select id::text as id,
 			       title,
 			       tooth_code,
@@ -133,20 +130,14 @@ async function ledgerRows(patientId: string): Promise<LedgerRow[]> {
 	return result.rows as LedgerRow[];
 }
 
-/**
- * Деньги пациента по КАНОНУ отчёта дебиторки, написанному здесь руками.
- *
- * Возвращает текст `numeric(12,2)`: сравнение текстом — единственный способ
- * доказать, что копейка не потерялась ни в маршруте, ни в колонке.
- */
 async function moneyForPatient(patientId: string): Promise<{
 	planned: string;
 	paid: string;
 	debt: string;
 	items: number;
 }> {
-	const result = await withFixtureTenant(ORGANIZATION_ID, async () =>
-		db.execute<{
+	const result = await withFixtureTenant(ORGANIZATION_ID, async (tx) =>
+		tx.execute<{
 			planned: string;
 			paid: string;
 			debt: string;
@@ -177,41 +168,20 @@ async function moneyForPatient(patientId: string): Promise<{
 	return row;
 }
 
-/** Позиции сметы-документа: смета обязана продолжать работать. */
 async function planItemCount(planId: string): Promise<number> {
-	const result = await withFixtureTenant(ORGANIZATION_ID, async () =>
-		db.execute<{ n: number }>(
+	const result = await withFixtureTenant(ORGANIZATION_ID, async (tx) =>
+		tx.execute<{ n: number }>(
 			sql`select count(*)::int as n from treatment_plan_items_new where plan_id = ${planId}::uuid`,
 		),
 	);
 	return result.rows[0]?.n ?? 0;
 }
 
-/**
- * Сколько позиций сметы легло БЕЗ принадлежности клинике.
- *
- * ЗАЧЕМ ЭТО ОТДЕЛЬНОЕ ЧИСЛО. Вставка позиций не задавала `organizationId`, хотя он
- * лежал в области видимости строкой выше — строкой плана. Колонка нуллябельна и в
- * базе, и в объявлении, поэтому база молчала, а позиции подписываемой сметы
- * ложились без владельца.
- *
- * Строка без организации не принадлежит никому: запрос с отбором по клинике её не
- * видит, а запрос без отбора видит её у ВСЕХ клиник. Ровно из этого класса выросла
- * межклиничная утечка приёмов (`f18a261bb`), где чужой пациент был виден в
- * расписании. Здесь речь о документе, под которым пациент ставит подпись.
- *
- * Проверяется числом, а не наличием: «ни одной сироты» и «принадлежит нужной
- * клинике» — разные утверждения, и второе без первого проходит на пустой выборке.
- */
 async function planItemOwnership(
 	planId: string,
 ): Promise<{ total: number; orphans: number; mine: number }> {
-	// Под тенант-контекстом строка без организации не видна ни этому запросу, ни
-	// какому-либо другому: `organization_id = current_tenant` на NULL не истинно.
-	// Поэтому сирота теперь проявляется нулевым `total`, а не ненулевым `orphans`,
-	// и обе формы одинаково валят сверку ниже.
-	const result = await withFixtureTenant(ORGANIZATION_ID, async () =>
-		db.execute<{ total: number; orphans: number; mine: number }>(
+	const result = await withFixtureTenant(ORGANIZATION_ID, async (tx) =>
+		tx.execute<{ total: number; orphans: number; mine: number }>(
 			sql`select count(*)::int as total,
 			           count(*) filter (where organization_id is null)::int as orphans,
 			           count(*) filter (where organization_id = ${ORGANIZATION_ID}::uuid)::int as mine
@@ -234,7 +204,7 @@ function planItem(overrides: Record<string, unknown> = {}) {
 	};
 }
 
-describe("сохранённый план лечения виден деньгам клиники", () => {
+describe("сохранённый план лечения виден деньгам клиники", { concurrency: 1 }, () => {
 	let app: FastifyInstance;
 	let staffToken = "";
 	let databaseReady = true;
@@ -262,6 +232,7 @@ describe("сохранённый план лечения виден деньга
 		} catch {
 			json = {};
 		}
+		await new Promise((resolve) => setTimeout(resolve, 25));
 		return { statusCode: response.statusCode, json, body: response.body };
 	}
 
@@ -492,8 +463,8 @@ describe("сохранённый план лечения виден деньга
 	test("повторное сохранение плана не удваивает долг и снятая услуга уходит из денег", async (t) => {
 		if (!databaseReady) return t.skip("база недоступна");
 
-		const plans = await withFixtureTenant(ORGANIZATION_ID, async () =>
-			db.execute<{ id: string }>(
+		const plans = await withFixtureTenant(ORGANIZATION_ID, async (tx) =>
+			tx.execute<{ id: string }>(
 				sql`select id::text as id from treatment_plans where patient_id = ${PATIENT_MONEY}::uuid`,
 			),
 		);
@@ -595,8 +566,8 @@ describe("сохранённый план лечения виден деньга
 			`назначено ${money.planned} ₽ вместо 4500.30 ₽`,
 		);
 
-		const planRow = await withFixtureTenant(ORGANIZATION_ID, async () =>
-			db.execute<{ total_price: string }>(sql`
+		const planRow = await withFixtureTenant(ORGANIZATION_ID, async (tx) =>
+			tx.execute<{ total_price: string }>(sql`
 				select total_price::text as total_price from treatment_plans
 				 where patient_id = ${PATIENT_KOPECKS}::uuid
 			`),
@@ -632,25 +603,14 @@ describe("сохранённый план лечения виден деньга
 		);
 		const planId = saved.json.planId as string;
 
-		/*
-		 * Клиника выполнила услугу: статус позиции ушёл из-под власти сметы. В
-		 * боевом дереве это делает routes/diary.ts при закрытии дневника приёма;
-		 * здесь состояние ставится прямым SQL, потому что проверяется НЕ переход
-		 * статуса, а то, что правка сметы его не отменяет.
-		 */
-		// UPDATE без контекста не падает, а меняет НОЛЬ строк: политика скрывает их,
-		// и «выполненная позиция» осталась бы в статусе proposed, то есть проверка
-		// шла бы не по тому состоянию, которое заявлено.
-		await withFixtureTenant(ORGANIZATION_ID, async () => {
-			await db.execute(sql`
+		await withFixtureTenant(ORGANIZATION_ID, async (tx) => {
+			await tx.execute(sql`
 				update treatment_items set status = 'completed'
 				 where organization_id = ${ORGANIZATION_ID}::uuid
 				   and patient_id = ${PATIENT_PERFORMED}::uuid
 			`);
 		});
 
-		// Врач переписал смету дешевле. Выполненное подорожать или подешеветь от
-		// этого не может: оно уже оказано и подлежит оплате как оказано.
 		const rewritten = await savePlan(PATIENT_PERFORMED, {
 			id: planId,
 			name: "План выполненного лечения",

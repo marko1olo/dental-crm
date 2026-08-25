@@ -83,7 +83,7 @@ html.dark,
 	--paper-strong: #1e293b; /* Slate 800 */
 	--paper-soft: #020617; /* Slate 950 */
 	--ink: #f8fafc; /* Slate 50 */
-	--muted: #94a3b8; /* Slate 400 */
+	--muted: #cbd5e1; /* Slate 300 - WCAG AAA */
 	--line: rgba(204, 251, 241, 0.15); /* Soft teal line */
 	--line-strong: rgba(204, 251, 241, 0.3);
 
@@ -144,7 +144,7 @@ html.light,
 	--paper-strong: #ffffff;
 	--paper-soft: #f8fafc;
 	--ink: #111827;
-	--muted: #64748b;
+	--muted: #475569;
 	--line: #e2e8f0;
 	--line-strong: #cbd5e1;
 
@@ -274,7 +274,7 @@ html.light,
 	--surface-muted: #f0fdfa;
 	--ink: #134e4a;
 	--ink-2: #115e59;
-	--muted: #0f766e;
+	--muted: #115e59;
 	--line: #99f6e4;
 	--line-strong: #5eead4;
 
@@ -545,8 +545,8 @@ html.light,
 	color: #ecfdf5;
 	background: #022013;
 
-	--paper: #064e3b;
-	--paper-strong: #047857;
+	--paper: #022c22;
+	--paper-strong: #064e3b;
 	--paper-soft: #022013;
 	--surface: #065f46;
 	--surface-muted: #022013;
@@ -554,7 +554,7 @@ html.light,
 	--glass-border: rgba(52, 211, 153, 0.25);
 	--ink: #ecfdf5;
 	--ink-2: #a7f3d0;
-	--muted: #6ee7b7;
+	--muted: #d1fae5;
 	--line: rgba(52, 211, 153, 0.2);
 	--line-strong: rgba(52, 211, 153, 0.4);
 
@@ -696,7 +696,7 @@ html.light,
 	--glass-border: #fde68a;
 	--ink: #451a03;
 	--ink-2: #78350f;
-	--muted: #92400e;
+	--muted: #78350f;
 	--line: #fde68a;
 	--line-strong: #f59e0b;
 
@@ -1140,43 +1140,36 @@ button:disabled {
 
 	.workspace-role-switcher {
 		display: inline-block;
-		margin-top: 10px;
+		margin-top: 0;
 		position: relative;
 	}
 
 	.workspace-role-switcher summary {
 		align-items: center;
-		background: var(--paper-strong);
+		background: var(--paper-soft);
 		border: 1px solid var(--line);
-		border-radius: 999px;
+		border-radius: 8px;
 		cursor: pointer;
 		display: inline-flex;
-		gap: 7px;
+		gap: 6px;
 		list-style: none;
-		min-height: 34px;
-		padding: 6px 11px;
+		min-height: 32px;
+		padding: 4px 10px;
 	}
 
 	.workspace-role-switcher summary::-webkit-details-marker {
 		display: none;
 	}
 
-	.workspace-role-switcher summary::after {
-		color: var(--muted);
-		content: "сменить";
-		font-size: 11px;
-		font-weight: 850;
-	}
-
 	.workspace-role-switcher span,
 	.workspace-role-switcher summary strong {
-		color: var(--muted);
+		color: var(--ink-2);
 		font-size: 12px;
-		font-weight: 900;
+		font-weight: 600;
 	}
 
 	.workspace-role-switcher summary strong {
-		color: var(--teal-dark);
+		color: var(--ink);
 	}
 
 	.role-switcher-options {
@@ -9849,39 +9842,6 @@ section.imaging-panel {
 	overflow-wrap: anywhere;
 }
 
-.schedule-filter-strip {
-	align-items: end;
-	background: #fbfefd;
-	border: 1px solid var(--line);
-	border-radius: 8px;
-	display: grid;
-	gap: 10px;
-	grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(140px, auto);
-	margin-bottom: 12px;
-	padding: 12px;
-}
-
-.schedule-filter-strip label {
-	color: var(--muted);
-	display: grid;
-	font-size: 12px;
-	font-weight: 900;
-	gap: 6px;
-	min-width: 0;
-}
-
-.schedule-filter-strip input,
-.schedule-filter-strip select {
-	background: #ffffff;
-	border: 1px solid var(--line);
-	border-radius: 8px;
-	box-sizing: border-box;
-	color: var(--ink);
-	min-height: 38px;
-	min-width: 0;
-	padding: 8px 10px;
-	width: 100%;
-}
 
 .schedule-filter-actions {
 	align-items: center;
@@ -13886,7 +13846,6 @@ html.dark .communication-side .panel-heading h3,
 	.specialty-focus-options,
 	.schedule-command-grid,
 	.schedule-shift-summary-grid,
-	.schedule-filter-strip,
 	.schedule-suggestion-strip,
 	.finance-summary-grid,
 	.plan-scenario-grid,

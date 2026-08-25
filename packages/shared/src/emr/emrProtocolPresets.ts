@@ -141,6 +141,12 @@ export const statutoryAnestheticDrugLabels: Record<StatutoryAnestheticDrug, { na
 export const anestheticDrugLabels = statutoryAnestheticDrugLabels;
 
 
+export interface Order804nServiceRef {
+	readonly code: string;
+	readonly nameRu: string;
+	readonly isMandatory: boolean;
+}
+
 /** Структурированный клинический шаблон протокола */
 export interface ClinicalProtocolTemplate {
 	readonly icd10Code: string;
@@ -167,6 +173,7 @@ export interface ClinicalProtocolTemplate {
 	readonly requiresRubberDam: boolean;
 	readonly requiresApexLocatorRvg: boolean;
 	readonly statutoryOrderRef: string;
+	readonly order804nServices: readonly Order804nServiceRef[];
 }
 
 /**
@@ -219,6 +226,11 @@ export const STATUTORY_EMR_PROTOCOL_CATALOG: Record<string, ClinicalProtocolTemp
 		requiresRubberDam: true,
 		requiresApexLocatorRvg: false,
 		statutoryOrderRef: "Приказ Минздрава РФ № 834н / Клинические рекомендации СтАР «Кариес зубов»",
+		order804nServices: [
+			{ code: "A16.07.002.001", nameRu: "Восстановление зуба пломбой I, V, VI класс по Блэку с использованием материалов из фотополимеров", isMandatory: true },
+			{ code: "A16.07.031", nameRu: "Препарирование твердых тканей зуба при лечении кариеса", isMandatory: true },
+			{ code: "A11.07.012", nameRu: "Глубокое фторирование эмали зуба", isMandatory: false },
+		],
 	},
 
 	// ─────────────────────────────────────────────────────────────────────────────
@@ -272,6 +284,12 @@ export const STATUTORY_EMR_PROTOCOL_CATALOG: Record<string, ClinicalProtocolTemp
 		requiresRubberDam: true,
 		requiresApexLocatorRvg: true,
 		statutoryOrderRef: "Приказ Минздрава РФ № 834н / Клинические рекомендации СтАР «Пульпит зуба»",
+		order804nServices: [
+			{ code: "A16.07.030.003", nameRu: "Инструментальная и медикаментозная обработка корневого канала (3-канальный зуб)", isMandatory: true },
+			{ code: "A16.07.008.003", nameRu: "Пломбирование корневого канала зуба гуттаперчей / биокерамикой (3 канала)", isMandatory: true },
+			{ code: "A16.07.002", nameRu: "Восстановление зуба пломбой (наложение пломбы)", isMandatory: true },
+			{ code: "A06.07.007", nameRu: "Внутриротовая рентгенография (радиовизиография)", isMandatory: true },
+		],
 	},
 
 	// ─────────────────────────────────────────────────────────────────────────────
@@ -321,6 +339,12 @@ export const STATUTORY_EMR_PROTOCOL_CATALOG: Record<string, ClinicalProtocolTemp
 		requiresRubberDam: true,
 		requiresApexLocatorRvg: true,
 		statutoryOrderRef: "Приказ Минздрава РФ № 834н / Клинические рекомендации СтАР «Периодонтит»",
+		order804nServices: [
+			{ code: "A16.07.082", nameRu: "Распломбирование корневого канала зуба", isMandatory: true },
+			{ code: "A16.07.030", nameRu: "Инструментальная и медикаментозная обработка корневого канала", isMandatory: true },
+			{ code: "A16.07.091", nameRu: "Временное пломбирование лекарственным препаратом корневого канала (Ca(OH)2)", isMandatory: true },
+			{ code: "A06.07.007", nameRu: "Внутриротовая рентгенография (RVG)", isMandatory: true },
+		],
 	},
 
 	// ─────────────────────────────────────────────────────────────────────────────
@@ -374,6 +398,12 @@ export const STATUTORY_EMR_PROTOCOL_CATALOG: Record<string, ClinicalProtocolTemp
 		requiresRubberDam: false,
 		requiresApexLocatorRvg: false,
 		statutoryOrderRef: "Приказ Минздрава РФ № 834н / Клинические рекомендации СтАР «Пародонтит»",
+		order804nServices: [
+			{ code: "A16.07.051", nameRu: "Профессиональная гигиена полости рта и зубов", isMandatory: true },
+			{ code: "A16.07.020", nameRu: "Удаление наддесневых и поддесневых зубных отложений ультразвуком", isMandatory: true },
+			{ code: "A16.07.039", nameRu: "Закрытый кюретаж при заболеваниях пародонта в области зуба", isMandatory: true },
+			{ code: "A11.07.010", nameRu: "Введение лекарственных препаратов в пародонтальный карман", isMandatory: true },
+		],
 	},
 
 	// ─────────────────────────────────────────────────────────────────────────────
@@ -433,6 +463,11 @@ export const STATUTORY_EMR_PROTOCOL_CATALOG: Record<string, ClinicalProtocolTemp
 		requiresRubberDam: false,
 		requiresApexLocatorRvg: false,
 		statutoryOrderRef: "Приказ Минздрава РФ № 834н / Клинические рекомендации СтАР «Операция удаления зуба»",
+		order804nServices: [
+			{ code: "A16.07.001.001", nameRu: "Удаление постоянного зуба", isMandatory: true },
+			{ code: "A16.07.097", nameRu: "Наложение шва на слизистую оболочку рта", isMandatory: false },
+			{ code: "A06.07.007", nameRu: "Внутриротовая рентгенография зуба", isMandatory: true },
+		],
 	},
 
 	// ─────────────────────────────────────────────────────────────────────────────
@@ -479,6 +514,12 @@ export const STATUTORY_EMR_PROTOCOL_CATALOG: Record<string, ClinicalProtocolTemp
 		requiresRubberDam: false,
 		requiresApexLocatorRvg: false,
 		statutoryOrderRef: "Приказ Минздрава РФ № 834н / Клинические рекомендации СтАР «Ортопедическое лечение коронками»",
+		order804nServices: [
+			{ code: "A16.07.004", nameRu: "Восстановление зуба коронкой", isMandatory: true },
+			{ code: "A16.07.004.001", nameRu: "Препарирование зуба под искусственную коронку", isMandatory: true },
+			{ code: "A02.07.010", nameRu: "Снятие оттиска с одной челюсти", isMandatory: true },
+			{ code: "A16.07.004.002", nameRu: "Изготовление и фиксация временной коронки", isMandatory: true },
+		],
 	},
 };
 

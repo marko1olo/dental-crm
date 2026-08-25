@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { getToothStateFromHotkey } from "./ClassicGostOdontogram";
 import type { ToothState } from "./ToothChart";
+import { isPrimaryTooth } from "@dental/shared";
 
 export interface RadialMenuItem {
 	id: string;
@@ -34,7 +35,7 @@ export interface RadialToothMenuProps {
 	currentState?: ToothState | undefined;
 	iropz?: number | undefined;
 	surfaces?: readonly string[] | undefined;
-	onSelectState: (state: ToothState, surfaces?: readonly string[]) => void;
+	onSelectState: (state: ToothState, surfaces?: readonly string[], subType?: string) => void;
 	onSelectSurfaces?: (surfaces: readonly string[]) => void;
 	onOpenEndo?: () => void;
 	onAddToInvoice?: () => void;
@@ -291,7 +292,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 					})}
 				</div>
 
-				{/* Black classification cavity 1-touch macros */}
+				{/* Top Quick Bar: Pediatric Resorption & Exchange macros for deciduous teeth OR Black macros for adult teeth */}
 				<div
 					className="absolute flex items-center gap-1.5 pointer-events-auto bg-[var(--odontogram-paper)]/95 backdrop-blur-xl px-3.5 py-1.5 rounded-full border border-[var(--odontogram-border)] shadow-xl z-20"
 					style={{
@@ -300,51 +301,103 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 						transform: "translate(-50%, 0)",
 					}}
 				>
-					<span className="text-xs uppercase font-black text-amber-600 dark:text-amber-400 px-1">Блэк:</span>
-					<button
-						type="button"
-						onClick={() => {
-							onSelectState("Caries", ["M", "O", "D"]);
-							onClose();
-						}}
-						className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30"
-						title="Медиально-окклюзионно-дистальная полость (II класс)"
-					>
-						[MOD]
-					</button>
-					<button
-						type="button"
-						onClick={() => {
-							onSelectState("Caries", ["M", "O"]);
-							onClose();
-						}}
-						className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30"
-						title="Медиально-окклюзионная полость (II класс)"
-					>
-						[MO]
-					</button>
-					<button
-						type="button"
-						onClick={() => {
-							onSelectState("Caries", ["O", "D"]);
-							onClose();
-						}}
-						className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30"
-						title="Окклюзионно-дистальная полость (II класс)"
-					>
-						[OD]
-					</button>
-					<button
-						type="button"
-						onClick={() => {
-							onSelectState("Caries", ["V"]);
-							onClose();
-						}}
-						className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30"
-						title="Пришеечная полость (V класс)"
-					>
-						[V класс]
-					</button>
+					{isPrimaryTooth(toothNumber) ? (
+						<>
+							<span className="text-xs uppercase font-black text-purple-600 dark:text-purple-400 px-1">Резорбция:</span>
+							<button
+								type="button"
+								onClick={() => {
+									onSelectState("Healthy", undefined, "resorption_1");
+									onClose();
+								}}
+								className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-xl text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30"
+								title="Физиологическая резорбция I степени (рассасывание верхушки до 1/3 корня)"
+							>
+								[Рез I]
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									onSelectState("Healthy", undefined, "resorption_2");
+									onClose();
+								}}
+								className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-xl text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30"
+								title="Физиологическая резорбция II степени (рассасывание до 1/2 корня)"
+							>
+								[Рез II]
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									onSelectState("Healthy", undefined, "resorption_3");
+									onClose();
+								}}
+								className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-xl text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30"
+								title="Физиологическая резорбция III степени (полное рассасывание корней / подвижность)"
+							>
+								[Рез III]
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									onSelectState("Missing", undefined, "exfoliation");
+									onClose();
+								}}
+								className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-xl text-xs font-black bg-rose-500/15 text-rose-800 dark:text-rose-200 hover:bg-rose-500/30 transition-all cursor-pointer border border-rose-500/30"
+								title="Физиологическая смена / Удаление молочного зуба"
+							>
+								[Смена 0]
+							</button>
+						</>
+					) : (
+						<>
+							<span className="text-xs uppercase font-black text-amber-600 dark:text-amber-400 px-1">Блэк:</span>
+							<button
+								type="button"
+								onClick={() => {
+									onSelectState("Caries", ["M", "O", "D"]);
+									onClose();
+								}}
+								className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30"
+								title="Медиально-окклюзионно-дистальная полость (II класс)"
+							>
+								[MOD]
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									onSelectState("Caries", ["M", "O"]);
+									onClose();
+								}}
+								className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30"
+								title="Медиально-окклюзионная полость (II класс)"
+							>
+								[MO]
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									onSelectState("Caries", ["O", "D"]);
+									onClose();
+								}}
+								className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30"
+								title="Окклюзионно-дистальная полость (II класс)"
+							>
+								[OD]
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									onSelectState("Caries", ["V"]);
+									onClose();
+								}}
+								className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30"
+								title="Пришеечная полость (V класс)"
+							>
+								[V класс]
+							</button>
+						</>
+					)}
 				</div>
 
 				{/* IROPZ > 0.6 Smart Orthopedic Warning Banner */}

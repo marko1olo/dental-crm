@@ -126,6 +126,52 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		reason:
 			"Вспомогательный компонент термопечати фискального чека (ширина ленты 58/80 мм) по стандарту 54-ФЗ, визуализирующий QR-код ФНС, теги ФФД 1.2 и реквизиты клиники внутри Fiscal54FzReceiptModal.",
 	},
+	{
+		file: "components/clinical/PrescriptionsWidget.tsx",
+		name: "PrescriptionsWidget",
+		reason:
+			"Клинический микровиджет выписки электронных рецептов по Приказу Минздрава РФ № 1094н (Форма 107-1/у, 148-1/у-88 ПКУ, 148-1/у-04(л) льготный). Интегрирует автоматический фармакологический аудит безопасности (контроль ВРД/ВСД, матрица DDI межлекарственных взаимодействий, возрастные противопоказания и дублирование групп НПВП).",
+	},
+	{
+		file: "components/imaging/DicomViewerModal.tsx",
+		name: "DicomViewerModal",
+		reason:
+			"Автономное модальное окно полнофункционального 3D DICOM/КЛКТ просмотрщика (CornerstoneJS / VTK.js) с поддержкой MPR-аксиальных, сагиттальных и корональных срезов, HU-калибровкой плотности костной ткани и интерактивным планированием дентальных имплантатов.",
+	},
+	{
+		file: "components/imaging/DicomViewport.tsx",
+		name: "DicomViewport",
+		reason:
+			"Вспомогательный компонент WebGL/Canvas рендеринга срезов DICOM внутри DicomViewerModal с поддержкой оконных уровней (Window/Level), зума, паннинга и аннотаций.",
+	},
+	{
+		file: "components/offline/OfflineContinuityStrip.tsx",
+		name: "OfflineContinuityStrip",
+		reason:
+			"Автономный индикатор состояния мульти-сетевой топологии и ручного сброса очереди IndexedDB мутаций (Cloud VPS / Wi-Fi LAN Mesh / Autonomous Offline) с русской плюрализацией и кнопкой принудительной синхронизации.",
+	},
+	{
+		file: "components/offline/OfflineReadinessBanner.tsx",
+		name: "OfflineReadinessBanner",
+		reason:
+			"Баннер готовности к офлайн-работе с индикацией Service Worker, готовности IndexedDB и кнопками 1-клик экспорта зашифрованного резервного архива базы (.dente) и проверки целостности локального кэша.",
+	},
+	{
+		file: "components/schedule/PatientSearchModal.tsx",
+		name: "PatientSearchModal",
+		reason:
+			"Автономное модальное окно быстрого поиска пациентов регистратуры с дебаунсом 150мс, подсветкой совпадений по цифрам телефона, ФИО и номеру карты, отображением баланса и 1-click действиями записи на прием.",
+	},
+	{
+		file: "components/schedule/TomorrowRemindersModal.tsx",
+		name: "TomorrowRemindersModal",
+		reason:
+			"Интерактивное модальное окно пакетной рассылки напоминаний о завтрашних приемах через WhatsApp и SMS с автоподстановкой клинических инструкций, предупреждений об аллергиях, поиском пациентов и 1-click копированием буфера для регистратора.",
+	},
+	/*
+	 * PatientPortalModal СМОНТИРОВАН в ClinicalModalsStudioStandalone.tsx и доступен
+	 * через точку входа #clinical-modals-studio.
+	 */
 	/*
 	 * ComparativePlannerDashboard УДАЛЁН, поэтому записи долга здесь больше нет — и
 	 * список заявленных долгов на этом пуст: несмонтированных компонентов в

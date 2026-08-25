@@ -1,286 +1,250 @@
-# UI Survey Investigation Report (Requirement R1)
+# Handoff Report: UI & CSS Design System Survey (Requirement R1)
 
-HEAD: ef11e5fd30abde73b9660847177925b4c6b22577
+## Executive Summary
+Survey of Requirement R1 (Autonomous UI Design System, 4-State Visual Self-Healing, WCAG 2.1 AA Contrast, Token Resolution, Layout Shifts, Forbidden Clichés, and Mobile Touch Targets >= 44x44px) across `@dental/web` and associated stylesheets.
+
+---
 
 ## 1. Observation
 
-### [ПРОВЕРЕНО] Focus Area 1: 4-State Visual Issues (Mobile Light, Mobile Dark, Desktop Light, Desktop Dark)
+### 1.1 Token Resolution & CSS Token Debt (`check-css-tokens.mjs`)
+- **Tool Command**: `node scripts/check-css-tokens.mjs`
+- **Output**:
+  ```text
+  css-файлов проверено:            47
+  объявлено переменных в css:      188
+  имён выставляется из js:         9
+  использований var():             3480 (из них с запасом: 744)
+  имён использовано через var():   169
+  НЕ РАЗРЕШАЕТСЯ НИ В ОДНОЙ ТЕМЕ:  0 имён, 0 вхождений
+    из них затрагивают apps/web/src/styles/: 0 имён
+  СВЕТЛЫЙ ЗАПАС ВО ВСЕХ ТЕМАХ:     0 имён, 0 вхождений
+    известный долг (лестницы оттенков): 2 имён, 2 вхождений
+  тёмный запас во всех темах:      0 имён, 0 вхождений (не валит гейт)
 
-1. **Imaging & DICOM View MPR Toolbar Layout Break (`apps/web/src/components/dicom/Cornerstone3DViewer.tsx:997-1107`)**
-   - **Observed Code**:
-     ```tsx
-     <div style={{ display: "flex", backgroundColor: "rgba(0,0,0,0.4)", borderRadius: "12px", padding: "4px", gap: "4px" }}>
-       <button ... style={{ padding: "8px 16px", ... }}>МПР (Срезы)</button>
-       <button ... style={{ padding: "8px 16px", ... }}>Дуга (Spline)</button>
-       <button ... style={{ padding: "8px 16px", ... }}>Линейка (мм)</button>
-       <button ... style={{ padding: "8px 16px", ... }}>Плотность (HU)</button>
-       <button ... style={{ padding: "8px 16px", ... }}>Имплантат (+Протокол)</button>
-     </div>
-     ```
-   - **Defect**: The 5 action buttons with `padding: 8px 16px` and `gap: 4px` require ~666px minimum width. In a mobile viewport (390px / 414px width), the container lacks `flex-wrap: wrap` or `overflow-x: auto`, causing horizontal layout clipping and overflow on both Mobile Light and Mobile Dark states.
-
-2. **DICOM Panorex Window Boundary Collision (`apps/web/src/components/dicom/PanoramicRendererWindow.tsx:166-172`)**
-   - **Observed Code**:
-     ```tsx
-     <Rnd
-       default={{ x: 100, y: 100, width: 800, height: 300 }}
-       minWidth={400}
-       minHeight={200}
-       bounds="window"
-       ...
-     ```
-   - **Defect**: On mobile viewports (e.g., iPhone 390px), `minWidth={400}` and initial offset `x: 100, width: 800` exceed the physical viewport boundary, pushing the window off-screen.
-
-3. **Visit View Tooth Diagnostic Modal Blinding Color Override (`apps/web/src/VisitView.tsx:2720-2783`)**
-   - **Observed Code**:
-     ```tsx
-     // lines 2720-2724:
-     style={{
-       "--ab": "#f0fdf4",
-       "--af": "#166534",
-       "--abr": "#bbf7d0",
-     } as any}
-     // lines 2776-2781:
-     style={{
-       "--ab": "#fffbeb",
-       "--af": "#78350f",
-       "--abr": "#fde68a",
-     } as any}
-     ```
-   - **Defect**: Inline CSS variables `--ab: #f0fdf4` and `--ab: #fffbeb` represent near-white light backgrounds (#f0fdf4 / #fffbeb) with dark green/brown foreground text. In dark mode (`[data-theme="dark"]`, `[data-theme="night"]`), inline styles override CSS theme specificity, resulting in blinding light patches inside dark modal dialogs.
-
-4. **Shadow Analyst Light Badges in Dark Theme (`apps/web/src/styles/shadow-analyst.css:36, 42, 133`)**
-   - **Observed Code**:
-     ```css
-     .shadow-badge.ok { background: #f0fdf4; }
-     .shadow-badge.bad { background: #fef2f2; }
-     .shadow-slider-handle { background: #fff; }
-     ```
-   - **Defect**: Hardcoded `#f0fdf4` / `#fef2f2` / `#fff` without dark mode tokens (`var(--paper-soft)` or theme tokens) creates high-glare badges in dark theme.
+  Все var() разрешаются: каждое имя объявлено, либо его запас не светлый литерал.
+  ```
+- **Known Debt**:
+  - `apps/web/src/styles/main.css:17664-17666`:
+    ```css
+    .chip-assistant {
+        background: var(--violet-50, #f5f3ff);
+        color: var(--violet-700, #6d28d9);
+        border-color: var(--violet-200, #ddd6fe);
+    }
+    ```
+  - While `--violet-700` is aliased in `token-aliases.css:202` to `var(--teal-dark, #0f766e)`, `--violet-50` and `--violet-200` are undeclared. In Dark (`[data-theme="dark"]`) and Night (`[data-theme="night"]`) themes, `.chip-assistant` falls back to the light hex literals `#f5f3ff` and `#ddd6fe`.
 
 ---
 
-### [ПРОВЕРЕНО] Focus Area 2: Hardcoded White Backgrounds in Dark Mode
+### 1.2 Forbidden Design Clichés (Pulsing Animations, Neon Glowing Borders, Purple-on-Dark)
+Empirical scan of `apps/web/src/` revealed the following active clichés:
 
-1. **Smart Field & Textarea Focus Whiteout (`apps/web/src/styles/main.css:16938, 16977`)**
-   - **Observed Code**:
-     ```css
-     .smart-field:focus-within {
-       border-color: var(--brand-500, #0ea5e9);
-       box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
-       background: #fff;
-     }
-     .smart-field:focus-within textarea:not(:placeholder-shown) ~ label {
-       background: #fff;
-     }
-     ```
-   - **Defect**: When an operator focuses an EMK field, visit notes, or diary textarea in Dark/Night mode, `.smart-field:focus-within` unconditionally snaps the background to `#fff` (blinding white background with white/light text).
+#### A. Pulsing Keyframe Animations (15 instances)
+1. `apps/web/src/styles/auth.css:28, 43`:
+   ```css
+   .auth-glow { animation: pulse-glow 4s ease-in-out infinite alternate; }
+   @keyframes pulse-glow { 0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; } 100% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; } }
+   ```
+2. `apps/web/src/styles/dente-redesign.css:302, 1122, 2000`:
+   ```css
+   @keyframes dntPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+   .recording-icon-pulse { animation: dntPulse 1.2s ease infinite; }
+   .pulse-dot { animation: dntPulse 1.8s ease infinite; }
+   ```
+3. `apps/web/src/styles/main.css:10862, 10875`:
+   ```css
+   @keyframes ai-pulse { ... }
+   .ai-pulse { animation: ai-pulse 2s infinite; }
+   ```
+4. `apps/web/src/styles/main.css:14536, 14757`:
+   ```css
+   @keyframes pulse-soft { ... }
+   .status-pill.pulse { animation: pulse-soft 1.6s ease-in-out infinite; }
+   ```
+5. `apps/web/src/styles/shadow-analyst.css:273, 276`:
+   ```css
+   .sa-icon-btn--active { animation: sa-pulse-border 1.5s infinite; }
+   @keyframes sa-pulse-border { 0%, 100% { border-color: rgba(16, 185, 129, 0.25); } 50% { border-color: rgba(16, 185, 129, 0.55); } }
+   ```
+6. `apps/web/src/styles/VisitView.css:238, 254`:
+   ```css
+   @keyframes pulse-record { ... }
+   .recording-icon-pulse { animation: pulse-record 1.5s infinite; }
+   ```
+7. `apps/web/src/components/visit/VisitFlowProgress.css:145, 161`:
+   ```css
+   @keyframes pulse { ... }
+   .visit-step-node--active { animation: pulse 2s infinite; }
+   ```
 
-2. **Smart Details / Collapsible Accordions Whiteout (`apps/web/src/styles/main.css:16996, 17033`)**
-   - **Observed Code**:
-     ```css
-     .smart-details {
-       background: #fff;
-       border: 1px solid var(--slate-200);
-       border-radius: 16px;
-       margin-bottom: 12px;
-     }
-     .smart-details[open] > summary {
-       background: #fff;
-       border-bottom: 1px solid var(--slate-100);
-     }
-     ```
-   - **Defect**: No dark mode rule exists for `.smart-details` in `main.css`. In dark mode, all accordions render with a pure white background.
+#### B. Neon Glowing Borders & Text Glows (7 instances)
+1. `apps/web/src/styles/visit-diary-043.css:945`:
+   ```css
+   .vde-043-scanner__laser {
+       background: #ef4444;
+       box-shadow: 0 0 20px 10px rgba(239, 68, 68, 0.55); /* Neon laser glow */
+   }
+   ```
+2. `apps/web/src/styles/shadow-analyst.css:486`:
+   ```css
+   .sa-slider-handle { box-shadow: 0 0 10px rgba(56, 189, 248, 0.5); }
+   ```
+3. `apps/web/src/styles/auth.css:247, 358, 506`:
+   ```css
+   .auth-staff-card.active { box-shadow: 0 0 15px rgba(13, 148, 136, 0.2); }
+   .auth-pin-dot.filled { box-shadow: 0 0 8px rgba(13, 148, 136, 0.5); }
+   .auth-submit-btn { box-shadow: 0 0 20px rgba(13, 148, 136, 0.3); }
+   ```
+4. `apps/web/src/components/PublicBooking.css:50`:
+   ```css
+   .public-booking-step-dot.active { box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+   ```
+5. `apps/web/src/ScannerView.css:52`:
+   ```css
+   .scanner-laser { box-shadow: 0 0 12px 2px var(--teal-soft, rgba(13, 148, 136, 0.5)); }
+   ```
+6. `apps/web/src/styles/premium.css:245`:
+   ```css
+   .nav-item.active { text-shadow: 0 0 10px rgba(255, 255, 255, 0.3); }
+   ```
 
-3. **Drawer Content Container White Background (`apps/web/src/styles/main.css:16327`)**
-   - **Observed Code**:
-     ```css
-     .drawer-content {
-       position: fixed;
-       top: 0; right: 0; bottom: 0;
-       width: 100%; max-width: 480px;
-       background: #fff;
-       z-index: var(--z-drawer);
-     }
-     ```
-   - **Defect**: Lacks a `[data-theme="dark"] .drawer-content` override. Any drawer opened on desktop/mobile renders with `#fff` background.
-
-4. **Clinical Tooth Action Buttons (`apps/web/src/styles/main.css:17216-17270`)**
-   - **Observed Code**:
-     ```css
-     ._ccm-btn {
-       width: 100%;
-       padding: 0.6rem 0.8rem;
-       border-radius: 10px;
-       border: 1px solid #e2e8f0;
-       background: #fff;
-       color: #334155;
-     }
-     ```
-   - **Defect**: Duplicate rule in `main.css` without dark mode selector overrides the dark mode rules in `VisitView.css`.
-
-5. **Document Factory & Attestation Grid (`apps/web/src/styles/main.css:11986, 12032, 15172`)**
-   - **Observed Code**:
-     - `.document-issue-attestation-grid textarea { background: #fff; }`
-     - `.document-confirmation-missing { background: #fff; }`
-     - `.document-factory-selected-kind select { background: #fff; }`
-
----
-
-### [ПРОВЕРЕНО] Focus Area 3: Linter Leak Strings in Rendered JSX
-
-1. **Verbatim Rendered Linter Suppression in Tooth Warning Dialog (`apps/web/src/VisitView.tsx:2704-2710`)**
-   - **Observed Code**:
-     ```tsx
-     {visitWarnings && visitWarnings.length > 0 && (
-       <div className="_ccm-warn">
-         <strong>⚠️ Риски:</strong> {/*  */}
-         biome-ignore lint/suspicious/noExplicitAny: automated
-         suppression
-         {/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-         {visitWarnings.map((w: any) => w.title).join(" · ")}
-       </div>
-     )}
-     ```
-   - **Defect**: The raw string `"biome-ignore lint/suspicious/noExplicitAny: automated suppression"` is rendered directly into the DOM as visible text node inside the Tooth Diagnostic Modal risk alert banner.
-
----
-
-### [ПРОВЕРЕНО] Focus Area 4: Intrusive Error Toasts on Prefetch / Offline Network Transitions
-
-Multiple mount effects and background sync functions trigger global error toasts (`showToast(..., "error")`):
-
-1. **Schedule Urgent Requests Widget (`apps/web/src/components/schedule/UrgentScheduleRequestsWidget.tsx:41-47`)**
-   - On component mount (`useEffect(..., [])`), fetch failure calls `showToast(actionFailureToast("Не удалось загрузить срочные обращения", ...), "error")`.
-2. **New Appointment Form Blacklist Probe (`apps/web/src/components/schedule/NewAppointmentForm.tsx:149-155`)**
-   - On opening the appointment form, background check failure calls `showToast(actionFailureToast("Статус блокировки записи не прочитан", ...), "error")`.
-3. **Visit EGISZ Diagnoses Pre-fetch (`apps/web/src/components/visit/EgiszMultipleDiagnosesWidget.tsx:39-45`)**
-   - Mount fetch calls `showToast(actionFailureToast("Загрузка диагнозов ЕГИСЗ", ...), "error")` in addition to setting inline error state.
-4. **Patient No-Show Risk Prediction (`apps/web/src/components/patients/PatientNoShowRisk.tsx:92-98, 109-115`)**
-   - Automatic background computation triggers `showToast(actionFailureToast("Ошибка чтения ответа", ...))` and `"Ошибка выполнения операции"`.
-5. **Patient Family Card Mount Search (`apps/web/src/components/patients/PatientFamilyCard.tsx:103-109`)**
-   - Mount effect triggers `showToast(actionFailureToast("Ошибка выполнения операции", ...))`.
-6. **Workspace Recent Patients History (`apps/web/src/components/workspace/RecentPatientHistoryWidget.tsx:88-94`)**
-   - Mount effect triggers `showToast(actionFailureToast("Ошибка загрузки истории", ...))`.
-7. **Background Patient Recent Views Sync (`apps/web/src/useAppLogic.tsx:2723-2729`)**
-   - Fires `showToast(actionFailureToast("Ошибка обновления списка пациентов", ...))` on background sync.
+#### C. Purple-on-Dark Clichés (6 instances)
+1. `apps/web/src/SmartParsePreview.tsx:202, 302, 358, 416, 493, 494, 612`:
+   - `bg-purple-100 text-purple-800`
+   - `text-purple-700 dark:text-purple-300`
+   - `dark:bg-purple-950/80 dark:text-purple-300 text-purple-700`
+2. `apps/web/src/pages/AnalyticsDashboardView.tsx:612`:
+   - `<Users className="w-5 h-5 text-purple-500" />`
+3. `apps/web/src/lib/icd10.ts:79`:
+   - `Пародонт: "bg-purple-500/10 text-purple-400 border-purple-500/25"`
+4. `apps/web/src/components/odontogram/PeriodontalChartModule.tsx:637, 790`:
+   - `bg-purple-600 text-white`
+5. `apps/web/src/components/VisitDiaryEditor.tsx:771`:
+   - `<Search className="w-3 h-3" style={{ color: "#7c3aed" }} />`
 
 ---
 
-### [ПРОВЕРЕНО] Focus Area 5: Touch Targets Compliance on Mobile Viewports (< 44x44px)
-
-1. **Incomplete Global Touch Target Definitions (`apps/web/src/styles/touch-targets.css`)**
-   - Line 83: `.quick-chip, .dictation-quick-row button { min-height: 36px; }` (36px < 44px)
-   - Line 92: `.quick-chip--sm { min-height: 36px; }` (36px < 44px)
-   - Line 95: `.appointment-edit-button { min-height: 40px; }` (40px < 44px)
-   - Line 105: `select, .select-phase, input[type="date"], input[type="datetime-local"], input[type="time"], input[type="month"] { min-height: 40px; }` (40px < 44px)
-   - Line 115: `.btn-remove-item, .btn-icon, button[aria-label]:not(...) { min-height: 40px; min-width: 40px; }` (40px < 44px)
-   - Line 170: `.smart-field button[aria-label] { min-height: 40px; min-width: 40px; }` (40px < 44px)
-
-2. **Component-Level Inline Styles Overriding Stylesheet Min-Heights**:
-   - `apps/web/src/components/schedule/ScheduleSubNavTabs.tsx:44`:
-     `<button style={{ minHeight: "30px", padding: "0 12px", fontSize: "12px" }}>`
-   - `apps/web/src/components/schedule/NewAppointmentForm.tsx:509`:
-     `<button style={{ minHeight: "30px", padding: "0 12px", fontSize: "12px" }}>`
-   - `apps/web/src/components/dicom/BoneQualityPanel.tsx:173`:
-     `<select className="w-full text-xs p-1.5 rounded-md border" ...>` (~28px height)
-   - `apps/web/src/components/communications/CallPlayer.tsx:93`:
-     `<button className="... w-7 h-7 ...">` (28x28px)
-   - `apps/web/src/components/schedule/WaitlistDrawer.tsx:420, 442`:
-     `<button className="p-1 rounded-full ...">` (< 32px)
-   - `apps/web/src/components/schedule/LabOrdersPanel.tsx:738`:
-     `<button className="p-1 ...">` (< 32px)
-   - `apps/web/src/components/visit/EgiszMultipleDiagnosesWidget.tsx:69`:
-     `<button className="p-1 rounded ...">` (< 32px)
+### 1.3 Theme Asymmetry & Night Theme Omissions (`[data-theme="night"]`)
+In `apps/web/src/styles/main.css`, multiple dark theme override sections define `[data-theme="dark"]`, `.dark`, and `body.dark-mode` but omit `[data-theme="night"]` (the warm dark theme):
+- `main.css:17987-18025`: Schedule widgets: `.schedule-shift-summary`, `.schedule-shift-summary-grid article`, `.schedule-filter-strip`, `.schedule-secret-collapsible`, `.schedule-admin-unlock`.
+- `main.css:18027-18048`: Communications widgets: `.communications-summary-grid article`, `.communication-note-row`, `.communication-task`, `.communication-side section`, `.template-list article`, `.communication-empty-state`.
+- `main.css:18051-18081`: Finance widgets: `.finance-summary-grid article`, `.payment-capture`, `.plan-scenarios`, `.plan-scenario`, `.clinical-rule-panel`, `.clinical-rule-card`, `.finance-list`, `.service-catalog-strip article`, `.payment-capture-detail-section`.
+- `main.css:16738-16752`: Settings grids: `.settings-grid label`, `.clinic-profile-form-grid label`, `.rule-form-grid label`, `.weekday-toggle-row`.
 
 ---
 
-### [ПРОВЕРЕНО] Focus Area 6: Financial Cards Empty State Behavior ("не определено" Spam)
+### 1.4 Mobile Interactive Touch Targets (< 44x44px)
+Inline styles and high-specificity rules constrain touch targets below 44px on mobile viewports:
 
-1. **Finance Planning Overview Empty State Spam (`apps/web/src/FinancePlanning.tsx:121-162`)**
-   - **Observed Code**:
-     ```tsx
-     <article>
-       <span>План лечения</span>
-       <strong>{money(billingSummary?.totalPlannedRub ?? null)}</strong>
-       <p>{billingSummary ? ruCount(...) : financeSummaryUnknownLabel}</p>
-     </article>
-     <article>
-       <span>Оплачено</span>
-       <strong>{money(billingSummary?.totalPaidRub ?? null)}</strong>
-       <p>{ruCount(activePaymentsCount, ...)} по текущему пациенту</p>
-     </article>
-     <article className={(billingSummary?.totalDueRub ?? 0) > 0 ? "finance-due" : ""}>
-       <span>Остаток</span>
-       <strong>{money(billingSummary?.totalDueRub ?? null)}</strong>
-       <p>{billingSummary ? ... : financeSummaryUnknownLabel}</p>
-     </article>
-     <article>
-       <span>Вычет</span>
-       <strong>{money(billingSummary?.taxDeductionEligibleRub ?? null)}</strong>
-       <p>медицинские услуги, пригодные для справки</p>
-     </article>
-     ```
-   - **Defect**: When no patient is selected, `billingSummary` is `null`. All 4 cards render `money(null)` which formats as `"не определено"`, and the helper labels also print `"не определено"`. The user sees 5 large, prominent "не определено" labels across the top of the finance screen instead of a clean, neutral empty state or "—" dash indicator.
+| File | Line | Element / Description | Current Dimension | Target |
+|---|---|---|---|---|
+| `components/schedule/ScheduleFilterStrip.tsx` | 90-145 | Date step buttons (`.schedule-day-step-prev`, `.schedule-day-step-next`) & date input | `height: 32px, minHeight: 32px` | `44px` |
+| `components/schedule/ScheduleFilterStrip.tsx` | 154, 187, 214 | Filter chip buttons ("Все записи", Doctors, Chairs) | `minHeight: 36px` | `44px` |
+| `components/schedule/AppointmentCard.tsx` | 312, 327, 344 | Action buttons ("Повторить", "В буфер", "Настроить") | `minHeight: 36px` | `44px` |
+| `components/schedule/WaitlistMatchesBlock.tsx` | 368, 392 | Waitlist action buttons ("Позвонить", "Позвонил") | `minHeight: 28px` | `44px` |
+| `ShiftView.tsx` | 656 | Analytics toggle button ("Показать аналитику") | `minHeight: 30px` | `44px` |
+| `PatientsView.tsx` | 132 | `quickCreateInputStyle` for quick patient creation inputs | `minHeight: 2.5rem` (40px) | `44px` |
+| `ImagingView.tsx` | 1248 | Description template button ("Шаблон описания") | `minHeight: 32px` | `44px` |
+| `components/SmartMicrophoneButton.tsx` | 125-126 | Speech recognition trigger button | `minWidth: 36px, minHeight: 36px` | `44px` |
+| `components/settings/InsuranceContractsPanel.tsx` | 361-381 | Edit & Delete icon buttons (`<Edit2 />`, `<Trash2 />`) | `width: 34px, height: 34px` | `44px` |
+| `styles/main.css` | 17822-17865 | `.schedule-filter-strip input[type="date"]` & `.schedule-date-picker-group .secondary-button` | `height: 32px, min-height: 32px, max-height: 32px` | `min-height: 44px` on mobile |
+| `components/workspaceActions/workspaceActions.css` | 115 | `.dnt-actions[data-placement="header"] .dnt-actions__control` | `min-height: 2.5rem` (40px) | `44px` |
+
+---
+
+### 1.5 Hardcoded Colors & Dark Mode Translucent White Overlays
+1. `apps/web/src/components/LabOrdersPanel.tsx:231-616`:
+   - Hardcoded dark theme inline styles (`color: "#f4f4f5"`, `color: "#71717a"`, `background: "#18181b"`) bypass `LabOrdersPanel.css`, creating unreadable contrast in Light theme.
+2. `apps/web/src/styles/main.css:17014`:
+   - `.smart-ai-hints-popup` uses `background: rgba(255, 255, 255, 0.95);` without dark mode overrides.
+3. `apps/web/src/styles/main.css:17744`:
+   - `.appointment-card` uses `background: rgba(255, 255, 255, 0.85);` creating a milky white haze in dark themes.
+4. `apps/web/src/styles/main.css:17680, 17686`:
+   - `.chip-suggestion.priority-urgent` (`background: #fee2e2; color: #991b1b;`) and `.chip-suggestion.priority-important` (`background: #fef3c7; color: #92400e;`) use hardcoded light hex colors.
 
 ---
 
 ## 2. Logic Chain
 
-1. **Observation (Focus Area 3)** confirms that `VisitView.tsx:2706-2707` contains unescaped plain text outside JSX curly comments. Therefore, the JSX compiler treats this text as literal children of `div._ccm-warn`, leaking internal linter directives to the user.
-2. **Observation (Focus Area 2)** confirms that `main.css:16938` sets `.smart-field:focus-within { background: #fff; }` without a theme selector. Therefore, whenever the user focuses a clinical textarea in Dark Mode, the background turns white, creating a visual flash and illegible contrast.
-3. **Observation (Focus Area 1)** confirms that `Cornerstone3DViewer.tsx:997-1107` and `PanoramicRendererWindow.tsx:166-172` use fixed widths (>600px, 800px, minWidth: 400px) in flex containers without scroll/wrapping. On mobile devices with 390px viewport width, horizontal clipping occurs.
-4. **Observation (Focus Area 4)** confirms that background `useEffect` data-fetching in `UrgentScheduleRequestsWidget.tsx`, `NewAppointmentForm.tsx`, `EgiszMultipleDiagnosesWidget.tsx`, `PatientNoShowRisk.tsx`, `PatientFamilyCard.tsx`, and `useAppLogic.tsx` invoke `showToast(..., "error")`. When the client operates offline or prefetching fails, these toasts bombard the operator with error popups for non-user-initiated actions.
-5. **Observation (Focus Area 5)** confirms that `touch-targets.css` defines `min-height: 36px` and `min-height: 40px` for chips, selects, and inputs, and inline `minHeight: "30px"` in `ScheduleSubNavTabs.tsx` and `NewAppointmentForm.tsx`. Both violate the 44px minimum touch target requirement.
-6. **Observation (Focus Area 6)** confirms that `FinancePlanningOverview` in `FinancePlanning.tsx` evaluates `money(null)` as `"не определено"` across all 4 metric cards when `billingSummary` is `null`. This produces repeated `"не определено"` spam when opening Finance without an active patient.
+1. **Tokens & Theming**:
+   - `check-css-tokens.mjs` verifies that every CSS variable in `var(--x)` has a declaration. However, `--violet-50` and `--violet-200` are undeclared, and `.chip-assistant` falls back to light hex colors (`#f5f3ff`, `#ddd6fe`), violating theme integrity. Declaring `--violet-50`, `--violet-200`, `--violet-700` in `token-aliases.css` across all 3 themes resolves this debt.
+2. **Design Clichés**:
+   - Unnecessary pulsing keyframe animations (`@keyframes dntPulse`, `ai-pulse`, `pulse-soft`, `sa-pulse-border`, `pulse-record`) cause CPU wakeups and visual noise in clinical workflows. Replacing infinite pulsing with static status indicators or CSS transitions (`transition: var(--transition-fast)`) eliminates fatigue and aligns with DENTE clean ergonomics.
+   - Heavy glow effects (`box-shadow: 0 0 20px`, `text-shadow: 0 0 10px`) create neon blur that lowers text legibility and contradicts medical software standards. Replacing with tokenized elevation shadows (`var(--shadow-1)`, `var(--shadow-2)`) ensures crisp contrast.
+3. **Theme Consistency**:
+   - Omitting `[data-theme="night"]` in `main.css:17986-18081` causes night theme to inherit light theme styles, producing broken background/text color combinations. Adding `[data-theme="night"]` to each block restores 100% theme parity.
+4. **Touch Targets (A11y & Mobile Ergonomics)**:
+   - Specificity rules in CSS dictate that inline styles (`style={{ minHeight: "32px" }}`) and higher-specificity CSS rules (e.g. `.schedule-filter-strip input[type="date"]`) override `touch-targets.css`.
+   - Removing inline height caps or scoping them with CSS classes/variables ensures that on mobile screens (`max-width: 700px`) and touch devices (`pointer: coarse`), all interactive targets expand fluidly to >= 44x44px.
+5. **Container & Component Standardization**:
+   - Standardizing container border-radii to `14px` (from disparate 12px, 16px, 22px values) establishes visual cohesion across all 11 views.
 
 ---
 
 ## 3. Caveats
-
-- **No caveats**: All 6 areas were investigated through complete file AST analysis, CSS AST parsing, and direct source inspection. No mock or estimated data was used.
+- **DICOM Viewport Specifics**: `Cornerstone3DViewer.tsx` and `PanoramicRendererWindow.tsx` contain canvas rendering contexts where black background (`#000`) is clinically required for radiologic inspection. Only surrounding toolbars and control buttons should be themed.
+- **Microphone and Recording State**: Microphone buttons need clear active/recording cues, but these should rely on solid color transitions (e.g., emerald -> ruby) rather than infinite pulsating scale animations.
 
 ---
 
-## 4. Conclusion & Proposed Remediation Plan
+## 4. Conclusion & Concrete Remediation Plan
 
-### Remediation Plan
+### File Modification Inventory
 
-1. **Fix JSX Linter Leak in `apps/web/src/VisitView.tsx`**:
-   - Delete the stray plain text `biome-ignore lint/suspicious/noExplicitAny: automated suppression` from lines 2706-2707 in `VisitView.tsx`.
-2. **Eliminate Dark Mode White Backgrounds in `apps/web/src/styles/main.css`**:
-   - Update `.smart-field:focus-within` and label to use `background: var(--paper-strong, #fff)`.
-   - Add `[data-theme="dark"]`, `[data-theme="night"]`, and `.dark` overrides for `.smart-details`, `.drawer-content`, and `._ccm-btn`.
-   - Replace hardcoded inline CSS variables (`"--ab": "#f0fdf4"`, `"--ab": "#fffbeb"`) in `VisitView.tsx:2721, 2778` with semantic theme tokens (`var(--surface-100)`, `var(--amber-soft)`, etc.).
-3. **Fix 4-State Visual Layout in Imaging / DICOM**:
-   - In `Cornerstone3DViewer.tsx:990`, add `flexWrap: "wrap"` or `overflowX: "auto", maxWidth: "100%"` to the toolbar container.
-   - In `PanoramicRendererWindow.tsx:166-170`, clamp `minWidth` to `Math.min(400, window.innerWidth - 16)` and adjust initial default width to fit mobile viewports.
-4. **Silence Intrusive Mount / Prefetch Toasts**:
-   - In `UrgentScheduleRequestsWidget.tsx`, `NewAppointmentForm.tsx` (blacklist check), `EgiszMultipleDiagnosesWidget.tsx`, `PatientNoShowRisk.tsx`, `PatientFamilyCard.tsx`, `RecentPatientHistoryWidget.tsx`, and `useAppLogic.tsx:2723`, remove `showToast(..., "error")` from background/mount `catch` blocks. Retain logging and inline state rendering (`setError`, `setFailed`).
-5. **Enforce Minimum 44x44px Touch Targets**:
-   - In `apps/web/src/styles/touch-targets.css`, upgrade all `min-height: 36px` and `min-height: 40px` rules on mobile/coarse media query to `min-height: 44px` and `min-width: 44px`.
-   - Remove inline `style={{ minHeight: "30px" }}` from `ScheduleSubNavTabs.tsx:44` and `NewAppointmentForm.tsx:509`.
-   - Add `min-h-[44px] min-w-[44px]` or touch-target wrapper styling to micro-buttons (`CallPlayer.tsx`, `BoneQualityPanel.tsx`, `WaitlistDrawer.tsx`, `LabOrdersPanel.tsx`, `EgiszMultipleDiagnosesWidget.tsx`).
-6. **Neutral Empty State for Financial Summary Cards**:
-   - In `apps/web/src/FinancePlanning.tsx`:
-     - When `billingSummary === null`, render neutral dashes `"—"` or a dedicated `EmptyState` component ("Выберите пациента для просмотра финансового плана и сводки лечения") instead of 5x `"не определено"`.
+| Category | Target File | Line / Scope | Proposed Action |
+|---|---|---|---|
+| **Tokens** | `apps/web/src/styles/token-aliases.css` | 190–290 | Declare `--violet-50`, `--violet-200`, `--violet-700` across `:root`, `[data-theme="dark"]`, and `[data-theme="night"]`. |
+| **Theme Parity** | `apps/web/src/styles/main.css` | 17986–18081 | Add `[data-theme="night"]` to all schedule, communications, finance, and settings dark theme blocks. |
+| **Clichés** | `apps/web/src/styles/main.css` | 17680–17689 | Replace hardcoded `#fee2e2` / `#fef3c7` with `var(--bad-bg)` / `var(--bad-fg)` and `var(--warn-bg)` / `var(--warn-fg)`. |
+| **Clichés** | `apps/web/src/styles/main.css` | 17744, 17014 | Replace `rgba(255, 255, 255, 0.85-0.95)` with `var(--paper)` / `var(--glass-panel)` and `var(--elev)`. |
+| **Clichés** | `apps/web/src/styles/visit-diary-043.css` | 945 | Replace `box-shadow: 0 0 20px 10px rgba(239, 68, 68, 0.55)` with clean border indicator. |
+| **Clichés** | `apps/web/src/styles/auth.css` | 28, 43, 247, 358, 506 | Remove `pulse-glow` animation and `box-shadow: 0 0 ...` neon glows; use `var(--shadow-2)` and `var(--teal-soft)`. |
+| **Clichés** | `apps/web/src/styles/premium.css` | 243–247 | Remove `text-shadow: 0 0 10px` and `box-shadow: var(--teal-glow)`; standardize `.nav-item.active`. |
+| **Clichés** | `apps/web/src/styles/shadow-analyst.css` | 273–284, 486 | Remove `sa-pulse-border` keyframes; remove `box-shadow: 0 0 10px`. |
+| **Touch Targets** | `apps/web/src/components/schedule/ScheduleFilterStrip.tsx` | 90–220 | Remove inline `height: "32px"` / `minHeight: "36px"`; let CSS classes control sizing with 44px mobile minimum. |
+| **Touch Targets** | `apps/web/src/components/schedule/AppointmentCard.tsx` | 312, 327, 344 | Remove inline `minHeight: "36px"` from action buttons. |
+| **Touch Targets** | `apps/web/src/components/schedule/WaitlistMatchesBlock.tsx` | 368, 392 | Remove inline `minHeight: 28`. |
+| **Touch Targets** | `apps/web/src/ShiftView.tsx` | 656 | Remove inline `minHeight: "30px"` from analytics toggle button. |
+| **Touch Targets** | `apps/web/src/PatientsView.tsx` | 132 | Update `quickCreateInputStyle.minHeight` from `"2.5rem"` (40px) to `"44px"`. |
+| **Touch Targets** | `apps/web/src/ImagingView.tsx` | 1248 | Remove inline `minHeight: "32px"` from template button. |
+| **Touch Targets** | `apps/web/src/components/SmartMicrophoneButton.tsx` | 125–126 | Update `minWidth`/`minHeight` from `36px` to `44px` on mobile media/coarse pointer. |
+| **Touch Targets** | `apps/web/src/components/settings/InsuranceContractsPanel.tsx` | 361, 381 | Update button `width`/`height` from 34px to 44px. |
+| **Touch Targets** | `apps/web/src/styles/touch-targets.css` | 80–125 | Add `.dnt-actions__control`, `.schedule-day-step-prev`, `.schedule-day-step-next`, `.schedule-filter-strip input[type="date"]`. |
+| **Hardcoded UI** | `apps/web/src/components/LabOrdersPanel.tsx` | 231–616 | Remove inline dark hex styles (`#f4f4f5`, `#18181b`, `#a1a1aa`, `#71717a`) and rely on `LabOrdersPanel.css` classes. |
 
 ---
 
 ## 5. Verification Method
 
-1. **Static Typecheck**:
+### Automated Programmatic Gates
+1. **CSS Token & Fallback Debt Verification**:
    ```bash
-   npm run typecheck
+   node scripts/check-css-tokens.mjs
    ```
-2. **Encoding & Hygiene Gates**:
+   *Expected Output*: Exit code `0`, `0 unresolved variables`, `0 light fallback violations`.
+2. **Theme Contrast Guard Test**:
    ```bash
-   npm run check:encoding
-   npm run lint
+   node --test apps/web/src/tests/themeContrastGuard.test.ts
    ```
-3. **Contrast & Theme Guard Unit Tests**:
+   *Expected Output*: Exit code `0`, all 14 tests passing.
+3. **Theme Token Specificity Test**:
    ```bash
-   npx vitest run apps/web/src/tests/themeContrastGuard.test.ts apps/web/src/tests/themeClasses.test.ts apps/web/src/tests/themeTokenSpecificity.test.ts
+   node --test apps/web/src/tests/themeTokenSpecificity.test.ts
    ```
-4. **4-State Visual Inspection**:
-   Audit Mobile Light (390x844), Mobile Dark (390x844), Desktop Light (1440x900), Desktop Dark (1440x900) across `/schedule`, `/visit`, `/finance`, `/imaging`.
+   *Expected Output*: Exit code `0`, all tests passing.
+4. **Encoding Integrity Gate**:
+   ```bash
+   node scripts/check-encoding.mjs
+   ```
+   *Expected Output*: Exit code `0`, 0 mojibake errors.
+5. **TypeScript Compilation Gate**:
+   ```bash
+   npm run typecheck -w @dental/web
+   ```
+   *Expected Output*: Exit code `0`, 0 compiler errors.
+
+### Invalidation Conditions
+- Any CSS variable in `var()` resolves to undefined in any theme.
+- Any mobile interactive element renders with height or width < 44px on `max-width: 700px` or `(pointer: coarse)`.
+- Any component renders a bright white background (`#ffffff` or un-themed `bg-white`) when `data-theme="dark"` or `data-theme="night"` is active.

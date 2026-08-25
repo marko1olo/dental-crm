@@ -304,6 +304,62 @@ describe("checkAppointmentResourceCollision — 4D schedule collision detection"
 		assert.equal(afterResult.hasCollision, false);
 	});
 
+	test("Обнаруживает граничную коллизию при пересечении ровно на 1 минуту", () => {
+		// Базовый: 10:00 - 11:00. Проверяем нахлёст на 1 минуту с конца (10:59 - 11:30)
+		const overlapEnd1Min = checkAppointmentResourceCollision(
+			{
+				patientId: "pat-2",
+				doctorUserId: "doc-1",
+				chairId: "chair-2",
+				startsAt: "2028-11-01T10:59:00.000Z",
+				endsAt: "2028-11-01T11:30:00.000Z",
+			},
+			[baseAppointment],
+			{ staff: staffList, chairs: chairsList, patients: patientsList },
+		);
+		assert.equal(overlapEnd1Min.hasCollision, true);
+		assert.equal(overlapEnd1Min.conflictType, "doctor");
+
+		// Проверяем нахлёст на 1 минуту с начала (09:30 - 10:01)
+		const overlapStart1Min = checkAppointmentResourceCollision(
+			{
+				patientId: "pat-2",
+				doctorUserId: "doc-2",
+				chairId: "chair-1",
+				startsAt: "2028-11-01T09:30:00.000Z",
+				endsAt: "2028-11-01T10:01:00.000Z",
+			},
+			[baseAppointment],
+			{ staff: staffList, chairs: chairsList, patients: patientsList },
+		);
+		assert.equal(overlapStart1Min.hasCollision, true);
+		assert.equal(overlapStart1Min.conflictType, "chair");
+	});
+
+	test("Обнаруживает одновременную запись ассистента в 2 разных кабинета", () => {
+		// Ассистент ast-1 уже в appt-100 (Кабинет 1, 10:00-11:00).
+		// Пытаемся записать ast-1 в Кабинет 2 (10:15-10:45) с другим врачом и пациентом.
+		const assistantCrossCabinetCollision = checkAppointmentResourceCollision(
+			{
+				patientId: "pat-2",
+				doctorUserId: "doc-2",
+				chairId: "chair-2",
+				assistantUserId: "ast-1",
+				startsAt: "2028-11-01T10:15:00.000Z",
+				endsAt: "2028-11-01T10:45:00.000Z",
+			},
+			[baseAppointment],
+			{ staff: staffList, chairs: chairsList, patients: patientsList },
+		);
+
+		assert.equal(assistantCrossCabinetCollision.hasCollision, true);
+		assert.equal(assistantCrossCabinetCollision.conflictType, "assistant");
+		assert.match(
+			assistantCrossCabinetCollision.message ?? "",
+			/Ассистент Смирнов Алексей уже занят\(а\)/,
+		);
+	});
+
 	test("Невалидные или пустые данные не приводят к сбою и возвращают false", () => {
 		assert.equal(
 			checkAppointmentResourceCollision({}, [baseAppointment]).hasCollision,

@@ -29,6 +29,7 @@ import "./styles/dente-redesign.css";
 import "./styles/token-aliases.css";
 // Минимальный размер зон нажатия на узких экранах.
 import "./styles/touch-targets.css";
+import "./styles/modules/mobile-touch.css";
 // Горизонтальные переполнения, подтверждённые замерами.
 import "./styles/overflow-fixes.css";
 // Контраст текста по WCAG 1.4.3.
@@ -111,9 +112,10 @@ if (publicPortalRoute) {
 	(window.location.hash.startsWith("#clinical-modals-studio") ||
 		window.location.search.includes("clinical-modals-studio"))
 ) {
+	installApiAuthFetch();
 	appRoot.render(
 		<React.StrictMode>
-			<BootErrorBoundary audience="public">
+			<BootErrorBoundary audience="clinic">
 				<ClinicalModalsStudioStandalone />
 				<GlobalToast />
 			</BootErrorBoundary>
@@ -124,9 +126,10 @@ if (publicPortalRoute) {
 	(window.location.hash.startsWith("#odontogram-studio") ||
 		window.location.search.includes("odontogram-studio"))
 ) {
+	installApiAuthFetch();
 	appRoot.render(
 		<React.StrictMode>
-			<BootErrorBoundary audience="public">
+			<BootErrorBoundary audience="clinic">
 				<OdontogramStudioStandalone />
 				<GlobalToast />
 			</BootErrorBoundary>

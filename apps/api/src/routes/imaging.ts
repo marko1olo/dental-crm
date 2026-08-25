@@ -9595,22 +9595,20 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const result = await withTenantCtx(organizationId, async () => {
-			return await LocalPacsStorageService.registerLocalRadiologyScan({
-				organizationId,
-				patientId,
-				visitId,
-				kind,
-				title,
-				toothCode,
-				region,
-				localFilePath,
-				fileSizeBytes,
-				dicomStudyUid,
-				dicomSeriesUid,
-				dicomSopInstanceUid,
-				localThumbnailDataUri,
-			});
+		const result = await LocalPacsStorageService.registerLocalRadiologyScan({
+			organizationId,
+			patientId,
+			visitId,
+			kind,
+			title,
+			toothCode,
+			region,
+			localFilePath,
+			fileSizeBytes,
+			dicomStudyUid,
+			dicomSeriesUid,
+			dicomSopInstanceUid,
+			localThumbnailDataUri,
 		});
 
 		return reply.status(201).send({
@@ -9633,9 +9631,7 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 			if (!organizationId) return;
 
 			const { studyId } = request.params;
-			const study = await withTenantCtx(organizationId, async () => {
-				return await LocalPacsStorageService.getLocalStudyForConsultation(organizationId, studyId);
-			});
+			const study = await LocalPacsStorageService.getLocalStudyForConsultation(organizationId, studyId);
 
 			if (!study) {
 				return reply.status(404).send({
@@ -9672,9 +9668,7 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const result = await withTenantCtx(organizationId, async () => {
-			return await LocalPacsStorageService.queueCloudSync(studyId, organizationId);
-		});
+		const result = await LocalPacsStorageService.queueCloudSync(studyId, organizationId);
 
 		return reply.status(200).send(result);
 	});
@@ -9690,9 +9684,7 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 		const organizationId = requireOrganizationId(request, reply);
 		if (!organizationId) return;
 
-		const pending = await withTenantCtx(organizationId, async () => {
-			return await LocalPacsStorageService.listPendingSyncs(organizationId);
-		});
+		const pending = await LocalPacsStorageService.listPendingSyncs(organizationId);
 
 		return reply.status(200).send({
 			success: true,

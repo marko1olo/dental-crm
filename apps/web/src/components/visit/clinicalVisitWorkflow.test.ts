@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+	DENTAL_DRUG_DOSAGE_LIMITS,
+	DENTAL_PRESCRIPTION_DRUG_CATALOG,
+	type Form107_1uPayload,
+	type PrescriptionDrugItem,
+	renderForm107_1uHtml,
+	verifyPrescriptionStatutoryValidity,
+} from "@dental/shared";
+import {
 	ANESTHESIA_QUICK_PRESETS,
 	appendAnesthesiaToSoap,
 	appendRecommendationToSoap,
@@ -9,7 +17,20 @@ import {
 	mergeSoapDiaryState,
 	PATIENT_RECOMMENDATIONS,
 } from "../../lib/clinicalProtocols043";
+import {
+	estimatorDismissalKeys,
+	type EstimatorToothInput,
+	reconcileAutoSuggestions,
+} from "../odontogram/treatmentEstimatorPricing";
+import type { PlanPriceCatalogItem } from "../plan/planPricing";
+import { DENTAL_FAST_PRESCRIPTION_SETS } from "../prescriptions/PrescriptionPrintModal";
 import type { DiaryState } from "../useVisitDiaryLogic";
+import {
+	completeClinicalVisitAndAssembleEstimate,
+	extractProceduresFromDiary,
+	CLINICAL_STANDARD_PRICE_CATALOG,
+	type ClinicalEstimateItem,
+} from "./clinicalVisitWorkflow";
 
 describe("Clinical Visit & SOAP Diary Ergonomics Engine", () => {
 	const initialEmptyDiary: DiaryState = {
@@ -391,6 +412,343 @@ describe("Clinical Visit & SOAP Diary Ergonomics Engine", () => {
 			assert.ok(diary.treatmentDescription.includes("Холод на область щеки"));
 			assert.ok(diary.treatmentDescription.includes("Щадящая диета"));
 			assert.ok(diary.treatmentDescription.includes("Нимесил 100 мг"));
+		});
+	});
+
+	describe("1-Click Dental Prescriptions Engine (Form 107-1/u & Pharmacological Invariants)", () => {
+		it("should verify standard dental prescription drug catalog and dosage limits", () => {
+			assert.ok(DENTAL_PRESCRIPTION_DRUG_CATALOG.length >= 10);
+
+			// 1. Amoxiclav (Antibiotic)
+			const amoxiclav = DENTAL_PRESCRIPTION_DRUG_CATALOG.find(
+				(d) => d.id === "amoxiclav_875_125",
+			);
+			assert.ok(amoxiclav !== undefined);
+			assert.equal(amoxiclav?.category, "antibiotic");
+			assert.ok(amoxiclav?.latinRp.includes("Amoxicillini 875 mg"));
+			assert.ok(amoxiclav?.signaRu.includes("2 раза в сутки"));
+
+			// 2. Ibuprofen (NSAID)
+			const ibuprofen = DENTAL_PRESCRIPTION_DRUG_CATALOG.find(
+				(d) => d.id === "ibuprofen_400",
+			);
+			assert.ok(ibuprofen !== undefined);
+			assert.equal(ibuprofen?.category, "nsaid");
+			assert.ok(ibuprofen?.latinRp.includes("Ibuprofeni 400 mg"));
+			const ibuLimits = DENTAL_DRUG_DOSAGE_LIMITS.ibuprofen_400;
+			assert.ok(ibuLimits !== undefined);
+			assert.equal(ibuLimits?.maxSingleDoseMg, 800);
+			assert.equal(ibuLimits?.maxDailyDoseMg, 2400);
+
+			// 3. Chlorhexidine 0.05% (Antiseptic)
+			const chlorhexidine = DENTAL_PRESCRIPTION_DRUG_CATALOG.find(
+				(d) => d.id === "chlorhexidine_005",
+			);
+			assert.ok(chlorhexidine !== undefined);
+			assert.equal(chlorhexidine?.category, "antiseptic");
+			assert.ok(chlorhexidine?.signaRu.includes("Ротовые ванночки"));
+
+			// 4. Nimesil 100mg (NSAID)
+			const nimesil = DENTAL_PRESCRIPTION_DRUG_CATALOG.find(
+				(d) => d.id === "nimesulide_100",
+			);
+			assert.ok(nimesil !== undefined);
+			assert.equal(nimesil?.category, "nsaid");
+			const nimLimits = DENTAL_DRUG_DOSAGE_LIMITS.nimesulide_100;
+			assert.ok(nimLimits !== undefined);
+			assert.equal(nimLimits?.maxSingleDoseMg, 100);
+			assert.equal(nimLimits?.maxDailyDoseMg, 200);
+
+			// 5. Cholisal Gel (Antiseptic)
+			const cholisal = DENTAL_PRESCRIPTION_DRUG_CATALOG.find(
+				(d) => d.id === "cholisal_gel",
+			);
+			assert.ok(cholisal !== undefined);
+			assert.equal(cholisal?.category, "antiseptic");
+		});
+
+		it("should verify 1-click fast prescription sets and their drug mapping", () => {
+			assert.ok(DENTAL_FAST_PRESCRIPTION_SETS.length >= 6);
+			for (const set of DENTAL_FAST_PRESCRIPTION_SETS) {
+				assert.ok(set.drugIds.length > 0 && set.drugIds.length <= 3);
+				for (const drugId of set.drugIds) {
+					const drugExists = DENTAL_PRESCRIPTION_DRUG_CATALOG.some(
+						(d) => d.id === drugId,
+					);
+					assert.ok(
+						drugExists,
+						`Drug preset ${drugId} in set ${set.id} must exist in DENTAL_PRESCRIPTION_DRUG_CATALOG`,
+					);
+				}
+			}
+		});
+
+		it("should validate and render Form 107-1/u prescription payload correctly", () => {
+			const amoxiclav = DENTAL_PRESCRIPTION_DRUG_CATALOG.find(
+				(d) => d.id === "amoxiclav_875_125",
+			)!;
+			const nimesil = DENTAL_PRESCRIPTION_DRUG_CATALOG.find(
+				(d) => d.id === "nimesulide_100",
+			)!;
+
+			const drugItems: PrescriptionDrugItem[] = [
+				{
+					id: "drug-1",
+					latinName: amoxiclav.latinRp,
+					tradeName: amoxiclav.tradeNameRu,
+					form: amoxiclav.formRu,
+					dosage: amoxiclav.dosageRu,
+					quantity: amoxiclav.quantityLabel,
+					dispenseLatin: amoxiclav.dispenseLatin,
+					signaRussian: amoxiclav.signaRu,
+					category: amoxiclav.category,
+				},
+				{
+					id: "drug-2",
+					latinName: nimesil.latinRp,
+					tradeName: nimesil.tradeNameRu,
+					form: nimesil.formRu,
+					dosage: nimesil.dosageRu,
+					quantity: nimesil.quantityLabel,
+					dispenseLatin: nimesil.dispenseLatin,
+					signaRussian: nimesil.signaRu,
+					category: nimesil.category,
+				},
+			];
+
+			const audit = verifyPrescriptionStatutoryValidity({
+				formType: "107-1u",
+				prescriptionDate: "2026-08-23",
+				validityDays: "60",
+				items: drugItems,
+			});
+			assert.equal(audit.isValid, true);
+			assert.equal(audit.errors.length, 0);
+
+			const payload: Form107_1uPayload = {
+				formNumber: "107-1/у",
+				clinicLegalName: "ООО «Денте Стоматология»",
+				prescriptionSeriesNumber: "РЕЦ-2026-1044",
+				prescriptionDate: "2026-08-23",
+				patientFullName: "Иванов Иван Иванович",
+				patientBirthDate: "1988-05-14",
+				medicalCardNumber: "043/у-2026/891",
+				doctorFullName: "Д-р Смирнова Анна Сергеевна",
+				doctorSpecialty: "Врач-стоматолог терапевт",
+				validityDays: "60",
+				isChronicSpecialCare: false,
+				items: drugItems,
+				diagnosisIcd10Code: "K04.5",
+			};
+
+			const html = renderForm107_1uHtml(payload);
+			assert.ok(html.includes("Форма бланка № 107-1/у"));
+			assert.ok(html.includes("ООО «Денте Стоматология»"));
+			assert.ok(html.includes("Иванов Иван Иванович"));
+			assert.ok(html.includes("Amoxicillini 875 mg"));
+			assert.ok(html.includes("Nimesulidi 100 mg"));
+		});
+	});
+
+	describe("Financial Estimator Auto-Reconciliation & Synchronous Bill Items", () => {
+		const mockCatalog: PlanPriceCatalogItem[] = [
+			{
+				id: "srv_caries",
+				title: "Лечение кариеса с пломбированием светоотверждаемым композитом",
+				category: "therapy",
+				basePriceRub: 4500,
+				active: true,
+			},
+			{
+				id: "srv_pulpitis",
+				title: "Эндодонтическое лечение пульпита (1 канал)",
+				category: "therapy",
+				basePriceRub: 6500,
+				active: true,
+			},
+			{
+				id: "srv_crown",
+				title: "Коронка из диоксида циркония",
+				category: "prosthetics",
+				basePriceRub: 25000,
+				active: true,
+			},
+			{
+				id: "srv_implant",
+				title: "Установка дентального имплантата Osstem",
+				category: "surgery",
+				basePriceRub: 38000,
+				active: true,
+			},
+			{
+				id: "srv_guide",
+				title: "Навигационный хирургический шаблон",
+				category: "surgery",
+				basePriceRub: 12000,
+				active: true,
+			},
+		];
+
+		it("should auto-reconcile tooth pathologies into price-matched service items with correct phases", () => {
+			const teethInput: EstimatorToothInput[] = [
+				{ toothNumber: 16, state: "Caries", surfaces: ["O"] },
+				{ toothNumber: 26, state: "Pulpitis" },
+				{ toothNumber: 36, state: "Crown" },
+				{ toothNumber: 46, state: "Planned_Implant" },
+			];
+
+			const { items, changed } = reconcileAutoSuggestions(
+				[],
+				teethInput,
+				mockCatalog,
+			);
+
+			assert.equal(changed, true);
+			assert.equal(items.length, 5); // Caries + Pulpitis + Crown + Implant + Surgical Guide
+
+			// Therapy (Phase 1)
+			const cariesItem = items.find((i) => i.toothNumber === 16);
+			assert.ok(cariesItem !== undefined);
+			assert.equal(cariesItem?.priceId, "srv_caries");
+			assert.equal(cariesItem?.price, 4500);
+			assert.equal(cariesItem?.phase, 1);
+			assert.ok(cariesItem?.name.includes("Поверхности: O"));
+
+			const pulpitisItem = items.find((i) => i.toothNumber === 26);
+			assert.ok(pulpitisItem !== undefined);
+			assert.equal(pulpitisItem?.priceId, "srv_pulpitis");
+			assert.equal(pulpitisItem?.price, 6500);
+			assert.equal(pulpitisItem?.phase, 1);
+
+			// Orthopedics (Phase 3)
+			const crownItem = items.find((i) => i.toothNumber === 36);
+			assert.ok(crownItem !== undefined);
+			assert.equal(crownItem?.priceId, "srv_crown");
+			assert.equal(crownItem?.price, 25000);
+			assert.equal(crownItem?.phase, 3);
+
+			// Surgery (Phase 2)
+			const implantItems = items.filter((i) => i.toothNumber === 46);
+			assert.equal(implantItems.length, 2);
+			const implant = implantItems.find((i) => i.priceId === "srv_implant");
+			const guide = implantItems.find((i) => i.priceId === "srv_guide");
+			assert.ok(implant !== undefined);
+			assert.ok(guide !== undefined);
+			assert.equal(implant?.price, 38000);
+			assert.equal(implant?.phase, 2);
+			assert.equal(guide?.price, 12000);
+			assert.equal(guide?.phase, 2);
+
+			// Exact Total
+			const totalRub = items.reduce((sum, item) => sum + (item.price ?? 0), 0);
+			assert.equal(totalRub, 86000);
+		});
+
+		it("should respect dismissal keys and not resurrect dismissed items", () => {
+			const teethInput: EstimatorToothInput[] = [
+				{ toothNumber: 16, state: "Caries" },
+				{ toothNumber: 36, state: "Crown" },
+			];
+
+			const initial = reconcileAutoSuggestions([], teethInput, mockCatalog);
+			assert.equal(initial.items.length, 2);
+
+			const crownItem = initial.items.find((i) => i.toothNumber === 36)!;
+			const dismissalKeys = new Set(estimatorDismissalKeys(crownItem));
+
+			const secondRun = reconcileAutoSuggestions(
+				initial.items.filter((i) => i.toothNumber !== 36),
+				teethInput,
+				mockCatalog,
+				dismissalKeys,
+			);
+
+			assert.equal(secondRun.items.length, 1);
+			assert.equal(secondRun.items[0]?.toothNumber, 16);
+		});
+	});
+
+	describe("1-Click Clinical Visit Completion & Automated Estimate Engine", () => {
+		it("extracts anesthesia, cofferdam and composite restoration from caries diary", () => {
+			const diary: Partial<DiaryState> = {
+				diagnosisIcd10: "K02.1",
+				diagnosisTooth: "16",
+				statusLocalis: "Глубокая кариозная полость 16 зуба (MO). Зондирование болезненно по дну полости.",
+				treatmentDescription:
+					"Инфильтрационная анестезия Sol. Ultracaini D-S 1:200000 1.7 мл. Изоляция коффердам. Препарирование кариозной полости, адгезивный протокол, пломбирование Estelite Asteria A3B/A3E. Шлифовка, полировка.",
+			};
+
+			const items = extractProceduresFromDiary(diary);
+
+			assert.ok(items.length >= 3);
+			const hasAnes = items.some((i) => i.category === "anesthesia" && i.priceRub === 800);
+			const hasCoff = items.some((i) => i.category === "isolation" && i.priceRub === 600);
+			const hasTherapy = items.some((i) => i.category === "therapy" && i.priceRub === 4500);
+
+			assert.equal(hasAnes, true);
+			assert.equal(hasCoff, true);
+			assert.equal(hasTherapy, true);
+		});
+
+		it("extracts anesthesia, cofferdam, endodontics and radiovisiography from pulpitis diary", () => {
+			const diary: Partial<DiaryState> = {
+				diagnosisIcd10: "K04.0",
+				diagnosisTooth: "36",
+				statusLocalis: "Полость зуба 36 вскрыта, зондирование устьев каналов резко болезненно, кровоточивость.",
+				treatmentDescription:
+					"Проводниковая анестезия Ультракаин Д-С Форте 1.7 мл. Наложен коффердам. Экстирпация пульпы, эндодонтическая обработка корневых каналов ProTaper Gold, ирригация 3% NaOCl + 17% EDTA. Обтурация гуттаперчей с AH Plus. Контрольная радиовизиография визиографом.",
+			};
+
+			const items = extractProceduresFromDiary(diary);
+
+			const hasAnes = items.some((i) => i.category === "anesthesia");
+			const hasCoff = items.some((i) => i.category === "isolation");
+			const hasEndo = items.some((i) => i.category === "endodontics" && i.priceRub === 6500);
+			const hasRadio = items.some((i) => i.category === "diagnostics" && i.priceRub === 500);
+
+			assert.equal(hasAnes, true);
+			assert.equal(hasCoff, true);
+			assert.equal(hasEndo, true);
+			assert.equal(hasRadio, true);
+		});
+
+		it("completes clinical visit, calculates exact estimate, discount and generates SBP QR checkout payload", () => {
+			const result = completeClinicalVisitAndAssembleEstimate({
+				visitId: "VIS-9988",
+				patientId: "pat-101",
+				patientName: "Алексеев Дмитрий Игоревич",
+				patientPhone: "+7 (999) 111-22-33",
+				doctorName: "Д-р Смирнова Анна Сергеевна",
+				doctorSpecialty: "Врач-стоматолог терапевт",
+				diary: {
+					diagnosisIcd10: "K02.1",
+					diagnosisTooth: "46",
+					treatmentDescription: "Анестезия Ультракаин 1.7 мл. Изоляция коффердам. Пломбирование Estelite 46.",
+				},
+				discountPercent: 10,
+			});
+
+			assert.equal(result.visitId, "VIS-9988");
+			assert.equal(result.patientName, "Алексеев Дмитрий Игоревич");
+			assert.equal(result.form043uSaved, true);
+			assert.equal(result.status, "ready_for_payment");
+
+			// Gross: 800 (Anes) + 600 (Coff) + 4500 (Caries) = 5900 ₽
+			assert.equal(result.totalGrossRub, 5900);
+			// 10% Discount = 590 ₽
+			assert.equal(result.totalDiscountRub, 590);
+			// Net: 5310 ₽
+			assert.equal(result.totalNetRub, 5310);
+			assert.equal(result.totalNetKop, 531000);
+
+			// Status Banner
+			assert.ok(result.statusBannerText.replace(/[\s  ]/g, "").includes("5310₽"));
+			assert.ok(result.statusBannerText.includes("Чек передан на кассу / готов к оплате"));
+
+			// SBP QR Payload
+			assert.ok(result.sbpQrUrl.startsWith("https://qr.nspk.ru/"));
+			assert.ok(result.sbpQrUrl.includes("sum=531000"));
+			assert.ok(result.sbpQrUrl.includes("cur=RUB"));
 		});
 	});
 });

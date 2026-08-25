@@ -47,8 +47,8 @@ describe("MDLP / GS1 DataMatrix Checksum & Utility Tests", () => {
 		assert.strictEqual(isValidGtinChecksum("123"), false);
 		assert.strictEqual(isValidGtinChecksum("036647980000181"), false);
 		assert.strictEqual(isValidGtinChecksum("0366479800001A"), false);
-		assert.strictEqual(isValidGtinChecksum(null), false);
-		assert.strictEqual(isValidGtinChecksum(undefined), false);
+		assert.strictEqual(isValidGtinChecksum(null as unknown as string), false);
+		assert.strictEqual(isValidGtinChecksum(undefined as unknown as string), false);
 	});
 
 	test("normalizeDataMatrixSeparators normalizes various scanner representations of GS", () => {

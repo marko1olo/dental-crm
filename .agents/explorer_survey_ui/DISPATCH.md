@@ -1,27 +1,18 @@
-# Dispatch: Explorer Survey UI (R1)
+# DISPATCH: Survey Explorer - UI & CSS Tokens
 
-## Mission
-Survey the codebase for Requirement R1:
-Full elimination of visual and ergonomic UI defects in all 4 states (Mobile Light, Mobile Dark, Desktop Light, Desktop Dark) on Schedule, Visit, Finance, and Imaging views.
+## Objective
+Survey Requirement R1:
+- Autonomous UI Design System & 4-State Visual Self-Healing.
+- WCAG 2.1 AA 4.5:1 contrast compliance across all themes (light, dark, night, etc.).
+- Missing/unmapped CSS variables via `node scripts/check-css-tokens.mjs` analysis.
+- Broken layout shifts (CLS), forbidden design clichés (neon glowing borders, pulsing animations, purple-on-dark).
+- Viewports: Mobile (375px–390px) and Desktop (1440px–1920px).
+- Mobile interactive elements touch targets >= 44x44px.
 
-## Scope & Targets
-- `apps/web/src/`
-- Schedule views, Visit views, Finance views, Imaging views.
-- Blinding white blocks in dark mode (`[data-theme="dark"]`, `bg-white`, hardcoded `#fff` without dark equivalent).
-- Linter leak strings (e.g., eslint/biome suppressions or error comments leaking into rendered JSX).
-- Intrusive error toasts on prefetch / offline network transitions.
-- Interactive elements on mobile < 44x44px.
-- Financial cards without patient selected showing "не определено" spam instead of neutral empty state.
-
-## 2026-08-14T15:50:04Z
-User request:
-Perform a comprehensive survey of the frontend codebase (`apps/web/src/`) targeting Requirement R1:
-1. 4-state visual issues (Mobile Light, Mobile Dark, Desktop Light, Desktop Dark) on Schedule, Visit, Finance, and Imaging views.
-2. Search for hardcoded white backgrounds in dark mode (`[data-theme="dark"]`, `bg-white` without dark mode classes like `dark:bg-...`).
-3. Find any linter leak strings or raw suppression comments in rendered JSX.
-4. Identify intrusive error toasts on prefetch / offline network transitions.
-5. Check interactive elements (buttons, inputs, select triggers, icons) on mobile viewports for minimum 44x44px touch target compliance.
-6. Check financial cards empty state behavior when no patient is selected (eliminate "не определено" spam).
-
-Write your detailed findings, exact file paths, line numbers, and proposed remediation plan to C:\Clinic_MVP\dental-crm\.agents\explorer_survey_ui\handoff.md.
-Send a message back to parent when complete.
+## Scope & Instructions
+1. Read `C:\Clinic_MVP\dental-crm\.agents\AGENTS.md`, `C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md`, `C:\Clinic_MVP\dental-crm\.agents\UI_STANDARDS.md`.
+2. Inspect the UI codebase in `@dental/web` (and any shared styles in `@dental/shared` or root).
+3. Check `scripts/check-css-tokens.mjs` and CSS files for token definitions, dark/light theme consistency, unmapped variables, and contrast issues.
+4. Check touch target sizes on mobile interactive components (buttons, tabs, inputs, icon buttons).
+5. Recommend a concrete fix strategy and inventory of all files to modify.
+6. Write your comprehensive report to `C:\Clinic_MVP\dental-crm\.agents\explorer_survey_ui\handoff.md` and report back.

@@ -1,12 +1,16 @@
-## 2026-08-08T21:01:28Z
-<USER_REQUEST>
-Your working directory: C:\Clinic_MVP\dental-crm\.agents\m1_challenger_2
-Your role: Milestone 1 Adversarial Challenger 2
-Must read original request: C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md
-Must read worker handoff: C:\Clinic_MVP\dental-crm\.agents\m1_worker_1\handoff.md
+## 2026-08-18T17:31:51Z
+You are the Adversarial Re-Challenger for Milestone M1 in DENTE Dental CRM at C:/Clinic_MVP/dental-crm.
+Your working directory is C:/Clinic_MVP/dental-crm/.agents/m1_challenger_2. Create progress.md and write your final report to handoff.md in your directory.
 
-Task Objectives:
-1. Validate that the React Error Boundary checks in `smoke.spec.ts` actually trigger on invalid states or syntax errors, and confirm that normal execution produces ZERO Error Boundary crashes.
-2. Run typechecks (`npm run typecheck -w @dental/web`).
-3. Render an explicit verdict (APPROVE or REQUEST_CHANGES) in your handoff report `C:\Clinic_MVP\dental-crm\.agents\m1_challenger_2\handoff.md`.
-</USER_REQUEST>
+Read the authoritative documents:
+- C:/Clinic_MVP/dental-crm/PROJECT.md
+- C:/Clinic_MVP/dental-crm/.agents/ORIGINAL_REQUEST.md
+- C:/Clinic_MVP/dental-crm/.agents/AGENTS.md
+- C:/Clinic_MVP/dental-crm/.agents/worker_m1_fix/handoff.md
+
+Perform adversarial verification:
+1. Verify `apps/web/src/__tests__/m1AdversarialRemediation.test.ts` executes and passes 100%.
+2. Run `npm test -w @dental/web` and confirm 0 failing tests.
+3. Run `npm run typecheck` and confirm 0 compiler errors.
+
+Provide an explicit verdict (CONFIRMED or FAILED) in your handoff.md and notify the orchestrator via send_message.

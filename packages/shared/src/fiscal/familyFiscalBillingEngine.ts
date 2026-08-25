@@ -182,10 +182,11 @@ export function compileFamilyBillingDraft(
 	>();
 
 	for (const item of items) {
-		const unitPriceKop = rubToKopecks(item.priceRub);
-		const discountKop = item.discountRub ? rubToKopecks(item.discountRub) : 0;
+		const unitPriceKop = Math.max(0, rubToKopecks(item.priceRub || 0));
+		const discountKop = item.discountRub ? Math.max(0, rubToKopecks(item.discountRub)) : 0;
 		const effectivePriceKop = Math.max(0, unitPriceKop - discountKop);
-		const lineTotalKop = effectivePriceKop * (item.quantity ?? 1);
+		const qty = Number.isFinite(item.quantity) && item.quantity > 0 ? item.quantity : 1;
+		const lineTotalKop = Math.round(effectivePriceKop * qty);
 
 		totalAmountKopecks += lineTotalKop;
 
@@ -211,7 +212,7 @@ export function compileFamilyBillingDraft(
 				relationship: item.relationship,
 				itemsCount: 1,
 				totalKopecks: lineTotalKop,
-				code01Kopecks: item.taxDeductionCategory === "1" ? lineTotalKop : 0,
+				code01Kopecks: item.taxDeductionCategory === "2" ? 0 : lineTotalKop,
 				code02Kopecks: item.taxDeductionCategory === "2" ? lineTotalKop : 0,
 			});
 		}
@@ -264,7 +265,7 @@ export function compileFamilyBillingDraft(
 
 	// Multi-tender split calculation (Family wallet deposit Tag 1215 + Dynamic SBP QR Tag 1081)
 	const totalAmountRub = kopecksToRub(totalAmountKopecks);
-	const availableWalletRub = draft.availableFamilyWalletRub || 0;
+	const availableWalletRub = Math.max(0, draft.availableFamilyWalletRub || 0);
 
 	const splitResult = calculateSbpMultiTenderSplit({
 		totalAmountRub,

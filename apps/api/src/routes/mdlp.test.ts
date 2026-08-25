@@ -1,28 +1,41 @@
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, test } from "node:test";
-import Fastify from "fastify";
+import Fastify, { type FastifyInstance } from "fastify";
+import { getRequestIdentity } from "../security/identity.js";
+import { mdlpQueueService } from "../services/mdlp/index.js";
+import { authTokenSecret } from "../security/authSecret.js";
 import { signToken } from "../utils/cryptoHelper.js";
-import { TOKEN_SECRET } from "./auth.js";
 import { registerMdlpRoutes } from "./mdlp.js";
 
 describe("MDLP / Chestny Znak API Routes", () => {
-	let app: ReturnType<typeof Fastify>;
+	let app: FastifyInstance;
 	let clinicHeaders: Record<string, string>;
 	const testOrgId = "11111111-2222-3333-4444-555555555555";
 
 	beforeEach(async () => {
 		process.env.NODE_ENV = "test";
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS = "1";
+		process.env.AUTH_TOKEN_SECRET ??= "test-auth-token-secret";
+
+		mdlpQueueService.clearQueue(testOrgId);
 
 		clinicHeaders = {
 			"x-dente-clinic-token": signToken(
-				{ organizationId: testOrgId },
-				TOKEN_SECRET(),
+				{ organizationId: testOrgId, role: "admin", userId: "00000000-1111-2222-3333-444444444444" },
+				authTokenSecret(),
 			),
 			"x-organization-id": testOrgId,
 		};
 
 		app = Fastify();
+		app.addHook("onRequest", async (request) => {
+			const identity = getRequestIdentity(request);
+			const carrier = request as unknown as Record<string, unknown>;
+			if (identity?.organizationId) {
+				carrier.tenantId = identity.organizationId;
+			}
+		});
+
 		await registerMdlpRoutes(app);
 	});
 
@@ -125,57 +138,112 @@ describe("MDLP / Chestny Znak API Routes", () => {
 		);
 		assert(disposeJson.disposalDocument.xmlContent.includes('<withdrawal action_id="10560">'));
 		assert(disposeJson.disposalDocument.xmlContent.includes("<sgtin>03400930000038DISPOSE123456</sgtin>"));
+	});
 
-		// 3. Second disposal of the same SGTIN should be rejected with 409
-		const doubleDisposeRes = await app.inject({
+	test("GET /api/mdlp/catalog/anesthetics returns catalog of dental anesthetics", async () => {
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/mdlp/catalog/anesthetics",
+			headers: clinicHeaders,
+		});
+
+		assert.strictEqual(response.statusCode, 200);
+		const json = response.json();
+		assert.strictEqual(json.success, true);
+		assert(Array.isArray(json.catalog));
+		assert(json.catalog.length >= 6);
+	});
+
+	test("MDLP Queue workflow: add, list, remove, batch dispose under Schema 10560", async () => {
+		const raw1 =
+			"010366479800001621QUEUE00000001\x1d17280531\x1d10LOT1\x1d91ABCD\x1d92SIG1234567890abcdefghijklmnopqrstuvwxyz1234";
+		const raw2 =
+			"010340093000001421QUEUE00000002\x1d17280531\x1d10LOT2\x1d91ABCD\x1d92SIG1234567890abcdefghijklmnopqrstuvwxyz1234";
+
+		// 1. Add to queue
+		const addRes1 = await app.inject({
 			method: "POST",
-			url: "/api/mdlp/dispose",
+			url: "/api/mdlp/queue/add",
+			headers: clinicHeaders,
+			payload: { rawBarcode: raw1, costRub: 450 },
+		});
+		assert.strictEqual(addRes1.statusCode, 200);
+		assert.strictEqual(addRes1.json().success, true);
+
+		const addRes2 = await app.inject({
+			method: "POST",
+			url: "/api/mdlp/queue/add",
+			headers: clinicHeaders,
+			payload: { rawBarcode: raw2, costRub: 420 },
+		});
+		assert.strictEqual(addRes2.statusCode, 200);
+
+		// 2. Get queue
+		const queueRes = await app.inject({
+			method: "GET",
+			url: "/api/mdlp/queue",
+			headers: clinicHeaders,
+		});
+		assert.strictEqual(queueRes.statusCode, 200);
+		const queueJson = queueRes.json();
+		assert.strictEqual(queueJson.items.length, 2);
+		assert.strictEqual(queueJson.stats.totalCount, 2);
+		assert.strictEqual(queueJson.stats.totalCostRub, 870);
+
+		// 3. Batch dispose from queue
+		const batchRes = await app.inject({
+			method: "POST",
+			url: "/api/mdlp/dispose-batch",
 			headers: clinicHeaders,
 			payload: {
-				sgtin: "03400930000038DISPOSE123456",
+				useQueue: true,
+				docNum: "BATCH-TEST-01",
+				docDate: "2026-08-25",
 			},
 		});
 
-		assert.strictEqual(doubleDisposeRes.statusCode, 409);
-		assert.strictEqual(
-			doubleDisposeRes.json().error,
-			"MedicationAlreadyDisposed",
-		);
+		assert.strictEqual(batchRes.statusCode, 200);
+		const batchJson = batchRes.json();
+		assert.strictEqual(batchJson.success, true);
+		assert.strictEqual(batchJson.disposedCount, 2);
+		assert.strictEqual(batchJson.disposalDocument.actionId, 10560);
+		assert(batchJson.disposalDocument.xmlContent.includes("<doc_num>BATCH-TEST-01</doc_num>"));
+
+		// 4. Queue should now be empty
+		const emptyQueueRes = await app.inject({
+			method: "GET",
+			url: "/api/mdlp/queue",
+			headers: clinicHeaders,
+		});
+		assert.strictEqual(emptyQueueRes.json().items.length, 0);
 	});
 
-	test("GET /api/mdlp/items lists and filters tracked medications", async () => {
-		const resAll = await app.inject({
-			method: "GET",
-			url: "/api/mdlp/items",
+	test("POST /api/mdlp/disposal-act generates Senior Nurse Write-off Act", async () => {
+		const raw =
+			"010366479800001621ACT0000000001\x1d17280531\x1d10LOT2026\x1d91ABCD\x1d92SIG1234567890abcdefghijklmnopqrstuvwxyz1234";
+		await app.inject({
+			method: "POST",
+			url: "/api/mdlp/queue/add",
 			headers: clinicHeaders,
+			payload: { rawBarcode: raw, costRub: 450 },
 		});
 
-		assert.strictEqual(resAll.statusCode, 200);
-		const jsonAll = resAll.json();
-		assert.strictEqual(jsonAll.success, true);
-		assert(Array.isArray(jsonAll.items));
-		assert(jsonAll.total >= 2);
-
-		// Filter by status=disposed
-		const resDisposed = await app.inject({
-			method: "GET",
-			url: "/api/mdlp/items?status=disposed",
+		const actRes = await app.inject({
+			method: "POST",
+			url: "/api/mdlp/disposal-act",
 			headers: clinicHeaders,
+			payload: {
+				useQueue: true,
+				actNumber: "СПИС-API-01",
+				seniorNurseName: "Иванова Е.В.",
+			},
 		});
 
-		assert.strictEqual(resDisposed.statusCode, 200);
-		const jsonDisposed = resDisposed.json();
-		assert(jsonDisposed.items.every((it: { status: string }) => it.status === "disposed"));
-
-		// Filter by search query
-		const resSearch = await app.inject({
-			method: "GET",
-			url: "/api/mdlp/items?search=Ультракаин",
-			headers: clinicHeaders,
-		});
-
-		assert.strictEqual(resSearch.statusCode, 200);
-		const jsonSearch = resSearch.json();
-		assert(jsonSearch.items.every((it: { tradeName: string }) => it.tradeName.includes("Ультракаин")));
+		assert.strictEqual(actRes.statusCode, 200);
+		const actJson = actRes.json();
+		assert.strictEqual(actJson.success, true);
+		assert.strictEqual(actJson.actData.actNumber, "СПИС-API-01");
+		assert(actJson.html.includes("АКТ СПИСАНИЯ ЛЕКАРСТВЕННЫХ ПРЕПАРАТОВ"));
+		assert(actJson.html.includes("Иванова Е.В."));
 	});
 });

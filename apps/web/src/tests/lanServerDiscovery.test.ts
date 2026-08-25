@@ -7,11 +7,15 @@ import test from "node:test";
 import {
 	createLanFailoverFetch,
 	DEFAULT_LAN_BEACON_PORT,
+	DEFAULT_LAN_PROBE_TIMEOUT_MS,
 	discoverLocalClinicServer,
 	generateSubnetIpCandidates,
 	getActiveApiBaseUrl,
 	getLanDiscoveryCandidates,
+	HEARTBEAT_INTERVAL_ACTIVE_MS,
+	HEARTBEAT_INTERVAL_IDLE_MS,
 	isUsingLocalFallbackServer,
+	lanHeartbeatManager,
 	probeCandidateServer,
 	resetApiToCloud,
 	setActiveApiBaseUrl,
@@ -38,6 +42,9 @@ test("Local Clinic Server Discovery & Offline Failover Suite", async (t) => {
 
 	t.afterEach(() => {
 		resetApiToCloud();
+		lanHeartbeatManager.stop();
+		lanHeartbeatManager.setCloudReachable(true);
+		lanHeartbeatManager.setInterval(HEARTBEAT_INTERVAL_IDLE_MS);
 		globalThis.localStorage.clear();
 	});
 
@@ -218,4 +225,46 @@ test("Local Clinic Server Discovery & Offline Failover Suite", async (t) => {
 		assert.ok(receivedEventDetail);
 		assert.equal((receivedEventDetail as { url: string })?.url, "http://192.168.1.100:4100/api");
 	});
+
+	await t.test("10. Fast non-blocking subnet probe: respects 300ms timeout via AbortSignal", async () => {
+		globalThis.fetch = ((_url: string | URL | Request, init?: RequestInit) => {
+			return new Promise((resolve, reject) => {
+				const signal = init?.signal;
+				if (signal?.aborted) {
+					return reject(new DOMException("The operation was aborted", "AbortError"));
+				}
+				const timer = setTimeout(() => {
+					resolve({ ok: false, status: 504 });
+				}, 1000);
+
+				signal?.addEventListener("abort", () => {
+					clearTimeout(timer);
+					reject(new DOMException("The operation was aborted", "AbortError"));
+				});
+			});
+		}) as unknown as typeof fetch;
+
+		const startTime = Date.now();
+		const result = await probeCandidateServer("http://192.168.1.254:4100", 100);
+		const elapsed = Date.now() - startTime;
+
+		assert.equal(result, null);
+		assert.ok(elapsed < 300, `Probe must abort rapidly around 100ms without freezing, took ${elapsed}ms`);
+	});
+
+	await t.test("11. Dynamic heartbeat & battery conservation: adapts interval between 4s (active) and 45s (idle)", () => {
+		lanHeartbeatManager.stop();
+		assert.equal(lanHeartbeatManager.getInterval(), HEARTBEAT_INTERVAL_IDLE_MS);
+
+		// When cloud drops, switch to fast 4s interval
+		lanHeartbeatManager.setCloudReachable(false);
+		assert.equal(lanHeartbeatManager.getInterval(), HEARTBEAT_INTERVAL_ACTIVE_MS);
+		assert.equal(lanHeartbeatManager.getState().isCloudReachable, false);
+
+		// When cloud is restored, switch back to 45s idle interval for battery savings
+		lanHeartbeatManager.setCloudReachable(true);
+		assert.equal(lanHeartbeatManager.getInterval(), HEARTBEAT_INTERVAL_IDLE_MS);
+		assert.equal(lanHeartbeatManager.getState().isCloudReachable, true);
+	});
 });
+

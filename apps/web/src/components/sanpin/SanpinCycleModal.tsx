@@ -28,6 +28,7 @@ import {
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import { generateThermalStickerHtml, type KraftPackageRecord } from "./kraft/kraftPackageEngine";
 
 export interface SanpinCycleModalProps {
 	isOpen: boolean;
@@ -207,41 +208,62 @@ export function SanpinCycleModal({
 	};
 
 	const handlePrintPouchLabel = () => {
-		const printWin = window.open("", "_blank", "width=400,height=300");
+		const printWin = window.open("", "_blank", "width=500,height=400");
 		if (!printWin) {
 			showToast("Разрешите всплывающие окна для печати этикетки", "error");
 			return;
 		}
 		const expFormatted = estimatedExpiration
-			? new Date(estimatedExpiration).toLocaleDateString("ru-RU")
-			: "Вскрыть сразу";
+			? new Date(estimatedExpiration).toISOString().slice(0, 10)
+			: new Date(Date.now() + 50 * 86400000).toISOString().slice(0, 10);
+		const packDate = new Date().toISOString().slice(0, 10);
+
+		const rec: KraftPackageRecord = {
+			id: `kp-cycle-${cycleNumber}`,
+			batchId: `CYC-${cycleNumber}`,
+			serialNumber: 1,
+			packageType: (packagingType === "laminated_heat_sealed" ? "paper_plastic_pouch" : "paper_self_seal_single"),
+			packageSize: "size_100x200",
+			toolSetId: "custom_set",
+			toolSetNameRu: itemsDescription.slice(0, 32) || "Стоматологический набор",
+			itemsListRu: [itemsDescription],
+			packDate,
+			expDate: expFormatted,
+			daysLifespan: 50,
+			daysRemaining: 50,
+			status: "sterile_valid",
+			autoclaveId: deviceName,
+			cycleNumber: Number(cycleNumber),
+			operatorId: "NURSE-01",
+			operatorName: nurseName,
+			indicatorId: indicatorType === "class6_emulating" ? "vinar_inte_6" : indicatorType === "class5_integrating" ? "vinar_inte_5" : "vinar_steritest_4",
+			indicatorVerified: passedIndicator,
+			barcode128: calculatedBarcode,
+			barcodeDataMatrixPayload: `${calculatedBarcode}|${deviceName}|CYC${cycleNumber}|${packDate}|${expFormatted}|${nurseName}`,
+			isBreached: false,
+			notes: notes || "",
+			createdAt: new Date().toISOString(),
+		};
+
+		const stickerHtml = generateThermalStickerHtml(rec, {
+			size: "58x40",
+			clinicName: "Стоматологическая клиника «DENTE»",
+		});
 
 		printWin.document.write(`
 			<!DOCTYPE html>
-			<html>
+			<html lang="ru">
 			<head>
-				<title>Этикетка стерилизационного пакета</title>
+				<meta charset="UTF-8">
+				<title>Термоэтикетка: ${calculatedBarcode}</title>
 				<style>
-					body { font-family: monospace; padding: 10px; font-size: 11pt; color: #000; }
-					.border-box { border: 2px solid #000; padding: 8px; border-radius: 4px; }
-					.title { font-weight: bold; font-size: 13pt; text-align: center; border-bottom: 1px solid #000; padding-bottom: 4px; margin-bottom: 6px; }
-					.row { display: flex; justify-content: space-between; margin-bottom: 4px; }
-					.barcode { font-size: 14pt; font-weight: bold; text-align: center; letter-spacing: 2px; margin: 8px 0; background: #eee; padding: 4px; }
-					.stamp { font-size: 9pt; text-align: center; margin-top: 6px; border-top: 1px dashed #000; padding-top: 4px; }
+					@page { size: 58mm 40mm; margin: 0; }
+					body { margin: 0; padding: 0; background: #fff; display: flex; justify-content: center; align-items: center; }
 				</style>
 			</head>
 			<body>
-				<div class="border-box">
-					<div class="title">СТЕРИЛЬНО / САНПИН 3.3686-21</div>
-					<div class="row"><span>Аппарат:</span> <strong>${deviceName}</strong></div>
-					<div class="row"><span>Цикл:</span> <strong>№ ${cycleNumber} (${temperatureCelsius}°C / ${durationMin} мин)</strong></div>
-					<div class="row"><span>Дата стерилизации:</span> <strong>${new Date().toLocaleDateString("ru-RU")}</strong></div>
-					<div class="row"><span>Годен до:</span> <strong>${expFormatted}</strong></div>
-					<div class="row"><span>Содержимое:</span> <span>${itemsDescription.slice(0, 32)}...</span></div>
-					<div class="barcode">*${calculatedBarcode}*</div>
-					<div class="stamp">МЕДСЕСТРА ЦСО: ${nurseName} | ХИМ. ИНДИКАТОР КЛАСС 5: ГОДЕН</div>
-				</div>
-				<script>window.print(); setTimeout(() => window.close(), 500);</script>
+				${stickerHtml}
+				<script>window.print(); setTimeout(() => window.close(), 600);</script>
 			</body>
 			</html>
 		`);

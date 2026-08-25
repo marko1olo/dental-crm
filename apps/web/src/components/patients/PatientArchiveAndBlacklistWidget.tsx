@@ -273,7 +273,7 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 										? "Снять блокировку записи"
 										: "Заблокировать запись и добавить в ЧС"
 								}
-								className={`px-3 py-1.5 rounded text-xs font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
+								className={`px-4 py-2 min-h-[44px] rounded-xl text-xs font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center ${
 									isBlacklisted
 										? "bg-emerald-600 hover:bg-emerald-700 text-white"
 										: "bg-rose-600 hover:bg-rose-700 text-white"

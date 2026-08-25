@@ -1,9 +1,10 @@
-import type { Appointment, Dashboard, Patient } from "@dental/shared";
+import type { Appointment, Dashboard, DentalSpecialty, Patient } from "@dental/shared";
 import {
 	AlertTriangle,
 	Calendar,
 	Check,
 	Clock,
+	Flame,
 	Plus,
 	Search,
 	Sparkles,
@@ -24,6 +25,7 @@ import {
 } from "../../utils/patientSearchUtils";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { showToast } from "../GlobalToast";
+import { specialtyLabels } from "../../workspaceUiLabels";
 
 export interface QuickBookingSlotInfo {
 	dateKey?: string | undefined;
@@ -33,6 +35,9 @@ export interface QuickBookingSlotInfo {
 	doctorUserId?: string | null | undefined;
 	chairId?: string | null | undefined;
 	durationMinutes?: number | undefined;
+	reason?: string | undefined;
+	isCitoEmergency?: boolean | undefined;
+	patientId?: string | null | undefined;
 }
 
 export interface QuickBookingDrawerProps {
@@ -202,18 +207,49 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		// Assistant prefill
 		setAssistantUserId(isSoloDoctor ? "" : (assistants[0]?.id ?? ""));
 
-		// Reset patient and status
-		setPatientId("");
-		setSelectedPatient(null);
-		setSearchQuery("");
+		// Pre-selected patient if provided in slot
+		if (initialSlot?.patientId) {
+			const found = (dashboard?.patients ?? []).find((p) => p.id === initialSlot.patientId);
+			if (found) {
+				setPatientId(found.id);
+				setSelectedPatient(found);
+				setSearchQuery(found.fullName);
+			} else {
+				setPatientId(initialSlot.patientId);
+				setSelectedPatient(null);
+				setSearchQuery("");
+			}
+		} else {
+			setPatientId("");
+			setSelectedPatient(null);
+			setSearchQuery("");
+		}
+
 		setIsTypeaheadOpen(false);
 		setShowInlineNewPatient(false);
 		setNewPatientFullName("");
 		setNewPatientPhone("");
 		setNewPatientBirthDate("");
-		setReason("Осмотр");
-		setComment("");
-		setStatus("planned");
+
+		const isCito = Boolean(
+			initialSlot?.isCitoEmergency ||
+			initialSlot?.reason?.includes("CITO") ||
+			initialSlot?.reason?.includes("Острая боль")
+		);
+
+		if (isCito) {
+			setReason(initialSlot?.reason || "CITO! Острая боль");
+			setComment("Экстренный прием по острой боли (CITO)");
+			setStatus("confirmed");
+			if (!initialSlot?.durationMinutes) {
+				setDurationMinutes(20);
+			}
+		} else {
+			setReason(initialSlot?.reason || "Осмотр");
+			setComment("");
+			setStatus("planned");
+		}
+
 		setSubmitError(null);
 		setIsSubmitting(false);
 
@@ -529,15 +565,22 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			{/* Drawer Surface */}
 			<div className="relative w-full max-w-lg h-full bg-[var(--paper)] border-l border-[var(--line)] shadow-2xl flex flex-col z-10 text-[var(--ink)] overflow-hidden animate-slide-in">
 				{/* Header */}
-				<div className="p-5 border-b border-[var(--line)] flex items-center justify-between bg-[var(--paper-soft)]">
+				<div className={`p-5 border-b border-[var(--line)] flex items-center justify-between ${initialSlot?.isCitoEmergency ? "bg-rose-500/10 dark:bg-rose-950/40 border-rose-500/30" : "bg-[var(--paper-soft)]"}`}>
 					<div className="flex items-center gap-3">
-						<div className="p-2 rounded-xl bg-teal-500/10 text-[var(--teal)] border border-teal-500/20">
-							<Sparkles size={20} />
+						<div className={`p-2 rounded-xl border ${initialSlot?.isCitoEmergency ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/40 animate-pulse" : "bg-teal-500/10 text-[var(--teal)] border-teal-500/20"}`}>
+							{initialSlot?.isCitoEmergency ? <Flame size={20} /> : <Sparkles size={20} />}
 						</div>
 						<div>
-							<h3 className="text-base font-bold tracking-tight text-[var(--ink)] m-0">
-								Быстрая запись на прием
-							</h3>
+							<div className="flex items-center gap-2">
+								<h3 className="text-base font-bold tracking-tight text-[var(--ink)] m-0">
+									{initialSlot?.isCitoEmergency ? "Экстренный прием (CITO!)" : "Быстрая запись на прием"}
+								</h3>
+								{initialSlot?.isCitoEmergency && (
+									<span className="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-extrabold uppercase tracking-wider">
+										Острая боль
+									</span>
+								)}
+							</div>
 							<p className="text-xs text-[var(--muted)] m-0 mt-0.5">
 								{startsAtLocal ? `${startsAtLocal.slice(0, 10)} в ${startsAtLocal.slice(11, 16)}` : "1-клик бронирование"} · {durationMinutes} мин
 							</p>
@@ -546,7 +589,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] transition-colors"
+						className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] transition-colors cursor-pointer"
 						aria-label="Закрыть"
 					>
 						<X size={20} />
@@ -555,6 +598,16 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 
 				{/* Body Content */}
 				<div className="flex-1 overflow-y-auto p-5 space-y-5">
+					{/* CITO Emergency Callout Banner */}
+					{initialSlot?.isCitoEmergency && (
+						<div className="p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/40 text-rose-900 dark:text-rose-100 text-xs font-bold flex items-center justify-between gap-2 shadow-xs">
+							<div className="flex items-center gap-2">
+								<Flame size={18} className="text-rose-600 dark:text-rose-400 shrink-0 animate-bounce" />
+								<span>Экстренный слот дежурному врачу (острая боль, пульпит, абсцесс). Заполнение карты можно завершить во время или после приема.</span>
+							</div>
+						</div>
+					)}
+
 					{/* Collision alert if any */}
 					{collision.hasCollision && (
 						<div
@@ -568,40 +621,57 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 
 					{/* 1. Patient Selection & Typeahead */}
 					<div className="space-y-2">
-						<div className="flex justify-between items-center">
+						<div className="flex justify-between items-center flex-wrap gap-1">
 							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
 								<User size={14} className="text-[var(--teal)]" />
 								<span>Пациент *</span>
 							</label>
 							{!showInlineNewPatient && (
-								<button
-									type="button"
-									onClick={() => {
-										setShowInlineNewPatient(true);
-										setNewPatientFullName(
-											/^[а-яёa-z\s]+$/i.test(searchQuery) ? searchQuery : "",
-										);
-										setNewPatientPhone(
-											/^[0-9+()-\s]+$/.test(searchQuery) ? searchQuery : "",
-										);
-									}}
-									className="text-xs font-bold text-[var(--teal)] hover:underline flex items-center gap-1 min-h-[36px] px-2"
-								>
-									<UserPlus size={14} />
-									<span>+ Новый пациент</span>
-								</button>
+								<div className="flex items-center gap-2">
+									{initialSlot?.isCitoEmergency && (
+										<button
+											type="button"
+											onClick={() => {
+												setShowInlineNewPatient(true);
+												setNewPatientFullName("Пациент с острой болью (CITO)");
+												setNewPatientPhone("");
+											}}
+											className="text-xs font-extrabold text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1 min-h-[36px] px-2 bg-rose-500/10 rounded-lg cursor-pointer"
+											title="Создать временную карту для пациента с острой болью"
+										>
+											<Flame size={13} />
+											<span>+ Экспресс-пациент CITO</span>
+										</button>
+									)}
+									<button
+										type="button"
+										onClick={() => {
+											setShowInlineNewPatient(true);
+											setNewPatientFullName(
+												/^[а-яёa-z\s]+$/i.test(searchQuery) ? searchQuery : "",
+											);
+											setNewPatientPhone(
+												/^[0-9+()-\s]+$/.test(searchQuery) ? searchQuery : "",
+											);
+										}}
+										className="text-xs font-bold text-[var(--teal)] hover:underline flex items-center gap-1 min-h-[36px] px-2 cursor-pointer"
+									>
+										<UserPlus size={14} />
+										<span>+ Новый пациент</span>
+									</button>
+								</div>
 							)}
 						</div>
 
 						{/* Selected Patient Card */}
 						{selectedPatient ? (
-							<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line-strong)] flex items-center justify-between">
+							<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-between">
 								<div className="flex items-center gap-3">
-									<div className="w-9 h-9 rounded-full bg-[var(--teal-surface)] text-[var(--teal-dark)] font-bold text-sm flex items-center justify-center border border-[var(--teal)]/30">
+									<div className="w-9 h-9 rounded-full bg-[var(--teal-surface)] text-[var(--teal-dark)] font-bold text-sm flex items-center justify-center border border-[var(--teal)]/30 shrink-0">
 										{selectedPatient.fullName.slice(0, 2).toUpperCase()}
 									</div>
-									<div>
-										<h4 className="text-sm font-bold text-[var(--ink)] m-0 leading-snug">
+									<div className="min-w-0">
+										<h4 className="text-sm font-bold text-[var(--ink)] m-0 leading-snug truncate">
 											{selectedPatient.fullName}
 										</h4>
 										<div className="text-xs text-[var(--muted)] flex gap-2 mt-0.5">
@@ -627,7 +697,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 							</div>
 						) : (
 							/* Typeahead Search Input */
-							<div className="relative">
+							<div className="relative z-30">
 								<div className="relative">
 									<Search
 										size={16}
@@ -672,7 +742,11 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 								{/* Dropdown Suggestions */}
 								{isTypeaheadOpen && (
 									<div
-										className="absolute top-full left-0 right-0 mt-1.5 max-h-60 overflow-y-auto rounded-xl bg-[var(--paper)] border border-[var(--line-strong)] shadow-2xl z-30 divide-y divide-[var(--line)]"
+										className="absolute top-full left-0 right-0 mt-1.5 max-h-60 overflow-y-auto rounded-xl bg-[var(--paper)] border border-[var(--line-strong)] shadow-2xl z-50 divide-y divide-[var(--line)]"
+										style={{
+											backgroundColor: "var(--paper)",
+											boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5)",
+										}}
 										role="listbox"
 									>
 										{filteredPatients.length > 0 ? (
@@ -681,14 +755,16 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 													key={p.id}
 													type="button"
 													onClick={() => selectPatient(p)}
-													className={`w-full p-3 text-left flex items-center justify-between hover:bg-[var(--paper-soft)] transition-colors min-h-[44px] cursor-pointer ${
-														idx === highlightedIndex ? "bg-[var(--paper-soft)] ring-1 ring-inset ring-[var(--teal)]" : ""
+													className={`w-full p-3 text-left flex items-center justify-between transition-colors min-h-[44px] cursor-pointer ${
+														idx === highlightedIndex
+															? "bg-[var(--teal-surface)] text-[var(--ink)]"
+															: "bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)]"
 													}`}
 													role="option"
 													aria-selected={idx === highlightedIndex}
 												>
-													<div>
-														<div className="text-sm font-semibold text-[var(--ink)]">
+													<div className="min-w-0">
+														<div className="text-sm font-semibold text-[var(--ink)] truncate">
 															{p.fullName}
 														</div>
 														<div className="text-xs text-[var(--muted)] flex gap-2 mt-0.5">
@@ -696,7 +772,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 															{p.birthDate && <span>д.р. {p.birthDate}</span>}
 														</div>
 													</div>
-													<Check size={14} className="text-[var(--teal)] opacity-0 group-hover:opacity-100" />
+													<Check size={14} className="text-[var(--teal)] opacity-0 group-hover:opacity-100 shrink-0" />
 												</button>
 											))
 										) : (
@@ -746,7 +822,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 								</div>
 								<div className="space-y-2">
 									<div>
-										<label className="text-[11px] font-semibold text-[var(--muted)] block mb-1">
+										<label className="text-xs font-semibold text-[var(--muted)] block mb-1">
 											ФИО пациента *
 										</label>
 										<input
@@ -760,7 +836,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 									</div>
 									<div className="grid grid-cols-2 gap-2">
 										<div>
-											<label className="text-[11px] font-semibold text-[var(--muted)] block mb-1">
+											<label className="text-xs font-semibold text-[var(--muted)] block mb-1">
 												Телефон
 											</label>
 											<input
@@ -772,7 +848,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 											/>
 										</div>
 										<div>
-											<label className="text-[11px] font-semibold text-[var(--muted)] block mb-1">
+											<label className="text-xs font-semibold text-[var(--muted)] block mb-1">
 												Дата рождения
 											</label>
 											<input
@@ -799,26 +875,26 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 					</div>
 
 					{/* 2. Date, Time & Duration Section */}
-					<div className="space-y-3 p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
+					<div className="space-y-3 pt-1">
 						<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
 							<Clock size={14} className="text-[var(--teal)]" />
 							<span>Время и длительность *</span>
 						</label>
 
-						<div className="grid grid-cols-2 gap-3">
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 							<div>
-								<span className="text-[11px] font-semibold text-[var(--muted)] block mb-1">
+								<span className="text-xs font-semibold text-[var(--muted)] block mb-1">
 									Начало
 								</span>
 								<input
 									type="datetime-local"
 									value={startsAtLocal}
 									onChange={(e) => setStartsAtLocal(e.target.value)}
-									className="w-full p-2.5 min-h-[44px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+									className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
 								/>
 							</div>
 							<div>
-								<span className="text-[11px] font-semibold text-[var(--muted)] block mb-1">
+								<span className="text-xs font-semibold text-[var(--muted)] block mb-1">
 									Окончание (+{durationMinutes}м)
 								</span>
 								<input
@@ -832,26 +908,26 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 											setDurationMinutes(Math.round((eMs - sMs) / 60_000));
 										}
 									}}
-									className="w-full p-2.5 min-h-[44px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+									className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
 								/>
 							</div>
 						</div>
 
 						{/* Fast Duration Chips */}
 						<div>
-							<span className="text-[11px] font-semibold text-[var(--muted)] block mb-1.5">
+							<span className="text-xs font-bold text-[var(--muted)] block mb-1.5">
 								Быстрый выбор длительности:
 							</span>
-							<div className="flex flex-wrap gap-1.5">
+							<div className="flex flex-wrap gap-2">
 								{COMMON_DURATIONS.map((mins) => (
 									<button
 										key={mins}
 										type="button"
 										onClick={() => setDurationMinutes(mins)}
-										className={`min-h-[44px] sm:min-h-[36px] px-3 rounded-lg text-xs font-bold transition-all ${
+										className={`min-h-[44px] px-3.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
 											durationMinutes === mins
 												? "bg-[var(--teal-dark)] text-white shadow-sm ring-1 ring-[var(--teal)]"
-												: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
+												: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper)]"
 										}`}
 									>
 										{mins} мин
@@ -864,32 +940,35 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 					{/* 3. Doctor, Assistant & Chair Selection */}
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 						<div>
-							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
+							<label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
 								Врач *
 							</label>
 							<select
 								value={doctorUserId}
 								onChange={(e) => setDoctorUserId(e.target.value)}
-								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-medium outline-none focus:ring-2 focus:ring-[var(--teal)]"
 								required
 							>
 								<option value="">-- Выберите врача --</option>
 								{doctors.map((d) => (
 									<option key={d.id} value={d.id}>
 										{d.fullName}
+										{d.specialties && d.specialties.length > 0
+											? ` (${d.specialties.map((s) => specialtyLabels[s as DentalSpecialty] || s).join(", ")})`
+											: ""}
 									</option>
 								))}
 							</select>
 						</div>
 
 						<div>
-							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
+							<label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
 								Кресло / Кабинет *
 							</label>
 							<select
 								value={chairId}
 								onChange={(e) => setChairId(e.target.value)}
-								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-medium outline-none focus:ring-2 focus:ring-[var(--teal)]"
 								required
 							>
 								<option value="">-- Выберите кресло --</option>
@@ -903,13 +982,13 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 
 						{!isSoloDoctor && (
 							<div className="sm:col-span-2">
-								<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
+								<label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
 									Ассистент
 								</label>
 								<select
 									value={assistantUserId}
 									onChange={(e) => setAssistantUserId(e.target.value)}
-									className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+									className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-medium outline-none focus:ring-2 focus:ring-[var(--teal)]"
 								>
 									<option value="">-- Без ассистента --</option>
 									{assistants.map((a) => (
@@ -925,7 +1004,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 					{/* 4. Reason & Comment */}
 					<div className="space-y-3">
 						<div>
-							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
+							<label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
 								Повод обращения / Услуга
 							</label>
 							<input
@@ -935,7 +1014,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 								placeholder="Например: Осмотр, Кариес, Консультация"
 								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
 							/>
-							<div className="flex flex-wrap gap-1.5 mt-2">
+							<div className="flex flex-wrap gap-2 mt-2">
 								{COMMON_REASONS.map((r) => (
 									<button
 										key={r}
@@ -944,7 +1023,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 											const cur = reason.trim();
 											setReason(cur ? `${cur}, ${r.toLowerCase()}` : r);
 										}}
-										className="min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] transition-colors cursor-pointer"
+										className="min-h-[44px] px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] transition-colors cursor-pointer"
 									>
 										+ {r}
 									</button>
@@ -953,7 +1032,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 						</div>
 
 						<div>
-							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
+							<label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
 								Комментарий для врача / регистратуры
 							</label>
 							<textarea
@@ -961,7 +1040,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 								onChange={(e) => setComment(e.target.value)}
 								placeholder="Дополнительные пожелания или примечания…"
 								rows={2}
-								className="w-full p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
 							/>
 						</div>
 					</div>
@@ -978,12 +1057,12 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 				</div>
 
 				{/* Footer Actions */}
-				<div className="p-4 border-t border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between gap-3">
+				<div className="p-4 sm:p-5 pb-6 sm:pb-5 border-t border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between gap-3 shrink-0">
 					<button
 						type="button"
 						onClick={onClose}
 						disabled={isSubmitting}
-						className="min-h-[44px] px-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-semibold transition-colors disabled:opacity-50"
+						className="min-h-[44px] px-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-semibold transition-colors disabled:opacity-50 cursor-pointer"
 					>
 						Отмена (Esc)
 					</button>

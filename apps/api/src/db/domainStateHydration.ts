@@ -98,6 +98,7 @@ import {
 	validScheduleTimeZone,
 } from "../sampleData.js";
 import { staffAuthorityFlags } from "../security/permissions.js";
+import { withTenantCtx } from "./rls.js";
 import { db } from "./client.js";
 import {
 	projectServiceCatalogRows,
@@ -485,7 +486,9 @@ export async function hydrateDomainStateFromDb(
 	if (report.mode === "in_memory") {
 		return { state: inMemoryDomainState, report };
 	}
-	return hydrateFromDatabase(organizationId, report);
+	return withTenantCtx(organizationId, async () => {
+		return hydrateFromDatabase(organizationId, report);
+	});
 }
 
 /**
@@ -1389,20 +1392,16 @@ async function _findLatestVisitIdForPatient(
 	patientId: string,
 ): Promise<string | null> {
 	if (inMemoryMode()) return null;
-	try {
-		const rows = await db
-			.select({ id: schema.visits.id })
-			.from(schema.visits)
-			.where(
-				and(
-					eq(schema.visits.organizationId, organizationId),
-					eq(schema.visits.patientId, patientId),
-				),
-			)
-			.orderBy(desc(schema.visits.updatedAt))
-			.limit(1);
-		return rows[0]?.id ?? null;
-	} catch {
-		return null;
-	}
+	const rows = await db
+		.select({ id: schema.visits.id })
+		.from(schema.visits)
+		.where(
+			and(
+				eq(schema.visits.organizationId, organizationId),
+				eq(schema.visits.patientId, patientId),
+			),
+		)
+		.orderBy(desc(schema.visits.updatedAt))
+		.limit(1);
+	return rows[0]?.id ?? null;
 }

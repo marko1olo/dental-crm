@@ -1369,150 +1369,6 @@ export function DocumentsView(props: DocumentsViewProps) {
 				className="document-factory"
 				aria-label="Быстро создать документ"
 			>
-				<label className="document-factory-tax-year">
-					Налоговый год
-					<input
-						type="number"
-						inputMode="numeric"
-						min={2021}
-						max={2100}
-						value={taxDocumentYear}
-						onChange={(event) => {
-							const nextYear = Number(event.target.value);
-							if (
-								Number.isInteger(nextYear) &&
-								nextYear >= 2021 &&
-								nextYear <= 2100
-							) {
-								setTaxDocumentYear(nextYear);
-							}
-						}}
-					/>
-					<span>КНД 1151156 с 2024 года; старая справка для 2021-2023</span>
-					<button
-						type="button"
-						className="primary-button"
-						style={{ marginLeft: "auto" }}
-						onClick={() => setIsFnsNdflXmlOpen(true)}
-						data-testid="open-fns-ndfl-xml-modal-btn"
-					>
-						Справка для ФНС (XML Приказ № ЕД-7-11/755@)
-					</button>
-				</label>
-				{typedTaxDocumentPayerOptions.length ? (
-					<label className="document-factory-tax-payer">
-						Плательщик для КНД
-						<select
-							value={selectedTaxDocumentPayerKey}
-							onChange={(event) => {
-								setTaxDocumentPayerInn(event.target.value);
-							}}
-						>
-							{typedTaxDocumentPayerOptions.length > 1 ? (
-								<option value="">Выберите плательщика</option>
-							) : null}
-							{typedTaxDocumentPayerOptions.map((option) => (
-								<option key={option.key} value={option.key}>
-									{option.label} · {money(option.amountRub)}
-								</option>
-							))}
-						</select>
-						<span>
-							Справка и реестр не смешивают разных налогоплательщиков.
-						</span>
-					</label>
-				) : null}
-				{selectedDocumentUsesTaxPaymentSelection ? (
-					<section
-						className="document-factory-tax-payments"
-						aria-label="Фискальные чеки для налогового документа"
-					>
-						<div className="document-factory-tax-payments-heading">
-							<div>
-								<strong>Фискальные чеки для заявления и справки</strong>
-								<span>
-									Выбрано {selectedEligibleTaxPayments.length} из{" "}
-									{typedEligibleTaxPayments.length} ·{" "}
-									{money(selectedTaxPaymentTotalRub)}
-								</span>
-							</div>
-							<div>
-								<button
-									type="button"
-									className="text-button"
-									onClick={selectAllEligibleTaxPaymentsForCurrentDocument}
-								>
-									Все
-								</button>
-								<button
-									type="button"
-									className="text-button"
-									onClick={() => setSelectedTaxPaymentIds([])}
-								>
-									Снять
-								</button>
-								<button
-									type="button"
-									className="primary-button"
-									onClick={() => setIsFnsNdflXmlOpen(true)}
-								>
-									Справка для ФНС (XML Приказ № ЕД-7-11/755@)
-								</button>
-							</div>
-						</div>
-						{typedEligibleTaxPayments.length ? (
-							<div className="tax-payment-selection-list">
-								{typedEligibleTaxPayments.map((payment) => {
-									const paymentDate =
-										payment.fiscalReceiptIssuedAt || payment.paidAt;
-									const receiptLabel =
-										payment.fiscalReceiptNumber?.trim() ||
-										payment.id.slice(0, 8);
-									const payerLabel =
-										payment.payerFullName?.trim() || "плательщик не указан";
-									return (
-										<label
-											key={payment.id}
-											className="tax-payment-selection-item"
-										>
-											<input
-												type="checkbox"
-												checked={selectedTaxPaymentIdSet.has(payment.id)}
-												onChange={(event) => {
-													setSelectedTaxPaymentIds((current: string[]) =>
-														event.target.checked
-															? Array.from(new Set([...current, payment.id]))
-															: current.filter(
-																	(paymentId: string) =>
-																		paymentId !== payment.id,
-																),
-													);
-												}}
-											/>
-											<span>
-												<strong>
-													{money(payment.amountRub)} · чек {receiptLabel}
-												</strong>
-												<small>
-													{paymentDate} · {payerLabel}
-													{payment.taxDeductionCode
-														? ` · код ${payment.taxDeductionCode}`
-														: " · код не выбран"}
-												</small>
-											</span>
-										</label>
-									);
-								})}
-							</div>
-						) : (
-							<EmptyState
-								title="Нет проведенных чеков"
-								description="Нет проведенных чеков за выбранный год и плательщика. Сначала запишите оплату с фискальным чеком и данными плательщика."
-								className="my-3 py-6"
-							/>
-						)}
-					</section>
-				) : null}
 				<div className="document-factory-selected-kind">
 					<label>
 						Документ
@@ -1536,13 +1392,160 @@ export function DocumentsView(props: DocumentsViewProps) {
 						</select>
 					</label>
 					<span id={selectedDocumentCreateGuidanceId}>
-						{/* Было «Перед созданием CRM проверит обязательные поля» —
-                      программа говорила о себе аббревиатурой. */}
 						{selectedDocumentNeedsPayload
-							? "Заполните форму ниже: без обязательных полей документ не создастся. Выбранный вид документа запомнится."
-							: "Можно создать сразу. Выбранный вид документа запомнится."}
+							? "Заполните обязательные поля формы ниже для формирования и печати документа."
+							: "Документ готов к моментальному формированию и печати в 1 клик."}
 					</span>
 				</div>
+
+				{selectedDocumentUsesTaxPaymentSelection ? (
+					<>
+						<label className="document-factory-tax-year">
+							Налоговый год
+							<input
+								type="number"
+								inputMode="numeric"
+								min={2021}
+								max={2100}
+								value={taxDocumentYear}
+								onChange={(event) => {
+									const nextYear = Number(event.target.value);
+									if (
+										Number.isInteger(nextYear) &&
+										nextYear >= 2021 &&
+										nextYear <= 2100
+									) {
+										setTaxDocumentYear(nextYear);
+									}
+								}}
+							/>
+							<span>КНД 1151156 с 2024 года; старая справка для 2021-2023</span>
+							<button
+								type="button"
+								className="primary-button"
+								style={{ marginLeft: "auto" }}
+								onClick={() => setIsFnsNdflXmlOpen(true)}
+								data-testid="open-fns-ndfl-xml-modal-btn"
+							>
+								Справка для ФНС (XML Приказ № ЕД-7-11/755@)
+							</button>
+						</label>
+
+						{typedTaxDocumentPayerOptions.length ? (
+							<label className="document-factory-tax-payer">
+								Плательщик для КНД
+								<select
+									value={selectedTaxDocumentPayerKey}
+									onChange={(event) => {
+										setTaxDocumentPayerInn(event.target.value);
+									}}
+								>
+									{typedTaxDocumentPayerOptions.length > 1 ? (
+										<option value="">Выберите плательщика</option>
+									) : null}
+									{typedTaxDocumentPayerOptions.map((option) => (
+										<option key={option.key} value={option.key}>
+											{option.label} · {money(option.amountRub)}
+										</option>
+									))}
+								</select>
+								<span>
+									Справка и реестр не смешивают разных налогоплательщиков.
+								</span>
+							</label>
+						) : null}
+
+						<section
+							className="document-factory-tax-payments"
+							aria-label="Фискальные чеки для налогового документа"
+						>
+							<div className="document-factory-tax-payments-heading">
+								<div>
+									<strong>Фискальные чеки для заявления и справки</strong>
+									<span>
+										Выбрано {selectedEligibleTaxPayments.length} из{" "}
+										{typedEligibleTaxPayments.length} ·{" "}
+										{money(selectedTaxPaymentTotalRub)}
+									</span>
+								</div>
+								<div>
+									<button
+										type="button"
+										className="text-button"
+										onClick={selectAllEligibleTaxPaymentsForCurrentDocument}
+									>
+										Все
+									</button>
+									<button
+										type="button"
+										className="text-button"
+										onClick={() => setSelectedTaxPaymentIds([])}
+									>
+										Снять
+									</button>
+									<button
+										type="button"
+										className="primary-button"
+										onClick={() => setIsFnsNdflXmlOpen(true)}
+									>
+										Справка для ФНС (XML Приказ № ЕД-7-11/755@)
+									</button>
+								</div>
+							</div>
+							{typedEligibleTaxPayments.length ? (
+								<div className="tax-payment-selection-list">
+									{typedEligibleTaxPayments.map((payment) => {
+										const paymentDate =
+											payment.fiscalReceiptIssuedAt || payment.paidAt;
+										const receiptLabel =
+											payment.fiscalReceiptNumber?.trim() ||
+											payment.id.slice(0, 8);
+										const payerLabel =
+											payment.payerFullName?.trim() || "плательщик не указан";
+										return (
+											<label
+												key={payment.id}
+												className="tax-payment-selection-item"
+											>
+												<input
+													type="checkbox"
+													checked={selectedTaxPaymentIdSet.has(payment.id)}
+													onChange={(event) => {
+														setSelectedTaxPaymentIds((current: string[]) =>
+															event.target.checked
+																? Array.from(new Set([...current, payment.id]))
+																: current.filter(
+																		(paymentId: string) =>
+																			paymentId !== payment.id,
+																	),
+														);
+													}}
+												/>
+												<span>
+													<strong>
+														{money(payment.amountRub)} · чек {receiptLabel}
+													</strong>
+													<small>
+														{paymentDate} · {payerLabel}
+														{payment.taxDeductionCode
+															? ` · код ${payment.taxDeductionCode}`
+															: " · код не выбран"}
+													</small>
+												</span>
+											</label>
+										);
+									})}
+								</div>
+							) : (
+								<EmptyState
+									title="Нет проведенных чеков"
+									description="Нет проведенных чеков за выбранный год и плательщика. Сначала запишите оплату с фискальным чеком и данными плательщика."
+									className="my-3 py-6"
+								/>
+							)}
+						</section>
+					</>
+				) : null}
 				<article
 					className="document-source-card"
 					aria-label="Статус источника выбранной формы"

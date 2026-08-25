@@ -1,5 +1,6 @@
 /**
- * FiscalReceipt54FzModal.tsx — Интерактивное модальное окно фискализации 54-ФЗ, раздельной оплаты и СБП QR.
+ * FiscalReceipt54FzModal.tsx — Интерактивное модальное окно фискализации 54-ФЗ (ФФД 1.2),
+ * раздельной оплаты, чеков возврата прихода, коррекционных чеков и справок для налогового вычета (КНД 1151156).
  */
 
 import React, { useMemo, useState } from "react";
@@ -9,17 +10,21 @@ import {
 	Check,
 	CheckCircle2,
 	Coins,
+	Copy,
 	CreditCard,
-	DollarSign,
+	FileCheck,
 	FileText,
 	Gift,
 	Layers,
 	Printer,
 	QrCode,
 	Receipt,
+	RotateCcw,
 	Send,
+	ShieldAlert,
 	ShieldCheck,
 	Sparkles,
+	Undo2,
 	Wallet,
 	X,
 } from "lucide-react";
@@ -27,25 +32,35 @@ import { parseChestnyZnakDataMatrix } from "@dental/shared";
 import type { TreatmentPlanItem } from "../treatment-plans/types";
 import { showToast } from "../GlobalToast";
 import {
+	ANNUAL_TAX_DEDUCTION_LIMIT_RUB,
+	calculateProportionalRefundAllocation,
 	calculateSplitPaymentAllocation,
+	calculateTaxDeductionBreakdown,
+	generateFiscalCorrectionReceipt54Fz,
 	generateFiscalReceipt54Fz,
+	generateFiscalRefundReceipt54Fz,
+	generateTaxDeductionCertificate,
 	mapTreatmentItemsToFiscalReceipt,
 	type SplitPaymentInput,
+	TAX_DEDUCTION_RELATIONSHIP_CODES,
+	TAX_DEDUCTION_RELATIONSHIP_LABELS,
+	type TaxDeductionRelationship,
 	TREATMENT_STAGE_LABELS,
 } from "./order804nFiscalEngine";
 import { Order804nFiscalReceiptPrint } from "./Order804nFiscalReceiptPrint";
+import { numberToWordsRu } from "../treatment-plans/TreatmentPlanCompletedActPrint";
 
 export interface FiscalReceipt54FzModalProps {
 	readonly isOpen: boolean;
 	readonly items: readonly TreatmentPlanItem[];
 	readonly patientId: string;
-	readonly patientName?: string;
-	readonly patientPhone?: string;
-	readonly patientDepositRub?: number;
-	readonly cashierFullName?: string;
-	readonly clinicName?: string;
+	readonly patientName?: string | undefined;
+	readonly patientPhone?: string | undefined;
+	readonly patientDepositRub?: number | undefined;
+	readonly cashierFullName?: string | undefined;
+	readonly clinicName?: string | undefined;
 	readonly onClose: () => void;
-	readonly onReceiptFiscalized?: (receiptNumber: string) => void;
+	readonly onReceiptFiscalized?: ((receiptNumber: string) => void) | undefined;
 }
 
 /**
@@ -74,10 +89,15 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 }) => {
 	if (!isOpen) return null;
 
-	const [activeTab, setActiveTab] = useState<"payment" | "preview">("payment");
+	const [activeTab, setActiveTab] = useState<"payment" | "refund" | "correction" | "certificate" | "act" | "preview">("payment");
+	const [actNumber, setActNumber] = useState<string>(
+		`АКТ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+	);
+	const [contractNumber, setContractNumber] = useState<string>(
+		`ДОГ-${new Date().getFullYear()}/${patientId.slice(0, 5).toUpperCase()}`,
+	);
 	const [selectedStageKind, setSelectedStageKind] = useState<string>("all");
 	const [mdlpCodes, setMdlpCodes] = useState<Record<string, string>>({});
-	const [showItemsList, setShowItemsList] = useState<boolean>(true);
 	const [cashAmount, setCashAmount] = useState<number>(0);
 	const [receivedCashRub, setReceivedCashRub] = useState<number>(0);
 	const [cardAmount, setCardAmount] = useState<number>(0);
@@ -86,9 +106,25 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 	const [certificateAmount, setCertificateAmount] = useState<number>(0);
 	const [insuranceAmount, setInsuranceAmount] = useState<number>(0);
 	const [guaranteeLetterNumber, setGuaranteeLetterNumber] = useState<string>("");
-	const [isDmsActive, setIsDmsActive] = useState<boolean>(false);
 	const [customerContact, setCustomerContact] = useState<string>(patientPhone);
 	const [isFiscalizing, setIsFiscalizing] = useState<boolean>(false);
+
+	// Refund state (Возврат прихода при отказе от части услуг)
+	const [refundItemSelection, setRefundItemSelection] = useState<Record<string, boolean>>({});
+	const [refundReason, setRefundReason] = useState<string>("Отказ пациента от части услуг плана лечения");
+	const [originalReceiptNumberForRefund, setOriginalReceiptNumberForRefund] = useState<string>("");
+
+	// Correction state (Чек коррекции 54-ФЗ)
+	const [correctionType, setCorrectionType] = useState<"self_initiated" | "by_instruction">("self_initiated");
+	const [correctionDocDate, setCorrectionDocDate] = useState<string>(new Date().toISOString().slice(0, 10));
+	const [correctionDocNumber, setCorrectionDocNumber] = useState<string>("АКТ-1");
+	const [correctionReason, setCorrectionReason] = useState<string>("Коррекция неприменения ККТ при техническом сбое");
+
+	// Certificate state (Справка для налоговой КНД 1151156)
+	const [payerFullName, setPayerFullName] = useState<string>(patientName);
+	const [payerInn, setPayerInn] = useState<string>("");
+	const [payerRelationship, setPayerRelationship] = useState<TaxDeductionRelationship>("self");
+	const [taxYear, setTaxYear] = useState<number>(new Date().getFullYear());
 
 	const availableStages = useMemo(() => {
 		const stages = new Set<string>();
@@ -163,7 +199,6 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 			receivedCashRub: receivedCashRub > 0 ? receivedCashRub : cashAmount,
 			cardRub: cardAmount,
 			sbpRub: sbpAmount,
-			// Сертификат и аванс фискализируются по 54-ФЗ как зачет предоплаты / встречное предоставление (Тег 1215/1216)
 			depositRub: depositAmount + certificateAmount,
 			insuranceRub: insuranceAmount,
 			...(guaranteeLetterNumber.trim() ? { guaranteeLetterNumber: guaranteeLetterNumber.trim() } : {}),
@@ -198,45 +233,28 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 			setCashAmount(0);
 			setDepositAmount(0);
 			setCertificateAmount(0);
-			setIsDmsActive(true);
-			showToast(
-				`Выбрана 100% оплата по ДМС: ${formatMoneyRu(totalSumRub)}`,
-				"info",
-				1500,
-			);
+			showToast(`Выбрана 100% оплата по ДМС: ${formatMoneyRu(totalSumRub)}`, "info", 1500);
 		} else if (type === "card") {
 			setCardAmount(totalSumRub - insuranceAmount);
 			setSbpAmount(0);
 			setCashAmount(0);
 			setDepositAmount(0);
 			setCertificateAmount(0);
-			showToast(
-				`Выбрана оплата картой: ${formatMoneyRu(totalSumRub - insuranceAmount)}`,
-				"info",
-				1500,
-			);
+			showToast(`Выбрана оплата картой: ${formatMoneyRu(totalSumRub - insuranceAmount)}`, "info", 1500);
 		} else if (type === "sbp") {
 			setSbpAmount(totalSumRub - insuranceAmount);
 			setCardAmount(0);
 			setCashAmount(0);
 			setDepositAmount(0);
 			setCertificateAmount(0);
-			showToast(
-				`Выбрана оплата СБП QR: ${formatMoneyRu(totalSumRub - insuranceAmount)}`,
-				"info",
-				1500,
-			);
+			showToast(`Выбрана оплата СБП QR: ${formatMoneyRu(totalSumRub - insuranceAmount)}`, "info", 1500);
 		} else if (type === "cash") {
 			setCashAmount(totalSumRub - insuranceAmount);
 			setCardAmount(0);
 			setSbpAmount(0);
 			setDepositAmount(0);
 			setCertificateAmount(0);
-			showToast(
-				`Выбрана оплата наличными: ${formatMoneyRu(totalSumRub - insuranceAmount)}`,
-				"info",
-				1500,
-			);
+			showToast(`Выбрана оплата наличными: ${formatMoneyRu(totalSumRub - insuranceAmount)}`, "info", 1500);
 		} else if (type === "deposit") {
 			const targetTotal = totalSumRub - insuranceAmount;
 			const depUsed = Math.min(patientDepositRub, targetTotal);
@@ -259,43 +277,25 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 			setSbpAmount(0);
 			setCashAmount(0);
 			setDepositAmount(0);
-			showToast(
-				`Выбрана оплата сертификатом: ${formatMoneyRu(totalSumRub - insuranceAmount)}`,
-				"info",
-				1500,
-			);
+			showToast(`Выбрана оплата сертификатом: ${formatMoneyRu(totalSumRub - insuranceAmount)}`, "info", 1500);
 		}
 	};
 
-	// Fast Fill Helper
-	const handleFillRemaining = (
-		type: "cash" | "card" | "sbp" | "deposit" | "certificate",
-	) => {
+	const handleFillRemaining = (type: "cash" | "card" | "sbp" | "deposit" | "certificate") => {
 		const unallocated = Math.max(0, remainingRub);
 		if (type === "cash") setCashAmount((prev) => prev + unallocated);
 		if (type === "card") setCardAmount((prev) => prev + unallocated);
 		if (type === "sbp") setSbpAmount((prev) => prev + unallocated);
-		if (type === "certificate")
-			setCertificateAmount((prev) => prev + unallocated);
+		if (type === "certificate") setCertificateAmount((prev) => prev + unallocated);
 		if (type === "deposit") {
-			const maxDepositCanUse = Math.min(
-				patientDepositRub,
-				depositAmount + unallocated,
-			);
+			const maxDepositCanUse = Math.min(patientDepositRub, depositAmount + unallocated);
 			setDepositAmount(maxDepositCanUse);
 		}
 	};
 
-	// Instant distribute remaining balance
 	const handleAutoDistributeRemaining = () => {
 		if (remainingRub <= 0) return;
-		if (
-			cardAmount > 0 ||
-			(cashAmount === 0 &&
-				sbpAmount === 0 &&
-				depositAmount === 0 &&
-				certificateAmount === 0)
-		) {
+		if (cardAmount > 0 || (cashAmount === 0 && sbpAmount === 0 && depositAmount === 0 && certificateAmount === 0)) {
 			setCardAmount((prev) => prev + remainingRub);
 		} else if (sbpAmount > 0) {
 			setSbpAmount((prev) => prev + remainingRub);
@@ -306,14 +306,53 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 		} else {
 			setCardAmount((prev) => prev + remainingRub);
 		}
-		showToast(
-			`Остаток ${formatMoneyRu(remainingRub)} распределен`,
-			"success",
-			1500,
-		);
+		showToast(`Остаток ${formatMoneyRu(remainingRub)} распределен`, "success", 1500);
 	};
 
+	// Refund items calculation
+	const refundActiveItems = useMemo(() => {
+		const hasAnySelection = Object.values(refundItemSelection).some(Boolean);
+		if (!hasAnySelection) return activeItems;
+		return activeItems.filter((i) => refundItemSelection[i.id]);
+	}, [activeItems, refundItemSelection]);
+
+	const refundFiscalData = useMemo(() => {
+		return mapTreatmentItemsToFiscalReceipt(refundActiveItems);
+	}, [refundActiveItems]);
+
 	const fiscalReceipt = useMemo(() => {
+		if (activeTab === "refund") {
+			return generateFiscalRefundReceipt54Fz({
+				items: refundActiveItems,
+				originalReceipt: {
+					receiptNumber: originalReceiptNumberForRefund || `CHK-${taxYear}-0001`,
+					patientId,
+					patientName,
+					customerContact: customerContact.trim() || patientPhone,
+					cashierFullName,
+					clinicLegalName: clinicName,
+				},
+				refundReason,
+				cashierFullName,
+			});
+		}
+
+		if (activeTab === "correction") {
+			return generateFiscalCorrectionReceipt54Fz({
+				items: activeItems,
+				splitPayment: splitInput,
+				correctionType,
+				correctionDocDate,
+				correctionDocNumber,
+				correctionReason,
+				patientId,
+				patientName,
+				customerContact: customerContact.trim() || patientPhone,
+				cashierFullName,
+				clinicLegalName: clinicName,
+			});
+		}
+
 		return generateFiscalReceipt54Fz({
 			items: activeItems,
 			splitPayment: splitInput,
@@ -324,7 +363,15 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 			clinicLegalName: clinicName,
 		});
 	}, [
+		activeTab,
 		activeItems,
+		refundActiveItems,
+		originalReceiptNumberForRefund,
+		refundReason,
+		correctionType,
+		correctionDocDate,
+		correctionDocNumber,
+		correctionReason,
 		splitInput,
 		patientId,
 		patientName,
@@ -332,10 +379,25 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 		patientPhone,
 		cashierFullName,
 		clinicName,
+		taxYear,
 	]);
 
+	const taxDeductionBreakdown = useMemo(() => {
+		return calculateTaxDeductionBreakdown(activeItems);
+	}, [activeItems]);
+
+	const taxDeductionCert = useMemo(() => {
+		return generateTaxDeductionCertificate({
+			receipt: fiscalReceipt,
+			payerFullName: payerFullName.trim() || patientName,
+			payerInn: payerInn.trim() || undefined,
+			payerRelationship,
+			taxYear,
+		});
+	}, [fiscalReceipt, payerFullName, patientName, payerInn, payerRelationship, taxYear]);
+
 	const handleExecuteFiscalization = async () => {
-		if (!allocation.isFullyAllocated) {
+		if (activeTab === "payment" && !allocation.isFullyAllocated) {
 			showToast(
 				`Сумма оплат не совпадает с суммой чека (остаток: ${formatMoneyRu(remainingRub)})`,
 				"warning",
@@ -347,8 +409,14 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 		setIsFiscalizing(true);
 		try {
 			await new Promise((resolve) => setTimeout(resolve, 800));
+			const opText =
+				activeTab === "refund"
+					? "Чек возврата прихода"
+					: activeTab === "correction"
+						? "Чек коррекции"
+						: "Чек";
 			showToast(
-				`Чек №${fiscalReceipt.receiptNumber} на сумму ${formatMoneyRu(totalSumRub)} успешно фискализирован в ОФД!`,
+				`${opText} №${fiscalReceipt.receiptNumber} на сумму ${formatMoneyRu(fiscalReceipt.totalRub)} успешно фискализирован в ОФД!`,
 				"success",
 				6000,
 			);
@@ -363,80 +431,58 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 		}
 	};
 
-	// Keyboard Shortcuts: 1-Card, 2-SBP, 3-Cash, 4-Deposit, 5-Certificate, Enter-Submit, Esc-Close
-	React.useEffect(() => {
-		if (!isOpen) return;
+	const handleCopyCertData = () => {
+		const text = `СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ ДЛЯ ФНС (КНД 1151156)
+Номер: ${taxDeductionCert.certificateNumber}
+Клиника: ${taxDeductionCert.clinicLegalName} (ИНН ${taxDeductionCert.clinicInn} / КПП ${taxDeductionCert.clinicKpp})
+Налогоплательщик: ${taxDeductionCert.payerFullName} (Степень родства: ${taxDeductionCert.payerRelationshipLabel}, Код ${taxDeductionCert.payerRelationshipCode})
+Пациент: ${taxDeductionCert.patientFullName}
+Налоговый период: ${taxDeductionCert.taxYear} год
+Сумма по Коду 01 (Стандартное лечение): ${formatMoneyRu(taxDeductionCert.breakdown.code01Rub)}
+Сумма по Коду 02 (Дорогостоящее лечение): ${formatMoneyRu(taxDeductionCert.breakdown.code02Rub)}
+ИТОГО к вычету: ${formatMoneyRu(taxDeductionCert.breakdown.totalRub)}
+Оценка возврата НДФЛ (13%): ${formatMoneyRu(taxDeductionCert.breakdown.refund13EstimateRub)}`;
+		navigator.clipboard.writeText(text);
+		showToast("Данные справки скопированы в буфер обмена!", "success", 2500);
+	};
 
-		const handleKeyDown = (e: KeyboardEvent) => {
-			const activeTag = (document.activeElement?.tagName || "").toUpperCase();
-			if (
-				activeTag === "INPUT" ||
-				activeTag === "TEXTAREA" ||
-				activeTag === "SELECT"
-			) {
-				return;
-			}
-
-			if (e.key === "Escape") {
-				e.preventDefault();
-				onClose();
-				return;
-			}
-
-			if (e.key === "Enter") {
-				e.preventDefault();
-				if (allocation.isFullyAllocated && !isFiscalizing) {
-					handleExecuteFiscalization();
-				}
-				return;
-			}
-
-			if (e.key === "1") {
-				e.preventDefault();
-				selectSingleMethod("card");
-				return;
-			}
-			if (e.key === "2") {
-				e.preventDefault();
-				selectSingleMethod("sbp");
-				return;
-			}
-			if (e.key === "3") {
-				e.preventDefault();
-				selectSingleMethod("cash");
-				return;
-			}
-			if (e.key === "4") {
-				e.preventDefault();
-				selectSingleMethod("deposit");
-				return;
-			}
-			if (e.key === "5") {
-				e.preventDefault();
-				selectSingleMethod("certificate");
-				return;
-			}
-		};
-
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [
-		isOpen,
-		totalSumRub,
-		patientDepositRub,
-		allocation.isFullyAllocated,
-		isFiscalizing,
-		onClose,
-		handleExecuteFiscalization,
-		selectSingleMethod,
-	]);
+	const handleCopyActData = () => {
+		const lines = [
+			`АКТ № ${actNumber} СДАЧИ-ПРИЕМКИ ВЫПОЛНЕННЫХ СТОМАТОЛОГИЧЕСКИХ РАБОТ (ОКАЗАННЫХ УСЛУГ)`,
+			`Дата: ${new Date().toLocaleDateString("ru-RU")}`,
+			`К договору оказания платных медицинских услуг: № ${contractNumber}`,
+			`Исполнитель: ${clinicName}`,
+			`Пациент (Заказчик): ${patientName}`,
+			``,
+			`ОКАЗАННЫЕ МЕДИЦИНСКИЕ УСЛУГИ:`,
+			...activeItems.map((it, i) => {
+				const toothPart = it.toothNumber ? ` [Зуб ${it.toothNumber}]` : "";
+				const codePart = it.code804n ? ` (${it.code804n})` : "";
+				const qty = it.quantity || 1;
+				const sum = it.priceRub * qty - (it.discountRub || 0);
+				return `${i + 1}. ${it.name}${codePart}${toothPart} — ${qty} шт. × ${formatMoneyRu(it.priceRub)} = ${formatMoneyRu(sum)}`;
+			}),
+			``,
+			`ИТОГО ОКАЗАНО УСЛУГ: ${formatMoneyRu(totalSumRub)}`,
+			`Сумма прописью: ${numberToWordsRu(totalSumRub)}`,
+			``,
+			`УСЛОВИЯ ПРИЕМКИ:`,
+			`Вышеперечисленные медицинские услуги выполнены в полном объеме, надлежащего качества и в установленные сроки.`,
+			`Заказчик претензий по объему, качеству и срокам оказания услуг к Исполнителю не имеет.`,
+			``,
+			`Исполнитель: _________________ / ${cashierFullName}`,
+			`Заказчик:    _________________ / ${patientName}`,
+		];
+		navigator.clipboard.writeText(lines.join("\n"));
+		showToast("Текст Акта выполненных работ скопирован в буфер!", "success", 2500);
+	};
 
 	return (
 		<div
 			className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
 			data-testid="fiscal-receipt-54fz-modal"
 		>
-			<div className="relative flex flex-col w-full max-w-4xl max-h-[92vh] bg-[var(--paper,var(--background,#ffffff))] text-[var(--ink,#0f172a)] rounded-3xl shadow-2xl overflow-hidden border border-[var(--border,#cbd5e1)]">
+			<div className="relative flex flex-col w-full max-w-5xl max-h-[92vh] bg-[var(--paper,var(--background,#ffffff))] text-[var(--ink,#0f172a)] rounded-3xl shadow-2xl overflow-hidden border border-[var(--border,#cbd5e1)]">
 				{/* Top Modal Header */}
 				<div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3.5 sm:py-4 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--border,#cbd5e1)] shrink-0 flex-wrap sm:flex-nowrap">
 					<div className="flex items-center gap-3 min-w-0">
@@ -446,9 +492,17 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 						<div className="min-w-0">
 							<div className="flex items-center gap-2 flex-wrap">
 								<h3 className="font-extrabold text-sm sm:text-base text-[var(--ink,#0f172a)] truncate">
-									Фискализация 54-ФЗ & Прием оплаты
+									{activeTab === "refund"
+										? "Возврат прихода / Отказ от услуг"
+										: activeTab === "correction"
+											? "Чек коррекции 54-ФЗ (ФФД 1.2)"
+											: activeTab === "certificate"
+												? "Справка для налогового вычета (КНД 1151156)"
+												: activeTab === "act"
+													? "Акт сдачи-приемки выполненных работ (804н)"
+													: "Фискализация 54-ФЗ & Прием оплаты"}
 								</h3>
-								<span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 font-bold">
+								<span className="text-xs font-mono px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 font-bold">
 									ФФД 1.2
 								</span>
 							</div>
@@ -459,15 +513,15 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 								</strong>{" "}
 								· Итого:{" "}
 								<strong className="text-emerald-600 dark:text-emerald-400 font-mono">
-									{formatMoneyRu(totalSumRub)}
+									{formatMoneyRu(activeTab === "refund" ? refundFiscalData.totalRub : totalSumRub)}
 								</strong>
 							</p>
 						</div>
 					</div>
 
-					<div className="flex items-center gap-2 shrink-0">
-						{/* Tab Selector */}
-						<div className="inline-flex p-1 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-xs">
+					<div className="flex items-center gap-2 shrink-0 flex-wrap">
+						{/* Multi-Tab Selector */}
+						<div className="inline-flex p-1 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-xs flex-wrap">
 							<button
 								type="button"
 								onClick={() => setActiveTab("payment")}
@@ -477,7 +531,51 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 								}`}
 							>
-								Оплата и СБП
+								Оплата 54-ФЗ
+							</button>
+							<button
+								type="button"
+								onClick={() => setActiveTab("act")}
+								className={`min-h-[44px] px-3.5 py-2 rounded-lg font-bold transition-all cursor-pointer ${
+									activeTab === "act"
+										? "bg-emerald-600 text-white shadow-xs"
+										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								}`}
+							>
+								Акт работ (804н)
+							</button>
+							<button
+								type="button"
+								onClick={() => setActiveTab("certificate")}
+								className={`min-h-[44px] px-3.5 py-2 rounded-lg font-bold transition-all cursor-pointer ${
+									activeTab === "certificate"
+										? "bg-indigo-600 text-white shadow-xs"
+										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								}`}
+							>
+								Справка для ФНС
+							</button>
+							<button
+								type="button"
+								onClick={() => setActiveTab("refund")}
+								className={`min-h-[44px] px-3.5 py-2 rounded-lg font-bold transition-all cursor-pointer ${
+									activeTab === "refund"
+										? "bg-rose-600 text-white shadow-xs"
+										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								}`}
+							>
+								Возврат услуг
+							</button>
+							<button
+								type="button"
+								onClick={() => setActiveTab("correction")}
+								className={`min-h-[44px] px-3.5 py-2 rounded-lg font-bold transition-all cursor-pointer ${
+									activeTab === "correction"
+										? "bg-amber-600 text-white shadow-xs"
+										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								}`}
+							>
+								Коррекция
 							</button>
 							<button
 								type="button"
@@ -488,7 +586,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 								}`}
 							>
-								Предпросмотр чека
+								Чек
 							</button>
 						</div>
 
@@ -505,15 +603,42 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 
 				{/* Modal Body */}
 				<div className="p-6 overflow-y-auto flex-1 space-y-6">
-					{activeTab === "payment" ? (
+					{activeTab === "payment" && (
 						<div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 							{/* Left Column: Split Payment Builders */}
 							<div className="lg:col-span-7 space-y-4">
-								{/* Stage Filter Chips (Терапия, Хирургия, Ортопедия, Ортодонтия, Гигиена) */}
+								{/* 1-Click Fast Documentation Action Bar for Front Desk */}
+								<div className="p-3.5 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex flex-wrap items-center justify-between gap-2.5">
+									<div className="flex items-center gap-2 text-xs font-bold text-teal-900 dark:text-teal-100">
+										<FileCheck size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+										<span>1-Click Документы при закрытии визита:</span>
+									</div>
+									<div className="flex items-center gap-2 flex-wrap">
+										<button
+											type="button"
+											onClick={() => setActiveTab("act")}
+											className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+											title="1-Клик: Сформировать и распечатать Акт выполненных работ"
+										>
+											<FileText size={14} />
+											<span>Акт выполненных работ (804н)</span>
+										</button>
+										<button
+											type="button"
+											onClick={() => setActiveTab("certificate")}
+											className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-indigo-500/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/15 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+											title="1-Клик: Сформировать и распечатать Справку для налоговой КНД 1151156"
+										>
+											<FileCheck size={14} />
+											<span>Справка КНД 1151156</span>
+										</button>
+									</div>
+								</div>
+								{/* Stage Filter Chips */}
 								{availableStages.length > 0 && (
 									<div className="p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] space-y-2">
 										<div className="flex items-center justify-between text-xs font-bold">
-											<span className="flex items-center gap-1.5 text-[var(--muted,#64748b)] uppercase tracking-wider text-[10px]">
+											<span className="flex items-center gap-1.5 text-[var(--muted,#64748b)] uppercase tracking-wider text-xs">
 												<Layers size={14} className="text-teal-600 dark:text-teal-400" />
 												Этап плана лечения для оплаты:
 											</span>
@@ -521,11 +646,11 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												Позиций: {activeItems.length}
 											</span>
 										</div>
-										<div className="flex flex-wrap gap-1.5">
+										<div className="flex flex-wrap gap-2">
 											<button
 												type="button"
 												onClick={() => handleSelectStage("all")}
-												className={`min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+												className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
 													selectedStageKind === "all"
 														? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-xs"
 														: "bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:border-teal-400"
@@ -542,7 +667,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 														key={st}
 														type="button"
 														onClick={() => handleSelectStage(st)}
-														className={`min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+														className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
 															selectedStageKind === st
 																? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-xs"
 																: "bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:border-teal-400"
@@ -564,11 +689,11 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												<ShieldCheck size={16} className="text-amber-600" />
 												Маркировка Честный ЗНАК / МДЛП (Тег 1162 / 2000)
 											</span>
-											<span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100">
+											<span className="px-2.5 py-1 rounded text-xs font-mono font-bold bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100">
 												Обязательно 54-ФЗ
 											</span>
 										</div>
-										<p className="text-[11px] text-amber-800 dark:text-amber-300">
+										<p className="text-xs text-amber-800 dark:text-amber-300">
 											В счете присутствуют лекарственные препараты / имплантаты, подлежащие выводу из оборота через ККТ.
 										</p>
 										<div className="space-y-2 pt-1">
@@ -580,13 +705,13 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 													return (
 														<div
 															key={markedItem.id}
-															className="p-2.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-amber-200 dark:border-amber-800/60 space-y-1.5"
+															className="p-3 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-amber-200 dark:border-amber-800/60 space-y-2"
 														>
 															<div className="flex items-center justify-between text-xs">
 																<span className="font-bold text-[var(--ink,#0f172a)] truncate max-w-[280px]">
 																	{markedItem.name}
 																</span>
-																<span className="text-[10px] font-mono text-[var(--muted,#64748b)]">
+																<span className="text-xs font-mono text-[var(--muted,#64748b)]">
 																	{formatMoneyRu(markedItem.amountRub)}
 																</span>
 															</div>
@@ -596,14 +721,14 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 																	value={currentCode}
 																	onChange={(e) => handleUpdateMdlpCode(markedItem.id, e.target.value)}
 																	placeholder="Отсканируйте GS1 DataMatrix (01)...(21)..."
-																	className="min-h-[40px] flex-1 px-3 py-1.5 text-xs font-mono rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
+																	className="min-h-[44px] flex-1 px-3.5 py-2 text-xs font-mono rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
 																/>
 																{parseResult?.isValid ? (
-																	<span className="shrink-0 px-2.5 py-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 text-xs font-bold flex items-center gap-1">
-																		<CheckCircle2 size={14} /> [М] ОК
+																	<span className="shrink-0 min-h-[44px] px-3 py-2 rounded-xl bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 text-xs font-bold flex items-center gap-1">
+																		<CheckCircle2 size={16} /> [М] ОК
 																	</span>
 																) : currentCode ? (
-																	<span className="shrink-0 px-2.5 py-1.5 rounded-lg bg-rose-100 dark:bg-rose-900 text-rose-800 dark:text-rose-200 text-xs font-bold">
+																	<span className="shrink-0 min-h-[44px] px-3 py-2 rounded-xl bg-rose-100 dark:bg-rose-900 text-rose-800 dark:text-rose-200 text-xs font-bold flex items-center">
 																		Ошибка GS1
 																	</span>
 																) : null}
@@ -624,7 +749,6 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									</span>
 								</div>
 
-								{/* 5 Big Tactile Payment Method Tiles (Elevated to min-h-[56px] / >= 48px) */}
 								{/* 6 Tactile Payment Method Tiles with DMS & Guarantee Letter support */}
 								<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
 									<button
@@ -636,12 +760,9 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-blue-400 text-[var(--ink,#0f172a)]"
 										}`}
 									>
-										<CreditCard
-											size={16}
-											className="text-blue-600 dark:text-blue-400 shrink-0"
-										/>
+										<CreditCard size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
 										<span className="text-xs font-bold whitespace-nowrap">Карта</span>
-										<span className="text-[10px] opacity-75 font-normal leading-none">Безнал</span>
+										<span className="text-xs opacity-75 font-normal leading-none">Безнал</span>
 									</button>
 
 									<button
@@ -653,12 +774,9 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-teal-400 text-[var(--ink,#0f172a)]"
 										}`}
 									>
-										<QrCode
-											size={16}
-											className="text-teal-600 dark:text-teal-400 shrink-0"
-										/>
+										<QrCode size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
 										<span className="text-xs font-bold whitespace-nowrap">СБП QR</span>
-										<span className="text-[10px] opacity-75 font-normal leading-none">Плати QR</span>
+										<span className="text-xs opacity-75 font-normal leading-none">Плати QR</span>
 									</button>
 
 									<button
@@ -670,12 +788,9 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-emerald-400 text-[var(--ink,#0f172a)]"
 										}`}
 									>
-										<Banknote
-											size={16}
-											className="text-emerald-600 dark:text-emerald-400 shrink-0"
-										/>
+										<Banknote size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 										<span className="text-xs font-bold whitespace-nowrap">Наличные</span>
-										<span className="text-[10px] opacity-75 font-normal leading-none">Касса</span>
+										<span className="text-xs opacity-75 font-normal leading-none">Касса</span>
 									</button>
 
 									<button
@@ -687,12 +802,9 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
 										}`}
 									>
-										<Coins
-											size={16}
-											className="text-amber-600 dark:text-amber-400 shrink-0"
-										/>
+										<Coins size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
 										<span className="text-xs font-bold whitespace-nowrap">Зачет аванса</span>
-										<span className="text-[10px] opacity-75 font-normal leading-none">Депозит</span>
+										<span className="text-xs opacity-75 font-normal leading-none">Депозит</span>
 									</button>
 
 									<button
@@ -704,12 +816,9 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-purple-400 text-[var(--ink,#0f172a)]"
 										}`}
 									>
-										<Gift
-											size={16}
-											className="text-purple-600 dark:text-purple-400 shrink-0"
-										/>
+										<Gift size={16} className="text-purple-600 dark:text-purple-400 shrink-0" />
 										<span className="text-xs font-bold whitespace-nowrap">Сертификат</span>
-										<span className="text-[10px] opacity-75 font-normal leading-none">Подарок</span>
+										<span className="text-xs opacity-75 font-normal leading-none">Подарок</span>
 									</button>
 
 									<button
@@ -721,93 +830,15 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-indigo-400 text-[var(--ink,#0f172a)]"
 										}`}
 									>
-										<ShieldCheck
-											size={16}
-											className="text-indigo-600 dark:text-indigo-400 shrink-0"
-										/>
+										<ShieldCheck size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
 										<span className="text-xs font-bold whitespace-nowrap">ДМС / ГП</span>
-										<span className="text-[10px] opacity-75 font-normal leading-none">Страховая</span>
+										<span className="text-xs opacity-75 font-normal leading-none">Страховая</span>
 									</button>
 								</div>
 
 								{/* Detailed Split Payment Rows with Elevated min-h-[48px] Buttons */}
 								<div className="space-y-3 pt-1">
-									{/* DMS Insurance / Guarantee Letter Split Block */}
-									<div className="p-3.5 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/60 space-y-3">
-										<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-											<div className="flex items-center gap-3">
-												<div className="p-2.5 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-													<ShieldCheck size={18} />
-												</div>
-												<div>
-													<span className="font-bold text-xs sm:text-sm block text-indigo-950 dark:text-indigo-100">
-														Страховая компания (ДМС / Гарантийное письмо)
-													</span>
-													<span className="text-[10px] sm:text-xs text-indigo-800 dark:text-indigo-300 font-medium">
-														Безналичный взаиморасчет по Номенклатуре 804н (без НДС)
-													</span>
-												</div>
-											</div>
-
-											<div className="flex items-center gap-2 w-full sm:w-auto">
-												<input
-													type="number"
-													min={0}
-													max={totalSumRub}
-													value={insuranceAmount || ""}
-													onChange={(e) => {
-														const val = Math.max(0, Math.min(totalSumRub, Number(e.target.value) || 0));
-														setInsuranceAmount(val);
-														if (val > 0) setIsDmsActive(true);
-													}}
-													placeholder="0"
-													className="min-h-[48px] flex-1 sm:w-32 px-3 py-2 text-xs sm:text-sm font-mono font-bold rounded-xl border border-indigo-300 dark:border-indigo-700 bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
-												/>
-												{insuranceAmount < totalSumRub && (
-													<button
-														type="button"
-														onClick={() => selectSingleMethod("insurance")}
-														className="min-h-[48px] px-3.5 py-2 text-xs sm:text-sm font-bold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer transition-colors flex items-center justify-center shadow-xs shrink-0"
-														title="100% покрытие страховой компанией"
-													>
-														100% ДМС
-													</button>
-												)}
-												{insuranceAmount > 0 && (
-													<button
-														type="button"
-														onClick={() => setInsuranceAmount(0)}
-														className="min-h-[48px] px-2.5 py-2 text-xs font-bold rounded-xl bg-indigo-100 text-indigo-700 hover:bg-indigo-200 cursor-pointer transition-colors shrink-0"
-														title="Сбросить ДМС"
-													>
-														Сброс
-													</button>
-												)}
-											</div>
-										</div>
-
-										{/* Guarantee letter number input & Co-payment summary */}
-										<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-indigo-100 dark:border-indigo-900/30">
-											<div className="flex items-center gap-2">
-												<FileText size={14} className="text-indigo-600 shrink-0" />
-												<input
-													type="text"
-													value={guaranteeLetterNumber}
-													onChange={(e) => setGuaranteeLetterNumber(e.target.value)}
-													placeholder="Номер ГП (напр. ГП-2026/8412)"
-													className="w-full text-xs font-mono px-3 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-800 bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
-												/>
-											</div>
-
-											<div className="flex items-center justify-end gap-2 text-xs">
-												<span className="text-[var(--muted,#64748b)]">Доплата в кассу:</span>
-												<span className="font-mono font-bold text-slate-900 dark:text-white px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-800">
-													{formatMoneyRu(patientCoPayRub)}
-												</span>
-											</div>
-										</div>
-									</div>
-									{/* Bank Card / Acquiring */}
+									{/* Bank Card */}
 									<div className="p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] flex items-center justify-between gap-3">
 										<div className="flex items-center gap-3">
 											<div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
@@ -817,7 +848,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												<span className="font-bold text-xs sm:text-sm block text-[var(--ink,#0f172a)]">
 													Безналичные / Эквайринг
 												</span>
-												<span className="text-[10px] sm:text-xs text-[var(--muted,#64748b)]">
+												<span className="text-xs text-[var(--muted,#64748b)]">
 													Банковская карта (Тег 1081)
 												</span>
 											</div>
@@ -829,11 +860,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												min={0}
 												max={totalSumRub}
 												value={cardAmount || ""}
-												onChange={(e) =>
-													setCardAmount(
-														Math.max(0, Number(e.target.value) || 0),
-													)
-												}
+												onChange={(e) => setCardAmount(Math.max(0, Number(e.target.value) || 0))}
 												placeholder="0"
 												className="min-h-[48px] w-28 sm:w-32 px-3 py-2 text-xs sm:text-sm font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
 											/>
@@ -845,16 +872,6 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 													title="Внести всю сумму на карту"
 												>
 													Вся сумма
-												</button>
-											)}
-											{remainingRub > 0 && cardAmount > 0 && (
-												<button
-													type="button"
-													onClick={() => handleFillRemaining("card")}
-													className="min-h-[48px] px-3.5 py-2 text-xs sm:text-sm font-bold rounded-xl bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 cursor-pointer transition-colors flex items-center justify-center"
-													title="Заполнить остаток"
-												>
-													+ остаток
 												</button>
 											)}
 										</div>
@@ -870,7 +887,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												<span className="font-bold text-xs sm:text-sm block text-[var(--ink,#0f172a)]">
 													СБП / Плати QR
 												</span>
-												<span className="text-[10px] sm:text-xs text-[var(--muted,#64748b)]">
+												<span className="text-xs text-[var(--muted,#64748b)]">
 													Динамический QR НСПК (Тег 1081)
 												</span>
 											</div>
@@ -882,9 +899,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												min={0}
 												max={totalSumRub}
 												value={sbpAmount || ""}
-												onChange={(e) =>
-													setSbpAmount(Math.max(0, Number(e.target.value) || 0))
-												}
+												onChange={(e) => setSbpAmount(Math.max(0, Number(e.target.value) || 0))}
 												placeholder="0"
 												className="min-h-[48px] w-28 sm:w-32 px-3 py-2 text-xs sm:text-sm font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
 											/>
@@ -893,19 +908,8 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 													type="button"
 													onClick={() => selectSingleMethod("sbp")}
 													className="min-h-[48px] px-3.5 py-2 text-xs sm:text-sm font-bold rounded-xl bg-teal-500/10 text-teal-600 hover:bg-teal-500/20 cursor-pointer transition-colors flex items-center justify-center"
-													title="Внести всю сумму через СБП"
 												>
 													Вся сумма
-												</button>
-											)}
-											{remainingRub > 0 && sbpAmount > 0 && (
-												<button
-													type="button"
-													onClick={() => handleFillRemaining("sbp")}
-													className="min-h-[48px] px-3.5 py-2 text-xs sm:text-sm font-bold rounded-xl bg-teal-500/10 text-teal-600 hover:bg-teal-500/20 cursor-pointer transition-colors flex items-center justify-center"
-													title="Заполнить остаток"
-												>
-													+ остаток
 												</button>
 											)}
 										</div>
@@ -921,7 +925,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												<span className="font-bold text-xs sm:text-sm block text-[var(--ink,#0f172a)]">
 													Наличные
 												</span>
-												<span className="text-[10px] sm:text-xs text-[var(--muted,#64748b)]">
+												<span className="text-xs text-[var(--muted,#64748b)]">
 													Купюры / касса (Тег 1031)
 												</span>
 											</div>
@@ -936,9 +940,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												onChange={(e) => {
 													const val = Math.max(0, Number(e.target.value) || 0);
 													setCashAmount(val);
-													if (receivedCashRub < val) {
-														setReceivedCashRub(val);
-													}
+													if (receivedCashRub < val) setReceivedCashRub(val);
 												}}
 												placeholder="0"
 												className="min-h-[48px] w-28 sm:w-32 px-3 py-2 text-xs sm:text-sm font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
@@ -948,81 +950,12 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 													type="button"
 													onClick={() => selectSingleMethod("cash")}
 													className="min-h-[48px] px-3.5 py-2 text-xs sm:text-sm font-bold rounded-xl bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 cursor-pointer transition-colors flex items-center justify-center"
-													title="Внести всю сумму наличными"
 												>
 													Вся сумма
 												</button>
 											)}
-											{remainingRub > 0 && cashAmount > 0 && (
-												<button
-													type="button"
-													onClick={() => handleFillRemaining("cash")}
-													className="min-h-[48px] px-3.5 py-2 text-xs sm:text-sm font-bold rounded-xl bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 cursor-pointer transition-colors flex items-center justify-center"
-													title="Заполнить остаток"
-												>
-													+ остаток
-												</button>
-											)}
 										</div>
 									</div>
-
-									{/* Instant Cash Change Calculator HUD */}
-									{cashAmount > 0 && (
-										<div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-2">
-											<div className="flex items-center justify-between text-xs">
-												<span className="font-extrabold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
-													<Coins size={14} className="text-emerald-600" />
-													Моментальный расчет сдачи
-												</span>
-												{allocation.changeRub > 0 && (
-													<span className="font-mono font-black px-2 py-0.5 rounded-md bg-emerald-600 text-white text-xs">
-														Сдача: {formatMoneyRu(allocation.changeRub)}
-													</span>
-												)}
-											</div>
-
-											<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 items-center">
-												<div>
-													<label className="block text-[11px] font-semibold text-[var(--muted,#64748b)] mb-1">
-														Внесено пациентом (рубли):
-													</label>
-													<input
-														type="number"
-														min={0}
-														value={receivedCashRub || ""}
-														onChange={(e) => setReceivedCashRub(Math.max(0, Number(e.target.value) || 0))}
-														placeholder={`${cashAmount} ₽`}
-														className="min-h-[44px] w-full px-3 py-1.5 text-sm font-mono font-black rounded-xl border border-emerald-300 dark:border-emerald-700 bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
-													/>
-												</div>
-
-												<div className="space-y-1">
-													<span className="text-[10px] font-bold text-[var(--muted,#64748b)] uppercase tracking-wider block">
-														Быстрые купюры:
-													</span>
-													<div className="flex flex-wrap gap-1">
-														<button
-															type="button"
-															onClick={() => setReceivedCashRub(cashAmount)}
-															className="px-2 py-1 text-xs font-bold rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] hover:bg-emerald-500/20 cursor-pointer"
-														>
-															Без сдачи
-														</button>
-														{[100, 500, 1000, 2000, 5000].filter((b) => b > cashAmount).slice(0, 3).map((bill) => (
-															<button
-																key={bill}
-																type="button"
-																onClick={() => setReceivedCashRub(bill)}
-																className="px-2 py-1 text-xs font-bold font-mono rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] hover:bg-emerald-500/20 cursor-pointer"
-															>
-																{bill.toLocaleString("ru-RU")} ₽
-															</button>
-														))}
-													</div>
-												</div>
-											</div>
-										</div>
-									)}
 
 									{/* Patient Deposit / Prepaid */}
 									<div className="p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] flex items-center justify-between gap-3">
@@ -1034,9 +967,8 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												<span className="font-bold text-xs sm:text-sm block text-[var(--ink,#0f172a)]">
 													Зачет аванса / Депозит
 												</span>
-												<span className="text-[10px] sm:text-xs text-[var(--muted,#64748b)]">
-													Доступно: {formatMoneyRu(patientDepositRub)} (Тег
-													1215)
+												<span className="text-xs text-[var(--muted,#64748b)]">
+													Доступно: {formatMoneyRu(patientDepositRub)} (Тег 1215)
 												</span>
 											</div>
 										</div>
@@ -1049,13 +981,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												value={depositAmount || ""}
 												onChange={(e) =>
 													setDepositAmount(
-														Math.max(
-															0,
-															Math.min(
-																patientDepositRub,
-																Number(e.target.value) || 0,
-															),
-														),
+														Math.max(0, Math.min(patientDepositRub, Number(e.target.value) || 0)),
 													)
 												}
 												placeholder="0"
@@ -1066,69 +992,15 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 													type="button"
 													onClick={() => selectSingleMethod("deposit")}
 													className="min-h-[48px] px-3.5 py-2 text-xs sm:text-sm font-bold rounded-xl bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 cursor-pointer transition-colors flex items-center justify-center"
-													title="Зачесть максимальный доступный аванс"
 												>
-													Зачесть аванс
-												</button>
-											)}
-										</div>
-									</div>
-
-									{/* Gift Certificate / Сертификат */}
-									<div className="p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] flex items-center justify-between gap-3">
-										<div className="flex items-center gap-3">
-											<div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
-												<Gift size={18} />
-											</div>
-											<div>
-												<span className="font-bold text-xs sm:text-sm block text-[var(--ink,#0f172a)]">
-													Подарочный сертификат
-												</span>
-												<span className="text-[10px] sm:text-xs text-[var(--muted,#64748b)]">
-													Встречное предоставление (Тег 1215/1216)
-												</span>
-											</div>
-										</div>
-
-										<div className="flex items-center gap-2">
-											<input
-												type="number"
-												min={0}
-												max={totalSumRub}
-												value={certificateAmount || ""}
-												onChange={(e) =>
-													setCertificateAmount(
-														Math.max(0, Number(e.target.value) || 0),
-													)
-												}
-												placeholder="0"
-												className="min-h-[48px] w-28 sm:w-32 px-3 py-2 text-xs sm:text-sm font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
-											/>
-											{certificateAmount < totalSumRub && (
-												<button
-													type="button"
-													onClick={() => selectSingleMethod("certificate")}
-													className="min-h-[48px] px-3.5 py-2 text-xs sm:text-sm font-bold rounded-xl bg-purple-500/10 text-purple-600 hover:bg-purple-500/20 cursor-pointer transition-colors flex items-center justify-center"
-													title="Внести всю сумму сертификатом"
-												>
-													Вся сумма
-												</button>
-											)}
-											{remainingRub > 0 && certificateAmount > 0 && (
-												<button
-													type="button"
-													onClick={() => handleFillRemaining("certificate")}
-													className="min-h-[48px] px-3.5 py-2 text-xs sm:text-sm font-bold rounded-xl bg-purple-500/10 text-purple-600 hover:bg-purple-500/20 cursor-pointer transition-colors flex items-center justify-center"
-													title="Заполнить остаток"
-												>
-													+ остаток
+													Зачесть
 												</button>
 											)}
 										</div>
 									</div>
 								</div>
 
-								{/* Allocation Status Indicator with Instant Remainder Distribution */}
+								{/* Allocation Status Indicator */}
 								<div
 									className={`p-4 rounded-2xl border-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm font-bold ${
 										allocation.isFullyAllocated
@@ -1140,15 +1012,9 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 								>
 									<div className="flex items-center gap-2">
 										{allocation.isFullyAllocated ? (
-											<CheckCircle2
-												size={20}
-												className="text-emerald-600 dark:text-emerald-400 shrink-0"
-											/>
+											<CheckCircle2 size={20} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 										) : (
-											<AlertTriangle
-												size={20}
-												className="text-amber-600 dark:text-amber-400 shrink-0"
-											/>
+											<AlertTriangle size={20} className="text-amber-600 dark:text-amber-400 shrink-0" />
 										)}
 										<span>
 											{allocation.isFullyAllocated
@@ -1165,23 +1031,16 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												type="button"
 												onClick={handleAutoDistributeRemaining}
 												className="min-h-[48px] px-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-teal-600 text-white hover:bg-teal-500 shadow-md shadow-teal-600/20 cursor-pointer active:scale-95 transition-all flex items-center gap-1.5"
-												title="Моментально распределить весь остаток"
 											>
 												<Sparkles size={16} />
-												<span>
-													Распределить остаток (+{formatMoneyRu(remainingRub)})
-												</span>
+												<span>Распределить остаток (+{formatMoneyRu(remainingRub)})</span>
 											</button>
 										)}
 										<span className="font-mono text-sm sm:text-base font-black">
-											{(allocation.allocatedKopecks / 100).toLocaleString(
-												"ru-RU",
-												{
-													minimumFractionDigits:
-														allocation.allocatedKopecks % 100 !== 0 ? 2 : 0,
-													maximumFractionDigits: 2,
-												},
-											)}{" "}
+											{(allocation.allocatedKopecks / 100).toLocaleString("ru-RU", {
+												minimumFractionDigits: allocation.allocatedKopecks % 100 !== 0 ? 2 : 0,
+												maximumFractionDigits: 2,
+											})}{" "}
 											/ {formatMoneyRu(totalSumRub)}
 										</span>
 									</div>
@@ -1190,8 +1049,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 								{/* 54-FZ Electronic Contact Input */}
 								<div className="space-y-1.5 pt-2">
 									<label className="block text-xs font-semibold text-[var(--muted,#64748b)]">
-										Телефон или Email для отправки электронного чека (54-ФЗ, Тег
-										1008):
+										Телефон или Email для отправки электронного чека (54-ФЗ, Тег 1008):
 									</label>
 									<input
 										type="text"
@@ -1214,39 +1072,28 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 										<div className="p-5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-teal-500/30 text-center space-y-3">
 											<div className="flex items-center justify-center gap-1.5 text-xs sm:text-sm font-bold text-teal-700 dark:text-teal-300">
 												<QrCode size={18} />
-												<span>
-													Динамический QR СБП ({formatMoneyRu(sbpAmount)})
-												</span>
+												<span>Динамический QR СБП ({formatMoneyRu(sbpAmount)})</span>
 											</div>
 
-											{/* Mock QR visual presentation */}
-											<div className="inline-block p-4 bg-white rounded-2xl border border-slate-300 shadow-md">
-												<div className="w-36 h-36 bg-slate-900 rounded-lg flex flex-col items-center justify-center text-white text-[10px] font-mono p-2 space-y-1">
-													<QrCode size={64} className="text-teal-400" />
-													<span>НСПК СБП QR</span>
-													<span className="text-[8px] text-slate-400">
-														Сумма: {formatMoneyRu(sbpAmount)}
+											<div className="inline-block p-4 bg-[var(--paper-strong,var(--paper,#ffffff))] rounded-2xl border border-[var(--border,#cbd5e1)] shadow-md">
+												<div className="w-36 h-36 bg-[var(--paper-soft,#f8fafc)] rounded-lg flex flex-col items-center justify-center text-[var(--ink,#0f172a)] text-xs font-mono p-2 space-y-1 border border-[var(--border,#cbd5e1)]">
+													<QrCode size={56} className="text-teal-600 dark:text-teal-400" />
+													<span className="font-bold">НСПК СБП QR</span>
+													<span className="text-xs text-[var(--muted,#64748b)] font-semibold">
+														{formatMoneyRu(sbpAmount)}
 													</span>
 												</div>
 											</div>
 
-											<p className="text-[11px] sm:text-xs text-[var(--muted,#64748b)]">
-												Пациент сканирует QR камерой телефона или в приложении
-												любого банка РФ.
+											<p className="text-xs text-[var(--muted,#64748b)]">
+												Пациент сканирует QR камерой телефона или в приложении любого банка РФ.
 											</p>
-
-											{fiscalReceipt.sbpPayloadUrl && (
-												<div className="text-[9px] font-mono text-slate-500 break-all p-2 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)]">
-													{fiscalReceipt.sbpPayloadUrl}
-												</div>
-											)}
 										</div>
 									) : (
 										<div className="p-8 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] text-center text-xs text-[var(--muted,#64748b)] space-y-2">
 											<QrCode size={32} className="mx-auto text-slate-400" />
 											<p>
-												Укажите сумму в поле «СБП / Плати QR», чтобы сформировать
-												платежный QR-код НСПК.
+												Укажите сумму в поле «СБП / Плати QR», чтобы сформировать платежный QR-код НСПК.
 											</p>
 										</div>
 									)}
@@ -1282,14 +1129,537 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 								</div>
 							</div>
 						</div>
-					) : (
-						/* Tab: Thermal Paper Receipt Preview */
+					)}
+
+					{/* TAB: REFUND / ВОЗВРАТ ПРИХОДА */}
+					{activeTab === "refund" && (
+						<div className="space-y-6">
+							<div className="p-4 rounded-2xl bg-rose-50/80 dark:bg-rose-950/30 border border-rose-300 dark:border-rose-800/60 flex items-start gap-3">
+								<Undo2 size={24} className="text-rose-600 shrink-0 mt-0.5" />
+								<div>
+									<h4 className="font-extrabold text-sm text-rose-950 dark:text-rose-200">
+										Формирование чека возврата прихода (ФФД 1.2 Тег 1054 = 2)
+									</h4>
+									<p className="text-xs text-rose-800 dark:text-rose-300 mt-1">
+										Отметьте позиции, от которых пациент отказался. Сумма возврата будет автоматически распределена с сохранением копеечной точности по методу наибольших остатков.
+									</p>
+								</div>
+							</div>
+
+							{/* Refused items picker */}
+							<div className="space-y-2">
+								<h4 className="font-bold text-xs uppercase tracking-wider text-[var(--muted,#64748b)]">
+									1. Выберите отменяемые услуги плана лечения:
+								</h4>
+								<div className="divide-y divide-[var(--border,#cbd5e1)] rounded-2xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] overflow-hidden">
+									{activeItems.map((item) => {
+										const isSelected = refundItemSelection[item.id] ?? false;
+										const itemRub = (item.unitPriceRub || item.priceRub || 0) * (item.quantity || 1) - (item.discountRub || 0);
+										return (
+											<label
+												key={item.id}
+												className="flex items-center justify-between p-3.5 hover:bg-[var(--paper-strong,var(--paper,#ffffff))] cursor-pointer transition-colors"
+											>
+												<div className="flex items-center gap-3">
+													<input
+														type="checkbox"
+														checked={isSelected}
+														onChange={(e) =>
+															setRefundItemSelection((prev) => ({
+																...prev,
+																[item.id]: e.target.checked,
+															}))
+														}
+														className="w-5 h-5 rounded text-rose-600 accent-rose-600 cursor-pointer"
+													/>
+													<div>
+														<span className="font-bold text-xs sm:text-sm text-[var(--ink,#0f172a)] block">
+															{item.name} {item.toothNumber ? `(зуб №${item.toothNumber})` : ""}
+														</span>
+														<span className="text-xs text-[var(--muted,#64748b)]">
+															{item.code804n ? `[${item.code804n}] · ` : ""}
+															{item.quantity || 1} шт. × {formatMoneyRu(item.unitPriceRub || item.priceRub || 0)}
+															{item.discountRub ? ` (- скидка ${formatMoneyRu(item.discountRub)})` : ""}
+														</span>
+													</div>
+												</div>
+												<span className="font-mono font-bold text-xs sm:text-sm text-rose-600 dark:text-rose-400">
+													{formatMoneyRu(itemRub)}
+												</span>
+											</label>
+										);
+									})}
+								</div>
+							</div>
+
+							{/* Refund details inputs */}
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+								<div>
+									<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
+										Номер исходного чека продажи:
+									</label>
+									<input
+										type="text"
+										value={originalReceiptNumberForRefund}
+										onChange={(e) => setOriginalReceiptNumberForRefund(e.target.value)}
+										placeholder="CHK-2026-XXXXX"
+										className="w-full min-h-[44px] px-3.5 py-2 text-xs sm:text-sm font-mono rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+									/>
+								</div>
+								<div>
+									<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
+										Причина возврата (для журнала ККТ):
+									</label>
+									<input
+										type="text"
+										value={refundReason}
+										onChange={(e) => setRefundReason(e.target.value)}
+										placeholder="Отказ пациента / Коррекция"
+										className="w-full min-h-[44px] px-3.5 py-2 text-xs sm:text-sm rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+									/>
+								</div>
+							</div>
+
+							{/* Action: Execute Refund */}
+							<button
+								type="button"
+								onClick={handleExecuteFiscalization}
+								disabled={refundFiscalData.totalRub <= 0 || isFiscalizing}
+								className="w-full min-h-[52px] flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-sm bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99]"
+							>
+								<RotateCcw size={18} />
+								<span>
+									{isFiscalizing
+										? "Фискализация возврата..."
+										: `Пробить чек возврата прихода на ${formatMoneyRu(refundFiscalData.totalRub)}`}
+								</span>
+							</button>
+						</div>
+					)}
+
+					{/* TAB: CORRECTION / ЧЕК КОРРЕКЦИИ */}
+					{activeTab === "correction" && (
+						<div className="space-y-6">
+							<div className="p-4 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800/60 flex items-start gap-3">
+								<ShieldAlert size={24} className="text-amber-600 shrink-0 mt-0.5" />
+								<div>
+									<h4 className="font-extrabold text-sm text-amber-950 dark:text-amber-200">
+										Кассовый чек коррекции по 54-ФЗ (ФФД 1.2)
+									</h4>
+									<p className="text-xs text-amber-800 dark:text-amber-300 mt-1">
+										Применяется при исправлении ошибок кассира или оформлении расчетов, произведенных без применения ККТ (с указанием документа-основания: Теги 1173, 1178, 1179).
+									</p>
+								</div>
+							</div>
+
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+								<div>
+									<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
+										Тип коррекции (Тег 1173):
+									</label>
+									<div className="flex gap-2">
+										<button
+											type="button"
+											onClick={() => setCorrectionType("self_initiated")}
+											className={`flex-1 min-h-[44px] px-3 py-2 text-xs font-bold rounded-xl border transition-colors cursor-pointer ${
+												correctionType === "self_initiated"
+													? "bg-amber-600 text-white border-amber-600"
+													: "bg-[var(--paper-strong,var(--paper,#ffffff))] border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)]"
+											}`}
+										>
+											Самостоятельно (0)
+										</button>
+										<button
+											type="button"
+											onClick={() => setCorrectionType("by_instruction")}
+											className={`flex-1 min-h-[44px] px-3 py-2 text-xs font-bold rounded-xl border transition-colors cursor-pointer ${
+												correctionType === "by_instruction"
+													? "bg-amber-600 text-white border-amber-600"
+													: "bg-[var(--paper-strong,var(--paper,#ffffff))] border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)]"
+											}`}
+										>
+											По предписанию (1)
+										</button>
+									</div>
+								</div>
+
+								<div>
+									<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
+										Дата документа-основания (Тег 1178):
+									</label>
+									<input
+										type="date"
+										value={correctionDocDate}
+										onChange={(e) => setCorrectionDocDate(e.target.value)}
+										className="w-full min-h-[44px] px-3.5 py-2 text-xs sm:text-sm rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] font-mono"
+									/>
+								</div>
+
+								<div>
+									<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
+										Номер документа-основания (Тег 1179):
+									</label>
+									<input
+										type="text"
+										value={correctionDocNumber}
+										onChange={(e) => setCorrectionDocNumber(e.target.value)}
+										placeholder="АКТ-1 или Предписание №12"
+										className="w-full min-h-[44px] px-3.5 py-2 text-xs sm:text-sm rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+									/>
+								</div>
+
+								<div>
+									<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
+										Описание причины коррекции:
+									</label>
+									<input
+										type="text"
+										value={correctionReason}
+										onChange={(e) => setCorrectionReason(e.target.value)}
+										placeholder="Сбой ККТ / Ошибка оператора"
+										className="w-full min-h-[44px] px-3.5 py-2 text-xs sm:text-sm rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+									/>
+								</div>
+							</div>
+
+							<button
+								type="button"
+								onClick={handleExecuteFiscalization}
+								disabled={isFiscalizing}
+								className="w-full min-h-[52px] flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-sm bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99]"
+							>
+								<ShieldCheck size={18} />
+								<span>
+									{isFiscalizing
+										? "Фискализация чека коррекции..."
+										: `Пробить чек коррекции на ${formatMoneyRu(totalSumRub)}`}
+								</span>
+							</button>
+						</div>
+					)}
+
+					{/* TAB: TAX DEDUCTION CERTIFICATE / СПРАВКА ДЛЯ ФНС */}
+					{activeTab === "certificate" && (
+						<div className="space-y-6">
+							{/* Deduction Codes Breakdown HUD */}
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+								{/* Code 01 */}
+								<div className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] space-y-2">
+									<div className="flex items-center justify-between">
+										<span className="px-2.5 py-1 rounded-lg bg-teal-500/10 text-teal-700 dark:text-teal-300 font-mono font-bold text-xs">
+											КОД 01 — Стандартное лечение
+										</span>
+										<span className="text-xs text-[var(--muted,#64748b)]">
+											Лимит: 150 000 ₽ / год
+										</span>
+									</div>
+									<p className="text-xs text-[var(--muted,#64748b)]">
+										Терапия, кариес, пульпит, профгигиена, ортодонтия (брекеты, элайнеры).
+									</p>
+									<div className="pt-2 flex justify-between items-baseline border-t border-[var(--border,#cbd5e1)]">
+										<span className="text-xs text-[var(--muted,#64748b)]">Сумма услуг:</span>
+										<span className="font-mono font-extrabold text-sm sm:text-base text-[var(--ink,#0f172a)]">
+											{formatMoneyRu(taxDeductionBreakdown.code01Rub)}
+										</span>
+									</div>
+									<div className="flex justify-between items-baseline text-xs text-teal-600 dark:text-teal-400 font-semibold">
+										<span>Возврат 13% (до 19 500 ₽):</span>
+										<span className="font-mono font-bold">
+											{formatMoneyRu(taxDeductionBreakdown.code01Refund13Rub)}
+										</span>
+									</div>
+								</div>
+
+								{/* Code 02 */}
+								<div className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] space-y-2">
+									<div className="flex items-center justify-between">
+										<span className="px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-mono font-bold text-xs">
+											КОД 02 — Дорогостоящее лечение
+										</span>
+										<span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
+											БЕЗ ЛИМИТА (ст. 219 НК)
+										</span>
+									</div>
+									<p className="text-xs text-[var(--muted,#64748b)]">
+										Дентальная имплантация, костная пластика, синус-лифтинг, сложная хирургия.
+									</p>
+									<div className="pt-2 flex justify-between items-baseline border-t border-[var(--border,#cbd5e1)]">
+										<span className="text-xs text-[var(--muted,#64748b)]">Сумма услуг:</span>
+										<span className="font-mono font-extrabold text-sm sm:text-base text-[var(--ink,#0f172a)]">
+											{formatMoneyRu(taxDeductionBreakdown.code02Rub)}
+										</span>
+									</div>
+									<div className="flex justify-between items-baseline text-xs text-indigo-600 dark:text-indigo-400 font-semibold">
+										<span>Возврат 13% (со всей суммы):</span>
+										<span className="font-mono font-bold">
+											{formatMoneyRu(taxDeductionBreakdown.code02Refund13Rub)}
+										</span>
+									</div>
+								</div>
+							</div>
+
+							{/* Taxpayer / Payer Form */}
+							<div className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] space-y-4">
+								<h4 className="font-bold text-xs uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5">
+									<FileCheck size={16} className="text-teal-600" />
+									Реквизиты справки КНД 1151156 для налогового органа:
+								</h4>
+
+								<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+									<div>
+										<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
+											Налогоплательщик (ФИО):
+										</label>
+										<input
+											type="text"
+											value={payerFullName}
+											onChange={(e) => setPayerFullName(e.target.value)}
+											className="w-full min-h-[44px] px-3 py-2 text-xs rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+										/>
+									</div>
+									<div>
+										<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
+											ИНН налогоплательщика:
+										</label>
+										<input
+											type="text"
+											value={payerInn}
+											onChange={(e) => setPayerInn(e.target.value)}
+											placeholder="12 цифр"
+											className="w-full min-h-[44px] px-3 py-2 text-xs font-mono rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+										/>
+									</div>
+									<div>
+										<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
+											Степень родства:
+										</label>
+										<select
+											value={payerRelationship}
+											onChange={(e) => setPayerRelationship(e.target.value as TaxDeductionRelationship)}
+											className="w-full min-h-[44px] px-3 py-2 text-xs rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+										>
+											<option value="self">1 — Пациент лично (за себя)</option>
+											<option value="spouse">2 — Супруг / супруга</option>
+											<option value="parent">3 — Родитель</option>
+											<option value="child">4 — Ребенок / подопечный</option>
+										</select>
+									</div>
+									<div>
+										<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
+											Налоговый год:
+										</label>
+										<input
+											type="number"
+											value={taxYear}
+											onChange={(e) => setTaxYear(Number(e.target.value) || new Date().getFullYear())}
+											className="w-full min-h-[44px] px-3 py-2 text-xs font-mono rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+										/>
+									</div>
+								</div>
+							</div>
+
+							{/* Actions: Copy & Print */}
+							<div className="flex flex-wrap gap-3">
+								<button
+									type="button"
+									onClick={handleCopyCertData}
+									className="min-h-[48px] px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))] flex items-center gap-2 cursor-pointer transition-colors shadow-xs"
+								>
+									<Copy size={16} />
+									<span>Скопировать данные справки</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => window.print()}
+									className="min-h-[48px] px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-indigo-600 text-white hover:bg-indigo-700 flex items-center gap-2 cursor-pointer transition-colors shadow-md"
+								>
+									<Printer size={16} />
+									<span>Печать справки КНД 1151156</span>
+								</button>
+							</div>
+						</div>
+					)}
+
+					{/* TAB: COMPLETED WORKS ACT / АКТ ВЫПОЛНЕННЫХ РАБОТ */}
+					{activeTab === "act" && (
+						<div className="space-y-6">
+							{/* Act Controls */}
+							<div className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] space-y-3">
+								<h4 className="font-bold text-xs uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5">
+									<FileText size={16} className="text-emerald-600" />
+									Реквизиты Акта сдачи-приемки выполненных медицинских работ:
+								</h4>
+								<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+									<div>
+										<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
+											Номер акта:
+										</label>
+										<input
+											type="text"
+											value={actNumber}
+											onChange={(e) => setActNumber(e.target.value)}
+											className="w-full min-h-[44px] px-3 py-2 text-xs font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+										/>
+									</div>
+									<div>
+										<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
+											К договору №:
+										</label>
+										<input
+											type="text"
+											value={contractNumber}
+											onChange={(e) => setContractNumber(e.target.value)}
+											className="w-full min-h-[44px] px-3 py-2 text-xs font-mono rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+										/>
+									</div>
+									<div>
+										<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
+											Исполнитель (Кассир / Врач):
+										</label>
+										<input
+											type="text"
+											value={cashierFullName}
+											readOnly
+											className="w-full min-h-[44px] px-3 py-2 text-xs rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] cursor-not-allowed"
+										/>
+									</div>
+								</div>
+							</div>
+
+							{/* Official Printable Act Layout */}
+							<div className="p-6 rounded-2xl bg-white text-slate-900 border border-slate-300 shadow-sm space-y-4 font-serif select-text">
+								<div className="text-center space-y-1 border-b border-slate-300 pb-3">
+									<h2 className="text-base sm:text-lg font-bold font-sans tracking-wide uppercase">
+										АКТ № {actNumber}
+									</h2>
+									<p className="text-xs font-sans text-slate-600">
+										сдачи-приемки выполненных стоматологических работ (оказанных медицинских услуг)
+									</p>
+									<p className="text-xs font-sans font-semibold text-slate-700">
+										к Договору на оказание платных медицинских услуг № {contractNumber} от {new Date().toLocaleDateString("ru-RU")} г.
+									</p>
+								</div>
+
+								<div className="text-xs space-y-1 text-slate-800 font-sans">
+									<p>
+										<strong>Исполнитель:</strong> {clinicName}, ИНН 7701234567, КПП 770101001, Лицензия ЛО41-01137-77/00123456
+									</p>
+									<p>
+										<strong>Заказчик (Пациент):</strong> {patientName}, тел. {customerContact}
+									</p>
+									<p className="pt-1 leading-relaxed">
+										Мы, нижеподписавшиеся, Исполнитель в лице {cashierFullName}, с одной стороны, и Пациент (Заказчик) {patientName}, с другой стороны, составили настоящий Акт о том, что Исполнителем были фактически оказаны, а Заказчиком приняты следующие медицинские услуги:
+									</p>
+								</div>
+
+								{/* Items Table */}
+								<div className="overflow-x-auto">
+									<table className="w-full text-xs font-sans border-collapse border border-slate-400">
+										<thead>
+											<tr className="bg-slate-100 text-slate-800 font-bold text-center">
+												<th className="border border-slate-400 p-2 w-8">№</th>
+												<th className="border border-slate-400 p-2 w-28">Код 804н</th>
+												<th className="border border-slate-400 p-2 text-left">Наименование медицинской услуги</th>
+												<th className="border border-slate-400 p-2 w-14">Зуб</th>
+												<th className="border border-slate-400 p-2 w-14">Кол-во</th>
+												<th className="border border-slate-400 p-2 w-24 text-right">Цена (руб.)</th>
+												<th className="border border-slate-400 p-2 w-24 text-right">Сумма (руб.)</th>
+											</tr>
+										</thead>
+										<tbody>
+											{activeItems.map((it, idx) => {
+												const qty = it.quantity || 1;
+												const sum = it.priceRub * qty - (it.discountRub || 0);
+												return (
+													<tr key={it.id || idx} className="hover:bg-slate-50">
+														<td className="border border-slate-400 p-2 text-center">{idx + 1}</td>
+														<td className="border border-slate-400 p-2 font-mono text-center text-[11px]">{it.code804n || "—"}</td>
+														<td className="border border-slate-400 p-2">{it.name}</td>
+														<td className="border border-slate-400 p-2 text-center font-bold">{it.toothNumber || "—"}</td>
+														<td className="border border-slate-400 p-2 text-center">{qty}</td>
+														<td className="border border-slate-400 p-2 text-right font-mono">{formatMoneyRu(it.priceRub)}</td>
+														<td className="border border-slate-400 p-2 text-right font-mono font-bold">{formatMoneyRu(sum)}</td>
+													</tr>
+												);
+											})}
+										</tbody>
+										<tfoot>
+											<tr className="bg-slate-100 font-bold">
+												<td colSpan={6} className="border border-slate-400 p-2 text-right uppercase">Итого к оплате:</td>
+												<td className="border border-slate-400 p-2 text-right font-mono font-extrabold text-sm">{formatMoneyRu(totalSumRub)}</td>
+											</tr>
+										</tfoot>
+									</table>
+								</div>
+
+								{/* Amount in words */}
+								<div className="p-3 bg-slate-50 border border-slate-300 rounded-xl text-xs font-sans space-y-1">
+									<p>
+										<strong>Всего оказано услуг:</strong> {activeItems.length} на сумму <strong>{formatMoneyRu(totalSumRub)}</strong>
+									</p>
+									<p>
+										<strong>Сумма прописью:</strong> <em>{numberToWordsRu(totalSumRub)}</em>
+									</p>
+								</div>
+
+								{/* Guarantee and Quality Statement */}
+								<div className="text-[11px] text-slate-700 font-sans space-y-1 pt-1 leading-relaxed">
+									<p>
+										Вышеперечисленные медицинские услуги выполнены в полном объеме, надлежащего качества и в установленные сроки согласно стандартам медицинской помощи и клиническим рекомендациям Минздрава РФ (ст. 779 ГК РФ, Постановление Правительства РФ № 736). Заказчик претензий по объему, качеству и срокам оказания услуг к Исполнителю не имеет.
+									</p>
+								</div>
+
+								{/* Signatures */}
+								<div className="grid grid-cols-2 gap-8 pt-4 border-t border-slate-300 text-xs font-sans">
+									<div className="space-y-4">
+										<p className="font-bold">Исполнитель:</p>
+										<p className="text-slate-600">{clinicName}</p>
+										<div className="pt-4 border-b border-slate-400 flex justify-between items-end">
+											<span>Подпись / М.П.:</span>
+											<span className="font-bold">/ {cashierFullName} /</span>
+										</div>
+									</div>
+									<div className="space-y-4">
+										<p className="font-bold">Заказчик (Пациент):</p>
+										<p className="text-slate-600">{patientName}</p>
+										<div className="pt-4 border-b border-slate-400 flex justify-between items-end">
+											<span>Подпись:</span>
+											<span className="font-bold">/ {patientName} /</span>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							{/* Actions: Copy & Print */}
+							<div className="flex flex-wrap gap-3">
+								<button
+									type="button"
+									onClick={handleCopyActData}
+									className="min-h-[48px] px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))] flex items-center gap-2 cursor-pointer transition-colors shadow-xs"
+								>
+									<Copy size={16} />
+									<span>Скопировать текст Акта</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => window.print()}
+									className="min-h-[48px] px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-emerald-600 text-white hover:bg-emerald-700 flex items-center gap-2 cursor-pointer transition-colors shadow-md"
+								>
+									<Printer size={16} />
+									<span>Печать Акта выполненных работ</span>
+								</button>
+							</div>
+						</div>
+					)}
+
+					{/* TAB: PREVIEW / ЧЕК НА ТЕРМОЛЕНТЕ */}
+					{activeTab === "preview" && (
 						<div className="space-y-4">
 							<div className="flex justify-end gap-2">
 								<button
 									type="button"
 									onClick={() => window.print()}
-									className="min-h-[48px] flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-800 dark:text-slate-100 cursor-pointer transition-colors"
+									className="min-h-[48px] flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
 								>
 									<Printer size={16} />
 									<span>Печать чека</span>

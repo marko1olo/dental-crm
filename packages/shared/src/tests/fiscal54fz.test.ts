@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
 	calculateAdvanceDepositOffset,
 	calculateMultiTenderAllocation,
+	calculateProportionalMultiTenderRefund,
 	calculateVatKopecks,
 	createFiscalReceiptPayloadSchema,
 	distributeDiscountProportionally,
@@ -22,6 +23,10 @@ import {
 	parseAndValidate54FzFtsQrString,
 	parseChestnyZnakDataMatrix,
 	rubToKopecks,
+	generateFiscalPeriodStatementHtml,
+	exportFiscalPeriodStatementToCsv,
+	calculateFiscalPeriodStatementTotals,
+	DEFAULT_CLINIC_FISCAL_REQUISITES,
 } from "../index.js";
 
 describe("Shared Fiscal 54-FZ & FFD 1.2 Suite", () => {
@@ -278,4 +283,269 @@ describe("Shared Fiscal 54-FZ & FFD 1.2 Suite", () => {
 		assert.equal(res3.isValid, false);
 		assert.ok(res3.errorMessage?.includes("Недопустимый признак расчета"));
 	});
+
+	it("1.14 calculateProportionalMultiTenderRefund — Zero-loss proportional multi-tender partial refund", () => {
+		// Original payment: 2,000 Cash + 3,000 SBP QR = 5,000 RUB (500,000 kopecks)
+		const originalTenders = {
+			cashKopecks: 200000,
+			cardKopecks: 0,
+			sbpKopecks: 300000,
+			advanceOffsetKopecks: 0,
+			totalPaidKopecks: 500000,
+		};
+
+		// 1. Partial refund of 1,500 RUB (150,000 kopecks):
+		// Cash share = 2000/5000 = 40% -> 600 RUB (60,000 коп)
+		// SBP share = 3000/5000 = 60% -> 900 RUB (90,000 коп)
+		const partialRefund = calculateProportionalMultiTenderRefund(originalTenders, 150000);
+		assert.equal(partialRefund.refundCashKopecks, 60000);
+		assert.equal(partialRefund.refundSbpKopecks, 90000);
+		assert.equal(partialRefund.refundElectronicKopecks, 90000);
+		assert.equal(partialRefund.totalRefundKopecks, 150000);
+		assert.equal(partialRefund.refundCashRub, 600);
+		assert.equal(partialRefund.refundSbpRub, 900);
+		assert.equal(partialRefund.isPartialRefund, true);
+		assert.equal(partialRefund.isFullRefund, false);
+
+		// 2. Full refund of 5,000 RUB (500,000 kopecks)
+		const fullRefund = calculateProportionalMultiTenderRefund(originalTenders, 500000);
+		assert.equal(fullRefund.refundCashKopecks, 200000);
+		assert.equal(fullRefund.refundSbpKopecks, 300000);
+		assert.equal(fullRefund.totalRefundKopecks, 500000);
+		assert.equal(fullRefund.isFullRefund, true);
+
+		// 3. Three-way split with fractional penny distribution:
+		// 1000 Cash (33.33%) + 1000 Card (33.33%) + 1000 Advance (33.33%) = 3000 RUB
+		// Requested refund = 1000 kopecks (10.00 RUB) -> floor = 333 + 333 + 333 = 999 -> 1 remainder goes to highest fraction
+		const threeWay = {
+			cashKopecks: 100000,
+			cardKopecks: 100000,
+			sbpKopecks: 0,
+			advanceOffsetKopecks: 100000,
+			totalPaidKopecks: 300000,
+		};
+		const splitRefund = calculateProportionalMultiTenderRefund(threeWay, 1000);
+		assert.equal(splitRefund.totalRefundKopecks, 1000);
+		const sumBuckets =
+			splitRefund.refundCashKopecks +
+			splitRefund.refundCardKopecks +
+			splitRefund.refundAdvanceOffsetKopecks;
+		assert.equal(sumBuckets, 1000);
+	});
+
+	it("1.15 54-FZ Correction Receipt schema validation (Теги 1173, 1178, 1179)", () => {
+		// Valid self-initiated correction receipt
+		const validCorrection = {
+			patientId: "00000000-0000-0000-0000-000000000001",
+			operationType: "income",
+			customerContact: "+79991234567",
+			cashierFullName: "Старший Кассир",
+			totalKopecks: 450000,
+			electronicCardKopecks: 450000,
+			isCorrection: true,
+			correctionType: "self_initiated",
+			correctionDocDate: "2026-08-22",
+			correctionDocNumber: "АКТ-ИНВ-2026/08",
+			items: [
+				{
+					name: "Лечение кариеса (чек коррекции)",
+					priceKopecks: 450000,
+					quantity: 1,
+					amountKopecks: 450000,
+				},
+			],
+		};
+
+		const parsed = createFiscalReceiptPayloadSchema.safeParse(validCorrection);
+		assert.equal(parsed.success, true);
+		if (parsed.success) {
+			assert.equal(parsed.data.isCorrection, true);
+			assert.equal(parsed.data.correctionType, "self_initiated");
+			assert.equal(parsed.data.correctionDocDate, "2026-08-22");
+			assert.equal(parsed.data.correctionDocNumber, "АКТ-ИНВ-2026/08");
+		}
+
+		// Invalid correction missing document date & number
+		const invalidCorrection = {
+			...validCorrection,
+			correctionDocDate: null,
+			correctionDocNumber: null,
+		};
+		const parsedInvalid = createFiscalReceiptPayloadSchema.safeParse(invalidCorrection);
+		assert.equal(parsedInvalid.success, false);
+	});
+
+	it("1.16 calculateFiscalPeriodStatementTotals — kopeck-exact shift aggregation and bank reconciliation", () => {
+		const sampleShifts = [
+			{
+				shiftNumber: 101,
+				date: "2026-08-20",
+				cashierFullName: "Сидорова А. П.",
+				receiptsCount: 4,
+				cashIncomeRub: 12000,
+				cashIncomeKopecks: 1200000,
+				cardIncomeRub: 35000,
+				cardIncomeKopecks: 3500000,
+				sbpIncomeRub: 15000,
+				sbpIncomeKopecks: 1500000,
+				advanceOffsetIncomeRub: 8000,
+				advanceOffsetIncomeKopecks: 800000,
+				returnsTotalRub: 2000,
+				returnsTotalKopecks: 200000,
+				shiftRevenueTotalRub: 68000,
+				shiftRevenueTotalKopecks: 6800000,
+			},
+			{
+				shiftNumber: 102,
+				date: "2026-08-21",
+				cashierFullName: "Сидорова А. П.",
+				receiptsCount: 6,
+				cashIncomeRub: 5000,
+				cashIncomeKopecks: 500000,
+				cardIncomeRub: 40000,
+				cardIncomeKopecks: 4000000,
+				sbpIncomeRub: 20000,
+				sbpIncomeKopecks: 2000000,
+				advanceOffsetIncomeRub: 5000,
+				advanceOffsetIncomeKopecks: 500000,
+				returnsTotalRub: 0,
+				returnsTotalKopecks: 0,
+				shiftRevenueTotalRub: 70000,
+				shiftRevenueTotalKopecks: 7000000,
+			},
+		];
+
+		const { totals, bankReconciliation } = calculateFiscalPeriodStatementTotals(sampleShifts, 110000, 1650);
+
+		assert.equal(totals.shiftsCount, 2);
+		assert.equal(totals.totalReceiptsCount, 10);
+		assert.equal(totals.totalCashIncomeRub, 17000);
+		assert.equal(totals.totalCashIncomeKopecks, 1700000);
+		assert.equal(totals.totalCardIncomeRub, 75000);
+		assert.equal(totals.totalCardIncomeKopecks, 7500000);
+		assert.equal(totals.totalSbpIncomeRub, 35000);
+		assert.equal(totals.totalSbpIncomeKopecks, 3500000);
+		assert.equal(totals.totalElectronicRub, 110000);
+		assert.equal(totals.totalElectronicKopecks, 11000000);
+		assert.equal(totals.totalAdvanceOffsetRub, 13000);
+		assert.equal(totals.totalAdvanceOffsetKopecks, 1300000);
+		assert.equal(totals.totalReturnsRub, 2000);
+		assert.equal(totals.totalReturnsKopecks, 200000);
+		assert.equal(totals.totalRevenueRub, 138000);
+		assert.equal(totals.totalRevenueKopecks, 13800000);
+
+		// Bank reconciliation
+		assert.equal(bankReconciliation.totalCardAndSbpKktRub, 110000);
+		assert.equal(bankReconciliation.totalBankStatementRub, 110000);
+		assert.equal(bankReconciliation.bankAcquiringFeeRub, 1650);
+		assert.equal(bankReconciliation.netBankDepositRub, 108350);
+		assert.equal(bankReconciliation.discrepancyRub, 0);
+		assert.equal(bankReconciliation.status, "reconciled");
+	});
+
+	it("1.17 generateFiscalPeriodStatementHtml — generates official A4 landscape blank with license, KKT, FN & stamps", () => {
+		const html = generateFiscalPeriodStatementHtml({
+			clinicRequisites: {
+				name: "ООО «Стоматологическая клиника ДЕНТЕ»",
+				inn: "7701234567",
+				ogrn: "1027700123456",
+				address: "г. Москва, ул. Клиническая, д. 10",
+				licenseNumber: "№ ЛО41-01137-77/00368421",
+				kktRegNumber: "0004829104058291",
+				kktSerialNumber: "019482019482",
+				fnSerialNumber: "9960440302145896",
+				ofdName: "АО «ПЕРВЫЙ ОФД»",
+				chiefExecutiveFullName: "Смирнов А. В.",
+				chiefAccountantFullName: "Кузнецова Е. И.",
+				defaultCashierFullName: "Сидорова А. П.",
+			},
+			statementNumber: "ВЕД-2026/08-01",
+			periodStart: "2026-08-01",
+			periodEnd: "2026-08-25",
+			periodLabelRu: "за период с 01.08.2026 по 25.08.2026",
+			shifts: [
+				{
+					shiftNumber: 1,
+					date: "2026-08-01",
+					cashierFullName: "Сидорова А. П.",
+					receiptsCount: 5,
+					cashIncomeRub: 10000,
+					cashIncomeKopecks: 1000000,
+					cardIncomeRub: 20000,
+					cardIncomeKopecks: 2000000,
+					sbpIncomeRub: 10000,
+					sbpIncomeKopecks: 1000000,
+					advanceOffsetIncomeRub: 5000,
+					advanceOffsetIncomeKopecks: 500000,
+					returnsTotalRub: 0,
+					returnsTotalKopecks: 0,
+					shiftRevenueTotalRub: 45000,
+					shiftRevenueTotalKopecks: 4500000,
+				},
+			],
+		});
+
+		// Check clinic header and statutory tags
+		assert.ok(html.includes("№ ЛО41-01137-77/00368421"), "Must include medical license number");
+		assert.ok(html.includes("0004829104058291"), "Must include KKT registration number");
+		assert.ok(html.includes("9960440302145896"), "Must include FN serial number");
+		assert.ok(html.includes("АО «ПЕРВЫЙ ОФД»"), "Must include OFD name");
+		assert.ok(html.includes("Сводная ведомость фискальных операций и выручки за период"));
+		assert.ok(html.includes("Тег 1031"));
+		assert.ok(html.includes("Тег 1081"));
+		assert.ok(html.includes("Тег 1215"));
+		assert.ok(html.includes("Тег 1054=2"));
+		assert.ok(html.includes("Сверка безналичной выручки (Эквайринг + СБП) с банковской выпиской"));
+		assert.ok(html.includes("Смирнов А. В."));
+		assert.ok(html.includes("Кузнецова Е. И."));
+		assert.ok(html.includes("Сидорова А. П."));
+		assert.ok(html.includes("[ М. П. ]"));
+	});
+
+	it("1.18 exportFiscalPeriodStatementToCsv — exports RFC 4180 CSV with UTF-8 BOM for 1C", () => {
+		const csv = exportFiscalPeriodStatementToCsv({
+			clinicRequisites: {
+				name: "ООО «Стоматологическая клиника ДЕНТЕ»",
+				inn: "7701234567",
+				ogrn: "1027700123456",
+				address: "г. Москва, ул. Клиническая, д. 10",
+				licenseNumber: "№ ЛО41-01137-77/00368421",
+				kktRegNumber: "0004829104058291",
+				kktSerialNumber: "019482019482",
+				fnSerialNumber: "9960440302145896",
+			},
+			statementNumber: "ВЕД-89",
+			periodStart: "2026-08-01",
+			periodEnd: "2026-08-25",
+			shifts: [
+				{
+					shiftNumber: 1,
+					date: "2026-08-01",
+					cashierFullName: "Сидорова А. П.",
+					receiptsCount: 3,
+					cashIncomeRub: 5000,
+					cashIncomeKopecks: 500000,
+					cardIncomeRub: 15000,
+					cardIncomeKopecks: 1500000,
+					sbpIncomeRub: 5000,
+					sbpIncomeKopecks: 500000,
+					advanceOffsetIncomeRub: 0,
+					advanceOffsetIncomeKopecks: 0,
+					returnsTotalRub: 0,
+					returnsTotalKopecks: 0,
+					shiftRevenueTotalRub: 25000,
+					shiftRevenueTotalKopecks: 2500000,
+				},
+			],
+		});
+
+		assert.ok(csv.startsWith("\uFEFF"), "Must start with UTF-8 BOM for native 1C / Excel compatibility");
+		assert.ok(csv.includes("№ ЛО41-01137-77/00368421"));
+		assert.ok(csv.includes("0004829104058291"));
+		assert.ok(csv.includes("9960440302145896"));
+		assert.ok(csv.includes("СВОДНАЯ ВЕДОМОСТЬ ФИСКАЛЬНЫХ ОПЕРАЦИЙ И ВЫРУЧКИ ЗА ПЕРИОД"));
+		assert.ok(csv.includes("=== РАСШИФРОВКА СВЕРКИ С БАНКОВСКОЙ ВЫПИСКОЙ (ЭКВАЙРИНГ И СБП) ==="));
+		assert.ok(csv.includes("ИТОГО ЗА ПЕРИОД"));
+	});
 });
+

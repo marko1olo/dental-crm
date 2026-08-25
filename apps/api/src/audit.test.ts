@@ -24,6 +24,7 @@ describe("recordAuditEvent", () => {
 	});
 
 	test("inserts audit event with provided organizationId", async () => {
+		const entityId = `user-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 		await withFixtureTenant(ORG_ID, async (tx) => {
 			await tx.insert(organizations).values({ id: ORG_ID, name: "Test Org" }).onConflictDoNothing();
 			
@@ -31,7 +32,7 @@ describe("recordAuditEvent", () => {
 				{
 					organizationId: "  " + ORG_ID + "  ", // tests trim
 					entityType: "User",
-					entityId: "user-456",
+					entityId,
 					action: "LOGIN",
 					reason: "Successful login",
 				}
@@ -40,13 +41,13 @@ describe("recordAuditEvent", () => {
 			const events = await tx
 				.select()
 				.from(auditEvents)
-				.where(and(eq(auditEvents.organizationId, ORG_ID), eq(auditEvents.entityId, "user-456")));
+				.where(and(eq(auditEvents.organizationId, ORG_ID), eq(auditEvents.entityId, entityId)));
 			
 			assert.strictEqual(events.length, 1);
 			const event = events[0]!;
 			assert.strictEqual(event.organizationId, ORG_ID);
 			assert.strictEqual(event.entityType, "User");
-			assert.strictEqual(event.entityId, "user-456");
+			assert.strictEqual(event.entityId, entityId);
 			assert.strictEqual(event.action, "LOGIN");
 			assert.strictEqual(event.reason, "Successful login");
 			assert.strictEqual(event.actorUserId, null);
@@ -54,6 +55,7 @@ describe("recordAuditEvent", () => {
 	});
 
 	test("записывает автора события, когда вызывающий его передал", async () => {
+		const entityId = `doc-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 		await withFixtureTenant(ORG_ID, async (tx) => {
 			// We MUST insert the organization and the user first to satisfy foreign keys
 			await tx.insert(organizations).values({ id: ORG_ID, name: "Test Org 2" }).onConflictDoNothing();
@@ -64,7 +66,7 @@ describe("recordAuditEvent", () => {
 					organizationId: ORG_ID,
 					actorUserId: USER_ID,
 					entityType: "document",
-					entityId: "doc-1",
+					entityId,
 					action: "document_voided",
 					reason: null,
 				}
@@ -73,7 +75,7 @@ describe("recordAuditEvent", () => {
 			const events = await tx
 				.select()
 				.from(auditEvents)
-				.where(and(eq(auditEvents.organizationId, ORG_ID), eq(auditEvents.entityId, "doc-1"), eq(auditEvents.action, "document_voided")));
+				.where(and(eq(auditEvents.organizationId, ORG_ID), eq(auditEvents.entityId, entityId), eq(auditEvents.action, "document_voided")));
 
 			assert.strictEqual(events.length, 1);
 			assert.strictEqual(events[0]!.actorUserId, USER_ID);
@@ -81,13 +83,14 @@ describe("recordAuditEvent", () => {
 	});
 
 	test("fetches first organization when organizationId is missing", async () => {
+		const entityId = `post-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 		await withFixtureTenant(FALLBACK_ORG_ID, async (tx) => {
 			await tx.insert(organizations).values({ id: FALLBACK_ORG_ID, name: "Fallback Org" }).onConflictDoNothing();
 
 			await recordAuditEvent(
 				{
 					entityType: "Post",
-					entityId: "post-1",
+					entityId,
 					action: "CREATE",
 				}
 			);
@@ -95,7 +98,7 @@ describe("recordAuditEvent", () => {
 			const events = await tx
 				.select()
 				.from(auditEvents)
-				.where(eq(auditEvents.entityId, "post-1"));
+				.where(eq(auditEvents.entityId, entityId));
 
 			assert.strictEqual(events.length, 1);
 			const event = events[0]!;

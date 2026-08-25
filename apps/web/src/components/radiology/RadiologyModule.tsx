@@ -343,7 +343,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 						<div className="flex items-center gap-2.5">
 							<Activity className="w-5 h-5" />
 							<div className="flex flex-col">
-								<span className="text-[11px] uppercase font-bold tracking-wider opacity-80">
+								<span className="text-xs uppercase font-bold tracking-wider opacity-80">
 									Суммарная доза за год
 								</span>
 								<span className="text-sm md:text-base font-bold tracking-tight">
@@ -361,7 +361,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 					<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex items-center gap-3">
 						<ShieldCheck className="w-5 h-5 text-teal-600 dark:text-teal-400" />
 						<div className="flex flex-col">
-							<span className="text-[11px] text-[var(--muted)] uppercase font-bold tracking-wider">
+							<span className="text-xs text-[var(--muted)] uppercase font-bold tracking-wider">
 								Принцип ALARA
 							</span>
 							<span className="text-xs md:text-sm font-bold text-[var(--ink)]">
@@ -373,7 +373,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 					<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex items-center gap-3">
 						<Target className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
 						<div className="flex flex-col">
-							<span className="text-[11px] text-[var(--muted)] uppercase font-bold tracking-wider">
+							<span className="text-xs text-[var(--muted)] uppercase font-bold tracking-wider">
 								Контроль зубов (FDI)
 							</span>
 							<span className="text-xs md:text-sm font-bold text-[var(--ink)] truncate">

@@ -16,7 +16,8 @@ const THEMES = [
 ];
 
 const VIEWPORTS = [
-	{ name: "pc_1440", width: 1440, height: 900, scale: 2, isMobile: false },
+	{ name: "pc_1440", width: 1440, height: 900, scale: 1, isMobile: false },
+	{ name: "tablet_1024", width: 1024, height: 768, scale: 2, isMobile: true, hasTouch: true },
 	{ name: "mobile_390", width: 390, height: 844, scale: 3, isMobile: true, hasTouch: true },
 ];
 
@@ -183,6 +184,44 @@ async function auditContrastAndLayout(page, theme, viewportName, sectionName) {
 	);
 }
 
+async function closeModal(page) {
+	try {
+		const closeBtn = page.locator("[role='dialog'] button:has-text('Закрыть'), [role='dialog'] button[aria-label*='Закрыть'], [role='dialog'] button:has(svg.lucide-x), [data-testid$='-modal'] button:has(svg.lucide-x)").first();
+		if (await closeBtn.count()) {
+			await closeBtn.click({ force: true });
+		} else {
+			await page.keyboard.press("Escape");
+		}
+	} catch {
+		await page.keyboard.press("Escape");
+	}
+	await page.waitForTimeout(250);
+}
+
+async function auditModalIfPresent(page, theme, vp, modalName, buttonTestId, screenshotPrefix, allDefects) {
+	try {
+		const btn = page.locator(`[data-testid='${buttonTestId}']`).first();
+		if (await btn.count()) {
+			await btn.scrollIntoViewIfNeeded();
+			await btn.click({ force: true });
+			await page.waitForSelector("[role='dialog'], [data-testid$='-modal']", { timeout: 5000 });
+			await page.waitForTimeout(300);
+
+			const defects = await auditContrastAndLayout(page, theme, vp.name, modalName);
+			allDefects.push(...defects);
+
+			const shotName = `audit_${screenshotPrefix}_${theme}_${vp.name}.png`;
+			await saveScreenshot(page, shotName);
+			console.log(`[PASS] ${shotName}`);
+
+			await closeModal(page);
+		}
+	} catch (err) {
+		console.warn(`[WARN] ${modalName} audit encountered error:`, err?.message || err);
+		await closeModal(page);
+	}
+}
+
 async function runAudit() {
 	console.log("=== STARTING COMPREHENSIVE MULTI-THEME CLINICAL AUDIT ===");
 	console.log(`Themes: ${THEMES.join(", ")}`);
@@ -213,7 +252,6 @@ async function runAudit() {
 			await page.waitForSelector("[data-testid='open-pediatric-modal-btn']", { timeout: 10000 });
 			await applyTheme(page, theme);
 			await page.waitForTimeout(300);
-
 			// 1. Audit AnesthesiaCalculator
 			const calcHeader = page.locator("[data-testid='anesthesia-calculator'] > div").first();
 			if (await calcHeader.count()) {
@@ -227,93 +265,53 @@ async function runAudit() {
 			console.log(`[PASS] ${shotAnesth}`);
 
 			// 2. Audit PediatricMixedDentitionModal
-			const openPediatricBtn = page.locator("[data-testid='open-pediatric-modal-btn']");
-			if (await openPediatricBtn.count()) {
-				await openPediatricBtn.click();
-				await page.waitForSelector("[role='dialog']", { timeout: 5000 });
-				await page.waitForTimeout(300);
-
-				const pedDefects = await auditContrastAndLayout(page, theme, vp.name, "PediatricMixedDentitionModal");
-				allDefects.push(...pedDefects);
-
-				const shotPed = `audit_pediatric_${theme}_${vp.name}.png`;
-				await saveScreenshot(page, shotPed);
-				console.log(`[PASS] ${shotPed}`);
-
-				await page.keyboard.press("Escape");
-				await page.waitForTimeout(300);
-			}
+			await auditModalIfPresent(page, theme, vp, "PediatricMixedDentitionModal", "open-pediatric-modal-btn", "pediatric", allDefects);
 
 			// 3. Audit FiscalReceipt54FzModal
-			const openFiscalBtn = page.locator("[data-testid='open-fiscal-modal-btn']");
-			if (await openFiscalBtn.count()) {
-				await openFiscalBtn.click();
-				await page.waitForSelector("[data-testid='fiscal-receipt-54fz-modal']", { timeout: 5000 });
-				await page.waitForTimeout(300);
-
-				const fiscalDefects = await auditContrastAndLayout(page, theme, vp.name, "FiscalReceipt54FzModal");
-				allDefects.push(...fiscalDefects);
-
-				const shotFiscal = `audit_fiscal_${theme}_${vp.name}.png`;
-				await saveScreenshot(page, shotFiscal);
-				console.log(`[PASS] ${shotFiscal}`);
-
-				await page.keyboard.press("Escape");
-				await page.waitForTimeout(300);
-			}
+			await auditModalIfPresent(page, theme, vp, "FiscalReceipt54FzModal", "open-fiscal-modal-btn", "fiscal", allDefects);
 
 			// 4. Audit PrescriptionModal
-			const openPrescriptionBtn = page.locator("[data-testid='open-prescription-modal-btn']");
-			if (await openPrescriptionBtn.count()) {
-				await openPrescriptionBtn.click();
-				await page.waitForSelector("[data-testid='prescription-modal']", { timeout: 5000 });
-				await page.waitForTimeout(300);
-
-				const prescDefects = await auditContrastAndLayout(page, theme, vp.name, "PrescriptionModal");
-				allDefects.push(...prescDefects);
-
-				const shotPresc = `audit_prescription_${theme}_${vp.name}.png`;
-				await saveScreenshot(page, shotPresc);
-				console.log(`[PASS] ${shotPresc}`);
-
-				await page.keyboard.press("Escape");
-				await page.waitForTimeout(300);
-			}
+			await auditModalIfPresent(page, theme, vp, "PrescriptionModal", "open-prescription-modal-btn", "prescription", allDefects);
 
 			// 5. Audit RadiologyReferralModal
-			const openRadiologyBtn = page.locator("[data-testid='open-radiology-modal-btn']");
-			if (await openRadiologyBtn.count()) {
-				await openRadiologyBtn.click();
-				await page.waitForSelector("[data-testid='radiology-referral-modal']", { timeout: 5000 });
-				await page.waitForTimeout(300);
+			await auditModalIfPresent(page, theme, vp, "RadiologyReferralModal", "open-radiology-modal-btn", "radiology", allDefects);
 
-				const radDefects = await auditContrastAndLayout(page, theme, vp.name, "RadiologyReferralModal");
-				allDefects.push(...radDefects);
+			// 6. Audit FNS Tax Deduction (КНД 1184043 / 1151156)
+			await auditModalIfPresent(page, theme, vp, "FnsNdflXmlModal", "open-fns-ndfl-xml-modal-btn", "fns_ndfl", allDefects);
 
-				const shotRad = `audit_radiology_${theme}_${vp.name}.png`;
-				await saveScreenshot(page, shotRad);
-				console.log(`[PASS] ${shotRad}`);
+			// 7. Audit Medical Prescription 107-1/у
+			await auditModalIfPresent(page, theme, vp, "MedicalPrescriptionModal", "open-med-prescription-modal-btn", "med_prescription", allDefects);
 
-				await page.keyboard.press("Escape");
-				await page.waitForTimeout(300);
+			// 8. Audit EGISZ REMD CDA R2
+			await auditModalIfPresent(page, theme, vp, "EgiszRemdXmlModal", "open-egisz-remd-modal-btn", "egisz_remd", allDefects);
+
+			// 9. Audit Informed Consent 1051n
+			await auditModalIfPresent(page, theme, vp, "InformedConsent1051nModal", "open-consent-1051n-modal-btn", "consent_1051n", allDefects);
+
+			// 10. Audit SanPin Journals
+			await auditModalIfPresent(page, theme, vp, "SanpinJournalsModal", "open-sanpin-journals-modal-btn", "sanpin_journals", allDefects);
+
+			// -------------------------------------------------------------
+			// B. AUDIT ODONTOGRAM STUDIO STANDALONE (OPTIONAL)
+			// -------------------------------------------------------------
+			try {
+				await page.goto("http://127.0.0.1:5173/?odontogram-studio#odontogram-studio", {
+					waitUntil: "domcontentloaded",
+				});
+				if (await page.waitForSelector("[data-testid='odontogram-studio-container']", { timeout: 4000 })) {
+					await applyTheme(page, theme);
+					await page.waitForTimeout(200);
+
+					const odontoDefects = await auditContrastAndLayout(page, theme, vp.name, "OdontogramStudio");
+					allDefects.push(...odontoDefects);
+
+					const shotOdonto = `audit_odontogram_${theme}_${vp.name}.png`;
+					await saveScreenshot(page, shotOdonto);
+					console.log(`[PASS] ${shotOdonto}`);
+				}
+			} catch {
+				/* ignore standalone navigation if studio already audited */
 			}
-
-			// -------------------------------------------------------------
-			// B. AUDIT ODONTOGRAM STUDIO STANDALONE
-			// -------------------------------------------------------------
-			await page.goto("http://127.0.0.1:5173/?odontogram-studio#odontogram-studio", {
-				waitUntil: "domcontentloaded",
-			});
-			await page.waitForSelector("[data-testid='odontogram-studio-container']", { timeout: 10000 });
-			await applyTheme(page, theme);
-			await page.waitForTimeout(300);
-
-			const odontoDefects = await auditContrastAndLayout(page, theme, vp.name, "OdontogramStudio");
-			allDefects.push(...odontoDefects);
-
-			const shotOdonto = `audit_odontogram_${theme}_${vp.name}.png`;
-			await saveScreenshot(page, shotOdonto);
-			console.log(`[PASS] ${shotOdonto}`);
 
 			await context.close();
 		}

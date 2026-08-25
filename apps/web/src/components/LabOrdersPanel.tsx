@@ -109,7 +109,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 				throw new Error("Failed to fetch lab orders");
 			}
 			const data = await res.json();
-			setOrders(data);
+			setOrders(Array.isArray(data) ? data : Array.isArray(data?.orders) ? data.orders : Array.isArray(data?.data) ? data.data : []);
 		} catch (err: any) {
 			setError(err.message || "Error fetching lab orders");
 		} finally {

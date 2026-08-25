@@ -1,0 +1,6 @@
+feat(clinical): add 3D visiograph MPR presets, telephony reception hub, and Order 804n multi-canal billing
+
+Implement multi-sphere clinical upgrades:
+- Sphere 1: 3D Visiograph & Volumetric MPR Diagnostics with calibrated HU presets (Bone, Enamel/Dentin, Soft Tissue, Endo Apex), mandibular canal collision safety alert (<2.0mm threshold), and 1-click snapshot export with HU clinical metadata to patient Form 043/u.
+- Sphere 2: Clinical Telephony & Reception Hub with real-time WebRTC/SIP call drawer popup, patient card auto-focus, touch-friendly 1-click booking (>=44px touch targets), 1-click WhatsApp/SMS confirmation generator, and audio recording player.
+- Sphere 3: Minzdrav Order 804n endodontic line items mapped strictly to 1..4 anatomical root canals across all FDI permanent/primary teeth with estimation accuracy for multi-rooted molars.

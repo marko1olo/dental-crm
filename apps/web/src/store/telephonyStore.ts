@@ -4,6 +4,24 @@ import { create } from "zustand";
 export type TelephonyProvider = "mango" | "uis" | "asterisk" | "zadarma" | "unknown";
 export type TelephonyCallStatus = "ringing" | "answered" | "ended" | "rejected";
 export type PlaybackSpeed = 1 | 1.25 | 1.5 | 2;
+export type CallTransferType = "blind" | "attended";
+
+export interface CallTransferState {
+	isTransferring: boolean;
+	targetExtension: string;
+	transferType: CallTransferType;
+	status: "idle" | "dialing" | "transferred" | "failed";
+	failureReason?: string | undefined;
+}
+
+export interface SpeechTranscriptUtterance {
+	speaker: "operator" | "patient";
+	startTimeSeconds: number;
+	endTimeSeconds: number;
+	text: string;
+	confidence: number;
+	sentiment: "neutral" | "positive" | "negative";
+}
 
 export interface IncomingCallPayload {
 	callId?: string | undefined;
@@ -30,7 +48,10 @@ export interface CallHistoryItem extends IncomingCallPayload {
 		| "missed"
 		| "whatsapp_sent"
 		| "sms_sent"
+		| "transferred"
 		| undefined;
+	transferTarget?: string | undefined;
+	transcript?: SpeechTranscriptUtterance[] | undefined;
 }
 
 export interface TelephonyStore {
@@ -42,6 +63,7 @@ export interface TelephonyStore {
 	playbackSpeed: PlaybackSpeed; // 1 | 1.25 | 1.5 | 2 (default 1)
 	activeRecordingUrl: string | null;
 	isPlayingRecording: boolean;
+	transferState: CallTransferState;
 
 	// Actions
 	triggerIncomingCall: (call: IncomingCallPayload) => void;
@@ -49,6 +71,9 @@ export interface TelephonyStore {
 	acceptCall: () => void;
 	rejectCall: () => void;
 	dismissCall: () => void;
+	startCallTransfer: (targetExtension: string, transferType?: CallTransferType) => void;
+	completeCallTransfer: () => void;
+	cancelCallTransfer: () => void;
 	openSimulator: () => void;
 	closeSimulator: () => void;
 	toggleMute: () => void;
@@ -565,6 +590,208 @@ export function generateWaveformBars(seed: string | null | undefined, count = 48
 	return bars;
 }
 
+/**
+ * Deterministically generates a realistic clinical speech-to-text transcript based on the call seed / context.
+ */
+export function generateCallTranscript(
+	seed: string | null | undefined,
+	durationSeconds = 45,
+): SpeechTranscriptUtterance[] {
+	const safeSeed = seed || "dente-call";
+	let hash = 0;
+	for (let i = 0; i < safeSeed.length; i++) {
+		hash = (hash << 5) - hash + safeSeed.charCodeAt(i);
+		hash |= 0;
+	}
+	const variant = Math.abs(hash) % 4;
+
+	if (variant === 0) {
+		return [
+			{
+				speaker: "operator",
+				startTimeSeconds: 1,
+				endTimeSeconds: 6,
+				text: "Здравствуйте! Стоматологическая клиника DENTE. Администратор Анна, чем могу вам помочь?",
+				confidence: 0.98,
+				sentiment: "positive",
+			},
+			{
+				speaker: "patient",
+				startTimeSeconds: 7,
+				endTimeSeconds: 15,
+				text: "Добрый день! У меня со вчерашнего вечера сильно разболелся зуб справа сверху, реакция на холодное и горячее. Можно попасть к врачу сегодня?",
+				confidence: 0.95,
+				sentiment: "negative",
+			},
+			{
+				speaker: "operator",
+				startTimeSeconds: 16,
+				endTimeSeconds: 24,
+				text: "Конечно! С острой болью мы принимаем вне очереди. У нас есть свободное окно у доктора Петрова сегодня в 10:00. Сможете подойти?",
+				confidence: 0.99,
+				sentiment: "positive",
+			},
+			{
+				speaker: "patient",
+				startTimeSeconds: 25,
+				endTimeSeconds: 31,
+				text: "Да, отлично, в 10:00 я буду. Паспорт с собой брать?",
+				confidence: 0.97,
+				sentiment: "neutral",
+			},
+			{
+				speaker: "operator",
+				startTimeSeconds: 32,
+				endTimeSeconds: 42,
+				text: "Да, пожалуйста, возьмите паспорт для оформления договора. Записала вас на 10:00 к доктору Петрову. До встречи в клинике!",
+				confidence: 0.99,
+				sentiment: "positive",
+			},
+		];
+	}
+
+	if (variant === 1) {
+		return [
+			{
+				speaker: "operator",
+				startTimeSeconds: 1,
+				endTimeSeconds: 5,
+				text: "Добрый день! Клиника DENTE, слушаю вас.",
+				confidence: 0.97,
+				sentiment: "neutral",
+			},
+			{
+				speaker: "patient",
+				startTimeSeconds: 6,
+				endTimeSeconds: 14,
+				text: "Здравствуйте, я хотел бы записаться на профессиональную гигиену полости рта и профилактический осмотр.",
+				confidence: 0.96,
+				sentiment: "neutral",
+			},
+			{
+				speaker: "operator",
+				startTimeSeconds: 15,
+				endTimeSeconds: 25,
+				text: "Прекрасно! Комплексная гигиена AirFlow с ультразвуком и реминерализацией. Есть свободное время завтра в 11:00 или в 15:30. Как вам удобнее?",
+				confidence: 0.98,
+				sentiment: "positive",
+			},
+			{
+				speaker: "patient",
+				startTimeSeconds: 26,
+				endTimeSeconds: 30,
+				text: "Завтра в 11:00 будет идеально. Запишите меня, пожалуйста.",
+				confidence: 0.98,
+				sentiment: "positive",
+			},
+			{
+				speaker: "operator",
+				startTimeSeconds: 31,
+				endTimeSeconds: 38,
+				text: "Записали вас на завтра в 11:00. Направили подтверждение и схему проезда в WhatsApp. Всего доброго!",
+				confidence: 0.99,
+				sentiment: "positive",
+			},
+		];
+	}
+
+	if (variant === 2) {
+		return [
+			{
+				speaker: "operator",
+				startTimeSeconds: 1,
+				endTimeSeconds: 6,
+				text: "Здравствуйте! Клиника DENTE, администратор на связи.",
+				confidence: 0.98,
+				sentiment: "positive",
+			},
+			{
+				speaker: "patient",
+				startTimeSeconds: 7,
+				endTimeSeconds: 16,
+				text: "Здравствуйте! Подскажите, вы работаете со страховыми компаниями по полису ДМС СОГАЗ?",
+				confidence: 0.96,
+				sentiment: "neutral",
+			},
+			{
+				speaker: "operator",
+				startTimeSeconds: 17,
+				endTimeSeconds: 27,
+				text: "Да, мы являемся аккредитованной клиникой СОГАЗ. Терапия и гигиена покрываются на 100%. Назовите, пожалуйста, номер вашего полиса.",
+				confidence: 0.98,
+				sentiment: "positive",
+			},
+			{
+				speaker: "patient",
+				startTimeSeconds: 28,
+				endTimeSeconds: 36,
+				text: "Полис СОГАЗ-987654. Хочу записаться на консультацию к хирургу-имплантологу.",
+				confidence: 0.97,
+				sentiment: "neutral",
+			},
+			{
+				speaker: "operator",
+				startTimeSeconds: 37,
+				endTimeSeconds: 44,
+				text: "Полис верифицирован в системе! Записываю вас на консультацию. Ждем вас!",
+				confidence: 0.99,
+				sentiment: "positive",
+			},
+		];
+	}
+
+	return [
+		{
+			speaker: "operator",
+			startTimeSeconds: 1,
+			endTimeSeconds: 5,
+			text: "Клиника DENTE, здравствуйте! Чем могу помочь?",
+			confidence: 0.98,
+			sentiment: "positive",
+		},
+		{
+			speaker: "patient",
+			startTimeSeconds: 6,
+			endTimeSeconds: 14,
+			text: "Здравствуйте, хочу уточнить стоимость установки коронки из диоксида циркония и записаться на приём.",
+			confidence: 0.95,
+			sentiment: "neutral",
+		},
+		{
+			speaker: "operator",
+			startTimeSeconds: 15,
+			endTimeSeconds: 26,
+			text: "Коронка из диоксида циркония под ключ с цифровым 3D-сканированием и фиксацией. Рекомендую начать с консультации ортопеда.",
+			confidence: 0.97,
+			sentiment: "positive",
+		},
+		{
+			speaker: "patient",
+			startTimeSeconds: 27,
+			endTimeSeconds: 33,
+			text: "Да, давайте запишемся на консультацию ортопеда на этой неделе.",
+			confidence: 0.96,
+			sentiment: "positive",
+		},
+		{
+			speaker: "operator",
+			startTimeSeconds: 34,
+			endTimeSeconds: 42,
+			text: "Записали вас на консультацию. Направили информацию в мессенджер. Хорошего дня!",
+			confidence: 0.99,
+			sentiment: "positive",
+		},
+	];
+}
+
+const initialTransferState: CallTransferState = {
+	isTransferring: false,
+	targetExtension: "",
+	transferType: "blind",
+	status: "idle",
+	failureReason: undefined,
+};
+
 export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 	activeCall: null,
 	callHistory: [],
@@ -574,6 +801,7 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 	playbackSpeed: 1,
 	activeRecordingUrl: null,
 	isPlayingRecording: false,
+	transferState: initialTransferState,
 
 	triggerIncomingCall: (call) => {
 		const id = `call-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -583,6 +811,7 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 			status: call.status ?? "ringing",
 			callStartedAt: call.callStartedAt ?? Date.now(),
 			actionTaken: undefined,
+			transcript: generateCallTranscript(call.callId || call.phone, call.durationSeconds || 45),
 		};
 
 		set((state) => ({
@@ -592,6 +821,7 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 				callStartedAt: call.callStartedAt ?? Date.now(),
 			},
 			callHistory: [historyItem, ...state.callHistory.slice(0, 49)],
+			transferState: initialTransferState,
 		}));
 	},
 
@@ -626,6 +856,7 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 		set({
 			activeCall: null,
 			callHistory: updatedHistory,
+			transferState: initialTransferState,
 		});
 	},
 
@@ -643,6 +874,7 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 		set({
 			activeCall: null,
 			callHistory: updatedHistory,
+			transferState: initialTransferState,
 		});
 	},
 
@@ -660,6 +892,52 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 		set({
 			activeCall: null,
 			callHistory: updatedHistory,
+			transferState: initialTransferState,
+		});
+	},
+
+	startCallTransfer: (targetExtension, transferType = "blind") => {
+		const { activeCall, callHistory } = get();
+		if (!activeCall) return;
+
+		const updatedHistory = callHistory.map((item, idx) => {
+			if (idx === 0 && item.phone === activeCall.phone) {
+				return {
+					...item,
+					actionTaken: "transferred" as const,
+					transferTarget: targetExtension,
+				};
+			}
+			return item;
+		});
+
+		set({
+			transferState: {
+				isTransferring: true,
+				targetExtension,
+				transferType,
+				status: transferType === "blind" ? "transferred" : "dialing",
+				failureReason: undefined,
+			},
+			activeCall: transferType === "blind" ? null : activeCall,
+			callHistory: updatedHistory,
+		});
+	},
+
+	completeCallTransfer: () => {
+		set({
+			activeCall: null,
+			transferState: {
+				...get().transferState,
+				isTransferring: false,
+				status: "transferred",
+			},
+		});
+	},
+
+	cancelCallTransfer: () => {
+		set({
+			transferState: initialTransferState,
 		});
 	},
 
@@ -684,3 +962,4 @@ if (typeof window !== "undefined") {
 	(window as unknown as { useTelephonyStore: typeof useTelephonyStore }).useTelephonyStore =
 		useTelephonyStore;
 }
+

@@ -60,14 +60,14 @@ interface AllowedSite {
 
 const CLINIC_SCHEDULE_SITES: readonly AllowedSite[] = [
 	{
-		file: "db/schema.ts",
+		file: "db/schema/auth.ts",
 		code: 'clinicSchedule: jsonb("clinic_schedule"),',
 		role: "объявление колонки",
 		why: "объявление самой колонки в схеме drizzle — не чтение и не запись",
 	},
 	{
 		file: "db/settingsQuery.ts",
-		code: "if (input.scheduleDefaults !== undefined) updateData.clinicSchedule = input.scheduleDefaults;",
+		code: "updateData.clinicSchedule = input.scheduleDefaults;",
 		role: "писатель",
 		why: "ЕДИНСТВЕННЫЙ писатель: Настройки → «Клиника», формат clinicScheduleDefaultsSchema",
 	},
@@ -90,18 +90,24 @@ const CLINIC_SCHEDULE_SITES: readonly AllowedSite[] = [
 		why: "выборка графика для публичного виджета записи — свободные слоты и создание записи",
 		count: 2,
 	},
+	{
+		file: "routes/publicBooking.ts",
+		code: "clinicSchedule: DaySchedule,",
+		role: "чтение",
+		why: "типизация аргумента функции",
+	},
 ];
 
 const CLINIC_MODE_SITES: readonly AllowedSite[] = [
 	{
-		file: "db/schema.ts",
+		file: "db/schema/auth.ts",
 		code: 'clinicMode: text("clinic_mode").notNull().default(DEFAULT_CLINIC_MODE),',
 		role: "объявление колонки",
 		why: "сама колонка, умолчание проверяет tests/clinicModeOneVocabulary.test.ts",
 	},
 	{
 		file: "db/settingsQuery.ts",
-		code: "await db.update(schema.organizations).set({ clinicMode: mode }).where(eq(schema.organizations.id, organizationId));",
+		code: ".set({ clinicMode: mode })",
 		role: "писатель",
 		why: "ЕДИНСТВЕННЫЙ писатель: updateClinicModeInDb, принимает ClinicMode, то есть значение из словаря",
 	},

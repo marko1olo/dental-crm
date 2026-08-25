@@ -15,6 +15,7 @@
 import type { SQL } from "drizzle-orm";
 import { and, asc, eq, isNull, lte } from "drizzle-orm";
 import { db } from "../db/client.js";
+import { withSuperuserBypass } from "../db/rls.js";
 import {
 	type SystemBackgroundJob,
 	systemBackgroundJobs,
@@ -92,25 +93,27 @@ export class TaskQueueService {
 	 * Постановка задачи в персистентную очередь.
 	 */
 	static async enqueue(params: EnqueueJobParams): Promise<SystemBackgroundJob> {
-		const [job] = await db
-			.insert(systemBackgroundJobs)
-			.values({
-				organizationId: params.organizationId ?? null,
-				queueName: params.queueName,
-				taskName: params.taskName,
-				payload: params.payload ?? {},
-				status: "pending",
-				retryCount: 0,
-				maxRetries: params.maxRetries ?? 3,
-				scheduledFor: params.scheduledFor ?? new Date(),
-			})
-			.returning();
+		return withSuperuserBypass(async (tx) => {
+			const [job] = await tx
+				.insert(systemBackgroundJobs)
+				.values({
+					organizationId: params.organizationId ?? null,
+					queueName: params.queueName,
+					taskName: params.taskName,
+					payload: params.payload ?? {},
+					status: "pending",
+					retryCount: 0,
+					maxRetries: params.maxRetries ?? 3,
+					scheduledFor: params.scheduledFor ?? new Date(),
+				})
+				.returning();
 
-		if (!job) {
-			throw new Error("Failed to enqueue job");
-		}
+			if (!job) {
+				throw new Error("Failed to enqueue job");
+			}
 
-		return job;
+			return job;
+		});
 	}
 
 	/**
@@ -120,7 +123,7 @@ export class TaskQueueService {
 	static async dequeueNext(
 		queueName: string,
 	): Promise<SystemBackgroundJob | null> {
-		return await db.transaction(async (tx) => {
+		return withSuperuserBypass(async (tx) => {
 			const now = new Date();
 
 			const [candidate] = await tx
@@ -173,17 +176,19 @@ export class TaskQueueService {
 			updateValues.payload = resultPayload;
 		}
 
-		const [job] = await db
-			.update(systemBackgroundJobs)
-			.set(updateValues)
-			.where(eq(systemBackgroundJobs.id, jobId))
-			.returning();
+		return withSuperuserBypass(async (tx) => {
+			const [job] = await tx
+				.update(systemBackgroundJobs)
+				.set(updateValues)
+				.where(eq(systemBackgroundJobs.id, jobId))
+				.returning();
 
-		if (!job) {
-			throw new Error(`Failed to complete job ${jobId}`);
-		}
+			if (!job) {
+				throw new Error(`Failed to complete job ${jobId}`);
+			}
 
-		return job;
+			return job;
+		});
 	}
 
 	/**
@@ -197,55 +202,57 @@ export class TaskQueueService {
 		const errorMessage = error instanceof Error ? error.message : String(error);
 		const now = new Date();
 
-		const [existing] = await db
-			.select()
-			.from(systemBackgroundJobs)
-			.where(eq(systemBackgroundJobs.id, jobId))
-			.limit(1);
+		return withSuperuserBypass(async (tx) => {
+			const [existing] = await tx
+				.select()
+				.from(systemBackgroundJobs)
+				.where(eq(systemBackgroundJobs.id, jobId))
+				.limit(1);
 
-		if (!existing) {
-			throw new Error(`Job with id ${jobId} not found`);
-		}
+			if (!existing) {
+				throw new Error(`Job with id ${jobId} not found`);
+			}
 
-		const isDeadLetter = existing.retryCount >= existing.maxRetries;
+			const isDeadLetter = existing.retryCount >= existing.maxRetries;
 
-		if (isDeadLetter) {
-			const [dead] = await db
+			if (isDeadLetter) {
+				const [dead] = await tx
+					.update(systemBackgroundJobs)
+					.set({
+						status: "dead_letter",
+						finishedAt: now,
+						lastError: errorMessage,
+					})
+					.where(eq(systemBackgroundJobs.id, jobId))
+					.returning();
+				if (!dead) {
+					throw new Error(`Failed to update dead_letter for job ${jobId}`);
+				}
+				return dead;
+			}
+
+			// Экспоненциальный бэкофф: 2^retryCount * 5 сек (5s, 10s, 20s, 40s...)
+			const delayMs =
+				customRetryDelayMs ??
+				Math.min(3600_000, 5000 * 2 ** Math.max(0, existing.retryCount - 1));
+			const nextScheduled = new Date(now.getTime() + delayMs);
+
+			const [retried] = await tx
 				.update(systemBackgroundJobs)
 				.set({
-					status: "dead_letter",
-					finishedAt: now,
+					status: "pending",
+					scheduledFor: nextScheduled,
 					lastError: errorMessage,
 				})
 				.where(eq(systemBackgroundJobs.id, jobId))
 				.returning();
-			if (!dead) {
-				throw new Error(`Failed to update dead_letter for job ${jobId}`);
+
+			if (!retried) {
+				throw new Error(`Failed to retry job ${jobId}`);
 			}
-			return dead;
-		}
 
-		// Экспоненциальный бэкофф: 2^retryCount * 5 сек (5s, 10s, 20s, 40s...)
-		const delayMs =
-			customRetryDelayMs ??
-			Math.min(3600_000, 5000 * 2 ** Math.max(0, existing.retryCount - 1));
-		const nextScheduled = new Date(now.getTime() + delayMs);
-
-		const [retried] = await db
-			.update(systemBackgroundJobs)
-			.set({
-				status: "pending",
-				scheduledFor: nextScheduled,
-				lastError: errorMessage,
-			})
-			.where(eq(systemBackgroundJobs.id, jobId))
-			.returning();
-
-		if (!retried) {
-			throw new Error(`Failed to retry job ${jobId}`);
-		}
-
-		return retried;
+			return retried;
+		});
 	}
 
 	/**
@@ -295,63 +302,69 @@ export class TaskQueueService {
 	 * Ручной перезапуск задачи из статуса dead_letter или failed.
 	 */
 	static async retryJob(jobId: string): Promise<SystemBackgroundJob> {
-		const [job] = await db
-			.update(systemBackgroundJobs)
-			.set({
-				status: "pending",
-				scheduledFor: new Date(),
-				retryCount: 0,
-				finishedAt: null,
-				lastError: null,
-			})
-			.where(eq(systemBackgroundJobs.id, jobId))
-			.returning();
+		return withSuperuserBypass(async (tx) => {
+			const [job] = await tx
+				.update(systemBackgroundJobs)
+				.set({
+					status: "pending",
+					scheduledFor: new Date(),
+					retryCount: 0,
+					finishedAt: null,
+					lastError: null,
+				})
+				.where(eq(systemBackgroundJobs.id, jobId))
+				.returning();
 
-		if (!job) {
-			throw new Error(`Job with id ${jobId} not found`);
-		}
+			if (!job) {
+				throw new Error(`Job with id ${jobId} not found`);
+			}
 
-		return job;
+			return job;
+		});
 	}
 
 	/**
 	 * Отмена запланированной задачи.
 	 */
 	static async cancelJob(jobId: string): Promise<SystemBackgroundJob> {
-		const [job] = await db
-			.update(systemBackgroundJobs)
-			.set({
-				status: "cancelled",
-				finishedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(systemBackgroundJobs.id, jobId),
-					eq(systemBackgroundJobs.status, "pending"),
-				),
-			)
-			.returning();
+		return withSuperuserBypass(async (tx) => {
+			const [job] = await tx
+				.update(systemBackgroundJobs)
+				.set({
+					status: "cancelled",
+					finishedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(systemBackgroundJobs.id, jobId),
+						eq(systemBackgroundJobs.status, "pending"),
+					),
+				)
+				.returning();
 
-		if (!job) {
-			throw new Error(
-				`Job with id ${jobId} not found or not in pending status`,
-			);
-		}
+			if (!job) {
+				throw new Error(
+					`Job with id ${jobId} not found or not in pending status`,
+				);
+			}
 
-		return job;
+			return job;
+		});
 	}
 
 	/**
 	 * Получение информации о задаче по ID.
 	 */
 	static async getJob(jobId: string): Promise<SystemBackgroundJob | null> {
-		const [job] = await db
-			.select()
-			.from(systemBackgroundJobs)
-			.where(eq(systemBackgroundJobs.id, jobId))
-			.limit(1);
+		return withSuperuserBypass(async (tx) => {
+			const [job] = await tx
+				.select()
+				.from(systemBackgroundJobs)
+				.where(eq(systemBackgroundJobs.id, jobId))
+				.limit(1);
 
-		return job ?? null;
+			return job ?? null;
+		});
 	}
 
 	/**
@@ -384,15 +397,17 @@ export class TaskQueueService {
 
 		const validConditions = conditions.filter((c): c is SQL => c !== undefined);
 
-		const query = db
-			.select()
-			.from(systemBackgroundJobs)
-			.where(validConditions.length > 0 ? and(...validConditions) : undefined)
-			.orderBy(asc(systemBackgroundJobs.scheduledFor))
-			.limit(params.limit ?? 50)
-			.offset(params.offset ?? 0);
+		return withSuperuserBypass(async (tx) => {
+			const query = tx
+				.select()
+				.from(systemBackgroundJobs)
+				.where(validConditions.length > 0 ? and(...validConditions) : undefined)
+				.orderBy(asc(systemBackgroundJobs.scheduledFor))
+				.limit(params.limit ?? 50)
+				.offset(params.offset ?? 0);
 
-		return await query;
+			return await query;
+		});
 	}
 
 	/**

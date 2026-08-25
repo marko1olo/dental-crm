@@ -1,6 +1,7 @@
-export * from "./InventoryConfirmDialog";
-export * from "./ProcedureMaterialDeductionModal";
-export * from "./inventoryMath";
-export * from "./useInventoryLogic";
-export { ClinicalWriteoffModal, type ClinicalWriteoffModalProps } from "./writeoff/ClinicalWriteoffModal";
-export { WarehouseTransferModal, type WarehouseTransferModalProps } from "./transfers/WarehouseTransferModal";
+export * from "./InventoryConfirmDialog.js";
+export * from "./ProcedureMaterialDeductionModal.js";
+export * from "./inventoryMath.js";
+export * from "./useInventoryLogic.js";
+export { ClinicalWriteoffModal, type ClinicalWriteoffModalProps } from "./writeoff/ClinicalWriteoffModal.js";
+export { WarehouseTransferModal, type WarehouseTransferModalProps } from "./transfers/WarehouseTransferModal.js";
+export * from "./mdlp/index.js";

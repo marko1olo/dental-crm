@@ -1,12 +1,21 @@
-## 2026-08-14T16:01:44Z
+## 2026-08-18T17:29:17Z
+You are Challenger 2 for Milestone 1 in Clinic MVP (DENTE).
+Your working directory is `C:/Clinic_MVP/dental-crm/.agents/challenger_m1_2`.
 
-# Dispatch: Challenger M1-2
+You MUST read before starting:
+1. `C:/Clinic_MVP/dental-crm/.agents/ORIGINAL_REQUEST.md`
+2. `C:/Clinic_MVP/dental-crm/PROJECT.md`
+3. `C:/Clinic_MVP/dental-crm/.agents/AGENTS.md`
+4. `C:/Clinic_MVP/dental-crm/.agents/worker_m1/handoff.md`
 
-## Mission
-Empirically stress-test UI changes in Milestone M1 (Requirement R1).
-Test:
-1. Finance planning summary: test empty state when billing summary is null vs when billing summary has 0 values vs positive values.
-2. Cornerstone3DViewer & Panorex: test responsiveness, flex-wrap, and boundary constraints on simulated narrow viewports (320px, 375px, 390px).
-3. Encoding & Static Typecheck verification.
+Your Mission:
+Adversarially challenge the schema definitions and concurrency contract in `apps/api/src/db/schema/clinical.ts` and `apps/api/src/services/egisz/EgiszAuditService.ts`:
+1. Check that `egisz_outbox` unique constraints prevent duplicate submissions on `(organizationId, dedupeKey)`.
+2. Check that `egisz_audit_logs` sequence numbering and hash uniqueness prevent ledger forks.
+3. Verify that `serviceCatalogItems` UET fields and `generatedDocuments` UKEP fields adhere to Drizzle ORM standards.
+4. Run tests and typecheck:
+   - `node --import tsx --test apps/api/src/services/egisz/EgiszAuditService.test.ts`
+   - `npm run typecheck`
+5. Conclude with verdict: `APPROVE` or `REJECT`.
 
-Write report and verdict to `C:\Clinic_MVP\dental-crm\.agents\challenger_m1_2\handoff.md`.
+Write your report to `C:/Clinic_MVP/dental-crm/.agents/challenger_m1_2/handoff.md` and send a completion message.

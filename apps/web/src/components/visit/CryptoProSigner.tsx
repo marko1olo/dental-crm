@@ -318,7 +318,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 					<div className="text-xs font-medium text-emerald-400">
 						Подписано и защищено от правок
 					</div>
-					<div className="text-[10px] text-emerald-500/70">
+					<div className="text-xs text-emerald-500/80">
 						{signedAtText ?? "время подписания уточняется"}
 					</div>
 				</div>
@@ -349,18 +349,18 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 					aria-modal="true"
 					aria-labelledby="crypto-signer-modal-title"
 				>
-					<div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative overflow-hidden text-slate-900 dark:text-white">
+					<div className="bg-[var(--paper)] border border-[var(--line)] rounded-2xl w-full max-w-md p-6 shadow-2xl relative overflow-hidden text-[var(--ink)]">
 						<div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal-500 to-emerald-500"></div>
 
-						<h3 id="crypto-signer-modal-title" className="text-xl font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+						<h3 id="crypto-signer-modal-title" className="text-xl font-bold text-[var(--ink)] mb-2 flex items-center gap-2">
 							<ShieldCheck className="w-6 h-6 text-teal-600 dark:text-teal-400" />
 							Подписание дневника
 						</h3>
-						<p className="text-slate-600 dark:text-zinc-400 text-sm mb-6">
+						<p className="text-[var(--muted)] text-sm mb-6">
 							После подписания редактирование будет заблокировано.
 						</p>
 
-						<div className="flex gap-2 mb-6 p-1 bg-slate-100 dark:bg-zinc-950 rounded-lg border border-slate-200 dark:border-zinc-800">
+						<div className="flex gap-2 mb-6 p-1 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)]">
 							<button
 								type="button"
 								disabled={lockInProgress}
@@ -370,10 +370,10 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 									// Поле ПИН общее для двух способов: чужой остаток не переносим.
 									setPinCode("");
 								}}
-								className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors disabled:opacity-60 ${
+								className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-60 cursor-pointer ${
 									signatureType === "pin"
-										? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm"
-										: "text-slate-600 dark:text-zinc-500 hover:text-slate-900 dark:hover:text-zinc-300"
+										? "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-xs"
+										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 							>
 								Простая подпись (ПИН)
@@ -387,10 +387,10 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 									setPinCode("");
 									loadCertificates();
 								}}
-								className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors disabled:opacity-60 ${
+								className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-60 cursor-pointer ${
 									signatureType === "crypto"
-										? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm"
-										: "text-slate-600 dark:text-zinc-500 hover:text-slate-900 dark:hover:text-zinc-300"
+										? "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-xs"
+										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 							>
 								КриптоПро / Рутокен
@@ -401,7 +401,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 							<div className="mb-6">
 								<label
 									htmlFor="cryptopro-pincode"
-									className="block text-xs font-medium text-slate-700 dark:text-zinc-400 mb-2 uppercase tracking-wider"
+									className="block text-xs font-semibold text-[var(--muted)] mb-2 uppercase tracking-wider"
 								>
 									Ваш ПИН-код сотрудника
 								</label>
@@ -412,7 +412,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 									autoComplete="off"
 									maxLength={4}
 									disabled={lockInProgress}
-									className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-300 dark:border-zinc-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white text-center text-2xl tracking-[1em] focus:ring-2 focus:ring-teal-500 focus:outline-none disabled:opacity-60"
+									className="w-full bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl px-4 py-3 text-[var(--ink)] text-center text-2xl tracking-[1em] focus:ring-2 focus:ring-teal-500 focus:outline-none disabled:opacity-60"
 									value={pinCode}
 									onChange={(e) => {
 										setPinCode(e.target.value.replace(/\D/g, ""));
@@ -420,7 +420,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 									}}
 									placeholder="••••"
 								/>
-								<p className="mt-2 text-[11px] text-zinc-500">
+								<p className="mt-2 text-xs text-[var(--muted)]">
 									Четыре цифры — тот же ПИН, которым вы входите в смену.
 								</p>
 							</div>
@@ -478,7 +478,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 									{!isLoadingCerts &&
 									certificatesLoaded &&
 									certificates.length === 0 ? (
-										<p className="mt-2 text-[11px] text-amber-400">
+										<p className="mt-2 text-xs text-amber-400">
 											Ни одного сертификата не видно. Проверьте: носитель
 											Рутокен вставлен, КриптоПро установлен, расширение
 											браузера включено. Затем нажмите «Обновить список».
@@ -503,7 +503,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 									<div>
 										<label
 											htmlFor="cryptopro-token-pin"
-											className="block text-xs font-medium text-slate-700 dark:text-zinc-400 mb-2 uppercase tracking-wider"
+											className="block text-xs font-semibold text-[var(--muted)] mb-2 uppercase tracking-wider"
 										>
 											ПИН-код носителя Рутокен
 										</label>
@@ -512,7 +512,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 											type="password"
 											autoComplete="off"
 											disabled={lockInProgress}
-											className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-300 dark:border-zinc-800 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:outline-none disabled:opacity-60"
+											className="w-full bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl px-4 py-3 text-[var(--ink)] focus:ring-2 focus:ring-teal-500 focus:outline-none disabled:opacity-60"
 											value={pinCode}
 											onChange={(e) => {
 												setPinCode(e.target.value);
@@ -562,7 +562,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 										? "Идёт подписание. Дождитесь подтверждения сервера или сообщения об отказе — закрытое окно выглядело бы как подписанная запись."
 										: undefined
 								}
-								className="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-300 font-medium rounded-xl transition-colors disabled:opacity-60"
+								className="flex-1 px-4 py-2.5 bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)] font-semibold rounded-xl transition-colors disabled:opacity-60 cursor-pointer min-h-[44px]"
 							>
 								Отмена
 							</button>

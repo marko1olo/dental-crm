@@ -6987,6 +6987,7 @@ export interface TelegramMessageContext {
 export function renderDenteTelegramMessagePreview(
 	input: DenteTelegramMessagePreviewRequest,
 	settings: DenteTelegramBotSettings = denteTelegramBotSettings,
+	state: DomainState = inMemoryDomainState,
 ): DenteTelegramMessagePreview {
 	const portal = denteTelegramPortalUrlForTemplate(
 		input.templateKind,
@@ -6999,10 +7000,10 @@ export function renderDenteTelegramMessagePreview(
 		settings,
 	);
 	const clinicName = repairMojibakeText(
-		clinicProfile.clinicName || "клиника DENTE",
+		state.clinicProfile?.clinicName || clinicProfile.clinicName || "клиника DENTE",
 	);
 	const appointment = input.appointmentId
-		? (appointments.find((item) => item.id === input.appointmentId) ?? null)
+		? (state.appointments.find((item) => item.id === input.appointmentId) ?? null)
 		: null;
 	const appointmentTime = appointment
 		? telegramAppointmentTimeLabel(appointment)
@@ -7047,7 +7048,7 @@ export function renderDenteTelegramMessagePreview(
 
 	if (
 		input.patientId &&
-		!patients.some((patient) => patient.id === input.patientId)
+		!state.patients.some((patient) => patient.id === input.patientId)
 	) {
 		throw new Error("Пациент для предпросмотра Telegram не найден.");
 	}
@@ -7056,13 +7057,13 @@ export function renderDenteTelegramMessagePreview(
 	}
 	if (
 		input.documentId &&
-		!documents.some((document) => document.id === input.documentId)
+		!state.documents.some((document) => document.id === input.documentId)
 	) {
 		throw new Error("Документ для предпросмотра Telegram не найден.");
 	}
 	if (
 		input.taskId &&
-		!communicationTasks.some((task) => task.id === input.taskId)
+		!state.communicationTasks.some((task) => task.id === input.taskId)
 	) {
 		throw new Error(
 			"Задача коммуникации для предпросмотра Telegram не найдена.",
@@ -7119,7 +7120,7 @@ export function renderDenteTelegramMessagePreview(
 
 	if (input.templateKind === "staff_daily_digest") {
 		const staff = input.staffId
-			? (staffMembers.find(
+			? (state.staffMembers.find(
 					(member) =>
 						member.id === input.staffId &&
 						member.organizationId === settings.organizationId &&
@@ -7130,14 +7131,14 @@ export function renderDenteTelegramMessagePreview(
 			throw new Error("Сотрудник для предпросмотра Telegram не найден.");
 		}
 		const clinicDateKey = appointmentClinicDateKey(new Date().toISOString());
-		const scopedAppointments = appointments.filter(
+		const scopedAppointments = state.appointments.filter(
 			(appointment) =>
 				appointment.organizationId === settings.organizationId &&
 				staffDigestVisibleAppointmentStatuses.has(appointment.status) &&
 				appointmentClinicDateKey(appointment.startsAt) === clinicDateKey &&
 				(!staff || staffCanSeeTelegramDigestAppointment(staff, appointment)),
 		);
-		const scopedTasks = communicationTasks.filter(
+		const scopedTasks = state.communicationTasks.filter(
 			(task) =>
 				task.organizationId === settings.organizationId &&
 				isOpenCommunicationTask(task) &&
@@ -8829,6 +8830,7 @@ function buildDenteTelegramOutboxItem(
 			| "tax_document_request";
 	},
 	runtimeScope?: DenteTelegramOutboxRuntimeScope,
+	state: DomainState = inMemoryDomainState,
 ) {
 	const runtime = resolveDenteTelegramOutboxRuntimeScope(runtimeScope);
 	const { settings } = runtime;
@@ -8851,6 +8853,7 @@ function buildDenteTelegramOutboxItem(
 						includePhi: false,
 					},
 					settings,
+					state,
 				)
 			: renderDenteTelegramMessagePreview(
 					{
@@ -8864,6 +8867,7 @@ function buildDenteTelegramOutboxItem(
 						includePhi: false,
 					},
 					settings,
+					state,
 				);
 	const warnings = [...preview.warnings];
 	const replyMarkup = preview.allowedByDefault
@@ -9018,13 +9022,14 @@ function paymentReminderAlreadyCovered(outboxItemId: string): boolean {
 function patientPaymentDebtKopecks(
 	patientId: string,
 	organizationScope = denteTelegramBotSettings.organizationId,
+	state: DomainState = inMemoryDomainState,
 ): Kopecks {
 	const ledger = buildPatientLedger(
 		patientId,
-		treatmentPlanItems.filter(
+		state.treatmentPlanItems.filter(
 			(item) => item.organizationId === organizationScope,
 		),
-		payments.filter((payment) => payment.organizationId === organizationScope),
+		state.payments.filter((payment) => payment.organizationId === organizationScope),
 	);
 	return patientOwesClinicKopecks(ledger);
 }
@@ -9032,8 +9037,9 @@ function patientPaymentDebtKopecks(
 function patientPaymentReminderScheduledAt(
 	patientId: string,
 	organizationScope = denteTelegramBotSettings.organizationId,
+	state: DomainState = inMemoryDomainState,
 ): string {
-	const latestPaidAtMs = payments
+	const latestPaidAtMs = state.payments
 		.filter(
 			(payment) =>
 				payment.organizationId === organizationScope &&
@@ -9050,10 +9056,11 @@ function patientPaymentReminderScheduledAt(
 
 function buildDenteTelegramPaymentReminderItems(
 	runtimeScope?: DenteTelegramOutboxRuntimeScope,
+	state: DomainState = inMemoryDomainState,
 ): DenteTelegramOutboxItem[] {
 	const runtime = resolveDenteTelegramOutboxRuntimeScope(runtimeScope);
 	const organizationScope = runtime.settings.organizationId;
-	return patients.flatMap((patient) => {
+	return state.patients.flatMap((patient) => {
 		if (patient.organizationId !== organizationScope) return [];
 		if (patient.status !== "active") return [];
 
@@ -9071,6 +9078,7 @@ function buildDenteTelegramPaymentReminderItems(
 			balanceDueKopecks = patientPaymentDebtKopecks(
 				patient.id,
 				organizationScope,
+				state,
 			);
 		} catch (error) {
 			if (
@@ -9101,10 +9109,12 @@ function buildDenteTelegramPaymentReminderItems(
 					scheduledAt: patientPaymentReminderScheduledAt(
 						patient.id,
 						organizationScope,
+						state,
 					),
 					source: "payment_reminder",
 				},
 				runtime,
+				state,
 			),
 		];
 	});
@@ -9142,20 +9152,21 @@ function recallScheduledAt(item: TreatmentPlanItem): string {
 
 function buildDenteTelegramRecallItems(
 	runtimeScope?: DenteTelegramOutboxRuntimeScope,
+	state: DomainState = inMemoryDomainState,
 ): DenteTelegramOutboxItem[] {
 	const runtime = resolveDenteTelegramOutboxRuntimeScope(runtimeScope);
 	const organizationScope = runtime.settings.organizationId;
 	const activePatientsMap = new Map(
-		patients.filter((p) => p.status === "active").map((p) => [p.id, p]),
+		state.patients.filter((p) => p.status === "active").map((p) => [p.id, p]),
 	);
-	return treatmentPlanItems.flatMap((item) => {
+	return state.treatmentPlanItems.flatMap((item) => {
 		if (item.organizationId !== organizationScope) return [];
 		if (item.status !== "completed") return [];
 
 		// БЫЛО: только индекс, без запасного поиска по прайсу. Услуга, добавленная
 		// после построения индекса, не находилась, и напоминание о гигиене
 		// пациенту не уходило вовсе.
-		const service = getServiceCatalogItem(item.serviceId);
+		const service = getServiceCatalogItem(item.serviceId, state);
 		if (service?.category !== "hygiene") return [];
 
 		const patient = activePatientsMap.get(item.patientId);
@@ -9177,6 +9188,7 @@ function buildDenteTelegramRecallItems(
 					source: "recall",
 				},
 				runtime,
+				state,
 			),
 		];
 	});
@@ -9418,16 +9430,17 @@ function taxApplicationSlaWarning(document: GeneratedDocument): string | null {
 
 function buildDenteTelegramTaxDocumentRequestItems(
 	runtimeScope?: DenteTelegramOutboxRuntimeScope,
+	state: DomainState = inMemoryDomainState,
 ): DenteTelegramOutboxItem[] {
 	const runtime = resolveDenteTelegramOutboxRuntimeScope(runtimeScope);
 	const organizationScope = runtime.settings.organizationId;
 	// Один индекс активных пациентов вместо линейного поиска на каждый документ.
 	const activePatientIds = new Set(
-		patients
+		state.patients
 			.filter((candidate) => candidate.status === "active")
 			.map((candidate) => candidate.id),
 	);
-	return documents.flatMap((document) => {
+	return state.documents.flatMap((document) => {
 		if (document.organizationId !== organizationScope) return [];
 		if (document.kind !== "tax_deduction_application") return [];
 		if (document.status !== "issued") return [];
@@ -9450,6 +9463,7 @@ function buildDenteTelegramTaxDocumentRequestItems(
 				source: "tax_document_request",
 			},
 			runtime,
+			state,
 		);
 		const warning = taxApplicationSlaWarning(document);
 		return warning
@@ -9495,18 +9509,19 @@ function documentReadyAlreadyCovered(
 
 function buildDenteTelegramDocumentReadyItems(
 	runtimeScope?: DenteTelegramOutboxRuntimeScope,
+	state: DomainState = inMemoryDomainState,
 ): DenteTelegramOutboxItem[] {
 	const runtime = resolveDenteTelegramOutboxRuntimeScope(runtimeScope);
 	const organizationScope = runtime.settings.organizationId;
 
 	const activePatients = new Map<string, Patient>();
-	for (const p of patients) {
+	for (const p of state.patients) {
 		if (p.status === "active") {
 			activePatients.set(p.id, p);
 		}
 	}
 
-	return documents.flatMap((document) => {
+	return state.documents.flatMap((document) => {
 		if (document.organizationId !== organizationScope) return [];
 		if (document.status !== "issued") return [];
 		if (documentReadyNoticeExcludedKinds.has(document.kind)) return [];
@@ -9529,6 +9544,7 @@ function buildDenteTelegramDocumentReadyItems(
 					source: "document_ready",
 				},
 				runtime,
+				state,
 			),
 		];
 	});
@@ -9549,14 +9565,15 @@ function staffDailyDigestAlreadySent(outboxItemId: string): boolean {
 
 function buildDenteTelegramAppointmentReminderItems(
 	runtimeScope?: DenteTelegramOutboxRuntimeScope,
+	state: DomainState = inMemoryDomainState,
 ): DenteTelegramOutboxItem[] {
 	const runtime = resolveDenteTelegramOutboxRuntimeScope(runtimeScope);
 	const { settings } = runtime;
 	const nowMs = Date.now();
 	const activePatientsMap = new Map(
-		patients.filter((p) => p.status === "active").map((p) => [p.id, p]),
+		state.patients.filter((p) => p.status === "active").map((p) => [p.id, p]),
 	);
-	return appointments.flatMap((appointment) => {
+	return state.appointments.flatMap((appointment) => {
 		if (appointment.organizationId !== settings.organizationId) return [];
 		if (!appointment.patientId) return [];
 		const patientId = appointment.patientId;
@@ -9595,6 +9612,7 @@ function buildDenteTelegramAppointmentReminderItems(
 						source: "appointment_reminder",
 					},
 					runtime,
+					state,
 				),
 			];
 		});
@@ -9603,6 +9621,7 @@ function buildDenteTelegramAppointmentReminderItems(
 
 function buildDenteTelegramPostVisitInstructionItems(
 	runtimeScope?: DenteTelegramOutboxRuntimeScope,
+	state: DomainState = inMemoryDomainState,
 ): DenteTelegramOutboxItem[] {
 	const runtime = resolveDenteTelegramOutboxRuntimeScope(runtimeScope);
 	const organizationScope = runtime.settings.organizationId;
@@ -9611,9 +9630,9 @@ function buildDenteTelegramPostVisitInstructionItems(
 		{ visitId: string; patientId: string }
 	>();
 	const activePatientsMap = new Map(
-		patients.filter((p) => p.status === "active").map((p) => [p.id, p]),
+		state.patients.filter((p) => p.status === "active").map((p) => [p.id, p]),
 	);
-	for (const item of treatmentPlanItems) {
+	for (const item of state.treatmentPlanItems) {
 		if (!item.visitId || item.organizationId !== organizationScope) continue;
 		if (item.status !== "completed" && item.status !== "in_progress") continue;
 		const patient = activePatientsMap.get(item.patientId);
@@ -9623,7 +9642,7 @@ function buildDenteTelegramPostVisitInstructionItems(
 			patientId: item.patientId,
 		});
 	}
-	for (const document of documents) {
+	for (const document of state.documents) {
 		if (document.organizationId !== organizationScope) continue;
 		if (document.kind !== "post_visit_recommendations") continue;
 		if (document.status !== "issued") continue;
@@ -9657,6 +9676,7 @@ function buildDenteTelegramPostVisitInstructionItems(
 					source: "post_visit_instruction",
 				},
 				runtime,
+				state,
 			),
 		];
 	});
@@ -9695,17 +9715,18 @@ function postVisitCheckupAlreadyCovered(outboxItemId: string): boolean {
 
 function buildDenteTelegramPostVisitCheckupItems(
 	runtimeScope?: DenteTelegramOutboxRuntimeScope,
+	state: DomainState = inMemoryDomainState,
 ): DenteTelegramOutboxItem[] {
 	const runtime = resolveDenteTelegramOutboxRuntimeScope(runtimeScope);
 	const organizationScope = runtime.settings.organizationId;
-	return documents.flatMap((document) => {
+	return state.documents.flatMap((document) => {
 		if (document.organizationId !== organizationScope) return [];
 		if (document.kind !== "post_visit_recommendations") return [];
 		if (document.status !== "issued") return [];
 		if (!document.visitId) return [];
 		if (!document.payload?.postVisitRecommendations?.safeForTelegramSending)
 			return [];
-		const patient = patients.find(
+		const patient = state.patients.find(
 			(candidate) =>
 				candidate.id === document.patientId && candidate.status === "active",
 		);
@@ -9728,6 +9749,7 @@ function buildDenteTelegramPostVisitCheckupItems(
 					source: "post_visit_checkup",
 				},
 				runtime,
+				state,
 			),
 		];
 	});
@@ -9756,6 +9778,7 @@ function reviewRequestClosedVisitCandidates(
 
 function buildDenteTelegramReviewRequestItems(
 	runtimeScope?: DenteTelegramOutboxRuntimeScope,
+	state: DomainState = inMemoryDomainState,
 ): DenteTelegramOutboxItem[] {
 	const runtime = resolveDenteTelegramOutboxRuntimeScope(runtimeScope);
 	const organizationScope = runtime.settings.organizationId;
@@ -9791,6 +9814,7 @@ function buildDenteTelegramReviewRequestItems(
 					source: "review_request",
 				},
 				runtime,
+				state,
 			),
 		);
 	};
@@ -9811,7 +9835,7 @@ function buildDenteTelegramReviewRequestItems(
 		});
 	}
 
-	const paidMilestones = [...payments]
+	const paidMilestones = [...state.payments]
 		.filter(
 			(payment) =>
 				payment.organizationId === organizationScope &&
@@ -9824,7 +9848,7 @@ function buildDenteTelegramReviewRequestItems(
 		);
 
 	const activePatientsById = new Map(
-		patients.filter((p) => p.status === "active").map((p) => [p.id, p]),
+		state.patients.filter((p) => p.status === "active").map((p) => [p.id, p]),
 	);
 
 	for (const payment of paidMilestones) {
@@ -10408,18 +10432,27 @@ function buildAllDenteTelegramOutboxItems(
 				),
 			];
 		});
-	const paymentReminderItems = buildDenteTelegramPaymentReminderItems(runtime);
+	const paymentReminderItems = buildDenteTelegramPaymentReminderItems(
+		runtime,
+		state,
+	);
 	const appointmentReminderItems =
-		buildDenteTelegramAppointmentReminderItems(runtime);
+		buildDenteTelegramAppointmentReminderItems(runtime, state);
 	const postVisitInstructionItems =
-		buildDenteTelegramPostVisitInstructionItems(runtime);
+		buildDenteTelegramPostVisitInstructionItems(runtime, state);
 	const postVisitCheckupItems =
-		buildDenteTelegramPostVisitCheckupItems(runtime);
-	const recallItems = buildDenteTelegramRecallItems(runtime);
+		buildDenteTelegramPostVisitCheckupItems(runtime, state);
+	const recallItems = buildDenteTelegramRecallItems(runtime, state);
 	const taxDocumentRequestItems =
-		buildDenteTelegramTaxDocumentRequestItems(runtime);
-	const documentReadyItems = buildDenteTelegramDocumentReadyItems(runtime);
-	const reviewRequestItems = buildDenteTelegramReviewRequestItems(runtime);
+		buildDenteTelegramTaxDocumentRequestItems(runtime, state);
+	const documentReadyItems = buildDenteTelegramDocumentReadyItems(
+		runtime,
+		state,
+	);
+	const reviewRequestItems = buildDenteTelegramReviewRequestItems(
+		runtime,
+		state,
+	);
 	const allItems = [
 		...taskItems,
 		...paymentReminderItems,
@@ -10444,6 +10477,7 @@ function findDenteTelegramOutboxItem(
 		buildAllDenteTelegramOutboxItems(
 			new Date().toISOString(),
 			runtimeScope,
+			state,
 		).find((item) => item.id === outboxItemId) ?? null
 	);
 }
@@ -10457,7 +10491,7 @@ export function buildDenteTelegramOutbox(
 	const runtime = resolveDenteTelegramOutboxRuntimeScope(runtimeScope);
 	const { settings } = runtime;
 	const now = new Date().toISOString();
-	const allItems = buildAllDenteTelegramOutboxItems(now, runtime);
+	const allItems = buildAllDenteTelegramOutboxItems(now, runtime, state);
 	const warnings: string[] = [];
 	const nowMs = Date.now();
 	const readyItems = allItems.filter((item) => item.deliveryStatus === "ready");

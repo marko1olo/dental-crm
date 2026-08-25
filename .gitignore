@@ -48,6 +48,8 @@ blob-report/
 # from .data/dental-crm-state.json). Never track its raw Postgres page files.
 dente-db/
 apps/api/dente-db/
+.local-pg-data/
+
 
 # Git internal leftover from a prior history rewrite; must never be tracked.
 .git-rewrite/
@@ -122,6 +124,8 @@ __pycache__/
 *.pyc
 *.pyo
 .postgres/
+backups/
+*.sql.enc
 # Подписанные токены для съёмки панелей: выдаются заново скриптом,
 # в репозиторий попадать не должны.
 .ops-shot-tokens.json

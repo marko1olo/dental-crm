@@ -4,6 +4,7 @@ import {
 	BarChart3,
 	CalendarClock,
 	CalendarDays,
+	ChevronDown,
 	ChevronsLeft,
 	ClipboardCheck,
 	ClipboardList,
@@ -499,6 +500,7 @@ export function PerspectiveSwitcher() {
 			<summary title={perspectiveDescriptions[perspective]}>
 				<span>Режим</span>
 				<strong>{perspectiveLabels[perspective]}</strong>
+				<ChevronDown size={13} className="switcher-chevron opacity-60" aria-hidden="true" />
 			</summary>
 			<div className="role-switcher-options">
 				{options.map((mode) => (
@@ -602,36 +604,39 @@ export function WorkspaceTopbar({
 					</p>
 					<h1>{clinicName}</h1>
 				</div>
-				<details
-					className="workspace-role-switcher"
-					aria-label={workspaceTopbarLabels.role.region}
-				>
-					<summary>
-						<span>{workspaceTopbarLabels.role.caption}</span>
-						<strong>{staffRoleLabels[selectedWorkspaceRole]}</strong>
-					</summary>
-					<div className="role-switcher-options">
-						{availableRoles.map((role) => (
-							<button
-								className={selectedWorkspaceRole === role ? "active" : ""}
-								key={role}
-								type="button"
-								aria-pressed={selectedWorkspaceRole === role}
-								aria-label={`${workspaceTopbarLabels.role.region}: ${staffRoleLabels[role]}`}
-								onClick={(event) => {
-									onRoleChange(role);
-									event.currentTarget
-										.closest("details")
-										?.removeAttribute("open");
-								}}
-							>
-								{staffRoleLabels[role]}
-							</button>
-						))}
-					</div>
-				</details>
-				<PerspectiveSwitcher />
-				<RecentPatientHistoryWidget compactDropdown />
+				<div className="topbar-selectors">
+					<details
+						className="workspace-role-switcher"
+						aria-label={workspaceTopbarLabels.role.region}
+					>
+						<summary>
+							<span>{workspaceTopbarLabels.role.caption}</span>
+							<strong>{staffRoleLabels[selectedWorkspaceRole]}</strong>
+							<ChevronDown size={13} className="switcher-chevron opacity-60" aria-hidden="true" />
+						</summary>
+						<div className="role-switcher-options">
+							{availableRoles.map((role) => (
+								<button
+									className={selectedWorkspaceRole === role ? "active" : ""}
+									key={role}
+									type="button"
+									aria-pressed={selectedWorkspaceRole === role}
+									aria-label={`${workspaceTopbarLabels.role.region}: ${staffRoleLabels[role]}`}
+									onClick={(event) => {
+										onRoleChange(role);
+										event.currentTarget
+											.closest("details")
+											?.removeAttribute("open");
+									}}
+								>
+									{staffRoleLabels[role]}
+								</button>
+							))}
+						</div>
+					</details>
+					<PerspectiveSwitcher />
+					<RecentPatientHistoryWidget compactDropdown />
+				</div>
 			</div>
 			{/*
         ПОРЯДОК В ЭТОЙ СТРОКЕ — И ЕСТЬ ГАРАНТИЯ, ЧТО «ЗАПИСЬ» НЕ УЕДЕТ НА ВТОРУЮ

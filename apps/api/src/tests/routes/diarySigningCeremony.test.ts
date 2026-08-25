@@ -155,8 +155,8 @@ describe("церемония подписания дневника одинак�
 		 * `organization_id = current_tenant`, без дизъюнкта обхода, поэтому вставка
 		 * без контекста отвергается кодом 42501.
 		 */
-		return withFixtureTenant(organizationId, async () => {
-			const [service] = await db
+		return withFixtureTenant(organizationId, async (tx) => {
+			const [service] = await tx
 				.insert(serviceCatalogItems)
 				.values({
 					organizationId,
@@ -168,7 +168,7 @@ describe("церемония подписания дневника одинак�
 				.returning({ id: serviceCatalogItems.id });
 			assert.ok(service);
 
-			const [item] = await db
+			const [item] = await tx
 				.insert(inventoryItems)
 				.values({
 					organizationId,
@@ -180,7 +180,7 @@ describe("церемония подписания дневника одинак�
 				.returning({ id: inventoryItems.id });
 			assert.ok(item);
 
-			await db.insert(procedureMaterialRules).values({
+			await tx.insert(procedureMaterialRules).values({
 				...(ruleOrganizationId ? { organizationId: ruleOrganizationId } : {}),
 				serviceId: service.id,
 				inventoryItemId: item.id,
@@ -188,13 +188,13 @@ describe("церемония подписания дневника одинак�
 				quantityToDeduct,
 			});
 
-			const [visit] = await db
+			const [visit] = await tx
 				.insert(visits)
 				.values({ organizationId, patientId, status: "draft" })
 				.returning({ id: visits.id });
 			assert.ok(visit);
 
-			const [treatmentItem] = await db
+			const [treatmentItem] = await tx
 				.insert(treatmentItems)
 				.values({
 					organizationId,
@@ -225,8 +225,8 @@ describe("церемония подписания дневника одинак�
 		 * молча отдаёт ноль строк, и «списания не было», «журнал пуст» подтверждались
 		 * бы скрытием строк политикой, а не их отсутствием.
 		 */
-		return withFixtureTenant(organizationId, async () => {
-			const [diary] = await db
+		return withFixtureTenant(organizationId, async (tx) => {
+			const [diary] = await tx
 				.select()
 				.from(visitDiaries)
 				.where(
@@ -236,12 +236,12 @@ describe("церемония подписания дневника одинак�
 					),
 				);
 			assert.ok(diary);
-			const [item] = await db
+			const [item] = await tx
 				.select()
 				.from(inventoryItems)
 				.where(eq(inventoryItems.id, scenario.inventoryItemId));
 			assert.ok(item);
-			const movements = await db
+			const movements = await tx
 				.select()
 				.from(inventoryTransactions)
 				.where(
@@ -250,7 +250,7 @@ describe("церемония подписания дневника одинак�
 						eq(inventoryTransactions.organizationId, organizationId),
 					),
 				);
-			const audits = await db
+			const audits = await tx
 				.select()
 				.from(clinicalAuditLogs)
 				.where(
@@ -259,12 +259,12 @@ describe("церемония подписания дневника одинак�
 						eq(clinicalAuditLogs.organizationId, organizationId),
 					),
 				);
-			const [treatment] = await db
+			const [treatment] = await tx
 				.select()
 				.from(treatmentItems)
 				.where(eq(treatmentItems.id, scenario.treatmentItemId));
 			assert.ok(treatment);
-			const commissions = await db
+			const commissions = await tx
 				.select()
 				.from(doctorCommissions)
 				.where(
@@ -320,21 +320,21 @@ describe("церемония подписания дневника одинак�
 		 * и `patients` знает только `organization_id = current_tenant`, без дизъюнкта
 		 * обхода, поэтому вставка без контекста отвергается кодом 42501.
 		 */
-		await withFixtureTenant(organizationId, async () => {
-			const [organization] = await db
+		await withFixtureTenant(organizationId, async (tx) => {
+			const [organization] = await tx
 				.insert(organizations)
 				.values({ id: organizationId, name: "U5 ceremony probe clinic" })
 				.returning({ id: organizations.id });
 			assert.ok(organization);
 
-			const [doctor] = await db
+			const [doctor] = await tx
 				.insert(users)
 				.values({ organizationId, fullName: "Врач U5", role: "doctor" })
 				.returning({ id: users.id });
 			assert.ok(doctor);
 			doctorId = doctor.id;
 
-			const [patient] = await db
+			const [patient] = await tx
 				.insert(patients)
 				.values({ organizationId, fullName: "Пациент U5" })
 				.returning({ id: patients.id });
@@ -371,46 +371,46 @@ describe("церемония подписания дневника одинак�
 			 * не из списка имён в коде: перечень устареет при первой же миграции,
 			 * закрывающей ещё одну таблицу, а `has_table_privilege` отстать не может.
 			 */
-await withFixtureTenant(organizationId, async () => {
-				await db
+			await withFixtureTenant(organizationId, async (tx) => {
+				await tx
 					.delete(inventoryTransactions)
 					.where(eq(inventoryTransactions.organizationId, organizationId));
-				await db
+				await tx
 					.delete(doctorCommissions)
 					.where(eq(doctorCommissions.organizationId, organizationId));
-				await db
+				await tx
 					.delete(visitDiaryRevisions)
 					.where(eq(visitDiaryRevisions.organizationId, organizationId));
-				await db
+				await tx
 					.delete(visitDiaries)
 					.where(eq(visitDiaries.organizationId, organizationId));
-				await db
+				await tx
 					.delete(procedureMaterialRules)
 					.where(eq(procedureMaterialRules.organizationId, organizationId));
 				// Правила без organization_id по организации не удаляются — их надо
 				// снимать по позиции склада, иначе фикстура остаётся в живой базе.
-				await db.execute(
+				await tx.execute(
 					sql`delete from procedure_material_rules
 					     where inventory_item_id in (
 					       select id from inventory_items where organization_id = ${organizationId}
 					     )`,
 				);
-				await db
+				await tx
 					.delete(treatmentItems)
 					.where(eq(treatmentItems.organizationId, organizationId));
-				await db
+				await tx
 					.delete(visits)
 					.where(eq(visits.organizationId, organizationId));
-				await db
+				await tx
 					.delete(serviceCatalogItems)
 					.where(eq(serviceCatalogItems.organizationId, organizationId));
-				await db
+				await tx
 					.delete(inventoryItems)
 					.where(eq(inventoryItems.organizationId, organizationId));
-				await db
+				await tx
 					.delete(patients)
 					.where(eq(patients.organizationId, organizationId));
-				await db.delete(users).where(eq(users.organizationId, organizationId));
+				await tx.delete(users).where(eq(users.organizationId, organizationId));
 			});
 		}
 		process.env = originalEnv;
@@ -443,8 +443,8 @@ await withFixtureTenant(organizationId, async () => {
 				"string",
 				"черновик должен возвращать hash для подписания через ЭЦП",
 			);
-			const [draftInDb] = await withFixtureTenant(organizationId, async () =>
-				db
+			const [draftInDb] = await withFixtureTenant(organizationId, async (tx) =>
+				tx
 					.select({ isLocked: visitDiaries.isLocked })
 					.from(visitDiaries)
 					.where(
@@ -480,8 +480,8 @@ await withFixtureTenant(organizationId, async () => {
 		// Путь B: подпись через /lock.
 		// Чтение — под тенант-контекстом: без него политика отдаёт ноль строк, и
 		// дневник выглядел бы несуществующим сразу после успешного создания.
-		const [lockDiary] = await withFixtureTenant(organizationId, async () =>
-			db
+		const [lockDiary] = await withFixtureTenant(organizationId, async (tx) =>
+			tx
 				.select({ id: visitDiaries.id })
 				.from(visitDiaries)
 				.where(
@@ -917,22 +917,22 @@ await withFixtureTenant(organizationId, async () => {
 
 		// Три чтения — под тенант-контекстом: без него ни одна из трёх строк не
 		// видна, и проверка типа numeric-нуля не нашла бы, что проверять.
-		const [item] = await withFixtureTenant(organizationId, async () =>
-			db
+		const [item] = await withFixtureTenant(organizationId, async (tx) =>
+			tx
 				.select()
 				.from(inventoryItems)
 				.where(eq(inventoryItems.id, scenario.inventoryItemId)),
 		);
 		assert.ok(item);
-		const [rule] = await withFixtureTenant(organizationId, async () =>
-			db
+		const [rule] = await withFixtureTenant(organizationId, async (tx) =>
+			tx
 				.select()
 				.from(procedureMaterialRules)
 				.where(eq(procedureMaterialRules.serviceId, scenario.serviceId)),
 		);
 		assert.ok(rule);
-		const [treatment] = await withFixtureTenant(organizationId, async () =>
-			db
+		const [treatment] = await withFixtureTenant(organizationId, async (tx) =>
+			tx
 				.select()
 				.from(treatmentItems)
 				.where(eq(treatmentItems.id, scenario.treatmentItemId)),

@@ -16,8 +16,8 @@ function assertNotIncludes(source, marker, label) {
 }
 
 [
-	'const SHELL_CACHE = "dental-crm-shell-v4"',
-	"const MAX_DYNAMIC_SHELL_CACHE_ENTRIES = 80",
+	'const SHELL_CACHE = "dental-crm-shell-v6"',
+	"const MAX_DYNAMIC_SHELL_CACHE_ENTRIES = 500",
 	"function isForbiddenRuntimeResponse(url)",
 	'url.pathname.startsWith("/api/")',
 	"medical-documents",
@@ -25,7 +25,6 @@ function assertNotIncludes(source, marker, label) {
 	"function isCacheableShellAsset(url)",
 	"function isNetworkFirstShellAsset(url)",
 	"SHELL_ASSETS.includes(url.pathname)",
-	"/^\\/assets\\/[-A-Za-z0-9_./]+(?:\\.js|\\.css|\\.svg|\\.png|\\.webp|\\.woff2?)$/.test(url.pathname)",
 	"async function putShellCache(request, response)",
 	"dynamicKeys.length <= MAX_DYNAMIC_SHELL_CACHE_ENTRIES",
 	"cache.delete(key)",

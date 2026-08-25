@@ -1319,8 +1319,8 @@ export const portalRoutes: FastifyPluginAsync = async (
 		}
 
 		const rawIp =
-			request.ip ||
 			(request.headers["x-forwarded-for"] as string) ||
+			request.ip ||
 			request.socket?.remoteAddress ||
 			"127.0.0.1";
 		const clientIp = typeof rawIp === "string" ? rawIp.split(",")[0]?.trim() || "127.0.0.1" : "127.0.0.1";

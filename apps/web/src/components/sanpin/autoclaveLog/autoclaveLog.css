@@ -17,9 +17,10 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	z-index: 9999;
+	z-index: 10000;
 	padding: 1rem;
 	animation: autoclaveFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	box-sizing: border-box;
 }
 
 @keyframes autoclaveFadeIn {
@@ -234,10 +235,12 @@
 }
 
 [data-theme="dark"] .autoclave-regime-card,
-.dark .autoclave-regime-card {
-	background: #1e293b;
-	border-color: #334155;
-	color: #f8fafc;
+[data-theme="night"] .autoclave-regime-card,
+.dark .autoclave-regime-card,
+html[data-theme="dark"] .autoclave-regime-card {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+	color: #f8fafc !important;
 }
 
 .autoclave-regime-card:hover {
@@ -253,9 +256,13 @@
 }
 
 [data-theme="dark"] .autoclave-regime-card.selected,
-.dark .autoclave-regime-card.selected {
-	background: rgba(13, 148, 136, 0.2);
-	color: #f8fafc;
+[data-theme="night"] .autoclave-regime-card.selected,
+.dark .autoclave-regime-card.selected,
+html[data-theme="dark"] .autoclave-regime-card.selected {
+	background: rgba(13, 148, 136, 0.25) !important;
+	border-color: #14b8a6 !important;
+	box-shadow: 0 0 0 1px #14b8a6 !important;
+	color: #f8fafc !important;
 }
 
 .autoclave-regime-card-header {
@@ -649,15 +656,18 @@
 	color: #94a3b8;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
 	.autoclave-log-modal-overlay {
-		padding: 0.5rem;
+		padding: 0;
+		align-items: flex-start;
 	}
 
 	.autoclave-log-modal-container {
-		max-height: 98vh;
-		height: 98vh;
-		border-radius: 12px;
+		max-height: 100dvh;
+		height: 100dvh;
+		width: 100vw;
+		border-radius: 0;
+		border: none;
 	}
 
 	.autoclave-log-header {
@@ -671,6 +681,7 @@
 
 	.autoclave-log-body {
 		padding: 1rem;
+		padding-bottom: 5rem;
 	}
 }
 

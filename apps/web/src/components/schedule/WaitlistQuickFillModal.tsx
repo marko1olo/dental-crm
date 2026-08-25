@@ -884,12 +884,12 @@ export function WaitlistQuickFillModal({
 															{patient.patientName || "Пациент без имени"}
 														</h4>
 														<span
-															className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${priorityCfg.badgeClass}`}
+															className={`text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${priorityCfg.badgeClass}`}
 														>
 															{priorityCfg.icon} {priorityCfg.label}
 														</span>
 														<span
-															className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+															className={`text-xs font-extrabold px-2 py-0.5 rounded-full ${
 																scoring.score >= 80
 																	? "bg-[var(--ok-bg)] text-[var(--ok-fg)]"
 																	: scoring.score >= 60
@@ -933,7 +933,7 @@ export function WaitlistQuickFillModal({
 														{scoring.matchReasons.map((r) => (
 															<span
 																key={r}
-																className="text-[10px] px-2 py-0.5 rounded-md bg-[var(--teal)]/10 text-[var(--teal-dark)] font-medium"
+																className="text-xs px-2 py-0.5 rounded-md bg-[var(--teal)]/10 text-[var(--teal-dark)] font-medium"
 															>
 																✓ {r}
 															</span>
@@ -941,7 +941,7 @@ export function WaitlistQuickFillModal({
 														{scoring.mismatchReasons.map((m) => (
 															<span
 																key={m}
-																className="text-[10px] px-2 py-0.5 rounded-md bg-[var(--bad-bg)]/50 text-[var(--bad-fg)] font-medium"
+																className="text-xs px-2 py-0.5 rounded-md bg-[var(--bad-bg)]/50 text-[var(--bad-fg)] font-medium"
 															>
 																✕ {m}
 															</span>
@@ -1082,12 +1082,12 @@ export function WaitlistQuickFillModal({
 															{item.patientName || "Пациент без имени"}
 														</h4>
 														<span
-															className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${priorityCfg.badgeClass}`}
+															className={`text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${priorityCfg.badgeClass}`}
 														>
 															{priorityCfg.icon} {priorityCfg.label}
 														</span>
 														{item.status === "fulfilled" && (
-															<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/15 text-green-600">
+															<span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-500/15 text-green-600">
 																Принят ✓
 															</span>
 														)}
@@ -1354,7 +1354,7 @@ export function WaitlistQuickFillModal({
 												}`}
 											>
 												<span className="font-bold">{t.label}</span>
-												<span className="text-[10px] opacity-80">{t.sub}</span>
+												<span className="text-xs opacity-80">{t.sub}</span>
 											</button>
 										))}
 									</div>

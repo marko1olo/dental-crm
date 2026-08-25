@@ -483,7 +483,7 @@ export async function registerSberPosWebhookRoutes(app: FastifyInstance) {
 			});
 		}
 
-		return await withTenantCtx(targetTx.organizationId, async (tx) => {
+		const result = await withTenantCtx(targetTx.organizationId, async (tx) => {
 			const [lockedTx] = await tx
 				.select()
 				.from(sberbankTransactions)
@@ -497,10 +497,13 @@ export async function registerSberPosWebhookRoutes(app: FastifyInstance) {
 				.limit(1);
 
 			if (!lockedTx) {
-				return reply.status(404).send({
-					error: "TransactionNotFound",
-					message: "Транзакция не найдена в контексте организации.",
-				});
+				return {
+					statusCode: 404,
+					body: {
+						error: "TransactionNotFound",
+						message: "Транзакция не найдена в контексте организации.",
+					},
+				};
 			}
 
 			// Validate incoming amount in kopecks if provided
@@ -511,10 +514,13 @@ export async function registerSberPosWebhookRoutes(app: FastifyInstance) {
 						{ orderId, expected: lockedTx.amount, received: incomingKopecks },
 						"[SberPosWebhook] Amount mismatch detected",
 					);
-					return reply.status(400).send({
-						error: "AmountMismatch",
-						message: "Сумма в уведомлении не совпадает с суммой зарегистрированной транзакции.",
-					});
+					return {
+						statusCode: 400,
+						body: {
+							error: "AmountMismatch",
+							message: "Сумма в уведомлении не совпадает с суммой зарегистрированной транзакции.",
+						},
+					};
 				}
 			}
 
@@ -568,12 +574,15 @@ export async function registerSberPosWebhookRoutes(app: FastifyInstance) {
 						);
 				}
 
-				return reply.status(200).send({
-					success: true,
-					processed: true,
-					status: nextStatus,
-					orderId: lockedTx.orderId,
-				});
+				return {
+					statusCode: 200,
+					body: {
+						success: true,
+						processed: true,
+						status: nextStatus,
+						orderId: lockedTx.orderId,
+					},
+				};
 			}
 
 			// 2. AUTHORIZATION (HOLD) HANDLING
@@ -588,12 +597,15 @@ export async function registerSberPosWebhookRoutes(app: FastifyInstance) {
 						),
 					);
 
-				return reply.status(200).send({
-					success: true,
-					processed: true,
-					status: "AUTHORIZED",
-					orderId: lockedTx.orderId,
-				});
+				return {
+					statusCode: 200,
+					body: {
+						success: true,
+						processed: true,
+						status: "AUTHORIZED",
+						orderId: lockedTx.orderId,
+					},
+				};
 			}
 
 			// 3. SETTLED / SUCCESS / DEPOSITED (FINAL CHARGE)
@@ -610,14 +622,17 @@ export async function registerSberPosWebhookRoutes(app: FastifyInstance) {
 					lockedTx.status === "SETTLED" ||
 					(lockedPayment && lockedPayment.status === "paid")
 				) {
-					return reply.status(200).send({
-						success: true,
-						processed: false,
-						reason: "already_processed",
-						status: "SETTLED",
-						paymentId: lockedPayment?.id,
-						orderId: lockedTx.orderId,
-					});
+					return {
+						statusCode: 200,
+						body: {
+							success: true,
+							processed: false,
+							reason: "already_processed",
+							status: "SETTLED",
+							paymentId: lockedPayment?.id,
+							orderId: lockedTx.orderId,
+						},
+					};
 				}
 
 				await tx
@@ -729,15 +744,18 @@ export async function registerSberPosWebhookRoutes(app: FastifyInstance) {
 					retryCount: 0,
 				});
 
-				return reply.status(200).send({
-					success: true,
-					processed: true,
-					status: "SETTLED",
-					paymentId: newPayment?.id || lockedPayment?.id,
-					amountKopecks: lockedTx.amount,
-					amountRub,
-					orderId: lockedTx.orderId,
-				});
+				return {
+					statusCode: 200,
+					body: {
+						success: true,
+						processed: true,
+						status: "SETTLED",
+						paymentId: newPayment?.id || lockedPayment?.id,
+						amountKopecks: lockedTx.amount,
+						amountRub,
+						orderId: lockedTx.orderId,
+					},
+				};
 			}
 
 			// 4. FAILED / DECLINED
@@ -751,13 +769,18 @@ export async function registerSberPosWebhookRoutes(app: FastifyInstance) {
 					),
 				);
 
-			return reply.status(200).send({
-				success: true,
-				processed: true,
-				status: "FAILED",
-				orderId: lockedTx.orderId,
-			});
+			return {
+				statusCode: 200,
+				body: {
+					success: true,
+					processed: true,
+					status: "FAILED",
+					orderId: lockedTx.orderId,
+				},
+			};
 		});
+
+		return reply.status(result.statusCode).send(result.body);
 	};
 
 	app.post("/api/payments/sberbank/pos/webhook", webhookHandler);

@@ -83,6 +83,7 @@ export function registerRateLimiting(app: FastifyInstance): void {
 		},
 		errorResponseBuilder: (_req, _context) => {
 			return {
+				statusCode: 429,
 				error: "TooManyRequests",
 				message: "Слишком много запросов. Пожалуйста, подождите.",
 			};

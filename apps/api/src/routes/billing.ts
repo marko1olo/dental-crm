@@ -580,11 +580,11 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 			input.clientMutationId,
 		);
 		if (existingPayment?.patientId) {
-			if (existingPayment.patientId !== input.patientId) {
+			if (!paymentRetryMatchesExisting(existingPayment, input)) {
 				return sendBillingPaymentScopeError(
 					reply,
 					409,
-					"Клиентская операция уже относится к другой оплате.",
+					"Клиентская операция с данным ключом уже существует с другими параметрами платежа.",
 				);
 			}
 			return reply.code(200).send(paymentSchema.parse(existingPayment));
