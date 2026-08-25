@@ -21,6 +21,7 @@ import {
 	calculatePatientTaxDeduction,
 	generatePatientDentalPassport,
 	formatFdiToothPlainRussian,
+	type PatientPersonalCabinetData,
 } from "../patientCabinetEngine";
 
 describe("Patient Care Instructions & Friendly Billing Engine", () => {
@@ -349,7 +350,7 @@ describe("Patient Care Instructions & Friendly Billing Engine", () => {
 				],
 			};
 
-			const passport = generatePatientDentalPassport(mockData);
+			const passport = generatePatientDentalPassport(mockData as any);
 
 			assert.equal(passport.patientName, "Алексей Смирнов");
 			assert.equal(passport.totalTreatedTeethCount, 1);
