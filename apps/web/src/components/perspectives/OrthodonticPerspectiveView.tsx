@@ -206,7 +206,7 @@ export function OrthodonticPerspectiveView() {
 
 					<div>
 						<div className="flex items-center gap-2">
-							<span className="text-xs uppercase tracking-widest font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/70 px-2.5 py-0.5 rounded-md border border-teal-500/40">
+							<span className="text-xs uppercase tracking-widest font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] px-2.5 py-0.5 rounded-md border border-[var(--teal,var(--brand-primary))]/40">
 								Ортодонтия & Элайнеры
 							</span>
 							{activePatient && (
@@ -227,7 +227,7 @@ export function OrthodonticPerspectiveView() {
 						type="button"
 						onClick={() => setIsCephModalOpen(true)}
 						data-testid="open-ceph-analysis-btn"
-						className="min-h-[48px] px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold flex items-center gap-2 shadow-md shadow-teal-600/20 active:scale-95 transition-all text-sm cursor-pointer border border-teal-500/30"
+						className="min-h-[48px] px-4 py-2.5 rounded-xl bg-[var(--teal,var(--brand-primary))] hover:brightness-110 text-white font-bold flex items-center gap-2 shadow-md shadow-[var(--teal,var(--brand-primary))]/20 active:scale-95 transition-all text-sm cursor-pointer border border-[var(--teal,var(--brand-primary))]/30"
 						title="Открыть цефалометрический анализ ТРГ в боковой проекции"
 					>
 						<Activity size={18} />
@@ -240,7 +240,7 @@ export function OrthodonticPerspectiveView() {
 							aria-label="Выбор ортодонтического пациента"
 							value={activePatient?.id || ""}
 							onChange={(e) => setSelectedPatientId(e.target.value)}
-							className="min-h-[48px] px-4 py-2 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 border border-[var(--line,#cbd5e1)] dark:border-slate-700 rounded-xl text-[var(--ink,#0f172a)] dark:text-slate-100 font-semibold text-sm cursor-pointer outline-none focus:border-teal-500"
+							className="min-h-[48px] px-4 py-2 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 border border-[var(--line,#cbd5e1)] dark:border-slate-700 rounded-xl text-[var(--ink,#0f172a)] dark:text-slate-100 font-semibold text-sm cursor-pointer outline-none focus:border-[var(--teal,var(--brand-primary))]"
 						>
 							{dashboard.patients.map((p) => (
 								<option key={p.id} value={p.id}>
@@ -260,10 +260,10 @@ export function OrthodonticPerspectiveView() {
 					<div className="bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl p-5 shadow-sm">
 						<div className="flex items-center justify-between mb-4 pb-2 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
 							<div className="flex items-center gap-2">
-								<Smile size={22} className="text-teal-600 dark:text-teal-400 shrink-0" />
+								<Smile size={22} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 								<h2 className="text-lg font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 m-0">Трекер элайнеров</h2>
 							</div>
-							<span className="text-xs font-bold text-teal-800 dark:text-teal-200 bg-teal-50 dark:bg-teal-950/70 px-2.5 py-1 rounded-full border border-teal-500/40">
+							<span className="text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] px-2.5 py-1 rounded-full border border-[var(--teal,var(--brand-primary))]/40">
 								{progressPercent}% пройдено
 							</span>
 						</div>
@@ -276,7 +276,7 @@ export function OrthodonticPerspectiveView() {
 									{currentAligner}{" "}
 									<span className="text-xl font-medium text-[var(--muted,#64748b)] dark:text-slate-400">/ {totalAligners}</span>
 								</div>
-								<div className="text-xs text-teal-700 dark:text-teal-300 mt-1 flex items-center gap-1.5 font-semibold">
+								<div className="text-xs text-[var(--teal-dark,var(--teal))] mt-1 flex items-center gap-1.5 font-semibold">
 									<Clock size={13} />
 									<span>Режим: 22 ч/сутки · Смена через 4 дня</span>
 								</div>
@@ -295,7 +295,7 @@ export function OrthodonticPerspectiveView() {
 									type="button"
 									onClick={handleNextAligner}
 									disabled={currentAligner >= totalAligners}
-									className="min-h-[48px] px-5 rounded-xl bg-teal-600 hover:bg-teal-500 disabled:opacity-40 text-white font-bold text-xs shadow-md shadow-teal-600/20 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all border border-teal-500/30"
+									className="min-h-[48px] px-5 rounded-xl bg-[var(--teal,var(--brand-primary))] hover:brightness-110 disabled:opacity-40 text-white font-bold text-xs shadow-md shadow-[var(--teal,var(--brand-primary))]/20 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all border border-[var(--teal,var(--brand-primary))]/30"
 								>
 									Следующая каппа <ChevronRight size={16} />
 								</button>
@@ -307,7 +307,7 @@ export function OrthodonticPerspectiveView() {
 							<motion.div
 								initial={{ width: 0 }}
 								animate={{ width: `${progressPercent}%` }}
-								className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full"
+								className="h-full bg-gradient-to-r from-[var(--teal,var(--brand-primary))] to-emerald-500 rounded-full"
 							/>
 						</div>
 						<div className="flex justify-between text-xs text-[var(--muted,#64748b)] dark:text-slate-400 font-medium">
@@ -323,7 +323,7 @@ export function OrthodonticPerspectiveView() {
 					<div className="bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl p-5 shadow-sm flex-1 flex flex-col">
 						<div className="flex items-center justify-between pb-3 mb-4 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
 							<div className="flex items-center gap-2">
-								<Layers size={22} className="text-teal-600 dark:text-teal-400 shrink-0" />
+								<Layers size={22} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 								<h3 className="text-base font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 m-0">Клинический таймлайн лечения</h3>
 							</div>
 							<span className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 font-medium">5 этапов</span>
@@ -338,7 +338,7 @@ export function OrthodonticPerspectiveView() {
 										key={stg.number}
 										className={`p-4 rounded-xl border transition-all flex items-start gap-3.5 shadow-sm ${
 											isActive
-												? "bg-teal-50 dark:bg-teal-950/60 border-teal-500/70 shadow-sm"
+												? "bg-[var(--teal-soft,var(--paper-soft))] border-[var(--teal,var(--brand-primary))]/70 shadow-sm"
 												: isCompleted
 													? "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800/80 border-[var(--line,#cbd5e1)] dark:border-slate-700"
 													: "bg-[var(--surface-muted,#f8fafc)] dark:bg-slate-800/40 border-[var(--line,#e2e8f0)] dark:border-slate-800 opacity-75"
@@ -349,7 +349,7 @@ export function OrthodonticPerspectiveView() {
 												isCompleted
 													? "bg-emerald-600 text-white"
 													: isActive
-														? "bg-teal-600 text-white"
+														? "bg-[var(--teal,var(--brand-primary))] text-white"
 														: "bg-[var(--line,#cbd5e1)] dark:bg-slate-700 text-[var(--muted,#64748b)] dark:text-slate-400"
 											}`}
 										>
@@ -369,7 +369,7 @@ export function OrthodonticPerspectiveView() {
 													{stg.alignerRange}
 												</span>
 												{isActive && (
-													<span className="text-[10px] uppercase font-bold bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-200 px-2 py-0.5 rounded border border-teal-500/30">
+													<span className="text-[10px] uppercase font-bold bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] px-2 py-0.5 rounded border border-[var(--teal,var(--brand-primary))]/30">
 														Текущий этап
 													</span>
 												)}
@@ -377,7 +377,7 @@ export function OrthodonticPerspectiveView() {
 													<button
 														type="button"
 														onClick={() => setIsCephModalOpen(true)}
-														className="text-[11px] font-bold text-teal-700 dark:text-teal-300 hover:underline flex items-center gap-1 cursor-pointer bg-teal-50 dark:bg-teal-950/60 px-2 py-0.5 rounded border border-teal-500/30"
+														className="text-[11px] font-bold text-[var(--teal-dark,var(--teal))] hover:underline flex items-center gap-1 cursor-pointer bg-[var(--teal-soft,var(--paper-soft))] px-2 py-0.5 rounded border border-[var(--teal,var(--brand-primary))]/30"
 													>
 														<Activity size={12} />
 														<span>Открыть расчет ТРГ</span>
@@ -398,7 +398,7 @@ export function OrthodonticPerspectiveView() {
 					<div className="bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl p-5 shadow-sm flex flex-col">
 						<div className="flex items-center justify-between pb-3 mb-3 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
 							<div className="flex items-center gap-2">
-								<Camera size={22} className="text-teal-600 dark:text-teal-400 shrink-0" />
+								<Camera size={22} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 								<h3 className="text-base font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 m-0">Фотопротокол До / После</h3>
 							</div>
 							<span className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 font-medium">Сплит-сравнение</span>
@@ -420,7 +420,7 @@ export function OrthodonticPerspectiveView() {
 									onClick={() => setActiveAngle(angle.id)}
 									className={`min-h-[44px] py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
 										activeAngle === angle.id
-											? "bg-teal-600 text-white shadow-sm"
+											? "bg-[var(--teal,var(--brand-primary))] text-white shadow-sm"
 											: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--muted,#64748b)] dark:text-slate-300 hover:text-[var(--ink,#0f172a)] dark:hover:text-white"
 									}`}
 								>
@@ -436,7 +436,7 @@ export function OrthodonticPerspectiveView() {
 								{/* Left Side: Before */}
 								<div
 									style={{ width: `${sliderPosition}%` }}
-									className="h-full bg-slate-900 border-r-2 border-teal-400 overflow-hidden relative"
+									className="h-full bg-slate-900 border-r-2 border-[var(--teal,var(--brand-primary))] overflow-hidden relative"
 								>
 									<div className="absolute inset-0 flex flex-col items-center justify-center p-4">
 										<span className="text-xs font-bold text-rose-300 bg-rose-950/90 px-2.5 py-0.5 rounded border border-rose-500/40 mb-2">
@@ -512,9 +512,9 @@ export function OrthodonticPerspectiveView() {
 							/>
 							<div
 								style={{ left: `${sliderPosition}%` }}
-								className="absolute top-0 bottom-0 w-1 bg-teal-400 z-10 pointer-events-none flex items-center justify-center"
+								className="absolute top-0 bottom-0 w-1 bg-[var(--teal,var(--brand-primary))] z-10 pointer-events-none flex items-center justify-center"
 							>
-								<div className="w-8 h-8 rounded-full bg-teal-500 text-slate-950 flex items-center justify-center shadow-lg border-2 border-white">
+								<div className="w-8 h-8 rounded-full bg-[var(--teal,var(--brand-primary))] text-white flex items-center justify-center shadow-lg border-2 border-white">
 									<Sliders size={14} />
 								</div>
 							</div>
@@ -530,7 +530,7 @@ export function OrthodonticPerspectiveView() {
 						<div>
 							<div className="flex items-center justify-between pb-3 mb-3 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
 								<div className="flex items-center gap-2">
-									<CreditCard size={22} className="text-teal-600 dark:text-teal-400 shrink-0" />
+									<CreditCard size={22} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 									<h3 className="text-base font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 m-0">
 										Абонементные платежи (Активации)
 									</h3>
@@ -576,7 +576,7 @@ export function OrthodonticPerspectiveView() {
 						<button
 							type="button"
 							onClick={() => showToast("Счет на очередную активацию 8 500 ₽ выставлен", "success")}
-							className="mt-4 w-full min-h-[44px] bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md shadow-teal-600/20 cursor-pointer active:scale-95 transition-all border border-teal-500/30"
+							className="mt-4 w-full min-h-[44px] bg-[var(--teal,var(--brand-primary))] hover:brightness-110 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md shadow-[var(--teal,var(--brand-primary))]/20 cursor-pointer active:scale-95 transition-all border border-[var(--teal,var(--brand-primary))]/30"
 						>
 							<DollarSign size={16} />
 							<span>Провести оплату активации (8 500 ₽)</span>

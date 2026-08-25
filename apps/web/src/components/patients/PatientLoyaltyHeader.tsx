@@ -119,14 +119,9 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 				aria-haspopup="menu"
 				aria-label={`Статус лояльности: ${currentLoyalty.label}`}
 				/*
-					БЫЛО: `focus:ring-2 focus:ring-teal-600 focus:outline-none`. Палитра
-					Tailwind в проекте не переопределена (tailwind.config.* в дереве нет,
-					`@theme` в листах стилей тоже), поэтому `teal-600` — стоковая холодная
-					бирюза во всех трёх темах, тогда как ночная тема тёплая. Рамка фокуса
-					при этом здесь уже была своя и на токене: правило
+					Рамка фокуса на токене: правило
 					`button:focus-visible { outline: 2px solid var(--teal) !important }` в
-					dente-redesign.css накрывает эту кнопку. То есть стоковый ring рисовал
-					поверх правильной рамки вторую, холодную. Убран, рамка осталась.
+					dente-redesign.css накрывает эту кнопку.
 				*/
 				style={{
 					display: "flex",

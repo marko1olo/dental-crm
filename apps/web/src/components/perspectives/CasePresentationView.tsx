@@ -341,7 +341,7 @@ export function CasePresentationView() {
 			);
 		if (tier.id === "optimum")
 			return (
-				<Sparkles size={22} className="text-teal-600 dark:text-teal-400" />
+				<Sparkles size={22} className="text-[var(--teal,var(--brand-primary))]" />
 			);
 		return <Shield size={22} className="text-slate-500 dark:text-slate-400" />;
 	};
@@ -366,11 +366,11 @@ export function CasePresentationView() {
 
 					<div className="relative">
 						<div className="flex items-center gap-2 flex-wrap">
-							<span className="text-xs uppercase tracking-widest font-extrabold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/70 px-3 py-0.5 rounded-full border border-teal-500/40">
+							<span className="text-xs uppercase tracking-widest font-extrabold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] px-3 py-0.5 rounded-full border border-[var(--teal,var(--brand-primary))]/40">
 								Второй экран · Презентация планов лечения
 							</span>
 							<span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 font-medium">
-								<Stethoscope size={14} className="text-teal-600" />
+								<Stethoscope size={14} className="text-[var(--teal,var(--brand-primary))]" />
 								<span>{clinicalSummary}</span>
 							</span>
 						</div>
@@ -383,7 +383,7 @@ export function CasePresentationView() {
 									onClick={() =>
 										setIsPatientDropdownOpen(!isPatientDropdownOpen)
 									}
-									className="text-teal-700 dark:text-teal-300 hover:underline flex items-center gap-1 cursor-pointer font-black"
+									className="text-[var(--teal-dark,var(--teal))] hover:underline flex items-center gap-1 cursor-pointer font-black"
 								>
 									<span>
 										{activePatient?.fullName || "Уважаемого Пациента"}
@@ -395,7 +395,7 @@ export function CasePresentationView() {
 							{isLoadingData ? (
 								<RefreshCw
 									size={16}
-									className="animate-spin text-teal-600 ml-2"
+									className="animate-spin text-[var(--teal,var(--brand-primary))] ml-2"
 								/>
 							) : null}
 						</div>
@@ -416,7 +416,7 @@ export function CasePresentationView() {
 										}}
 										className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors cursor-pointer ${
 											p.id === activePatient?.id
-												? "bg-teal-50 dark:bg-teal-950/70 text-teal-900 dark:text-teal-200 font-bold border border-teal-500/30"
+												? "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] font-bold border border-[var(--teal,var(--brand-primary))]/30"
 												: "hover:bg-[var(--surface,#f1f5f9)] dark:hover:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200"
 										}`}
 									>
@@ -443,7 +443,7 @@ export function CasePresentationView() {
 					<button
 						type="button"
 						onClick={handleOpenMessengerModal}
-						className="min-h-[48px] px-5 bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-md shadow-teal-600/20 border border-teal-500/30 cursor-pointer active:scale-95 transition-all"
+						className="min-h-[48px] px-5 bg-[var(--teal,var(--brand-primary))] hover:brightness-110 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-md shadow-[var(--teal,var(--brand-primary))]/20 border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer active:scale-95 transition-all"
 					>
 						<Send size={16} />
 						<span>Отправить в мессенджер</span>
@@ -498,7 +498,7 @@ export function CasePresentationView() {
 										<div className="text-3xl font-black text-[var(--ink,#0f172a)] dark:text-white mt-1">
 											{formatKopecksRu(tier.totalKopecks)}
 										</div>
-										<div className="text-xs text-teal-700 dark:text-teal-300 font-semibold mt-1 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5">
+										<div className="text-xs text-[var(--teal-dark,var(--teal))] font-semibold mt-1 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5">
 											<span className="whitespace-nowrap">Срок: ~{tier.durationWeeks} нед.</span>
 											<span>·</span>
 											<span className="whitespace-nowrap">
@@ -522,7 +522,7 @@ export function CasePresentationView() {
 											>
 												<CheckCircle2
 													size={16}
-													className="text-teal-600 dark:text-teal-400 shrink-0 mt-0.5"
+													className="text-[var(--teal,var(--brand-primary))] shrink-0 mt-0.5"
 												/>
 												<span>{feat}</span>
 											</div>
@@ -541,7 +541,7 @@ export function CasePresentationView() {
 													className="text-xs flex items-center justify-between text-slate-600 dark:text-slate-300"
 												>
 													<span className="font-semibold">{stg.title}</span>
-													<span className="text-[11px] font-mono text-teal-600 dark:text-teal-400">
+													<span className="text-[11px] font-mono text-[var(--teal,var(--brand-primary))]">
 														{stg.count}
 													</span>
 												</div>
@@ -555,7 +555,7 @@ export function CasePresentationView() {
 									type="button"
 									className={`w-full min-h-[48px] py-3.5 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
 										isSelected
-											? "bg-teal-600 text-white shadow-md shadow-teal-600/30"
+											? "bg-[var(--teal,var(--brand-primary))] text-white shadow-md shadow-[var(--teal,var(--brand-primary))]/30"
 											: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 border border-[var(--line,#cbd5e1)] dark:border-slate-700"
 									}`}
 								>
@@ -619,7 +619,7 @@ export function CasePresentationView() {
 									type="checkbox"
 									checked={isHighCostEligible}
 									onChange={(e) => setIsHighCostEligible(e.target.checked)}
-									className="w-4 h-4 rounded border-[var(--line,#cbd5e1)] text-teal-600 focus:ring-teal-500 cursor-pointer"
+									className="w-4 h-4 rounded border-[var(--line,#cbd5e1)] text-[var(--teal,var(--brand-primary))] focus:ring-[var(--teal)] cursor-pointer"
 								/>
 								<span>
 									Дорогостоящее лечение (Код услуги 2 — возврат 13% без лимита в
@@ -630,7 +630,7 @@ export function CasePresentationView() {
 
 						<div className="mt-4 pt-3 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800 text-xs text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center justify-between">
 							<span>Справка формируется администратором в 1 клик</span>
-							<span className="font-bold text-teal-700 dark:text-teal-300">
+							<span className="font-bold text-[var(--teal-dark,var(--teal))]">
 								Форма 2026 года
 							</span>
 						</div>
@@ -641,7 +641,7 @@ export function CasePresentationView() {
 						<div>
 							<div className="flex items-center justify-between pb-3 mb-4 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
 								<div className="flex items-center gap-2.5">
-									<div className="p-2 rounded-xl bg-teal-50 dark:bg-teal-950/70 text-teal-700 dark:text-teal-300 border border-teal-500/30">
+									<div className="p-2 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/30">
 										<Calculator size={20} />
 									</div>
 									<div>
@@ -653,7 +653,7 @@ export function CasePresentationView() {
 										</p>
 									</div>
 								</div>
-								<span className="text-xs font-bold text-teal-800 dark:text-teal-200 bg-teal-50 dark:bg-teal-950/70 px-3 py-1 rounded-full border border-teal-500/40">
+								<span className="text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] px-3 py-1 rounded-full border border-[var(--teal,var(--brand-primary))]/40">
 									Без % банку
 								</span>
 							</div>
@@ -663,7 +663,7 @@ export function CasePresentationView() {
 									<div className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400">
 										Ежемесячный платёж:
 									</div>
-									<div className="text-2xl font-black text-teal-700 dark:text-teal-300 mt-0.5">
+									<div className="text-2xl font-black text-[var(--teal-dark,var(--teal))] mt-0.5">
 										{formatKopecksRu(monthlyInstallmentKopecks)} / мес
 									</div>
 								</div>
@@ -686,7 +686,7 @@ export function CasePresentationView() {
 										onClick={() => setInstallmentMonths(m)}
 										className={`flex-1 min-h-[44px] py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
 											installmentMonths === m
-												? "bg-teal-600 text-white border-teal-600 shadow-sm"
+												? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal,var(--brand-primary))] shadow-sm"
 												: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700"
 										}`}
 									>
@@ -698,7 +698,7 @@ export function CasePresentationView() {
 
 						<div className="mt-4 pt-3 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800 text-xs text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center justify-between">
 							<span>Первый взнос: 0 ₽ при оформлении</span>
-							<span className="font-bold text-teal-700 dark:text-teal-300">
+							<span className="font-bold text-[var(--teal-dark,var(--teal))]">
 								Одобрение за 2 минуты
 							</span>
 						</div>
@@ -718,7 +718,7 @@ export function CasePresentationView() {
 						>
 							<div className="flex items-center justify-between pb-3 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
 								<div className="flex items-center gap-2.5">
-									<div className="p-2 rounded-xl bg-teal-50 dark:bg-teal-950/70 text-teal-600 dark:text-teal-300 border border-teal-500/30">
+									<div className="p-2 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border border-[var(--teal,var(--brand-primary))]/30">
 										<Send size={18} />
 									</div>
 									<div>
@@ -757,7 +757,7 @@ export function CasePresentationView() {
 									onClick={() => setMessengerChannel("telegram")}
 									className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
 										messengerChannel === "telegram"
-											? "bg-white dark:bg-slate-900 text-sky-600 shadow-xs"
+											? "bg-white dark:bg-slate-900 text-[var(--teal,var(--brand-primary))] shadow-xs"
 											: "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
 									}`}
 								>
@@ -796,7 +796,7 @@ export function CasePresentationView() {
 									rows={8}
 									value={customMessage}
 									onChange={(e) => setCustomMessage(e.target.value)}
-									className="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-teal-500/40 focus:outline-hidden font-mono leading-relaxed"
+									className="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-[var(--teal)]/40 focus:outline-hidden font-mono leading-relaxed"
 								/>
 							</div>
 
@@ -817,7 +817,7 @@ export function CasePresentationView() {
 										type="button"
 										disabled={isSendingMessage || !customMessage.trim()}
 										onClick={() => void handleSendMessage()}
-										className="min-h-[44px] px-5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center gap-2 shadow-md shadow-teal-600/20 disabled:opacity-50 cursor-pointer"
+										className="min-h-[44px] px-5 rounded-xl bg-[var(--teal,var(--brand-primary))] hover:brightness-110 text-white font-bold text-xs flex items-center gap-2 shadow-md shadow-[var(--teal,var(--brand-primary))]/20 disabled:opacity-50 cursor-pointer"
 									>
 										{isSendingMessage ? (
 											<>

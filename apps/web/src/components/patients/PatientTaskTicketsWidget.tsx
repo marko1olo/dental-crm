@@ -244,16 +244,14 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 		>
 			<div className="panel-heading flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 m-0">
 				<div className="flex items-center gap-2.5">
-					<div className="w-8 h-8 rounded-lg bg-sky-100 dark:bg-sky-950 flex items-center justify-center text-sky-600 dark:text-sky-400">
+					<div className="w-8 h-8 rounded-lg bg-[var(--teal-soft,var(--paper-soft))] flex items-center justify-center text-[var(--teal,var(--brand-primary))]">
 						<Clock size={16} />
 					</div>
 					<div>
 						<h3 className="text-sm font-semibold text-slate-900 dark:text-white m-0 flex items-center gap-2">
 							Задачи по пациенту
 							{pendingCount > 0 && (
-								/* БЫЛО: «3 активн.» — обрубленное слово с точкой вместо
-								   согласования с числом. */
-								<span className="bg-sky-600 text-white px-2.5 py-0.5 rounded-full text-xs font-bold">
+								<span className="bg-[var(--teal,var(--brand-primary))] text-white px-2.5 py-0.5 rounded-full text-xs font-bold">
 									в работе: {pendingCount}
 								</span>
 							)}
@@ -266,7 +264,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 					className={`border-0 rounded-xl px-3.5 py-2 min-h-[44px] text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-all ${
 						isAdding
 							? "bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200"
-							: "bg-sky-50 dark:bg-sky-950 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 hover:bg-sky-100 dark:hover:bg-sky-900"
+							: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/30 hover:brightness-105"
 					}`}
 				>
 					<Plus size={16} /> {isAdding ? "Отмена" : "Создать"}
@@ -376,7 +374,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 									type="submit"
 									disabled={isSubmitting}
 									aria-busy={isSubmitting}
-									className="primary-button bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 min-h-[44px] rounded-xl font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center"
+									className="primary-button bg-[var(--teal,var(--brand-primary))] hover:brightness-110 text-white px-4 py-2 min-h-[44px] rounded-xl font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center transition-all"
 								>
 									{isSubmitting ? "Создание..." : "Создать задачу"}
 								</button>
@@ -441,7 +439,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 										onClick={() => handleToggleStatus(ticket.id, ticket.status)}
 										className={`bg-transparent border-0 p-0 cursor-pointer transition-colors flex mt-0.5 min-h-[44px] min-w-[44px] items-center justify-center ${
 											isPending
-												? "text-slate-400 dark:text-slate-500 hover:text-sky-600"
+												? "text-slate-400 dark:text-slate-500 hover:text-[var(--teal,var(--brand-primary))]"
 												: "text-emerald-500"
 										}`}
 										title={
@@ -477,7 +475,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 										<div className="flex items-center gap-4 flex-wrap text-xs text-slate-500 dark:text-slate-400">
 											<div className="flex items-center gap-1 font-medium">
 												<User size={14} />
-												<span className="text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/60 px-2 py-0.5 rounded">
+												<span className="text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] px-2 py-0.5 rounded">
 													{assignee?.fullName || "Неизвестный сотрудник"}
 												</span>
 											</div>

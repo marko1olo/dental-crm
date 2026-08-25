@@ -523,7 +523,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 							<div className="flex gap-2">
 								<button
 									type="button"
-									className="flex-1 bg-sky-600 hover:bg-sky-700 text-white p-2 min-h-[44px] text-xs rounded-xl font-semibold cursor-pointer border-0 inline-flex items-center justify-center"
+									className="flex-1 bg-[var(--teal,var(--brand-primary))] hover:brightness-110 text-white p-2 min-h-[44px] text-xs rounded-xl font-semibold cursor-pointer border-0 inline-flex items-center justify-center transition-all"
 									onClick={handleCreateFamily}
 									disabled={loading}
 								>
@@ -591,7 +591,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 												{f.name}
 											</div>
 										</div>
-										<span className="px-2.5 py-1 text-xs bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 rounded-lg font-semibold">
+										<span className="px-2.5 py-1 text-xs bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] rounded-lg font-semibold">
 											Выбрать
 										</span>
 									</button>

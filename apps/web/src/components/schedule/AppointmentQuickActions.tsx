@@ -213,22 +213,22 @@ export function AppointmentQuickActions({
 			targetStatus: "in_treatment",
 			label: "В кресле",
 			shortLabel: "В кресле",
-			icon: <CalendarCheck size={15} className="shrink-0 text-sky-600 dark:text-sky-400" />,
+			icon: <CalendarCheck size={15} className="shrink-0 text-[var(--teal,var(--brand-primary))]" />,
 			title: `Отметить: ${patientName} в кресле у врача (Клавиша 2)`,
-			activeClass: "ring-2 ring-sky-500 bg-sky-500/20 text-sky-800 dark:text-sky-200 font-bold shadow-xs",
-			hoverClass: "hover:bg-sky-500/15 text-sky-700 dark:text-sky-300",
-			bgStyle: "border-sky-500/30 bg-sky-500/10",
+			activeClass: "ring-2 ring-[var(--teal)] bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] font-bold shadow-xs",
+			hoverClass: "hover:bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))]",
+			bgStyle: "border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))]",
 		},
 		{
 			key: "completed",
 			targetStatus: "completed",
 			label: "Завершен",
 			shortLabel: "Готово",
-			icon: <CheckCircle2 size={15} className="shrink-0 text-teal-600 dark:text-teal-400" />,
+			icon: <CheckCircle2 size={15} className="shrink-0 text-[var(--teal,var(--brand-primary))]" />,
 			title: `Завершить прием: ${patientName} (Клавиша 3)`,
-			activeClass: "ring-2 ring-teal-500 bg-teal-500/20 text-teal-800 dark:text-teal-200 font-bold shadow-xs",
-			hoverClass: "hover:bg-teal-500/15 text-teal-700 dark:text-teal-300",
-			bgStyle: "border-teal-500/30 bg-teal-500/10",
+			activeClass: "ring-2 ring-[var(--teal)] bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] font-bold shadow-xs",
+			hoverClass: "hover:bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))]",
+			bgStyle: "border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))]",
 		},
 		{
 			key: "confirmed",
@@ -306,7 +306,7 @@ export function AppointmentQuickActions({
 							e.stopPropagation();
 							void handleAction(action.targetStatus, action.noteAppend);
 						}}
-						className={`quick-action-pill min-h-[44px] sm:min-h-[48px] px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer select-none active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed focus:ring-2 focus:ring-teal-500 focus:outline-none min-w-0 ${
+						className={`quick-action-pill min-h-[44px] sm:min-h-[48px] px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer select-none active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed focus:ring-2 focus:ring-[var(--teal)] focus:outline-none min-w-0 ${
 							isCurrent ? action.activeClass : `${action.bgStyle} ${action.hoverClass}`
 						}`}
 						title={
@@ -359,11 +359,11 @@ export function AppointmentQuickActions({
 								e.stopPropagation();
 								handleCopySmsReminder("reminder_24h");
 							}}
-							className="min-h-[44px] sm:min-h-[48px] px-3 py-2 rounded-xl border border-teal-500/30 bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1 touch-manipulation"
+							className="min-h-[44px] sm:min-h-[48px] px-3 py-2 rounded-xl border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1 touch-manipulation"
 							title={`Скопировать текст напоминания (SMS/мессенджер) для ${patientName}`}
 							aria-label={`Скопировать SMS: ${patientName}`}
 						>
-							<Copy size={14} className="shrink-0 text-teal-500" />
+							<Copy size={14} className="shrink-0 text-[var(--teal,var(--brand-primary))]" />
 							<span>SMS</span>
 						</button>
 

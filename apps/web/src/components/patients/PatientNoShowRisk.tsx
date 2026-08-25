@@ -211,7 +211,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 								{getRiskLabel(riskData?.riskLevel ?? "")}
 							</span>
 						</div>
-						<div className="px-2 py-1 rounded text-xs font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200 border border-blue-200 dark:border-blue-800">
+						<div className="px-2 py-1 rounded text-xs font-bold bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/20">
 							Вероятность неявки:{" "}
 							{Math.round((riskData?.noShowProbability || 0) * 100)}%
 						</div>

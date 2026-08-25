@@ -90,7 +90,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 			{/* Top Control Bar: Installments, Modes & Studio Triggers */}
 			<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-4 rounded-3xl bg-[var(--paper-soft,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-xs text-[var(--ink,#0f172a)] shadow-xs">
 				<div className="flex items-center gap-3">
-					<div className="p-2.5 rounded-2xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
+					<div className="p-2.5 rounded-2xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border border-[var(--teal,var(--brand-primary))]/20">
 						<Sparkles size={18} />
 					</div>
 					<div>
@@ -116,7 +116,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 							onClick={() => setActivePaymentMode("installment")}
 							className={`px-3 py-1 rounded-lg font-bold text-xs transition-all cursor-pointer ${
 								activePaymentMode === "installment"
-									? "bg-teal-600 text-white shadow-xs"
+									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 						>
@@ -127,7 +127,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 							onClick={() => setActivePaymentMode("staged")}
 							className={`px-3 py-1 rounded-lg font-bold text-xs transition-all cursor-pointer ${
 								activePaymentMode === "staged"
-									? "bg-teal-600 text-white shadow-xs"
+									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 						>
@@ -138,7 +138,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 							onClick={() => setActivePaymentMode("discount")}
 							className={`px-3 py-1 rounded-lg font-bold text-xs transition-all cursor-pointer ${
 								activePaymentMode === "discount"
-									? "bg-teal-600 text-white shadow-xs"
+									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 						>
@@ -156,7 +156,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 									onClick={() => setInstallmentMonths(m as 3 | 6 | 12 | 24)}
 									className={`px-2 py-0.5 rounded-md font-mono text-xs font-bold transition-all cursor-pointer ${
 										installmentMonths === m
-											? "bg-teal-600 text-white shadow-xs"
+											? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 									}`}
 								>
@@ -189,7 +189,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 							className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-slate-100 dark:hover:bg-slate-800 border border-[var(--border,#cbd5e1)] cursor-pointer transition-colors"
 							title="Открыть полноэкранную презентационную студию сравнения"
 						>
-							<Sparkles size={13} className="text-teal-600" />
+							<Sparkles size={13} className="text-[var(--teal,var(--brand-primary))]" />
 							<span>Студия 3-Tier</span>
 						</button>
 					)}
@@ -247,7 +247,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 							onClick={() => handleCardClick(tier)}
 							className={`relative flex flex-col justify-between rounded-3xl p-5 border transition-all duration-300 cursor-pointer bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] ${
 								isSelected
-									? `${tier.borderClass} shadow-xl ring-2 ring-teal-500/20 scale-[1.01] z-10`
+									? `${tier.borderClass} shadow-xl ring-2 ring-[var(--teal,var(--brand-primary))]/20 scale-[1.01] z-10`
 									: "border-[var(--border,#cbd5e1)] opacity-95 hover:opacity-100 hover:border-slate-400 shadow-md"
 							}`}
 							data-testid={`tier-card-${tier.tierId}`}
@@ -298,10 +298,10 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 									{activePaymentMode === "installment" && (
 										<div className="flex items-center justify-between text-xs pt-1.5 border-t border-[var(--border,#cbd5e1)]">
 											<span className="text-[var(--muted,#64748b)] flex items-center gap-1">
-												<Percent size={12} className="text-teal-600" />
+												<Percent size={12} className="text-[var(--teal,var(--brand-primary))]" />
 												Рассрочка {installmentMonths} мес:
 											</span>
-											<span className="font-bold text-teal-600 dark:text-teal-400 font-mono">
+											<span className="font-bold text-[var(--teal,var(--brand-primary))] font-mono">
 												{monthlyPayment.toLocaleString("ru-RU")} ₽/мес
 											</span>
 										</div>
@@ -342,7 +342,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 											</div>
 											<div className="flex justify-between text-slate-800 dark:text-slate-200 font-bold">
 												<span>Итого со скидкой:</span>
-												<span className="font-mono text-teal-600 dark:text-teal-400">
+												<span className="font-mono text-[var(--teal,var(--brand-primary))]">
 													{priceWith5PctDiscount.toLocaleString("ru-RU")} ₽
 												</span>
 											</div>
@@ -404,10 +404,10 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 									<button
 										type="button"
 										onClick={(e) => toggleStagesExpand(e, tier.tierId)}
-										className="w-full flex items-center justify-between text-xs font-bold text-[var(--ink,#0f172a)] hover:text-teal-600 cursor-pointer py-1"
+										className="w-full flex items-center justify-between text-xs font-bold text-[var(--ink,#0f172a)] hover:text-[var(--teal,var(--brand-primary))] cursor-pointer py-1"
 									>
 										<span className="flex items-center gap-1.5">
-											<Layers size={13} className="text-teal-600" />
+											<Layers size={13} className="text-[var(--teal,var(--brand-primary))]" />
 											<span>Клинические этапы I, II, III ({tier.stages.length})</span>
 										</span>
 										{isExpandedStages ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -422,7 +422,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 													className="p-1.5 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] space-y-1"
 												>
 													<div className="flex justify-between items-center font-bold">
-														<span className="text-teal-700 dark:text-teal-300">
+														<span className="text-[var(--teal-dark,var(--teal))]">
 															Этап {stg.stageNumber}: {stg.title.split(":")[1]?.trim() || stg.title}
 														</span>
 														<span className="font-mono text-slate-900 dark:text-slate-100">
@@ -433,14 +433,14 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 														{stg.clinicalGoal} · ~{stg.estimatedWeeks} нед. ({stg.estimatedVisits} виз.)
 													</p>
 													{stg.items.length > 0 && (
-														<ul className="text-[9px] text-[var(--muted,#64748b)] space-y-0.5 pl-1.5 border-l border-teal-500/30">
+														<ul className="text-[9px] text-[var(--muted,#64748b)] space-y-0.5 pl-1.5 border-l border-[var(--teal,var(--brand-primary))]/30">
 															{stg.items.slice(0, 3).map((it) => (
 																<li key={it.id} className="truncate">
 																	• {it.toothNumber ? `Зуб ${it.toothNumber}: ` : ""}{it.name}
 																</li>
 															))}
 															{stg.items.length > 3 && (
-																<li className="italic text-teal-600">
+																<li className="italic text-[var(--teal,var(--brand-primary))]">
 																	+ еще {stg.items.length - 3} процедур
 																</li>
 															)}
@@ -455,7 +455,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 								{/* Materials & Technologies Highlights */}
 								<div className="space-y-2 pt-2 border-t border-[var(--border,#cbd5e1)]">
 									<h4 className="text-xs font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
-										<Sparkles size={13} className="text-teal-600 dark:text-teal-400" />
+										<Sparkles size={13} className="text-[var(--teal,var(--brand-primary))]" />
 										<span>Материалы и технологии</span>
 									</h4>
 									<ul className="space-y-1 text-xs text-[var(--muted,#64748b)]">

@@ -189,7 +189,7 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 										title="Скопировать и вставить в дневник 043/у"
 										className="safety-btn safety-btn--outline text-xs"
 									>
-										<Copy className="w-3.5 h-3.5 text-teal-600" />
+										<Copy className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
 										В 043/у
 									</button>
 								)}
@@ -230,7 +230,7 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 													{flag.id.includes("pacemaker") && <ZapOff className="w-4 h-4 text-rose-600" />}
 													{flag.id.includes("bisphosphonate") && <ShieldAlert className="w-4 h-4 text-rose-600" />}
 													{flag.id.includes("anticoagulant") && <Pill className="w-4 h-4 text-rose-600" />}
-													{flag.id.includes("pregnancy") && <Baby className="w-4 h-4 text-sky-600" />}
+													{flag.id.includes("pregnancy") && <Baby className="w-4 h-4 text-pink-500" />}
 													{flag.id.includes("hypertension") && <HeartPulse className="w-4 h-4 text-amber-600" />}
 													{flag.id.includes("asthma") && <Activity className="w-4 h-4 text-amber-600" />}
 													<span>{flag.titleRu}</span>
@@ -290,7 +290,7 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 
 								{/* Общая сводка анестезии и предосторожностей */}
 								{evaluation.anestheticRecommendations.length > 0 && (
-									<div className="p-3 rounded-xl bg-teal-50 dark:bg-teal-950/50 border border-teal-200 dark:border-teal-800/50 text-xs text-teal-950 dark:text-teal-200 flex flex-col gap-1">
+									<div className="p-3 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/20 text-xs text-[var(--teal-dark,var(--teal))] flex flex-col gap-1">
 										<span className="font-bold uppercase tracking-wide">
 											💉 Сводные клинические рекомендации по анестезии:
 										</span>

@@ -459,7 +459,7 @@ export function ScheduleTimeline(props: ScheduleTimelineProps) {
 							typeof setScheduleDateFilter === "function" &&
 							typeof todayScheduleDate === "function" ? (
 								<button
-									className="secondary-button min-h-[44px] px-3.5 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+									className="secondary-button min-h-[44px] px-3.5 focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors"
 									type="button"
 									onClick={() => setScheduleDateFilter(todayScheduleDate())}
 								>
@@ -469,7 +469,7 @@ export function ScheduleTimeline(props: ScheduleTimelineProps) {
 							{activeScheduleFilterCount > 0 &&
 							typeof resetScheduleFilters === "function" ? (
 								<button
-									className="text-button min-h-[44px] px-3.5 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+									className="text-button min-h-[44px] px-3.5 focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors"
 									type="button"
 									onClick={resetScheduleFilters}
 								>
@@ -477,7 +477,7 @@ export function ScheduleTimeline(props: ScheduleTimelineProps) {
 								</button>
 							) : null}
 							<button
-								className="primary-button min-h-[44px] px-4 flex items-center justify-center gap-1.5 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+								className="primary-button min-h-[44px] px-4 flex items-center justify-center gap-1.5 focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors"
 								type="button"
 								onClick={onNewAppointmentClick}
 							>

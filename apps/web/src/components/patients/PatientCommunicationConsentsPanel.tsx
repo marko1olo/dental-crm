@@ -332,16 +332,16 @@ export const PatientCommunicationConsentsPanel: React.FC<
 
 	return (
 		<section
-			className="rounded-2xl border border-sky-500/25 bg-zinc-950/80 p-4 shadow-[0_0_40px_-18px_rgba(14,165,233,0.3)]"
+			className="rounded-2xl border border-[var(--teal,var(--brand-primary))]/25 bg-[var(--paper,#ffffff)] dark:bg-zinc-950/80 p-4 shadow-sm"
 			data-testid="patient-comm-consents-panel"
 			aria-label="Согласия на каналы связи"
 		>
 			<div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3">
 				<div>
-					<h3 className="text-sm font-bold text-sky-200 tracking-wide">
+					<h3 className="text-sm font-bold text-[var(--ink,#0f172a)] tracking-wide">
 						Согласия на связь
 					</h3>
-					<p className="text-xs text-zinc-500 mt-0.5">
+					<p className="text-xs text-[var(--muted,#64748b)] mt-0.5">
 						Служебные (запись, напоминания) и реклама по каналам. Без явного
 						«разрешено» реклама не уходит.
 					</p>
@@ -366,7 +366,7 @@ export const PatientCommunicationConsentsPanel: React.FC<
 						data-testid="patient-comm-consents-save"
 						disabled={loading || saving || !dirty || !loaded}
 						onClick={() => void save()}
-						className="px-4 py-2 min-h-[44px] text-xs font-bold rounded-xl bg-sky-600/90 hover:bg-sky-500 text-white border border-sky-400/40 disabled:opacity-50 inline-flex items-center justify-center"
+						className="px-4 py-2 min-h-[44px] text-xs font-bold rounded-xl bg-[var(--teal,var(--brand-primary))] hover:brightness-110 text-white border border-[var(--teal,var(--brand-primary))]/40 disabled:opacity-50 inline-flex items-center justify-center cursor-pointer"
 					>
 						{saving ? "Сохраняю…" : "Сохранить"}
 					</button>

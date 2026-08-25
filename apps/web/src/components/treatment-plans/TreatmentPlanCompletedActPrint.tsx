@@ -337,7 +337,7 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 										actData.status === "executed"
 											? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
 											: actData.status === "signed"
-												? "bg-teal-100 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800"
+												? "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/40"
 												: "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
 									}`}
 								>
@@ -617,7 +617,7 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 							}}
 						>
 							<div className="flex items-center gap-2">
-								<Award className="w-4 h-4 text-teal-700" />
+								<Award className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
 								<span>1. Оказанные медицинские услуги (Номенклатура МЗ РФ № 804н)</span>
 							</div>
 							<span className="text-[11px] font-semibold lowercase opacity-90">
@@ -749,7 +749,7 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 							}}
 						>
 							<div className="flex items-center gap-2">
-								<Package className="w-4 h-4 text-teal-700" />
+								<Package className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
 								<span>2. Накладная на списание медикаментов и расходных материалов (ТМЦ)</span>
 							</div>
 							<span className="text-[11px] font-semibold lowercase opacity-90">
@@ -791,7 +791,7 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 											<td className="border border-slate-300 p-2 text-center text-[11px] text-slate-700">
 												<div>{mat.procedureName}</div>
 												{mat.toothNumber && (
-													<span className="font-bold text-teal-800">(зуб №{mat.toothNumber})</span>
+													<span className="font-bold text-[var(--teal-dark,var(--teal))]">(зуб №{mat.toothNumber})</span>
 												)}
 											</td>
 											<td className="border border-slate-300 p-2 text-center font-mono">

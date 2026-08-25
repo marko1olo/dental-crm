@@ -422,10 +422,10 @@ export function WaitlistDrawer(props: Props) {
 							type="button"
 							data-testid="waitlist-quickfill-btn"
 							onClick={() => setIsQuickFillOpen(true)}
-							className="min-h-[38px] px-3 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-800 dark:text-teal-300 text-xs font-bold flex items-center gap-1.5 border border-teal-500/30 transition-all cursor-pointer shadow-sm active:scale-95"
+							className="min-h-[38px] px-3 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] text-xs font-bold flex items-center gap-1.5 border border-[var(--teal,var(--brand-primary))]/30 transition-all cursor-pointer shadow-sm active:scale-95"
 							title="Умный подбор пациентов на горящие окна"
 						>
-							<Sparkles size={14} className="text-teal-600 dark:text-teal-400" />
+							<Sparkles size={14} className="text-[var(--teal,var(--brand-primary))]" />
 							<span>Быстрый подбор</span>
 						</button>
 						<button

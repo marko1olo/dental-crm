@@ -232,7 +232,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 				{/* Header */}
 				<div className="p-5 border-b border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between">
 					<div className="flex items-center gap-3">
-						<div className="p-2 rounded-xl bg-teal-500/10 text-[var(--teal)] border border-teal-500/20">
+						<div className="p-2 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border border-[var(--teal,var(--brand-primary))]/20">
 							<Calendar size={20} />
 						</div>
 						<div>

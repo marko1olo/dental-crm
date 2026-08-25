@@ -341,13 +341,13 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 				{/* Modal Header */}
 				<header className="stage-payment-header">
 					<div className="flex items-center gap-3">
-						<div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400">
+						<div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))]">
 							<Coins className="h-5 w-5" />
 						</div>
 						<div>
 							<h2 className="text-lg font-bold tracking-tight text-[var(--ink,#0f172a)] flex items-center gap-2">
 								Студия поэтапной оплаты и Эскроу
-								<span className="rounded-full bg-teal-500/10 px-2.5 py-0.5 text-xs font-semibold text-teal-700 dark:text-teal-300">
+								<span className="rounded-full bg-[var(--teal-soft,var(--paper-soft))] px-2.5 py-0.5 text-xs font-semibold text-[var(--teal-dark,var(--teal))]">
 									ГК РФ ст. 709/711
 								</span>
 							</h2>
@@ -388,15 +388,15 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 
 				{/* Toast Banner */}
 				{statusMessage && (
-					<div className="bg-teal-50 dark:bg-teal-950/40 border-b border-teal-200 dark:border-teal-800/60 px-6 py-2.5 flex items-center justify-between text-xs text-teal-800 dark:text-teal-300 no-print">
+					<div className="bg-[var(--teal-soft,var(--paper-soft))] border-b border-[var(--teal,var(--brand-primary))]/20 px-6 py-2.5 flex items-center justify-between text-xs text-[var(--teal-dark,var(--teal))] no-print">
 						<div className="flex items-center gap-2">
-							<Sparkles className="h-4 w-4 shrink-0 text-teal-600" />
+							<Sparkles className="h-4 w-4 shrink-0 text-[var(--teal,var(--brand-primary))]" />
 							<span>{statusMessage}</span>
 						</div>
 						<button
 							type="button"
 							onClick={() => setStatusMessage(null)}
-							className="text-teal-600 hover:text-teal-800 dark:hover:text-teal-200 font-semibold"
+							className="text-[var(--teal,var(--brand-primary))] hover:text-[var(--teal-dark,var(--teal))] font-semibold"
 						>
 							Закрыть
 						</button>
@@ -425,7 +425,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 						<Wallet className="h-4 w-4" />
 						<span>Депозит и Эскроу</span>
 						{depositWallet.lockedEscrowKopecks > 0 && (
-							<span className="ml-1 rounded-full bg-teal-500/20 text-teal-700 dark:text-teal-300 px-2 py-0.2 text-xs">
+							<span className="ml-1 rounded-full bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] px-2 py-0.2 text-xs">
 								{formatKopecksRu(depositWallet.lockedEscrowKopecks)}
 							</span>
 						)}
@@ -499,7 +499,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 										</div>
 										<div className="rounded-lg bg-[var(--paper,#ffffff)] border border-[var(--border,#cbd5e1)] px-3 py-1.5 shadow-sm">
 											<span className="text-[var(--muted,#64748b)] block">В эскроу (заблокировано):</span>
-											<span className="font-bold text-teal-600 dark:text-teal-400 text-sm">
+											<span className="font-bold text-[var(--teal,var(--brand-primary))] text-sm">
 												{formatKopecksRu(totals.totalEscrowLockedKopecks)}
 											</span>
 										</div>
@@ -586,7 +586,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 												</div>
 												<div>
 													<span className="text-[var(--muted,#64748b)] block">В эскроу (заморожено):</span>
-													<span className="font-semibold text-teal-600 dark:text-teal-400">
+													<span className="font-semibold text-[var(--teal,var(--brand-primary))]">
 														{formatKopecksRu(stage.escrowLockedKopecks)}
 													</span>
 												</div>
@@ -653,7 +653,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 															}}
 															className="stage-action-btn secondary"
 														>
-															<FileCheck className="h-4 w-4 text-teal-600" />
+															<FileCheck className="h-4 w-4 text-[var(--teal,var(--brand-primary))]" />
 															<span>Закрыть актом</span>
 														</button>
 													)}
@@ -696,12 +696,12 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 									</p>
 								</div>
 
-								<div className="rounded-2xl border border-teal-500/30 bg-teal-50/50 dark:bg-teal-950/20 p-5 shadow-sm">
-									<div className="flex items-center justify-between text-xs text-teal-700 dark:text-teal-300 mb-1">
+								<div className="rounded-2xl border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))] p-5 shadow-sm">
+									<div className="flex items-center justify-between text-xs text-[var(--teal-dark,var(--teal))] mb-1">
 										<span>Заблокировано в Эскроу</span>
-										<Lock className="h-4 w-4 text-teal-600" />
+										<Lock className="h-4 w-4 text-[var(--teal,var(--brand-primary))]" />
 									</div>
-									<div className="text-2xl font-black text-teal-600 dark:text-teal-400">
+									<div className="text-2xl font-black text-[var(--teal,var(--brand-primary))]">
 										{formatKopecksRu(depositWallet.lockedEscrowKopecks)}
 									</div>
 									<p className="text-xs text-[var(--muted,#64748b)] mt-2">
@@ -712,7 +712,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 								<div className="rounded-2xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,#ffffff)] p-5 shadow-sm">
 									<div className="flex items-center justify-between text-xs text-[var(--muted,#64748b)] mb-1">
 										<span>Общий баланс пациента</span>
-										<Coins className="h-4 w-4 text-blue-500" />
+										<Coins className="h-4 w-4 text-amber-500" />
 									</div>
 									<div className="text-2xl font-black text-[var(--ink,#0f172a)]">
 										{formatKopecksRu(depositWallet.totalBalanceKopecks)}
@@ -728,7 +728,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 								{/* Deposit Top-Up Form */}
 								<div className="rounded-2xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,#ffffff)] p-5 flex flex-col gap-4">
 									<h3 className="font-bold text-base text-[var(--ink,#0f172a)] flex items-center gap-2">
-										<Plus className="h-5 w-5 text-teal-600" />
+										<Plus className="h-5 w-5 text-[var(--teal,var(--brand-primary))]" />
 										Внесение средств на депозит пациента
 									</h3>
 									<p className="text-xs text-[var(--muted,#64748b)]">
@@ -741,7 +741,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 												value={topUpAmountRub}
 												onChange={(e) => setTopUpAmountRub(e.target.value)}
 												placeholder="Сумма в рублях..."
-												className="w-full rounded-xl border border-[var(--border,#cbd5e1)] bg-transparent px-4 py-2.5 text-sm font-semibold text-[var(--ink,#0f172a)] focus:border-teal-500 focus:outline-none"
+												className="w-full rounded-xl border border-[var(--border,#cbd5e1)] bg-transparent px-4 py-2.5 text-sm font-semibold text-[var(--ink,#0f172a)] focus:border-[var(--teal,var(--brand-primary))] focus:outline-none"
 											/>
 											<span className="absolute right-3.5 top-2.5 text-xs text-[var(--muted,#64748b)] font-bold">
 												₽
@@ -761,7 +761,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 								<div className="rounded-2xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,#ffffff)] p-5 flex flex-col justify-between gap-4">
 									<div>
 										<h3 className="font-bold text-base text-[var(--ink,#0f172a)] flex items-center gap-2">
-											<Sparkles className="h-5 w-5 text-teal-600" />
+											<Sparkles className="h-5 w-5 text-[var(--teal,var(--brand-primary))]" />
 											Авто-распределение депозита по этапам
 										</h3>
 										<p className="text-xs text-[var(--muted,#64748b)] mt-1">
@@ -780,10 +780,10 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 							</div>
 
 							{/* Legal Escrow Protection Guarantee */}
-							<div className="rounded-2xl border border-teal-500/20 bg-teal-50/40 dark:bg-teal-950/20 p-4 text-xs text-[var(--ink,#0f172a)] flex items-start gap-3">
-								<ShieldCheck className="h-5 w-5 text-teal-600 shrink-0 mt-0.5" />
+							<div className="rounded-2xl border border-[var(--teal,var(--brand-primary))]/20 bg-[var(--teal-soft,var(--paper-soft))] p-4 text-xs text-[var(--ink,#0f172a)] flex items-start gap-3">
+								<ShieldCheck className="h-5 w-5 text-[var(--teal,var(--brand-primary))] shrink-0 mt-0.5" />
 								<div>
-									<h4 className="font-bold text-teal-900 dark:text-teal-200">
+									<h4 className="font-bold text-[var(--teal-dark,var(--teal))]">
 										Гарантия сохранности эскроу-депозита (ГК РФ ст. 711)
 									</h4>
 									<p className="text-[var(--muted,#64748b)] mt-1">
@@ -800,7 +800,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 							<div className="rounded-2xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,#ffffff)] p-5 flex flex-col gap-5">
 								<div className="flex items-center justify-between">
 									<h3 className="font-bold text-base text-[var(--ink,#0f172a)] flex items-center gap-2">
-										<FileCheck className="h-5 w-5 text-teal-600" />
+										<FileCheck className="h-5 w-5 text-[var(--teal,var(--brand-primary))]" />
 										Оформление Акта сдачи-приемки выполненных работ (ст. 720 ГК РФ)
 									</h3>
 									<span className="text-xs text-[var(--muted,#64748b)]">
@@ -817,7 +817,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 										<select
 											value={selectedStageForActId}
 											onChange={(e) => setSelectedStageForActId(e.target.value)}
-											className="w-full rounded-xl border border-[var(--border,#cbd5e1)] bg-transparent px-3 py-2 text-sm text-[var(--ink,#0f172a)] font-medium focus:border-teal-500 focus:outline-none"
+											className="w-full rounded-xl border border-[var(--border,#cbd5e1)] bg-transparent px-3 py-2 text-sm text-[var(--ink,#0f172a)] font-medium focus:border-[var(--teal,var(--brand-primary))] focus:outline-none"
 										>
 											{stages.map((s) => (
 												<option key={s.id} value={s.id}>
@@ -835,7 +835,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 											type="text"
 											value={actNumberInput}
 											onChange={(e) => setActNumberInput(e.target.value)}
-											className="w-full rounded-xl border border-[var(--border,#cbd5e1)] bg-transparent px-3 py-2 text-sm text-[var(--ink,#0f172a)] font-medium focus:border-teal-500 focus:outline-none"
+											className="w-full rounded-xl border border-[var(--border,#cbd5e1)] bg-transparent px-3 py-2 text-sm text-[var(--ink,#0f172a)] font-medium focus:border-[var(--teal,var(--brand-primary))] focus:outline-none"
 										/>
 									</div>
 
@@ -847,7 +847,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 											type="date"
 											value={actSignDate}
 											onChange={(e) => setActSignDate(e.target.value)}
-											className="w-full rounded-xl border border-[var(--border,#cbd5e1)] bg-transparent px-3 py-2 text-sm text-[var(--ink,#0f172a)] font-medium focus:border-teal-500 focus:outline-none"
+											className="w-full rounded-xl border border-[var(--border,#cbd5e1)] bg-transparent px-3 py-2 text-sm text-[var(--ink,#0f172a)] font-medium focus:border-[var(--teal,var(--brand-primary))] focus:outline-none"
 										/>
 									</div>
 								</div>
@@ -864,7 +864,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 												<span className="font-bold text-sm text-[var(--ink,#0f172a)]">
 													{stg.title}
 												</span>
-												<span className="font-extrabold text-sm text-teal-600 dark:text-teal-400">
+												<span className="font-extrabold text-sm text-[var(--teal,var(--brand-primary))]">
 													{formatKopecksRu(stg.totalKopecks)}
 												</span>
 											</div>
@@ -876,7 +876,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 												</div>
 												<div>
 													<span>Заблокировано в эскроу: </span>
-													<strong className="text-teal-600">{formatKopecksRu(stg.escrowLockedKopecks)}</strong>
+													<strong className="text-[var(--teal,var(--brand-primary))]">{formatKopecksRu(stg.escrowLockedKopecks)}</strong>
 												</div>
 												<div>
 													<span>Прямые затраты (Lab/BOM): </span>
@@ -938,7 +938,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 
 								<div className="rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,#ffffff)] p-4 text-xs">
 									<span className="text-[var(--muted,#64748b)] block">Принято по Актам (не возвращается):</span>
-									<span className="text-xl font-bold text-blue-600 dark:text-blue-400 mt-1 block">
+									<span className="text-xl font-bold text-[var(--teal-dark,var(--teal))] mt-1 block">
 										{formatKopecksRu(terminationCalc.completedActsTotalKopecks)}
 									</span>
 								</div>
@@ -1005,12 +1005,12 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 										value={newExpenseTitle}
 										onChange={(e) => setNewExpenseTitle(e.target.value)}
 										placeholder="Добавить подтвержденный расход (напр. фрезеровка каркаса)..."
-										className="flex-1 min-w-[200px] rounded-xl border border-[var(--border,#cbd5e1)] bg-transparent px-3 py-2 text-xs text-[var(--ink,#0f172a)] focus:border-teal-500 focus:outline-none"
+										className="flex-1 min-w-[200px] rounded-xl border border-[var(--border,#cbd5e1)] bg-transparent px-3 py-2 text-xs text-[var(--ink,#0f172a)] focus:border-[var(--teal,var(--brand-primary))] focus:outline-none"
 									/>
 									<select
 										value={newExpenseCategory}
 										onChange={(e) => setNewExpenseCategory(e.target.value as TerminationExpenseItem["category"])}
-										className="rounded-xl border border-[var(--border,#cbd5e1)] bg-transparent px-3 py-2 text-xs text-[var(--ink,#0f172a)] focus:border-teal-500 focus:outline-none"
+										className="rounded-xl border border-[var(--border,#cbd5e1)] bg-transparent px-3 py-2 text-xs text-[var(--ink,#0f172a)] focus:border-[var(--teal,var(--brand-primary))] focus:outline-none"
 									>
 										<option value="lab_cadcam">CAD/CAM Лаборатория</option>
 										<option value="implant_hardware">Имплантаты/Компоненты</option>
@@ -1022,7 +1022,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 										value={newExpenseRub}
 										onChange={(e) => setNewExpenseRub(e.target.value)}
 										placeholder="Сумма ₽"
-										className="w-28 rounded-xl border border-[var(--border,#cbd5e1)] bg-transparent px-3 py-2 text-xs text-[var(--ink,#0f172a)] focus:border-teal-500 focus:outline-none"
+										className="w-28 rounded-xl border border-[var(--border,#cbd5e1)] bg-transparent px-3 py-2 text-xs text-[var(--ink,#0f172a)] focus:border-[var(--teal,var(--brand-primary))] focus:outline-none"
 									/>
 									<button
 										type="button"
@@ -1051,7 +1051,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 							{/* Parameters Config Panel */}
 							<div className="flex-1 w-full rounded-2xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,#ffffff)] p-5 flex flex-col gap-4">
 								<h3 className="font-bold text-base text-[var(--ink,#0f172a)] flex items-center gap-2">
-									<QrCode className="h-5 w-5 text-teal-600" />
+									<QrCode className="h-5 w-5 text-[var(--teal,var(--brand-primary))]" />
 									Параметры фискализации по 54-ФЗ
 								</h3>
 
@@ -1062,7 +1062,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 									<select
 										value={selectedStageForFiscalId}
 										onChange={(e) => setSelectedStageForFiscalId(e.target.value)}
-										className="w-full rounded-xl border border-[var(--border,#cbd5e1)] bg-transparent px-3 py-2 text-sm text-[var(--ink,#0f172a)] focus:border-teal-500 focus:outline-none"
+										className="w-full rounded-xl border border-[var(--border,#cbd5e1)] bg-transparent px-3 py-2 text-sm text-[var(--ink,#0f172a)] focus:border-[var(--teal,var(--brand-primary))] focus:outline-none"
 									>
 										{stages.map((s) => (
 											<option key={s.id} value={s.id}>
@@ -1108,7 +1108,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 									<select
 										value={fiscalPaymentMethod}
 										onChange={(e) => setFiscalPaymentMethod(e.target.value as any)}
-										className="w-full rounded-xl border border-[var(--border,#cbd5e1)] bg-transparent px-3 py-2 text-sm text-[var(--ink,#0f172a)] focus:border-teal-500 focus:outline-none"
+										className="w-full rounded-xl border border-[var(--border,#cbd5e1)] bg-transparent px-3 py-2 text-sm text-[var(--ink,#0f172a)] focus:border-[var(--teal,var(--brand-primary))] focus:outline-none"
 									>
 										<option value="BANK_CARD">Банковская карта (Эквайринг)</option>
 										<option value="SBP_QR">СБП QR-код</option>

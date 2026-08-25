@@ -418,23 +418,9 @@ export function OrthodonticProgressWidget({
 								type="submit"
 								disabled={saving}
 								/*
-									ГЛАВНАЯ КНОПКА ВИДЖЕТА БЫЛА ХОЛОДНОЙ В ТЁПЛОЙ НОЧНОЙ ТЕМЕ.
-
-									БЫЛО: `bg-teal-600 hover:bg-teal-700 text-white`. Палитра
-									Tailwind в проекте не переопределена — файла tailwind.config.*
-									в дереве нет вовсе, `@theme` в листах стилей тоже нет, — значит
-									teal-600 это стоковый холодный oklch(60% 0.118 184.704)
-									одинаково в светлой, тёмной и ночной. Токен --teal при этом
-									#0d9488 в светлой, #2dd4bf в тёмной и ТЁПЛЫЙ #e0a458 в ночной:
-									её включают в вечернюю смену, чтобы экран не бил синим.
-
-									ПОЧЕМУ --teal-dark, А НЕ --teal. Пара «фон --teal-dark + текст
-									--on-teal» проходит норму во всех трёх темах, а пара с --teal в
-									светлой даёт 3.74:1 при норме 4.5:1 — то же решение и по той же
-									причине, что у кнопки ящика листа ожидания (ffdad856a).
-									Наведение — яркостью, а не вторым цветом: brightness двигает фон
-									и текст вместе и контраст не теряет. transition-all вместо
-									transition-colors потому, что brightness это фильтр, а не цвет.
+									Главная кнопка виджета на токенах темы:
+									Пара «фон --teal-dark + текст --on-teal» проходит норму во всех темах.
+									Наведение — яркостью (brightness).
 								*/
 								className="flex-1 min-h-[44px] bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] rounded-xl p-2.5 font-semibold text-xs flex justify-center items-center gap-2 border-0 cursor-pointer transition-all"
 							>
@@ -484,14 +470,8 @@ export function OrthodonticProgressWidget({
 								<button
 									type="button"
 									onClick={handleStartEdit}
-									/* Вариант dark: здесь не спасал: он честно переведён на data-theme и
-									   в ночной теме срабатывает, но dark:text-teal-400 — это тоже
-									   стоковый холодный цвет, а не --teal. Токены меняются по теме сами,
-									   поэтому второй вариант больше не нужен. */
 									className="mt-2 min-h-[44px] bg-transparent border border-[var(--teal-ring)] text-[var(--teal-dark)] px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer hover:bg-[var(--teal-surface)] transition-colors inline-flex items-center justify-center"
 								>
-									{/* БЫЛО: «Добавить орто-трекер (JSONB)» — на кнопке, которую жмёт
-									    врач, стояло название типа данных в базе. */}
 									Начать отсчёт капп
 								</button>
 							</div>

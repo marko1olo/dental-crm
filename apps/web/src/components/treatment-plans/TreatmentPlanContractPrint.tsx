@@ -138,7 +138,7 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 				{/* Top Action Bar (hidden on print) */}
 				<div className="flex items-center justify-between px-6 py-4 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] print:hidden">
 					<div className="flex items-center gap-2">
-						<FileText className="text-teal-600 dark:text-teal-400 w-5 h-5" />
+						<FileText className="text-[var(--teal,var(--brand-primary))] w-5 h-5" />
 						<span className="font-bold text-sm text-[var(--ink,#0f172a)]">
 							Печатная форма: Договор, Комплексный план лечения и Смета с QR-кодом
 						</span>
@@ -147,7 +147,7 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-500 shadow-md cursor-pointer transition-colors"
+							className="flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-xl text-xs font-bold text-white bg-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-dark,var(--brand-primary))] shadow-md cursor-pointer transition-colors"
 						>
 							<Printer size={14} />
 							<span>Печать документа (Ctrl+P)</span>
@@ -173,10 +173,10 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 						<div className="flex justify-between items-start border-b border-slate-200 pb-4 gap-4">
 							<div className="space-y-1 flex-1">
 								<div className="flex items-center gap-2">
-								<h1 className="text-base sm:text-lg font-black tracking-tight text-slate-900 uppercase">
+								<h1 className="text-base sm:lg font-black tracking-tight text-slate-900 uppercase">
 									{clinicName}
 								</h1>
-								<span className="text-[9px] px-2 py-0.5 rounded bg-teal-100 text-teal-800 font-bold border border-teal-200">
+								<span className="text-[9px] px-2 py-0.5 rounded bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] font-bold border border-[var(--teal,var(--brand-primary))]/30">
 									СтАР & Приказ МЗ РФ № 804н
 								</span>
 							</div>
@@ -196,7 +196,7 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 									ДОГОВОР № {displayContractNumber}
 								</div>
 								<p className="text-[10px] text-slate-500">г. Москва · {todayRu} г.</p>
-								<div className="text-[9px] text-teal-700 font-semibold">
+								<div className="text-[9px] text-[var(--teal-dark,var(--teal))] font-semibold">
 									Онлайн-верификация сметы →
 								</div>
 							</div>
@@ -344,7 +344,7 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 
 							<div className="space-y-1">
 								<span className="text-slate-500 block">Итого к оплате пациентом:</span>
-								<strong className="text-base font-mono text-teal-700 font-black">
+								<strong className="text-base font-mono text-[var(--teal-dark,var(--teal))] font-black">
 									{finalTotalRub.toLocaleString("ru-RU")} ₽
 								</strong>
 							</div>
@@ -353,7 +353,7 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 						{/* Installments & Tax Refund Row */}
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200 text-[10px]">
 							<div className="p-2.5 rounded-lg bg-white border border-slate-200 space-y-1">
-								<div className="flex items-center gap-1 font-bold text-teal-800">
+								<div className="flex items-center gap-1 font-bold text-[var(--teal-dark,var(--teal))]">
 									<CreditCard size={12} />
 									<span>Программа беспроцентной рассрочки 0% ({installmentMonths} мес.):</span>
 								</div>

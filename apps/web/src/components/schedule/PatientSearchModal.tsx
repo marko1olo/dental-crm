@@ -135,7 +135,7 @@ export function PatientSearchModal({
 			>
 				{/* Search Input Bar */}
 				<div className="p-3 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3 bg-slate-50 dark:bg-slate-900/50">
-					<Search className="w-5 h-5 text-teal-600 dark:text-teal-400 shrink-0 ml-1" />
+					<Search className="w-5 h-5 text-[var(--teal,var(--brand-primary))] shrink-0 ml-1" />
 					<input
 						ref={inputRef}
 						type="text"
@@ -206,7 +206,7 @@ export function PatientSearchModal({
 									onMouseEnter={() => setSelectedIndex(index)}
 									className={`p-3 rounded-xl transition-all cursor-pointer flex flex-wrap items-center justify-between gap-3 ${
 										isSelected
-											? "bg-teal-50 dark:bg-teal-950/40 border border-teal-500/30 shadow-xs"
+											? "bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 shadow-xs"
 											: "hover:bg-slate-50 dark:hover:bg-slate-800/50"
 									}`}
 									data-testid={`patient-search-result-${patient.id}`}
@@ -215,7 +215,7 @@ export function PatientSearchModal({
 									<div className="space-y-1 min-w-0 flex-1">
 										<div className="flex items-center gap-2 flex-wrap">
 											<span className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 truncate">
-												<User className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+												<User className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
 												<RenderHighlightedParts parts={item.fullNameHighlights} />
 											</span>
 
@@ -301,7 +301,7 @@ export function PatientSearchModal({
 													onSelectPatientForBooking(patient);
 													onClose();
 												}}
-												className="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer min-h-[40px]"
+												className="px-3.5 py-2 rounded-xl bg-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-dark,var(--brand-primary))] active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer min-h-[40px]"
 												title="Записать пациента на прием"
 											>
 												<CalendarPlus className="w-4 h-4" />

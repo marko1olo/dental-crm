@@ -402,8 +402,8 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 							onClick={() => setActiveTab("prices")}
 							className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
 								activeTab === "prices"
-									? "bg-white dark:bg-slate-900 text-teal-700 dark:text-teal-300 shadow-xs"
-									: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+									? "bg-[var(--paper)] text-[var(--teal-dark,var(--teal))] shadow-xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 						>
 							Сверка цен и прайс-листа
@@ -413,13 +413,13 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 							onClick={() => setActiveTab("star_protocols")}
 							className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
 								activeTab === "star_protocols"
-									? "bg-white dark:bg-slate-900 text-teal-700 dark:text-teal-300 shadow-xs"
-									: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+									? "bg-[var(--paper)] text-[var(--teal-dark,var(--teal))] shadow-xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 						>
 							<Award size={14} />
 							<span>Протоколы СтАР & 804н</span>
-							<span className="px-1.5 py-0.2 rounded-full bg-teal-500/20 text-teal-700 dark:text-teal-300 text-[10px] font-mono">
+							<span className="px-1.5 py-0.2 rounded-full bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] text-[10px] font-mono">
 								{starValidation.checks.length}
 							</span>
 						</button>
@@ -428,8 +428,8 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 							onClick={() => setActiveTab("summary")}
 							className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
 								activeTab === "summary"
-									? "bg-white dark:bg-slate-900 text-teal-700 dark:text-teal-300 shadow-xs"
-									: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+									? "bg-[var(--paper)] text-[var(--teal-dark,var(--teal))] shadow-xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 						>
 							Экспертное заключение
@@ -730,7 +730,7 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 							{/* Protocol Filter & Summary Bar */}
 							<div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
 								<div className="flex items-center gap-2">
-									<div className="p-2 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400">
+									<div className="p-2 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))]">
 										<Award size={16} />
 									</div>
 									<div>
@@ -749,7 +749,7 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 										onClick={() => setProtocolSeverityFilter("all")}
 										className={`px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all ${
 											protocolSeverityFilter === "all"
-												? "bg-teal-600 text-white"
+												? "bg-[var(--teal,var(--brand-primary))] text-white"
 												: "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
 										}`}
 									>
@@ -850,7 +850,7 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 						<div className="space-y-4 text-xs">
 							<div className="p-5 rounded-3xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4">
 								<h3 className="text-base font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
-									<FileCheck className="text-teal-600" size={20} />
+									<FileCheck className="text-[var(--teal,var(--brand-primary))]" size={20} />
 									<span>Сводное экспертное заключение по смете плана лечения</span>
 								</h3>
 
@@ -881,7 +881,7 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 									</div>
 								</div>
 
-								<div className="p-3 rounded-2xl bg-teal-50 dark:bg-teal-950/30 border border-teal-500/20 text-teal-900 dark:text-teal-200 text-xs">
+								<div className="p-3 rounded-2xl bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/20 text-[var(--teal-dark,var(--teal))] text-xs">
 									<strong>Правовое основание:</strong> Смета составлена в строгом соответствии с Приказом Минздрава России от 13.10.2017 № 804н, ст. 709 и ст. 711 Гражданского кодекса РФ, Постановлением Правительства РФ № 736 от 11.05.2023 г. и клиническими рекомендациями СтАР.
 								</div>
 							</div>

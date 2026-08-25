@@ -53,10 +53,10 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 
 	const stageColorMap = {
 		1: {
-			badge: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20",
-			iconBg: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
-			headerBg: "bg-blue-500/5",
-			accentBorder: "border-blue-500/30",
+			badge: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/20",
+			iconBg: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))]",
+			headerBg: "bg-[var(--teal)]/5",
+			accentBorder: "border-[var(--teal,var(--brand-primary))]/30",
 		},
 		2: {
 			badge: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20",
@@ -148,7 +148,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 				<div className="p-4 space-y-3 bg-[var(--paper-soft,var(--paper,#ffffff))]">
 					{/* Clinical Goal Banner */}
 					<div className="flex items-center gap-2 p-2.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-xs text-[var(--muted,#64748b)]">
-						<Activity size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<Activity size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 						<span className="font-medium">
 							<strong>Клиническая цель:</strong> {stage.clinicalGoal}
 						</span>
@@ -164,7 +164,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 							stage.items.map((item, idx) => (
 								<div
 									key={item.id || idx}
-									className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] hover:border-teal-500/40 transition-all"
+									className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] hover:border-[var(--teal,var(--brand-primary))]/40 transition-all"
 								>
 									<div className="flex flex-col gap-1 min-w-0 flex-1">
 										<div className="flex items-center gap-1.5 flex-wrap">
@@ -211,11 +211,11 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 															item.toothNumber ? [item.toothNumber] : undefined,
 														)
 													}
-													className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 cursor-pointer transition-colors shrink-0"
+													className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors shrink-0"
 													title={`Оформить наряд-заказ в зуботехническую лабораторию для ${item.name}`}
 													data-testid={`item-lab-order-btn-${item.id}`}
 												>
-													<FlaskConical size={12} className="text-teal-600 dark:text-teal-400" />
+													<FlaskConical size={12} className="text-[var(--teal,var(--brand-primary))]" />
 													<span>Наряд в ЗТЛ</span>
 												</button>
 											)}
@@ -244,7 +244,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 							className="w-full flex items-center justify-between p-3 text-xs font-bold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition-colors cursor-pointer"
 						>
 							<div className="flex items-center gap-2">
-								<Package size={15} className="text-teal-600 dark:text-teal-400" />
+								<Package size={15} className="text-[var(--teal,var(--brand-primary))]" />
 								<span>
 									Нормы расхода ТМЦ и себестоимость этапа ({materialSummary.items.length} поз.)
 								</span>
@@ -368,11 +368,11 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 												.filter((t): t is number => typeof t === "number" && t > 0);
 											onOpenLabOrder(stageTeeth.length > 0 ? stageTeeth : undefined);
 										}}
-										className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 cursor-pointer transition-colors"
+										className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors"
 										title="Оформить наряд-заказ в зуботехническую лабораторию"
 										data-testid={`stage-${stage.stageNumber}-lab-order-btn`}
 									>
-										<FlaskConical size={13} className="text-teal-600 dark:text-teal-400" />
+										<FlaskConical size={13} className="text-[var(--teal,var(--brand-primary))]" />
 										<span>Наряд-заказ в зуботехническую лабораторию</span>
 									</button>
 								)}
@@ -381,7 +381,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 								<button
 									type="button"
 									onClick={() => onExecuteWriteOffStage(stage)}
-									className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 cursor-pointer transition-colors"
+									className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors"
 									title="Сформировать Акт выполненных работ и провести списание ТМЦ со склада"
 								>
 									<Package size={13} />

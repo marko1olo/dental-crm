@@ -121,10 +121,10 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 					<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)]">
 						<div className="space-y-0.5">
 							<div className="flex items-center gap-2">
-								<span className="text-xs font-bold text-teal-700 dark:text-teal-300">
+								<span className="text-xs font-bold text-[var(--teal-dark,var(--teal))]">
 									Выбранный вариант:
 								</span>
-								<span className="text-xs font-extrabold px-2 py-0.5 rounded-md bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20">
+								<span className="text-xs font-extrabold px-2 py-0.5 rounded-md bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/20">
 									{tier.title}
 								</span>
 							</div>
@@ -144,7 +144,7 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 					{/* Legal Clause / Consent Statement */}
 					<div className="p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] text-xs text-[var(--muted,#64748b)] space-y-2 leading-relaxed max-h-36 overflow-y-auto">
 						<div className="flex items-center gap-1.5 font-bold text-[var(--ink,#0f172a)]">
-							<ShieldCheck size={14} className="text-teal-600 dark:text-teal-400" />
+							<ShieldCheck size={14} className="text-[var(--teal,var(--brand-primary))]" />
 							<span>Условия утверждения плана (ст. 20 ФЗ № 323-ФЗ):</span>
 						</div>
 						<p>
@@ -165,7 +165,7 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 					<div className="space-y-2">
 						<div className="flex items-center justify-between">
 							<label className="text-xs font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
-								<PenTool size={14} className="text-teal-600 dark:text-teal-400" />
+								<PenTool size={14} className="text-[var(--teal,var(--brand-primary))]" />
 								<span>Личная подпись пациента (нарисуйте на экране):</span>
 							</label>
 							{signatureBase64 && (
@@ -189,7 +189,7 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 							type="checkbox"
 							checked={termsAccepted}
 							onChange={(e) => setTermsAccepted(e.target.checked)}
-							className="mt-0.5 w-4 h-4 rounded text-teal-600 border-[var(--border,#cbd5e1)] focus:ring-teal-500 cursor-pointer"
+							className="mt-0.5 w-4 h-4 rounded text-[var(--teal,var(--brand-primary))] border-[var(--border,#cbd5e1)] focus:ring-[var(--teal)] cursor-pointer"
 						/>
 						<span>
 							Подтверждаю правильность выбранного плана и даю согласие на начало лечения.

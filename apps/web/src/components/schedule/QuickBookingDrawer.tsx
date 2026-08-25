@@ -567,7 +567,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 				{/* Header */}
 				<div className={`p-5 border-b border-[var(--line)] flex items-center justify-between ${initialSlot?.isCitoEmergency ? "bg-rose-500/10 dark:bg-rose-950/40 border-rose-500/30" : "bg-[var(--paper-soft)]"}`}>
 					<div className="flex items-center gap-3">
-						<div className={`p-2 rounded-xl border ${initialSlot?.isCitoEmergency ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/40 animate-pulse" : "bg-teal-500/10 text-[var(--teal)] border-teal-500/20"}`}>
+						<div className={`p-2 rounded-xl border ${initialSlot?.isCitoEmergency ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/40 animate-pulse" : "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border-[var(--teal,var(--brand-primary))]/20"}`}>
 							{initialSlot?.isCitoEmergency ? <Flame size={20} /> : <Sparkles size={20} />}
 						</div>
 						<div>

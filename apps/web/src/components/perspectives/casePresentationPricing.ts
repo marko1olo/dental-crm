@@ -589,9 +589,9 @@ export function generate3TierPlans(
 			"Имплантация, лечение под микроскопом и безметалловая керамика",
 		isRecommended: true,
 		badgeClass:
-			"bg-teal-100 dark:bg-teal-950 text-teal-900 dark:text-teal-200 border-teal-400/50",
+			"bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border-[var(--teal,var(--brand-primary))]/50",
 		borderClass:
-			"border-teal-500 ring-2 ring-teal-500/20 shadow-lg shadow-teal-500/10",
+			"border-[var(--teal,var(--brand-primary))] ring-2 ring-[var(--teal,var(--brand-primary))]/20 shadow-lg shadow-[var(--teal,var(--brand-primary))]/10",
 		totalRub: optimumTotalRub,
 		totalKopecks: optimumTotalKopecks,
 		durationWeeks: optimumWeeks,

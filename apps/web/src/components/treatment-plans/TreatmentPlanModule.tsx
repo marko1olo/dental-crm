@@ -352,7 +352,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 			{/* Top Bar: Title & Global Quick Actions */}
 			<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-[var(--border,#cbd5e1)]">
 				<div className="flex items-center gap-3">
-					<div className="p-3 rounded-2xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
+					<div className="p-3 rounded-2xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border border-[var(--teal,var(--brand-primary))]/20">
 						<Layers size={22} />
 					</div>
 					<div>
@@ -406,10 +406,10 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					<button
 						type="button"
 						onClick={() => setIsComparatorModalOpen(true)}
-						className="min-h-[40px] flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-teal-800 dark:text-teal-200 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 cursor-pointer transition-colors shadow-xs"
+						className="min-h-[40px] flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors shadow-xs"
 						title="Открыть полноэкранную презентационную 3-Tier Студию с дифференциальным анализом"
 					>
-						<Sparkles size={14} className="text-teal-600 dark:text-teal-400" />
+						<Sparkles size={14} className="text-[var(--teal,var(--brand-primary))]" />
 						<span>Студия 3-Tier</span>
 					</button>
 
@@ -460,7 +460,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						className="min-h-[40px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] shadow-xs cursor-pointer transition-colors"
 						title="Открыть договор на оказание платных медицинских услуг, спецификацию и смету с QR-кодом"
 					>
-						<FileText size={15} className="text-teal-600 dark:text-teal-400" />
+						<FileText size={15} className="text-[var(--teal,var(--brand-primary))]" />
 						<span>Договор (QR)</span>
 					</button>
 
@@ -468,11 +468,11 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					<button
 						type="button"
 						onClick={() => handleOpenLabOrder()}
-						className="min-h-[40px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 shadow-xs cursor-pointer transition-colors"
+						className="min-h-[40px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 shadow-xs cursor-pointer transition-colors"
 						title="Оформить наряд-заказ в зуботехническую лабораторию"
 						data-testid="lab-work-order-btn"
 					>
-						<FlaskConical size={15} className="text-teal-600 dark:text-teal-400" />
+						<FlaskConical size={15} className="text-[var(--teal,var(--brand-primary))]" />
 						<span>Наряд-заказ</span>
 					</button>
 
@@ -503,7 +503,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						type="button"
 						onClick={handleSavePlanToDatabase}
 						disabled={isSaving}
-						className="min-h-[40px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 cursor-pointer transition-colors shadow-sm"
+						className="min-h-[40px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-[var(--teal-dark,var(--brand-primary))] hover:bg-[var(--teal,var(--brand-primary))] disabled:opacity-50 cursor-pointer transition-colors shadow-sm"
 					>
 						<Save size={14} />
 						<span>{isSaving ? "Сохранение..." : "Сохранить"}</span>
@@ -524,7 +524,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 								onClick={() => setDiscountPercent(pct)}
 								className={`px-2.5 py-1 rounded-lg font-mono font-bold text-xs cursor-pointer transition-all ${
 									discountPercent === pct
-										? "bg-teal-600 text-white shadow-xs"
+										? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 										: "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)]"
 								}`}
 							>

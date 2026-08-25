@@ -202,7 +202,7 @@ export function FrontdeskPerspectiveView() {
 
 					<div>
 						<div className="flex items-center gap-2">
-							<span className="text-xs uppercase tracking-widest font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/70 px-2.5 py-0.5 rounded-md border border-teal-500/40">
+							<span className="text-xs uppercase tracking-widest font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] px-2.5 py-0.5 rounded-md border border-[var(--teal,var(--brand-primary))]/40">
 								Ресепшн и Экспресс-Касса 54-ФЗ
 							</span>
 							<span className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 font-medium">ОФД Онлайн · ФН готов</span>
@@ -219,7 +219,7 @@ export function FrontdeskPerspectiveView() {
 					<button
 						type="button"
 						onClick={() => setIsNdflModalOpen(true)}
-						className="min-h-[44px] px-4 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center gap-2 shadow-md shadow-teal-600/20 border border-teal-500/30 cursor-pointer active:scale-95 transition-all"
+						className="min-h-[44px] px-4 rounded-xl bg-[var(--teal,var(--brand-primary))] hover:brightness-110 text-white font-bold text-xs flex items-center gap-2 shadow-md shadow-[var(--teal,var(--brand-primary))]/20 border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer active:scale-95 transition-all"
 					>
 						<FileText size={16} />
 						<span>Справка НДФЛ 13% (1 клик)</span>
@@ -243,7 +243,7 @@ export function FrontdeskPerspectiveView() {
 				<section className="lg:col-span-7 bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl p-5 shadow-sm flex flex-col">
 					<div className="flex items-center justify-between pb-3 mb-4 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
 						<div className="flex items-center gap-2">
-							<Receipt size={22} className="text-teal-600 dark:text-teal-400 shrink-0" />
+							<Receipt size={22} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 							<h2 className="text-lg font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 m-0">
 								К оплате сегодня (Визиты без закрытия чека)
 							</h2>
@@ -268,11 +268,11 @@ export function FrontdeskPerspectiveView() {
 								return (
 									<div
 										key={visit.appointmentId}
-										className="p-4 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800/80 border border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:border-teal-500/60 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm"
+										className="p-4 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800/80 border border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:border-[var(--teal,var(--brand-primary))]/60 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm"
 									>
 										<div>
 											<div className="flex items-center gap-2">
-												<span className="text-xs font-bold text-teal-800 dark:text-teal-200 bg-teal-100 dark:bg-teal-950 px-2 py-0.5 rounded border border-teal-500/30">
+												<span className="text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] px-2 py-0.5 rounded border border-[var(--teal,var(--brand-primary))]/30">
 													{visit.time}
 												</span>
 												<strong className="text-base text-[var(--ink,#0f172a)] dark:text-white">{visit.patientName}</strong>
@@ -306,7 +306,7 @@ export function FrontdeskPerspectiveView() {
 													type="button"
 													disabled={isProcessing}
 													onClick={() => void handle1ClickCheckout(visit, "card")}
-													className="min-h-[44px] px-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow active:scale-95 cursor-pointer transition-all border border-blue-400/30"
+													className="min-h-[44px] px-3.5 bg-[var(--teal,var(--brand-primary))] hover:brightness-110 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow active:scale-95 cursor-pointer transition-all border border-[var(--teal,var(--brand-primary))]/30"
 													title="Оплата картой через терминал (Чек 54-ФЗ)"
 												>
 													<CreditCard size={16} />
@@ -337,7 +337,7 @@ export function FrontdeskPerspectiveView() {
 					<div>
 						<div className="flex items-center justify-between pb-3 mb-3 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
 							<div className="flex items-center gap-2">
-								<PhoneCall size={22} className="text-teal-600 dark:text-teal-400 shrink-0" />
+								<PhoneCall size={22} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 								<h2 className="text-lg font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 m-0">Утренний обзвон пациентов</h2>
 							</div>
 							<span className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 font-medium">На сегодня</span>
@@ -352,7 +352,7 @@ export function FrontdeskPerspectiveView() {
 								value={filterSearch}
 								onChange={(e) => setFilterSearch(e.target.value)}
 								style={{ paddingLeft: "2.75rem" }}
-								className="w-full min-h-[44px] !pl-11 pr-3 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 border border-[var(--line,#cbd5e1)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 text-xs outline-none focus:border-teal-500"
+								className="w-full min-h-[44px] !pl-11 pr-3 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 border border-[var(--line,#cbd5e1)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 text-xs outline-none focus:border-[var(--teal,var(--brand-primary))]"
 							/>
 						</div>
 
@@ -371,7 +371,7 @@ export function FrontdeskPerspectiveView() {
 										<div className="flex items-start justify-between gap-2">
 											<div>
 												<div className="flex items-center gap-2">
-													<span className="text-xs font-bold text-teal-800 dark:text-teal-200 bg-teal-100 dark:bg-teal-950 px-1.5 py-0.5 rounded border border-teal-500/20">
+													<span className="text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] px-1.5 py-0.5 rounded border border-[var(--teal,var(--brand-primary))]/20">
 														{call.time}
 													</span>
 													<strong className="text-sm text-[var(--ink,#0f172a)] dark:text-white">{call.patientName}</strong>
@@ -380,7 +380,7 @@ export function FrontdeskPerspectiveView() {
 													<Phone size={12} className="text-[var(--muted,#64748b)] dark:text-slate-400" />
 													<a
 														href={`tel:${call.phone}`}
-														className="text-teal-700 dark:text-teal-300 font-semibold hover:underline"
+														className="text-[var(--teal-dark,var(--teal))] font-semibold hover:underline"
 													>
 														{call.phone}
 													</a>

@@ -28,7 +28,7 @@ const TreatmentPlanCardItem: React.FC<{
 			case "completed":
 				return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30";
 			case "in_progress":
-				return "bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30";
+				return "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/30";
 			case "cancelled":
 				return "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30";
 			default:
@@ -290,7 +290,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 								aria-label="Управление полисами ДМС и гарантийными письмами (СОГАЗ, Ингосстрах, РЕСО)"
 								data-testid="patient-dms-manager-btn"
 							>
-								<Shield className="w-4 h-4 inline mr-1.5 text-sky-500" />
+								<Shield className="w-4 h-4 inline mr-1.5 text-[var(--teal,var(--brand-primary))]" />
 								Управление ДМС
 							</button>
 							<button

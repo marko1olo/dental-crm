@@ -228,7 +228,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 										? "bg-rose-500 text-white"
 										: evaluation.hasHighRiskFlags
 											? "bg-amber-500 text-white"
-											: "bg-teal-600 text-white"
+											: "bg-[var(--brand-primary)] text-white"
 								}`}
 							>
 								<Stethoscope className="w-5 h-5" />
@@ -303,7 +303,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 						<button
 							type="button"
 							onClick={() => applyPreset("pregnant_2")}
-							className="px-2.5 py-1 text-xs rounded-lg font-semibold bg-sky-50 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 border border-sky-300 dark:border-sky-700/50 hover:bg-sky-100 cursor-pointer shrink-0 transition-colors"
+							className="px-2.5 py-1 text-xs rounded-lg font-semibold bg-pink-50 text-pink-800 dark:bg-pink-950/60 dark:text-pink-300 border border-pink-300 dark:border-pink-700/50 hover:bg-pink-100 cursor-pointer shrink-0 transition-colors"
 						>
 							🤰 Беременность 2 трим.
 						</button>
@@ -489,8 +489,8 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 
 						{/* 2. БЕРЕМЕННОСТЬ И ЛАКТАЦИЯ */}
 						<div className="anamnesis-group">
-							<h3 className="anamnesis-group__title text-sky-700 dark:text-sky-400">
-								<Baby className="w-4 h-4 text-sky-600" />
+							<h3 className="anamnesis-group__title text-pink-700 dark:text-pink-400">
+								<Baby className="w-4 h-4 text-pink-600" />
 								2. Беременность и период лактации
 							</h3>
 							<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -509,8 +509,8 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 											onClick={() => updateField("pregnancyTrimester", t.key as PregnancyTrimester)}
 											className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center text-center ${
 												isSelected
-													? "bg-sky-600 text-white border-sky-600 shadow-sm"
-													: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#1e293b)] dark:text-slate-200 border-[var(--line,#e2e8f0)] dark:border-slate-700 hover:border-sky-500"
+													? "bg-pink-600 text-white border-pink-600 shadow-sm"
+													: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#1e293b)] dark:text-slate-200 border-[var(--line,#e2e8f0)] dark:border-slate-700 hover:border-pink-500"
 											}`}
 										>
 											{t.label}
@@ -638,7 +638,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 						<div className="anamnesis-group">
 							<div className="flex items-center justify-between">
 								<h3 className="anamnesis-group__title text-[var(--ink,#1e293b)] dark:text-slate-200">
-									<FileText className="w-4 h-4 text-teal-600" />
+									<FileText className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
 									4. Дополнительные примечания врача и постоянные препараты
 								</h3>
 								<SmartMicrophoneButton
@@ -658,7 +658,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 								value={profile.customChronicNotes || ""}
 								onChange={(e) => updateField("customChronicNotes", e.target.value)}
 								placeholder="Индивидуальные особенности, перенесенные операции, принимаемые медикаменты или аллергические реакции в анамнезе..."
-								className="w-full p-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-900 text-xs text-[var(--ink,#1e293b)] dark:text-slate-100 outline-none focus:border-teal-500 resize-y"
+								className="w-full p-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-900 text-xs text-[var(--ink,#1e293b)] dark:text-slate-100 outline-none focus:border-[var(--teal,var(--brand-primary))] resize-y"
 							/>
 						</div>
 
@@ -671,7 +671,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 								<button
 									type="button"
 									onClick={handleSyncToEmk}
-									className="text-xs font-bold text-teal-700 dark:text-teal-400 hover:underline inline-flex items-center gap-1 bg-transparent border-0 cursor-pointer"
+									className="text-xs font-bold text-[var(--teal-dark,var(--teal))] hover:underline inline-flex items-center gap-1 bg-transparent border-0 cursor-pointer"
 								>
 									<Copy className="w-3.5 h-3.5" />
 									Скопировать
@@ -691,7 +691,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 								onClick={handleSyncToEmk}
 								className="safety-btn safety-btn--outline"
 							>
-								<Copy className="w-4 h-4 text-teal-600" />
+								<Copy className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
 								1-Click в протокол 043/у
 							</button>
 						</div>

@@ -249,8 +249,8 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 			>
 				<div className="flex items-center justify-between gap-2">
 					<div className="flex items-center gap-2">
-						<Bot size={18} className="text-sky-600 dark:text-sky-400 shrink-0" />
-						<h4 className="font-semibold text-sm text-sky-600 dark:text-sky-400 m-0 leading-snug">
+						<Bot size={18} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+						<h4 className="font-semibold text-sm text-[var(--teal,var(--brand-primary))] m-0 leading-snug">
 							Записать словами: скажите или впишите
 						</h4>
 					</div>
@@ -496,7 +496,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 							data-schedule-create-toggle="true"
 							aria-expanded={showCreateForm}
 							onClick={() => setShowCreateForm(!showCreateForm)}
-							className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+							className="secondary-button focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors"
 							style={{ minHeight: "44px", padding: "0 12px", fontSize: "12px" }}
 						>
 							{showCreateForm
@@ -509,7 +509,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 									type="checkbox"
 									checked={useManualSelects}
 									onChange={(e) => setUseManualSelects(e.target.checked)}
-									className="focus:ring-2 focus:ring-teal-600 focus:outline-none"
+									className="focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
 								/>
 								Классические списки
 							</label>

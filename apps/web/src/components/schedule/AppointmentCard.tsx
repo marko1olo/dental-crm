@@ -512,13 +512,13 @@ export function AppointmentCard(props: AppointmentCardProps) {
 					onFocus={() => setIsHoverPreviewOpen(true)}
 					onBlur={() => setIsHoverPreviewOpen(false)}
 					aria-label={`Карточка приема: ${appointmentPatientName}, ${formatTime(appointment.startsAt)} - ${formatTime(appointment.endsAt)}`}
-					className={`appointment-card mode-fit-card glass-panel rounded-xl p-4 mb-3 shadow-sm transition-all focus:ring-2 focus:ring-teal-500 focus:outline-none min-w-0 max-w-full relative ${
+					className={`appointment-card mode-fit-card glass-panel rounded-xl p-4 mb-3 shadow-sm transition-all focus:ring-2 focus:ring-[var(--teal)] focus:outline-none min-w-0 max-w-full relative ${
 						isCito
 							? "border-rose-500 ring-2 ring-rose-500/40 bg-rose-500/5"
 							: displayStatus === "confirmed"
 								? "border-emerald-500/50"
 								: displayStatus === "in_treatment"
-									? "border-sky-500/60"
+									? "border-[var(--teal,var(--brand-primary))]/60"
 									: displayStatus === "arrived"
 										? "border-amber-500/50"
 										: displayStatus === "completed"
@@ -539,13 +539,13 @@ export function AppointmentCard(props: AppointmentCardProps) {
 					{/* Крупное всплывающее превью пациента по наведению */}
 					{isHoverPreviewOpen && !appointmentEditing && (
 						<div
-							className="appointment-patient-hover-preview p-3.5 rounded-2xl bg-white dark:bg-slate-900 border-2 border-teal-500 shadow-2xl space-y-2.5 animate-in fade-in zoom-in-95 duration-150 text-xs text-slate-800 dark:text-slate-200 z-30"
+							className="appointment-patient-hover-preview p-3.5 rounded-2xl bg-[var(--paper)] border-2 border-[var(--teal,var(--brand-primary))] shadow-2xl space-y-2.5 animate-in fade-in zoom-in-95 duration-150 text-xs text-[var(--ink)] z-30"
 							data-testid="appointment-patient-hover-preview"
 						>
 							{/* 1. Крупное ФИО пациента (18px bold) */}
-							<div className="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
-								<span className="text-[18px] font-black text-slate-900 dark:text-slate-100 flex items-center gap-1.5 truncate">
-									<User className="w-5 h-5 text-teal-600 dark:text-teal-400 shrink-0" />
+							<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-2">
+								<span className="text-[18px] font-black text-[var(--ink)] flex items-center gap-1.5 truncate">
+									<User className="w-5 h-5 text-[var(--teal,var(--brand-primary))] shrink-0" />
 									{appointmentPatientName || "Пациент"}
 								</span>
 								{patientBalance !== null && (
@@ -569,8 +569,8 @@ export function AppointmentCard(props: AppointmentCardProps) {
 
 							{/* 2. Номер телефона с кнопкой WhatsApp */}
 							<div className="flex items-center justify-between gap-2">
-								<div className="flex items-center gap-1.5 font-mono text-xs font-semibold text-slate-700 dark:text-slate-300">
-									<Phone className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+								<div className="flex items-center gap-1.5 font-mono text-xs font-semibold text-[var(--ink)]">
+									<Phone className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))] shrink-0" />
 									<span>{appointmentPatient?.phone || "Телефон не указан"}</span>
 								</div>
 								{appointmentPatient?.phone && (
@@ -654,7 +654,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									displayStatus === "confirmed"
 										? "bg-emerald-500/15 border-emerald-500/50 text-emerald-800 dark:text-emerald-200"
 										: displayStatus === "in_treatment"
-											? "bg-sky-500/15 border-sky-500/50 text-sky-800 dark:text-sky-200"
+											? "bg-[var(--teal-soft,var(--paper-soft))] border-[var(--teal,var(--brand-primary))]/50 text-[var(--teal-dark,var(--teal))]"
 											: displayStatus === "arrived"
 												? "bg-amber-500/15 border-amber-500/50 text-amber-800 dark:text-amber-200"
 												: displayStatus === "completed"
@@ -666,7 +666,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								title={appointmentLabels?.[displayStatus] ?? String(displayStatus ?? "")}
 							>
 								{displayStatus === "in_treatment" && (
-									<span className="w-2 h-2 rounded-full bg-sky-500 animate-ping shrink-0" />
+									<span className="w-2 h-2 rounded-full bg-[var(--teal,var(--brand-primary))] animate-ping shrink-0" />
 								)}
 								{displayStatus === "arrived" && (
 									<span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
@@ -914,7 +914,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						</button>
 
 						<button
-							className="secondary-button appointment-repeat-button min-h-[44px] px-3.5 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors text-xs font-semibold flex items-center justify-center cursor-pointer"
+							className="secondary-button appointment-repeat-button min-h-[44px] px-3.5 py-2 focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors text-xs font-semibold flex items-center justify-center cursor-pointer"
 							type="button"
 							onClick={() => repeatAppointment(appointment)}
 							aria-label={`Повторить запись: ${appointmentPatientName}. Форма новой записи откроется заполненной, останется выбрать время`}
@@ -924,7 +924,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						</button>
 						{copyAppointmentToBuffer ? (
 							<button
-								className="secondary-button appointment-buffer-button min-h-[44px] px-3.5 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors text-xs font-semibold flex items-center justify-center cursor-pointer"
+								className="secondary-button appointment-buffer-button min-h-[44px] px-3.5 py-2 focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors text-xs font-semibold flex items-center justify-center cursor-pointer"
 								type="button"
 								onClick={() => copyAppointmentToBuffer(appointment)}
 								aria-label={`В буфер: ${appointmentPatientName}`}
@@ -934,7 +934,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							</button>
 						) : null}
 						<button
-							className="secondary-button appointment-edit-button min-h-[44px] px-3.5 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors text-xs font-semibold flex items-center justify-center cursor-pointer"
+							className="secondary-button appointment-edit-button min-h-[44px] px-3.5 py-2 focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors text-xs font-semibold flex items-center justify-center cursor-pointer"
 							type="button"
 							onClick={() => openAppointmentEditor(appointment)}
 							aria-expanded={appointmentEditing}

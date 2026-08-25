@@ -94,7 +94,7 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 				{/* Header */}
 				<div className="p-4 sm:p-5 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between">
 					<div className="flex items-center gap-3">
-						<div className="w-10 h-10 rounded-xl bg-teal-500/15 text-teal-600 dark:text-teal-400 flex items-center justify-center border border-teal-500/30">
+						<div className="w-10 h-10 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] flex items-center justify-center border border-[var(--teal,var(--brand-primary))]/30">
 							<Search className="w-5 h-5" />
 						</div>
 						<div>
@@ -131,8 +131,8 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 									onClick={() => setSelectedDoctorId(doc.id)}
 									className={`min-h-[44px] px-3.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
 										selectedDoctorId === doc.id
-											? "bg-teal-600 text-white shadow-sm"
-											: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-teal-400"
+											? "bg-[var(--teal,var(--brand-primary))] text-white shadow-sm"
+											: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,var(--brand-primary))]"
 									}`}
 								>
 									{doc.fullName}
@@ -164,8 +164,8 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 									onClick={() => setStartDateOffsetDays(p.offset)}
 									className={`min-h-[44px] px-3.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
 										startDateOffsetDays === p.offset
-											? "bg-teal-700 text-white shadow-sm border border-teal-600"
-											: "border border-teal-600/30 bg-teal-50/50 dark:bg-teal-950/20 text-teal-800 dark:text-teal-300 hover:bg-teal-100/60 dark:hover:bg-teal-900/40"
+											? "bg-[var(--teal-dark,var(--teal))] text-white shadow-sm border border-[var(--teal,var(--brand-primary))]"
+											: "border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal-soft,var(--paper-soft))]"
 									}`}
 								>
 									<Calendar size={13} />
@@ -180,7 +180,7 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 						{/* Horizon */}
 						<div className="space-y-1">
 							<span className="text-xs font-bold text-[var(--muted,#64748b)] flex items-center gap-1">
-								<Calendar size={13} className="text-teal-600" /> Горизонт поиска:
+								<Calendar size={13} className="text-[var(--teal,var(--brand-primary))]" /> Горизонт поиска:
 							</span>
 							<div className="flex gap-1.5">
 								{[7, 14].map((h) => (
@@ -190,7 +190,7 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 										onClick={() => setHorizonDays(h as 7 | 14)}
 										className={`min-h-[44px] flex-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
 											horizonDays === h
-												? "bg-teal-600 text-white shadow-sm"
+												? "bg-[var(--teal,var(--brand-primary))] text-white shadow-sm"
 												: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
 										}`}
 									>
@@ -203,7 +203,7 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 						{/* Duration */}
 						<div className="space-y-1">
 							<span className="text-xs font-bold text-[var(--muted,#64748b)] flex items-center gap-1">
-								<Clock size={13} className="text-teal-600" /> Длительность приема:
+								<Clock size={13} className="text-[var(--teal,var(--brand-primary))]" /> Длительность приема:
 							</span>
 							<div className="flex gap-1">
 								{[30, 45, 60, 90, 120].map((dur) => (
@@ -213,7 +213,7 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 										onClick={() => setDurationMinutes(dur)}
 										className={`min-h-[44px] flex-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
 											durationMinutes === dur
-												? "bg-teal-600 text-white shadow-sm"
+												? "bg-[var(--teal,var(--brand-primary))] text-white shadow-sm"
 												: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
 										}`}
 									>
@@ -226,7 +226,7 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 						{/* Time of Day */}
 						<div className="space-y-1">
 							<span className="text-xs font-bold text-[var(--muted,#64748b)] flex items-center gap-1">
-								<Sun size={13} className="text-teal-600" /> Время суток:
+								<Sun size={13} className="text-[var(--teal,var(--brand-primary))]" /> Время суток:
 							</span>
 							<div className="flex gap-1">
 								{(
@@ -243,7 +243,7 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 										onClick={() => setTimeOfDayFilter(t.id)}
 										className={`min-h-[44px] flex-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
 											timeOfDayFilter === t.id
-												? "bg-teal-600 text-white shadow-sm"
+												? "bg-[var(--teal,var(--brand-primary))] text-white shadow-sm"
 												: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
 										}`}
 									>
@@ -284,7 +284,7 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 											</span>
 										)}
 									</div>
-									<span className="text-xs font-semibold text-teal-700 dark:text-teal-300">
+									<span className="text-xs font-semibold text-[var(--teal-dark,var(--teal))]">
 										{day.isDayOff ? "—" : `Свободно слотов: ${day.slots.length}`}
 									</span>
 								</div>
@@ -307,7 +307,7 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 													onSelectSlot(slot);
 													onClose();
 												}}
-												className="min-h-[44px] p-2 rounded-xl border border-teal-600/30 bg-[var(--paper,#ffffff)] hover:bg-teal-500/10 hover:border-teal-500 text-teal-800 dark:text-teal-200 text-xs font-bold flex flex-col items-center justify-center transition-all cursor-pointer shadow-xs group"
+												className="min-h-[44px] p-2 rounded-xl border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--paper,#ffffff)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:border-[var(--teal,var(--brand-primary))] text-[var(--teal-dark,var(--teal))] text-xs font-bold flex flex-col items-center justify-center transition-all cursor-pointer shadow-xs group"
 												title={`Записать на ${slot.timeDisplay} (${slot.chairName})`}
 											>
 												<span className="font-mono text-xs group-hover:scale-105 transition-transform">

@@ -384,10 +384,10 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 
 	const statusColors = {
 		draft: "text-slate-700 dark:text-slate-400 border-slate-300 dark:border-slate-700/50 bg-slate-100 dark:bg-slate-800/40",
-		sent: "text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10",
+		sent: "text-[var(--teal,var(--brand-primary))] border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))]",
 		in_progress: "text-amber-800 dark:text-amber-400 border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10",
-		shipped: "text-sky-800 dark:text-sky-400 border-sky-300 dark:border-sky-500/30 bg-sky-50 dark:bg-sky-500/10",
-		received: "text-teal-800 dark:text-teal-400 border-teal-300 dark:border-teal-500/30 bg-teal-50 dark:bg-teal-500/10",
+		shipped: "text-[var(--teal-dark,var(--teal))] border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))]",
+		received: "text-[var(--teal-dark,var(--teal))] border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))]",
 		refitting: "text-rose-800 dark:text-rose-400 border-rose-300 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10",
 		completed: "text-emerald-800 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10",
 	};
@@ -400,7 +400,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 				className="bg-slate-50/70 dark:bg-slate-800/20 p-4 border border-slate-200 dark:border-slate-700/40 rounded-xl space-y-4 shadow-sm"
 			>
 				<h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2 m-0">
-					<FlaskConical className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+					<FlaskConical className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
 					Новый наряд ЗТЛ
 				</h4>
 
@@ -415,7 +415,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							placeholder="Напр. 16, 24"
 							value={toothFdi}
 							onChange={(e) => setToothFdi(e.target.value)}
-							className="w-full min-h-[38px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-500"
+							className="w-full min-h-[38px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[var(--teal,var(--brand-primary))]"
 						/>
 					</div>
 
@@ -430,7 +430,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							id="lab-order-material"
 							value={material}
 							onChange={(e) => setMaterial(e.target.value)}
-							className="w-full min-h-[38px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-500"
+							className="w-full min-h-[38px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[var(--teal,var(--brand-primary))]"
 						>
 							<option value="zirconia">Диоксид циркония</option>
 							<option value="emax">E.max (керамика)</option>
@@ -451,7 +451,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							id="lab-order-color-vita"
 							value={colorVita}
 							onChange={(e) => setColorVita(e.target.value)}
-							className="w-full min-h-[38px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-500"
+							className="w-full min-h-[38px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[var(--teal,var(--brand-primary))]"
 						>
 							{[
 								"OM1",
@@ -488,7 +488,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							placeholder="например 12500"
 							value={priceRub}
 							onChange={(e) => setPriceRub(e.target.value)}
-							className="w-full min-h-[38px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-500"
+							className="w-full min-h-[38px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[var(--teal,var(--brand-primary))]"
 						/>
 					</div>
 				</div>
@@ -505,7 +505,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							id="lab-order-doctor"
 							value={doctorId}
 							onChange={(e) => setDoctorId(e.target.value)}
-							className="w-full min-h-[38px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-500"
+							className="w-full min-h-[38px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[var(--teal,var(--brand-primary))]"
 						>
 							<option value="">Не указан</option>
 							{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
@@ -529,7 +529,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							type="datetime-local"
 							value={dueDate}
 							onChange={(e) => setDueDate(e.target.value)}
-							className="w-full min-h-[38px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-500"
+							className="w-full min-h-[38px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[var(--teal,var(--brand-primary))]"
 						/>
 					</div>
 
@@ -546,7 +546,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							placeholder="Опишите особенности прикуса, уступы..."
 							value={clinicalNotes}
 							onChange={(e) => setClinicalNotes(e.target.value)}
-							className="w-full min-h-[38px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-500"
+							className="w-full min-h-[38px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[var(--teal,var(--brand-primary))]"
 						/>
 					</div>
 				</div>
@@ -555,7 +555,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 					type="submit"
 					disabled={isCreating}
 					aria-busy={isCreating}
-					className="w-full min-h-[44px] py-2 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold rounded-lg text-xs transition-colors shadow-md shadow-teal-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+					className="w-full min-h-[44px] py-2 bg-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-dark,var(--brand-primary))] text-white font-bold rounded-lg text-xs transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
 				>
 					{isCreating ? "Создание..." : "Создать наряд ЗТЛ"}
 				</button>
@@ -658,7 +658,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 									*/}
 									{order.dueDate && (
 										<div className="text-xs text-slate-400 flex items-center gap-1">
-											<Calendar className="w-3.5 h-3.5 text-teal-400/80" />
+											<Calendar className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
 											Срок:{" "}
 											{new Date(order.dueDate).toLocaleDateString("ru-RU", {
 												day: "numeric",
@@ -688,7 +688,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 										«цены нет» (null) по-прежнему не показывается вовсе.
 									*/}
 									{order.priceRub !== null && order.priceRub !== undefined ? (
-										<span className="font-semibold text-teal-400 mr-2">
+										<span className="font-semibold text-[var(--teal,var(--brand-primary))] mr-2">
 											{money(order.priceRub)}
 										</span>
 									) : null}
@@ -700,7 +700,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 												e.target.value as LabOrder["status"],
 											)
 										}
-										className="py-1.5 px-2.5 min-h-[44px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-200 focus:outline-none focus:border-teal-500 text-xs"
+										className="py-1.5 px-2.5 min-h-[44px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-200 focus:outline-none focus:border-[var(--teal,var(--brand-primary))] text-xs"
 										title="Изменить статус заказа ЗТЛ"
 									>
 										{clinicStatusFlow.map((s) => (
@@ -719,7 +719,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 									<button
 										type="button"
 										onClick={() => copyPortalLink(order.secureToken)}
-										className="py-1.5 px-2.5 min-h-[44px] bg-teal-50 dark:bg-teal-500/10 hover:bg-teal-100 dark:hover:bg-teal-500/20 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-500/20 rounded-lg font-semibold transition-colors flex items-center gap-1 text-xs cursor-pointer"
+										className="py-1.5 px-2.5 min-h-[44px] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/20 rounded-lg font-semibold transition-colors flex items-center gap-1 text-xs cursor-pointer"
 									>
 										<Link className="w-3.5 h-3.5" />
 										Ссылка технику

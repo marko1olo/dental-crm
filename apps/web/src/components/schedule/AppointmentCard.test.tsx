@@ -302,7 +302,7 @@ describe("AppointmentCard Suite", () => {
 
 			assert.ok(html.includes(mockAppointmentLabels[st]), `должен содержать лейбл статуса ${st}`);
 			if (st === "in_treatment") {
-				assert.ok(html.includes("bg-sky-500 animate-ping"), "должен содержать синий пульсирующий индикатор");
+				assert.ok(html.includes("animate-ping"), "должен содержать пульсирующий индикатор");
 			} else if (st === "confirmed") {
 				assert.ok(html.includes("border-emerald-500"), "должен содержать зеленый контур подтверждения");
 			} else if (st === "arrived") {

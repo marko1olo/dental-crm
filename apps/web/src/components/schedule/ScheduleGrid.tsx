@@ -181,7 +181,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 				<div className="p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-wrap items-center justify-between gap-3 text-xs">
 					<div className="flex items-center gap-3">
 						<span className="font-bold text-[var(--ink)] flex items-center gap-1.5">
-							<CalendarCheck size={16} className="text-teal-600" />
+							<CalendarCheck size={16} className="text-[var(--teal,var(--brand-primary))]" />
 							Загрузка клиники: {dailyTally.totalAppointmentsCount} визитов ({dailyTally.clinicOccupancyPercent}%)
 						</span>
 						<span className="text-[var(--muted)]">·</span>
@@ -225,7 +225,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 							>
 								<span>{chair.name}</span>
 								{chairStat && chairStat.appointmentsCount > 0 && (
-									<span className="text-[10px] font-normal font-sans lowercase px-2 py-0.5 rounded-full bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/20">
+									<span className="text-[10px] font-normal font-sans lowercase px-2 py-0.5 rounded-full bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/20">
 										{chairStat.appointmentsCount} виз. ({chairStat.occupancyPercent}%)
 									</span>
 								)}
@@ -345,7 +345,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																	: a.status === "confirmed"
 																		? "bg-emerald-500/15 border-emerald-500/50 text-emerald-800 dark:text-emerald-200"
 																		: a.status === "in_treatment"
-																			? "bg-sky-500/15 border-sky-500/50 text-sky-800 dark:text-sky-200"
+																			? "bg-[var(--teal-soft,var(--paper-soft))] border-[var(--teal,var(--brand-primary))]/50 text-[var(--teal-dark,var(--teal))]"
 																			: a.status === "arrived"
 																				? "bg-amber-500/15 border-amber-500/50 text-amber-800 dark:text-amber-200"
 																				: a.status === "completed"
@@ -358,13 +358,13 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 														{/* Крупное всплывающее превью пациента по наведению */}
 														{hoveredApptId === a.id && (
 															<div
-																className="appointment-patient-hover-preview p-3.5 rounded-2xl bg-white dark:bg-slate-900 border-2 border-teal-500 shadow-2xl space-y-2.5 animate-in fade-in zoom-in-95 duration-150 text-xs text-slate-800 dark:text-slate-200 z-30"
+																className="appointment-patient-hover-preview p-3.5 rounded-2xl bg-[var(--paper)] border-2 border-[var(--teal,var(--brand-primary))] shadow-2xl space-y-2.5 animate-in fade-in zoom-in-95 duration-150 text-xs text-[var(--ink)] z-30"
 																data-testid="schedule-grid-patient-hover-preview"
 															>
 																{/* 1. Крупное ФИО пациента (18px bold) */}
-																<div className="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
-																	<span className="text-[18px] font-black text-slate-900 dark:text-slate-100 flex items-center gap-1.5 truncate">
-																		<User className="w-5 h-5 text-teal-600 dark:text-teal-400 shrink-0" />
+																<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-2">
+																	<span className="text-[18px] font-black text-[var(--ink)] flex items-center gap-1.5 truncate">
+																		<User className="w-5 h-5 text-[var(--teal,var(--brand-primary))] shrink-0" />
 																		{pName || "Пациент"}
 																	</span>
 																	{pBalance !== null && (
@@ -388,8 +388,8 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 
 																{/* 2. Номер телефона с кнопкой WhatsApp */}
 																<div className="flex items-center justify-between gap-2">
-																	<div className="flex items-center gap-1.5 font-mono text-xs font-semibold text-slate-700 dark:text-slate-300">
-																		<Phone className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+																	<div className="flex items-center gap-1.5 font-mono text-xs font-semibold text-[var(--ink)]">
+																		<Phone className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))] shrink-0" />
 																		<span>{patObj?.phone || "Телефон не указан"}</span>
 																	</div>
 																	{patObj?.phone && (
@@ -475,7 +475,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																)}
 																<span className={`text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md shrink-0 flex items-center gap-1 ${
 																	a.status === "in_treatment"
-																		? "bg-sky-500 text-white shadow-xs"
+																		? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 																		: a.status === "arrived"
 																			? "bg-amber-500 text-white shadow-xs"
 																			: a.status === "confirmed"
@@ -571,8 +571,8 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																		}}
 																		className={`p-2 rounded-xl border min-h-[48px] min-w-[48px] flex items-center justify-center transition-all cursor-pointer ${
 																			a.status === "in_treatment"
-																				? "bg-sky-500 text-white border-sky-600 font-bold shadow-xs"
-																				: "bg-[var(--paper-soft)] border-[var(--line)] text-sky-700 dark:text-sky-300 hover:bg-sky-500/20"
+																				? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal-dark,var(--teal))] font-bold shadow-xs"
+																				: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal-soft,var(--paper-soft))]"
 																		}`}
 																		title="В кресле"
 																		aria-label={`Отметить статус В кресле для ${pName}`}
@@ -587,8 +587,8 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																		}}
 																		className={`p-2 rounded-xl border min-h-[48px] min-w-[48px] flex items-center justify-center transition-all cursor-pointer ${
 																			a.status === "completed"
-																				? "bg-teal-500 text-white border-teal-600 font-bold shadow-xs"
-																				: "bg-[var(--paper-soft)] border-[var(--line)] text-teal-700 dark:text-teal-300 hover:bg-teal-500/20"
+																				? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal-dark,var(--teal))] font-bold shadow-xs"
+																				: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal-soft,var(--paper-soft))]"
 																		}`}
 																		title="Завершен"
 																		aria-label={`Отметить статус Завершен для ${pName}`}
@@ -635,7 +635,7 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 																				showToast(`Текст напоминания для ${pName} скопирован в буфер`, "success");
 																			}
 																		}}
-																		className="p-2 rounded-xl border border-teal-500/30 bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 min-h-[48px] min-w-[48px] flex items-center justify-center transition-all cursor-pointer"
+																		className="p-2 rounded-xl border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] min-h-[48px] min-w-[48px] flex items-center justify-center transition-all cursor-pointer"
 																		title={`Скопировать текст напоминания (SMS) для ${pName}`}
 																		aria-label={`Скопировать SMS напоминание для ${pName}`}
 																	>

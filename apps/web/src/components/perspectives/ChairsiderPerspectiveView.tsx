@@ -86,17 +86,17 @@ const CHAIRSIDE_TOOTH_STATUS_OPTIONS: ReadonlyArray<{
 		state: "Filled",
 		label: "Пломба",
 		shortCode: "Пл",
-		colorClass: "bg-teal-500/15 text-teal-800 dark:text-teal-200 hover:bg-teal-500/25",
-		borderClass: "border-teal-500/40",
-		badgeClass: "bg-teal-600 text-white",
+		colorClass: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] hover:brightness-105",
+		borderClass: "border-[var(--teal,var(--brand-primary))]/40",
+		badgeClass: "bg-[var(--teal,var(--brand-primary))] text-white",
 	},
 	{
 		state: "Crown",
 		label: "Коронка",
 		shortCode: "Кр",
-		colorClass: "bg-blue-500/15 text-blue-700 dark:text-blue-300 hover:bg-blue-500/25",
-		borderClass: "border-blue-500/40",
-		badgeClass: "bg-blue-600 text-white",
+		colorClass: "bg-[var(--paper-soft)] text-[var(--ink)] hover:brightness-105",
+		borderClass: "border-[var(--teal,var(--brand-primary))]/40",
+		badgeClass: "bg-[var(--teal,var(--brand-primary))] text-white",
 	},
 	{
 		state: "Implant",
@@ -110,9 +110,9 @@ const CHAIRSIDE_TOOTH_STATUS_OPTIONS: ReadonlyArray<{
 		state: "Planned_Implant",
 		label: "План импл.",
 		shortCode: "ПлИ",
-		colorClass: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/25",
-		borderClass: "border-indigo-500/40",
-		badgeClass: "bg-indigo-600 text-white",
+		colorClass: "bg-[var(--paper-soft)] text-[var(--teal-dark,var(--teal))] hover:brightness-105",
+		borderClass: "border-[var(--teal,var(--brand-primary))]/40",
+		badgeClass: "bg-[var(--teal,var(--brand-primary))] text-white",
 	},
 	{
 		state: "Missing",
@@ -446,7 +446,7 @@ export function ChairsiderPerspectiveView() {
 
 					<div>
 						<div className="flex items-center gap-2">
-							<span className="text-xs uppercase tracking-widest font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/70 px-2.5 py-0.5 rounded-md border border-teal-500/40">
+							<span className="text-xs uppercase tracking-widest font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] px-2.5 py-0.5 rounded-md border border-[var(--teal,var(--brand-primary))]/40">
 								Стерильный планшет у кресла
 							</span>
 							{activePatient && (
@@ -481,7 +481,7 @@ export function ChairsiderPerspectiveView() {
 							aria-label="Выбор пациента у кресла"
 							value={activePatient?.id || ""}
 							onChange={(e) => setSelectedPatientId(e.target.value)}
-							className="min-h-[56px] px-4 py-2 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 border border-[var(--line,#cbd5e1)] dark:border-slate-700 rounded-xl text-[var(--ink,#0f172a)] dark:text-slate-100 font-semibold text-sm cursor-pointer outline-none focus:border-teal-500"
+							className="min-h-[56px] px-4 py-2 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 border border-[var(--line,#cbd5e1)] dark:border-slate-700 rounded-xl text-[var(--ink,#0f172a)] dark:text-slate-100 font-semibold text-sm cursor-pointer outline-none focus:border-[var(--teal,var(--brand-primary))]"
 						>
 							{dashboard.patients.map((p) => (
 								<option key={p.id} value={p.id}>
@@ -496,10 +496,10 @@ export function ChairsiderPerspectiveView() {
 						type="button"
 						data-testid="chairsider-egisz-cda-btn"
 						onClick={() => setIsEgiszModalOpen(true)}
-						className="min-h-[56px] px-3.5 py-2.5 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-800 dark:text-teal-300 font-bold flex items-center gap-2 border border-teal-500/30 active:scale-95 transition-all text-sm cursor-pointer shadow-sm"
+						className="min-h-[56px] px-3.5 py-2.5 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] hover:brightness-105 text-[var(--teal-dark,var(--teal))] font-bold flex items-center gap-2 border border-[var(--teal,var(--brand-primary))]/30 active:scale-95 transition-all text-sm cursor-pointer shadow-sm"
 						title="Открыть СЭМД ЕГИСЗ (CDA R2) валидатор и экспорт"
 					>
-						<FileCode size={20} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<FileCode size={20} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 						<span className="hidden md:inline">СЭМД ЕГИСЗ</span>
 					</button>
 				</div>
@@ -513,12 +513,12 @@ export function ChairsiderPerspectiveView() {
 						{/* View Mode Toggle & Header */}
 						<div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
 							<div className="flex items-center gap-2">
-								<Stethoscope size={24} className="text-teal-600 dark:text-teal-400 shrink-0" />
+								<Stethoscope size={24} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 								<h2 className="text-lg font-bold m-0 text-[var(--ink,#0f172a)] dark:text-slate-100">
 									Зубная формула (FDI)
 								</h2>
 								{isLoadingTeeth && (
-									<span className="text-xs text-teal-600 dark:text-teal-400 flex items-center gap-1">
+									<span className="text-xs text-[var(--teal,var(--brand-primary))] flex items-center gap-1">
 										<Loader2 size={14} className="animate-spin" /> Загрузка...
 									</span>
 								)}
@@ -536,8 +536,8 @@ export function ChairsiderPerspectiveView() {
 									aria-pressed={viewMode === "svg"}
 									className={`min-h-[44px] px-1.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 transition-all cursor-pointer ${
 										viewMode === "svg"
-											? "bg-teal-600 text-white shadow-md shadow-teal-600/30"
-											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-300"
+											? "bg-[var(--teal,var(--brand-primary))] text-white shadow-md shadow-[var(--teal,var(--brand-primary))]/30"
+											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-[var(--teal,var(--brand-primary))]"
 									}`}
 								>
 									<span className="text-base sm:text-sm">🦷</span>
@@ -549,8 +549,8 @@ export function ChairsiderPerspectiveView() {
 									aria-pressed={viewMode === "tiles"}
 									className={`min-h-[44px] px-1.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 transition-all cursor-pointer ${
 										viewMode === "tiles"
-											? "bg-teal-600 text-white shadow-md shadow-teal-600/30"
-											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-300"
+											? "bg-[var(--teal,var(--brand-primary))] text-white shadow-md shadow-[var(--teal,var(--brand-primary))]/30"
+											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-[var(--teal,var(--brand-primary))]"
 									}`}
 								>
 									<span className="text-base sm:text-sm">🔲</span>
@@ -562,8 +562,8 @@ export function ChairsiderPerspectiveView() {
 									aria-pressed={viewMode === "perio"}
 									className={`min-h-[44px] px-1.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 transition-all cursor-pointer ${
 										viewMode === "perio"
-											? "bg-teal-600 text-white shadow-md shadow-teal-600/30"
-											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-300"
+											? "bg-[var(--teal,var(--brand-primary))] text-white shadow-md shadow-[var(--teal,var(--brand-primary))]/30"
+											: "text-[var(--ink,#0f172a)] dark:text-slate-300 hover:text-[var(--teal,var(--brand-primary))]"
 									}`}
 								>
 									<span className="text-base sm:text-sm">📊</span>
@@ -598,7 +598,7 @@ export function ChairsiderPerspectiveView() {
 								<div>
 									<div className="text-xs font-bold text-[var(--muted,#64748b)] dark:text-slate-400 uppercase tracking-wider mb-2.5 flex items-center justify-between">
 										<span>Верхняя челюсть (18–28)</span>
-										<span className="text-xs font-bold text-teal-700 dark:text-teal-300">Крупные тач-плитки 64–76px</span>
+										<span className="text-xs font-bold text-[var(--teal-dark,var(--teal))]">Крупные тач-плитки 64–76px</span>
 									</div>
 									<div className="grid grid-cols-8 sm:grid-cols-16 gap-2 md:gap-2.5 overflow-x-auto pb-2">
 										{upperJawTeeth.map((tNum) => {
@@ -613,14 +613,14 @@ export function ChairsiderPerspectiveView() {
 													onClick={() => setSelectedTooth(tNum)}
 													className={`min-h-[64px] min-w-[48px] md:min-h-[76px] md:min-w-[60px] p-1.5 rounded-xl flex flex-col items-center justify-center font-black transition-all border cursor-pointer active:scale-95 whitespace-nowrap shadow-xs ${
 														isSelected
-															? "bg-teal-600 text-white border-teal-700 shadow-lg shadow-teal-600/30 scale-105 z-10"
+															? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal,var(--brand-primary))] shadow-lg shadow-[var(--teal,var(--brand-primary))]/30 scale-105 z-10"
 															: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 border-[var(--line,#cbd5e1)] dark:border-slate-700"
 													}`}
 												>
 													<span className="text-sm sm:text-base md:text-lg font-black whitespace-nowrap leading-tight">{tNum}</span>
 													<span
 														className={`flex items-center justify-center gap-1 mt-0.5 text-[11px] font-bold px-1 rounded-sm whitespace-nowrap leading-none ${
-															isSelected ? "text-teal-100" : "text-[var(--ink,#0f172a)] dark:text-slate-300"
+															isSelected ? "text-white" : "text-[var(--ink,#0f172a)] dark:text-slate-300"
 														}`}
 													>
 														<span
@@ -630,7 +630,7 @@ export function ChairsiderPerspectiveView() {
 														<span className="whitespace-nowrap">{meta.code}</span>
 													</span>
 													{surfaces && surfaces.length > 0 && (
-														<span className="text-[9px] font-bold leading-tight text-teal-300 dark:text-teal-200 mt-0.5 truncate max-w-full">
+														<span className="text-[9px] font-bold leading-tight text-[var(--teal-soft,var(--paper-soft))] mt-0.5 truncate max-w-full">
 															{surfaces.join("")}
 														</span>
 													)}
@@ -658,14 +658,14 @@ export function ChairsiderPerspectiveView() {
 													onClick={() => setSelectedTooth(tNum)}
 													className={`min-h-[64px] min-w-[48px] md:min-h-[76px] md:min-w-[60px] p-1.5 rounded-xl flex flex-col items-center justify-center font-black transition-all border cursor-pointer active:scale-95 whitespace-nowrap shadow-xs ${
 														isSelected
-															? "bg-teal-600 text-white border-teal-700 shadow-lg shadow-teal-600/30 scale-105 z-10"
+															? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal,var(--brand-primary))] shadow-lg shadow-[var(--teal,var(--brand-primary))]/30 scale-105 z-10"
 															: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 border-[var(--line,#cbd5e1)] dark:border-slate-700"
 													}`}
 												>
 													<span className="text-sm sm:text-base md:text-lg font-black whitespace-nowrap leading-tight">{tNum}</span>
 													<span
 														className={`flex items-center justify-center gap-1 mt-0.5 text-[11px] font-bold px-1 rounded-sm whitespace-nowrap leading-none ${
-															isSelected ? "text-teal-100" : "text-[var(--ink,#0f172a)] dark:text-slate-300"
+															isSelected ? "text-white" : "text-[var(--ink,#0f172a)] dark:text-slate-300"
 														}`}
 													>
 														<span
@@ -675,7 +675,7 @@ export function ChairsiderPerspectiveView() {
 														<span className="whitespace-nowrap">{meta.code}</span>
 													</span>
 													{surfaces && surfaces.length > 0 && (
-														<span className="text-[9px] font-bold leading-tight text-teal-300 dark:text-teal-200 mt-0.5 truncate max-w-full">
+														<span className="text-[9px] font-bold leading-tight text-[var(--teal-soft,var(--paper-soft))] mt-0.5 truncate max-w-full">
 															{surfaces.join("")}
 														</span>
 													)}
@@ -694,12 +694,12 @@ export function ChairsiderPerspectiveView() {
 							<div className="text-sm font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 mb-3 flex items-center justify-between flex-wrap gap-2">
 								<span className="flex items-center gap-2">
 									<span>Быстрое присвоение статуса для зуба #{selectedTooth}:</span>
-									<span className="text-xs px-2 py-0.5 rounded bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border border-teal-500/30 font-bold">
+									<span className="text-xs px-2 py-0.5 rounded bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/30 font-bold">
 										{TOOTH_STATE_LABELS[selectedToothState] || selectedToothState}
 									</span>
 								</span>
 								{isSavingTooth && (
-									<span className="text-teal-600 dark:text-teal-400 text-xs flex items-center gap-1">
+									<span className="text-[var(--teal,var(--brand-primary))] text-xs flex items-center gap-1">
 										<Loader2 size={14} className="animate-spin" /> Сохранение...
 									</span>
 								)}
@@ -714,7 +714,7 @@ export function ChairsiderPerspectiveView() {
 											disabled={isSavingTooth}
 											onClick={() => void handleToothStatusSelect(opt.state)}
 											className={`min-h-[64px] p-2 rounded-xl font-bold border flex flex-col items-center justify-between gap-1 transition-all active:scale-95 cursor-pointer shadow-xs min-w-0 w-full overflow-hidden ${opt.colorClass} ${opt.borderClass} ${
-												isActive ? "ring-2 ring-teal-500 ring-offset-1 font-black shadow-md" : ""
+												isActive ? "ring-2 ring-[var(--teal)] ring-offset-1 font-black shadow-md" : ""
 											}`}
 											title={`${opt.label} (${opt.shortCode})`}
 										>
@@ -743,7 +743,7 @@ export function ChairsiderPerspectiveView() {
 									Клинический приём и документация (Форма 043/у)
 								</h3>
 								<div className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 mt-0.5">
-									Выбранный зуб: <span className="font-bold text-[var(--ink,#0f172a)] dark:text-slate-200">{cleanToothTitle}</span> · Статус: <span className="font-bold text-teal-700 dark:text-teal-300">{TOOTH_STATE_LABELS[selectedToothState] || selectedToothState}</span>
+									Выбранный зуб: <span className="font-bold text-[var(--ink,#0f172a)] dark:text-slate-200">{cleanToothTitle}</span> · Статус: <span className="font-bold text-[var(--teal-dark,var(--teal))]">{TOOTH_STATE_LABELS[selectedToothState] || selectedToothState}</span>
 								</div>
 							</div>
 						</div>
@@ -763,8 +763,8 @@ export function ChairsiderPerspectiveView() {
 										onClick={() => toggleSurface(surf)}
 										className={`min-h-[44px] min-w-[44px] px-3 py-2 rounded-lg text-xs font-bold transition-all border cursor-pointer flex items-center justify-center ${
 											isSurfActive
-												? "bg-teal-600 text-white border-teal-700 shadow-xs"
-												: "bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-600 hover:bg-teal-50 dark:hover:bg-slate-600"
+												? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal,var(--brand-primary))] shadow-xs"
+												: "bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-600 hover:bg-[var(--teal-soft,var(--paper-soft))] dark:hover:bg-slate-600"
 										}`}
 									>
 										{surf}
@@ -800,15 +800,15 @@ export function ChairsiderPerspectiveView() {
 								navigator.clipboard?.writeText?.(clipText);
 								showToast(`Протокол для зуба #${selectedTooth} скопирован для Формы 043/у`, "success");
 							}}
-							className="min-h-[74px] p-3 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-900 dark:text-teal-200 font-bold flex flex-col justify-between items-stretch border border-teal-500/30 active:scale-98 transition-all cursor-pointer shadow-xs"
+							className="min-h-[74px] p-3 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] hover:brightness-105 text-[var(--teal-dark,var(--teal))] font-bold flex flex-col justify-between items-stretch border border-[var(--teal,var(--brand-primary))]/30 active:scale-98 transition-all cursor-pointer shadow-xs"
 							title="Скопировать клинический протокол Формы 043/у в дневник"
 						>
 							<div className="flex items-center justify-between w-full gap-2">
-								<span className="flex items-center gap-1.5 font-bold text-xs text-teal-800 dark:text-teal-300">
-									<Sparkles size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+								<span className="flex items-center gap-1.5 font-bold text-xs text-[var(--teal-dark,var(--teal))]">
+									<Sparkles size={16} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 									<span>Форма 043/у</span>
 								</span>
-								<span className="text-[10px] px-1.5 py-0.5 rounded bg-teal-600 text-white font-black shrink-0">
+								<span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--teal,var(--brand-primary))] text-white font-black shrink-0">
 									SOAP
 								</span>
 							</div>
@@ -844,15 +844,15 @@ export function ChairsiderPerspectiveView() {
 							type="button"
 							data-testid="chairsider-lab-order-btn"
 							onClick={() => setIsLabModalOpen(true)}
-							className="min-h-[74px] p-3 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-900 dark:text-indigo-200 font-bold flex flex-col justify-between items-stretch border border-indigo-500/30 active:scale-98 transition-all cursor-pointer shadow-xs"
+							className="min-h-[74px] p-3 rounded-xl bg-[var(--paper-soft)] hover:brightness-105 text-[var(--ink)] font-bold flex flex-col justify-between items-stretch border border-[var(--line)] active:scale-98 transition-all cursor-pointer shadow-xs"
 							title="Оформить цифровой наряд в зуботехническую лабораторию"
 						>
 							<div className="flex items-center justify-between w-full gap-2">
-								<span className="flex items-center gap-1.5 font-bold text-xs text-indigo-800 dark:text-indigo-300">
+								<span className="flex items-center gap-1.5 font-bold text-xs text-[var(--ink)]">
 									<span className="text-sm shrink-0">🦷</span>
 									<span>Зуботехника</span>
 								</span>
-								<span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-600 text-white font-black shrink-0">
+								<span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] font-black shrink-0">
 									CAD/CAM
 								</span>
 							</div>
@@ -866,15 +866,15 @@ export function ChairsiderPerspectiveView() {
 							type="button"
 							data-testid="chairsider-launch-ct-btn"
 							onClick={handleLaunchCT}
-							className="min-h-[74px] p-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-900 dark:text-blue-200 font-bold flex flex-col justify-between items-stretch border border-blue-500/30 active:scale-98 transition-all cursor-pointer shadow-xs"
+							className="min-h-[74px] p-3 rounded-xl bg-[var(--paper-soft)] hover:brightness-105 text-[var(--ink)] font-bold flex flex-col justify-between items-stretch border border-[var(--line)] active:scale-98 transition-all cursor-pointer shadow-xs"
 							title="Открыть 3D КТ / КЛКТ / Рентген в DICOM просмотрщике"
 						>
 							<div className="flex items-center justify-between w-full gap-2">
-								<span className="flex items-center gap-1.5 font-bold text-xs text-blue-800 dark:text-blue-300">
-									<Scan size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
+								<span className="flex items-center gap-1.5 font-bold text-xs text-[var(--ink)]">
+									<Scan size={16} className="text-[var(--muted)] shrink-0" />
 									<span>Томография / Рентген</span>
 								</span>
-								<span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-600 text-white font-black shrink-0">
+								<span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] font-black shrink-0">
 									3D DICOM
 								</span>
 							</div>
@@ -890,7 +890,7 @@ export function ChairsiderPerspectiveView() {
 						<div className="lg:col-span-7 flex flex-col gap-3">
 							<div className="flex items-center justify-between">
 								<div className="flex items-center gap-2">
-									<Mic size={20} className="text-teal-600 dark:text-teal-400 shrink-0" />
+									<Mic size={20} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 									<h4 className="text-sm font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 m-0">
 										Голосовая диктовка и дневник приёма
 									</h4>
@@ -901,14 +901,14 @@ export function ChairsiderPerspectiveView() {
 								<SmartMicrophoneButton
 									context="visit"
 									onResult={handleVoiceResult}
-									className="w-16 h-16 rounded-full bg-teal-600 hover:bg-teal-500 text-white shadow-lg shadow-teal-600/30 flex items-center justify-center cursor-pointer active:scale-95 transition-transform shrink-0"
+									className="w-16 h-16 rounded-full bg-[var(--teal,var(--brand-primary))] hover:brightness-110 text-white shadow-lg shadow-[var(--teal,var(--brand-primary))]/30 flex items-center justify-center cursor-pointer active:scale-95 transition-transform shrink-0"
 								/>
 								<div className="flex-1 flex flex-col gap-2">
 									<textarea
 										value={voiceNotes}
 										onChange={(e) => setVoiceNotes(e.target.value)}
 										placeholder="Нажмите микрофон или введите текст клинического протокола (жалобы, объективно, диагноз, лечение)..."
-										className="w-full min-h-[90px] p-3 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 border border-[var(--line,#cbd5e1)] dark:border-slate-700 text-xs text-[var(--ink,#0f172a)] dark:text-slate-200 outline-none focus:border-teal-500 resize-y"
+										className="w-full min-h-[90px] p-3 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 border border-[var(--line,#cbd5e1)] dark:border-slate-700 text-xs text-[var(--ink,#0f172a)] dark:text-slate-200 outline-none focus:border-[var(--teal,var(--brand-primary))] resize-y"
 									/>
 									{voiceNotes && (
 										<div className="flex justify-end">
@@ -918,7 +918,7 @@ export function ChairsiderPerspectiveView() {
 													navigator.clipboard?.writeText?.(voiceNotes);
 													showToast("Текст протокола скопирован в буфер", "success");
 												}}
-												className="text-xs px-3 py-1.5 rounded-lg bg-teal-600 text-white font-bold hover:bg-teal-500 cursor-pointer"
+												className="text-xs px-3 py-1.5 rounded-lg bg-[var(--teal,var(--brand-primary))] text-white font-bold hover:brightness-110 cursor-pointer"
 											>
 												Скопировать текст
 											</button>
@@ -943,7 +943,7 @@ export function ChairsiderPerspectiveView() {
 											onClick={() => toggleProcedure(proc.id)}
 											className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-all border cursor-pointer active:scale-98 ${
 												isApplied
-													? "bg-teal-50 dark:bg-teal-950/70 text-teal-800 dark:text-teal-200 border-teal-500/70 shadow-xs"
+													? "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border-[var(--teal,var(--brand-primary))]/70 shadow-xs"
 													: "bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700"
 											}`}
 										>
@@ -952,7 +952,7 @@ export function ChairsiderPerspectiveView() {
 												<span className="leading-tight truncate">{proc.label}</span>
 											</span>
 											{isApplied ? (
-												<Check size={16} className="text-teal-600 dark:text-teal-400 shrink-0 ml-1.5" />
+												<Check size={16} className="text-[var(--teal,var(--brand-primary))] shrink-0 ml-1.5" />
 											) : (
 												<Plus size={16} className="text-[var(--muted,#64748b)] dark:text-slate-400 shrink-0 ml-1.5" />
 											)}
