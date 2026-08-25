@@ -4,6 +4,7 @@ import { money as formatMoney } from "./AppHelpers";
 import { ClinicalAiPersonalizePanel } from "./ClinicalAiPersonalizePanel";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
 import { CashDayTally } from "./components/finance/CashDayTally";
+import { CashShiftWidget } from "./components/finance/CashShiftWidget";
 import { FamilyWalletPanel } from "./components/finance/FamilyWalletPanel";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { FinanceLedger } from "./FinanceLedger";
@@ -309,6 +310,10 @@ export function FinanceView({
 					Документы
 				</button>
 			</div>
+
+			<CashShiftWidget
+				cashierName={paymentFiscalCashierName || undefined}
+			/>
 
 			<FinancePlanningOverview
 				activePaymentsCount={(activePayments ?? []).length}

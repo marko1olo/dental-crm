@@ -12,6 +12,7 @@
 import type {
 	FiscalReceiptPrintPayload,
 	FiscalReceiptPrintResult,
+	QueueOverflowTelemetry,
 	QueuedFiscalReceiptItem,
 } from "./hardwareTypes.js";
 import { KktLanPrinterService } from "./kktLanPrinter.js";
@@ -20,11 +21,14 @@ type QueueEventListener = (items: QueuedFiscalReceiptItem[]) => void;
 type ReceiptPrintedListener = (receipt: QueuedFiscalReceiptItem, result: FiscalReceiptPrintResult) => void;
 
 export class FiscalReceiptQueueManager {
+	public static readonly MAX_QUEUE_CAPACITY = 2000;
+	public static readonly MAX_RETRY_LIMIT = 10;
 	private static inMemoryQueue = new Map<string, QueuedFiscalReceiptItem>();
 	private static queueListeners = new Set<QueueEventListener>();
 	private static printedListeners = new Set<ReceiptPrintedListener>();
 	private static autoRetryTimer: NodeJS.Timeout | null = null;
 	private static isAutoRetrying = false;
+	private static evictedPrintedCount = 0;
 
 	/**
 	 * Subscribes to queue changes.
@@ -59,6 +63,34 @@ export class FiscalReceiptQueueManager {
 	}
 
 	/**
+	 * Returns queue telemetry and capacity metrics.
+	 */
+	public static getQueueTelemetry(): QueueOverflowTelemetry {
+		const items = this.getAllQueuedItems();
+		const pendingCount = items.filter((i) => i.status === "pending_print" || i.status === "hardware_offline").length;
+		const printedCount = items.filter((i) => i.status === "printed").length;
+		const failedCount = items.filter((i) => i.status === "failed").length;
+
+		return {
+			maxCapacity: this.MAX_QUEUE_CAPACITY,
+			currentSize: items.length,
+			pendingCount,
+			printedCount,
+			failedCount,
+			evictedPrintedCount: this.evictedPrintedCount,
+		};
+	}
+
+	/**
+	 * Calculates exponential backoff delay with jitter (in ms).
+	 */
+	public static calculateBackoffDelay(retryCount: number, baseMs = 1000, maxMs = 60000): number {
+		const exponential = baseMs * Math.pow(2, Math.min(retryCount, 6));
+		const jitter = Math.floor(Math.random() * 500);
+		return Math.min(maxMs, exponential + jitter);
+	}
+
+	/**
 	 * Returns all items in the queue.
 	 */
 	public static getAllQueuedItems(): QueuedFiscalReceiptItem[] {
@@ -78,12 +110,39 @@ export class FiscalReceiptQueueManager {
 
 	/**
 	 * Buffers a receipt in the queue when KKT hardware is offline or out of paper.
+	 * Enforces capacity limits and evicts oldest already-printed receipts if full.
 	 */
 	public static enqueueReceipt(
 		payload: FiscalReceiptPrintPayload,
 		reason = "KKT hardware offline or out of paper",
 		queueId?: string,
 	): QueuedFiscalReceiptItem {
+		// Enforce capacity bounds
+		if (this.inMemoryQueue.size >= this.MAX_QUEUE_CAPACITY) {
+			// Find and evict oldest printed receipts first
+			const printedItems = this.getAllQueuedItems()
+				.filter((i) => i.status === "printed")
+				.reverse();
+
+			if (printedItems.length > 0) {
+				const toEvict = printedItems[0]!;
+				this.inMemoryQueue.delete(toEvict.id);
+				this.evictedPrintedCount++;
+			} else {
+				// If queue is completely full of unprinted/failed items, evict oldest failed item
+				const failedItems = this.getAllQueuedItems()
+					.filter((i) => i.status === "failed")
+					.reverse();
+				if (failedItems.length > 0) {
+					this.inMemoryQueue.delete(failedItems[0]!.id);
+				} else {
+					console.warn("[FiscalReceiptQueueManager] Queue capacity reached max limit, forcing oldest unprinted item eviction to prevent OOM.");
+					const oldest = this.getAllQueuedItems().reverse()[0];
+					if (oldest) this.inMemoryQueue.delete(oldest.id);
+				}
+			}
+		}
+
 		const id = queueId || `q-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 		const now = new Date().toISOString();
 
@@ -107,6 +166,7 @@ export class FiscalReceiptQueueManager {
 
 	/**
 	 * Retries printing a specific queued receipt.
+	 * Implements Dead Letter Queue (DLQ) state when exceeding MAX_RETRY_LIMIT.
 	 */
 	public static async retryReceipt(id: string): Promise<FiscalReceiptPrintResult> {
 		const item = this.inMemoryQueue.get(id);
@@ -118,8 +178,28 @@ export class FiscalReceiptQueueManager {
 			};
 		}
 
-		const printResult = await KktLanPrinterService.printReceipt(item.payload);
+		const nextRetryCount = item.retryCount + 1;
 		const now = new Date().toISOString();
+
+		// Dead Letter Queue transition
+		if (nextRetryCount > this.MAX_RETRY_LIMIT) {
+			const failedItem: QueuedFiscalReceiptItem = {
+				...item,
+				status: "failed",
+				lastError: `Превышен лимит попыток печати (${this.MAX_RETRY_LIMIT}). Чек помещен в карантин ошибок для ручной обработки кассиром.`,
+				retryCount: nextRetryCount,
+				updatedAt: now,
+			};
+			this.inMemoryQueue.set(id, failedItem);
+			this.notifyListeners();
+			return {
+				success: false,
+				status: "hardware_offline",
+				error: failedItem.lastError || "Превышен лимит попыток печати",
+			};
+		}
+
+		const printResult = await KktLanPrinterService.printReceipt(item.payload);
 
 		if (printResult.success && printResult.status === "printed") {
 			const updatedItem: QueuedFiscalReceiptItem = {
@@ -127,7 +207,7 @@ export class FiscalReceiptQueueManager {
 				status: "printed",
 				printedAt: printResult.printedAt || now,
 				lastError: null,
-				retryCount: item.retryCount + 1,
+				retryCount: nextRetryCount,
 				updatedAt: now,
 			};
 			this.inMemoryQueue.set(id, updatedItem);
@@ -149,7 +229,7 @@ export class FiscalReceiptQueueManager {
 			...item,
 			status: "hardware_offline",
 			lastError: printResult.error || "Касса по-прежнему недоступна",
-			retryCount: item.retryCount + 1,
+			retryCount: nextRetryCount,
 			updatedAt: now,
 		};
 		this.inMemoryQueue.set(id, updatedItem);

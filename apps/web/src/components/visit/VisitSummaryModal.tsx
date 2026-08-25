@@ -657,7 +657,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="inline-flex items-center justify-center px-4 py-2 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm font-medium hover:bg-[var(--paper-strong)] transition-colors"
+						className="inline-flex items-center justify-center px-5 py-2.5 min-h-[48px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm font-bold hover:bg-[var(--paper-strong)] transition-colors cursor-pointer"
 					>
 						Закрыть
 					</button>
@@ -665,17 +665,17 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsProtocolGeneratorOpen(true)}
-							className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl border border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-teal-300 text-sm font-semibold hover:bg-teal-500/20 transition-colors"
+							className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl border border-teal-500/40 bg-teal-500/15 text-teal-800 dark:text-teal-200 text-sm font-bold hover:bg-teal-500/25 transition-colors cursor-pointer"
 							title="Сформировать дневник 043/у по МКБ-10 и формуле зубов"
 							data-testid="summary-open-protocol-generator-btn"
 						>
-							<Sparkles className="w-4 h-4" />
-							<span>Протокол 043/у (1-Click)</span>
+							<Sparkles className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+							<span>⚡ Протокол 043/у (1 клик)</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setIsCustomizerOpen(true)}
-							className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl border border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-teal-300 text-sm font-semibold hover:bg-teal-500/20 transition-colors"
+							className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl border border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-teal-300 text-sm font-bold hover:bg-teal-500/20 transition-colors cursor-pointer"
 							title="Настроить фирменный бланк клиники, цвета, логотип и реквизиты"
 							data-testid="summary-customize-branding-btn"
 						>
@@ -689,7 +689,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 									onClose();
 									onOpenPrescription();
 								}}
-								className="inline-flex items-center justify-center gap-2 px-3.5 py-2 min-h-[44px] rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-sm font-semibold hover:bg-blue-500/20 transition-colors"
+								className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300 text-sm font-bold hover:bg-blue-500/20 transition-colors cursor-pointer"
 								data-testid="summary-prescription-btn"
 							>
 								<Pill className="w-4 h-4" />
@@ -703,7 +703,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 									onClose();
 									onOpenRadiologyReferral();
 								}}
-								className="inline-flex items-center justify-center gap-2 px-3.5 py-2 min-h-[44px] rounded-xl border border-teal-500/30 bg-teal-500/10 text-teal-600 dark:text-teal-400 text-sm font-semibold hover:bg-teal-500/20 transition-colors"
+								className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl border border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-teal-300 text-sm font-bold hover:bg-teal-500/20 transition-colors cursor-pointer"
 								data-testid="summary-radiology-btn"
 							>
 								<Scan className="w-4 h-4" />
@@ -717,7 +717,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 									onClose();
 									onOpenEgiszExport();
 								}}
-								className="inline-flex items-center justify-center gap-2 px-3.5 py-2 min-h-[44px] rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm font-semibold hover:bg-emerald-500/20 transition-colors"
+								className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-sm font-bold hover:bg-emerald-500/20 transition-colors cursor-pointer"
 								data-testid="summary-egisz-btn"
 							>
 								<ShieldCheck className="w-4 h-4" />
@@ -734,7 +734,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 									window.print();
 								}
 							}}
-							className="inline-flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] rounded-xl bg-[var(--teal)] text-[var(--on-teal,white)] text-sm font-semibold hover:bg-[var(--teal-dark)] transition-colors"
+							className="inline-flex items-center justify-center gap-2 px-5 py-2.5 min-h-[48px] rounded-xl bg-[var(--teal)] text-[var(--on-teal,white)] text-sm sm:text-base font-extrabold hover:bg-[var(--teal-dark)] transition-colors shadow-md cursor-pointer"
 							data-testid="summary-print-btn"
 						>
 							<Printer className="w-4 h-4" />

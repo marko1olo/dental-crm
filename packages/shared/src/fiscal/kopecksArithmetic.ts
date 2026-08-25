@@ -214,3 +214,139 @@ export function calculateVatKopecks(amountKopecks: number, vatRate: Ffd12VatRate
 			return 0;
 	}
 }
+
+export interface OriginalPaymentTenders {
+	readonly cashKopecks: number;
+	readonly cardKopecks: number;
+	readonly sbpKopecks: number;
+	readonly advanceOffsetKopecks: number;
+	readonly totalPaidKopecks?: number | undefined;
+}
+
+export interface ProportionalRefundAllocation {
+	readonly refundCashKopecks: number;
+	readonly refundCardKopecks: number;
+	readonly refundSbpKopecks: number;
+	readonly refundAdvanceOffsetKopecks: number;
+	readonly refundElectronicKopecks: number;
+	readonly totalRefundKopecks: number;
+	readonly refundCashRub: number;
+	readonly refundCardRub: number;
+	readonly refundSbpRub: number;
+	readonly refundAdvanceOffsetRub: number;
+	readonly refundElectronicRub: number;
+	readonly totalRefundRub: number;
+	readonly isFullRefund: boolean;
+	readonly isPartialRefund: boolean;
+}
+
+/**
+ * Calculates zero-loss proportional refund breakdown across multiple payment tenders (54-FZ).
+ * Uses Hamilton / Hare-Niemeyer Largest Remainder method to eliminate fractional kopeck drift.
+ * Handles split payments (Cash + SBP QR + Card + Advance/Deposit).
+ */
+export function calculateProportionalMultiTenderRefund(
+	originalTenders: OriginalPaymentTenders,
+	requestedRefundKopecks: number,
+): ProportionalRefundAllocation {
+	const origCash = Math.max(0, Math.round(originalTenders.cashKopecks || 0));
+	const origCard = Math.max(0, Math.round(originalTenders.cardKopecks || 0));
+	const origSbp = Math.max(0, Math.round(originalTenders.sbpKopecks || 0));
+	const origAdvance = Math.max(0, Math.round(originalTenders.advanceOffsetKopecks || 0));
+
+	const totalOriginalPaid =
+		originalTenders.totalPaidKopecks !== undefined && originalTenders.totalPaidKopecks > 0
+			? Math.round(originalTenders.totalPaidKopecks)
+			: origCash + origCard + origSbp + origAdvance;
+
+	const targetRefund = Math.min(Math.max(0, Math.round(requestedRefundKopecks)), totalOriginalPaid);
+
+	if (targetRefund <= 0 || totalOriginalPaid <= 0) {
+		return {
+			refundCashKopecks: 0,
+			refundCardKopecks: 0,
+			refundSbpKopecks: 0,
+			refundAdvanceOffsetKopecks: 0,
+			refundElectronicKopecks: 0,
+			totalRefundKopecks: 0,
+			refundCashRub: 0,
+			refundCardRub: 0,
+			refundSbpRub: 0,
+			refundAdvanceOffsetRub: 0,
+			refundElectronicRub: 0,
+			totalRefundRub: 0,
+			isFullRefund: false,
+			isPartialRefund: false,
+		};
+	}
+
+	if (targetRefund === totalOriginalPaid) {
+		const totalElectronicKop = origCard + origSbp;
+		return {
+			refundCashKopecks: origCash,
+			refundCardKopecks: origCard,
+			refundSbpKopecks: origSbp,
+			refundAdvanceOffsetKopecks: origAdvance,
+			refundElectronicKopecks: totalElectronicKop,
+			totalRefundKopecks: totalOriginalPaid,
+			refundCashRub: kopecksToRub(origCash),
+			refundCardRub: kopecksToRub(origCard),
+			refundSbpRub: kopecksToRub(origSbp),
+			refundAdvanceOffsetRub: kopecksToRub(origAdvance),
+			refundElectronicRub: kopecksToRub(totalElectronicKop),
+			totalRefundRub: kopecksToRub(totalOriginalPaid),
+			isFullRefund: true,
+			isPartialRefund: false,
+		};
+	}
+
+	// Partial refund: Hamilton / Hare-Niemeyer Largest Remainder method
+	const originalBuckets = [origCash, origCard, origSbp, origAdvance];
+	const exactShares = originalBuckets.map((b) => (b * targetRefund) / totalOriginalPaid);
+	const floorShares = exactShares.map((s) => Math.floor(s));
+	const allocatedFloorSum = floorShares.reduce((sum, f) => sum + f, 0);
+	let remainderKopecks = targetRefund - allocatedFloorSum;
+
+	const remainders = exactShares.map((s, idx) => ({
+		index: idx,
+		remainder: s - Math.floor(s),
+	}));
+	remainders.sort((a, b) => b.remainder - a.remainder);
+
+	const finalAllocations = [...floorShares];
+	for (let i = 0; i < remainders.length && remainderKopecks > 0; i++) {
+		const idx = remainders[i]?.index;
+		if (idx !== undefined) {
+			const maxPossible = originalBuckets[idx] ?? 0;
+			if ((finalAllocations[idx] ?? 0) < maxPossible) {
+				finalAllocations[idx] = (finalAllocations[idx] ?? 0) + 1;
+				remainderKopecks--;
+			}
+		}
+	}
+
+	const refundCashKopecks = finalAllocations[0] ?? 0;
+	const refundCardKopecks = finalAllocations[1] ?? 0;
+	const refundSbpKopecks = finalAllocations[2] ?? 0;
+	const refundAdvanceOffsetKopecks = finalAllocations[3] ?? 0;
+	const refundElectronicKopecks = refundCardKopecks + refundSbpKopecks;
+	const totalRefundKopecks =
+		refundCashKopecks + refundElectronicKopecks + refundAdvanceOffsetKopecks;
+
+	return {
+		refundCashKopecks,
+		refundCardKopecks,
+		refundSbpKopecks,
+		refundAdvanceOffsetKopecks,
+		refundElectronicKopecks,
+		totalRefundKopecks,
+		refundCashRub: kopecksToRub(refundCashKopecks),
+		refundCardRub: kopecksToRub(refundCardKopecks),
+		refundSbpRub: kopecksToRub(refundSbpKopecks),
+		refundAdvanceOffsetRub: kopecksToRub(refundAdvanceOffsetKopecks),
+		refundElectronicRub: kopecksToRub(refundElectronicKopecks),
+		totalRefundRub: kopecksToRub(totalRefundKopecks),
+		isFullRefund: totalRefundKopecks === totalOriginalPaid,
+		isPartialRefund: totalRefundKopecks > 0 && totalRefundKopecks < totalOriginalPaid,
+	};
+}

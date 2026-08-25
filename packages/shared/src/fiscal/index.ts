@@ -6,3 +6,6 @@ export * from "./ffd12Types.js";
 export * from "./markingValidation.js";
 export * from "./kopecksArithmetic.js";
 export * from "./validation.js";
+export * from "./fiscalReconciliationStatement.js";
+export * from "./offlineFiscalBatchReconciler.js";
+
