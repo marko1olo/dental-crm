@@ -208,16 +208,27 @@ export const EgiszRemdXmlModal: React.FC<EgiszRemdXmlModalProps> = ({
 	]);
 
 	// Preflight Report
-	const preflightReport = useMemo(
-		() => runEgisz043uPreflight(fullPayload),
-		[fullPayload]
-	);
+	const preflightReport = useMemo(() => {
+		if (!isOpen) {
+			return {
+				isValid: true,
+				canSendToRemd: true,
+				totalChecks: 0,
+				passedCount: 0,
+				failedCount: 0,
+				warningCount: 0,
+				scorePercent: 100,
+				checks: [],
+			};
+		}
+		return runEgisz043uPreflight(fullPayload);
+	}, [isOpen, fullPayload]);
 
 	// Generated XML String
-	const generatedCdaXml = useMemo(
-		() => generateEgisz043uCdaXml(fullPayload),
-		[fullPayload]
-	);
+	const generatedCdaXml = useMemo(() => {
+		if (!isOpen) return "";
+		return generateEgisz043uCdaXml(fullPayload);
+	}, [isOpen, fullPayload]);
 
 	// XMLDSig Block
 	const xmlSigBlock = useMemo(() => {

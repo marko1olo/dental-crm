@@ -1,0 +1,97 @@
+/* Form T-13 Statutory Timesheet Workspace Styling */
+
+.timesheet-modal-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 60;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1rem;
+	background-color: rgba(0, 0, 0, 0.7);
+	backdrop-filter: blur(4px);
+}
+
+.timesheet-modal-container {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	max-width: 1280px;
+	height: 90vh;
+	max-height: 900px;
+	background-color: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 1rem;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+	overflow: hidden;
+}
+
+.timesheet-stat-card {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	padding: 0.875rem;
+	background-color: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 0.75rem;
+}
+
+.timesheet-grid-cell {
+	min-width: 44px;
+	height: 48px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--line, #e2e8f0);
+	font-size: 0.75rem;
+	transition: all 0.15s ease;
+	cursor: pointer;
+}
+
+.timesheet-grid-cell:hover {
+	background-color: var(--paper-soft, #f1f5f9);
+}
+
+.timesheet-cell-work {
+	background-color: rgba(20, 184, 166, 0.08);
+	border-color: rgba(20, 184, 166, 0.3);
+}
+
+.timesheet-cell-weekend {
+	background-color: rgba(148, 163, 184, 0.1);
+	border-color: rgba(148, 163, 184, 0.2);
+}
+
+.timesheet-cell-vacation {
+	background-color: rgba(59, 130, 246, 0.08);
+	border-color: rgba(59, 130, 246, 0.3);
+}
+
+.timesheet-cell-sick {
+	background-color: rgba(244, 63, 94, 0.08);
+	border-color: rgba(244, 63, 94, 0.3);
+}
+
+.timesheet-cell-overtime {
+	background-color: rgba(245, 158, 11, 0.08);
+	border-color: rgba(245, 158, 11, 0.3);
+}
+
+@media print {
+	.timesheet-modal-overlay {
+		position: static;
+		padding: 0;
+		background: none;
+	}
+	.timesheet-modal-container {
+		max-width: 100%;
+		height: auto;
+		border: none;
+		box-shadow: none;
+	}
+	.timesheet-no-print {
+		display: none !important;
+	}
+}

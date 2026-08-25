@@ -63,7 +63,7 @@
 }
 
 .tooth-map-selected button {
-	background: #ffffff;
+	background: var(--paper-strong, var(--paper));
 	border: 1px solid var(--line);
 	border-radius: 999px;
 	color: var(--teal-dark);
@@ -205,7 +205,7 @@
 }
 
 .tooth {
-	background: #ffffff;
+	background: var(--paper, #ffffff);
 	border: 1px solid var(--line);
 	border-radius: 7px 7px 12px 12px;
 	color: var(--ink);

@@ -1,0 +1,110 @@
+/* 3D CBCT Multi-Planar Reconstruction (MPR) Fullscreen Workspace */
+
+.cbct-workspace-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 60;
+	display: flex;
+	flex-direction: column;
+	background-color: #000000;
+	color: #ffffff;
+	overflow: hidden;
+}
+
+.cbct-workspace-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.625rem 1rem;
+	background-color: #09090b;
+	border-bottom: 1px solid #27272a;
+	gap: 0.75rem;
+}
+
+.cbct-mpr-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-template-rows: repeat(2, minmax(0, 1fr));
+	gap: 4px;
+	background-color: #18181b;
+	flex: 1;
+	min-height: 0;
+	padding: 4px;
+}
+
+@media (max-width: 768px) {
+	.cbct-mpr-grid {
+		grid-template-columns: 1fr;
+		grid-template-rows: repeat(4, minmax(240px, 1fr));
+		overflow-y: auto;
+	}
+}
+
+.cbct-viewport-box {
+	position: relative;
+	background-color: #000000;
+	border: 1px solid #27272a;
+	border-radius: 0.5rem;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+
+.cbct-viewport-header {
+	position: absolute;
+	top: 0.5rem;
+	left: 0.5rem;
+	z-index: 10;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	background-color: rgba(0, 0, 0, 0.75);
+	backdrop-filter: blur(4px);
+	padding: 0.25rem 0.5rem;
+	border-radius: 0.375rem;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	font-size: 0.75rem;
+	font-weight: 700;
+}
+
+.cbct-viewport-canvas-container {
+	flex: 1;
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 0;
+	cursor: crosshair;
+}
+
+.cbct-caliper-hud {
+	position: absolute;
+	bottom: 0.75rem;
+	right: 0.75rem;
+	z-index: 20;
+	max-width: 340px;
+	padding: 0.75rem;
+	border-radius: 0.75rem;
+	backdrop-filter: blur(8px);
+	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+	border: 1px solid rgba(255, 255, 255, 0.15);
+	background-color: rgba(9, 9, 11, 0.88);
+}
+
+.cbct-badge-safe {
+	background-color: rgba(16, 185, 129, 0.2);
+	color: #34d399;
+	border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.cbct-badge-warning {
+	background-color: rgba(245, 158, 11, 0.2);
+	color: #fbbf24;
+	border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.cbct-badge-danger {
+	background-color: rgba(239, 68, 68, 0.25);
+	color: #f87171;
+	border: 1px solid rgba(239, 68, 68, 0.5);
+}

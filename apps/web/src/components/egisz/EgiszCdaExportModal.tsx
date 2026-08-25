@@ -35,6 +35,7 @@ import {
 	type CdaExportData,
 	EGISZ_SEMD_DOC_TYPES,
 	type EgiszSemdDocTypeCode,
+	type SemanticValidationReport,
 	buildCdaXml,
 	canonicalizeXml,
 	validateCdaSemanticRules,
@@ -291,18 +292,30 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 
 	// Generate XML
 	const generatedXml = useMemo(() => {
+		if (!isOpen) return "";
 		return buildCdaXml(exportData);
-	}, [exportData]);
+	}, [isOpen, exportData]);
 
 	// Validation report
-	const validationReport = useMemo(() => {
+	const validationReport: SemanticValidationReport = useMemo(() => {
+		if (!isOpen) {
+			return {
+				isValid: true,
+				totalRules: 0,
+				passedCount: 0,
+				warningCount: 0,
+				failedCount: 0,
+				scorePercent: 100,
+				rules: [],
+			};
+		}
 		return validateCdaSemanticRules(
 			exportData,
 			generatedXml,
 			Boolean(doctorSignatureBase64),
 			false,
 		);
-	}, [exportData, generatedXml, doctorSignatureBase64]);
+	}, [isOpen, exportData, generatedXml, doctorSignatureBase64]);
 
 	// Load certificates
 	const loadCertificates = useCallback(async () => {

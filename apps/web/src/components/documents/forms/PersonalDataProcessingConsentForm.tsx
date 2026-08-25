@@ -178,11 +178,11 @@ export const PersonalDataProcessingConsentForm = React.memo(
 						placeholder={`пусто — заполните в «${CLINIC_REQUISITES_LOCATION}»`}
 					/>
 				</label>
-				<div style={{ marginBottom: "12px" }}>
+				<div style={{ marginBottom: "14px" }}>
 					<button
 						type="button"
 						className="secondary-button"
-						style={{ fontSize: "12px", padding: "4px 10px" }}
+						style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
 						onClick={() => {
 							setPersonalDataPurposes(PERSONAL_DATA_EGISZ_CONSENT_PRESET.purposes.join("\n"));
 							setPersonalDataCategories(PERSONAL_DATA_EGISZ_CONSENT_PRESET.categories.join("\n"));

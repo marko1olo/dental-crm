@@ -165,8 +165,9 @@
 }
 
 .access-workspace-active-roles span {
-	background: white;
+	background: var(--paper-strong, var(--paper));
 	color: var(--teal);
+	border: 1px solid var(--line);
 	padding: 2px 10px;
 	border-radius: 12px;
 	font-size: 12px;

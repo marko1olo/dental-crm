@@ -663,7 +663,7 @@ export function EndoCanalLogModal({
 						type="button"
 						onClick={onClose}
 						data-testid="endo-modal-close-btn"
-						className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center cursor-pointer"
+						className="min-h-[48px] min-w-[48px] p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center cursor-pointer"
 						aria-label="Закрыть модальное окно"
 					>
 						<X size={22} />
@@ -683,19 +683,19 @@ export function EndoCanalLogModal({
 							<button
 								type="button"
 								onClick={handleResetToDefaults}
-								className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center gap-2 transition-all cursor-pointer"
+								className="min-h-[48px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center gap-2 transition-all cursor-pointer touch-manipulation"
 								title="Сбросить каналы к анатомическому стандарту FDI для этого зуба"
 							>
-								<RotateCcw size={15} />
+								<RotateCcw size={16} />
 								<span>Анатомический стандарт FDI</span>
 							</button>
 
 							<button
 								type="button"
 								onClick={handleAddCanal}
-								className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-2 shadow-md shadow-rose-600/20 transition-all cursor-pointer"
+								className="min-h-[48px] px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-2 shadow-md shadow-rose-600/20 transition-all cursor-pointer touch-manipulation"
 							>
-								<Plus size={16} />
+								<Plus size={18} />
 								<span>Добавить канал</span>
 							</button>
 						</div>
@@ -849,10 +849,10 @@ export function EndoCanalLogModal({
 												<button
 													type="button"
 													onClick={() => handleRemoveCanal(c.id)}
-													className="min-h-[44px] min-w-[44px] rounded-xl text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center transition-colors cursor-pointer"
+													className="min-h-[48px] min-w-[48px] rounded-xl text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center transition-colors cursor-pointer"
 													title={`Удалить канал ${c.canalName}`}
 												>
-													<Trash2 size={16} />
+													<Trash2 size={18} />
 												</button>
 											</td>
 										</tr>
@@ -876,7 +876,7 @@ export function EndoCanalLogModal({
 								type="text"
 								value={irrigation}
 								onChange={(e) => setIrrigation(e.target.value)}
-								className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs outline-none focus:ring-2 focus:ring-rose-500"
+								className="w-full min-h-[48px] px-3.5 py-2.5 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs sm:text-sm outline-none focus:ring-2 focus:ring-rose-500 font-medium"
 								placeholder="3% NaOCl + 17% EDTA с ультразвуковой активацией"
 							/>
 						</div>
@@ -893,7 +893,7 @@ export function EndoCanalLogModal({
 								type="text"
 								value={radiologyControl}
 								onChange={(e) => setRadiologyControl(e.target.value)}
-								className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs outline-none focus:ring-2 focus:ring-rose-500"
+								className="w-full min-h-[48px] px-3.5 py-2.5 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white text-xs sm:text-sm outline-none focus:ring-2 focus:ring-rose-500 font-medium"
 								placeholder="Контрольная визиография: каналы обтурированы до апекса."
 							/>
 						</div>
@@ -910,9 +910,9 @@ export function EndoCanalLogModal({
 							<button
 								type="button"
 								onClick={handleCopyText}
-								className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer"
+								className="min-h-[48px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer"
 							>
-								{copied ? <Check size={14} className="text-emerald-500" /> : <Clipboard size={14} />}
+								{copied ? <Check size={16} className="text-emerald-500" /> : <Clipboard size={16} />}
 								<span>{copied ? "Скопировано!" : "Копировать текст"}</span>
 							</button>
 						</div>

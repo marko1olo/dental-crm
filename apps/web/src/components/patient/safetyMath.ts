@@ -62,8 +62,10 @@ export interface PatientClinicalSafetyProfile {
 	readonly hasPacemakerExs?: boolean | undefined;
 	readonly hasCardiovascularDisease?: boolean | undefined;
 	readonly hasHypertension?: boolean | undefined;
+	readonly hasSevereHypertensionStage3?: boolean | undefined;
 	readonly hasIhd?: boolean | undefined;
 	readonly hasArrhythmia?: boolean | undefined;
+	readonly takesBetaBlockers?: boolean | undefined;
 
 	// 3. Гематология & Антикоагулянты
 	readonly takesAnticoagulants?: boolean | undefined;
@@ -86,6 +88,7 @@ export interface PatientClinicalSafetyProfile {
 	readonly hasHepatitis?: boolean | undefined;
 	readonly hasHiv?: boolean | undefined;
 	readonly hasThyroidDisease?: boolean | undefined;
+	readonly hasThyrotoxicosis?: boolean | undefined;
 	readonly hasPenicillinAllergy?: boolean | undefined;
 	readonly hasLatexAllergy?: boolean | undefined;
 
@@ -447,6 +450,65 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		icd10Codes: ["Z91.0", "T78.4"],
 		keywords: ["латекс", "аллергия на латекс", "коффердам", "перчатки"],
 	},
+	{
+		id: "thyrotoxicosis_hyperthyroidism",
+		category: "chronic_somatic",
+		severity: "critical",
+		shortBadge: "⛔ ТИРЕОТОКСИКОЗ: ЗАПРЕТ АДРЕНАЛИНА",
+		titleRu: "Тиреотоксикоз / Гипертиреоз (МКБ-10 E05)",
+		fullDescription:
+			"Повышенная чувствительность миокарда к экзогенным катехоламинам. Экстремальный риск тиреотоксического криза, тахиаритмии и фибрилляции желудочков при введении адреналина.",
+		forbiddenProcedures: [
+			"Местная анестезия с адреналином / эпинефрином (в любых концентрациях 1:100 000 и 1:200 000)",
+			"Ретракционные нити с адреналином",
+		],
+		mandatoryPrecautions: [
+			"Анестезия строго препаратами без вазоконстриктора: Скандонест 3% (Мепивакаин)",
+			"Постоянный мониторинг пульса и артериального давления",
+		],
+		recommendedAnesthesiaNotes: "Скандонест 3% (Мепивакаин без адреналина и без сульфитов).",
+		icd10Codes: ["E05", "E05.0", "E05.9"],
+		keywords: ["тиреотоксикоз", "гипертиреоз", "базедова", "зоб", "e05"],
+	},
+	{
+		id: "beta_blockers_interaction",
+		category: "chronic_somatic",
+		severity: "high",
+		shortBadge: "⚠️ БЕТА-БЛОКАТОРЫ: РИСК КРИЗА НА АДРЕНАЛИН",
+		titleRu: "Прием бета-адреноблокаторов (Бисопролол, Анаприлин)",
+		fullDescription:
+			"Блокада бета-2-адренорецепторов сосудов при введении адреналина вызывает нескомпенсированную альфа-1-вазоконстрикцию, резкий подъем системного АД и рефлекторную тяжелую брадикардию.",
+		forbiddenProcedures: [
+			"Высокие концентрации адреналина (1:100 000)",
+			"Повторные дозы вазоконстриктора",
+		],
+		mandatoryPrecautions: [
+			"Препарат первого выбора — Скандонест 3% (Мепивакаин)",
+			"При острой необходимости адреналина — не более 1 карпулы 1:200 000 с аспирацией",
+		],
+		recommendedAnesthesiaNotes: "Скандонест 3% (Мепивакаин) без вазоконстриктора.",
+		keywords: ["бета-блокатор", "бетаблокатор", "бисопролол", "конкор", "анаприлин", "пропранолол", "метопролол", "соталол"],
+	},
+	{
+		id: "severe_hypertension_stage_3",
+		category: "chronic_somatic",
+		severity: "critical",
+		shortBadge: "⛔ АГ III СТАДИИ: ЗАПРЕТ АДРЕНАЛИНА",
+		titleRu: "Артериальная гипертензия III ст. / Кризовое течение (АД > 180/110)",
+		fullDescription:
+			"Тяжелая гипертензия с высоким риском инсульта, инфаркта миокарда и расслоения аорты при выбросе или экзогенном введении адреналина.",
+		forbiddenProcedures: [
+			"Анестетики с адреналином 1:100 000 и 1:200 000",
+			"Плановые травматичные вмешательства до стабилизации АД",
+		],
+		mandatoryPrecautions: [
+			"Анестезия только Скандонест 3% (Мепивакаин)",
+			"Измерение АД до и после анестезии",
+		],
+		recommendedAnesthesiaNotes: "Скандонест 3% без адреналина.",
+		icd10Codes: ["I10", "I15"],
+		keywords: ["аг 3", "аг iii", "криз", "тяжелая гипертония"],
+	},
 ];
 
 /** Результат комплексной оценки клинической безопасности */
@@ -548,6 +610,15 @@ export function evaluatePatientSafetyFlags(
 	// 6. Хронические соматические болезни
 	if (profile.hasHypertension || profile.hasCardiovascularDisease || profile.hasIhd || profile.hasArrhythmia) {
 		addFlagFromCatalog("hypertension_cvd");
+	}
+	if (profile.hasSevereHypertensionStage3) {
+		addFlagFromCatalog("severe_hypertension_stage_3");
+	}
+	if (profile.hasThyrotoxicosis) {
+		addFlagFromCatalog("thyrotoxicosis_hyperthyroidism");
+	}
+	if (profile.takesBetaBlockers) {
+		addFlagFromCatalog("beta_blockers_interaction");
 	}
 	if (profile.hasDiabetesMellitus) {
 		const extra = profile.diabetesType ? `Тип: ${profile.diabetesType}` : undefined;

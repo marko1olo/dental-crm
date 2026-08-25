@@ -25,6 +25,7 @@ import {
 	Users,
 	X,
 } from "lucide-react";
+import { TimesheetT13Modal } from "../../payroll/TimesheetT13Modal";
 import {
 	type CabinetDefinition,
 	CLINIC_CABINETS_CATALOG,
@@ -96,6 +97,7 @@ export function DoctorShiftRosterModal({
 
 	// Filter by specialty/doctor
 	const [filterRole, setFilterRole] = useState<string>("all");
+	const [isT13ModalOpen, setIsT13ModalOpen] = useState<boolean>(false);
 
 	// 7 days of the selected week
 	const weekDays = useMemo(() => {
@@ -1170,6 +1172,14 @@ export function DoctorShiftRosterModal({
 					</div>
 				</div>
 			</div>
+
+			{/* Form T-13 Statutory Timesheet Modal */}
+			{isT13ModalOpen && (
+				<TimesheetT13Modal
+					isOpen={isT13ModalOpen}
+					onClose={() => setIsT13ModalOpen(false)}
+				/>
+			)}
 		</div>
 	);
 }

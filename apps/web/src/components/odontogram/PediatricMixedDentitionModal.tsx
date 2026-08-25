@@ -5,9 +5,11 @@ import {
 	AlertCircle,
 	Check,
 	Clock,
+	Heart,
 	Info,
 	Layers,
 	PieChart as PieChartIcon,
+	Printer,
 	ShieldCheck,
 	Sparkles,
 	X,
@@ -24,9 +26,11 @@ import {
 	type ResorptionStagePercent,
 	calculateCariogramRisk,
 	calculateEruptionTimelineByAge,
+	type FranklRating,
 } from "./pediatricDentitionEngine";
 import type { ToothData } from "./ToothChart";
 import { showToast } from "../GlobalToast";
+import { FranklBehaviorBadge, PediatricParentMemoModal } from "../pediatric";
 
 const UPPER_PRIMARY_TEETH = [55, 54, 53, 52, 51, 61, 62, 63, 64, 65];
 const LOWER_PRIMARY_TEETH = [85, 84, 83, 82, 81, 71, 72, 73, 74, 75];
@@ -41,7 +45,7 @@ export interface PediatricMixedDentitionModalProps {
 	initialAge?: number;
 }
 
-type ModalTab = "timeline" | "cariogram" | "resorption";
+type ModalTab = "timeline" | "cariogram" | "resorption" | "frankl";
 
 export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModalProps> = ({
 	isOpen,
@@ -53,6 +57,8 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 	initialAge = 7.5,
 }) => {
 	const [activeTab, setActiveTab] = useState<ModalTab>("timeline");
+	const [franklRating, setFranklRating] = useState<FranklRating>(3);
+	const [isParentMemoModalOpen, setIsParentMemoModalOpen] = useState<boolean>(false);
 
 	// 1. Eruption Timeline State
 	const [selectedAge, setSelectedAge] = useState<number>(initialAge);
@@ -93,6 +99,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 			patientAgeYears: selectedAge,
 			cariogramInput,
 			teethStates: teethStatesMap,
+			franklRating,
 		});
 		try {
 			window.dispatchEvent(
@@ -101,7 +108,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 						soap: {
 							diagnosisIcd10: "Z01.2",
 							statusLocalis: text,
-							treatmentDescription: `• Индивидуальный план профилактики кариеса (Шанс избежать: ${cariogramResult.chanceOfAvoidingCariesPercent}%, Риск: ${cariogramResult.riskCategoryNameRu}).\n• ${cariogramResult.preventiveProgram.professionalHygieneRu}\n• ${cariogramResult.preventiveProgram.fluorideVarnishProtocolRu}\n• ${cariogramResult.preventiveProgram.homeCareProtocolRu}\n• ${cariogramResult.preventiveProgram.dietaryGuidanceRu}`,
+							treatmentDescription: `• Индивидуальный план профилактики кариеса (Шанс избежать: ${cariogramResult.chanceOfAvoidingCariesPercent}%, Риск: ${cariogramResult.riskCategoryNameRu}).\n• Поведение по Франклу: Рейтинг ${franklRating}.\n• ${cariogramResult.preventiveProgram.professionalHygieneRu}\n• ${cariogramResult.preventiveProgram.fluorideVarnishProtocolRu}\n• ${cariogramResult.preventiveProgram.homeCareProtocolRu}\n• ${cariogramResult.preventiveProgram.dietaryGuidanceRu}`,
 						},
 						mode: "smart_append",
 					},
@@ -111,7 +118,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 			// ignore event dispatch error
 		}
 		showToast(
-			"Протокол Cariogram успешно перенесён в медицинскую карту 043/у!",
+			"Протокол Cariogram и шкала Франкла успешно перенесены в карту 043/у!",
 			"success",
 		);
 	};
@@ -315,6 +322,19 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 					>
 						<Layers className="w-4 h-4 shrink-0" />
 						<span>Шкала резорбции корней (0–100%)</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setActiveTab("frankl")}
+						className={`flex items-center gap-2 px-5 py-3 min-h-[44px] rounded-t-xl text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer select-none ${
+							activeTab === "frankl"
+								? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--odontogram-paper,var(--paper,#ffffff))] shadow-xs"
+								: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] hover:text-[var(--odontogram-ink,var(--ink,#0f172a))]"
+						}`}
+					>
+						<Heart className="w-4 h-4 shrink-0 text-rose-500" />
+						<span>Поведение (Франкл) &amp; Памятка</span>
 					</button>
 				</div>
 
@@ -1075,6 +1095,45 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 							</div>
 						</div>
 					)}
+
+					{/* ------------------------------------------------------------------------- */}
+					{/* TAB 4: FRANKL BEHAVIOR SCALE & PARENT RECOMMENDATIONS */}
+					{/* ------------------------------------------------------------------------- */}
+					{activeTab === "frankl" && (
+						<div className="space-y-6 animate-in fade-in duration-200">
+							<FranklBehaviorBadge
+								rating={franklRating}
+								onChange={setFranklRating}
+								showStrategies={true}
+							/>
+
+							{/* Parent Recommendations Trigger Card */}
+							<div className="p-5 sm:p-6 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] space-y-4">
+								<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+									<div>
+										<span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--teal,#0d9488)]">
+											Рекомендации родителям
+										</span>
+										<h4 className="text-base font-extrabold text-[var(--odontogram-ink,var(--ink,#0f172a))]">
+											Формирование памятки по детским процедурам
+										</h4>
+										<p className="text-xs sm:text-sm text-[var(--odontogram-ink-muted,var(--muted,#64748b))] font-medium mt-1">
+											Печать памяток по серебрению, герметизации фиссур и витальной пульпотомии (с контролем прикусывания анестезированной губы).
+										</p>
+									</div>
+
+									<button
+										type="button"
+										onClick={() => setIsParentMemoModalOpen(true)}
+										className="min-h-[48px] px-6 py-2.5 rounded-2xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-sm shadow-md shadow-teal-600/20 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 shrink-0"
+									>
+										<Printer className="w-4 h-4" />
+										<span>Открыть генератор памятки</span>
+									</button>
+								</div>
+							</div>
+						</div>
+					)}
 				</div>
 
 				{/* Modal Footer */}
@@ -1092,6 +1151,16 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 					</button>
 				</div>
 			</div>
+
+			{/* Child Modal: Parent Recommendations Generator */}
+			{isParentMemoModalOpen && (
+				<PediatricParentMemoModal
+					isOpen={isParentMemoModalOpen}
+					onClose={() => setIsParentMemoModalOpen(false)}
+					initialFrankl={franklRating}
+					patientAgeYears={selectedAge}
+				/>
+			)}
 		</div>
 	);
 

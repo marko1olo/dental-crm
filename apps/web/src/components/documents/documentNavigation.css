@@ -924,3 +924,98 @@
 	flex-wrap: wrap;
 	gap: 10px;
 }
+
+@media (max-width: 640px) {
+	.document-package-modal-overlay {
+		padding: 6px;
+	}
+	.document-package-modal-content {
+		max-height: 98vh;
+		border-radius: 12px;
+	}
+	.document-package-modal-header {
+		padding: 10px 14px;
+	}
+	.document-package-modal-title {
+		font-size: 15px;
+	}
+	.document-package-modal-body {
+		padding: 12px;
+		gap: 10px;
+	}
+	.document-package-patient-card {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 8px;
+	}
+	.document-package-item-card {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 10px;
+	}
+	.document-package-item-actions {
+		width: 100%;
+		display: flex;
+		align-items: stretch;
+		gap: 8px;
+	}
+	.document-package-item-actions > button,
+	.document-package-item-actions > a {
+		flex: 1;
+		min-height: 44px;
+		text-align: center;
+		justify-content: center;
+	}
+	.document-package-modal-footer {
+		flex-direction: column-reverse;
+		align-items: stretch;
+		gap: 10px;
+		padding: 10px 14px;
+	}
+	.document-package-modal-footer > div,
+	.document-package-modal-footer > button {
+		width: 100%;
+	}
+	.document-package-modal-footer button {
+		width: 100%;
+		min-height: 44px;
+		justify-content: center;
+	}
+	.doc-nav-categories {
+		width: 100%;
+	}
+	.doc-nav-search-wrap {
+		flex: 1 1 100%;
+		width: 100%;
+	}
+	.doc-nav-quick-actions {
+		width: 100%;
+	}
+	.doc-nav-action-btn {
+		flex: 1;
+		min-height: 44px;
+	}
+}
+
+.document-anamnesis-quick {
+	display: inline-flex;
+	align-items: center;
+	padding: 6px 12px;
+	min-height: 44px;
+	border-radius: 10px;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--teal-dark, var(--teal));
+	background: var(--teal-surface);
+	border: 1px solid var(--teal-soft);
+	cursor: pointer;
+	transition: all var(--transition-fast);
+	margin-top: 6px;
+	text-align: left;
+}
+
+.document-anamnesis-quick:hover {
+	background: var(--teal-soft);
+	border-color: var(--teal);
+}
+

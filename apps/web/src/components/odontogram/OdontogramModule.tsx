@@ -1,6 +1,19 @@
 import { isValidFdiToothNumber } from "@dental/shared";
-import { Activity, Calculator, History, Mic, Printer, Sparkles, Stethoscope } from "lucide-react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import {
+	Activity,
+	AlertTriangle,
+	Banknote,
+	Calculator,
+	Coins,
+	CreditCard,
+	History,
+	Mic,
+	Printer,
+	QrCode,
+	Sparkles,
+	Stethoscope,
+} from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -36,6 +49,9 @@ import { PeriodontalChartModule } from "./PeriodontalChartModule";
 import { TreatmentEstimator } from "./TreatmentEstimator";
 import { TreatmentPlanModule } from "../treatment-plans/TreatmentPlanModule";
 import { VoiceDictationOverlay } from "./VoiceDictationOverlay";
+import { FastCheckoutModal } from "../payments/checkout/FastCheckoutModal";
+import type { CheckoutPaymentMethodType } from "../payments/checkout/fastCheckoutPresets";
+import { calculateLiveInvoiceItems } from "./OdontogramLiveInvoice";
 import {
 	getToothAnatomicalNameRu,
 	getToothFolkAndAnatomicalNameRu,
@@ -174,6 +190,32 @@ export const OdontogramModule = ({
 	} | null>(null);
 	const [historyTooth, setHistoryTooth] = useState<number | null>(null);
 	const [endoTooth, setEndoTooth] = useState<number | null>(null);
+
+	const [isFastCheckoutOpen, setIsFastCheckoutOpen] = useState(false);
+	const [fastCheckoutMethod, setFastCheckoutMethod] = useState<CheckoutPaymentMethodType>("sbp_qr");
+
+	// Auto-compute live invoice items and gross total in rubles for In-Chair Hot Path Cockpit
+	const liveInvoiceItems = useMemo(() => {
+		return calculateLiveInvoiceItems(teethData);
+	}, [teethData]);
+
+	const liveGrossTotalRub = useMemo(() => {
+		return liveInvoiceItems.reduce(
+			(acc, item) => acc + item.price * item.quantity,
+			0,
+		);
+	}, [liveInvoiceItems]);
+
+	// Extract allergy and somatic risk warnings from active patient
+	const allergyText =
+		(activePatient as { allergies?: string | null } | undefined)?.allergies ||
+		(activePatient as { anamnesis?: { allergies?: string | null } } | undefined)?.anamnesis?.allergies;
+	const rawSomaticAlerts = (activePatient as { somaticAlerts?: string[] } | undefined)?.somaticAlerts;
+	const rawRiskLevel = (activePatient as { somaticRiskLevel?: string } | undefined)?.somaticRiskLevel;
+	const isCardiacOrDiabetes = Boolean(
+		(activePatient as { heartRisk?: boolean; diabetes?: boolean } | undefined)?.heartRisk ||
+		(activePatient as { heartRisk?: boolean; diabetes?: boolean } | undefined)?.diabetes,
+	);
 
 	const perspective = usePerspectiveStore((state) => state.perspective);
 	// New States for Pediatric & Multi-Select & Collapsible Treatment Estimator
@@ -334,6 +376,14 @@ export const OdontogramModule = ({
 
 			setMenuConfig(null);
 			setSelectedTeeth([]);
+
+			if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+				try {
+					navigator.vibrate([15, 30, 15]);
+				} catch {
+					// Safe ignore if vibration is not allowed by browser permissions
+				}
+			}
 
 			try {
 				// Save to API
@@ -747,6 +797,54 @@ export const OdontogramModule = ({
 					/>
 				)}
 
+				{/* ── КРИТИЧЕСКИЙ АЛЛЕРГО- И СОМАТИЧЕСКИЙ АЛЕРТ БЕЗОПАСНОСТИ (TIER 1) ── */}
+				{(Boolean(allergyText) || (rawSomaticAlerts && rawSomaticAlerts.length > 0) || rawRiskLevel === "high" || isCardiacOrDiabetes) && (
+					<div
+						className="p-3.5 sm:p-4 rounded-2xl bg-rose-500/15 dark:bg-rose-950/40 border-2 border-rose-500/40 dark:border-rose-500/50 text-rose-950 dark:text-rose-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md animate-in fade-in duration-200"
+						role="alert"
+						aria-live="assertive"
+						data-testid="odontogram-critical-somatic-alert"
+					>
+						<div className="flex items-start gap-3 min-w-0">
+							<div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-sm animate-pulse">
+								<AlertTriangle className="w-5 h-5" />
+							</div>
+							<div className="min-w-0 space-y-1">
+								<div className="flex items-center gap-2 flex-wrap">
+									<span className="text-xs sm:text-sm font-black uppercase tracking-wider text-rose-700 dark:text-rose-300">
+										⚠️ АЛЛЕРГИИ И СОМАТИЧЕСКИЕ РИСКИ БЕЗОПАСНОСТИ:
+									</span>
+									{rawRiskLevel === "high" && (
+										<span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black tracking-wide">
+											ВЫСОКИЙ РИСК (ASA III/IV)
+										</span>
+									)}
+								</div>
+								<div className="text-xs sm:text-sm font-bold text-rose-900 dark:text-rose-100 flex items-center gap-2 flex-wrap break-words">
+									{allergyText && (
+										<span className="px-2.5 py-1 rounded-lg bg-rose-600 text-white font-mono font-black text-xs inline-flex items-center gap-1 shadow-xs">
+											🚫 {allergyText}
+										</span>
+									)}
+									{rawSomaticAlerts && rawSomaticAlerts.map((alert, idx) => (
+										<span key={idx} className="px-2 py-0.5 rounded-lg bg-rose-500/20 dark:bg-rose-900/40 text-rose-900 dark:text-rose-200 font-semibold text-xs border border-rose-500/30">
+											{alert}
+										</span>
+									))}
+									{isCardiacOrDiabetes && !allergyText && (!rawSomaticAlerts || rawSomaticAlerts.length === 0) && (
+										<span>Кардио- / эндокринный мониторинг при анестезии (ограничение вазоконстриктора 1:200 000).</span>
+									)}
+								</div>
+							</div>
+						</div>
+						<div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+							<span className="text-[11px] font-bold text-rose-700 dark:text-rose-300 hidden md:inline">
+								Учтено в протоколе 043/у
+							</span>
+						</div>
+					</div>
+				)}
+
 				{/* ── БАБУШКО-УСТОЙЧИВАЯ ШАПКА: ТУМБЛЕР ПРИКУСА + АВТОСОХРАНЕНИЕ + НАРОДНАЯ ПОДСКАЗКА ── */}
 				<div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] dark:bg-zinc-900/60 border border-[var(--line,#e2e8f0)] dark:border-zinc-800 shadow-2xs">
 					{/* Гигантский 1-клик тумблер прикуса (≥48px) */}
@@ -802,6 +900,103 @@ export const OdontogramModule = ({
 							<span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse inline-block shadow-xs shrink-0" />
 							<span>🟢 Сохранено на диск ({lastSavedAt}) — данные в полной безопасности</span>
 						</div>
+					</div>
+				</div>
+
+				{/* ── ТАКТИЛЬНАЯ ЭКСПРЕСС-КАССА И СУММА К ОПЛАТЕ В 1 КЛИК (TIER 1) ── */}
+				<div
+					className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 p-3.5 rounded-2xl bg-gradient-to-r from-teal-500/10 via-emerald-500/10 to-teal-500/10 dark:from-teal-950/40 dark:via-emerald-950/40 dark:to-teal-950/40 border border-teal-500/30 shadow-xs"
+					data-testid="odontogram-fast-checkout-ribbon"
+				>
+					<div className="flex items-center gap-3 min-w-0">
+						<div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+							<Coins className="w-5 h-5" />
+						</div>
+						<div className="min-w-0">
+							<div className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider">
+								Итоговая сумма приема (по одонтограмме):
+							</div>
+							<div className="text-lg sm:text-xl font-black font-mono text-teal-800 dark:text-teal-200 flex items-center gap-2">
+								<span>{liveGrossTotalRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span>
+								{liveInvoiceItems.length > 0 ? (
+									<span className="text-xs font-bold font-sans px-2 py-0.5 rounded-full bg-teal-600 text-white">
+										{liveInvoiceItems.length} {countLabel(liveInvoiceItems.length, "услуга", "услуги", "услуг")}
+									</span>
+								) : (
+									<span className="text-xs font-bold font-sans text-emerald-600">
+										(санация / интактно)
+									</span>
+								)}
+							</div>
+						</div>
+					</div>
+
+					{/* 1-Click Immediate Payment Tender Triggers (>= 48px touch targets) */}
+					<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+						<button
+							type="button"
+							onClick={() => {
+								setFastCheckoutMethod("sbp_qr");
+								setIsFastCheckoutOpen(true);
+								if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+									try { navigator.vibrate([15, 30, 15]); } catch { /* ignore */ }
+								}
+							}}
+							className="flex-1 sm:flex-initial min-h-[48px] px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer select-none"
+							title="1-клик оплата по QR-коду СБП (0% комиссии)"
+							data-testid="cockpit-pay-sbp-btn"
+						>
+							<QrCode className="w-4 h-4" />
+							<span>⚡ СБП QR</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								setFastCheckoutMethod("bank_card");
+								setIsFastCheckoutOpen(true);
+								if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+									try { navigator.vibrate([15, 30, 15]); } catch { /* ignore */ }
+								}
+							}}
+							className="flex-1 sm:flex-initial min-h-[48px] px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer select-none"
+							title="1-клик оплата банковской картой (эквайринг)"
+							data-testid="cockpit-pay-card-btn"
+						>
+							<CreditCard className="w-4 h-4" />
+							<span>💳 Карта</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								setFastCheckoutMethod("cash");
+								setIsFastCheckoutOpen(true);
+								if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+									try { navigator.vibrate([15, 30, 15]); } catch { /* ignore */ }
+								}
+							}}
+							className="flex-1 sm:flex-initial min-h-[48px] px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer select-none"
+							title="1-клик оплата наличными с расчетом сдачи"
+							data-testid="cockpit-pay-cash-btn"
+						>
+							<Banknote className="w-4 h-4" />
+							<span>💵 Наличные</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								setFastCheckoutMethod("patient_deposit");
+								setIsFastCheckoutOpen(true);
+								if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+									try { navigator.vibrate([15, 30, 15]); } catch { /* ignore */ }
+								}
+							}}
+							className="flex-1 sm:flex-initial min-h-[48px] px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer select-none"
+							title="1-клик списание с семейного лицевого счета / депозита"
+							data-testid="cockpit-pay-deposit-btn"
+						>
+							<Coins className="w-4 h-4" />
+							<span>🪙 Депозит</span>
+						</button>
 					</div>
 				</div>
 
@@ -1432,6 +1627,26 @@ export const OdontogramModule = ({
 					</div>
 				</div>
 			</div>
+
+			{/* 1-Click Fast Checkout Modal for In-Chair Cockpit */}
+			{isFastCheckoutOpen && (
+				<FastCheckoutModal
+					isOpen={isFastCheckoutOpen}
+					onClose={() => setIsFastCheckoutOpen(false)}
+					totalBillKop={Math.max(100, Math.round(liveGrossTotalRub * 100))}
+					initialPaymentMethod={fastCheckoutMethod}
+					patientName={activePatient?.fullName || "Пациент"}
+					patientPhone={activePatient?.phone || "+7 (999) 000-00-00"}
+					orderId={`CHK-${patientId.slice(0, 8)}`}
+					onPaymentComplete={() => {
+						showToast(
+							`Чек на сумму ${liveGrossTotalRub.toLocaleString("ru-RU")} ₽ успешно фискализирован (54-ФЗ)`,
+							"success",
+						);
+						setIsFastCheckoutOpen(false);
+					}}
+				/>
+			)}
 		</div>
 	);
 };

@@ -180,11 +180,11 @@ export const InformedConsentForm = React.memo(function InformedConsentForm({
 					</div>
 				) : null}
 		>
-			<div style={{ marginBottom: "12px" }}>
+			<div style={{ marginBottom: "14px" }}>
 				<button
 					type="button"
 					className="secondary-button"
-					style={{ fontSize: "12px", padding: "4px 10px" }}
+					style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
 					onClick={() => {
 						setInformedConsentIntervention(BASE_INFORMED_CONSENT_PRESET.intervention);
 						setInformedConsentDiagnosisOrIndication(BASE_INFORMED_CONSENT_PRESET.diagnosisOrIndication);

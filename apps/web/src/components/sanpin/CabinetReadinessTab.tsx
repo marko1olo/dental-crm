@@ -473,8 +473,8 @@ export function CabinetReadinessTab() {
 					</h3>
 
 					<div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", fontSize: "0.85rem" }}>
-						<div style={{ background: "var(--paper-subtle, #f8fafc)", padding: "0.65rem", borderRadius: "0.5rem", border: "1px solid #e2e8f0" }}>
-							<strong style={{ display: "block", marginBottom: "0.4rem", color: "#1e293b" }}>
+						<div style={{ background: "var(--paper-subtle, #f8fafc)", padding: "0.65rem", borderRadius: "0.5rem", border: "1px solid var(--line, #e2e8f0)" }}>
+							<strong style={{ display: "block", marginBottom: "0.4rem", color: "var(--ink, #1e293b)" }}>
 								Наконечники и крафт-пакеты:
 							</strong>
 							<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.3rem", cursor: "pointer" }}>
@@ -487,12 +487,12 @@ export function CabinetReadinessTab() {
 							</label>
 							<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
 								<input type="checkbox" checked={class5Verified} onChange={(e) => setClass5Verified(e.target.checked)} />
-								<span style={{ fontWeight: 600, color: "#059669" }}>Индикатор 5 класса (Интеграл/Медтест) проверен</span>
+								<span style={{ fontWeight: 600, color: "var(--ok-fg, #059669)" }}>Индикатор 5 класса (Интеграл/Медтест) проверен</span>
 							</label>
 						</div>
 
-						<div style={{ background: "var(--paper-subtle, #f8fafc)", padding: "0.65rem", borderRadius: "0.5rem", border: "1px solid #e2e8f0" }}>
-							<strong style={{ display: "block", marginBottom: "0.4rem", color: "#1e293b" }}>
+						<div style={{ background: "var(--paper-subtle, #f8fafc)", padding: "0.65rem", borderRadius: "0.5rem", border: "1px solid var(--line, #e2e8f0)" }}>
+							<strong style={{ display: "block", marginBottom: "0.4rem", color: "var(--ink, #1e293b)" }}>
 								Базовый смотровой лоток:
 							</strong>
 							<div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.25rem" }}>
@@ -519,8 +519,8 @@ export function CabinetReadinessTab() {
 							</div>
 						</div>
 
-						<div style={{ background: "var(--paper-subtle, #f8fafc)", padding: "0.65rem", borderRadius: "0.5rem", border: "1px solid #e2e8f0" }}>
-							<strong style={{ display: "block", marginBottom: "0.4rem", color: "#1e293b" }}>
+						<div style={{ background: "var(--paper-subtle, #f8fafc)", padding: "0.65rem", borderRadius: "0.5rem", border: "1px solid var(--line, #e2e8f0)" }}>
+							<strong style={{ display: "block", marginBottom: "0.4rem", color: "var(--ink, #1e293b)" }}>
 								Аспирационная система и Коффердам:
 							</strong>
 							<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem", cursor: "pointer" }}>
@@ -532,7 +532,7 @@ export function CabinetReadinessTab() {
 								<span>Пылесос (высокообъемная канюля)</span>
 							</label>
 							{currentPreset.requiresCofferdam && (
-								<div style={{ marginTop: "0.4rem", borderTop: "1px dashed #cbd5e1", paddingTop: "0.4rem" }}>
+								<div style={{ marginTop: "0.4rem", borderTop: "1px dashed var(--line, #cbd5e1)", paddingTop: "0.4rem" }}>
 									<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
 										<input
 											type="checkbox"

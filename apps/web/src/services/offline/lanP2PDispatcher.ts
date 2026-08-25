@@ -148,6 +148,9 @@ export class LanP2PDispatcher {
 		if (typeof BroadcastChannel !== "undefined") {
 			try {
 				this.broadcastChannel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
+				if (typeof (this.broadcastChannel as any)?.unref === "function") {
+					(this.broadcastChannel as any).unref();
+				}
 				this.broadcastChannel.onmessage = (event: MessageEvent) => {
 					this.handleIncomingRawMessage(event.data, "broadcast_channel");
 				};

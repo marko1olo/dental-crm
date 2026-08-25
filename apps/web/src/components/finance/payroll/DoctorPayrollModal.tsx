@@ -103,6 +103,30 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 	}, [doctorsList, selectedDoctorId]);
 
 	const payrollResult: DoctorPayrollResult = useMemo(() => {
+		if (!isOpen) {
+			return {
+				doctorId: activeDoc.id,
+				doctorName: activeDoc.name,
+				specialtyTitleRu: "",
+				periodLabelRu: `${periodStart} — ${periodEnd}`,
+				totalGrossRevenueKop: 0,
+				totalLabDeductionsKop: 0,
+				totalMaterialDeductionsKop: 0,
+				totalNetBaseKop: 0,
+				baseCommissionPercent: 0,
+				earnedBaseCommissionKop: 0,
+				kpiBonusPercent: 0,
+				kpiBonusEarnedKop: 0,
+				kpiTierBadgeRu: "",
+				earnedRetailCommissionKop: 0,
+				grossPayoutBeforeTaxKop: 0,
+				ndfl13TaxKop: 0,
+				netPayoutToDoctorKop: 0,
+				minimumGuaranteeApplied: false,
+				manualAdjustmentKop: 0,
+				serviceCount: 0,
+			};
+		}
 		return calculateDoctorPeriodPayroll({
 			doctorId: activeDoc.id,
 			doctorName: activeDoc.name,
@@ -113,7 +137,7 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 			customBasePercentage: customPercent,
 			manualAdjustmentKop: Math.round(manualAdjustmentRub * 100),
 		});
-	}, [activeDoc, periodStart, periodEnd, customPercent, manualAdjustmentRub]);
+	}, [isOpen, activeDoc, periodStart, periodEnd, customPercent, manualAdjustmentRub]);
 
 	if (!isOpen) return null;
 

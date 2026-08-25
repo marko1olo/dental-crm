@@ -323,11 +323,11 @@
 	}
 
 	.visit-focus-bar.odontogram-compact .visit-focus-actions button {
-		min-height: 28px !important;
-		height: 28px !important;
-		padding: 2px 8px !important;
-		font-size: 11px !important;
-		line-height: 1 !important;
+		min-height: 44px !important;
+		height: 44px !important;
+		padding: 4px 10px !important;
+		font-size: 13px !important;
+		line-height: 1.2 !important;
 	}
 
 	.tooth-chart-arch-container {
@@ -1645,7 +1645,9 @@
 }
 
 .tooth-hover-quick-hud button {
-	min-height: 34px;
+	min-height: 44px;
+	min-width: 44px;
+	font-size: 13px;
 	touch-action: manipulation;
 }
 

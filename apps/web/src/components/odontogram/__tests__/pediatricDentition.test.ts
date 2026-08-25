@@ -11,7 +11,7 @@ import {
 	generateCariogramPieChartSlices,
 	getToothDentitionType,
 	DEFAULT_CARIOGRAM_INPUT,
-} from "../pediatricDentitionEngine.js";
+} from "../pediatricDentitionEngine";
 
 describe("Pediatric Dentition & Cariogram Engine", () => {
 	it("correctly identifies all 20 primary teeth", () => {

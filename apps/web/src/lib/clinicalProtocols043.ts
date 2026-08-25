@@ -1,4 +1,17 @@
-import { isValidFdiToothNumber } from "@dental/shared";
+import {
+	isValidFdiToothNumber,
+	synthesizeProtocolFromOrder804nService,
+	enrichDiaryFrom804nServices,
+	ORDER_804N_PROTOCOL_DEFINITIONS,
+	type Order804nProtocolDefinition,
+} from "@dental/shared";
+
+export {
+	synthesizeProtocolFromOrder804nService,
+	enrichDiaryFrom804nServices,
+	ORDER_804N_PROTOCOL_DEFINITIONS,
+	type Order804nProtocolDefinition,
+};
 
 export interface DiaryState {
 	anamnesis: string;
@@ -830,6 +843,53 @@ export function mergeSoapDiaryState(
 		),
 		complications: mergeText(existing.complications, incoming.complications),
 		comorbidities: mergeText(existing.comorbidities, incoming.comorbidities),
+	};
+}
+
+/**
+ * 100% неразрушающее применение услуги Номенклатуры 804н к SOAP-дневнику врача.
+ * Гарантирует сохранение ранее введенного врачом текста (жалобы, статус, сопутствующие патологии).
+ */
+export function applyOrder804nServiceToSoapDiary(
+	current: DiaryState,
+	code804n: string,
+	toothNumber?: number | string,
+): DiaryState {
+	const def = synthesizeProtocolFromOrder804nService(
+		code804n,
+		toothNumber !== undefined ? { toothNumber } : undefined,
+	);
+
+	const currentAnamnesis = (current.anamnesis ?? "").trim();
+	const nextAnamnesis = currentAnamnesis || def.defaultSubjective || "";
+
+	const currentStatus = (current.statusLocalis ?? "").trim();
+	const nextStatus = currentStatus || def.defaultStatusLocalis || "";
+
+	const currentTreatment = (current.treatmentDescription ?? "").trim();
+	let nextTreatment = currentTreatment;
+	if (def.protocolStepRu && !currentTreatment.includes(def.protocolStepRu)) {
+		nextTreatment = currentTreatment
+			? `${currentTreatment}\n\n${def.protocolStepRu}`
+			: def.protocolStepRu;
+	}
+
+	const currentIcd = (current.diagnosisIcd10 ?? "").trim();
+	const nextIcd = currentIcd || def.primaryIcd10;
+
+	const currentTooth = (current.diagnosisTooth ?? "").trim();
+	const nextTooth = toothNumber
+		? (currentTooth ? normalizeFdiToothList(`${currentTooth}, ${toothNumber}`) : String(toothNumber))
+		: currentTooth;
+
+	return {
+		anamnesis: nextAnamnesis,
+		statusLocalis: nextStatus,
+		diagnosisIcd10: nextIcd,
+		diagnosisTooth: nextTooth,
+		treatmentDescription: nextTreatment,
+		complications: current.complications ?? "",
+		comorbidities: current.comorbidities ?? "",
 	};
 }
 

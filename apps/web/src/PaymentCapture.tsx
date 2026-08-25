@@ -380,7 +380,7 @@ function TaxPayerDetails({
 								<button
 									key={rel}
 									type="button"
-									className="quick-chip quick-chip--sm"
+									className="quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold"
 									onClick={() => onPayerRelationshipChange(rel)}
 								>
 									{rel}
@@ -395,7 +395,7 @@ function TaxPayerDetails({
 						aria-label="Код медицинской услуги для налогового вычета"
 					>
 						<button
-							className={`quick-chip ${taxDeductionCode === "" ? "active" : ""}`}
+							className={`quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold ${taxDeductionCode === "" ? "active" : ""}`}
 							type="button"
 							aria-pressed={taxDeductionCode === ""}
 							onClick={() => onTaxDeductionCodeChange("")}

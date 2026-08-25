@@ -377,8 +377,8 @@
 	margin: 0 0 0.15rem;
 	font-size: 0.9rem;
 	font-weight: 700;
-	color: #1e293b;
-	border-bottom: 1px solid #e2e8f0;
+	color: var(--ink, #1e293b);
+	border-bottom: 1px solid var(--line, #e2e8f0);
 	padding-bottom: 0.55rem;
 }
 ._ccm-label {
@@ -386,7 +386,7 @@
 	font-weight: 800;
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
-	color: #64748b;
+	color: var(--muted, #64748b);
 	margin: 0.6rem 0 0.15rem;
 }
 ._ccm-label:first-of-type {

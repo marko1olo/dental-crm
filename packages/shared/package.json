@@ -10,6 +10,26 @@
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js",
 			"default": "./dist/index.js"
+		},
+		"./finance": {
+			"types": "./dist/finance/index.d.ts",
+			"import": "./dist/finance/index.js",
+			"default": "./dist/finance/index.js"
+		},
+		"./fiscal": {
+			"types": "./dist/fiscal/index.d.ts",
+			"import": "./dist/fiscal/index.js",
+			"default": "./dist/fiscal/index.js"
+		},
+		"./sanpin": {
+			"types": "./dist/sanpin/index.d.ts",
+			"import": "./dist/sanpin/index.js",
+			"default": "./dist/sanpin/index.js"
+		},
+		"./imaging": {
+			"types": "./dist/imaging/index.d.ts",
+			"import": "./dist/imaging/index.js",
+			"default": "./dist/imaging/index.js"
 		}
 	},
 	"scripts": {

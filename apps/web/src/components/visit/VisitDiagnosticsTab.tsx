@@ -9,6 +9,9 @@ import { EndoCanalLogModal } from "../odontogram/EndoCanalLogModal";
 import { CephalometricAnalysisModal } from "../orthodontics/CephalometricAnalysisModal";
 import { LabOrdersPanel } from "../schedule/LabOrdersPanel";
 import { RadiologyReferralModal } from "./RadiologyReferralModal";
+import { ClinicalPhotoProtocolModal } from "../photography/ClinicalPhotoProtocolModal";
+import { CbctMprWorkspace } from "../dicom/CbctMprWorkspace";
+import { MedicalTourismQuoteModal } from "../finance/MedicalTourismQuoteModal";
 import { imagingWriteTarget, realVisitFieldId } from "./visitIdentity";
 import {
 	type ClinicalPhotoAttachment,
@@ -54,6 +57,9 @@ export function VisitDiagnosticsTab(props?: {
 	const [isCephModalOpen, setIsCephModalOpen] = useState<boolean>(false);
 	const [isEndoLogModalOpen, setIsEndoLogModalOpen] = useState<boolean>(false);
 	const [isRadiologyModalOpen, setIsRadiologyModalOpen] = useState<boolean>(false);
+	const [isPhotoProtocolModalOpen, setIsPhotoProtocolModalOpen] = useState<boolean>(false);
+	const [isCbctModalOpen, setIsCbctModalOpen] = useState<boolean>(false);
+	const [isMedicalTourismModalOpen, setIsMedicalTourismModalOpen] = useState<boolean>(false);
 
 	const [photoAttachments, setPhotoAttachments] = useState<ClinicalPhotoAttachment[]>([]);
 	const [selectedToothForPhoto, setSelectedToothForPhoto] = useState<number>(16);
@@ -190,6 +196,16 @@ export function VisitDiagnosticsTab(props?: {
 							</p>
 						</div>
 					</div>
+
+					<button
+						type="button"
+						onClick={() => setIsPhotoProtocolModalOpen(true)}
+						data-testid="open-visit-photo-protocol-modal-btn"
+						className="px-4 py-2.5 min-h-[44px] rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shrink-0 shadow-md shadow-indigo-600/20 active:scale-95 transition-all cursor-pointer border border-indigo-500/30 touch-manipulation"
+					>
+						<Camera size={15} />
+						<span>Сетка протокола (12 слотов)</span>
+					</button>
 				</div>
 
 				<div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
@@ -464,6 +480,66 @@ export function VisitDiagnosticsTab(props?: {
 				diary={EMPTY_DIARY}
 				doctorName={ctx?.auth?.currentUser?.name || "Лечащий врач стоматолог"}
 				clinicName={dashboard?.clinicSettings?.profile?.brandName || "Клиника ДЕНТЕ"}
+			/>
+
+			{/* Clinical 12/8/6/3-Slot Photo Protocol Studio Modal (Tier 2 on-demand) */}
+			<ClinicalPhotoProtocolModal
+				isOpen={isPhotoProtocolModalOpen}
+				onClose={() => setIsPhotoProtocolModalOpen(false)}
+				patientId={visitPatientId ?? activePatient?.id}
+				patientName={visitPatientName ?? activePatient?.fullName}
+				doctorName={ctx?.auth?.currentUser?.name || "Лечащий врач стоматолог"}
+				clinicName={dashboard?.clinicSettings?.profile?.brandName || "Клиника ДЕНТЕ"}
+				onSaveProtocol={(slots) => {
+					const newAttachments: ClinicalPhotoAttachment[] = Object.entries(slots)
+						.filter(([_, rec]) => typeof rec.imageUrl === "string" && rec.imageUrl.length > 0)
+						.map(([slotId, rec]) => ({
+							id: `photo-slot-${slotId}-${Date.now()}`,
+							photoType: rec.stage === "after" ? "after" : "before",
+							photoUrl: rec.imageUrl || "",
+							description: `Слот: ${slotId}`,
+							capturedAtIso: rec.uploadedAt ?? new Date().toISOString(),
+						}));
+					if (newAttachments.length > 0) {
+						const updated = [...photoAttachments, ...newAttachments];
+						setPhotoAttachments(updated);
+						const statement = generatePhotoProtocolAttachmentsStatement(updated);
+						if (props?.onInsertToProtocol) {
+							props.onInsertToProtocol(statement);
+						} else {
+							try {
+								window.dispatchEvent(
+									new CustomEvent("dente-apply-soap-protocol", {
+										detail: {
+											soap: {
+												treatmentDescription: statement,
+											},
+											mode: "smart_append",
+										},
+									}),
+								);
+							} catch {
+								// ignore
+							}
+						}
+					}
+					setIsPhotoProtocolModalOpen(false);
+				}}
+			/>
+
+			{/* 3D CBCT / MPR Fullscreen Studio Modal (Tier 3 on-demand) */}
+			<CbctMprWorkspace
+				isOpen={isCbctModalOpen}
+				onClose={() => setIsCbctModalOpen(false)}
+				patientId={visitPatientId ?? activePatient?.id}
+				patientName={visitPatientName ?? activePatient?.fullName}
+			/>
+
+			{/* Medical Tourism Multi-Currency Quote Modal (Tier 3 on-demand) */}
+			<MedicalTourismQuoteModal
+				isOpen={isMedicalTourismModalOpen}
+				onClose={() => setIsMedicalTourismModalOpen(false)}
+				initialPatientName={visitPatientName ?? activePatient?.fullName}
 			/>
 		</div>
 	);

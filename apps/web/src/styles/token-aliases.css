@@ -175,8 +175,10 @@
      на #fee2e2 это 6.4:1 вместо 3.9:1 у прежнего значения. */
 	--error-text: var(--bad-fg);
 	--brand-200: var(--teal-soft);
+	--teal-500: var(--teal);
 	--teal-600: var(--teal);
 	--teal-light: var(--teal);
+	--paper-border: var(--line);
 	/* Единственное вхождение — вертушка ожидания в портале лаборатории
      (GuestLabPortal.css:50, запас #2563eb). --brand-500 держит синий в светлой
      (#0ea5e9) и тёмной (#38bdf8) теме и уходит в тёплый в ночной, то есть

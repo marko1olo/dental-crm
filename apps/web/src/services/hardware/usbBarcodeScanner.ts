@@ -15,10 +15,14 @@
  */
 
 import {
-	parseGs1DataMatrix,
+	parseGs1DataMatrix as parseGs1DataMatrixFn,
 	triggerHaptic,
 	type ParsedGs1DataMatrix,
 } from "../../native/mobileBridge";
+
+export const parseGs1DataMatrix = parseGs1DataMatrixFn;
+export type { ParsedGs1DataMatrix };
+
 
 export type BarcodeClassification =
 	| "gs1_datamatrix"

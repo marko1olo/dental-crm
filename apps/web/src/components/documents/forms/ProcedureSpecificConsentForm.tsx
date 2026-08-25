@@ -150,15 +150,15 @@ export const ProcedureSpecificConsentForm = React.memo(
 				title="Процедурное согласие"
 				description="Приложение к согласию для конкретной процедуры: тип, зона, материалы, риски, альтернативы и послеоперационные ограничения."
 			>
-				<div style={{ marginBottom: "12px" }}>
-					<span style={{ fontSize: "12px", color: "var(--muted, #64748b)", display: "block", marginBottom: "6px" }}>
+				<div style={{ marginBottom: "14px" }}>
+					<span style={{ fontSize: "12px", fontWeight: 700, color: "var(--muted, #64748b)", display: "block", marginBottom: "8px" }}>
 						⚡ Быстрое заполнение по клиническому профилю (1 клик):
 					</span>
-					<div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+					<div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
 						<button
 							type="button"
 							className="secondary-button"
-							style={{ fontSize: "11.5px", padding: "3px 8px" }}
+							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
 							onClick={() => applyClinicalPreset("therapy_endo_restoration")}
 						>
 							🦷 Терапия / Эндодонтия
@@ -166,7 +166,7 @@ export const ProcedureSpecificConsentForm = React.memo(
 						<button
 							type="button"
 							className="secondary-button"
-							style={{ fontSize: "11.5px", padding: "3px 8px" }}
+							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
 							onClick={() => applyClinicalPreset("local_anesthesia")}
 						>
 							💉 Местная анестезия
@@ -174,7 +174,7 @@ export const ProcedureSpecificConsentForm = React.memo(
 						<button
 							type="button"
 							className="secondary-button"
-							style={{ fontSize: "11.5px", padding: "3px 8px" }}
+							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
 							onClick={() => applyClinicalPreset("sedation")}
 						>
 							💨 Седация (ЗАКС / в/в)
@@ -182,7 +182,7 @@ export const ProcedureSpecificConsentForm = React.memo(
 						<button
 							type="button"
 							className="secondary-button"
-							style={{ fontSize: "11.5px", padding: "3px 8px" }}
+							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
 							onClick={() => applyClinicalPreset("surgery_extraction")}
 						>
 							🔪 Хирургия / Удаление
@@ -190,7 +190,7 @@ export const ProcedureSpecificConsentForm = React.memo(
 						<button
 							type="button"
 							className="secondary-button"
-							style={{ fontSize: "11.5px", padding: "3px 8px" }}
+							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
 							onClick={() => applyClinicalPreset("implantation_bone_graft")}
 						>
 							🔩 Имплантация / Костная пластика
@@ -198,7 +198,7 @@ export const ProcedureSpecificConsentForm = React.memo(
 						<button
 							type="button"
 							className="secondary-button"
-							style={{ fontSize: "11.5px", padding: "3px 8px" }}
+							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
 							onClick={() => applyClinicalPreset("prosthetics")}
 						>
 							👑 Ортопедия (коронки, виниры)
@@ -206,7 +206,7 @@ export const ProcedureSpecificConsentForm = React.memo(
 						<button
 							type="button"
 							className="secondary-button"
-							style={{ fontSize: "11.5px", padding: "3px 8px" }}
+							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
 							onClick={() => applyClinicalPreset("orthodontics")}
 						>
 							📐 Ортодонтия (брекеты, элайнеры)
@@ -214,7 +214,7 @@ export const ProcedureSpecificConsentForm = React.memo(
 						<button
 							type="button"
 							className="secondary-button"
-							style={{ fontSize: "11.5px", padding: "3px 8px" }}
+							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
 							onClick={() => applyClinicalPreset("hygiene_whitening")}
 						>
 							🪥 Гигиена и отбеливание
@@ -222,7 +222,7 @@ export const ProcedureSpecificConsentForm = React.memo(
 						<button
 							type="button"
 							className="secondary-button"
-							style={{ fontSize: "11.5px", padding: "3px 8px" }}
+							style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
 							onClick={() => applyClinicalPreset("periodontology")}
 						>
 							🩸 Пародонтология

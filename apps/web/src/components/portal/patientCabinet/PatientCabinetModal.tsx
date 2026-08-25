@@ -2718,8 +2718,9 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 						<div
 							className="pc-modal-content"
 							style={{
-								backgroundColor: "#ffffff",
-								color: "#0f172a",
+								backgroundColor: "var(--paper-strong, var(--paper, #ffffff))",
+								color: "var(--ink, #0f172a)",
+								border: "1px solid var(--line, #e2e8f0)",
 								borderRadius: "24px",
 								padding: "24px",
 								width: "100%",
@@ -2734,7 +2735,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 							}}
 						>
 							<div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-								<div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#0d9488", fontWeight: 800, fontSize: "0.875rem" }}>
+								<div style={{ display: "flex", alignItems: "center", gap: "6px", color: "var(--teal, #0d9488)", fontWeight: 800, fontSize: "0.875rem" }}>
 									<Sparkles size={18} />
 									<span>МАКСИМАЛЬНАЯ ЯРКОСТЬ</span>
 								</div>
@@ -2746,7 +2747,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 										border: "none",
 										fontSize: "24px",
 										cursor: "pointer",
-										color: "#64748b",
+										color: "var(--muted, #64748b)",
 										minHeight: "48px",
 										minWidth: "48px",
 										display: "flex",
@@ -2760,10 +2761,10 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 							</div>
 
 							<div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-								<h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 900, color: "#0f172a" }}>
+								<h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 900, color: "var(--ink, #0f172a)" }}>
 									{data.fullName}
 								</h3>
-								<div style={{ fontSize: "0.875rem", color: "#64748b", fontWeight: 600 }}>
+								<div style={{ fontSize: "0.875rem", color: "var(--muted, #64748b)", fontWeight: 600 }}>
 									Карта пациента № {data.cardNumber}
 								</div>
 							</div>
@@ -2789,8 +2790,8 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 								<div
 									style={{
 										width: "100%",
-										background: "#f0fdfa",
-										border: "1px solid #99f6e4",
+										background: "var(--teal-surface, #f0fdfa)",
+										border: "1px solid var(--line, #99f6e4)",
 										borderRadius: "12px",
 										padding: "12px 14px",
 										display: "flex",
@@ -2800,26 +2801,26 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 									}}
 								>
 									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-										<span style={{ fontSize: "0.75rem", fontWeight: 800, color: "#0f766e", textTransform: "uppercase" }}>
+										<span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--teal-dark, #0f766e)", textTransform: "uppercase" }}>
 											Ближайший прием
 										</span>
-										<span className="pc-next-visit-time" style={{ color: "#0f766e" }}>
+										<span className="pc-next-visit-time" style={{ color: "var(--teal-dark, #0f766e)" }}>
 											{summary.nextAppointment.timeRu}
 										</span>
 									</div>
-									<div style={{ fontSize: "0.875rem", fontWeight: 700, color: "#0f172a" }}>
+									<div style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--ink, #0f172a)" }}>
 										{summary.nextAppointment.dateIso} &bull; {summary.nextAppointment.titleRu}
 									</div>
-									<div style={{ fontSize: "0.8125rem", color: "#334155" }}>
+									<div style={{ fontSize: "0.8125rem", color: "var(--muted, #334155)" }}>
 										Врач: <strong>{summary.nextAppointment.doctorName}</strong>
 									</div>
-									<div style={{ fontSize: "0.875rem", fontWeight: 800, color: "#0d9488", marginTop: "2px" }}>
+									<div style={{ fontSize: "0.875rem", fontWeight: 800, color: "var(--teal, #0d9488)", marginTop: "2px" }}>
 										📍 {summary.nextAppointment.roomNumber}
 									</div>
 								</div>
 							)}
 
-							<p style={{ margin: 0, fontSize: "0.8125rem", color: "#64748b", lineHeight: 1.4 }}>
+							<p style={{ margin: 0, fontSize: "0.8125rem", color: "var(--muted, #64748b)", lineHeight: 1.4 }}>
 								Поднесите экран к сканеру на стойке ресепшена или покажите администратору для мгновенной отметки о прибытии.
 							</p>
 
@@ -2829,8 +2830,8 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 								style={{
 									width: "100%",
 									minHeight: "48px",
-									backgroundColor: "#0d9488",
-									color: "#ffffff",
+									backgroundColor: "var(--teal, #0d9488)",
+									color: "var(--on-teal, #ffffff)",
 									border: "none",
 									borderRadius: "12px",
 									fontSize: "1rem",
@@ -2871,8 +2872,9 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 						<div
 							className="pc-modal-content"
 							style={{
-								backgroundColor: "#ffffff",
-								color: "#0f172a",
+								backgroundColor: "var(--paper-strong, var(--paper, #ffffff))",
+								color: "var(--ink, #0f172a)",
+								border: "1px solid var(--line, #e2e8f0)",
 								borderRadius: "24px",
 								padding: "24px",
 								width: "100%",
@@ -2887,7 +2889,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 							}}
 						>
 							<div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-								<div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#0d9488", fontWeight: 800, fontSize: "0.875rem" }}>
+								<div style={{ display: "flex", alignItems: "center", gap: "6px", color: "var(--teal, #0d9488)", fontWeight: 800, fontSize: "0.875rem" }}>
 									<Heart size={18} />
 									<span>ПАМЯТКА НА СМАРТФОНЕ</span>
 								</div>
@@ -2899,7 +2901,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 										border: "none",
 										fontSize: "24px",
 										cursor: "pointer",
-										color: "#64748b",
+										color: "var(--muted, #64748b)",
 										minHeight: "48px",
 										minWidth: "48px",
 										display: "flex",
@@ -2913,10 +2915,10 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 							</div>
 
 							<div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-								<h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 900, color: "#0f172a" }}>
+								<h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 900, color: "var(--ink, #0f172a)" }}>
 									{careMemo.patientName}
 								</h3>
-								<div style={{ fontSize: "0.875rem", color: "#64748b", fontWeight: 600 }}>
+								<div style={{ fontSize: "0.875rem", color: "var(--muted, #64748b)", fontWeight: 600 }}>
 									Рекомендации после лечения зуба №{careMemo.toothFdi}
 								</div>
 							</div>

@@ -187,6 +187,7 @@ export const CARDIO_MAX_EPINEPHRINE_MG = 0.04; // 40 мкг для пациен�
 
 /** Текст визуального бейджа кардиологического лимита */
 export const CARDIO_LIMIT_BADGE_TEXT = "Кардиологический лимит";
+export const EPINEPHRINE_BLOCKED_BADGE_TEXT = "⛔ Адреналин запрещен";
 
 /** Профиль соматических факторов риска и аллергоанамнеза пациента */
 export interface SomaticRiskProfile {
@@ -194,10 +195,22 @@ export interface SomaticRiskProfile {
 	readonly hasCardiovascularRisk?: boolean | undefined;
 	/** Гипертоническая болезнь (МКБ-10 I10–I15) */
 	readonly hasHypertension?: boolean | undefined;
+	/** Тяжелая артериальная гипертензия III стадии / кризовое течение (АД > 180/110) */
+	readonly hasSevereHypertensionStage3?: boolean | undefined;
 	/** Ишемическая болезнь сердца / инфаркт миокарда (МКБ-10 I20–I25) */
 	readonly hasIhd?: boolean | undefined;
 	/** Нарушения сердечного ритма / аритмия / тахикардия (МКБ-10 I44–I49) */
 	readonly hasArrhythmia?: boolean | undefined;
+	/** Тиреотоксикоз / гипертиреоз (МКБ-10 E05) — абсолютный запрет адреналина */
+	readonly hasThyrotoxicosis?: boolean | undefined;
+	/** Прием бета-адреноблокаторов (бисопролол, анаприлин, соталол и др.) — риск криза на адреналин */
+	readonly takesBetaBlockers?: boolean | undefined;
+	/** Аллергия на артикаин (Ультракаин, Септанест, Убистезин) */
+	readonly hasArticaineAllergy?: boolean | undefined;
+	/** Аллергия на мепивакаин (Скандонест) */
+	readonly hasMepivacaineAllergy?: boolean | undefined;
+	/** Аллергия на лидокаин */
+	readonly hasLidocaineAllergy?: boolean | undefined;
 	/** Аллергия на сульфиты / метабисульфит натрия (E223) */
 	readonly hasSulfiteAllergy?: boolean | undefined;
 	/** Бронхиальная астма (МКБ-10 J45) */
@@ -285,10 +298,55 @@ export function extractSomaticRiskProfileFromText(text?: string | null | undefin
 		raw.includes("i48") ||
 		raw.includes("i49");
 
+	const hasSevereHypertension =
+		raw.includes("аг 3") ||
+		raw.includes("аг iii") ||
+		raw.includes("3 стад") ||
+		raw.includes("iii стад") ||
+		raw.includes("криз") ||
+		raw.includes("тяжелая гипертенз") ||
+		raw.includes("тяжелой гипертенз");
+
+	const hasThyrotoxicosis =
+		raw.includes("тиреотоксикоз") ||
+		raw.includes("гипертиреоз") ||
+		raw.includes("базедов") ||
+		raw.includes("e05") ||
+		raw.includes("е05") ||
+		raw.includes("токсический зоб");
+
+	const takesBetaBlockers =
+		raw.includes("бета-блокатор") ||
+		raw.includes("бетаблокатор") ||
+		raw.includes("бисопролол") ||
+		raw.includes("конкор") ||
+		raw.includes("анаприлин") ||
+		raw.includes("пропранолол") ||
+		raw.includes("метопролол") ||
+		raw.includes("эгилок") ||
+		raw.includes("соталол") ||
+		raw.includes("атенолол") ||
+		raw.includes("карведилол");
+
+	const hasArticaineAllergy =
+		(raw.includes("аллерг") || raw.includes("непереносим")) &&
+		(raw.includes("артикаин") || raw.includes("ультракаин") || raw.includes("септанест") || raw.includes("убистезин"));
+
+	const hasMepivacaineAllergy =
+		(raw.includes("аллерг") || raw.includes("непереносим")) &&
+		(raw.includes("мепивакаин") || raw.includes("скандонест") || raw.includes("мепивастезин"));
+
+	const hasLidocaineAllergy =
+		(raw.includes("аллерг") || raw.includes("непереносим")) &&
+		(raw.includes("лидокаин") || raw.includes("новокаин") || raw.includes("ксилокаин"));
+
 	const hasCardio =
 		hasHypertension ||
+		hasSevereHypertension ||
 		hasIhd ||
 		hasArrhythmia ||
+		hasThyrotoxicosis ||
+		takesBetaBlockers ||
 		raw.includes("сердеч") ||
 		raw.includes("кардио") ||
 		raw.includes("пороком сердца") ||
@@ -341,8 +399,14 @@ export function extractSomaticRiskProfileFromText(text?: string | null | undefin
 	return {
 		hasCardiovascularRisk: hasCardio,
 		hasHypertension,
+		hasSevereHypertensionStage3: hasSevereHypertension,
 		hasIhd,
 		hasArrhythmia,
+		hasThyrotoxicosis,
+		takesBetaBlockers,
+		hasArticaineAllergy,
+		hasMepivacaineAllergy,
+		hasLidocaineAllergy,
 		hasSulfiteAllergy: hasSulfite,
 		hasBronchialAsthma: hasAsthma,
 		isPregnantOrLactating: isPregnant,
@@ -364,11 +428,17 @@ export function checkAnesthesiaSomaticContraindications(params: {
 	const carpules = Math.max(0, Number.isFinite(params.carpulesCount) ? (params.carpulesCount ?? 1) : 1);
 
 	const totalEpinephrineMg = Math.round(carpules * drug.epinephrineMgPerCarpule * 10000) / 10000;
+	const isEpinephrineBlocked = Boolean(
+		somatic.hasSevereHypertensionStage3 ||
+		somatic.hasThyrotoxicosis ||
+		somatic.takesBetaBlockers,
+	);
 	const hasCardio = Boolean(
 		somatic.hasCardiovascularRisk ||
 		somatic.hasHypertension ||
 		somatic.hasIhd ||
-		somatic.hasArrhythmia,
+		somatic.hasArrhythmia ||
+		isEpinephrineBlocked,
 	);
 	const hasAsthmaOrSulfite = Boolean(somatic.hasSulfiteAllergy || somatic.hasBronchialAsthma);
 	const isPregnant = Boolean(
@@ -376,15 +446,17 @@ export function checkAnesthesiaSomaticContraindications(params: {
 		(somatic.pregnancyTrimester && somatic.pregnancyTrimester !== "none"),
 	);
 
-	const isCardioRestricted = hasCardio && !drug.isAdrenalineFree;
-	const maxSafeEpinephrineMg = isCardioRestricted
-		? CARDIO_MAX_EPINEPHRINE_MG
-		: HEALTHY_MAX_EPINEPHRINE_MG;
+	const isCardioRestricted = (hasCardio || isEpinephrineBlocked) && !drug.isAdrenalineFree;
+	let maxSafeEpinephrineMg = isEpinephrineBlocked
+		? 0.0
+		: isCardioRestricted
+			? CARDIO_MAX_EPINEPHRINE_MG
+			: HEALTHY_MAX_EPINEPHRINE_MG;
 
 	let maxCardioCarpules: number | null = null;
-	if (!drug.isAdrenalineFree && drug.epinephrineMgPerCarpule > 0) {
-		// Для 1:100 000 (0.017 мг/карп) -> 0.04 / 0.017 = 2.35 -> строго 2 карпулы
-		// Для 1:200 000 (0.0085 мг/карп) -> 0.04 / 0.0085 = 4.7 -> строго 4 карпулы
+	if (isEpinephrineBlocked && !drug.isAdrenalineFree) {
+		maxCardioCarpules = 0;
+	} else if (!drug.isAdrenalineFree && drug.epinephrineMgPerCarpule > 0) {
 		if (drug.vasoconstrictorRatio === "1:100000") {
 			maxCardioCarpules = 2.0;
 		} else if (drug.vasoconstrictorRatio === "1:200000") {
@@ -397,6 +469,74 @@ export function checkAnesthesiaSomaticContraindications(params: {
 	const alerts: AnesthesiaSomaticAlert[] = [];
 	let recommendedDrugKey: AnesthesiaDrugKey | null = null;
 	let hasContraindications = false;
+
+	// 0. КРОСС-ЧЕК: АЛЛЕРГИЯ НА АНЕСТЕТИКИ (Артикаин, Мепивакаин, Лидокаин)
+	if (somatic.hasArticaineAllergy && (drug.key === "ultracain_ds_forte" || drug.key === "ultracain_ds" || drug.key === "septanest_100")) {
+		hasContraindications = true;
+		recommendedDrugKey = somatic.hasMepivacaineAllergy ? "lidocaine_2" : "scandonest_3";
+		alerts.push({
+			id: "articaine_allergy_contraindication",
+			severity: "danger",
+			title: "⛔ АЛЛЕРГИЯ НА АРТИКАИН (УЛЬТРАКАИН)",
+			message: "У пациента зарегистрирована аллергическая реакция на артикаин (Ультракаин, Септанест). Препарат категорически противопоказан! Риск анафилактического шока. Препарат выбора — Скандонест 3% (Мепивакаин).",
+			recommendedDrugKey,
+			recommendedAction: "Заменить на Скандонест 3% (Мепивакаин)",
+		});
+	}
+
+	if (somatic.hasMepivacaineAllergy && drug.key === "scandonest_3") {
+		hasContraindications = true;
+		recommendedDrugKey = somatic.hasArticaineAllergy ? "lidocaine_2" : "ultracain_ds";
+		alerts.push({
+			id: "mepivacaine_allergy_contraindication",
+			severity: "danger",
+			title: "⛔ АЛЛЕРГИЯ НА МЕПИВАКАИН (СКАНДОНЕСТ)",
+			message: "У пациента аллергия на мепивакаин. Препарат Скандонест 3% категорически противопоказан!",
+			recommendedDrugKey,
+			recommendedAction: "Заменить на Артикаин или Лидокаин 2%",
+		});
+	}
+
+	if (somatic.hasLidocaineAllergy && drug.key === "lidocaine_2") {
+		hasContraindications = true;
+		recommendedDrugKey = somatic.hasMepivacaineAllergy ? "ultracain_ds" : "scandonest_3";
+		alerts.push({
+			id: "lidocaine_allergy_contraindication",
+			severity: "danger",
+			title: "⛔ АЛЛЕРГИЯ НА ЛИДОКАИН",
+			message: "У пациента аллергия на лидокаин. Препарат Лидокаин 2% категорически противопоказан!",
+			recommendedDrugKey,
+			recommendedAction: "Заменить на Скандонест 3% (Мепивакаин)",
+		});
+	}
+
+	// 1. КРОСС-ЧЕК: АБСОЛЮТНЫЙ ЗАПРЕТ ВАЗОКОНСТРИКТОРА (АГ III, Тиреотоксикоз, Бета-блокаторы)
+	if (isEpinephrineBlocked) {
+		if (!drug.isAdrenalineFree) {
+			hasContraindications = true;
+			recommendedDrugKey = "scandonest_3";
+			const reasonStr = somatic.hasThyrotoxicosis
+				? "тиреотоксикоз / гипертиреоз (E05)"
+				: somatic.takesBetaBlockers
+					? "прием бета-адреноблокаторов (риск неконтролируемого криза и рефлекторной брадикардии)"
+					: "тяжелая артериальная гипертензия III стадии / кризовое течение";
+			alerts.push({
+				id: "epinephrine_absolute_block_contraindication",
+				severity: "danger",
+				title: "⛔ АБСОЛЮТНЫЙ ЗАПРЕТ АДРЕНАЛИНА (ЭПИНЕФРИНА)",
+				message: `У пациента выявлены критические соматические риски: ${reasonStr}! Вазоконстрикторы (адреналин/эпинефрин) АБСОЛЮТНО ПРОТИВОПОКАЗАНЫ. Разрешены строго анестетики без адреналина (Скандонест 3% / Мепивакаин).`,
+				recommendedDrugKey: "scandonest_3",
+				recommendedAction: "Использовать Скандонест 3% без вазоконстриктора",
+			});
+		} else {
+			alerts.push({
+				id: "epinephrine_block_safe_plain",
+				severity: "safe",
+				title: "Разрешено: препарат без адреналина",
+				message: "Препарат не содержит вазоконстриктора. Безопасен при тиреотоксикозе, приеме бета-блокаторов и кризовой гипертонии.",
+			});
+		}
+	}
 
 	// 1. КРОСС-ЧЕК: Аллергия на сульфиты / Бронхиальная астма (J45)
 	if (hasAsthmaOrSulfite) {
@@ -729,6 +869,7 @@ export function calculatePatientMrd(params: {
 	patientAgeYears?: number | null | undefined;
 	isPediatric?: boolean | undefined;
 	isCardioRestricted?: boolean | undefined;
+	isEpinephrineBlocked?: boolean | undefined;
 }): PatientMrdCalculation {
 	const drug = ANESTHESIA_DRUGS[params.drugKey] ?? ANESTHESIA_DRUGS.ultracain_ds;
 	const weight = Math.max(5, Math.min(250, Number.isFinite(params.patientWeightKg) && params.patientWeightKg > 0 ? params.patientWeightKg : 70));
@@ -751,7 +892,12 @@ export function calculatePatientMrd(params: {
 	let isCappedByCardio = false;
 	let maxSafeEpinephrineMg = HEALTHY_MAX_EPINEPHRINE_MG;
 
-	if (params.isCardioRestricted && !drug.isAdrenalineFree && drug.epinephrineMgPerCarpule > 0) {
+	if (params.isEpinephrineBlocked && !drug.isAdrenalineFree) {
+		maxSafeEpinephrineMg = 0.0;
+		mrdCarpules = 0;
+		mrdDoseMg = 0;
+		isCappedByCardio = true;
+	} else if (params.isCardioRestricted && !drug.isAdrenalineFree && drug.epinephrineMgPerCarpule > 0) {
 		maxSafeEpinephrineMg = CARDIO_MAX_EPINEPHRINE_MG;
 		const maxCardioCarp = drug.vasoconstrictorRatio === "1:100000"
 			? 2.0
@@ -767,7 +913,9 @@ export function calculatePatientMrd(params: {
 	}
 
 	const mrdVolumeMl = Math.round(mrdCarpules * drug.volumeMlPerCarpule * 100) / 100;
-	const formattedNoteRu = `МРД (${drug.commercialName}, ${weight} кг${isPediatric ? ", дети" : ""}): ${mrdDoseMg} мг (${mrdVolumeMl} мл / ${mrdCarpules} карп.)${isCappedByCardio ? ` [${CARDIO_LIMIT_BADGE_TEXT}: <= 0.04 мг адреналина]` : ""}`;
+	const formattedNoteRu = params.isEpinephrineBlocked && !drug.isAdrenalineFree
+		? `МРД (${drug.commercialName}): 0 мг / 0 карп. [${EPINEPHRINE_BLOCKED_BADGE_TEXT}]`
+		: `МРД (${drug.commercialName}, ${weight} кг${isPediatric ? ", дети" : ""}): ${mrdDoseMg} мг (${mrdVolumeMl} мл / ${mrdCarpules} карп.)${isCappedByCardio ? ` [${CARDIO_LIMIT_BADGE_TEXT}: <= 0.04 мг адреналина]` : ""}`;
 
 	return {
 		drugKey: drug.key,
@@ -782,7 +930,9 @@ export function calculatePatientMrd(params: {
 		isCappedByAbsoluteMax,
 		isCappedByCardio,
 		maxSafeEpinephrineMg,
-		cardioLimitBadgeText: isCappedByCardio ? CARDIO_LIMIT_BADGE_TEXT : null,
+		cardioLimitBadgeText: params.isEpinephrineBlocked && !drug.isAdrenalineFree
+			? EPINEPHRINE_BLOCKED_BADGE_TEXT
+			: isCappedByCardio ? CARDIO_LIMIT_BADGE_TEXT : null,
 		formattedNoteRu,
 	};
 }
@@ -818,30 +968,53 @@ export function resolveAutopilotAnesthesia(params: {
 		somatic.isPregnantOrLactating ||
 		(somatic.pregnancyTrimester && somatic.pregnancyTrimester !== "none"),
 	);
+	const isEpinephrineBlocked = Boolean(
+		somatic.hasSevereHypertensionStage3 ||
+		somatic.hasThyrotoxicosis ||
+		somatic.takesBetaBlockers,
+	);
 	const hasCardio = Boolean(
 		somatic.hasCardiovascularRisk ||
 		somatic.hasHypertension ||
 		somatic.hasIhd ||
-		somatic.hasArrhythmia,
+		somatic.hasArrhythmia ||
+		isEpinephrineBlocked,
 	);
 
 	let selectedDrugKey: AnesthesiaDrugKey = "ultracain_ds_forte";
 	let rationaleRu = "Стандартный соматический статус без отягощающих факторов. Препарат выбора — Ультракаин Д-С Форте 1:100 000.";
 	let badgeText = "Ультракаин Д-С Форте 1:100k (Стандарт)";
 
-	// 1. Бронхиальная астма / Аллергия на сульфиты -> Скандонест 3%
-	if (hasAsthmaOrSulfite) {
+	// 0. Аллергия на артикаин -> Скандонест 3%
+	if (somatic.hasArticaineAllergy) {
+		selectedDrugKey = somatic.hasMepivacaineAllergy ? "lidocaine_2" : "scandonest_3";
+		rationaleRu = "Аллергия на артикаин (Ультракаин): артикаин-содержащие препараты категорически запрещены. Автовыбор — Скандонест 3% (Мепивакаин).";
+		badgeText = "Скандонест 3% (Аллергия на артикаин)";
+	}
+	// 1. Абсолютный запрет адреналина (Тиреотоксикоз, АГ III ст., Бета-блокаторы)
+	else if (isEpinephrineBlocked) {
+		selectedDrugKey = "scandonest_3";
+		const reasonStr = somatic.hasThyrotoxicosis
+			? "тиреотоксикоз (МКБ-10 E05)"
+			: somatic.takesBetaBlockers
+				? "прием бета-блокаторов"
+				: "артериальная гипертензия III стадии";
+		rationaleRu = `Тяжелый соматический риск (${reasonStr}): адреналин абсолютно противопоказан из-за риска криза и аритмии. Автовыбор — Скандонест 3% (Мепивакаин без адреналина).`;
+		badgeText = "Скандонест 3% (⛔ Адреналин запрещен)";
+	}
+	// 2. Бронхиальная астма / Аллергия на сульфиты -> Скандонест 3%
+	else if (hasAsthmaOrSulfite) {
 		selectedDrugKey = "scandonest_3";
 		rationaleRu = "Бронхиальная астма (J45) / аллергия на сульфиты: метабисульфит натрия (E223) в адреналиновых растворах противопоказан из-за риска бронхоспазма. Автовыбор — Скандонест 3% (Мепивакаин без вазоконстриктора и сульфитов).";
 		badgeText = "Скандонест 3% (Астма / Без сульфитов)";
 	}
-	// 2. Беременность / Лактация -> Ультракаин Д-С 1:200 000
+	// 3. Беременность / Лактация -> Ультракаин Д-С 1:200 000
 	else if (isPregnant) {
 		selectedDrugKey = "ultracain_ds";
 		rationaleRu = "Беременность / период лактации: золотой стандарт СтАР — Артикаин 4% с пониженной концентрацией адреналина 1:200 000 (Ультракаин Д-С). Высокое связывание с белками (95%), минимальный плацентарный переход.";
 		badgeText = "Ультракаин Д-С 1:200k (Беременность / Лактация)";
 	}
-	// 3. Сердечно-сосудистые заболевания / Гипертония / ИБС / Аритмия -> Скандонест 3% или адреналиновый лимит
+	// 4. Сердечно-сосудистые заболевания / Гипертония / ИБС / Аритмия -> Скандонест 3% или адреналиновый лимит
 	else if (hasCardio) {
 		selectedDrugKey = "scandonest_3";
 		rationaleRu = "Гипертоническая болезнь (I10–I15) / ИБС / Аритмия: препарат выбора — Скандонест 3% без вазоконстриктора. При использовании адреналина действует жесткий кардиологический лимит 0.04 мг (макс. 2 карпулы 1:100k или 4 карпулы 1:200k).";
@@ -856,6 +1029,7 @@ export function resolveAutopilotAnesthesia(params: {
 		patientAgeYears: params.patientAgeYears,
 		isPediatric: params.isPediatric,
 		isCardioRestricted: hasCardio,
+		isEpinephrineBlocked,
 	});
 
 	const crossCheck = checkAnesthesiaSomaticContraindications({
@@ -870,7 +1044,9 @@ export function resolveAutopilotAnesthesia(params: {
 		rationaleRu,
 		badgeText,
 		isCardioRestricted,
-		cardioLimitBadgeText: hasCardio ? CARDIO_LIMIT_BADGE_TEXT : null,
+		cardioLimitBadgeText: isEpinephrineBlocked
+			? EPINEPHRINE_BLOCKED_BADGE_TEXT
+			: hasCardio ? CARDIO_LIMIT_BADGE_TEXT : null,
 		mrdDoseMg: mrd.mrdDoseMg,
 		mrdVolumeMl: mrd.mrdVolumeMl,
 		mrdCarpules: mrd.mrdCarpules,

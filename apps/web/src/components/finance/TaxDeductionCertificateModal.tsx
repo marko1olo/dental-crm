@@ -144,12 +144,42 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 	);
 
 	// Multi-year summary calculation
-	const calculationResult = useMemo(
-		() => calculateTaxDeductionSummary(payments),
-		[payments]
-	);
+	const calculationResult = useMemo(() => {
+		if (!isOpen) {
+			return {
+				yearsSummary: [],
+				grandTotalCode01Rub: 0,
+				grandTotalCode01Kopecks: 0,
+				grandTotalCode02Rub: 0,
+				grandTotalCode02Kopecks: 0,
+				grandTotalRub: 0,
+				grandTotalKopecks: 0,
+				grandTotalRefund13Rub: 0,
+				grandTotalRefund15Rub: 0,
+				totalReceiptsCount: 0,
+				totalAmountInWordsRu: "",
+			};
+		}
+		return calculateTaxDeductionSummary(payments);
+	}, [isOpen, payments]);
 
 	const targetYearSummary = useMemo(() => {
+		if (!isOpen) {
+			return {
+				taxYear: selectedYear,
+				code01Rub: 0,
+				code01Kopecks: 0,
+				code02Rub: 0,
+				code02Kopecks: 0,
+				totalRub: 0,
+				totalKopecks: 0,
+				receiptsCount: 0,
+				code01StatutoryLimitRub: selectedYear >= 2024 ? 150000 : 120000,
+				code01EligibleRub: 0,
+				refund13EstimateRub: 0,
+				refund15EstimateRub: 0,
+			};
+		}
 		return (
 			calculationResult.yearsSummary.find((y) => y.taxYear === selectedYear) || {
 				taxYear: selectedYear,
@@ -166,21 +196,12 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 				refund15EstimateRub: 0,
 			}
 		);
-	}, [calculationResult, selectedYear]);
+	}, [isOpen, calculationResult, selectedYear]);
 
 	const yearPayments = useMemo(() => {
+		if (!isOpen) return [];
 		return payments.filter((p) => new Date(p.dateIso).getFullYear() === selectedYear);
-	}, [payments, selectedYear]);
-
-	if (!isOpen) return null;
-
-	const handleFillFromPatient = () => {
-		setPayerFullName(patientName);
-		setPayerBirthDate(patientBirthDate);
-		if (patientInn) setPayerInn(patientInn);
-		setPayerRelationship("patient");
-		showToast("Данные плательщика заполнены из карточки пациента", "info");
-	};
+	}, [isOpen, payments, selectedYear]);
 
 	const getCertificateParams = (): TaxDeductionCertificateParams => ({
 		certificateNumber,
@@ -214,9 +235,13 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 	});
 
 	const xmlRepresentation = useMemo(() => {
+		if (!isOpen) {
+			return { fileName: "", xmlContent: "" };
+		}
 		const params = getCertificateParams();
 		return generateFnsTaxDeductionXml(params);
 	}, [
+		isOpen,
 		certificateNumber,
 		selectedYear,
 		taxOfficeCode,
@@ -241,15 +266,27 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 	]);
 
 	const qrSvgString = useMemo(() => {
+		if (!isOpen) return "";
 		const params = getCertificateParams();
 		return generateTaxCertificateQrSvg(params, { size: 120, margin: 1 });
 	}, [
+		isOpen,
 		certificateNumber,
 		selectedYear,
 		clinicInn,
 		payerInn,
 		payments,
 	]);
+
+	if (!isOpen) return null;
+
+	const handleFillFromPatient = () => {
+		setPayerFullName(patientName);
+		setPayerBirthDate(patientBirthDate);
+		if (patientInn) setPayerInn(patientInn);
+		setPayerRelationship("patient");
+		showToast("Данные плательщика заполнены из карточки пациента", "info");
+	};
 
 	const handlePrint = () => {
 		const params = getCertificateParams();

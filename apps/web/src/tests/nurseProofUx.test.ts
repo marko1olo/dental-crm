@@ -12,10 +12,12 @@ import {
 	generateSoapFromOdontogramFinding,
 	appendAnesthesiaToSoap,
 	appendRecommendationToSoap,
+	POST_OP_PATIENT_MEMOS,
 } from "../lib/clinicalProtocols043";
 import type { DiaryState } from "../components/useVisitDiaryLogic";
 import { CLINICAL_PRESETS } from "../components/visit/ClinicalQuickPresetsBar";
 import { TOOTH_STATE_LABELS } from "../components/odontogram/ToothChart";
+import { getDefaultCanalsForTooth } from "../components/odontogram/EndoCanalLogModal";
 import { isValidFdiToothNumber } from "@dental/shared";
 
 describe("NURSE-PROOF & NON-INTRUSIVE CLINICAL UX SUITE («ЗАЩИТА ОТ СОВКОВОЙ БАБУШКИ»)", () => {
@@ -283,6 +285,38 @@ describe("NURSE-PROOF & NON-INTRUSIVE CLINICAL UX SUITE («ЗАЩИТА ОТ С�
 				const method = ANESTHESIA_METHODS[key];
 				assert.ok(method.nameRu.length > 0, `${key} Russian method name must exist`);
 				assert.match(method.nameRu, /[а-яА-ЯёЁ]/, `${key} name must be Russian`);
+			}
+		});
+	});
+
+	describe("5. Clinical Modals & 1-Click Nurse-Proof Workflows", () => {
+		it("should generate anatomical endodontic canal templates for molars and premolars", () => {
+			// Upper molar (16) -> 4 canals (MB1, MB2, DB, P)
+			const upperMolarCanals = getDefaultCanalsForTooth(16);
+			assert.equal(upperMolarCanals.length, 4);
+			assert.equal(upperMolarCanals[0]?.canalName, "MB1");
+			assert.equal(upperMolarCanals[3]?.canalName, "P");
+
+			// Lower molar (46) -> 3 canals (MB, ML, D)
+			const lowerMolarCanals = getDefaultCanalsForTooth(46);
+			assert.equal(lowerMolarCanals.length, 3);
+			assert.equal(lowerMolarCanals[0]?.canalName, "MB");
+			assert.equal(lowerMolarCanals[2]?.canalName, "D");
+
+			// Central incisor (11) -> 1 canal (Main)
+			const incisorCanals = getDefaultCanalsForTooth(11);
+			assert.equal(incisorCanals.length, 1);
+			assert.equal(incisorCanals[0]?.canalName, "Main");
+		});
+
+		it("should provide complete post-op patient memos with emergency contact triggers", () => {
+			assert.ok(POST_OP_PATIENT_MEMOS.length >= 3);
+
+			for (const memo of POST_OP_PATIENT_MEMOS) {
+				assert.ok(memo.title.length > 0, `Memo ${memo.id} must have title`);
+				assert.ok(memo.shortTitle.length > 0, `Memo ${memo.id} must have shortTitle`);
+				assert.ok(memo.keyRules.length >= 3, `Memo ${memo.id} must have at least 3 rules`);
+				assert.ok(memo.urgentTriggers.length >= 2, `Memo ${memo.id} must have emergency triggers`);
 			}
 		});
 	});

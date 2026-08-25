@@ -15,8 +15,16 @@ import {
 	RefreshCw,
 	ArrowRight,
 	Save,
+	Globe,
+	Users,
+	ChevronDown,
 	Zap,
 } from "lucide-react";
+import {
+	convertRubToForeignCurrency,
+	type SupportedCurrency,
+	CBR_CURRENCIES,
+} from "@dental/shared";
 import {
 	CHECKOUT_PAYMENT_METHODS,
 	type CheckoutPaymentMethodType,
@@ -39,6 +47,7 @@ export interface FastCheckoutModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly totalBillKop?: number | undefined;
+	readonly initialPaymentMethod?: CheckoutPaymentMethodType | undefined;
 	readonly patientName?: string | undefined;
 	readonly patientPhone?: string | undefined;
 	readonly orderId?: string | undefined;
@@ -50,6 +59,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	isOpen,
 	onClose,
 	totalBillKop: initialTotalBillKop = 1960000,
+	initialPaymentMethod,
 	patientName = "Смирнова Екатерина Васильевна",
 	patientPhone = "+7 (999) 123-45-67",
 	orderId = "CHK-2026-891",
@@ -59,12 +69,22 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	const [selectedStageId, setSelectedStageId] = useState<string>("full_plan");
 	const [stagePaymentMode, setStagePaymentMode] = useState<StagePaymentMode>("full");
 	const [advanceAlreadyPaidRub, setAdvanceAlreadyPaidRub] = useState<number>(15000);
-	const [activeMethod, setActiveMethod] = useState<CheckoutPaymentMethodType>("sbp_qr");
+	const [activeMethod, setActiveMethod] = useState<CheckoutPaymentMethodType>(
+		initialPaymentMethod ?? "sbp_qr"
+	);
 	const [cashTenderedRub, setCashTenderedRub] = useState<number>(0);
 	const [isPrinting, setIsPrinting] = useState<boolean>(false);
 	const [isOfflineBuffered, setIsOfflineBuffered] = useState<boolean>(false);
 	const [pendingOfflineCount, setPendingOfflineCount] = useState<number>(0);
 	const [isFlushingQueue, setIsFlushingQueue] = useState<boolean>(false);
+
+	useEffect(() => {
+		if (isOpen && initialPaymentMethod) {
+			setActiveMethod(initialPaymentMethod);
+		}
+	}, [isOpen, initialPaymentMethod]);
+	const [isTier2Open, setIsTier2Open] = useState<boolean>(false);
+	const [selectedForeignCurrency, setSelectedForeignCurrency] = useState<SupportedCurrency>("USD");
 
 	// Compute base stage amount in kopecks from selected stage or fallback
 	const baseStageAmountKop = useMemo(() => {
@@ -85,6 +105,14 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	}, [baseStageAmountKop, stagePaymentMode, advanceAlreadyPaidRub]);
 
 	const effectiveBillKop = stageCalc.requiredAmountKop;
+
+	const foreignCalc = useMemo(() => {
+		return convertRubToForeignCurrency({
+			amountRubKopecks: effectiveBillKop,
+			targetCurrency: selectedForeignCurrency,
+			bankSpreadPercent: 2.0,
+		});
+	}, [effectiveBillKop, selectedForeignCurrency]);
 
 	const [payments, setPayments] = useState<readonly CheckoutSplitItem[]>([
 		{ method: "sbp_qr", amountKop: initialTotalBillKop },
@@ -386,50 +414,50 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<button
 								type="button"
 								onClick={() => setStagePaymentMode("full")}
-								className={`min-h-[40px] px-2.5 py-1.5 rounded-xl border text-xs font-bold flex flex-col justify-center items-center transition-all cursor-pointer ${
+								className={`min-h-[44px] px-2.5 py-1.5 rounded-xl border text-xs sm:text-sm font-bold flex flex-col justify-center items-center transition-all cursor-pointer ${
 									stagePaymentMode === "full"
 										? "border-teal-600 bg-teal-500/15 text-teal-900 dark:text-teal-200 shadow-xs ring-1 ring-teal-500/30"
 										: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-teal-400"
 								}`}
 							>
 								<span>100% Оплата</span>
-								<span className="text-[10px] font-mono opacity-80">{(baseStageAmountKop / 100).toLocaleString("ru-RU")} ₽</span>
+								<span className="text-xs font-mono opacity-80">{(baseStageAmountKop / 100).toLocaleString("ru-RU")} ₽</span>
 							</button>
 							<button
 								type="button"
 								onClick={() => setStagePaymentMode("advance_30")}
-								className={`min-h-[40px] px-2.5 py-1.5 rounded-xl border text-xs font-bold flex flex-col justify-center items-center transition-all cursor-pointer ${
+								className={`min-h-[44px] px-2.5 py-1.5 rounded-xl border text-xs sm:text-sm font-bold flex flex-col justify-center items-center transition-all cursor-pointer ${
 									stagePaymentMode === "advance_30"
 										? "border-amber-600 bg-amber-500/15 text-amber-900 dark:text-amber-200 shadow-xs ring-1 ring-amber-500/30"
 										: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-amber-400"
 								}`}
 							>
 								<span>Аванс 30%</span>
-								<span className="text-[10px] font-mono opacity-80">{Math.round(baseStageAmountKop * 0.3 / 100).toLocaleString("ru-RU")} ₽</span>
+								<span className="text-xs font-mono opacity-80">{Math.round(baseStageAmountKop * 0.3 / 100).toLocaleString("ru-RU")} ₽</span>
 							</button>
 							<button
 								type="button"
 								onClick={() => setStagePaymentMode("advance_50")}
-								className={`min-h-[40px] px-2.5 py-1.5 rounded-xl border text-xs font-bold flex flex-col justify-center items-center transition-all cursor-pointer ${
+								className={`min-h-[44px] px-2.5 py-1.5 rounded-xl border text-xs sm:text-sm font-bold flex flex-col justify-center items-center transition-all cursor-pointer ${
 									stagePaymentMode === "advance_50"
 										? "border-amber-600 bg-amber-500/15 text-amber-900 dark:text-amber-200 shadow-xs ring-1 ring-amber-500/30"
 										: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-amber-400"
 								}`}
 							>
 								<span>Аванс 50%</span>
-								<span className="text-[10px] font-mono opacity-80">{Math.round(baseStageAmountKop * 0.5 / 100).toLocaleString("ru-RU")} ₽</span>
+								<span className="text-xs font-mono opacity-80">{Math.round(baseStageAmountKop * 0.5 / 100).toLocaleString("ru-RU")} ₽</span>
 							</button>
 							<button
 								type="button"
 								onClick={() => setStagePaymentMode("advance_offset_tag1215")}
-								className={`min-h-[40px] px-2.5 py-1.5 rounded-xl border text-xs font-bold flex flex-col justify-center items-center transition-all cursor-pointer ${
+								className={`min-h-[44px] px-2.5 py-1.5 rounded-xl border text-xs sm:text-sm font-bold flex flex-col justify-center items-center transition-all cursor-pointer ${
 									stagePaymentMode === "advance_offset_tag1215"
 										? "border-purple-600 bg-purple-500/15 text-purple-900 dark:text-purple-200 shadow-xs ring-1 ring-purple-500/30"
 										: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-purple-400"
 								}`}
 							>
 								<span>Зачет аванса (1215)</span>
-								<span className="text-[10px] font-mono opacity-80">Доплата {(stageCalc.requiredAmountKop / 100).toLocaleString("ru-RU")} ₽</span>
+								<span className="text-xs font-mono opacity-80">Доплата {(stageCalc.requiredAmountKop / 100).toLocaleString("ru-RU")} ₽</span>
 							</button>
 						</div>
 
@@ -480,13 +508,13 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 
 					{/* SBP QR Display Panel */}
 					{activeMethod === "sbp_qr" && (
-						<div className="p-5 rounded-2xl bg-teal-500/5 border border-teal-500/30 flex flex-col items-center justify-center text-center gap-3">
-							<div className="w-44 h-44 rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] p-4 shadow-md flex items-center justify-center border border-teal-500/30">
+						<div className="p-4 rounded-2xl bg-teal-500/5 border border-teal-500/30 flex flex-col items-center justify-center text-center gap-2.5">
+							<div className="w-36 h-36 rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] p-3 shadow-md flex items-center justify-center border border-teal-500/30">
 								<QrCode className="w-full h-full text-teal-600 dark:text-teal-400" />
 							</div>
-							<div className="text-xs text-[var(--ink,#0f172a)]">
-								<p className="font-bold m-0">Отсканируйте камерой телефона или в приложении любого банка</p>
-								<p className="text-[var(--muted,#64748b)] m-0 mt-1">Сумма: {(effectiveBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽ • Без комиссии для пациента (Тег 1081)</p>
+							<div className="text-xs text-[var(--ink)]">
+								<p className="font-bold m-0 text-[var(--ink)]">Отсканируйте камерой телефона или в приложении любого банка</p>
+								<p className="text-[var(--muted)] m-0 mt-0.5">Сумма: {(effectiveBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽ • Без комиссии для пациента (Тег 1081)</p>
 							</div>
 						</div>
 					)}
@@ -550,6 +578,87 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 						</div>
 					)}
 
+					{/* Tier 2 (Факультатив: Медтуризм / Мультивалюта ЦБ РФ & Семейный депозит) */}
+					<div className="rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] overflow-hidden transition-all">
+						<button
+							type="button"
+							onClick={() => setIsTier2Open((prev) => !prev)}
+							className="w-full p-3 flex items-center justify-between text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+							aria-expanded={isTier2Open}
+						>
+							<div className="flex items-center gap-2">
+								<Globe size={14} className="text-teal-600 dark:text-teal-400" />
+								<span>Факультатив: Медтуризм, Валюта ЦБ РФ & Семейный счет (Tier 2)</span>
+							</div>
+							<ChevronDown
+								size={16}
+								className={`transition-transform duration-200 ${isTier2Open ? "rotate-180 text-teal-600" : "text-[var(--muted,#64748b)]"}`}
+							/>
+						</button>
+
+						{isTier2Open && (
+							<div className="p-4 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex flex-col gap-4 text-xs">
+								{/* Multi-Currency Medical Tourism Calculator */}
+								<div className="flex flex-col gap-2">
+									<div className="flex items-center justify-between flex-wrap gap-1">
+										<span className="font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
+											<Globe size={14} className="text-teal-600" />
+											Многовалютный калькулятор (ЦБ РФ):
+										</span>
+										<span className="text-xs text-[var(--muted,#64748b)] font-mono">
+											Курс ЦБ: 1 {selectedForeignCurrency} = {foreignCalc.officialCbrRateRub.toFixed(2)} ₽
+										</span>
+									</div>
+
+									<div className="flex items-center gap-1.5 flex-wrap">
+										{(["USD", "EUR", "KZT", "BYN", "CNY", "AED"] as SupportedCurrency[]).map((curr) => {
+											const isCurrSelected = selectedForeignCurrency === curr;
+											return (
+												<button
+													key={curr}
+													type="button"
+													onClick={() => setSelectedForeignCurrency(curr)}
+													className={`min-h-[44px] px-3.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+														isCurrSelected
+															? "border-teal-600 bg-teal-500/15 text-teal-900 dark:text-teal-200 shadow-xs"
+															: "border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-teal-400"
+													}`}
+												>
+													{curr} ({CBR_CURRENCIES[curr]?.symbol})
+												</button>
+											);
+										})}
+									</div>
+
+									<div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-between flex-wrap gap-2 text-teal-950 dark:text-teal-100 font-mono">
+										<div>
+											Сумма в валюте ({selectedForeignCurrency}): <strong className="text-sm">{foreignCalc.targetFormatted}</strong>
+										</div>
+										<div className="text-xs text-[var(--muted,#64748b)]">
+											(включая спред эквайринга +{foreignCalc.bankSpreadPercent}%)
+										</div>
+									</div>
+								</div>
+
+								{/* Family Deposit Info */}
+								<div className="flex flex-col gap-1.5 pt-2 border-t border-[var(--line,#e2e8f0)]">
+									<div className="flex items-center justify-between">
+										<span className="font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
+											<Users size={14} className="text-purple-600" />
+											Семейный лицевой счет:
+										</span>
+										<span className="text-emerald-700 dark:text-emerald-300 font-bold font-mono">
+											Баланс депозита: 85 000.00 ₽
+										</span>
+									</div>
+									<p className="text-xs text-[var(--muted,#64748b)] m-0">
+										Плательщик: Смирнов В.А. (Глава семьи). Списание разрешено (Тег 1215 ФФД 1.2).
+									</p>
+								</div>
+							</div>
+						)}
+					</div>
+
 					{/* Emergency Offline Queue Status Banner */}
 					{pendingOfflineCount > 0 && (
 						<div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between flex-wrap gap-2 text-xs">
@@ -563,7 +672,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								type="button"
 								onClick={handleFlushQueue}
 								disabled={isFlushingQueue}
-								className="min-h-[38px] px-3 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+								className="min-h-[44px] px-3.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
 							>
 								<RefreshCw size={14} className={isFlushingQueue ? "animate-spin" : ""} />
 								<span>Синхронизировать</span>
@@ -581,7 +690,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<button
 								type="button"
 								onClick={() => handleSingle100Percent(activeMethod || "bank_card")}
-								className="px-3 py-1.5 min-h-[38px] rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1 cursor-pointer transition-all shadow-xs"
+								className="px-3.5 py-1.5 min-h-[44px] rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs sm:text-sm flex items-center gap-1 cursor-pointer transition-all shadow-xs"
 								title="Сбросить суммы и применить 100% на выбранный способ"
 							>
 								<Zap size={13} /> ⚡ Исправить в 1 клик (100% {activeMethod ? CHECKOUT_PAYMENT_METHODS.find((m) => m.id === activeMethod)?.titleRu : "Картой"})

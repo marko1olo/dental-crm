@@ -142,11 +142,11 @@ export const MinorLegalRepresentativeConsentForm = React.memo(
 				title="Согласие законного представителя (педиатрия)"
 				description="Информированное согласие на стоматологическое лечение несовершеннолетнего гражданина РФ до 15 лет (до 18 лет при наркологических расстройствах)."
 			>
-				<div style={{ marginBottom: "12px" }}>
+				<div style={{ marginBottom: "14px" }}>
 					<button
 						type="button"
 						className="secondary-button"
-						style={{ fontSize: "12px", padding: "4px 10px" }}
+						style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
 						onClick={applyPediatricPreset}
 					>
 						👶 Заполнить стандартный протокол детского стоматологического лечения (323-ФЗ)
