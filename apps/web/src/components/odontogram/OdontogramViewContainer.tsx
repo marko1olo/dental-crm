@@ -26,6 +26,7 @@ import {
 	ToothChart,
 	type ToothData,
 	type ToothState,
+	type OdontogramQuadrantId,
 	TOP_TEETH,
 	BOTTOM_TEETH,
 	ALL_ADULT_TEETH_NUMBERS,
@@ -88,6 +89,9 @@ export interface OdontogramViewContainerProps {
 	hideHeader?: boolean | undefined;
 	hideLegend?: boolean | undefined;
 	hideModeSwitcher?: boolean | undefined;
+	hideQuadrantSwitcher?: boolean | undefined;
+	activeQuadrant?: OdontogramQuadrantId | undefined;
+	onQuadrantChange?: ((quadrant: OdontogramQuadrantId) => void) | undefined;
 	className?: string | undefined;
 	initialViewMode?: OdontogramViewMode | undefined;
 	onViewModeChange?: ((mode: OdontogramViewMode) => void) | undefined;
@@ -117,6 +121,9 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 	hideHeader = false,
 	hideLegend = false,
 	hideModeSwitcher = false,
+	hideQuadrantSwitcher = false,
+	activeQuadrant: controlledQuadrant,
+	onQuadrantChange,
 	className = "",
 	initialViewMode,
 	onViewModeChange,
@@ -272,6 +279,9 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 		useSurfaces,
 		hideHeader,
 		hideLegend,
+		hideQuadrantSwitcher,
+		activeQuadrant: controlledQuadrant,
+		onQuadrantChange,
 		showWisdomTeeth,
 		showPulpAndCanals,
 		className: "",

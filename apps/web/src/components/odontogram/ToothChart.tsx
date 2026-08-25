@@ -80,6 +80,175 @@ export interface ToothData {
 	clinicalData?: EndoToothClinicalData | Record<string, unknown>;
 }
 
+export type OdontogramQuadrantId =
+	| "all"
+	| "Q1"
+	| "Q2"
+	| "Q3"
+	| "Q4"
+	| "Q5"
+	| "Q6"
+	| "Q7"
+	| "Q8";
+
+export interface QuadrantDefinition {
+	id: OdontogramQuadrantId;
+	label: string;
+	shortLabel: string;
+	rangeText: string;
+	jaw: "upper" | "lower";
+	side: "right" | "left";
+	teeth: number[];
+}
+
+export const ADULT_QUADRANTS: readonly QuadrantDefinition[] = [
+	{
+		id: "Q1",
+		label: "Q1: Верхняя челюсть (Правый)",
+		shortLabel: "Q1 18–11",
+		rangeText: "18–11 (Правый)",
+		jaw: "upper",
+		side: "right",
+		teeth: [18, 17, 16, 15, 14, 13, 12, 11],
+	},
+	{
+		id: "Q2",
+		label: "Q2: Верхняя челюсть (Левый)",
+		shortLabel: "Q2 21–28",
+		rangeText: "21–28 (Левый)",
+		jaw: "upper",
+		side: "left",
+		teeth: [21, 22, 23, 24, 25, 26, 27, 28],
+	},
+	{
+		id: "Q4",
+		label: "Q4: Нижняя челюсть (Правый)",
+		shortLabel: "Q4 48–41",
+		rangeText: "48–41 (Правый)",
+		jaw: "lower",
+		side: "right",
+		teeth: [48, 47, 46, 45, 44, 43, 42, 41],
+	},
+	{
+		id: "Q3",
+		label: "Q3: Нижняя челюсть (Левый)",
+		shortLabel: "Q3 31–38",
+		rangeText: "31–38 (Левый)",
+		jaw: "lower",
+		side: "left",
+		teeth: [31, 32, 33, 34, 35, 36, 37, 38],
+	},
+];
+
+export const PEDIATRIC_QUADRANTS: readonly QuadrantDefinition[] = [
+	{
+		id: "Q5",
+		label: "Q5: Верхняя челюсть (Правый)",
+		shortLabel: "Q5 55–51",
+		rangeText: "55–51 (Правый)",
+		jaw: "upper",
+		side: "right",
+		teeth: [55, 54, 53, 52, 51],
+	},
+	{
+		id: "Q6",
+		label: "Q6: Верхняя челюсть (Левый)",
+		shortLabel: "Q6 61–65",
+		rangeText: "61–65 (Левый)",
+		jaw: "upper",
+		side: "left",
+		teeth: [61, 62, 63, 64, 65],
+	},
+	{
+		id: "Q8",
+		label: "Q8: Нижняя челюсть (Правый)",
+		shortLabel: "Q8 85–81",
+		rangeText: "85–81 (Правый)",
+		jaw: "lower",
+		side: "right",
+		teeth: [85, 84, 83, 82, 81],
+	},
+	{
+		id: "Q7",
+		label: "Q7: Нижняя челюсть (Левый)",
+		shortLabel: "Q7 71–75",
+		rangeText: "71–75 (Левый)",
+		jaw: "lower",
+		side: "left",
+		teeth: [71, 72, 73, 74, 75],
+	},
+];
+
+export function getQuadrantForTooth(
+	toothNumber: number,
+	pediatricMode?: boolean,
+): OdontogramQuadrantId {
+	const q = Math.floor(toothNumber / 10);
+	switch (q) {
+		case 1:
+			return "Q1";
+		case 2:
+			return "Q2";
+		case 3:
+			return "Q3";
+		case 4:
+			return "Q4";
+		case 5:
+			return "Q5";
+		case 6:
+			return "Q6";
+		case 7:
+			return "Q7";
+		case 8:
+			return "Q8";
+		default:
+			return pediatricMode ? "Q5" : "Q1";
+	}
+}
+
+export function getAdjacentQuadrant(
+	current: OdontogramQuadrantId,
+	direction: "next" | "prev",
+	pediatricMode?: boolean,
+): OdontogramQuadrantId {
+	const adultOrder: OdontogramQuadrantId[] = ["Q1", "Q2", "Q3", "Q4"];
+	const pedOrder: OdontogramQuadrantId[] = ["Q5", "Q6", "Q7", "Q8"];
+	const order = pediatricMode ? pedOrder : adultOrder;
+	const idx = order.indexOf(current);
+	if (idx === -1) return order[0]!;
+	if (direction === "next") {
+		return order[(idx + 1) % order.length]!;
+	}
+	return order[(idx - 1 + order.length) % order.length]!;
+}
+
+export function isQuadrantTop(quadrant: OdontogramQuadrantId): boolean {
+	return quadrant === "Q1" || quadrant === "Q2" || quadrant === "Q5" || quadrant === "Q6";
+}
+
+export function getQuadrantTitle(quadrant: OdontogramQuadrantId, pediatricMode?: boolean): string {
+	switch (quadrant) {
+		case "Q1":
+			return "Верхняя челюсть (Правая) • Зубы 18–11";
+		case "Q2":
+			return "Верхняя челюсть (Левая) • Зубы 21–28";
+		case "Q3":
+			return "Нижняя челюсть (Левая) • Зубы 31–38";
+		case "Q4":
+			return "Нижняя челюсть (Правая) • Зубы 48–41";
+		case "Q5":
+			return "Верхняя челюсть (Правая) • Зубы 55–51";
+		case "Q6":
+			return "Верхняя челюсть (Левая) • Зубы 61–65";
+		case "Q7":
+			return "Нижняя челюсть (Левая) • Зубы 71–75";
+		case "Q8":
+			return "Нижняя челюсть (Правая) • Зубы 85–81";
+		default:
+			return pediatricMode ? "Все молочные зубы (55–85)" : "Все взрослые зубы (18–48)";
+	}
+}
+
 export interface ToothChartProps {
 	teethData: ToothData[];
 	pediatricMode?: boolean | undefined;
@@ -93,9 +262,12 @@ export interface ToothChartProps {
 	useSurfaces?: boolean | undefined;
 	hideHeader?: boolean | undefined;
 	hideLegend?: boolean | undefined;
+	hideQuadrantSwitcher?: boolean | undefined;
 	showPulpAndCanals?: boolean | undefined;
 	showPeriapicalHalos?: boolean | undefined;
 	showPeriodontalBoneLoss?: boolean | undefined;
+	activeQuadrant?: OdontogramQuadrantId | undefined;
+	onQuadrantChange?: ((quadrant: OdontogramQuadrantId) => void) | undefined;
 	className?: string | undefined;
 }
 
@@ -1939,6 +2111,32 @@ function splitArchAtMidline(teeth: number[]): { left: number[]; right: number[] 
 	};
 }
 
+export function getQuadrantTeeth(
+	quadrant: OdontogramQuadrantId,
+	topTeeth: number[],
+	bottomTeeth: number[],
+	pediatricMode?: boolean,
+): number[] {
+	const topSplit = splitArchAtMidline(topTeeth);
+	const bottomSplit = splitArchAtMidline(bottomTeeth);
+	switch (quadrant) {
+		case "Q1":
+		case "Q5":
+			return topSplit.left;
+		case "Q2":
+		case "Q6":
+			return topSplit.right;
+		case "Q4":
+		case "Q8":
+			return bottomSplit.left;
+		case "Q3":
+		case "Q7":
+			return bottomSplit.right;
+		default:
+			return [...topTeeth, ...bottomTeeth];
+	}
+}
+
 export const ToothChart: React.FC<ToothChartProps> = ({
 	teethData = [],
 	pediatricMode,
@@ -1952,15 +2150,34 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 	useSurfaces,
 	hideHeader = false,
 	hideLegend = false,
+	hideQuadrantSwitcher = false,
 	showPulpAndCanals = false,
 	showPeriapicalHalos = true,
 	showPeriodontalBoneLoss = true,
+	activeQuadrant: controlledQuadrant,
+	onQuadrantChange,
 	className = "",
 }) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const archContainerRef = useRef<HTMLDivElement>(null);
 	const [archScale, setArchScale] = useState(1);
 	const appliedArchScaleRef = useRef(1);
+
+	const [localQuadrant, setLocalQuadrant] = useState<OdontogramQuadrantId>(
+		controlledQuadrant ?? "all",
+	);
+	const currentQuadrant = controlledQuadrant ?? localQuadrant;
+
+	const handleSelectQuadrant = (q: OdontogramQuadrantId) => {
+		setLocalQuadrant(q);
+		onQuadrantChange?.(q);
+	};
+
+	useEffect(() => {
+		if (controlledQuadrant !== undefined) {
+			setLocalQuadrant(controlledQuadrant);
+		}
+	}, [controlledQuadrant]);
 
 	const topTeethList =
 		customTopTeeth ??
@@ -1996,9 +2213,11 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 			const naturalWidth = row.scrollWidth / applied;
 			if (!Number.isFinite(naturalWidth) || naturalWidth <= 0) return;
 
+			const isQuadrantView = currentQuadrant !== "all";
+			const minScale = isQuadrantView ? 0.75 : MIN_ARCH_SCALE;
 			const next = Math.min(
 				1.75,
-				Math.max(MIN_ARCH_SCALE, available / naturalWidth),
+				Math.max(minScale, available / naturalWidth),
 			);
 			if (Math.abs(applied - next) < 0.005) return;
 			appliedArchScaleRef.current = next;
@@ -2009,7 +2228,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 		const observer = new ResizeObserver(recalculate);
 		observer.observe(element);
 		return () => observer.disconnect();
-	}, []);
+	}, [currentQuadrant]);
 
 	const digitBufferRef = useRef<{ buffer: string; timer: any }>({
 		buffer: "",
@@ -2056,6 +2275,12 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 					const firstDigit = Number.parseInt(prevBuffer, 10);
 					const fdiCandidate = firstDigit * 10 + digit;
 					digitBufferRef.current.buffer = "";
+					if (currentQuadrant !== "all") {
+						const targetQuad = getQuadrantForTooth(fdiCandidate, pediatricMode);
+						if (targetQuad !== currentQuadrant) {
+							handleSelectQuadrant(targetQuad);
+						}
+					}
 					const targetBtn = document.querySelector<HTMLButtonElement>(
 						`[data-tooth-id="${fdiCandidate}"]`,
 					);
@@ -2071,6 +2296,12 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 				const isPediatricQuad = quadrant >= 5 && quadrant <= 8;
 				if (!isPediatricQuad || digit <= 5) {
 					const targetTooth = quadrant * 10 + digit;
+					if (currentQuadrant !== "all") {
+						const targetQuad = getQuadrantForTooth(targetTooth, pediatricMode);
+						if (targetQuad !== currentQuadrant) {
+							handleSelectQuadrant(targetQuad);
+						}
+					}
 					const targetBtn = document.querySelector<HTMLButtonElement>(
 						`[data-tooth-id="${targetTooth}"]`,
 					);
@@ -2106,6 +2337,12 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 				if (navDir) {
 					e.preventDefault();
 					const nextTooth = getNextFocusedTooth(firstTooth, navDir, pediatricMode);
+					if (currentQuadrant !== "all") {
+						const nextQuad = getQuadrantForTooth(nextTooth, pediatricMode);
+						if (nextQuad !== currentQuadrant) {
+							handleSelectQuadrant(nextQuad);
+						}
+					}
 					const nextEl = document.querySelector<HTMLButtonElement>(
 						`[data-tooth-id="${nextTooth}"]`,
 					);
@@ -2120,7 +2357,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 				e.key === "ArrowUp" ||
 				e.key === "ArrowDown"
 			) {
-				// If nothing is selected, focus first tooth (18 or 11)
+				// If nothing is selected, focus first tooth (18 or 11 or active quadrant first tooth)
 				e.preventDefault();
 				const initialTooth = pediatricMode ? 55 : 18;
 				const initialEl = document.querySelector<HTMLButtonElement>(
@@ -2137,7 +2374,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 		return () => {
 			window.removeEventListener("keydown", handleGlobalKeyDown);
 		};
-	}, [selectedTeeth, onQuickStateChange, pediatricMode, teethData]);
+	}, [selectedTeeth, onQuickStateChange, pediatricMode, teethData, currentQuadrant]);
 
 	const handleToothClick = (
 		e: React.MouseEvent,
@@ -2151,10 +2388,114 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 	const topSplit = splitArchAtMidline(topTeethList);
 	const bottomSplit = splitArchAtMidline(bottomTeethList);
 
+	const isQuadrantView = currentQuadrant !== "all";
+	const activeQuadrantTeeth = isQuadrantView
+		? getQuadrantTeeth(currentQuadrant, topTeethList, bottomTeethList, pediatricMode)
+		: [];
+	const isTopQuadrant = isQuadrantTop(currentQuadrant);
+
 	return (
 		<div className={`tooth-chart-container ${className}`.trim()} ref={containerRef}>
 			{/* Shared SVG Shaders & Gradients */}
 			<DenteToothSvgDefs />
+
+			{/* Responsive Mobile & Desktop Quadrant Adapter Bar */}
+			{!hideQuadrantSwitcher && (
+				<div className="odontogram-quadrant-bar mb-3 select-none" data-testid="odontogram-quadrant-bar">
+					<div className="flex items-center justify-between gap-2 mb-2 w-full">
+						<div className="flex items-center gap-1.5">
+							<span className="text-xs font-black uppercase text-[var(--odontogram-ink-muted)]">
+								Квадранты челюсти:
+							</span>
+							{isQuadrantView && (
+								<span className="text-xs font-black px-2 py-0.5 rounded-md bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 font-mono">
+									{currentQuadrant}
+								</span>
+							)}
+						</div>
+						<button
+							type="button"
+							onClick={() => handleSelectQuadrant("all")}
+							className={`min-h-[44px] px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer select-none shrink-0 ${
+								currentQuadrant === "all"
+									? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] font-black border-[var(--teal-dark,var(--teal))] shadow-xs"
+									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink-muted)] hover:text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:bg-[var(--odontogram-surface-hover)]"
+							}`}
+							title="Показать полную зубную формулу (все 32 зуба)"
+							data-testid="quadrant-btn-all"
+						>
+							Все зубы ({pediatricMode ? "20" : "32"})
+						</button>
+					</div>
+
+					{/* 2x2 Quadrants Dental Layout Grid */}
+					<div className="grid grid-cols-2 gap-2 w-full">
+						{/* Upper Right Quadrant: Q1 18–11 (or Q5 55–51) */}
+						<button
+							type="button"
+							onClick={() => handleSelectQuadrant(pediatricMode ? "Q5" : "Q1")}
+							className={`quadrant-btn min-h-[48px] px-3 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between border transition-all cursor-pointer select-none ${
+								currentQuadrant === (pediatricMode ? "Q5" : "Q1")
+									? "bg-indigo-600 text-white font-black border-indigo-700 shadow-md ring-2 ring-indigo-400/50"
+									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
+							}`}
+							title={pediatricMode ? "Q5 55–51 (Верхняя челюсть, Правый)" : "Q1 18–11 (Верхняя челюсть, Правый)"}
+							data-testid={pediatricMode ? "quadrant-btn-Q5" : "quadrant-btn-Q1"}
+						>
+							<span className="font-extrabold">{pediatricMode ? "Q5 55–51 (Правый)" : "Q1 18–11 (Правый)"}</span>
+							<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase">ВЧ</span>
+						</button>
+
+						{/* Upper Left Quadrant: Q2 21–28 (or Q6 61–65) */}
+						<button
+							type="button"
+							onClick={() => handleSelectQuadrant(pediatricMode ? "Q6" : "Q2")}
+							className={`quadrant-btn min-h-[48px] px-3 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between border transition-all cursor-pointer select-none ${
+								currentQuadrant === (pediatricMode ? "Q6" : "Q2")
+									? "bg-indigo-600 text-white font-black border-indigo-700 shadow-md ring-2 ring-indigo-400/50"
+									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
+							}`}
+							title={pediatricMode ? "Q6 61–65 (Верхняя челюсть, Левый)" : "Q2 21–28 (Верхняя челюсть, Левый)"}
+							data-testid={pediatricMode ? "quadrant-btn-Q6" : "quadrant-btn-Q2"}
+						>
+							<span className="font-extrabold">{pediatricMode ? "Q6 61–65 (Левый)" : "Q2 21–28 (Левый)"}</span>
+							<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase">ВЧ</span>
+						</button>
+
+						{/* Lower Right Quadrant: Q4 48–41 (or Q8 85–81) */}
+						<button
+							type="button"
+							onClick={() => handleSelectQuadrant(pediatricMode ? "Q8" : "Q4")}
+							className={`quadrant-btn min-h-[48px] px-3 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between border transition-all cursor-pointer select-none ${
+								currentQuadrant === (pediatricMode ? "Q8" : "Q4")
+									? "bg-indigo-600 text-white font-black border-indigo-700 shadow-md ring-2 ring-indigo-400/50"
+									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
+							}`}
+							title={pediatricMode ? "Q8 85–81 (Нижняя челюсть, Правый)" : "Q4 48–41 (Нижняя челюсть, Правый)"}
+							data-testid={pediatricMode ? "quadrant-btn-Q8" : "quadrant-btn-Q4"}
+						>
+							<span className="font-extrabold">{pediatricMode ? "Q8 85–81 (Правый)" : "Q4 48–41 (Правый)"}</span>
+							<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase">НЧ</span>
+						</button>
+
+						{/* Lower Left Quadrant: Q3 31–38 (or Q7 71–75) */}
+						<button
+							type="button"
+							onClick={() => handleSelectQuadrant(pediatricMode ? "Q7" : "Q3")}
+							className={`quadrant-btn min-h-[48px] px-3 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between border transition-all cursor-pointer select-none ${
+								currentQuadrant === (pediatricMode ? "Q7" : "Q3")
+									? "bg-indigo-600 text-white font-black border-indigo-700 shadow-md ring-2 ring-indigo-400/50"
+									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
+							}`}
+							title={pediatricMode ? "Q7 71–75 (Нижняя челюсть, Левый)" : "Q3 31–38 (Нижняя челюсть, Левый)"}
+							data-testid={pediatricMode ? "quadrant-btn-Q7" : "quadrant-btn-Q3"}
+						>
+							<span className="font-extrabold">{pediatricMode ? "Q7 71–75 (Левый)" : "Q3 31–38 (Левый)"}</span>
+							<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase">НЧ</span>
+						</button>
+					</div>
+				</div>
+			)}
 
 			{!hideLegend && (
 				<div className="tooth-chart-legend-row">
@@ -2188,182 +2529,257 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 			)}
 
 			<div className="tooth-chart-arch-container" ref={archContainerRef}>
-				<div
-					className="tooth-chart-arch-wrapper"
-					style={{
-						minWidth: "max-content",
-						margin: "0 auto",
-						position: "relative",
-					}}
-				>
-					{/* Upper Arch (Maxilla) */}
-					<div className="teeth-row top-row">
-						{/* Left Half (Q1: 18..11 or Q5: 55..51) */}
-						<div className="tooth-quadrant-group top-left-quad">
-							{topSplit.left.map((num) => {
-								const tData = (teethData ?? []).find((t) => t.toothNumber === num);
-								return (
-									<ToothSVG
-										key={num}
-										number={num}
-										scale={archScale}
-										state={tData ? tData.state : "Healthy"}
-										material={tData?.material}
-										canalObturation={tData?.canalObturation}
-										hasPost={tData?.hasPost}
-										postType={tData?.postType}
-										boneLossLevel={tData?.boneLossLevel}
-										boneLossType={tData?.boneLossType}
-										periapicalLesion={tData?.periapicalLesion}
-										pocketDepth={tData?.pocketDepth}
-										pocketDepthMm={tData?.pocketDepthMm}
-										maxPocketDepth={tData?.maxPocketDepth}
-										surfaces={tData?.surfaces}
-										useSurfaces={useSurfaces}
-										showPulpAndCanals={showPulpAndCanals}
-										showPeriapicalHalos={showPeriapicalHalos}
-										showPeriodontalBoneLoss={showPeriodontalBoneLoss}
-										isSelected={selectedTeeth.includes(num)}
-										selectedTeeth={selectedTeeth}
-										activeStamp={activeStamp}
-										onClick={handleToothClick}
-										onQuickStateChange={onQuickStateChange}
-										pediatricMode={pediatricMode}
-									/>
-								);
-							})}
+				{isQuadrantView ? (
+					/* Focused Single Quadrant Large Mobile View (8 teeth with touch hit targets >= 48x48px) */
+					<div
+						className="tooth-chart-arch-wrapper quadrant-view-wrapper"
+						data-testid="quadrant-focused-view"
+						style={{
+							minWidth: "max-content",
+							margin: "0 auto",
+							position: "relative",
+						}}
+					>
+						<div className="flex items-center justify-between w-full max-w-lg px-3 py-2 rounded-xl bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)] mb-2">
+							<button
+								type="button"
+								onClick={() => handleSelectQuadrant(getAdjacentQuadrant(currentQuadrant, "prev", pediatricMode))}
+								className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border-subtle)] flex items-center gap-1 cursor-pointer transition-colors"
+								title="Предыдущий квадрант"
+								data-testid="quadrant-prev-btn"
+							>
+								← Пред.
+							</button>
+							<span className="text-xs sm:text-sm font-black text-[var(--odontogram-ink)] text-center px-2">
+								{getQuadrantTitle(currentQuadrant, pediatricMode)}
+							</span>
+							<button
+								type="button"
+								onClick={() => handleSelectQuadrant(getAdjacentQuadrant(currentQuadrant, "next", pediatricMode))}
+								className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border-subtle)] flex items-center gap-1 cursor-pointer transition-colors"
+								title="Следующий квадрант"
+								data-testid="quadrant-next-btn"
+							>
+								След. →
+							</button>
 						</div>
 
-						{/* Midline Vertical Guide Line Notch */}
-						<div className="tooth-arch-midline-guide top-guide" title="Сагиттальная линия (Midline)">
-							<div className="midline-notch" />
-						</div>
-
-						{/* Right Half (Q2: 21..28 or Q6: 61..65) */}
-						<div className="tooth-quadrant-group top-right-quad">
-							{topSplit.right.map((num) => {
-								const tData = (teethData ?? []).find((t) => t.toothNumber === num);
-								return (
-									<ToothSVG
-										key={num}
-										number={num}
-										scale={archScale}
-										state={tData ? tData.state : "Healthy"}
-										material={tData?.material}
-										canalObturation={tData?.canalObturation}
-										hasPost={tData?.hasPost}
-										postType={tData?.postType}
-										boneLossLevel={tData?.boneLossLevel}
-										boneLossType={tData?.boneLossType}
-										periapicalLesion={tData?.periapicalLesion}
-										pocketDepth={tData?.pocketDepth}
-										pocketDepthMm={tData?.pocketDepthMm}
-										maxPocketDepth={tData?.maxPocketDepth}
-										surfaces={tData?.surfaces}
-										useSurfaces={useSurfaces}
-										showPulpAndCanals={showPulpAndCanals}
-										showPeriapicalHalos={showPeriapicalHalos}
-										showPeriodontalBoneLoss={showPeriodontalBoneLoss}
-										isSelected={selectedTeeth.includes(num)}
-										selectedTeeth={selectedTeeth}
-										activeStamp={activeStamp}
-										onClick={handleToothClick}
-										onQuickStateChange={onQuickStateChange}
-										pediatricMode={pediatricMode}
-									/>
-								);
-							})}
+						<div className={`teeth-row ${isTopQuadrant ? "top-row" : "bottom-row"} quadrant-row`}>
+							<div className="tooth-quadrant-group focused-quadrant-group">
+								{activeQuadrantTeeth.map((num) => {
+									const tData = (teethData ?? []).find((t) => t.toothNumber === num);
+									return (
+										<ToothSVG
+											key={num}
+											number={num}
+											scale={Math.max(0.85, archScale)}
+											state={tData ? tData.state : "Healthy"}
+											material={tData?.material}
+											canalObturation={tData?.canalObturation}
+											hasPost={tData?.hasPost}
+											postType={tData?.postType}
+											boneLossLevel={tData?.boneLossLevel}
+											boneLossType={tData?.boneLossType}
+											periapicalLesion={tData?.periapicalLesion}
+											pocketDepth={tData?.pocketDepth}
+											pocketDepthMm={tData?.pocketDepthMm}
+											maxPocketDepth={tData?.maxPocketDepth}
+											surfaces={tData?.surfaces}
+											useSurfaces={useSurfaces}
+											showPulpAndCanals={showPulpAndCanals}
+											showPeriapicalHalos={showPeriapicalHalos}
+											showPeriodontalBoneLoss={showPeriodontalBoneLoss}
+											isSelected={selectedTeeth.includes(num)}
+											selectedTeeth={selectedTeeth}
+											activeStamp={activeStamp}
+											onClick={handleToothClick}
+											onQuickStateChange={onQuickStateChange}
+											pediatricMode={pediatricMode}
+										/>
+									);
+								})}
+							</div>
 						</div>
 					</div>
+				) : (
+					/* Full Dual-Arch View (All 32 adult teeth or 20 pediatric teeth) */
+					<div
+						className="tooth-chart-arch-wrapper"
+						style={{
+							minWidth: "max-content",
+							margin: "0 auto",
+							position: "relative",
+						}}
+					>
+						{/* Upper Arch (Maxilla) */}
+						<div className="teeth-row top-row">
+							{/* Left Half (Q1: 18..11 or Q5: 55..51) */}
+							<div className="tooth-quadrant-group top-left-quad">
+								{topSplit.left.map((num) => {
+									const tData = (teethData ?? []).find((t) => t.toothNumber === num);
+									return (
+										<ToothSVG
+											key={num}
+											number={num}
+											scale={archScale}
+											state={tData ? tData.state : "Healthy"}
+											material={tData?.material}
+											canalObturation={tData?.canalObturation}
+											hasPost={tData?.hasPost}
+											postType={tData?.postType}
+											boneLossLevel={tData?.boneLossLevel}
+											boneLossType={tData?.boneLossType}
+											periapicalLesion={tData?.periapicalLesion}
+											pocketDepth={tData?.pocketDepth}
+											pocketDepthMm={tData?.pocketDepthMm}
+											maxPocketDepth={tData?.maxPocketDepth}
+											surfaces={tData?.surfaces}
+											useSurfaces={useSurfaces}
+											showPulpAndCanals={showPulpAndCanals}
+											showPeriapicalHalos={showPeriapicalHalos}
+											showPeriodontalBoneLoss={showPeriodontalBoneLoss}
+											isSelected={selectedTeeth.includes(num)}
+											selectedTeeth={selectedTeeth}
+											activeStamp={activeStamp}
+											onClick={handleToothClick}
+											onQuickStateChange={onQuickStateChange}
+											pediatricMode={pediatricMode}
+										/>
+									);
+								})}
+							</div>
 
-					{/* Horizontal Occlusal Arch Divider */}
-					<div className="teeth-divider">
-						<div className="divider-line" />
-						<div className="divider-center" title="Центр окклюзионной плоскости">
-							<div className="divider-diamond" />
+							{/* Midline Vertical Guide Line Notch */}
+							<div className="tooth-arch-midline-guide top-guide" title="Сагиттальная линия (Midline)">
+								<div className="midline-notch" />
+							</div>
+
+							{/* Right Half (Q2: 21..28 or Q6: 61..65) */}
+							<div className="tooth-quadrant-group top-right-quad">
+								{topSplit.right.map((num) => {
+									const tData = (teethData ?? []).find((t) => t.toothNumber === num);
+									return (
+										<ToothSVG
+											key={num}
+											number={num}
+											scale={archScale}
+											state={tData ? tData.state : "Healthy"}
+											material={tData?.material}
+											canalObturation={tData?.canalObturation}
+											hasPost={tData?.hasPost}
+											postType={tData?.postType}
+											boneLossLevel={tData?.boneLossLevel}
+											boneLossType={tData?.boneLossType}
+											periapicalLesion={tData?.periapicalLesion}
+											pocketDepth={tData?.pocketDepth}
+											pocketDepthMm={tData?.pocketDepthMm}
+											maxPocketDepth={tData?.maxPocketDepth}
+											surfaces={tData?.surfaces}
+											useSurfaces={useSurfaces}
+											showPulpAndCanals={showPulpAndCanals}
+											showPeriapicalHalos={showPeriapicalHalos}
+											showPeriodontalBoneLoss={showPeriodontalBoneLoss}
+											isSelected={selectedTeeth.includes(num)}
+											selectedTeeth={selectedTeeth}
+											activeStamp={activeStamp}
+											onClick={handleToothClick}
+											onQuickStateChange={onQuickStateChange}
+											pediatricMode={pediatricMode}
+										/>
+									);
+								})}
+							</div>
+						</div>
+
+						{/* Horizontal Occlusal Arch Divider */}
+						<div className="teeth-divider">
+							<div className="divider-line" />
+							<div className="divider-center" title="Центр окклюзионной плоскости">
+								<div className="divider-diamond" />
+							</div>
+						</div>
+
+						{/* Lower Arch (Mandible) */}
+						<div className="teeth-row bottom-row">
+							{/* Left Half (Q4: 48..41 or Q8: 85..81) */}
+							<div className="tooth-quadrant-group bottom-left-quad">
+								{bottomSplit.left.map((num) => {
+									const tData = (teethData ?? []).find((t) => t.toothNumber === num);
+									return (
+										<ToothSVG
+											key={num}
+											number={num}
+											scale={archScale}
+											state={tData ? tData.state : "Healthy"}
+											material={tData?.material}
+											canalObturation={tData?.canalObturation}
+											hasPost={tData?.hasPost}
+											postType={tData?.postType}
+											boneLossLevel={tData?.boneLossLevel}
+											boneLossType={tData?.boneLossType}
+											periapicalLesion={tData?.periapicalLesion}
+											pocketDepth={tData?.pocketDepth}
+											pocketDepthMm={tData?.pocketDepthMm}
+											maxPocketDepth={tData?.maxPocketDepth}
+											surfaces={tData?.surfaces}
+											useSurfaces={useSurfaces}
+											showPulpAndCanals={showPulpAndCanals}
+											showPeriapicalHalos={showPeriapicalHalos}
+											showPeriodontalBoneLoss={showPeriodontalBoneLoss}
+											isSelected={selectedTeeth.includes(num)}
+											selectedTeeth={selectedTeeth}
+											activeStamp={activeStamp}
+											onClick={handleToothClick}
+											onQuickStateChange={onQuickStateChange}
+											pediatricMode={pediatricMode}
+										/>
+									);
+								})}
+							</div>
+
+							{/* Midline Vertical Guide Line Notch */}
+							<div className="tooth-arch-midline-guide bottom-guide" title="Сагиттальная линия (Midline)">
+								<div className="midline-notch" />
+							</div>
+
+							{/* Right Half (Q3: 31..38 or Q7: 71..75) */}
+							<div className="tooth-quadrant-group bottom-right-quad">
+								{bottomSplit.right.map((num) => {
+									const tData = (teethData ?? []).find((t) => t.toothNumber === num);
+									return (
+										<ToothSVG
+											key={num}
+											number={num}
+											scale={archScale}
+											state={tData ? tData.state : "Healthy"}
+											material={tData?.material}
+											canalObturation={tData?.canalObturation}
+											hasPost={tData?.hasPost}
+											postType={tData?.postType}
+											boneLossLevel={tData?.boneLossLevel}
+											boneLossType={tData?.boneLossType}
+											periapicalLesion={tData?.periapicalLesion}
+											pocketDepth={tData?.pocketDepth}
+											pocketDepthMm={tData?.pocketDepthMm}
+											maxPocketDepth={tData?.maxPocketDepth}
+											surfaces={tData?.surfaces}
+											useSurfaces={useSurfaces}
+											showPulpAndCanals={showPulpAndCanals}
+											showPeriapicalHalos={showPeriapicalHalos}
+											showPeriodontalBoneLoss={showPeriodontalBoneLoss}
+											isSelected={selectedTeeth.includes(num)}
+											selectedTeeth={selectedTeeth}
+											activeStamp={activeStamp}
+											onClick={handleToothClick}
+											onQuickStateChange={onQuickStateChange}
+											pediatricMode={pediatricMode}
+										/>
+									);
+								})}
+							</div>
 						</div>
 					</div>
-
-					{/* Lower Arch (Mandible) */}
-					<div className="teeth-row bottom-row">
-						{/* Left Half (Q4: 48..41 or Q8: 85..81) */}
-						<div className="tooth-quadrant-group bottom-left-quad">
-							{bottomSplit.left.map((num) => {
-								const tData = (teethData ?? []).find((t) => t.toothNumber === num);
-								return (
-									<ToothSVG
-										key={num}
-										number={num}
-										scale={archScale}
-										state={tData ? tData.state : "Healthy"}
-										material={tData?.material}
-										canalObturation={tData?.canalObturation}
-										hasPost={tData?.hasPost}
-										postType={tData?.postType}
-										boneLossLevel={tData?.boneLossLevel}
-										boneLossType={tData?.boneLossType}
-										periapicalLesion={tData?.periapicalLesion}
-										pocketDepth={tData?.pocketDepth}
-										pocketDepthMm={tData?.pocketDepthMm}
-										maxPocketDepth={tData?.maxPocketDepth}
-										surfaces={tData?.surfaces}
-										useSurfaces={useSurfaces}
-										showPulpAndCanals={showPulpAndCanals}
-										showPeriapicalHalos={showPeriapicalHalos}
-										showPeriodontalBoneLoss={showPeriodontalBoneLoss}
-										isSelected={selectedTeeth.includes(num)}
-										selectedTeeth={selectedTeeth}
-										activeStamp={activeStamp}
-										onClick={handleToothClick}
-										onQuickStateChange={onQuickStateChange}
-										pediatricMode={pediatricMode}
-									/>
-								);
-							})}
-						</div>
-
-						{/* Midline Vertical Guide Line Notch */}
-						<div className="tooth-arch-midline-guide bottom-guide" title="Сагиттальная линия (Midline)">
-							<div className="midline-notch" />
-						</div>
-
-						{/* Right Half (Q3: 31..38 or Q7: 71..75) */}
-						<div className="tooth-quadrant-group bottom-right-quad">
-							{bottomSplit.right.map((num) => {
-								const tData = (teethData ?? []).find((t) => t.toothNumber === num);
-								return (
-									<ToothSVG
-										key={num}
-										number={num}
-										scale={archScale}
-										state={tData ? tData.state : "Healthy"}
-										material={tData?.material}
-										canalObturation={tData?.canalObturation}
-										hasPost={tData?.hasPost}
-										postType={tData?.postType}
-										boneLossLevel={tData?.boneLossLevel}
-										boneLossType={tData?.boneLossType}
-										periapicalLesion={tData?.periapicalLesion}
-										pocketDepth={tData?.pocketDepth}
-										pocketDepthMm={tData?.pocketDepthMm}
-										maxPocketDepth={tData?.maxPocketDepth}
-										surfaces={tData?.surfaces}
-										useSurfaces={useSurfaces}
-										showPulpAndCanals={showPulpAndCanals}
-										showPeriapicalHalos={showPeriapicalHalos}
-										showPeriodontalBoneLoss={showPeriodontalBoneLoss}
-										isSelected={selectedTeeth.includes(num)}
-										selectedTeeth={selectedTeeth}
-										activeStamp={activeStamp}
-										onClick={handleToothClick}
-										onQuickStateChange={onQuickStateChange}
-										pediatricMode={pediatricMode}
-									/>
-								);
-							})}
-						</div>
-					</div>
-				</div>
+				)}
 			</div>
 		</div>
 	);

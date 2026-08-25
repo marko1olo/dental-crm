@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
 	AlertTriangle,
@@ -6,7 +6,6 @@ import {
 	Crown,
 	Flame,
 	Hammer,
-	Layers,
 	Sparkles,
 	Trash2,
 	Wrench,
@@ -14,7 +13,8 @@ import {
 	Zap,
 } from "lucide-react";
 import { getToothStateFromHotkey } from "./ClassicGostOdontogram";
-import type { ToothState } from "./ToothChart";
+import { type ToothState, TOOTH_STATE_LABELS } from "./ToothChart";
+import { getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { isPrimaryTooth } from "@dental/shared";
 
 export interface RadialMenuItem {
@@ -55,6 +55,20 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 	onClose,
 }) => {
 	const menuRef = useRef<HTMLDivElement>(null);
+	const [isMobile, setIsMobile] = useState<boolean>(() => {
+		if (typeof window !== "undefined") {
+			return window.innerWidth <= 640;
+		}
+		return false;
+	});
+
+	useEffect(() => {
+		const handleResize = () => {
+			setIsMobile(window.innerWidth <= 640);
+		};
+		window.addEventListener("resize", handleResize);
+		return () => window.removeEventListener("resize", handleResize);
+	}, []);
 
 	const items: RadialMenuItem[] = [
 		{
@@ -182,7 +196,7 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 	const vh = typeof window !== "undefined" ? window.innerHeight : 800;
 
 	// Clamp menu center to prevent edge clipping while staying true to the tooth position
-	const radius = Math.min(170, Math.max(125, Math.floor((vw - 90) / 2)));
+	const radius = Math.min(170, Math.max(120, Math.floor((vw - 90) / 2)));
 	const minMarginX = Math.min(240, vw / 2);
 	const minMarginTop = 240;
 	const minMarginBottom = 250;
@@ -191,281 +205,502 @@ export const RadialToothMenu: React.FC<RadialToothMenuProps> = ({
 
 	const content = (
 		<div
-			className="radial-tooth-menu-overlay fixed inset-0 z-[9999] pointer-events-auto bg-black/55 backdrop-blur-[4px] animate-fadeIn"
+			className={`radial-tooth-menu-overlay fixed inset-0 z-[9999] pointer-events-auto bg-black/60 backdrop-blur-[4px] animate-fadeIn ${
+				isMobile ? "flex flex-col justify-end p-0 sm:p-4" : ""
+			}`}
 			data-testid="radial-tooth-menu-overlay"
 		>
-			<div
-				ref={menuRef}
-				className="radial-tooth-menu-container absolute select-none flex items-center justify-center pointer-events-none"
-				style={{
-					left: `${centerX}px`,
-					top: `${centerY}px`,
-					width: "480px",
-					height: "480px",
-					transform: "translate(-50%, -50%)",
-				}}
-				role="dialog"
-				aria-label={`Радиальное меню зуба ${toothNumber}`}
-			>
-				{/* Background Glass Disc - centered at container origin */}
+			{isMobile ? (
+				/* Mobile Bottom Sheet Drawer Layout (<= 640px / 390px) */
 				<div
-					className="absolute rounded-full bg-[var(--odontogram-paper)]/92 backdrop-blur-2xl border border-[var(--odontogram-border)] shadow-2xl pointer-events-none"
-					style={{
-						width: `${(radius + 45) * 2}px`,
-						height: `${(radius + 45) * 2}px`,
-						left: "50%",
-						top: "50%",
-						transform: "translate(-50%, -50%)",
-					}}
-				/>
-
-				{/* Center Tooth Hub - centered at container origin */}
-				<div
-					className="absolute flex flex-col items-center justify-center w-24 h-24 rounded-full bg-[var(--odontogram-surface)] border-2 border-[var(--teal,#0d9488)] shadow-2xl text-[var(--odontogram-ink)] z-20 pointer-events-auto"
-					style={{
-						left: "50%",
-						top: "50%",
-						transform: "translate(-50%, -50%)",
-					}}
+					ref={menuRef}
+					className="radial-mobile-sheet w-full max-w-lg mx-auto bg-[var(--odontogram-paper)] border-t sm:border border-[var(--odontogram-border)] rounded-t-3xl sm:rounded-2xl shadow-2xl p-4 flex flex-col gap-3 max-h-[88vh] overflow-y-auto animate-slideUp select-none"
+					role="dialog"
+					aria-label={`Меню статуса зуба ${toothNumber}`}
+					onClick={(e) => e.stopPropagation()}
 				>
-					<span className="text-xs uppercase font-black text-[var(--teal,#0d9488)] tracking-wider">Зуб</span>
-					<span className="text-3xl font-black leading-none text-[var(--odontogram-ink)]">{toothNumber}</span>
-					<button
-						type="button"
-						onClick={onClose}
-						className="absolute -top-3 -right-3 min-w-[48px] min-h-[48px] w-12 h-12 flex items-center justify-center p-2 rounded-full bg-rose-600 hover:bg-rose-500 text-white shadow-xl cursor-pointer transition-transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-rose-400 pointer-events-auto"
-						title="Закрыть (Esc)"
-						aria-label="Закрыть меню"
-					>
-						<X size={20} />
-					</button>
-				</div>
+					{/* Sheet Drag Handle */}
+					<div className="w-12 h-1.5 rounded-full bg-[var(--odontogram-border-strong)] mx-auto opacity-60 mb-0.5" />
 
-				{/* Radial Circle Slices - anchored to container origin (50%, 50%) */}
-				<div className="radial-slices-wrapper absolute inset-0 pointer-events-none">
-					{items.map((item, index) => {
-						const angle = (index * 2 * Math.PI) / items.length - Math.PI / 2;
-						const x = Math.cos(angle) * radius;
-						const y = Math.sin(angle) * radius;
-						const isCurrent = currentState === item.state;
+					{/* Header with Tooth Number and Folk Name */}
+					<div className="flex items-center justify-between border-b border-[var(--odontogram-border-subtle)] pb-2.5">
+						<div className="flex items-center gap-2.5 min-w-0">
+							<span className="w-11 h-11 rounded-xl bg-teal-500/15 border border-teal-500/30 text-[var(--teal)] font-black text-xl flex items-center justify-center font-mono shrink-0 shadow-2xs">
+								{toothNumber}
+							</span>
+							<div className="flex flex-col min-w-0">
+								<span className="text-sm font-extrabold text-[var(--odontogram-ink)] leading-tight truncate">
+									{getToothFolkAndAnatomicalNameRu(toothNumber)}
+								</span>
+								<span className="text-xs text-[var(--odontogram-ink-muted)] truncate">
+									Текущий: <strong className="text-[var(--odontogram-ink)]">{TOOTH_STATE_LABELS[currentState ?? "Healthy"]}</strong>
+								</span>
+							</div>
+						</div>
+						<button
+							type="button"
+							onClick={onClose}
+							className="min-w-[48px] min-h-[48px] w-12 h-12 rounded-full bg-[var(--odontogram-surface-hover)] hover:bg-rose-500 hover:text-white text-[var(--odontogram-ink-muted)] flex items-center justify-center transition-all cursor-pointer shrink-0"
+							title="Закрыть (Esc)"
+							aria-label="Закрыть меню"
+						>
+							<X size={20} />
+						</button>
+					</div>
 
-						return (
-							<button
-								key={item.id}
-								type="button"
-								onClick={() => {
-									if (item.state) onSelectState(item.state, surfaces);
-									onClose();
-								}}
-								style={{
-									position: "absolute",
-									left: "50%",
-									top: "50%",
-									transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`,
-									background: item.bgGradient,
-									minWidth: "max-content",
-									width: "max-content",
-									whiteSpace: "nowrap",
-									display: "inline-flex",
-									alignItems: "center",
-									justifyContent: "center",
-									gap: "8px",
-									padding: "12px 20px",
-									borderRadius: "9999px",
-									border: "1.5px solid rgba(255, 255, 255, 0.35)",
-									boxShadow: isCurrent
-										? "0 0 0 3px #ffffff, 0 14px 32px -4px rgba(0, 0, 0, 0.65)"
-										: "0 8px 22px -3px rgba(0, 0, 0, 0.45)",
-								}}
-								className={`radial-item-btn pointer-events-auto min-h-[48px] min-w-[48px] text-xs font-bold text-white cursor-pointer transition-all duration-200 hover:scale-108 active:scale-95 focus:outline-none ${
-									isCurrent
-										? "scale-105 font-black ring-2 ring-white"
-										: "opacity-95 hover:opacity-100"
-								}`}
-								title={item.label}
-								data-testid={`radial-btn-${item.id}`}
-							>
-								<span className="shrink-0 flex items-center justify-center">{item.icon}</span>
-								<span className="whitespace-nowrap font-black text-[14px] sm:text-[15px] tracking-tight">{item.shortLabel}</span>
-							</button>
-						);
-					})}
-				</div>
+					{/* 8 Status Buttons in 2-Column Touch Grid */}
+					<div className="grid grid-cols-2 gap-2 w-full">
+						{items.map((item) => {
+							const isCurrent = currentState === item.state;
+							return (
+								<button
+									key={item.id}
+									type="button"
+									onClick={() => {
+										if (item.state) onSelectState(item.state, surfaces);
+										onClose();
+									}}
+									style={{ background: item.bgGradient }}
+									className={`radial-item-btn min-h-[48px] min-w-[48px] px-3.5 py-2.5 rounded-xl font-bold text-white flex items-center justify-between gap-2 shadow-sm transition-all active:scale-95 cursor-pointer touch-manipulation border border-white/25 ${
+										isCurrent
+											? "ring-2 ring-white scale-[1.02] font-black"
+											: "opacity-90 hover:opacity-100"
+									}`}
+									title={item.label}
+									data-testid={`radial-btn-${item.id}`}
+								>
+									<div className="flex items-center gap-2 min-w-0">
+										<span className="shrink-0">{item.icon}</span>
+										<span className="text-sm font-black truncate">{item.shortLabel}</span>
+									</div>
+									<span className="text-[11px] px-1.5 py-0.5 rounded-md bg-black/30 text-white font-mono font-black shrink-0">
+										{item.hotkey}
+									</span>
+								</button>
+							);
+						})}
+					</div>
 
-				{/* Top Quick Bar: Pediatric Resorption & Exchange macros for deciduous teeth OR Black macros for adult teeth */}
-				<div
-					className="absolute flex items-center gap-1.5 pointer-events-auto bg-[var(--odontogram-paper)]/95 backdrop-blur-xl px-3.5 py-1.5 rounded-full border border-[var(--odontogram-border)] shadow-xl z-20"
-					style={{
-						left: "50%",
-						top: `calc(50% - ${radius + 52}px)`,
-						transform: "translate(-50%, 0)",
-					}}
-				>
-					{isPrimaryTooth(toothNumber) ? (
-						<>
-							<span className="text-xs uppercase font-black text-purple-600 dark:text-purple-400 px-1">Резорбция:</span>
-							<button
-								type="button"
-								onClick={() => {
-									onSelectState("Healthy", undefined, "resorption_1");
-									onClose();
-								}}
-								className="min-h-[48px] min-w-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation"
-								title="Физиологическая резорбция I степени (рассасывание верхушки до 1/3 корня)"
-							>
-								[Рез I]
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									onSelectState("Healthy", undefined, "resorption_2");
-									onClose();
-								}}
-								className="min-h-[48px] min-w-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation"
-								title="Физиологическая резорбция II степени (рассасывание до 1/2 корня)"
-							>
-								[Рез II]
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									onSelectState("Healthy", undefined, "resorption_3");
-									onClose();
-								}}
-								className="min-h-[48px] min-w-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation"
-								title="Физиологическая резорбция III степени (полное рассасывание корней / подвижность)"
-							>
-								[Рез III]
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									onSelectState("Missing", undefined, "exfoliation");
-									onClose();
-								}}
-								className="min-h-[48px] min-w-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-rose-500/15 text-rose-800 dark:text-rose-200 hover:bg-rose-500/30 transition-all cursor-pointer border border-rose-500/30 touch-manipulation"
-								title="Физиологическая смена / Удаление молочного зуба"
-							>
-								[Смена 0]
-							</button>
-						</>
-					) : (
-						<>
-							<span className="text-xs uppercase font-black text-amber-600 dark:text-amber-400 px-1">Блэк:</span>
-							<button
-								type="button"
-								onClick={() => {
-									onSelectState("Caries", ["M", "O", "D"]);
-									onClose();
-								}}
-								className="min-h-[48px] min-w-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
-								title="Медиально-окклюзионно-дистальная полость (II класс)"
-							>
-								[MOD]
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									onSelectState("Caries", ["M", "O"]);
-									onClose();
-								}}
-								className="min-h-[48px] min-w-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
-								title="Медиально-окклюзионная полость (II класс)"
-							>
-								[MO]
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									onSelectState("Caries", ["O", "D"]);
-									onClose();
-								}}
-								className="min-h-[48px] min-w-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
-								title="Окклюзионно-дистальная полость (II класс)"
-							>
-								[OD]
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									onSelectState("Caries", ["V"]);
-									onClose();
-								}}
-								className="min-h-[48px] min-w-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
-								title="Пришеечная полость (V класс)"
-							>
-								[V класс]
-							</button>
-						</>
+					{/* Quick Macro Bar (Black / Resorption) */}
+					<div className="flex flex-wrap items-center gap-1.5 p-2 rounded-xl bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)]">
+						{isPrimaryTooth(toothNumber) ? (
+							<>
+								<span className="text-xs uppercase font-black text-purple-600 dark:text-purple-400 px-1 shrink-0">Резорбция:</span>
+								<div className="grid grid-cols-4 gap-1 flex-1">
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Healthy", undefined, "resorption_1");
+											onClose();
+										}}
+										className="min-h-[48px] min-w-[48px] px-2 py-2 rounded-xl text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation text-center"
+										title="Физиологическая резорбция I степени"
+									>
+										[Рез I]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Healthy", undefined, "resorption_2");
+											onClose();
+										}}
+										className="min-h-[48px] min-w-[48px] px-2 py-2 rounded-xl text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation text-center"
+										title="Физиологическая резорбция II степени"
+									>
+										[Рез II]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Healthy", undefined, "resorption_3");
+											onClose();
+										}}
+										className="min-h-[48px] min-w-[48px] px-2 py-2 rounded-xl text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation text-center"
+										title="Физиологическая резорбция III степени"
+									>
+										[Рез III]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Missing", undefined, "exfoliation");
+											onClose();
+										}}
+										className="min-h-[48px] min-w-[48px] px-2 py-2 rounded-xl text-xs font-black bg-rose-500/15 text-rose-800 dark:text-rose-200 hover:bg-rose-500/30 transition-all cursor-pointer border border-rose-500/30 touch-manipulation text-center"
+										title="Физиологическая смена / Удаление"
+									>
+										[Смена 0]
+									</button>
+								</div>
+							</>
+						) : (
+							<>
+								<span className="text-xs uppercase font-black text-amber-600 dark:text-amber-400 px-1 shrink-0">Блэк:</span>
+								<div className="grid grid-cols-4 gap-1 flex-1">
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Caries", ["M", "O", "D"]);
+											onClose();
+										}}
+										className="min-h-[48px] min-w-[48px] px-2 py-2 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
+										title="Медиально-окклюзионно-дистальная полость (II класс)"
+									>
+										[MOD]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Caries", ["M", "O"]);
+											onClose();
+										}}
+										className="min-h-[48px] min-w-[48px] px-2 py-2 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
+										title="Медиально-окклюзионная полость (II класс)"
+									>
+										[MO]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Caries", ["O", "D"]);
+											onClose();
+										}}
+										className="min-h-[48px] min-w-[48px] px-2 py-2 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
+										title="Окклюзионно-дистальная полость (II класс)"
+									>
+										[OD]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Caries", ["V"]);
+											onClose();
+										}}
+										className="min-h-[48px] min-w-[48px] px-2 py-2 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
+										title="Пришеечная полость (V класс)"
+									>
+										[V класс]
+									</button>
+								</div>
+							</>
+						)}
+					</div>
+
+					{/* IROPZ warning */}
+					{(Boolean(iropz && iropz > 0.6) || currentState === "Pulpitis" || currentState === "Periodontitis") && (
+						<div className="flex items-center gap-2 bg-amber-500/15 text-amber-900 dark:text-amber-200 p-2.5 rounded-xl border border-amber-500/30 text-xs font-bold">
+							<AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
+							<span>ИРОПЗ &gt; 0.6: Рекомендовано ортопедическое восстановление (коронка Z51.8)</span>
+						</div>
+					)}
+
+					{/* Quick Actions (Endo / Invoice) */}
+					{Boolean(onOpenEndo || onAddToInvoice) && (
+						<div className="flex items-center gap-2 pt-1 border-t border-[var(--odontogram-border-subtle)]">
+							{onOpenEndo && (
+								<button
+									type="button"
+									onClick={() => {
+										onOpenEndo();
+										onClose();
+									}}
+									className="flex-1 min-h-[48px] min-w-[48px] py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black text-rose-600 dark:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+								>
+									<Wrench size={16} />
+									<span>Журнал каналов</span>
+								</button>
+							)}
+							{onAddToInvoice && (
+								<button
+									type="button"
+									onClick={() => {
+										onAddToInvoice();
+										onClose();
+									}}
+									className="flex-1 min-h-[48px] min-w-[48px] py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black text-[var(--teal)] bg-[var(--teal-soft,rgba(13,148,136,0.1))] hover:bg-[var(--teal-soft,rgba(13,148,136,0.2))] border border-[var(--teal)]/30 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+								>
+									<Coins size={16} />
+									<span>В смету</span>
+								</button>
+							)}
+						</div>
 					)}
 				</div>
-
-				{/* IROPZ > 0.6 Smart Orthopedic Warning Banner */}
-				{(Boolean(iropz && iropz > 0.6) || currentState === "Pulpitis" || currentState === "Periodontitis") && (
+			) : (
+				/* Desktop Clamped Circular Radial Menu */
+				<div
+					ref={menuRef}
+					className="radial-tooth-menu-container absolute select-none flex items-center justify-center pointer-events-none"
+					style={{
+						left: `${centerX}px`,
+						top: `${centerY}px`,
+						width: "480px",
+						height: "480px",
+						transform: "translate(-50%, -50%)",
+					}}
+					role="dialog"
+					aria-label={`Радиальное меню зуба ${toothNumber}`}
+				>
+					{/* Background Glass Disc - centered at container origin */}
 					<div
-						className="absolute flex items-center gap-2 pointer-events-auto bg-amber-500/20 text-amber-900 dark:text-amber-200 px-3.5 py-1.5 rounded-full border border-amber-500/40 shadow-xl z-20 text-xs font-bold whitespace-nowrap"
+						className="absolute rounded-full bg-[var(--odontogram-paper)]/92 backdrop-blur-2xl border border-[var(--odontogram-border)] shadow-2xl pointer-events-none"
+						style={{
+							width: `${(radius + 45) * 2}px`,
+							height: `${(radius + 45) * 2}px`,
+							left: "50%",
+							top: "50%",
+							transform: "translate(-50%, -50%)",
+						}}
+					/>
+
+					{/* Center Tooth Hub - centered at container origin */}
+					<div
+						className="absolute flex flex-col items-center justify-center w-24 h-24 rounded-full bg-[var(--odontogram-surface)] border-2 border-[var(--teal,#0d9488)] shadow-2xl text-[var(--odontogram-ink)] z-20 pointer-events-auto"
 						style={{
 							left: "50%",
-							top: `calc(50% + ${radius + 10}px)`,
+							top: "50%",
+							transform: "translate(-50%, -50%)",
+						}}
+					>
+						<span className="text-xs uppercase font-black text-[var(--teal,#0d9488)] tracking-wider">Зуб</span>
+						<span className="text-3xl font-black leading-none text-[var(--odontogram-ink)]">{toothNumber}</span>
+						<button
+							type="button"
+							onClick={onClose}
+							className="absolute -top-3 -right-3 min-w-[48px] min-h-[48px] w-12 h-12 flex items-center justify-center p-2 rounded-full bg-rose-600 hover:bg-rose-500 text-white shadow-xl cursor-pointer transition-transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-rose-400 pointer-events-auto"
+							title="Закрыть (Esc)"
+							aria-label="Закрыть меню"
+						>
+							<X size={20} />
+						</button>
+					</div>
+
+					{/* Radial Circle Slices - anchored to container origin (50%, 50%) */}
+					<div className="radial-slices-wrapper absolute inset-0 pointer-events-none">
+						{items.map((item, index) => {
+							const angle = (index * 2 * Math.PI) / items.length - Math.PI / 2;
+							const x = Math.cos(angle) * radius;
+							const y = Math.sin(angle) * radius;
+							const isCurrent = currentState === item.state;
+
+							return (
+								<button
+									key={item.id}
+									type="button"
+									onClick={() => {
+										if (item.state) onSelectState(item.state, surfaces);
+										onClose();
+									}}
+									style={{
+										position: "absolute",
+										left: "50%",
+										top: "50%",
+										transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`,
+										background: item.bgGradient,
+										minWidth: "max-content",
+										width: "max-content",
+										whiteSpace: "nowrap",
+										display: "inline-flex",
+										alignItems: "center",
+										justifyContent: "center",
+										gap: "8px",
+										padding: "12px 20px",
+										borderRadius: "9999px",
+										border: "1.5px solid rgba(255, 255, 255, 0.35)",
+										boxShadow: isCurrent
+											? "0 0 0 3px #ffffff, 0 14px 32px -4px rgba(0, 0, 0, 0.65)"
+											: "0 8px 22px -3px rgba(0, 0, 0, 0.45)",
+									}}
+									className={`radial-item-btn pointer-events-auto min-h-[48px] min-w-[48px] text-xs font-bold text-white cursor-pointer transition-all duration-200 hover:scale-108 active:scale-95 focus:outline-none ${
+										isCurrent
+											? "scale-105 font-black ring-2 ring-white"
+											: "opacity-95 hover:opacity-100"
+									}`}
+									title={item.label}
+									data-testid={`radial-btn-${item.id}`}
+								>
+									<span className="shrink-0 flex items-center justify-center">{item.icon}</span>
+									<span className="whitespace-nowrap font-black text-[14px] sm:text-[15px] tracking-tight">{item.shortLabel}</span>
+								</button>
+							);
+						})}
+					</div>
+
+					{/* Top Quick Bar: Pediatric Resorption & Exchange macros for deciduous teeth OR Black macros for adult teeth */}
+					<div
+						className="absolute flex items-center gap-1.5 pointer-events-auto bg-[var(--odontogram-paper)]/95 backdrop-blur-xl px-3.5 py-1.5 rounded-full border border-[var(--odontogram-border)] shadow-xl z-20"
+						style={{
+							left: "50%",
+							top: `calc(50% - ${radius + 52}px)`,
 							transform: "translate(-50%, 0)",
 						}}
 					>
-						<AlertTriangle size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
-						<span>ИРОПЗ &gt; 0.6: Рекомендовано ортопедическое восстановление (коронка Z51.8)</span>
+						{isPrimaryTooth(toothNumber) ? (
+							<>
+								<span className="text-xs uppercase font-black text-purple-600 dark:text-purple-400 px-1">Резорбция:</span>
+								<button
+									type="button"
+									onClick={() => {
+										onSelectState("Healthy", undefined, "resorption_1");
+										onClose();
+									}}
+									className="min-h-[48px] min-w-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation"
+									title="Физиологическая резорбция I степени (рассасывание верхушки до 1/3 корня)"
+								>
+									[Рез I]
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										onSelectState("Healthy", undefined, "resorption_2");
+										onClose();
+									}}
+									className="min-h-[48px] min-w-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation"
+									title="Физиологическая резорбция II степени (рассасывание до 1/2 корня)"
+								>
+									[Рез II]
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										onSelectState("Healthy", undefined, "resorption_3");
+										onClose();
+									}}
+									className="min-h-[48px] min-w-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation"
+									title="Физиологическая резорбция III степени (полное рассасывание корней / подвижность)"
+								>
+									[Рез III]
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										onSelectState("Missing", undefined, "exfoliation");
+										onClose();
+									}}
+									className="min-h-[48px] min-w-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-rose-500/15 text-rose-800 dark:text-rose-200 hover:bg-rose-500/30 transition-all cursor-pointer border border-rose-500/30 touch-manipulation"
+									title="Физиологическая смена / Удаление молочного зуба"
+								>
+									[Смена 0]
+								</button>
+							</>
+						) : (
+							<>
+								<span className="text-xs uppercase font-black text-amber-600 dark:text-amber-400 px-1">Блэк:</span>
+								<button
+									type="button"
+									onClick={() => {
+										onSelectState("Caries", ["M", "O", "D"]);
+										onClose();
+									}}
+									className="min-h-[48px] min-w-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+									title="Медиально-окклюзионно-дистальная полость (II класс)"
+								>
+									[MOD]
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										onSelectState("Caries", ["M", "O"]);
+										onClose();
+									}}
+									className="min-h-[48px] min-w-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+									title="Медиально-окклюзионная полость (II класс)"
+								>
+									[MO]
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										onSelectState("Caries", ["O", "D"]);
+										onClose();
+									}}
+									className="min-h-[48px] min-w-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+									title="Окклюзионно-дистальная полость (II класс)"
+								>
+									[OD]
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										onSelectState("Caries", ["V"]);
+										onClose();
+									}}
+									className="min-h-[48px] min-w-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+									title="Пришеечная полость (V класс)"
+								>
+									[V класс]
+								</button>
+							</>
+						)}
 					</div>
-				)}
 
-				{/* Quick Action Footer Controls - centered below the radial disc */}
-				{Boolean(onOpenEndo || onAddToInvoice) && (
-					<div
-						className="absolute flex items-center gap-3 pointer-events-auto bg-[var(--odontogram-paper)] backdrop-blur-xl px-4 py-2 rounded-full border border-[var(--odontogram-border)] shadow-2xl z-20"
-						style={{
-							left: "50%",
-							top: `calc(50% + ${radius + 56}px)`,
-							transform: "translate(-50%, 0)",
-						}}
-					>
-						{onOpenEndo && (
-							<button
-								type="button"
-								onClick={() => {
-									onOpenEndo();
-									onClose();
-								}}
-								style={{
-									display: "inline-flex",
-									alignItems: "center",
-									gap: "8px",
-									background: "transparent",
-								}}
-								className="min-h-[48px] min-w-[48px] text-[14px] font-black text-rose-600 dark:text-rose-300 hover:bg-rose-500/15 px-4 py-2 rounded-xl transition-colors cursor-pointer border-0"
-							>
-								<Wrench size={18} />
-								<span>Журнал каналов</span>
-							</button>
-						)}
-						{onAddToInvoice && (
-							<button
-								type="button"
-								onClick={() => {
-									onAddToInvoice();
-									onClose();
-								}}
-								style={{
-									display: "inline-flex",
-									alignItems: "center",
-									gap: "8px",
-									background: "transparent",
-								}}
-								className="min-h-[48px] min-w-[48px] text-[14px] font-black text-[var(--teal,#0d9488)] hover:bg-[var(--teal-soft,rgba(13,148,136,0.15))] px-4 py-2 rounded-xl transition-colors cursor-pointer border-0"
-							>
-								<Coins size={18} />
-								<span>В смету</span>
-							</button>
-						)}
-					</div>
-				)}
-			</div>
+					{/* IROPZ > 0.6 Smart Orthopedic Warning Banner */}
+					{(Boolean(iropz && iropz > 0.6) || currentState === "Pulpitis" || currentState === "Periodontitis") && (
+						<div
+							className="absolute flex items-center gap-2 pointer-events-auto bg-amber-500/20 text-amber-900 dark:text-amber-200 px-3.5 py-1.5 rounded-full border border-amber-500/40 shadow-xl z-20 text-xs font-bold whitespace-nowrap"
+							style={{
+								left: "50%",
+								top: `calc(50% + ${radius + 10}px)`,
+								transform: "translate(-50%, 0)",
+							}}
+						>
+							<AlertTriangle size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+							<span>ИРОПЗ &gt; 0.6: Рекомендовано ортопедическое восстановление (коронка Z51.8)</span>
+						</div>
+					)}
+
+					{/* Quick Action Footer Controls - centered below the radial disc */}
+					{Boolean(onOpenEndo || onAddToInvoice) && (
+						<div
+							className="absolute flex items-center gap-3 pointer-events-auto bg-[var(--odontogram-paper)] backdrop-blur-xl px-4 py-2 rounded-full border border-[var(--odontogram-border)] shadow-2xl z-20"
+							style={{
+								left: "50%",
+								top: `calc(50% + ${radius + 56}px)`,
+								transform: "translate(-50%, 0)",
+							}}
+						>
+							{onOpenEndo && (
+								<button
+									type="button"
+									onClick={() => {
+										onOpenEndo();
+										onClose();
+									}}
+									style={{
+										display: "inline-flex",
+										alignItems: "center",
+										gap: "8px",
+										background: "transparent",
+									}}
+									className="min-h-[48px] min-w-[48px] text-[14px] font-black text-rose-600 dark:text-rose-300 hover:bg-rose-500/15 px-4 py-2 rounded-xl transition-colors cursor-pointer border-0"
+								>
+									<Wrench size={18} />
+									<span>Журнал каналов</span>
+								</button>
+							)}
+							{onAddToInvoice && (
+								<button
+									type="button"
+									onClick={() => {
+										onAddToInvoice();
+										onClose();
+									}}
+									style={{
+										display: "inline-flex",
+										alignItems: "center",
+										gap: "8px",
+										background: "transparent",
+									}}
+									className="min-h-[48px] min-w-[48px] text-[14px] font-black text-[var(--teal,#0d9488)] hover:bg-[var(--teal-soft,rgba(13,148,136,0.15))] px-4 py-2 rounded-xl transition-colors cursor-pointer border-0"
+								>
+									<Coins size={18} />
+									<span>В смету</span>
+								</button>
+							)}
+						</div>
+					)}
+				</div>
+			)}
 		</div>
 	);
 

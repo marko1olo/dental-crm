@@ -1677,6 +1677,73 @@
 }
 
 /* ── Graphic Tooth Formula & Form 043/u A4 Print Styles ── */
+/* Responsive Mobile Quadrant Adapter & Mobile Bottom Sheet (390px Viewports) */
+.odontogram-quadrant-bar {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.quadrant-btn {
+	min-height: 48px !important;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+	transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.quadrant-btn:active {
+	transform: scale(0.97);
+}
+
+.quadrant-view-wrapper {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 8px 4px;
+}
+
+.focused-quadrant-group {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	flex-wrap: nowrap;
+	min-width: max-content;
+}
+
+@media (max-width: 640px) {
+	.focused-quadrant-group {
+		gap: 2px;
+	}
+	.focused-quadrant-group .tooth-svg-wrapper {
+		min-width: 44px;
+		min-height: 48px;
+	}
+}
+
+.radial-mobile-sheet {
+	padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+}
+
+@keyframes slideUpDrawer {
+	from {
+		transform: translateY(100%);
+		opacity: 0.8;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}
+
+.animate-slideUp {
+	animation: slideUpDrawer 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 @media print {
 	body {
 		background: #ffffff !important;
@@ -1720,4 +1787,5 @@
 		margin: 8mm 10mm;
 	}
 }
+
 
