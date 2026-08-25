@@ -185,16 +185,27 @@ export type SomaticAlertSeverity = "danger" | "warning" | "caution" | "info" | "
 export const HEALTHY_MAX_EPINEPHRINE_MG = 0.20; // 200 мкг для здоровых пациентов
 export const CARDIO_MAX_EPINEPHRINE_MG = 0.04; // 40 мкг для пациентов с сердечно-сосудистой патологией
 
+/** Текст визуального бейджа кардиологического лимита */
+export const CARDIO_LIMIT_BADGE_TEXT = "Кардиологический лимит";
+
 /** Профиль соматических факторов риска и аллергоанамнеза пациента */
 export interface SomaticRiskProfile {
 	/** Сердечно-сосудистые заболевания / Гипертоническая болезнь (МКБ-10 I10–I15, ИБС, аритмия) */
 	readonly hasCardiovascularRisk?: boolean | undefined;
+	/** Гипертоническая болезнь (МКБ-10 I10–I15) */
+	readonly hasHypertension?: boolean | undefined;
+	/** Ишемическая болезнь сердца / инфаркт миокарда (МКБ-10 I20–I25) */
+	readonly hasIhd?: boolean | undefined;
+	/** Нарушения сердечного ритма / аритмия / тахикардия (МКБ-10 I44–I49) */
+	readonly hasArrhythmia?: boolean | undefined;
 	/** Аллергия на сульфиты / метабисульфит натрия (E223) */
 	readonly hasSulfiteAllergy?: boolean | undefined;
 	/** Бронхиальная астма (МКБ-10 J45) */
 	readonly hasBronchialAsthma?: boolean | undefined;
 	/** Беременность / период лактации (МКБ-10 Z32–Z39) */
 	readonly isPregnantOrLactating?: boolean | undefined;
+	/** Триместр беременности */
+	readonly pregnancyTrimester?: "none" | "trimester_1" | "trimester_2" | "trimester_3" | "lactation" | undefined;
 	/** Дополнительные клинические примечания */
 	readonly customNotes?: string | undefined;
 }
@@ -215,6 +226,129 @@ export interface SomaticCrossCheckResult {
 	readonly maxCardioCarpules: number | null;
 	readonly totalEpinephrineMg: number;
 	readonly maxSafeEpinephrineMg: number;
+	readonly isCardioRestricted: boolean;
+	readonly cardioLimitBadgeText: string | null;
+	readonly cardioLimitDetails: {
+		readonly maxEpinephrineMg: number;
+		readonly maxCarpules: number | null;
+		readonly currentEpinephrineMg: number;
+		readonly isExceeded: boolean;
+	} | null;
+}
+
+/**
+ * Парсит соматический анамнез пациента (из текста сопутствующих патологий или МКБ-10) в структурированный профиль риска.
+ */
+export function extractSomaticRiskProfileFromText(text?: string | null | undefined): SomaticRiskProfile {
+	const raw = (text ?? "").toLowerCase();
+	if (!raw.trim()) return {};
+
+	const hasHypertension =
+		raw.includes("гипертон") ||
+		raw.includes("гипертенз") ||
+		raw.includes("давлен") ||
+		raw.includes("аг ") ||
+		raw.includes("аг,") ||
+		raw.includes("криз") ||
+		raw.includes("i10") ||
+		raw.includes("i11") ||
+		raw.includes("i12") ||
+		raw.includes("i13") ||
+		raw.includes("i14") ||
+		raw.includes("i15");
+
+	const hasIhd =
+		raw.includes("ибс") ||
+		raw.includes("стенокард") ||
+		raw.includes("инфаркт") ||
+		raw.includes("постинфаркт") ||
+		raw.includes("стентирован") ||
+		raw.includes("шунтирован") ||
+		raw.includes("i20") ||
+		raw.includes("i21") ||
+		raw.includes("i22") ||
+		raw.includes("i23") ||
+		raw.includes("i24") ||
+		raw.includes("i25");
+
+	const hasArrhythmia =
+		raw.includes("аритми") ||
+		raw.includes("мерцательн") ||
+		raw.includes("экстрасистол") ||
+		raw.includes("тахикарди") ||
+		raw.includes("фибрилляц") ||
+		raw.includes("пароксизм") ||
+		raw.includes("блокад") ||
+		raw.includes("i44") ||
+		raw.includes("i45") ||
+		raw.includes("i47") ||
+		raw.includes("i48") ||
+		raw.includes("i49");
+
+	const hasCardio =
+		hasHypertension ||
+		hasIhd ||
+		hasArrhythmia ||
+		raw.includes("сердеч") ||
+		raw.includes("кардио") ||
+		raw.includes("пороком сердца") ||
+		raw.includes("хсн");
+
+	const hasSulfite =
+		raw.includes("сульфит") ||
+		raw.includes("дисульфит") ||
+		raw.includes("метабисульфит") ||
+		raw.includes("пиросульфит") ||
+		raw.includes("е223") ||
+		raw.includes("e223") ||
+		raw.includes("консервант");
+
+	const hasAsthma =
+		raw.includes("астм") ||
+		raw.includes("бронхиальн") ||
+		raw.includes("сальбутамол") ||
+		raw.includes("беродуал") ||
+		raw.includes("j45") ||
+		raw.includes("j46");
+
+	const isPregnant =
+		raw.includes("беременн") ||
+		raw.includes("лактац") ||
+		raw.includes("кормлен") ||
+		raw.includes("гв") ||
+		raw.includes("триместр") ||
+		raw.includes("z32") ||
+		raw.includes("z33") ||
+		raw.includes("z34") ||
+		raw.includes("z35") ||
+		raw.includes("z39");
+
+	let pregnancyTrimester: SomaticRiskProfile["pregnancyTrimester"] = "none";
+	if (isPregnant) {
+		if (raw.includes("1 триместр") || raw.includes("1-й триместр") || raw.includes("первый триместр")) {
+			pregnancyTrimester = "trimester_1";
+		} else if (raw.includes("2 триместр") || raw.includes("2-й триместр") || raw.includes("второй триместр")) {
+			pregnancyTrimester = "trimester_2";
+		} else if (raw.includes("3 триместр") || raw.includes("3-й триместр") || raw.includes("третий триместр")) {
+			pregnancyTrimester = "trimester_3";
+		} else if (raw.includes("лактац") || raw.includes("гв") || raw.includes("кормлен")) {
+			pregnancyTrimester = "lactation";
+		} else {
+			pregnancyTrimester = "trimester_2";
+		}
+	}
+
+	return {
+		hasCardiovascularRisk: hasCardio,
+		hasHypertension,
+		hasIhd,
+		hasArrhythmia,
+		hasSulfiteAllergy: hasSulfite,
+		hasBronchialAsthma: hasAsthma,
+		isPregnantOrLactating: isPregnant,
+		pregnancyTrimester,
+		...(text ? { customNotes: text } : {}),
+	};
 }
 
 /**
@@ -230,18 +364,27 @@ export function checkAnesthesiaSomaticContraindications(params: {
 	const carpules = Math.max(0, Number.isFinite(params.carpulesCount) ? (params.carpulesCount ?? 1) : 1);
 
 	const totalEpinephrineMg = Math.round(carpules * drug.epinephrineMgPerCarpule * 10000) / 10000;
-	const hasCardio = Boolean(somatic.hasCardiovascularRisk);
+	const hasCardio = Boolean(
+		somatic.hasCardiovascularRisk ||
+		somatic.hasHypertension ||
+		somatic.hasIhd ||
+		somatic.hasArrhythmia,
+	);
 	const hasAsthmaOrSulfite = Boolean(somatic.hasSulfiteAllergy || somatic.hasBronchialAsthma);
-	const isPregnant = Boolean(somatic.isPregnantOrLactating);
+	const isPregnant = Boolean(
+		somatic.isPregnantOrLactating ||
+		(somatic.pregnancyTrimester && somatic.pregnancyTrimester !== "none"),
+	);
 
-	const maxSafeEpinephrineMg = hasCardio && !drug.isAdrenalineFree
+	const isCardioRestricted = hasCardio && !drug.isAdrenalineFree;
+	const maxSafeEpinephrineMg = isCardioRestricted
 		? CARDIO_MAX_EPINEPHRINE_MG
 		: HEALTHY_MAX_EPINEPHRINE_MG;
 
 	let maxCardioCarpules: number | null = null;
 	if (!drug.isAdrenalineFree && drug.epinephrineMgPerCarpule > 0) {
 		// Для 1:100 000 (0.017 мг/карп) -> 0.04 / 0.017 = 2.35 -> строго 2 карпулы
-		// Для 1:200 000 (0.0085 мг/карп) -> 0.04 / 0.0085 = 4.7 -> макс 4 карпулы
+		// Для 1:200 000 (0.0085 мг/карп) -> 0.04 / 0.0085 = 4.7 -> строго 4 карпулы
 		if (drug.vasoconstrictorRatio === "1:100000") {
 			maxCardioCarpules = 2.0;
 		} else if (drug.vasoconstrictorRatio === "1:200000") {
@@ -374,6 +517,14 @@ export function checkAnesthesiaSomaticContraindications(params: {
 		maxCardioCarpules,
 		totalEpinephrineMg,
 		maxSafeEpinephrineMg,
+		isCardioRestricted,
+		cardioLimitBadgeText: isCardioRestricted ? CARDIO_LIMIT_BADGE_TEXT : null,
+		cardioLimitDetails: isCardioRestricted ? {
+			maxEpinephrineMg: CARDIO_MAX_EPINEPHRINE_MG,
+			maxCarpules: maxCardioCarpules,
+			currentEpinephrineMg: totalEpinephrineMg,
+			isExceeded: totalEpinephrineMg > CARDIO_MAX_EPINEPHRINE_MG,
+		} : null,
 	};
 }
 
@@ -396,7 +547,11 @@ export interface AnesthesiaCalculationResult {
 	readonly totalVolumeMl: number;
 	readonly totalDoseMg: number;
 	readonly maxSafeDoseMg: number;
+	readonly maxSafeVolumeMl: number;
 	readonly maxSafeCarpules: number;
+	readonly mrdDoseMg: number;
+	readonly mrdVolumeMl: number;
+	readonly mrdCarpules: number;
 	readonly totalEpinephrineMg: number;
 	readonly maxSafeEpinephrineMg: number;
 	readonly safetyRatio: number; // 0.0 to 1.0+
@@ -407,6 +562,13 @@ export interface AnesthesiaCalculationResult {
 	readonly somaticAlerts: readonly AnesthesiaSomaticAlert[];
 	readonly recommendedDrugKey: AnesthesiaDrugKey | null;
 	readonly isCardioRestricted: boolean;
+	readonly cardioLimitBadgeText: string | null;
+	readonly cardioLimitDetails: {
+		readonly maxEpinephrineMg: number;
+		readonly maxCarpules: number | null;
+		readonly currentEpinephrineMg: number;
+		readonly isExceeded: boolean;
+	} | null;
 }
 
 /**
@@ -414,7 +576,7 @@ export interface AnesthesiaCalculationResult {
  */
 export function calculateAnesthesiaSafety(params: AnesthesiaSafetyParams): AnesthesiaCalculationResult {
 	const drug = ANESTHESIA_DRUGS[params.drugKey] ?? ANESTHESIA_DRUGS.ultracain_ds;
-	const weight = Math.max(10, Math.min(250, Number.isFinite(params.patientWeightKg) && params.patientWeightKg > 0 ? params.patientWeightKg : 70));
+	const weight = Math.max(5, Math.min(250, Number.isFinite(params.patientWeightKg) && params.patientWeightKg > 0 ? params.patientWeightKg : 70));
 	const carpules = Math.max(0, Number.isFinite(params.carpulesCount) ? params.carpulesCount : 1);
 
 	// Определение детского возраста (< 18 лет) для расчета дозировки по педиатрическому стандарту (5 мг/кг для артикаина)
@@ -448,10 +610,17 @@ export function calculateAnesthesiaSafety(params: AnesthesiaSafetyParams): Anest
 		carpulesCount: carpules,
 	});
 
+	const hasCardio = Boolean(
+		params.somaticProfile?.hasCardiovascularRisk ||
+		params.somaticProfile?.hasHypertension ||
+		params.somaticProfile?.hasIhd ||
+		params.somaticProfile?.hasArrhythmia,
+	);
+
 	let isCardioRestricted = false;
 
 	// Если у пациента кардиориск и препарат содержит адреналин, ограничиваем дозу кардиологическим лимитом
-	if (params.somaticProfile?.hasCardiovascularRisk && !drug.isAdrenalineFree && crossCheck.maxCardioCarpules !== null) {
+	if (hasCardio && !drug.isAdrenalineFree && crossCheck.maxCardioCarpules !== null) {
 		isCardioRestricted = true;
 		if (crossCheck.maxCardioCarpules < maxSafeCarpules) {
 			maxSafeCarpules = crossCheck.maxCardioCarpules;
@@ -459,6 +628,8 @@ export function calculateAnesthesiaSafety(params: AnesthesiaSafetyParams): Anest
 			maxSafeDoseMg = Math.min(maxSafeDoseMg, cardioDoseCapMg);
 		}
 	}
+
+	const maxSafeVolumeMl = Math.round(maxSafeCarpules * drug.volumeMlPerCarpule * 100) / 100;
 
 	const doseRatio = maxSafeDoseMg > 0 ? totalDoseMg / maxSafeDoseMg : 0;
 	const epiRatio = crossCheck.maxSafeEpinephrineMg > 0 && crossCheck.totalEpinephrineMg > 0
@@ -471,7 +642,10 @@ export function calculateAnesthesiaSafety(params: AnesthesiaSafetyParams): Anest
 	let safetyLevel: AnesthesiaSafetyLevel = "safe";
 	let warningMessage: string | null = null;
 
-	const dangerAlert = crossCheck.alerts.find((a) => a.severity === "danger");
+	const dangerAlert =
+		crossCheck.alerts.find((a) => a.id === "cardio_epinephrine_overdose") ??
+		crossCheck.alerts.find((a) => a.id === "sulfite_asthma_contraindication") ??
+		crossCheck.alerts.find((a) => a.severity === "danger");
 	const warningAlert = crossCheck.alerts.find((a) => a.severity === "warning");
 	const cautionAlert = crossCheck.alerts.find((a) => a.severity === "caution");
 
@@ -480,7 +654,7 @@ export function calculateAnesthesiaSafety(params: AnesthesiaSafetyParams): Anest
 		warningMessage = dangerAlert.message;
 	} else if (safetyRatio >= 1.0) {
 		safetyLevel = "danger";
-		if (epiRatio >= 1.0 && params.somaticProfile?.hasCardiovascularRisk) {
+		if (epiRatio >= 1.0 && hasCardio) {
 			warningMessage = `ВНИМАНИЕ: Превышен кардиологический лимит адреналина (${crossCheck.totalEpinephrineMg} мг из макс. ${crossCheck.maxSafeEpinephrineMg} мг / ${maxSafeCarpules} карп.)!`;
 		} else {
 			warningMessage = `ВНИМАНИЕ: Превышена максимально допустимая доза анестетика (${totalDoseMg} мг из макс. ${maxSafeDoseMg} мг)! Риск системной токсичности.`;
@@ -508,7 +682,11 @@ export function calculateAnesthesiaSafety(params: AnesthesiaSafetyParams): Anest
 		totalVolumeMl,
 		totalDoseMg,
 		maxSafeDoseMg,
+		maxSafeVolumeMl,
 		maxSafeCarpules,
+		mrdDoseMg: maxSafeDoseMg,
+		mrdVolumeMl: maxSafeVolumeMl,
+		mrdCarpules: maxSafeCarpules,
 		totalEpinephrineMg: crossCheck.totalEpinephrineMg,
 		maxSafeEpinephrineMg: crossCheck.maxSafeEpinephrineMg,
 		safetyRatio,
@@ -519,6 +697,186 @@ export function calculateAnesthesiaSafety(params: AnesthesiaSafetyParams): Anest
 		somaticAlerts: crossCheck.alerts,
 		recommendedDrugKey: crossCheck.recommendedDrugKey,
 		isCardioRestricted,
+		cardioLimitBadgeText: isCardioRestricted ? CARDIO_LIMIT_BADGE_TEXT : null,
+		cardioLimitDetails: isCardioRestricted ? crossCheck.cardioLimitDetails : null,
+	};
+}
+
+export interface PatientMrdCalculation {
+	readonly drugKey: AnesthesiaDrugKey;
+	readonly commercialName: string;
+	readonly activeSubstance: string;
+	readonly patientWeightKg: number;
+	readonly isPediatric: boolean;
+	readonly maxDoseMgPerKg: number;
+	readonly mrdDoseMg: number;
+	readonly mrdVolumeMl: number;
+	readonly mrdCarpules: number;
+	readonly isCappedByAbsoluteMax: boolean;
+	readonly isCappedByCardio: boolean;
+	readonly maxSafeEpinephrineMg: number;
+	readonly cardioLimitBadgeText: string | null;
+	readonly formattedNoteRu: string;
+}
+
+/**
+ * Рассчитывает максимальную разовую дозу (МРД) анестетика в мг, мл и карпулах
+ * на основе точной массы тела пациента и соматических кардио-ограничений.
+ */
+export function calculatePatientMrd(params: {
+	drugKey: AnesthesiaDrugKey;
+	patientWeightKg: number;
+	patientAgeYears?: number | null | undefined;
+	isPediatric?: boolean | undefined;
+	isCardioRestricted?: boolean | undefined;
+}): PatientMrdCalculation {
+	const drug = ANESTHESIA_DRUGS[params.drugKey] ?? ANESTHESIA_DRUGS.ultracain_ds;
+	const weight = Math.max(5, Math.min(250, Number.isFinite(params.patientWeightKg) && params.patientWeightKg > 0 ? params.patientWeightKg : 70));
+	const isPediatric = Boolean(
+		params.isPediatric ||
+		(params.patientAgeYears !== null && params.patientAgeYears !== undefined && params.patientAgeYears < 18),
+	);
+	const maxDoseMgPerKg = isPediatric && drug.maxDoseMgPerKgPediatric
+		? drug.maxDoseMgPerKgPediatric
+		: drug.maxDoseMgPerKg;
+
+	const weightLimitMg = Math.round(weight * maxDoseMgPerKg * 10) / 10;
+	let mrdDoseMg = isPediatric ? weightLimitMg : Math.min(weightLimitMg, drug.absoluteMaxDoseMg);
+	const isCappedByAbsoluteMax = !isPediatric && weightLimitMg > drug.absoluteMaxDoseMg;
+
+	let mrdCarpules = drug.mgPerCarpule > 0
+		? Math.round((mrdDoseMg / drug.mgPerCarpule) * 10) / 10
+		: 0;
+
+	let isCappedByCardio = false;
+	let maxSafeEpinephrineMg = HEALTHY_MAX_EPINEPHRINE_MG;
+
+	if (params.isCardioRestricted && !drug.isAdrenalineFree && drug.epinephrineMgPerCarpule > 0) {
+		maxSafeEpinephrineMg = CARDIO_MAX_EPINEPHRINE_MG;
+		const maxCardioCarp = drug.vasoconstrictorRatio === "1:100000"
+			? 2.0
+			: drug.vasoconstrictorRatio === "1:200000"
+				? 4.0
+				: Math.floor((CARDIO_MAX_EPINEPHRINE_MG / drug.epinephrineMgPerCarpule) * 10) / 10;
+
+		if (maxCardioCarp < mrdCarpules) {
+			mrdCarpules = maxCardioCarp;
+			mrdDoseMg = Math.min(mrdDoseMg, Math.round(mrdCarpules * drug.mgPerCarpule * 10) / 10);
+			isCappedByCardio = true;
+		}
+	}
+
+	const mrdVolumeMl = Math.round(mrdCarpules * drug.volumeMlPerCarpule * 100) / 100;
+	const formattedNoteRu = `МРД (${drug.commercialName}, ${weight} кг${isPediatric ? ", дети" : ""}): ${mrdDoseMg} мг (${mrdVolumeMl} мл / ${mrdCarpules} карп.)${isCappedByCardio ? ` [${CARDIO_LIMIT_BADGE_TEXT}: <= 0.04 мг адреналина]` : ""}`;
+
+	return {
+		drugKey: drug.key,
+		commercialName: drug.commercialName,
+		activeSubstance: drug.activeSubstance,
+		patientWeightKg: weight,
+		isPediatric,
+		maxDoseMgPerKg,
+		mrdDoseMg,
+		mrdVolumeMl,
+		mrdCarpules,
+		isCappedByAbsoluteMax,
+		isCappedByCardio,
+		maxSafeEpinephrineMg,
+		cardioLimitBadgeText: isCappedByCardio ? CARDIO_LIMIT_BADGE_TEXT : null,
+		formattedNoteRu,
+	};
+}
+
+export interface AutopilotResolutionResult {
+	readonly selectedDrugKey: AnesthesiaDrugKey;
+	readonly drug: AnesthesiaDrugDefinition;
+	readonly rationaleRu: string;
+	readonly badgeText: string;
+	readonly isCardioRestricted: boolean;
+	readonly cardioLimitBadgeText: string | null;
+	readonly mrdDoseMg: number;
+	readonly mrdVolumeMl: number;
+	readonly mrdCarpules: number;
+	readonly maxSafeVolumeMl: number;
+	readonly maxSafeEpinephrineMg: number;
+	readonly crossCheck: SomaticCrossCheckResult;
+}
+
+/**
+ * Автоматически сканирует соматический статус пациента и подбирает безопасный препарат,
+ * выставляя жесткие дозировки, кардио-лимиты и бейджи без необходимости ручного подбора врачом.
+ */
+export function resolveAutopilotAnesthesia(params: {
+	somaticProfile?: SomaticRiskProfile | undefined;
+	patientWeightKg?: number | undefined;
+	patientAgeYears?: number | null | undefined;
+	isPediatric?: boolean | undefined;
+}): AutopilotResolutionResult {
+	const somatic = params.somaticProfile ?? {};
+	const hasAsthmaOrSulfite = Boolean(somatic.hasSulfiteAllergy || somatic.hasBronchialAsthma);
+	const isPregnant = Boolean(
+		somatic.isPregnantOrLactating ||
+		(somatic.pregnancyTrimester && somatic.pregnancyTrimester !== "none"),
+	);
+	const hasCardio = Boolean(
+		somatic.hasCardiovascularRisk ||
+		somatic.hasHypertension ||
+		somatic.hasIhd ||
+		somatic.hasArrhythmia,
+	);
+
+	let selectedDrugKey: AnesthesiaDrugKey = "ultracain_ds_forte";
+	let rationaleRu = "Стандартный соматический статус без отягощающих факторов. Препарат выбора — Ультракаин Д-С Форте 1:100 000.";
+	let badgeText = "Ультракаин Д-С Форте 1:100k (Стандарт)";
+
+	// 1. Бронхиальная астма / Аллергия на сульфиты -> Скандонест 3%
+	if (hasAsthmaOrSulfite) {
+		selectedDrugKey = "scandonest_3";
+		rationaleRu = "Бронхиальная астма (J45) / аллергия на сульфиты: метабисульфит натрия (E223) в адреналиновых растворах противопоказан из-за риска бронхоспазма. Автовыбор — Скандонест 3% (Мепивакаин без вазоконстриктора и сульфитов).";
+		badgeText = "Скандонест 3% (Астма / Без сульфитов)";
+	}
+	// 2. Беременность / Лактация -> Ультракаин Д-С 1:200 000
+	else if (isPregnant) {
+		selectedDrugKey = "ultracain_ds";
+		rationaleRu = "Беременность / период лактации: золотой стандарт СтАР — Артикаин 4% с пониженной концентрацией адреналина 1:200 000 (Ультракаин Д-С). Высокое связывание с белками (95%), минимальный плацентарный переход.";
+		badgeText = "Ультракаин Д-С 1:200k (Беременность / Лактация)";
+	}
+	// 3. Сердечно-сосудистые заболевания / Гипертония / ИБС / Аритмия -> Скандонест 3% или адреналиновый лимит
+	else if (hasCardio) {
+		selectedDrugKey = "scandonest_3";
+		rationaleRu = "Гипертоническая болезнь (I10–I15) / ИБС / Аритмия: препарат выбора — Скандонест 3% без вазоконстриктора. При использовании адреналина действует жесткий кардиологический лимит 0.04 мг (макс. 2 карпулы 1:100k или 4 карпулы 1:200k).";
+		badgeText = "Скандонест 3% (Кардио-безопасный)";
+	}
+
+	const weight = params.patientWeightKg ?? 70;
+	const isCardioRestricted = hasCardio && !ANESTHESIA_DRUGS[selectedDrugKey].isAdrenalineFree;
+	const mrd = calculatePatientMrd({
+		drugKey: selectedDrugKey,
+		patientWeightKg: weight,
+		patientAgeYears: params.patientAgeYears,
+		isPediatric: params.isPediatric,
+		isCardioRestricted: hasCardio,
+	});
+
+	const crossCheck = checkAnesthesiaSomaticContraindications({
+		drugKey: selectedDrugKey,
+		somaticProfile: somatic,
+		carpulesCount: 1,
+	});
+
+	return {
+		selectedDrugKey,
+		drug: ANESTHESIA_DRUGS[selectedDrugKey],
+		rationaleRu,
+		badgeText,
+		isCardioRestricted,
+		cardioLimitBadgeText: hasCardio ? CARDIO_LIMIT_BADGE_TEXT : null,
+		mrdDoseMg: mrd.mrdDoseMg,
+		mrdVolumeMl: mrd.mrdVolumeMl,
+		mrdCarpules: mrd.mrdCarpules,
+		maxSafeVolumeMl: mrd.mrdVolumeMl,
+		maxSafeEpinephrineMg: mrd.maxSafeEpinephrineMg,
+		crossCheck,
 	};
 }
 
@@ -566,7 +924,14 @@ export function formatAnesthesiaSoapText(params: AnesthesiaSoapRecordParams): st
 
 	// Соматические обоснования для записи
 	const somaticNotes: string[] = [];
-	if (params.somaticProfile?.hasCardiovascularRisk) {
+	const hasCardio = Boolean(
+		params.somaticProfile?.hasCardiovascularRisk ||
+		params.somaticProfile?.hasHypertension ||
+		params.somaticProfile?.hasIhd ||
+		params.somaticProfile?.hasArrhythmia,
+	);
+
+	if (hasCardio) {
 		if (drug.isAdrenalineFree) {
 			somaticNotes.push("Соматический статус: Кардиоваскулярный риск / Гипертензия (I10-I15) — применен препарат без вазоконстриктора.");
 		} else {
@@ -576,7 +941,7 @@ export function formatAnesthesiaSoapText(params: AnesthesiaSoapRecordParams): st
 	if (params.somaticProfile?.hasSulfiteAllergy || params.somaticProfile?.hasBronchialAsthma) {
 		somaticNotes.push("Аллергоанамнез: Бронхиальная астма / аллергия на сульфиты — применен безсульфитный препарат.");
 	}
-	if (params.somaticProfile?.isPregnantOrLactating) {
+	if (params.somaticProfile?.isPregnantOrLactating || (params.somaticProfile?.pregnancyTrimester && params.somaticProfile.pregnancyTrimester !== "none")) {
 		somaticNotes.push("Соматический статус: Беременность/лактация — применен препарат выбора с пониженным содержанием вазоконстриктора 1:200 000.");
 	}
 
@@ -584,3 +949,4 @@ export function formatAnesthesiaSoapText(params: AnesthesiaSoapRecordParams): st
 
 	return `Обезболивание: ${method.nameRu} анестезия${toothSuffix} препаратом «${drug.commercialName}» (${drug.activeSubstance}) в объеме ${calc.totalVolumeMl} мл (${params.carpulesCount} карп., ${calc.totalDoseMg} мг действующего вещества).${somaticStr} ${aspirationStr}${timeStr} Наступление анестезии через ${method.typicalOnsetMinutes} мин. Глубина обезболивания достаточная. ${reactionStr}`;
 }
+

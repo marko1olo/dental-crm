@@ -14,6 +14,7 @@
 
 import { generateQrCodeDataUri, generateQrCodeSvg, type QrSvgOptions } from "./qrGenerator.js";
 import { escapeXml } from "../cda/c14n.js";
+import { rubToKopecks, kopecksToRub } from "./kopecksArithmetic.js";
 import {
 	amountToWordsRu,
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB,
@@ -621,4 +622,208 @@ function formatDateToRussian(isoString: string): string {
 	const month = (d.getMonth() + 1).toString().padStart(2, "0");
 	const year = d.getFullYear().toString();
 	return `${day}.${month}.${year}`;
+}
+
+export interface PlanServiceItemForTax {
+	readonly id?: string | undefined;
+	readonly code804n?: string | undefined;
+	readonly serviceName?: string | undefined;
+	readonly name?: string | undefined;
+	readonly priceRub?: number | undefined;
+	readonly priceKopecks?: number | undefined;
+	readonly quantity?: number | undefined;
+	readonly taxCode?: "1" | "2" | undefined;
+}
+
+export interface PlanTaxItemDeduction {
+	readonly id?: string | undefined;
+	readonly code804n?: string | undefined;
+	readonly serviceName: string;
+	readonly categoryCode: "1" | "2";
+	readonly isExpensive: boolean;
+	readonly totalRub: number;
+	readonly totalKopecks: number;
+	readonly eligibleRub: number;
+	readonly eligibleKopecks: number;
+	readonly refund13Rub: number;
+	readonly refund13Kopecks: number;
+}
+
+export interface PlanTaxDeductionCalculation {
+	readonly code01TotalRub: number;
+	readonly code01TotalKopecks: number;
+	readonly code01EligibleRub: number;
+	readonly code01EligibleKopecks: number;
+	readonly code01Refund13Rub: number;
+	readonly code01Refund13Kopecks: number;
+	readonly code01StatutoryLimitRub: number;
+	readonly isCode01Capped: boolean;
+
+	readonly code02TotalRub: number;
+	readonly code02TotalKopecks: number;
+	readonly code02EligibleRub: number;
+	readonly code02EligibleKopecks: number;
+	readonly code02Refund13Rub: number;
+	readonly code02Refund13Kopecks: number;
+
+	readonly grandTotalRub: number;
+	readonly grandTotalKopecks: number;
+	readonly grandTotalRefund13Rub: number;
+	readonly grandTotalRefund13Kopecks: number;
+	readonly netPriceWithRefundRub: number;
+	readonly netPriceWithRefundKopecks: number;
+
+	readonly items: readonly PlanTaxItemDeduction[];
+	readonly hasCode02ExpensiveServices: boolean;
+}
+
+export interface StagedPaymentScheduleBreakdown {
+	readonly totalKopecks: number;
+	readonly totalRub: number;
+	readonly stage1AdvanceTherapyKopecks: number; // 30%
+	readonly stage1AdvanceTherapyRub: number;
+	readonly stage2SurgeryImplantKopecks: number; // 40%
+	readonly stage2SurgeryImplantRub: number;
+	readonly stage3OrthopedicsKopecks: number; // 30%
+	readonly stage3OrthopedicsRub: number;
+	readonly isBalanced: boolean;
+	readonly partsKopecks: readonly [number, number, number];
+}
+
+/**
+ * Точный расчет возврата 13% НДФЛ по плану лечения с разделением на Код 01 (до 150 000 ₽) и Код 02 (дорогостоящее без лимита).
+ */
+export function calculatePlanTaxDeductionBreakdown(
+	items: readonly PlanServiceItemForTax[],
+	statutoryLimitRub: number = ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024,
+): PlanTaxDeductionCalculation {
+	let code01TotalKopecks = 0;
+	let code02TotalKopecks = 0;
+
+	const mappedItems: PlanTaxItemDeduction[] = items.map((item) => {
+		const rawName = item.serviceName || item.name || "Медицинская услуга";
+		const catCode = item.taxCode || resolveTaxDeductionCategoryShared(item.code804n, rawName);
+		const isExp = catCode === "2";
+
+		const qty = typeof item.quantity === "number" && item.quantity > 0 ? item.quantity : 1;
+		const unitKopecks =
+			typeof item.priceKopecks === "number" && Number.isFinite(item.priceKopecks)
+				? Math.max(0, Math.round(item.priceKopecks))
+				: typeof item.priceRub === "number" && Number.isFinite(item.priceRub)
+					? Math.max(0, rubToKopecks(item.priceRub))
+					: 0;
+
+		const lineTotalKopecks = unitKopecks * qty;
+		const lineTotalRub = kopecksToRub(lineTotalKopecks);
+
+		if (isExp) {
+			code02TotalKopecks += lineTotalKopecks;
+		} else {
+			code01TotalKopecks += lineTotalKopecks;
+		}
+
+		// Для отдельной строки расчетный возврат 13%
+		const itemRefund13Kopecks = Math.round(lineTotalKopecks * 0.13);
+
+		return {
+			id: item.id,
+			code804n: item.code804n,
+			serviceName: rawName,
+			categoryCode: catCode,
+			isExpensive: isExp,
+			totalRub: lineTotalRub,
+			totalKopecks: lineTotalKopecks,
+			eligibleRub: lineTotalRub,
+			eligibleKopecks: lineTotalKopecks,
+			refund13Rub: kopecksToRub(itemRefund13Kopecks),
+			refund13Kopecks: itemRefund13Kopecks,
+		};
+	});
+
+	const limitKopecks = Math.max(0, Math.round(statutoryLimitRub * 100));
+	const code01EligibleKopecks = Math.min(code01TotalKopecks, limitKopecks);
+	const isCode01Capped = code01TotalKopecks > limitKopecks;
+	const code01Refund13Kopecks = Math.round(code01EligibleKopecks * 0.13);
+
+	const code02EligibleKopecks = code02TotalKopecks;
+	const code02Refund13Kopecks = Math.round(code02EligibleKopecks * 0.13);
+
+	const grandTotalKopecks = code01TotalKopecks + code02TotalKopecks;
+	const grandTotalRefund13Kopecks = code01Refund13Kopecks + code02Refund13Kopecks;
+	const netPriceWithRefundKopecks = Math.max(0, grandTotalKopecks - grandTotalRefund13Kopecks);
+
+	return {
+		code01TotalRub: kopecksToRub(code01TotalKopecks),
+		code01TotalKopecks,
+		code01EligibleRub: kopecksToRub(code01EligibleKopecks),
+		code01EligibleKopecks,
+		code01Refund13Rub: kopecksToRub(code01Refund13Kopecks),
+		code01Refund13Kopecks,
+		code01StatutoryLimitRub: statutoryLimitRub,
+		isCode01Capped,
+
+		code02TotalRub: kopecksToRub(code02TotalKopecks),
+		code02TotalKopecks,
+		code02EligibleRub: kopecksToRub(code02EligibleKopecks),
+		code02EligibleKopecks,
+		code02Refund13Rub: kopecksToRub(code02Refund13Kopecks),
+		code02Refund13Kopecks,
+
+		grandTotalRub: kopecksToRub(grandTotalKopecks),
+		grandTotalKopecks,
+		grandTotalRefund13Rub: kopecksToRub(grandTotalRefund13Kopecks),
+		grandTotalRefund13Kopecks,
+		netPriceWithRefundRub: kopecksToRub(netPriceWithRefundKopecks),
+		netPriceWithRefundKopecks,
+
+		items: mappedItems,
+		hasCode02ExpensiveServices: code02TotalKopecks > 0,
+	};
+}
+
+/**
+ * Расчет графика поэтапной оплаты (30% аванс/санация, 40% хирургия, 30% ортопедия) с точной балансировкой копеек.
+ */
+export function calculateStaged304030Schedule(
+	totalRubOrKopecks: number,
+	isKopecksInput = false,
+): StagedPaymentScheduleBreakdown {
+	const totalKopecks = Math.max(
+		0,
+		isKopecksInput
+			? Math.round(totalRubOrKopecks || 0)
+			: rubToKopecks(totalRubOrKopecks || 0),
+	);
+
+	if (totalKopecks === 0) {
+		return {
+			totalKopecks: 0,
+			totalRub: 0,
+			stage1AdvanceTherapyKopecks: 0,
+			stage1AdvanceTherapyRub: 0,
+			stage2SurgeryImplantKopecks: 0,
+			stage2SurgeryImplantRub: 0,
+			stage3OrthopedicsKopecks: 0,
+			stage3OrthopedicsRub: 0,
+			isBalanced: true,
+			partsKopecks: [0, 0, 0],
+		};
+	}
+
+	const stage1Kopecks = Math.round(totalKopecks * 0.3);
+	const stage2Kopecks = Math.round(totalKopecks * 0.4);
+	const stage3Kopecks = totalKopecks - stage1Kopecks - stage2Kopecks;
+
+	return {
+		totalKopecks,
+		totalRub: kopecksToRub(totalKopecks),
+		stage1AdvanceTherapyKopecks: stage1Kopecks,
+		stage1AdvanceTherapyRub: kopecksToRub(stage1Kopecks),
+		stage2SurgeryImplantKopecks: stage2Kopecks,
+		stage2SurgeryImplantRub: kopecksToRub(stage2Kopecks),
+		stage3OrthopedicsKopecks: stage3Kopecks,
+		stage3OrthopedicsRub: kopecksToRub(stage3Kopecks),
+		isBalanced: stage1Kopecks + stage2Kopecks + stage3Kopecks === totalKopecks,
+		partsKopecks: [stage1Kopecks, stage2Kopecks, stage3Kopecks],
+	};
 }

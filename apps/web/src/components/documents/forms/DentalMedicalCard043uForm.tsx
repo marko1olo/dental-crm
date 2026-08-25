@@ -370,7 +370,10 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										<label style={{ fontWeight: 600, display: "block", marginBottom: "4px" }}>Пораженные поверхности (5 поверхностей по FDI):</label>
 										<div style={{ display: "flex", gap: "8px" }}>
 											{SURFACES.map((s) => {
-												const active = currentToothRecord.surfaces.includes(s.key);
+												const active = Boolean(
+													currentToothRecord?.surfaces &&
+														currentToothRecord.surfaces.includes(s.key),
+												);
 												return (
 													<button
 														key={s.key}

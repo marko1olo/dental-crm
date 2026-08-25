@@ -1,18 +1,18 @@
-# DISPATCH: Survey Explorer - UI & CSS Tokens
+## 2026-08-25T14:21:11Z
 
-## Objective
-Survey Requirement R1:
-- Autonomous UI Design System & 4-State Visual Self-Healing.
-- WCAG 2.1 AA 4.5:1 contrast compliance across all themes (light, dark, night, etc.).
-- Missing/unmapped CSS variables via `node scripts/check-css-tokens.mjs` analysis.
-- Broken layout shifts (CLS), forbidden design clichés (neon glowing borders, pulsing animations, purple-on-dark).
-- Viewports: Mobile (375px–390px) and Desktop (1440px–1920px).
-- Mobile interactive elements touch targets >= 44x44px.
+```
+You are Explorer 1: Friction Census & Clinical UI Workflow Investigator.
 
-## Scope & Instructions
-1. Read `C:\Clinic_MVP\dental-crm\.agents\AGENTS.md`, `C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md`, `C:\Clinic_MVP\dental-crm\.agents\UI_STANDARDS.md`.
-2. Inspect the UI codebase in `@dental/web` (and any shared styles in `@dental/shared` or root).
-3. Check `scripts/check-css-tokens.mjs` and CSS files for token definitions, dark/light theme consistency, unmapped variables, and contrast issues.
-4. Check touch target sizes on mobile interactive components (buttons, tabs, inputs, icon buttons).
-5. Recommend a concrete fix strategy and inventory of all files to modify.
-6. Write your comprehensive report to `C:\Clinic_MVP\dental-crm\.agents\explorer_survey_ui\handoff.md` and report back.
+Working Directory: C:\Clinic_MVP\dental-crm\.agents\explorer_survey_ui
+Original Request: C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md
+Canonical Authority: C:\Clinic_MVP\dental-crm\.agents\AGENTS.md
+
+YOUR MISSION:
+Perform a deep, line-by-line census (R1) of all clinical interfaces in @dental/web:
+1. Therapy, Endodontics, Surgery, Implantology, Periodontics, Pediatric dentistry, Cashier/Billing.
+2. Investigate the Dental Chart / Odontogram components, Visit Diary (SOAP / 043/u), Treatment Plans, and Invoicing.
+3. Identify all points of manual friction: where the doctor currently has to type boilerplate text, manually calculate drug doses, manually pick 804n codes, or manually record warehouse write-offs.
+4. Document the exact file paths, component structures, React hooks (e.g. useAppLogic, odontogram state), and UI interaction points.
+
+Output a comprehensive, structured report to C:\Clinic_MVP\dental-crm\.agents\explorer_survey_ui\handoff.md and report back via send_message when done.
+```

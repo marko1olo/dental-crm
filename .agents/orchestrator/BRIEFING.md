@@ -1,73 +1,65 @@
-# BRIEFING — 2026-08-08T21:50:06Z
+# BRIEFING — 2026-08-25T14:20:43Z
 
 ## Mission
-DENTE CRM Dead Code Reassessment & False-Positive Restoration Task. Analyze false positive flagging in `useDocumentWorkflowModule.ts` (`_selectedTaxDocumentPayerInn`, `_eligibleTaxPaymentIdsKey`, `_eligiblePaymentReceiptIdsKey`), re-audit `apps/web/src` for falsely deleted/flagged code, aggressively trace Git history (`git log -p`, `git diff`), physically trace execution chains, restore valid code, verify `npm run typecheck -w @dental/web`, and generate an incident report.
+Autonomous end-to-end clinical routine automation and adversarial friction audit for DENTE Dental CRM (R1-R4).
 
 ## 🔒 My Identity
 - Archetype: Project Orchestrator
 - Roles: orchestrator, user_liaison, human_reporter, successor
 - Working directory: C:\Clinic_MVP\dental-crm\.agents\orchestrator
-- Original parent: parent
-- Original parent conversation ID: 4a1c1387-e164-4a84-98d7-6855b66fc410
+- Original parent: top-level
+- Original parent conversation ID: a81e0d6a-7047-415e-b10e-e8c7ad4cddcc
 
 ## 🔒 My Workflow
-- **Pattern**: Project Pattern
-- **Scope document**: C:\Clinic_MVP\dental-crm\.agents\orchestrator\plan.md
-1. **Decompose**: Survey & investigation via Explorers (`teamwork_preview_explorer`), analysis of `useDocumentWorkflowModule.ts` and recent git commits / changes across `apps/web/src`.
+- **Pattern**: Project Pattern (Survey -> Assess -> Decompose -> Delegate/Iterate -> Dual Track Testing -> Verification)
+- **Scope document**: C:\Clinic_MVP\dental-crm\PROJECT.md
+1. **Decompose**: Decompose clinical automation, safety guards, treatment plan generation, sterilization tracking, and tests across @dental/shared, @dental/api, @dental/web.
 2. **Dispatch & Execute**:
-   - Stage 1: Survey & Root Cause Analysis (Explorers - DONE).
-   - Stage 2: Restoration & Fix (Worker - IN PROGRESS).
-   - Stage 3: Audit & Review (Reviewers, Challengers, Forensic Auditor).
-   - Stage 4: Incident Report & Final Handoff.
-3. **On failure**: Retry → Replace → Skip → Redistribute → Redesign → Escalate.
-4. **Succession**: Self-succeed at 20 subagent spawns. Write handoff.md, spawn successor.
+   - Survey phase: 3 parallel Explorers (Friction Census, Clinical Protocols & Nomenclature, Architecture & Safety/Storage).
+   - Milestone decomposition and implementation via Subagents.
+   - Dual track E2E / Unit testing and forensic audits.
+3. **On failure**: Retry -> Replace -> Skip (non-critical) -> Redistribute -> Redesign.
+4. **Succession**: Threshold 16 spawns.
 - **Work items**:
-  1. Root cause investigation of `useDocumentWorkflowModule.ts` false positives [done]
-  2. Codebase-wide dead code re-audit across `apps/web/src` with aggressive Git history scan [done]
-  3. Restoration of falsely deleted/flagged code & execution chain verification [in-progress]
-  4. Typecheck verification (`npm run typecheck -w @dental/web`) & Incident Report generation [pending]
-- **Current phase**: 2 (Restoration & Fix)
-- **Current focus**: Awaiting restoration worker execution report (`d501e596-038c-4992-899c-5ef7cc3a2574`)
+  1. Survey & Friction Census [in-progress]
+  2. Architecture & Decomposition (PROJECT.md) [pending]
+  3. Milestone Execution (R1-R3) [pending]
+  4. Testing Track & Verification (R4) [pending]
+- **Current phase**: 0 (Survey)
+- **Current focus**: Parallel Exploration & Survey of DENTE Codebase
 
 ## 🔒 Key Constraints
-- NEVER write, modify, or create source code files directly.
-- NEVER run build/test commands yourself — require workers to do so.
-- NEVER investigate or explore code directly — dispatch Explorers.
-- Strict clinic MVP rules: C:\Clinic_MVP\dental-crm\.agents\AGENTS.md.
-- Zero AI optimism: All changes verified by typechecks and forensic audit.
-- USER DIRECTIVE: Aggressively use Git history (`git log -p`, `git diff`) to trace lost/broken logic.
+- Follow C:\Clinic_MVP\dental-crm\.agents\AGENTS.md mandates (HEAD-hash, kopeck-exact money, compiles != works, zero mocks, ast-grep read/write split).
+- 100% strict verification across all packages.
+- Never reuse subagents after handoff.
+- Pass all quality gates (typecheck, check-encoding, check-css-tokens, unit/integration tests).
 
 ## Current Parent
-- Conversation ID: 4a1c1387-e164-4a84-98d7-6855b66fc410
-- Updated: 2026-08-08T21:50:06Z
+- Conversation ID: a81e0d6a-7047-415e-b10e-e8c7ad4cddcc
+- Updated: 2026-08-25T14:20:43Z
 
 ## Key Decisions Made
-- Initiated Dead Code Reassessment Task.
-- Stage 1 Explorers completed: Analyzed root cause of `useDocumentWorkflowModule.ts` false positives, audited recent git deletions, and executed codebase-wide AST reference scan.
-- Dispatched Stage 2 Worker (`reassessment_worker_1`, ID `d501e596-038c-4992-899c-5ef7cc3a2574`) to restore `useDocumentWorkflowModule.ts`, `OdontogramModule.tsx`, and `FamilyWalletPanel.tsx`.
+- Dispatched 3 parallel explorers to investigate doctor interfaces, nomenclature/protocols, and health/sterilization infra.
 
 ## Team Roster
 | Agent | Type | Work Item | Status | Conv ID |
 |-------|------|-----------|--------|---------|
-| reassessment_explorer_1 | teamwork_preview_explorer | Root Cause Analysis of Workflow Module | completed | b37fd0ec-0eed-40c9-bc6d-b2d3385d0570 |
-| reassessment_explorer_2 | teamwork_preview_explorer | Git History & Recent Deletions Audit | completed | fdf218af-b351-4ef4-af96-3eaad98beba3 |
-| reassessment_explorer_3 | teamwork_preview_explorer | Codebase-Wide AST Scan | completed | e1903dff-a4b7-4de8-9f06-fc512bfc8e6e |
-| reassessment_worker_1 | teamwork_preview_worker | Code Restoration & Verification | in-progress | d501e596-038c-4992-899c-5ef7cc3a2574 |
+| explorer_survey_ui | teamwork_preview_explorer | R1 UI Friction Census & Web Flows | in-progress | 3899361e-f059-4d3f-8a98-add0a32941ab |
+| explorer_survey_protocols | teamwork_preview_explorer | Protocols, Anatomy & 804n | in-progress | c2863e06-de38-461d-a0d6-18b428eab7b9 |
+| explorer_survey_safety_infra | teamwork_preview_explorer | Pharma Safety, 3-Option Plans, Sterilization | in-progress | 480968cd-2e0e-47ed-a64e-56dfbb8f2831 |
 
 ## Succession Status
 - Succession required: no
-- Spawn count: 4 / 20
-- Pending subagents: d501e596-038c-4992-899c-5ef7cc3a2574
+- Spawn count: 3 / 16
+- Pending subagents: 3899361e-f059-4d3f-8a98-add0a32941ab, c2863e06-de38-461d-a0d6-18b428eab7b9, 480968cd-2e0e-47ed-a64e-56dfbb8f2831
 - Predecessor: none
 - Successor: not yet spawned
 
 ## Active Timers
-- Heartbeat cron: task-21
+- Heartbeat cron: 1b235ed5-4da9-44a7-8084-d587284992fc/task-11
 - Safety timer: none
 
 ## Artifact Index
-- C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md — Verbatim user prompt
-- C:\Clinic_MVP\dental-crm\.agents\orchestrator\DISPATCH.md — Task assignment log
-- C:\Clinic_MVP\dental-crm\.agents\orchestrator\plan.md — Detailed execution plan
-- C:\Clinic_MVP\dental-crm\.agents\orchestrator\progress.md — Execution heartbeat and checklist
-- C:\Clinic_MVP\dental-crm\.agents\orchestrator\GATE_STATUS.md — Gate status evaluation log
+- C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md — Original User Request
+- C:\Clinic_MVP\dental-crm\.agents\orchestrator\DISPATCH.md — Dispatch log
+- C:\Clinic_MVP\dental-crm\.agents\orchestrator\progress.md — Liveness & status tracking

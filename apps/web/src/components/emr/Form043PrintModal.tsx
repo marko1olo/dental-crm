@@ -795,7 +795,9 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 												>
 													<div style={{ fontWeight: "bold" }}>{t.toothNumber}</div>
 													<div style={{ fontSize: "10px", marginTop: "2px" }}>
-														{toothStatusCodeShortMap[t.statusCode] || "Norm"}
+														{(t.statusCode && t.statusCode in toothStatusCodeShortMap
+															? toothStatusCodeShortMap[t.statusCode as keyof typeof toothStatusCodeShortMap]
+															: null) || "Norm"}
 													</div>
 												</div>
 											);
@@ -812,7 +814,9 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 												>
 													<div style={{ fontWeight: "bold" }}>{t.toothNumber}</div>
 													<div style={{ fontSize: "10px", marginTop: "2px" }}>
-														{toothStatusCodeShortMap[t.statusCode] || "Norm"}
+														{(t.statusCode && t.statusCode in toothStatusCodeShortMap
+															? toothStatusCodeShortMap[t.statusCode as keyof typeof toothStatusCodeShortMap]
+															: null) || "Norm"}
 													</div>
 												</div>
 											);

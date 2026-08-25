@@ -2,7 +2,7 @@
  * types.ts — строго типизированные контракты и структуры данных планов лечения и смет DENTE CRM.
  */
 
-import type { Kopecks } from "@dental/shared";
+import type { Kopecks, StagedPaymentScheduleBreakdown } from "@dental/shared";
 
 export type TreatmentPlanStageKind =
 	| "stage_1_therapy" // Этап 1: Неотложная помощь и терапевтическая санация
@@ -109,6 +109,7 @@ export interface TreatmentPlanTier {
 	readonly monthlyInstallment12Rub: number;
 	readonly installments: Record<3 | 6 | 12 | 24, TierInstallmentPlan>;
 	readonly ndflDetails: NdflDeductionResult;
+	readonly stagedSchedule?: StagedPaymentScheduleBreakdown | undefined;
 }
 
 export interface DigitalSignatureAgreementData {

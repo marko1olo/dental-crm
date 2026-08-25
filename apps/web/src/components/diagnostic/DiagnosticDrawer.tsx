@@ -105,6 +105,7 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 
 	// Hotkey listener: Ctrl+Shift+D to toggle HUD
 	useEffect(() => {
+		if (typeof window === "undefined" || typeof window.addEventListener !== "function") return;
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.ctrlKey && e.shiftKey && (e.key === "D" || e.key === "в" || e.key === "В")) {
 				e.preventDefault();

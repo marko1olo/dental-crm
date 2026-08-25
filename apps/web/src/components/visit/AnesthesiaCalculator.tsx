@@ -52,7 +52,28 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 	className = "",
 }) => {
 	const [isExpanded, setIsExpanded] = useState(false);
-	const [drugKey, setDrugKey] = useState<AnesthesiaDrugKey>("ultracain_ds_forte");
+	const [hasCardiovascularRisk, setHasCardiovascularRisk] = useState<boolean>(
+		Boolean(initialSomaticProfile?.hasCardiovascularRisk || initialSomaticProfile?.hasHypertension || initialSomaticProfile?.hasIhd || initialSomaticProfile?.hasArrhythmia),
+	);
+	const [hasSulfiteOrAsthma, setHasSulfiteOrAsthma] = useState<boolean>(
+		Boolean(initialSomaticProfile?.hasSulfiteAllergy || initialSomaticProfile?.hasBronchialAsthma),
+	);
+	const [isPregnantOrLactating, setIsPregnantOrLactating] = useState<boolean>(
+		Boolean(initialSomaticProfile?.isPregnantOrLactating || (initialSomaticProfile?.pregnancyTrimester && initialSomaticProfile.pregnancyTrimester !== "none")),
+	);
+
+	const [drugKey, setDrugKey] = useState<AnesthesiaDrugKey>(() => {
+		if (initialSomaticProfile?.hasSulfiteAllergy || initialSomaticProfile?.hasBronchialAsthma) {
+			return "scandonest_3";
+		}
+		if (initialSomaticProfile?.isPregnantOrLactating || (initialSomaticProfile?.pregnancyTrimester && initialSomaticProfile.pregnancyTrimester !== "none")) {
+			return "ultracain_ds";
+		}
+		if (initialSomaticProfile?.hasCardiovascularRisk || initialSomaticProfile?.hasHypertension || initialSomaticProfile?.hasIhd || initialSomaticProfile?.hasArrhythmia) {
+			return "scandonest_3";
+		}
+		return "ultracain_ds_forte";
+	});
 	const [methodKey, setMethodKey] = useState<AnesthesiaMethodKey>("infiltration");
 	const [patientWeightKg, setPatientWeightKg] = useState<number>(defaultWeightKg);
 	const [isPediatricMode, setIsPediatricMode] = useState<boolean>(() => {
@@ -71,19 +92,9 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 		return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 	});
 
-	// Соматические факторы риска
-	const [hasCardiovascularRisk, setHasCardiovascularRisk] = useState<boolean>(
-		Boolean(initialSomaticProfile?.hasCardiovascularRisk),
-	);
-	const [hasSulfiteOrAsthma, setHasSulfiteOrAsthma] = useState<boolean>(
-		Boolean(initialSomaticProfile?.hasSulfiteAllergy || initialSomaticProfile?.hasBronchialAsthma),
-	);
-	const [isPregnantOrLactating, setIsPregnantOrLactating] = useState<boolean>(
-		Boolean(initialSomaticProfile?.isPregnantOrLactating),
-	);
-
 	const somaticProfile: SomaticRiskProfile = useMemo(() => ({
 		hasCardiovascularRisk,
+		hasHypertension: hasCardiovascularRisk,
 		hasSulfiteAllergy: hasSulfiteOrAsthma,
 		hasBronchialAsthma: hasSulfiteOrAsthma,
 		isPregnantOrLactating,
@@ -578,8 +589,9 @@ export const AnesthesiaCalculator: React.FC<AnesthesiaCalculatorProps> = ({
 										<strong>{calc.maxSafeDoseMg} мг</strong> ({calc.maxSafeCarpules} карп.)
 									</span>
 									{calc.isCardioRestricted && (
-										<span className="px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-700 dark:text-rose-300 font-bold text-xs">
-											Кардио-лимит (макс. {calc.maxSafeCarpules} к.)
+										<span className="px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 font-bold text-xs border border-rose-500/30 flex items-center gap-1">
+											<Heart size={11} className="text-rose-600 dark:text-rose-400" />
+											<span>{calc.cardioLimitBadgeText ?? "Кардиологический лимит"} (макс. {calc.maxSafeCarpules} к. / {calc.maxSafeEpinephrineMg} мг адр.)</span>
 										</span>
 									)}
 								</span>

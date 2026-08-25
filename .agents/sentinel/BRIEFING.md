@@ -1,21 +1,21 @@
-# BRIEFING — 2026-08-23T23:44:01+04:00
+# BRIEFING — 2026-08-25T14:20:50Z
 
 ## Mission
-Ensure autonomous quality control across Domains 1–5 for the DENTE Dental CRM by dispatching and monitoring the Lead Project Orchestrator.
+Autonomous end-to-end clinical routine automation, adversarial friction audit, and machine verification for DENTE Dental CRM.
 
 ## 🔒 My Identity
 - Archetype: sentinel
 - Working directory: C:\Clinic_MVP\dental-crm\.agents\sentinel
-- Orchestrator: TBD
+- Orchestrator: 1b235ed5-4da9-44a7-8084-d587284992fc
 - Victory Auditor: to be spawned on victory claim
 
 ## 🔒 Key Constraints
 - No technical decisions — relay only
 - Victory Audit is MANDATORY before reporting completion
-- Manage subagents directly; setup crons for monitoring
+- Must enforce zero mocks, 100% strict typecheck, and full test suite passing
 
 ## User Context
-- **Last user request**: Autonomous quality control across Domains 1-5, verify clinical ergonomics, and capture 4-state screenshots.
+- **Last user request**: Clinical routine automation and adversarial friction audit for DENTE Dental CRM (R1-R4)
 - **Pending clarifications**: none
 - **Delivered results**: none
 
@@ -28,4 +28,5 @@ Ensure autonomous quality control across Domains 1–5 for the DENTE Dental CRM 
 - **Retry count**: 0
 
 ## Artifact Index
-- C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md — Authoritative user request
+- C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md — Authoritative record of user request
+- C:\Clinic_MVP\dental-crm\.agents\orchestrator\progress.md — Orchestrator live progress log

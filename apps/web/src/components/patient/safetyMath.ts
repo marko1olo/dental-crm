@@ -13,6 +13,15 @@
  * 6. Хронические соматические заболевания (Сахарный диабет, Гипертония, Астма, Эпилепсия, Гепатит B/C, ВИЧ, аллергия на латекс и пенициллины).
  */
 
+import {
+	type AnesthesiaDrugKey,
+	type AutopilotResolutionResult,
+	type PatientMrdCalculation,
+	type SomaticRiskProfile,
+	calculatePatientMrd,
+	resolveAutopilotAnesthesia,
+} from "../visit/anesthesiaCalculatorEngine";
+
 export type ClinicalSafetySeverity = "critical" | "high" | "moderate" | "info" | "none";
 
 export type ClinicalSafetyCategory =
@@ -53,6 +62,8 @@ export interface PatientClinicalSafetyProfile {
 	readonly hasPacemakerExs?: boolean | undefined;
 	readonly hasCardiovascularDisease?: boolean | undefined;
 	readonly hasHypertension?: boolean | undefined;
+	readonly hasIhd?: boolean | undefined;
+	readonly hasArrhythmia?: boolean | undefined;
 
 	// 3. Гематология & Антикоагулянты
 	readonly takesAnticoagulants?: boolean | undefined;
@@ -535,7 +546,9 @@ export function evaluatePatientSafetyFlags(
 	else if (profile.pregnancyTrimester === "trimester_3") addFlagFromCatalog("pregnancy_trimester_3");
 
 	// 6. Хронические соматические болезни
-	if (profile.hasHypertension || profile.hasCardiovascularDisease) addFlagFromCatalog("hypertension_cvd");
+	if (profile.hasHypertension || profile.hasCardiovascularDisease || profile.hasIhd || profile.hasArrhythmia) {
+		addFlagFromCatalog("hypertension_cvd");
+	}
 	if (profile.hasDiabetesMellitus) {
 		const extra = profile.diabetesType ? `Тип: ${profile.diabetesType}` : undefined;
 		addFlagFromCatalog("diabetes_mellitus", extra);
@@ -604,16 +617,20 @@ export function parseSafetyProfileFromText(text?: string | null | undefined): Pa
 
 	const hasSulfites =
 		raw.includes("сульфит") ||
+		raw.includes("дисульфит") ||
 		raw.includes("метабисульфит") ||
+		raw.includes("пиросульфит") ||
 		raw.includes("е223") ||
-		raw.includes("e223");
+		raw.includes("e223") ||
+		raw.includes("консервант");
 
 	const hasPacemaker =
 		raw.includes("кардиостимулятор") ||
 		raw.includes("экс") ||
 		raw.includes("икд") ||
 		raw.includes("пейсмейкер") ||
-		raw.includes("водитель ритма");
+		raw.includes("водитель ритма") ||
+		raw.includes("z95.0");
 
 	const hasBisphosphonates =
 		raw.includes("бисфосфонат") ||
@@ -626,7 +643,8 @@ export function parseSafetyProfileFromText(text?: string | null | undefined): Pa
 		raw.includes("пролиа") ||
 		raw.includes("деносумаб") ||
 		raw.includes("остеонекроз") ||
-		raw.includes("бонч");
+		raw.includes("бонч") ||
+		raw.includes("m87.1");
 
 	const hasAnticoagulants =
 		raw.includes("варфарин") ||
@@ -640,11 +658,12 @@ export function parseSafetyProfileFromText(text?: string | null | undefined): Pa
 		raw.includes("клопидогрел") ||
 		raw.includes("тромбо асс") ||
 		raw.includes("антикоагулянт") ||
-		raw.includes("дезагрегант");
+		raw.includes("дезагрегант") ||
+		raw.includes("z92.1");
 
 	// Беременность по триместрам
 	let pregnancyTrimester: PregnancyTrimester = "none";
-	if (raw.includes("беременн") || raw.includes("лактац") || raw.includes("триместр")) {
+	if (raw.includes("беременн") || raw.includes("лактац") || raw.includes("триместр") || raw.includes("кормлен") || raw.includes("гв") || raw.includes("z33")) {
 		if (raw.includes("1 триместр") || raw.includes("1-й триместр") || raw.includes("первый триместр") || raw.includes("ранние сроки")) {
 			pregnancyTrimester = "trimester_1";
 		} else if (raw.includes("2 триместр") || raw.includes("2-й триместр") || raw.includes("второй триместр")) {
@@ -658,15 +677,56 @@ export function parseSafetyProfileFromText(text?: string | null | undefined): Pa
 		}
 	}
 
-	const hasCardio =
+	const hasHypertension =
 		raw.includes("гипертон") ||
-		raw.includes("ибс") ||
+		raw.includes("гипертенз") ||
 		raw.includes("давлен") ||
+		raw.includes("аг ") ||
+		raw.includes("аг,") ||
+		raw.includes("криз") ||
+		raw.includes("i10") ||
+		raw.includes("i11") ||
+		raw.includes("i12") ||
+		raw.includes("i13") ||
+		raw.includes("i14") ||
+		raw.includes("i15");
+
+	const hasIhd =
+		raw.includes("ибс") ||
 		raw.includes("стенокард") ||
 		raw.includes("инфаркт") ||
+		raw.includes("постинфаркт") ||
+		raw.includes("стентирован") ||
+		raw.includes("шунтирован") ||
+		raw.includes("i20") ||
+		raw.includes("i21") ||
+		raw.includes("i22") ||
+		raw.includes("i23") ||
+		raw.includes("i24") ||
+		raw.includes("i25");
+
+	const hasArrhythmia =
 		raw.includes("аритми") ||
-		raw.includes("i10") ||
-		raw.includes("i11");
+		raw.includes("мерцательн") ||
+		raw.includes("экстрасистол") ||
+		raw.includes("тахикарди") ||
+		raw.includes("фибрилляц") ||
+		raw.includes("пароксизм") ||
+		raw.includes("блокад") ||
+		raw.includes("i44") ||
+		raw.includes("i45") ||
+		raw.includes("i47") ||
+		raw.includes("i48") ||
+		raw.includes("i49");
+
+	const hasCardio =
+		hasHypertension ||
+		hasIhd ||
+		hasArrhythmia ||
+		raw.includes("сердеч") ||
+		raw.includes("кардио") ||
+		raw.includes("пороком сердца") ||
+		raw.includes("хсн");
 
 	const hasDiabetes =
 		raw.includes("диабет") ||
@@ -677,10 +737,12 @@ export function parseSafetyProfileFromText(text?: string | null | undefined): Pa
 
 	const hasAsthma =
 		raw.includes("астма") ||
+		raw.includes("астм") ||
 		raw.includes("бронхиальн") ||
 		raw.includes("сальбутамол") ||
 		raw.includes("беродуал") ||
-		raw.includes("j45");
+		raw.includes("j45") ||
+		raw.includes("j46");
 
 	const hasEpilepsy =
 		raw.includes("эпилепс") ||
@@ -701,7 +763,9 @@ export function parseSafetyProfileFromText(text?: string | null | undefined): Pa
 		raw.includes("пенициллин") ||
 		raw.includes("амоксициллин") ||
 		raw.includes("амоксиклав") ||
-		raw.includes("аугментин");
+		raw.includes("аугментин") ||
+		raw.includes("флемоксин") ||
+		raw.includes("z88.0");
 
 	const hasLatex =
 		raw.includes("латекс");
@@ -716,7 +780,9 @@ export function parseSafetyProfileFromText(text?: string | null | undefined): Pa
 		takesAnticoagulants: hasAnticoagulants,
 		pregnancyTrimester,
 		hasCardiovascularDisease: hasCardio,
-		hasHypertension: hasCardio,
+		hasHypertension,
+		hasIhd,
+		hasArrhythmia,
 		hasDiabetesMellitus: hasDiabetes,
 		hasBronchialAsthma: hasAsthma,
 		hasEpilepsy: hasEpilepsy,
@@ -862,3 +928,84 @@ export function checkProcedureSafety(
 		alternatives,
 	};
 }
+
+/**
+ * Преобразует профиль безопасности пациента в соматический профиль риска для анестезиологического калькулятора.
+ */
+export function patientProfileToSomaticRiskProfile(
+	profile?: Partial<PatientClinicalSafetyProfile> | string | null | undefined,
+): SomaticRiskProfile {
+	if (!profile) return {};
+	if (typeof profile === "string") {
+		const parsed = parseSafetyProfileFromText(profile);
+		return patientProfileToSomaticRiskProfile(parsed);
+	}
+
+	const hasCardio = Boolean(
+		profile.hasCardiovascularDisease ||
+		profile.hasHypertension ||
+		profile.hasIhd ||
+		profile.hasArrhythmia,
+	);
+	const isPregnant = Boolean(
+		profile.pregnancyTrimester && profile.pregnancyTrimester !== "none",
+	);
+
+	return {
+		hasCardiovascularRisk: hasCardio,
+		hasHypertension: Boolean(profile.hasHypertension),
+		hasIhd: Boolean(profile.hasIhd),
+		hasArrhythmia: Boolean(profile.hasArrhythmia),
+		hasSulfiteAllergy: Boolean(profile.hasSulfiteAllergy),
+		hasBronchialAsthma: Boolean(profile.hasBronchialAsthma),
+		isPregnantOrLactating: isPregnant,
+		pregnancyTrimester: profile.pregnancyTrimester,
+		customNotes: profile.customChronicNotes || profile.customAllergyNotes,
+	};
+}
+
+/**
+ * Автоматически рассчитывает безопасный анестетик и дозировки на основе профиля пациента (Автопилот безопасности).
+ */
+export function getAnesthesiaAutopilotForPatient(
+	profile?: Partial<PatientClinicalSafetyProfile> | string | null | undefined,
+	weightKg?: number | undefined,
+	ageYears?: number | null | undefined,
+	isPediatric?: boolean | undefined,
+): AutopilotResolutionResult {
+	const somatic = patientProfileToSomaticRiskProfile(profile);
+	return resolveAutopilotAnesthesia({
+		somaticProfile: somatic,
+		patientWeightKg: weightKg,
+		patientAgeYears: ageYears,
+		isPediatric,
+	});
+}
+
+/**
+ * Рассчитывает МРД (максимальную разовую дозу) анестетика с учетом кардио-ограничений профиля пациента.
+ */
+export function calculatePatientMrdForProfile(params: {
+	profile?: Partial<PatientClinicalSafetyProfile> | string | null | undefined;
+	drugKey: AnesthesiaDrugKey;
+	patientWeightKg: number;
+	patientAgeYears?: number | null | undefined;
+	isPediatric?: boolean | undefined;
+}): PatientMrdCalculation {
+	const somatic = patientProfileToSomaticRiskProfile(params.profile);
+	const hasCardio = Boolean(
+		somatic.hasCardiovascularRisk ||
+		somatic.hasHypertension ||
+		somatic.hasIhd ||
+		somatic.hasArrhythmia,
+	);
+
+	return calculatePatientMrd({
+		drugKey: params.drugKey,
+		patientWeightKg: params.patientWeightKg,
+		patientAgeYears: params.patientAgeYears,
+		isPediatric: params.isPediatric,
+		isCardioRestricted: hasCardio,
+	});
+}
+

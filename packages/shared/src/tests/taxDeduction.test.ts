@@ -10,6 +10,8 @@ import {
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB,
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024,
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_PRE2024,
+	calculatePlanTaxDeductionBreakdown,
+	calculateStaged304030Schedule,
 	calculateTaxDeductionSummary,
 	classifyTaxDeduction804n,
 	EXPENSIVE_TREATMENT_804N_CODES,
@@ -432,5 +434,101 @@ describe("Tax Deduction & FNS Registry Engine (Order EA-7-11/824@, КНД 115115
 		assert.ok(batchGen.xmlContent.includes('НомерСвед="102"'));
 		assert.ok(batchGen.xmlContent.includes('КодРодств="4"'));
 		assert.ok(batchGen.xmlContent.includes('Пациент ФИО="Иванова Мария Ивановна"'));
+	});
+
+	it("calculates plan tax deduction breakdown with Code 01 statutory limit and Code 02 unlimited expensive services", () => {
+		const planItems = [
+			// Code 01 items: 100 000 ₽ therapy + 80 000 ₽ crowns = 180 000 ₽ total Code 01 (> 150 000 ₽ limit)
+			{
+				id: "item-1",
+				code804n: "A16.07.002.001",
+				serviceName: "Лечение кариеса нанокомпозитом",
+				priceRub: 100000,
+				quantity: 1,
+			},
+			{
+				id: "item-2",
+				code804n: "A16.07.004.001",
+				serviceName: "Коронка из диоксида циркония Prettau",
+				priceRub: 80000,
+				quantity: 1,
+			},
+			// Code 02 items: 2x Implants 42 000 ₽ + 1x Surgical Guide 12 000 ₽ = 96 000 ₽ total Code 02 (unlimited)
+			{
+				id: "item-3",
+				code804n: "A16.07.054.001",
+				serviceName: "Дентальная имплантация Osstem TS-III",
+				priceRub: 42000,
+				quantity: 2,
+			},
+			{
+				id: "item-4",
+				code804n: "A16.07.054",
+				serviceName: "Хирургический навигационный 3D-шаблон",
+				priceRub: 12000,
+				quantity: 1,
+			},
+		];
+
+		const breakdown = calculatePlanTaxDeductionBreakdown(planItems);
+
+		// Code 01 check: 180 000 ₽ total, capped at 150 000 ₽ eligible -> 13% of 150k = 19 500 ₽ refund
+		assert.equal(breakdown.code01TotalRub, 180000);
+		assert.equal(breakdown.code01TotalKopecks, 18000000);
+		assert.equal(breakdown.code01EligibleRub, 150000);
+		assert.equal(breakdown.isCode01Capped, true);
+		assert.equal(breakdown.code01Refund13Rub, 19500);
+		assert.equal(breakdown.code01Refund13Kopecks, 1950000);
+
+		// Code 02 check: 96 000 ₽ total, 100% eligible -> 13% of 96k = 12 480 ₽ refund
+		assert.equal(breakdown.code02TotalRub, 96000);
+		assert.equal(breakdown.code02TotalKopecks, 9600000);
+		assert.equal(breakdown.code02EligibleRub, 96000);
+		assert.equal(breakdown.code02Refund13Rub, 12480);
+		assert.equal(breakdown.code02Refund13Kopecks, 1248000);
+		assert.equal(breakdown.hasCode02ExpensiveServices, true);
+
+		// Grand totals: 276 000 ₽ gross, 31 980 ₽ refund, 244 020 ₽ net payable
+		assert.equal(breakdown.grandTotalRub, 276000);
+		assert.equal(breakdown.grandTotalKopecks, 27600000);
+		assert.equal(breakdown.grandTotalRefund13Rub, 31980);
+		assert.equal(breakdown.grandTotalRefund13Kopecks, 3198000);
+		assert.equal(breakdown.netPriceWithRefundRub, 244020);
+		assert.equal(breakdown.netPriceWithRefundKopecks, 24402000);
+		assert.equal(breakdown.items.length, 4);
+	});
+
+	it("calculates staged payment schedule (30% / 40% / 30%) with exact penny balancing", () => {
+		// Test amount with odd kopecks: 123 456.77 ₽
+		const schedule = calculateStaged304030Schedule(123456.77);
+
+		assert.equal(schedule.totalRub, 123456.77);
+		assert.equal(schedule.totalKopecks, 12345677);
+
+		// Stage 1: 30% of 12345677 = 3703703.1 -> 3703703 kopecks (37 037.03 ₽)
+		assert.equal(schedule.stage1AdvanceTherapyKopecks, 3703703);
+		assert.equal(schedule.stage1AdvanceTherapyRub, 37037.03);
+
+		// Stage 2: 40% of 12345677 = 4938270.8 -> 4938271 kopecks (49 382.71 ₽)
+		assert.equal(schedule.stage2SurgeryImplantKopecks, 4938271);
+		assert.equal(schedule.stage2SurgeryImplantRub, 49382.71);
+
+		// Stage 3: remaining kopecks = 12345677 - 3703703 - 4938271 = 3703703 kopecks (37 037.03 ₽)
+		assert.equal(schedule.stage3OrthopedicsKopecks, 3703703);
+		assert.equal(schedule.stage3OrthopedicsRub, 37037.03);
+
+		// Perfect kopecks balance verification
+		assert.equal(schedule.isBalanced, true);
+		assert.equal(
+			schedule.stage1AdvanceTherapyKopecks +
+				schedule.stage2SurgeryImplantKopecks +
+				schedule.stage3OrthopedicsKopecks,
+			schedule.totalKopecks,
+		);
+
+		// Zero total check
+		const zeroSchedule = calculateStaged304030Schedule(0);
+		assert.equal(zeroSchedule.totalKopecks, 0);
+		assert.equal(zeroSchedule.isBalanced, true);
 	});
 });

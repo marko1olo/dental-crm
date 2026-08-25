@@ -4103,7 +4103,7 @@ export declare const serviceCatalogItemSchema: z.ZodObject<{
     id: string;
     organizationId: string;
     durationMinutes: number;
-    category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+    category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
     active: boolean;
     title: string;
     specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
@@ -4115,7 +4115,7 @@ export declare const serviceCatalogItemSchema: z.ZodObject<{
     id: string;
     organizationId: string;
     durationMinutes: number;
-    category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+    category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
     active: boolean;
     title: string;
     specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
@@ -4179,7 +4179,7 @@ export declare const dentalPricelistItemSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     id: string;
     durationMinutes: number | null;
-    category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+    category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
     title: string;
     priceRub: number | null;
     confidence: number;
@@ -4200,7 +4200,7 @@ export declare const dentalPricelistItemSchema: z.ZodObject<{
 }, {
     id: string;
     durationMinutes: number | null;
-    category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+    category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
     title: string;
     priceRub: number | null;
     confidence: number;
@@ -4232,7 +4232,7 @@ export declare const dentalPricelistCategorySummarySchema: z.ZodObject<{
     brands: z.ZodArray<z.ZodString, "many">;
 }, "strip", z.ZodTypeAny, {
     count: number;
-    category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+    category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
     specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     pricedCount: number;
     minPriceRub: number | null;
@@ -4242,7 +4242,7 @@ export declare const dentalPricelistCategorySummarySchema: z.ZodObject<{
     brands: string[];
 }, {
     count: number;
-    category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+    category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
     specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
     pricedCount: number;
     minPriceRub: number | null;
@@ -4323,7 +4323,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         id: string;
         durationMinutes: number | null;
-        category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+        category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
         title: string;
         priceRub: number | null;
         confidence: number;
@@ -4344,7 +4344,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
     }, {
         id: string;
         durationMinutes: number | null;
-        category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+        category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
         title: string;
         priceRub: number | null;
         confidence: number;
@@ -4375,7 +4375,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         brands: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
         count: number;
-        category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+        category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
         specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         pricedCount: number;
         minPriceRub: number | null;
@@ -4385,7 +4385,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         brands: string[];
     }, {
         count: number;
-        category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+        category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
         specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         pricedCount: number;
         minPriceRub: number | null;
@@ -4422,7 +4422,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
     items: {
         id: string;
         durationMinutes: number | null;
-        category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+        category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
         title: string;
         priceRub: number | null;
         confidence: number;
@@ -4443,7 +4443,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
     }[];
     summary: {
         count: number;
-        category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+        category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
         specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         pricedCount: number;
         minPriceRub: number | null;
@@ -4470,7 +4470,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
     items: {
         id: string;
         durationMinutes: number | null;
-        category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+        category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
         title: string;
         priceRub: number | null;
         confidence: number;
@@ -4491,7 +4491,7 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
     }[];
     summary: {
         count: number;
-        category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+        category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
         specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
         pricedCount: number;
         minPriceRub: number | null;
@@ -4547,7 +4547,7 @@ export declare const treatmentPlanItemSchema: z.ZodObject<{
     toothCode: string | null;
     plannedDoctorUserId: string | null;
     plannedChairId: string | null;
-    snapshotServiceCategory?: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents" | null | undefined;
+    snapshotServiceCategory?: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents" | null | undefined;
 }, {
     status: "completed" | "in_progress" | "cancelled" | "proposed" | "approved";
     id: string;
@@ -4563,7 +4563,7 @@ export declare const treatmentPlanItemSchema: z.ZodObject<{
     toothCode: string | null;
     plannedDoctorUserId: string | null;
     plannedChairId: string | null;
-    snapshotServiceCategory?: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents" | null | undefined;
+    snapshotServiceCategory?: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents" | null | undefined;
 }>;
 export type TreatmentPlanItem = z.infer<typeof treatmentPlanItemSchema>;
 export declare const treatmentPlanScenarioSchema: z.ZodObject<{
@@ -4661,7 +4661,7 @@ export declare const clinicalRuleSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     id: string;
     organizationId: string;
-    category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+    category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
     active: boolean;
     title: string;
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
@@ -4678,7 +4678,7 @@ export declare const clinicalRuleSchema: z.ZodObject<{
 }, {
     id: string;
     organizationId: string;
-    category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+    category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
     active: boolean;
     title: string;
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
@@ -4945,7 +4945,7 @@ export declare const createClinicalRuleSchema: z.ZodEffects<z.ZodObject<{
     patientText: z.ZodString;
     active: z.ZodDefault<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
-    category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+    category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
     active: boolean;
     title: string;
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
@@ -4960,7 +4960,7 @@ export declare const createClinicalRuleSchema: z.ZodEffects<z.ZodObject<{
     patientText: string;
     condition?: string | null | undefined;
 }, {
-    category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+    category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
     title: string;
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
     severity: "info" | "warning" | "blocker";
@@ -4975,7 +4975,7 @@ export declare const createClinicalRuleSchema: z.ZodEffects<z.ZodObject<{
     requiresCompletedServiceIds?: string[] | undefined;
     blockedServiceIds?: string[] | undefined;
 }>, {
-    category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+    category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
     active: boolean;
     title: string;
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
@@ -4990,7 +4990,7 @@ export declare const createClinicalRuleSchema: z.ZodEffects<z.ZodObject<{
     patientText: string;
     condition?: string | null | undefined;
 }, {
-    category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+    category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
     title: string;
     action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
     severity: "info" | "warning" | "blocker";
@@ -5025,7 +5025,7 @@ export declare const updateClinicalRuleSchema: z.ZodObject<{
     id: z.ZodString;
 }, "strip", z.ZodTypeAny, {
     id: string;
-    category?: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents" | undefined;
+    category?: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents" | undefined;
     active?: boolean | undefined;
     title?: string | undefined;
     action?: "add_required_service" | "block_service" | "show_warning" | "schedule_followup" | undefined;
@@ -5041,7 +5041,7 @@ export declare const updateClinicalRuleSchema: z.ZodObject<{
     patientText?: string | undefined;
 }, {
     id: string;
-    category?: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents" | undefined;
+    category?: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents" | undefined;
     active?: boolean | undefined;
     title?: string | undefined;
     action?: "add_required_service" | "block_service" | "show_warning" | "schedule_followup" | undefined;
@@ -5438,10 +5438,10 @@ export declare const denteTelegramPostVisitCheckupDelayHoursByTopicSchema: z.Zod
     surgery: number;
     orthodontics: number;
     endo: number;
+    hygiene: number;
     local_anesthesia: number;
     prosthetics: number;
     periodontology: number;
-    hygiene: number;
     extraction: number;
     implantation: number;
     filling_restoration: number;
@@ -5450,10 +5450,10 @@ export declare const denteTelegramPostVisitCheckupDelayHoursByTopicSchema: z.Zod
     surgery?: number | undefined;
     orthodontics?: number | undefined;
     endo?: number | undefined;
+    hygiene?: number | undefined;
     local_anesthesia?: number | undefined;
     prosthetics?: number | undefined;
     periodontology?: number | undefined;
-    hygiene?: number | undefined;
     extraction?: number | undefined;
     implantation?: number | undefined;
     filling_restoration?: number | undefined;
@@ -5519,10 +5519,10 @@ export declare const denteTelegramBotSettingsSchema: z.ZodObject<{
         surgery: number;
         orthodontics: number;
         endo: number;
+        hygiene: number;
         local_anesthesia: number;
         prosthetics: number;
         periodontology: number;
-        hygiene: number;
         extraction: number;
         implantation: number;
         filling_restoration: number;
@@ -5531,10 +5531,10 @@ export declare const denteTelegramBotSettingsSchema: z.ZodObject<{
         surgery?: number | undefined;
         orthodontics?: number | undefined;
         endo?: number | undefined;
+        hygiene?: number | undefined;
         local_anesthesia?: number | undefined;
         prosthetics?: number | undefined;
         periodontology?: number | undefined;
-        hygiene?: number | undefined;
         extraction?: number | undefined;
         implantation?: number | undefined;
         filling_restoration?: number | undefined;
@@ -5575,10 +5575,10 @@ export declare const denteTelegramBotSettingsSchema: z.ZodObject<{
         surgery: number;
         orthodontics: number;
         endo: number;
+        hygiene: number;
         local_anesthesia: number;
         prosthetics: number;
         periodontology: number;
-        hygiene: number;
         extraction: number;
         implantation: number;
         filling_restoration: number;
@@ -5619,10 +5619,10 @@ export declare const denteTelegramBotSettingsSchema: z.ZodObject<{
         surgery?: number | undefined;
         orthodontics?: number | undefined;
         endo?: number | undefined;
+        hygiene?: number | undefined;
         local_anesthesia?: number | undefined;
         prosthetics?: number | undefined;
         periodontology?: number | undefined;
-        hygiene?: number | undefined;
         extraction?: number | undefined;
         implantation?: number | undefined;
         filling_restoration?: number | undefined;
@@ -5688,10 +5688,10 @@ export declare const updateDenteTelegramBotSettingsSchema: z.ZodObject<{
         surgery: number;
         orthodontics: number;
         endo: number;
+        hygiene: number;
         local_anesthesia: number;
         prosthetics: number;
         periodontology: number;
-        hygiene: number;
         extraction: number;
         implantation: number;
         filling_restoration: number;
@@ -5700,10 +5700,10 @@ export declare const updateDenteTelegramBotSettingsSchema: z.ZodObject<{
         surgery?: number | undefined;
         orthodontics?: number | undefined;
         endo?: number | undefined;
+        hygiene?: number | undefined;
         local_anesthesia?: number | undefined;
         prosthetics?: number | undefined;
         periodontology?: number | undefined;
-        hygiene?: number | undefined;
         extraction?: number | undefined;
         implantation?: number | undefined;
         filling_restoration?: number | undefined;
@@ -5746,10 +5746,10 @@ export declare const updateDenteTelegramBotSettingsSchema: z.ZodObject<{
         surgery: number;
         orthodontics: number;
         endo: number;
+        hygiene: number;
         local_anesthesia: number;
         prosthetics: number;
         periodontology: number;
-        hygiene: number;
         extraction: number;
         implantation: number;
         filling_restoration: number;
@@ -5788,10 +5788,10 @@ export declare const updateDenteTelegramBotSettingsSchema: z.ZodObject<{
         surgery?: number | undefined;
         orthodontics?: number | undefined;
         endo?: number | undefined;
+        hygiene?: number | undefined;
         local_anesthesia?: number | undefined;
         prosthetics?: number | undefined;
         periodontology?: number | undefined;
-        hygiene?: number | undefined;
         extraction?: number | undefined;
         implantation?: number | undefined;
         filling_restoration?: number | undefined;
@@ -7120,10 +7120,10 @@ export declare const denteTelegramBotStatusSchema: z.ZodObject<{
             surgery: number;
             orthodontics: number;
             endo: number;
+            hygiene: number;
             local_anesthesia: number;
             prosthetics: number;
             periodontology: number;
-            hygiene: number;
             extraction: number;
             implantation: number;
             filling_restoration: number;
@@ -7132,10 +7132,10 @@ export declare const denteTelegramBotStatusSchema: z.ZodObject<{
             surgery?: number | undefined;
             orthodontics?: number | undefined;
             endo?: number | undefined;
+            hygiene?: number | undefined;
             local_anesthesia?: number | undefined;
             prosthetics?: number | undefined;
             periodontology?: number | undefined;
-            hygiene?: number | undefined;
             extraction?: number | undefined;
             implantation?: number | undefined;
             filling_restoration?: number | undefined;
@@ -7176,10 +7176,10 @@ export declare const denteTelegramBotStatusSchema: z.ZodObject<{
             surgery: number;
             orthodontics: number;
             endo: number;
+            hygiene: number;
             local_anesthesia: number;
             prosthetics: number;
             periodontology: number;
-            hygiene: number;
             extraction: number;
             implantation: number;
             filling_restoration: number;
@@ -7220,10 +7220,10 @@ export declare const denteTelegramBotStatusSchema: z.ZodObject<{
             surgery?: number | undefined;
             orthodontics?: number | undefined;
             endo?: number | undefined;
+            hygiene?: number | undefined;
             local_anesthesia?: number | undefined;
             prosthetics?: number | undefined;
             periodontology?: number | undefined;
-            hygiene?: number | undefined;
             extraction?: number | undefined;
             implantation?: number | undefined;
             filling_restoration?: number | undefined;
@@ -7316,10 +7316,10 @@ export declare const denteTelegramBotStatusSchema: z.ZodObject<{
             surgery: number;
             orthodontics: number;
             endo: number;
+            hygiene: number;
             local_anesthesia: number;
             prosthetics: number;
             periodontology: number;
-            hygiene: number;
             extraction: number;
             implantation: number;
             filling_restoration: number;
@@ -7389,10 +7389,10 @@ export declare const denteTelegramBotStatusSchema: z.ZodObject<{
             surgery?: number | undefined;
             orthodontics?: number | undefined;
             endo?: number | undefined;
+            hygiene?: number | undefined;
             local_anesthesia?: number | undefined;
             prosthetics?: number | undefined;
             periodontology?: number | undefined;
-            hygiene?: number | undefined;
             extraction?: number | undefined;
             implantation?: number | undefined;
             filling_restoration?: number | undefined;
@@ -11483,7 +11483,7 @@ export declare const postVisitRecommendationsPayloadSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     doctorFullName: string;
     toothOrArea: string;
-    careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+    careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
     procedureName: string;
     performedAt: string;
     allowedAfter: string[];
@@ -11501,7 +11501,7 @@ export declare const postVisitRecommendationsPayloadSchema: z.ZodObject<{
 }, {
     doctorFullName: string;
     toothOrArea: string;
-    careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+    careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
     procedureName: string;
     performedAt: string;
     allowedAfter: string[];
@@ -16063,7 +16063,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         doctorFullName: string;
         toothOrArea: string;
-        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
         procedureName: string;
         performedAt: string;
         allowedAfter: string[];
@@ -16081,7 +16081,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
     }, {
         doctorFullName: string;
         toothOrArea: string;
-        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
         procedureName: string;
         performedAt: string;
         allowedAfter: string[];
@@ -17722,7 +17722,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
     postVisitRecommendations?: {
         doctorFullName: string;
         toothOrArea: string;
-        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
         procedureName: string;
         performedAt: string;
         allowedAfter: string[];
@@ -18881,7 +18881,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
     postVisitRecommendations?: {
         doctorFullName: string;
         toothOrArea: string;
-        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
         procedureName: string;
         performedAt: string;
         allowedAfter: string[];
@@ -24385,7 +24385,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         }, "strip", z.ZodTypeAny, {
             doctorFullName: string;
             toothOrArea: string;
-            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
             procedureName: string;
             performedAt: string;
             allowedAfter: string[];
@@ -24403,7 +24403,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         }, {
             doctorFullName: string;
             toothOrArea: string;
-            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
             procedureName: string;
             performedAt: string;
             allowedAfter: string[];
@@ -26044,7 +26044,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         postVisitRecommendations?: {
             doctorFullName: string;
             toothOrArea: string;
-            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
             procedureName: string;
             performedAt: string;
             allowedAfter: string[];
@@ -27203,7 +27203,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         postVisitRecommendations?: {
             doctorFullName: string;
             toothOrArea: string;
-            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
             procedureName: string;
             performedAt: string;
             allowedAfter: string[];
@@ -29215,7 +29215,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         postVisitRecommendations?: {
             doctorFullName: string;
             toothOrArea: string;
-            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
             procedureName: string;
             performedAt: string;
             allowedAfter: string[];
@@ -30604,7 +30604,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         postVisitRecommendations?: {
             doctorFullName: string;
             toothOrArea: string;
-            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
             procedureName: string;
             performedAt: string;
             allowedAfter: string[];
@@ -35195,7 +35195,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         }, "strip", z.ZodTypeAny, {
             doctorFullName: string;
             toothOrArea: string;
-            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
             procedureName: string;
             performedAt: string;
             allowedAfter: string[];
@@ -35213,7 +35213,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         }, {
             doctorFullName: string;
             toothOrArea: string;
-            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
             procedureName: string;
             performedAt: string;
             allowedAfter: string[];
@@ -36854,7 +36854,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         postVisitRecommendations?: {
             doctorFullName: string;
             toothOrArea: string;
-            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
             procedureName: string;
             performedAt: string;
             allowedAfter: string[];
@@ -38013,7 +38013,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         postVisitRecommendations?: {
             doctorFullName: string;
             toothOrArea: string;
-            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
             procedureName: string;
             performedAt: string;
             allowedAfter: string[];
@@ -45283,7 +45283,7 @@ export declare const dashboardSchema: z.ZodObject<{
             }, "strip", z.ZodTypeAny, {
                 doctorFullName: string;
                 toothOrArea: string;
-                careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+                careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
                 procedureName: string;
                 performedAt: string;
                 allowedAfter: string[];
@@ -45301,7 +45301,7 @@ export declare const dashboardSchema: z.ZodObject<{
             }, {
                 doctorFullName: string;
                 toothOrArea: string;
-                careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+                careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
                 procedureName: string;
                 performedAt: string;
                 allowedAfter: string[];
@@ -46942,7 +46942,7 @@ export declare const dashboardSchema: z.ZodObject<{
             postVisitRecommendations?: {
                 doctorFullName: string;
                 toothOrArea: string;
-                careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+                careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
                 procedureName: string;
                 performedAt: string;
                 allowedAfter: string[];
@@ -48101,7 +48101,7 @@ export declare const dashboardSchema: z.ZodObject<{
             postVisitRecommendations?: {
                 doctorFullName: string;
                 toothOrArea: string;
-                careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+                careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
                 procedureName: string;
                 performedAt: string;
                 allowedAfter: string[];
@@ -49445,7 +49445,7 @@ export declare const dashboardSchema: z.ZodObject<{
         id: string;
         organizationId: string;
         durationMinutes: number;
-        category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+        category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
         active: boolean;
         title: string;
         specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
@@ -49457,7 +49457,7 @@ export declare const dashboardSchema: z.ZodObject<{
         id: string;
         organizationId: string;
         durationMinutes: number;
-        category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+        category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
         active: boolean;
         title: string;
         specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
@@ -49496,7 +49496,7 @@ export declare const dashboardSchema: z.ZodObject<{
         toothCode: string | null;
         plannedDoctorUserId: string | null;
         plannedChairId: string | null;
-        snapshotServiceCategory?: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents" | null | undefined;
+        snapshotServiceCategory?: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents" | null | undefined;
     }, {
         status: "completed" | "in_progress" | "cancelled" | "proposed" | "approved";
         id: string;
@@ -49512,7 +49512,7 @@ export declare const dashboardSchema: z.ZodObject<{
         toothCode: string | null;
         plannedDoctorUserId: string | null;
         plannedChairId: string | null;
-        snapshotServiceCategory?: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents" | null | undefined;
+        snapshotServiceCategory?: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents" | null | undefined;
     }>, "many">;
     treatmentPlanScenarios: z.ZodArray<z.ZodObject<{
         id: z.ZodString;
@@ -49608,7 +49608,7 @@ export declare const dashboardSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         id: string;
         organizationId: string;
-        category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+        category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
         active: boolean;
         title: string;
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
@@ -49625,7 +49625,7 @@ export declare const dashboardSchema: z.ZodObject<{
     }, {
         id: string;
         organizationId: string;
-        category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+        category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
         active: boolean;
         title: string;
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
@@ -50614,7 +50614,7 @@ export declare const dashboardSchema: z.ZodObject<{
         id: string;
         organizationId: string;
         durationMinutes: number;
-        category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+        category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
         active: boolean;
         title: string;
         specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
@@ -50637,7 +50637,7 @@ export declare const dashboardSchema: z.ZodObject<{
         toothCode: string | null;
         plannedDoctorUserId: string | null;
         plannedChairId: string | null;
-        snapshotServiceCategory?: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents" | null | undefined;
+        snapshotServiceCategory?: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents" | null | undefined;
     }[];
     treatmentPlanScenarios: {
         id: string;
@@ -50664,7 +50664,7 @@ export declare const dashboardSchema: z.ZodObject<{
     clinicalRules: {
         id: string;
         organizationId: string;
-        category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+        category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
         active: boolean;
         title: string;
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
@@ -51284,7 +51284,7 @@ export declare const dashboardSchema: z.ZodObject<{
         id: string;
         organizationId: string;
         durationMinutes: number;
-        category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+        category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
         active: boolean;
         title: string;
         specialty: "pediatric" | "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "implantologist" | "radiologist" | "universal";
@@ -51307,7 +51307,7 @@ export declare const dashboardSchema: z.ZodObject<{
         toothCode: string | null;
         plannedDoctorUserId: string | null;
         plannedChairId: string | null;
-        snapshotServiceCategory?: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents" | null | undefined;
+        snapshotServiceCategory?: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents" | null | undefined;
     }[];
     treatmentPlanScenarios: {
         id: string;
@@ -51334,7 +51334,7 @@ export declare const dashboardSchema: z.ZodObject<{
     clinicalRules: {
         id: string;
         organizationId: string;
-        category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+        category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
         active: boolean;
         title: string;
         action: "add_required_service" | "block_service" | "show_warning" | "schedule_followup";
@@ -51517,12 +51517,12 @@ export declare const insuranceCalculationItemSchema: z.ZodObject<{
     quantity: z.ZodDefault<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
     quantity: number;
-    category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+    category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
     priceRub: number;
     serviceId: string;
     serviceName?: string | undefined;
 }, {
-    category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+    category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
     priceRub: number;
     serviceId: string;
     quantity?: number | undefined;
@@ -51540,12 +51540,12 @@ export declare const insuranceCoverageCalculationInputSchema: z.ZodObject<{
         quantity: z.ZodDefault<z.ZodNumber>;
     }, "strip", z.ZodTypeAny, {
         quantity: number;
-        category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+        category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
         priceRub: number;
         serviceId: string;
         serviceName?: string | undefined;
     }, {
-        category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+        category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
         priceRub: number;
         serviceId: string;
         quantity?: number | undefined;
@@ -51554,7 +51554,7 @@ export declare const insuranceCoverageCalculationInputSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     items: {
         quantity: number;
-        category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+        category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
         priceRub: number;
         serviceId: string;
         serviceName?: string | undefined;
@@ -51563,7 +51563,7 @@ export declare const insuranceCoverageCalculationInputSchema: z.ZodObject<{
     usedAnnualAmountRub: number;
 }, {
     items: {
-        category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+        category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
         priceRub: number;
         serviceId: string;
         quantity?: number | undefined;
@@ -51973,7 +51973,7 @@ export declare const dmsSplitCalculationItemSchema: z.ZodObject<{
     isExplicitlyApproved: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
     quantity: number;
-    category: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents";
+    category: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents";
     priceRub: number;
     discountRub: number;
     serviceId: string;
@@ -51988,7 +51988,7 @@ export declare const dmsSplitCalculationItemSchema: z.ZodObject<{
     serviceId: string;
     quantity?: number | undefined;
     toothNumber?: string | number | undefined;
-    category?: "other" | "therapy" | "surgery" | "orthodontics" | "prosthetics" | "periodontology" | "consultation" | "hygiene" | "imaging" | "documents" | undefined;
+    category?: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents" | undefined;
     serviceName?: string | undefined;
     discountRub?: number | undefined;
     serviceCode?: string | undefined;
@@ -56830,7 +56830,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         }, "strip", z.ZodTypeAny, {
             doctorFullName: string;
             toothOrArea: string;
-            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
             procedureName: string;
             performedAt: string;
             allowedAfter: string[];
@@ -56848,7 +56848,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         }, {
             doctorFullName: string;
             toothOrArea: string;
-            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
             procedureName: string;
             performedAt: string;
             allowedAfter: string[];
@@ -58489,7 +58489,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         postVisitRecommendations?: {
             doctorFullName: string;
             toothOrArea: string;
-            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
             procedureName: string;
             performedAt: string;
             allowedAfter: string[];
@@ -59648,7 +59648,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         postVisitRecommendations?: {
             doctorFullName: string;
             toothOrArea: string;
-            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
             procedureName: string;
             performedAt: string;
             allowedAfter: string[];
@@ -60815,7 +60815,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         postVisitRecommendations?: {
             doctorFullName: string;
             toothOrArea: string;
-            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
             procedureName: string;
             performedAt: string;
             allowedAfter: string[];
@@ -61983,7 +61983,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         postVisitRecommendations?: {
             doctorFullName: string;
             toothOrArea: string;
-            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
             procedureName: string;
             performedAt: string;
             allowedAfter: string[];
@@ -63151,7 +63151,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         postVisitRecommendations?: {
             doctorFullName: string;
             toothOrArea: string;
-            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
             procedureName: string;
             performedAt: string;
             allowedAfter: string[];
@@ -64319,7 +64319,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         postVisitRecommendations?: {
             doctorFullName: string;
             toothOrArea: string;
-            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
             procedureName: string;
             performedAt: string;
             allowedAfter: string[];
@@ -100102,7 +100102,7 @@ export declare const uiPreferencesSchema: z.ZodObject<{
     documentIssueStaffFullName: string;
     documentIssueStaffRole: string;
     procedureConsentProcedureType: "other" | "orthodontics" | "therapy_endo_restoration" | "local_anesthesia" | "sedation" | "surgery_extraction" | "implantation_bone_graft" | "prosthetics" | "hygiene_whitening" | "periodontology";
-    postVisitCareTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+    postVisitCareTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
     pricelistSourceKind: "manual" | "text" | "ocr_text" | "photo_ocr" | "spreadsheet_copy";
     usePricelistAi: boolean;
     recognitionKind: "voice_transcription" | "visit_note_draft" | "image_summary" | "document_draft" | "paper_ocr";
@@ -100151,7 +100151,7 @@ export declare const uiPreferencesSchema: z.ZodObject<{
     documentIssueStaffFullName?: string | undefined;
     documentIssueStaffRole?: string | undefined;
     procedureConsentProcedureType?: "other" | "orthodontics" | "therapy_endo_restoration" | "local_anesthesia" | "sedation" | "surgery_extraction" | "implantation_bone_graft" | "prosthetics" | "hygiene_whitening" | "periodontology" | undefined;
-    postVisitCareTopic?: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration" | undefined;
+    postVisitCareTopic?: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration" | undefined;
     pricelistSourceKind?: "manual" | "text" | "ocr_text" | "photo_ocr" | "spreadsheet_copy" | undefined;
     usePricelistAi?: boolean | undefined;
     recognitionKind?: "voice_transcription" | "visit_note_draft" | "image_summary" | "document_draft" | "paper_ocr" | undefined;
@@ -100254,7 +100254,7 @@ export declare const uiPreferencesInputSchema: z.ZodObject<Omit<{
     documentIssueStaffFullName: string;
     documentIssueStaffRole: string;
     procedureConsentProcedureType: "other" | "orthodontics" | "therapy_endo_restoration" | "local_anesthesia" | "sedation" | "surgery_extraction" | "implantation_bone_graft" | "prosthetics" | "hygiene_whitening" | "periodontology";
-    postVisitCareTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+    postVisitCareTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
     pricelistSourceKind: "manual" | "text" | "ocr_text" | "photo_ocr" | "spreadsheet_copy";
     usePricelistAi: boolean;
     recognitionKind: "voice_transcription" | "visit_note_draft" | "image_summary" | "document_draft" | "paper_ocr";
@@ -100305,7 +100305,7 @@ export declare const uiPreferencesInputSchema: z.ZodObject<Omit<{
     documentIssueStaffFullName?: string | undefined;
     documentIssueStaffRole?: string | undefined;
     procedureConsentProcedureType?: "other" | "orthodontics" | "therapy_endo_restoration" | "local_anesthesia" | "sedation" | "surgery_extraction" | "implantation_bone_graft" | "prosthetics" | "hygiene_whitening" | "periodontology" | undefined;
-    postVisitCareTopic?: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration" | undefined;
+    postVisitCareTopic?: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration" | undefined;
     pricelistSourceKind?: "manual" | "text" | "ocr_text" | "photo_ocr" | "spreadsheet_copy" | undefined;
     usePricelistAi?: boolean | undefined;
     recognitionKind?: "voice_transcription" | "visit_note_draft" | "image_summary" | "document_draft" | "paper_ocr" | undefined;
@@ -110919,7 +110919,7 @@ export declare const visitFlowRecommendationsStepResultSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         doctorFullName: string;
         toothOrArea: string;
-        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
         procedureName: string;
         performedAt: string;
         allowedAfter: string[];
@@ -110937,7 +110937,7 @@ export declare const visitFlowRecommendationsStepResultSchema: z.ZodObject<{
     }, {
         doctorFullName: string;
         toothOrArea: string;
-        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
         procedureName: string;
         performedAt: string;
         allowedAfter: string[];
@@ -110959,7 +110959,7 @@ export declare const visitFlowRecommendationsStepResultSchema: z.ZodObject<{
     data: {
         doctorFullName: string;
         toothOrArea: string;
-        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
         procedureName: string;
         performedAt: string;
         allowedAfter: string[];
@@ -110982,7 +110982,7 @@ export declare const visitFlowRecommendationsStepResultSchema: z.ZodObject<{
     data: {
         doctorFullName: string;
         toothOrArea: string;
-        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
         procedureName: string;
         performedAt: string;
         allowedAfter: string[];
@@ -111501,7 +111501,7 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
     }, "strip", z.ZodTypeAny, {
         doctorFullName: string;
         toothOrArea: string;
-        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
         procedureName: string;
         performedAt: string;
         allowedAfter: string[];
@@ -111519,7 +111519,7 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
     }, {
         doctorFullName: string;
         toothOrArea: string;
-        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
         procedureName: string;
         performedAt: string;
         allowedAfter: string[];
@@ -111541,7 +111541,7 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
     data: {
         doctorFullName: string;
         toothOrArea: string;
-        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
         procedureName: string;
         performedAt: string;
         allowedAfter: string[];
@@ -111564,7 +111564,7 @@ export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", 
     data: {
         doctorFullName: string;
         toothOrArea: string;
-        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
         procedureName: string;
         performedAt: string;
         allowedAfter: string[];
@@ -111814,7 +111814,7 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         doctorFullName: string;
         toothOrArea: string;
-        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
         procedureName: string;
         performedAt: string;
         allowedAfter: string[];
@@ -111832,7 +111832,7 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
     }, {
         doctorFullName: string;
         toothOrArea: string;
-        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
         procedureName: string;
         performedAt: string;
         allowedAfter: string[];
@@ -111908,7 +111908,7 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
     recommendationsPayload?: {
         doctorFullName: string;
         toothOrArea: string;
-        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
         procedureName: string;
         performedAt: string;
         allowedAfter: string[];
@@ -111984,7 +111984,7 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
     recommendationsPayload?: {
         doctorFullName: string;
         toothOrArea: string;
-        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+        careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
         procedureName: string;
         performedAt: string;
         allowedAfter: string[];
@@ -112457,7 +112457,7 @@ export declare const visitFlowResultSchema: z.ZodObject<{
         }, "strip", z.ZodTypeAny, {
             doctorFullName: string;
             toothOrArea: string;
-            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
             procedureName: string;
             performedAt: string;
             allowedAfter: string[];
@@ -112475,7 +112475,7 @@ export declare const visitFlowResultSchema: z.ZodObject<{
         }, {
             doctorFullName: string;
             toothOrArea: string;
-            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
             procedureName: string;
             performedAt: string;
             allowedAfter: string[];
@@ -112497,7 +112497,7 @@ export declare const visitFlowResultSchema: z.ZodObject<{
         data: {
             doctorFullName: string;
             toothOrArea: string;
-            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
             procedureName: string;
             performedAt: string;
             allowedAfter: string[];
@@ -112520,7 +112520,7 @@ export declare const visitFlowResultSchema: z.ZodObject<{
         data: {
             doctorFullName: string;
             toothOrArea: string;
-            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
             procedureName: string;
             performedAt: string;
             allowedAfter: string[];
@@ -112606,7 +112606,7 @@ export declare const visitFlowResultSchema: z.ZodObject<{
         data: {
             doctorFullName: string;
             toothOrArea: string;
-            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
             procedureName: string;
             performedAt: string;
             allowedAfter: string[];
@@ -112717,7 +112717,7 @@ export declare const visitFlowResultSchema: z.ZodObject<{
         data: {
             doctorFullName: string;
             toothOrArea: string;
-            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "local_anesthesia" | "prosthetics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration";
+            careTopic: "other" | "surgery" | "orthodontics" | "endo" | "hygiene" | "local_anesthesia" | "prosthetics" | "periodontology" | "extraction" | "implantation" | "filling_restoration";
             procedureName: string;
             performedAt: string;
             allowedAfter: string[];
@@ -113316,9 +113316,9 @@ export declare const anesthesiaLogRecordSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     patientId: string;
     organizationId: string;
+    drug: "articaine" | "mepivacaine" | "lidocaine" | "bupivacaine";
     vasoconstrictor: "none" | "1:100000" | "1:200000" | "1:50000";
     technique: "infiltration" | "intraligamentary" | "intraosseous" | "mandibular_block" | "tuberal_block" | "infraorbital_block" | "incisive_block" | "palatine_block" | "mental_block" | "intraseptal" | "sedation_nitrous" | "sedation_iv";
-    drug: "articaine" | "mepivacaine" | "lidocaine" | "bupivacaine";
     drugBrandName: string;
     concentrationPct: number;
     carpuleVolumeMl: number;
@@ -113365,8 +113365,8 @@ export declare const anesthesiaLogRecordSchema: z.ZodObject<{
 }, {
     patientId: string;
     organizationId: string;
-    technique: "infiltration" | "intraligamentary" | "intraosseous" | "mandibular_block" | "tuberal_block" | "infraorbital_block" | "incisive_block" | "palatine_block" | "mental_block" | "intraseptal" | "sedation_nitrous" | "sedation_iv";
     drug: "articaine" | "mepivacaine" | "lidocaine" | "bupivacaine";
+    technique: "infiltration" | "intraligamentary" | "intraosseous" | "mandibular_block" | "tuberal_block" | "infraorbital_block" | "incisive_block" | "palatine_block" | "mental_block" | "intraseptal" | "sedation_nitrous" | "sedation_iv";
     totalDoseMg: number;
     maxAllowedDoseMg: number;
     id?: string | undefined;

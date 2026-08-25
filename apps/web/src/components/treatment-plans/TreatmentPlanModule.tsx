@@ -252,7 +252,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 
 	// Action: Save Plan to Database
 	const handleSavePlanToDatabase = async () => {
-		if (stages.length === 0 || totalItemsCount === 0) {
+		if (totalItemsCount === 0) {
 			showToast("План пуст: добавьте или отметьте зубы на схеме", "warning");
 			return;
 		}

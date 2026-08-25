@@ -1,44 +1,49 @@
-# MISSION: BRUTAL UI ERGONOMICS & HEADER BLUNDER AUDIT
+# Original User Request
 
-Nurse-proof design audit for DENTE CRM views.
+## 2026-08-25T14:20:24Z
 
-## Follow-up — 2026-08-23T19:41:56Z
+Autonomous end-to-end clinical routine automation and adversarial friction audit for DENTE Dental CRM. Eliminate manual doctor paperwork and boilerplate clicking through intelligent 1-click workflows, clinical auto-suggestions, and bulletproof safety guards.
 
-/teamwork-preview
+Working directory: C:\Clinic_MVP\dental-crm
+Integrity mode: development
 
-Продолжай непрерывную оркестрацию роя Dente CRM! Сервер был перезапущен.
-Текущее состояние системы:
-1. `npm run check:encoding` -> 100% OK.
-2. `node scripts/check-css-tokens.mjs` -> 100% OK.
-3. `npm run typecheck` -> 100% OK во всех пакетах.
-4. `npm test` -> 100% PASS.
+## Requirements
 
-Продолжай автономный контроль качества по Доменам 1–5, верифицируй эргономику, клинические сценарии и визуальные скриншоты.
+### R1. Сквозной аудит клинических фрикций и мест ручного ввода (Friction Census)
+Провести аудит всех интерфейсов врача (терапия, эндодонтия, хирургия, имплантология, пародонтология, детство, касса) и выявить все места, где врач вынужден вручную заполнять шаблонный текст, подбирать коды Номенклатуры 804н, рассчитывать дозы препаратов или вручную списывать материалы.
 
-## Follow-up — 2026-08-23T20:20:13Z
+### R2. Интеллектуальный автопилот приёма (1-Click Clinical Automation)
+Реализовать и связать воедино автоматические сценарии:
+1. **1-клик из зубной формулы**: выбор диагноза на зубе автоматически формирует дневник SOAP по протоколам СтАР, привязывает точные коды Номенклатуры 804н с учетом анатомии (число каналов/корней), формирует черновик счета и списывает расходники со склада.
+2. **Фармакологический предохранитель**: авто-проверка анкеты здоровья (гипертония, астма, аллергии) с автоматическим расчетом МРД анестетика по весу и ограничением кардио-лимита адреналина <= 0.04 мг.
+3. **1-клик генератор 3 альтернатив планов лечения**: автоматическое составление смет Эконом / Стандарт / Оптимум с расчетом 13% налогового вычета и этапов рассрочки.
+4. **Стерилизация и СанПиН**: 1-клик сканирование крафт-пакета с автопривязкой партии автоклава к протоколу 043/у и СЭМД CDA R2.
 
-/teamwork-preview
+### R3. Адверсариальная самокритика и устранение багов (Devil's Advocate & Fix)
+Провести жесткую проверку созданных автопилотов:
+- Обработка ошибок при частичных данных (пациент без веса, нестандартная анатомия 5-канального зуба, смешанные аллергии);
+- Предотвращение дублирования списания расходников при повторном клике;
+- Защита от потери несохраненных правок врача.
 
-Сервер перезапущен. Продолжай непрерывную оркестрацию роя Dente CRM в рамках Раунда 41!
-Все статические гейты и тесты подтверждены.
+### R4. Машинная верификация и строгие гейты качества
+- 100% строгая компиляция TypeScript во всех рабочих областях (@dental/shared, @dental/api, @dental/web) без --noEmit ошибок.
+- Написание полного пакета модульных и компонентных тестов.
+- Нулевые регрессии по существующим 588+ тестам монорепозитория.
 
-## Follow-up — 2026-08-23T20:20:43Z
+## Acceptance Criteria
 
-[REVIVAL & CONTINUATION NOTICE — ROUND 41]
-Resume continuous swarm orchestration across all 5 clinical and operational domains immediately in C:\Clinic_MVP\dental-crm\.agents\orchestrator_r41!
+### Clinical Automation & Autopilot
+- [ ] Клик по диагнозу зуба формирует готовый протокол SOAP и позиции счета без ручного набора текста
+- [ ] Количество каналов в кодах 804н строго соответствует анатомии постоянных и временных зубов
+- [ ] Калькулятор анестезии автоматически блокирует адреналин > 0.04 мг для кардиологических пациентов
+- [ ] Генератор планов лечения формирует 3 сметы с расчетом вычета 13% НДФЛ за O(1)
 
-Confirmed static gates:
-- `npm run check:encoding` -> 100% OK
-- `node scripts/check-css-tokens.mjs` -> 100% OK
-- `npm run typecheck` -> 100% OK across all packages
-- `npm test` -> 100% PASS
+### Defensive Resilience & Bug Fixes
+- [ ] Все краевые случаи (экзотическая анатомия, неизвестный вес, смешанные соматические патологии) имеют корректные безопасные фоллбэки
+- [ ] Защита от повторного списания инвентаря и защита от рассинхронизации черновиков
 
-Your Mission:
-1. Autonomous quality control, clinical ergonomics polish, and verification across Domains 1–5:
-   - Domain 1: Clinical EMR 043/u & AAP/EFP Perio Chart, nurse-proof glove-touch ergonomics (140-160px tooth height, >= 44px buttons, zero clutter).
-   - Domain 2: 54-FZ Finance, fiscal QR codes, refund settlement, Form T-51 payroll.
-   - Domain 3: Inventory & Order 804n BOM write-offs, TORG-13/TORG-2.
-   - Domain 4: SanPiN 3.3686-21 Sterilization Form 257/u, TSPL/ZPL thermal label printers.
-   - Domain 5: Multi-Platform Topology & LAN CRDT Sync.
-2. Verify clinical ergonomics and capture 4-state visual confirmation screenshots (Mobile Light, Mobile Dark, PC Light, PC Dark).
-3. Report completion back to Sentinel with concrete empirical proofs for independent Victory Audit.
+### Machine Verification Gates
+- [ ] npm run typecheck завершается с Exit Code 0
+- [ ] node scripts/check-encoding.mjs (3694+ файлов) завершается с Exit Code 0
+- [ ] node scripts/check-css-tokens.mjs (108 файлов) завершается с Exit Code 0
+- [ ] npm test -w @dental/shared и npm test -w @dental/web завершаются со 100% прохождением тестов (Exit Code 0)

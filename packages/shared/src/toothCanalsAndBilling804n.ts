@@ -223,6 +223,17 @@ export function getAnatomicalRootCanalCount(
 	return 1;
 }
 
+export function getCanalCountForTooth(
+	fdiNumber: number | string,
+	clinicalCanalCount?: number,
+): AnatomicalCanalCount {
+	const parsedFdi =
+		typeof fdiNumber === "number"
+			? fdiNumber
+			: parseInt(String(fdiNumber || "").replace(/[^0-9]/g, ""), 10) || 11;
+	return getAnatomicalRootCanalCount(parsedFdi, clinicalCanalCount);
+}
+
 /**
  * Checks if a tooth is anatomically multi-rooted (e.g. molars 16, 17, 18, 26, 27, 28, 36, 37, 38, 46, 47, 48,
  * upper 1st premolars 14, 24, and primary molars).
@@ -309,3 +320,473 @@ export function calculateEndodonticCompositeTreatment(
 		totalCompositePrice,
 	};
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// МИНЗДРАВ РФ ПРИКАЗ № 804Н — ПОЛНЫЕ КАТАЛОГИ НОМЕНКЛАТУРЫ МЕДИЦИНСКИХ УСЛУГ
+// ─────────────────────────────────────────────────────────────────────────────
+
+import { type Kopecks, parseKopecks, sumKopecks, multiplyKopecks } from "./utils/money.js";
+import type { ToothSurface } from "./documents/forms043u.js";
+
+export interface Order804nBillingLineItem {
+	readonly code: string;
+	readonly title: string;
+	readonly category: string;
+	readonly priceRub: number;
+	readonly priceKopecks: Kopecks;
+	readonly quantity: number;
+	readonly totalRub: number;
+	readonly totalKopecks: Kopecks;
+	readonly totalPriceKopecks?: Kopecks;
+	readonly isMandatory: boolean;
+	readonly toothNumber?: number | string | null;
+	readonly canalCount?: AnatomicalCanalCount | null;
+}
+
+export const ORDER_804N_THERAPY_CATALOG = {
+	compositeFilling1Surface: {
+		code: "A16.07.002.001",
+		title: "Восстановление зуба пломбой I, V, VI класс по Блэку с использованием материалов из фотополимеров",
+		category: "Терапевтическая стоматология",
+		price: 4500,
+	},
+	compositeFillingMultiSurfaces: {
+		code: "A16.07.002.002",
+		title: "Восстановление зуба пломбой с нарушением контактного пункта II, III, IV класс по Блэку с использованием фотополимеров",
+		category: "Терапевтическая стоматология",
+		price: 5500,
+	},
+	cariesPreparation: {
+		code: "A16.07.031",
+		title: "Препарирование твердых тканей зуба при лечении кариеса",
+		category: "Терапевтическая стоматология",
+		price: 1200,
+	},
+	deepFluoridation: {
+		code: "A11.07.012",
+		title: "Глубокое фторирование эмали зуба",
+		category: "Профилактическая стоматология",
+		price: 900,
+	},
+	selectivePolishing: {
+		code: "A16.07.025",
+		title: "Избирательное пришлифовывание и полирование твердых тканей зуба",
+		category: "Терапевтическая стоматология",
+		price: 600,
+	},
+	inlayVeneerRestoration: {
+		code: "A16.07.003",
+		title: "Восстановление зуба вкладками, виниром, полукоронкой",
+		category: "Терапевтическая стоматология",
+		price: 15000,
+	},
+} as const;
+
+export const ORDER_804N_SURGERY_CATALOG = {
+	simpleExtraction: {
+		code: "A16.07.001.001",
+		title: "Удаление постоянного зуба (простое)",
+		category: "Хирургическая стоматология",
+		price: 3500,
+	},
+	complexExtraction: {
+		code: "A16.07.001.002",
+		title: "Удаление зуба сложное с разъединением корней",
+		category: "Хирургическая стоматология",
+		price: 6000,
+	},
+	retractedExtraction: {
+		code: "A16.07.001.003",
+		title: "Удаление ретинированного, дистопированного или сверхкомплектного зуба",
+		category: "Хирургическая стоматология",
+		price: 8500,
+	},
+	sutureApplication: {
+		code: "A16.07.097",
+		title: "Наложение шва на слизистую оболочку рта",
+		category: "Хирургическая стоматология",
+		price: 1500,
+	},
+	periostotomy: {
+		code: "A16.07.017",
+		title: "Вскрытие поднадкостничного очага воспаления (периостотомия)",
+		category: "Хирургическая стоматология",
+		price: 3000,
+	},
+	cystectomy: {
+		code: "A16.07.016",
+		title: "Цистотомия или цистэктомия в области челюсти",
+		category: "Хирургическая стоматология",
+		price: 7500,
+	},
+} as const;
+
+export const ORDER_804N_PERIO_CATALOG = {
+	prophyHygieneFull: {
+		code: "A16.07.051",
+		title: "Профессиональная гигиена полости рта и зубов",
+		category: "Пародонтология",
+		price: 4500,
+	},
+	ultrasonicScaling: {
+		code: "A16.07.020",
+		title: "Удаление наддесневых и поддесневых зубных отложений ультразвуком",
+		category: "Пародонтология",
+		price: 2500,
+	},
+	closedCurettage: {
+		code: "A16.07.039",
+		title: "Закрытый кюретаж при заболеваниях пародонта в области зуба",
+		category: "Пародонтология",
+		price: 1800,
+	},
+	openCurettage: {
+		code: "A16.07.038",
+		title: "Открытый кюретаж при заболеваниях пародонта в области зуба",
+		category: "Пародонтология",
+		price: 3200,
+	},
+	perioPocketMedication: {
+		code: "A11.07.010",
+		title: "Введение лекарственных препаратов в пародонтальный карман",
+		category: "Пародонтология",
+		price: 1200,
+	},
+	perioSplinting: {
+		code: "A16.07.019",
+		title: "Временное шинирование при заболеваниях пародонта (1 единица)",
+		category: "Пародонтология",
+		price: 2200,
+	},
+} as const;
+
+export const ORDER_804N_ORTHO_CATALOG = {
+	crownRestoration: {
+		code: "A16.07.004",
+		title: "Восстановление зуба коронкой постоянной",
+		category: "Ортопедическая стоматология",
+		price: 18000,
+	},
+	crownPreparation: {
+		code: "A16.07.004.001",
+		title: "Препарирование зуба под искусственную коронку",
+		category: "Ортопедическая стоматология",
+		price: 3500,
+	},
+	provisionalCrown: {
+		code: "A16.07.004.002",
+		title: "Изготовление и фиксация временной провизорной коронки",
+		category: "Ортопедическая стоматология",
+		price: 2500,
+	},
+	jawImpression: {
+		code: "A02.07.010",
+		title: "Снятие оттиска с одной челюсти",
+		category: "Ортопедическая стоматология",
+		price: 1500,
+	},
+	ceramicZirconiaCrown: {
+		code: "A16.07.005",
+		title: "Восстановление зуба коронкой постоянной безметалловой (диоксид циркония / E-max)",
+		category: "Ортопедическая стоматология",
+		price: 24000,
+	},
+} as const;
+
+export const ORDER_804N_ANESTHESIA_CATALOG = {
+	infiltration: {
+		code: "B01.003.004.005",
+		title: "Инфильтрационная анестезия",
+		category: "Анестезиология",
+		price: 800,
+	},
+	conduction: {
+		code: "B01.003.004.004",
+		title: "Проводниковая анестезия",
+		category: "Анестезиология",
+		price: 950,
+	},
+	application: {
+		code: "B01.003.004.001",
+		title: "Аппликационная анестезия",
+		category: "Анестезиология",
+		price: 400,
+	},
+} as const;
+
+export const ORDER_804N_DIAGNOSTICS_CATALOG = {
+	rvgIntraoral: {
+		code: "A06.07.007",
+		title: "Внутриротовая рентгенография (радиовизиография RVG)",
+		category: "Рентгенология",
+		price: 750,
+	},
+	optgPanoramic: {
+		code: "A06.07.004",
+		title: "Ортопантомография (панорамная томография ОПТГ)",
+		category: "Рентгенология",
+		price: 1800,
+	},
+	cbct3d: {
+		code: "A06.07.013",
+		title: "Конусно-лучевая компьютерная томография (КЛКТ челюстно-лицевой области)",
+		category: "Рентгенология",
+		price: 3500,
+	},
+} as const;
+
+export interface ClinicalCase804nOptions {
+	readonly fdiNumber?: number | string | null;
+	readonly toothNumber?: number | string | null;
+	readonly icd10Code: string;
+	readonly surfaces?: readonly ToothSurface[] | null;
+	readonly canalCount?: number | null | undefined;
+	readonly clinicalCanalCount?: number | null | undefined;
+	readonly specialty?: string | null | undefined;
+	readonly isMultiVisit?: boolean | undefined;
+	readonly endoVisitStage?: "access_instrumentation_temporary_calcium" | "final_obturation_restoration" | "single_visit_complete" | undefined;
+	readonly isRetreatment?: boolean | undefined;
+	readonly isDifficultExtraction?: boolean | undefined;
+	readonly includeAnesthesia?: boolean | undefined;
+	readonly includeRvg?: boolean | undefined;
+	readonly includeSutures?: boolean | undefined;
+	readonly anesthesiaType?: "infiltration" | "mandibular" | "torus" | "application" | undefined;
+	readonly cavityClass?: string | null | undefined;
+}
+
+/**
+ * Автоматический маппинг клинического диагноза и анатомии зуба на точные коды номенклатуры 804н.
+ */
+export function getOrder804nServicesForClinicalCase(
+	options: ClinicalCase804nOptions,
+): Order804nBillingLineItem[] {
+	const items: Order804nBillingLineItem[] = [];
+	const toothRaw = options.toothNumber ?? options.fdiNumber;
+	const fdi = typeof toothRaw === "string" ? parseInt(toothRaw, 10) : (toothRaw ?? null);
+	const validFdi = fdi !== null && !Number.isNaN(fdi) ? fdi : null;
+	const canalOverride = options.canalCount ?? options.clinicalCanalCount;
+	const canalCount = validFdi
+		? getAnatomicalRootCanalCount(validFdi, canalOverride ?? undefined)
+		: (canalOverride ? (Math.min(4, Math.max(1, Math.round(canalOverride))) as AnatomicalCanalCount) : 1);
+
+	const icd = (options.icd10Code || "").trim().toUpperCase();
+	const isMultiSurface = Boolean(options.surfaces && options.surfaces.length >= 2);
+
+	const createItem = (
+		catalogItem: { code: string; title: string; category: string; price: number },
+		isMandatory: boolean = true,
+		quantity: number = 1,
+		canalsOverride?: AnatomicalCanalCount,
+	): Order804nBillingLineItem => {
+		const priceKopecks = parseKopecks(catalogItem.price);
+		const totalKopecks = multiplyKopecks(priceKopecks, quantity);
+		return {
+			code: catalogItem.code,
+			title: catalogItem.title,
+			category: catalogItem.category,
+			priceRub: catalogItem.price,
+			priceKopecks,
+			quantity,
+			totalRub: (catalogItem.price * quantity),
+			totalKopecks,
+			totalPriceKopecks: totalKopecks,
+			isMandatory,
+			toothNumber: validFdi,
+			canalCount: canalsOverride ?? (canalsOverride === undefined && (catalogItem.category === "Эндодонтия" || icd.startsWith("K04")) ? canalCount : null),
+		};
+	};
+
+	// 1. Анестезия (по умолчанию включена для инвазивных процедур)
+	if (options.includeAnesthesia !== false) {
+		const isLowerMolar = validFdi !== null && Math.floor(validFdi / 10) >= 3 && (validFdi % 10) >= 6;
+		const anesth = isLowerMolar || options.anesthesiaType === "mandibular" || options.anesthesiaType === "torus"
+			? ORDER_804N_ANESTHESIA_CATALOG.conduction
+			: options.anesthesiaType === "application"
+				? ORDER_804N_ANESTHESIA_CATALOG.application
+				: ORDER_804N_ANESTHESIA_CATALOG.infiltration;
+		items.push(createItem(anesth, true));
+	}
+
+	// 2. Эндодонтия (K04.0, K04.4, K04.5, K04.8)
+	if (icd.startsWith("K04")) {
+		// RVG снимок
+		if (options.includeRvg !== false) {
+			items.push(createItem(ORDER_804N_DIAGNOSTICS_CATALOG.rvgIntraoral, true));
+		}
+
+		// Распломбирование корневого канала при перелечивании (K04.5)
+		if (icd === "K04.5" || options.isRetreatment) {
+			items.push(createItem(ORDER_804N_UNSEALING, true, canalCount, canalCount));
+		}
+
+		// Инструментальная обработка каналов по числу анатомических каналов (1..4)
+		const instItem = ORDER_804N_INSTRUMENTATION[canalCount];
+		items.push(createItem(instItem, true, 1, canalCount));
+
+		if (options.endoVisitStage === "access_instrumentation_temporary_calcium") {
+			// Временная лечебная обтурация Ca(OH)2
+			items.push(createItem(ORDER_804N_MEDICATION_CAOH2, true, 1, canalCount));
+			// Временная пломба
+			items.push(createItem(ORDER_804N_THERAPY_CATALOG.compositeFilling1Surface, true));
+		} else if (options.endoVisitStage === "final_obturation_restoration") {
+			// Трехмерная обтурация каналов
+			const obtItem = ORDER_804N_OBTURATIONS[canalCount];
+			items.push(createItem(obtItem, true, 1, canalCount));
+			// Постоянная композитная реставрация
+			items.push(
+				createItem(
+					isMultiSurface
+						? ORDER_804N_THERAPY_CATALOG.compositeFillingMultiSurfaces
+						: ORDER_804N_THERAPY_CATALOG.compositeFilling1Surface,
+					true,
+				),
+			);
+		} else {
+			// Одноэтапное полное эндодонтическое лечение
+			const obtItem = ORDER_804N_OBTURATIONS[canalCount];
+			items.push(createItem(obtItem, true, 1, canalCount));
+
+			if (icd === "K04.4" || icd === "K04.5" || icd === "K04.8") {
+				// Включение лечебной противовоспалительной пасты при периодонтите
+				items.push(createItem(ORDER_804N_MEDICATION_CAOH2, false, 1, canalCount));
+			}
+
+			// Постоянная композитная реставрация
+			items.push(
+				createItem(
+					isMultiSurface
+						? ORDER_804N_THERAPY_CATALOG.compositeFillingMultiSurfaces
+						: ORDER_804N_THERAPY_CATALOG.compositeFilling1Surface,
+					true,
+				),
+			);
+		}
+	} else if (icd === "K02.0") {
+		// Кариес эмали (стадия пятна / начальный)
+		items.push(createItem(ORDER_804N_THERAPY_CATALOG.deepFluoridation, true));
+		items.push(createItem(ORDER_804N_THERAPY_CATALOG.compositeFilling1Surface, true));
+		items.push(createItem(ORDER_804N_THERAPY_CATALOG.selectivePolishing, true));
+	} else if (icd === "K02.1") {
+		// Кариес дентина (средний / глубокий)
+		items.push(createItem(ORDER_804N_THERAPY_CATALOG.cariesPreparation, true));
+		items.push(
+			createItem(
+				isMultiSurface
+					? ORDER_804N_THERAPY_CATALOG.compositeFillingMultiSurfaces
+					: ORDER_804N_THERAPY_CATALOG.compositeFilling1Surface,
+				true,
+			),
+		);
+		items.push(createItem(ORDER_804N_THERAPY_CATALOG.deepFluoridation, false));
+	} else if (icd === "K02.2") {
+		// Кариес цемента корня
+		items.push(createItem(ORDER_804N_THERAPY_CATALOG.cariesPreparation, true));
+		items.push(createItem(ORDER_804N_THERAPY_CATALOG.compositeFilling1Surface, true));
+		items.push(createItem(ORDER_804N_THERAPY_CATALOG.deepFluoridation, true));
+	} else if (icd.startsWith("K03")) {
+		// Некариозные поражения (клиновидный дефект, стираемость, эрозия)
+		items.push(createItem(ORDER_804N_THERAPY_CATALOG.cariesPreparation, true));
+		items.push(createItem(ORDER_804N_THERAPY_CATALOG.compositeFilling1Surface, true));
+		items.push(createItem(ORDER_804N_THERAPY_CATALOG.deepFluoridation, true));
+	} else if (icd === "K05.0" || icd === "K05.1") {
+		// Гингивит (острый / хронический)
+		items.push(createItem(ORDER_804N_PERIO_CATALOG.prophyHygieneFull, true));
+		items.push(createItem(ORDER_804N_PERIO_CATALOG.ultrasonicScaling, true));
+		items.push(createItem(ORDER_804N_PERIO_CATALOG.perioPocketMedication, true));
+	} else if (icd === "K05.3") {
+		// Пародонтит хронический
+		items.push(createItem(ORDER_804N_PERIO_CATALOG.prophyHygieneFull, true));
+		items.push(createItem(ORDER_804N_PERIO_CATALOG.ultrasonicScaling, true));
+		items.push(createItem(ORDER_804N_PERIO_CATALOG.closedCurettage, true));
+		items.push(createItem(ORDER_804N_PERIO_CATALOG.perioPocketMedication, true));
+	} else if (icd === "K08.1" || options.specialty === "surgery") {
+		// Хирургическое удаление зуба
+		if (options.includeRvg !== false) {
+			items.push(createItem(ORDER_804N_DIAGNOSTICS_CATALOG.rvgIntraoral, true));
+		}
+		const isMulti = validFdi ? isMultiRootedTooth(validFdi) : (canalCount > 1);
+		const extraction = isMulti || options.isDifficultExtraction
+			? ORDER_804N_SURGERY_CATALOG.complexExtraction
+			: ORDER_804N_SURGERY_CATALOG.simpleExtraction;
+		items.push(createItem(extraction, true));
+		if (options.includeSutures) {
+			items.push(createItem(ORDER_804N_SURGERY_CATALOG.sutureApplication, true));
+		}
+	} else if (icd.includes("ORTHO") || options.specialty === "orthopedics" || icd === "Z51.8") {
+		// Ортопедия — коронка
+		items.push(createItem(ORDER_804N_ORTHO_CATALOG.crownRestoration, true));
+		items.push(createItem(ORDER_804N_ORTHO_CATALOG.crownPreparation, true));
+		items.push(createItem(ORDER_804N_ORTHO_CATALOG.jawImpression, true, 2));
+		items.push(createItem(ORDER_804N_ORTHO_CATALOG.provisionalCrown, true));
+	} else {
+		// Универсальный fallback на кариес дентина
+		items.push(createItem(ORDER_804N_THERAPY_CATALOG.cariesPreparation, true));
+		items.push(createItem(ORDER_804N_THERAPY_CATALOG.compositeFilling1Surface, true));
+	}
+
+	return items;
+}
+
+export interface Order804nBillingEstimateResult {
+	readonly fdiNumber?: number | null;
+	readonly icd10Code: string;
+	readonly canalCount?: AnatomicalCanalCount | null;
+	readonly items: readonly Order804nBillingLineItem[];
+	readonly lineItems: readonly Order804nBillingLineItem[];
+	readonly totalKopecks: Kopecks;
+	readonly totalRub: number;
+	readonly formattedTotal: string;
+	readonly invoiceLines: readonly {
+		readonly code: string;
+		readonly title: string;
+		readonly unitPriceRub: number;
+		readonly quantity: number;
+		readonly totalRub: number;
+		readonly toothNumber?: string | null;
+	}[];
+}
+
+/**
+ * Расчет полной сметы и позиций счёта по номенклатуре Минздрава 804н с копеечной точностью.
+ */
+export function calculateOrder804nBillingEstimate(
+	options: ClinicalCase804nOptions,
+): Order804nBillingEstimateResult {
+	const items = getOrder804nServicesForClinicalCase(options);
+	const toothRaw = options.toothNumber ?? options.fdiNumber;
+	const fdi = typeof toothRaw === "string" ? parseInt(toothRaw, 10) : (toothRaw ?? null);
+	const validFdi = fdi !== null && !Number.isNaN(fdi) ? fdi : null;
+	const canalOverride = options.canalCount ?? options.clinicalCanalCount;
+	const canalCount = validFdi
+		? getAnatomicalRootCanalCount(validFdi, canalOverride ?? undefined)
+		: (canalOverride ? (Math.min(4, Math.max(1, Math.round(canalOverride))) as AnatomicalCanalCount) : 1);
+
+	const totalKopecks = sumKopecks(items.map((i) => i.totalKopecks));
+	const totalRub = totalKopecks / 100;
+	const rubles = Math.floor(totalKopecks / 100);
+	const kopecks = totalKopecks % 100;
+	const formattedTotal = `${rubles.toLocaleString("ru-RU")},${kopecks.toString().padStart(2, "0")} ₽`;
+
+	const invoiceLines = items.map((item) => ({
+		code: item.code,
+		title: item.title,
+		unitPriceRub: item.priceRub,
+		quantity: item.quantity,
+		totalRub: item.totalRub,
+		toothNumber: validFdi ? String(validFdi) : null,
+	}));
+
+	return {
+		fdiNumber: validFdi,
+		icd10Code: options.icd10Code,
+		canalCount,
+		items,
+		lineItems: items,
+		totalKopecks,
+		totalRub,
+		formattedTotal,
+		invoiceLines,
+	};
+}
+
+
