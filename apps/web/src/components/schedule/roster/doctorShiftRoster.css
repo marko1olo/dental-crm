@@ -463,7 +463,8 @@
 	align-items: center;
 	gap: 0.25rem;
 	margin-top: 0.125rem;
-	color: var(--teal);
+	color: var(--teal-dark, var(--teal));
+	font-weight: 600;
 }
 
 /* Heatmap Badges */

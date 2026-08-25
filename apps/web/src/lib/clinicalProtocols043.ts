@@ -1,12 +1,21 @@
 import { isValidFdiToothNumber } from "@dental/shared";
-import type { DiaryState } from "../components/useVisitDiaryLogic";
+
+export interface DiaryState {
+	anamnesis: string;
+	statusLocalis: string;
+	diagnosisIcd10: string;
+	diagnosisTooth: string;
+	treatmentDescription: string;
+	complications: string;
+	comorbidities: string;
+}
 import {
 	ANESTHESIA_DRUGS,
 	calculateAnesthesiaSafety,
 	checkAnesthesiaSomaticContraindications,
 	type AnesthesiaDrugKey,
 	type SomaticRiskProfile,
-} from "../components/visit/anesthesiaCalculatorEngine";
+} from "../components/visit/anesthesiaCalculatorEngine.js";
 
 /** Поверхности зуба по стандарту стоматологической карты */
 export type ToothSurfaceKey = "O" | "M" | "D" | "B" | "V" | "L" | "P";
@@ -1957,12 +1966,7 @@ export function appendEndoProtocolToSoap(
 	};
 }
 
-export {
-	type EndoCanalData,
-	generateEndoCanalsTable043,
-	formatEndoCanalsTable043,
-	generateEndoProtocol043,
-} from "../components/odontogram/EndoCanalLogModal";
+
 
 /**
  * Клиническое фотоприложение к карте стоматологического пациента (Форма 043/у).
