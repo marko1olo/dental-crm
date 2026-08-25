@@ -323,4 +323,46 @@ describe('Russian Dental Emergency Protocols & Resuscitation Suite', () => {
 			assert.ok(cheatSheet.includes('75/45'));
 		});
 	});
+
+	describe('6. EmergencyRescueModal Component Rendering', () => {
+		it('renders EmergencyRescueModal with high-contrast dosage cards and CPR standard', async () => {
+			const React = await import('react');
+			const { renderToStaticMarkup } = await import('react-dom/server');
+			const { EmergencyRescueModal } = await import('../components/emergency/EmergencyRescueModal');
+
+			const html = renderToStaticMarkup(
+				React.createElement(EmergencyRescueModal, {
+					isOpen: true,
+					onClose: () => {},
+					clinicName: 'ООО "Денте"',
+					initialPatientName: 'Сидоров А.Н.',
+					initialPatientAgeYears: 45,
+					initialPatientWeightKg: 80,
+				})
+			);
+
+			assert.ok(html.includes('ЭКСТРЕННЫЙ РЕАНИМАЦИОННЫЙ HUD'));
+			assert.ok(html.includes('ВЫЗОВ СМП (103 / 112)'));
+			assert.ok(html.includes('Экстренные дозировки препаратов'));
+			assert.ok(html.includes('ТАЙМЕР ПОВТОРНОГО ВВЕДЕНИЯ АДРЕНАЛИНА'));
+			assert.ok(html.includes('СТАНДАРТ БАЗОВОЙ СЛР (МИНЗДРАВ РФ &amp; ФАР)') || html.includes('СТАНДАРТ БАЗОВОЙ СЛР (МИНЗДРАВ РФ & ФАР)'));
+			assert.ok(html.includes('30 компрессий : 2 вдоха'));
+			assert.ok(html.includes('100–120 в минуту'));
+		});
+
+		it('returns null when isOpen is false', async () => {
+			const React = await import('react');
+			const { renderToStaticMarkup } = await import('react-dom/server');
+			const { EmergencyRescueModal } = await import('../components/emergency/EmergencyRescueModal');
+
+			const html = renderToStaticMarkup(
+				React.createElement(EmergencyRescueModal, {
+					isOpen: false,
+					onClose: () => {},
+				})
+			);
+
+			assert.equal(html, '');
+		});
+	});
 });

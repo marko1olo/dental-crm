@@ -360,7 +360,7 @@ export function DoctorShiftRosterModal({
 				<div className="roster-header">
 					<div className="roster-header-top">
 						<div className="roster-title-block">
-							<span className="roster-title-badge">ТК РФ ст. 350 | 33 ч/нед</span>
+							<span className="roster-title-badge">Норма: 33 ч/нед</span>
 							<h2 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800 }}>
 								График сменности и табель учета врачей (2026)
 							</h2>
@@ -423,7 +423,7 @@ export function DoctorShiftRosterModal({
 							<span className="roster-kpi-val" style={{ color: "var(--teal, #0d9488)" }}>
 								{monthNormObj?.normHours33 || 138.6} ч
 							</span>
-							<span className="roster-kpi-sub">33-часовая неделя медперсонала</span>
+							<span className="roster-kpi-sub">33-часовая неделя</span>
 						</div>
 						<div className="roster-kpi-card">
 							<span className="roster-kpi-label">Ассистентские пары</span>
@@ -431,15 +431,15 @@ export function DoctorShiftRosterModal({
 							<span className="roster-kpi-sub">Охват работы в 4 руки</span>
 						</div>
 						<div className="roster-kpi-card">
-							<span className="roster-kpi-label">Коллизии и нарушения</span>
+							<span className="roster-kpi-label">Коллизии и наложения</span>
 							<span
 								className="roster-kpi-val"
-								style={{ color: kpis.conflictCount > 0 ? "#ef4444" : "var(--teal, #0d9488)" }}
+								style={{ color: kpis.conflictCount > 0 ? "var(--bad-fg, #ef4444)" : "var(--teal, #0d9488)" }}
 							>
 								{kpis.conflictCount}
 							</span>
 							<span className="roster-kpi-sub">
-								{kpis.errorConflictCount > 0 ? "Есть критические наложения!" : "Наложений не обнаружено"}
+								{kpis.errorConflictCount > 0 ? "Есть наложения смен" : "График сбалансирован"}
 							</span>
 						</div>
 					</div>
@@ -523,8 +523,8 @@ export function DoctorShiftRosterModal({
 					<div
 						style={{
 							padding: "0.5rem 1.5rem",
-							background: notification.type === "error" ? "#fef2f2" : "#f0fdf4",
-							color: notification.type === "error" ? "#991b1b" : "#166534",
+							background: notification.type === "error" ? "var(--bad-bg, #fef2f2)" : "var(--ok-bg, #f0fdf4)",
+							color: notification.type === "error" ? "var(--bad-fg, #991b1b)" : "var(--ok-fg, #166534)",
 							fontSize: "0.8125rem",
 							fontWeight: 600,
 							display: "flex",
@@ -539,16 +539,22 @@ export function DoctorShiftRosterModal({
 				)}
 
 				{conflicts.length > 0 && (
-					<div className="roster-conflict-banner">
-						<AlertTriangle size={18} />
-						<div>
-							<strong>Обнаружено {conflicts.length} коллизий / нарушений графика: </strong>
-							{conflicts.slice(0, 2).map((c) => (
-								<span key={c.id} style={{ marginRight: "0.75rem" }}>
-									• {c.message}
-								</span>
+					<div className="roster-conflict-banner" role="status" aria-live="polite">
+						<div className="roster-conflict-header">
+							<AlertTriangle size={16} className="roster-conflict-icon" />
+							<span className="roster-conflict-title">Предупреждения ({conflicts.length}):</span>
+						</div>
+						<div className="roster-conflict-list">
+							{conflicts.map((c) => (
+								<div
+									key={c.id}
+									className={`roster-conflict-tag ${c.severity === "error" ? "error" : "warning"}`}
+									title={c.message}
+								>
+									<span className="roster-conflict-dot" />
+									<span className="roster-conflict-text">{c.message}</span>
+								</div>
 							))}
-							{conflicts.length > 2 && <span>(и еще {conflicts.length - 2}...)</span>}
 						</div>
 					</div>
 				)}
@@ -662,7 +668,7 @@ export function DoctorShiftRosterModal({
 												{d.dayName}, {d.dayNumber}.{weekStartDateIso.substring(5, 7)}
 											</th>
 										))}
-										<th style={{ width: "10rem" }}>Неделя / Лимит ТК РФ</th>
+										<th style={{ width: "10rem" }}>Неделя / Норма (33 ч)</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -769,7 +775,7 @@ export function DoctorShiftRosterModal({
 										Табель учета рабочего времени (Форма Т-13 Госкомстата) — {monthNormObj?.nameRu} {selectedYear}
 									</h3>
 									<span style={{ fontSize: "0.8125rem", color: "var(--muted, #64748b)" }}>
-										Норма: {monthNormObj?.normHours33 || 138.6} часов (33 ч/нед для врачей по ст. 350 ТК РФ)
+										Норма: {monthNormObj?.normHours33 || 138.6} ч (врачи: 33 ч/нед, ассистенты: 39 ч/нед)
 									</span>
 								</div>
 								<button
@@ -1143,7 +1149,7 @@ export function DoctorShiftRosterModal({
 				{/* Footer */}
 				<div className="roster-footer">
 					<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
-						ТК РФ ст. 350 (Сокращенная продолжительность рабочего времени медицинских работников: не более 33 ч в неделю)
+						Баланс рабочего времени: 33 ч/нед (врачи) • Форма Т-13
 					</div>
 					<div style={{ display: "flex", gap: "0.75rem" }}>
 						<button

@@ -412,64 +412,298 @@ export function EmergencyRescueModal({
 							</div>
 						</div>
 
-						{/* Real-Time Calculated Dosage Banner for Active Scenario */}
+						{/* Real-Time Calculated Dosage Section for Active Scenario */}
 						<div className="emergency-dosage-banner">
-							<div className="emergency-dosage-title">
-								<Syringe size={18} />
-								РАСЧЕТ ДОЗИРОВОК ПРЕПАРАТОВ (МАССА: {patientWeightKg} КГ, {patientAgeYears < 18 ? 'ДЕТСКИЙ ВОЗРАСТ' : 'ВЗРОСЛЫЙ'}):
+							<div className="emergency-dosage-header">
+								<div className="emergency-dosage-title">
+									<Syringe size={18} />
+									<span>Экстренные дозировки препаратов</span>
+								</div>
+								<div className="emergency-dosage-patient-tag">
+									Масса: {patientWeightKg} кг • {patientAgeYears < 18 ? 'Детский возраст' : 'Взрослый'} ({patientAgeYears} л)
+								</div>
 							</div>
 
-							{activeScenarioId === 'anaphylactic_shock' && (
-								<div className="emergency-dosage-details">
-									⚡ <strong>Адреналин 0.1%:</strong> {allDosages.adrenaline_epi_01.calculatedVolumeMl} мл ({allDosages.adrenaline_epi_01.calculatedDoseMg} мг) в/м в среднюю треть бедра.
-									<br />
-									💊 <strong>Преднизолон:</strong> {allDosages.prednisolone_30mg.calculatedDoseMg} мг ({allDosages.prednisolone_30mg.calculatedVolumeMl} мл, {allDosages.prednisolone_30mg.numberOfAmpoules} амп.) в/в струйно.
-								</div>
-							)}
+							<div className="emergency-dosage-cards-grid">
+								{activeScenarioId === 'anaphylactic_shock' && (
+									<>
+										<div className="emergency-drug-card primary">
+											<div className="emergency-drug-card-header">
+												<div className="emergency-drug-name">
+													<span>⚡ Адреналин 0.1% (Эпинефрин)</span>
+												</div>
+												<span className="emergency-drug-priority-badge first-line">1-я линия</span>
+											</div>
+											<div className="emergency-drug-dose-highlight">
+												<span className="emergency-drug-dose-val">{allDosages.adrenaline_epi_01.calculatedVolumeMl} мл</span>
+												<span className="emergency-drug-dose-sub">({allDosages.adrenaline_epi_01.calculatedDoseMg} мг)</span>
+											</div>
+											<div className="emergency-drug-route">
+												<span>📍 В/М в среднюю треть бедра</span>
+											</div>
+											<div className="emergency-drug-note">
+												Повтор через 5 мин при сохранении гипотонии
+											</div>
+										</div>
 
-							{activeScenarioId === 'local_anesthetic_toxicity' && (
-								<div className="emergency-dosage-details">
-									🧪 <strong>Липидная эмульсия 20% (Липофундин):</strong> БОЛЮС <strong>{lipidRescueData.bolusVolumeMl} мл</strong> в/в за 2 мин, затем ИНФУЗИЯ <strong>{lipidRescueData.infusionRateMlPerHour} мл/час</strong>.
-									<br />
-									💉 <strong>Диазепам 0.5%:</strong> {allDosages.diazepam_relanium.calculatedDoseMg} мг ({allDosages.diazepam_relanium.calculatedVolumeMl} мл) медленно в/в при судорогах.
-								</div>
-							)}
+										<div className="emergency-drug-card">
+											<div className="emergency-drug-card-header">
+												<div className="emergency-drug-name">
+													<span>💊 Преднизолон (ГКС)</span>
+												</div>
+												<span className="emergency-drug-priority-badge second-line">2-я линия</span>
+											</div>
+											<div className="emergency-drug-dose-highlight">
+												<span className="emergency-drug-dose-val">{allDosages.prednisolone_30mg.calculatedDoseMg} мг</span>
+												<span className="emergency-drug-dose-sub">({allDosages.prednisolone_30mg.calculatedVolumeMl} мл / {allDosages.prednisolone_30mg.numberOfAmpoules} амп.)</span>
+											</div>
+											<div className="emergency-drug-route">
+												<span>📍 В/В струйно медленно за 2–3 мин</span>
+											</div>
+											<div className="emergency-drug-note">
+												На 10 мл 0.9% NaCl для профилактики 2-й волны шока
+											</div>
+										</div>
+									</>
+								)}
 
-							{activeScenarioId === 'hypertensive_crisis' && (
-								<div className="emergency-dosage-details">
-									💊 <strong>Каптоприл (Капотен):</strong> 25 мг сублингвально (под язык), ИЛИ <strong>Моксонидин:</strong> 0.2 мг под язык.
-								</div>
-							)}
+								{activeScenarioId === 'local_anesthetic_toxicity' && (
+									<>
+										<div className="emergency-drug-card primary">
+											<div className="emergency-drug-card-header">
+												<div className="emergency-drug-name">
+													<span>🧪 Липидная эмульсия 20% (Липофундин)</span>
+												</div>
+												<span className="emergency-drug-priority-badge first-line">Антидот</span>
+											</div>
+											<div className="emergency-drug-dose-highlight">
+												<span className="emergency-drug-dose-val">{lipidRescueData.bolusVolumeMl} мл</span>
+												<span className="emergency-drug-dose-sub">(болюс за 1–2 мин)</span>
+											</div>
+											<div className="emergency-drug-route">
+												<span>📍 В/В инфузия: {lipidRescueData.infusionRateMlPerHour} мл/час ({lipidRescueData.infusionRateMlPerMin} мл/мин)</span>
+											</div>
+											<div className="emergency-drug-note">
+												Макс доза: {lipidRescueData.maxTotalDoseMl} мл (12 мл/кг)
+											</div>
+										</div>
 
-							{activeScenarioId === 'angina_myocardial_infarction' && (
-								<div className="emergency-dosage-details">
-									💊 <strong>Нитроглицерин 0.5 мг:</strong> 1 таб под язык (при АД сист &gt; 100 мм рт. ст.) + <strong>Аспирин:</strong> 250–325 мг разжевать.
-								</div>
-							)}
+										<div className="emergency-drug-card">
+											<div className="emergency-drug-card-header">
+												<div className="emergency-drug-name">
+													<span>💉 Диазепам 0.5% (Реланиум)</span>
+												</div>
+												<span className="emergency-drug-priority-badge second-line">При судорогах</span>
+											</div>
+											<div className="emergency-drug-dose-highlight">
+												<span className="emergency-drug-dose-val">{allDosages.diazepam_relanium.calculatedDoseMg} мг</span>
+												<span className="emergency-drug-dose-sub">({allDosages.diazepam_relanium.calculatedVolumeMl} мл)</span>
+											</div>
+											<div className="emergency-drug-route">
+												<span>📍 В/В медленно за 2–3 мин</span>
+											</div>
+											<div className="emergency-drug-note">
+												Готовность к ИВЛ мешком Амбу
+											</div>
+										</div>
+									</>
+								)}
 
-							{activeScenarioId === 'bronchospasm_asthma' && (
-								<div className="emergency-dosage-details">
-									💨 <strong>Сальбутамол:</strong> 2–4 ингаляционные дозы через спейсер + <strong>Преднизолон:</strong> {allDosages.prednisolone_30mg.calculatedDoseMg} мг в/в.
-								</div>
-							)}
+								{activeScenarioId === 'hypertensive_crisis' && (
+									<>
+										<div className="emergency-drug-card primary">
+											<div className="emergency-drug-card-header">
+												<div className="emergency-drug-name">
+													<span>💊 Каптоприл (Капотен)</span>
+												</div>
+												<span className="emergency-drug-priority-badge first-line">1-я линия</span>
+											</div>
+											<div className="emergency-drug-dose-highlight">
+												<span className="emergency-drug-dose-val">25 мг</span>
+												<span className="emergency-drug-dose-sub">(1 таблетка)</span>
+											</div>
+											<div className="emergency-drug-route">
+												<span>📍 Сублингвально (под язык)</span>
+											</div>
+											<div className="emergency-drug-note">
+												Снижение АД не более чем на 20–25% за 1–2 часа
+											</div>
+										</div>
 
-							{activeScenarioId === 'hypoglycemia_diabetic' && (
-								<div className="emergency-dosage-details">
-									🍯 <strong>Глюкоза 40%:</strong> {allDosages.glucose_dextrose_40.calculatedVolumeMl} мл в/в струйно (или теплый сладкий чай при сохранении сознания).
-								</div>
-							)}
+										<div className="emergency-drug-card">
+											<div className="emergency-drug-card-header">
+												<div className="emergency-drug-name">
+													<span>💊 Моксонидин (Физиотенз)</span>
+												</div>
+												<span className="emergency-drug-priority-badge second-line">Альтернатива</span>
+											</div>
+											<div className="emergency-drug-dose-highlight">
+												<span className="emergency-drug-dose-val">0.2 мг</span>
+												<span className="emergency-drug-dose-sub">(1 таблетка)</span>
+											</div>
+											<div className="emergency-drug-route">
+												<span>📍 Сублингвально (под язык)</span>
+											</div>
+											<div className="emergency-drug-note">
+												Контроль АД и ЧСС каждые 10 минут
+											</div>
+										</div>
+									</>
+								)}
 
-							{activeScenarioId === 'syncope_collapse' && (
-								<div className="emergency-dosage-details">
-									🧴 <strong>Аммиак 10% (нашатырный спирт):</strong> пары на ватке 1–2 сек + Положение Тренделенбурга. При брадикардии: Кордиамин 2 мл п/к.
-								</div>
-							)}
+								{activeScenarioId === 'angina_myocardial_infarction' && (
+									<>
+										<div className="emergency-drug-card primary">
+											<div className="emergency-drug-card-header">
+												<div className="emergency-drug-name">
+													<span>💊 Нитроглицерин 0.5 мг</span>
+												</div>
+												<span className="emergency-drug-priority-badge first-line">ОКС</span>
+											</div>
+											<div className="emergency-drug-dose-highlight">
+												<span className="emergency-drug-dose-val">0.5 мг</span>
+												<span className="emergency-drug-dose-sub">(1 таб / 1 доза спрея)</span>
+											</div>
+											<div className="emergency-drug-route">
+												<span>📍 Под язык строго сидя (при АД сист &gt; 100)</span>
+											</div>
+											<div className="emergency-drug-note">
+												Противопоказан при АД &lt; 100 и приеме ингибиторов ФДЭ-5!
+											</div>
+										</div>
 
-							{activeScenarioId === 'accidental_swallowing' && (
-								<div className="emergency-dosage-details">
-									🛑 <strong>Прием Геймлиха</strong> (5 толчков в эпигастрий) при асфиксии. При проглатывании в ЖКТ — <strong>РВОТУ НЕ ВЫЗЫВАТЬ!</strong> Направление на рентген/ФГДС.
-								</div>
-							)}
+										<div className="emergency-drug-card">
+											<div className="emergency-drug-card-header">
+												<div className="emergency-drug-name">
+													<span>💊 Аспирин (АСК)</span>
+												</div>
+												<span className="emergency-drug-priority-badge second-line">Антиагрегант</span>
+											</div>
+											<div className="emergency-drug-dose-highlight">
+												<span className="emergency-drug-dose-val">250–325 мг</span>
+												<span className="emergency-drug-dose-sub">(разжевать)</span>
+											</div>
+											<div className="emergency-drug-route">
+												<span>📍 Разжевать и проглотить</span>
+											</div>
+											<div className="emergency-drug-note">
+												Без кишечнорастворимой оболочки
+											</div>
+										</div>
+									</>
+								)}
+
+								{activeScenarioId === 'bronchospasm_asthma' && (
+									<>
+										<div className="emergency-drug-card primary">
+											<div className="emergency-drug-card-header">
+												<div className="emergency-drug-name">
+													<span>💨 Сальбутамол (Вентолин)</span>
+												</div>
+												<span className="emergency-drug-priority-badge first-line">Ингаляция</span>
+											</div>
+											<div className="emergency-drug-dose-highlight">
+												<span className="emergency-drug-dose-val">2–4 дозы</span>
+												<span className="emergency-drug-dose-sub">(200–400 мкг)</span>
+											</div>
+											<div className="emergency-drug-route">
+												<span>📍 Через спейсер с задержкой дыхания</span>
+											</div>
+											<div className="emergency-drug-note">
+												Повторить через 15–20 мин при необходимости
+											</div>
+										</div>
+
+										<div className="emergency-drug-card">
+											<div className="emergency-drug-card-header">
+												<div className="emergency-drug-name">
+													<span>💊 Преднизолон (ГКС)</span>
+												</div>
+												<span className="emergency-drug-priority-badge second-line">Парентерально</span>
+											</div>
+											<div className="emergency-drug-dose-highlight">
+												<span className="emergency-drug-dose-val">{allDosages.prednisolone_30mg.calculatedDoseMg} мг</span>
+												<span className="emergency-drug-dose-sub">({allDosages.prednisolone_30mg.calculatedVolumeMl} мл)</span>
+											</div>
+											<div className="emergency-drug-route">
+												<span>📍 В/В медленно или В/М</span>
+											</div>
+											<div className="emergency-drug-note">
+												При тяжелом удушье / астматическом статусе
+											</div>
+										</div>
+									</>
+								)}
+
+								{activeScenarioId === 'hypoglycemia_diabetic' && (
+									<>
+										<div className="emergency-drug-card primary">
+											<div className="emergency-drug-card-header">
+												<div className="emergency-drug-name">
+													<span>🍯 Глюкоза 40% (Декстроза)</span>
+												</div>
+												<span className="emergency-drug-priority-badge first-line">В/В струйно</span>
+											</div>
+											<div className="emergency-drug-dose-highlight">
+												<span className="emergency-drug-dose-val">{allDosages.glucose_dextrose_40.calculatedVolumeMl} мл</span>
+												<span className="emergency-drug-dose-sub">({(allDosages.glucose_dextrose_40.calculatedVolumeMl * 0.4).toFixed(0)} г глюкозы)</span>
+											</div>
+											<div className="emergency-drug-route">
+												<span>📍 В/В струйно до восстановления сознания</span>
+											</div>
+											<div className="emergency-drug-note">
+												При сохранении сознания: теплый сладкий чай / сахар
+											</div>
+										</div>
+									</>
+								)}
+
+								{activeScenarioId === 'syncope_collapse' && (
+									<>
+										<div className="emergency-drug-card primary">
+											<div className="emergency-drug-card-header">
+												<div className="emergency-drug-name">
+													<span>🧴 Аммиак 10% (Нашатырный спирт)</span>
+												</div>
+												<span className="emergency-drug-priority-badge first-line">Рефлекторно</span>
+											</div>
+											<div className="emergency-drug-dose-highlight">
+												<span className="emergency-drug-dose-val">Пары на ватке</span>
+												<span className="emergency-drug-dose-sub">(1–2 сек на 2 см)</span>
+											</div>
+											<div className="emergency-drug-route">
+												<span>📍 Ингаляционно + положение Тренделенбурга</span>
+											</div>
+											<div className="emergency-drug-note">
+												При брадикардии/гипотонии: Кордиамин 2 мл п/к или в/м
+											</div>
+										</div>
+									</>
+								)}
+
+								{activeScenarioId === 'accidental_swallowing' && (
+									<>
+										<div className="emergency-drug-card primary">
+											<div className="emergency-drug-card-header">
+												<div className="emergency-drug-name">
+													<span>🛑 Прием Геймлиха</span>
+												</div>
+												<span className="emergency-drug-priority-badge first-line">При асфиксии</span>
+											</div>
+											<div className="emergency-drug-dose-highlight">
+												<span className="emergency-drug-dose-val">5 толчков</span>
+												<span className="emergency-drug-dose-sub">(вверх в эпигастрий)</span>
+											</div>
+											<div className="emergency-drug-route">
+												<span>📍 До восстановления проходимости</span>
+											</div>
+											<div className="emergency-drug-note">
+												При попадании в ЖКТ: РВОТУ НЕ ВЫЗЫВАТЬ! Рентген/ФГДС.
+											</div>
+										</div>
+									</>
+								)}
+							</div>
 						</div>
 
 						{/* Step-by-Step Resuscitation Checklist */}
@@ -533,7 +767,7 @@ export function EmergencyRescueModal({
 						<div className="emergency-timer-box">
 							<div className="emergency-timer-title">
 								<Clock size={20} />
-								ТАЙМЕР ПОВТОРНОГО ВВЕДЕНИЯ АДРЕНАЛИНА
+								<span>ТАЙМЕР ПОВТОРНОГО ВВЕДЕНИЯ АДРЕНАЛИНА</span>
 							</div>
 
 							<div className={`emergency-timer-display ${isAdrenalineDue ? 'due' : ''}`}>
@@ -541,7 +775,7 @@ export function EmergencyRescueModal({
 							</div>
 
 							{isAdrenalineDue && (
-								<div className="text-red-400 font-bold text-sm animate-bounce">
+								<div className="emergency-timer-alert">
 									⚠️ ВРЕМЯ ПОВТОРНОГО ВВЕДЕНИЯ АДРЕНАЛИНА (0.3–0.5 МЛ В/М)!
 								</div>
 							)}
@@ -566,8 +800,8 @@ export function EmergencyRescueModal({
 									className="emergency-timer-btn"
 									onClick={handleResetAdrenalineTimer}
 								>
-									<RotateCcw size={14} className="inline mr-1" />
-									Сброс
+									<RotateCcw size={14} />
+									<span>Сброс</span>
 								</button>
 							</div>
 						</div>
@@ -576,52 +810,52 @@ export function EmergencyRescueModal({
 						<div className="emergency-cpr-box">
 							<div className="emergency-cpr-header">
 								<div className="emergency-cpr-title">
-									<Heart size={18} className="text-red-500" />
-									СТАНДАРТ БАЗОВОЙ СЛР (МИНЗДРАВ РФ & ФАР)
+									<Heart size={18} style={{ color: 'var(--bad-fg)' }} />
+									<span>СТАНДАРТ БАЗОВОЙ СЛР (МИНЗДРАВ РФ & ФАР)</span>
 								</div>
 							</div>
 
-							<div className="p-3 text-xs space-y-2 text-gray-200">
-								<div className="flex justify-between border-b border-gray-700 pb-1">
-									<span className="text-gray-400">Соотношение:</span>
-									<span className="font-bold text-red-400">30 компрессий : 2 вдоха</span>
+							<div className="emergency-cpr-guidelines-list">
+								<div className="emergency-cpr-guideline-row">
+									<span className="emergency-cpr-label">Соотношение:</span>
+									<span className="emergency-cpr-val highlight-bad">30 компрессий : 2 вдоха</span>
 								</div>
-								<div className="flex justify-between border-b border-gray-700 pb-1">
-									<span className="text-gray-400">Частота нажатий:</span>
-									<span className="font-bold text-white">100–120 в минуту</span>
+								<div className="emergency-cpr-guideline-row">
+									<span className="emergency-cpr-label">Частота нажатий:</span>
+									<span className="emergency-cpr-val">100–120 в минуту</span>
 								</div>
-								<div className="flex justify-between border-b border-gray-700 pb-1">
-									<span className="text-gray-400">Глубина компрессий:</span>
-									<span className="font-bold text-white">5–6 см (1/3 грудной клетки)</span>
+								<div className="emergency-cpr-guideline-row">
+									<span className="emergency-cpr-label">Глубина компрессий:</span>
+									<span className="emergency-cpr-val">5–6 см (1/3 грудной клетки)</span>
 								</div>
-								<div className="flex justify-between">
-									<span className="text-gray-400">Положение:</span>
-									<span className="font-bold text-green-400">Твердая горизонтальная поверхность</span>
+								<div className="emergency-cpr-guideline-row">
+									<span className="emergency-cpr-label">Положение:</span>
+									<span className="emergency-cpr-val highlight-ok">Твердая горизонтальная поверхность</span>
 								</div>
 							</div>
 						</div>
 
 						{/* Emergency Incident Protocol Preview & Handover Box */}
 						<div className="emergency-protocol-box">
-							<div className="flex items-center justify-between">
-								<div className="flex gap-2">
+							<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+								<div style={{ display: 'flex', gap: '0.5rem' }}>
 									<button
 										type="button"
-										className={`text-xs font-bold px-3 py-1.5 rounded ${activeProtocolTab === 'act' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'}`}
+										className={`emergency-protocol-tab-btn ${activeProtocolTab === 'act' ? 'active-act' : ''}`}
 										onClick={() => setActiveProtocolTab('act')}
 									>
 										Акт 043/у
 									</button>
 									<button
 										type="button"
-										className={`text-xs font-bold px-3 py-1.5 rounded ${activeProtocolTab === 'cheatsheet' ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-300'}`}
+										className={`emergency-protocol-tab-btn ${activeProtocolTab === 'cheatsheet' ? 'active-cheatsheet' : ''}`}
 										onClick={() => setActiveProtocolTab('cheatsheet')}
 									>
 										Шпаргалка 112
 									</button>
 								</div>
 
-								<span className="text-xs text-gray-400">
+								<span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
 									Шагов выполнено: {completedStepsList.length} из {activeScenario.actionSteps.length}
 								</span>
 							</div>
@@ -655,7 +889,7 @@ export function EmergencyRescueModal({
 											<button
 												type="button"
 												className="emergency-copy-act-btn"
-												style={{ background: 'var(--brand-500, #3b82f6)' }}
+												style={{ background: 'var(--teal, #0d9488)', color: 'var(--on-teal, #ffffff)' }}
 												onClick={handleApplyToForm043}
 											>
 												<FileText size={16} />

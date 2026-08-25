@@ -214,17 +214,92 @@
 	color: var(--teal);
 }
 
-/* Conflict Alert Ribbon */
+/* Conflict Alert Ribbon & Compact Badges */
 .roster-conflict-banner {
 	background-color: var(--bad-bg);
 	border-bottom: 1px solid var(--bad-fg);
 	color: var(--bad-fg);
-	padding: 0.5rem 1.5rem;
-	font-size: 0.8125rem;
-	font-weight: 600;
+	padding: 0.5rem 1.25rem;
 	display: flex;
 	align-items: center;
-	gap: 0.5rem;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+	min-width: 0;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.roster-conflict-header {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	color: var(--bad-fg);
+	flex-shrink: 0;
+}
+
+.roster-conflict-icon {
+	flex-shrink: 0;
+}
+
+.roster-conflict-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.375rem;
+	align-items: center;
+	flex: 1;
+	min-width: 0;
+}
+
+.roster-conflict-tag {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.2rem 0.55rem;
+	border-radius: 6px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	line-height: 1.35;
+	word-break: break-word;
+	overflow-wrap: anywhere;
+	max-width: 100%;
+	transition: background-color var(--transition-fast, 0.15s ease);
+}
+
+.roster-conflict-tag.error {
+	background: var(--paper);
+	color: var(--bad-fg);
+	border: 1px solid var(--bad-fg);
+	box-shadow: var(--shadow-1);
+}
+
+.roster-conflict-tag.warning {
+	background: var(--paper);
+	color: var(--warn-fg, #b45309);
+	border: 1px solid var(--warn-fg, #f59e0b);
+	box-shadow: var(--shadow-1);
+}
+
+.roster-conflict-dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+.roster-conflict-tag.error .roster-conflict-dot {
+	background-color: var(--bad-fg);
+}
+
+.roster-conflict-tag.warning .roster-conflict-dot {
+	background-color: var(--warn-fg, #f59e0b);
+}
+
+.roster-conflict-text {
+	min-width: 0;
+	overflow-wrap: anywhere;
+	word-break: break-word;
 }
 
 /* Main Content Area */
@@ -609,6 +684,25 @@
 	.roster-nav-bar {
 		padding: 0.5rem 1rem;
 		-webkit-overflow-scrolling: touch;
+	}
+
+	.roster-conflict-banner {
+		padding: 0.5rem 0.75rem;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.375rem;
+	}
+
+	.roster-conflict-list {
+		width: 100%;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.25rem;
+	}
+
+	.roster-conflict-tag {
+		width: 100%;
+		box-sizing: border-box;
 	}
 }
 
