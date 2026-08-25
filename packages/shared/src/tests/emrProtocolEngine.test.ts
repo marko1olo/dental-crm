@@ -11,6 +11,8 @@ import {
 	type FdiToothRecord,
 	type VisitDiaryEntry043,
 	STATUTORY_EMR_PROTOCOL_CATALOG,
+	synthesizeProtocolFromOrder804nService,
+	enrichDiaryFrom804nServices,
 	anestheticDrugLabels,
 	blackCavityClassLabels,
 } from "../emr/index.js";
@@ -103,5 +105,70 @@ describe("Shared EMR Form 043/u Statutory Protocol Engine (Order № 834n)", () 
 		// Extraction: must map to A16.07.001
 		const extraction = STATUTORY_EMR_PROTOCOL_CATALOG["K08.1"]!;
 		assert.ok(extraction.order804nServices.some((s) => s.code.startsWith("A16.07.001")));
+	});
+
+	it("synthesizes structured clinical protocol from Order 804n service code", () => {
+		const cariesDef = synthesizeProtocolFromOrder804nService("A16.07.002.001");
+		assert.strictEqual(cariesDef.primaryIcd10, "K02.1");
+		assert.match(cariesDef.protocolStepRu, /коффердам/i);
+		assert.match(cariesDef.protocolStepRu, /37%/);
+		assert.match(cariesDef.protocolStepRu, /OptiBond/i);
+		assert.match(cariesDef.protocolStepRu, /Filtek|Estelite/i);
+
+		const endoPrepDef = synthesizeProtocolFromOrder804nService("A16.07.030.001");
+		assert.strictEqual(endoPrepDef.primaryIcd10, "K04.0");
+		assert.match(endoPrepDef.protocolStepRu, /апекслокатор/i);
+		assert.match(endoPrepDef.protocolStepRu, /WaveOne|ProTaper/i);
+		assert.match(endoPrepDef.protocolStepRu, /NaOCl/);
+
+		const endoObtDef = synthesizeProtocolFromOrder804nService("A16.07.008.001");
+		assert.strictEqual(endoObtDef.primaryIcd10, "K04.0");
+		assert.match(endoObtDef.protocolStepRu, /AH Plus/i);
+		assert.match(endoObtDef.protocolStepRu, /гуттаперч/i);
+
+		const extractionDef = synthesizeProtocolFromOrder804nService("A16.07.001.001");
+		assert.strictEqual(extractionDef.primaryIcd10, "K08.1");
+		assert.match(extractionDef.protocolStepRu, /синдесмотомия/i);
+		assert.match(extractionDef.protocolStepRu, /кюретаж/i);
+
+		const perioDef = synthesizeProtocolFromOrder804nService("A16.07.051");
+		assert.strictEqual(perioDef.primaryIcd10, "K05.0");
+		assert.match(perioDef.protocolStepRu, /Air-Flow/i);
+		assert.match(perioDef.protocolStepRu, /Clinpro/i);
+	});
+
+	it("100% preserves existing doctor text when enriching diary with 804n services (Non-Destructive)", () => {
+		const doctorAuthoredDiary = {
+			entryDate: "2026-08-25",
+			toothNumber: "16",
+			subjectiveComplaints: "Пациент жалуется на ноющие боли после сладкого, пломба выпала 2 дня назад. Аллергия на пенициллин!",
+			objectiveStatusLocalis: "Зуб 16: глубокая полость на окклюзионной и дистальной поверхности, десна интактна.",
+			procedureProtocol: "Проведена инфильтрационная анестезия Septanest 1.7 мл.",
+			assessmentDiagnosisText: "Кариес дентина (K02.1)",
+			assessmentIcd10Code: "K02.1",
+		};
+
+		const enriched = enrichDiaryFrom804nServices(
+			doctorAuthoredDiary,
+			["A16.07.002.002", "A16.07.031"],
+			{ toothNumber: "16", doctorFullName: "Петров П.П." },
+		);
+
+		// Complaints must NOT be overwritten!
+		assert.strictEqual(enriched.subjectiveComplaints, doctorAuthoredDiary.subjectiveComplaints);
+		assert.match(enriched.subjectiveComplaints, /Аллергия на пенициллин/);
+
+		// Status Localis must NOT be overwritten!
+		assert.strictEqual(enriched.objectiveStatusLocalis, doctorAuthoredDiary.objectiveStatusLocalis);
+
+		// Protocol must contain initial anesthesia AND enriched composite/preparation steps
+		assert.match(enriched.procedureProtocol, /Septanest/);
+		assert.match(enriched.procedureProtocol, /матриц/i);
+		assert.match(enriched.procedureProtocol, /коффердам/i);
+		assert.match(enriched.procedureProtocol, /Garrison/i);
+
+		// Materials should be merged
+		assert.ok(enriched.appliedMaterials);
+		assert.match(enriched.appliedMaterials!, /Garrison/);
 	});
 });
