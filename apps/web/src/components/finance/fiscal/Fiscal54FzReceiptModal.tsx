@@ -18,6 +18,7 @@ import {
 	FileText,
 	Gift,
 	Layers,
+	Lock as LockIcon,
 	Printer,
 	QrCode,
 	Receipt,
@@ -53,6 +54,7 @@ import {
 	type TaxDeductionRelationship,
 	type TaxDeductionPaymentItem,
 } from "../taxDeductionEngine";
+import { ShiftCloseZReportModal } from "./ShiftCloseZReportModal";
 
 export interface Fiscal54FzReceiptModalProps {
 	readonly isOpen: boolean;
@@ -110,6 +112,7 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 	const [certificateAmount, setCertificateAmount] = useState<number>(0);
 	const [customerContact, setCustomerContact] = useState<string>(patientPhone);
 	const [isFiscalizing, setIsFiscalizing] = useState<boolean>(false);
+	const [isShiftCloseOpen, setIsShiftCloseOpen] = useState<boolean>(false);
 	const [itemMarkingCodes, setItemMarkingCodes] = useState<Record<string, string>>({});
 
 	// Merge item marking codes
@@ -569,6 +572,15 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 								}`}
 							>
 								Вид чека
+							</button>
+							<button
+								type="button"
+								onClick={() => setIsShiftCloseOpen(true)}
+								className="px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-500/15 text-rose-700 dark:text-rose-300 hover:bg-rose-500/25 transition-all cursor-pointer flex items-center gap-1 border border-rose-500/30"
+								title="1-Клик: Закрытие смены и суточный Z-отчет 54-ФЗ"
+							>
+								<LockIcon className="w-3.5 h-3.5" />
+								<span>Z-отчет</span>
 							</button>
 						</div>
 
@@ -1429,6 +1441,16 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 					</div>
 				</div>
 			</div>
+
+			{/* Shift Close & 54-FZ Z-Report Modal */}
+			<ShiftCloseZReportModal
+				isOpen={isShiftCloseOpen}
+				onClose={() => setIsShiftCloseOpen(false)}
+				cashierFullName={cashierFullName}
+				clinicLegalName={clinicName}
+				clinicInn={clinicInn}
+				clinicAddress={clinicLicense}
+			/>
 		</div>
 	);
 };

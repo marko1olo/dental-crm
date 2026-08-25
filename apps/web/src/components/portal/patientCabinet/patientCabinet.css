@@ -1049,5 +1049,170 @@
 	}
 }
 
+/* ============================================================
+   CARE INSTRUCTIONS & FRIENDLY BILLING (WHATSAPP & PHONE QR)
+   ============================================================ */
+
+.pc-care-memo-card {
+	border: 2px solid var(--pc-primary);
+	background: linear-gradient(
+		135deg,
+		var(--pc-surface) 0%,
+		var(--pc-primary-light) 100%
+	);
+	border-radius: var(--pc-radius-lg);
+	padding: 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	box-sizing: border-box;
+}
+
+.pc-care-rec-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: 12px;
+}
+
+.pc-care-rec-item {
+	background: var(--pc-bg);
+	border: 1.5px solid var(--pc-border);
+	border-radius: var(--pc-radius-md);
+	padding: 14px 16px;
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+	box-sizing: border-box;
+	transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.pc-care-rec-item:hover {
+	border-color: var(--pc-primary);
+	transform: translateY(-1px);
+}
+
+.pc-care-rec-item.urgent {
+	border-color: var(--pc-danger);
+	background: var(--pc-danger-light);
+}
+
+.pc-care-rec-icon {
+	font-size: 28px;
+	line-height: 1;
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	border-radius: 12px;
+	background: var(--pc-surface);
+	border: 1px solid var(--pc-border);
+}
+
+.pc-care-rec-content {
+	flex: 1;
+	min-width: 0;
+}
+
+.pc-care-rec-title {
+	font-size: 1rem;
+	font-weight: 800;
+	color: var(--pc-text-main);
+	margin: 0 0 4px 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.pc-care-rec-desc {
+	font-size: 0.875rem;
+	color: var(--pc-text-muted);
+	margin: 0;
+	line-height: 1.45;
+}
+
+.pc-whatsapp-btn {
+	min-height: 48px;
+	padding: 10px 20px;
+	border-radius: var(--pc-radius-md);
+	font-size: 0.9375rem;
+	font-weight: 800;
+	background: #25d366;
+	color: #ffffff;
+	border: none;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	text-decoration: none;
+	touch-action: manipulation;
+	box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35);
+	transition: all 0.15s ease;
+}
+
+.pc-whatsapp-btn:hover {
+	background: #20ba59;
+	transform: scale(1.02);
+}
+
+.pc-friendly-billing-group {
+	background: var(--pc-surface);
+	border: 1.5px solid var(--pc-border);
+	border-radius: var(--pc-radius-lg);
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	box-sizing: border-box;
+}
+
+.pc-friendly-billing-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.pc-friendly-group-title {
+	font-size: 1.0625rem;
+	font-weight: 800;
+	color: var(--pc-text-main);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+}
+
+.pc-friendly-group-sum {
+	font-size: 1.125rem;
+	font-weight: 900;
+	color: var(--pc-primary);
+	font-family: inherit;
+}
+
+@media (max-width: 480px) {
+	.pc-care-rec-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.pc-care-memo-card {
+		padding: 12px;
+	}
+
+	.pc-care-rec-item {
+		padding: 12px;
+		gap: 10px;
+	}
+
+	.pc-whatsapp-btn {
+		width: 100%;
+	}
+}
+
+
 
 

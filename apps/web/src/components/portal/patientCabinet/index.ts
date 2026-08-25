@@ -4,6 +4,7 @@
  */
 
 export * from "./patientCabinetEngine";
+export * from "./patientCareInstructionsEngine";
 export * from "./patientCabinetPresets";
 export * from "./PatientCabinetModal";
 export { default } from "./PatientCabinetModal";
