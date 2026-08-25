@@ -3,7 +3,9 @@ import {
 	ArrowRight,
 	Award,
 	Coins,
+	Layers,
 	PlusCircle,
+	QrCode,
 	ShieldCheck,
 	Sparkles,
 	User,
@@ -33,6 +35,7 @@ import {
 	familyTopupRequestKey,
 	type MutationTicket,
 } from "./familyWalletMutationKey";
+import { FamilyCombinedBillingModal } from "./FamilyCombinedBillingModal";
 import "./FamilyWalletPanel.css";
 import { logger } from "../../utils/logger";
 
@@ -150,6 +153,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	} | null>(null);
 	const [isPaying, setIsPaying] = useState(false);
 	const [isToppingUp, setIsToppingUp] = useState(false);
+	const [isCombinedBillingModalOpen, setIsCombinedBillingModalOpen] = useState(false);
 	/*
 	 * СУММЫ ХРАНЯТСЯ СТРОКОЙ — ТЕМ, ЧТО НАБРАЛ ЧЕЛОВЕК.
 	 *
@@ -401,22 +405,19 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 
 	/*
 	 * Сколько предложить списать одним нажатием.
-	 *
-	 * Долг приходит с копейками (billingSummary.totalDueRub), а списание с
-	 * семейного счёта сервер принимает только целым числом рублей: familyPaymentSchema
-	 * требует z.number().int() (routes/finance_family.ts). Поэтому целое.
+	 * Долг учитывается с копейками (billingSummary.totalDueRub) с округлением до сотых.
 	 */
-	const debtSuggestionRub = Math.floor(
-		Number.isFinite(remainingDebtRub) ? Math.max(0, remainingDebtRub) : 0,
-	);
+	const debtSuggestionRub = Number.isFinite(remainingDebtRub)
+		? Math.max(0, Math.round(remainingDebtRub * 100) / 100)
+		: 0;
 
 	/*
 	 * Почему кнопка «Списать с баланса» погасла.
 	 */
 	const payBlockReason = amountInvalid
 		? "Впишите сумму цифрами, копейки после запятой: 1500,50"
-		: amount > 0 && !Number.isInteger(amount)
-			? "Списание проходит только целыми рублями — уберите копейки из суммы."
+		: amount > 0 && Math.round(amount * 100) !== amount * 100
+			? "Сумма списания может содержать не более 2 знаков после запятой (копейки)."
 			: amount > balanceVal && amount > 0
 				? `На семейном счету только ${money(balanceVal)}. Спишите не больше этой суммы, остальное примите обычной оплатой или пополните счёт.`
 				: null;
@@ -426,8 +427,8 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	 */
 	const topupBlockReason = topupInvalid
 		? "Впишите сумму цифрами, копейки после запятой: 1500,50"
-		: topupAmount > 0 && !Number.isInteger(topupAmount)
-			? "Пополнение проходит только целыми рублями — уберите копейки из суммы."
+		: topupAmount > 0 && Math.round(topupAmount * 100) !== topupAmount * 100
+			? "Сумма пополнения может содержать не более 2 знаков после запятой (копейки)."
 			: null;
 
 	const handlePay = async () => {
@@ -436,8 +437,8 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			showToast("Введите сумму", "error");
 			return;
 		}
-		if (!Number.isInteger(amount)) {
-			showToast("Сумма списания указывается целыми рублями", "error");
+		if (Math.round(amount * 100) !== amount * 100) {
+			showToast("Сумма списания может содержать не более 2 знаков после запятой", "error");
 			return;
 		}
 		if (amount > balanceVal) {
@@ -509,8 +510,8 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 
 	const handleTopup = async () => {
 		if (!family || isToppingUp) return;
-		if (!Number.isInteger(topupAmount) || topupAmount <= 0) {
-			showToast("Введите сумму пополнения целыми рублями", "error");
+		if (topupAmount <= 0 || Math.round(topupAmount * 100) !== topupAmount * 100) {
+			showToast("Введите корректную сумму пополнения", "error");
 			return;
 		}
 		const mutationId = familyMutationId(
@@ -619,12 +620,25 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 						Единый счет для семьи ({(family.members ?? []).length} чел.)
 					</p>
 				</div>
-				<div className="family-wallet-balance-container">
-					<div className="family-wallet-balance">{money(animatedBalance)}</div>
-					<p className="family-wallet-balance-label">
-						<ShieldCheck size={12} />
-						ДОСТУПНЫЙ БАЛАНС
-					</p>
+				<div className="flex items-center gap-3">
+					<div className="family-wallet-balance-container">
+						<div className="family-wallet-balance">{money(animatedBalance)}</div>
+						<p className="family-wallet-balance-label">
+							<ShieldCheck size={12} />
+							ДОСТУПНЫЙ БАЛАНС
+						</p>
+					</div>
+
+					<button
+						type="button"
+						onClick={() => setIsCombinedBillingModalOpen(true)}
+						className="min-h-[44px] px-3.5 py-2 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white text-xs font-bold shadow-md flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+						title="Объединить счета членов семьи и фискализировать чек 54-ФЗ со сплитом"
+						data-testid="btn-open-family-combined-billing"
+					>
+						<Sparkles size={15} className="animate-pulse" />
+						<span>⚡ Семейный расчет 54-ФЗ</span>
+					</button>
 				</div>
 			</div>
 
@@ -726,8 +740,8 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 					{balanceVal > 0 && (
 						<button
 							type="button"
-							className={`family-bonus-chip ${amount === Math.floor(balanceVal) ? "active" : ""}`}
-							onClick={() => setAmountInput(String(Math.floor(balanceVal)))}
+							className={`family-bonus-chip ${amount === balanceVal ? "active" : ""}`}
+							onClick={() => setAmountInput(String(balanceVal))}
 							disabled={isPaying}
 						>
 							<Award size={14} className="text-teal-500 shrink-0" />
@@ -851,6 +865,24 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 					{topupBlockReason}
 				</p>
 			)}
+
+			{/* Модальное окно объединенного расчета семьи и сплит-оплаты */}
+			<FamilyCombinedBillingModal
+				isOpen={isCombinedBillingModalOpen}
+				onClose={() => setIsCombinedBillingModalOpen(false)}
+				familyGroupId={family.id}
+				familyGroupName={family.name?.trim() || "Семья"}
+				availableFamilyWalletRub={balanceVal}
+				initialPayer={{
+					payerId: patientId,
+					payerFullName: payerName || "Плательщик семьи",
+				}}
+				onCheckoutComplete={async () => {
+					setIsCombinedBillingModalOpen(false);
+					await onPaymentSuccess?.();
+					void loadFamily();
+				}}
+			/>
 		</div>
 	);
 };

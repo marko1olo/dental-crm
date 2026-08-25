@@ -8,4 +8,6 @@ export * from "./kopecksArithmetic.js";
 export * from "./validation.js";
 export * from "./fiscalReconciliationStatement.js";
 export * from "./offlineFiscalBatchReconciler.js";
+export * from "./sbpQrEngine.js";
+export * from "./familyFiscalBillingEngine.js";
 
