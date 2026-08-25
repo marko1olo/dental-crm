@@ -362,118 +362,126 @@ export async function registerFiscalReceiptRoutes(
 
 		// Idempotency check for refund
 		if (data.clientMutationId && data.clientMutationId.trim().length > 0) {
-			const existingQueueRows = await db
-				.select()
-				.from(fiscalReceiptQueue)
-				.where(
-					and(
-						eq(fiscalReceiptQueue.organizationId, orgId),
-						sql`${fiscalReceiptQueue.payloadJson}->>'clientMutationId' = ${data.clientMutationId.trim()}`,
-					),
-				)
-				.limit(1);
+			const mutationId = data.clientMutationId.trim();
 
-			const existingRow = existingQueueRows[0];
-			if (existingRow) {
-				const storedPayload = (existingRow.payloadJson || {}) as Record<string, unknown>;
-				const signature = buildFiscalRefundPayloadSignature(data);
-				const verification = verifyFiscalCompositeIdempotencyKey(data.clientMutationId, signature);
+			return await db.transaction(async (tx) => {
+				await tx.execute(
+					sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':' || ${mutationId}))`,
+				);
 
-				const refundKopecksMatch = Number(storedPayload["totalKopecks"]) === data.totalRefundKopecks;
-				if (verification.isValid && refundKopecksMatch) {
-					return reply.status(200).send({
-						success: true,
-						replayed: true,
-						refundQueueId: existingRow.id,
-						status: existingRow.status,
-						originalReceiptNumber: data.originalReceiptNumber,
-						fiscalDocumentNumber: (storedPayload["fiscalDocumentNumber"] as string) || "1002",
-						fiscalSign: (storedPayload["fiscalSign"] as string) || "1234567890",
-						ofdVerificationUrl: (storedPayload["ofdVerificationUrl"] as string) || `https://ofd.ru/check?s=${kopecksToNumericString(data.totalRefundKopecks)}&n=2`,
-						totalRefundRub: kopecksToNumericString(data.totalRefundKopecks),
-					});
-				} else {
-					return reply.status(409).send({
-						error: "FiscalReceiptConflictError",
-						message: "Возврат с таким ключом операции (clientMutationId) уже был зарегистрирован с другими параметрами.",
-					});
+				const existingQueueRows = await tx
+					.select()
+					.from(fiscalReceiptQueue)
+					.where(
+						and(
+							eq(fiscalReceiptQueue.organizationId, orgId),
+							sql`${fiscalReceiptQueue.payloadJson}->>'clientMutationId' = ${mutationId}`,
+						),
+					)
+					.limit(1);
+
+				const existingRow = existingQueueRows[0];
+				if (existingRow) {
+					const storedPayload = (existingRow.payloadJson || {}) as Record<string, unknown>;
+					const signature = buildFiscalRefundPayloadSignature(data);
+					const verification = verifyFiscalCompositeIdempotencyKey(mutationId, signature);
+
+					const refundKopecksMatch = Number(storedPayload["totalKopecks"]) === data.totalRefundKopecks;
+					if (verification.isValid && refundKopecksMatch) {
+						return reply.status(200).send({
+							success: true,
+							replayed: true,
+							refundQueueId: existingRow.id,
+							status: existingRow.status,
+							originalReceiptNumber: data.originalReceiptNumber,
+							fiscalDocumentNumber: (storedPayload["fiscalDocumentNumber"] as string) || "1002",
+							fiscalSign: (storedPayload["fiscalSign"] as string) || "1234567890",
+							ofdVerificationUrl: (storedPayload["ofdVerificationUrl"] as string) || `https://ofd.ru/check?s=${kopecksToNumericString(data.totalRefundKopecks)}&n=2`,
+							totalRefundRub: kopecksToNumericString(data.totalRefundKopecks),
+						});
+					} else {
+						return reply.status(409).send({
+							error: "FiscalReceiptConflictError",
+							message: "Возврат с таким ключом операции (clientMutationId) уже был зарегистрирован с другими параметрами.",
+						});
+					}
 				}
-			}
+
+				const totalElectronicKopecks = data.refundElectronicKopecks;
+
+				const refundReceiptInput: CreateFiscalReceiptPayloadInput = createFiscalReceiptPayloadSchema.parse({
+					clientMutationId: data.clientMutationId,
+					patientId: data.patientId,
+					operationType: "income_return",
+					customerContact: "+79990000000",
+					cashierFullName: data.cashierFullName,
+					items: data.items,
+					cashKopecks: data.refundCashKopecks,
+					electronicCardKopecks: totalElectronicKopecks,
+					sbpKopecks: 0,
+					prepaidKopecks: data.refundPrepaidKopecks,
+					creditKopecks: 0,
+					totalKopecks: data.totalRefundKopecks,
+					taxationSystem: "usn_income",
+					taxDeductionSummaryCode: "code_1_standard",
+					isCorrection: false,
+				});
+
+				const compiled = FiscalReceiptFactory.buildFfd12Receipt(refundReceiptInput);
+				const printResult = await LanKktDriverService.printFiscalReceipt(compiled);
+				const isOffline = printResult.status === "hardware_offline";
+				const now = new Date();
+
+				let validPaymentId: string | null = null;
+				if (data.originalPaymentId) {
+					const [existingPayment] = await tx
+						.select({ id: payments.id })
+						.from(payments)
+						.where(and(eq(payments.id, data.originalPaymentId), eq(payments.organizationId, orgId)))
+						.limit(1);
+					if (existingPayment) {
+						validPaymentId = existingPayment.id;
+					}
+				}
+
+				const payloadToStore: Record<string, unknown> = {
+					...compiled,
+					clientMutationId: data.clientMutationId ?? null,
+					originalReceiptNumber: data.originalReceiptNumber ?? null,
+					fnSerial: printResult.fnSerial,
+					fiscalDocumentNumber: printResult.fiscalDocumentNumber,
+					fiscalSign: printResult.fiscalSign,
+					ofdVerificationUrl: printResult.ofdVerificationUrl,
+					receiptIssuedAt: printResult.receiptIssuedAt,
+				};
+
+				const [queueRow] = await tx
+					.insert(fiscalReceiptQueue)
+					.values({
+						organizationId: orgId,
+						paymentId: validPaymentId,
+						receiptType: "income_return",
+						status: printResult.status,
+						payloadJson: payloadToStore,
+						lastError: isOffline ? printResult.errorMessage || "KKT offline on refund" : null,
+						retryCount: isOffline ? 1 : 0,
+						printedAt: isOffline ? null : now,
+					})
+					.returning();
+
+				return reply.status(200).send({
+					success: true,
+					replayed: false,
+					refundQueueId: queueRow?.id,
+					status: queueRow?.status,
+					originalReceiptNumber: data.originalReceiptNumber,
+					fiscalDocumentNumber: printResult.fiscalDocumentNumber,
+					fiscalSign: printResult.fiscalSign,
+					ofdVerificationUrl: printResult.ofdVerificationUrl,
+					totalRefundRub: kopecksToNumericString(data.totalRefundKopecks),
+				});
+			});
 		}
-
-		const totalElectronicKopecks = data.refundElectronicKopecks;
-
-		const refundReceiptInput: CreateFiscalReceiptPayloadInput = createFiscalReceiptPayloadSchema.parse({
-			clientMutationId: data.clientMutationId,
-			patientId: data.patientId,
-			operationType: "income_return",
-			customerContact: "+79990000000",
-			cashierFullName: data.cashierFullName,
-			items: data.items,
-			cashKopecks: data.refundCashKopecks,
-			electronicCardKopecks: totalElectronicKopecks,
-			sbpKopecks: 0,
-			prepaidKopecks: data.refundPrepaidKopecks,
-			creditKopecks: 0,
-			totalKopecks: data.totalRefundKopecks,
-			taxationSystem: "usn_income",
-			taxDeductionSummaryCode: "code_1_standard",
-			isCorrection: false,
-		});
-
-		const compiled = FiscalReceiptFactory.buildFfd12Receipt(refundReceiptInput);
-		const printResult = await LanKktDriverService.printFiscalReceipt(compiled);
-		const isOffline = printResult.status === "hardware_offline";
-		const now = new Date();
-
-		let validPaymentId: string | null = null;
-		if (data.originalPaymentId) {
-			const [existingPayment] = await db
-				.select({ id: payments.id })
-				.from(payments)
-				.where(and(eq(payments.id, data.originalPaymentId), eq(payments.organizationId, orgId)))
-				.limit(1);
-			if (existingPayment) {
-				validPaymentId = existingPayment.id;
-			}
-		}
-
-		const payloadToStore: Record<string, unknown> = {
-			...compiled,
-			clientMutationId: data.clientMutationId ?? null,
-			originalReceiptNumber: data.originalReceiptNumber ?? null,
-			fnSerial: printResult.fnSerial,
-			fiscalDocumentNumber: printResult.fiscalDocumentNumber,
-			fiscalSign: printResult.fiscalSign,
-			ofdVerificationUrl: printResult.ofdVerificationUrl,
-			receiptIssuedAt: printResult.receiptIssuedAt,
-		};
-
-		const [queueRow] = await db
-			.insert(fiscalReceiptQueue)
-			.values({
-				organizationId: orgId,
-				paymentId: validPaymentId,
-				receiptType: "income_return",
-				status: printResult.status,
-				payloadJson: payloadToStore,
-				lastError: isOffline ? printResult.errorMessage || "KKT offline on refund" : null,
-				retryCount: isOffline ? 1 : 0,
-				printedAt: isOffline ? null : now,
-			})
-			.returning();
-
-		return reply.status(200).send({
-			success: true,
-			replayed: false,
-			refundQueueId: queueRow?.id,
-			status: queueRow?.status,
-			originalReceiptNumber: data.originalReceiptNumber,
-			fiscalDocumentNumber: printResult.fiscalDocumentNumber,
-			fiscalSign: printResult.fiscalSign,
-			ofdVerificationUrl: printResult.ofdVerificationUrl,
-			totalRefundRub: kopecksToNumericString(data.totalRefundKopecks),
-		});
 	});
 
 	/**
