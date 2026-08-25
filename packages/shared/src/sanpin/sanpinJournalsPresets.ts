@@ -1,0 +1,738 @@
+/**
+ * ============================================================================
+ * SANPIN 3.3686-21 & R 3.5.1904-04 STATUTORY REGISTERS & PRESETS
+ * Нормативные классификаторы, методики химических проб ПСО, регламенты работы
+ * бактерицидных установок, графики генеральных уборок и реестр дезсредств.
+ * ============================================================================
+ */
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 1. КОНТРОЛЬ ПРЕДСТЕРИЛИЗАЦИОННОЙ ОЧИСТКИ (ПСО, ФОРМА № 366/у)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type PsoChemicalTestId = "azopyram" | "phenolphthalein" | "sudan_iii" | "both_standard";
+
+export interface PsoChemicalTestDefinition {
+	readonly id: PsoChemicalTestId;
+	readonly nameRu: string;
+	readonly shortNameRu: string;
+	readonly targetPollutantRu: string;
+	readonly reagentCompositionRu: string;
+	readonly positiveReactionRu: string;
+	readonly negativeReactionRu: string;
+	readonly observationTimeSeconds: number;
+	readonly sanpinRequirementRu: string;
+}
+
+export const SANPIN_PSO_CHEMICAL_TESTS: readonly PsoChemicalTestDefinition[] = [
+	{
+		id: "azopyram",
+		nameRu: "Азопирамовая проба (на скрытую кровь и гемоглобин)",
+		shortNameRu: "Азопирам",
+		targetPollutantRu: "Гемоглобин, остатки крови, пероксидазы, ржавчина",
+		reagentCompositionRu: "Раствор азопирама (амидопирин + анилин гидрохлорид) + 3% перекись водорода в соотношении 1:1",
+		positiveReactionRu: "Сине-фиолетовое / сиреневое окрашивание в течение 60 секунд",
+		negativeReactionRu: "Окрашивание отсутствует (раствор бесцветный / слегка желтоватый)",
+		observationTimeSeconds: 60,
+		sanpinRequirementRu: "СанПиН 3.3686-21 п. 3584: контроль 1% от партии (не менее 3–5 единиц каждого наименования)",
+	},
+	{
+		id: "phenolphthalein",
+		nameRu: "Фенолфталеиновая проба (на остаточную щелочность моющих средств)",
+		shortNameRu: "Фенолфталеин",
+		targetPollutantRu: "Остатки щелочных компонентов синтетических моющих средств (pH > 8.5)",
+		reagentCompositionRu: "1% спиртовой раствор фенолфталеина",
+		positiveReactionRu: "Розовое / малиновое окрашивание в месте нанесения реактива",
+		negativeReactionRu: "Окрашивание отсутствует",
+		observationTimeSeconds: 30,
+		sanpinRequirementRu: "СанПиН 3.3686-21 п. 3584: обязательный контроль при использовании щелочных моющих средств",
+	},
+	{
+		id: "sudan_iii",
+		nameRu: "Проба с Суданом III (на остаточные жировые и масляные загрязнения)",
+		shortNameRu: "Судан III",
+		targetPollutantRu: "Масляные смазки наконечников, липидные пленки, жировые загрязнения",
+		reagentCompositionRu: "Раствор красителя Судан III в 70% этиловом спирте",
+		positiveReactionRu: "Желто-розовые капли и окрашенные жировые пятна",
+		negativeReactionRu: "Равномерное стекание без окрашивания жировых включений",
+		observationTimeSeconds: 45,
+		sanpinRequirementRu: "СанПиН 3.3686-21: контроль качества очистки вращающихся инструментов и смазанных наконечников",
+	},
+	{
+		id: "both_standard",
+		nameRu: "Комплексный контроль СанПиН (Азопирам + Фенолфталеин)",
+		shortNameRu: "Азопирам + Фенолфталеин",
+		targetPollutantRu: "Скрытая кровь + остаточная щелочность моющих средств",
+		reagentCompositionRu: "Азопирам с 3% H2O2 + 1% спиртовой фенолфталеин",
+		positiveReactionRu: "Любое положительное окрашивание хотя бы по одной пробе",
+		negativeReactionRu: "Обе пробы строго отрицательные",
+		observationTimeSeconds: 60,
+		sanpinRequirementRu: "Золотой стандарт ежедневного контроля качества ПСО в стоматологии",
+	},
+];
+
+export interface DentalInstrumentCategoryDefinition {
+	readonly id: string;
+	readonly categoryNameRu: string;
+	readonly defaultBatchSize: number;
+	readonly typicalItemsRu: readonly string[];
+	readonly criticalSurfacesRu: string;
+}
+
+export const DENTAL_INSTRUMENT_CATEGORIES: readonly DentalInstrumentCategoryDefinition[] = [
+	{
+		id: "therapeutic_kit",
+		categoryNameRu: "Терапевтический смотровой инструментарий",
+		defaultBatchSize: 100,
+		typicalItemsRu: [
+			"Стоматологические зеркала с ручкой",
+			"Зонды угловые и пуговчатые",
+			"Пинцеты анатомические стоматологические",
+			"Гладилки двухсторонние и штопферы",
+			"Экскаваторы стоматологические",
+		],
+		criticalSurfacesRu: "Резьбовые соединения зеркал, насечки пинцетов, бороздки штопферов",
+	},
+	{
+		id: "endodontic_kit",
+		categoryNameRu: "Эндодонтический инструментарий",
+		defaultBatchSize: 60,
+		typicalItemsRu: [
+			"К-файлы, Н-файлы, римеры (ручные)",
+			"Машинные Ni-Ti вращающиеся файлы (Protaper, WaveOne)",
+			"Спредеры и плаггеры для гуттаперчи",
+			"Каналонаполнители Лентуло",
+			"Эндодонтические линейки и пинцеты",
+		],
+		criticalSurfacesRu: "Спиральные витки файлов, микроуглубления режущих граней",
+	},
+	{
+		id: "surgical_kit",
+		categoryNameRu: "Хирургический инструментарий",
+		defaultBatchSize: 40,
+		typicalItemsRu: [
+			"Щипцы экстракционные (верхние и нижние)",
+			"Элеваторы прямые, штыковидные и угловые (Бейна, Леклюза)",
+			"Кюретажные ложки Лукаса",
+			"Распаторы костные",
+			"Иглодержатели и хирургические ножницы",
+			"Рукоятки скальпелей",
+		],
+		criticalSurfacesRu: "Замковые соединения щипцов, ретенционные насечки щечек, шарниры",
+	},
+	{
+		id: "periodontal_kit",
+		categoryNameRu: "Пародонтологический инструментарий",
+		defaultBatchSize: 30,
+		typicalItemsRu: [
+			"Кюреты Грейси (1/2, 7/8, 11/12, 13/14)",
+			"Скейлеры серповидные и мотыгообразные",
+			"Пародонтологические зонды ВОЗ с миллиметровой градуировкой",
+			"Ультразвуковые насадки для скейлинга",
+		],
+		criticalSurfacesRu: "Внутренний ирригационный канал насадок, рабочие желобки кюрет",
+	},
+	{
+		id: "rotary_burs_kit",
+		categoryNameRu: "Вращающийся режущий инструмент (Боры и фрезы)",
+		defaultBatchSize: 120,
+		typicalItemsRu: [
+			"Боры алмазные турбинные и угловые",
+			"Боры твердосплавные фиссурные и шаровидные",
+			"Твердосплавные фрезы для обработки пластмасс",
+			"Дискодержатели (мандрели) и полировочные головки",
+		],
+		criticalSurfacesRu: "Межзубцовое пространство фрез, алмазное напыление рабочей части",
+	},
+	{
+		id: "handpieces_kit",
+		categoryNameRu: "Стоматологические наконечники",
+		defaultBatchSize: 20,
+		typicalItemsRu: [
+			"Турбинные наконечники с кнопочным зажимом",
+			"Угловые микромоторные наконечники",
+			"Прямые хирургические наконечники",
+			"Переходники и быстросъемные муфты",
+		],
+		criticalSurfacesRu: "Внутренние водо-воздушные каналы спрея, цанговый зажим бора",
+	},
+];
+
+export interface DetergentCatalogItem {
+	readonly id: string;
+	readonly brandNameRu: string;
+	readonly manufacturerRu: string;
+	readonly activeIngredientsRu: string;
+	readonly recommendedPsoConcentrationPercent: number;
+	readonly recommendedPsoExposureMinutes: number;
+	readonly recommendedTempCelsius: number;
+	readonly requiresPhenolphthaleinCheck: boolean;
+	readonly isEnzymatic: boolean;
+}
+
+export const SANPIN_DETERGENTS_CATALOG: readonly DetergentCatalogItem[] = [
+	{
+		id: "biolot",
+		brandNameRu: "Биолот (порошок)",
+		manufacturerRu: "Россия",
+		activeIngredientsRu: "Фермент протеаза + алкилсульфаты (ПАВ)",
+		recommendedPsoConcentrationPercent: 0.5,
+		recommendedPsoExposureMinutes: 15,
+		recommendedTempCelsius: 40,
+		requiresPhenolphthaleinCheck: true,
+		isEnzymatic: true,
+	},
+	{
+		id: "alaminol",
+		brandNameRu: "Аламинол",
+		manufacturerRu: "ФГУП «ГНЦ «НИОПИК», Россия",
+		activeIngredientsRu: "Алкилдиметилбензиламмоний хлорид (ЧАС 5%) + Глутаровый альдегид (8%)",
+		recommendedPsoConcentrationPercent: 1.5,
+		recommendedPsoExposureMinutes: 30,
+		recommendedTempCelsius: 20,
+		requiresPhenolphthaleinCheck: true,
+		isEnzymatic: false,
+	},
+	{
+		id: "brilliant_classic",
+		brandNameRu: "Бриллиант Классик",
+		manufacturerRu: "ООО «ЦСП Химмедпром», Россия",
+		activeIngredientsRu: "Алкилдиметилбензиламмоний хлорид (ЧАС) + Глутаровый альдегид",
+		recommendedPsoConcentrationPercent: 1.0,
+		recommendedPsoExposureMinutes: 15,
+		recommendedTempCelsius: 20,
+		requiresPhenolphthaleinCheck: true,
+		isEnzymatic: false,
+	},
+	{
+		id: "optimax_pro",
+		brandNameRu: "Оптимакс Про",
+		manufacturerRu: "ООО «Интерсэн-плюс», Россия",
+		activeIngredientsRu: "N,N-бис(3-аминопропил)додециламин (третичный амин 5%) + ПАВ",
+		recommendedPsoConcentrationPercent: 1.0,
+		recommendedPsoExposureMinutes: 15,
+		recommendedTempCelsius: 20,
+		requiresPhenolphthaleinCheck: true,
+		isEnzymatic: false,
+	},
+	{
+		id: "blanidas_active",
+		brandNameRu: "Бланидас Актив Энзим",
+		manufacturerRu: "Лизоформ, Германия",
+		activeIngredientsRu: "Комплекс ферментов (протеаза, амилаза, липаза) + ЧАС",
+		recommendedPsoConcentrationPercent: 0.5,
+		recommendedPsoExposureMinutes: 10,
+		recommendedTempCelsius: 25,
+		requiresPhenolphthaleinCheck: false,
+		isEnzymatic: true,
+	},
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. РЕЦИРКУЛЯТОРЫ И БАКТЕРИЦИДНЫЕ УСТАНОВКИ (Р 3.5.1904-04 / САНПИН 3.3686-21)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface UvRecirculatorModelDefinition {
+	readonly id: string;
+	readonly brandNameRu: string;
+	readonly fullModelNameRu: string;
+	readonly manufacturerRu: string;
+	readonly deviceType: "recirculator_closed" | "irradiator_open" | "combined";
+	readonly lampCount: number;
+	readonly lampTypeRu: string;
+	readonly lampPowerWatts: number;
+	readonly standardLampLifetimeHours: number;
+	readonly productivityM3PerHour: number;
+	readonly allowedInPresenceOfPeople: boolean;
+	readonly recommendedRoomVolumeM3: number;
+}
+
+export const UV_RECIRCULATOR_MODELS: readonly UvRecirculatorModelDefinition[] = [
+	{
+		id: "dezar_4",
+		brandNameRu: "Дезар-4 (ОРУБн-3-3-«КРОНТ»)",
+		fullModelNameRu: "Облучатель-рециркулятор настенный ОРУБн-3-3-«КРОНТ» (Дезар-4)",
+		manufacturerRu: "АО «КРОНТ-М», Россия",
+		deviceType: "recirculator_closed",
+		lampCount: 3,
+		lampTypeRu: "УФ-лампа безозоновая TUV 15W Philips / HNS 15W Osram",
+		lampPowerWatts: 15,
+		standardLampLifetimeHours: 8000,
+		productivityM3PerHour: 100,
+		allowedInPresenceOfPeople: true,
+		recommendedRoomVolumeM3: 50,
+	},
+	{
+		id: "dezar_7",
+		brandNameRu: "Дезар-7 (ОРУБп-3-5-«КРОНТ» передвижной)",
+		fullModelNameRu: "Облучатель-рециркулятор передвижной ОРУБп-3-5-«КРОНТ» (Дезар-7)",
+		manufacturerRu: "АО «КРОНТ-М», Россия",
+		deviceType: "recirculator_closed",
+		lampCount: 5,
+		lampTypeRu: "УФ-лампа безозоновая TUV 15W Philips",
+		lampPowerWatts: 15,
+		standardLampLifetimeHours: 8000,
+		productivityM3PerHour: 120,
+		allowedInPresenceOfPeople: true,
+		recommendedRoomVolumeM3: 100,
+	},
+	{
+		id: "sibest_sunny",
+		brandNameRu: "Сибэст-45",
+		fullModelNameRu: "Облучатель-рециркулятор бактерицидный Сибэст-45 настенный",
+		manufacturerRu: "ООО «Сибэст», Россия",
+		deviceType: "recirculator_closed",
+		lampCount: 2,
+		lampTypeRu: "УФ-лампа TUV 15W",
+		lampPowerWatts: 15,
+		standardLampLifetimeHours: 9000,
+		productivityM3PerHour: 60,
+		allowedInPresenceOfPeople: true,
+		recommendedRoomVolumeM3: 45,
+	},
+	{
+		id: "obn_150_open",
+		brandNameRu: "ОБН-150 (Открытый облучатель)",
+		fullModelNameRu: "Облучатель бактерицидный настенный ОБН-150 (2х30 Вт)",
+		manufacturerRu: "Россия",
+		deviceType: "irradiator_open",
+		lampCount: 2,
+		lampTypeRu: "УФ-лампа ДБ-30 / TUV 30W",
+		lampPowerWatts: 30,
+		standardLampLifetimeHours: 8000,
+		productivityM3PerHour: 150,
+		allowedInPresenceOfPeople: false,
+		recommendedRoomVolumeM3: 60,
+	},
+];
+
+export interface RoomSanitaryCategoryDefinition {
+	readonly categoryCode: "I" | "II" | "III" | "IV";
+	readonly categoryNameRu: string;
+	readonly targetBactericidalEfficiencyPercent: number;
+	readonly roomExamplesRu: readonly string[];
+	readonly maxAllowedMicrobialCountCfuPerM3: number;
+}
+
+export const ROOM_SANITARY_CATEGORIES: readonly RoomSanitaryCategoryDefinition[] = [
+	{
+		categoryCode: "I",
+		categoryNameRu: "Категория I — Особо стерильные помещения",
+		targetBactericidalEfficiencyPercent: 99.9,
+		roomExamplesRu: ["Операционная хирургической стоматологии", "Предоперационная"],
+		maxAllowedMicrobialCountCfuPerM3: 200,
+	},
+	{
+		categoryCode: "II",
+		categoryNameRu: "Категория II — Стерильные помещения",
+		targetBactericidalEfficiencyPercent: 99.0,
+		roomExamplesRu: [
+			"Кабинет терапевтической стоматологии",
+			"Кабинет ортопедической стоматологии",
+			"Стерилизационная (ЦСО)",
+			"Кабинет гигиены и профилактики",
+		],
+		maxAllowedMicrobialCountCfuPerM3: 500,
+	},
+	{
+		categoryCode: "III",
+		categoryNameRu: "Категория III — Условно-стерильные помещения",
+		targetBactericidalEfficiencyPercent: 95.0,
+		roomExamplesRu: ["Кабинет рентгенодиагностики (КЛКТ, ОПТГ)", "Зуботехническая лаборатория"],
+		maxAllowedMicrobialCountCfuPerM3: 750,
+	},
+	{
+		categoryCode: "IV",
+		categoryNameRu: "Категория IV — Вспомогательные помещения",
+		targetBactericidalEfficiencyPercent: 90.0,
+		roomExamplesRu: ["Помещение временного накопления отходов", "Санузлы для персонала и пациентов"],
+		maxAllowedMicrobialCountCfuPerM3: 1000,
+	},
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. ГЕНЕРАЛЬНЫЕ УБОРКИ (САНПИН 3.3686-21 РАЗДЕЛ IV)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface GeneralCleaningPresetDefinition {
+	readonly roomType: "surgical" | "therapeutic" | "cso_sterile" | "xray" | "utility";
+	readonly roomTypeTitleRu: string;
+	readonly statutoryFrequencyDays: number;
+	readonly sanpinNormRefRu: string;
+	readonly standardDisinfectantRu: string;
+	readonly standardConcentrationPercent: number;
+	readonly standardExposureMinutes: number;
+	readonly standardUvIrradiationMinutes: number;
+	readonly standardVentilationMinutes: number;
+	readonly mandatoryStepsRu: readonly string[];
+}
+
+export const GENERAL_CLEANING_PRESETS: readonly GeneralCleaningPresetDefinition[] = [
+	{
+		roomType: "surgical",
+		roomTypeTitleRu: "Хирургический стоматологический кабинет / Операционная",
+		statutoryFrequencyDays: 7,
+		sanpinNormRefRu: "СанПиН 3.3686-21 п. 3524",
+		standardDisinfectantRu: "Аламинол (или Оптимакс Про)",
+		standardConcentrationPercent: 1.5,
+		standardExposureMinutes: 60,
+		standardUvIrradiationMinutes: 120,
+		standardVentilationMinutes: 20,
+		mandatoryStepsRu: [
+			"Освобождение кабинета от расходных материалов и медикаментов",
+			"Мытье поверхностей, стен на всю высоту дезинфицирующим раствором",
+			"Нанесение рабочего раствора дезсредства методом двукратного протирания с интервалом 15 мин",
+			"Выдержка экспозиции 60 минут в закрытом помещении",
+			"Смывание дезинфектанта чистой водой",
+			"Бактерицидное УФ-облучение 120 мин",
+			"Проветривание не менее 20 минут",
+		],
+	},
+	{
+		roomType: "therapeutic",
+		roomTypeTitleRu: "Терапевтический / Ортопедический кабинет",
+		statutoryFrequencyDays: 7,
+		sanpinNormRefRu: "СанПиН 3.3686-21 п. 3524",
+		standardDisinfectantRu: "Бриллиант Классик (или Аламинол)",
+		standardConcentrationPercent: 1.0,
+		standardExposureMinutes: 60,
+		standardUvIrradiationMinutes: 60,
+		standardVentilationMinutes: 15,
+		mandatoryStepsRu: [
+			"Очистка светильников, мебели и радиаторов",
+			"Обеззараживание поверхностей стоматологической установки",
+			"Двукратное протирание стен и пола рабочим раствором",
+			"Экспозиция 60 минут",
+			"Смывание чистой водой",
+			"УФ-обеззараживание 60 минут",
+			"Проветривание 15 минут",
+		],
+	},
+	{
+		roomType: "cso_sterile",
+		roomTypeTitleRu: "Центральное стерилизационное отделение (ЦСО)",
+		statutoryFrequencyDays: 7,
+		sanpinNormRefRu: "СанПиН 3.3686-21",
+		standardDisinfectantRu: "Оптимакс Про 1.5%",
+		standardConcentrationPercent: 1.5,
+		standardExposureMinutes: 60,
+		standardUvIrradiationMinutes: 90,
+		standardVentilationMinutes: 15,
+		mandatoryStepsRu: [
+			"Раздельная обработка 'грязной' и 'чистой' зон ЦСО",
+			"Очистка ультразвуковых моек и запечатывающих устройств",
+			"Дезинфекция столов и полок хранения крафт-пакетов",
+			"Экспозиция и смыв",
+			"УФ-облучение 90 минут",
+			"Проветривание",
+		],
+	},
+	{
+		roomType: "xray",
+		roomTypeTitleRu: "Кабинет рентгенодиагностики (КЛКТ / ОПТГ)",
+		statutoryFrequencyDays: 7,
+		sanpinNormRefRu: "СанПиН 2.6.1.1192-03 и СанПиН 3.3686-21",
+		standardDisinfectantRu: "Бриллиант Классик 1.0%",
+		standardConcentrationPercent: 1.0,
+		standardExposureMinutes: 30,
+		standardUvIrradiationMinutes: 60,
+		standardVentilationMinutes: 15,
+		mandatoryStepsRu: [
+			"Обесточивание аппаратуры перед влажной уборкой",
+			"Дезинфекция защитных фартуков и позиционеров",
+			"Протирание поверхностей аппарата, стен и пола",
+			"УФ-облучение 60 минут",
+		],
+	},
+	{
+		roomType: "utility",
+		roomTypeTitleRu: "Вспомогательные помещения и комната медотходов",
+		statutoryFrequencyDays: 30,
+		sanpinNormRefRu: "СанПиН 3.3686-21 и СанПиН 2.1.3684-21",
+		standardDisinfectantRu: "Аламинол 3.0%",
+		standardConcentrationPercent: 3.0,
+		standardExposureMinutes: 60,
+		standardUvIrradiationMinutes: 60,
+		standardVentilationMinutes: 30,
+		mandatoryStepsRu: [
+			"Дезинфекция баков и холодильных камер для отходов класса Б",
+			"Мытье стен и пола с дезраствором",
+			"УФ-облучение и вентиляция",
+		],
+	},
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. ЭКСПРЕСС-ЧЕК-ЛИСТ «ПОДГОТОВКА КАБИНЕТА И СТОМАТОЛОГИЧЕСКОЙ УСТАНОВКИ»
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type DentalAppointmentType =
+	| "therapy"
+	| "endodontics"
+	| "surgery"
+	| "implantology"
+	| "pediatric"
+	| "orthopedics"
+	| "orthodontics";
+
+export interface CabinetReadinessPreset {
+	readonly type: DentalAppointmentType;
+	readonly titleRu: string;
+	readonly shortLabelRu: string;
+	readonly requiredDisinfectantsRu: readonly string[];
+	readonly defaultDisinfectantRu: string;
+	readonly minExposureMinutes: number;
+	readonly requiredHandpiecesRu: readonly string[];
+	readonly requiresCofferdam: boolean;
+	readonly requiredAspirationRu: readonly string[];
+	readonly requiredSterileTrayRu: readonly string[];
+	readonly specialtyEquipmentRu: readonly string[];
+	readonly mandatorySurfacesRu: readonly string[];
+}
+
+export const CABINET_READINESS_PRESETS: readonly CabinetReadinessPreset[] = [
+	{
+		type: "therapy",
+		titleRu: "Терапевтический приём (кариес, реставрация, некариозные поражения)",
+		shortLabelRu: "Терапия",
+		requiredDisinfectantsRu: ["Бациллол АФ", "Дезискраб", "Экобриз Окси", "Микаспор"],
+		defaultDisinfectantRu: "Бациллол АФ (экспресс-спрей)",
+		minExposureMinutes: 3,
+		requiredHandpiecesRu: [
+			"Турбинный наконечник с оптикой (стерильный крафт-пакет, индикатор 5 кл.)",
+			"Микромоторный угловой наконечник 1:1",
+			"Пистолет вода/воздух с одноразовой насадкой",
+		],
+		requiresCofferdam: true,
+		requiredAspirationRu: [
+			"Слюноотсос одноразовый (подключен к системе)",
+			"Пылесос аспирационный (канюля 11/16 мм)",
+		],
+		requiredSterileTrayRu: [
+			"Зеркало стоматологическое стерильное",
+			"Зонд угловой остроконечный",
+			"Пинцет анатомический",
+			"Гладилка-штопфер двухсторонняя",
+		],
+		specialtyEquipmentRu: [
+			"Фотополимеризационная лампа с одноразовым чехлом",
+			"Набор матриц, клиньев и полировочных дисков",
+			"Адгезивная система и травильный гель",
+		],
+		mandatorySurfacesRu: [
+			"Кресло пациента, подголовник и подлокотники",
+			"Столик врача и столик ассистента",
+			"Ручки и выключатель бестеневого светильника",
+			"Плевательница и гидроблок (промывка дезсредством)",
+			"Шланги наконечников и блок управления установкой",
+		],
+	},
+	{
+		type: "endodontics",
+		titleRu: "Эндодонтический приём (пульпит, периодонтит, перелечивание каналов)",
+		shortLabelRu: "Эндодонтия",
+		requiredDisinfectantsRu: ["Бациллол АФ", "Дезискраб", "Экобриз Окси"],
+		defaultDisinfectantRu: "Бациллол АФ (экспресс-спрей)",
+		minExposureMinutes: 3,
+		requiredHandpiecesRu: [
+			"Эндодонтический микромотор / угловой наконечник 6:1 (стерильный)",
+			"Турбинный наконечник для создания эндодоступа",
+			"Ультразвуковой наконечник с эндо-насадками",
+		],
+		requiresCofferdam: true,
+		requiredAspirationRu: [
+			"Слюноотсос с эндодонтической канюлей",
+			"Хирургический/эндо пылесос для ирригации",
+		],
+		requiredSterileTrayRu: [
+			"Смотровой лоток (зеркало, зонд, пинцет)",
+			"Эндодонтический пинцет с продольным пазом",
+			"Эндодонтическая линейка калибровочная стерильная",
+		],
+		specialtyEquipmentRu: [
+			"Апекслокатор с проверенным загубником и клипсой",
+			"Эндомотор беспроводной",
+			"Ирригационные шприцы с эндоиглами с боковым срезом (NaOCl 3%, ЭДТА 17%)",
+			"Аппарат трехмерной обтурации горячей гуттаперчей",
+		],
+		mandatorySurfacesRu: [
+			"Кресло пациента и защитный фартук",
+			"Столик врача и столик ассистента",
+			"Ручки светильника (барьерная пленка / дезинфекция)",
+			"Корпус апекслокатора и эндомотора",
+			"Плевательница и аспирационная система",
+		],
+	},
+	{
+		type: "surgery",
+		titleRu: "Хирургический приём (удаление зубов, цистэктомия, резекция)",
+		shortLabelRu: "Хирургия",
+		requiredDisinfectantsRu: ["Дезискраб", "Бациллол АФ", "Аламинол 1.5%"],
+		defaultDisinfectantRu: "Дезискраб / Бациллол АФ",
+		minExposureMinutes: 5,
+		requiredHandpiecesRu: [
+			"Прямой хирургический наконечник стерильный",
+			"Хирургический угловой наконечник со стерильным физраствором",
+		],
+		requiresCofferdam: false,
+		requiredAspirationRu: [
+			"Хирургический аспиратор стерильный (металлический/одноразовый наконечник)",
+			"Слюноотсос стерильный",
+		],
+		requiredSterileTrayRu: [
+			"Щипцы экстракционные в крафт-пакете (индикатор 5 кл. ОК)",
+			"Элеваторы прямой, штыковидный, угловой стерильные",
+			"Кюретажная ложка Лукаса",
+			"Распатор костный и скальпель стерильный одноразовый",
+			"Иглодержатель, ножницы, шовный материал с атравматической иглой",
+		],
+		specialtyEquipmentRu: [
+			"Стерильные марлевые салфетки и гемостатические губки",
+			"Анестетик карпульный с иглой 30G/27G и карпульным шприцем",
+			"Стерильный лоток для удаленных зубов/биоптата",
+		],
+		mandatorySurfacesRu: [
+			"Полная деконтаминация стоматологической установки (экспозиция 5 мин)",
+			"Стерильное операционное белье / одноразовая простыня",
+			"Бестеневой светильник со стерильными чехлами на ручках",
+			"Хирургический столик из нержавеющей стали (стерильное покрытие)",
+		],
+	},
+	{
+		type: "implantology",
+		titleRu: "Дентальная имплантация и костная пластика (высокая стерильность)",
+		shortLabelRu: "Имплантация",
+		requiredDisinfectantsRu: ["Дезискраб 70%", "Бациллол АФ", "Оптимакс Про"],
+		defaultDisinfectantRu: "Дезискраб + Бациллол АФ",
+		minExposureMinutes: 5,
+		requiredHandpiecesRu: [
+			"Физиодиспенсер со стерильным угловым редукционным наконечником 20:1",
+			"Стерильная ирригационная система охлаждения физраствором",
+		],
+		requiresCofferdam: false,
+		requiredAspirationRu: [
+			"Хирургический наконечник аспирации тонкий стерильный",
+			"Резервная аспирационная линия",
+		],
+		requiredSterileTrayRu: [
+			"Хирургический базовый набор стерильный",
+			"Хирургический протокол имплантационной системы (пилотные, формирующие фрезы)",
+			"Динамометрический ключ (храповик / динамометр) поверенный",
+			"Глубиномер и пины параллельности",
+		],
+		specialtyEquipmentRu: [
+			"Физиодиспенсер проверен, педаль в стерильном чехле",
+			"Стерильные халаты, шапочки, перчатки и маски хирурга/ассистента",
+			"Стерильные простыни для изоляции операционного поля пациента",
+			"Упаковки дентальных имплантатов с неповрежденной заводской пломбой",
+		],
+		mandatorySurfacesRu: [
+			"Стерильное зонирование операционной (чистая и грязная зоны)",
+			"Все поверхности обработаны двукратно с экспозицией 5 мин",
+			"УФ-рециркулятор отработал предоперационный цикл",
+		],
+	},
+	{
+		type: "pediatric",
+		titleRu: "Детский приём (терапия, адаптация, молочный прикус)",
+		shortLabelRu: "Детство",
+		requiredDisinfectantsRu: ["Экобриз Окси (мягкий запах)", "Бациллол АФ"],
+		defaultDisinfectantRu: "Экобриз Окси",
+		minExposureMinutes: 3,
+		requiredHandpiecesRu: [
+			"Турбинный наконечник с пониженным уровнем шума",
+			"Микромоторный наконечник с щеточкой для профгигиены",
+		],
+		requiresCofferdam: true,
+		requiredAspirationRu: [
+			"Слюноотсос с мягким наконечником (комфортный детский)",
+			"Аспирационная канюля детская",
+		],
+		requiredSterileTrayRu: [
+			"Смотровой детский лоток стерильный",
+			"Зонд пуговчатый не травмирующий",
+			"Пинцет анатомический",
+		],
+		specialtyEquipmentRu: [
+			"Аппликационный анестетик с фруктовым вкусом",
+			"Цветные коффердам-платки и детские клампы (W8A, 14, 00)",
+			"Фторирующий гель / реминерализующая пенка",
+			"Адаптационные подарки / игрушка смелости",
+		],
+		mandatorySurfacesRu: [
+			"Кресло пациента с детским вкладышем/подушкой",
+			"Столики врача и ассистента без пугающих инструментов на виду",
+			"Ручки светильника и плевательница продезинфицированы",
+		],
+	},
+	{
+		type: "orthopedics",
+		titleRu: "Ортопедический приём (препарирование, сканирование, примерка, фиксация)",
+		shortLabelRu: "Ортопедия",
+		requiredDisinfectantsRu: ["Бациллол АФ", "Дезискраб", "Экобриз Окси"],
+		defaultDisinfectantRu: "Бациллол АФ",
+		minExposureMinutes: 3,
+		requiredHandpiecesRu: [
+			"Ортопедический турбинный наконечник высокой мощности с 4-точечным спреем",
+			"Повышающий наконечник 1:5 для финишной обработки уступа",
+		],
+		requiresCofferdam: false,
+		requiredAspirationRu: [
+			"Слюноотсос одноразовый",
+			"Пылесос высокообъемный",
+		],
+		requiredSterileTrayRu: [
+			"Смотровой лоток (зеркало, зонд, пинцет)",
+			"Ретракционная гладилка тонкая",
+			"Калибратор толщины препарирования",
+		],
+		specialtyEquipmentRu: [
+			"Набор алмазных боров для препарирования под коронки/виниры",
+			"Ретракционные нити (размеры 000, 00, 0) и гемостатик",
+			"Интраоральный 3D-сканер с откалиброванной стерильной насадкой",
+			"Адгезивный цемент двойного отверждения и полимеризационная лампа",
+		],
+		mandatorySurfacesRu: [
+			"Кресло пациента, столик врача и ассистента",
+			"Наконечник интраорального сканера и защитные чехлы",
+			"Светильник и блок управления установкой",
+		],
+	},
+	{
+		type: "orthodontics",
+		titleRu: "Ортодонтический приём (фиксация брекетов, замена дуг, элайнеры)",
+		shortLabelRu: "Ортодонтия",
+		requiredDisinfectantsRu: ["Бациллол АФ", "Экобриз Окси"],
+		defaultDisinfectantRu: "Бациллол АФ",
+		minExposureMinutes: 3,
+		requiredHandpiecesRu: [
+			"Микромоторный наконечник с полировочной чашкой и щеточкой",
+		],
+		requiresCofferdam: false,
+		requiredAspirationRu: [
+			"Слюноотсос с мягким изгибом",
+			"Пылесос",
+		],
+		requiredSterileTrayRu: [
+			"Смотровой лоток стерильный",
+			"Ортодонтический пинцет обратного действия для брекетов",
+			"Позиционер брекетов регулируемый стерильный",
+			"Щипцы Вайнгарта и дистальные кусачки стерильные",
+		],
+		specialtyEquipmentRu: [
+			"Роторасширитель (Оптрагейт / пластиковый ретрактор) стерильный",
+			"Ортодонтический адгезив светового отверждения",
+			"Ортодонтические дуги, лигатуры и эластики",
+		],
+		mandatorySurfacesRu: [
+			"Кресло пациента, подголовник",
+			"Столики врача и ассистента",
+			"Светильник и кнопки управления",
+		],
+	},
+];
+
+export function getCabinetReadinessPreset(type: DentalAppointmentType): CabinetReadinessPreset {
+	const found = CABINET_READINESS_PRESETS.find((p) => p.type === type);
+	return found || CABINET_READINESS_PRESETS[0]!;
+}

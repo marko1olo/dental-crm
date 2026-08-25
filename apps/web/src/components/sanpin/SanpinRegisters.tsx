@@ -21,6 +21,7 @@ import {
 	QrCode,
 	Radio,
 	Recycle,
+	Rocket,
 	RotateCcw,
 	Search,
 	ShieldAlert,
@@ -35,6 +36,7 @@ import {
 import React, { useEffect, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import { CabinetReadinessTab } from "./CabinetReadinessTab";
 import { AutoclaveRegisterTab } from "./AutoclaveRegisterTab";
 import { BactericidalRegisterTab } from "./BactericidalRegisterTab";
 import { EmergencyBiohazardRegisterTab } from "./EmergencyBiohazardRegisterTab";
@@ -42,13 +44,21 @@ import { GeneralCleaningRegisterTab } from "./GeneralCleaningRegisterTab";
 import { MedicalWasteRegisterTab } from "./MedicalWasteRegisterTab";
 import { PsoRegisterTab } from "./PsoRegisterTab";
 import { TemperatureHumidityRegisterTab } from "./TemperatureHumidityRegisterTab";
+import { RetroactiveBatchTab } from "./RetroactiveBatchTab";
+import { RetroactiveSanpinBatchModal } from "./RetroactiveSanpinBatchModal";
 import { SanpinCycleModal } from "./SanpinCycleModal";
 import { SanpinJournalsModal } from "./journals/SanpinJournalsModal";
 import { KraftPackageBarcodeModal } from "./kraft/KraftPackageBarcodeModal";
 import { AutoclaveLog257Modal } from "./autoclaveLog/AutoclaveLog257Modal";
+import {
+	generateSanpinConsolidatedInspectionHtml,
+	exportSanpinConsolidatedArchiveToCsv,
+} from "./journals/sanpinJournalsEngine";
 import "./SanpinRegisters.css";
 
 export type SanpinRegisterTab =
+	| "retroactive_batch"
+	| "cabinet_readiness"
 	| "pso"
 	| "autoclave"
 	| "bactericidal"
@@ -67,6 +77,7 @@ export function SanpinRegisters() {
 	const [isKraftModalOpen, setIsKraftModalOpen] = useState(false);
 	const [isJournal257ModalOpen, setIsJournal257ModalOpen] = useState(false);
 	const [isSanpinJournalsModalOpen, setIsSanpinJournalsModalOpen] = useState(false);
+	const [isRetroactiveBatchModalOpen, setIsRetroactiveBatchModalOpen] = useState(false);
 	const [sanpinJournalsTab, setSanpinJournalsTab] = useState<"pso" | "bactericidal" | "cleaning" | "disinfectants">("pso");
 	const [isNurseSignModalOpen, setIsNurseSignModalOpen] = useState(false);
 	const [nurseSignName, setNurseSignName] = useState("Медсестра ЦСО");
@@ -151,6 +162,309 @@ export function SanpinRegisters() {
 		window.print();
 	};
 
+	const handlePrintConsolidatedBinder = () => {
+		const html = generateSanpinConsolidatedInspectionHtml({
+			clinicInfo: {
+				name: "ООО «Стоматологическая клиника ДЕНТЕ»",
+				ogrn: "1027700123456",
+				inn: "7701234567",
+				address: "г. Москва, ул. Клиническая, д. 10",
+				chiefDoctor: "Смирнов А. В.",
+				headNurse: "Иванова М. П.",
+				licenseNumber: "№ ЛО41-01137-77/00368421",
+				volumeNumber: 1,
+			},
+			periodLabelRu: `за период с 01.08.2026 по ${new Date().toLocaleDateString("ru-RU")}`,
+			psoRecords: [
+				{
+					id: "PSO-20260822-0101",
+					timestamp: new Date().toISOString(),
+					instrumentName: "Терапевтический смотровой набор (зеркала, зонды, пинцеты)",
+					categoryId: "therapeutic_kit",
+					batchItemCount: 120,
+					testedSampleCount: 5,
+					testType: "both_standard",
+					isAzopyramNegative: true,
+					isPhenolphthaleinNegative: true,
+					isSudanNegative: true,
+					detergentBrand: "Биолот 0.5% + Аламинол 1.0%",
+					isBatchApproved: true,
+					operatorStaffFullName: "Смирнова Анна Викторовна",
+					operatorStaffPosition: "Медсестра ЦСО",
+					electronicStampVerified: true,
+					notes: "Пробы отрицательные. Партия передана на автоклавирование (Цикл #14)",
+				},
+				{
+					id: "PSO-20260822-0102",
+					timestamp: new Date(Date.now() - 3600 * 1000 * 2).toISOString(),
+					instrumentName: "Хирургические элеваторы и щипцы экстракционные",
+					categoryId: "surgical_kit",
+					batchItemCount: 40,
+					testedSampleCount: 4,
+					testType: "both_standard",
+					isAzopyramNegative: true,
+					isPhenolphthaleinNegative: true,
+					isSudanNegative: true,
+					detergentBrand: "Оптимакс Про 1.5%",
+					isBatchApproved: true,
+					operatorStaffFullName: "Смирнова Анна Викторовна",
+					operatorStaffPosition: "Медсестра ЦСО",
+					electronicStampVerified: true,
+					notes: "Пробы отрицательные. Хирургический блок.",
+				},
+			],
+			form257Records: [
+				{
+					id: "F257-20260822-01",
+					date: "2026-08-22",
+					cycleNumber: 14,
+					sterilizerId: "autoclave-01",
+					sterilizerCode: "АВТОКЛАВ-01",
+					sterilizerBrandModel: "Euronda E9 Next (Класс B)",
+					sterilizerSerialNumber: "SN-EUR-99824",
+					regimeId: "b_134_universal",
+					regimeNameRu: "134°C Универсальный (фракционированный вакуум)",
+					targetTemperatureCelsius: 134,
+					targetPressureBar: 2.1,
+					targetExposureMinutes: 5,
+					actualTemperatureCelsius: 134.5,
+					actualPressureBar: 2.15,
+					actualExposureMinutes: 5.5,
+					itemsDescriptionRu: "Стоматологические наконечники, боры, терапевтические наборы (крафт-пакеты)",
+					packsCount: 18,
+					packagingType: "kraft_pouch",
+					packagingNameRu: "Пакеты комбинированные самоклеящиеся 100х200",
+					shelfLifeDays: 50,
+					chamberPoints: [
+						{ pointIndex: 1, code: "KT-1", nameRu: "Верхний левый угол", indicatorId: "medtest-134", indicatorTradeNameRu: "Медтест 134/5", status: "passed", initialColorRu: "Желтый", actualColorRu: "Темно-коричневый" },
+						{ pointIndex: 2, code: "KT-2", nameRu: "Верхний правый угол", indicatorId: "medtest-134", indicatorTradeNameRu: "Медтест 134/5", status: "passed", initialColorRu: "Желтый", actualColorRu: "Темно-коричневый" },
+						{ pointIndex: 3, code: "KT-3", nameRu: "Центр камеры", indicatorId: "medtest-134", indicatorTradeNameRu: "Медтест 134/5", status: "passed", initialColorRu: "Желтый", actualColorRu: "Темно-коричневый" },
+						{ pointIndex: 4, code: "KT-4", nameRu: "Нижний левый угол", indicatorId: "medtest-134", indicatorTradeNameRu: "Медтест 134/5", status: "passed", initialColorRu: "Желтый", actualColorRu: "Темно-коричневый" },
+						{ pointIndex: 5, code: "KT-5", nameRu: "Точка стока конденсата", indicatorId: "medtest-134", indicatorTradeNameRu: "Медтест 134/5", status: "passed", initialColorRu: "Желтый", actualColorRu: "Темно-коричневый" },
+					],
+					areAllPointsPassed: true,
+					chemicalIndicatorNameRu: "Медтест 134/5 (5 класс)",
+					isCyclePassed: true,
+					status: "sterile_passed",
+					operatorStaffFullName: "Смирнова А. В.",
+					operatorStaffPosition: "Медсестра ЦСО",
+					headNurseSignatureFullName: "Иванова М. П.",
+					isHeadNurseVerified: true,
+					verificationTimestamp: new Date().toISOString(),
+					digitalStampHash: "STAMP-AUTOCLAVE-01-20260822-VERIFIED-ECP",
+					createdAt: new Date().toISOString(),
+				},
+			],
+			bactericidalSessions: [
+				{
+					id: "sess-01",
+					equipmentId: "equip-01",
+					roomName: "Кабинет №1 (Терапия)",
+					deviceBrand: "Дезар-Кронт 802",
+					date: "2026-08-22",
+					sessionStartTime: "08:00",
+					sessionEndTime: "08:30",
+					durationMinutes: 30,
+					durationHours: 0.5,
+					operatingMode: "pre_op_preparation",
+					cumulativeHoursAfterSession: 1420.5,
+					operatorStaffFullName: "Соколова Т. Н.",
+				},
+			],
+			generalCleanings: [
+				{
+					id: "clean-01",
+					roomType: "surgical",
+					roomName: "Хирургический кабинет №2",
+					scheduledDate: "2026-08-22",
+					actualDateTime: new Date().toISOString(),
+					treatedAreaM2: 32.5,
+					disinfectantName: "Аламинол 1.5%",
+					activeIngredient: "Альдегиды + ЧАС",
+					solutionConcentrationPercent: 1.5,
+					applicationMethodRu: "Двукратное протирание поверхностей",
+					exposureTimeMinutes: 60,
+					uvIrradiationMinutes: 60,
+					ventilationMinutes: 15,
+					operatorStaffFullName: "Смирнова А. В.",
+					inspectorStaffFullName: "Иванова М. П.",
+					isInspectorVerified: true,
+					status: "verified_by_inspector",
+				},
+			],
+			temperatureLogs: [
+				{
+					id: "temp-01",
+					measurementDate: "2026-08-22",
+					measurementPeriod: "morning",
+					equipmentName: "Фармацевтический холодильник Pozis ХФ-250",
+					location: "ЦСО / Процедурный кабинет",
+					meterDeviceName: "Термометр ТМН-1",
+					meterSerialNumber: "SN-90412",
+					temperatureCelsius: 4.2,
+					relativeHumidityPercent: 55,
+					targetTempMinCelsius: 2,
+					targetTempMaxCelsius: 8,
+					isWithinNorm: true,
+					operatorStaffFullName: "Иванова М. П.",
+				},
+			],
+		});
+
+		const printWindow = window.open("", "_blank");
+		if (printWindow) {
+			printWindow.document.write(html);
+			printWindow.document.close();
+			printWindow.focus();
+			setTimeout(() => {
+				printWindow.print();
+			}, 250);
+		}
+	};
+
+	const handleExportConsolidatedCsv = () => {
+		const csv = exportSanpinConsolidatedArchiveToCsv({
+			clinicInfo: {
+				name: "ООО «Стоматологическая клиника ДЕНТЕ»",
+				ogrn: "1027700123456",
+				inn: "7701234567",
+				address: "г. Москва, ул. Клиническая, д. 10",
+				chiefDoctor: "Смирнов А. В.",
+				headNurse: "Иванова М. П.",
+				licenseNumber: "№ ЛО41-01137-77/00368421",
+				volumeNumber: 1,
+			},
+			periodLabelRu: `за период с 01.08.2026 по ${new Date().toLocaleDateString("ru-RU")}`,
+			psoRecords: [
+				{
+					id: "PSO-20260822-0101",
+					timestamp: new Date().toISOString(),
+					instrumentName: "Терапевтический смотровой набор (зеркала, зонды, пинцеты)",
+					categoryId: "therapeutic_kit",
+					batchItemCount: 120,
+					testedSampleCount: 5,
+					testType: "both_standard",
+					isAzopyramNegative: true,
+					isPhenolphthaleinNegative: true,
+					isSudanNegative: true,
+					detergentBrand: "Биолот 0.5% + Аламинол 1.0%",
+					isBatchApproved: true,
+					operatorStaffFullName: "Смирнова Анна Викторовна",
+					operatorStaffPosition: "Медсестра ЦСО",
+					electronicStampVerified: true,
+					notes: "Пробы отрицательные. Партия передана на автоклавирование (Цикл #14)",
+				},
+			],
+			form257Records: [
+				{
+					id: "F257-20260822-01",
+					date: "2026-08-22",
+					cycleNumber: 14,
+					sterilizerId: "autoclave-01",
+					sterilizerCode: "АВТОКЛАВ-01",
+					sterilizerBrandModel: "Euronda E9 Next (Класс B)",
+					sterilizerSerialNumber: "SN-EUR-99824",
+					regimeId: "b_134_universal",
+					regimeNameRu: "134°C Универсальный (фракционированный вакуум)",
+					targetTemperatureCelsius: 134,
+					targetPressureBar: 2.1,
+					targetExposureMinutes: 5,
+					actualTemperatureCelsius: 134.5,
+					actualPressureBar: 2.15,
+					actualExposureMinutes: 5.5,
+					itemsDescriptionRu: "Стоматологические наконечники, боры, терапевтические наборы (крафт-пакеты)",
+					packsCount: 18,
+					packagingType: "kraft_pouch",
+					packagingNameRu: "Пакеты комбинированные самоклеящиеся 100х200",
+					shelfLifeDays: 50,
+					chamberPoints: [
+						{ pointIndex: 1, code: "KT-1", nameRu: "Верхний левый угол", indicatorId: "medtest-134", indicatorTradeNameRu: "Медтест 134/5", status: "passed", initialColorRu: "Желтый", actualColorRu: "Темно-коричневый" },
+						{ pointIndex: 2, code: "KT-2", nameRu: "Верхний правый угол", indicatorId: "medtest-134", indicatorTradeNameRu: "Медтест 134/5", status: "passed", initialColorRu: "Желтый", actualColorRu: "Темно-коричневый" },
+						{ pointIndex: 3, code: "KT-3", nameRu: "Центр камеры", indicatorId: "medtest-134", indicatorTradeNameRu: "Медтест 134/5", status: "passed", initialColorRu: "Желтый", actualColorRu: "Темно-коричневый" },
+						{ pointIndex: 4, code: "KT-4", nameRu: "Нижний левый угол", indicatorId: "medtest-134", indicatorTradeNameRu: "Медтест 134/5", status: "passed", initialColorRu: "Желтый", actualColorRu: "Темно-коричневый" },
+						{ pointIndex: 5, code: "KT-5", nameRu: "Точка стока конденсата", indicatorId: "medtest-134", indicatorTradeNameRu: "Медтест 134/5", status: "passed", initialColorRu: "Желтый", actualColorRu: "Темно-коричневый" },
+					],
+					areAllPointsPassed: true,
+					chemicalIndicatorNameRu: "Медтест 134/5 (5 класс)",
+					isCyclePassed: true,
+					status: "sterile_passed",
+					operatorStaffFullName: "Смирнова А. В.",
+					operatorStaffPosition: "Медсестра ЦСО",
+					headNurseSignatureFullName: "Иванова М. П.",
+					isHeadNurseVerified: true,
+					verificationTimestamp: new Date().toISOString(),
+					digitalStampHash: "STAMP-AUTOCLAVE-01-20260822-VERIFIED-ECP",
+					createdAt: new Date().toISOString(),
+				},
+			],
+			bactericidalSessions: [
+				{
+					id: "sess-01",
+					equipmentId: "equip-01",
+					roomName: "Кабинет №1 (Терапия)",
+					deviceBrand: "Дезар-Кронт 802",
+					date: "2026-08-22",
+					sessionStartTime: "08:00",
+					sessionEndTime: "08:30",
+					durationMinutes: 30,
+					durationHours: 0.5,
+					operatingMode: "pre_op_preparation",
+					cumulativeHoursAfterSession: 1420.5,
+					operatorStaffFullName: "Соколова Т. Н.",
+				},
+			],
+			generalCleanings: [
+				{
+					id: "clean-01",
+					roomType: "surgical",
+					roomName: "Хирургический кабинет №2",
+					scheduledDate: "2026-08-22",
+					actualDateTime: new Date().toISOString(),
+					treatedAreaM2: 32.5,
+					disinfectantName: "Аламинол 1.5%",
+					activeIngredient: "Альдегиды + ЧАС",
+					solutionConcentrationPercent: 1.5,
+					applicationMethodRu: "Двукратное протирание поверхностей",
+					exposureTimeMinutes: 60,
+					uvIrradiationMinutes: 60,
+					ventilationMinutes: 15,
+					operatorStaffFullName: "Смирнова А. В.",
+					inspectorStaffFullName: "Иванова М. П.",
+					isInspectorVerified: true,
+					status: "verified_by_inspector",
+				},
+			],
+			temperatureLogs: [
+				{
+					id: "temp-01",
+					measurementDate: "2026-08-22",
+					measurementPeriod: "morning",
+					equipmentName: "Фармацевтический холодильник Pozis ХФ-250",
+					location: "ЦСО / Процедурный кабинет",
+					meterDeviceName: "Термометр ТМН-1",
+					meterSerialNumber: "SN-90412",
+					temperatureCelsius: 4.2,
+					relativeHumidityPercent: 55,
+					targetTempMinCelsius: 2,
+					targetTempMaxCelsius: 8,
+					isWithinNorm: true,
+					operatorStaffFullName: "Иванова М. П.",
+				},
+			],
+		});
+
+		const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement("a");
+		link.setAttribute("href", url);
+		link.setAttribute("download", "SanPiN_Consolidated_Production_Control_Archive.csv");
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		URL.revokeObjectURL(url);
+		showToast("Сводный архив СанПиН (CSV) успешно экспортирован", "success");
+	};
+
 	const handleOpenSanpinJournals = (tab?: "pso" | "bactericidal" | "cleaning" | "disinfectants") => {
 		if (tab) {
 			setSanpinJournalsTab(tab);
@@ -200,7 +514,28 @@ export function SanpinRegisters() {
 						title="1 Клик: Автоматически сформировать и опечатать журналы 257/у и 366/у за всю смену на основе завершенных приемов"
 						data-testid="sanpin-1click-autofill-btn"
 					>
-						<Sparkles size={16} /> {autoFilling ? "Оформление..." : "⚡ Закрыть смену по СанПиН (1 клик)"}
+						<Sparkles size={16} /> {autoFilling ? "Оформление..." : "⚡ Закрыть смену (сегодня)"}
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setIsRetroactiveBatchModalOpen(true)}
+						className="sanpin-btn sanpin-btn-primary"
+						style={{
+							minHeight: "44px",
+							padding: "0.5rem 1rem",
+							fontSize: "0.875rem",
+							fontWeight: 800,
+							background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
+							borderColor: "#1d4ed8",
+							color: "#ffffff",
+							boxShadow: "0 2px 8px rgba(37, 99, 235, 0.3)",
+							cursor: "pointer",
+						}}
+						title="Пакетное заполнение журналов СанПиН за период в 1 клик (неделя, месяц, квартал)"
+						data-testid="open-retroactive-batch-header-btn"
+					>
+						<Rocket size={16} /> 🚀 Пакетное закрытие (за период)
 					</button>
 
 					<button
@@ -271,12 +606,43 @@ export function SanpinRegisters() {
 
 					<button
 						type="button"
+						onClick={handlePrintConsolidatedBinder}
+						className="sanpin-btn sanpin-btn-primary"
+						style={{
+							minHeight: "44px",
+							padding: "0.5rem 0.9rem",
+							fontSize: "0.875rem",
+							fontWeight: 700,
+							cursor: "pointer",
+							background: "linear-gradient(135deg, #4338ca 0%, #3730a3 100%)",
+							borderColor: "#3730a3",
+							color: "#fff",
+						}}
+						title="Генератор сшива журналов «Сводный журнал производственного контроля СанПиН за период» (А4 Альбомная с титульным листом и заверительной надписью)"
+						data-testid="print-consolidated-binder-btn"
+					>
+						<FileBadge size={16} /> Сводный сшив СанПиН (А4)
+					</button>
+
+					<button
+						type="button"
+						onClick={handleExportConsolidatedCsv}
+						className="sanpin-btn sanpin-btn-secondary"
+						style={{ minHeight: "44px", padding: "0.5rem 0.9rem", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}
+						title="1-клик экспорт в единый многостраничный CSV/Excel архив с разделителями страниц"
+						data-testid="export-consolidated-csv-btn"
+					>
+						<Download size={16} color="var(--brand-primary)" /> Сводный CSV архив
+					</button>
+
+					<button
+						type="button"
 						onClick={handleExportDossierPdf}
 						className="sanpin-btn sanpin-btn-secondary"
 						style={{ minHeight: "44px", padding: "0.5rem 0.9rem", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}
-						title="Печать полного досье СанПиН"
+						title="Печать текущей вкладки СанПиН"
 					>
-						<Printer size={16} /> Печать / PDF
+						<Printer size={16} /> Печать вкладки
 					</button>
 
 					<button
@@ -372,6 +738,26 @@ export function SanpinRegisters() {
 			<div className="sanpin-tabs-nav">
 				<button
 					type="button"
+					onClick={() => setActiveTab("retroactive_batch")}
+					className={`sanpin-tab-btn ${activeTab === "retroactive_batch" ? "active" : ""}`}
+					style={{ minHeight: "44px", fontSize: "0.9rem", fontWeight: 700 }}
+					data-testid="tab-retroactive-batch-btn"
+				>
+					<Rocket size={18} color={activeTab === "retroactive_batch" ? "#ffffff" : "var(--brand-primary, #2563eb)"} /> ⚡ Пакетное закрытие (за период)
+				</button>
+
+				<button
+					type="button"
+					onClick={() => setActiveTab("cabinet_readiness")}
+					className={`sanpin-tab-btn ${activeTab === "cabinet_readiness" ? "active" : ""}`}
+					style={{ minHeight: "44px", fontSize: "0.9rem", fontWeight: 700 }}
+					data-testid="tab-cabinet-readiness-btn"
+				>
+					<ShieldCheck size={18} color="var(--brand-primary, #2563eb)" /> 0. Готовность кабинета
+				</button>
+
+				<button
+					type="button"
 					onClick={() => setActiveTab("pso")}
 					className={`sanpin-tab-btn ${activeTab === "pso" ? "active" : ""}`}
 					style={{ minHeight: "44px", fontSize: "0.9rem" }}
@@ -435,6 +821,8 @@ export function SanpinRegisters() {
 			</div>
 
 			{/* Tab Views */}
+			{activeTab === "retroactive_batch" && <RetroactiveBatchTab />}
+			{activeTab === "cabinet_readiness" && <CabinetReadinessTab />}
 			{activeTab === "pso" && <PsoRegisterTab />}
 			{activeTab === "autoclave" && <AutoclaveRegisterTab />}
 			{activeTab === "bactericidal" && <BactericidalRegisterTab />}
@@ -564,6 +952,13 @@ export function SanpinRegisters() {
 			<AutoclaveLog257Modal
 				isOpen={isJournal257ModalOpen}
 				onClose={() => setIsJournal257ModalOpen(false)}
+			/>
+
+			{/* Retroactive SanPiN Batch Modal Studio */}
+			<RetroactiveSanpinBatchModal
+				isOpen={isRetroactiveBatchModalOpen}
+				onClose={() => setIsRetroactiveBatchModalOpen(false)}
+				onSuccess={fetchSummary}
 			/>
 		</div>
 	);

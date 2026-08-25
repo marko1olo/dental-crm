@@ -18,6 +18,12 @@ import {
 	generateGeneralCleaningJournalPrintHtml,
 	generatePsoJournalPrintHtml,
 	generatePsoRecordId,
+	generateSanpinConsolidatedInspectionHtml,
+	exportSanpinConsolidatedArchiveToCsv,
+	generateTemperatureHumidityJournalPrintHtml,
+	exportTemperatureHumidityJournalToCsv,
+	numberToRussianWords,
+	formatRussianSheetsCount,
 	validateCleaningScheduleCompliance,
 	type BactericidalEquipmentRecord,
 	type BactericidalSessionRecord,
@@ -524,4 +530,197 @@ describe("SanPiN 3.3686-21 Disinfection & Sterilization Journal Studio Suite", (
 			assert.equal(typeof calculateDisinfectantSolutionMath, "function");
 		});
 	});
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// 8. CONSOLIDATED BINDER & MULTI-SECTION EXPORT
+	// ─────────────────────────────────────────────────────────────────────────
+	describe("8. Consolidated Supervisory Inspection Binder (Rospotrebnadzor Dossier)", () => {
+		it("formats Russian sheet counts and declensions properly", () => {
+			assert.equal(numberToRussianWords(1), "один");
+			assert.equal(numberToRussianWords(5), "пять");
+			assert.equal(numberToRussianWords(21), "двадцать один");
+			assert.equal(numberToRussianWords(32), "двадцать два".replace("двадцать два", "тридцать два"));
+
+			const sheets1 = formatRussianSheetsCount(1);
+			assert.equal(sheets1.formattedRu, "1 (один) лист");
+
+			const sheets3 = formatRussianSheetsCount(3);
+			assert.equal(sheets3.formattedRu, "3 (три) листа");
+
+			const sheets10 = formatRussianSheetsCount(10);
+			assert.equal(sheets10.formattedRu, "10 (десять) листов");
+		});
+
+		it("generates comprehensive Consolidated A4 Landscape HTML Binder with cover page and license", () => {
+			const html = generateSanpinConsolidatedInspectionHtml({
+				clinicInfo: {
+					name: "ООО «Стоматологическая клиника ДЕНТЕ»",
+					ogrn: "1027700123456",
+					inn: "7701234567",
+					address: "г. Москва, ул. Клиническая, д. 10",
+					chiefDoctor: "Смирнов А. В.",
+					headNurse: "Иванова М. П.",
+					licenseNumber: "№ ЛО41-01137-77/00368421",
+					volumeNumber: 1,
+				},
+				periodLabelRu: "за август 2026",
+				totalPagesCount: 15,
+				psoRecords: [
+					{
+						id: "pso-01",
+						timestamp: "2026-08-22T09:00:00Z",
+						instrumentName: "Терапевтический смотровой набор",
+						categoryId: "therapeutic_kit",
+						batchItemCount: 100,
+						testedSampleCount: 5,
+						testType: "both_standard",
+						isAzopyramNegative: true,
+						isPhenolphthaleinNegative: true,
+						isSudanNegative: true,
+						detergentBrand: "Биолот 0.5%",
+						isBatchApproved: true,
+						operatorStaffFullName: "Смирнова А. В.",
+						operatorStaffPosition: "Медсестра ЦСО",
+						electronicStampVerified: true,
+					},
+				],
+				form257Records: [
+					{
+						id: "f257-01",
+						date: "2026-08-22",
+						cycleNumber: 1,
+						sterilizerId: "autoclave-01",
+						sterilizerCode: "АВТОКЛАВ-01",
+						sterilizerBrandModel: "Euronda E9 Next",
+						sterilizerSerialNumber: "SN-EUR-99824",
+						regimeId: "steam_134_5min",
+						regimeNameRu: "134°C Универсальный",
+						targetTemperatureCelsius: 134,
+						targetPressureBar: 2.1,
+						targetExposureMinutes: 5,
+						actualTemperatureCelsius: 134.5,
+						actualPressureBar: 2.15,
+						actualExposureMinutes: 5.5,
+						itemsDescriptionRu: "Хирургический набор",
+						packsCount: 10,
+						packagingType: "kraft_pouch",
+						packagingNameRu: "Пакеты комбинированные",
+						shelfLifeDays: 50,
+						chamberPoints: [
+							{ pointIndex: 1, code: "KT-1", nameRu: "КТ-1", indicatorId: "ind", indicatorTradeNameRu: "Медтест", status: "passed", initialColorRu: "Желтый", actualColorRu: "Коричневый" },
+							{ pointIndex: 2, code: "KT-2", nameRu: "КТ-2", indicatorId: "ind", indicatorTradeNameRu: "Медтест", status: "passed", initialColorRu: "Желтый", actualColorRu: "Коричневый" },
+							{ pointIndex: 3, code: "KT-3", nameRu: "КТ-3", indicatorId: "ind", indicatorTradeNameRu: "Медтест", status: "passed", initialColorRu: "Желтый", actualColorRu: "Коричневый" },
+							{ pointIndex: 4, code: "KT-4", nameRu: "КТ-4", indicatorId: "ind", indicatorTradeNameRu: "Медтест", status: "passed", initialColorRu: "Желтый", actualColorRu: "Коричневый" },
+							{ pointIndex: 5, code: "KT-5", nameRu: "КТ-5", indicatorId: "ind", indicatorTradeNameRu: "Медтест", status: "passed", initialColorRu: "Желтый", actualColorRu: "Коричневый" },
+						],
+						areAllPointsPassed: true,
+						chemicalIndicatorNameRu: "Медтест 134/5",
+						isCyclePassed: true,
+						status: "sterile_passed",
+						operatorStaffFullName: "Смирнова А. В.",
+						operatorStaffPosition: "Медсестра ЦСО",
+						isHeadNurseVerified: true,
+						digitalStampHash: "HASH",
+						createdAt: "2026-08-22T10:00:00Z",
+					},
+				],
+				bactericidalSessions: [
+					{
+						id: "bac-01",
+						equipmentId: "eq-01",
+						roomName: "Кабинет №1",
+						deviceBrand: "Дезар-Кронт 802",
+						date: "2026-08-22",
+						sessionStartTime: "08:00",
+						sessionEndTime: "08:30",
+						durationMinutes: 30,
+						durationHours: 0.5,
+						operatingMode: "pre_op_preparation",
+						cumulativeHoursAfterSession: 100,
+						operatorStaffFullName: "Соколова Т. Н.",
+					},
+				],
+				generalCleanings: [
+					{
+						id: "clean-01",
+						roomType: "surgical",
+						roomName: "Хирургический кабинет №2",
+						scheduledDate: "2026-08-22",
+						actualDateTime: "2026-08-22T08:00:00Z",
+						treatedAreaM2: 32.5,
+						disinfectantName: "Аламинол 1.5%",
+						activeIngredient: "Альдегиды",
+						solutionConcentrationPercent: 1.5,
+						applicationMethodRu: "Протирание",
+						exposureTimeMinutes: 60,
+						uvIrradiationMinutes: 60,
+						ventilationMinutes: 15,
+						operatorStaffFullName: "Смирнова А. В.",
+						inspectorStaffFullName: "Иванова М. П.",
+						isInspectorVerified: true,
+						status: "verified_by_inspector",
+					},
+				],
+				temperatureLogs: [
+					{
+						id: "temp-01",
+						measurementDate: "2026-08-22",
+						measurementPeriod: "morning",
+						equipmentName: "Фармацевтический холодильник Pozis",
+						location: "ЦСО",
+						meterDeviceName: "Термометр ТМН-1",
+						temperatureCelsius: 4.2,
+						targetTempMinCelsius: 2,
+						targetTempMaxCelsius: 8,
+						isWithinNorm: true,
+						operatorStaffFullName: "Иванова М. П.",
+					},
+				],
+			});
+
+			assert.ok(html.includes("№ ЛО41-01137-77/00368421"));
+			assert.ok(html.includes("ТОМ № 1"));
+			assert.ok(html.includes("Смирнов А. В."));
+			assert.ok(html.includes("Иванова М. П."));
+			assert.ok(html.includes("Раздел 1 • СанПиН 3.3686-21"));
+			assert.ok(html.includes("Раздел 2 • СанПиН 3.3686-21"));
+			assert.ok(html.includes("Раздел 3 • Часть 1"));
+			assert.ok(html.includes("Раздел 4 • Приказ Минздравсоцразвития РФ № 706н"));
+			assert.ok(html.includes("ЗАВЕРИТЕЛЬНАЯ НАДПИСЬ СШИВА ТОМА № 1"));
+			assert.ok(html.includes("15 (пятнадцать) листов"));
+		});
+
+		it("exports multi-section consolidated CSV archive with section banners and sheet certification", () => {
+			const csv = exportSanpinConsolidatedArchiveToCsv({
+				clinicInfo: {
+					name: "ООО «Стоматологическая клиника ДЕНТЕ»",
+					ogrn: "1027700123456",
+					inn: "7701234567",
+					address: "г. Москва, ул. Клиническая, д. 10",
+					chiefDoctor: "Смирнов А. В.",
+					headNurse: "Иванова М. П.",
+					licenseNumber: "№ ЛО41-01137-77/00368421",
+					volumeNumber: 1,
+				},
+				periodLabelRu: "за август 2026",
+				totalPagesCount: 20,
+				psoRecords: [],
+				form257Records: [],
+				bactericidalSessions: [],
+				generalCleanings: [],
+				temperatureLogs: [],
+			});
+
+			assert.ok(csv.startsWith("\uFEFF"));
+			assert.ok(csv.includes("№ ЛО41-01137-77/00368421"));
+			assert.ok(csv.includes("=== РАЗДЕЛ 1: ЖУРНАЛ УЧЕТА КАЧЕСТВА ПРЕДСТЕРИЛИЗАЦИОННОЙ ОБРАБОТКИ (ФОРМА № 366/У) ==="));
+			assert.ok(csv.includes("=== РАЗДЕЛ 2: ЖУРНАЛ КОНТРОЛЯ РАБОТЫ СТЕРИЛИЗАТОРОВ АВТОКЛАВОВ (ФОРМА № 257/У) ==="));
+			assert.ok(csv.includes("=== РАЗДЕЛ 3.1: ЖУРНАЛ РЕГИСТРАЦИИ РАБОТЫ БАКТЕРИЦИДНЫХ УСТАНОВОК (Р 3.5.1904-04) ==="));
+			assert.ok(csv.includes("=== РАЗДЕЛ 3.2: ЖУРНАЛ ПРОВЕДЕНИЯ ГЕНЕРАЛЬНЫХ УБОРОК (САНПИН 3.3686-21) ==="));
+			assert.ok(csv.includes("=== РАЗДЕЛ 4: ЖУРНАЛ ТЕМПЕРАТУРНОГО РЕЖИМА ХОЛОДИЛЬНИКОВ И ХРАНЕНИЯ ЛС (ПРИКАЗ 706Н) ==="));
+			assert.ok(csv.includes("=== ЗАВЕРИТЕЛЬНЫЙ ЛИСТ СШИВА ТОМА № 1 ==="));
+			assert.ok(csv.includes("20 (двадцать) листов"));
+		});
+	});
 });
+
