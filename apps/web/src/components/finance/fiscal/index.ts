@@ -5,3 +5,6 @@
 export * from "./fiscal54fzEngine";
 export * from "./FiscalReceiptPrintView";
 export * from "./Fiscal54FzReceiptModal";
+export * from "./ShiftCloseZReportModal";
+export * from "./OfflineFiscalBatchModal";
+

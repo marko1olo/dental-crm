@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	buildFiscalIdempotencyKey,
+	buildFnsFiscalReceiptQrString,
 	calculateAdvanceStagePrepayment,
 	calculateCashChange,
 	calculateFinalSettlementWithAdvanceOffset,
@@ -12,10 +13,25 @@ import {
 	compile54FzFiscalTags,
 	compile54FzShiftCloseZReport,
 	compileFiscalDraftSummary,
+	distributeLoyaltyDiscountAcrossItems,
 	type FiscalItemDraft,
+	generate54FzZReportReceiptTapeText,
 	getCashPresetSuggestions,
+	buildReceptionQuickContactMessage,
 	type SplitTenderState,
 	validateDataMatrixBarcode,
+	calculateFiscalPeriodStatementTotals,
+	generateFiscalPeriodStatementHtml,
+	exportFiscalPeriodStatementToCsv,
+	calculateOfflineQueueSummary,
+	filterOfflineQueue,
+	exportOfflineFiscalQueueToCsv,
+	reconcileAcquiringWithKkt,
+	exportAcquiringReconciliationToCsv,
+	generateAcquiringReconciliationPrintHtml,
+	type QueuedReceiptDraft,
+	type AcquiringTerminalTransaction,
+	type KktFiscalElectronicRecord,
 } from "./fiscal54fzEngine";
 
 describe("Frontend 54-FZ (FFD 1.2) Fiscal Engine Tests", () => {
@@ -633,5 +649,477 @@ describe("Frontend 54-FZ (FFD 1.2) Fiscal Engine Tests", () => {
 		assert.equal(split.fiscalTags.totalTenderKopecks, 4578933);
 		assert.equal(split.fiscalTags.isBalanced, true);
 	});
+
+	it("1.15 buildFnsFiscalReceiptQrString — Statutory 54-FZ FNS QR verification string construction", () => {
+		const qrIncome = buildFnsFiscalReceiptQrString({
+			issuedAtIso: "2026-08-25T14:30:00.000Z",
+			totalRubFormatted: "12450.75",
+			fnSerial: "9960440302145896",
+			fiscalDocNumber: "48291",
+			fiscalSign: "3920194821",
+			operationType: "income",
+		});
+
+		assert.ok(qrIncome.includes("s=12450.75"));
+		assert.ok(qrIncome.includes("fn=9960440302145896"));
+		assert.ok(qrIncome.includes("i=48291"));
+		assert.ok(qrIncome.includes("fp=3920194821"));
+		assert.ok(qrIncome.endsWith("&n=1"));
+
+		const qrReturn = buildFnsFiscalReceiptQrString({
+			issuedAtIso: "2026-08-25T14:30:00.000Z",
+			totalRubFormatted: "5000.00",
+			fnSerial: "9960440302145896",
+			fiscalDocNumber: "48292",
+			fiscalSign: "3920194822",
+			operationType: "income_return",
+		});
+
+		assert.ok(qrReturn.includes("s=5000.00"));
+		assert.ok(qrReturn.endsWith("&n=2"));
+	});
+
+	it("1.16 generate54FzZReportReceiptTapeText — 54-FZ FFD 1.2 thermal receipt tape generation (58mm and 80mm)", () => {
+		const shiftReceipts = [
+			{
+				id: "rec-1",
+				operationType: "income" as const,
+				totalRub: 8000.0,
+				tenders: { cashRub: 8000.0, cardRub: 0, sbpRub: 0, advanceOffsetRub: 0, certificateRub: 0 },
+			},
+			{
+				id: "rec-2",
+				operationType: "income" as const,
+				totalRub: 25000.0,
+				tenders: { cashRub: 0, cardRub: 15000.0, sbpRub: 10000.0, advanceOffsetRub: 0, certificateRub: 0 },
+			},
+			{
+				id: "rec-3",
+				operationType: "income_return" as const,
+				totalRub: 2000.0,
+				tenders: { cashRub: 2000.0, cardRub: 0, sbpRub: 0, advanceOffsetRub: 0, certificateRub: 0 },
+			},
+		];
+
+		const summary = compile54FzShiftCloseZReport(shiftReceipts, 42);
+
+		// 58mm narrow tape
+		const tape58 = generate54FzZReportReceiptTapeText({
+			summary,
+			clinicLegalName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+			clinicInn: "7701234567",
+			cashierFullName: "Сидорова А.П.",
+			tapeWidth: "58mm",
+		});
+
+		assert.ok(tape58.includes("ОТЧЕТ О ЗАКРЫТИИ СМЕНЫ"));
+		assert.ok(tape58.includes("СМЕНА:"));
+		assert.ok(tape58.includes("№ 42"));
+		assert.ok(tape58.includes("1. ПРИХОД (ТЕГ 1054 = 1)"));
+		assert.ok(tape58.includes("2. ВОЗВРАТ (ТЕГ 1054 = 2)"));
+		assert.ok(tape58.includes("ЧИСТАЯ ВЫРУЧКА:"));
+		assert.ok(tape58.includes("В ЯЩИКЕ НАЛИЧНЫХ:"));
+		assert.ok(tape58.includes("[ ЧЕКОВАЯ ЛЕНТА 58 ММ ]"));
+
+		// 80mm wide tape
+		const tape80 = generate54FzZReportReceiptTapeText({
+			summary,
+			clinicLegalName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+			clinicInn: "7701234567",
+			cashierFullName: "Сидорова А.П.",
+			tapeWidth: "80mm",
+		});
+
+		assert.ok(tape80.includes("[ ШИРОКАЯ ЛЕНТА 80 ММ ]"));
+		assert.ok(tape80.includes("ЧИСТАЯ ВЫРУЧКА:"));
+	});
+
+	it("1.17 distributeLoyaltyDiscountAcrossItems — Exact kopeck distribution for Pensioner 10%, Family 5%, Employee 20%", () => {
+		const items: FiscalItemDraft[] = [
+			{
+				id: "it-1",
+				name: "Лечение глубокого кариеса",
+				quantity: 1,
+				priceRub: 4500,
+				subject: "service",
+				method: "full_payment",
+				vatRate: "vat_none",
+				measure: "piece",
+			},
+			{
+				id: "it-2",
+				name: "Профессиональная гигиена",
+				quantity: 1,
+				priceRub: 3500,
+				subject: "service",
+				method: "full_payment",
+				vatRate: "vat_none",
+				measure: "piece",
+			},
+			{
+				id: "it-3",
+				name: "Прицельный снимок визиографом",
+				quantity: 2,
+				priceRub: 500,
+				subject: "service",
+				method: "full_payment",
+				vatRate: "vat_none",
+				measure: "piece",
+			},
+		];
+		// Total Gross: 4500 + 3500 + (500 * 2) = 9000 ₽
+
+		// 1. Pensioner 10% (Discount = 900 ₽, Net = 8100 ₽)
+		const resPension = distributeLoyaltyDiscountAcrossItems(items, { preset: "pensioner_10" });
+		assert.equal(resPension.totalGrossRub, 9000);
+		assert.equal(resPension.totalDiscountRub, 900);
+		assert.equal(resPension.totalNetRub, 8100);
+		assert.equal(resPension.effectivePercent, 10);
+		assert.ok(resPension.savingsText.includes("900,00 ₽"));
+
+		// Verify sum of item totals equals totalNet EXACTLY
+		const sumNetPension = resPension.items.reduce((acc, it) => acc + (it.priceRub - (it.discountRub || 0)) * it.quantity, 0);
+		assert.equal(sumNetPension, 8100);
+
+		// 2. Family 5% (Discount = 450 ₽, Net = 8550 ₽)
+		const resFamily = distributeLoyaltyDiscountAcrossItems(items, { preset: "family_5" });
+		assert.equal(resFamily.totalDiscountRub, 450);
+		assert.equal(resFamily.totalNetRub, 8550);
+
+		// 3. Employee 20% (Discount = 1800 ₽, Net = 7200 ₽)
+		const resEmp = distributeLoyaltyDiscountAcrossItems(items, { preset: "employee_20" });
+		assert.equal(resEmp.totalDiscountRub, 1800);
+		assert.equal(resEmp.totalNetRub, 7200);
+	});
+
+	it("1.18 distributeLoyaltyDiscountAcrossItems — Bounded capping and negative value protection", () => {
+		const items: FiscalItemDraft[] = [
+			{
+				id: "it-1",
+				name: "Консультация",
+				quantity: 1,
+				priceRub: 1000,
+				subject: "service",
+				method: "full_payment",
+				vatRate: "vat_none",
+				measure: "piece",
+			},
+		];
+
+		// Over-discount requested: 5000 ₽ on 1000 ₽ bill -> Capped at 1000 ₽
+		const resCapped = distributeLoyaltyDiscountAcrossItems(items, { preset: "manual_rub", customRub: 5000 });
+		assert.equal(resCapped.totalDiscountRub, 1000);
+		assert.equal(resCapped.totalNetRub, 0);
+		assert.equal(resCapped.isCapped, true);
+
+		// Negative discount requested -> Clamped to 0
+		const resNeg = distributeLoyaltyDiscountAcrossItems(items, { preset: "manual_rub", customRub: -500 });
+		assert.equal(resNeg.totalDiscountRub, 0);
+		assert.equal(resNeg.totalNetRub, 1000);
+	});
+
+	it("1.19 buildReceptionQuickContactMessage — Generates statutory WhatsApp and Phone links for reception contact templates", () => {
+		const contact = buildReceptionQuickContactMessage({
+			patientName: "Алексей Петрович",
+			patientPhone: "+7 (916) 123-45-67",
+			clinicName: "Клиника «ДЕНТЕ»",
+			doctorName: "Д-р Кузнецов",
+			appointmentTime: "14:30",
+			template: "doctor_early",
+		});
+
+		assert.ok(contact.whatsAppLink.startsWith("https://wa.me/79161234567?text="));
+		assert.ok(contact.telLink === "tel:+79161234567");
+		assert.ok(contact.messageText.includes("освободился чуть раньше"));
+	});
+
+	it("1.20 generateFiscalPeriodStatementHtml — Generates A4 Landscape fiscal accounting statement", () => {
+		const html = generateFiscalPeriodStatementHtml({
+			statementNumber: "ВЕД-2026/08",
+			periodStart: "2026-08-01",
+			periodEnd: "2026-08-25",
+			shifts: [
+				{
+					shiftNumber: 1,
+					date: "2026-08-01",
+					cashierFullName: "Сидорова А. П.",
+					receiptsCount: 4,
+					cashIncomeRub: 10000,
+					cashIncomeKopecks: 1000000,
+					cardIncomeRub: 20000,
+					cardIncomeKopecks: 2000000,
+					sbpIncomeRub: 5000,
+					sbpIncomeKopecks: 500000,
+					advanceOffsetIncomeRub: 2000,
+					advanceOffsetIncomeKopecks: 200000,
+					returnsTotalRub: 0,
+					returnsTotalKopecks: 0,
+					shiftRevenueTotalRub: 37000,
+					shiftRevenueTotalKopecks: 3700000,
+				},
+			],
+		});
+
+		assert.ok(html.includes("Сводная ведомость фискальных операций и выручки за период"));
+		assert.ok(html.includes("№ ЛО41-01137-77/00368421"));
+		assert.ok(html.includes("0004829104058291"));
+		assert.ok(html.includes("9960440302145896"));
+		assert.ok(html.includes("Тег 1031"));
+		assert.ok(html.includes("Тег 1081"));
+		assert.ok(html.includes("Смирнов А. В."));
+		assert.ok(html.includes("[ М. П. ]"));
+	});
+
+	it("1.21 exportFiscalPeriodStatementToCsv — Generates RFC 4180 CSV with UTF-8 BOM", () => {
+		const csv = exportFiscalPeriodStatementToCsv({
+			statementNumber: "ВЕД-2026/08",
+			periodStart: "2026-08-01",
+			periodEnd: "2026-08-25",
+			shifts: [],
+		});
+
+		assert.ok(csv.startsWith("\uFEFF"));
+		assert.ok(csv.includes("СВОДНАЯ ВЕДОМОСТЬ ФИСКАЛЬНЫХ ОПЕРАЦИЙ И ВЫРУЧКИ ЗА ПЕРИОД"));
+		assert.ok(csv.includes("№ ЛО41-01137-77/00368421"));
+		assert.ok(csv.includes("ИТОГО ЗА ПЕРИОД"));
+	});
+
+	it("1.22 calculateOfflineQueueSummary & filterOfflineQueue — Exact kopecks, queue metrics and filter logic", () => {
+		const sampleQueue: QueuedReceiptDraft[] = [
+			{
+				id: "q-1",
+				patientId: "pat-1",
+				patientName: "Иванова Мария",
+				operationType: "income",
+				items: [],
+				tenders: { cashRub: 0, cardRub: 7400, sbpRub: 0, advanceOffsetRub: 0, certificateRub: 0 },
+				totalRub: 7400,
+				totalKopecks: 740000,
+				status: "hardware_offline",
+				retryCount: 2,
+				queuedAt: "2026-08-25 10:15:30",
+				paymentMethodRu: "Банковская карта",
+				terminalRrn: "623891048291",
+			},
+			{
+				id: "q-2",
+				patientId: "pat-2",
+				patientName: "Смирнов Дмитрий",
+				operationType: "income",
+				items: [],
+				tenders: { cashRub: 0, cardRub: 0, sbpRub: 5500, advanceOffsetRub: 0, certificateRub: 0 },
+				totalRub: 5500,
+				totalKopecks: 550000,
+				status: "pending_ofd",
+				retryCount: 0,
+				queuedAt: "2026-08-25 10:45:12",
+				paymentMethodRu: "СБП QR",
+			},
+			{
+				id: "q-3",
+				patientId: "pat-3",
+				patientName: "Петрова Елена",
+				operationType: "income",
+				items: [],
+				tenders: { cashRub: 28000, cardRub: 0, sbpRub: 0, advanceOffsetRub: 0, certificateRub: 0 },
+				totalRub: 28000,
+				totalKopecks: 2800000,
+				status: "fiscalized",
+				fiscalDocNumber: "00084",
+				fiscalSign: "4920194821",
+				retryCount: 1,
+				queuedAt: "2026-08-25 09:10:00",
+				paymentMethodRu: "Наличные",
+			},
+		];
+
+		const summary = calculateOfflineQueueSummary(sampleQueue);
+		assert.equal(summary.totalCount, 3);
+		assert.equal(summary.totalKopecks, 4090000);
+		assert.equal(summary.totalRub, 40900);
+		assert.equal(summary.unprintedCount, 2);
+		assert.equal(summary.unprintedKopecks, 1290000);
+		assert.equal(summary.unprintedRub, 12900);
+		assert.equal(summary.offlineCount, 1);
+		assert.equal(summary.offlineRub, 7400);
+		assert.equal(summary.pendingCount, 1);
+		assert.equal(summary.pendingRub, 5500);
+		assert.equal(summary.fiscalizedCount, 1);
+		assert.equal(summary.fiscalizedRub, 28000);
+		assert.ok(summary.formattedStatusText.includes("В очереди на отправку в ОФД: 2 чека на сумму"));
+		assert.ok(summary.formattedStatusText.includes("12") && summary.formattedStatusText.includes("900"));
+
+		// Filter unprinted
+		const unprinted = filterOfflineQueue(sampleQueue, "unprinted");
+		assert.equal(unprinted.length, 2);
+
+		// Filter offline
+		const offline = filterOfflineQueue(sampleQueue, "offline");
+		assert.equal(offline.length, 1);
+		assert.equal(offline[0]?.id, "q-1");
+
+		// Filter search
+		const searchByRrn = filterOfflineQueue(sampleQueue, "all", "623891048291");
+		assert.equal(searchByRrn.length, 1);
+		assert.equal(searchByRrn[0]?.patientName, "Иванова Мария");
+	});
+
+	it("1.23 exportOfflineFiscalQueueToCsv — RFC 4180 CSV with UTF-8 BOM", () => {
+		const sampleQueue: QueuedReceiptDraft[] = [
+			{
+				id: "q-1",
+				patientId: "pat-1",
+				patientName: "Иванова Мария",
+				operationType: "income",
+				items: [],
+				tenders: { cashRub: 0, cardRub: 7400, sbpRub: 0, advanceOffsetRub: 0, certificateRub: 0 },
+				totalRub: 7400,
+				totalKopecks: 740000,
+				status: "hardware_offline",
+				errorMessage: "Таймаут порта ККТ",
+				retryCount: 2,
+				queuedAt: "2026-08-25 10:15:30",
+				paymentMethodRu: "Банковская карта",
+				terminalRrn: "623891048291",
+			},
+		];
+
+		const csv = exportOfflineFiscalQueueToCsv(sampleQueue);
+		assert.ok(csv.startsWith("\uFEFF"));
+		assert.ok(csv.includes("ID в очереди;Дата постановки;Пациент;Тип операции"));
+		assert.ok(csv.includes("Иванова Мария"));
+		assert.ok(csv.includes("7400,00"));
+		assert.ok(csv.includes("Ошибка связи с ФН / Касса офлайн"));
+		assert.ok(csv.includes("623891048291"));
+	});
+
+	it("1.24 reconcileAcquiringWithKkt — Matches exact transactions, catches missing receipts and amount diffs", () => {
+		const terminalTxs: AcquiringTerminalTransaction[] = [
+			{
+				id: "t-1",
+				rrn: "623891048110",
+				authCode: "594821",
+				panMasked: "4276 38** **** 8421",
+				paymentType: "card_contactless",
+				amountRub: 28000,
+				amountKopecks: 2800000,
+				timestamp: "2026-08-25 09:09:40",
+				terminalId: "POS-01",
+				status: "approved",
+			},
+			{
+				id: "t-2",
+				rrn: "623891048291",
+				authCode: "392015",
+				panMasked: "2200 12** **** 5482",
+				paymentType: "card_chip",
+				amountRub: 7400,
+				amountKopecks: 740000,
+				timestamp: "2026-08-25 10:14:55",
+				terminalId: "POS-01",
+				status: "approved",
+			},
+		];
+
+		// Case 1: Partial match (t-1 matched with kkt-1, t-2 is missing in KKT)
+		const kktRecords: KktFiscalElectronicRecord[] = [
+			{
+				id: "k-1",
+				fiscalDocNumber: "00084",
+				fiscalSign: "4920194821",
+				patientName: "Кузнецов Артем",
+				electronicAmountRub: 28000,
+				electronicAmountKopecks: 2800000,
+				operationType: "income",
+				timestamp: "2026-08-25 09:12:44",
+				terminalRrn: "623891048110",
+				authCode: "594821",
+			},
+		];
+
+		const report = reconcileAcquiringWithKkt(terminalTxs, kktRecords);
+		assert.equal(report.isExactMatch, false);
+		assert.equal(report.matchedCount, 1);
+		assert.equal(report.missingKktCount, 1);
+		assert.equal(report.totalDiffRub, 7400);
+		assert.equal(report.totalDiffKopecks, 740000);
+
+		// Case 2: 100% Exact match
+		const fullKktRecords: KktFiscalElectronicRecord[] = [
+			...kktRecords,
+			{
+				id: "k-2",
+				fiscalDocNumber: "00085",
+				fiscalSign: "4920194999",
+				patientName: "Иванова Мария",
+				electronicAmountRub: 7400,
+				electronicAmountKopecks: 740000,
+				operationType: "income",
+				timestamp: "2026-08-25 10:16:00",
+				terminalRrn: "623891048291",
+			},
+		];
+
+		const perfectReport = reconcileAcquiringWithKkt(terminalTxs, fullKktRecords);
+		assert.equal(perfectReport.isExactMatch, true);
+		assert.equal(perfectReport.matchedCount, 2);
+		assert.equal(perfectReport.missingKktCount, 0);
+		assert.equal(perfectReport.totalDiffRub, 0);
+		assert.equal(perfectReport.totalDiffKopecks, 0);
+		assert.ok(perfectReport.summaryTitleRu.includes("точно в копейку"));
+	});
+
+	it("1.25 exportAcquiringReconciliationToCsv & generateAcquiringReconciliationPrintHtml — CSV and HTML exports", () => {
+		const terminalTxs: AcquiringTerminalTransaction[] = [
+			{
+				id: "t-1",
+				rrn: "623891048110",
+				authCode: "594821",
+				panMasked: "4276 38** **** 8421",
+				paymentType: "card_contactless",
+				amountRub: 28000,
+				amountKopecks: 2800000,
+				timestamp: "2026-08-25 09:09:40",
+				terminalId: "POS-01",
+				status: "approved",
+			},
+		];
+		const kktRecords: KktFiscalElectronicRecord[] = [
+			{
+				id: "k-1",
+				fiscalDocNumber: "00084",
+				fiscalSign: "4920194821",
+				patientName: "Кузнецов Артем",
+				electronicAmountRub: 28000,
+				electronicAmountKopecks: 2800000,
+				operationType: "income",
+				timestamp: "2026-08-25 09:12:44",
+				terminalRrn: "623891048110",
+			},
+		];
+
+		const report = reconcileAcquiringWithKkt(terminalTxs, kktRecords);
+
+		// CSV
+		const csv = exportAcquiringReconciliationToCsv(report);
+		assert.ok(csv.startsWith("\uFEFF"));
+		assert.ok(csv.includes("Статус сверки;RRN Эквайринга;Карта / Тип"));
+		assert.ok(csv.includes("623891048110"));
+		assert.ok(csv.includes("28000,00"));
+
+		// HTML
+		const html = generateAcquiringReconciliationPrintHtml(report, {
+			clinicName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+			cashierName: "Сидорова А. П.",
+			shiftNumber: 42,
+		});
+		assert.ok(html.includes("АКТ СВЕРКИ ОПЕРАЦИЙ ЭКВАЙРИНГА С ФИСКАЛЬНЫМИ ЧЕКАМИ ККТ 54-ФЗ"));
+		assert.ok(html.includes("Сидорова А. П."));
+		assert.ok(html.includes("28000.00 ₽"));
+		assert.ok(html.includes("Сошлось копейка в копейку"));
+	});
 });
+
+
+
 

@@ -19,6 +19,9 @@ import {
 	Gift,
 	Layers,
 	Lock as LockIcon,
+	MessageSquare,
+	Percent,
+	Phone,
 	Printer,
 	QrCode,
 	Receipt,
@@ -37,11 +40,16 @@ import {
 } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import {
+	buildReceptionQuickContactMessage,
 	calculateInstallmentPlanSchedule,
 	calculateThreeSourceSplit,
 	compileFiscalDraftSummary,
+	distributeLoyaltyDiscountAcrossItems,
 	type FiscalItemDraft,
 	getCashPresetSuggestions,
+	LOYALTY_DISCOUNT_PRESETS,
+	type LoyaltyDiscountPreset,
+	type QuickReceptionContactTemplate,
 	type SplitTenderState,
 	validateDataMatrixBarcode,
 } from "./fiscal54fzEngine";
@@ -55,6 +63,8 @@ import {
 	type TaxDeductionPaymentItem,
 } from "../taxDeductionEngine";
 import { ShiftCloseZReportModal } from "./ShiftCloseZReportModal";
+import { OfflineFiscalBatchModal } from "./OfflineFiscalBatchModal";
+
 
 export interface Fiscal54FzReceiptModalProps {
 	readonly isOpen: boolean;
@@ -113,15 +123,28 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 	const [customerContact, setCustomerContact] = useState<string>(patientPhone);
 	const [isFiscalizing, setIsFiscalizing] = useState<boolean>(false);
 	const [isShiftCloseOpen, setIsShiftCloseOpen] = useState<boolean>(false);
+	const [isOfflineBatchOpen, setIsOfflineBatchOpen] = useState<boolean>(false);
 	const [itemMarkingCodes, setItemMarkingCodes] = useState<Record<string, string>>({});
+	const [discountPreset, setDiscountPreset] = useState<LoyaltyDiscountPreset>("none");
+	const [customDiscountPercent, setCustomDiscountPercent] = useState<number>(0);
+	const [customDiscountRub, setCustomDiscountRub] = useState<number>(0);
+	const [showQuickContactModal, setShowQuickContactModal] = useState<boolean>(false);
 
-	// Merge item marking codes
+	const discountResult = useMemo(() => {
+		return distributeLoyaltyDiscountAcrossItems(items, {
+			preset: discountPreset,
+			customPercent: customDiscountPercent,
+			customRub: customDiscountRub,
+		});
+	}, [items, discountPreset, customDiscountPercent, customDiscountRub]);
+
+	// Merge item marking codes on discounted items
 	const currentItems = useMemo(() => {
-		return items.map((it) => ({
+		return discountResult.items.map((it) => ({
 			...it,
 			markingCode: itemMarkingCodes[it.id] ?? it.markingCode ?? undefined,
 		}));
-	}, [items, itemMarkingCodes]);
+	}, [discountResult.items, itemMarkingCodes]);
 
 	const distinctFamilyPatients = useMemo(() => {
 		interface FamilyPatientSummary {
@@ -241,6 +264,40 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 			planTitle: currentItems[0]?.name,
 		});
 	}, [summary.totalRub, currentItems]);
+
+	const handleSelectDiscountPreset = (preset: LoyaltyDiscountPreset) => {
+		setDiscountPreset(preset);
+		const newDiscount = distributeLoyaltyDiscountAcrossItems(items, {
+			preset,
+			customPercent: customDiscountPercent,
+			customRub: customDiscountRub,
+		});
+		// Auto-sync single-tender allocation to the new discounted net sum
+		if (cardAmount > 0 && cashAmount === 0 && sbpAmount === 0) {
+			setCardAmount(newDiscount.totalNetRub);
+		} else if (cashAmount > 0 && cardAmount === 0 && sbpAmount === 0) {
+			setCashAmount(newDiscount.totalNetRub);
+			setReceivedCashRub(newDiscount.totalNetRub);
+		} else if (sbpAmount > 0 && cardAmount === 0 && cashAmount === 0) {
+			setSbpAmount(newDiscount.totalNetRub);
+		}
+	};
+
+	const handleQuickWhatsAppContact = (tpl: QuickReceptionContactTemplate) => {
+		const contact = buildReceptionQuickContactMessage({
+			patientName,
+			patientPhone: customerContact || patientPhone,
+			clinicName,
+			template: tpl,
+		});
+		window.open(contact.whatsAppLink, "_blank");
+		showToast("Шаблон сообщения открыт в WhatsApp", "success");
+	};
+
+	const handleQuickCall = () => {
+		const cleanPhone = (customerContact || patientPhone || "").replace(/\D/g, "");
+		window.location.href = `tel:+${cleanPhone}`;
+	};
 
 	const handleMarkingCodeChange = (itemId: string, code: string) => {
 		setItemMarkingCodes((prev) => ({
@@ -582,6 +639,16 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 								<LockIcon className="w-3.5 h-3.5" />
 								<span>Z-отчет</span>
 							</button>
+							<button
+								type="button"
+								onClick={() => setIsOfflineBatchOpen(true)}
+								className="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 hover:bg-amber-500/25 transition-all cursor-pointer flex items-center gap-1 border border-amber-500/30"
+								title="Очередь чеков, пакетная фискализация и сверка с эквайрингом"
+								data-testid="open-offline-batch-btn"
+							>
+								<Layers className="w-3.5 h-3.5" />
+								<span>Очередь чеков</span>
+							</button>
 						</div>
 
 						<button
@@ -643,6 +710,110 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 										</button>
 									</div>
 								</div>
+								{/* Loyalty Program & Discount Allocation */}
+								<div className="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 space-y-3">
+									<div className="flex flex-wrap items-center justify-between gap-2">
+										<div className="flex items-center gap-2 text-xs font-extrabold text-indigo-950 dark:text-indigo-200">
+											<Percent className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+											<span>Программа лояльности & Скидка:</span>
+										</div>
+										{discountResult.totalDiscountRub > 0 && (
+											<span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 animate-in fade-in">
+												{discountResult.savingsText} ({discountResult.effectivePercent}%)
+											</span>
+										)}
+									</div>
+
+									{/* Preset Buttons */}
+									<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+										{LOYALTY_DISCOUNT_PRESETS.map((preset) => (
+											<button
+												key={preset.id}
+												type="button"
+												onClick={() => handleSelectDiscountPreset(preset.id)}
+												className={`min-h-[44px] px-2.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex flex-col items-center justify-center text-center ${
+													discountPreset === preset.id
+														? "bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-400"
+														: "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-indigo-400"
+												}`}
+												title={preset.description}
+											>
+												<span>{preset.label}</span>
+											</button>
+										))}
+									</div>
+
+									{/* Manual Inputs if manual % or manual ₽ selected */}
+									{discountPreset === "manual_percent" && (
+										<div className="flex items-center gap-3 pt-1">
+											<label className="text-xs font-bold text-slate-600 dark:text-slate-400 whitespace-nowrap">
+												Размер скидки (%):
+											</label>
+											<input
+												type="number"
+												min={0}
+												max={100}
+												step={1}
+												value={customDiscountPercent || ""}
+												onChange={(e) => {
+													const val = Math.max(0, Math.min(100, parseFloat(e.target.value) || 0));
+													setCustomDiscountPercent(val);
+												}}
+												className="w-28 px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 border border-indigo-300 dark:border-indigo-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+												placeholder="0%"
+											/>
+											<span className="text-xs text-slate-500">
+												(от 0% до 100%, авто-распределение по строкам до копейки)
+											</span>
+										</div>
+									)}
+
+									{discountPreset === "manual_rub" && (
+										<div className="flex items-center gap-3 pt-1">
+											<label className="text-xs font-bold text-slate-600 dark:text-slate-400 whitespace-nowrap">
+												Сумма скидки (₽):
+											</label>
+											<input
+												type="number"
+												min={0}
+												max={discountResult.totalGrossRub}
+												step={10}
+												value={customDiscountRub || ""}
+												onChange={(e) => {
+													const val = Math.max(0, parseFloat(e.target.value) || 0);
+													setCustomDiscountRub(val);
+												}}
+												className="w-32 px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 border border-indigo-300 dark:border-indigo-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+												placeholder="0.00 ₽"
+											/>
+											<span className="text-xs text-slate-500">
+												(максимум: {discountResult.totalGrossRub.toLocaleString("ru-RU")} ₽)
+											</span>
+										</div>
+									)}
+
+									{/* Large Prominent Savings & Totals Indicator */}
+									{discountResult.totalDiscountRub > 0 && (
+										<div className="p-3 bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/30 rounded-xl flex flex-wrap items-center justify-between gap-2 text-xs">
+											<div className="space-y-0.5">
+												<span className="text-slate-500 dark:text-slate-400 block">
+													Сумма без скидки: <s className="font-mono">{discountResult.totalGrossRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</s>
+												</span>
+												<strong className="text-emerald-900 dark:text-emerald-200 font-extrabold text-sm flex items-center gap-1">
+													<Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+													{discountResult.savingsText}
+												</strong>
+											</div>
+											<div className="text-right">
+												<span className="text-slate-500 dark:text-slate-400 block">К оплате со скидкой:</span>
+												<span className="text-sm font-black font-mono text-indigo-700 dark:text-indigo-300">
+													{discountResult.totalNetRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+												</span>
+											</div>
+										</div>
+									)}
+								</div>
+
 								{/* 1-Click Fast Actions */}
 								<div>
 									<label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
@@ -984,11 +1155,78 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 									</div>
 								)}
 
-								{/* Electronic Delivery Contact */}
-								<div>
-									<label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
-										Контакты для электронного чека (Тег 1008 — SMS / Email)
-									</label>
+								{/* Reception Quick Contact & Electronic Delivery Contact */}
+								<div className="p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2.5">
+									<div className="flex flex-wrap items-center justify-between gap-2">
+										<label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+											Связь с пациентом & Чек (Тег 1008)
+										</label>
+										<div className="flex items-center gap-1.5">
+											<button
+												type="button"
+												onClick={handleQuickCall}
+												className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 border border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+												title="Позвонить пациенту по телефону"
+											>
+												<Phone className="w-3.5 h-3.5 text-emerald-600" />
+												<span>📞 Позвонить</span>
+											</button>
+											<button
+												type="button"
+												onClick={() => setShowQuickContactModal(!showQuickContactModal)}
+												className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[#25d366]/15 hover:bg-[#25d366]/25 border border-[#25d366]/40 text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+												title="Отправить сообщение в WhatsApp по шаблону"
+											>
+												<MessageSquare className="w-3.5 h-3.5 text-[#25d366]" />
+												<span>💬 WhatsApp</span>
+											</button>
+										</div>
+									</div>
+
+									{/* WhatsApp Templates Quick Selector */}
+									{showQuickContactModal && (
+										<div className="p-3 bg-white dark:bg-slate-900 border border-emerald-500/30 rounded-xl space-y-2 animate-in fade-in duration-100">
+											<span className="text-xs font-bold text-slate-600 dark:text-slate-400 block">
+												Быстрые шаблоны сообщений администратора:
+											</span>
+											<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+												<button
+													type="button"
+													onClick={() => {
+														handleQuickWhatsAppContact("reminder_visit");
+														setShowQuickContactModal(false);
+													}}
+													className="p-2 rounded-lg text-left text-xs bg-slate-50 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-700 hover:border-emerald-500 transition-all cursor-pointer"
+												>
+													<div className="font-bold text-slate-800 dark:text-slate-200">Напоминание о приёме</div>
+													<div className="text-[11px] text-slate-500">«Напоминаем о визите...»</div>
+												</button>
+												<button
+													type="button"
+													onClick={() => {
+														handleQuickWhatsAppContact("doctor_early");
+														setShowQuickContactModal(false);
+													}}
+													className="p-2 rounded-lg text-left text-xs bg-slate-50 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-700 hover:border-emerald-500 transition-all cursor-pointer"
+												>
+													<div className="font-bold text-slate-800 dark:text-slate-200">Доктор освободился раньше</div>
+													<div className="text-[11px] text-slate-500">«Можете подойти пораньше...»</div>
+												</button>
+												<button
+													type="button"
+													onClick={() => {
+														handleQuickWhatsAppContact("patient_running_late");
+														setShowQuickContactModal(false);
+													}}
+													className="p-2 rounded-lg text-left text-xs bg-slate-50 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-700 hover:border-emerald-500 transition-all cursor-pointer"
+												>
+													<div className="font-bold text-slate-800 dark:text-slate-200">Вы задерживаетесь?</div>
+													<div className="text-[11px] text-slate-500">«Уточняем, всё ли в порядке...»</div>
+												</button>
+											</div>
+										</div>
+									)}
+
 									<input
 										type="text"
 										value={customerContact}
@@ -1450,6 +1688,14 @@ export const Fiscal54FzReceiptModal: React.FC<Fiscal54FzReceiptModalProps> = ({
 				clinicLegalName={clinicName}
 				clinicInn={clinicInn}
 				clinicAddress={clinicLicense}
+			/>
+
+			{/* Offline Fiscal Batch & Acquiring Reconciliation Modal */}
+			<OfflineFiscalBatchModal
+				isOpen={isOfflineBatchOpen}
+				onClose={() => setIsOfflineBatchOpen(false)}
+				clinicName={clinicName}
+				cashierFullName={cashierFullName}
 			/>
 		</div>
 	);
