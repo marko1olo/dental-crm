@@ -302,7 +302,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						<label style={{ display: "block", fontSize: "12px", color: "var(--muted)", marginBottom: "4px" }}>
 							Зубы по FDI (выбрано: {selectedTeeth.length > 0 ? selectedTeeth.join(", ") : "не выбрано"})
 						</label>
-						<div style={{ display: "flex", flexWrap: "wrap", gap: "4px", background: "var(--paper)", padding: "8px", borderRadius: "6px", border: "1px solid var(--line)" }}>
+						<div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "4px 0" }}>
 							{[18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28].map((t) => (
 								<button
 									key={t}
@@ -311,20 +311,20 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 									style={{
 										padding: "4px 8px",
 										fontSize: "12px",
-										borderRadius: "4px",
-										background: selectedTeeth.includes(t) ? "var(--teal)" : "var(--paper-soft)",
+										borderRadius: "6px",
+										background: selectedTeeth.includes(t) ? "var(--teal)" : "var(--paper)",
 										color: selectedTeeth.includes(t) ? "var(--on-teal, #ffffff)" : "var(--ink)",
 										border: "1px solid var(--line)",
 										cursor: "pointer",
-										minHeight: "32px",
-										minWidth: "32px",
+										minHeight: "36px",
+										minWidth: "36px",
 									}}
 								>
 									{t}
 								</button>
 							))}
 						</div>
-						<div style={{ display: "flex", flexWrap: "wrap", gap: "4px", background: "var(--paper)", padding: "8px", borderRadius: "6px", marginTop: "4px", border: "1px solid var(--line)" }}>
+						<div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "4px 0", marginTop: "2px" }}>
 							{[48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38].map((t) => (
 								<button
 									key={t}
@@ -333,13 +333,13 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 									style={{
 										padding: "4px 8px",
 										fontSize: "12px",
-										borderRadius: "4px",
-										background: selectedTeeth.includes(t) ? "var(--teal)" : "var(--paper-soft)",
+										borderRadius: "6px",
+										background: selectedTeeth.includes(t) ? "var(--teal)" : "var(--paper)",
 										color: selectedTeeth.includes(t) ? "var(--on-teal, #ffffff)" : "var(--ink)",
 										border: "1px solid var(--line)",
 										cursor: "pointer",
-										minHeight: "32px",
-										minWidth: "32px",
+										minHeight: "36px",
+										minWidth: "36px",
 									}}
 								>
 									{t}

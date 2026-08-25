@@ -450,7 +450,7 @@ export function PeriodontalChartModule({
 	const lowerTeeth = teeth.filter((t) => t.toothNumber >= 30 && t.toothNumber <= 48);
 
 	return (
-		<div className="perio-chart-module bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm space-y-4">
+		<div className="perio-chart-module space-y-4 w-full">
 			{/* Top Header Banner */}
 			<div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
 				<div>
@@ -632,8 +632,8 @@ export function PeriodontalChartModule({
 			)}
 
 			{/* PSR / CPITN Sextants Widget */}
-			<div className="bg-slate-50/80 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-200 dark:border-slate-700/60">
-				<div className="flex items-center justify-between mb-2">
+			<div className="space-y-2">
+				<div className="flex items-center justify-between">
 					<span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
 						<Info className="w-4 h-4 text-teal-600 dark:text-teal-400" />
 						<span>Скрининг пародонта PSR / CPITN по 6 секстантам (ВОЗ)</span>
@@ -676,7 +676,7 @@ export function PeriodontalChartModule({
 			{/* Main Content Area based on View Mode */}
 			{viewMode === "pra" ? (
 				/* PRA Spider / Radar Risk Assessment Tab */
-				<div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-4">
+				<div className="space-y-4">
 					<div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-700 pb-3">
 						<div className="flex items-center gap-2">
 							<Radar className="w-6 h-6 text-teal-600 dark:text-teal-400" />

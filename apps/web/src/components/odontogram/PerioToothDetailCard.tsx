@@ -83,8 +83,8 @@ export const PerioToothDetailCard: React.FC<PerioToothDetailCardProps> = ({
 					</div>
 				</div>
 
-				{/* Values Row: PD, GM, CAL */}
-				<div className="grid grid-cols-3 gap-1 text-center bg-white/85 dark:bg-slate-900/80 p-1 rounded-lg border border-slate-200/80 dark:border-slate-800">
+				{/* Values Row: PD, GM, CAL (Flat single-level) */}
+				<div className="grid grid-cols-3 gap-1 text-center pt-1.5 border-t border-slate-200/60 dark:border-slate-700/60">
 					<div>
 						<span className="text-xs font-bold text-slate-500 dark:text-slate-400 block">PD</span>
 						<span className={`text-sm font-black ${color.textColor}`}>
@@ -109,7 +109,7 @@ export const PerioToothDetailCard: React.FC<PerioToothDetailCardProps> = ({
 	};
 
 	return (
-		<div className="perio-tooth-detail-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-xs space-y-4">
+		<div className="perio-tooth-detail-card space-y-4">
 			{/* Header: Tooth Info & System States */}
 			<div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
 				<div className="flex items-center gap-3">
