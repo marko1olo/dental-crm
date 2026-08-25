@@ -95,7 +95,8 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 					<button
 						type="button"
 						onClick={onClose}
-						className="w-9 h-9 rounded-xl border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors"
+						className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-xl border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors"
+						aria-label="Закрыть"
 					>
 						<X className="w-5 h-5" />
 					</button>
@@ -205,18 +206,27 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 				</div>
 
 				{/* Footer Actions */}
-				<div className="p-4 sm:p-5 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between flex-wrap gap-3">
-					<div className="text-xs text-[var(--muted,#64748b)]">
+				<div className="p-4 sm:p-5 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+					<div className="text-xs text-[var(--muted,#64748b)] leading-tight">
 						Соответствует приказу Минздрава России от 24.11.2021 № 1094н
 					</div>
-					<button
-						type="button"
-						onClick={() => window.print()}
-						className="h-10 px-5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
-					>
-						<Printer className="w-4 h-4" />
-						Печать рецепта (Форма 107-1/у)
-					</button>
+					<div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+						<button
+							type="button"
+							onClick={onClose}
+							className="min-h-[44px] w-full sm:w-auto px-5 py-2.5 text-xs font-semibold rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] border border-[var(--line)] sm:border-transparent transition-colors text-center"
+						>
+							Закрыть
+						</button>
+						<button
+							type="button"
+							onClick={() => window.print()}
+							className="min-h-[44px] w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 text-xs font-bold rounded-xl bg-teal-600 hover:bg-teal-700 text-white shadow-md transition-all active:scale-[0.98] cursor-pointer"
+						>
+							<Printer className="w-4 h-4 shrink-0" />
+							<span>Печать рецепта (Форма 107-1/у)</span>
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>

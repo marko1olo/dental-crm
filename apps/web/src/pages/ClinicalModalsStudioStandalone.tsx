@@ -343,7 +343,10 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	}, []);
 
 	return (
-		<div className="min-h-screen bg-[var(--paper-soft,var(--paper,#0f172a))] text-[var(--ink,#f8fafc)] flex flex-col font-sans selection:bg-teal-500/30 selection:text-teal-200">
+		<div
+			className="min-h-screen bg-[var(--paper-soft,var(--paper,#0f172a))] text-[var(--ink,#f8fafc)] flex flex-col font-sans selection:bg-teal-500/30 selection:text-teal-200"
+			data-testid="clinical-modals-studio-container"
+		>
 			{/* Top Bar */}
 			<header className="sticky top-0 z-40 bg-[var(--paper,#1e293b)] border-b border-[var(--line,rgba(204,251,241,0.15))] px-4 sm:px-6 py-3.5 shadow-sm backdrop-blur-md flex flex-wrap items-center justify-between gap-4">
 				<div className="flex items-center gap-3">

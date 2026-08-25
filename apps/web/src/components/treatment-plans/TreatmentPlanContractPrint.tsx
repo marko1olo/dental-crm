@@ -131,15 +131,15 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 
 	return (
 		<div
-			className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 print:p-0 print:static print:bg-white print:inset-auto"
+			className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md flex items-start justify-center p-2 sm:p-6 py-6 sm:py-8 print:p-0 print:static print:bg-white print:inset-auto"
 			data-testid="treatment-contract-print-modal"
 		>
-			<div className="relative w-full max-w-4xl bg-white text-slate-900 rounded-3xl shadow-2xl overflow-hidden border border-slate-200 print:border-none print:shadow-none print:rounded-none print:w-full print:max-w-none">
+			<div className="relative w-full max-w-4xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] rounded-3xl shadow-2xl overflow-hidden border border-[var(--line,#cbd5e1)] print:border-none print:shadow-none print:rounded-none print:w-full print:max-w-none">
 				{/* Top Action Bar (hidden on print) */}
-				<div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-b border-slate-200 print:hidden">
+				<div className="flex items-center justify-between px-6 py-4 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] print:hidden">
 					<div className="flex items-center gap-2">
-						<FileText className="text-teal-600 w-5 h-5" />
-						<span className="font-bold text-sm text-slate-800">
+						<FileText className="text-teal-600 dark:text-teal-400 w-5 h-5" />
+						<span className="font-bold text-sm text-[var(--ink,#0f172a)]">
 							Печатная форма: Договор, Комплексный план лечения и Смета с QR-кодом
 						</span>
 					</div>
@@ -147,7 +147,7 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-500 shadow-md cursor-pointer transition-colors"
+							className="flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-500 shadow-md cursor-pointer transition-colors"
 						>
 							<Printer size={14} />
 							<span>Печать документа (Ctrl+P)</span>
@@ -155,19 +155,24 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 						<button
 							type="button"
 							onClick={onClose}
-							className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 cursor-pointer transition-colors"
+							className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--line)] cursor-pointer transition-colors"
+							aria-label="Закрыть"
 						>
 							<X size={18} />
 						</button>
 					</div>
 				</div>
 
-				{/* Printable Document Body */}
-				<div className="p-8 sm:p-12 space-y-6 text-xs leading-relaxed print:p-0 print:space-y-4 print:text-[10pt]">
-					{/* Header with Clinic Info & Verification QR Code */}
-					<div className="flex justify-between items-start border-b border-slate-200 pb-4 gap-4">
-						<div className="space-y-1 flex-1">
-							<div className="flex items-center gap-2">
+				{/* Printable Document Body & Desk Preview */}
+				<div className="p-3 sm:p-6 lg:p-8 bg-slate-200/60 dark:bg-slate-950 flex justify-center overflow-x-auto print:p-0 print:bg-transparent print:overflow-visible">
+					<div
+						className="print-paper-sheet p-8 sm:p-12 space-y-6 text-xs leading-relaxed bg-white text-slate-900 rounded-2xl border border-slate-300 shadow-xl max-w-3xl w-full print:p-0 print:space-y-4 print:text-[10pt] print:border-none print:shadow-none print:rounded-none print:max-w-none"
+						data-paper-sheet="true"
+					>
+						{/* Header with Clinic Info & Verification QR Code */}
+						<div className="flex justify-between items-start border-b border-slate-200 pb-4 gap-4">
+							<div className="space-y-1 flex-1">
+								<div className="flex items-center gap-2">
 								<h1 className="text-base sm:text-lg font-black tracking-tight text-slate-900 uppercase">
 									{clinicName}
 								</h1>
@@ -436,6 +441,7 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 				</div>
 			</div>
 		</div>
+	</div>
 	);
 };
 

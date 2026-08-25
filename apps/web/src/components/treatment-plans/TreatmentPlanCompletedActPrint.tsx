@@ -311,7 +311,7 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 
 	return (
 		<div
-			className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-6 print:p-0 print:static print:bg-white print:inset-auto print:overflow-visible print:block"
+			className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md flex items-start justify-center p-2 sm:p-6 py-6 sm:py-8 print:p-0 print:static print:bg-white print:inset-auto print:overflow-visible print:block"
 			data-testid="treatment-completed-act-print-modal"
 			role="dialog"
 			aria-modal="true"
@@ -319,7 +319,7 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 		>
 			<div className="relative w-full max-w-5xl bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#0f172a)] dark:text-slate-100 rounded-3xl shadow-2xl overflow-hidden border border-[var(--line,#cbd5e1)] dark:border-slate-800 print:border-none print:shadow-none print:rounded-none print:w-full print:max-w-none print:bg-white print:text-black">
 				{/* ── Top Action Bar (hidden on print) ── */}
-				<div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-950/80 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 print:hidden">
+				<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-950/80 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 print:hidden">
 					<div className="flex items-center gap-3">
 						<div
 							className="p-2.5 rounded-2xl text-white shadow-sm shrink-0 flex items-center justify-center"
@@ -328,7 +328,7 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 							<FileCheck className="w-5 h-5" />
 						</div>
 						<div>
-							<div className="flex items-center gap-2">
+							<div className="flex items-center gap-2 flex-wrap">
 								<span className="font-bold text-sm text-[var(--ink,#0f172a)] dark:text-white block">
 									Акт сдачи-приемки и Накладная на списание ТМЦ
 								</span>
@@ -354,13 +354,13 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 						</div>
 					</div>
 
-					<div className="flex items-center gap-2">
+					<div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
 						{onConfirmExecuteWriteOff && actData.status !== "executed" && (
 							<button
 								type="button"
 								onClick={onConfirmExecuteWriteOff}
 								disabled={isExecuting || hasDeficit}
-								className={`flex items-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl text-xs font-bold text-white shadow-md cursor-pointer transition-all ${
+								className={`flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] flex-1 sm:flex-initial rounded-xl text-xs font-bold text-white shadow-md cursor-pointer transition-all ${
 									hasDeficit
 										? "bg-rose-600 hover:bg-rose-500 opacity-90"
 										: "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500"
@@ -380,7 +380,7 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl text-xs font-bold border transition-colors cursor-pointer"
+							className="flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] flex-1 sm:flex-initial rounded-xl text-xs font-bold border transition-colors cursor-pointer"
 							style={{
 								borderColor: palette.accentBorder,
 								backgroundColor: palette.softBg,
@@ -402,22 +402,23 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 					</div>
 				</div>
 
-				{/* ── Printable Document Sheet Body ── */}
-				<div
-					className={`premium-doc-sheet doc-palette-${branding.brandAccentColor} doc-density-${branding.layoutDensity} doc-font-${branding.fontFamily} p-8 sm:p-12 print:p-0`}
-					style={
-						{
-							"--doc-primary": palette.primary,
-							"--doc-primary-dark": palette.primaryDark,
-							"--doc-soft-bg": palette.softBg,
-							"--doc-accent-border": palette.accentBorder,
-							"--doc-border": "#cbd5e1",
-							"--doc-ink": "#0f172a",
-							"--doc-muted": "#475569",
-							"--doc-paper": "#ffffff",
-						} as React.CSSProperties
-					}
-				>
+				{/* ── Printable Document Sheet Body & Desk Preview ── */}
+				<div className="p-3 sm:p-6 lg:p-8 bg-slate-200/60 dark:bg-slate-950 flex justify-center overflow-x-auto print:p-0 print:bg-transparent print:overflow-visible">
+					<div
+						className={`premium-doc-sheet doc-palette-${branding.brandAccentColor} doc-density-${branding.layoutDensity} doc-font-${branding.fontFamily} p-4 sm:p-8 md:p-12 print:p-0`}
+						style={
+							{
+								"--doc-primary": palette.primary,
+								"--doc-primary-dark": palette.primaryDark,
+								"--doc-soft-bg": palette.softBg,
+								"--doc-accent-border": palette.accentBorder,
+								"--doc-border": "#cbd5e1",
+								"--doc-ink": "#0f172a",
+								"--doc-muted": "#475569",
+								"--doc-paper": "#ffffff",
+							} as React.CSSProperties
+						}
+					>
 					{/* ── 1. Official Header with Clinic Details & Accreditation ── */}
 					{branding.headerStyle === "classic_centered" ? (
 						<header className="doc-header-classic-centered border-b-2 pb-4 mb-4" style={{ borderColor: palette.primary }}>
@@ -1030,5 +1031,6 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 				</div>
 			</div>
 		</div>
+	</div>
 	);
 };

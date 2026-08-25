@@ -104,7 +104,7 @@ export const SHIFT_ARCHETYPES: Record<ShiftArchetypeId, ShiftArchetype> = {
 		nightMultiplier: 1.0,
 		color: "#0284c7",
 		t13Code: "Я",
-		description: "08:30–14:30 — Базовая смена врача-стоматолога (норма 33 ч/нед, ст. 350 ТК РФ)",
+		description: "08:30–14:30 — Базовая утренняя смена врача (норма 33 ч/нед)",
 	},
 	evening_shift: {
 		id: "evening_shift",

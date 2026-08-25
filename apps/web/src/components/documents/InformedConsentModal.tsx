@@ -537,7 +537,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 				</div>
 
 				{/* ── 1-Click Clinical Presets Bar (min-h-[44px] buttons) ── */}
-				<div className="px-4 md:px-6 py-2.5 border-b border-[var(--line)] bg-[var(--paper-soft)] overflow-x-auto flex items-center gap-2 shrink-0">
+				<div className="px-3 md:px-6 py-2.5 border-b border-[var(--line)] bg-[var(--paper-soft)] overflow-x-auto flex items-center gap-2 shrink-0 scrollbar-thin">
 					<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] shrink-0 hidden sm:inline">
 						Клинический профиль (1 клик):
 					</span>
@@ -546,9 +546,9 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							key={p.key}
 							type="button"
 							onClick={() => applyPreset(p.key)}
-							className={`min-h-[44px] px-3.5 py-2 text-xs font-bold rounded-xl border whitespace-nowrap transition-all flex items-center gap-1.5 ${
+							className={`min-h-[44px] px-3.5 py-2 text-xs font-bold rounded-xl border whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 select-none ${
 								activePreset === p.key
-									? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] border-[var(--teal)] shadow-sm"
+									? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] border-[var(--teal)] shadow-sm font-bold"
 									: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
 							}`}
 						>
@@ -763,7 +763,10 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 						</div>
 
 						{/* Printable Physical Sheet Mockup */}
-						<div className="p-6 md:p-8 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs shadow-xl font-serif leading-relaxed flex flex-col gap-3.5 selection:bg-teal-100">
+						<div
+							className="print-paper-sheet p-6 md:p-8 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs shadow-xl font-serif leading-relaxed flex flex-col gap-3.5 selection:bg-teal-100"
+							data-paper-sheet="true"
+						>
 							{/* Header */}
 							<div className="border-b-2 border-slate-900 pb-2 text-[10px] text-slate-700 flex justify-between gap-3">
 								<div>
@@ -874,16 +877,16 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 				</div>
 
 				{/* ── Modal Footer ── */}
-				<div className="flex items-center justify-between px-5 md:px-6 py-3.5 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
+				<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 sm:px-6 py-3.5 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 					<div className="flex items-center gap-2 text-xs text-[var(--muted)]">
-						<FileCheck className="w-4 h-4 text-emerald-600" />
-						<span>Соответствует Приказу № 1051н и ст. 20 323-ФЗ.</span>
+						<FileCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+						<span className="leading-tight">Соответствует Приказу № 1051н и ст. 20 323-ФЗ.</span>
 					</div>
-					<div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+					<div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-[44px] px-5 py-2 text-xs font-semibold rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-colors"
+							className="min-h-[44px] w-full sm:w-auto px-5 py-2.5 text-xs font-semibold rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] border border-[var(--line)] sm:border-transparent transition-colors text-center"
 						>
 							Закрыть
 						</button>
@@ -893,11 +896,11 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 								handleConfirmAndSave();
 								handlePrint();
 							}}
-							className="min-h-[44px] inline-flex items-center justify-center gap-2 px-6 py-2 text-xs font-bold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:opacity-90 text-[var(--on-teal,#ffffff)] shadow-md transition-all active:scale-[0.98]"
+							className="min-h-[44px] w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 text-xs font-bold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:opacity-90 text-[var(--on-teal,#ffffff)] shadow-md transition-all active:scale-[0.98]"
 							data-testid="print-consent-btn"
 						>
-							<Printer className="w-4 h-4" />
-							Печать ИДС (Приказ № 1051н)
+							<Printer className="w-4 h-4 shrink-0" />
+							<span>Печать ИДС (Приказ № 1051н)</span>
 						</button>
 					</div>
 				</div>

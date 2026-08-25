@@ -181,8 +181,11 @@ async function auditContrastAndLayout(page, theme, viewportName, sectionName) {
 					}
 				}
 
-				// 2. Blinding white box check in dark themes
+				// 2. Blinding white box check in dark themes (exempting physical A4 / thermal paper previews)
 				if (isDarkTheme && bgRgb && bgRgb.r > 240 && bgRgb.g > 240 && bgRgb.b > 240) {
+					if (el.closest(".premium-doc-sheet, .emr043-a4-sheet, .print-paper-sheet, [data-paper-sheet], .fiscal-receipt-view, #printable-lab-order-sheet, #printable-memo-sheet, .doc-container, .doc-palette-medical_navy, .doc-palette-deep_teal, .doc-palette-royal_burgundy, .doc-palette-pure_slate, .doc-palette-gold_luxury")) {
+						continue;
+					}
 					const rect = el.getBoundingClientRect();
 					if (rect.width > 200 && rect.height > 100) {
 						defects.push({

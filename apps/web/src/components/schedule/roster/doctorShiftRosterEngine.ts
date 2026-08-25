@@ -834,7 +834,7 @@ export function generatePrintableRosterHtml(
 	<div class="header-block">
 		<div>
 			<div class="title">УТВЕРЖДАЮ: ГРАФИК СМЕННОСТИ И РАСПИСАНИЯ ВРАЧЕЙ</div>
-			<div class="subtitle">${clinicName} | Период: с ${weekStartIso} по ${weekEndIso} (ТК РФ ст. 350, 33-часовая неделя)</div>
+			<div class="subtitle">${clinicName} | Период: с ${weekStartIso} по ${weekEndIso} (33-часовая рабочая неделя)</div>
 		</div>
 		<div style="text-align: right; font-size: 11px;">
 			Главный врач: _________________ (подпись / печать)<br/>

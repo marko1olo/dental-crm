@@ -1564,22 +1564,13 @@ button[data-tooth-state="missing"] {
 }
 
 /* ---------- 15. ГЛОБАЛЬНАЯ НЕЙТРАЛИЗАЦИЯ ЖЕСТКИХ TAILWIND КЛАССОВ ---------- */
-[data-theme="dark"] [class*="bg-white"],
-[data-theme="night"] [class*="bg-white"],
-[data-theme="dark"] .bg-white,
-[data-theme="night"] .bg-white {
+:is([data-theme="dark"], [data-theme="night"], .dark) :is([class*="bg-white"], .bg-white):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *):not(.fiscal-receipt-view *):not(#printable-lab-order-sheet *):not(.doc-container *) {
 	background-color: var(--paper);
 	color: var(--ink);
 	border-color: var(--line);
 }
 
-[data-theme="dark"] [class*="bg-slate-50"],
-[data-theme="night"] [class*="bg-slate-50"],
-[data-theme="dark"] .bg-slate-50,
-[data-theme="night"] .bg-slate-50,
-[data-theme="dark"] [class*="bg-slate-100"],
-[data-theme="night"] [class*="bg-slate-100"],
-[data-theme="dark"] .bg-slate-100 {
+:is([data-theme="dark"], [data-theme="night"], .dark) :is([class*="bg-slate-50"], .bg-slate-50, [class*="bg-slate-100"], .bg-slate-100):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *):not(.fiscal-receipt-view *):not(#printable-lab-order-sheet *):not(.doc-container *) {
 	background-color: var(--paper-soft);
 	color: var(--ink);
 	border-color: var(--line);
@@ -1594,28 +1585,15 @@ button[data-tooth-state="missing"] {
 	border-color: var(--line);
 }
 
-[data-theme="dark"] [class*="text-slate-900"],
-[data-theme="night"] [class*="text-slate-900"],
-[data-theme="dark"] [class*="text-slate-800"],
-[data-theme="night"] [class*="text-slate-800"],
-[data-theme="dark"] [class*="text-slate-700"],
-[data-theme="night"] [class*="text-slate-700"] {
+:is([data-theme="dark"], [data-theme="night"], .dark) :is([class*="text-slate-900"], [class*="text-slate-800"], [class*="text-slate-700"]):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *):not(.fiscal-receipt-view *):not(#printable-lab-order-sheet *):not(.doc-container *) {
 	color: var(--ink);
 }
 
-[data-theme="dark"] [class*="text-slate-500"],
-[data-theme="night"] [class*="text-slate-500"],
-[data-theme="dark"] [class*="text-slate-400"],
-[data-theme="night"] [class*="text-slate-400"] {
+:is([data-theme="dark"], [data-theme="night"], .dark) :is([class*="text-slate-500"], [class*="text-slate-400"]):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *):not(.fiscal-receipt-view *):not(#printable-lab-order-sheet *):not(.doc-container *) {
 	color: var(--muted);
 }
 
-[data-theme="dark"] [class*="border-slate-200"],
-[data-theme="night"] [class*="border-slate-200"],
-[data-theme="dark"] [class*="border-slate-100"],
-[data-theme="night"] [class*="border-slate-100"],
-[data-theme="dark"] [class*="border-slate-300"],
-[data-theme="night"] [class*="border-slate-300"] {
+:is([data-theme="dark"], [data-theme="night"], .dark) :is([class*="border-slate-200"], [class*="border-slate-100"], [class*="border-slate-300"]):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *):not(.fiscal-receipt-view *):not(#printable-lab-order-sheet *):not(.doc-container *) {
 	border-color: var(--line);
 }
 

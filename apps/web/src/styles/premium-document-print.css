@@ -65,31 +65,107 @@
 }
 
 /* ── Document Container on Screen ── */
-.premium-doc-sheet {
+.premium-doc-sheet,
+.print-paper-sheet,
+[data-paper-sheet] {
 	width: 100%;
 	max-width: 210mm;
 	min-height: 297mm;
 	margin: 0 auto;
 	padding: 16mm 18mm;
-	background: var(--doc-paper);
-	color: var(--doc-ink);
-	box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+	background: #ffffff !important;
+	background-color: #ffffff !important;
+	color: #0f172a !important;
+	color-scheme: light !important;
+	box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.08);
 	box-sizing: border-box;
 	position: relative;
 	overflow: hidden;
 }
 
-.doc-density-compact .premium-doc-sheet {
+/* Theme isolation: ensure paper sheets never inherit inverted dark colors */
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .premium-doc-sheet,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .print-paper-sheet,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) [data-paper-sheet] {
+	background: #ffffff !important;
+	background-color: #ffffff !important;
+	color: #0f172a !important;
+}
+
+:is(.premium-doc-sheet, .print-paper-sheet, [data-paper-sheet]) :is(h1, h2, h3, h4, h5, h6) {
+	color: #0f172a !important;
+}
+
+:is(.premium-doc-sheet, .print-paper-sheet, [data-paper-sheet]) .doc-brand-title {
+	color: var(--doc-primary-dark, #0f172a) !important;
+}
+
+:is(.premium-doc-sheet, .print-paper-sheet, [data-paper-sheet]) .doc-official-title-box h1 {
+	color: var(--doc-primary-dark, #0f172a) !important;
+}
+
+:is(.premium-doc-sheet, .print-paper-sheet, [data-paper-sheet]) :is(table, thead, tbody, tr, th, td) {
+	border-color: #cbd5e1 !important;
+}
+
+:is(.premium-doc-sheet, .print-paper-sheet, [data-paper-sheet]) table {
+	background-color: #ffffff !important;
+	color: #0f172a !important;
+}
+
+:is(.premium-doc-sheet, .print-paper-sheet, [data-paper-sheet]) th {
+	background-color: #f1f5f9 !important;
+	color: #0f172a !important;
+	font-weight: 700 !important;
+}
+
+:is(.premium-doc-sheet, .print-paper-sheet, [data-paper-sheet]) td {
+	background-color: #ffffff !important;
+	color: #0f172a !important;
+}
+
+:is(.premium-doc-sheet, .print-paper-sheet, [data-paper-sheet]) tr:hover td {
+	background-color: #f8fafc !important;
+}
+
+:is(.premium-doc-sheet, .print-paper-sheet, [data-paper-sheet]) [class*="bg-slate-100"] {
+	background-color: #f1f5f9 !important;
+	color: #0f172a !important;
+}
+
+:is(.premium-doc-sheet, .print-paper-sheet, [data-paper-sheet]) [class*="bg-slate-50"] {
+	background-color: #f8fafc !important;
+	color: #0f172a !important;
+}
+
+:is(.premium-doc-sheet, .print-paper-sheet, [data-paper-sheet]) [class*="bg-white"] {
+	background-color: #ffffff !important;
+	color: #0f172a !important;
+}
+
+:is(.premium-doc-sheet, .print-paper-sheet, [data-paper-sheet]) :is([class*="text-slate-900"], [class*="text-slate-800"], [class*="text-slate-700"]) {
+	color: #0f172a !important;
+}
+
+:is(.premium-doc-sheet, .print-paper-sheet, [data-paper-sheet]) :is([class*="text-slate-600"], [class*="text-slate-500"]) {
+	color: #475569 !important;
+}
+
+:is(.premium-doc-sheet, .print-paper-sheet, [data-paper-sheet]) [class*="border-slate-"] {
+	border-color: #cbd5e1 !important;
+}
+
+.doc-density-compact :is(.premium-doc-sheet, .print-paper-sheet, [data-paper-sheet]) {
 	padding: 10mm 12mm;
 	font-size: 0.85rem;
 }
 
-.doc-density-comfortable .premium-doc-sheet {
+.doc-density-comfortable :is(.premium-doc-sheet, .print-paper-sheet, [data-paper-sheet]) {
 	padding: 16mm 18mm;
 	font-size: 0.95rem;
 }
 
-.doc-density-formal .premium-doc-sheet {
+.doc-density-formal :is(.premium-doc-sheet, .print-paper-sheet, [data-paper-sheet]) {
 	padding: 20mm 20mm;
 	font-size: 0.9rem;
 }

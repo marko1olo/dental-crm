@@ -798,7 +798,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 											key={cat.id}
 											type="button"
 											onClick={() => setCategoryFilter(cat.id)}
-											className={`min-h-[36px] px-3 py-1 text-xs font-bold rounded-xl border whitespace-nowrap shrink-0 transition-all ${
+											className={`min-h-[44px] px-3.5 py-1.5 text-xs font-bold rounded-xl border whitespace-nowrap shrink-0 transition-all ${
 												categoryFilter === cat.id
 													? "bg-[var(--teal-surface)] text-[var(--teal)] border-[var(--teal)] shadow-xs"
 													: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:border-[var(--teal)] hover:text-[var(--ink)]"
@@ -1340,26 +1340,26 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 				</div>
 
 				{/* ── Modal Footer ── */}
-				<div className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
-					<span className="text-xs text-[var(--muted)] hidden sm:inline">
+				<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 sm:px-6 py-3.5 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
+					<span className="text-xs text-[var(--muted)] leading-tight">
 						Соответствует Приказу Минздрава России от 24.11.2021 г. № 1094н.
 					</span>
-					<div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+					<div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-[44px] px-5 py-2 text-xs font-semibold rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-colors"
+							className="min-h-[44px] w-full sm:w-auto px-5 py-2.5 text-xs font-semibold rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] border border-[var(--line)] sm:border-transparent transition-colors text-center"
 						>
 							Закрыть
 						</button>
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="min-h-[44px] inline-flex items-center justify-center gap-2 px-6 py-2 text-xs font-bold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:opacity-90 text-white shadow-md transition-all active:scale-[0.98]"
+							className="min-h-[44px] w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 text-xs font-bold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:opacity-90 text-white shadow-md transition-all active:scale-[0.98]"
 							data-testid="print-prescription-btn"
 						>
-							<Printer className="w-4 h-4" />
-							Печать рецепта ({activeForm === "107-1u" ? "107-1/у" : activeForm === "148-1u-88" ? "148-1/у-88" : "148-1/у-04(л)"})
+							<Printer className="w-4 h-4 shrink-0" />
+							<span>Печать рецепта ({activeForm === "107-1u" ? "107-1/у" : activeForm === "148-1u-88" ? "148-1/у-88" : "148-1/у-04(л)"})</span>
 						</button>
 					</div>
 				</div>
