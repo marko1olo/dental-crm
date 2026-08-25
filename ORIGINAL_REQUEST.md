@@ -1,467 +1,179 @@
 # Original User Request
 
-## 2026-07-27T00:09:13Z
+## 2026-08-22T19:04:25Z
 
-Execute a comprehensive UI unification and cohesion overhaul across all 11 modules of DENTE Dental CRM (`C:\Clinic_MVP\dental-crm`).
+# Teamwork Project Prompt — DENTE Universal Multi-Platform & Network Resilience Architecture
 
-Working directory: `C:\Clinic_MVP\dental-crm`
-Integrity mode: `development`
-
-## Requirements
-
-### R1. Cohesive UI Design System Unification
-Unify all visual elements across all 11 views (Shift, Schedule, Patients, Imaging, Visit, Documents, Finance, Analytics, Communications, Settings, Marketing):
-- Standardize card border-radii (`14px`), container paddings, typography scales (`Golos Text`), and elevation shadow depths.
-- Harmonize button variants (Primary teal gradient, Secondary soft border, Ghost text) and status badges (`status-pill`) across all views.
-- Ensure 100% theme consistency across Light, Dark, and Night modes without raw color mismatches.
-
-### R2. Structural Inline Style Cleanup & Responsive Refactoring
-Audit and refactor all view components to replace ad-hoc inline styles with unified CSS classes from `dente-redesign.css` and `main.css`. Ensure clean responsive flex/grid layouts without horizontal scrolling or text clipping on mobile (390px) and desktop (1440px).
-
-### R3. Quality & Verification Gates
-- Verify zero TypeScript errors (`npm run typecheck`).
-- Execute `dente-redesign-shots.mjs` to capture 4-state visual proof (Desktop/Mobile x Light/Dark).
-- Commit every modified file individually per Clinic MVP Constitution.
-
-## Acceptance Criteria
-
-### Verification
-- [ ] `npm run typecheck` passes with 0 errors.
-- [ ] All 11 views demonstrate a cohesive, unified visual language.
-- [ ] 4-state visual proof matrix generated and self-audited.
-
-## 2026-07-31T12:21:20Z
-
-Full clinical and UI mounting sprint for Dental CRM (`C:\Clinic_MVP\dental-crm`) to bridge backend API capabilities with React web UI views, seed realistic clinical data, and verify visual quality across 4 layout/theme states.
-
-Working directory: `C:\Clinic_MVP\dental-crm`
+Working directory: C:\Clinic_MVP\dental-crm
 Integrity mode: development
 
+DENTE Dental CRM is an industrial-grade clinical ecosystem engineered for real-world conditions across medical clinics in Russia. The system must operate seamlessly across 3 Universal Runtime Targets: (1) Modern Web App / PWA, (2) Standalone Desktop Executable (.exe via Electron/Tauri), and (3) Mobile/Tablet App (.apk via Capacitor/Android WebView), while guaranteeing 100% data integrity across 3 Network Tiers: Local In-Cabinet Offline, Clinic LAN/Wi-Fi Subnet, and Remote Cloud Synchronization.
+
 ## Requirements
 
-### R1. UI Feature Mounting & Workflow Integration
-Integrate unmounted backend query modules and Fastify routes into the React web client (`apps/web/src/`):
-- Mount "Потерянные пациенты" (Lost Patients Filter from `lostPatientsFiltersQuery.ts`) in `AnalyticsDashboardView.tsx` and `PatientsView.tsx`.
-- Mount No-Show Risk Indicator (`patientNoShowRiskQuery.ts`) badges on appointment cards in `ScheduleView.tsx`.
-- Ensure zero broken/unmounted routes or dead-end buttons.
+### R1. Universal Multi-Platform Portability (Web / Desktop EXE / Mobile APK)
+- **Web & PWA (`apps/web`)**: Web App Manifest (`manifest.webmanifest`), Service Worker with cache-first and stale-while-revalidate strategies for assets, offline IndexedDB outbox.
+- **Desktop Windows Executable (.exe)**: Direct integration with workstation hardware (COM/USB ports for TWAIN dental sensors, direct TCP sockets for АТОЛ/Штрих-М KKT, local folder watching for Visiograph/PACS files).
+- **Mobile Android (.apk) & Tablet UI**: Touch-first responsive interface (>= 44x44px touch targets), camera-based Barcode/DataMatrix scanner (Честный ЗНАК / МДЛП), biometric PIN lock, adaptive tooth formula scaling.
 
-### R2. Clinical Seed Expansion & Realistic Demo Data
-Expand base seed dataset in `apps/api/.data/dental-crm-state.json` and `seedOpsScreenshotDemo.ts`:
-- Include at least 15 patients with full administrative profiles (Passport, SNILS, OMS/DMS).
-- Seed completed EMK visits with objective findings and tooth formula statuses (teeth 11–48 crowns, fillings, missing teeth).
-- Seed completed works acts, 54-FZ fiscal receipts, NDFL certificates (КНД 1151156 XML), and EGISZ CDA XML snapshots.
+### R2. 3-Tier Network & Hardware Topology
+- **Tier 1 — Autonomous Offline**: Doctor fills Form 043/u SOAP, selects odontogram pathologies, writes 107-1/u prescriptions, and accepts payments into the offline queue without network blockers or data loss.
+- **Tier 2 — Local Clinic Subnet (LAN / Wi-Fi 192.168.x.x)**:
+  - Direct network printing on fiscal registers (АТОЛ ДТО 10 / Штрих-М). If paper runs out or KKT is powered off, receipts buffer in `fiscal_receipt_queue` (`hardware_offline`) with automatic background retry.
+  - Local radiology viewing without cloud round-trip delay (`local_offline_available`).
+  - Local Asterisk WebRTC SIP telephony with automatic failover to cloud webhooks (Mango/Zadarma).
+- **Tier 3 — Remote Cloud Synchronization**: Bi-directional replication with PostgreSQL, background queue draining, and retry backoff.
 
-### R3. Automated Visual Proof & 4-State Verification
-Verify UI quality and theme responsiveness using Playwright/CDP screenshot tools (`scripts/ops-panels-shots.mjs`):
-- Fix session token re-hydration during theme changes to prevent shift lock screen fallbacks.
-- Capture 4-state visual proof (PC Light, PC Dark, Mobile Light, Mobile Dark) without any `_ПУСТО.png` diagnostic screens.
+### R3. Strict Financial Idempotency & CRDT Field-Level Merging
+- Every transaction and mutation carries a composite `Idempotency-Key` (`<uuid>#<sha256(canonicalJson(payload))>`).
+- Re-sending offline payments or invoices guarantees **exactly-once execution**: no double charges, no duplicate fiscal receipts.
+- Concurrent edits by doctors and receptionists merge deterministically via Field-Level Last-Write-Wins (LWW) CRDT without field clobbering.
 
-### R4. Compilation, Encoding & Code Quality Gates
-Enforce strict repository quality gates prior to commit:
-- `npm run check:encoding` must pass with 0 encoding/mojibake errors.
-- `npm run typecheck` must pass with 0 TypeScript compiler errors across all monorepo packages (`@dental/shared`, `@dental/api`, `@dental/web`).
+### R4. Automated Verification & Resilience Test Suite
+- Automated unit and integration test suites covering:
+  - Network disconnection mid-typing in Form 043/u -> IndexedDB persistence -> 100% character recovery.
+  - KKT power interruption -> offline buffer -> recovery.
+  - Multi-platform packaging contracts, Web Manifest validity, and icon assets.
+  - Monorepo typecheck (`npm run typecheck`), CSS tokens check (`node scripts/check-css-tokens.mjs`), and UTF-8 encoding check (`npm run check:encoding`).
 
 ## Acceptance Criteria
 
-### Quality & Build Invariants
-- [ ] `npm run check:encoding` passes with 0 errors across all codebase files.
-- [ ] `npm run typecheck` passes cleanly with 0 TypeScript errors across `@dental/shared`, `@dental/api`, and `@dental/web`.
-- [ ] `node scripts/ops-panels-shots.mjs` generates complete, non-empty screenshot panels without falling back to shift lock screens or diagnostic `_ПУСТО.png` placeholders.
-- [ ] All 4 layout/theme states (PC Light, PC Dark, Mobile Light, Mobile Dark) are verified with clean visual rendering.
-- [ ] All changes are committed to git with proper conventional commit messages and zero tool attributions.
+### Universal Runtime & Resilience Integrity
+- [ ] PWA Web Manifest is valid and passes standalone installability checks.
+- [ ] Offline typing in Form 043/u with `navigator.onLine = false` preserves 100% of entered text in IndexedDB without data loss.
+- [ ] Restoring network connection automatically syncs all queued changes to backend with `EXIT 0`.
+- [ ] Financial operations maintain strict idempotency — duplicate payments are recognized and deduplicated in PostgreSQL.
+- [ ] All 10 CRM themes render with compliant WCAG AAA contrast and >= 44x44px touch targets.
+- [ ] Full monorepo typecheck (`npm run typecheck`) and encoding tests (`npm run check:encoding`) pass with 0 errors.
 
-## 2026-07-31T22:19:51Z
+## 2026-08-22T19:15:11Z
 
-DENTE Dental CRM is a high-performance clinical management platform for dentistry. Your agent swarm will autonomously audit database integrity, complete Form 043/у visual styling, enforce kopeck-exact financial accounting, and verify 4-state UI responsiveness (Mobile Light, Mobile Dark, PC Light, PC Dark).
+# Teamwork Project Prompt — DENTE Multi-Platform Packaging & Native Runtime Engine
 
 Working directory: C:\Clinic_MVP\dental-crm
-Integrity mode: demo
+Integrity mode: development
+
+DENTE Dental CRM must be packaged, runnable, and verifiable across all 3 major platforms: (1) Windows Desktop Standalone (.EXE via Electron/Tauri harness with native hardware drivers), (2) Mobile Android (.APK via Capacitor/Android WebView with camera DataMatrix scanning and biometric lock), and (3) Modern Web App / PWA (Browser Standalone with Service Worker caching and IndexedDB outbox). All platforms share the identical @dental/shared business logic and state synchronization protocols.
 
 ## Requirements
 
-### R1. Form 043/у & Odontogram Completeness
-The clinical diary (Form 043/у) and interactive tooth map (Odontogram) must render correctly without layout shifts, clipped text, or missing patient data.
+### R1. Desktop Standalone Windows Runtime (.EXE)
+- Native desktop wrapper configuration (Electron / Tauri / Node Host) for Windows.
+- Native hardware bridges:
+  - Local COM/USB serial port access for TWAIN dental sensors and visiographs.
+  - Direct TCP/IP socket printing for АТОЛ and Штрих-М fiscal registers without cloud latency.
+  - Local filesystem watch for incoming X-ray DICOMs.
 
-### R2. Kopeck-Exact Financial & Tenant Isolation
-All transaction calculations, pricing, and patient balance ledgers must execute with kopeck-exact integer arithmetic (1 RUB = 100 kopecks), strict tenant isolation, and zero floating-point rounding errors.
+### R2. Mobile Android & Tablet App (.APK)
+- Native mobile wrapper configuration (Capacitor / Android WebView).
+- Native mobile hardware integration:
+  - Camera-based GS1 DataMatrix / Barcode scanner for Честный ЗНАК / МДЛП medication verification.
+  - Biometric PIN / TouchID / FaceID staff authentication.
+  - Touch-first responsive interface (>= 44x44px touch targets, no layout shift).
 
-### R3. 4-State Visual Verification & Automated Playwright Proof
-Every primary UI route (Visit, Schedule, Patients, Finance, Settings) must pass automated 4-state visual testing: Mobile Light (390x844), Mobile Dark (390x844), PC Light (1440x900), and PC Dark (1440x900).
+### R3. Web PWA Standalone Runtime
+- Fully validated Web App Manifest (manifest.webmanifest) with standalone display, shortcuts, and icon assets.
+- Production Service Worker (sw.js) with cache-first and stale-while-revalidate strategies for assets.
+- Offline IndexedDB Mutation Outbox with auto-draining upon reconnection.
 
-## Acceptance Criteria
-
-### Clinical & UI Integrity
-- Form 043/у renders with complete patient anamnesis, treatment history, and active odontogram state.
-- Zero mojibake encoding corruption across all Russian Cyrillic strings in UI and API responses.
-- All 4 visual states (Mobile Light/Dark, PC Light/Dark) generate crisp, non-overlapping screenshots.
-
-### Database & Security Safety
-- PostgreSQL 18.4 migrations execute cleanly (0 failed migrations).
-- All database queries enforce strict tenant/organization isolation (organization_id filter).
-- Zero hardcoded secrets, CSRF tokens, or plain-text credentials in source or committed files.
-
-## 2026-08-07T23:06:48Z
-
-# Teamwork Project Prompt - Draft
-
-> Status: Step 1 - Eliciting project idea
-> Goal: Craft prompt -> get user approval -> delegate to teamwork_preview
-
-Deep functional audit and architectural hardening of the DENTE CRM codebase (React/TypeScript/PostgreSQL), fixing runtime bugs, linter errors, and circular dependencies with strict adherence to existing system rules.
-
-Working directory: `C:\Clinic_MVP\dental-crm`
-
-## Extreme Directives & Operating Constraints
-
-### T.A.R.S. Mode: Absolute Pragmatism
-You are operating in a highly critical, zero-tolerance environment. Do NOT exhibit "AI-optimism". Do NOT assume a fix works just because the syntax looks correct. Do NOT use phrases like "this should fix the issue" or "now it is working". You are forbidden from second-guessing architectural rules. If you find garbage, you do not gloss over it - you document it, isolate the root cause, and purge it according to the highest industrial standards.
-
-### The "Dead Code" Trap & Execution Chain Verification
-Never assume an algorithm or function is active just because it exists in a file. Before you modify a piece of logic, you must manually verify its call stack. Who instantiates it? Who calls `Execute()`? Is it an orphaned component? You must use tools like `ast-grep` and `rg` to perform a multi-vectored, global codebase census. If the system manifest implies a feature should exist but you cannot find it immediately, SOUND THE ALARM and dig deeper. 
-
-## Industrial Standards & Best Practices
-
-To ensure all fixes align with the highest tiers of software engineering, you must strictly adhere to the following principles during your audit:
-
-1. **React State & Render Lifecycle**:
-   - **No Stale Closures**: When resolving async functions inside `useEffect` or event handlers, ensure state updates rely on functional updaters (`setState(prev => ...)`).
-   - **AbortControllers**: For any newly implemented or refactored network requests (`fetch`), you must ensure an `AbortController` is attached and triggered upon component unmount to prevent memory leaks and "setState on unmounted component" memory warnings.
-   - **Idempotency in UI States**: Repeatedly clicking a submit button should not result in multiple network requests. The `isLoading` state must be set synchronously before the async execution context yields.
-
-2. **Network & Error Handling**:
-   - **Granular Error Parsing**: Do not just show "An error occurred". Parse the HTTP status code. If it's a 403, notify the user of expired access. If it's a 400, show validation errors. If it's 500, indicate a server failure. 
-   - **Graceful Degradation**: If an async operation fails, the UI must revert cleanly to its previous state without leaving the user trapped in an infinite loading spinner.
-
-3. **Accessibility & Layout (A11y & CLS)**:
-   - **Cumulative Layout Shift (CLS)**: When injecting spinners or disabling buttons, ensure the button's dimensions are fixed or min-width is set so the UI does not violently jump.
-   - **ARIA Attributes**: Always use `aria-busy={true}` alongside `disabled={true}` for accessibility tools to recognize the loading state.
-
-## Deep Architectural Requirements
-
-### R1. Eradication of "Silent Swallows" and Unhandled Async Errors
-The current system suffers from critical functional defects where asynchronous operations (API fetches, tRPC calls, document generation) fail silently. When a promise rejects or a `try/catch` block catches an error, it is currently being swallowed (e.g., `catch (e) { console.error(e) }`) without any user-facing feedback. 
-Your task is to hunt down every single instance of unhandled or poorly handled async errors across the entire React frontend (`apps/web/src`). 
-For every discovered instance, you must explicitly route the error to the UI using the project's established toast infrastructure (`showToast`, `actionFailureToast`). The medical staff (dentists, administrators) must receive clear, localized, and actionable feedback when a network request fails, rather than staring at a frozen screen while the console silently bleeds errors.
-
-### R2. Annihilation of Race Conditions and Double Submits (State Hardening)
-Critical user flows-specifically financial transactions (Sberbank terminal integrations), appointment bookings, and document signing-are vulnerable to double-submit race conditions. Forms and action buttons are currently failing to lock their UI state during pending asynchronous operations. 
-You must identify all buttons and forms that trigger mutations or API requests and ensure they are fortified with strict loading states. You must implement robust `isSubmitting`, `isLoading`, or `isPending` state guards. Buttons must be physically disabled (`disabled={isSubmitting}`) and visually indicate their loading state (`aria-busy={true}`) to prevent users from spam-clicking and corrupting the PostgreSQL database with duplicate records. 
-
-### R3. Exhaustive Discovery and Code Health Enforcement
-Your reconnaissance must be paranoid and exhaustive. Before applying any fixes to the functional bugs mentioned in R1 and R2, you must execute a structural search of the codebase. You are required to run `rg "await fetch|catch" apps/web/src` and `rg "onSubmit" apps/web/src` to map the battlefield. 
-Furthermore, you are strictly bound by the project's linter and compiler rules. Every piece of code you touch must comply with the existing Biome rules and TypeScript strict mode configurations. You must never bypass a type check with `any` or `@ts-ignore`. 
+### R4. Universal Cross-Platform Verification Suite
+- Comprehensive automated verification suite:
+  - Cross-platform build scripts (npm run build, packaging configs).
+  - Validation of PWA manifests, icons, and native hardware wrapper interfaces.
+  - Monorepo typecheck (npm run typecheck), CSS tokens check (node scripts/check-css-tokens.mjs), and UTF-8 encoding check (npm run check:encoding).
 
 ## Acceptance Criteria
 
-### Technical Correctness (Objective Verification)
-- [ ] **Type Safety:** The entire workspace must compile cleanly. You must run `npm run typecheck -w @dental/web` and `npm run typecheck -w @dental/api`. The exit code MUST be `0`.
-- [ ] **Linter Compliance:** You must run `npx biome lint apps/web/src`. The command must return zero errors for all files modified during your operation.
-- [ ] **Proof of Execution:** You must not claim a task is complete without providing the actual terminal `stdout` logs demonstrating that the compiler and linter passed.
+### Multi-Platform Packaging & Runtime Integrity
+- [ ] Desktop packaging contracts and hardware bridge configs are valid and typed.
+- [ ] Mobile Capacitor / Android WebView configuration is complete with DataMatrix camera scanner bridge.
+- [ ] PWA Web Manifest is valid and passes standalone installability checks.
+- [ ] Full monorepo typecheck (npm run typecheck) and encoding tests (npm run check:encoding) pass with 0 errors.
+- [ ] All 10 CRM themes render with compliant WCAG AAA contrast and >= 44x44px touch targets.
 
-### Functional Integrity
-- [ ] Every modified action button or form submit handler actively blocks secondary interactions while the initial promise is resolving.
-- [ ] Every modified `catch` block explicitly informs the user of the failure state via `showToast` or an equivalent established UI pattern.
-- [ ] No regression of existing functionality: Context providers, custom hooks, and memoization dependencies must remain intact and functionally identical in their positive paths.
+## 2026-08-22T20:06:33Z
 
-## 2026-08-08T09:59:45Z
-
-# Teamwork Project Prompt — Draft
-
-> Status: Launched
-
-Deep architectural restoration of the DENTE CRM codebase (`apps/web`). Over the last 7-10 days, rogue agents went on a destructive refactoring spree, deleting 198 critical properties and their underlying logic from the `useAppLogic` state monolith. 
-The team must manually reconstruct this lost logic by extracting the implementations from the **Golden Reference Commit from July 30th (`da92ab9507`)** and surgically injecting them into the modern codebase, **WITHOUT LOSING ANY MODERN CHANGES (bugfixes, tests, UI changes) made in the last 7 days**.
-
-Working directory: `C:\Clinic_MVP\dental-crm`
-Integrity mode: development (no restrictions)
-
-## Requirements
-
-### R1. Intelligent Logic Restoration (No Purging)
-The swarm must NOT use AST scripts to delete UI components or buttons. You must read `dead_props.txt` to identify the 198 missing properties (e.g. `previewMigrationAutopilotSources`, `telegramStaffEscalationChannelDraft`). 
-You must run `git show da92ab9507:apps/web/src/useAppLogic.tsx` (the stable version before the massacre) to find the original implementations of these 198 properties. You must manually extract that logic and integrate it into the current domain hooks (`apps/web/src/hooks/domains/`) and the current `useAppLogic.tsx`.
-
-### R2. Surgical Merging (PRESERVE ALL MODERN CHANGES)
-**CRITICAL:** You cannot simply `git checkout` or overwrite the old files. Doing so will destroy all the valid bugfixes and optimizations made in the last week. 
-You must **surgically copy** the missing functions and state variables from the golden commit (`da92ab9507`) and **paste them** into the modern architecture. Modern changes must be preserved at all costs.
-
-### R3. Global Execution Chain Integrity
-When restoring functions, ensure they are actually wired correctly to the backend or local state. Do not just return dummy empty functions `() => {}` unless absolutely necessary to unblock the build as a temporary fallback. 
-
-## Acceptance Criteria
-
-### Technical Correctness
-- [ ] `npm run typecheck -w @dental/web` must exit with `0`. The 198 `TS2339` errors must be completely resolved by providing the correct types and implementations in `useAppLogic`.
-- [ ] No existing UI buttons or views are deleted or commented out.
-- [ ] No bugfixes, structural changes, or accessibility fixes made between July 30 and August 8 are overwritten or lost.
-
-## 2026-08-08T20:51:53Z
-
-# Teamwork Project Prompt
-
-Deep architectural audit, E2E Playwright verification, and God-Object dismantling (AppHelpers.tsx) for the DENTE CRM frontend, with absolute paranoia and zero AI optimism.
-
-Working directory: C:\Clinic_MVP\dental-crm
-Integrity mode: benchmark
-
-## Requirements
-
-### R1. Browser UI & E2E Verification
-Physically launch Playwright (or similar headless browser testing) to log into the CRM and navigate through all major panels (Schedule, Patients, Finance). Verify that no UI components crash or throw React Error Boundary exceptions. Take screenshots and read browser console logs to ensure every button and field is rendering properly.
-
-### R2. Paranoid Global Codebase Search
-Before deleting ANY code or modifying `AppHelpers.tsx`, the swarm must perform exhaustive global searches (`ripgrep`, `ast-grep`) to verify the execution chain. DO NOT rely on a single file's context. Cross-reference all exported symbols against the entire `apps/web/src` directory.
-
-### R3. God-Object Dismantling (AppHelpers.tsx)
-Surgically extract domain logic (Finance, Telegram, Date/Time, Clinic Profile) from the 8000-line `AppHelpers.tsx` into dedicated `/utils/` modules. Every single step must be followed by `npm run typecheck -w @dental/web` to guarantee no broken imports.
-
-### R4. Zero AI Optimism
-The swarm must not assume that "it should work now." Every architectural rewrite must be proven by successful test runs, zero circular dependencies (`npx madge --circular apps/web/src/main.tsx`), and a clean typecheck.
-
-## Acceptance Criteria
-
-### Objective Programmatic Verification
-- [ ] `npm run typecheck -w @dental/web` passes with 0 errors after every file move.
-- [ ] `npx madge --circular apps/web/src/main.tsx` outputs exactly 0 circular dependencies.
-- [ ] Playwright E2E tests execute successfully and physically confirm that the UI loads without crashing or throwing console errors.
-- [ ] All architectural decisions and fixes are grounded using Google Search for industry best practices.
-
-## 2026-08-08T21:40:35Z
-
-# Teamwork Project Prompt — Draft
-
-Perform a paranoid, objective reassessment of all "dead code" removals and flagged variables in the `apps/web/src` codebase. The goal is to identify false positives where agents incorrectly deleted or flagged actively used code, using the `useDocumentWorkflowModule.ts` failure as a baseline.
+# DENTE CRM Multi-Domain Autonomous Swarm — Teamwork Execution
 
 Working directory: C:\Clinic_MVP\dental-crm
 Integrity mode: development
 
 ## Requirements
 
-### R1. Root Cause Analysis of False Positives
-Analyze exactly why `_selectedTaxDocumentPayerInn`, `_eligibleTaxPaymentIdsKey`, and `_eligiblePaymentReceiptIdsKey` were falsely flagged as dead code in `useDocumentWorkflowModule.ts` by the previous subagent, despite being actively used in the file. Identify the logical fallacy or tool failure that led to this AI optimism.
+### R1. Clinical EMR, Odontogram & SOAP Protocol 043/u
+- Touch-first responsive tooth formula with 1-click pathology selection.
+- Automatic ICD-10 binding per tooth (K02, K04, K05, K08).
+- Order 1094n statutory prescription generation and Articaine max safe dosage calculator (mg/kg).
 
-### R2. Global "Dead Code" Re-Audit
-Execute a rigorous codebase-wide scan across `apps/web/src` (maximum paranoia). Verify if any other recently deleted or flagged "dead" functions/variables were actually part of an active call stack. You have no restrictions — you may use AST parsers (e.g., `ts-morph`), `tsc`, `madge`, `ripgrep`, or custom scripts.
+### R2. Finance, 54-FZ Fiscalization & Doctor Payroll
+- Multi-tender split payment (Cash, Card, SBP QR, Advance offset, Family wallet).
+- FFD 1.2 tags (1214, 1212, 1030) and dynamic FNS QR verification string.
+- T-51 doctor payroll calculation deducting lab costs and materials.
 
-### R3. Strict Execution Chain Verification
-For every piece of code suspected of being dead, physically trace its execution chain. Who instantiates it? Is it part of a dynamically generated key, an export, or a larger object spread? Do not delete anything unless it is mathematically proven to be dead (0 references across the AST).
+### R3. Inventory, Order 804n Clinical Writeoff & Inter-Branch Transfers
+- Procedure BOM auto-writeoff for dental services (A16.07.002.001).
+- FEFO expiration sorting and бракераж of expired batches.
+- Statutory acts generation: Form 0504230, M-11, TORG-2 discrepancy acts, and TORG-13 transfer notes.
 
-## Acceptance Criteria
+### R4. SanPiN 3.3686-21 Sterilization & Autoclave Log
+- Form 257/u digital autoclave log with 5-point chamber chemical indicator audit (KT-1..KT-5).
+- Form 366/u pre-sterilization cleansing (ПСО) quality control tests (Azopyram, Phenolphthalein, Sudan III).
+- Pure TypeScript vector DataMatrix & Code128 kraft package label generation.
 
-### Verification
-- [ ] Programmatic validation: An automated typescript check (`npm run typecheck -w @dental/web`) must pass, proving no deletions broke the build.
-- [ ] Output validation: A detailed incident report is generated explaining the exact mechanism of the false positive in the workflow module.
-- [ ] Output validation: Any other code falsely identified as dead in the recent refactoring must be restored and documented.
-
-## Follow-up — 2026-08-08T21:41:28Z
-
-USER OVERRIDE: The user specifically demands that the audit team aggressively use Git history (`git log -p`, `git diff`, etc.) to trace and investigate any lost or broken logic from recent refactorings. Ensure your orchestrator and subagents incorporate Git history analysis immediately into their workflow to find anything that might have been accidentally deleted or broken recently.
-
-## 2026-08-08T20:25:04Z
-
-# Teamwork Project Prompt — Draft
-
-> Status: Launched
-> Goal: Craft prompt → get user approval → delegate to teamwork_preview
-
-Ruthless E2E Visual Audit & Code Health Orchestration. The swarm will analyze the codebase, setup Playwright for 4-state visual testing (Mobile Light, Mobile Dark, PC Light, PC PC Dark), detect UI bugs, fix layout and contrast issues, and relentlessly refactor according to clean architecture standards without any AI-optimism.
-
-Working directory: C:\Clinic_MVP\dental-crm
-Integrity mode: benchmark
-
-## Requirements
-
-### R1. Ruthless Visual Scrutiny (4-State Proof)
-Implement Playwright or equivalent to capture screenshots of every screen, dialog, and state in Mobile Light, Mobile Dark, PC Light, PC Dark. Agents must critically evaluate these screenshots for layout breaks, padding/margin errors, unreadable contrast, missing hover states, and z-index issues. "Looks good to me" is banned.
-
-### R2. Global System Census & Code Health
-Perform exhaustive `ast-grep` and `rg` searches before writing code. Identify legacy systems, duplicate logic, and competing architectures. Run all linters and parsers to ensure clean architecture (SOLID, FSD). Fix every single warning and error.
-
-### R3. Execution Chain Verification
-Never assume code works because a file exists. Verify the entire call stack to ensure the logic is actually instantiated and called. Cross-reference with project documents and logs.
-
-### R4. Grounding & Zero Optimism
-Every technical decision must be backed by Google Search (e.g., React 19, Tailwind, Playwright docs). Agents must report facts and failures honestly. No sugarcoating, no "now it should work".
+### R5. Telephony, Schedule & Multi-Platform Offline Resilience
+- WebRTC SIP integration with incoming call HUD, patient debt/last visit preview, and 1-click booking.
+- Chair and doctor collision prevention with Postgres 18 exclusion constraints and 0–100 waitlist matching.
+- Offline-first IndexedDB CRDT mutation queue with automatic background sync upon reconnection.
 
 ## Acceptance Criteria
 
-### Visual Polish
-- [ ] Playwright tests are configured and successfully capture 4 states for all main views.
-- [ ] Screenshots are saved to the artifact directory and manually audited by an agent.
-- [ ] Zero overlapping text, broken margins, or contrast issues in the final visual report.
+### Verification Gates
+- [x] All packages (@dental/shared, @dental/api, @dental/web) pass npm run typecheck with 0 errors.
+- [x] check:encoding passes on all 3420+ source files (UTF-8 clean).
+- [x] check:css-tokens verifies all 6900+ var() usages resolve across all 10 clinical themes.
+- [x] All domain unit and integration test suites pass with Exit Code 0.
+## 2026-08-22T20:33:42Z
 
-### Codebase Health
-- [ ] No warnings or errors reported by the project's primary linters (e.g., Biome, ESLint, TypeScript).
-- [ ] Structural searches (`ast-grep`, `madge`) return zero circular dependencies or unresolved legacy duplicates for the modified scopes.
-
-### Architectural Integrity
-- [ ] Every modified or added feature includes execution chain proof (logs showing it's called in runtime).
-- [ ] No subjective "LGTM" verifications; all fixes are accompanied by before/after objective data.
-
-## 2026-08-09T09:03:30Z
-
-# Teamwork Project Prompt
-
-Устранение 48 падений React Error Boundary ("Раздел временно не открылся") в интерфейсе DENTE CRM. Внедрение Defensive Programming во все компоненты, падающие на `.map()`, `.split()` и `undefined` данных.
+# DENTE CRM — Full Autonomous Engineering & Multimodal Verification Swarm
 
 Working directory: C:\Clinic_MVP\dental-crm
 Integrity mode: development
 
+Perform comprehensive engineering, verification, and autonomous visual audits across all 5 core clinical and operational domains of the DENTE Dental CRM platform.
+
 ## Requirements
 
-### R1. Defensive Programming в React-компонентах
-Найти и исправить уязвимые места в компонентах, которые ожидают идеальные данные. Цели первой очереди:
-- `apps/web/src/components/schedule/AppointmentCard.tsx` (краш на `split`)
-- `apps/web/src/components/settings/SettingsClinicTab.tsx` (краш на `map`)
-- `apps/web/src/components/communications/MessageDeliveryConsole.tsx` (краш на `map`)
-- Все остальные компоненты в разделах `patients`, `analytics`, `communications`.
+### R1. Clinical EMR, Odontogram & SOAP Protocol 043/u
+- Standardized odontogram with fast pediatric (51–85) vs permanent (11–48) dentition toggles, mixed dentition tooth replacement stages (6–12 years), and 140px minimum tooth height.
+- Clinical SOAP Protocol 043/u generator with 11 standardized complaint presets, automated ICD-10 tooth diagnosis auto-binding (K02.1, K04.0, K04.5, K05.3, K08.1), and Order 1094n Form 107-1/u statutory prescriptions.
+- Articaine 4% safety dosage engine (7.0 mg/kg adult, 5.0 mg/kg pediatric, 0.04 mg epinephrine ceiling for cardiovascular patients).
 
-### R2. Восстановление 4-State рендера
-После внедрения защит (optional chaining, fallbacks), компоненты должны рендериться даже с пустыми моками (без белых экранов смерти).
+### R2. Finance, 54-FZ Fiscalization & Doctor Payroll
+- 54-FZ FFD 1.2 QR code validation (t, s, fn, i, fp, n) with kopeck-exact arithmetic.
+- Split-payment processing (Cash, SBP QR, Card, Family Wallet balance).
+- Statutory Form T-51 doctor payroll calculation with automatic lab CAD/CAM & material expense deduction.
+
+### R3. Inventory, Order 804n Clinical Writeoff & Inter-Branch Transfers
+- Automated BOM material write-off based on Ministry of Health Order 804n service codes (A16.07.002.001 Composite filling, A16.07.030.001 Anesthesia).
+- Statutory TORG-13 inter-cabinet and inter-branch transfer forms, and TORG-2 discrepancy acts.
+- Expiration tracking with FEFO (First-Expired, First-Out) and nurse re-stock alerts.
+
+### R4. SanPiN 3.3686-21 Sterilization & Autoclave Log
+- Form 257/u digital autoclave cycle logger with 5-point chemical indicator validation (KT-1..KT-5, class 4/5 integrators) and spore tests.
+- Form 366/u Pre-Sterilization Cleansing (PSO) quality control (1% statutory sampling, Azopyram, Phenolphthalein, Sudan III).
+- Pure TypeScript vector DataMatrix 2D & Code128 1D thermal label printers for kraft packages with 50/60/180-day sterility limits.
+
+### R5. Telephony, Schedule & Multi-Platform Resilience
+- SIP WebRTC softphone with 48x48px mobile floating action button (FAB) inside React Portal with safe-area-inset support.
+- Schedule conflict detection using Postgres 18 tsrange exclusion constraints for doctors, chairs, assistants, and patients.
+- Waitlist quick-fill matching engine with 0–100 score priority ranking.
 
 ## Acceptance Criteria
 
-### Verification & Quality Bar
-- [ ] Запуск `node e2e_4state_audit.cjs` генерирует 68 скриншотов без единого сообщения "Раздел временно не открылся".
-- [ ] Линтер TypeScript (`npm run typecheck`) проходит без новых ошибок.
-- [ ] Ошибки вида `Cannot read properties of undefined` полностью устранены из консоли браузера.
-
-## 2026-08-13T20:12:02Z
-
-# Teamwork Project Prompt — Draft
-
-> Status: Launched
-> Goal: Eradicate race conditions in payment capturing by implementing a secure async webhook receiver for Sberbank Acquiring.
-
-Implement `POST /api/sberbank/webhook` to handle asynchronous payment confirmations from Sberbank, ensuring the Dente CRM ledger is updated even if the client closes their browser.
-
-Working directory: C:/Clinic_MVP/dental-crm
-Integrity mode: development
-
-## Requirements
-
-### R1. Webhook Endpoint
-Implement a Fastify route in `apps/api/src/routes/sberbank.ts` at `POST /api/sberbank/webhook` to receive Sberbank callbacks.
-
-### R2. Cryptographic Verification Guard
-The webhook must not accept unverified payloads. Implement a verification mechanism (e.g. signature validation) as expected by Sberbank Acquiring standards. The route must drop unauthorized calls immediately without touching the database.
-
-### R3. Ledger State Machine
-If the webhook signals successful payment, look up the `sberbankTransactions` row. If the transaction transitions from `pending` to `success`, strictly insert a new row into the `payments` table (schema: id, organizationId, patientId, method: "card", status: "paid", amountRub: transaction.amount / 100).
-
-### R4. ZERO MOCKS
-Write pure, mathematically sound logic. No `// TODO` stubs.
-
-## Acceptance Criteria
-
-### Automated Tests
-- [ ] A new integration test in `apps/api/src/tests/routes/sberbankWebhook.test.ts` exists.
-- [ ] The test proves that an invalid checksum is rejected with 400 or 401 without updating the DB.
-- [ ] The test proves that a valid payload updates `sberbankTransactions` and inserts a ledger record into `payments`.
-- [ ] The `check:stub-overrides` and `tsc --noEmit` checks must pass completely.
-
-## 2026-08-13T20:33:06Z
-
-# Teamwork Project Prompt — Draft
-
-> Status: Launched
-> Goal: Implement `POST /api/ai/visit-flow` route calling `ai/visitFlowOrchestrator.ts`.
-
-Working directory: C:/Clinic_MVP/dental-crm
-Integrity mode: development
-
-## Requirements
-
-### R1. Create AI route module
-- Check if `apps/api/src/routes/ai.ts` exists. If not, create it.
-- Implement `POST /api/ai/visit-flow`.
-- Use `requireClinicalMutationAccess(request, reply, "ai visit flow")` and `requireOrganizationId(request, reply)`.
-
-### R2. Integrate Orchestrator
-- Import and call the appropriate function from `apps/api/src/ai/visitFlowOrchestrator.ts` to process the request. (e.g. `startVisitFlowOrchestrator(payload)`).
-- Ensure the route reads the required payload from `request.body`. Use `rg "/api/ai/visit-flow" apps/web/src` to see what the frontend sends.
-
-### R3. Register the route
-- Add `import { registerAiRoutes } from "./routes/ai.js"` and `await registerAiRoutes(app)` to `apps/api/src/server.ts`.
-
-### R4. Remove `todo` marker
-In `apps/api/src/tests/contract-breach-proofs.test.ts`, remove the `todo` marker from `(A) POST /api/ai/visit-flow`.
-
-Ensure `tsc --noEmit` passes. NO MOCKS.
-
-
-## 2026-08-13T20:33:06Z
-
-# Teamwork Project Prompt — Draft
-
-> Status: Launched
-> Goal: Implement missing EGISZ routes for `GET /api/integrations/egisz-blank-permissions` and `POST /api/egisz/send`.
-
-Working directory: C:/Clinic_MVP/dental-crm
-Integrity mode: development
-
-## Requirements
-
-### R1. `GET /api/integrations/egisz-blank-permissions`
-Implement this route in `apps/api/src/routes/egisz.ts`.
-- Use `requireClinicalReadAccess(request, reply, "egisz permissions check")`.
-- Extract `orgId` via `requireOrganizationId(request, reply)`.
-- Query `db.select().from(schema.egiszBlankPermissions).where(eq(schema.egiszBlankPermissions.organizationId, orgId))` and return the rows in a way the frontend expects. Check the frontend code (`apps/web/src`) to see if it expects an array or `{ permissions }`.
-
-### R2. `POST /api/egisz/send`
-Implement this route in `apps/api/src/routes/egisz.ts`.
-- Use `requireClinicalMutationAccess(request, reply, "egisz send")`.
-- Parse body with Zod `{ patientId: z.string().uuid(), visitId: z.string().uuid() }`.
-- Insert into `schema.egiszLogs` with `status: "Pending"`.
-- Return `{ success: true, logId: inserted.id }`.
-
-### R3. Remove `todo` markers
-In `apps/api/src/tests/contract-breach-proofs.test.ts`, remove `todo` markers from:
-- `(A) POST /api/egisz/send`
-- `(A) GET /api/integrations/egisz-blank-permissions`
-Do not touch other `todo` tests.
-
-Ensure `tsc --noEmit` passes. NO MOCKS.
-
-## 2026-08-14T15:48:52Z
-
-# Teamwork Project Prompt
-
-Комплексный автономный аудит, устранение дефектов интерфейса (Dark/Light режимы на мобильных и десктопе), полировка финансового модуля (54-ФЗ, эквайринг Сбера, справки НДФЛ) и клинической карты 043/у в стоматологической CRM DENTE.
-
-Working directory: C:\Clinic_MVP\dental-crm
-Integrity mode: development
-
-## Requirements
-
-### R1. Полная ликвидация визуальных и эргономических дефектов интерфейса
-Устранить все дефекты вёрстки во всех 4 состояниях (Mobile Light, Mobile Dark, Desktop Light, Desktop Dark) на экранах Расписания, Приема, Финансов и Снимков. Запретить слепящие белые блоки в темной теме, утечки служебных строк линтера, навязчивые фоновые тосты ошибок и кривые отступы. Интерактивные элементы на мобильных устройствах должны иметь минимальную область нажатия 44×44px.
-
-### R2. Финансовый модуль и кассовая дисциплина (54-ФЗ / Сбербанк)
-Обеспечить 100% копеечную точность расчетов, корректную обработку ответов интернет-эквайринга Сбербанка (включая оплату по QR/formUrl), безошибочное формирование справок для налогового вычета (КНД 1151156) и расчет выработки врачей.
-
-### R3. Электронная медкарта 043/у и коллизии расписания
-Обеспечить надежное автосохранение протоколов приёма, удобный интерфейс заполнения карты на приеме, предотвращение наложения врачей в креслах с блокировкой на уровне БД (FOR UPDATE + Exclusion Constraints).
-
-### R4. Просмотрщик КТ / DICOM срезов
-Обеспечить корректную работу MPR-реконструкции, Catmull-Rom проекцию зубной дуги (FDI) и точный расчет плотности кости по Хаунсфилду (HU) из активного кэша объема.
-
-## Acceptance Criteria
-
-### Визуальная безупречность (4-State Matrix)
-- 0 навязчивых фоновых тостов с ошибками при открытии страниц в оффлайне или при фоновом префетче.
-- 0 слепящих белых фонов в тёмной теме ([data-theme="dark"]).
-- Все интерактивные элементы на мобильном имеют высоту не менее 44px.
-- Финансовые карточки без выбранного пациента отображают нейтральное состояние без спама «не определено».
-
-### Статическая верификация и сборка
-- `npm run check:encoding` проходит на 100% (0 файлов с поврежденной кодировкой).
-- `npm run typecheck` (`shared`, `api`, `web`) завершается с кодом 0 (0 ошибок компиляции TypeScript).
-- The Iron Gate pre-commit проверки (`gitleaks`, `check:encoding`, `check:stub-overrides`, `check:fetch-response`, `check:dynamic-imports`) успешно пройдены.
-- Все изменения зафиксированы в `origin/main` согласно Mandate 8b.
-
-
-
-
-
-
+### Automated Verification Gates
+- [ ] TypeScript Typecheck: npm run typecheck exits with code 0 across all workspaces (@dental/shared, @dental/api, @dental/web).
+- [ ] Encoding: npm run check:encoding reports 0 issues across all repository files.
+- [ ] CSS Design Tokens: node scripts/check-css-tokens.mjs verifies 0 unresolved variables across all 10 clinical themes.
+- [ ] Automated Test Suites: 100% pass rate across domain test suites (@dental/shared, @dental/api, @dental/web).
+- [ ] Pre-commit Iron Gate: all 5 pre-commit checks pass cleanly.
+- [ ] Visual Proof: 4-state visual confirmation (Mobile Light, Mobile Dark, PC Light, PC Dark) inspected and verified.
