@@ -436,7 +436,7 @@ export function SettingsTelegramTab({
 										}}
 										className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
 											telegramLinkSubjectType === option.value
-												? "bg-sky-600 text-white border-sky-600"
+												? "bg-[var(--teal)] text-white border-[var(--teal-dark)]"
 												: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700"
 										}`}
 									>
@@ -750,7 +750,7 @@ export function SettingsTelegramTab({
 										}}
 										className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
 											telegramModeDraft === option.value
-												? "bg-sky-600 text-white border-sky-600"
+												? "bg-[var(--teal)] text-white border-[var(--teal-dark)]"
 												: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700"
 										}`}
 									>

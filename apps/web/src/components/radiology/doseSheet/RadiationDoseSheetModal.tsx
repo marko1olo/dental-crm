@@ -352,7 +352,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 				{/* ═══ Header ═══ */}
 				<header className="flex flex-wrap items-center justify-between gap-3 px-5 md:px-6 py-3.5 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 					<div className="flex items-center gap-3">
-						<div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-teal-500/15 border border-teal-500/30 text-teal-600 dark:text-teal-400 shrink-0">
+						<div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)] shrink-0">
 							<Activity className="w-6 h-6" />
 						</div>
 						<div>
@@ -360,7 +360,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 								<h2 className="text-base md:text-lg font-extrabold text-[var(--ink)] leading-tight">
 									Лист учета дозовых нагрузок пациента
 								</h2>
-								<span className="hidden sm:inline-flex px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30">
+								<span className="hidden sm:inline-flex px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]">
 									СанПиН 2.6.1.1192-03
 								</span>
 							</div>
@@ -374,10 +374,10 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 						<button
 							type="button"
 							onClick={handlePrintDoseSheet}
-							className="inline-flex items-center gap-1.5 min-h-[44px] px-3.5 py-2 text-xs md:text-sm font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line)] hover:border-teal-500/40 active:scale-95 transition-all shadow-sm"
+							className="inline-flex items-center gap-1.5 min-h-[44px] px-3.5 py-2 text-xs md:text-sm font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line)] hover:border-[var(--teal)] active:scale-95 transition-all shadow-sm"
 							title="Печать официального вкладыша в карту 043/у (A4)"
 						>
-							<Printer className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+							<Printer className="w-4 h-4 text-[var(--teal)]" />
 							<span className="hidden sm:inline">Печать (043/у)</span>
 						</button>
 
@@ -411,7 +411,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 							onClick={() => setActiveTab("summary")}
 							className={`inline-flex items-center gap-2 min-h-[44px] px-4 py-2 text-xs md:text-sm font-bold rounded-xl transition-all ${
 								activeTab === "summary"
-									? "bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30 shadow-sm"
+									? "bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] shadow-sm"
 									: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 							}`}
 						>
@@ -424,7 +424,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 							onClick={() => setActiveTab("journal")}
 							className={`inline-flex items-center gap-2 min-h-[44px] px-4 py-2 text-xs md:text-sm font-bold rounded-xl transition-all ${
 								activeTab === "journal"
-									? "bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30 shadow-sm"
+									? "bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] shadow-sm"
 									: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 							}`}
 						>
@@ -440,7 +440,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 							onClick={() => setActiveTab("calculator")}
 							className={`inline-flex items-center gap-2 min-h-[44px] px-4 py-2 text-xs md:text-sm font-bold rounded-xl transition-all ${
 								activeTab === "calculator"
-									? "bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30 shadow-sm"
+									? "bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] shadow-sm"
 									: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 							}`}
 						>
@@ -453,7 +453,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 							onClick={() => setActiveTab("sanpin")}
 							className={`inline-flex items-center gap-2 min-h-[44px] px-4 py-2 text-xs md:text-sm font-bold rounded-xl transition-all ${
 								activeTab === "sanpin"
-									? "bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30 shadow-sm"
+									? "bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] shadow-sm"
 									: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 							}`}
 						>
@@ -470,7 +470,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 						<select
 							value={selectedYear}
 							onChange={(e) => setSelectedYear(Number(e.target.value))}
-							className="min-h-[44px] px-3 py-1 text-xs md:text-sm font-bold rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-teal-500/40"
+							className="min-h-[44px] px-3 py-1 text-xs md:text-sm font-bold rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 							aria-label="Выбор отчетного года"
 						>
 							<option value={currentYear}>{currentYear} год (текущий)</option>
@@ -533,7 +533,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 										<div className="text-xl md:text-2xl font-black text-[var(--ink)]">
 											{doseSummary.annualMsv} мЗв
 										</div>
-										<div className="text-xs font-bold text-teal-600 dark:text-teal-400">
+										<div className="text-xs font-bold text-[var(--teal)]">
 											{doseSummary.annualMicrosv} мкЗв · {doseSummary.annualStudiesCount} снимков
 										</div>
 										<span className="text-[11px] text-[var(--muted)]">
@@ -590,7 +590,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 										<span className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)]">
 											За всё время лечения:
 										</span>
-										<div className="text-xl md:text-2xl font-black text-teal-600 dark:text-teal-400">
+										<div className="text-xl md:text-2xl font-black text-[var(--teal)]">
 											{doseSummary.lifetimeMsv} мЗв
 										</div>
 										<span className="text-xs font-bold text-[var(--muted)]">
@@ -609,7 +609,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 							<div className="flex flex-col gap-2.5 p-4 rounded-3xl bg-[var(--paper-soft)] border border-[var(--line)]">
 								<div className="flex items-center justify-between">
 									<span className="text-xs font-extrabold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
-										<Sparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+										<Sparkles className="w-3.5 h-3.5 text-[var(--teal)]" />
 										1-Click Быстрое добавление снимка по СанПиН:
 									</span>
 									<span className="text-[11px] text-[var(--muted)] hidden sm:inline">
@@ -621,12 +621,12 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 									<button
 										type="button"
 										onClick={() => handleQuickAdd("visiography_intraoral")}
-										className="flex flex-col items-center justify-center p-3 rounded-2xl border border-[var(--line)] bg-[var(--paper)] hover:border-teal-500 hover:bg-teal-500/10 active:scale-95 transition-all min-h-[44px] text-center group"
+										className="flex flex-col items-center justify-center p-3 rounded-2xl border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] active:scale-95 transition-all min-h-[44px] text-center group"
 									>
-										<span className="text-xs font-bold text-[var(--ink)] group-hover:text-teal-600 dark:group-hover:text-teal-400">
+										<span className="text-xs font-bold text-[var(--ink)] group-hover:text-[var(--teal)]">
 											Визиограф (RVG)
 										</span>
-										<span className="text-[11px] font-extrabold text-teal-600 dark:text-teal-400">
+										<span className="text-[11px] font-extrabold text-[var(--teal)]">
 											+0.002 мЗв
 										</span>
 									</button>
@@ -634,12 +634,12 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 									<button
 										type="button"
 										onClick={() => handleQuickAdd("optg_panoramic")}
-										className="flex flex-col items-center justify-center p-3 rounded-2xl border border-[var(--line)] bg-[var(--paper)] hover:border-teal-500 hover:bg-teal-500/10 active:scale-95 transition-all min-h-[44px] text-center group"
+										className="flex flex-col items-center justify-center p-3 rounded-2xl border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] active:scale-95 transition-all min-h-[44px] text-center group"
 									>
-										<span className="text-xs font-bold text-[var(--ink)] group-hover:text-teal-600 dark:group-hover:text-teal-400">
+										<span className="text-xs font-bold text-[var(--ink)] group-hover:text-[var(--teal)]">
 											ОПТГ (Панорама)
 										</span>
-										<span className="text-[11px] font-extrabold text-teal-600 dark:text-teal-400">
+										<span className="text-[11px] font-extrabold text-[var(--teal)]">
 											+0.018 мЗв
 										</span>
 									</button>
@@ -647,12 +647,12 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 									<button
 										type="button"
 										onClick={() => handleQuickAdd("cbct_segmental")}
-										className="flex flex-col items-center justify-center p-3 rounded-2xl border border-[var(--line)] bg-[var(--paper)] hover:border-teal-500 hover:bg-teal-500/10 active:scale-95 transition-all min-h-[44px] text-center group"
+										className="flex flex-col items-center justify-center p-3 rounded-2xl border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] active:scale-95 transition-all min-h-[44px] text-center group"
 									>
-										<span className="text-xs font-bold text-[var(--ink)] group-hover:text-teal-600 dark:group-hover:text-teal-400">
+										<span className="text-xs font-bold text-[var(--ink)] group-hover:text-[var(--teal)]">
 											3D КЛКТ 5х5
 										</span>
-										<span className="text-[11px] font-extrabold text-teal-600 dark:text-teal-400">
+										<span className="text-[11px] font-extrabold text-[var(--teal)]">
 											+0.035 мЗв
 										</span>
 									</button>
@@ -660,12 +660,12 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 									<button
 										type="button"
 										onClick={() => handleQuickAdd("cbct_full_jaws")}
-										className="flex flex-col items-center justify-center p-3 rounded-2xl border border-[var(--line)] bg-[var(--paper)] hover:border-teal-500 hover:bg-teal-500/10 active:scale-95 transition-all min-h-[44px] text-center group"
+										className="flex flex-col items-center justify-center p-3 rounded-2xl border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] active:scale-95 transition-all min-h-[44px] text-center group"
 									>
-										<span className="text-xs font-bold text-[var(--ink)] group-hover:text-teal-600 dark:group-hover:text-teal-400">
+										<span className="text-xs font-bold text-[var(--ink)] group-hover:text-[var(--teal)]">
 											3D КЛКТ челюстей
 										</span>
-										<span className="text-[11px] font-extrabold text-teal-600 dark:text-teal-400">
+										<span className="text-[11px] font-extrabold text-[var(--teal)]">
 											+0.065 мЗв
 										</span>
 									</button>
@@ -673,12 +673,12 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 									<button
 										type="button"
 										onClick={() => handleQuickAdd("cbct_maxillofacial")}
-										className="flex flex-col items-center justify-center p-3 rounded-2xl border border-[var(--line)] bg-[var(--paper)] hover:border-teal-500 hover:bg-teal-500/10 active:scale-95 transition-all min-h-[44px] text-center group"
+										className="flex flex-col items-center justify-center p-3 rounded-2xl border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] active:scale-95 transition-all min-h-[44px] text-center group"
 									>
-										<span className="text-xs font-bold text-[var(--ink)] group-hover:text-teal-600 dark:group-hover:text-teal-400">
+										<span className="text-xs font-bold text-[var(--ink)] group-hover:text-[var(--teal)]">
 											3D КЛКТ 15х15
 										</span>
-										<span className="text-[11px] font-extrabold text-teal-600 dark:text-teal-400">
+										<span className="text-[11px] font-extrabold text-[var(--teal)]">
 											+0.095 мЗв
 										</span>
 									</button>
@@ -686,12 +686,12 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 									<button
 										type="button"
 										onClick={() => handleQuickAdd("teleradiography_trg")}
-										className="flex flex-col items-center justify-center p-3 rounded-2xl border border-[var(--line)] bg-[var(--paper)] hover:border-teal-500 hover:bg-teal-500/10 active:scale-95 transition-all min-h-[44px] text-center group"
+										className="flex flex-col items-center justify-center p-3 rounded-2xl border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] active:scale-95 transition-all min-h-[44px] text-center group"
 									>
-										<span className="text-xs font-bold text-[var(--ink)] group-hover:text-teal-600 dark:group-hover:text-teal-400">
+										<span className="text-xs font-bold text-[var(--ink)] group-hover:text-[var(--teal)]">
 											ТРГ (Цефало)
 										</span>
-										<span className="text-[11px] font-extrabold text-teal-600 dark:text-teal-400">
+										<span className="text-[11px] font-extrabold text-[var(--teal)]">
 											+0.006 мЗв
 										</span>
 									</button>
@@ -707,7 +707,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 									<button
 										type="button"
 										onClick={() => setActiveTab("journal")}
-										className="text-xs font-bold text-teal-600 dark:text-teal-400 hover:underline inline-flex items-center gap-1 min-h-[44px]"
+										className="text-xs font-bold text-[var(--teal)] hover:underline inline-flex items-center gap-1 min-h-[44px]"
 									>
 										<span>Открыть полный журнал ({records.length})</span>
 										<ChevronRight className="w-4 h-4" />
@@ -753,7 +753,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 															<td className="px-4 py-3 font-semibold text-[var(--ink)]">
 																{st.modalityLabel}
 															</td>
-															<td className="px-4 py-3 font-bold text-teal-600 dark:text-teal-400">
+															<td className="px-4 py-3 font-bold text-[var(--teal)]">
 																{st.anatomicalArea}
 																{st.teethFdi && st.teethFdi.length > 0
 																	? ` (${st.teethFdi.join(", ")})`
@@ -762,7 +762,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 															<td className="px-4 py-3 text-right font-bold text-[var(--ink)]">
 																{st.effectiveDoseMicrosv.toFixed(1)}
 															</td>
-															<td className="px-4 py-3 text-right font-mono font-bold text-teal-600 dark:text-teal-400">
+															<td className="px-4 py-3 text-right font-mono font-bold text-[var(--teal)]">
 																{st.effectiveDoseMsv.toFixed(4)}
 															</td>
 															<td className="px-4 py-3 text-[var(--muted)] truncate max-w-[140px]">
@@ -778,10 +778,10 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 							</div>
 
 							{/* ALARA Principle & Statutory Declaration */}
-							<div className="p-4 rounded-3xl bg-teal-500/10 border border-teal-500/30 flex items-start gap-3.5">
-								<Info className="w-5 h-5 text-teal-600 dark:text-teal-400 shrink-0 mt-0.5" />
+							<div className="p-4 rounded-3xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] flex items-start gap-3.5">
+								<Info className="w-5 h-5 text-[var(--teal)] shrink-0 mt-0.5" />
 								<div className="text-xs text-[var(--ink)] leading-relaxed flex flex-col gap-1">
-									<strong className="text-teal-800 dark:text-teal-200 font-bold">
+									<strong className="text-[var(--teal-dark,teal)] font-bold">
 										Радиационная безопасность и защита пациента (СанПиН 2.6.1.1192-03):
 									</strong>
 									<p>{doseSummary.alaraComplianceNotes}</p>
@@ -833,7 +833,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 									<button
 										type="button"
 										onClick={() => setActiveTab("calculator")}
-										className="inline-flex items-center gap-1.5 min-h-[40px] px-4 py-2 text-xs font-bold rounded-xl bg-teal-600 text-white hover:bg-teal-700 active:scale-95 transition-all shadow-sm"
+										className="inline-flex items-center gap-1.5 min-h-[40px] px-4 py-2 text-xs font-bold rounded-xl bg-[var(--teal)] text-white hover:opacity-90 active:scale-95 transition-all shadow-sm"
 									>
 										<Plus className="w-3.5 h-3.5" />
 										<span>Новое исследование</span>
@@ -889,7 +889,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 																{st.apparatusModel}
 															</span>
 														</td>
-														<td className="px-4 py-3 font-bold text-teal-600 dark:text-teal-400">
+														<td className="px-4 py-3 font-bold text-[var(--teal)]">
 															{st.anatomicalArea}
 															{st.teethFdi && st.teethFdi.length > 0 ? (
 																<span className="block text-[11px] font-mono text-[var(--muted)]">
@@ -903,7 +903,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 														<td className="px-4 py-3 text-right font-bold text-[var(--ink)]">
 															{st.effectiveDoseMicrosv.toFixed(1)}
 														</td>
-														<td className="px-4 py-3 text-right font-mono font-bold text-teal-600 dark:text-teal-400">
+														<td className="px-4 py-3 text-right font-mono font-bold text-[var(--teal)]">
 															{st.effectiveDoseMsv.toFixed(4)}
 														</td>
 														<td className="px-4 py-3 text-[11px] text-[var(--muted)] max-w-[120px] truncate">
@@ -939,7 +939,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 							{/* Form Column (col-span-7) */}
 							<div className="lg:col-span-7 flex flex-col gap-4 p-5 rounded-3xl bg-[var(--paper-soft)] border border-[var(--line)]">
 								<h3 className="text-sm font-extrabold uppercase tracking-wider text-[var(--ink)] flex items-center gap-2">
-									<Zap className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+									<Zap className="w-4 h-4 text-[var(--teal)]" />
 									Параметры планируемого исследования:
 								</h3>
 
@@ -955,7 +955,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 												e.target.value as StatutoryRadiologyModality,
 											)
 										}
-										className="min-h-[44px] px-3.5 py-2 text-xs md:text-sm font-bold rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-teal-500/40"
+										className="min-h-[44px] px-3.5 py-2 text-xs md:text-sm font-bold rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 									>
 										{STATUTORY_RADIATION_DOSE_PRESETS.map((p) => (
 											<option key={p.id} value={p.id}>
@@ -997,7 +997,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 											step={1}
 											value={calcKv}
 											onChange={(e) => setCalcKv(Number(e.target.value))}
-											className="accent-teal-500"
+											className="accent-[var(--teal)]"
 										/>
 									</div>
 
@@ -1013,7 +1013,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 											step={0.5}
 											value={calcMa}
 											onChange={(e) => setCalcMa(Number(e.target.value))}
-											className="accent-teal-500"
+											className="accent-[var(--teal)]"
 										/>
 									</div>
 
@@ -1029,7 +1029,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 											step={0.05}
 											value={calcExpSec}
 											onChange={(e) => setCalcExpSec(Number(e.target.value))}
-											className="accent-teal-500"
+											className="accent-[var(--teal)]"
 										/>
 									</div>
 								</div>
@@ -1068,7 +1068,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 							<div className="lg:col-span-5 flex flex-col justify-between gap-4 p-5 rounded-3xl bg-[var(--paper-soft)] border border-[var(--line)]">
 								<div className="flex flex-col gap-4">
 									<h3 className="text-sm font-extrabold uppercase tracking-wider text-[var(--ink)] flex items-center gap-2">
-										<Activity className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+										<Activity className="w-4 h-4 text-[var(--teal)]" />
 										Прогноз лучевой нагрузки (МУ 2.6.1.2944-11):
 									</h3>
 
@@ -1076,7 +1076,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 										<span className="text-xs font-bold text-[var(--muted)] uppercase">
 											Ориентировочная доза за процедуру:
 										</span>
-										<div className="text-2xl md:text-3xl font-black text-teal-600 dark:text-teal-400">
+										<div className="text-2xl md:text-3xl font-black text-[var(--teal)]">
 											{calcEstimate.estimatedDoseMsv} мЗв
 										</div>
 										<span className="text-xs text-[var(--muted)]">
@@ -1123,8 +1123,8 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 									</div>
 
 									{/* Action Required */}
-									<div className="p-3 rounded-2xl bg-teal-500/10 border border-teal-500/30 text-xs text-[var(--ink)] leading-relaxed">
-										<strong className="text-teal-800 dark:text-teal-200 block mb-0.5">
+									<div className="p-3 rounded-2xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-xs text-[var(--ink)] leading-relaxed">
+										<strong className="text-[var(--teal-dark,teal)] block mb-0.5">
 											Клинический протокол:
 										</strong>
 										{calcCompliance.protocolActionRequired}
@@ -1135,7 +1135,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 								<button
 									type="button"
 									onClick={handleAddFromCalculator}
-									className="inline-flex items-center justify-center gap-2 min-h-[48px] px-6 py-3 text-sm font-extrabold rounded-2xl bg-teal-600 text-white hover:bg-teal-700 active:scale-95 transition-all shadow-md mt-2"
+									className="inline-flex items-center justify-center gap-2 min-h-[48px] px-6 py-3 text-sm font-extrabold rounded-2xl bg-[var(--teal)] text-white hover:opacity-90 active:scale-95 transition-all shadow-md mt-2"
 								>
 									<Check className="w-5 h-5" />
 									<span>Добавить исследование в журнал</span>
@@ -1151,7 +1151,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 								<div className="p-5 rounded-3xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-3">
 									<div className="flex items-center gap-2.5">
-										<ShieldCheck className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+										<ShieldCheck className="w-6 h-6 text-[var(--teal)]" />
 										<div>
 											<h4 className="text-sm font-extrabold text-[var(--ink)]">
 												{SANPIN_RADIATION_REGULATORY_AUTHORITIES.sanpin1192_03.code}
@@ -1168,7 +1168,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 										{SANPIN_RADIATION_REGULATORY_AUTHORITIES.sanpin1192_03.relevantClauses.map(
 											(c, i) => (
 												<li key={i} className="flex items-start gap-1.5">
-													<span className="text-teal-600 font-bold">•</span>
+													<span className="text-[var(--teal)] font-bold">•</span>
 													<span>{c}</span>
 												</li>
 											),
@@ -1178,7 +1178,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 
 								<div className="p-5 rounded-3xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-3">
 									<div className="flex items-center gap-2.5">
-										<Shield className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+										<Shield className="w-6 h-6 text-[var(--teal)]" />
 										<div>
 											<h4 className="text-sm font-extrabold text-[var(--ink)]">
 												{SANPIN_RADIATION_REGULATORY_AUTHORITIES.nrb99_2009.code}
@@ -1195,7 +1195,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 										{SANPIN_RADIATION_REGULATORY_AUTHORITIES.nrb99_2009.relevantClauses.map(
 											(c, i) => (
 												<li key={i} className="flex items-start gap-1.5">
-													<span className="text-teal-600 font-bold">•</span>
+													<span className="text-[var(--teal)] font-bold">•</span>
 													<span>{c}</span>
 												</li>
 											),
@@ -1226,7 +1226,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 												<tr key={p.id} className="hover:bg-[var(--paper-soft)] transition-colors">
 													<td className="px-4 py-3 font-bold text-[var(--ink)]">{p.nameRu}</td>
 													<td className="px-4 py-3 text-[var(--muted)]">{p.sensorTypeRu}</td>
-													<td className="px-4 py-3 text-right font-mono font-bold text-teal-600 dark:text-teal-400">
+													<td className="px-4 py-3 text-right font-mono font-bold text-[var(--teal)]">
 														{p.typicalDoseMsv}
 													</td>
 													<td className="px-4 py-3 text-right font-mono font-semibold text-[var(--ink)]">
@@ -1258,7 +1258,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 												<strong className="text-xs font-bold text-[var(--ink)]">
 													{eq.nameRu}
 												</strong>
-												<span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30">
+												<span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]">
 													{eq.leadEquivalentMmPb} мм Pb
 												</span>
 											</div>
@@ -1289,7 +1289,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 						<button
 							type="button"
 							onClick={handlePrintDoseSheet}
-							className="inline-flex items-center gap-2 min-h-[44px] px-6 py-2.5 text-xs md:text-sm font-extrabold rounded-xl bg-teal-600 text-white shadow-md hover:bg-teal-700 active:scale-95 transition-all"
+							className="inline-flex items-center gap-2 min-h-[44px] px-6 py-2.5 text-xs md:text-sm font-extrabold rounded-xl bg-[var(--teal)] text-white shadow-md hover:opacity-90 active:scale-95 transition-all"
 						>
 							<Printer className="w-4 h-4" />
 							<span>Печать Листа дозовых нагрузок (043/у)</span>

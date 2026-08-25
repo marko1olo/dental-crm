@@ -420,7 +420,7 @@ export function TelephonySimulatorModal() {
 				{/* Modal Header */}
 				<div className="flex items-center justify-between px-6 py-4 border-b border-[var(--line,#334155)] bg-[var(--paper-soft,rgba(30,41,59,0.5))]">
 					<div className="flex items-center gap-3">
-						<div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400">
+						<div className="w-10 h-10 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] flex items-center justify-center text-[var(--teal)]">
 							<Server size={20} />
 						</div>
 						<div>
@@ -429,7 +429,7 @@ export function TelephonySimulatorModal() {
 								className="text-lg font-black tracking-tight flex items-center gap-2"
 							>
 								<span>Симулятор SIP-Телефонии</span>
-								<span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-teal-950 text-teal-300 border border-teal-800/50">
+								<span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]">
 									АТС Studio
 								</span>
 							</h2>
@@ -457,7 +457,7 @@ export function TelephonySimulatorModal() {
 						onClick={() => setActiveTab("builder")}
 						className={`pb-2.5 px-3 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 ${
 							activeTab === "builder"
-								? "border-teal-500 text-teal-400"
+								? "border-[var(--teal)] text-[var(--teal)]"
 								: "border-transparent text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)]"
 						}`}
 					>
@@ -470,7 +470,7 @@ export function TelephonySimulatorModal() {
 						onClick={() => setActiveTab("payload")}
 						className={`pb-2.5 px-3 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 ${
 							activeTab === "payload"
-								? "border-teal-500 text-teal-400"
+								? "border-[var(--teal)] text-[var(--teal)]"
 								: "border-transparent text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)]"
 						}`}
 					>
@@ -483,7 +483,7 @@ export function TelephonySimulatorModal() {
 						onClick={() => setActiveTab("history")}
 						className={`pb-2.5 px-3 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 ${
 							activeTab === "history"
-								? "border-teal-500 text-teal-400"
+								? "border-[var(--teal)] text-[var(--teal)]"
 								: "border-transparent text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)]"
 						}`}
 					>
@@ -503,7 +503,7 @@ export function TelephonySimulatorModal() {
 									onClick={() => setChannelMode("call")}
 									className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
 										channelMode === "call"
-											? "bg-teal-600 text-white shadow"
+											? "bg-[var(--teal)] text-white shadow"
 											: "text-slate-400 hover:text-slate-200"
 									}`}
 								>
@@ -515,7 +515,7 @@ export function TelephonySimulatorModal() {
 									onClick={() => setChannelMode("sms")}
 									className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
 										channelMode === "sms"
-											? "bg-teal-600 text-white shadow"
+											? "bg-[var(--teal)] text-white shadow"
 											: "text-slate-400 hover:text-slate-200"
 									}`}
 								>
@@ -562,9 +562,9 @@ export function TelephonySimulatorModal() {
 									<button
 										type="button"
 										onClick={() => applyScenario("insured")}
-										className="p-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-slate-800 border border-[var(--line,#334155)] hover:border-cyan-500/50 text-left transition-all group"
+										className="p-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-slate-800 border border-[var(--line,#334155)] hover:border-[var(--info-fg,rgba(2,132,199,0.5))] text-left transition-all group"
 									>
-										<div className="flex items-center gap-1.5 text-cyan-400 font-bold text-xs mb-0.5">
+										<div className="flex items-center gap-1.5 text-[var(--info-fg,#0284c7)] font-bold text-xs mb-0.5">
 											<Shield size={13} />
 											<span>Полис ДМС</span>
 										</div>
@@ -613,7 +613,7 @@ export function TelephonySimulatorModal() {
 												}}
 												className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border flex items-center justify-between ${
 													provider === p.id
-														? "bg-teal-500/10 border-teal-500 text-teal-400"
+														? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal)]"
 														: "bg-[var(--paper-soft,#1e293b)] border-[var(--line,#334155)] text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)]"
 												}`}
 											>
@@ -661,7 +661,7 @@ export function TelephonySimulatorModal() {
 											value={smsMessage}
 											onChange={(e) => setSmsMessage(e.target.value)}
 											rows={2}
-											className="w-full px-3 py-2 rounded-xl bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] text-[var(--ink,#f8fafc)] text-xs focus:outline-none focus:ring-2 focus:ring-teal-500"
+											className="w-full px-3 py-2 rounded-xl bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] text-[var(--ink,#f8fafc)] text-xs focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 											placeholder="Текст сообщения..."
 										/>
 									</div>
@@ -677,7 +677,7 @@ export function TelephonySimulatorModal() {
 									<select
 										value={selectedPatientId || ""}
 										onChange={(e) => handleSelectPatient(e.target.value)}
-										className="w-full px-3 py-2 rounded-xl bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] text-[var(--ink,#f8fafc)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-teal-500"
+										className="w-full px-3 py-2 rounded-xl bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] text-[var(--ink,#f8fafc)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 									>
 										<option value="">
 											-- Неизвестный номер (создать новый лид) --
@@ -702,7 +702,7 @@ export function TelephonySimulatorModal() {
 											type="text"
 											value={callerPhone}
 											onChange={(e) => setCallerPhone(e.target.value)}
-											className="w-full px-3 py-2 rounded-xl bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] text-[var(--ink,#f8fafc)] text-xs font-mono font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500"
+											className="w-full px-3 py-2 rounded-xl bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] text-[var(--ink,#f8fafc)] text-xs font-mono font-semibold focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 											placeholder="+7 (999) 123-45-67"
 										/>
 									</div>
@@ -715,7 +715,7 @@ export function TelephonySimulatorModal() {
 											type="text"
 											value={callerName}
 											onChange={(e) => setCallerName(e.target.value)}
-											className="w-full px-3 py-2 rounded-xl bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] text-[var(--ink,#f8fafc)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-teal-500"
+											className="w-full px-3 py-2 rounded-xl bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] text-[var(--ink,#f8fafc)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 											placeholder="Иванов Иван Иванович"
 										/>
 									</div>
@@ -730,7 +730,7 @@ export function TelephonySimulatorModal() {
 											type="text"
 											value={targetDid}
 											onChange={(e) => setTargetDid(e.target.value)}
-											className="w-full px-3 py-2 rounded-xl bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] text-[var(--ink,#f8fafc)] text-xs font-mono focus:outline-none focus:ring-2 focus:ring-teal-500"
+											className="w-full px-3 py-2 rounded-xl bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] text-[var(--ink,#f8fafc)] text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 										/>
 									</div>
 
@@ -742,7 +742,7 @@ export function TelephonySimulatorModal() {
 											<button
 												type="button"
 												onClick={regenerateCallId}
-												className="text-[11px] text-teal-400 hover:underline inline-flex items-center gap-1"
+												className="text-[11px] text-[var(--teal)] hover:underline inline-flex items-center gap-1"
 											>
 												<RefreshCw size={10} /> обновить
 											</button>
@@ -751,7 +751,7 @@ export function TelephonySimulatorModal() {
 											type="text"
 											value={callId}
 											onChange={(e) => setCallId(e.target.value)}
-											className="w-full px-3 py-2 rounded-xl bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] text-[var(--ink,#f8fafc)] text-xs font-mono focus:outline-none focus:ring-2 focus:ring-teal-500"
+											className="w-full px-3 py-2 rounded-xl bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] text-[var(--ink,#f8fafc)] text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 										/>
 									</div>
 								</div>
@@ -763,7 +763,7 @@ export function TelephonySimulatorModal() {
 												type="checkbox"
 												checked={includeRecording}
 												onChange={(e) => setIncludeRecording(e.target.checked)}
-												className="rounded border-slate-700 text-teal-500 focus:ring-teal-500"
+												className="rounded border-slate-700 accent-[var(--teal)]"
 											/>
 											<span>Прикрепить URL аудиозаписи звонка (Softphone Player)</span>
 										</label>
@@ -788,7 +788,7 @@ export function TelephonySimulatorModal() {
 								<button
 									type="button"
 									onClick={handleCopyPayload}
-									className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper-soft,#1e293b)] border border-[var(--line,#334155)] hover:border-teal-500 text-teal-400 inline-flex items-center gap-1.5 transition-all"
+									className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper-soft,#1e293b)] border border-[var(--line,#334155)] hover:border-[var(--teal)] text-[var(--teal)] inline-flex items-center gap-1.5 transition-all"
 								>
 									{copiedPayload ? (
 										<>
@@ -837,7 +837,7 @@ export function TelephonySimulatorModal() {
 											className="flex items-center justify-between p-3 rounded-xl bg-[var(--paper-soft,#1e293b)] border border-[var(--line,#334155)] text-xs"
 										>
 											<div className="flex items-center gap-3">
-												<div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-400 flex items-center justify-center font-bold">
+												<div className="w-8 h-8 rounded-lg bg-[var(--teal-surface)] text-[var(--teal)] flex items-center justify-center font-bold">
 													<PhoneIncoming size={16} />
 												</div>
 												<div>
@@ -896,10 +896,10 @@ export function TelephonySimulatorModal() {
 							type="button"
 							onClick={handleSendWebhook}
 							disabled={isSendingWebhook}
-							className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-[var(--ink,#f8fafc)] text-xs font-bold border border-[var(--line,#334155)] inline-flex items-center gap-1.5 transition-all focus:outline-none focus:ring-2 focus:ring-teal-500"
+							className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-[var(--ink,#f8fafc)] text-xs font-bold border border-[var(--line,#334155)] inline-flex items-center gap-1.5 transition-all focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 							title="Отправить реальный POST вебхук на бэкенд Fastify"
 						>
-							<Send size={14} className="text-teal-400" />
+							<Send size={14} className="text-[var(--teal)]" />
 							<span>
 								{isSendingWebhook ? "Отправка..." : "Отправить на Webhook"}
 							</span>
@@ -908,7 +908,7 @@ export function TelephonySimulatorModal() {
 						<button
 							type="button"
 							onClick={handleSimulateLocal}
-							className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 active:scale-[0.98] text-white text-xs font-bold transition-all shadow-lg shadow-teal-950/50 inline-flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-teal-400"
+							className="px-5 py-2.5 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-[0.98] text-white text-xs font-bold transition-all shadow-lg shadow-teal-950/50 inline-flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 						>
 							<Play size={14} />
 							<span>Запустить звонок в UI</span>

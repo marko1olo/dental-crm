@@ -262,7 +262,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 				<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
 					{/* Left: Patient & Clinical Module Title */}
 					<div className="flex items-center gap-4">
-						<div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-teal-500/15 border border-teal-500/30 text-teal-600 dark:text-teal-400 shrink-0">
+						<div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)] shrink-0">
 							<Scan className="w-7 h-7" />
 						</div>
 
@@ -271,7 +271,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 								<h1 className="text-lg md:text-xl font-bold text-[var(--ink)]">
 									Лучевая диагностика и рентгенология
 								</h1>
-								<span className="px-2.5 py-0.5 rounded-lg bg-teal-500/10 border border-teal-500/30 text-teal-700 dark:text-teal-300 text-xs font-bold uppercase tracking-wide">
+								<span className="px-2.5 py-0.5 rounded-lg bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)] text-xs font-bold uppercase tracking-wide">
 									СанПиН / ALARA
 								</span>
 							</div>
@@ -305,10 +305,10 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsDoseSheetModalOpen(true)}
-							className="flex items-center gap-2 min-h-[44px] px-4 py-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] hover:border-emerald-500/50 text-[var(--ink)] hover:text-emerald-600 dark:hover:text-emerald-400 text-xs md:text-sm font-bold shadow-sm transition-all"
+							className="flex items-center gap-2 min-h-[44px] px-4 py-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] hover:border-[var(--teal)] text-[var(--ink)] hover:text-[var(--teal)] text-xs md:text-sm font-bold shadow-sm transition-all"
 							data-testid="open-dose-sheet-modal-btn"
 						>
-							<Activity className="w-4 h-4 text-emerald-500" />
+							<Activity className="w-4 h-4 text-[var(--teal)]" />
 							<span>Лист дозовых нагрузок</span>
 						</button>
 
@@ -324,12 +324,12 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 							}}
 							className={`flex items-center gap-2 min-h-[44px] px-4 py-2.5 rounded-xl border text-xs md:text-sm font-bold shadow-sm transition-all ${
 								isCompareMode
-									? "bg-cyan-500/20 border-cyan-500 text-cyan-700 dark:text-cyan-300"
-									: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:border-cyan-500/40"
+									? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal)]"
+									: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
 							}`}
 							data-testid="toggle-compare-mode-btn"
 						>
-							<ArrowLeftRight className="w-4 h-4 text-cyan-500" />
+							<ArrowLeftRight className="w-4 h-4 text-[var(--teal)]" />
 							<span>Сравнение (Split-View)</span>
 						</button>
 					</div>
@@ -359,7 +359,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 					</div>
 
 					<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex items-center gap-3">
-						<ShieldCheck className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+						<ShieldCheck className="w-5 h-5 text-[var(--teal)]" />
 						<div className="flex flex-col">
 							<span className="text-xs text-[var(--muted)] uppercase font-bold tracking-wider">
 								Принцип ALARA
@@ -371,7 +371,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 					</div>
 
 					<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex items-center gap-3">
-						<Target className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+						<Target className="w-5 h-5 text-[var(--teal)]" />
 						<div className="flex flex-col">
 							<span className="text-xs text-[var(--muted)] uppercase font-bold tracking-wider">
 								Контроль зубов (FDI)
@@ -391,11 +391,11 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 			    ═══════════════════════════════════════════════════════════════════ */}
 			{isCompareMode && (
 				<div
-					className="p-4 bg-slate-950 border-b border-cyan-500/30 flex flex-col gap-4 text-slate-100 animate-in slide-in-from-top-4 duration-200"
+					className="p-4 bg-slate-950 border-b border-[var(--teal)]/30 flex flex-col gap-4 text-slate-100 animate-in slide-in-from-top-4 duration-200"
 					data-testid="compare-split-view-container"
 				>
 					<div className="flex items-center justify-between">
-						<div className="flex items-center gap-2 text-cyan-400 font-bold text-sm">
+						<div className="flex items-center gap-2 text-[var(--teal)] font-bold text-sm">
 							<ArrowLeftRight className="w-5 h-5" />
 							<span>Сравнительный анализ двух исследований (Side-by-Side)</span>
 						</div>
@@ -412,7 +412,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 						{/* Study A Selector & Preview */}
 						<div className="flex flex-col gap-2 p-4 rounded-2xl bg-slate-900 border border-slate-800">
 							<div className="flex items-center justify-between">
-								<span className="text-xs font-bold text-cyan-300 uppercase">
+								<span className="text-xs font-bold text-[var(--teal)] uppercase">
 									Снимок А (До лечения / База):
 								</span>
 								<select
@@ -440,13 +440,13 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 										alt="Study A"
 										className="max-h-full object-contain"
 									/>
-									<div className="absolute top-2 left-2 px-2.5 py-1 rounded-lg bg-black/80 text-cyan-300 text-xs font-bold border border-cyan-500/40">
+									<div className="absolute top-2 left-2 px-2.5 py-1 rounded-lg bg-black/80 text-[var(--teal)] text-xs font-bold border border-[var(--teal)]/40">
 										{compareStudyA.studyDate} · {compareStudyA.modalityLabel}
 									</div>
 									<button
 										type="button"
 										onClick={() => handleOpenViewer(compareStudyA)}
-										className="absolute bottom-2 right-2 min-h-[44px] px-3.5 py-1.5 rounded-xl bg-cyan-500 text-slate-950 text-xs font-bold shadow-lg"
+										className="absolute bottom-2 right-2 min-h-[44px] px-3.5 py-1.5 rounded-xl bg-[var(--teal)] text-white text-xs font-bold shadow-lg"
 									>
 										Развернуть снимок А
 									</button>
@@ -457,7 +457,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 						{/* Study B Selector & Preview */}
 						<div className="flex flex-col gap-2 p-4 rounded-2xl bg-slate-900 border border-slate-800">
 							<div className="flex items-center justify-between">
-								<span className="text-xs font-bold text-emerald-300 uppercase">
+								<span className="text-xs font-bold text-[var(--teal)] uppercase">
 									Снимок B (После лечения / Контроль):
 								</span>
 								<select
@@ -485,13 +485,13 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 										alt="Study B"
 										className="max-h-full object-contain"
 									/>
-									<div className="absolute top-2 left-2 px-2.5 py-1 rounded-lg bg-black/80 text-emerald-300 text-xs font-bold border border-emerald-500/40">
+									<div className="absolute top-2 left-2 px-2.5 py-1 rounded-lg bg-black/80 text-[var(--teal)] text-xs font-bold border border-[var(--teal)]/40">
 										{compareStudyB.studyDate} · {compareStudyB.modalityLabel}
 									</div>
 									<button
 										type="button"
 										onClick={() => handleOpenViewer(compareStudyB)}
-										className="absolute bottom-2 right-2 min-h-[44px] px-3.5 py-1.5 rounded-xl bg-emerald-500 text-slate-950 text-xs font-bold shadow-lg"
+										className="absolute bottom-2 right-2 min-h-[44px] px-3.5 py-1.5 rounded-xl bg-[var(--teal)] text-white text-xs font-bold shadow-lg"
 									>
 										Развернуть снимок B
 									</button>

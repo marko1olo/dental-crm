@@ -385,11 +385,11 @@ export function DicomArchiveUploader({
 
 			{loading && (
 				<div className="w-full max-w-xs my-2 flex flex-col items-center gap-2">
-					<div className="w-6 h-6 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+					<div className="w-6 h-6 border-2 border-[var(--teal)] border-t-transparent rounded-full animate-spin"></div>
 					{progressPercent !== null && (
 						<div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
 							<div
-								className="bg-teal-500 h-full transition-all duration-150"
+								className="bg-[var(--teal)] h-full transition-all duration-150"
 								style={{ width: `${progressPercent}%` }}
 							></div>
 						</div>

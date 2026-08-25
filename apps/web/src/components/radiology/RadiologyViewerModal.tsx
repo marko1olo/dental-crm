@@ -360,13 +360,13 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 			{/* ═══════════════════════════════════════════════════════════════════
 			    1. TOP CYBER HUD BAR (Ergonomic Header)
 			    ═══════════════════════════════════════════════════════════════════ */}
-			<header className="flex items-center justify-between px-4 py-2.5 bg-slate-900/90 border-b border-cyan-500/20 backdrop-blur-md z-30 shrink-0">
+			<header className="flex items-center justify-between px-4 py-2.5 bg-slate-900/90 border-b border-[var(--teal)]/20 backdrop-blur-md z-30 shrink-0">
 				{/* Left: Study Title, Modality & Patient Info */}
 				<div className="flex items-center gap-3 min-w-0">
 					<button
 						type="button"
 						onClick={onClose}
-						className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-cyan-400 hover:border-cyan-500/50 hover:bg-slate-700/60 active:scale-95 transition-all"
+						className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-[var(--teal)] hover:border-[var(--teal)]/50 hover:bg-slate-700/60 active:scale-95 transition-all"
 						title="Закрыть просмотрщик (Esc)"
 						data-testid="radiology-viewer-close-btn"
 					>
@@ -375,7 +375,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 
 					<div className="flex flex-col min-w-0">
 						<div className="flex items-center gap-2 flex-wrap">
-							<span className="px-2.5 py-1 rounded-lg bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 text-xs font-bold uppercase tracking-wide">
+							<span className="px-2.5 py-1 rounded-lg bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)] text-xs font-bold uppercase tracking-wide">
 								{modalityLabel}
 							</span>
 							<h1 className="text-sm md:text-base font-bold text-slate-100 truncate">
@@ -389,7 +389,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							<span>•</span>
 							<span>Врач: {doctorName}</span>
 							<span>•</span>
-							<span className="font-bold text-cyan-400">
+							<span className="font-bold text-[var(--teal)]">
 								Дата: {studyDateFormatted}
 							</span>
 						</div>
@@ -399,10 +399,10 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 				{/* Center: High-contrast Radiation Dose Badge & Tooth FDI */}
 				<div className="hidden lg:flex items-center gap-3">
 					{study?.teethFdi && study.teethFdi.length > 0 && (
-						<div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-950/60 border border-cyan-500/40 text-cyan-300 shadow-sm">
-							<Target className="w-4 h-4 text-cyan-400" />
+						<div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)] shadow-sm">
+							<Target className="w-4 h-4 text-[var(--teal)]" />
 							<span className="text-xs font-medium text-slate-300">Зубы FDI:</span>
-							<span className="text-sm font-bold text-cyan-300">
+							<span className="text-sm font-bold text-[var(--teal)]">
 								{study.teethFdi.join(", ")}
 							</span>
 						</div>
@@ -429,7 +429,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						onClick={() => setIsHudVisible((prev) => !prev)}
 						className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all ${
 							isHudVisible
-								? "bg-cyan-500/20 border-cyan-500/50 text-cyan-300"
+								? "bg-[var(--teal-surface)] border-[var(--teal-soft)] text-[var(--teal)]"
 								: "bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200"
 						}`}
 						title={isHudVisible ? "Скрыть HUD метки" : "Показать HUD метки"}
@@ -441,10 +441,10 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						<button
 							type="button"
 							onClick={() => onOpenReferralModal(study)}
-							className="hidden sm:flex items-center gap-2 min-h-[44px] px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 hover:border-cyan-500/40 text-slate-200 hover:text-cyan-300 text-xs font-bold transition-all"
+							className="hidden sm:flex items-center gap-2 min-h-[44px] px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 hover:border-[var(--teal-soft)] text-slate-200 hover:text-[var(--teal)] text-xs font-bold transition-all"
 							title="Оформить направление на дообследование"
 						>
-							<FileText className="w-4 h-4 text-cyan-400" />
+							<FileText className="w-4 h-4 text-[var(--teal)]" />
 							<span>Направление</span>
 						</button>
 					)}
@@ -453,10 +453,10 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						<button
 							type="button"
 							onClick={() => onOpenDoseSheetModal(study)}
-							className="hidden md:flex items-center gap-2 min-h-[44px] px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 hover:border-emerald-500/40 text-slate-200 hover:text-emerald-300 text-xs font-bold transition-all"
+							className="hidden md:flex items-center gap-2 min-h-[44px] px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 hover:border-[var(--teal-soft)] text-slate-200 hover:text-[var(--teal)] text-xs font-bold transition-all"
 							title="Лист учета дозовых нагрузок (СанПиН)"
 						>
-							<Activity className="w-4 h-4 text-emerald-400" />
+							<Activity className="w-4 h-4 text-[var(--teal)]" />
 							<span>Лист доз</span>
 						</button>
 					)}
@@ -466,7 +466,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						onClick={() => setIsSideDrawerOpen((prev) => !prev)}
 						className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all ${
 							isSideDrawerOpen
-								? "bg-cyan-500/20 border-cyan-500/50 text-cyan-300"
+								? "bg-[var(--teal-surface)] border-[var(--teal-soft)] text-[var(--teal)]"
 								: "bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200"
 						}`}
 						title="Панель сведений и отчета"
@@ -484,7 +484,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 				{/* ── TOOLBAR (Floating Cyber Dock with >= 44x44px targets) ── */}
 				<nav
 					aria-label="Инструменты управления просмотрщиком"
-					className="absolute left-4 top-4 z-40 flex flex-col gap-1.5 p-2 rounded-2xl bg-slate-900/90 border border-cyan-500/30 shadow-2xl backdrop-blur-md"
+					className="absolute left-4 top-4 z-40 flex flex-col gap-1.5 p-2 rounded-2xl bg-slate-900/90 border border-[var(--teal)]/30 shadow-2xl backdrop-blur-md"
 				>
 					{/* Primary Interactive Tools */}
 					<div className="flex flex-col gap-1 pb-2 border-b border-slate-800">
@@ -496,8 +496,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							}}
 							className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all ${
 								activeTool === "pan"
-									? "bg-cyan-500/30 border-cyan-400 text-cyan-200 shadow-lg shadow-cyan-500/20"
-									: "bg-slate-800/80 border-slate-700/60 text-slate-300 hover:text-cyan-300 hover:bg-slate-700"
+									? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal)] shadow-sm"
+									: "bg-slate-800/80 border-slate-700/60 text-slate-300 hover:text-[var(--teal)] hover:bg-slate-700"
 							}`}
 							title="Панорамирование / Перемещение (P)"
 							data-testid="tool-pan-btn"
@@ -513,8 +513,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							}}
 							className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all ${
 								activeTool === "ruler"
-									? "bg-cyan-500/30 border-cyan-400 text-cyan-200 shadow-lg shadow-cyan-500/20"
-									: "bg-slate-800/80 border-slate-700/60 text-slate-300 hover:text-cyan-300 hover:bg-slate-700"
+									? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal)] shadow-sm"
+									: "bg-slate-800/80 border-slate-700/60 text-slate-300 hover:text-[var(--teal)] hover:bg-slate-700"
 							}`}
 							title="Измерительная 2-точечная линейка в мм (M)"
 							data-testid="tool-ruler-btn"
@@ -530,8 +530,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							}}
 							className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all ${
 								activeTool === "landmark"
-									? "bg-cyan-500/30 border-cyan-400 text-cyan-200 shadow-lg shadow-cyan-500/20"
-									: "bg-slate-800/80 border-slate-700/60 text-slate-300 hover:text-cyan-300 hover:bg-slate-700"
+									? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal)] shadow-sm"
+									: "bg-slate-800/80 border-slate-700/60 text-slate-300 hover:text-[var(--teal)] hover:bg-slate-700"
 							}`}
 							title="Установка анатомической метки зуба / апекса (L)"
 							data-testid="tool-landmark-btn"
@@ -545,7 +545,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						<button
 							type="button"
 							onClick={() => setZoom((prev) => Math.min(prev + 0.25, 6.0))}
-							className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/60 text-slate-300 hover:text-cyan-300 hover:bg-slate-700 active:scale-95 transition-all"
+							className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/60 text-slate-300 hover:text-[var(--teal)] hover:bg-slate-700 active:scale-95 transition-all"
 							title="Увеличить (+)"
 						>
 							<ZoomIn className="w-5 h-5" />
@@ -554,7 +554,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						<button
 							type="button"
 							onClick={() => setZoom((prev) => Math.max(prev - 0.25, 0.2))}
-							className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/60 text-slate-300 hover:text-cyan-300 hover:bg-slate-700 active:scale-95 transition-all"
+							className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/60 text-slate-300 hover:text-[var(--teal)] hover:bg-slate-700 active:scale-95 transition-all"
 							title="Уменьшить (-)"
 						>
 							<Minus className="w-5 h-5" />
@@ -566,7 +566,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setZoom(1.0);
 								setPan({ x: 0, y: 0 });
 							}}
-							className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs font-bold text-cyan-400 hover:bg-slate-700 active:scale-95 transition-all"
+							className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs font-bold text-[var(--teal)] hover:bg-slate-700 active:scale-95 transition-all"
 							title="Сброс масштаба 100% (0)"
 						>
 							100%
@@ -578,7 +578,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						<button
 							type="button"
 							onClick={() => setRotation((prev) => (prev + 90) % 360)}
-							className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/60 text-slate-300 hover:text-cyan-300 hover:bg-slate-700 active:scale-95 transition-all"
+							className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/60 text-slate-300 hover:text-[var(--teal)] hover:bg-slate-700 active:scale-95 transition-all"
 							title="Поворот по часовой стрелке 90° (R)"
 						>
 							<RotateCw className="w-5 h-5" />
@@ -589,8 +589,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							onClick={() => setFlipH((prev) => !prev)}
 							className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all ${
 								flipH
-									? "bg-cyan-500/30 border-cyan-400 text-cyan-200"
-									: "bg-slate-800/80 border-slate-700/60 text-slate-300 hover:text-cyan-300 hover:bg-slate-700"
+									? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal)]"
+									: "bg-slate-800/80 border-slate-700/60 text-slate-300 hover:text-[var(--teal)] hover:bg-slate-700"
 							}`}
 							title="Зеркальное отражение по горизонтали"
 						>
@@ -602,8 +602,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							onClick={() => setInvert((prev) => !prev)}
 							className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all ${
 								invert
-									? "bg-amber-500/30 border-amber-400 text-amber-200"
-									: "bg-slate-800/80 border-slate-700/60 text-slate-300 hover:text-amber-300 hover:bg-slate-700"
+									? "bg-[var(--warn-bg)] border-[var(--warn-fg)] text-[var(--warn-fg)]"
+									: "bg-slate-800/80 border-slate-700/60 text-slate-300 hover:text-[var(--warn-fg)] hover:bg-slate-700"
 							}`}
 							title="Инверсия негатив / позитив (I)"
 						>
@@ -618,8 +618,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							onClick={() => setIsControlsExpanded((prev) => !prev)}
 							className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all ${
 								isControlsExpanded
-									? "bg-cyan-500/30 border-cyan-400 text-cyan-200"
-									: "bg-slate-800/80 border-slate-700/60 text-slate-300 hover:text-cyan-300 hover:bg-slate-700"
+									? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal)]"
+									: "bg-slate-800/80 border-slate-700/60 text-slate-300 hover:text-[var(--teal)] hover:bg-slate-700"
 							}`}
 							title="Настройка яркости и контраста (WW/WL)"
 						>
@@ -638,7 +638,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 				</nav>
 
 				{/* ── WW/WL PRESETS QUICK BAR (Bottom Floating) ── */}
-				<div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 hidden md:flex items-center gap-1.5 p-1.5 rounded-2xl bg-slate-900/90 border border-cyan-500/30 shadow-2xl backdrop-blur-md">
+				<div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 hidden md:flex items-center gap-1.5 p-1.5 rounded-2xl bg-slate-900/90 border border-[var(--teal)]/30 shadow-2xl backdrop-blur-md">
 					<span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-slate-400">
 						Пресеты WW/WL:
 					</span>
@@ -651,8 +651,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								onClick={() => handleSelectPreset(preset)}
 								className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
 									isSelected
-										? "bg-cyan-500/30 border border-cyan-400 text-cyan-200 shadow-md shadow-cyan-500/20"
-										: "bg-slate-800/80 border border-slate-700/60 text-slate-300 hover:text-cyan-300 hover:bg-slate-700"
+										? "bg-[var(--teal)] border border-[var(--teal)] text-white shadow-sm"
+										: "bg-slate-800/80 border border-slate-700/60 text-slate-300 hover:text-[var(--teal)] hover:bg-slate-700"
 								}`}
 								title={preset.description}
 								data-testid={`preset-btn-${preset.id}`}
@@ -665,7 +665,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 
 				{/* ── EXPANDED CONTROLS POPUP (Sliders for Brightness/Contrast) ── */}
 				{isControlsExpanded && (
-					<div className="absolute left-20 top-24 z-40 w-72 p-4 rounded-2xl bg-slate-900/95 border border-cyan-500/40 shadow-2xl backdrop-blur-md flex flex-col gap-4 text-xs">
+					<div className="absolute left-20 top-24 z-40 w-72 p-4 rounded-2xl bg-slate-900/95 border border-[var(--teal)]/40 shadow-2xl backdrop-blur-md flex flex-col gap-4 text-xs">
 						<div className="flex items-center justify-between border-b border-slate-800 pb-2">
 							<span className="font-bold text-slate-200 uppercase tracking-wide">
 								Точная калибровка WW/WL
@@ -683,7 +683,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						<div>
 							<div className="flex justify-between font-semibold text-slate-300 mb-1.5">
 								<span>Яркость (WL):</span>
-								<span className="font-mono text-cyan-400 font-bold">{brightness}%</span>
+								<span className="font-mono text-[var(--teal)] font-bold">{brightness}%</span>
 							</div>
 							<input
 								type="range"
@@ -691,7 +691,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								max="200"
 								value={brightness}
 								onChange={(e) => setBrightness(Number(e.target.value))}
-								className="w-full h-2 rounded-lg bg-slate-700 accent-cyan-400 cursor-pointer"
+								className="w-full h-2 rounded-lg bg-slate-700 accent-[var(--teal)] cursor-pointer"
 							/>
 						</div>
 
@@ -699,7 +699,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						<div>
 							<div className="flex justify-between font-semibold text-slate-300 mb-1.5">
 								<span>Контрастность (WW):</span>
-								<span className="font-mono text-cyan-400 font-bold">{contrast}%</span>
+								<span className="font-mono text-[var(--teal)] font-bold">{contrast}%</span>
 							</div>
 							<input
 								type="range"
@@ -707,7 +707,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								max="250"
 								value={contrast}
 								onChange={(e) => setContrast(Number(e.target.value))}
-								className="w-full h-2 rounded-lg bg-slate-700 accent-cyan-400 cursor-pointer"
+								className="w-full h-2 rounded-lg bg-slate-700 accent-[var(--teal)] cursor-pointer"
 							/>
 						</div>
 
@@ -717,7 +717,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 									type="checkbox"
 									checked={invert}
 									onChange={(e) => setInvert(e.target.checked)}
-									className="w-4 h-4 rounded text-cyan-500 focus:ring-0 bg-slate-800 border-slate-700"
+									className="w-4 h-4 rounded text-[var(--teal)] focus:ring-0 bg-slate-800 border-slate-700"
 								/>
 								<span className="font-semibold">Инверсия (Негатив)</span>
 							</label>
@@ -739,12 +739,12 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 				{/* ── LANDMARK PIN PLACEMENT DIALOG ── */}
 				{pendingLandmarkPos && (
 					<div
-						className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-96 p-5 rounded-2xl bg-slate-900 border-2 border-cyan-500 shadow-2xl flex flex-col gap-4 text-slate-100 animate-in zoom-in-95 duration-150"
+						className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-96 p-5 rounded-2xl bg-slate-900 border-2 border-[var(--teal)] shadow-2xl flex flex-col gap-4 text-slate-100 animate-in zoom-in-95 duration-150"
 						data-testid="landmark-picker-modal"
 					>
 						<div className="flex items-center justify-between border-b border-slate-800 pb-2">
 							<div className="flex items-center gap-2">
-								<Pin className="w-5 h-5 text-cyan-400" />
+								<Pin className="w-5 h-5 text-[var(--teal)]" />
 								<span className="font-bold text-sm">Установка метки зуба / структуры</span>
 							</div>
 							<button
@@ -768,7 +768,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								id="landmark-type-select"
 								value={landmarkType}
 								onChange={(e) => setLandmarkType(e.target.value as LandmarkPin["type"])}
-								className="w-full px-3 py-2.5 text-xs rounded-xl bg-slate-800 border border-slate-700 text-slate-100 font-semibold focus:outline-none focus:border-cyan-500"
+								className="w-full px-3 py-2.5 text-xs rounded-xl bg-slate-800 border border-slate-700 text-slate-100 font-semibold focus:outline-none focus:border-[var(--teal)]"
 							>
 								{Object.entries(LANDMARK_TYPE_LABELS).map(([k, v]) => (
 									<option key={k} value={k}>
@@ -793,7 +793,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 											onClick={() => setSelectedFdiTooth(tooth)}
 											className={`min-h-[44px] min-w-[44px] p-2 text-xs font-bold rounded-lg transition-all ${
 												selectedFdiTooth === tooth
-													? "bg-cyan-500 text-slate-950 shadow-md font-extrabold"
+													? "bg-[var(--teal)] text-white shadow-md font-extrabold"
 													: "bg-slate-800 text-slate-300 hover:bg-slate-700"
 											}`}
 										>
@@ -807,7 +807,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 											onClick={() => setSelectedFdiTooth(tooth)}
 											className={`min-h-[44px] min-w-[44px] p-2 text-xs font-bold rounded-lg transition-all ${
 												selectedFdiTooth === tooth
-													? "bg-cyan-500 text-slate-950 shadow-md font-extrabold"
+													? "bg-[var(--teal)] text-white shadow-md font-extrabold"
 													: "bg-slate-800 text-slate-300 hover:bg-slate-700"
 											}`}
 										>
@@ -824,7 +824,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 											onClick={() => setSelectedFdiTooth(tooth)}
 											className={`min-h-[44px] min-w-[44px] p-2 text-xs font-bold rounded-lg transition-all ${
 												selectedFdiTooth === tooth
-													? "bg-cyan-500 text-slate-950 shadow-md font-extrabold"
+													? "bg-[var(--teal)] text-white shadow-md font-extrabold"
 													: "bg-slate-800 text-slate-300 hover:bg-slate-700"
 											}`}
 										>
@@ -838,7 +838,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 											onClick={() => setSelectedFdiTooth(tooth)}
 											className={`min-h-[44px] min-w-[44px] p-2 text-xs font-bold rounded-lg transition-all ${
 												selectedFdiTooth === tooth
-													? "bg-cyan-500 text-slate-950 shadow-md font-extrabold"
+													? "bg-[var(--teal)] text-white shadow-md font-extrabold"
 													: "bg-slate-800 text-slate-300 hover:bg-slate-700"
 											}`}
 										>
@@ -847,7 +847,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 									))}
 								</div>
 							</div>
-							<p className="text-[11px] text-cyan-400 mt-1 font-semibold">
+							<p className="text-[11px] text-[var(--teal)] mt-1 font-semibold">
 								Выбран: {selectedFdiTooth} — {FDI_TOOTH_NAMES[selectedFdiTooth] || "Зуб"}
 							</p>
 						</div>
@@ -866,7 +866,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								value={landmarkCustomLabel}
 								onChange={(e) => setLandmarkCustomLabel(e.target.value)}
 								placeholder="Например: Деструкция кости d=3.5мм, апекс..."
-								className="w-full px-3 py-2 text-xs rounded-xl bg-slate-800 border border-slate-700 text-slate-100 focus:outline-none focus:border-cyan-500"
+								className="w-full px-3 py-2 text-xs rounded-xl bg-slate-800 border border-slate-700 text-slate-100 focus:outline-none focus:border-[var(--teal)]"
 							/>
 						</div>
 
@@ -882,7 +882,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							<button
 								type="button"
 								onClick={handleConfirmLandmark}
-								className="min-h-[44px] px-5 py-2 text-xs font-bold rounded-xl bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/30 hover:bg-cyan-400 font-extrabold"
+								className="min-h-[44px] px-5 py-2 text-xs font-bold rounded-xl bg-[var(--teal)] text-white shadow-lg hover:opacity-90 font-extrabold"
 								data-testid="save-landmark-pin-btn"
 							>
 								Сохранить метку
@@ -975,7 +975,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 												className="overflow-visible"
 												style={{ transform: "translate(-50%, -50%)" }}
 											>
-												<div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-950/90 border border-cyan-400 text-cyan-300 text-[10px] font-bold shadow-lg whitespace-nowrap">
+												<div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--teal-surface)] border border-[var(--teal)] text-[var(--teal)] text-[10px] font-bold shadow-lg whitespace-nowrap">
 													<span>{ruler.distanceMm} мм</span>
 													<button
 														type="button"
@@ -1036,7 +1036,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								>
 									<div className="flex flex-col items-center cursor-pointer">
 										{/* Badge pill */}
-										<div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-950/90 border border-cyan-400 text-cyan-300 text-[11px] font-bold shadow-lg whitespace-nowrap group-hover:scale-110 transition-transform">
+										<div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-950/90 border border-[var(--teal)] text-[var(--teal)] text-[11px] font-bold shadow-lg whitespace-nowrap group-hover:scale-110 transition-transform">
 											<span>FDI: {pin.toothFdi}</span>
 											<button
 												type="button"
@@ -1051,7 +1051,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 											</button>
 										</div>
 										{/* Pin Needle Indicator */}
-										<div className="w-2.5 h-2.5 rounded-full bg-cyan-400 border border-slate-950 shadow-md -mt-0.5 animate-pulse" />
+										<div className="w-2.5 h-2.5 rounded-full bg-[var(--teal)] border border-slate-950 shadow-md -mt-0.5 animate-pulse" />
 									</div>
 								</div>
 							))}
@@ -1061,10 +1061,10 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 					<div className="absolute left-4 bottom-4 z-30 hidden sm:flex flex-col gap-1 p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] font-mono text-slate-400 backdrop-blur-sm pointer-events-none">
 						<div className="flex items-center gap-2">
 							<span className="text-slate-300 font-bold">Масштаб:</span>
-							<span className="text-cyan-400 font-bold">{Math.round(zoom * 100)}%</span>
+							<span className="text-[var(--teal)] font-bold">{Math.round(zoom * 100)}%</span>
 							<span>•</span>
 							<span className="text-slate-300 font-bold">Поворот:</span>
-							<span className="text-cyan-400 font-bold">{rotation}°</span>
+							<span className="text-[var(--teal)] font-bold">{rotation}°</span>
 						</div>
 						<div className="flex items-center gap-2">
 							<span className="text-slate-300 font-bold">Калибровка:</span>
@@ -1083,13 +1083,13 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 				{isSideDrawerOpen && (
 					<aside
 						aria-label="Сведения об исследовании и диагностическое заключение"
-						className="w-80 md:w-96 bg-slate-900 border-l border-cyan-500/20 flex flex-col shrink-0 z-30 overflow-y-auto"
+						className="w-80 md:w-96 bg-slate-900 border-l border-[var(--teal)]/20 flex flex-col shrink-0 z-30 overflow-y-auto"
 						data-testid="radiology-viewer-side-drawer"
 					>
 						{/* Header */}
 						<div className="flex items-center justify-between px-5 py-3 border-b border-slate-800 bg-slate-900/90 sticky top-0 z-10">
 							<div className="flex items-center gap-2">
-								<FileText className="w-4 h-4 text-cyan-400" />
+								<FileText className="w-4 h-4 text-[var(--teal)]" />
 								<span className="text-xs font-bold uppercase tracking-wider text-slate-200">
 									Сведения об исследовании
 								</span>
@@ -1142,7 +1142,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 									Анатомическая зона (FDI):
 								</span>
 								<div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex flex-col gap-1.5">
-									<div className="text-sm font-bold text-cyan-300">
+									<div className="text-sm font-bold text-[var(--teal)]">
 										{study?.anatomicalArea || "Обзорное исследование челюстей"}
 									</div>
 									{study?.teethFdi && study.teethFdi.length > 0 && (
@@ -1150,7 +1150,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 											{study.teethFdi.map((t) => (
 												<span
 													key={t}
-													className="px-2 py-1 rounded-lg bg-cyan-950 border border-cyan-500/40 text-cyan-300 text-xs font-bold"
+													className="px-2 py-1 rounded-lg bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)] text-xs font-bold"
 												>
 													Зуб {t}
 												</span>
@@ -1178,8 +1178,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 
 							{/* AI Findings Summary if present */}
 							{study?.aiFindings && (
-								<div className="p-4 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 flex flex-col gap-2 min-w-0">
-									<div className="flex items-center gap-2 text-cyan-300 font-bold text-xs">
+								<div className="p-4 rounded-2xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] flex flex-col gap-2 min-w-0">
+									<div className="flex items-center gap-2 text-[var(--teal)] font-bold text-xs">
 										<Activity className="w-4 h-4" />
 										<span>AI-Анализ снимка (Shadow Analyst)</span>
 									</div>
@@ -1187,7 +1187,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 										{study.aiFindings.summary || "Признаков скрытых патологий не выявлено."}
 									</p>
 									{study.aiFindings.confidence && (
-										<div className="text-[11px] text-cyan-400 font-semibold mt-1">
+										<div className="text-[11px] text-[var(--teal)] font-semibold mt-1">
 											Уверенность модели: {Math.round(study.aiFindings.confidence * 100)}%
 										</div>
 									)}
@@ -1226,7 +1226,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 													#{idx + 1}. Дистанция:
 												</span>
 												<div className="flex items-center gap-2">
-													<span className="font-bold text-cyan-400 text-sm">
+													<span className="font-bold text-[var(--teal)] text-sm">
 														{r.distanceMm} мм
 													</span>
 													<button
@@ -1272,7 +1272,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 												className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs"
 											>
 												<div className="flex flex-col min-w-0">
-													<span className="font-bold text-cyan-300">
+													<span className="font-bold text-[var(--teal)]">
 														Зуб FDI: {p.toothFdi}
 													</span>
 													<span className="text-[11px] text-slate-400 truncate">

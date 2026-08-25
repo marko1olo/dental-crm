@@ -401,7 +401,7 @@ export function PanoramicRendererWindow({
 			<div className="mpr-toolbar bg-neutral-900 border-b border-neutral-800 px-4 py-2.5 flex flex-wrap justify-between items-center cursor-move handle gap-3">
 				<div className="flex items-center gap-3">
 					<div className="flex items-center gap-2">
-						<Activity className="w-5 h-5 text-teal-400" />
+						<Activity className="w-5 h-5 text-[var(--teal)]" />
 						<h3 className="text-white font-bold text-sm sm:text-base tracking-tight">
 							3D MPR & Панорамная реконструкция (ОПТГ)
 						</h3>
@@ -528,7 +528,7 @@ export function PanoramicRendererWindow({
 						onChange={(e) => setSliceThicknessMm(Number(e.target.value))}
 						className="mpr-slider-touch w-20"
 					/>
-					<span className="text-xs font-bold text-teal-400 w-12 text-right">
+					<span className="text-xs font-bold text-[var(--teal)] w-12 text-right">
 						{sliceThicknessMm.toFixed(1)} мм
 					</span>
 				</div>
@@ -538,8 +538,8 @@ export function PanoramicRendererWindow({
 			<div className="flex-1 relative bg-black flex items-center justify-center p-2 min-h-0 overflow-hidden">
 				{loading && (
 					<div className="absolute inset-0 flex flex-col items-center justify-center bg-black/85 z-20">
-						<div className="w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
-						<span className="text-teal-400 mt-4 text-sm font-bold animate-pulse">
+						<div className="w-10 h-10 border-4 border-[var(--teal)] border-t-transparent rounded-full animate-spin"></div>
+						<span className="text-[var(--teal)] mt-4 text-sm font-bold animate-pulse">
 							Построение трилинейной интерполяции и кросс-срезов...
 						</span>
 					</div>
@@ -584,7 +584,7 @@ export function PanoramicRendererWindow({
 									{boneRecommendation.label}
 								</span>
 							</div>
-							<span className="text-sm font-black text-teal-400">
+							<span className="text-sm font-black text-[var(--teal)]">
 								{probedHU} HU
 							</span>
 						</div>

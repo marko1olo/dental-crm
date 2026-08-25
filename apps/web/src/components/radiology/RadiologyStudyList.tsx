@@ -156,7 +156,7 @@ export const RadiologyStudyList: React.FC<RadiologyStudyListProps> = ({
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							placeholder="Поиск по зубу (FDI), диагнозу МКБ, врачу, описанию..."
-							className="w-full pl-10 pr-4 min-h-[44px] text-xs md:text-sm rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:border-teal-500 transition-colors shadow-inner"
+							className="w-full pl-10 pr-4 min-h-[44px] text-xs md:text-sm rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--teal)] transition-colors shadow-inner"
 						/>
 						{searchQuery && (
 							<button
@@ -178,7 +178,7 @@ export const RadiologyStudyList: React.FC<RadiologyStudyListProps> = ({
 								value={selectedToothFilter}
 								onChange={(e) => setSelectedToothFilter(e.target.value)}
 								placeholder="Зуб FDI..."
-								className="w-full pl-8 pr-2 min-h-[44px] text-xs font-mono rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-teal-500"
+								className="w-full pl-8 pr-2 min-h-[44px] text-xs font-mono rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
 							/>
 						</div>
 
@@ -186,7 +186,7 @@ export const RadiologyStudyList: React.FC<RadiologyStudyListProps> = ({
 						<select
 							value={sortBy}
 							onChange={(e) => setSortBy(e.target.value as any)}
-							className="min-h-[44px] px-3 text-xs font-semibold rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-teal-500 shrink-0"
+							className="min-h-[44px] px-3 text-xs font-semibold rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] shrink-0"
 						>
 							<option value="date_desc">Сначала новые</option>
 							<option value="date_asc">Сначала старые</option>
@@ -219,8 +219,8 @@ export const RadiologyStudyList: React.FC<RadiologyStudyListProps> = ({
 								onClick={() => setSelectedModality(mod.id)}
 								className={`flex items-center gap-2 min-h-[44px] px-4 rounded-xl text-xs md:text-sm font-bold whitespace-nowrap transition-all ${
 									isSelected
-										? "bg-teal-500/15 border-2 border-teal-500 text-teal-700 dark:text-teal-300 shadow-sm"
-										: "bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-teal-500/40"
+										? "bg-[var(--teal-surface)] border-2 border-[var(--teal)] text-[var(--teal)] shadow-sm"
+										: "bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal)]"
 								}`}
 								data-testid={`modality-filter-${mod.id}`}
 							>
@@ -228,7 +228,7 @@ export const RadiologyStudyList: React.FC<RadiologyStudyListProps> = ({
 								<span
 									className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${
 										isSelected
-											? "bg-teal-500 text-white"
+											? "bg-[var(--teal)] text-white"
 											: "bg-[var(--line)] text-[var(--muted)]"
 									}`}
 								>
@@ -267,8 +267,8 @@ export const RadiologyStudyList: React.FC<RadiologyStudyListProps> = ({
 								key={study.id}
 								className={`flex flex-col p-4 rounded-2xl border transition-all ${
 									isSelected
-										? "bg-teal-500/5 border-teal-500 shadow-md ring-1 ring-teal-500/20"
-										: "bg-[var(--paper)] border-[var(--line)] hover:border-teal-500/30 hover:shadow-sm"
+										? "bg-[var(--teal-surface)] border-[var(--teal)] shadow-md ring-1 ring-[var(--teal-soft)]"
+										: "bg-[var(--paper)] border-[var(--line)] hover:border-[var(--teal)] hover:shadow-sm"
 								}`}
 								data-testid={`study-card-${study.id}`}
 							>
@@ -276,21 +276,21 @@ export const RadiologyStudyList: React.FC<RadiologyStudyListProps> = ({
 									{/* Left Info Column */}
 									<div className="flex items-start gap-3.5 min-w-0">
 										{/* Modality Icon / Thumbnail */}
-										<div className="w-14 h-14 rounded-xl bg-slate-900 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0 shadow-inner">
+										<div className="w-14 h-14 rounded-xl bg-[var(--paper-soft)] border border-[var(--teal-soft)] flex items-center justify-center text-[var(--teal)] shrink-0 shadow-inner">
 											<Scan className="w-7 h-7" />
 										</div>
 
 										<div className="flex flex-col min-w-0">
 											{/* Top Badges: Modality & FDI Tooth */}
 											<div className="flex items-center gap-2 flex-wrap mb-1">
-												<span className="px-2.5 py-0.5 rounded-lg bg-teal-500/10 border border-teal-500/30 text-teal-700 dark:text-teal-300 text-xs font-bold uppercase tracking-wide">
+												<span className="px-2.5 py-0.5 rounded-lg bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)] text-xs font-bold uppercase tracking-wide">
 													{study.modalityLabel}
 												</span>
 
 												{/* Teeth FDI >= 13-14px bold per mandate */}
 												{study.teethFdi && study.teethFdi.length > 0 && (
-													<div className="flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-700 dark:text-cyan-300">
-														<Target className="w-3.5 h-3.5 text-cyan-500" />
+													<div className="flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)]">
+														<Target className="w-3.5 h-3.5 text-[var(--teal)]" />
 														<span className="text-xs md:text-sm font-bold">
 															Зуб: {study.teethFdi.join(", ")}
 														</span>
@@ -313,7 +313,7 @@ export const RadiologyStudyList: React.FC<RadiologyStudyListProps> = ({
 											{/* Date & Doctor (Study Date >= 13-14px bold) */}
 											<div className="flex items-center gap-3 text-xs text-[var(--muted)] mt-1 flex-wrap">
 												<span className="flex items-center gap-1 font-bold text-[var(--ink)] text-xs md:text-sm">
-													<Calendar className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+													<Calendar className="w-3.5 h-3.5 text-[var(--teal)]" />
 													{study.studyDate}
 												</span>
 												<span>•</span>
@@ -348,11 +348,11 @@ export const RadiologyStudyList: React.FC<RadiologyStudyListProps> = ({
 											<button
 												type="button"
 												onClick={() => onSelectStudy(study)}
-												className="flex items-center gap-2 min-h-[44px] px-4 rounded-xl bg-slate-900 border border-cyan-500/40 text-cyan-300 hover:bg-slate-800 hover:text-cyan-200 text-xs md:text-sm font-bold shadow-sm active:scale-95 transition-all"
+												className="flex items-center gap-2 min-h-[44px] px-4 rounded-xl bg-[var(--teal)] text-white hover:opacity-90 text-xs md:text-sm font-bold shadow-sm active:scale-95 transition-all"
 												title="Открыть в кибер-просмотрщике с линейкой и метками"
 												data-testid={`open-cyber-viewer-${study.id}`}
 											>
-												<Eye className="w-4 h-4 text-cyan-400" />
+												<Eye className="w-4 h-4 text-white" />
 												<span>Просмотр снимка</span>
 											</button>
 

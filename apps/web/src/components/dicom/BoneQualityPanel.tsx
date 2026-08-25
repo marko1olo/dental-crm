@@ -287,8 +287,8 @@ function PanelHeader({
 				borderTop: "none",
 			}}
 		>
-			<span className="text-xs font-bold flex items-center gap-1.5 text-teal-600 dark:text-teal-400">
-				<Activity className="w-4 h-4 text-teal-500" />
+			<span className="text-xs font-bold flex items-center gap-1.5 text-[var(--teal)]">
+				<Activity className="w-4 h-4 text-[var(--teal)]" />
 				Плотность кости (HU){toothFdi ? ` • Зуб #${toothFdi}` : ""}
 			</span>
 			<span style={{ color: "var(--muted)" }}>

@@ -262,12 +262,12 @@ export function CephalometricCanvas({
 			<div className="absolute top-3 left-3 right-3 z-30 flex items-center justify-between gap-2 flex-wrap pointer-events-none">
 				{/* Active Target Indicator Badge */}
 				<div className="pointer-events-auto flex items-center gap-2.5 bg-slate-900/95 backdrop-blur-md px-4 py-2.5 rounded-xl border border-slate-700/80 shadow-xl min-h-[44px]">
-					<Crosshair size={18} className="text-teal-400 animate-pulse shrink-0" />
+					<Crosshair size={18} className="text-[var(--teal)] animate-pulse shrink-0" />
 					<div className="text-sm font-bold text-slate-100 min-w-0 break-words">
 						{activeTargetKey ? (
 							<span>
 								Установите точку:{" "}
-								<span className="text-teal-300 font-extrabold uppercase">
+								<span className="text-[var(--teal)] font-extrabold uppercase">
 									{CEPHALOMETRIC_LANDMARKS.find((l) => l.key === activeTargetKey)?.nameRu}
 								</span>
 							</span>
@@ -762,7 +762,7 @@ export function CephalometricCanvas({
 
 			{/* Precision Magnifier Loupe (Zoom Window during point drag or hovering) */}
 			{(draggingKey || hoveredKey) && cursorImgPos && (
-				<div className="absolute bottom-4 right-4 z-40 w-36 h-36 rounded-full overflow-hidden border-2 border-teal-400 bg-slate-950 shadow-2xl pointer-events-none flex items-center justify-center">
+				<div className="absolute bottom-4 right-4 z-40 w-36 h-36 rounded-full overflow-hidden border-2 border-[var(--teal)] bg-slate-950 shadow-2xl pointer-events-none flex items-center justify-center">
 					<div
 						className="relative w-full h-full"
 						style={{
@@ -772,17 +772,17 @@ export function CephalometricCanvas({
 					>
 						{/* Replicated vector crosshair in magnifier */}
 						<div
-							className="absolute w-2.5 h-2.5 rounded-full bg-teal-400 border border-white"
+							className="absolute w-2.5 h-2.5 rounded-full bg-[var(--teal)] border border-white"
 							style={{ left: cursorImgPos.x - 5, top: cursorImgPos.y - 5 }}
 						/>
 					</div>
 					{/* Fixed Center Crosshair */}
 					<div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-						<div className="w-full h-[1px] bg-teal-400/50" />
-						<div className="h-full w-[1px] bg-teal-400/50 absolute" />
-						<div className="w-4 h-4 rounded-full border border-teal-300" />
+						<div className="w-full h-[1px] bg-[var(--teal-soft)]" />
+						<div className="h-full w-[1px] bg-[var(--teal-soft)] absolute" />
+						<div className="w-4 h-4 rounded-full border border-[var(--teal)]" />
 					</div>
-					<div className="absolute bottom-1.5 bg-slate-900/95 text-xs text-teal-300 px-2.5 py-0.5 rounded-full font-mono font-bold border border-teal-500/40">
+					<div className="absolute bottom-1.5 bg-slate-900/95 text-xs text-[var(--teal)] px-2.5 py-0.5 rounded-full font-mono font-bold border border-[var(--teal-soft)]">
 						{draggingKey ?? hoveredKey} ({Math.round(cursorImgPos.x)}, {Math.round(cursorImgPos.y)})
 					</div>
 				</div>

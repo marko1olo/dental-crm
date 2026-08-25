@@ -66,7 +66,7 @@ export function DentalLabShadeSelector({
 					onClick={() => setShadeSystem("classical")}
 					className={`min-h-[44px] px-4 py-2 text-xs font-bold rounded-lg transition-all ${
 						shadeSystem === "classical"
-							? "bg-white dark:bg-slate-700 text-teal-600 dark:text-teal-300 shadow-sm"
+							? "bg-white dark:bg-slate-700 text-[var(--teal)] shadow-sm"
 							: "text-slate-600 dark:text-slate-400 hover:text-slate-900"
 					}`}
 				>
@@ -77,7 +77,7 @@ export function DentalLabShadeSelector({
 					onClick={() => setShadeSystem("3d_master")}
 					className={`min-h-[44px] px-4 py-2 text-xs font-bold rounded-lg transition-all ${
 						shadeSystem === "3d_master"
-							? "bg-white dark:bg-slate-700 text-teal-600 dark:text-teal-300 shadow-sm"
+							? "bg-white dark:bg-slate-700 text-[var(--teal)] shadow-sm"
 							: "text-slate-600 dark:text-slate-400 hover:text-slate-900"
 					}`}
 				>
@@ -88,7 +88,7 @@ export function DentalLabShadeSelector({
 					onClick={() => setShadeSystem("bleach")}
 					className={`min-h-[44px] px-4 py-2 text-xs font-bold rounded-lg transition-all ${
 						shadeSystem === "bleach"
-							? "bg-white dark:bg-slate-700 text-teal-600 dark:text-teal-300 shadow-sm"
+							? "bg-white dark:bg-slate-700 text-[var(--teal)] shadow-sm"
 							: "text-slate-600 dark:text-slate-400 hover:text-slate-900"
 					}`}
 				>
@@ -189,7 +189,7 @@ export function DentalLabShadeSelector({
 			{/* 3-Zone Shade Selection (Cervical, Body, Incisal) */}
 			<div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-xl p-4 space-y-4">
 				<div className="flex items-center gap-2">
-					<Palette className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+					<Palette className="w-5 h-5 text-[var(--teal)]" />
 					<h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 m-0">
 						3-Зонная стратификация цвета (Cervical / Body / Incisal)
 					</h4>
@@ -204,7 +204,7 @@ export function DentalLabShadeSelector({
 						<select
 							value={shadeCervical}
 							onChange={(e) => setShadeCervical(e.target.value)}
-							className="w-full h-11 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm font-bold focus:ring-2 focus:ring-teal-500 focus:outline-none"
+							className="w-full h-11 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm font-bold focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
 						>
 							{VITA_CLASSICAL_SHADES.map((s) => (
 								<option key={s} value={s}>VITA {s} (Насыщенный пришеечный)</option>
@@ -224,7 +224,7 @@ export function DentalLabShadeSelector({
 						<select
 							value={shadeBody}
 							onChange={(e) => setShadeBody(e.target.value)}
-							className="w-full h-11 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm font-bold focus:ring-2 focus:ring-teal-500 focus:outline-none"
+							className="w-full h-11 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm font-bold focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
 						>
 							{VITA_CLASSICAL_SHADES.map((s) => (
 								<option key={s} value={s}>VITA {s}</option>
@@ -247,7 +247,7 @@ export function DentalLabShadeSelector({
 						<select
 							value={shadeIncisal}
 							onChange={(e) => setShadeIncisal(e.target.value)}
-							className="w-full h-11 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm font-bold focus:ring-2 focus:ring-teal-500 focus:outline-none"
+							className="w-full h-11 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm font-bold focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
 						>
 							{VITA_CLASSICAL_SHADES.map((s) => (
 								<option key={s} value={s}>VITA {s} (Опалесценция)</option>
@@ -285,7 +285,7 @@ export function DentalLabShadeSelector({
 								onClick={() => setShadeStump(isSelected ? "" : nd.id)}
 								className={`min-h-[48px] p-3 text-left rounded-xl border text-xs transition-all flex items-center justify-between gap-2.5 ${
 									isSelected
-										? "bg-teal-50/80 dark:bg-teal-950/40 border-teal-500 font-bold text-teal-900 dark:text-teal-200 ring-2 ring-teal-500/20"
+										? "bg-[var(--teal-surface)] border-[var(--teal)] font-bold text-[var(--teal)] ring-2 ring-[var(--teal-soft)]"
 										: "bg-white dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-400"
 								}`}
 							>
@@ -296,7 +296,7 @@ export function DentalLabShadeSelector({
 									/>
 									<span className="font-bold">{nd.name}</span>
 								</div>
-								{isSelected && <Check className="w-4 h-4 text-teal-600 dark:text-teal-400 flex-shrink-0" />}
+								{isSelected && <Check className="w-4 h-4 text-[var(--teal)] flex-shrink-0" />}
 							</button>
 						);
 					})}
@@ -323,8 +323,8 @@ export function DentalLabShadeSelector({
 								onClick={() => setTranslucency(t.id)}
 								className={`min-h-[44px] py-2 rounded-xl border text-xs font-bold flex flex-col items-center justify-center transition-all ${
 									translucency === t.id
-										? "bg-teal-600 text-white border-teal-600 shadow-sm"
-										: "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-teal-500"
+										? "bg-[var(--teal)] text-white border-[var(--teal-dark)] shadow-sm"
+										: "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-[var(--teal)]"
 								}`}
 							>
 								<span>{t.label}</span>
@@ -344,7 +344,7 @@ export function DentalLabShadeSelector({
 								type="checkbox"
 								checked={mamelons}
 								onChange={(e) => setMamelons(e.target.checked)}
-								className="w-5 h-5 rounded text-teal-600 focus:ring-teal-500 border-slate-300 dark:border-slate-700"
+								className="w-5 h-5 rounded accent-[var(--teal)] border-slate-300 dark:border-slate-700"
 							/>
 							Выраженные мамелоны режущего края
 						</label>
@@ -353,7 +353,7 @@ export function DentalLabShadeSelector({
 								type="checkbox"
 								checked={calcifications}
 								onChange={(e) => setCalcifications(e.target.checked)}
-								className="w-5 h-5 rounded text-teal-600 focus:ring-teal-500 border-slate-300 dark:border-slate-700"
+								className="w-5 h-5 rounded accent-[var(--teal)] border-slate-300 dark:border-slate-700"
 							/>
 							Кальцификаты / белые пятна
 						</label>

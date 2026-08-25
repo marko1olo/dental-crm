@@ -75,7 +75,7 @@ export function DentalLabPricingTab({
 								onClick={() => handleSharePreset(p.c, p.d)}
 								className={`min-h-[44px] flex-1 rounded-xl border text-xs font-bold transition-colors ${
 									clinicSharePct === p.c && doctorSharePct === p.d
-										? "bg-teal-600 text-white border-teal-600"
+										? "bg-[var(--teal)] text-white border-[var(--teal-dark)]"
 										: "bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300"
 								}`}
 							>

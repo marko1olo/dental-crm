@@ -293,7 +293,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 				    ═══════════════════════════════════════════════════════════════════ */}
 				<header className="flex items-center justify-between px-6 py-4 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 					<div className="flex items-center gap-3.5">
-						<div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-teal-500/15 border border-teal-500/30 text-teal-600 dark:text-teal-400">
+						<div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)]">
 							<Scan className="w-6 h-6" />
 						</div>
 						<div>
@@ -314,7 +314,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 								onClick={() => setActiveTab("form")}
 								className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
 									activeTab === "form"
-										? "bg-teal-500 text-white"
+										? "bg-[var(--teal)] text-white"
 										: "text-[var(--muted)]"
 								}`}
 							>
@@ -325,7 +325,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 								onClick={() => setActiveTab("preview")}
 								className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
 									activeTab === "preview"
-										? "bg-teal-500 text-white"
+										? "bg-[var(--teal)] text-white"
 										: "text-[var(--muted)]"
 								}`}
 							>
@@ -380,8 +380,8 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 											onClick={() => setStudyType(item.id)}
 											className={`flex flex-col p-3 rounded-2xl border text-left transition-all min-h-[44px] ${
 												isSelected
-													? "bg-teal-500/10 border-2 border-teal-500 text-[var(--ink)] shadow-sm ring-1 ring-teal-500/20"
-													: "bg-[var(--paper-soft)] border-[var(--line)] hover:border-teal-500/30 text-[var(--muted)] hover:text-[var(--ink)]"
+													? "bg-[var(--teal-surface)] border-2 border-[var(--teal)] text-[var(--ink)] shadow-sm ring-1 ring-[var(--teal-soft)]"
+													: "bg-[var(--paper-soft)] border-[var(--line)] hover:border-[var(--teal)] text-[var(--muted)] hover:text-[var(--ink)]"
 											}`}
 											data-testid={`referral-study-${item.id}`}
 										>
@@ -392,7 +392,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 												<div
 													className={`flex items-center justify-center w-5 h-5 rounded-md border ${
 														isSelected
-															? "bg-teal-500 border-teal-500 text-white"
+															? "bg-[var(--teal)] border-[var(--teal)] text-white"
 															: "border-[var(--line)]"
 													}`}
 												>
@@ -426,7 +426,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 											onClick={() => setStudyGoal(goal.id)}
 											className={`min-h-[44px] p-2.5 rounded-xl border text-left transition-all ${
 												isSelected
-													? "bg-teal-500/15 border-teal-500 text-teal-700 dark:text-teal-300 font-bold shadow-sm"
+													? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal)] font-bold shadow-sm"
 													: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
 											}`}
 											data-testid={`referral-goal-${goal.id}`}
@@ -473,8 +473,8 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 												onClick={() => handleToggleTooth(tooth)}
 												className={`min-h-[44px] min-w-[44px] p-2 text-xs font-bold rounded-xl transition-all ${
 													isSelected
-														? "bg-teal-500 text-white shadow-md font-extrabold scale-105"
-														: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-teal-500/50"
+														? "bg-[var(--teal)] text-white shadow-md font-extrabold scale-105"
+														: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
 												}`}
 											>
 												{tooth}
@@ -491,8 +491,8 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 												onClick={() => handleToggleTooth(tooth)}
 												className={`min-h-[44px] min-w-[44px] p-2 text-xs font-bold rounded-xl transition-all ${
 													isSelected
-														? "bg-teal-500 text-white shadow-md font-extrabold scale-105"
-														: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-teal-500/50"
+														? "bg-[var(--teal)] text-white shadow-md font-extrabold scale-105"
+														: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
 												}`}
 											>
 												{tooth}
@@ -512,8 +512,8 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 												onClick={() => handleToggleTooth(tooth)}
 												className={`min-h-[44px] min-w-[44px] p-2 text-xs font-bold rounded-xl transition-all ${
 													isSelected
-														? "bg-teal-500 text-white shadow-md font-extrabold scale-105"
-														: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-teal-500/50"
+														? "bg-[var(--teal)] text-white shadow-md font-extrabold scale-105"
+														: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
 												}`}
 											>
 												{tooth}
@@ -530,8 +530,8 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 												onClick={() => handleToggleTooth(tooth)}
 												className={`min-h-[44px] min-w-[44px] p-2 text-xs font-bold rounded-xl transition-all ${
 													isSelected
-														? "bg-teal-500 text-white shadow-md font-extrabold scale-105"
-														: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-teal-500/50"
+														? "bg-[var(--teal)] text-white shadow-md font-extrabold scale-105"
+														: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
 												}`}
 											>
 												{tooth}
@@ -548,7 +548,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 									value={customTeethInput}
 									onChange={(e) => setCustomTeethInput(e.target.value)}
 									placeholder="Или введите вручную: 16, 26, 36-38, Все..."
-									className="w-full px-3.5 min-h-[44px] text-xs font-mono rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-teal-500"
+									className="w-full px-3.5 min-h-[44px] text-xs font-mono rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
 								/>
 							</div>
 						</div>
@@ -568,7 +568,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 									value={diagnosisIcd10}
 									onChange={(e) => setDiagnosisIcd10(e.target.value)}
 									placeholder="K04.0, K05.3, K08.1..."
-									className="w-full px-3.5 min-h-[44px] text-xs font-mono font-bold rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-teal-500"
+									className="w-full px-3.5 min-h-[44px] text-xs font-mono font-bold rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
 								/>
 							</div>
 
@@ -584,7 +584,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 									type="text"
 									value={customReferralNumber}
 									onChange={(e) => setCustomReferralNumber(e.target.value)}
-									className="w-full px-3.5 min-h-[44px] text-xs font-mono rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-teal-500"
+									className="w-full px-3.5 min-h-[44px] text-xs font-mono rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
 								/>
 							</div>
 						</div>
@@ -600,7 +600,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 							<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
 								Предпросмотр бланка направления:
 							</span>
-							<span className="text-xs font-mono font-bold text-teal-600 dark:text-teal-400">
+							<span className="text-xs font-mono font-bold text-[var(--teal)]">
 								{customReferralNumber}
 							</span>
 						</div>
@@ -618,7 +618,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 									</div>
 								</div>
 								<div className="text-right">
-									<div className="font-black text-sm text-teal-800 uppercase tracking-tight">
+									<div className="font-black text-sm text-[var(--teal-dark,teal)] uppercase tracking-tight">
 										НАПРАВЛЕНИЕ
 									</div>
 									<div className="text-[11px] text-slate-600 font-semibold">
@@ -648,12 +648,12 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 							</div>
 
 							{/* Clinical Study Box */}
-							<div className="p-4 rounded-xl border-2 border-teal-600 bg-teal-50/70 flex flex-col gap-2 text-xs">
+							<div className="p-4 rounded-xl border-2 border-[var(--teal)] bg-[var(--teal-surface)] flex flex-col gap-2 text-xs">
 								<div className="flex justify-between items-center">
-									<span className="font-black text-teal-950 text-sm">
+									<span className="font-black text-[var(--ink)] text-sm">
 										Вид исследования: {dentalRadiologyStudyLabels[studyType]}
 									</span>
-									<span className="px-2 py-0.5 rounded bg-teal-700 text-white font-bold text-[10px]">
+									<span className="px-2 py-0.5 rounded bg-[var(--teal)] text-white font-bold text-[10px]">
 										{estimatedDose.microsvText}
 									</span>
 								</div>
@@ -663,13 +663,13 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 								</div>
 								<div>
 									<span className="text-slate-600">Локализация / Зубы (FDI): </span>
-									<strong className="text-teal-900 text-sm font-black">
+									<strong className="text-[var(--teal)] text-sm font-black">
 										{customTeethInput || selectedTeeth.join(", ") || "Все зубные ряды"}
 									</strong>
 								</div>
 								<div>
 									<span className="text-slate-600">Диагноз (МКБ-10): </span>
-									<strong className="font-mono text-teal-800">
+									<strong className="font-mono text-[var(--teal)]">
 										{diagnosisIcd10 || "K04.0"}
 									</strong>
 								</div>
@@ -704,7 +704,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 				    ═══════════════════════════════════════════════════════════════════ */}
 				<footer className="flex items-center justify-between px-6 py-4 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 					<div className="flex items-center gap-2 text-xs text-[var(--muted)]">
-						<Info className="w-4 h-4 text-teal-500" />
+						<Info className="w-4 h-4 text-[var(--teal)]" />
 						<span>Готово к прямой печати или передаче в рентген-кабинет.</span>
 					</div>
 

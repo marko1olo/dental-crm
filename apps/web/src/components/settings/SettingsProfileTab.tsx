@@ -295,7 +295,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 	if (loadState.phase === "loading" && !profile) {
 		return (
 			<div className="settings-tab-pane p-6 flex flex-col items-center justify-center text-center">
-				<div className="animate-spin h-8 w-8 text-sky-500 border-2 border-slate-300 dark:border-slate-700 border-t-sky-500 rounded-full" />
+				<div className="animate-spin h-8 w-8 text-[var(--teal)] border-2 border-slate-300 dark:border-slate-700 border-t-[var(--teal)] rounded-full" />
 				<p className="text-slate-500 dark:text-slate-400 mt-3 text-sm font-medium">
 					{panelStateText(PROFILE_PANEL_SUBJECT, { phase: "loading" }).title}
 				</p>
@@ -660,7 +660,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 				{/* Sound Notifications Block (Feature #49) */}
 				<section className="settings-section">
 					<div className="flex items-center gap-2 mb-2">
-						<Bell size={18} className="text-teal-600 dark:text-teal-400" />
+						<Bell size={18} className="text-[var(--teal)]" />
 						<h3 className="m-0">Звуковые оповещения</h3>
 					</div>
 					<p className="section-desc">
@@ -672,7 +672,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 								{appLogic?.soundNotificationsMuted ? (
 									<VolumeX size={20} className="text-slate-400" />
 								) : (
-									<Volume2 size={20} className="text-teal-600 dark:text-teal-400" />
+									<Volume2 size={20} className="text-[var(--teal)]" />
 								)}
 								<div>
 									<div className="text-sm font-semibold text-[var(--ink)]">
@@ -694,7 +694,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 									}
 									className="sr-only peer"
 								/>
-								<div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600" />
+								<div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--teal)]" />
 							</label>
 						</div>
 						<div className="form-actions form-span-2 flex gap-3 flex-wrap pt-2">

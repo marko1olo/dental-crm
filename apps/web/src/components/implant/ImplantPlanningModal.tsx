@@ -321,25 +321,25 @@ export function ImplantPlanningModal({
 		>
 			<div className="implant-modal-container">
 				{/* ─── MODAL HEADER ──────────────────────────────────────────────── */}
-				<header className="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-900/80 backdrop-blur shrink-0">
+				<header className="px-5 py-3.5 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 flex items-center justify-between bg-[var(--surface,#f8fafc)] dark:bg-slate-900/80 backdrop-blur shrink-0">
 					<div className="flex items-center gap-3">
-						<div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-sm shrink-0">
+						<div className="w-10 h-10 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)] flex items-center justify-center shadow-sm shrink-0">
 							<Bone size={22} />
 						</div>
 						<div>
 							<div className="flex items-center gap-2 flex-wrap">
 								<h2
 									id="implant-modal-title"
-									className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight"
+									className="text-base sm:text-lg font-bold text-[var(--ink,#0f172a)] dark:text-white tracking-tight"
 								>
 									3D-Планирование дентальной имплантации
 								</h2>
-								<span className="text-xs font-bold px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800">
+								<span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]">
 									Зуб FDI {toothFdi} ({isMandible ? "Нижняя челюсть" : "Верхняя челюсть"})
 								</span>
 							</div>
-							<p className="text-xs text-slate-500 dark:text-slate-400">
-								Пациент: <strong className="text-slate-700 dark:text-slate-200">{patientName}</strong>{" "}
+							<p className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400">
+								Пациент: <strong className="text-[var(--ink,#0f172a)] dark:text-slate-200">{patientName}</strong>{" "}
 								• Защита анатомических зон (IAN, Sinus, Roots, Papilla)
 							</p>
 						</div>
@@ -347,15 +347,15 @@ export function ImplantPlanningModal({
 
 					<div className="flex items-center gap-2">
 						{/* FDI Tooth Selector Dropdown / Stepper */}
-						<div className="flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-1">
-							<label htmlFor="fdi-select" className="text-xs font-bold text-slate-500 px-1">
+						<div className="flex items-center gap-1 bg-[var(--paper,#ffffff)] dark:bg-slate-800 border border-[var(--line,#cbd5e1)] dark:border-slate-700 rounded-lg p-1">
+							<label htmlFor="fdi-select" className="text-xs font-bold text-[var(--muted,#64748b)] px-1">
 								FDI:
 							</label>
 							<select
 								id="fdi-select"
 								value={toothFdi}
 								onChange={(e) => setToothFdi(Number(e.target.value))}
-								className="text-xs font-bold bg-transparent text-slate-900 dark:text-white focus:outline-none cursor-pointer"
+								className="text-xs font-bold bg-transparent text-[var(--ink,#0f172a)] dark:text-white focus:outline-none cursor-pointer"
 							>
 								<optgroup label="Верхняя челюсть (Maxilla)">
 									{[18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28].map((fdi) => (
@@ -378,7 +378,7 @@ export function ImplantPlanningModal({
 							type="button"
 							onClick={onClose}
 							aria-label="Закрыть окно планирования"
-							className="implant-touch-button w-10 h-10 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800"
+							className="implant-touch-button w-10 h-10 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-white hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-800"
 						>
 							<X size={20} />
 						</button>
@@ -390,9 +390,9 @@ export function ImplantPlanningModal({
 					{/* ─── LEFT COLUMN: FIXTURE SELECTOR & PARAMETERS (4 cols) ────── */}
 					<div className="lg:col-span-4 flex flex-col gap-4">
 						{/* Brand Selector Tabs (Touch-First >= 48px) */}
-						<div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 flex flex-col gap-3">
-							<span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-								<Wrench size={14} className="text-teal-600" />
+						<div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-3">
+							<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
+								<Wrench size={14} className="text-[var(--teal)]" />
 								Система имплантатов
 							</span>
 
@@ -416,14 +416,14 @@ export function ImplantPlanningModal({
 											onClick={() => handleBrandChange(brand)}
 											className={`implant-touch-button flex flex-col items-center justify-center p-2 rounded-lg border text-xs font-bold transition-all ${
 												isActive
-													? "bg-teal-600 text-white border-teal-600 shadow-sm"
-													: "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-teal-500"
+													? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-sm"
+													: "bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#0f172a)] dark:text-slate-300 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:border-[var(--teal)]"
 											}`}
 										>
 											<span>{meta.name}</span>
 											<span
 												className={`text-[9px] font-normal ${
-													isActive ? "text-teal-100" : "text-slate-400"
+													isActive ? "text-white/80" : "text-[var(--muted,#64748b)]"
 												}`}
 											>
 												{meta.country}
@@ -435,7 +435,7 @@ export function ImplantPlanningModal({
 
 							{/* Line Selector Pills */}
 							<div className="flex flex-col gap-1.5">
-								<span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+								<span className="text-xs font-semibold text-[var(--ink,#0f172a)] dark:text-slate-400">
 									Линейка имплантата:
 								</span>
 								<div className="flex flex-wrap gap-1.5">
@@ -449,7 +449,7 @@ export function ImplantPlanningModal({
 												className={`px-3 py-1.5 rounded-md text-xs font-bold border transition-all ${
 													isActive
 														? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white shadow-sm"
-														: "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-slate-500"
+														: "bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#0f172a)] dark:text-slate-300 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:border-slate-500"
 												}`}
 											>
 												{line}
@@ -461,9 +461,9 @@ export function ImplantPlanningModal({
 
 							{/* Diameter Selector (>= 48px buttons) */}
 							<div className="flex flex-col gap-1.5">
-								<span className="text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center justify-between">
+								<span className="text-xs font-semibold text-[var(--ink,#0f172a)] dark:text-slate-400 flex items-center justify-between">
 									<span>Диаметр (Ø мм):</span>
-									<span className="font-bold text-teal-600 dark:text-teal-400">
+									<span className="font-bold text-[var(--teal)]">
 										Ø {selectedDiameter.toFixed(1)} мм
 									</span>
 								</span>
@@ -487,9 +487,9 @@ export function ImplantPlanningModal({
 
 							{/* Length Selector (>= 48px buttons) */}
 							<div className="flex flex-col gap-1.5">
-								<span className="text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center justify-between">
+								<span className="text-xs font-semibold text-[var(--ink,#0f172a)] dark:text-slate-400 flex items-center justify-between">
 									<span>Длина (L мм):</span>
-									<span className="font-bold text-teal-600 dark:text-teal-400">
+									<span className="font-bold text-[var(--teal)]">
 										{selectedLength.toFixed(1)} мм
 									</span>
 								</span>
@@ -513,9 +513,9 @@ export function ImplantPlanningModal({
 						</div>
 
 						{/* Misch Bone Density & Tapping Controls */}
-						<div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 flex flex-col gap-3">
-							<span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-								<Activity size={14} className="text-teal-600" />
+						<div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-3">
+							<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
+								<Activity size={14} className="text-[var(--teal)]" />
 								Плотность кости (Misch Classification)
 							</span>
 
@@ -540,37 +540,37 @@ export function ImplantPlanningModal({
 								})}
 							</div>
 
-							<div className="flex flex-col gap-2 pt-1 border-t border-slate-200 dark:border-slate-700">
+							<div className="flex flex-col gap-2 pt-1 border-t border-[var(--line,#e2e8f0)] dark:border-slate-700">
 								<label className="flex items-center justify-between text-xs cursor-pointer select-none">
-									<span className="text-slate-700 dark:text-slate-300">
+									<span className="text-[var(--ink,#0f172a)] dark:text-slate-300">
 										Недопрепарирование (Underdrilling)
 									</span>
 									<input
 										type="checkbox"
 										checked={underdrillingUsed}
 										onChange={(e) => setUnderdrillingUsed(e.target.checked)}
-										className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 cursor-pointer"
+										className="w-4 h-4 rounded accent-[var(--teal)] cursor-pointer"
 									/>
 								</label>
 
 								<label className="flex items-center justify-between text-xs cursor-pointer select-none">
-									<span className="text-slate-700 dark:text-slate-300">
+									<span className="text-[var(--ink,#0f172a)] dark:text-slate-300">
 										Кортикальный метчик (Bone Tap)
 									</span>
 									<input
 										type="checkbox"
 										checked={corticalTapUsed}
 										onChange={(e) => setCorticalTapUsed(e.target.checked)}
-										className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 cursor-pointer"
+										className="w-4 h-4 rounded accent-[var(--teal)] cursor-pointer"
 									/>
 								</label>
 							</div>
 						</div>
 
 						{/* Anatomical Dimension Steppers */}
-						<div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 flex flex-col gap-3">
-							<span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-								<Ruler size={14} className="text-teal-600" />
+						<div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-3">
+							<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
+								<Ruler size={14} className="text-[var(--teal)]" />
 								Анатомические дистанции (КТ/CBCT)
 							</span>
 
@@ -944,14 +944,14 @@ export function ImplantPlanningModal({
 					{/* ─── RIGHT COLUMN: TABS (SAFETY / PROTOCOL / FINANCE) (4 cols) ─ */}
 					<div className="lg:col-span-4 flex flex-col gap-3">
 						{/* Tab Navigation */}
-						<div className="grid grid-cols-3 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+						<div className="grid grid-cols-3 p-1 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 border border-[var(--line,#e2e8f0)] dark:border-slate-700">
 							<button
 								type="button"
 								onClick={() => setActiveTab("safety")}
 								className={`py-2 text-xs font-bold rounded-lg transition-all ${
 									activeTab === "safety"
-										? "bg-white dark:bg-slate-900 text-teal-600 dark:text-teal-400 shadow-sm"
-										: "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+										? "bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--teal)] shadow-sm"
+										: "text-[var(--muted,#64748b)] dark:text-slate-400 hover:text-[var(--ink,#0f172a)]"
 								}`}
 							>
 								Безопасность
@@ -961,8 +961,8 @@ export function ImplantPlanningModal({
 								onClick={() => setActiveTab("protocol")}
 								className={`py-2 text-xs font-bold rounded-lg transition-all ${
 									activeTab === "protocol"
-										? "bg-white dark:bg-slate-900 text-teal-600 dark:text-teal-400 shadow-sm"
-										: "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+										? "bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--teal)] shadow-sm"
+										: "text-[var(--muted,#64748b)] dark:text-slate-400 hover:text-[var(--ink,#0f172a)]"
 								}`}
 							>
 								Протокол сверления
@@ -972,8 +972,8 @@ export function ImplantPlanningModal({
 								onClick={() => setActiveTab("finance")}
 								className={`py-2 text-xs font-bold rounded-lg transition-all ${
 									activeTab === "finance"
-										? "bg-white dark:bg-slate-900 text-teal-600 dark:text-teal-400 shadow-sm"
-										: "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+										? "bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--teal)] shadow-sm"
+										: "text-[var(--muted,#64748b)] dark:text-slate-400 hover:text-[var(--ink,#0f172a)]"
 								}`}
 							>
 								Смета (Копейки)
@@ -1028,8 +1028,8 @@ export function ImplantPlanningModal({
 									)}
 
 									{/* Root Clearances */}
-									<div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 flex flex-col gap-1.5">
-										<span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+									<div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-1.5">
+										<span className="text-xs font-bold text-[var(--ink,#0f172a)] dark:text-slate-300">
 											Дистанция до корней (≥ 1.5 мм):
 										</span>
 										<div className="flex items-center justify-between text-xs">
@@ -1060,10 +1060,10 @@ export function ImplantPlanningModal({
 								</div>
 
 								{/* Torque & Stability Gauge */}
-								<div className="p-3.5 rounded-xl bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-slate-800/80 dark:to-teal-950/40 border border-teal-200 dark:border-teal-900/60 flex flex-col gap-2.5">
+								<div className="p-3.5 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] flex flex-col gap-2.5">
 									<div className="flex items-center justify-between">
-										<span className="text-xs font-bold text-teal-900 dark:text-teal-200 flex items-center gap-1.5">
-											<Zap size={14} className="text-teal-600" />
+										<span className="text-xs font-bold text-[var(--teal)] flex items-center gap-1.5">
+											<Zap size={14} className="text-[var(--teal)]" />
 											Первичная стабильность и торк
 										</span>
 										<span
@@ -1080,17 +1080,17 @@ export function ImplantPlanningModal({
 									</div>
 
 									<div className="flex items-baseline justify-between">
-										<span className="text-2xl font-black text-slate-900 dark:text-white">
+										<span className="text-2xl font-black text-[var(--ink,#0f172a)] dark:text-white">
 											{audit.torqueEstimate.expectedTorqueMinNcm}–
 											{audit.torqueEstimate.expectedTorqueMaxNcm}
-											<span className="text-sm font-normal text-slate-500 ml-1">Нсм</span>
+											<span className="text-sm font-normal text-[var(--muted,#64748b)] ml-1">Нсм</span>
 										</span>
-										<span className="text-xs text-slate-600 dark:text-slate-400">
+										<span className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400">
 											Средний: <strong>{audit.torqueEstimate.expectedTorqueMeanNcm} Нсм</strong>
 										</span>
 									</div>
 
-									<p className="text-[11px] text-slate-600 dark:text-slate-300 leading-normal">
+									<p className="text-[11px] text-[var(--ink,#0f172a)] dark:text-slate-300 leading-normal">
 										{audit.torqueEstimate.surgicalTactics}
 									</p>
 								</div>
@@ -1100,25 +1100,25 @@ export function ImplantPlanningModal({
 						{/* ─── TAB 2: SURGICAL DRILL PROTOCOL ────────────────────────── */}
 						{activeTab === "protocol" && (
 							<div className="flex flex-col gap-2 max-h-[380px] overflow-y-auto pr-1">
-								<span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+								<span className="text-xs font-bold text-[var(--ink,#0f172a)] dark:text-slate-300">
 									Пошаговая последовательность сверл ({currentFixture.brandName} {currentFixture.line}):
 								</span>
 								{currentFixture.drillSequence.map((step) => (
 									<div
 										key={step.stepNumber}
-										className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex items-start gap-2.5"
+										className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/80 border border-[var(--line,#e2e8f0)] dark:border-slate-700 flex items-start gap-2.5"
 									>
-										<span className="w-5 h-5 rounded-full bg-teal-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+										<span className="w-5 h-5 rounded-full bg-[var(--teal)] text-white font-bold text-xs flex items-center justify-center shrink-0">
 											{step.stepNumber}
 										</span>
 										<div className="flex-1 min-w-0">
-											<div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
+											<div className="flex items-center justify-between text-xs font-bold text-[var(--ink,#0f172a)] dark:text-white">
 												<span className="truncate">{step.drillName}</span>
-												<span className="text-teal-600 dark:text-teal-400 shrink-0 ml-2">
+												<span className="text-[var(--teal)] shrink-0 ml-2">
 													{step.targetRpm} об/мин
 												</span>
 											</div>
-											<div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between mt-0.5">
+											<div className="text-[11px] text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center justify-between mt-0.5">
 												<span>{step.depthGuide}</span>
 												{step.isBoneDenseOnly && (
 													<span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">
@@ -1131,7 +1131,7 @@ export function ImplantPlanningModal({
 								))}
 
 								{/* Sleeve Specs */}
-								<div className="p-3 rounded-lg bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 text-xs text-sky-900 dark:text-sky-200 flex flex-col gap-1">
+								<div className="p-3 rounded-lg bg-[var(--info-bg,rgba(2,132,199,0.1))] border border-[var(--info-fg,rgba(2,132,199,0.3))] text-xs text-[var(--info-fg,#0284c7)] flex flex-col gap-1">
 									<strong className="font-bold flex items-center gap-1.5">
 										<Info size={14} /> Навигационная гильза шаблона:
 									</strong>
@@ -1140,7 +1140,7 @@ export function ImplantPlanningModal({
 										{currentFixture.guidedSleeve.sleeveHeightMm} мм • Оффсет:{" "}
 										{currentFixture.guidedSleeve.offsetMm} мм
 									</span>
-									<span className="text-[10px] text-sky-700 dark:text-sky-300">
+									<span className="text-[10px] opacity-80">
 										Артикул: {currentFixture.guidedSleeve.sleeveArticle}
 									</span>
 								</div>
@@ -1150,15 +1150,15 @@ export function ImplantPlanningModal({
 						{/* ─── TAB 3: KOPECK-EXACT FINANCIAL BREAKDOWN ───────────────── */}
 						{activeTab === "finance" && (
 							<div className="flex flex-col gap-3">
-								<div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 flex flex-col gap-2">
-									<span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-										<Coins size={14} className="text-teal-600" />
+								<div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2">
+									<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
+										<Coins size={14} className="text-[var(--teal)]" />
 										Смета хирургического комплекта (Копейки)
 									</span>
 
 									<div className="flex flex-col gap-1.5 text-xs">
 										<div className="flex items-center justify-between">
-											<span className="text-slate-700 dark:text-slate-300">
+											<span className="text-[var(--ink,#0f172a)] dark:text-slate-300">
 												Имплантат {currentFixture.brandName} {currentFixture.line}:
 											</span>
 											<strong className="font-mono">
@@ -1167,7 +1167,7 @@ export function ImplantPlanningModal({
 										</div>
 
 										<div className="flex items-center justify-between">
-											<span className="text-slate-700 dark:text-slate-300">
+											<span className="text-[var(--ink,#0f172a)] dark:text-slate-300">
 												Формирователь десны (Healing Cap):
 											</span>
 											<strong className="font-mono">
@@ -1176,7 +1176,7 @@ export function ImplantPlanningModal({
 										</div>
 
 										<div className="flex items-center justify-between">
-											<span className="text-slate-700 dark:text-slate-300">
+											<span className="text-[var(--ink,#0f172a)] dark:text-slate-300">
 												Трансфер слепочный / Scanbody:
 											</span>
 											<strong className="font-mono">
@@ -1185,7 +1185,7 @@ export function ImplantPlanningModal({
 										</div>
 
 										<div className="flex items-center justify-between">
-											<span className="text-slate-700 dark:text-slate-300">
+											<span className="text-[var(--ink,#0f172a)] dark:text-slate-300">
 												Абатмент стандартный титановый:
 											</span>
 											<strong className="font-mono">
@@ -1194,7 +1194,7 @@ export function ImplantPlanningModal({
 										</div>
 
 										<div className="flex items-center justify-between">
-											<span className="text-slate-700 dark:text-slate-300">
+											<span className="text-[var(--ink,#0f172a)] dark:text-slate-300">
 												Навигационная гильза:
 											</span>
 											<strong className="font-mono">
@@ -1202,7 +1202,7 @@ export function ImplantPlanningModal({
 											</strong>
 										</div>
 
-										<div className="pt-2 border-t border-slate-300 dark:border-slate-700 flex items-center justify-between text-sm font-bold text-teal-700 dark:text-teal-300">
+										<div className="pt-2 border-t border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center justify-between text-sm font-bold text-[var(--teal)]">
 											<span>ИТОГО КЛИНИЧЕСКИЙ КОМПЛЕКТ:</span>
 											<span className="font-mono text-base font-black">
 												{kitCost.totalRublesFormatted}
@@ -1221,8 +1221,8 @@ export function ImplantPlanningModal({
 				</div>
 
 				{/* ─── MODAL FOOTER ACTIONS ──────────────────────────────────────── */}
-				<footer className="px-5 py-3.5 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50/70 dark:bg-slate-900/80 shrink-0">
-					<div className="flex items-center gap-2 text-xs text-slate-500">
+				<footer className="px-5 py-3.5 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 bg-[var(--surface,#f8fafc)] dark:bg-slate-900/80 shrink-0">
+					<div className="flex items-center gap-2 text-xs text-[var(--muted,#64748b)]">
 						<span>
 							Выбран: <strong>{currentFixture.brandName} {currentFixture.line}</strong> (Ø
 							{currentFixture.diameterMm} x {currentFixture.lengthMm} мм)
@@ -1233,7 +1233,7 @@ export function ImplantPlanningModal({
 						<button
 							type="button"
 							onClick={handleCopyProtocol}
-							className="implant-touch-button flex-1 sm:flex-initial px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-slate-100 dark:hover:bg-slate-700"
+							className="implant-touch-button flex-1 sm:flex-initial px-4 py-2 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700"
 						>
 							{copied ? <Check size={16} className="text-emerald-500" /> : <Clipboard size={16} />}
 							<span>{copied ? "Скопировано!" : "Копировать протокол"}</span>
@@ -1243,7 +1243,7 @@ export function ImplantPlanningModal({
 							<button
 								type="button"
 								onClick={handleInsertProtocol}
-								className="implant-touch-button flex-1 sm:flex-initial px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm"
+								className="implant-touch-button flex-1 sm:flex-initial px-4 py-2 rounded-lg bg-[var(--teal)] hover:opacity-90 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm"
 							>
 								<FileText size={16} />
 								<span>Вставить в карту 043/у</span>

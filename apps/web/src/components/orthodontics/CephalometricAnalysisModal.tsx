@@ -172,7 +172,7 @@ export function CephalometricAnalysisModal({
 				{/* ── Modal Header ────────────────────────────────────────────── */}
 				<header className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--surface,#f8fafc)] dark:bg-slate-900/95 shrink-0">
 					<div className="flex items-center gap-3 min-w-0">
-						<div className="w-11 h-11 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center text-white shadow-md shadow-teal-500/20 shrink-0">
+						<div className="w-11 h-11 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] flex items-center justify-center text-[var(--teal)] shadow-sm shrink-0">
 							<Activity size={24} />
 						</div>
 						<div className="min-w-0">
@@ -180,7 +180,7 @@ export function CephalometricAnalysisModal({
 								<h2 className="text-base sm:text-lg font-black tracking-tight text-[var(--ink,#0f172a)] dark:text-white m-0 truncate">
 									Цефалометрический анализ ТРГ (Телерентгенография)
 								</h2>
-								<span className="text-xs uppercase tracking-wider font-extrabold bg-teal-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 px-2.5 py-1 rounded-lg border border-teal-500/30">
+								<span className="text-xs uppercase tracking-wider font-extrabold bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] px-2.5 py-1 rounded-lg">
 									Steiner / Tweed / Downs / Ricketts
 								</span>
 							</div>
@@ -246,7 +246,7 @@ export function CephalometricAnalysisModal({
 										onClick={() => setFilterMode(flt.id)}
 										className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer inline-flex items-center justify-center ${
 											filterMode === flt.id
-												? "bg-teal-600 text-white shadow-md shadow-teal-600/30"
+												? "bg-[var(--teal)] text-white shadow-md"
 												: "bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700"
 										}`}
 									>
@@ -262,7 +262,7 @@ export function CephalometricAnalysisModal({
 									onClick={() => setShowPolygon((prev) => !prev)}
 									className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
 										showPolygon
-											? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30"
+											? "bg-[var(--teal)] text-white shadow-md"
 											: "bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700"
 									}`}
 								>
@@ -273,7 +273,7 @@ export function CephalometricAnalysisModal({
 									onClick={() => setShowPlanes((prev) => !prev)}
 									className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
 										showPlanes
-											? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30"
+											? "bg-[var(--teal)] text-white shadow-md"
 											: "bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700"
 									}`}
 								>
@@ -284,7 +284,7 @@ export function CephalometricAnalysisModal({
 									onClick={() => setShowLabels((prev) => !prev)}
 									className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
 										showLabels
-											? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30"
+											? "bg-[var(--teal)] text-white shadow-md"
 											: "bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700"
 									}`}
 								>
@@ -308,7 +308,7 @@ export function CephalometricAnalysisModal({
 									<button
 										type="button"
 										onClick={handleLoadPreset}
-										className="min-h-[44px] px-4 py-2 rounded-xl bg-teal-950/80 hover:bg-teal-900 text-teal-300 text-xs sm:text-sm font-bold flex items-center gap-2 transition-colors border border-teal-500/30 cursor-pointer shadow-sm"
+										className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] text-[var(--teal)] text-xs sm:text-sm font-bold flex items-center gap-2 transition-colors border border-[var(--teal-soft)] cursor-pointer shadow-sm"
 										title="Загрузить эталонную разметку"
 									>
 										<Sparkles size={16} />
@@ -338,12 +338,12 @@ export function CephalometricAnalysisModal({
 								onClick={() => setActiveTab("landmarks")}
 								className={`min-h-[44px] px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
 									activeTab === "landmarks"
-										? "border-teal-600 text-teal-700 dark:text-teal-400 bg-[var(--paper,#ffffff)] dark:bg-slate-900 rounded-t-xl shadow-sm"
+										? "border-[var(--teal)] text-[var(--teal)] bg-[var(--paper,#ffffff)] dark:bg-slate-900 rounded-t-xl shadow-sm"
 										: "border-transparent text-[var(--muted,#64748b)] dark:text-slate-400 hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
 								}`}
 							>
 								<span>1. Ориентиры</span>
-								<span className="text-xs bg-teal-100 dark:bg-teal-950 px-2 py-0.5 rounded-full font-extrabold text-teal-800 dark:text-teal-300">
+								<span className="text-xs bg-[var(--teal-surface)] px-2 py-0.5 rounded-full font-extrabold text-[var(--teal)]">
 									{analysis.placedCount}/{analysis.totalCount}
 								</span>
 							</button>
@@ -353,7 +353,7 @@ export function CephalometricAnalysisModal({
 								onClick={() => setActiveTab("metrics")}
 								className={`min-h-[44px] px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
 									activeTab === "metrics"
-										? "border-teal-600 text-teal-700 dark:text-teal-400 bg-[var(--paper,#ffffff)] dark:bg-slate-900 rounded-t-xl shadow-sm"
+										? "border-[var(--teal)] text-[var(--teal)] bg-[var(--paper,#ffffff)] dark:bg-slate-900 rounded-t-xl shadow-sm"
 										: "border-transparent text-[var(--muted,#64748b)] dark:text-slate-400 hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
 								}`}
 							>
@@ -368,7 +368,7 @@ export function CephalometricAnalysisModal({
 								onClick={() => setActiveTab("report")}
 								className={`min-h-[44px] px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
 									activeTab === "report"
-										? "border-teal-600 text-teal-700 dark:text-teal-400 bg-[var(--paper,#ffffff)] dark:bg-slate-900 rounded-t-xl shadow-sm"
+										? "border-[var(--teal)] text-[var(--teal)] bg-[var(--paper,#ffffff)] dark:bg-slate-900 rounded-t-xl shadow-sm"
 										: "border-transparent text-[var(--muted,#64748b)] dark:text-slate-400 hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
 								}`}
 							>
@@ -386,11 +386,11 @@ export function CephalometricAnalysisModal({
 										<span className="text-[var(--ink,#0f172a)] dark:text-slate-200">
 											Прогресс разметки ТРГ
 										</span>
-										<span className="text-teal-700 dark:text-teal-300 font-extrabold">{placedPercent}%</span>
+										<span className="text-[var(--teal)] font-extrabold">{placedPercent}%</span>
 									</div>
 									<div className="h-2.5 w-full bg-[var(--line,#e2e8f0)] dark:bg-slate-700 rounded-full overflow-hidden">
 										<div
-											className="h-full bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full transition-all duration-300"
+											className="h-full bg-[var(--teal)] rounded-full transition-all duration-300"
 											style={{ width: `${placedPercent}%` }}
 										/>
 									</div>
@@ -412,9 +412,9 @@ export function CephalometricAnalysisModal({
 												onClick={() => setActiveTargetKey(lm.key)}
 												className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between gap-3 cursor-pointer min-h-[52px] ${
 													isTarget
-														? "bg-teal-50 dark:bg-teal-950/70 border-teal-500 shadow-md ring-1 ring-teal-500/50"
+														? "bg-[var(--teal-surface)] border-[var(--teal)] shadow-md ring-1 ring-[var(--teal-soft)]"
 														: isPlaced
-															? "bg-[var(--surface,#f8fafc)] dark:bg-slate-800/70 border-[var(--line,#e2e8f0)] dark:border-slate-800 hover:border-teal-500/40"
+															? "bg-[var(--surface,#f8fafc)] dark:bg-slate-800/70 border-[var(--line,#e2e8f0)] dark:border-slate-800 hover:border-[var(--teal)]"
 															: "bg-[var(--paper,#ffffff)] dark:bg-slate-900/60 border-dashed border-[var(--line,#cbd5e1)] dark:border-slate-700 opacity-85 hover:opacity-100"
 												}`}
 											>
@@ -456,7 +456,7 @@ export function CephalometricAnalysisModal({
 									<button
 										type="button"
 										onClick={() => setActiveTab("metrics")}
-										className="w-full min-h-[48px] py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-teal-600/25 transition-all cursor-pointer"
+										className="w-full min-h-[48px] py-3 rounded-xl bg-[var(--teal)] hover:opacity-90 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
 									>
 										<span>Перейти к расчету углов (Steiner, Tweed, Downs)</span>
 										<ArrowRight size={16} />
@@ -469,8 +469,8 @@ export function CephalometricAnalysisModal({
 						{activeTab === "metrics" && (
 							<div className="flex-1 flex flex-col p-3 sm:p-4 overflow-y-auto">
 								{/* Quick Diagnosis Banner */}
-								<div className="mb-4 p-4 rounded-xl bg-gradient-to-r from-teal-900/30 to-cyan-900/30 border border-teal-500/40 shadow-sm">
-									<div className="text-xs font-black text-teal-800 dark:text-teal-300 uppercase tracking-wider">
+								<div className="mb-4 p-4 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] shadow-sm">
+									<div className="text-xs font-black text-[var(--teal)] uppercase tracking-wider">
 										Клиническое резюме анализа
 									</div>
 									<div className="text-base font-black text-[var(--ink,#0f172a)] dark:text-white mt-1 min-w-0 break-words">
@@ -512,7 +512,7 @@ export function CephalometricAnalysisModal({
 																		: m.status === "increased"
 																			? "text-rose-600 dark:text-rose-400"
 																			: m.status === "decreased"
-																				? "text-sky-600 dark:text-sky-400"
+																				? "text-[var(--info-fg,#0284c7)]"
 																				: "text-[var(--muted,#64748b)]"
 																}`}
 															>
@@ -525,7 +525,7 @@ export function CephalometricAnalysisModal({
 																		: m.status === "increased"
 																			? "bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border-rose-500/40"
 																			: m.status === "decreased"
-																				? "bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 border-sky-500/40"
+																				? "bg-[var(--info-bg,rgba(2,132,199,0.1))] text-[var(--info-fg,#0284c7)] border-[var(--info-fg,rgba(2,132,199,0.3))]"
 																				: "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-600/30"
 																}`}
 															>
@@ -572,7 +572,7 @@ export function CephalometricAnalysisModal({
 																		: m.status === "increased"
 																			? "text-rose-600 dark:text-rose-400"
 																			: m.status === "decreased"
-																				? "text-sky-600 dark:text-sky-400"
+																				? "text-[var(--info-fg,#0284c7)]"
 																				: "text-[var(--muted,#64748b)]"
 																}`}
 															>
@@ -585,7 +585,7 @@ export function CephalometricAnalysisModal({
 																		: m.status === "increased"
 																			? "bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border-rose-500/40"
 																			: m.status === "decreased"
-																				? "bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 border-sky-500/40"
+																				? "bg-[var(--info-bg,rgba(2,132,199,0.1))] text-[var(--info-fg,#0284c7)] border-[var(--info-fg,rgba(2,132,199,0.3))]"
 																				: "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-600/30"
 																}`}
 															>
@@ -632,7 +632,7 @@ export function CephalometricAnalysisModal({
 																		: m.status === "increased"
 																			? "text-rose-600 dark:text-rose-400"
 																			: m.status === "decreased"
-																				? "text-sky-600 dark:text-sky-400"
+																				? "text-[var(--info-fg,#0284c7)]"
 																				: "text-[var(--muted,#64748b)]"
 																}`}
 															>
@@ -645,7 +645,7 @@ export function CephalometricAnalysisModal({
 																		: m.status === "increased"
 																			? "bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border-rose-500/40"
 																			: m.status === "decreased"
-																				? "bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 border-sky-500/40"
+																				? "bg-[var(--info-bg,rgba(2,132,199,0.1))] text-[var(--info-fg,#0284c7)] border-[var(--info-fg,rgba(2,132,199,0.3))]"
 																				: "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-600/30"
 																}`}
 															>
@@ -669,7 +669,7 @@ export function CephalometricAnalysisModal({
 									<button
 										type="button"
 										onClick={() => setActiveTab("report")}
-										className="w-full min-h-[48px] py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-teal-600/25 transition-all cursor-pointer"
+										className="w-full min-h-[48px] py-3 rounded-xl bg-[var(--teal)] hover:opacity-90 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
 									>
 										<span>Сформировать протокол Формы 043/у</span>
 										<ArrowRight size={16} />
@@ -683,7 +683,7 @@ export function CephalometricAnalysisModal({
 							<div className="flex-1 flex flex-col p-3 sm:p-4 overflow-y-auto">
 								<div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
 									<div className="flex items-center gap-2 min-w-0">
-										<FileText size={20} className="text-teal-600 dark:text-teal-400 shrink-0" />
+										<FileText size={20} className="text-[var(--teal)] shrink-0" />
 										<span className="text-sm font-bold text-[var(--ink,#0f172a)] dark:text-white min-w-0 break-words">
 											Предпросмотр протокола для карты 043/у
 										</span>
@@ -703,7 +703,7 @@ export function CephalometricAnalysisModal({
 									readOnly
 									value={analysis.diagnosis.protocol043Text}
 									aria-label="Текст протокола ТРГ для формы 043/у"
-									className="flex-1 min-h-[320px] p-4 bg-[var(--surface,#f8fafc)] dark:bg-slate-950 border border-[var(--line,#cbd5e1)] dark:border-slate-800 rounded-xl font-mono text-xs sm:text-sm text-[var(--ink,#0f172a)] dark:text-slate-200 resize-none outline-none focus:border-teal-500 leading-relaxed shadow-inner"
+									className="flex-1 min-h-[320px] p-4 bg-[var(--surface,#f8fafc)] dark:bg-slate-950 border border-[var(--line,#cbd5e1)] dark:border-slate-800 rounded-xl font-mono text-xs sm:text-sm text-[var(--ink,#0f172a)] dark:text-slate-200 resize-none outline-none focus:border-[var(--teal)] leading-relaxed shadow-inner"
 								/>
 
 								{/* Bottom Action: 1-Click Insert into Orthodontic Card */}
@@ -711,7 +711,7 @@ export function CephalometricAnalysisModal({
 									<button
 										type="button"
 										onClick={handleInsertToChart}
-										className="w-full min-h-[48px] py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-teal-600/25 active:scale-95 transition-all cursor-pointer border border-teal-500/30"
+										className="w-full min-h-[48px] py-3 rounded-xl bg-[var(--teal)] hover:opacity-90 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer border border-[var(--teal-soft)]"
 									>
 										<Sparkles size={18} />
 										<span>Вставить в ортодонтическую карту Формы 043/у</span>

@@ -299,13 +299,13 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 			{/* TOP CONTROL BAR */}
 			<div className="cbct-workspace-header">
 				<div className="flex items-center gap-3">
-					<div className="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-400 flex items-center justify-center border border-teal-500/40">
+					<div className="w-8 h-8 rounded-lg bg-[var(--teal-surface)] text-[var(--teal)] flex items-center justify-center border border-[var(--teal-soft)]">
 						<Activity className="w-4 h-4" />
 					</div>
 					<div>
 						<h2 className="text-sm font-bold text-white flex items-center gap-2">
 							3D КЛКТ Multi-Planar Reconstruction (MPR)
-							<span className="text-[11px] font-medium px-2 py-0.5 rounded bg-teal-500/20 text-teal-300 border border-teal-500/30">
+							<span className="text-[11px] font-medium px-2 py-0.5 rounded bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]">
 								МПР 4-квадранта
 							</span>
 						</h2>
@@ -325,7 +325,7 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 								onClick={() => setActivePreset(preset.id)}
 								className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
 									activePreset === preset.id
-										? "bg-teal-600 text-white shadow"
+										? "bg-[var(--teal)] text-white shadow"
 										: "text-neutral-400 hover:text-white"
 								}`}
 							>
@@ -370,7 +370,7 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 						type="button"
 						onClick={handleExportTo043}
 						disabled={isExporting}
-						className="h-8 px-3 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 shadow transition-all cursor-pointer"
+						className="h-8 px-3 rounded-lg bg-[var(--teal)] hover:opacity-90 text-white text-xs font-bold flex items-center gap-1.5 shadow transition-all cursor-pointer"
 					>
 						<Camera className="w-3.5 h-3.5" />
 						<span>В карту 043/у</span>
@@ -399,7 +399,7 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 				{/* 1. AXIAL VIEWPORT (Z-PLANE) */}
 				<div className="cbct-viewport-box">
 					<div className="cbct-viewport-header">
-						<span className="text-teal-400">1. Аксиальный срез (Axial)</span>
+						<span className="text-[var(--teal)]">1. Аксиальный срез (Axial)</span>
 						<span className="text-neutral-400">Z: {axialSliceZ} мм</span>
 					</div>
 					<div className="cbct-viewport-canvas-container">
@@ -472,10 +472,10 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 					<div className="flex flex-col gap-2">
 						<div className="flex items-center justify-between">
 							<span className="text-xs font-bold text-neutral-300 flex items-center gap-1.5">
-								<Sliders className="w-3.5 h-3.5 text-teal-400" />
+								<Sliders className="w-3.5 h-3.5 text-[var(--teal)]" />
 								Дно гайморовой пазухи (Sinus Floor):
 							</span>
-							<span className="px-2 py-0.5 rounded text-xs font-black bg-teal-500/20 text-teal-300 border border-teal-500/30">
+							<span className="px-2 py-0.5 rounded text-xs font-black bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]">
 								{sinusMeasurement.residualBoneHeightMm} мм
 							</span>
 						</div>
@@ -489,7 +489,7 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 				<div className="mt-2 pt-2 border-t border-neutral-800 flex items-center justify-between text-[11px]">
 					<div className="flex items-center gap-1.5">
 						<span className="font-bold text-neutral-400">Плотность кости:</span>
-						<span className="font-bold text-teal-400">{boneQuality.label}</span>
+						<span className="font-bold text-[var(--teal)]">{boneQuality.label}</span>
 					</div>
 					<span className="font-mono text-neutral-300">{probedHU} HU</span>
 				</div>

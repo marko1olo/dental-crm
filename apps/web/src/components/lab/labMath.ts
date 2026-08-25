@@ -410,8 +410,8 @@ export const LAB_ORDER_STAGES = [
 		name: "2. Сканирование & CAD-дизайн",
 		desc: "Создание цифровой 3D-модели, виртуальное моделирование реставрации",
 		step: 2,
-		color: "text-indigo-600 bg-indigo-50 border-indigo-200 dark:bg-indigo-900/30 dark:border-indigo-700 dark:text-indigo-300",
-		badgeColor: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-300",
+		color: "text-[var(--info-fg,#0284c7)] bg-[var(--info-bg,rgba(2,132,199,0.1))] border-[var(--info-fg,rgba(2,132,199,0.3))]",
+		badgeColor: "bg-[var(--info-bg,rgba(2,132,199,0.15))] text-[var(--info-fg,#0284c7)]",
 	},
 	{
 		id: "framework_wax_milling",
@@ -442,8 +442,8 @@ export const LAB_ORDER_STAGES = [
 		name: "6. Финальная глазурь & ОТК",
 		desc: "Индивидуализация красителями, глазурование, контроль посадки",
 		step: 6,
-		color: "text-teal-600 bg-teal-50 border-teal-200 dark:bg-teal-900/30 dark:border-teal-700 dark:text-teal-300",
-		badgeColor: "bg-teal-100 text-teal-800 dark:bg-teal-950/50 dark:text-teal-300",
+		color: "text-[var(--teal)] bg-[var(--teal-surface)] border-[var(--teal-soft)]",
+		badgeColor: "bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]",
 	},
 	{
 		id: "delivered_to_clinic",

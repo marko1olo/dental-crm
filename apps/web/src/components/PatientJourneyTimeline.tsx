@@ -262,7 +262,7 @@ export const PatientJourneyTimeline: React.FC<PatientJourneyTimelineProps> =
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							placeholder="Поиск по дневникам 043/у: «пульпит», «коффердам», «пломба», «артикаин», зуб..."
-							className="w-full min-h-[44px] pl-10 pr-9 py-2 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-sm text-[var(--ink)] placeholder:text-[var(--muted)] outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all font-medium"
+							className="w-full min-h-[44px] pl-10 pr-9 py-2 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-sm text-[var(--ink)] placeholder:text-[var(--muted)] outline-none focus:border-[var(--teal)] focus:ring-2 focus:ring-[var(--teal-soft)] transition-all font-medium"
 						/>
 						{searchQuery && (
 							<button
@@ -286,8 +286,8 @@ export const PatientJourneyTimeline: React.FC<PatientJourneyTimelineProps> =
 									onClick={() => setSearchQuery(isActive ? "" : tag)}
 									className={`min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border flex items-center gap-1 ${
 										isActive
-											? "bg-teal-600 text-white border-teal-700 shadow-xs"
-											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-teal-500/50 hover:bg-[var(--paper-strong)]"
+											? "bg-[var(--teal)] text-white border-[var(--teal-dark)] shadow-xs"
+											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--paper-strong)]"
 									}`}
 								>
 									{tag}
@@ -335,7 +335,7 @@ export const PatientJourneyTimeline: React.FC<PatientJourneyTimelineProps> =
 								<button
 									type="button"
 									onClick={() => setSearchQuery("")}
-									className="min-h-[44px] px-4 py-2 text-xs font-bold rounded-xl bg-teal-600 text-white hover:bg-teal-500 transition-colors cursor-pointer"
+									className="min-h-[44px] px-4 py-2 text-xs font-bold rounded-xl bg-[var(--teal)] text-white hover:opacity-90 transition-colors cursor-pointer"
 								>
 									Сбросить фильтр
 								</button>

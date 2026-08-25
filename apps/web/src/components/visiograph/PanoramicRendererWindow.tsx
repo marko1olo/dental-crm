@@ -390,8 +390,8 @@ export function PanoramicRendererWindow({
 			<div className="flex-1 relative bg-black flex items-center justify-center p-2 min-h-0 overflow-hidden">
 				{loading && (
 					<div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-10">
-						<div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
-						<span className="text-teal-400 mt-4 text-sm font-medium animate-pulse">
+						<div className="w-8 h-8 border-4 border-[var(--teal)] border-t-transparent rounded-full animate-spin"></div>
+						<span className="text-[var(--teal)] mt-4 text-sm font-medium animate-pulse">
 							Построение трилинейной интерполяции среза...
 						</span>
 					</div>

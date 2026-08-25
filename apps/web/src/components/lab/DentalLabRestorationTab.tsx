@@ -40,7 +40,7 @@ export function DentalLabRestorationTab({
 						<span className="font-bold text-sm text-slate-900 dark:text-slate-100">
 							Зубная формула (FDI ISO 3950)
 						</span>
-						<span className="text-xs px-2.5 py-1 rounded-full bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300 font-bold">
+						<span className="text-xs px-2.5 py-1 rounded-full bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] font-bold">
 							{selectedTeeth.length > 0
 								? `Выбрано: ${selectedTeeth.join(", ")} (${selectedTeeth.length} ед.)`
 								: "Выберите зубы для наряда"}
@@ -151,7 +151,7 @@ export function DentalLabRestorationTab({
 									<div className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center justify-between">
 										<span>{c.name}</span>
 										{isSelected && (
-											<CheckCircle2 className="w-4 h-4 text-teal-600 dark:text-teal-400 flex-shrink-0 ml-1" />
+											<CheckCircle2 className="w-4 h-4 text-[var(--teal)] flex-shrink-0 ml-1" />
 										)}
 									</div>
 									<div className="text-xs text-slate-500 dark:text-slate-400 leading-snug">
@@ -182,7 +182,7 @@ export function DentalLabRestorationTab({
 								onClick={() => setMaterial(m.id)}
 								className={`min-h-[52px] p-3.5 text-left rounded-xl border transition-all flex items-center justify-between gap-3 ${
 									isSelected
-										? "bg-teal-50/80 dark:bg-teal-950/40 border-teal-500 shadow-sm ring-2 ring-teal-500/20"
+										? "bg-[var(--teal-surface)] border-[var(--teal)] shadow-sm ring-2 ring-[var(--teal-soft)]"
 										: "bg-white dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
 								}`}
 							>
@@ -213,7 +213,7 @@ export function DentalLabRestorationTab({
 						type="date"
 						value={dueDate}
 						onChange={(e) => setDueDate(e.target.value)}
-						className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm font-bold focus:ring-2 focus:ring-teal-500 focus:outline-none"
+						className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm font-bold focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
 					/>
 				</div>
 				<div className="space-y-1.5">
@@ -225,7 +225,7 @@ export function DentalLabRestorationTab({
 						placeholder="Напр. Пациент уезжает 25 числа, примерка на воске..."
 						value={clinicalNotes}
 						onChange={(e) => setClinicalNotes(e.target.value)}
-						className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none"
+						className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
 					/>
 				</div>
 			</div>

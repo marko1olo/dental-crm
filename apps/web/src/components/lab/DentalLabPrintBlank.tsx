@@ -95,7 +95,7 @@ export function DentalLabPrintBlank({
 				<button
 					type="button"
 					onClick={handlePrint}
-					className="min-h-[44px] px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center gap-2 shadow-md shadow-teal-500/20"
+					className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-bold text-xs flex items-center gap-2 shadow-md"
 				>
 					<Printer className="w-4 h-4" />
 					Распечатать наряд (A4 / Термочехол)

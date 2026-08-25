@@ -405,7 +405,7 @@ export function DentalLabOrderModal({
 				{/* ─── MODAL HEADER ──────────────────────────────────────────────── */}
 				<div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60">
 					<div className="flex items-center gap-3">
-						<div className="w-11 h-11 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-600 dark:text-teal-400 shadow-sm">
+						<div className="w-11 h-11 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] flex items-center justify-center text-[var(--teal)] shadow-sm">
 							<FlaskConical className="w-6 h-6" />
 						</div>
 						<div>
@@ -414,7 +414,7 @@ export function DentalLabOrderModal({
 								className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 m-0"
 							>
 								Наряд-заказ в зуботехническую лабораторию (ЗТЛ)
-								<span className="px-2.5 py-0.5 text-xs font-bold rounded-full bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300 border border-teal-300 dark:border-teal-700">
+								<span className="px-2.5 py-0.5 text-xs font-bold rounded-full bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]">
 									CAD/CAM Pro
 								</span>
 							</h2>
@@ -465,7 +465,7 @@ export function DentalLabOrderModal({
 								onClick={() => setActiveTab(tab.id as TabKey)}
 								className={`min-h-[44px] inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold whitespace-nowrap shrink-0 transition-all ${
 									isActive
-										? "bg-white dark:bg-slate-800 text-teal-600 dark:text-teal-400 shadow-sm border border-slate-200 dark:border-slate-700"
+										? "bg-white dark:bg-slate-800 text-[var(--teal)] shadow-sm border border-slate-200 dark:border-slate-700"
 										: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50"
 								}`}
 							>
@@ -554,7 +554,7 @@ export function DentalLabOrderModal({
 							{/* Fitting Trial Dates Box (Eliminate <= 11px micro-fonts) */}
 							<div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 space-y-3">
 								<div className="flex items-center gap-2">
-									<Calendar className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+									<Calendar className="w-4 h-4 text-[var(--teal)]" />
 									<span className="text-xs font-bold text-slate-700 dark:text-slate-300">
 										Даты клинических примерок у пациента
 									</span>
@@ -568,7 +568,7 @@ export function DentalLabOrderModal({
 											type="date"
 											value={frameworkTrialDate}
 											onChange={(e) => setFrameworkTrialDate(e.target.value)}
-											className="w-full h-11 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-teal-500"
+											className="w-full h-11 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-[var(--teal)]"
 										/>
 									</div>
 									<div className="space-y-1.5">
@@ -579,7 +579,7 @@ export function DentalLabOrderModal({
 											type="date"
 											value={ceramicTrialDate}
 											onChange={(e) => setCeramicTrialDate(e.target.value)}
-											className="w-full h-11 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-teal-500"
+											className="w-full h-11 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-[var(--teal)]"
 										/>
 									</div>
 								</div>
@@ -596,7 +596,7 @@ export function DentalLabOrderModal({
 											onClick={() => setCurrentStage(stage.id)}
 											className={`min-h-[52px] p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-4 ${
 												isCurrent
-													? `${stage.color} ring-2 ring-teal-500/30 shadow-md font-bold`
+													? `${stage.color} ring-2 ring-[var(--teal-soft)] shadow-md font-bold`
 													: isPassed
 													? "bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 opacity-85"
 													: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 opacity-50 hover:opacity-100"
@@ -606,7 +606,7 @@ export function DentalLabOrderModal({
 												<div
 													className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
 														isPassed || isCurrent
-															? "bg-teal-600 text-white"
+															? "bg-[var(--teal)] text-white"
 															: "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
 													}`}
 												>
@@ -623,7 +623,7 @@ export function DentalLabOrderModal({
 											</div>
 
 											{isCurrent && (
-												<span className="px-3 py-1 text-xs font-bold rounded-lg bg-teal-600 text-white shadow-sm flex-shrink-0">
+												<span className="px-3 py-1 text-xs font-bold rounded-lg bg-[var(--teal)] text-white shadow-sm flex-shrink-0">
 													Текущий этап
 												</span>
 											)}
@@ -692,7 +692,7 @@ export function DentalLabOrderModal({
 					<div className="text-xs text-slate-500 dark:text-slate-400 font-bold">
 						{selectedTeeth.length > 0 ? (
 							<span>
-								Зубы FDI: <strong className="text-slate-800 dark:text-slate-200 text-sm">{selectedTeeth.join(", ")}</strong> · Себестоимость: <strong className="text-teal-600 dark:text-teal-400 text-sm">{money(totalLabPriceRub)}</strong>
+								Зубы FDI: <strong className="text-slate-800 dark:text-slate-200 text-sm">{selectedTeeth.join(", ")}</strong> · Себестоимость: <strong className="text-[var(--teal)] text-sm">{money(totalLabPriceRub)}</strong>
 							</span>
 						) : (
 							<span>Зубы не выбраны</span>
@@ -712,7 +712,7 @@ export function DentalLabOrderModal({
 							type="button"
 							onClick={() => handleSaveOrder()}
 							disabled={isSubmitting || selectedTeeth.length === 0}
-							className="min-h-[44px] px-5 py-2.5 text-xs font-bold rounded-xl bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white shadow-md shadow-teal-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all inline-flex items-center gap-2"
+							className="min-h-[44px] px-5 py-2.5 text-xs font-bold rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white shadow-md shadow-teal-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all inline-flex items-center gap-2"
 						>
 							{isSubmitting ? (
 								<>

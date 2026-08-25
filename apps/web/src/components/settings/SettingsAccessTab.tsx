@@ -172,7 +172,7 @@ export function SettingsAccessTab({
 			<article className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 mt-6 shadow-sm">
 				<div className="mb-4">
 					<h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-						<Mail size={18} className="text-sky-500" /> Пригласить сотрудника
+						<Mail size={18} className="text-[var(--teal)]" /> Пригласить сотрудника
 					</h3>
 					<p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
 						Сгенерируйте уникальную ссылку для регистрации нового врача,
@@ -189,7 +189,7 @@ export function SettingsAccessTab({
 						value={inviteEmail}
 						onChange={(e) => setInviteEmail(e.target.value)}
 						disabled={loading}
-						className="px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 flex-1 min-w-[200px] text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+						className="px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 flex-1 min-w-[200px] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 					/>
 					{/*
                   РОЛИ БЕРУТСЯ ИЗ СПИСКА РОЛЕЙ, А НЕ ПИШУТСЯ ЗДЕСЬ РУКАМИ.
@@ -211,7 +211,7 @@ export function SettingsAccessTab({
 						value={inviteRole}
 						onChange={(e) => setInviteRole(e.target.value as StaffRole)}
 						disabled={loading}
-						className="px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 min-w-[150px] text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+						className="px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 min-w-[150px] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 					>
 						{INVITABLE_STAFF_ROLES.map((role) => (
 							<option key={role} value={role}>
@@ -222,7 +222,7 @@ export function SettingsAccessTab({
 					<button
 						type="submit"
 						disabled={loading}
-						className="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-medium text-sm transition-colors cursor-pointer disabled:opacity-50"
+						className="px-4 py-2 rounded-lg bg-[var(--teal)] hover:opacity-90 text-white font-medium text-sm transition-opacity cursor-pointer disabled:opacity-50"
 					>
 						{loading ? "Создание..." : "Сгенерировать"}
 					</button>

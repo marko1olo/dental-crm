@@ -255,7 +255,7 @@ export function SettingsBpmnTab() {
 						}}
 					>
 						<div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-							<div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/60">
+							<div className="p-2.5 rounded-xl bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]">
 								<GitMerge size={24} />
 							</div>
 							<div className="profile-section-title">

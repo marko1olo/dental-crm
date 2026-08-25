@@ -80,7 +80,7 @@ export const PublicBookingLinkPanel: React.FC = () => {
 			aria-label="Ссылка онлайн-записи"
 		>
 			<div className="profile-section-header">
-				<div className="p-2.5 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800/60">
+				<div className="p-2.5 rounded-xl bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]">
 					<CalendarDays size={24} aria-hidden="true" />
 				</div>
 				<div className="profile-section-title">
