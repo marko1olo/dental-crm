@@ -233,6 +233,126 @@ export function FamilyCombinedBillingModal({
 		}
 	};
 
+	const handlePrintTaxCertificates = () => {
+		const certs = billingResult.taxDeductionCertificates;
+		if (!certs.length) return;
+
+		const html = `
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8">
+	<title>Справки об оплате медицинских услуг для ИФНС (КНД 1151156)</title>
+	<style>
+		@page { size: A4; margin: 15mm; }
+		body { font-family: "Times New Roman", Times, serif; font-size: 13px; line-height: 1.3; color: #000; }
+		.cert { page-break-after: always; padding-bottom: 20px; }
+		.cert:last-child { page-break-after: avoid; }
+		.header { text-align: right; font-size: 11px; margin-bottom: 15px; }
+		.title { text-align: center; font-size: 15px; font-weight: bold; margin-bottom: 15px; text-transform: uppercase; }
+		.section { margin-bottom: 12px; }
+		.field-label { font-size: 11px; color: #444; }
+		.field-val { font-weight: bold; border-bottom: 1px solid #000; min-height: 18px; display: inline-block; width: 100%; }
+		.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+		table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+		th, td { border: 1px solid #000; padding: 6px 8px; text-align: left; font-size: 12px; }
+		th { background: #f2f2f2; text-align: center; }
+		.signatures { margin-top: 30px; display: flex; justify-content: space-between; }
+		.stamp-box { border: 1px dashed #777; width: 120px; height: 70px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #777; }
+	</style>
+</head>
+<body>
+${certs
+	.map(
+		(cert) => `
+	<div class="cert">
+		<div class="header">
+			Форма по КНД 1151156<br>
+			Приложение № 1 к приказу ФНС России от 08.11.2023 № ЕД-7-11/824@
+		</div>
+		<div class="title">
+			СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ<br>
+			ДЛЯ ПРЕДСТАВЛЕНИЯ В НАЛОГОВЫЙ ОРГАН № ${cert.certificateNumber}
+		</div>
+		<div class="section">
+			<div class="field-label">1. Медицинская организация:</div>
+			<div class="field-val">${clinicName}, ИНН: ${clinicInn}</div>
+		</div>
+		<div class="section grid">
+			<div>
+				<div class="field-label">2. Налогоплательщик (плательщик):</div>
+				<div class="field-val">${cert.payerFullName}</div>
+			</div>
+			<div>
+				<div class="field-label">ИНН налогоплательщика:</div>
+				<div class="field-val">${cert.payerInn || "—"}</div>
+			</div>
+		</div>
+		<div class="section grid">
+			<div>
+				<div class="field-label">3. Пациент:</div>
+				<div class="field-val">${cert.patientFullName}</div>
+			</div>
+			<div>
+				<div class="field-label">Код родства с налогоплательщиком:</div>
+				<div class="field-val">${cert.patientFnsCode} (${cert.patientRelationshipRu})</div>
+			</div>
+		</div>
+		<div class="section">
+			<div class="field-label">4. Стоимость оказанных медицинских услуг за ${cert.taxYear} год:</div>
+			<table>
+				<thead>
+					<tr>
+						<th>Код услуги</th>
+						<th>Наименование категории</th>
+						<th>Сумма (руб.)</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td style="text-align: center; font-weight: bold;">01</td>
+						<td>Услуги по лечению (за исключением дорогостоящего лечения)</td>
+						<td style="text-align: right; font-weight: bold;">${cert.code01TotalRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })}</td>
+					</tr>
+					<tr>
+						<td style="text-align: center; font-weight: bold;">02</td>
+						<td>Дорогостоящие виды лечения (хирургия, дентальная имплантация, костная пластика)</td>
+						<td style="text-align: right; font-weight: bold;">${cert.code02TotalRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })}</td>
+					</tr>
+					<tr style="background: #f9f9f9;">
+						<td colspan="2" style="font-weight: bold; text-align: right;">ИТОГО:</td>
+						<td style="text-align: right; font-weight: bold;">${cert.grandTotalRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })}</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<div class="section" style="margin-top: 15px; font-size: 11px; color: #555;">
+			Дата выдачи справки: ${new Date().toLocaleDateString("ru-RU")}. Справка выдана для получения социального налогового вычета по НДФЛ (ст. 219 НК РФ).
+		</div>
+		<div class="signatures">
+			<div>
+				Руководитель клиники: __________________ / _______________ /
+				<br><br>
+				Ответственное лицо (кассир): ___________ / _______________ /
+			</div>
+			<div class="stamp-box">М.П.</div>
+		</div>
+	</div>
+`,
+	)
+	.join("")}
+	<script>window.print();</script>
+</body>
+</html>
+		`;
+
+		const w = window.open("", "_blank");
+		if (w) {
+			w.document.write(html);
+			w.document.close();
+		}
+	};
+
 	const handleExecuteFiscalization = () => {
 		setIsFiscalizing(true);
 		try {
@@ -590,12 +710,24 @@ export function FamilyCombinedBillingModal({
 					{/* ВКЛАДКА 3: Справки для налоговой (ИФНС) */}
 					{activeTab === "tax" && (
 						<div className="space-y-4">
-							<div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/30 text-xs text-blue-900 dark:text-blue-200">
-								<strong>Приказ ФНС России от 08.11.2023 № ЕД-7-11/824@ (КНД 1151156):</strong>
-								<div className="mt-1">
-									Справки оформляются на имя плательщика (<strong>{initialPayer.payerFullName}</strong>, ИНН: {initialPayer.payerInn || "не указан"}) с автоматическим указанием кода родства:
-									1 = лично, 2 = супруг, 3 = родитель, 4 = ребенок.
+							<div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/30 text-xs text-blue-900 dark:text-blue-200 flex items-start justify-between gap-3 flex-wrap">
+								<div>
+									<strong>Приказ ФНС России от 08.11.2023 № ЕД-7-11/824@ (КНД 1151156):</strong>
+									<div className="mt-1">
+										Справки оформляются на имя плательщика (<strong>{initialPayer.payerFullName}</strong>, ИНН: {initialPayer.payerInn || "не указан"}) с автоматическим указанием кода родства:
+										1 = лично, 2 = супруг, 3 = родитель, 4 = ребенок.
+									</div>
 								</div>
+
+								<button
+									type="button"
+									onClick={handlePrintTaxCertificates}
+									className="min-h-[44px] px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs active:scale-95 transition-all"
+									data-testid="btn-print-tax-certificates"
+								>
+									<Printer size={14} />
+									<span>Печать всех справок (КНД 1151156 А4)</span>
+								</button>
 							</div>
 
 							<div className="space-y-2.5">
