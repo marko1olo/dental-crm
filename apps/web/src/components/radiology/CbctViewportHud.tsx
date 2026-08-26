@@ -2,13 +2,16 @@
  * DENTE CRM — Planmeca Romexis 6.x & Vatech Ez3D-i CBCT Viewport HUD & Overlay
  * Standards: DICOM Part 3 / PS 3.3, ITI Consensus
  *
- * Implements:
- * 1. 3D Orientation Compass / Cube in corner with A, P, L, R, S, I labels & colored axes.
- * 2. 4-Edge Anatomical Direction Indicators (Strict Radiological Rule: Patient's Right on Left).
- * 3. Top-Left Clinical Metadata Badge (Plane, Coordinates, Slab Mode, Thickness).
- * 4. True 10 mm Millimeter Physical Scale Calibration Bar.
+ * Industrial Dark Architecture:
+ * - Palette: Matte Graphite (#0c0e12, #14171e, #242a35, #e2e8f0, #94a3b8)
+ * - 3D Orientation Compass / Cube in corner with A, P, L, R, S, I labels & colored axes.
+ * - 4-Edge Anatomical Direction Indicators (Strict Radiological Rule: Patient's Right on Left).
+ * - Top-Left Clinical Metadata Badge (Plane, Coordinates, Slab Mode, Thickness).
+ * - Top-Right Maximization Toggle Button [ ⛶ ] / [ 🗗 ] & Double-click maximize trigger.
+ * - True 10 mm Millimeter Physical Scale Calibration Bar.
  */
 
+import { Maximize2, Minimize2 } from "lucide-react";
 import type React from "react";
 import { useMemo } from "react";
 import {
@@ -31,18 +34,24 @@ export interface CbctViewportHudProps {
 	readonly sliceIndex?: number | undefined;
 	readonly totalSlices?: number | undefined;
 	readonly className?: string | undefined;
+	readonly isMaximized?: boolean | undefined;
+	readonly onToggleMaximize?: (() => void) | undefined;
+	readonly obliqueAngleDeg?: number | undefined;
+	readonly zoomFactor?: number | undefined;
+	readonly windowWidth?: number | undefined;
+	readonly windowLevel?: number | undefined;
 }
 
 const OrientationCube3D: React.FC<{
 	viewportType: CbctViewportType;
 	size?: number;
-}> = ({ viewportType, size = 52 }) => {
+}> = ({ viewportType, size = 48 }) => {
 	const labels = useMemo(() => getViewportOrientationLabels(viewportType), [viewportType]);
 	const activeColor = labels.planeColor;
 
 	return (
 		<div
-			className="relative flex flex-col items-center justify-center p-1 rounded-lg bg-slate-950/80 border border-slate-800/80 shadow-md backdrop-blur-xs select-none pointer-events-auto"
+			className="relative flex flex-col items-center justify-center p-1 rounded-md bg-[#14171e] border border-[#242a35] select-none pointer-events-auto shadow-sm"
 			title={`3D Ориентационный компас: ${labels.planeNameRu}`}
 			data-testid={`cbct-orientation-cube-${viewportType}`}
 		>
@@ -55,9 +64,9 @@ const OrientationCube3D: React.FC<{
 				{/* Top Face (Z+ / Superior) */}
 				<polygon
 					points="0,-22 20,-11 0,0 -20,-11"
-					fill={viewportType === "axial" ? activeColor : "#1e293b"}
-					fillOpacity={viewportType === "axial" ? 0.75 : 0.45}
-					stroke={viewportType === "axial" ? activeColor : "#475569"}
+					fill={viewportType === "axial" ? activeColor : "#1e2430"}
+					fillOpacity={viewportType === "axial" ? 0.85 : 0.5}
+					stroke={viewportType === "axial" ? activeColor : "#334155"}
 					strokeWidth="1.2"
 				/>
 				<text
@@ -76,9 +85,9 @@ const OrientationCube3D: React.FC<{
 				{/* Left / Anterior Face */}
 				<polygon
 					points="-20,-11 0,0 0,22 -20,11"
-					fill={viewportType === "coronal" ? activeColor : viewportType === "sagittal" ? activeColor : "#0f172a"}
-					fillOpacity={viewportType === "coronal" || viewportType === "sagittal" ? 0.75 : 0.45}
-					stroke={viewportType === "coronal" || viewportType === "sagittal" ? activeColor : "#334155"}
+					fill={viewportType === "coronal" ? activeColor : viewportType === "sagittal" ? activeColor : "#0f131a"}
+					fillOpacity={viewportType === "coronal" || viewportType === "sagittal" ? 0.85 : 0.5}
+					stroke={viewportType === "coronal" || viewportType === "sagittal" ? activeColor : "#242a35"}
 					strokeWidth="1.2"
 				/>
 				<text
@@ -97,9 +106,9 @@ const OrientationCube3D: React.FC<{
 				{/* Right / Lateral Face */}
 				<polygon
 					points="0,0 20,-11 20,11 0,22"
-					fill={viewportType === "panoramic" || viewportType === "cross_section" ? activeColor : "#1e293b"}
-					fillOpacity={viewportType === "panoramic" || viewportType === "cross_section" ? 0.75 : 0.45}
-					stroke={viewportType === "panoramic" || viewportType === "cross_section" ? activeColor : "#334155"}
+					fill={viewportType === "panoramic" || viewportType === "cross_section" ? activeColor : "#1e2430"}
+					fillOpacity={viewportType === "panoramic" || viewportType === "cross_section" ? 0.85 : 0.5}
+					stroke={viewportType === "panoramic" || viewportType === "cross_section" ? activeColor : "#242a35"}
 					strokeWidth="1.2"
 				/>
 				<text
@@ -139,6 +148,12 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 	sliceIndex,
 	totalSlices,
 	className = "",
+	isMaximized = false,
+	onToggleMaximize,
+	obliqueAngleDeg,
+	zoomFactor,
+	windowWidth,
+	windowLevel,
 }) => {
 	const labels = useMemo(() => getViewportOrientationLabels(viewportType), [viewportType]);
 
@@ -169,84 +184,133 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 			data-testid={`cbct-viewport-hud-${viewportType}`}
 		>
 			{/* 1. TOP-LEFT CLINICAL HEADER BADGE */}
-			<div className="absolute top-2 left-2 flex items-center gap-2 pointer-events-auto">
+			<div
+				className="absolute top-2 left-2 flex items-center gap-1.5 pointer-events-auto flex-wrap max-w-[85%]"
+				onDoubleClick={(e) => {
+					e.stopPropagation();
+					onToggleMaximize?.();
+				}}
+			>
 				<div
-					className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950/85 border shadow-sm backdrop-blur-xs text-xs font-bold"
-					style={{ borderColor: `${labels.planeColor}60` }}
+					className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#14171e] border border-[#242a35] shadow-sm text-xs font-bold"
+					style={{ borderLeftColor: labels.planeColor, borderLeftWidth: 3 }}
 				>
 					<span
-						className="w-2.5 h-2.5 rounded-full shadow-xs"
+						className="w-2 h-2 rounded-xs"
 						style={{ backgroundColor: labels.planeColor }}
 					/>
-					<span className="text-white tracking-wide">{labels.planeNameEn}</span>
+					<span className="text-[#e2e8f0] tracking-wide font-semibold">{labels.planeNameEn}</span>
 					{coordText && (
-						<span className="font-mono text-slate-300 ml-1 text-[11px] font-semibold">
+						<span className="font-mono text-[#94a3b8] ml-1 text-[11px] font-medium">
 							({coordText})
 						</span>
 					)}
 				</div>
 
+				{obliqueAngleDeg !== undefined && Math.abs(obliqueAngleDeg) > 0.05 && (
+					<span
+						className="px-2 py-0.5 rounded-md bg-[#14171e] text-[10px] font-mono font-bold border border-[#242a35] shadow-xs text-sky-400"
+						title={`Угол наклона косого среза: ${obliqueAngleDeg > 0 ? "+" : ""}${obliqueAngleDeg.toFixed(1)}°`}
+					>
+						∡ {obliqueAngleDeg > 0 ? "+" : ""}{obliqueAngleDeg.toFixed(1)}°
+					</span>
+				)}
+
+				{zoomFactor !== undefined && Math.abs(zoomFactor - 1.0) > 0.01 && (
+					<span
+						className="px-1.5 py-0.5 rounded-md bg-[#14171e] text-emerald-400 text-[10px] font-mono border border-[#242a35] font-bold"
+						title={`Масштаб зума: ${(zoomFactor * 100).toFixed(0)}%`}
+					>
+						{zoomFactor.toFixed(1)}x
+					</span>
+				)}
+
 				{slabMode !== "single" && slabThicknessMm > 1 && (
 					<span
-						className="px-2 py-0.5 rounded-md bg-slate-900/90 text-[10px] font-mono font-bold border shadow-xs"
-						style={{ color: labels.planeColor, borderColor: `${labels.planeColor}40` }}
+						className="px-2 py-0.5 rounded-md bg-[#14171e] text-[10px] font-mono font-bold border border-[#242a35] shadow-xs"
+						style={{ color: labels.planeColor }}
 					>
 						MIP {slabThicknessMm} мм
 					</span>
 				)}
 
 				{sliceIndex !== undefined && totalSlices !== undefined && (
-					<span className="px-1.5 py-0.5 rounded bg-slate-900/80 text-slate-400 text-[10px] font-mono border border-slate-800">
+					<span className="px-1.5 py-0.5 rounded-md bg-[#14171e] text-[#94a3b8] text-[10px] font-mono border border-[#242a35]">
 						{sliceIndex + 1}/{totalSlices}
 					</span>
 				)}
 			</div>
 
-			{/* 2. FOUR ANATOMICAL DIRECTION INDICATORS */}
+			{/* 2. TOP-RIGHT VIEWPORT MAXIMIZE / RESTORE BUTTON */}
+			{onToggleMaximize && (
+				<div className="absolute top-2 right-2 pointer-events-auto flex items-center gap-1">
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							onToggleMaximize();
+						}}
+						className="p-1.5 rounded-md bg-[#14171e] hover:bg-[#2a3242] text-[#94a3b8] hover:text-[#e2e8f0] border border-[#242a35] shadow-sm transition-colors flex items-center justify-center min-w-[28px] min-h-[28px]"
+						title={isMaximized ? "Свернуть в сетку (двойной клик)" : "Развернуть на 100% (двойной клик)"}
+						data-testid={`cbct-maximize-${viewportType}-btn`}
+						aria-label={isMaximized ? "Свернуть окно" : "Развернуть окно"}
+					>
+						{isMaximized ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+					</button>
+				</div>
+			)}
+
+			{/* 3. FOUR ANATOMICAL DIRECTION INDICATORS (Patient Right on Screen-Left) */}
 			<div
-				className="absolute top-1 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded bg-slate-950/85 border border-slate-700/80 text-white font-mono font-extrabold text-xs shadow-md backdrop-blur-xs"
+				className="absolute top-1 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-md bg-[#14171e] border border-[#242a35] text-[#e2e8f0] font-mono font-extrabold text-xs shadow-sm"
 				title={labels.topTooltipRu}
 			>
 				{labels.top}
 			</div>
 
 			<div
-				className="absolute bottom-1 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded bg-slate-950/85 border border-slate-700/80 text-white font-mono font-extrabold text-xs shadow-md backdrop-blur-xs"
+				className="absolute bottom-1 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-md bg-[#14171e] border border-[#242a35] text-[#e2e8f0] font-mono font-extrabold text-xs shadow-sm"
 				title={labels.bottomTooltipRu}
 			>
 				{labels.bottom}
 			</div>
 
 			<div
-				className="absolute left-1 top-1/2 -translate-y-1/2 px-1.5 py-1 rounded bg-slate-950/85 border border-slate-700/80 text-white font-mono font-extrabold text-xs shadow-md backdrop-blur-xs"
+				className="absolute left-1 top-1/2 -translate-y-1/2 px-1.5 py-1 rounded-md bg-[#14171e] border border-[#242a35] text-[#e2e8f0] font-mono font-extrabold text-xs shadow-sm"
 				title={labels.leftTooltipRu}
 			>
 				{labels.left}
 			</div>
 
 			<div
-				className="absolute right-1 top-1/2 -translate-y-1/2 px-1.5 py-1 rounded bg-slate-950/85 border border-slate-700/80 text-white font-mono font-extrabold text-xs shadow-md backdrop-blur-xs"
+				className="absolute right-1 top-1/2 -translate-y-1/2 px-1.5 py-1 rounded-md bg-[#14171e] border border-[#242a35] text-[#e2e8f0] font-mono font-extrabold text-xs shadow-sm"
 				title={labels.rightTooltipRu}
 			>
 				{labels.right}
 			</div>
 
-			{/* 3. BOTTOM-LEFT 10 MM CALIBRATION SCALE BAR */}
-			<div className="absolute bottom-2 left-2 pointer-events-auto flex flex-col items-center">
-				<div className="px-2 py-0.5 rounded bg-slate-950/80 border border-slate-800/80 shadow-md backdrop-blur-xs flex flex-col items-center">
+			{/* 4. BOTTOM-LEFT 10 MM CALIBRATION SCALE BAR & W/L BADGE */}
+			<div className="absolute bottom-2 left-2 pointer-events-auto flex items-center gap-2">
+				<div className="px-2 py-0.5 rounded-md bg-[#14171e] border border-[#242a35] shadow-sm flex flex-col items-center">
 					<div
-						className="h-1.5 border-b-2 border-l-2 border-r-2 border-slate-200"
+						className="h-1.5 border-b-2 border-l-2 border-r-2 border-[#94a3b8]"
 						style={{ width: `${Math.max(20, Math.min(120, scaleBarWidthPx))}px` }}
 					/>
-					<span className="text-[9px] font-mono font-bold text-slate-300 mt-0.5">
+					<span className="text-[9px] font-mono font-bold text-[#94a3b8] mt-0.5">
 						10 мм
 					</span>
 				</div>
+
+				{windowWidth !== undefined && windowLevel !== undefined && (
+					<div className="px-2 py-0.5 rounded-md bg-[#14171e] border border-[#242a35] shadow-sm text-[9px] font-mono text-[#94a3b8]">
+						W: <span className="text-[#e2e8f0] font-bold">{windowWidth}</span> L: <span className="text-[#e2e8f0] font-bold">{windowLevel}</span>
+					</div>
+				)}
 			</div>
 
-			{/* 4. BOTTOM-RIGHT 3D ORIENTATION COMPASS CUBE */}
+			{/* 5. BOTTOM-RIGHT 3D ORIENTATION COMPASS CUBE */}
 			<div className="absolute bottom-2 right-2 pointer-events-auto">
-				<OrientationCube3D viewportType={viewportType} size={48} />
+				<OrientationCube3D viewportType={viewportType} size={44} />
 			</div>
 		</div>
 	);

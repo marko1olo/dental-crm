@@ -44,6 +44,11 @@ import {
 	type MprPlane,
 	type Point3D,
 	type SlabProjectionMode,
+	type ObliqueRotationAngles,
+	type ViewportTransform,
+	type RotationHandlePosition,
+	DEFAULT_OBLIQUE_ROTATION,
+	DEFAULT_VIEWPORT_TRANSFORM,
 	ROMEXIS_COLORS,
 	calculateMprSliceIndex,
 	clampCoordinateToVolume,
@@ -51,9 +56,17 @@ import {
 	disposeCbctVolume,
 	drawCalibratedMillimeterRulers,
 	drawRomexisSlabCorridor,
-	extractMprSlice,
-	mapCanvasPointerToWorldMm,
-	resliceMprSynchronized,
+	drawObliqueCrosshairWithRotationHandles,
+	extractObliqueMprSlice,
+	resliceObliqueMprSynchronized,
+	applyWindowLevelDrag,
+	applyCursorZoom,
+	applyPanDrag,
+	resetViewportTransform,
+	hitTestRotationHandle,
+	getRotationHandles,
+	calculateAngleFromHandleDrag,
+	mapCanvasPointerToWorldMmWithTransform,
 	worldMmToVoxel,
 } from "./cbctMprMath";
 import {
@@ -87,10 +100,27 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 }) => {
 	const viewerId = useId();
 
-	// ─── 1. VOLUME & CROSSHAIR STATE ───────────────────────────────────────────
+	// ─── 1. VOLUME, CROSSHAIR & OBLIQUE ROTATION STATE ──────────────────────────
 	const [volume, setVolume] = useState<CbctVoxelVolume | null>(null);
 	const [crosshairMm, setCrosshairMm] = useState<Point3D>({ x: 0, y: -10, z: -10 });
+	const [obliqueAngles, setObliqueAngles] = useState<ObliqueRotationAngles>(DEFAULT_OBLIQUE_ROTATION);
+	const [transforms, setTransforms] = useState<Record<MprPlane, ViewportTransform>>({
+		axial: DEFAULT_VIEWPORT_TRANSFORM,
+		coronal: DEFAULT_VIEWPORT_TRANSFORM,
+		sagittal: DEFAULT_VIEWPORT_TRANSFORM,
+	});
+
+	// Interactive drag states
 	const [activeDraggingPlane, setActiveDraggingPlane] = useState<MprPlane | null>(null);
+	const [isDraggingWL, setIsDraggingWL] = useState<{ startX: number; startY: number; startWW: number; startWL: number } | null>(null);
+	const [isPanning, setIsPanning] = useState<{ plane: MprPlane; startX: number; startY: number; startPanX: number; startPanY: number } | null>(null);
+	const [activeRotationHandle, setActiveRotationHandle] = useState<{ plane: MprPlane; handle: RotationHandlePosition; centerPx: { x: number; y: number } } | null>(null);
+	const [hoveredHandle, setHoveredHandle] = useState<{ plane: MprPlane; handle: RotationHandlePosition } | null>(null);
+
+	// Offscreen canvas refs for zero-GC canvas rendering
+	const axialOffscreenRef = useRef<HTMLCanvasElement | null>(null);
+	const coronalOffscreenRef = useRef<HTMLCanvasElement | null>(null);
+	const sagittalOffscreenRef = useRef<HTMLCanvasElement | null>(null);
 
 	// ─── 2. HOUNSFIELD WINDOW / LEVEL STATE ────────────────────────────────────
 	const [activePresetId, setActivePresetId] = useState<string>("bone_dense");
@@ -152,17 +182,19 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 		setWindowLevel(preset.windowLevel);
 	};
 
-	// ─── 5. RENDER 3-PLANE MPR SLICES ON CANVAS ────────────────────────────────
+	// ─── 5. RENDER 3-PLANE OBLIQUE MPR SLICES ON CANVAS ─────────────────────────
 	const renderMprPlanes = useCallback(() => {
 		if (!volume || volume.isDisposed || !volume.data) return;
 
-		const resliced = resliceMprSynchronized(
+		const resliced = resliceObliqueMprSynchronized(
 			volume,
 			crosshairMm,
+			obliqueAngles,
 			windowWidth,
 			windowLevel,
 			slabMode,
 			slabThicknessMm,
+			"trilinear",
 		);
 
 		const vox = worldMmToVoxel(crosshairMm, volume);
@@ -179,9 +211,29 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					canvas.width = w;
 					canvas.height = h;
 				}
-				const imgData = ctx.createImageData(w, h);
-				imgData.data.set(data);
-				ctx.putImageData(imgData, 0, 0);
+
+				if (!axialOffscreenRef.current) {
+					axialOffscreenRef.current = document.createElement("canvas");
+				}
+				const off = axialOffscreenRef.current;
+				if (off.width !== w || off.height !== h) {
+					off.width = w;
+					off.height = h;
+				}
+				const offCtx = off.getContext("2d");
+				if (offCtx) {
+					const imgData = offCtx.createImageData(w, h);
+					imgData.data.set(data);
+					offCtx.putImageData(imgData, 0, 0);
+				}
+
+				ctx.save();
+				ctx.clearRect(0, 0, w, h);
+				const transform = transforms.axial;
+				ctx.translate(transform.panX, transform.panY);
+				ctx.scale(transform.zoom, transform.zoom);
+
+				ctx.drawImage(off, 0, 0);
 
 				// Draw Calibrated Millimeter Rulers (1mm, 5mm, 10mm + scale bar)
 				drawCalibratedMillimeterRulers(ctx, {
@@ -296,47 +348,20 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					}
 				}
 
-				// Coronal Slab MIP Bounding Corridor (Orange #f59e0b)
-				if (slabMode !== "single" && slabThicknessMm > 1.0) {
-					drawRomexisSlabCorridor(ctx, {
-						orientation: "horizontal",
-						centerPx: vox.y,
-						thicknessMm: slabThicknessMm,
-						pixelSpacingMm: metadata.pixelSpacingY,
-						lengthPx: w,
-						colorRgba: ROMEXIS_COLORS.coronalRgba(0.65),
-						fillColorRgba: ROMEXIS_COLORS.coronalRgba(0.08),
-					});
-				}
+				// Draw Oblique Crosshair with Rotation Handles
+				drawObliqueCrosshairWithRotationHandles(ctx, {
+					widthPx: w,
+					heightPx: h,
+					centerPx: { x: vox.x, y: vox.y },
+					plane: "axial",
+					rotationDeg: obliqueAngles.axialAngleDeg,
+					activeHandle: activeRotationHandle?.plane === "axial" ? activeRotationHandle.handle : null,
+					hoveredHandle: hoveredHandle?.plane === "axial" ? hoveredHandle.handle : null,
+					showHandles: true,
+					showAngleBadge: true,
+				});
 
-				// Coronal Crosshair Line (Horizontal: Orange #f59e0b)
-				ctx.strokeStyle = ROMEXIS_COLORS.coronal;
-				ctx.lineWidth = 1.2;
-				ctx.beginPath();
-				ctx.moveTo(0, vox.y);
-				ctx.lineTo(canvas.width, vox.y);
-				ctx.stroke();
-
-				// Sagittal Slab MIP Bounding Corridor (Green #10b981)
-				if (slabMode !== "single" && slabThicknessMm > 1.0) {
-					drawRomexisSlabCorridor(ctx, {
-						orientation: "vertical",
-						centerPx: vox.x,
-						thicknessMm: slabThicknessMm,
-						pixelSpacingMm: metadata.pixelSpacingX,
-						lengthPx: h,
-						colorRgba: ROMEXIS_COLORS.sagittalRgba(0.65),
-						fillColorRgba: ROMEXIS_COLORS.sagittalRgba(0.08),
-					});
-				}
-
-				// Sagittal Crosshair Line (Vertical: Emerald Green #10b981)
-				ctx.strokeStyle = ROMEXIS_COLORS.sagittal;
-				ctx.lineWidth = 1.2;
-				ctx.beginPath();
-				ctx.moveTo(vox.x, 0);
-				ctx.lineTo(vox.x, canvas.height);
-				ctx.stroke();
+				ctx.restore();
 			}
 		}
 
@@ -352,9 +377,29 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					canvas.width = w;
 					canvas.height = h;
 				}
-				const imgData = ctx.createImageData(w, h);
-				imgData.data.set(data);
-				ctx.putImageData(imgData, 0, 0);
+
+				if (!coronalOffscreenRef.current) {
+					coronalOffscreenRef.current = document.createElement("canvas");
+				}
+				const off = coronalOffscreenRef.current;
+				if (off.width !== w || off.height !== h) {
+					off.width = w;
+					off.height = h;
+				}
+				const offCtx = off.getContext("2d");
+				if (offCtx) {
+					const imgData = offCtx.createImageData(w, h);
+					imgData.data.set(data);
+					offCtx.putImageData(imgData, 0, 0);
+				}
+
+				ctx.save();
+				ctx.clearRect(0, 0, w, h);
+				const transform = transforms.coronal;
+				ctx.translate(transform.panX, transform.panY);
+				ctx.scale(transform.zoom, transform.zoom);
+
+				ctx.drawImage(off, 0, 0);
 
 				// Draw Calibrated Millimeter Rulers
 				drawCalibratedMillimeterRulers(ctx, {
@@ -367,47 +412,20 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 
 				const zPx = h - 1 - vox.z;
 
-				// Axial Slab MIP Bounding Corridor (Cyan #06b6d4)
-				if (slabMode !== "single" && slabThicknessMm > 1.0) {
-					drawRomexisSlabCorridor(ctx, {
-						orientation: "horizontal",
-						centerPx: zPx,
-						thicknessMm: slabThicknessMm,
-						pixelSpacingMm: metadata.pixelSpacingY,
-						lengthPx: w,
-						colorRgba: ROMEXIS_COLORS.axialRgba(0.65),
-						fillColorRgba: ROMEXIS_COLORS.axialRgba(0.08),
-					});
-				}
+				// Draw Oblique Crosshair with Rotation Handles
+				drawObliqueCrosshairWithRotationHandles(ctx, {
+					widthPx: w,
+					heightPx: h,
+					centerPx: { x: vox.x, y: zPx },
+					plane: "coronal",
+					rotationDeg: obliqueAngles.coronalTiltDeg,
+					activeHandle: activeRotationHandle?.plane === "coronal" ? activeRotationHandle.handle : null,
+					hoveredHandle: hoveredHandle?.plane === "coronal" ? hoveredHandle.handle : null,
+					showHandles: true,
+					showAngleBadge: true,
+				});
 
-				// Axial Crosshair Line (Horizontal: Cyan #06b6d4)
-				ctx.strokeStyle = ROMEXIS_COLORS.axial;
-				ctx.lineWidth = 1.2;
-				ctx.beginPath();
-				ctx.moveTo(0, zPx);
-				ctx.lineTo(canvas.width, zPx);
-				ctx.stroke();
-
-				// Sagittal Slab MIP Bounding Corridor (Emerald Green #10b981)
-				if (slabMode !== "single" && slabThicknessMm > 1.0) {
-					drawRomexisSlabCorridor(ctx, {
-						orientation: "vertical",
-						centerPx: vox.x,
-						thicknessMm: slabThicknessMm,
-						pixelSpacingMm: metadata.pixelSpacingX,
-						lengthPx: h,
-						colorRgba: ROMEXIS_COLORS.sagittalRgba(0.65),
-						fillColorRgba: ROMEXIS_COLORS.sagittalRgba(0.08),
-					});
-				}
-
-				// Sagittal Crosshair Line (Vertical: Emerald Green #10b981)
-				ctx.strokeStyle = ROMEXIS_COLORS.sagittal;
-				ctx.lineWidth = 1.2;
-				ctx.beginPath();
-				ctx.moveTo(vox.x, 0);
-				ctx.lineTo(vox.x, canvas.height);
-				ctx.stroke();
+				ctx.restore();
 			}
 		}
 
@@ -423,9 +441,29 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					canvas.width = w;
 					canvas.height = h;
 				}
-				const imgData = ctx.createImageData(w, h);
-				imgData.data.set(data);
-				ctx.putImageData(imgData, 0, 0);
+
+				if (!sagittalOffscreenRef.current) {
+					sagittalOffscreenRef.current = document.createElement("canvas");
+				}
+				const off = sagittalOffscreenRef.current;
+				if (off.width !== w || off.height !== h) {
+					off.width = w;
+					off.height = h;
+				}
+				const offCtx = off.getContext("2d");
+				if (offCtx) {
+					const imgData = offCtx.createImageData(w, h);
+					imgData.data.set(data);
+					offCtx.putImageData(imgData, 0, 0);
+				}
+
+				ctx.save();
+				ctx.clearRect(0, 0, w, h);
+				const transform = transforms.sagittal;
+				ctx.translate(transform.panX, transform.panY);
+				ctx.scale(transform.zoom, transform.zoom);
+
+				ctx.drawImage(off, 0, 0);
 
 				// Draw Calibrated Millimeter Rulers
 				drawCalibratedMillimeterRulers(ctx, {
@@ -438,72 +476,229 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 
 				const zPx = h - 1 - vox.z;
 
-				// Axial Slab MIP Bounding Corridor (Cyan #06b6d4)
-				if (slabMode !== "single" && slabThicknessMm > 1.0) {
-					drawRomexisSlabCorridor(ctx, {
-						orientation: "horizontal",
-						centerPx: zPx,
-						thicknessMm: slabThicknessMm,
-						pixelSpacingMm: metadata.pixelSpacingY,
-						lengthPx: w,
-						colorRgba: ROMEXIS_COLORS.axialRgba(0.65),
-						fillColorRgba: ROMEXIS_COLORS.axialRgba(0.08),
-					});
-				}
+				// Draw Oblique Crosshair with Rotation Handles
+				drawObliqueCrosshairWithRotationHandles(ctx, {
+					widthPx: w,
+					heightPx: h,
+					centerPx: { x: vox.y, y: zPx },
+					plane: "sagittal",
+					rotationDeg: obliqueAngles.sagittalTiltDeg,
+					activeHandle: activeRotationHandle?.plane === "sagittal" ? activeRotationHandle.handle : null,
+					hoveredHandle: hoveredHandle?.plane === "sagittal" ? hoveredHandle.handle : null,
+					showHandles: true,
+					showAngleBadge: true,
+				});
 
-				// Axial Crosshair Line (Horizontal: Cyan #06b6d4)
-				ctx.strokeStyle = ROMEXIS_COLORS.axial;
-				ctx.lineWidth = 1.2;
-				ctx.beginPath();
-				ctx.moveTo(0, zPx);
-				ctx.lineTo(canvas.width, zPx);
-				ctx.stroke();
-
-				// Coronal Slab MIP Bounding Corridor (Orange #f59e0b)
-				if (slabMode !== "single" && slabThicknessMm > 1.0) {
-					drawRomexisSlabCorridor(ctx, {
-						orientation: "vertical",
-						centerPx: vox.y,
-						thicknessMm: slabThicknessMm,
-						pixelSpacingMm: metadata.pixelSpacingX,
-						lengthPx: h,
-						colorRgba: ROMEXIS_COLORS.coronalRgba(0.65),
-						fillColorRgba: ROMEXIS_COLORS.coronalRgba(0.08),
-					});
-				}
-
-				// Coronal Crosshair Line (Vertical: Orange #f59e0b)
-				ctx.strokeStyle = ROMEXIS_COLORS.coronal;
-				ctx.lineWidth = 1.2;
-				ctx.beginPath();
-				ctx.moveTo(vox.y, 0);
-				ctx.lineTo(vox.y, canvas.height);
-				ctx.stroke();
+				ctx.restore();
 			}
 		}
-	}, [volume, crosshairMm, windowWidth, windowLevel, slabMode, slabThicknessMm, archCurve, selectedAnchorId, crossSections, selectedCrossSectionIndex]);
+	}, [volume, crosshairMm, obliqueAngles, transforms, windowWidth, windowLevel, slabMode, slabThicknessMm, archCurve, selectedAnchorId, crossSections, selectedCrossSectionIndex, activeRotationHandle, hoveredHandle]);
 
 	useEffect(() => {
 		renderMprPlanes();
 	}, [renderMprPlanes]);
 
-	// ─── 6. INTERACTIVE CROSSHAIR DRAG HANDLERS (60 FPS) ──────────────────────
+	// Reset W/L & View (Zoom, Pan, Rotation)
+	const handleResetViewAndWL = () => {
+		setActivePresetId("bone_dense");
+		setWindowWidth(2000);
+		setWindowLevel(400);
+		setObliqueAngles(DEFAULT_OBLIQUE_ROTATION);
+		setTransforms({
+			axial: DEFAULT_VIEWPORT_TRANSFORM,
+			coronal: DEFAULT_VIEWPORT_TRANSFORM,
+			sagittal: DEFAULT_VIEWPORT_TRANSFORM,
+		});
+	};
+
+	// ─── 6. INTERACTIVE MOUSE HANDLERS (W/L, ZOOM, PAN & ROTATION) ───────────
 	const handlePointerDown = (plane: MprPlane, e: React.PointerEvent<HTMLCanvasElement>) => {
 		e.currentTarget.setPointerCapture(e.pointerId);
-		setActiveDraggingPlane(plane);
-		handlePointerMove(plane, e);
+		const canvas = e.currentTarget;
+		const rect = canvas.getBoundingClientRect();
+		const clientX = e.clientX;
+		const clientY = e.clientY;
+		const pointerPx = {
+			x: ((clientX - rect.left) / rect.width) * canvas.width,
+			y: ((clientY - rect.top) / rect.height) * canvas.height,
+		};
+
+		// 1. Right Click -> Adjust Window / Level (Contrast & Brightness)
+		if (e.button === 2) {
+			setIsDraggingWL({
+				startX: clientX,
+				startY: clientY,
+				startWW: windowWidth,
+				startWL: windowLevel,
+			});
+			return;
+		}
+
+		// 2. Middle Click -> Pan Viewport
+		if (e.button === 1) {
+			setIsPanning({
+				plane,
+				startX: clientX,
+				startY: clientY,
+				startPanX: transforms[plane].panX,
+				startPanY: transforms[plane].panY,
+			});
+			return;
+		}
+
+		// 3. Left Click -> Check rotation handle hit vs Crosshair translation
+		if (e.button === 0) {
+			if (!volume) return;
+			const vox = worldMmToVoxel(crosshairMm, volume);
+			const centerPx = plane === "axial"
+				? { x: vox.x, y: vox.y }
+				: plane === "coronal"
+				? { x: vox.x, y: canvas.height - 1 - vox.z }
+				: { x: vox.y, y: canvas.height - 1 - vox.z };
+
+			const transform = transforms[plane];
+			const untransformedPx = {
+				x: (pointerPx.x - transform.panX) / transform.zoom,
+				y: (pointerPx.y - transform.panY) / transform.zoom,
+			};
+
+			const rotDeg = plane === "axial"
+				? obliqueAngles.axialAngleDeg
+				: plane === "coronal"
+				? obliqueAngles.coronalTiltDeg
+				: obliqueAngles.sagittalTiltDeg;
+
+			const handles = getRotationHandles(plane, canvas.width, canvas.height, centerPx, 65, rotDeg);
+			const hitHandle = hitTestRotationHandle(untransformedPx, handles, 14);
+
+			if (hitHandle) {
+				setActiveRotationHandle({ plane, handle: hitHandle.position, centerPx });
+			} else {
+				setActiveDraggingPlane(plane);
+				const newCrosshair = mapCanvasPointerToWorldMmWithTransform(
+					pointerPx,
+					{ width: canvas.width, height: canvas.height },
+					plane,
+					crosshairMm,
+					obliqueAngles,
+					transform,
+					volume,
+				);
+				setCrosshairMm(newCrosshair);
+			}
+		}
 	};
 
 	const handlePointerMove = (plane: MprPlane, e: React.PointerEvent<HTMLCanvasElement>) => {
-		if (e.buttons === 0 && activeDraggingPlane !== plane) return;
-		if (!volume) return;
+		const canvas = e.currentTarget;
+		const rect = canvas.getBoundingClientRect();
+		const clientX = e.clientX;
+		const clientY = e.clientY;
+		const pointerPx = {
+			x: ((clientX - rect.left) / rect.width) * canvas.width,
+			y: ((clientY - rect.top) / rect.height) * canvas.height,
+		};
 
-		const rect = e.currentTarget.getBoundingClientRect();
-		const normX = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-		const normY = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+		// 1. Right Click Drag -> Adjust Window / Level
+		if (isDraggingWL) {
+			const deltaX = clientX - isDraggingWL.startX;
+			const deltaY = clientY - isDraggingWL.startY;
+			const { windowWidth: nw, windowLevel: nl } = applyWindowLevelDrag(
+				isDraggingWL.startWW,
+				isDraggingWL.startWL,
+				deltaX,
+				deltaY,
+				2.0,
+			);
+			setWindowWidth(nw);
+			setWindowLevel(nl);
+			return;
+		}
 
-		const newCrosshair = mapCanvasPointerToWorldMm(normX, normY, plane, crosshairMm, volume);
-		setCrosshairMm(newCrosshair);
+		// 2. Middle Click Drag -> Pan Viewport
+		if (isPanning && isPanning.plane === plane) {
+			const deltaX = (clientX - isPanning.startX) * (canvas.width / rect.width);
+			const deltaY = (clientY - isPanning.startY) * (canvas.height / rect.height);
+			setTransforms((prev) => ({
+				...prev,
+				[plane]: {
+					...prev[plane],
+					panX: Number((isPanning.startPanX + deltaX).toFixed(1)),
+					panY: Number((isPanning.startPanY + deltaY).toFixed(1)),
+				},
+			}));
+			return;
+		}
+
+		// 3. Rotation Handle Drag -> Oblique Axis Rotation
+		if (activeRotationHandle && activeRotationHandle.plane === plane) {
+			const transform = transforms[plane];
+			const untransformedPx = {
+				x: (pointerPx.x - transform.panX) / transform.zoom,
+				y: (pointerPx.y - transform.panY) / transform.zoom,
+			};
+			const newAngle = calculateAngleFromHandleDrag(
+				activeRotationHandle.centerPx,
+				untransformedPx,
+				activeRotationHandle.handle,
+			);
+
+			setObliqueAngles((prev) => ({
+				...prev,
+				...(plane === "axial"
+					? { axialAngleDeg: newAngle }
+					: plane === "coronal"
+					? { coronalTiltDeg: newAngle }
+					: { sagittalTiltDeg: newAngle }),
+			}));
+			return;
+		}
+
+		// 4. Crosshair Drag -> Center Slicing Position
+		if (activeDraggingPlane === plane && volume) {
+			const newCrosshair = mapCanvasPointerToWorldMmWithTransform(
+				pointerPx,
+				{ width: canvas.width, height: canvas.height },
+				plane,
+				crosshairMm,
+				obliqueAngles,
+				transforms[plane],
+				volume,
+			);
+			setCrosshairMm(newCrosshair);
+			return;
+		}
+
+		// 5. Hover Detection for Rotation Handles (Cursor change)
+		if (!isDraggingWL && !isPanning && !activeRotationHandle && !activeDraggingPlane && volume) {
+			const vox = worldMmToVoxel(crosshairMm, volume);
+			const centerPx = plane === "axial"
+				? { x: vox.x, y: vox.y }
+				: plane === "coronal"
+				? { x: vox.x, y: canvas.height - 1 - vox.z }
+				: { x: vox.y, y: canvas.height - 1 - vox.z };
+
+			const transform = transforms[plane];
+			const untransformedPx = {
+				x: (pointerPx.x - transform.panX) / transform.zoom,
+				y: (pointerPx.y - transform.panY) / transform.zoom,
+			};
+
+			const rotDeg = plane === "axial"
+				? obliqueAngles.axialAngleDeg
+				: plane === "coronal"
+				? obliqueAngles.coronalTiltDeg
+				: obliqueAngles.sagittalTiltDeg;
+
+			const handles = getRotationHandles(plane, canvas.width, canvas.height, centerPx, 65, rotDeg);
+			const hitHandle = hitTestRotationHandle(untransformedPx, handles, 14);
+
+			if (hitHandle) {
+				setHoveredHandle({ plane, handle: hitHandle.position });
+			} else if (hoveredHandle?.plane === plane) {
+				setHoveredHandle(null);
+			}
+		}
 	};
 
 	const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -512,27 +707,29 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 		} catch {
 			// ignore
 		}
+		setIsDraggingWL(null);
+		setIsPanning(null);
+		setActiveRotationHandle(null);
 		setActiveDraggingPlane(null);
 	};
 
-	// Mouse Wheel Slice Scrolling
-	const handleWheelScroll = (plane: MprPlane, e: React.WheelEvent<HTMLCanvasElement>) => {
+	// Mouse Wheel -> Cursor-anchored Smooth Zoom (0.5x - 5.0x)
+	const handleWheelZoom = (plane: MprPlane, e: React.WheelEvent<HTMLCanvasElement>) => {
 		e.preventDefault();
-		if (!volume) return;
+		const canvas = e.currentTarget;
+		const rect = canvas.getBoundingClientRect();
+		const cursorPx = {
+			x: ((e.clientX - rect.left) / rect.width) * canvas.width,
+			y: ((e.clientY - rect.top) / rect.height) * canvas.height,
+		};
 
-		const stepMm = plane === "axial" ? volume.spacingMm.z : plane === "coronal" ? volume.spacingMm.y : volume.spacingMm.x;
-		const delta = e.deltaY < 0 ? stepMm : -stepMm;
-
-		setCrosshairMm((prev) => {
-			if (plane === "axial") {
-				return clampCoordinateToVolume({ ...prev, z: prev.z + delta }, volume);
-			}
-			if (plane === "coronal") {
-				return clampCoordinateToVolume({ ...prev, y: prev.y + delta }, volume);
-			}
-			return clampCoordinateToVolume({ ...prev, x: prev.x + delta }, volume);
-		});
+		setTransforms((prev) => ({
+			...prev,
+			[plane]: applyCursorZoom(prev[plane], cursorPx, e.deltaY, 0.5, 5.0),
+		}));
 	};
+
+	const handleWheelScroll = handleWheelZoom;
 
 	// ─── 7. RECONSTRUCT PANORAMA & CROSS-SECTIONS ─────────────────────────────
 	const handleReconstructPanorama = () => {
@@ -752,7 +949,18 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				</div>
 
 				{/* Right: Controls & Close */}
+				{/* Right: Controls & Close */}
 				<div className="flex items-center gap-2">
+					<button
+						type="button"
+						onClick={handleResetViewAndWL}
+						className="flex items-center gap-1.5 min-h-[44px] px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold hover:bg-slate-700 hover:text-white transition-all shadow-sm"
+						title="Сбросить Window/Level, Зум, Панорамирование и Углы поворота"
+						data-testid="cbct-reset-view-wl-btn"
+					>
+						<RotateCcw className="w-4 h-4 text-sky-400" />
+						<span>Сброс W/L & Зума</span>
+					</button>
 					<button
 						type="button"
 						onClick={handleReconstructPanorama}
@@ -867,10 +1075,11 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 							<div className="flex-1 flex items-center justify-center relative p-1 bg-black min-h-0 overflow-hidden">
 								<canvas
 									ref={axialCanvasRef}
+									onContextMenu={(e) => e.preventDefault()}
 									onPointerDown={(e) => handlePointerDown("axial", e)}
 									onPointerMove={(e) => handlePointerMove("axial", e)}
 									onPointerUp={handlePointerUp}
-									onWheel={(e) => handleWheelScroll("axial", e)}
+									onWheel={(e) => handleWheelZoom("axial", e)}
 									className="max-h-full max-w-full object-contain cursor-crosshair rounded-lg"
 								/>
 								<CbctViewportHud
@@ -879,6 +1088,10 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 									slabMode={slabMode}
 									slabThicknessMm={slabThicknessMm}
 									pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
+									obliqueAngleDeg={obliqueAngles.axialAngleDeg}
+									zoomFactor={transforms.axial.zoom}
+									windowWidth={windowWidth}
+									windowLevel={windowLevel}
 								/>
 							</div>
 						</div>
@@ -888,10 +1101,11 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 							<div className="flex-1 flex items-center justify-center relative p-1 bg-black min-h-0 overflow-hidden">
 								<canvas
 									ref={coronalCanvasRef}
+									onContextMenu={(e) => e.preventDefault()}
 									onPointerDown={(e) => handlePointerDown("coronal", e)}
 									onPointerMove={(e) => handlePointerMove("coronal", e)}
 									onPointerUp={handlePointerUp}
-									onWheel={(e) => handleWheelScroll("coronal", e)}
+									onWheel={(e) => handleWheelZoom("coronal", e)}
 									className="max-h-full max-w-full object-contain cursor-crosshair rounded-lg"
 								/>
 								<CbctViewportHud
@@ -900,6 +1114,10 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 									slabMode={slabMode}
 									slabThicknessMm={slabThicknessMm}
 									pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
+									obliqueAngleDeg={obliqueAngles.coronalTiltDeg}
+									zoomFactor={transforms.coronal.zoom}
+									windowWidth={windowWidth}
+									windowLevel={windowLevel}
 								/>
 							</div>
 						</div>
@@ -909,10 +1127,11 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 							<div className="flex-1 flex items-center justify-center relative p-1 bg-black min-h-0 overflow-hidden">
 								<canvas
 									ref={sagittalCanvasRef}
+									onContextMenu={(e) => e.preventDefault()}
 									onPointerDown={(e) => handlePointerDown("sagittal", e)}
 									onPointerMove={(e) => handlePointerMove("sagittal", e)}
 									onPointerUp={handlePointerUp}
-									onWheel={(e) => handleWheelScroll("sagittal", e)}
+									onWheel={(e) => handleWheelZoom("sagittal", e)}
 									className="max-h-full max-w-full object-contain cursor-crosshair rounded-lg"
 								/>
 								<CbctViewportHud
@@ -921,6 +1140,10 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 									slabMode={slabMode}
 									slabThicknessMm={slabThicknessMm}
 									pixelSpacingMm={volume?.spacingMm.y ?? 0.4}
+									obliqueAngleDeg={obliqueAngles.sagittalTiltDeg}
+									zoomFactor={transforms.sagittal.zoom}
+									windowWidth={windowWidth}
+									windowLevel={windowLevel}
 								/>
 							</div>
 						</div>
