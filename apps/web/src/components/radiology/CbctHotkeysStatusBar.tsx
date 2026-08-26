@@ -100,7 +100,7 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 						<button
 							type="button"
 							onClick={onToggleMaximize}
-							className="px-2 py-0.5 rounded bg-[#14171e] hover:bg-[#1e2430] border border-[#242a35] font-mono text-[10px] text-[#cbd5e1] hover:text-[#38bdf8] flex items-center gap-1 transition-colors whitespace-nowrap cursor-pointer"
+							className="px-2 py-0.5 rounded bg-[#14171e] hover:bg-[#1e2430] border border-[#242a35] font-mono text-[10px] text-[#cbd5e1] hover:text-cyan-300 flex items-center gap-1 transition-colors whitespace-nowrap cursor-pointer"
 							title="Развернуть активное окно на весь экран / свернуть в сетку (Space / F)"
 							data-testid="cbct-status-bar-maximize-btn"
 						>
@@ -113,7 +113,7 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 						<button
 							type="button"
 							onClick={onTogglePanel}
-							className="hidden lg:inline-flex px-2 py-0.5 rounded bg-[#14171e] hover:bg-[#1e2430] border border-[#242a35] font-mono text-[10px] text-[#cbd5e1] hover:text-[#38bdf8] items-center gap-1 transition-colors whitespace-nowrap cursor-pointer"
+							className="hidden lg:inline-flex px-2 py-0.5 rounded bg-[#14171e] hover:bg-[#1e2430] border border-[#242a35] font-mono text-[10px] text-[#cbd5e1] hover:text-cyan-300 items-center gap-1 transition-colors whitespace-nowrap cursor-pointer"
 							title="Скрыть или показать правую панель планирования (KeyP)"
 							data-testid="cbct-status-bar-panel-btn"
 						>
@@ -128,7 +128,7 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 					<button
 						type="button"
 						onClick={onToggleHelp}
-						className="px-2.5 py-1 rounded bg-[#1e2430] hover:bg-[#2a3242] text-[#38bdf8] border border-[#38bdf8]/40 font-mono text-[10px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+						className="px-2.5 py-1 rounded bg-[#1e2430] hover:bg-[#252c3b] text-cyan-400 border border-cyan-500/60 font-mono text-[10px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
 						title="Показать полную справку горячих клавиш (? / F1)"
 						data-testid="cbct-status-bar-help-btn"
 					>

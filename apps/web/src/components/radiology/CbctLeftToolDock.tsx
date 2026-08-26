@@ -173,7 +173,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 			role="toolbar"
 			aria-label="Панель инструментов Romexis"
 			data-testid="cbct-left-tool-dock"
-			className={`w-[52px] min-w-[52px] max-w-[52px] h-full bg-[#0f1219] border-r border-[#242a35] flex flex-col items-center py-2 px-1 shrink-0 select-none z-30 relative overflow-visible ${className}`}
+			className={`w-[52px] min-w-[52px] max-w-[52px] h-full bg-[#14171e] border-r border-[#242a35] flex flex-col items-center py-2 px-1 shrink-0 select-none z-30 relative overflow-visible ${className}`}
 		>
 			{/* Hidden file inputs as fallback triggers */}
 			<input
@@ -194,16 +194,16 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 			/>
 
 			{/* ─── GROUP 1: MOUSE / CURSOR MODES ───────────────────────────── */}
-			<div className="flex flex-col items-center gap-1 w-full shrink-0">
+			<div className="flex flex-col items-center gap-1.5 w-full shrink-0">
 				{/* 1. Crosshair */}
 				<div className="relative group flex items-center justify-center">
 					<button
 						type="button"
 						onClick={() => onSelectTool("crosshair")}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "crosshair"
-								? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 shadow-sm shadow-cyan-950/40"
-								: "text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1a202c] border border-transparent"
+								? "bg-[#1e2430] text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
+								: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border border-[#242a35] hover:border-cyan-500/40"
 						}`}
 						title="Перекрестие (Синхронная 3D навигация) [C]"
 						aria-label="Перекрестие"
@@ -228,10 +228,10 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("pan")}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "pan"
-								? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 shadow-sm shadow-cyan-950/40"
-								: "text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1a202c] border border-transparent"
+								? "bg-[#1e2430] text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
+								: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border border-[#242a35] hover:border-cyan-500/40"
 						}`}
 						title="Панорама (Перемещение среза) [P]"
 						aria-label="Панорама"
@@ -256,10 +256,10 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("zoom")}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "zoom"
-								? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 shadow-sm shadow-cyan-950/40"
-								: "text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1a202c] border border-transparent"
+								? "bg-[#1e2430] text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
+								: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border border-[#242a35] hover:border-cyan-500/40"
 						}`}
 						title="Лупа / Зум (Масштабирование) [Z]"
 						aria-label="Лупа / Зум"
@@ -284,10 +284,10 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("window_level")}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "window_level"
-								? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 shadow-sm shadow-cyan-950/40"
-								: "text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1a202c] border border-transparent"
+								? "bg-[#1e2430] text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
+								: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border border-[#242a35] hover:border-cyan-500/40"
 						}`}
 						title="Окно W/L (Яркость и Контраст) [W]"
 						aria-label="Окно W/L"
@@ -312,10 +312,10 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("rotate")}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "rotate"
-								? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 shadow-sm shadow-cyan-950/40"
-								: "text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1a202c] border border-transparent"
+								? "bg-[#1e2430] text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
+								: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border border-[#242a35] hover:border-cyan-500/40"
 						}`}
 						title="Вращение осей (Oblique MPR) [R]"
 						aria-label="Вращение осей"
@@ -340,16 +340,16 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 			<div className="w-7 h-px bg-[#242a35] my-2 shrink-0" role="separator" />
 
 			{/* ─── GROUP 2: MEASUREMENTS & DENSITOMETRY ────────────────────── */}
-			<div className="flex flex-col items-center gap-1 w-full shrink-0">
+			<div className="flex flex-col items-center gap-1.5 w-full shrink-0">
 				{/* 6. Ruler / Caliper */}
 				<div className="relative group flex items-center justify-center">
 					<button
 						type="button"
 						onClick={() => onSelectTool("ruler")}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "ruler"
-								? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 shadow-sm shadow-cyan-950/40"
-								: "text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1a202c] border border-transparent"
+								? "bg-[#1e2430] text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
+								: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border border-[#242a35] hover:border-cyan-500/40"
 						}`}
 						title="Линейка (Калипер расстояния в мм) [M]"
 						aria-label="Линейка"
@@ -374,10 +374,10 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("probe")}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "probe"
-								? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 shadow-sm shadow-cyan-950/40"
-								: "text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1a202c] border border-transparent"
+								? "bg-[#1e2430] text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
+								: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border border-[#242a35] hover:border-cyan-500/40"
 						}`}
 						title="Плотность HU (Денситометрия Misch) [H]"
 						aria-label="Плотность HU"
@@ -402,10 +402,10 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("nerve")}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "nerve"
-								? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 shadow-sm shadow-cyan-950/40"
-								: "text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1a202c] border border-transparent"
+								? "bg-[#1e2430] text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
+								: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border border-[#242a35] hover:border-cyan-500/40"
 						}`}
 						title="Канал IAN (Трассировка нерва) [N]"
 						aria-label="Канал IAN"
@@ -430,16 +430,16 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 			<div className="w-7 h-px bg-[#242a35] my-2 shrink-0" role="separator" />
 
 			{/* ─── GROUP 3 & 4: SLAB THICKNESS / MIP & HU PRESETS ─────────── */}
-			<div className="flex flex-col items-center gap-1 w-full shrink-0">
+			<div className="flex flex-col items-center gap-1.5 w-full shrink-0">
 				{/* 9. Slab Thickness & MIP Flyout */}
 				<div className="relative flex items-center justify-center">
 					<button
 						type="button"
 						onClick={() => toggleMenu("slab")}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex flex-col items-center justify-center relative transition-all duration-150 ${
+						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex flex-col items-center justify-center relative transition-all duration-150 ${
 							openMenu === "slab" || isSlabActive
-								? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 shadow-sm shadow-cyan-950/40"
-								: "text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1a202c] border border-transparent"
+								? "bg-[#1e2430] text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
+								: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border border-[#242a35] hover:border-cyan-500/40"
 						}`}
 						title="Толщина среза & Режимы MIP"
 						aria-label="Толщина среза и MIP"
@@ -464,7 +464,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 							role="dialog"
 							aria-label="Настройки толщины среза и проекции MIP"
 							data-testid="cbct-slab-flyout"
-							className="absolute left-[54px] top-0 z-50 w-64 bg-[#14171e]/98 backdrop-blur-md border border-[#242a35] shadow-2xl rounded-xl p-3 text-[#e2e8f0]"
+							className="absolute left-[54px] top-0 z-50 w-64 bg-[#14171e] border border-[#242a35] shadow-2xl rounded-xl p-3 text-[#e2e8f0]"
 						>
 							<div className="flex items-center justify-between pb-2 border-b border-[#242a35] mb-2.5">
 								<div className="flex items-center gap-1.5">
@@ -494,8 +494,8 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 										onClick={() => handleSlabModeSelect("single")}
 										className={`px-2 py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
 											normalizedSlabMode === "single"
-												? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50"
-												: "bg-[#1e2430] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#252c3b] border border-[#242a35]"
+												? "bg-[#1e2430] text-cyan-400 border border-cyan-500/60 font-bold"
+												: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border border-[#242a35]"
 										}`}
 										data-testid="cbct-slab-mode-single"
 									>
@@ -506,8 +506,8 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 										onClick={() => handleSlabModeSelect("mip")}
 										className={`px-2 py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
 											normalizedSlabMode === "mip"
-												? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50"
-												: "bg-[#1e2430] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#252c3b] border border-[#242a35]"
+												? "bg-[#1e2430] text-cyan-400 border border-cyan-500/60 font-bold"
+												: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border border-[#242a35]"
 										}`}
 										data-testid="cbct-slab-mode-mip"
 									>
@@ -518,8 +518,8 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 										onClick={() => handleSlabModeSelect("average")}
 										className={`px-2 py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
 											normalizedSlabMode === "average"
-												? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50"
-												: "bg-[#1e2430] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#252c3b] border border-[#242a35]"
+												? "bg-[#1e2430] text-cyan-400 border border-cyan-500/60 font-bold"
+												: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border border-[#242a35]"
 										}`}
 										data-testid="cbct-slab-mode-average"
 									>
@@ -530,8 +530,8 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 										onClick={() => handleSlabModeSelect("minip")}
 										className={`px-2 py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
 											normalizedSlabMode === "minip"
-												? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50"
-												: "bg-[#1e2430] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#252c3b] border border-[#242a35]"
+												? "bg-[#1e2430] text-cyan-400 border border-cyan-500/60 font-bold"
+												: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border border-[#242a35]"
 										}`}
 										data-testid="cbct-slab-mode-minip"
 									>
@@ -560,8 +560,8 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 											onClick={() => onChangeSlabThicknessMm?.(t)}
 											className={`px-2 py-1 rounded text-[11px] font-mono transition-colors shrink-0 ${
 												Math.abs(slabThicknessMm - t) < 0.2
-													? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 font-bold"
-													: "bg-[#1e2430] text-[#94a3b8] hover:text-white border border-[#242a35]"
+													? "bg-[#1e2430] text-cyan-400 border border-cyan-500/60 font-bold"
+													: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border border-[#242a35]"
 											}`}
 										>
 											{t}мм
@@ -591,10 +591,10 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => toggleMenu("hu")}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex flex-col items-center justify-center relative transition-all duration-150 ${
+						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex flex-col items-center justify-center relative transition-all duration-150 ${
 							openMenu === "hu"
-								? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 shadow-sm shadow-cyan-950/40"
-								: "text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1a202c] border border-transparent"
+								? "bg-[#1e2430] text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
+								: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border border-[#242a35] hover:border-cyan-500/40"
 						}`}
 						title="Пресеты контраста HU (Зубы, Эндо, Кортикал, Мягкие ткани, Пазухи)"
 						aria-label="HU Пресеты контраста"
@@ -613,7 +613,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 							role="dialog"
 							aria-label="Клинические пресеты плотности HU"
 							data-testid="cbct-hu-flyout"
-							className="absolute left-[54px] top-0 z-50 w-72 bg-[#14171e]/98 backdrop-blur-md border border-[#242a35] shadow-2xl rounded-xl p-3 text-[#e2e8f0]"
+							className="absolute left-[54px] top-0 z-50 w-72 bg-[#14171e] border border-[#242a35] shadow-2xl rounded-xl p-3 text-[#e2e8f0]"
 						>
 							<div className="flex items-center justify-between pb-2 border-b border-[#242a35] mb-2">
 								<div className="flex items-center gap-1.5">
@@ -642,8 +642,8 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 											onClick={() => handlePresetSelect(p.id)}
 											className={`w-full px-2.5 py-2 rounded-lg text-left transition-colors flex items-center justify-between gap-2 border ${
 												isActive
-													? "bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow-xs"
-													: "bg-[#1e2430]/60 text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border-transparent"
+													? "bg-[#1e2430] text-cyan-300 border-cyan-500/60 shadow-xs"
+													: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border-[#242a35]"
 											}`}
 											data-testid={`cbct-hu-preset-option-${p.id}`}
 										>
@@ -668,7 +668,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 			</div>
 
 			{/* ─── BOTTOM ACTIONS (PINNED TO BOTTOM) ───────────────────────── */}
-			<div className="mt-auto flex flex-col items-center gap-1 w-full shrink-0">
+			<div className="mt-auto flex flex-col items-center gap-1.5 w-full shrink-0">
 				<div className="w-7 h-px bg-[#242a35] my-1 shrink-0" role="separator" />
 
 				{/* 11. Reset All (Axes, Zoom, Pan) */}
@@ -676,7 +676,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={onResetAll}
-						className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center text-amber-400 hover:text-amber-300 hover:bg-amber-500/20 border border-transparent hover:border-amber-500/40 transition-all duration-150"
+						className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center bg-[#14171e] text-[#94a3b8] hover:text-amber-300 hover:bg-[#1e2430] border border-[#242a35] hover:border-amber-500/40 transition-all duration-150"
 						title="↺ Сброс осей, зума и панорамы"
 						aria-label="Сбросить оси и зум"
 						data-testid="cbct-tool-reset-all"
@@ -697,10 +697,10 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => toggleMenu("dicom")}
-						className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center transition-all duration-150 ${
+						className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center transition-all duration-150 ${
 							openMenu === "dicom"
-								? "bg-sky-500/20 text-sky-300 border border-sky-500/50 shadow-sm shadow-sky-950/40"
-								: "text-[#38bdf8] hover:text-sky-300 hover:bg-sky-500/10 border border-transparent"
+								? "bg-[#1e2430] text-cyan-400 border border-cyan-500/60 shadow-xs shadow-cyan-950/40"
+								: "bg-[#14171e] text-[#94a3b8] hover:text-cyan-300 hover:bg-[#1e2430] border border-[#242a35] hover:border-cyan-500/40"
 						}`}
 						title="📁 Загрузить КТ / DICOM"
 						aria-label="Загрузить КТ / DICOM"
@@ -716,11 +716,11 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 							role="dialog"
 							aria-label="Загрузка файлов DICOM"
 							data-testid="cbct-dicom-flyout"
-							className="absolute left-[54px] bottom-0 z-50 w-60 bg-[#14171e]/98 backdrop-blur-md border border-[#242a35] shadow-2xl rounded-xl p-3 text-[#e2e8f0]"
+							className="absolute left-[54px] bottom-0 z-50 w-60 bg-[#14171e] border border-[#242a35] shadow-2xl rounded-xl p-3 text-[#e2e8f0]"
 						>
 							<div className="flex items-center justify-between pb-2 border-b border-[#242a35] mb-2">
 								<span className="text-xs font-bold text-[#e2e8f0] flex items-center gap-1.5">
-									<FolderOpen className="w-4 h-4 text-sky-400" />
+									<FolderOpen className="w-4 h-4 text-cyan-400" />
 									Загрузить КТ / DICOM
 								</span>
 								<button
@@ -737,10 +737,10 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 								<button
 									type="button"
 									onClick={handleFolderUploadClick}
-									className="w-full px-3 py-2.5 rounded-lg bg-[#1e2430] hover:bg-[#252c3b] text-[#e2e8f0] border border-[#242a35] text-xs font-semibold flex items-center gap-2.5 transition-colors shadow-xs"
+									className="w-full px-3 py-2.5 rounded-lg bg-[#14171e] hover:bg-[#1e2430] text-[#e2e8f0] border border-[#242a35] text-xs font-semibold flex items-center gap-2.5 transition-colors shadow-xs"
 									data-testid="cbct-dicom-folder-opt"
 								>
-									<FolderOpen className="w-4 h-4 text-sky-400 shrink-0" />
+									<FolderOpen className="w-4 h-4 text-cyan-400 shrink-0" />
 									<div className="flex flex-col text-left">
 										<span className="font-bold">Папка DICOM</span>
 										<span className="text-[10px] text-[#94a3b8]">
@@ -752,7 +752,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 								<button
 									type="button"
 									onClick={handleZipUploadClick}
-									className="w-full px-3 py-2.5 rounded-lg bg-[#1e2430] hover:bg-[#252c3b] text-[#e2e8f0] border border-[#242a35] text-xs font-semibold flex items-center gap-2.5 transition-colors shadow-xs"
+									className="w-full px-3 py-2.5 rounded-lg bg-[#14171e] hover:bg-[#1e2430] text-[#e2e8f0] border border-[#242a35] text-xs font-semibold flex items-center gap-2.5 transition-colors shadow-xs"
 									data-testid="cbct-dicom-zip-opt"
 								>
 									<FileArchive className="w-4 h-4 text-amber-400 shrink-0" />
