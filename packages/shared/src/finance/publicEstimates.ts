@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createHash } from "node:crypto";
+import { sha256Hex } from "../sync/hashing.js";
 import { moneyRubSchema, positiveMoneyRubSchema } from "../money.js";
 
 /**
@@ -149,5 +149,5 @@ export function computeEstimateDocumentHash(
 		signature.signature_png || "CLICK_ACCEPT",
 	].join("|");
 
-	return createHash("sha256").update(canonicalPayload, "utf-8").digest("hex");
+	return sha256Hex(canonicalPayload);
 }

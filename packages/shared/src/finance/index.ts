@@ -10,4 +10,6 @@ export * from "./familyDeposit.js";
 export * from "./loyaltyProgram.js";
 export * from "./multiCurrency.js";
 export * from "./publicEstimates.js";
+export * from "./clinicExpenses.js";
+
 

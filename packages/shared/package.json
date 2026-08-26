@@ -35,6 +35,16 @@
 			"types": "./dist/hardware/index.d.ts",
 			"import": "./dist/hardware/index.js",
 			"default": "./dist/hardware/index.js"
+		},
+		"./inventory/consumables": {
+			"types": "./dist/inventory/consumables.d.ts",
+			"import": "./dist/inventory/consumables.js",
+			"default": "./dist/inventory/consumables.js"
+		},
+		"./inventory": {
+			"types": "./dist/inventory/consumables.d.ts",
+			"import": "./dist/inventory/consumables.js",
+			"default": "./dist/inventory/consumables.js"
 		}
 	},
 	"scripts": {
