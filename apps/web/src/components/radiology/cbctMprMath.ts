@@ -11,26 +11,17 @@
  * 6. Procedural realistic anatomical Dental CBCT voxel volume generator (Mandible, Maxillary Sinus, Alveolar Ridge, Teeth 18..48, Inferior Alveolar Canal).
  */
 
+import type { Point2D, Point3D } from "./cbctCaliperNerveMath";
+
 export type MprPlane = "axial" | "coronal" | "sagittal";
 export type SlabProjectionMode = "single" | "mip" | "minip" | "average";
-
-export interface Point2D {
-	readonly x: number;
-	readonly y: number;
-}
-
-export interface Point3D {
-	readonly x: number; // mm in world coordinate (Sagittal: Left <-> Right)
-	readonly y: number; // mm in world coordinate (Coronal: Anterior <-> Posterior)
-	readonly z: number; // mm in world coordinate (Axial: Inferior <-> Superior)
-}
+export type { Point2D, Point3D };
 
 export interface VolumeDimensions {
 	readonly width: number; // X size (voxels along Sagittal axis)
 	readonly height: number; // Y size (voxels along Coronal axis)
 	readonly depth: number; // Z size (voxels along Axial axis)
 }
-
 
 export interface VolumeSpacingMm {
 	readonly x: number; // mm per voxel (typically 0.15 - 0.3 mm)
@@ -128,9 +119,24 @@ export interface MprSliceExtractionResult {
 // ─── 1. COORDINATE CONVERSION & CLAMPING MATH ─────────────────────────────────
 
 /**
- * Converts real-world physical millimeters (Point3D) into voxel buffer indices.
+ * Converts real-world physical millimeters into voxel buffer indices.
+ * Overloaded: supports worldMmToVoxel(pointMm, volume) and worldMmToVoxel(volume, pointMm).
  */
-export function worldMmToVoxel(pointMm: Point3D, volume: CbctVoxelVolume): { x: number; y: number; z: number } {
+export function worldMmToVoxel(
+	arg1: Point3D | CbctVoxelVolume,
+	arg2: CbctVoxelVolume | Point3D,
+): { x: number; y: number; z: number } {
+	let pointMm: Point3D;
+	let volume: CbctVoxelVolume;
+
+	if ("data" in arg1 || "dimensions" in arg1) {
+		volume = arg1 as CbctVoxelVolume;
+		pointMm = arg2 as Point3D;
+	} else {
+		pointMm = arg1 as Point3D;
+		volume = arg2 as CbctVoxelVolume;
+	}
+
 	const relX = pointMm.x - volume.originMm.x;
 	const relY = pointMm.y - volume.originMm.y;
 	const relZ = pointMm.z - volume.originMm.z;
@@ -148,17 +154,41 @@ export function worldMmToVoxel(pointMm: Point3D, volume: CbctVoxelVolume): { x: 
 
 /**
  * Converts voxel buffer indices (x, y, z) into real-world physical millimeters.
+ * Overloaded: supports voxelToWorldMm(voxel, volume) and voxelToWorldMm(volume, vx, vy, vz).
  */
-export function voxelToWorldMm(voxel: { x: number; y: number; z: number }, volume: CbctVoxelVolume): Point3D {
+export function voxelToWorldMm(
+	arg1: { x: number; y: number; z: number } | CbctVoxelVolume,
+	arg2: CbctVoxelVolume | number,
+	arg3?: number,
+	arg4?: number,
+): Point3D {
+	let volume: CbctVoxelVolume;
+	let vx = 0;
+	let vy = 0;
+	let vz = 0;
+
+	if (typeof arg2 === "number") {
+		volume = arg1 as CbctVoxelVolume;
+		vx = arg2;
+		vy = arg3 ?? 0;
+		vz = arg4 ?? 0;
+	} else {
+		const vox = arg1 as { x: number; y: number; z: number };
+		volume = arg2 as CbctVoxelVolume;
+		vx = vox.x;
+		vy = vox.y;
+		vz = vox.z;
+	}
+
 	return {
-		x: Number((volume.originMm.x + voxel.x * volume.spacingMm.x).toFixed(2)),
-		y: Number((volume.originMm.y + voxel.y * volume.spacingMm.y).toFixed(2)),
-		z: Number((volume.originMm.z + voxel.z * volume.spacingMm.z).toFixed(2)),
+		x: Number((volume.originMm.x + vx * volume.spacingMm.x).toFixed(2)),
+		y: Number((volume.originMm.y + vy * volume.spacingMm.y).toFixed(2)),
+		z: Number((volume.originMm.z + vz * volume.spacingMm.z).toFixed(2)),
 	};
 }
 
 /**
- * Clamps physical millimeter coordinate inside the active voxel volume boundary.
+ * Clamps real-world millimeter coordinates strictly inside the 3D volume bounding box.
  */
 export function clampCoordinateToVolume(worldMm: Point3D, volume: CbctVoxelVolume): Point3D {
 	const halfX = volume.physicalSizeMm.x / 2;
@@ -191,9 +221,33 @@ export function calculateMprSliceIndex(worldMm: Point3D, plane: MprPlane, volume
 
 /**
  * Safely samples Hounsfield Unit (HU) from volume buffer with boundary checking.
+ * Overloaded: supports (x, y, z, volume) and (volume, x, y, z).
  */
-export function sampleVoxelHU(x: number, y: number, z: number, volume: CbctVoxelVolume): number {
+export function sampleVoxelHU(
+	arg1: number | CbctVoxelVolume,
+	arg2: number,
+	arg3: number,
+	arg4?: number | CbctVoxelVolume,
+): number {
+	let volume: CbctVoxelVolume;
+	let x: number;
+	let y: number;
+	let z: number;
+
+	if (typeof arg1 === "object") {
+		volume = arg1;
+		x = arg2;
+		y = arg3;
+		z = typeof arg4 === "number" ? arg4 : 0;
+	} else {
+		x = arg1;
+		y = arg2;
+		z = arg3;
+		volume = arg4 as CbctVoxelVolume;
+	}
+
 	if (
+		!volume ||
 		!volume.data ||
 		volume.isDisposed ||
 		x < 0 ||
@@ -225,10 +279,11 @@ export function huToGrayscale(hu: number, windowWidth: number, windowLevel: numb
 	return invert ? 255 - val : val;
 }
 
-// ─── 3. HIGH-PERFORMANCE SLICE RESLICING ENGINE ──────────────────────────────
+// ─── 3. MULTI-PLANAR RESLICER (MPR) WITH SLAB PROJECTIONS ───────────────────
 
 /**
- * Extracts a 2D MPR slice along Axial, Coronal, or Sagittal plane with Slab projection (MIP/MinIP/Average).
+ * Extracts a 2D orthogonal slice (Axial, Coronal, or Sagittal) from the 3D CBCT volume.
+ * Supports Single Slice, MIP (Maximum Intensity Projection), MinIP, and Average IP.
  */
 export function extractMprSlice(
 	volume: CbctVoxelVolume,
@@ -236,155 +291,162 @@ export function extractMprSlice(
 	sliceIndex: number,
 	options: SliceRenderOptions,
 ): MprSliceExtractionResult {
-	const {
-		windowWidth,
-		windowLevel,
-		invert = false,
-		slabMode = "single",
-		slabThicknessMm = 2.0,
-	} = options;
+	const { windowWidth, windowLevel, invert = false, slabMode = "single", slabThicknessMm = 2.0 } = options;
 
-	const { width: volW, height: volH, depth: volD } = volume.dimensions;
-	let outW = 0;
-	let outH = 0;
-	let maxIndex = 0;
-	let pixelSpacingX = 0.2;
-	let pixelSpacingY = 0.2;
+	const dim = volume.dimensions;
+	const sp = volume.spacingMm;
 
+	let widthPx = 0;
+	let heightPx = 0;
+	let pixelSpacingX = 0;
+	let pixelSpacingY = 0;
+	let maxSliceIndex = 0;
+	let physicalPosMm = 0;
+	let slabVoxelCount = 1;
+
+	// Determine plane geometry
 	switch (plane) {
-		case "axial":
-			outW = volW;
-			outH = volH;
-			maxIndex = volD - 1;
-			pixelSpacingX = volume.spacingMm.x;
-			pixelSpacingY = volume.spacingMm.y;
+		case "axial": {
+			// Horizontal slice: X (width) vs Y (height) at constant Z
+			widthPx = dim.width;
+			heightPx = dim.height;
+			pixelSpacingX = sp.x;
+			pixelSpacingY = sp.y;
+			maxSliceIndex = dim.depth - 1;
+			const clampedZ = Math.max(0, Math.min(maxSliceIndex, sliceIndex));
+			physicalPosMm = volume.originMm.z + clampedZ * sp.z;
+			slabVoxelCount = slabMode === "single" ? 1 : Math.max(1, Math.round(slabThicknessMm / sp.z));
 			break;
-		case "coronal":
-			outW = volW;
-			outH = volD;
-			maxIndex = volH - 1;
-			pixelSpacingX = volume.spacingMm.x;
-			pixelSpacingY = volume.spacingMm.z;
+		}
+		case "coronal": {
+			// Frontal slice: X (width) vs Z (height) at constant Y
+			widthPx = dim.width;
+			heightPx = dim.depth;
+			pixelSpacingX = sp.x;
+			pixelSpacingY = sp.z;
+			maxSliceIndex = dim.height - 1;
+			const clampedY = Math.max(0, Math.min(maxSliceIndex, sliceIndex));
+			physicalPosMm = volume.originMm.y + clampedY * sp.y;
+			slabVoxelCount = slabMode === "single" ? 1 : Math.max(1, Math.round(slabThicknessMm / sp.y));
 			break;
-		case "sagittal":
-			outW = volH;
-			outH = volD;
-			maxIndex = volW - 1;
-			pixelSpacingX = volume.spacingMm.y;
-			pixelSpacingY = volume.spacingMm.z;
+		}
+		case "sagittal": {
+			// Profile slice: Y (width) vs Z (height) at constant X
+			widthPx = dim.height;
+			heightPx = dim.depth;
+			pixelSpacingX = sp.y;
+			pixelSpacingY = sp.z;
+			maxSliceIndex = dim.width - 1;
+			const clampedX = Math.max(0, Math.min(maxSliceIndex, sliceIndex));
+			physicalPosMm = volume.originMm.x + clampedX * sp.x;
+			slabVoxelCount = slabMode === "single" ? 1 : Math.max(1, Math.round(slabThicknessMm / sp.x));
 			break;
-	}
-
-	const clampedSlice = Math.max(0, Math.min(maxIndex, sliceIndex));
-	const outBuffer = new Uint8ClampedArray(outW * outH * 4);
-
-	// Determine slab range in voxels
-	let slabVoxelRadius = 0;
-	if (slabMode !== "single" && slabThicknessMm > 0) {
-		const axisSpacing =
-			plane === "axial" ? volume.spacingMm.z : plane === "coronal" ? volume.spacingMm.y : volume.spacingMm.x;
-		slabVoxelRadius = Math.max(1, Math.round((slabThicknessMm / 2.0) / axisSpacing));
-	}
-
-	// Iterate over destination 2D slice
-	for (let y = 0; y < outH; y++) {
-		for (let x = 0; x < outW; x++) {
-			let huVal = -1000;
-
-			if (slabMode === "single" || slabVoxelRadius === 0) {
-				// Fast single-voxel sampling
-				let vx = 0;
-				let vy = 0;
-				let vz = 0;
-				if (plane === "axial") {
-					vx = x;
-					vy = y;
-					vz = clampedSlice;
-				} else if (plane === "coronal") {
-					vx = x;
-					vy = clampedSlice;
-					vz = y;
-				} else {
-					vx = clampedSlice;
-					vy = x;
-					vz = y;
-				}
-				huVal = sampleVoxelHU(vx, vy, vz, volume);
-			} else {
-				// Slab projection: sample along orthogonal ray
-				const startV = Math.max(0, clampedSlice - slabVoxelRadius);
-				const endV = Math.min(maxIndex, clampedSlice + slabVoxelRadius);
-				const sampleCount = endV - startV + 1;
-
-				if (slabMode === "mip") {
-					let maxVal = -32768;
-					for (let v = startV; v <= endV; v++) {
-						const sample =
-							plane === "axial"
-								? sampleVoxelHU(x, y, v, volume)
-								: plane === "coronal"
-									? sampleVoxelHU(x, v, y, volume)
-									: sampleVoxelHU(v, x, y, volume);
-						if (sample > maxVal) maxVal = sample;
-					}
-					huVal = maxVal;
-				} else if (slabMode === "minip") {
-					let minVal = 32767;
-					for (let v = startV; v <= endV; v++) {
-						const sample =
-							plane === "axial"
-								? sampleVoxelHU(x, y, v, volume)
-								: plane === "coronal"
-									? sampleVoxelHU(x, v, y, volume)
-									: sampleVoxelHU(v, x, y, volume);
-						if (sample < minVal) minVal = sample;
-					}
-					huVal = minVal;
-				} else {
-					// Average IP
-					let sum = 0;
-					for (let v = startV; v <= endV; v++) {
-						const sample =
-							plane === "axial"
-								? sampleVoxelHU(x, y, v, volume)
-								: plane === "coronal"
-									? sampleVoxelHU(x, v, y, volume)
-									: sampleVoxelHU(v, x, y, volume);
-						sum += sample;
-					}
-					huVal = Math.round(sum / sampleCount);
-				}
-			}
-
-			// Map HU to 8-bit RGBA
-			const gray = huToGrayscale(huVal, windowWidth, windowLevel, invert);
-			const outIdx = (y * outW + x) * 4;
-			outBuffer[outIdx] = gray;
-			outBuffer[outIdx + 1] = gray;
-			outBuffer[outIdx + 2] = gray;
-			outBuffer[outIdx + 3] = 255;
 		}
 	}
 
-	const physicalPosMm =
-		plane === "axial"
-			? volume.originMm.z + clampedSlice * volume.spacingMm.z
-			: plane === "coronal"
-				? volume.originMm.y + clampedSlice * volume.spacingMm.y
-				: volume.originMm.x + clampedSlice * volume.spacingMm.x;
+	const clampedSlice = Math.max(0, Math.min(maxSliceIndex, sliceIndex));
+	const halfSlab = Math.floor(slabVoxelCount / 2);
+	const startSlice = Math.max(0, clampedSlice - halfSlab);
+	const endSlice = Math.min(maxSliceIndex, clampedSlice + halfSlab);
+
+	const totalPixels = widthPx * heightPx;
+	const pixelBuffer = new Uint8ClampedArray(totalPixels * 4); // RGBA
+
+	// Fast single slice path
+	if (slabMode === "single" || startSlice === endSlice) {
+		for (let row = 0; row < heightPx; row++) {
+			for (let col = 0; col < widthPx; col++) {
+				let vx = 0;
+				let vy = 0;
+				let vz = 0;
+
+				if (plane === "axial") {
+					vx = col;
+					vy = row;
+					vz = clampedSlice;
+				} else if (plane === "coronal") {
+					vx = col;
+					vy = clampedSlice;
+					vz = heightPx - 1 - row; // Flip Z for anatomical display (top = superior)
+				} else {
+					// sagittal
+					vx = clampedSlice;
+					vy = col;
+					vz = heightPx - 1 - row;
+				}
+
+				const hu = sampleVoxelHU(vx, vy, vz, volume);
+				const gray = huToGrayscale(hu, windowWidth, windowLevel, invert);
+
+				const pIdx = (row * widthPx + col) * 4;
+				pixelBuffer[pIdx] = gray;
+				pixelBuffer[pIdx + 1] = gray;
+				pixelBuffer[pIdx + 2] = gray;
+				pixelBuffer[pIdx + 3] = 255;
+			}
+		}
+	} else {
+		// Slab projection (MIP, MinIP, Average)
+		for (let row = 0; row < heightPx; row++) {
+			for (let col = 0; col < widthPx; col++) {
+				let maxHU = -32768;
+				let minHU = 32767;
+				let sumHU = 0;
+				let count = 0;
+
+				for (let s = startSlice; s <= endSlice; s++) {
+					let vx = 0;
+					let vy = 0;
+					let vz = 0;
+
+					if (plane === "axial") {
+						vx = col;
+						vy = row;
+						vz = s;
+					} else if (plane === "coronal") {
+						vx = col;
+						vy = s;
+						vz = heightPx - 1 - row;
+					} else {
+						// sagittal
+						vx = s;
+						vy = col;
+						vz = heightPx - 1 - row;
+					}
+
+					const hu = sampleVoxelHU(vx, vy, vz, volume);
+					if (hu > maxHU) maxHU = hu;
+					if (hu < minHU) minHU = hu;
+					sumHU += hu;
+					count++;
+				}
+
+				let finalHU = maxHU;
+				if (slabMode === "minip") finalHU = minHU;
+				else if (slabMode === "average") finalHU = count > 0 ? Math.round(sumHU / count) : minHU;
+
+				const gray = huToGrayscale(finalHU, windowWidth, windowLevel, invert);
+				const pIdx = (row * widthPx + col) * 4;
+				pixelBuffer[pIdx] = gray;
+				pixelBuffer[pIdx + 1] = gray;
+				pixelBuffer[pIdx + 2] = gray;
+				pixelBuffer[pIdx + 3] = 255;
+			}
+		}
+	}
 
 	return {
-		data: outBuffer,
+		data: pixelBuffer,
 		metadata: {
 			plane,
 			sliceIndex: clampedSlice,
-			maxSliceIndex: maxIndex,
+			maxSliceIndex,
 			physicalPositionMm: Number(physicalPosMm.toFixed(2)),
-			widthPx: outW,
-			heightPx: outH,
+			widthPx,
+			heightPx,
 			pixelSpacingX,
 			pixelSpacingY,
-			slabThicknessMm: slabMode === "single" ? 0 : slabThicknessMm,
+			slabThicknessMm: slabMode === "single" ? sp.x : slabThicknessMm,
 		},
 	};
 }
@@ -434,18 +496,22 @@ export function mapCanvasPointerToWorldMm(
 	let newY = currentCrosshair.y;
 	let newZ = currentCrosshair.z;
 
-	if (plane === "axial") {
-		// Axial: canvas X is Left-Right (X), canvas Y is Anterior-Posterior (Y)
-		newX = -halfX + canvasNormX * volume.physicalSizeMm.x;
-		newY = -halfY + canvasNormY * volume.physicalSizeMm.y;
-	} else if (plane === "coronal") {
-		// Coronal: canvas X is Left-Right (X), canvas Y is Inferior-Superior (Z)
-		newX = -halfX + canvasNormX * volume.physicalSizeMm.x;
-		newZ = -halfZ + canvasNormY * volume.physicalSizeMm.z;
-	} else if (plane === "sagittal") {
-		// Sagittal: canvas X is Anterior-Posterior (Y), canvas Y is Inferior-Superior (Z)
-		newY = -halfY + canvasNormX * volume.physicalSizeMm.y;
-		newZ = -halfZ + canvasNormY * volume.physicalSizeMm.z;
+	switch (plane) {
+		case "axial":
+			// Horizontal: NormX = Left -> Right (-halfX -> +halfX), NormY = Anterior -> Posterior (-halfY -> +halfY)
+			newX = (canvasNormX - 0.5) * 2 * halfX;
+			newY = (canvasNormY - 0.5) * 2 * halfY;
+			break;
+		case "coronal":
+			// Frontal: NormX = Left -> Right, NormY = Superior -> Inferior (+halfZ -> -halfZ)
+			newX = (canvasNormX - 0.5) * 2 * halfX;
+			newZ = (0.5 - canvasNormY) * 2 * halfZ;
+			break;
+		case "sagittal":
+			// Profile: NormX = Posterior -> Anterior, NormY = Superior -> Inferior
+			newY = (canvasNormX - 0.5) * 2 * halfY;
+			newZ = (0.5 - canvasNormY) * 2 * halfZ;
+			break;
 	}
 
 	return clampCoordinateToVolume({ x: newX, y: newY, z: newZ }, volume);
@@ -489,52 +555,52 @@ export function createSyntheticDentalCbctVolume(
 				const xMm = origin.x + x * voxelSpacingMm;
 				const idx = z * (width * height) + y * width + x;
 
-				let hu = -1000; // Air background
+				// Default: Air (-1000 HU)
+				let hu = -1000;
 
-				// 1. Soft tissue cheek / facial envelope
-				const distFromCenter = Math.hypot(xMm, yMm);
-				if (distFromCenter < 34.0 && zMm > -25.0 && zMm < 20.0) {
-					hu = 40; // Soft tissue
+				// Soft tissue profile of head & neck cylinder (Radius ~ 35mm)
+				const radiusHead = Math.hypot(xMm, yMm);
+				if (radiusHead < 35.0) {
+					hu = 40; // Soft tissue (+40 HU)
 				}
 
-				// 2. Parabolic Mandibular Jaw Bone
-				// y = a * x^2 + c
-				const archCenterY = 0.025 * (xMm * xMm) - 18.0;
-				const distToArch = Math.abs(yMm - archCenterY);
+				// Mandibular U-shaped arch curve: y = 0.035 * x^2 - 12 (for Z in range [-16..0])
+				if (zMm >= -16.0 && zMm <= 4.0) {
+					const archTargetY = 0.035 * (xMm * xMm) - 12.0;
+					const distToMandibleRidge = Math.hypot(xMm * 0.9, yMm - archTargetY);
 
-				if (distToArch < 5.5 && zMm > -22.0 && zMm < -2.0 && Math.abs(xMm) < 32.0) {
-					// Cortical outer shell vs Trabecular cancellous core
-					if (distToArch > 4.2 || zMm < -20.0 || zMm > -4.0) {
-						hu = 1200 + Math.sin(xMm * 3) * 50; // Dense Cortical Bone
-					} else {
-						hu = 450 + Math.sin(xMm * 7 + yMm * 5) * 80; // Trabecular Cancellous Bone
-					}
+					if (distToMandibleRidge < 7.0) {
+						// Cortical bone shell (1.5mm thickness) vs Trabecular core
+						if (distToMandibleRidge > 5.2) {
+							hu = 1450; // Cortical plate (+1450 HU)
+						} else {
+							hu = 650; // Spongiosa / Trabecular bone (+650 HU)
+						}
 
-					// Mandibular Canal (Nervus alveolaris inferior) running through mandible
-					const canalX = xMm > 0 ? 18.0 - (zMm + 20.0) * 0.3 : -18.0 + (zMm + 20.0) * 0.3;
-					const canalY = 0.025 * (canalX * canalX) - 18.0;
-					const canalZ = -14.0;
-					const distToCanal = Math.hypot(xMm - canalX, yMm - canalY, zMm - canalZ);
-					if (distToCanal < 1.5) {
-						hu = -50; // Hypodense nerve lumen surrounded by radiopaque border
-					}
-				}
+						// Inferior Alveolar Nerve Canal (Canal tunnel: radius 1.4mm at Z ~ -10mm)
+						if (Math.abs(xMm) > 10.0 && Math.abs(xMm) < 28.0) {
+							const canalY = archTargetY + 2.0;
+							const canalZ = -10.0;
+							const distToCanal = Math.hypot(yMm - canalY, zMm - canalZ);
+							if (distToCanal < 1.4) {
+								hu = 20; // Nerve soft tissue / hypodense lumen (+20 HU)
+							}
+						}
 
-				// 3. Teeth (Crowns and Roots along the arch)
-				if (distToArch < 3.2 && zMm >= -4.0 && zMm < 14.0 && Math.abs(xMm) < 30.0) {
-					// Teeth crowns with enamel & pulp
-					if (zMm > 4.0) {
-						hu = 2400; // Hyperdense enamel / dentin
-						if (distToArch < 0.8) hu = 100; // Pulp chamber
-					} else {
-						hu = 1600; // Tooth root
-						if (distToArch < 0.6) hu = 80; // Root canal
+						// Teeth enamel crowns (Z in range [0..4])
+						if (zMm > 0.0 && distToMandibleRidge < 4.0) {
+							hu = 2800; // Enamel & Dentin (+2800 HU)
+						}
 					}
 				}
 
-				// 4. Maxillary Sinuses (Air-filled cavities above maxilla)
-				if (zMm > 0.0 && zMm < 20.0 && Math.abs(xMm) > 8.0 && Math.abs(xMm) < 26.0 && yMm > -10.0 && yMm < 12.0) {
-					hu = -950; // Air-filled maxillary sinus
+				// Maxillary Sinuses (Bilateral air cavities at Z in [2..18], X ~ +/-16mm)
+				if (zMm >= 2.0 && zMm <= 18.0) {
+					const distToLeftSinus = Math.hypot(xMm - 16.0, yMm + 4.0, (zMm - 10.0) * 1.2);
+					const distToRightSinus = Math.hypot(xMm + 16.0, yMm + 4.0, (zMm - 10.0) * 1.2);
+					if (distToLeftSinus < 9.0 || distToRightSinus < 9.0) {
+						hu = -850; // Maxillary sinus cavity (-850 HU)
+					}
 				}
 
 				buffer[idx] = hu;
@@ -545,7 +611,7 @@ export function createSyntheticDentalCbctVolume(
 	}
 
 	return {
-		id: `cbct-synthetic-${Date.now()}`,
+		id: `synthetic-cbct-${Date.now()}`,
 		dimensions: { width, height, depth },
 		spacingMm: { x: voxelSpacingMm, y: voxelSpacingMm, z: voxelSpacingMm },
 		originMm: origin,
@@ -558,17 +624,11 @@ export function createSyntheticDentalCbctVolume(
 }
 
 /**
- * Disposes volume buffers to prevent GPU/RAM memory leaks.
+ * Explicitly releases TypedArray buffers to prevent GPU/RAM memory leaks.
  */
 export function disposeCbctVolume(volume: CbctVoxelVolume): void {
-	volume.data = null;
-	(volume as { isDisposed: boolean }).isDisposed = true;
-}
-
-export const generateSyntheticDentalCbctVolume = createSyntheticDentalCbctVolume;
-
-export type ReslicedPlaneMetadata = MprSliceMetadata;
-
-export function getVoxelIndex(x: number, y: number, z: number, dimensions: VolumeDimensions): number {
-	return z * (dimensions.width * dimensions.height) + y * dimensions.width + x;
+	if (volume && !volume.isDisposed) {
+		volume.data = null;
+		(volume as { isDisposed: boolean }).isDisposed = true;
+	}
 }
