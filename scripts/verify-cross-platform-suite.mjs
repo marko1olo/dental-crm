@@ -53,7 +53,7 @@ const steps = [
 	},
 	{
 		name: "8. Universal Hardware Dispatcher & Multi-Platform Bridges Suite",
-		cmd: "node --import tsx --import ./testCssStub.mjs --test src/tests/multiPlatformNativeBridges.test.ts",
+		cmd: "node --import tsx --import ./testCssStub.mjs --test src/tests/multiPlatformNativeBridges.test.ts src/tests/hardwareBridgeMultiPlatform.test.ts",
 		cwd: path.join(projectRoot, "apps/web"),
 	},
 	{

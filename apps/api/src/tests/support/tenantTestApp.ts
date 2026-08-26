@@ -55,6 +55,15 @@ export function createTenantTestApp(): FastifyInstance {
 		if (identity?.organizationId) {
 			carrier.tenantId = identity.organizationId;
 		}
+		if (identity?.userId) {
+			carrier.user = {
+				id: identity.userId,
+				role: identity.role,
+				organizationId: identity.organizationId,
+				fullName: identity.fullName,
+				sessionId: identity.sessionId,
+			};
+		}
 	});
 
 	app.addHook("onRoute", (routeOptions) => {

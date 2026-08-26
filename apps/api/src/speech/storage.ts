@@ -319,7 +319,7 @@ function assembleSpeechRecordingFromChunks(
 	const warnings = [
 		...chunks.flatMap((chunk) => chunk.warnings),
 		...qualityWarnings,
-		speechDurableStoreWarning(),
+		...speechDurableStoreWarnings(),
 		chunks.length ? "" : "У записи пока нет серверных фрагментов.",
 		missingChunkIndexes.length
 			? `Нет фрагментов с индексами: ${missingChunkIndexes.join(", ")}.`
@@ -1173,17 +1173,24 @@ function speechRestoreBackoffMs(): number {
 	return base * 2 ** Math.min(Math.max(speechRestoreFailedAttempts - 1, 0), 6);
 }
 
-function speechDurableStoreWarning(): string {
+function speechDurableStoreWarnings(): string[] {
+	const warnings: string[] = [];
 	if (speechRestoreFailure) {
-		return `Расшифровки не восстановлены из базы (${speechRestoreFailure}); неудачных попыток: ${speechRestoreFailedAttempts}; список может быть неполным.`;
+		warnings.push(
+			`Расшифровки не восстановлены из базы (${speechRestoreFailure}); неудачных попыток: ${speechRestoreFailedAttempts}; список может быть неполным.`,
+		);
 	}
 	if (speechRestoreUnreadableRows > 0) {
-		return `Конверты ${speechRestoreUnreadableRows} записей диктовки не прочитаны; их фрагменты не восстановлены в память, но в базе не тронуты.`;
+		warnings.push(
+			`Конверты ${speechRestoreUnreadableRows} записей диктовки не прочитаны; их фрагменты не восстановлены в память, но в базе не тронуты.`,
+		);
 	}
 	if (speechRestoreSkippedRecordings > 0) {
-		return `Записей диктовки, не поднятых в память из-за общего предела памяти сервера: ${speechRestoreSkippedRecordings} (в памяти ${speechRestoreCachedChunkCount} фрагментов, ${speechRestoreCachedCharCount} символов). Их текст в базе не тронут, но в живом списке фрагментов появится только с очередным фрагментом той же записи.`;
+		warnings.push(
+			`Записей диктовки, не поднятых в память из-за общего предела памяти сервера: ${speechRestoreSkippedRecordings} (в памяти ${speechRestoreCachedChunkCount} фрагментов, ${speechRestoreCachedCharCount} символов). Их текст в базе не тронут, но в живом списке фрагментов появится только с очередным фрагментом той же записи.`,
+		);
 	}
-	return "";
+	return warnings;
 }
 
 /**

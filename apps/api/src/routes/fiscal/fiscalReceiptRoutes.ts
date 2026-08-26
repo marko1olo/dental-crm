@@ -482,6 +482,80 @@ export async function registerFiscalReceiptRoutes(
 				});
 			});
 		}
+
+		const totalElectronicKopecks = data.refundElectronicKopecks;
+
+		const refundReceiptInput: CreateFiscalReceiptPayloadInput = createFiscalReceiptPayloadSchema.parse({
+			clientMutationId: data.clientMutationId,
+			patientId: data.patientId,
+			operationType: "income_return",
+			customerContact: "+79990000000",
+			cashierFullName: data.cashierFullName,
+			items: data.items,
+			cashKopecks: data.refundCashKopecks,
+			electronicCardKopecks: totalElectronicKopecks,
+			sbpKopecks: 0,
+			prepaidKopecks: data.refundPrepaidKopecks,
+			creditKopecks: 0,
+			totalKopecks: data.totalRefundKopecks,
+			taxationSystem: "usn_income",
+			taxDeductionSummaryCode: "code_1_standard",
+			isCorrection: false,
+		});
+
+		const compiled = FiscalReceiptFactory.buildFfd12Receipt(refundReceiptInput);
+		const printResult = await LanKktDriverService.printFiscalReceipt(compiled);
+		const isOffline = printResult.status === "hardware_offline";
+		const now = new Date();
+
+		let validPaymentId: string | null = null;
+		if (data.originalPaymentId) {
+			const [existingPayment] = await db
+				.select({ id: payments.id })
+				.from(payments)
+				.where(and(eq(payments.id, data.originalPaymentId), eq(payments.organizationId, orgId)))
+				.limit(1);
+			if (existingPayment) {
+				validPaymentId = existingPayment.id;
+			}
+		}
+
+		const payloadToStore: Record<string, unknown> = {
+			...compiled,
+			clientMutationId: data.clientMutationId ?? null,
+			originalReceiptNumber: data.originalReceiptNumber ?? null,
+			fnSerial: printResult.fnSerial,
+			fiscalDocumentNumber: printResult.fiscalDocumentNumber,
+			fiscalSign: printResult.fiscalSign,
+			ofdVerificationUrl: printResult.ofdVerificationUrl,
+			receiptIssuedAt: printResult.receiptIssuedAt,
+		};
+
+		const [queueRow] = await db
+			.insert(fiscalReceiptQueue)
+			.values({
+				organizationId: orgId,
+				paymentId: validPaymentId,
+				receiptType: "income_return",
+				status: printResult.status,
+				payloadJson: payloadToStore,
+				lastError: isOffline ? printResult.errorMessage || "KKT offline on refund" : null,
+				retryCount: isOffline ? 1 : 0,
+				printedAt: isOffline ? null : now,
+			})
+			.returning();
+
+		return reply.status(200).send({
+			success: true,
+			replayed: false,
+			refundQueueId: queueRow?.id,
+			status: queueRow?.status,
+			originalReceiptNumber: data.originalReceiptNumber,
+			fiscalDocumentNumber: printResult.fiscalDocumentNumber,
+			fiscalSign: printResult.fiscalSign,
+			ofdVerificationUrl: printResult.ofdVerificationUrl,
+			totalRefundRub: kopecksToNumericString(data.totalRefundKopecks),
+		});
 	});
 
 	/**

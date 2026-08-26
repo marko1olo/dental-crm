@@ -6,6 +6,7 @@
  * - Черновики клинических форм (043/у, одонтограмма, 107-1/у, документы, чеки)
  * - Пакетный шлюз синхронизации (Sync Gateway) с векторными часами
  * - Стратегии разрешения конфликтов Field-Level LWW / CRDT
+ * - Кэширование расписания, карточек пациентов 043/у, одонтограммы, прайса 804н и МКБ-10
  * - Экспоненциальный бэкофф и метрики непрерывности рабочего пространства
  */
 
@@ -35,10 +36,13 @@ export type MutationEntityType =
 	| "payment"
 	| "appointment"
 	| "pricelist"
+	| "pricelist_804n"
+	| "service_item"
 	| "inventory"
 	| "prescription"
+	| "icd10"
+	| "icd10_dictionary"
 	| SyncMutationEntityKind;
-
 
 export type MutationAction = SyncMutationAction | "sync";
 
@@ -130,3 +134,134 @@ export type SyncEventListener = (event: {
 	type: "progress" | "complete" | "conflict" | "error" | "slow_drain";
 	data: unknown;
 }) => void;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Clinical Offline Caching Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface CachedActiveSchedule {
+	scheduleKey: string; // e.g. "schedule_org_2026-08-26"
+	date: string; // YYYY-MM-DD
+	organizationId?: string | undefined;
+	appointments: Array<Record<string, unknown>>;
+	cachedAt: string;
+	cachedAtMs: number;
+}
+
+export interface CachedPatientCard {
+	patientId: string;
+	organizationId?: string | undefined;
+	personalInfo: {
+		fullName: string;
+		birthDate?: string | undefined;
+		phone?: string | undefined;
+		passport?: string | undefined;
+		snils?: string | undefined;
+		policyOms?: string | undefined;
+		gender?: string | undefined;
+		email?: string | undefined;
+	};
+	card043?: {
+		anamnesis?: string | undefined;
+		complaints?: string | undefined;
+		pastDiseases?: string | undefined;
+		allergies?: string[] | undefined;
+		diagnosisIcd10?: string | undefined;
+		treatmentPlan?: string | undefined;
+		visits?: Array<Record<string, unknown>> | undefined;
+	} | undefined;
+	odontogram?: Record<string, unknown> | undefined;
+	cachedAt: string;
+	cachedAtMs: number;
+}
+
+export interface CachedOdontogramTooth {
+	toothNumber: number;
+	statusCode: string;
+	surfaces?: string[] | undefined;
+	mobility?: number | undefined;
+	notes?: string | undefined;
+	updatedAt?: string | undefined;
+}
+
+export interface CachedOdontogram {
+	patientId: string;
+	organizationId?: string | undefined;
+	teeth: CachedOdontogramTooth[];
+	adultMode?: boolean | undefined;
+	cachedAt: string;
+	cachedAtMs: number;
+}
+
+export interface PriceList804nItem {
+	code804n: string; // e.g. "A16.07.002.001"
+	name: string;
+	category?: string | undefined;
+	priceRub: number;
+	priceKopecks: number;
+	unit?: string | undefined;
+	isActive?: boolean | undefined;
+}
+
+export interface CachedPriceList804n {
+	catalogKey: string; // e.g. "pricelist_804n_org_1"
+	organizationId?: string | undefined;
+	version?: string | undefined;
+	items: PriceList804nItem[];
+	cachedAt: string;
+	cachedAtMs: number;
+}
+
+export interface Icd10DictionaryItem {
+	code: string; // e.g. "K02.1"
+	name: string; // e.g. "Кариес дентина"
+	category?: string | undefined;
+	class?: string | undefined;
+}
+
+export interface CachedIcd10Dictionary {
+	dictionaryKey: string; // e.g. "icd10_dental_catalog"
+	items: Icd10DictionaryItem[];
+	cachedAt: string;
+	cachedAtMs: number;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Specialized Domain Outbox Mutation Inputs
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface Card043MutationInput {
+	patientId: string;
+	diaryData: Record<string, unknown>;
+	action?: MutationAction | undefined;
+	organizationId?: string | undefined;
+	authorUserId?: string | undefined;
+}
+
+export interface OdontogramStampMutationInput {
+	patientId: string;
+	tooth: number;
+	surface?: string | undefined;
+	condition: string;
+	state?: Record<string, unknown> | undefined;
+	action?: MutationAction | undefined;
+	organizationId?: string | undefined;
+	authorUserId?: string | undefined;
+}
+
+export interface ServiceAdditionMutationInput {
+	visitId?: string | undefined;
+	patientId: string;
+	serviceItem: {
+		code804n?: string | undefined;
+		name: string;
+		priceRub: number;
+		priceKopecks?: number | undefined;
+		quantity?: number | undefined;
+		toothNumber?: number | undefined;
+		discountRub?: number | undefined;
+	};
+	action?: MutationAction | undefined;
+	organizationId?: string | undefined;
+	authorUserId?: string | undefined;
+}

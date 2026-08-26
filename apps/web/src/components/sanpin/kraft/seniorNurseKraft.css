@@ -1,0 +1,381 @@
+/**
+ * ============================================================================
+ * SENIOR NURSE KRAFT UNSEAL STYLES ("БАБУШКА-PROOF")
+ * Giant hit targets, high contrast, huge scan buttons, status cards
+ * ============================================================================
+ */
+
+.snk-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	background: rgba(15, 23, 42, 0.75);
+	backdrop-filter: blur(4px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1rem;
+	animation: snkFadeIn 0.15s ease-out;
+}
+
+.snk-modal {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 2px solid var(--line, #cbd5e1);
+	border-radius: 24px;
+	width: 100%;
+	max-width: 680px;
+	max-height: 92vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+	animation: snkSlideUp 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.snk-header {
+	padding: 1.25rem 1.5rem;
+	background: var(--paper-soft, #f8fafc);
+	border-bottom: 2px solid var(--line, #e2e8f0);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+}
+
+.snk-title-group {
+	display: flex;
+	align-items: center;
+	gap: 0.85rem;
+}
+
+.snk-icon-badge {
+	width: 48px;
+	height: 48px;
+	border-radius: 14px;
+	background: rgba(13, 148, 136, 0.15);
+	color: #0d9488;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid rgba(13, 148, 136, 0.3);
+	flex-shrink: 0;
+}
+
+.snk-title {
+	font-size: 1.2rem;
+	font-weight: 800;
+	margin: 0;
+	color: var(--ink, #0f172a);
+}
+
+.snk-subtitle {
+	font-size: 0.85rem;
+	color: var(--muted, #64748b);
+	margin: 0;
+	margin-top: 2px;
+}
+
+.snk-close-btn {
+	min-width: 48px;
+	min-height: 48px;
+	border-radius: 12px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--muted, #64748b);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s;
+}
+
+.snk-close-btn:hover {
+	color: var(--ink, #0f172a);
+	background: var(--paper-soft, #f1f5f9);
+}
+
+.snk-body {
+	padding: 1.5rem;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+}
+
+/* Giant Scan Button */
+.snk-scan-button-hero {
+	width: 100%;
+	min-height: 72px;
+	padding: 1rem 1.5rem;
+	border-radius: 20px;
+	border: 3px dashed #0d9488;
+	background: rgba(13, 148, 136, 0.08);
+	color: #0f766e;
+	font-size: 1.15rem;
+	font-weight: 900;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.85rem;
+	cursor: pointer;
+	transition: all 0.2s ease-out;
+	text-align: center;
+	box-shadow: 0 4px 16px rgba(13, 148, 136, 0.15);
+	user-select: none;
+}
+
+.snk-scan-button-hero:hover {
+	background: rgba(13, 148, 136, 0.16);
+	border-color: #0f766e;
+	transform: translateY(-2px);
+	box-shadow: 0 8px 24px rgba(13, 148, 136, 0.25);
+}
+
+.snk-scan-button-hero:active {
+	transform: scale(0.98);
+}
+
+.snk-scan-button-hero.scanning {
+	border-style: solid;
+	background: #0d9488;
+	color: #ffffff;
+	animation: snkPulse 1.2s infinite alternate;
+}
+
+/* Preset Test Buttons Strip */
+.snk-test-chips-label {
+	font-size: 0.85rem;
+	font-weight: 700;
+	color: var(--muted, #64748b);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	margin-bottom: 0.35rem;
+}
+
+.snk-test-chips-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+	gap: 0.5rem;
+}
+
+.snk-test-chip {
+	min-height: 48px;
+	padding: 0.5rem 0.75rem;
+	border-radius: 12px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper-soft, #f8fafc);
+	color: var(--ink, #0f172a);
+	font-size: 0.88rem;
+	font-weight: 700;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s;
+	text-align: center;
+}
+
+.snk-test-chip:hover {
+	border-color: #0d9488;
+	background: rgba(13, 148, 136, 0.1);
+}
+
+.snk-test-chip.selected {
+	border-color: #0d9488;
+	background: rgba(13, 148, 136, 0.18);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.3);
+}
+
+.snk-test-chip.danger {
+	border-color: rgba(239, 68, 68, 0.4);
+	color: #dc2626;
+	background: rgba(239, 68, 68, 0.08);
+}
+
+.snk-test-chip.danger:hover {
+	background: rgba(239, 68, 68, 0.16);
+}
+
+/* Manual Barcode Input Row */
+.snk-input-row {
+	display: flex;
+	gap: 0.5rem;
+}
+
+.snk-text-input {
+	flex: 1;
+	min-height: 48px;
+	padding: 0.5rem 1rem;
+	border-radius: 12px;
+	border: 2px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 1rem;
+	font-weight: 700;
+	font-family: monospace;
+}
+
+.snk-text-input:focus {
+	outline: none;
+	border-color: #0d9488;
+	box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.2);
+}
+
+.snk-input-action-btn {
+	min-height: 48px;
+	min-width: 100px;
+	padding: 0.5rem 1rem;
+	border-radius: 12px;
+	border: none;
+	background: #0d9488;
+	color: #ffffff;
+	font-size: 0.95rem;
+	font-weight: 800;
+	cursor: pointer;
+	transition: all 0.15s;
+}
+
+.snk-input-action-btn:hover {
+	background: #0f766e;
+}
+
+/* Status Cards: Valid vs Expired */
+.snk-status-card {
+	border-radius: 18px;
+	padding: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.85rem;
+	border: 2px solid transparent;
+}
+
+.snk-status-card.valid {
+	background: rgba(16, 185, 129, 0.1);
+	border-color: #10b981;
+}
+
+.snk-status-card.expired {
+	background: rgba(239, 68, 68, 0.1);
+	border-color: #ef4444;
+}
+
+.snk-status-head {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.snk-status-title {
+	font-size: 1.15rem;
+	font-weight: 800;
+	margin: 0;
+}
+
+.snk-status-card.valid .snk-status-title {
+	color: #065f46;
+}
+
+.snk-status-card.expired .snk-status-title {
+	color: #991b1b;
+}
+
+.snk-package-info-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.75rem;
+	background: var(--paper, #ffffff);
+	padding: 1rem;
+	border-radius: 14px;
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+.snk-info-item {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.snk-info-label {
+	font-size: 0.75rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	color: var(--muted, #64748b);
+}
+
+.snk-info-val {
+	font-size: 0.95rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+/* Footer Action */
+.snk-footer {
+	padding: 1.25rem 1.5rem;
+	background: var(--paper-soft, #f8fafc);
+	border-top: 2px solid var(--line, #e2e8f0);
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0.75rem;
+}
+
+.snk-btn-primary {
+	min-height: 54px;
+	padding: 0.75rem 2rem;
+	border-radius: 14px;
+	border: none;
+	background: #0d9488;
+	color: #ffffff;
+	font-size: 1.05rem;
+	font-weight: 800;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	transition: all 0.15s;
+	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+}
+
+.snk-btn-primary:hover:not(:disabled) {
+	background: #0f766e;
+	box-shadow: 0 6px 18px rgba(13, 148, 136, 0.45);
+}
+
+.snk-btn-primary:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	box-shadow: none;
+}
+
+.snk-btn-secondary {
+	min-height: 54px;
+	padding: 0.75rem 1.5rem;
+	border-radius: 14px;
+	border: 2px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 1rem;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.snk-btn-secondary:hover {
+	background: var(--paper-soft, #f1f5f9);
+}
+
+@keyframes snkFadeIn {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+
+@keyframes snkSlideUp {
+	from { transform: translateY(14px) scale(0.98); opacity: 0; }
+	to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes snkPulse {
+	from { transform: scale(1); }
+	to { transform: scale(1.02); }
+}

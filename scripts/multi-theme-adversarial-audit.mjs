@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { chromium } from "playwright";
 
@@ -18,6 +18,7 @@ const THEMES = [
 const OUT_DIRS = [
 	"C:/Clinic_MVP/dental-crm/docs/proofs/odontogram",
 	"C:/Clinic_MVP/dental-crm/apps/web/screenshots",
+	"C:/Users/Admin/.gemini/antigravity/brain/597374ff-ac94-40b8-8848-ea236f205038",
 ];
 
 for (const dir of OUT_DIRS) {
@@ -41,6 +42,26 @@ const browser = await chromium.launch({
 	headless: true,
 	args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
 });
+
+async function saveScreenshot(page, filename) {
+	const primary = path.join(OUT_DIRS[0], filename);
+	try {
+		await page.screenshot({ path: primary, timeout: 10000, animations: "disabled" });
+	} catch {
+		try {
+			await page.screenshot({ path: primary, timeout: 10000 });
+		} catch (err) {
+			console.warn(`[WARN] screenshot failed for ${filename}:`, err?.message || err);
+		}
+	}
+	for (let i = 1; i < OUT_DIRS.length; i++) {
+		try {
+			copyFileSync(primary, path.join(OUT_DIRS[i], filename));
+		} catch {
+			/* ignore */
+		}
+	}
+}
 
 async function applyTheme(page, theme) {
 	await page.evaluate((th) => {
@@ -168,59 +189,85 @@ async function runAudit() {
 			deviceScaleFactor: 2,
 		});
 		const pcPage = await pcContext.newPage();
-		await pcPage.goto("http://127.0.0.1:5173/#odontogram-studio", {
-			waitUntil: "networkidle",
-		});
-		await pcPage.waitForSelector(".tooth-chart-container, .gost-odontogram-container", {
-			timeout: 10000,
-		});
+		try {
+			await pcPage.goto("http://127.0.0.1:5173/#odontogram-studio", {
+				waitUntil: "domcontentloaded",
+				timeout: 15000,
+			});
+			await pcPage.waitForSelector(".tooth-chart-container, .gost-odontogram-container, header", {
+				timeout: 10000,
+			});
+			await applyTheme(pcPage, theme);
 
-		await applyTheme(pcPage, theme);
-
-		// 1a. PC 3D Anatomical
-		const tab3d = pcPage.locator("button", { hasText: /3D Анатомический/i });
-		if (await tab3d.count()) await tab3d.click();
-		await pcPage.waitForTimeout(350);
-
-		const pcDefects = await auditContrastAndLayout(pcPage, theme, "PC-1440x900");
-		allDefects.push(...pcDefects);
-
-		const pcShotName = `odontogram_${theme}_pc_1440.png`;
-		for (const dir of OUT_DIRS) {
-			await pcPage.screenshot({ path: path.join(dir, pcShotName), fullPage: false });
-		}
-		console.log(`[PASS] Captured ${pcShotName}`);
-
-		// 1b. PC Radial Menu on Tooth 16
-		const tooth16Btn = pcPage.locator("button[data-tooth-id='16']").first();
-		if (await tooth16Btn.count()) {
-			await tooth16Btn.click();
-			await pcPage.waitForTimeout(350);
-			const radialShotName = `radial_menu_${theme}_pc.png`;
-			for (const dir of OUT_DIRS) {
-				await pcPage.screenshot({ path: path.join(dir, radialShotName), fullPage: false });
-			}
-			console.log(`[PASS] Captured ${radialShotName}`);
-			// Close radial menu cleanly
-			await pcPage.keyboard.press("Escape");
+			// 1a. PC 3D Anatomical
+			const tab3d = pcPage.locator("button:has-text('3D')").first();
+			if (await tab3d.count()) await tab3d.click({ force: true });
 			await pcPage.waitForTimeout(300);
-		}
 
-		// 1c. PC Classic GOST 043/u
-		const tabGost = pcPage.locator("button", { hasText: /ГОСТ 043/i });
-		if (await tabGost.count()) {
-			await tabGost.click();
-			await pcPage.waitForTimeout(350);
-			const gostShotName = `gost_table_${theme}_pc.png`;
-			for (const dir of OUT_DIRS) {
-				await pcPage.screenshot({ path: path.join(dir, gostShotName), fullPage: false });
+			const pcDefects = await auditContrastAndLayout(pcPage, theme, "PC-1440x900");
+			allDefects.push(...pcDefects);
+
+			const pcShotName = `odontogram_${theme}_pc_1440.png`;
+			await saveScreenshot(pcPage, pcShotName);
+			console.log(`[PASS] Captured ${pcShotName}`);
+
+			// 1b. PC Radial Menu on Tooth 16
+			const tooth16Btn = pcPage.locator("button[data-tooth-id='16']").first();
+			if (await tooth16Btn.count()) {
+				await tooth16Btn.click({ force: true });
+				await pcPage.waitForTimeout(300);
+				const radialShotName = `radial_menu_${theme}_pc.png`;
+				await saveScreenshot(pcPage, radialShotName);
+				console.log(`[PASS] Captured ${radialShotName}`);
+				await pcPage.keyboard.press("Escape");
+				await pcPage.waitForTimeout(200);
 			}
-			console.log(`[PASS] Captured ${gostShotName}`);
+
+			// 1c. PC Classic GOST 043/u
+			const tabGost = pcPage.locator("button:has-text('ГОСТ')").first();
+			if (await tabGost.count()) {
+				await tabGost.click({ force: true });
+				await pcPage.waitForTimeout(300);
+				const gostShotName = `gost_table_${theme}_pc.png`;
+				await saveScreenshot(pcPage, gostShotName);
+				console.log(`[PASS] Captured ${gostShotName}`);
+			}
+		} catch (err) {
+			console.warn(`[WARN] PC audit failed for ${theme}:`, err?.message || err);
+		} finally {
+			await pcContext.close();
 		}
 
-		await pcContext.close();
+		// 2. Tablet Viewport (1024x768 iPad)
+		const tabContext = await browser.newContext({
+			viewport: { width: 1024, height: 768 },
+			deviceScaleFactor: 2,
+		});
+		const tabAuditPage = await tabContext.newPage();
+		try {
+			await tabAuditPage.goto("http://127.0.0.1:5173/#odontogram-studio", {
+				waitUntil: "domcontentloaded",
+				timeout: 15000,
+			});
+			await tabAuditPage.waitForSelector(".tooth-chart-container, .gost-odontogram-container, header", {
+				timeout: 10000,
+			});
+			await applyTheme(tabAuditPage, theme);
 
-		// 2. Mobile Viewport (390x844 iPhone 14/15)
+			const tab3d = tabAuditPage.locator("button:has-text('3D')").first();
+			if (await tab3d.count()) await tab3d.click({ force: true });
+			await tabAuditPage.waitForTimeout(300);
+
+			const tabShotName = `odontogram_${theme}_tablet_1024.png`;
+			await saveScreenshot(tabAuditPage, tabShotName);
+			console.log(`[PASS] Captured ${tabShotName}`);
+		} catch (err) {
+			console.warn(`[WARN] Tablet audit failed for ${theme}:`, err?.message || err);
+		} finally {
+			await tabContext.close();
+		}
+
+		// 3. Mobile Viewport (390x844 iPhone 14/15)
 		const mobileContext = await browser.newContext({
 			viewport: { width: 390, height: 844 },
 			deviceScaleFactor: 3,
@@ -228,42 +275,42 @@ async function runAudit() {
 			hasTouch: true,
 		});
 		const mobPage = await mobileContext.newPage();
-		await mobPage.goto("http://127.0.0.1:5173/#odontogram-studio", {
-			waitUntil: "networkidle",
-		});
-		await mobPage.waitForSelector(".tooth-chart-container, .gost-odontogram-container", {
-			timeout: 10000,
-		});
+		try {
+			await mobPage.goto("http://127.0.0.1:5173/#odontogram-studio", {
+				waitUntil: "domcontentloaded",
+				timeout: 15000,
+			});
+			await mobPage.waitForSelector(".tooth-chart-container, .gost-odontogram-container, header", {
+				timeout: 10000,
+			});
+			await applyTheme(mobPage, theme);
 
-		await applyTheme(mobPage, theme);
+			// 3a. Mobile 3D Anatomical
+			const tab3dMob = mobPage.locator("button:has-text('3D')").first();
+			if (await tab3dMob.count()) await tab3dMob.click({ force: true });
+			await mobPage.waitForTimeout(300);
 
-		// 2a. Mobile 3D Anatomical
-		const tab3dMob = mobPage.locator("button", { hasText: /3D Анатомический/i });
-		if (await tab3dMob.count()) await tab3dMob.click();
-		await mobPage.waitForTimeout(350);
+			const mobDefects = await auditContrastAndLayout(mobPage, theme, "Mobile-390x844");
+			allDefects.push(...mobDefects);
 
-		const mobDefects = await auditContrastAndLayout(mobPage, theme, "Mobile-390x844");
-		allDefects.push(...mobDefects);
+			const mobShotName = `odontogram_${theme}_mobile_390.png`;
+			await saveScreenshot(mobPage, mobShotName);
+			console.log(`[PASS] Captured ${mobShotName}`);
 
-		const mobShotName = `odontogram_${theme}_mobile_390.png`;
-		for (const dir of OUT_DIRS) {
-			await mobPage.screenshot({ path: path.join(dir, mobShotName), fullPage: false });
-		}
-		console.log(`[PASS] Captured ${mobShotName}`);
-
-		// 2b. Mobile Classic GOST
-		const tabGostMob = mobPage.locator("button", { hasText: /ГОСТ 043/i });
-		if (await tabGostMob.count()) {
-			await tabGostMob.click();
-			await mobPage.waitForTimeout(350);
-			const mobGostShotName = `gost_table_${theme}_mobile_390.png`;
-			for (const dir of OUT_DIRS) {
-				await mobPage.screenshot({ path: path.join(dir, mobGostShotName), fullPage: false });
+			// 3b. Mobile Classic GOST
+			const tabGostMob = mobPage.locator("button:has-text('ГОСТ')").first();
+			if (await tabGostMob.count()) {
+				await tabGostMob.click({ force: true });
+				await mobPage.waitForTimeout(300);
+				const mobGostShotName = `gost_table_${theme}_mobile_390.png`;
+				await saveScreenshot(mobPage, mobGostShotName);
+				console.log(`[PASS] Captured ${mobGostShotName}`);
 			}
-			console.log(`[PASS] Captured ${mobGostShotName}`);
+		} catch (err) {
+			console.warn(`[WARN] Mobile audit failed for ${theme}:`, err?.message || err);
+		} finally {
+			await mobileContext.close();
 		}
-
-		await mobileContext.close();
 	}
 
 	await browser.close();

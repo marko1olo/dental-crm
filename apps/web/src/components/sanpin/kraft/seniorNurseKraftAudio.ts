@@ -1,0 +1,102 @@
+/**
+ * ============================================================================
+ * SENIOR NURSE KRAFT AUDIO FEEDBACK ENGINE (WEB AUDIO API)
+ * "БАБУШКА-PROOF" / Звуковая сигнализация стерильности крафт-пакетов
+ * ============================================================================
+ */
+
+let sharedAudioContext: AudioContext | null = null;
+
+function getAudioContext(): AudioContext | null {
+	if (typeof window === "undefined") return null;
+	try {
+		const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+		if (!AudioCtx) return null;
+		if (!sharedAudioContext || sharedAudioContext.state === "closed") {
+			sharedAudioContext = new AudioCtx();
+		}
+		if (sharedAudioContext.state === "suspended") {
+			void sharedAudioContext.resume();
+		}
+		return sharedAudioContext;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Чистый, приятный мажорный звуковой сигнал (Бип-Успех / Стерильно OK)
+ * C5 (523 Hz) -> E5 (659 Hz) -> G5 (784 Hz)
+ */
+export function playSterileSuccessTone(): void {
+	const ctx = getAudioContext();
+	if (!ctx) return;
+
+	try {
+		const now = ctx.currentTime;
+		const tones = [
+			{ freq: 523.25, time: now, dur: 0.12 },
+			{ freq: 659.25, time: now + 0.08, dur: 0.14 },
+			{ freq: 783.99, time: now + 0.16, dur: 0.22 },
+		];
+
+		tones.forEach(({ freq, time, dur }) => {
+			const osc = ctx.createOscillator();
+			const gain = ctx.createGain();
+
+			osc.type = "sine";
+			osc.frequency.setValueAtTime(freq, time);
+
+			// Smooth attack & decay
+			gain.gain.setValueAtTime(0.001, time);
+			gain.gain.exponentialRampToValueAtTime(0.25, time + 0.02);
+			gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+
+			osc.connect(gain);
+			gain.connect(ctx.destination);
+
+			osc.start(time);
+			osc.stop(time + dur);
+		});
+	} catch (err) {
+		console.warn("[Dente Audio] Sterile tone fallback", err);
+	}
+}
+
+/**
+ * Громкий низкочастотный предупреждающий гудок (Гудок-Ошибка / ПРОСРОЧЕНО!)
+ * 160 Hz square wave buzz with 2 pulses
+ */
+export function playExpiredErrorTone(): void {
+	const ctx = getAudioContext();
+	if (!ctx) return;
+
+	try {
+		const now = ctx.currentTime;
+		const pulses = [
+			{ time: now, dur: 0.18 },
+			{ time: now + 0.22, dur: 0.25 },
+		];
+
+		pulses.forEach(({ time, dur }) => {
+			const osc = ctx.createOscillator();
+			const gain = ctx.createGain();
+
+			osc.type = "sawtooth";
+			osc.frequency.setValueAtTime(160, time);
+			osc.frequency.linearRampToValueAtTime(130, time + dur);
+
+			gain.gain.setValueAtTime(0.001, time);
+			gain.gain.exponentialRampToValueAtTime(0.35, time + 0.02);
+			gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+
+			osc.connect(gain);
+			gain.connect(ctx.destination);
+
+			osc.start(time);
+			osc.stop(time + dur);
+		});
+	} catch (err) {
+		console.warn("[Dente Audio] Expired tone fallback", err);
+	}
+}

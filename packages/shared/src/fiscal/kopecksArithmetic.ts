@@ -45,6 +45,7 @@ export function roundHalfEven(value: number): number {
 }
 
 export { kopecksToNumericString };
+export const formatKopecksToRubString = kopecksToNumericString;
 
 export interface MultiTenderSplitInput {
 	readonly cashRub?: number | undefined;

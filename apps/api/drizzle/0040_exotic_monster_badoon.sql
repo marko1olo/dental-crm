@@ -12,7 +12,7 @@ CREATE TYPE "public"."migration_staging_status" AS ENUM('pending', 'normalized',
 ALTER TYPE "public"."communication_channel" ADD VALUE IF NOT EXISTS 'max';--> statement-breakpoint
 ALTER TYPE "public"."communication_intent" ADD VALUE 'transactional_reply';--> statement-breakpoint
 ALTER TYPE "public"."document_kind" ADD VALUE 'dental_medical_card_043u' BEFORE 'medical_record_extract';--> statement-breakpoint
-CREATE TABLE "advance_deposit_taggings" (
+CREATE TABLE IF NOT EXISTS "advance_deposit_taggings" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"patient_name" text NOT NULL,
@@ -23,7 +23,7 @@ CREATE TABLE "advance_deposit_taggings" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "alternative_treatment_plans" (
+CREATE TABLE IF NOT EXISTS "alternative_treatment_plans" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"patient_name" text NOT NULL,
@@ -34,7 +34,7 @@ CREATE TABLE "alternative_treatment_plans" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "appointment_channel_inheritances" (
+CREATE TABLE IF NOT EXISTS "appointment_channel_inheritances" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"chat_id" uuid NOT NULL,
@@ -44,7 +44,7 @@ CREATE TABLE "appointment_channel_inheritances" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "bulk_image_operation_logs" (
+CREATE TABLE IF NOT EXISTS "bulk_image_operation_logs" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"operation_type" text NOT NULL,
@@ -55,7 +55,7 @@ CREATE TABLE "bulk_image_operation_logs" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "cancellation_reasons_two_level" (
+CREATE TABLE IF NOT EXISTS "cancellation_reasons_two_level" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"category" text NOT NULL,
@@ -66,7 +66,7 @@ CREATE TABLE "cancellation_reasons_two_level" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "chat_message_dispatch_statuses" (
+CREATE TABLE IF NOT EXISTS "chat_message_dispatch_statuses" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"chat_id" uuid,
@@ -78,7 +78,7 @@ CREATE TABLE "chat_message_dispatch_statuses" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "clinic_chairs" (
+CREATE TABLE IF NOT EXISTS "clinic_chairs" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"name" text NOT NULL,
@@ -88,7 +88,7 @@ CREATE TABLE "clinic_chairs" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "clinic_workflows" (
+CREATE TABLE IF NOT EXISTS "clinic_workflows" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"name" varchar(255) NOT NULL,
@@ -98,7 +98,7 @@ CREATE TABLE "clinic_workflows" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "collaborative_chat_processing_states" (
+CREATE TABLE IF NOT EXISTS "collaborative_chat_processing_states" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"chat_id" uuid NOT NULL,
@@ -109,7 +109,7 @@ CREATE TABLE "collaborative_chat_processing_states" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "communication_outbox" (
+CREATE TABLE IF NOT EXISTS "communication_outbox" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"clinic_id" uuid,
@@ -143,7 +143,7 @@ CREATE TABLE "communication_outbox" (
 	CONSTRAINT "communication_outbox_org_dedupe_unique" UNIQUE("organization_id","dedupe_key")
 );
 --> statement-breakpoint
-CREATE TABLE "communication_settings" (
+CREATE TABLE IF NOT EXISTS "communication_settings" (
 	"organization_id" uuid PRIMARY KEY NOT NULL,
 	"timezone" text DEFAULT 'Europe/Moscow' NOT NULL,
 	"quiet_hours_start_minute" integer DEFAULT 1260 NOT NULL,
@@ -162,7 +162,7 @@ CREATE TABLE "communication_settings" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "confirmation_performance_reports" (
+CREATE TABLE IF NOT EXISTS "confirmation_performance_reports" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"staff_name" text NOT NULL,
@@ -174,7 +174,7 @@ CREATE TABLE "confirmation_performance_reports" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "crm_email_dispatch_logs" (
+CREATE TABLE IF NOT EXISTS "crm_email_dispatch_logs" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"patient_name" text NOT NULL,
@@ -185,7 +185,7 @@ CREATE TABLE "crm_email_dispatch_logs" (
 	"sent_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "custom_crm_task_types" (
+CREATE TABLE IF NOT EXISTS "custom_crm_task_types" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"type_code" text NOT NULL,
@@ -196,7 +196,7 @@ CREATE TABLE "custom_crm_task_types" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "custom_examination_form_catalogs" (
+CREATE TABLE IF NOT EXISTS "custom_examination_form_catalogs" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"form_code" text DEFAULT 'FORM_043U' NOT NULL,
@@ -207,7 +207,7 @@ CREATE TABLE "custom_examination_form_catalogs" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "dadata_geocoded_addresses" (
+CREATE TABLE IF NOT EXISTS "dadata_geocoded_addresses" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"patient_name" text NOT NULL,
@@ -219,7 +219,7 @@ CREATE TABLE "dadata_geocoded_addresses" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "diagnocat_ai_findings" (
+CREATE TABLE IF NOT EXISTS "diagnocat_ai_findings" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"imaging_study_id" uuid,
@@ -231,7 +231,7 @@ CREATE TABLE "diagnocat_ai_findings" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "diagnocat_reports" (
+CREATE TABLE IF NOT EXISTS "diagnocat_reports" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"patient_id" uuid NOT NULL,
@@ -240,7 +240,7 @@ CREATE TABLE "diagnocat_reports" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "digital_receipt_dispatches" (
+CREATE TABLE IF NOT EXISTS "digital_receipt_dispatches" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"payment_id" uuid NOT NULL,
@@ -253,7 +253,7 @@ CREATE TABLE "digital_receipt_dispatches" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "egisz_blank_permissions" (
+CREATE TABLE IF NOT EXISTS "egisz_blank_permissions" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"doctor_id" uuid NOT NULL,
@@ -264,7 +264,7 @@ CREATE TABLE "egisz_blank_permissions" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "egisz_multiple_diagnoses" (
+CREATE TABLE IF NOT EXISTS "egisz_multiple_diagnoses" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"patient_name" text NOT NULL,
@@ -275,7 +275,7 @@ CREATE TABLE "egisz_multiple_diagnoses" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "extended_odontogram_states" (
+CREATE TABLE IF NOT EXISTS "extended_odontogram_states" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"patient_name" text NOT NULL,
@@ -288,7 +288,7 @@ CREATE TABLE "extended_odontogram_states" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "external_schedule_action_logs" (
+CREATE TABLE IF NOT EXISTS "external_schedule_action_logs" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"external_provider" text NOT NULL,
@@ -299,7 +299,7 @@ CREATE TABLE "external_schedule_action_logs" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "family_recommendation_sources" (
+CREATE TABLE IF NOT EXISTS "family_recommendation_sources" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"family_group_name" text NOT NULL,
@@ -309,7 +309,7 @@ CREATE TABLE "family_recommendation_sources" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "kkm_item_quantity_units" (
+CREATE TABLE IF NOT EXISTS "kkm_item_quantity_units" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"service_code" text NOT NULL,
@@ -320,7 +320,7 @@ CREATE TABLE "kkm_item_quantity_units" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "landing_field_mappings" (
+CREATE TABLE IF NOT EXISTS "landing_field_mappings" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"landing_provider" text DEFAULT 'flexbe' NOT NULL,
@@ -331,7 +331,7 @@ CREATE TABLE "landing_field_mappings" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "lost_patients_filters" (
+CREATE TABLE IF NOT EXISTS "lost_patients_filters" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"patient_name" text NOT NULL,
@@ -342,7 +342,7 @@ CREATE TABLE "lost_patients_filters" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "message_template_catalogs" (
+CREATE TABLE IF NOT EXISTS "message_template_catalogs" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"title" text NOT NULL,
@@ -354,7 +354,7 @@ CREATE TABLE "message_template_catalogs" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "messenger_file_attachments" (
+CREATE TABLE IF NOT EXISTS "messenger_file_attachments" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"chat_id" uuid,
@@ -365,7 +365,7 @@ CREATE TABLE "messenger_file_attachments" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "migration_entity_links" (
+CREATE TABLE IF NOT EXISTS "migration_entity_links" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"entity_kind" "migration_entity_kind" NOT NULL,
@@ -379,7 +379,7 @@ CREATE TABLE "migration_entity_links" (
 	CONSTRAINT "migration_entity_links_source_unique" UNIQUE("organization_id","entity_kind","source_system","source_entity_id")
 );
 --> statement-breakpoint
-CREATE TABLE "migration_quarantine_records" (
+CREATE TABLE IF NOT EXISTS "migration_quarantine_records" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"run_id" uuid NOT NULL,
 	"organization_id" uuid NOT NULL,
@@ -397,7 +397,7 @@ CREATE TABLE "migration_quarantine_records" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "migration_reconciliations" (
+CREATE TABLE IF NOT EXISTS "migration_reconciliations" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"run_id" uuid NOT NULL,
 	"organization_id" uuid NOT NULL,
@@ -411,7 +411,7 @@ CREATE TABLE "migration_reconciliations" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "migration_runs" (
+CREATE TABLE IF NOT EXISTS "migration_runs" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"source_name" text NOT NULL,
@@ -451,7 +451,7 @@ CREATE TABLE "migration_runs" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "migration_staging_records" (
+CREATE TABLE IF NOT EXISTS "migration_staging_records" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"run_id" uuid NOT NULL,
 	"organization_id" uuid NOT NULL,
@@ -471,7 +471,7 @@ CREATE TABLE "migration_staging_records" (
 	CONSTRAINT "migration_staging_row_unique" UNIQUE("run_id","source_table","source_row_number")
 );
 --> statement-breakpoint
-CREATE TABLE "mkb10_auto_directories" (
+CREATE TABLE IF NOT EXISTS "mkb10_auto_directories" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"specialty" text DEFAULT 'universal' NOT NULL,
@@ -481,7 +481,7 @@ CREATE TABLE "mkb10_auto_directories" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "ndfl_tax_calculators" (
+CREATE TABLE IF NOT EXISTS "ndfl_tax_calculators" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"patient_id" uuid,
@@ -493,7 +493,7 @@ CREATE TABLE "ndfl_tax_calculators" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "non_dental_examination_forms" (
+CREATE TABLE IF NOT EXISTS "non_dental_examination_forms" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"specialty_type" text DEFAULT 'ENT' NOT NULL,
@@ -506,7 +506,7 @@ CREATE TABLE "non_dental_examination_forms" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "patient_archive_reasons_and_blacklists" (
+CREATE TABLE IF NOT EXISTS "patient_archive_reasons_and_blacklists" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"patient_id" uuid,
@@ -521,7 +521,7 @@ CREATE TABLE "patient_archive_reasons_and_blacklists" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "patient_communication_consents" (
+CREATE TABLE IF NOT EXISTS "patient_communication_consents" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"patient_id" uuid NOT NULL,
@@ -537,7 +537,7 @@ CREATE TABLE "patient_communication_consents" (
 	CONSTRAINT "patient_communication_consents_unique" UNIQUE("organization_id","patient_id","channel","scope")
 );
 --> statement-breakpoint
-CREATE TABLE "patient_communication_timelines" (
+CREATE TABLE IF NOT EXISTS "patient_communication_timelines" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"patient_name" text NOT NULL,
@@ -548,7 +548,7 @@ CREATE TABLE "patient_communication_timelines" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "patient_duplicate_merge_queues" (
+CREATE TABLE IF NOT EXISTS "patient_duplicate_merge_queues" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"source_patient_id" uuid NOT NULL,
@@ -560,7 +560,7 @@ CREATE TABLE "patient_duplicate_merge_queues" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "patient_reclamations" (
+CREATE TABLE IF NOT EXISTS "patient_reclamations" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"patient_id" uuid NOT NULL,
@@ -573,7 +573,7 @@ CREATE TABLE "patient_reclamations" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "patient_service_lineages" (
+CREATE TABLE IF NOT EXISTS "patient_service_lineages" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"patient_name" text NOT NULL,
@@ -585,7 +585,7 @@ CREATE TABLE "patient_service_lineages" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "patient_task_tickets" (
+CREATE TABLE IF NOT EXISTS "patient_task_tickets" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"patient_id" uuid NOT NULL,
@@ -598,7 +598,7 @@ CREATE TABLE "patient_task_tickets" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "portal_otp_codes" (
+CREATE TABLE IF NOT EXISTS "portal_otp_codes" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"patient_id" uuid NOT NULL,
@@ -612,7 +612,7 @@ CREATE TABLE "portal_otp_codes" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "previous_chat_dialog_histories" (
+CREATE TABLE IF NOT EXISTS "previous_chat_dialog_histories" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"chat_id" uuid NOT NULL,
@@ -622,7 +622,7 @@ CREATE TABLE "previous_chat_dialog_histories" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "pricelist_doctor_payrolls" (
+CREATE TABLE IF NOT EXISTS "pricelist_doctor_payrolls" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"service_code" text NOT NULL,
@@ -634,7 +634,7 @@ CREATE TABLE "pricelist_doctor_payrolls" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "prodoctorov_sync_exports" (
+CREATE TABLE IF NOT EXISTS "prodoctorov_sync_exports" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"price_list_sync_status" text DEFAULT 'synced' NOT NULL,
@@ -644,7 +644,7 @@ CREATE TABLE "prodoctorov_sync_exports" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "quick_appointment_confirmations" (
+CREATE TABLE IF NOT EXISTS "quick_appointment_confirmations" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"patient_name" text NOT NULL,
@@ -654,7 +654,7 @@ CREATE TABLE "quick_appointment_confirmations" (
 	"confirmed_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "rebooking_conversion_rules" (
+CREATE TABLE IF NOT EXISTS "rebooking_conversion_rules" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"patient_name" text NOT NULL,
@@ -665,7 +665,7 @@ CREATE TABLE "rebooking_conversion_rules" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "recent_patient_history" (
+CREATE TABLE IF NOT EXISTS "recent_patient_history" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"user_id" uuid NOT NULL,
@@ -675,7 +675,7 @@ CREATE TABLE "recent_patient_history" (
 	"last_viewed_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "sberbank_transactions" (
+CREATE TABLE IF NOT EXISTS "sberbank_transactions" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"order_id" text NOT NULL,
@@ -686,7 +686,7 @@ CREATE TABLE "sberbank_transactions" (
 	"updated_at" timestamp with time zone
 );
 --> statement-breakpoint
-CREATE TABLE "schedule_clipboard_items" (
+CREATE TABLE IF NOT EXISTS "schedule_clipboard_items" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"appointment_id" uuid NOT NULL,
@@ -698,7 +698,7 @@ CREATE TABLE "schedule_clipboard_items" (
 	"copied_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "schedule_time_reservations" (
+CREATE TABLE IF NOT EXISTS "schedule_time_reservations" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"chair_name" text NOT NULL,
@@ -711,7 +711,7 @@ CREATE TABLE "schedule_time_reservations" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "services" (
+CREATE TABLE IF NOT EXISTS "services" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"title" text NOT NULL,
@@ -725,7 +725,7 @@ CREATE TABLE "services" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "single_session_enforcements" (
+CREATE TABLE IF NOT EXISTS "single_session_enforcements" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"user_id" uuid NOT NULL,
@@ -737,7 +737,7 @@ CREATE TABLE "single_session_enforcements" (
 	"last_active_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "system_ram_watchdogs" (
+CREATE TABLE IF NOT EXISTS "system_ram_watchdogs" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"heap_used_mb" numeric(8, 2),
@@ -748,7 +748,7 @@ CREATE TABLE "system_ram_watchdogs" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "tooth_state_history" (
+CREATE TABLE IF NOT EXISTS "tooth_state_history" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"patient_id" uuid NOT NULL,
@@ -763,7 +763,7 @@ CREATE TABLE "tooth_state_history" (
 	"changed_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "treatment_plan_lock_tokens" (
+CREATE TABLE IF NOT EXISTS "treatment_plan_lock_tokens" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"treatment_plan_id" uuid NOT NULL,
@@ -774,7 +774,7 @@ CREATE TABLE "treatment_plan_lock_tokens" (
 	"locked_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "treatment_plan_print_odontograms" (
+CREATE TABLE IF NOT EXISTS "treatment_plan_print_odontograms" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"patient_name" text NOT NULL,
@@ -785,7 +785,7 @@ CREATE TABLE "treatment_plan_print_odontograms" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "treatment_plan_stages" (
+CREATE TABLE IF NOT EXISTS "treatment_plan_stages" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"patient_name" text NOT NULL,
@@ -798,7 +798,7 @@ CREATE TABLE "treatment_plan_stages" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "uis_call_speech_transcripts" (
+CREATE TABLE IF NOT EXISTS "uis_call_speech_transcripts" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"call_id" text NOT NULL,
@@ -810,7 +810,7 @@ CREATE TABLE "uis_call_speech_transcripts" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "uis_mass_appointment_confirmations" (
+CREATE TABLE IF NOT EXISTS "uis_mass_appointment_confirmations" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"target_date" text NOT NULL,
@@ -820,7 +820,7 @@ CREATE TABLE "uis_mass_appointment_confirmations" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "uis_omni_messenger_queues" (
+CREATE TABLE IF NOT EXISTS "uis_omni_messenger_queues" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"patient_name" text NOT NULL,
@@ -831,7 +831,7 @@ CREATE TABLE "uis_omni_messenger_queues" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "uis_sms_chat_quotas" (
+CREATE TABLE IF NOT EXISTS "uis_sms_chat_quotas" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"month_year" text NOT NULL,
@@ -841,7 +841,7 @@ CREATE TABLE "uis_sms_chat_quotas" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "urgent_schedule_requests" (
+CREATE TABLE IF NOT EXISTS "urgent_schedule_requests" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"patient_name" text NOT NULL,
@@ -853,7 +853,7 @@ CREATE TABLE "urgent_schedule_requests" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "visit_examination_photo_links" (
+CREATE TABLE IF NOT EXISTS "visit_examination_photo_links" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"visit_id" text NOT NULL,
@@ -863,7 +863,7 @@ CREATE TABLE "visit_examination_photo_links" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "yandex_calendar_syncs" (
+CREATE TABLE IF NOT EXISTS "yandex_calendar_syncs" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"doctor_id" uuid NOT NULL,
@@ -875,38 +875,7 @@ CREATE TABLE "yandex_calendar_syncs" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "analytics_snapshots" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
-ALTER TABLE "cash_shifts" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
-ALTER TABLE "clinical_tasks" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
-ALTER TABLE "dental_lab_orders" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
-ALTER TABLE "doctor_payrolls" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
-ALTER TABLE "doctor_assistants" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
-ALTER TABLE "document_templates" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
-ALTER TABLE "drill_protocols" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
-ALTER TABLE "ingested_patients_mapping" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
-ALTER TABLE "ingestion_sources" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
-ALTER TABLE "migration_templates" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
-ALTER TABLE "patient_anamnesis" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
-ALTER TABLE "payment_installments" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
-ALTER TABLE "scheduler_reservations" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
-ALTER TABLE "signed_outpatient_cards" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
-ALTER TABLE "ztl_lab_orders" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
-DROP TABLE "analytics_snapshots" CASCADE;--> statement-breakpoint
-DROP TABLE "cash_shifts" CASCADE;--> statement-breakpoint
-DROP TABLE "clinical_tasks" CASCADE;--> statement-breakpoint
-DROP TABLE "dental_lab_orders" CASCADE;--> statement-breakpoint
-DROP TABLE "doctor_payrolls" CASCADE;--> statement-breakpoint
-DROP TABLE "doctor_assistants" CASCADE;--> statement-breakpoint
-DROP TABLE "document_templates" CASCADE;--> statement-breakpoint
-DROP TABLE "drill_protocols" CASCADE;--> statement-breakpoint
-DROP TABLE "ingested_patients_mapping" CASCADE;--> statement-breakpoint
-DROP TABLE "ingestion_sources" CASCADE;--> statement-breakpoint
-DROP TABLE "migration_templates" CASCADE;--> statement-breakpoint
-DROP TABLE "patient_anamnesis" CASCADE;--> statement-breakpoint
-DROP TABLE "payment_installments" CASCADE;--> statement-breakpoint
-DROP TABLE "scheduler_reservations" CASCADE;--> statement-breakpoint
-DROP TABLE "signed_outpatient_cards" CASCADE;--> statement-breakpoint
-DROP TABLE "ztl_lab_orders" CASCADE;--> statement-breakpoint
+-- preserved schema tables (omitted drops from legacy diff)
 ALTER TABLE "dente_max_bot_configs" DROP CONSTRAINT "dente_max_bot_configs_org_unique";--> statement-breakpoint
 ALTER TABLE "dente_whatsapp_bot_configs" DROP CONSTRAINT "dente_whatsapp_bot_configs_org_unique";--> statement-breakpoint
 ALTER TABLE "appointment_waitlists" DROP CONSTRAINT "appointment_waitlists_preferred_doctor_id_users_id_fk";
@@ -1013,11 +982,11 @@ ALTER TABLE "crm_leads" ALTER COLUMN "status" SET DEFAULT 'new';--> statement-br
 ALTER TABLE "crm_leads" ALTER COLUMN "created_at" SET DATA TYPE timestamp with time zone;--> statement-breakpoint
 ALTER TABLE "crm_leads" ALTER COLUMN "created_at" SET DEFAULT now();--> statement-breakpoint
 ALTER TABLE "dente_max_bot_configs" ALTER COLUMN "id" SET DEFAULT uuidv7();--> statement-breakpoint
-ALTER TABLE "dente_max_bot_configs" ALTER COLUMN "enabled_features_json" SET DATA TYPE jsonb;--> statement-breakpoint
 ALTER TABLE "dente_max_bot_configs" ALTER COLUMN "enabled_features_json" DROP DEFAULT;--> statement-breakpoint
+ALTER TABLE "dente_max_bot_configs" ALTER COLUMN "enabled_features_json" SET DATA TYPE jsonb USING enabled_features_json::jsonb;--> statement-breakpoint
 ALTER TABLE "dente_max_bot_configs" ALTER COLUMN "enabled_features_json" DROP NOT NULL;--> statement-breakpoint
-ALTER TABLE "dente_max_bot_configs" ALTER COLUMN "staff_routing_json" SET DATA TYPE jsonb;--> statement-breakpoint
 ALTER TABLE "dente_max_bot_configs" ALTER COLUMN "staff_routing_json" DROP DEFAULT;--> statement-breakpoint
+ALTER TABLE "dente_max_bot_configs" ALTER COLUMN "staff_routing_json" SET DATA TYPE jsonb USING staff_routing_json::jsonb;--> statement-breakpoint
 ALTER TABLE "dente_max_bot_configs" ALTER COLUMN "staff_routing_json" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "dente_max_bot_configs" ALTER COLUMN "updated_at" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "dente_telegram_bot_configs" ALTER COLUMN "id" SET DEFAULT uuidv7();--> statement-breakpoint
@@ -1026,11 +995,11 @@ ALTER TABLE "dente_telegram_link_codes" ALTER COLUMN "id" SET DEFAULT uuidv7();-
 ALTER TABLE "dente_telegram_outbox_delivery_receipts" ALTER COLUMN "id" SET DEFAULT uuidv7();--> statement-breakpoint
 ALTER TABLE "dente_telegram_webhook_events" ALTER COLUMN "id" SET DEFAULT uuidv7();--> statement-breakpoint
 ALTER TABLE "dente_whatsapp_bot_configs" ALTER COLUMN "id" SET DEFAULT uuidv7();--> statement-breakpoint
-ALTER TABLE "dente_whatsapp_bot_configs" ALTER COLUMN "enabled_features_json" SET DATA TYPE jsonb;--> statement-breakpoint
 ALTER TABLE "dente_whatsapp_bot_configs" ALTER COLUMN "enabled_features_json" DROP DEFAULT;--> statement-breakpoint
+ALTER TABLE "dente_whatsapp_bot_configs" ALTER COLUMN "enabled_features_json" SET DATA TYPE jsonb USING enabled_features_json::jsonb;--> statement-breakpoint
 ALTER TABLE "dente_whatsapp_bot_configs" ALTER COLUMN "enabled_features_json" DROP NOT NULL;--> statement-breakpoint
-ALTER TABLE "dente_whatsapp_bot_configs" ALTER COLUMN "staff_routing_json" SET DATA TYPE jsonb;--> statement-breakpoint
 ALTER TABLE "dente_whatsapp_bot_configs" ALTER COLUMN "staff_routing_json" DROP DEFAULT;--> statement-breakpoint
+ALTER TABLE "dente_whatsapp_bot_configs" ALTER COLUMN "staff_routing_json" SET DATA TYPE jsonb USING staff_routing_json::jsonb;--> statement-breakpoint
 ALTER TABLE "dente_whatsapp_bot_configs" ALTER COLUMN "staff_routing_json" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "dente_whatsapp_bot_configs" ALTER COLUMN "updated_at" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "dicom_workbench_bundles" ALTER COLUMN "id" SET DEFAULT uuidv7();--> statement-breakpoint
@@ -1135,7 +1104,7 @@ ALTER TABLE "sterilization_logs" ALTER COLUMN "timestamp" DROP NOT NULL;--> stat
 ALTER TABLE "tooth_states" ALTER COLUMN "id" SET DEFAULT uuidv7();--> statement-breakpoint
 ALTER TABLE "tooth_states" ALTER COLUMN "state" SET DATA TYPE text;--> statement-breakpoint
 ALTER TABLE "tooth_states" ALTER COLUMN "state" SET DEFAULT 'healthy';--> statement-breakpoint
-ALTER TABLE "tooth_states" ALTER COLUMN "surfaces" SET DATA TYPE jsonb;--> statement-breakpoint
+ALTER TABLE "tooth_states" ALTER COLUMN "surfaces" SET DATA TYPE jsonb USING to_jsonb(surfaces);--> statement-breakpoint
 ALTER TABLE "tooth_states" ALTER COLUMN "updated_at" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "treatment_items" ALTER COLUMN "id" SET DEFAULT uuidv7();--> statement-breakpoint
 ALTER TABLE "treatment_items" ALTER COLUMN "price_rub" SET DATA TYPE numeric(12, 2);--> statement-breakpoint
@@ -1167,94 +1136,94 @@ ALTER TABLE "visit_templates" ALTER COLUMN "default_icd10" SET DATA TYPE text;--
 ALTER TABLE "visit_templates" ALTER COLUMN "default_icd10_label" SET DATA TYPE text;--> statement-breakpoint
 ALTER TABLE "visits" ALTER COLUMN "id" SET DEFAULT uuidv7();--> statement-breakpoint
 ALTER TABLE "xray_scans" ALTER COLUMN "id" SET DEFAULT uuidv7();--> statement-breakpoint
-ALTER TABLE "appointment_waitlists" ADD COLUMN "patient_name" text;--> statement-breakpoint
-ALTER TABLE "appointment_waitlists" ADD COLUMN "patient_phone" text;--> statement-breakpoint
-ALTER TABLE "appointment_waitlists" ADD COLUMN "preferred_doctor_name" text;--> statement-breakpoint
-ALTER TABLE "clinical_audit_logs" ADD COLUMN "actor_user_id" uuid;--> statement-breakpoint
-ALTER TABLE "clinical_audit_logs" ADD COLUMN "actor_login" text;--> statement-breakpoint
-ALTER TABLE "clinical_audit_logs" ADD COLUMN "event_type" text;--> statement-breakpoint
-ALTER TABLE "clinical_audit_logs" ADD COLUMN "resource_type" text;--> statement-breakpoint
-ALTER TABLE "clinical_audit_logs" ADD COLUMN "resource_id" uuid;--> statement-breakpoint
-ALTER TABLE "clinical_audit_logs" ADD COLUMN "meta" jsonb;--> statement-breakpoint
-ALTER TABLE "communication_events" ADD COLUMN "recording_url" text;--> statement-breakpoint
-ALTER TABLE "communication_events" ADD COLUMN "duration_seconds" integer;--> statement-breakpoint
-ALTER TABLE "communication_events" ADD COLUMN "audio_format" text DEFAULT 'audio/mpeg';--> statement-breakpoint
-ALTER TABLE "crm_leads" ADD COLUMN "patient_name" text;--> statement-breakpoint
-ALTER TABLE "crm_leads" ADD COLUMN "assigned_doctor_id" uuid;--> statement-breakpoint
-ALTER TABLE "crm_leads" ADD COLUMN "notes" text;--> statement-breakpoint
-ALTER TABLE "dente_max_bot_configs" ADD COLUMN "max_bot_token" text;--> statement-breakpoint
-ALTER TABLE "dente_max_bot_configs" ADD COLUMN "is_enabled" boolean DEFAULT false NOT NULL;--> statement-breakpoint
-ALTER TABLE "dente_whatsapp_bot_configs" ADD COLUMN "waba_account_id" text;--> statement-breakpoint
-ALTER TABLE "dente_whatsapp_bot_configs" ADD COLUMN "access_token" text;--> statement-breakpoint
-ALTER TABLE "dente_whatsapp_bot_configs" ADD COLUMN "is_enabled" boolean DEFAULT false NOT NULL;--> statement-breakpoint
-ALTER TABLE "doctor_commissions" ADD COLUMN "doctor_id" uuid;--> statement-breakpoint
-ALTER TABLE "doctor_commissions" ADD COLUMN "commission_percent" numeric(5, 2) DEFAULT '25' NOT NULL;--> statement-breakpoint
-ALTER TABLE "egisz_logs" ADD COLUMN "organization_id" uuid NOT NULL;--> statement-breakpoint
-ALTER TABLE "family_groups" ADD COLUMN "group_name" text DEFAULT '' NOT NULL;--> statement-breakpoint
-ALTER TABLE "family_groups" ADD COLUMN "primary_patient_id" uuid;--> statement-breakpoint
-ALTER TABLE "family_groups" ADD COLUMN "updated_at" timestamp with time zone DEFAULT now();--> statement-breakpoint
-ALTER TABLE "inventory_items" ADD COLUMN "category" text DEFAULT 'material' NOT NULL;--> statement-breakpoint
-ALTER TABLE "inventory_items" ADD COLUMN "unit" text DEFAULT 'шт' NOT NULL;--> statement-breakpoint
-ALTER TABLE "inventory_items" ADD COLUMN "current_qty" numeric(10, 3) DEFAULT '0' NOT NULL;--> statement-breakpoint
-ALTER TABLE "inventory_items" ADD COLUMN "min_qty" numeric(10, 3) DEFAULT '0' NOT NULL;--> statement-breakpoint
-ALTER TABLE "inventory_items" ADD COLUMN "price_per_unit" numeric(10, 2);--> statement-breakpoint
-ALTER TABLE "inventory_items" ADD COLUMN "notes" text;--> statement-breakpoint
-ALTER TABLE "inventory_items" ADD COLUMN "lot_number" text;--> statement-breakpoint
-ALTER TABLE "inventory_items" ADD COLUMN "expiration_date" date;--> statement-breakpoint
-ALTER TABLE "inventory_transactions" ADD COLUMN "item_id" uuid;--> statement-breakpoint
-ALTER TABLE "inventory_transactions" ADD COLUMN "qty" numeric(10, 3);--> statement-breakpoint
-ALTER TABLE "inventory_transactions" ADD COLUMN "notes" text;--> statement-breakpoint
-ALTER TABLE "lab_orders" ADD COLUMN "doctor_name" text;--> statement-breakpoint
-ALTER TABLE "messenger_inbound_events" ADD COLUMN "external_id" text;--> statement-breakpoint
-ALTER TABLE "messenger_inbound_events" ADD COLUMN "chat_id" uuid;--> statement-breakpoint
-ALTER TABLE "organizations" ADD COLUMN "workspace_feature_flags" jsonb;--> statement-breakpoint
-ALTER TABLE "patient_ct_plannings" ADD COLUMN "imaging_study_id" uuid;--> statement-breakpoint
-ALTER TABLE "patient_ct_plannings" ADD COLUMN "implant_positions" jsonb;--> statement-breakpoint
-ALTER TABLE "patient_ct_plannings" ADD COLUMN "plan_status" text DEFAULT 'draft' NOT NULL;--> statement-breakpoint
-ALTER TABLE "patient_ct_plannings" ADD COLUMN "notes" text;--> statement-breakpoint
-ALTER TABLE "patient_invoices" ADD COLUMN "total_rub" numeric(12, 2) NOT NULL;--> statement-breakpoint
-ALTER TABLE "patient_invoices" ADD COLUMN "issued_at" timestamp with time zone;--> statement-breakpoint
-ALTER TABLE "patient_invoices" ADD COLUMN "paid_at" timestamp with time zone;--> statement-breakpoint
-ALTER TABLE "patients" ADD COLUMN "merged_into_patient_id" uuid;--> statement-breakpoint
-ALTER TABLE "procedure_material_rules" ADD COLUMN "organization_id" uuid;--> statement-breakpoint
-ALTER TABLE "procedure_material_rules" ADD COLUMN "service_code" text;--> statement-breakpoint
-ALTER TABLE "procedure_material_rules" ADD COLUMN "material_item_id" uuid;--> statement-breakpoint
-ALTER TABLE "procedure_material_rules" ADD COLUMN "material_name" text;--> statement-breakpoint
-ALTER TABLE "procedure_material_rules" ADD COLUMN "required_qty" numeric(12, 4) DEFAULT '1.0000' NOT NULL;--> statement-breakpoint
-ALTER TABLE "protocol_templates" ADD COLUMN "created_at" timestamp with time zone DEFAULT now() NOT NULL;--> statement-breakpoint
-ALTER TABLE "sterilization_logs" ADD COLUMN "device_name" text DEFAULT 'Автоклав 1' NOT NULL;--> statement-breakpoint
-ALTER TABLE "sterilization_logs" ADD COLUMN "cycle_number" integer DEFAULT 1 NOT NULL;--> statement-breakpoint
-ALTER TABLE "sterilization_logs" ADD COLUMN "temperature_celsius" numeric(5, 1);--> statement-breakpoint
-ALTER TABLE "sterilization_logs" ADD COLUMN "pressure_bar" numeric(4, 2);--> statement-breakpoint
-ALTER TABLE "sterilization_logs" ADD COLUMN "items_description" text;--> statement-breakpoint
-ALTER TABLE "sterilization_logs" ADD COLUMN "passed_indicator" boolean DEFAULT true NOT NULL;--> statement-breakpoint
-ALTER TABLE "sterilization_logs" ADD COLUMN "created_at" timestamp with time zone DEFAULT now() NOT NULL;--> statement-breakpoint
-ALTER TABLE "tooth_states" ADD COLUMN "organization_id" uuid NOT NULL;--> statement-breakpoint
-ALTER TABLE "tooth_states" ADD COLUMN "notes" text;--> statement-breakpoint
-ALTER TABLE "tooth_states" ADD COLUMN "created_at" timestamp with time zone DEFAULT now() NOT NULL;--> statement-breakpoint
-ALTER TABLE "treatment_plan_items_new" ADD COLUMN "organization_id" uuid NOT NULL;--> statement-breakpoint
-ALTER TABLE "treatment_plan_items_new" ADD COLUMN "created_at" timestamp with time zone DEFAULT now() NOT NULL;--> statement-breakpoint
-ALTER TABLE "treatment_plans" ADD COLUMN "organization_id" uuid NOT NULL;--> statement-breakpoint
-ALTER TABLE "treatment_plans" ADD COLUMN "doctor_id" uuid;--> statement-breakpoint
-ALTER TABLE "treatment_plans" ADD COLUMN "title" text DEFAULT '' NOT NULL;--> statement-breakpoint
-ALTER TABLE "treatment_plans" ADD COLUMN "total_price_rub" numeric(12, 2);--> statement-breakpoint
-ALTER TABLE "treatment_plans" ADD COLUMN "approved_at" timestamp with time zone;--> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "current_session_id" text;--> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "yandex_calendar_id" text;--> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "yandex_calendar_token" jsonb;--> statement-breakpoint
-ALTER TABLE "visit_diaries" ADD COLUMN "author_id" uuid;--> statement-breakpoint
-ALTER TABLE "visit_diaries" ADD COLUMN "content" text DEFAULT '' NOT NULL;--> statement-breakpoint
-ALTER TABLE "visit_diary_revisions" ADD COLUMN "organization_id" uuid NOT NULL;--> statement-breakpoint
-ALTER TABLE "visit_diary_revisions" ADD COLUMN "revised_content" text DEFAULT '' NOT NULL;--> statement-breakpoint
-ALTER TABLE "visit_diary_revisions" ADD COLUMN "previous_diagnosis_tooth" varchar(10);--> statement-breakpoint
-ALTER TABLE "visit_diary_revisions" ADD COLUMN "previous_complications" text;--> statement-breakpoint
-ALTER TABLE "visit_diary_revisions" ADD COLUMN "previous_comorbidities" text;--> statement-breakpoint
-ALTER TABLE "visit_diary_revisions" ADD COLUMN "previous_instrument_tray_barcode" text;--> statement-breakpoint
-ALTER TABLE "visit_diary_revisions" ADD COLUMN "revision_reason" text;--> statement-breakpoint
-ALTER TABLE "visit_diary_revisions" ADD COLUMN "revised_by" uuid;--> statement-breakpoint
-ALTER TABLE "visit_diary_revisions" ADD COLUMN "created_at" timestamp with time zone DEFAULT now() NOT NULL;--> statement-breakpoint
-ALTER TABLE "visit_templates" ADD COLUMN "template_json" jsonb;--> statement-breakpoint
-ALTER TABLE "visits" ADD COLUMN "quality_control_status" text DEFAULT 'pending';--> statement-breakpoint
+ALTER TABLE "appointment_waitlists" ADD COLUMN IF NOT EXISTS "patient_name" text;--> statement-breakpoint
+ALTER TABLE "appointment_waitlists" ADD COLUMN IF NOT EXISTS "patient_phone" text;--> statement-breakpoint
+ALTER TABLE "appointment_waitlists" ADD COLUMN IF NOT EXISTS "preferred_doctor_name" text;--> statement-breakpoint
+ALTER TABLE "clinical_audit_logs" ADD COLUMN IF NOT EXISTS "actor_user_id" uuid;--> statement-breakpoint
+ALTER TABLE "clinical_audit_logs" ADD COLUMN IF NOT EXISTS "actor_login" text;--> statement-breakpoint
+ALTER TABLE "clinical_audit_logs" ADD COLUMN IF NOT EXISTS "event_type" text;--> statement-breakpoint
+ALTER TABLE "clinical_audit_logs" ADD COLUMN IF NOT EXISTS "resource_type" text;--> statement-breakpoint
+ALTER TABLE "clinical_audit_logs" ADD COLUMN IF NOT EXISTS "resource_id" uuid;--> statement-breakpoint
+ALTER TABLE "clinical_audit_logs" ADD COLUMN IF NOT EXISTS "meta" jsonb;--> statement-breakpoint
+ALTER TABLE "communication_events" ADD COLUMN IF NOT EXISTS "recording_url" text;--> statement-breakpoint
+ALTER TABLE "communication_events" ADD COLUMN IF NOT EXISTS "duration_seconds" integer;--> statement-breakpoint
+ALTER TABLE "communication_events" ADD COLUMN IF NOT EXISTS "audio_format" text DEFAULT 'audio/mpeg';--> statement-breakpoint
+ALTER TABLE "crm_leads" ADD COLUMN IF NOT EXISTS "patient_name" text;--> statement-breakpoint
+ALTER TABLE "crm_leads" ADD COLUMN IF NOT EXISTS "assigned_doctor_id" uuid;--> statement-breakpoint
+ALTER TABLE "crm_leads" ADD COLUMN IF NOT EXISTS "notes" text;--> statement-breakpoint
+ALTER TABLE "dente_max_bot_configs" ADD COLUMN IF NOT EXISTS "max_bot_token" text;--> statement-breakpoint
+ALTER TABLE "dente_max_bot_configs" ADD COLUMN IF NOT EXISTS "is_enabled" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "dente_whatsapp_bot_configs" ADD COLUMN IF NOT EXISTS "waba_account_id" text;--> statement-breakpoint
+ALTER TABLE "dente_whatsapp_bot_configs" ADD COLUMN IF NOT EXISTS "access_token" text;--> statement-breakpoint
+ALTER TABLE "dente_whatsapp_bot_configs" ADD COLUMN IF NOT EXISTS "is_enabled" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "doctor_commissions" ADD COLUMN IF NOT EXISTS "doctor_id" uuid;--> statement-breakpoint
+ALTER TABLE "doctor_commissions" ADD COLUMN IF NOT EXISTS "commission_percent" numeric(5, 2) DEFAULT '25' NOT NULL;--> statement-breakpoint
+ALTER TABLE "egisz_logs" ADD COLUMN IF NOT EXISTS "organization_id" uuid NOT NULL;--> statement-breakpoint
+ALTER TABLE "family_groups" ADD COLUMN IF NOT EXISTS "group_name" text DEFAULT '' NOT NULL;--> statement-breakpoint
+ALTER TABLE "family_groups" ADD COLUMN IF NOT EXISTS "primary_patient_id" uuid;--> statement-breakpoint
+ALTER TABLE "family_groups" ADD COLUMN IF NOT EXISTS "updated_at" timestamp with time zone DEFAULT now();--> statement-breakpoint
+ALTER TABLE "inventory_items" ADD COLUMN IF NOT EXISTS "category" text DEFAULT 'material' NOT NULL;--> statement-breakpoint
+ALTER TABLE "inventory_items" ADD COLUMN IF NOT EXISTS "unit" text DEFAULT 'шт' NOT NULL;--> statement-breakpoint
+ALTER TABLE "inventory_items" ADD COLUMN IF NOT EXISTS "current_qty" numeric(10, 3) DEFAULT '0' NOT NULL;--> statement-breakpoint
+ALTER TABLE "inventory_items" ADD COLUMN IF NOT EXISTS "min_qty" numeric(10, 3) DEFAULT '0' NOT NULL;--> statement-breakpoint
+ALTER TABLE "inventory_items" ADD COLUMN IF NOT EXISTS "price_per_unit" numeric(10, 2);--> statement-breakpoint
+ALTER TABLE "inventory_items" ADD COLUMN IF NOT EXISTS "notes" text;--> statement-breakpoint
+ALTER TABLE "inventory_items" ADD COLUMN IF NOT EXISTS "lot_number" text;--> statement-breakpoint
+ALTER TABLE "inventory_items" ADD COLUMN IF NOT EXISTS "expiration_date" date;--> statement-breakpoint
+ALTER TABLE "inventory_transactions" ADD COLUMN IF NOT EXISTS "item_id" uuid;--> statement-breakpoint
+ALTER TABLE "inventory_transactions" ADD COLUMN IF NOT EXISTS "qty" numeric(10, 3);--> statement-breakpoint
+ALTER TABLE "inventory_transactions" ADD COLUMN IF NOT EXISTS "notes" text;--> statement-breakpoint
+ALTER TABLE "lab_orders" ADD COLUMN IF NOT EXISTS "doctor_name" text;--> statement-breakpoint
+ALTER TABLE "messenger_inbound_events" ADD COLUMN IF NOT EXISTS "external_id" text;--> statement-breakpoint
+ALTER TABLE "messenger_inbound_events" ADD COLUMN IF NOT EXISTS "chat_id" uuid;--> statement-breakpoint
+ALTER TABLE "organizations" ADD COLUMN IF NOT EXISTS "workspace_feature_flags" jsonb;--> statement-breakpoint
+ALTER TABLE "patient_ct_plannings" ADD COLUMN IF NOT EXISTS "imaging_study_id" uuid;--> statement-breakpoint
+ALTER TABLE "patient_ct_plannings" ADD COLUMN IF NOT EXISTS "implant_positions" jsonb;--> statement-breakpoint
+ALTER TABLE "patient_ct_plannings" ADD COLUMN IF NOT EXISTS "plan_status" text DEFAULT 'draft' NOT NULL;--> statement-breakpoint
+ALTER TABLE "patient_ct_plannings" ADD COLUMN IF NOT EXISTS "notes" text;--> statement-breakpoint
+ALTER TABLE "patient_invoices" ADD COLUMN IF NOT EXISTS "total_rub" numeric(12, 2) NOT NULL;--> statement-breakpoint
+ALTER TABLE "patient_invoices" ADD COLUMN IF NOT EXISTS "issued_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "patient_invoices" ADD COLUMN IF NOT EXISTS "paid_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "patients" ADD COLUMN IF NOT EXISTS "merged_into_patient_id" uuid;--> statement-breakpoint
+ALTER TABLE "procedure_material_rules" ADD COLUMN IF NOT EXISTS "organization_id" uuid;--> statement-breakpoint
+ALTER TABLE "procedure_material_rules" ADD COLUMN IF NOT EXISTS "service_code" text;--> statement-breakpoint
+ALTER TABLE "procedure_material_rules" ADD COLUMN IF NOT EXISTS "material_item_id" uuid;--> statement-breakpoint
+ALTER TABLE "procedure_material_rules" ADD COLUMN IF NOT EXISTS "material_name" text;--> statement-breakpoint
+ALTER TABLE "procedure_material_rules" ADD COLUMN IF NOT EXISTS "required_qty" numeric(12, 4) DEFAULT '1.0000' NOT NULL;--> statement-breakpoint
+ALTER TABLE "protocol_templates" ADD COLUMN IF NOT EXISTS "created_at" timestamp with time zone DEFAULT now() NOT NULL;--> statement-breakpoint
+ALTER TABLE "sterilization_logs" ADD COLUMN IF NOT EXISTS "device_name" text DEFAULT 'Автоклав 1' NOT NULL;--> statement-breakpoint
+ALTER TABLE "sterilization_logs" ADD COLUMN IF NOT EXISTS "cycle_number" integer DEFAULT 1 NOT NULL;--> statement-breakpoint
+ALTER TABLE "sterilization_logs" ADD COLUMN IF NOT EXISTS "temperature_celsius" numeric(5, 1);--> statement-breakpoint
+ALTER TABLE "sterilization_logs" ADD COLUMN IF NOT EXISTS "pressure_bar" numeric(4, 2);--> statement-breakpoint
+ALTER TABLE "sterilization_logs" ADD COLUMN IF NOT EXISTS "items_description" text;--> statement-breakpoint
+ALTER TABLE "sterilization_logs" ADD COLUMN IF NOT EXISTS "passed_indicator" boolean DEFAULT true NOT NULL;--> statement-breakpoint
+ALTER TABLE "sterilization_logs" ADD COLUMN IF NOT EXISTS "created_at" timestamp with time zone DEFAULT now() NOT NULL;--> statement-breakpoint
+ALTER TABLE "tooth_states" ADD COLUMN IF NOT EXISTS "organization_id" uuid NOT NULL;--> statement-breakpoint
+ALTER TABLE "tooth_states" ADD COLUMN IF NOT EXISTS "notes" text;--> statement-breakpoint
+ALTER TABLE "tooth_states" ADD COLUMN IF NOT EXISTS "created_at" timestamp with time zone DEFAULT now() NOT NULL;--> statement-breakpoint
+ALTER TABLE "treatment_plan_items_new" ADD COLUMN IF NOT EXISTS "organization_id" uuid NOT NULL;--> statement-breakpoint
+ALTER TABLE "treatment_plan_items_new" ADD COLUMN IF NOT EXISTS "created_at" timestamp with time zone DEFAULT now() NOT NULL;--> statement-breakpoint
+ALTER TABLE "treatment_plans" ADD COLUMN IF NOT EXISTS "organization_id" uuid NOT NULL;--> statement-breakpoint
+ALTER TABLE "treatment_plans" ADD COLUMN IF NOT EXISTS "doctor_id" uuid;--> statement-breakpoint
+ALTER TABLE "treatment_plans" ADD COLUMN IF NOT EXISTS "title" text DEFAULT '' NOT NULL;--> statement-breakpoint
+ALTER TABLE "treatment_plans" ADD COLUMN IF NOT EXISTS "total_price_rub" numeric(12, 2);--> statement-breakpoint
+ALTER TABLE "treatment_plans" ADD COLUMN IF NOT EXISTS "approved_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "current_session_id" text;--> statement-breakpoint
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "yandex_calendar_id" text;--> statement-breakpoint
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "yandex_calendar_token" jsonb;--> statement-breakpoint
+ALTER TABLE "visit_diaries" ADD COLUMN IF NOT EXISTS "author_id" uuid;--> statement-breakpoint
+ALTER TABLE "visit_diaries" ADD COLUMN IF NOT EXISTS "content" text DEFAULT '' NOT NULL;--> statement-breakpoint
+ALTER TABLE "visit_diary_revisions" ADD COLUMN IF NOT EXISTS "organization_id" uuid NOT NULL;--> statement-breakpoint
+ALTER TABLE "visit_diary_revisions" ADD COLUMN IF NOT EXISTS "revised_content" text DEFAULT '' NOT NULL;--> statement-breakpoint
+ALTER TABLE "visit_diary_revisions" ADD COLUMN IF NOT EXISTS "previous_diagnosis_tooth" varchar(10);--> statement-breakpoint
+ALTER TABLE "visit_diary_revisions" ADD COLUMN IF NOT EXISTS "previous_complications" text;--> statement-breakpoint
+ALTER TABLE "visit_diary_revisions" ADD COLUMN IF NOT EXISTS "previous_comorbidities" text;--> statement-breakpoint
+ALTER TABLE "visit_diary_revisions" ADD COLUMN IF NOT EXISTS "previous_instrument_tray_barcode" text;--> statement-breakpoint
+ALTER TABLE "visit_diary_revisions" ADD COLUMN IF NOT EXISTS "revision_reason" text;--> statement-breakpoint
+ALTER TABLE "visit_diary_revisions" ADD COLUMN IF NOT EXISTS "revised_by" uuid;--> statement-breakpoint
+ALTER TABLE "visit_diary_revisions" ADD COLUMN IF NOT EXISTS "created_at" timestamp with time zone DEFAULT now() NOT NULL;--> statement-breakpoint
+ALTER TABLE "visit_templates" ADD COLUMN IF NOT EXISTS "template_json" jsonb;--> statement-breakpoint
+ALTER TABLE "visits" ADD COLUMN IF NOT EXISTS "quality_control_status" text DEFAULT 'pending';--> statement-breakpoint
 ALTER TABLE "advance_deposit_taggings" ADD CONSTRAINT "advance_deposit_taggings_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "alternative_treatment_plans" ADD CONSTRAINT "alternative_treatment_plans_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "appointment_channel_inheritances" ADD CONSTRAINT "appointment_channel_inheritances_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -1262,6 +1231,7 @@ ALTER TABLE "bulk_image_operation_logs" ADD CONSTRAINT "bulk_image_operation_log
 ALTER TABLE "cancellation_reasons_two_level" ADD CONSTRAINT "cancellation_reasons_two_level_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "chat_message_dispatch_statuses" ADD CONSTRAINT "chat_message_dispatch_statuses_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "clinic_chairs" ADD CONSTRAINT "clinic_chairs_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "clinic_workflows" DROP CONSTRAINT IF EXISTS "clinic_workflows_organization_id_organizations_id_fk";--> statement-breakpoint
 ALTER TABLE "clinic_workflows" ADD CONSTRAINT "clinic_workflows_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "collaborative_chat_processing_states" ADD CONSTRAINT "collaborative_chat_processing_states_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "communication_outbox" ADD CONSTRAINT "communication_outbox_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -1339,90 +1309,90 @@ ALTER TABLE "uis_sms_chat_quotas" ADD CONSTRAINT "uis_sms_chat_quotas_organizati
 ALTER TABLE "urgent_schedule_requests" ADD CONSTRAINT "urgent_schedule_requests_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "visit_examination_photo_links" ADD CONSTRAINT "visit_examination_photo_links_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "yandex_calendar_syncs" ADD CONSTRAINT "yandex_calendar_syncs_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "advance_deposit_taggings_organizationId_idx" ON "advance_deposit_taggings" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "alternative_treatment_plans_organizationId_idx" ON "alternative_treatment_plans" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "appointment_channel_inheritances_organizationId_idx" ON "appointment_channel_inheritances" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "bulk_image_operation_logs_organizationId_idx" ON "bulk_image_operation_logs" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "cancellation_reasons_two_level_organizationId_idx" ON "cancellation_reasons_two_level" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "chat_message_dispatch_statuses_organizationId_idx" ON "chat_message_dispatch_statuses" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "clinic_chairs_organizationId_idx" ON "clinic_chairs" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "clinic_workflows_org_idx" ON "clinic_workflows" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "collaborative_chat_processing_states_organizationId_idx" ON "collaborative_chat_processing_states" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "communication_outbox_org_created_idx" ON "communication_outbox" USING btree ("organization_id","created_at");--> statement-breakpoint
-CREATE INDEX "communication_outbox_clinicId_idx" ON "communication_outbox" USING btree ("clinic_id");--> statement-breakpoint
-CREATE INDEX "communication_outbox_patientId_idx" ON "communication_outbox" USING btree ("patient_id");--> statement-breakpoint
-CREATE INDEX "communication_outbox_taskId_idx" ON "communication_outbox" USING btree ("task_id");--> statement-breakpoint
-CREATE INDEX "communication_outbox_templateId_idx" ON "communication_outbox" USING btree ("template_id");--> statement-breakpoint
-CREATE INDEX "communication_settings_organizationId_idx" ON "communication_settings" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "confirmation_performance_reports_organizationId_idx" ON "confirmation_performance_reports" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "crm_email_dispatch_logs_organizationId_idx" ON "crm_email_dispatch_logs" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "custom_crm_task_types_organizationId_idx" ON "custom_crm_task_types" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "custom_examination_form_catalogs_organizationId_idx" ON "custom_examination_form_catalogs" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "dadata_geocoded_addresses_organizationId_idx" ON "dadata_geocoded_addresses" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "diagnocat_ai_findings_organizationId_idx" ON "diagnocat_ai_findings" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "diagnocat_reports_organization_id_idx" ON "diagnocat_reports" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "digital_receipt_dispatches_organizationId_idx" ON "digital_receipt_dispatches" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "egisz_blank_permissions_organizationId_idx" ON "egisz_blank_permissions" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "egisz_multiple_diagnoses_organizationId_idx" ON "egisz_multiple_diagnoses" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "extended_odontogram_states_organizationId_idx" ON "extended_odontogram_states" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "external_schedule_action_logs_organizationId_idx" ON "external_schedule_action_logs" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "family_recommendation_sources_organizationId_idx" ON "family_recommendation_sources" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "kkm_item_quantity_units_organizationId_idx" ON "kkm_item_quantity_units" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "landing_field_mappings_organizationId_idx" ON "landing_field_mappings" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "lost_patients_filters_organizationId_idx" ON "lost_patients_filters" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "message_template_catalogs_organizationId_idx" ON "message_template_catalogs" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "messenger_file_attachments_organizationId_idx" ON "messenger_file_attachments" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "migration_entity_links_target_idx" ON "migration_entity_links" USING btree ("target_entity_id");--> statement-breakpoint
-CREATE INDEX "migration_entity_links_run_idx" ON "migration_entity_links" USING btree ("created_by_run_id");--> statement-breakpoint
-CREATE INDEX "migration_quarantine_run_idx" ON "migration_quarantine_records" USING btree ("run_id","resolution","reason");--> statement-breakpoint
-CREATE INDEX "migration_quarantine_records_organizationId_idx" ON "migration_quarantine_records" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "migration_quarantine_records_stagingRecordId_idx" ON "migration_quarantine_records" USING btree ("staging_record_id");--> statement-breakpoint
-CREATE INDEX "migration_quarantine_records_resolvedByUserId_idx" ON "migration_quarantine_records" USING btree ("resolved_by_user_id");--> statement-breakpoint
-CREATE INDEX "migration_reconciliations_run_idx" ON "migration_reconciliations" USING btree ("run_id","generated_at");--> statement-breakpoint
-CREATE INDEX "migration_reconciliations_organizationId_idx" ON "migration_reconciliations" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "migration_runs_org_created_idx" ON "migration_runs" USING btree ("organization_id","created_at");--> statement-breakpoint
-CREATE INDEX "migration_runs_startedByUserId_idx" ON "migration_runs" USING btree ("started_by_user_id");--> statement-breakpoint
-CREATE INDEX "migration_staging_run_status_idx" ON "migration_staging_records" USING btree ("run_id","status");--> statement-breakpoint
-CREATE INDEX "migration_staging_hash_idx" ON "migration_staging_records" USING btree ("run_id","raw_hash");--> statement-breakpoint
-CREATE INDEX "migration_staging_records_organizationId_idx" ON "migration_staging_records" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "mkb10_auto_directories_organizationId_idx" ON "mkb10_auto_directories" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "ndfl_tax_calculators_organizationId_idx" ON "ndfl_tax_calculators" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "non_dental_examination_forms_organizationId_idx" ON "non_dental_examination_forms" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "patient_archive_reasons_and_blacklists_organizationId_idx" ON "patient_archive_reasons_and_blacklists" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "patient_communication_consents_decidedByUserId_idx" ON "patient_communication_consents" USING btree ("decided_by_user_id");--> statement-breakpoint
-CREATE INDEX "patient_communication_timelines_organizationId_idx" ON "patient_communication_timelines" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "patient_duplicate_merge_queues_organizationId_idx" ON "patient_duplicate_merge_queues" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "patient_reclamations_organizationId_idx" ON "patient_reclamations" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "patient_service_lineages_organizationId_idx" ON "patient_service_lineages" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "patient_task_tickets_organizationId_idx" ON "patient_task_tickets" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "portal_otp_codes_patient_idx" ON "portal_otp_codes" USING btree ("organization_id","patient_id","created_at");--> statement-breakpoint
-CREATE INDEX "portal_otp_codes_expires_idx" ON "portal_otp_codes" USING btree ("expires_at");--> statement-breakpoint
-CREATE INDEX "previous_chat_dialog_histories_organizationId_idx" ON "previous_chat_dialog_histories" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "pricelist_doctor_payrolls_organizationId_idx" ON "pricelist_doctor_payrolls" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "prodoctorov_sync_exports_organizationId_idx" ON "prodoctorov_sync_exports" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "quick_appointment_confirmations_organizationId_idx" ON "quick_appointment_confirmations" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "rebooking_conversion_rules_organizationId_idx" ON "rebooking_conversion_rules" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "recent_patient_history_organization_id_idx" ON "recent_patient_history" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "recent_patient_history_user_id_idx" ON "recent_patient_history" USING btree ("user_id");--> statement-breakpoint
-CREATE INDEX "recent_patient_history_patient_id_idx" ON "recent_patient_history" USING btree ("patient_id");--> statement-breakpoint
-CREATE INDEX "sberbank_transactions_organizationId_idx" ON "sberbank_transactions" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "schedule_clipboard_items_organizationId_idx" ON "schedule_clipboard_items" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "schedule_time_reservations_organizationId_idx" ON "schedule_time_reservations" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "services_organizationId_idx" ON "services" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "single_session_enforcements_organizationId_idx" ON "single_session_enforcements" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "system_ram_watchdogs_organizationId_idx" ON "system_ram_watchdogs" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "idx_tooth_state_history_patient_tooth" ON "tooth_state_history" USING btree ("patient_id","tooth_number","changed_at");--> statement-breakpoint
-CREATE INDEX "tooth_state_history_organizationId_idx" ON "tooth_state_history" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "treatment_plan_lock_tokens_organizationId_idx" ON "treatment_plan_lock_tokens" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "treatment_plan_print_odontograms_organizationId_idx" ON "treatment_plan_print_odontograms" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "treatment_plan_stages_organizationId_idx" ON "treatment_plan_stages" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "uis_call_speech_transcripts_organizationId_idx" ON "uis_call_speech_transcripts" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "uis_mass_appointment_confirmations_organizationId_idx" ON "uis_mass_appointment_confirmations" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "uis_omni_messenger_queues_organizationId_idx" ON "uis_omni_messenger_queues" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "uis_sms_chat_quotas_organizationId_idx" ON "uis_sms_chat_quotas" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "urgent_schedule_requests_organizationId_idx" ON "urgent_schedule_requests" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "visit_examination_photo_links_organizationId_idx" ON "visit_examination_photo_links" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "yandex_calendar_syncs_organizationId_idx" ON "yandex_calendar_syncs" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "advance_deposit_taggings_organizationId_idx" ON "advance_deposit_taggings" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "alternative_treatment_plans_organizationId_idx" ON "alternative_treatment_plans" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "appointment_channel_inheritances_organizationId_idx" ON "appointment_channel_inheritances" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "bulk_image_operation_logs_organizationId_idx" ON "bulk_image_operation_logs" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "cancellation_reasons_two_level_organizationId_idx" ON "cancellation_reasons_two_level" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "chat_message_dispatch_statuses_organizationId_idx" ON "chat_message_dispatch_statuses" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "clinic_chairs_organizationId_idx" ON "clinic_chairs" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "clinic_workflows_org_idx" ON "clinic_workflows" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "collaborative_chat_processing_states_organizationId_idx" ON "collaborative_chat_processing_states" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "communication_outbox_org_created_idx" ON "communication_outbox" USING btree ("organization_id","created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "communication_outbox_clinicId_idx" ON "communication_outbox" USING btree ("clinic_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "communication_outbox_patientId_idx" ON "communication_outbox" USING btree ("patient_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "communication_outbox_taskId_idx" ON "communication_outbox" USING btree ("task_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "communication_outbox_templateId_idx" ON "communication_outbox" USING btree ("template_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "communication_settings_organizationId_idx" ON "communication_settings" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "confirmation_performance_reports_organizationId_idx" ON "confirmation_performance_reports" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "crm_email_dispatch_logs_organizationId_idx" ON "crm_email_dispatch_logs" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "custom_crm_task_types_organizationId_idx" ON "custom_crm_task_types" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "custom_examination_form_catalogs_organizationId_idx" ON "custom_examination_form_catalogs" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "dadata_geocoded_addresses_organizationId_idx" ON "dadata_geocoded_addresses" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "diagnocat_ai_findings_organizationId_idx" ON "diagnocat_ai_findings" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "diagnocat_reports_organization_id_idx" ON "diagnocat_reports" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "digital_receipt_dispatches_organizationId_idx" ON "digital_receipt_dispatches" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "egisz_blank_permissions_organizationId_idx" ON "egisz_blank_permissions" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "egisz_multiple_diagnoses_organizationId_idx" ON "egisz_multiple_diagnoses" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "extended_odontogram_states_organizationId_idx" ON "extended_odontogram_states" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "external_schedule_action_logs_organizationId_idx" ON "external_schedule_action_logs" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "family_recommendation_sources_organizationId_idx" ON "family_recommendation_sources" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "kkm_item_quantity_units_organizationId_idx" ON "kkm_item_quantity_units" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "landing_field_mappings_organizationId_idx" ON "landing_field_mappings" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "lost_patients_filters_organizationId_idx" ON "lost_patients_filters" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "message_template_catalogs_organizationId_idx" ON "message_template_catalogs" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "messenger_file_attachments_organizationId_idx" ON "messenger_file_attachments" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "migration_entity_links_target_idx" ON "migration_entity_links" USING btree ("target_entity_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "migration_entity_links_run_idx" ON "migration_entity_links" USING btree ("created_by_run_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "migration_quarantine_run_idx" ON "migration_quarantine_records" USING btree ("run_id","resolution","reason");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "migration_quarantine_records_organizationId_idx" ON "migration_quarantine_records" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "migration_quarantine_records_stagingRecordId_idx" ON "migration_quarantine_records" USING btree ("staging_record_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "migration_quarantine_records_resolvedByUserId_idx" ON "migration_quarantine_records" USING btree ("resolved_by_user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "migration_reconciliations_run_idx" ON "migration_reconciliations" USING btree ("run_id","generated_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "migration_reconciliations_organizationId_idx" ON "migration_reconciliations" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "migration_runs_org_created_idx" ON "migration_runs" USING btree ("organization_id","created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "migration_runs_startedByUserId_idx" ON "migration_runs" USING btree ("started_by_user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "migration_staging_run_status_idx" ON "migration_staging_records" USING btree ("run_id","status");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "migration_staging_hash_idx" ON "migration_staging_records" USING btree ("run_id","raw_hash");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "migration_staging_records_organizationId_idx" ON "migration_staging_records" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "mkb10_auto_directories_organizationId_idx" ON "mkb10_auto_directories" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "ndfl_tax_calculators_organizationId_idx" ON "ndfl_tax_calculators" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "non_dental_examination_forms_organizationId_idx" ON "non_dental_examination_forms" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "patient_archive_reasons_and_blacklists_organizationId_idx" ON "patient_archive_reasons_and_blacklists" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "patient_communication_consents_decidedByUserId_idx" ON "patient_communication_consents" USING btree ("decided_by_user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "patient_communication_timelines_organizationId_idx" ON "patient_communication_timelines" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "patient_duplicate_merge_queues_organizationId_idx" ON "patient_duplicate_merge_queues" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "patient_reclamations_organizationId_idx" ON "patient_reclamations" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "patient_service_lineages_organizationId_idx" ON "patient_service_lineages" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "patient_task_tickets_organizationId_idx" ON "patient_task_tickets" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "portal_otp_codes_patient_idx" ON "portal_otp_codes" USING btree ("organization_id","patient_id","created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "portal_otp_codes_expires_idx" ON "portal_otp_codes" USING btree ("expires_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "previous_chat_dialog_histories_organizationId_idx" ON "previous_chat_dialog_histories" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "pricelist_doctor_payrolls_organizationId_idx" ON "pricelist_doctor_payrolls" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "prodoctorov_sync_exports_organizationId_idx" ON "prodoctorov_sync_exports" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "quick_appointment_confirmations_organizationId_idx" ON "quick_appointment_confirmations" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "rebooking_conversion_rules_organizationId_idx" ON "rebooking_conversion_rules" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "recent_patient_history_organization_id_idx" ON "recent_patient_history" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "recent_patient_history_user_id_idx" ON "recent_patient_history" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "recent_patient_history_patient_id_idx" ON "recent_patient_history" USING btree ("patient_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "sberbank_transactions_organizationId_idx" ON "sberbank_transactions" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "schedule_clipboard_items_organizationId_idx" ON "schedule_clipboard_items" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "schedule_time_reservations_organizationId_idx" ON "schedule_time_reservations" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "services_organizationId_idx" ON "services" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "single_session_enforcements_organizationId_idx" ON "single_session_enforcements" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "system_ram_watchdogs_organizationId_idx" ON "system_ram_watchdogs" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_tooth_state_history_patient_tooth" ON "tooth_state_history" USING btree ("patient_id","tooth_number","changed_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "tooth_state_history_organizationId_idx" ON "tooth_state_history" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "treatment_plan_lock_tokens_organizationId_idx" ON "treatment_plan_lock_tokens" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "treatment_plan_print_odontograms_organizationId_idx" ON "treatment_plan_print_odontograms" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "treatment_plan_stages_organizationId_idx" ON "treatment_plan_stages" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "uis_call_speech_transcripts_organizationId_idx" ON "uis_call_speech_transcripts" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "uis_mass_appointment_confirmations_organizationId_idx" ON "uis_mass_appointment_confirmations" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "uis_omni_messenger_queues_organizationId_idx" ON "uis_omni_messenger_queues" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "uis_sms_chat_quotas_organizationId_idx" ON "uis_sms_chat_quotas" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "urgent_schedule_requests_organizationId_idx" ON "urgent_schedule_requests" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "visit_examination_photo_links_organizationId_idx" ON "visit_examination_photo_links" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "yandex_calendar_syncs_organizationId_idx" ON "yandex_calendar_syncs" USING btree ("organization_id");--> statement-breakpoint
 ALTER TABLE "egisz_logs" ADD CONSTRAINT "egisz_logs_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "procedure_material_rules" ADD CONSTRAINT "procedure_material_rules_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tooth_states" ADD CONSTRAINT "tooth_states_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -1433,115 +1403,115 @@ ALTER TABLE "treatment_plans" ADD CONSTRAINT "treatment_plans_patient_id_patient
 ALTER TABLE "visit_diaries" ADD CONSTRAINT "visit_diaries_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "visit_diary_revisions" ADD CONSTRAINT "visit_diary_revisions_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE UNIQUE INDEX "ai_jobs_organization_storage_path_key" ON "ai_jobs" USING btree ("organization_id","input_storage_path");--> statement-breakpoint
-CREATE INDEX "ai_jobs_patientId_idx" ON "ai_jobs" USING btree ("patient_id");--> statement-breakpoint
-CREATE INDEX "ai_jobs_visitId_idx" ON "ai_jobs" USING btree ("visit_id");--> statement-breakpoint
-CREATE INDEX "ai_jobs_imagingStudyId_idx" ON "ai_jobs" USING btree ("imaging_study_id");--> statement-breakpoint
-CREATE INDEX "appointment_waitlists_organizationId_idx" ON "appointment_waitlists" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "appointment_waitlists_patientId_idx" ON "appointment_waitlists" USING btree ("patient_id");--> statement-breakpoint
-CREATE INDEX "idx_appointments_org_time" ON "appointments" USING btree ("organization_id","starts_at","ends_at");--> statement-breakpoint
-CREATE INDEX "appointments_patient_id_idx" ON "appointments" USING btree ("patient_id");--> statement-breakpoint
-CREATE INDEX "appointments_doctor_user_id_idx" ON "appointments" USING btree ("doctor_user_id");--> statement-breakpoint
-CREATE INDEX "appointments_assistant_user_id_idx" ON "appointments" USING btree ("assistant_user_id");--> statement-breakpoint
-CREATE INDEX "appointments_chair_id_idx" ON "appointments" USING btree ("chair_id");--> statement-breakpoint
-CREATE INDEX "attachments_organization_id_idx" ON "attachments" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "attachments_patient_id_idx" ON "attachments" USING btree ("patient_id");--> statement-breakpoint
-CREATE INDEX "attachments_visit_id_idx" ON "attachments" USING btree ("visit_id");--> statement-breakpoint
-CREATE INDEX "idx_audit_org_created" ON "audit_events" USING btree ("organization_id","created_at");--> statement-breakpoint
-CREATE INDEX "audit_events_actorUserId_idx" ON "audit_events" USING btree ("actor_user_id");--> statement-breakpoint
-CREATE INDEX "chairs_organization_id_idx" ON "chairs" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "chairs_clinic_id_idx" ON "chairs" USING btree ("clinic_id");--> statement-breakpoint
-CREATE INDEX "clinical_audit_logs_organizationId_idx" ON "clinical_audit_logs" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "clinical_rules_organizationId_idx" ON "clinical_rules" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "clinics_organization_id_idx" ON "clinics" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "communication_events_organization_id_idx" ON "communication_events" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "communication_events_clinic_id_idx" ON "communication_events" USING btree ("clinic_id");--> statement-breakpoint
-CREATE INDEX "communication_events_task_id_idx" ON "communication_events" USING btree ("task_id");--> statement-breakpoint
-CREATE INDEX "communication_events_patient_id_idx" ON "communication_events" USING btree ("patient_id");--> statement-breakpoint
-CREATE INDEX "communication_events_actor_user_id_idx" ON "communication_events" USING btree ("actor_user_id");--> statement-breakpoint
-CREATE INDEX "communication_tasks_organization_id_idx" ON "communication_tasks" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "communication_tasks_clinic_id_idx" ON "communication_tasks" USING btree ("clinic_id");--> statement-breakpoint
-CREATE INDEX "communication_tasks_patient_id_idx" ON "communication_tasks" USING btree ("patient_id");--> statement-breakpoint
-CREATE INDEX "communication_tasks_appointment_id_idx" ON "communication_tasks" USING btree ("appointment_id");--> statement-breakpoint
-CREATE INDEX "communication_tasks_visit_id_idx" ON "communication_tasks" USING btree ("visit_id");--> statement-breakpoint
-CREATE INDEX "communication_tasks_document_id_idx" ON "communication_tasks" USING btree ("document_id");--> statement-breakpoint
-CREATE INDEX "communication_templates_organization_id_idx" ON "communication_templates" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "communication_templates_clinic_id_idx" ON "communication_templates" USING btree ("clinic_id");--> statement-breakpoint
-CREATE INDEX "crm_leads_organizationId_idx" ON "crm_leads" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "dente_max_bot_configs_organizationId_idx" ON "dente_max_bot_configs" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "dente_telegram_chat_links_clinicId_idx" ON "dente_telegram_chat_links" USING btree ("clinic_id");--> statement-breakpoint
-CREATE INDEX "dente_telegram_link_codes_clinicId_idx" ON "dente_telegram_link_codes" USING btree ("clinic_id");--> statement-breakpoint
-CREATE INDEX "dente_telegram_link_codes_createdByUserId_idx" ON "dente_telegram_link_codes" USING btree ("created_by_user_id");--> statement-breakpoint
-CREATE INDEX "dente_telegram_outbox_delivery_receipts_clinicId_idx" ON "dente_telegram_outbox_delivery_receipts" USING btree ("clinic_id");--> statement-breakpoint
-CREATE INDEX "dente_telegram_outbox_delivery_receipts_taskId_idx" ON "dente_telegram_outbox_delivery_receipts" USING btree ("task_id");--> statement-breakpoint
-CREATE INDEX "dente_telegram_outbox_delivery_receipts_eventId_idx" ON "dente_telegram_outbox_delivery_receipts" USING btree ("event_id");--> statement-breakpoint
-CREATE INDEX "dente_telegram_webhook_events_clinicId_idx" ON "dente_telegram_webhook_events" USING btree ("clinic_id");--> statement-breakpoint
-CREATE INDEX "dente_whatsapp_bot_configs_organizationId_idx" ON "dente_whatsapp_bot_configs" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "dicom_workbench_bundles_organization_id_idx" ON "dicom_workbench_bundles" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "dicom_workbench_bundles_patient_id_idx" ON "dicom_workbench_bundles" USING btree ("patient_id");--> statement-breakpoint
-CREATE INDEX "doctor_commissions_organizationId_idx" ON "doctor_commissions" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "egisz_logs_organizationId_idx" ON "egisz_logs" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "egisz_logs_patientId_idx" ON "egisz_logs" USING btree ("patient_id");--> statement-breakpoint
-CREATE INDEX "egisz_logs_visitId_idx" ON "egisz_logs" USING btree ("visit_id");--> statement-breakpoint
-CREATE INDEX "family_groups_organizationId_idx" ON "family_groups" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "generated_documents_issued_by_idx" ON "generated_documents" USING btree ("issued_by_user_id");--> statement-breakpoint
-CREATE INDEX "generated_documents_voided_by_idx" ON "generated_documents" USING btree ("voided_by_user_id");--> statement-breakpoint
-CREATE INDEX "imaging_annotations_organizationId_idx" ON "imaging_annotations" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "imaging_annotations_studyId_idx" ON "imaging_annotations" USING btree ("study_id");--> statement-breakpoint
-CREATE INDEX "imaging_annotations_seriesId_idx" ON "imaging_annotations" USING btree ("series_id");--> statement-breakpoint
-CREATE INDEX "imaging_annotations_patientId_idx" ON "imaging_annotations" USING btree ("patient_id");--> statement-breakpoint
-CREATE INDEX "imaging_instances_organizationId_idx" ON "imaging_instances" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "imaging_series_organizationId_idx" ON "imaging_series" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "imaging_studies_organization_id_idx" ON "imaging_studies" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "imaging_studies_patient_id_idx" ON "imaging_studies" USING btree ("patient_id");--> statement-breakpoint
-CREATE INDEX "imaging_studies_visit_id_idx" ON "imaging_studies" USING btree ("visit_id");--> statement-breakpoint
-CREATE INDEX "imaging_viewer_sessions_organization_id_idx" ON "imaging_viewer_sessions" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "imaging_viewer_sessions_study_id_idx" ON "imaging_viewer_sessions" USING btree ("study_id");--> statement-breakpoint
-CREATE INDEX "imaging_viewer_sessions_patient_id_idx" ON "imaging_viewer_sessions" USING btree ("patient_id");--> statement-breakpoint
-CREATE INDEX "imaging_viewer_sessions_visit_id_idx" ON "imaging_viewer_sessions" USING btree ("visit_id");--> statement-breakpoint
-CREATE INDEX "import_batches_organization_id_idx" ON "import_batches" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "insurance_contracts_organizationId_idx" ON "insurance_contracts" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "inventory_items_organizationId_idx" ON "inventory_items" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "inventory_transactions_organizationId_idx" ON "inventory_transactions" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "lab_orders_organizationId_idx" ON "lab_orders" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "lab_orders_patientId_idx" ON "lab_orders" USING btree ("patient_id");--> statement-breakpoint
-CREATE INDEX "messenger_inbound_events_organizationId_idx" ON "messenger_inbound_events" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "patient_consents_organization_id_idx" ON "patient_consents" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "patient_consents_patient_id_idx" ON "patient_consents" USING btree ("patient_id");--> statement-breakpoint
-CREATE INDEX "patient_consents_document_id_idx" ON "patient_consents" USING btree ("document_id");--> statement-breakpoint
-CREATE INDEX "patient_ct_plannings_organizationId_idx" ON "patient_ct_plannings" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "patient_ct_plannings_patientId_idx" ON "patient_ct_plannings" USING btree ("patient_id");--> statement-breakpoint
-CREATE INDEX "patient_invoices_organizationId_idx" ON "patient_invoices" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "patient_invoices_patientId_idx" ON "patient_invoices" USING btree ("patient_id");--> statement-breakpoint
-CREATE INDEX "idx_patients_org_created" ON "patients" USING btree ("organization_id","created_at");--> statement-breakpoint
-CREATE INDEX "idx_payments_org_paid_at" ON "payments" USING btree ("organization_id","paid_at");--> statement-breakpoint
-CREATE INDEX "payments_patientId_idx" ON "payments" USING btree ("patient_id");--> statement-breakpoint
-CREATE INDEX "payments_visitId_idx" ON "payments" USING btree ("visit_id");--> statement-breakpoint
-CREATE INDEX "procedure_material_rules_organizationId_idx" ON "procedure_material_rules" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "protocol_templates_organizationId_idx" ON "protocol_templates" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "service_catalog_items_organization_id_idx" ON "service_catalog_items" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "sterilization_logs_organizationId_idx" ON "sterilization_logs" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "tooth_states_organizationId_idx" ON "tooth_states" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "tooth_states_patientId_idx" ON "tooth_states" USING btree ("patient_id");--> statement-breakpoint
-CREATE INDEX "treatment_items_organization_id_idx" ON "treatment_items" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "treatment_items_patient_id_idx" ON "treatment_items" USING btree ("patient_id");--> statement-breakpoint
-CREATE INDEX "treatment_items_visit_id_idx" ON "treatment_items" USING btree ("visit_id");--> statement-breakpoint
-CREATE INDEX "treatment_items_service_id_idx" ON "treatment_items" USING btree ("service_id");--> statement-breakpoint
-CREATE INDEX "treatment_items_planned_doctor_user_id_idx" ON "treatment_items" USING btree ("planned_doctor_user_id");--> statement-breakpoint
-CREATE INDEX "treatment_items_planned_chair_id_idx" ON "treatment_items" USING btree ("planned_chair_id");--> statement-breakpoint
-CREATE INDEX "treatment_plan_items_new_organizationId_idx" ON "treatment_plan_items_new" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "treatment_plans_organizationId_idx" ON "treatment_plans" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "treatment_plans_patientId_idx" ON "treatment_plans" USING btree ("patient_id");--> statement-breakpoint
-CREATE INDEX "treatment_scenarios_organization_id_idx" ON "treatment_scenarios" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "treatment_scenarios_patient_id_idx" ON "treatment_scenarios" USING btree ("patient_id");--> statement-breakpoint
-CREATE INDEX "user_invitations_organization_id_idx" ON "user_invitations" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "users_organization_id_idx" ON "users" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "visit_diaries_organizationId_idx" ON "visit_diaries" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "visit_diary_revisions_organizationId_idx" ON "visit_diary_revisions" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "visit_templates_organizationId_idx" ON "visit_templates" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "visits_organization_id_idx" ON "visits" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "visits_patient_id_idx" ON "visits" USING btree ("patient_id");--> statement-breakpoint
-CREATE INDEX "visits_appointment_id_idx" ON "visits" USING btree ("appointment_id");--> statement-breakpoint
-CREATE INDEX "xray_scans_visitId_idx" ON "xray_scans" USING btree ("visit_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "ai_jobs_patientId_idx" ON "ai_jobs" USING btree ("patient_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "ai_jobs_visitId_idx" ON "ai_jobs" USING btree ("visit_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "ai_jobs_imagingStudyId_idx" ON "ai_jobs" USING btree ("imaging_study_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "appointment_waitlists_organizationId_idx" ON "appointment_waitlists" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "appointment_waitlists_patientId_idx" ON "appointment_waitlists" USING btree ("patient_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_appointments_org_time" ON "appointments" USING btree ("organization_id","starts_at","ends_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "appointments_patient_id_idx" ON "appointments" USING btree ("patient_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "appointments_doctor_user_id_idx" ON "appointments" USING btree ("doctor_user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "appointments_assistant_user_id_idx" ON "appointments" USING btree ("assistant_user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "appointments_chair_id_idx" ON "appointments" USING btree ("chair_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "attachments_organization_id_idx" ON "attachments" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "attachments_patient_id_idx" ON "attachments" USING btree ("patient_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "attachments_visit_id_idx" ON "attachments" USING btree ("visit_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_audit_org_created" ON "audit_events" USING btree ("organization_id","created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "audit_events_actorUserId_idx" ON "audit_events" USING btree ("actor_user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "chairs_organization_id_idx" ON "chairs" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "chairs_clinic_id_idx" ON "chairs" USING btree ("clinic_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "clinical_audit_logs_organizationId_idx" ON "clinical_audit_logs" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "clinical_rules_organizationId_idx" ON "clinical_rules" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "clinics_organization_id_idx" ON "clinics" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "communication_events_organization_id_idx" ON "communication_events" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "communication_events_clinic_id_idx" ON "communication_events" USING btree ("clinic_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "communication_events_task_id_idx" ON "communication_events" USING btree ("task_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "communication_events_patient_id_idx" ON "communication_events" USING btree ("patient_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "communication_events_actor_user_id_idx" ON "communication_events" USING btree ("actor_user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "communication_tasks_organization_id_idx" ON "communication_tasks" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "communication_tasks_clinic_id_idx" ON "communication_tasks" USING btree ("clinic_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "communication_tasks_patient_id_idx" ON "communication_tasks" USING btree ("patient_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "communication_tasks_appointment_id_idx" ON "communication_tasks" USING btree ("appointment_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "communication_tasks_visit_id_idx" ON "communication_tasks" USING btree ("visit_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "communication_tasks_document_id_idx" ON "communication_tasks" USING btree ("document_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "communication_templates_organization_id_idx" ON "communication_templates" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "communication_templates_clinic_id_idx" ON "communication_templates" USING btree ("clinic_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "crm_leads_organizationId_idx" ON "crm_leads" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "dente_max_bot_configs_organizationId_idx" ON "dente_max_bot_configs" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "dente_telegram_chat_links_clinicId_idx" ON "dente_telegram_chat_links" USING btree ("clinic_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "dente_telegram_link_codes_clinicId_idx" ON "dente_telegram_link_codes" USING btree ("clinic_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "dente_telegram_link_codes_createdByUserId_idx" ON "dente_telegram_link_codes" USING btree ("created_by_user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "dente_telegram_outbox_delivery_receipts_clinicId_idx" ON "dente_telegram_outbox_delivery_receipts" USING btree ("clinic_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "dente_telegram_outbox_delivery_receipts_taskId_idx" ON "dente_telegram_outbox_delivery_receipts" USING btree ("task_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "dente_telegram_outbox_delivery_receipts_eventId_idx" ON "dente_telegram_outbox_delivery_receipts" USING btree ("event_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "dente_telegram_webhook_events_clinicId_idx" ON "dente_telegram_webhook_events" USING btree ("clinic_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "dente_whatsapp_bot_configs_organizationId_idx" ON "dente_whatsapp_bot_configs" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "dicom_workbench_bundles_organization_id_idx" ON "dicom_workbench_bundles" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "dicom_workbench_bundles_patient_id_idx" ON "dicom_workbench_bundles" USING btree ("patient_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "doctor_commissions_organizationId_idx" ON "doctor_commissions" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "egisz_logs_organizationId_idx" ON "egisz_logs" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "egisz_logs_patientId_idx" ON "egisz_logs" USING btree ("patient_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "egisz_logs_visitId_idx" ON "egisz_logs" USING btree ("visit_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "family_groups_organizationId_idx" ON "family_groups" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "generated_documents_issued_by_idx" ON "generated_documents" USING btree ("issued_by_user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "generated_documents_voided_by_idx" ON "generated_documents" USING btree ("voided_by_user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "imaging_annotations_organizationId_idx" ON "imaging_annotations" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "imaging_annotations_studyId_idx" ON "imaging_annotations" USING btree ("study_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "imaging_annotations_seriesId_idx" ON "imaging_annotations" USING btree ("series_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "imaging_annotations_patientId_idx" ON "imaging_annotations" USING btree ("patient_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "imaging_instances_organizationId_idx" ON "imaging_instances" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "imaging_series_organizationId_idx" ON "imaging_series" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "imaging_studies_organization_id_idx" ON "imaging_studies" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "imaging_studies_patient_id_idx" ON "imaging_studies" USING btree ("patient_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "imaging_studies_visit_id_idx" ON "imaging_studies" USING btree ("visit_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "imaging_viewer_sessions_organization_id_idx" ON "imaging_viewer_sessions" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "imaging_viewer_sessions_study_id_idx" ON "imaging_viewer_sessions" USING btree ("study_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "imaging_viewer_sessions_patient_id_idx" ON "imaging_viewer_sessions" USING btree ("patient_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "imaging_viewer_sessions_visit_id_idx" ON "imaging_viewer_sessions" USING btree ("visit_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "import_batches_organization_id_idx" ON "import_batches" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "insurance_contracts_organizationId_idx" ON "insurance_contracts" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "inventory_items_organizationId_idx" ON "inventory_items" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "inventory_transactions_organizationId_idx" ON "inventory_transactions" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "lab_orders_organizationId_idx" ON "lab_orders" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "lab_orders_patientId_idx" ON "lab_orders" USING btree ("patient_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "messenger_inbound_events_organizationId_idx" ON "messenger_inbound_events" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "patient_consents_organization_id_idx" ON "patient_consents" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "patient_consents_patient_id_idx" ON "patient_consents" USING btree ("patient_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "patient_consents_document_id_idx" ON "patient_consents" USING btree ("document_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "patient_ct_plannings_organizationId_idx" ON "patient_ct_plannings" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "patient_ct_plannings_patientId_idx" ON "patient_ct_plannings" USING btree ("patient_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "patient_invoices_organizationId_idx" ON "patient_invoices" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "patient_invoices_patientId_idx" ON "patient_invoices" USING btree ("patient_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_patients_org_created" ON "patients" USING btree ("organization_id","created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_payments_org_paid_at" ON "payments" USING btree ("organization_id","paid_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "payments_patientId_idx" ON "payments" USING btree ("patient_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "payments_visitId_idx" ON "payments" USING btree ("visit_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "procedure_material_rules_organizationId_idx" ON "procedure_material_rules" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "protocol_templates_organizationId_idx" ON "protocol_templates" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "service_catalog_items_organization_id_idx" ON "service_catalog_items" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "sterilization_logs_organizationId_idx" ON "sterilization_logs" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "tooth_states_organizationId_idx" ON "tooth_states" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "tooth_states_patientId_idx" ON "tooth_states" USING btree ("patient_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "treatment_items_organization_id_idx" ON "treatment_items" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "treatment_items_patient_id_idx" ON "treatment_items" USING btree ("patient_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "treatment_items_visit_id_idx" ON "treatment_items" USING btree ("visit_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "treatment_items_service_id_idx" ON "treatment_items" USING btree ("service_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "treatment_items_planned_doctor_user_id_idx" ON "treatment_items" USING btree ("planned_doctor_user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "treatment_items_planned_chair_id_idx" ON "treatment_items" USING btree ("planned_chair_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "treatment_plan_items_new_organizationId_idx" ON "treatment_plan_items_new" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "treatment_plans_organizationId_idx" ON "treatment_plans" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "treatment_plans_patientId_idx" ON "treatment_plans" USING btree ("patient_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "treatment_scenarios_organization_id_idx" ON "treatment_scenarios" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "treatment_scenarios_patient_id_idx" ON "treatment_scenarios" USING btree ("patient_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "user_invitations_organization_id_idx" ON "user_invitations" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "users_organization_id_idx" ON "users" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "visit_diaries_organizationId_idx" ON "visit_diaries" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "visit_diary_revisions_organizationId_idx" ON "visit_diary_revisions" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "visit_templates_organizationId_idx" ON "visit_templates" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "visits_organization_id_idx" ON "visits" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "visits_patient_id_idx" ON "visits" USING btree ("patient_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "visits_appointment_id_idx" ON "visits" USING btree ("appointment_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "xray_scans_visitId_idx" ON "xray_scans" USING btree ("visit_id");--> statement-breakpoint
 ALTER TABLE "appointments" DROP COLUMN "is_synced";--> statement-breakpoint
 ALTER TABLE "appointments" DROP COLUMN "version";--> statement-breakpoint
 ALTER TABLE "chairs" DROP COLUMN "status";--> statement-breakpoint
@@ -1589,14 +1559,4 @@ ALTER TABLE "visits" DROP COLUMN "version";--> statement-breakpoint
 ALTER TABLE "appointments" ADD CONSTRAINT "appointments_time_order_check" CHECK ("appointments"."starts_at" < "appointments"."ends_at");--> statement-breakpoint
 ALTER TABLE "inventory_items" ADD CONSTRAINT "inventory_items_stock_quantity_check" CHECK (CAST("inventory_items"."stock_quantity" AS NUMERIC) >= 0);--> statement-breakpoint
 ALTER TABLE "inventory_items" ADD CONSTRAINT "inventory_items_current_qty_check" CHECK (CAST("inventory_items"."current_qty" AS NUMERIC) >= 0);--> statement-breakpoint
-DROP TYPE "public"."clinical_task_status";--> statement-breakpoint
-DROP TYPE "public"."crm_lead_status";--> statement-breakpoint
-DROP TYPE "public"."drill_protocol_status";--> statement-breakpoint
-DROP TYPE "public"."implant_system";--> statement-breakpoint
-DROP TYPE "public"."ingestion_source_type";--> statement-breakpoint
-DROP TYPE "public"."ingestion_status";--> statement-breakpoint
-DROP TYPE "public"."invoice_status";--> statement-breakpoint
-DROP TYPE "public"."lab_order_status";--> statement-breakpoint
-DROP TYPE "public"."misch_bone_class";--> statement-breakpoint
-DROP TYPE "public"."scheduler_reservation_status";--> statement-breakpoint
-DROP TYPE "public"."tooth_state_enum";
+-- preserved enum types (omitted drops from legacy diff)

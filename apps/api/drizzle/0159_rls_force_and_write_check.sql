@@ -489,8 +489,8 @@ ALTER POLICY tenant_isolation ON "pricelist_doctor_payrolls"
   USING (current_setting('app.superuser_bypass', true) = 'on' OR organization_id = NULLIF(current_setting('app.current_tenant', true), '')::uuid)
   WITH CHECK (organization_id = NULLIF(current_setting('app.current_tenant', true), '')::uuid);
 ALTER POLICY tenant_isolation ON "procedure_material_rules"
-  USING (current_setting('app.superuser_bypass', true) = 'on' OR organization_id = NULLIF(current_setting('app.current_tenant', true), '')::uuid)
-  WITH CHECK (organization_id = NULLIF(current_setting('app.current_tenant', true), '')::uuid);
+  USING (current_setting('app.superuser_bypass', true) = 'on' OR organization_id IS NULL OR organization_id = NULLIF(current_setting('app.current_tenant', true), '')::uuid)
+  WITH CHECK (current_setting('app.superuser_bypass', true) = 'on' OR organization_id IS NULL OR organization_id = NULLIF(current_setting('app.current_tenant', true), '')::uuid);
 ALTER POLICY tenant_isolation ON "prodoctorov_sync_exports"
   USING (current_setting('app.superuser_bypass', true) = 'on' OR organization_id = NULLIF(current_setting('app.current_tenant', true), '')::uuid)
   WITH CHECK (organization_id = NULLIF(current_setting('app.current_tenant', true), '')::uuid);

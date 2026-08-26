@@ -515,3 +515,6 @@ export function safeParseMdlpDataMatrix(
 	}
 }
 
+export const parseGs1DataMatrix = parseMdlpDataMatrix;
+export type ParsedGs1DataMatrix = MdlpParsedBarcode;
+

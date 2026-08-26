@@ -30,6 +30,11 @@
 			"types": "./dist/imaging/index.d.ts",
 			"import": "./dist/imaging/index.js",
 			"default": "./dist/imaging/index.js"
+		},
+		"./hardware": {
+			"types": "./dist/hardware/index.d.ts",
+			"import": "./dist/hardware/index.js",
+			"default": "./dist/hardware/index.js"
 		}
 	},
 	"scripts": {

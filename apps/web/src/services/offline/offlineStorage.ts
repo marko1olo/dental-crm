@@ -23,12 +23,23 @@ import {
 } from "@dental/shared";
 import { logger } from "../../utils/logger";
 import type {
+	CachedActiveSchedule,
+	CachedIcd10Dictionary,
+	CachedOdontogram,
+	CachedOdontogramTooth,
+	CachedPatientCard,
+	CachedPriceList804n,
+	Card043MutationInput,
 	EnqueueMutationInput,
+	Icd10DictionaryItem,
 	MutationEntityType,
 	MutationStatus,
+	OdontogramStampMutationInput,
 	OfflineDraft,
 	OfflineMutation,
 	OfflineQueueMetrics,
+	PriceList804nItem,
+	ServiceAdditionMutationInput,
 } from "./types";
 
 export {
@@ -43,10 +54,15 @@ export {
 };
 
 export const OFFLINE_DB_NAME = "dente-crm-offline-outbox";
-export const OFFLINE_DB_VERSION = 2;
+export const OFFLINE_DB_VERSION = 3;
 export const MUTATIONS_STORE_NAME = "mutations";
 export const DRAFTS_STORE_NAME = "drafts";
 export const CLINICAL_CACHE_STORE_NAME = "clinical_cache";
+export const SCHEDULES_CACHE_STORE_NAME = "schedules_cache";
+export const PATIENTS_CACHE_STORE_NAME = "patients_cache";
+export const ODONTOGRAM_CACHE_STORE_NAME = "odontogram_cache";
+export const PRICELIST_CACHE_STORE_NAME = "pricelist_804n_cache";
+export const ICD10_CACHE_STORE_NAME = "icd10_cache";
 
 export const LOCAL_STORAGE_MUTATIONS_KEY = "dente_offline_mutations_v1";
 export const LOCAL_STORAGE_DRAFTS_PREFIX = "dente_offline_draft_v1:";
@@ -192,6 +208,86 @@ export function openOfflineOutboxDb(): Promise<IDBDatabase> {
 					safeCreateIndex(cacheStore, "entityId", "entityId");
 					safeCreateIndex(cacheStore, "cachedAtMs", "cachedAtMs");
 					safeCreateIndex(cacheStore, "organizationId", "organizationId");
+				}
+
+				// 4. Schedules Cache Store
+				let schedulesStore: IDBObjectStore | undefined;
+				if (!db.objectStoreNames.contains(SCHEDULES_CACHE_STORE_NAME)) {
+					schedulesStore = db.createObjectStore(SCHEDULES_CACHE_STORE_NAME, {
+						keyPath: "scheduleKey",
+					});
+				} else if (tx) {
+					try {
+						schedulesStore = tx.objectStore(SCHEDULES_CACHE_STORE_NAME);
+					} catch {}
+				}
+				if (schedulesStore) {
+					safeCreateIndex(schedulesStore, "date", "date");
+					safeCreateIndex(schedulesStore, "organizationId", "organizationId");
+					safeCreateIndex(schedulesStore, "cachedAtMs", "cachedAtMs");
+				}
+
+				// 5. Patients Cache Store
+				let patientsStore: IDBObjectStore | undefined;
+				if (!db.objectStoreNames.contains(PATIENTS_CACHE_STORE_NAME)) {
+					patientsStore = db.createObjectStore(PATIENTS_CACHE_STORE_NAME, {
+						keyPath: "patientId",
+					});
+				} else if (tx) {
+					try {
+						patientsStore = tx.objectStore(PATIENTS_CACHE_STORE_NAME);
+					} catch {}
+				}
+				if (patientsStore) {
+					safeCreateIndex(patientsStore, "organizationId", "organizationId");
+					safeCreateIndex(patientsStore, "cachedAtMs", "cachedAtMs");
+				}
+
+				// 6. Odontogram Cache Store
+				let odontogramStore: IDBObjectStore | undefined;
+				if (!db.objectStoreNames.contains(ODONTOGRAM_CACHE_STORE_NAME)) {
+					odontogramStore = db.createObjectStore(ODONTOGRAM_CACHE_STORE_NAME, {
+						keyPath: "patientId",
+					});
+				} else if (tx) {
+					try {
+						odontogramStore = tx.objectStore(ODONTOGRAM_CACHE_STORE_NAME);
+					} catch {}
+				}
+				if (odontogramStore) {
+					safeCreateIndex(odontogramStore, "organizationId", "organizationId");
+					safeCreateIndex(odontogramStore, "cachedAtMs", "cachedAtMs");
+				}
+
+				// 7. Price List 804n Cache Store
+				let priceStore: IDBObjectStore | undefined;
+				if (!db.objectStoreNames.contains(PRICELIST_CACHE_STORE_NAME)) {
+					priceStore = db.createObjectStore(PRICELIST_CACHE_STORE_NAME, {
+						keyPath: "catalogKey",
+					});
+				} else if (tx) {
+					try {
+						priceStore = tx.objectStore(PRICELIST_CACHE_STORE_NAME);
+					} catch {}
+				}
+				if (priceStore) {
+					safeCreateIndex(priceStore, "organizationId", "organizationId");
+					safeCreateIndex(priceStore, "cachedAtMs", "cachedAtMs");
+				}
+
+				// 8. ICD-10 Dictionary Cache Store
+				let icd10Store: IDBObjectStore | undefined;
+				if (!db.objectStoreNames.contains(ICD10_CACHE_STORE_NAME)) {
+					icd10Store = db.createObjectStore(ICD10_CACHE_STORE_NAME, {
+						keyPath: "dictionaryKey",
+					});
+				} else if (tx) {
+					try {
+						icd10Store = tx.objectStore(ICD10_CACHE_STORE_NAME);
+					} catch {}
+				}
+				if (icd10Store) {
+					safeCreateIndex(icd10Store, "cachedAtMs", "cachedAtMs");
 				}
 			};
 
@@ -1545,6 +1641,672 @@ export async function deletePatientClinicalCache(cacheKey: string): Promise<void
 		logger.warn(`[OfflineStorage] Failed to delete clinical cache for ${cacheKey}`, err);
 	}
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 10. Active Schedules Offline IndexedDB Cache
+// ─────────────────────────────────────────────────────────────────────────────
+
+const inMemorySchedulesMap = new Map<string, CachedActiveSchedule>();
+export const LOCAL_STORAGE_SCHEDULES_PREFIX = "dente_schedule_cache_v1:";
+
+export async function cacheActiveSchedule(params: {
+	date: string;
+	organizationId?: string | undefined;
+	appointments: Array<Record<string, unknown>>;
+	scheduleKey?: string | undefined;
+}): Promise<CachedActiveSchedule> {
+	const orgKey = params.organizationId || "default";
+	const scheduleKey = params.scheduleKey || `schedule_${orgKey}_${params.date}`;
+	const nowMs = Date.now();
+	const record: CachedActiveSchedule = {
+		scheduleKey,
+		date: params.date,
+		organizationId: params.organizationId,
+		appointments: params.appointments,
+		cachedAt: new Date(nowMs).toISOString(),
+		cachedAtMs: nowMs,
+	};
+
+	inMemorySchedulesMap.set(scheduleKey, record);
+	saveToLocalStorageSafe(`${LOCAL_STORAGE_SCHEDULES_PREFIX}${scheduleKey}`, JSON.stringify(record));
+
+	try {
+		await withIdbTransactionRetry(async (db) => {
+			if (!db.objectStoreNames.contains(SCHEDULES_CACHE_STORE_NAME)) return;
+			return new Promise<void>((resolve, reject) => {
+				const tx = db.transaction(SCHEDULES_CACHE_STORE_NAME, "readwrite");
+				const store = tx.objectStore(SCHEDULES_CACHE_STORE_NAME);
+				const req = store.put(record);
+				req.onsuccess = () => resolve();
+				req.onerror = () => reject(req.error);
+			});
+		});
+	} catch (err) {
+		logger.warn(`[OfflineStorage] Failed to put schedule in IDB for ${scheduleKey}`, err);
+	}
+
+	return record;
+}
+
+export async function getCachedActiveSchedule(
+	date: string,
+	organizationId?: string | undefined,
+): Promise<CachedActiveSchedule | null> {
+	const orgKey = organizationId || "default";
+	const scheduleKey = `schedule_${orgKey}_${date}`;
+
+	let idbResult: CachedActiveSchedule | null = null;
+	try {
+		idbResult = await withIdbTransactionRetry(async (db) => {
+			if (!db.objectStoreNames.contains(SCHEDULES_CACHE_STORE_NAME)) return null;
+			return new Promise<CachedActiveSchedule | null>((resolve, reject) => {
+				const tx = db.transaction(SCHEDULES_CACHE_STORE_NAME, "readonly");
+				const store = tx.objectStore(SCHEDULES_CACHE_STORE_NAME);
+				const req = store.get(scheduleKey);
+				req.onsuccess = () => resolve((req.result as CachedActiveSchedule) ?? null);
+				req.onerror = () => reject(req.error);
+			});
+		});
+	} catch {}
+
+	if (idbResult) return idbResult;
+
+	const rawLocal = getFromLocalStorageSafe(`${LOCAL_STORAGE_SCHEDULES_PREFIX}${scheduleKey}`);
+	if (rawLocal) {
+		try {
+			const parsed = JSON.parse(rawLocal);
+			if (parsed && typeof parsed === "object") return parsed as CachedActiveSchedule;
+		} catch {}
+	}
+
+	return inMemorySchedulesMap.get(scheduleKey) ?? null;
+}
+
+export async function listCachedActiveSchedules(
+	organizationId?: string | undefined,
+): Promise<CachedActiveSchedule[]> {
+	let list: CachedActiveSchedule[] = [];
+	try {
+		list = await withIdbTransactionRetry(async (db) => {
+			if (!db.objectStoreNames.contains(SCHEDULES_CACHE_STORE_NAME)) return [];
+			return new Promise<CachedActiveSchedule[]>((resolve, reject) => {
+				const tx = db.transaction(SCHEDULES_CACHE_STORE_NAME, "readonly");
+				const store = tx.objectStore(SCHEDULES_CACHE_STORE_NAME);
+				const req = store.getAll();
+				req.onsuccess = () => resolve((req.result as CachedActiveSchedule[]) || []);
+				req.onerror = () => reject(req.error);
+			});
+		});
+	} catch {
+		list = Array.from(inMemorySchedulesMap.values());
+	}
+
+	if (list.length === 0) {
+		list = Array.from(inMemorySchedulesMap.values());
+	}
+
+	return list.filter((item) => {
+		if (organizationId && item.organizationId && item.organizationId !== organizationId) return false;
+		return true;
+	});
+}
+
+export async function clearCachedActiveSchedules(
+	organizationId?: string | undefined,
+): Promise<number> {
+	let deletedCount = 0;
+	for (const [key, item] of Array.from(inMemorySchedulesMap.entries())) {
+		if (!organizationId || item.organizationId === organizationId) {
+			inMemorySchedulesMap.delete(key);
+			removeFromLocalStorageSafe(`${LOCAL_STORAGE_SCHEDULES_PREFIX}${key}`);
+			deletedCount++;
+		}
+	}
+	try {
+		await withIdbTransactionRetry(async (db) => {
+			if (!db.objectStoreNames.contains(SCHEDULES_CACHE_STORE_NAME)) return;
+			return new Promise<void>((resolve, reject) => {
+				const tx = db.transaction(SCHEDULES_CACHE_STORE_NAME, "readwrite");
+				const store = tx.objectStore(SCHEDULES_CACHE_STORE_NAME);
+				const req = store.clear();
+				req.onsuccess = () => resolve();
+				req.onerror = () => reject(req.error);
+			});
+		});
+	} catch {}
+	return deletedCount;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 11. Patient Cards & Form 043/u Offline IndexedDB Cache
+// ─────────────────────────────────────────────────────────────────────────────
+
+const inMemoryPatientsMap = new Map<string, CachedPatientCard>();
+export const LOCAL_STORAGE_PATIENTS_PREFIX = "dente_patient_cache_v1:";
+
+export async function cachePatientCard(
+	card: CachedPatientCard | {
+		patientId: string;
+		organizationId?: string | undefined;
+		personalInfo: CachedPatientCard["personalInfo"];
+		card043?: CachedPatientCard["card043"];
+		odontogram?: Record<string, unknown> | undefined;
+	},
+): Promise<CachedPatientCard> {
+	const nowMs = Date.now();
+	const record: CachedPatientCard = {
+		patientId: card.patientId,
+		organizationId: card.organizationId,
+		personalInfo: card.personalInfo,
+		card043: card.card043,
+		odontogram: card.odontogram,
+		cachedAt: new Date(nowMs).toISOString(),
+		cachedAtMs: nowMs,
+	};
+
+	inMemoryPatientsMap.set(card.patientId, record);
+	saveToLocalStorageSafe(`${LOCAL_STORAGE_PATIENTS_PREFIX}${card.patientId}`, JSON.stringify(record));
+
+	try {
+		await withIdbTransactionRetry(async (db) => {
+			if (!db.objectStoreNames.contains(PATIENTS_CACHE_STORE_NAME)) return;
+			return new Promise<void>((resolve, reject) => {
+				const tx = db.transaction(PATIENTS_CACHE_STORE_NAME, "readwrite");
+				const store = tx.objectStore(PATIENTS_CACHE_STORE_NAME);
+				const req = store.put(record);
+				req.onsuccess = () => resolve();
+				req.onerror = () => reject(req.error);
+			});
+		});
+	} catch (err) {
+		logger.warn(`[OfflineStorage] Failed to put patient card in IDB for ${card.patientId}`, err);
+	}
+
+	return record;
+}
+
+export async function getCachedPatientCard(
+	patientId: string,
+	organizationId?: string | undefined,
+): Promise<CachedPatientCard | null> {
+	let idbResult: CachedPatientCard | null = null;
+	try {
+		idbResult = await withIdbTransactionRetry(async (db) => {
+			if (!db.objectStoreNames.contains(PATIENTS_CACHE_STORE_NAME)) return null;
+			return new Promise<CachedPatientCard | null>((resolve, reject) => {
+				const tx = db.transaction(PATIENTS_CACHE_STORE_NAME, "readonly");
+				const store = tx.objectStore(PATIENTS_CACHE_STORE_NAME);
+				const req = store.get(patientId);
+				req.onsuccess = () => resolve((req.result as CachedPatientCard) ?? null);
+				req.onerror = () => reject(req.error);
+			});
+		});
+	} catch {}
+
+	if (idbResult) {
+		if (!organizationId || !idbResult.organizationId || idbResult.organizationId === organizationId) {
+			return idbResult;
+		}
+	}
+
+	const rawLocal = getFromLocalStorageSafe(`${LOCAL_STORAGE_PATIENTS_PREFIX}${patientId}`);
+	if (rawLocal) {
+		try {
+			const parsed = JSON.parse(rawLocal) as CachedPatientCard;
+			if (parsed && typeof parsed === "object") {
+				if (!organizationId || !parsed.organizationId || parsed.organizationId === organizationId) {
+					return parsed;
+				}
+			}
+		} catch {}
+	}
+
+	const mem = inMemoryPatientsMap.get(patientId);
+	if (mem) {
+		if (!organizationId || !mem.organizationId || mem.organizationId === organizationId) {
+			return mem;
+		}
+	}
+
+	return null;
+}
+
+export async function listCachedPatientCards(
+	organizationId?: string | undefined,
+): Promise<CachedPatientCard[]> {
+	let list: CachedPatientCard[] = [];
+	try {
+		list = await withIdbTransactionRetry(async (db) => {
+			if (!db.objectStoreNames.contains(PATIENTS_CACHE_STORE_NAME)) return [];
+			return new Promise<CachedPatientCard[]>((resolve, reject) => {
+				const tx = db.transaction(PATIENTS_CACHE_STORE_NAME, "readonly");
+				const store = tx.objectStore(PATIENTS_CACHE_STORE_NAME);
+				const req = store.getAll();
+				req.onsuccess = () => resolve((req.result as CachedPatientCard[]) || []);
+				req.onerror = () => reject(req.error);
+			});
+		});
+	} catch {
+		list = Array.from(inMemoryPatientsMap.values());
+	}
+
+	if (list.length === 0) {
+		list = Array.from(inMemoryPatientsMap.values());
+	}
+
+	return list.filter((item) => {
+		if (organizationId && item.organizationId && item.organizationId !== organizationId) return false;
+		return true;
+	});
+}
+
+export async function deleteCachedPatientCard(patientId: string): Promise<void> {
+	inMemoryPatientsMap.delete(patientId);
+	removeFromLocalStorageSafe(`${LOCAL_STORAGE_PATIENTS_PREFIX}${patientId}`);
+	try {
+		await withIdbTransactionRetry(async (db) => {
+			if (!db.objectStoreNames.contains(PATIENTS_CACHE_STORE_NAME)) return;
+			return new Promise<void>((resolve, reject) => {
+				const tx = db.transaction(PATIENTS_CACHE_STORE_NAME, "readwrite");
+				const store = tx.objectStore(PATIENTS_CACHE_STORE_NAME);
+				const req = store.delete(patientId);
+				req.onsuccess = () => resolve();
+				req.onerror = () => reject(req.error);
+			});
+		});
+	} catch {}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 12. Odontograms & Tooth Surface Maps Offline IndexedDB Cache
+// ─────────────────────────────────────────────────────────────────────────────
+
+const inMemoryOdontogramsMap = new Map<string, CachedOdontogram>();
+export const LOCAL_STORAGE_ODONTOGRAM_PREFIX = "dente_odontogram_cache_v1:";
+
+export async function cacheOdontogramState(params: {
+	patientId: string;
+	organizationId?: string | undefined;
+	teeth: CachedOdontogramTooth[];
+	adultMode?: boolean | undefined;
+}): Promise<CachedOdontogram> {
+	const nowMs = Date.now();
+	const record: CachedOdontogram = {
+		patientId: params.patientId,
+		organizationId: params.organizationId,
+		teeth: params.teeth,
+		adultMode: params.adultMode !== undefined ? params.adultMode : true,
+		cachedAt: new Date(nowMs).toISOString(),
+		cachedAtMs: nowMs,
+	};
+
+	inMemoryOdontogramsMap.set(params.patientId, record);
+	saveToLocalStorageSafe(`${LOCAL_STORAGE_ODONTOGRAM_PREFIX}${params.patientId}`, JSON.stringify(record));
+
+	try {
+		await withIdbTransactionRetry(async (db) => {
+			if (!db.objectStoreNames.contains(ODONTOGRAM_CACHE_STORE_NAME)) return;
+			return new Promise<void>((resolve, reject) => {
+				const tx = db.transaction(ODONTOGRAM_CACHE_STORE_NAME, "readwrite");
+				const store = tx.objectStore(ODONTOGRAM_CACHE_STORE_NAME);
+				const req = store.put(record);
+				req.onsuccess = () => resolve();
+				req.onerror = () => reject(req.error);
+			});
+		});
+	} catch (err) {
+		logger.warn(`[OfflineStorage] Failed to put odontogram in IDB for ${params.patientId}`, err);
+	}
+
+	return record;
+}
+
+export async function getCachedOdontogramState(
+	patientId: string,
+	organizationId?: string | undefined,
+): Promise<CachedOdontogram | null> {
+	let idbResult: CachedOdontogram | null = null;
+	try {
+		idbResult = await withIdbTransactionRetry(async (db) => {
+			if (!db.objectStoreNames.contains(ODONTOGRAM_CACHE_STORE_NAME)) return null;
+			return new Promise<CachedOdontogram | null>((resolve, reject) => {
+				const tx = db.transaction(ODONTOGRAM_CACHE_STORE_NAME, "readonly");
+				const store = tx.objectStore(ODONTOGRAM_CACHE_STORE_NAME);
+				const req = store.get(patientId);
+				req.onsuccess = () => resolve((req.result as CachedOdontogram) ?? null);
+				req.onerror = () => reject(req.error);
+			});
+		});
+	} catch {}
+
+	if (idbResult) {
+		if (!organizationId || !idbResult.organizationId || idbResult.organizationId === organizationId) {
+			return idbResult;
+		}
+	}
+
+	const rawLocal = getFromLocalStorageSafe(`${LOCAL_STORAGE_ODONTOGRAM_PREFIX}${patientId}`);
+	if (rawLocal) {
+		try {
+			const parsed = JSON.parse(rawLocal) as CachedOdontogram;
+			if (parsed && typeof parsed === "object") {
+				if (!organizationId || !parsed.organizationId || parsed.organizationId === organizationId) {
+					return parsed;
+				}
+			}
+		} catch {}
+	}
+
+	const mem = inMemoryOdontogramsMap.get(patientId);
+	if (mem) {
+		if (!organizationId || !mem.organizationId || mem.organizationId === organizationId) {
+			return mem;
+		}
+	}
+
+	return null;
+}
+
+export async function updateCachedToothSurface(
+	patientId: string,
+	toothNumber: number,
+	surface: string,
+	condition: string,
+	organizationId?: string | undefined,
+): Promise<CachedOdontogram> {
+	const current = (await getCachedOdontogramState(patientId, organizationId)) || {
+		patientId,
+		organizationId,
+		teeth: [],
+		adultMode: true,
+		cachedAt: new Date().toISOString(),
+		cachedAtMs: Date.now(),
+	};
+
+	const teeth = [...current.teeth];
+	const existingIdx = teeth.findIndex((t) => t.toothNumber === toothNumber);
+	const nowIso = new Date().toISOString();
+
+	if (existingIdx >= 0) {
+		const existingTooth = teeth[existingIdx]!;
+		const currentSurfaces = new Set(existingTooth.surfaces || []);
+		if (surface) currentSurfaces.add(surface);
+
+		teeth[existingIdx] = {
+			...existingTooth,
+			statusCode: condition || existingTooth.statusCode,
+			surfaces: Array.from(currentSurfaces),
+			updatedAt: nowIso,
+		};
+	} else {
+		teeth.push({
+			toothNumber,
+			statusCode: condition,
+			surfaces: surface ? [surface] : [],
+			updatedAt: nowIso,
+		});
+	}
+
+	return cacheOdontogramState({
+		patientId,
+		organizationId,
+		teeth,
+		adultMode: current.adultMode,
+	});
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 13. Order 804n Pricelist Offline IndexedDB Cache
+// ─────────────────────────────────────────────────────────────────────────────
+
+const inMemoryPriceListsMap = new Map<string, CachedPriceList804n>();
+export const LOCAL_STORAGE_PRICELIST_PREFIX = "dente_pricelist_cache_v1:";
+
+export async function cachePriceList804n(
+	items: PriceList804nItem[],
+	organizationId?: string | undefined,
+	version = "1.0",
+): Promise<CachedPriceList804n> {
+	const orgKey = organizationId || "default";
+	const catalogKey = `pricelist_804n_${orgKey}`;
+	const nowMs = Date.now();
+	const record: CachedPriceList804n = {
+		catalogKey,
+		organizationId,
+		version,
+		items: Array.isArray(items) ? items : [],
+		cachedAt: new Date(nowMs).toISOString(),
+		cachedAtMs: nowMs,
+	};
+
+	inMemoryPriceListsMap.set(catalogKey, record);
+	saveToLocalStorageSafe(`${LOCAL_STORAGE_PRICELIST_PREFIX}${catalogKey}`, JSON.stringify(record));
+
+	try {
+		await withIdbTransactionRetry(async (db) => {
+			if (!db.objectStoreNames.contains(PRICELIST_CACHE_STORE_NAME)) return;
+			return new Promise<void>((resolve, reject) => {
+				const tx = db.transaction(PRICELIST_CACHE_STORE_NAME, "readwrite");
+				const store = tx.objectStore(PRICELIST_CACHE_STORE_NAME);
+				const req = store.put(record);
+				req.onsuccess = () => resolve();
+				req.onerror = () => reject(req.error);
+			});
+		});
+	} catch (err) {
+		logger.warn(`[OfflineStorage] Failed to put pricelist in IDB for ${catalogKey}`, err);
+	}
+
+	return record;
+}
+
+export async function getCachedPriceList804n(
+	organizationId?: string | undefined,
+): Promise<CachedPriceList804n | null> {
+	const orgKey = organizationId || "default";
+	const catalogKey = `pricelist_804n_${orgKey}`;
+
+	let idbResult: CachedPriceList804n | null = null;
+	try {
+		idbResult = await withIdbTransactionRetry(async (db) => {
+			if (!db.objectStoreNames.contains(PRICELIST_CACHE_STORE_NAME)) return null;
+			return new Promise<CachedPriceList804n | null>((resolve, reject) => {
+				const tx = db.transaction(PRICELIST_CACHE_STORE_NAME, "readonly");
+				const store = tx.objectStore(PRICELIST_CACHE_STORE_NAME);
+				const req = store.get(catalogKey);
+				req.onsuccess = () => resolve((req.result as CachedPriceList804n) ?? null);
+				req.onerror = () => reject(req.error);
+			});
+		});
+	} catch {}
+
+	if (idbResult) return idbResult;
+
+	const rawLocal = getFromLocalStorageSafe(`${LOCAL_STORAGE_PRICELIST_PREFIX}${catalogKey}`);
+	if (rawLocal) {
+		try {
+			const parsed = JSON.parse(rawLocal) as CachedPriceList804n;
+			if (parsed && typeof parsed === "object") return parsed;
+		} catch {}
+	}
+
+	return inMemoryPriceListsMap.get(catalogKey) ?? null;
+}
+
+export async function searchCachedPriceList804n(
+	query: string,
+	organizationId?: string | undefined,
+): Promise<PriceList804nItem[]> {
+	const catalog = await getCachedPriceList804n(organizationId);
+	if (!catalog || !Array.isArray(catalog.items)) return [];
+
+	const q = (query || "").trim().toLowerCase();
+	if (!q) return catalog.items;
+
+	return catalog.items.filter((item) => {
+		const codeMatch = item.code804n && item.code804n.toLowerCase().includes(q);
+		const nameMatch = item.name && item.name.toLowerCase().includes(q);
+		const catMatch = item.category && item.category.toLowerCase().includes(q);
+		return Boolean(codeMatch || nameMatch || catMatch);
+	});
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 14. ICD-10 Clinical Diagnosis Catalog Offline IndexedDB Cache
+// ─────────────────────────────────────────────────────────────────────────────
+
+const inMemoryIcd10Map = new Map<string, CachedIcd10Dictionary>();
+export const LOCAL_STORAGE_ICD10_PREFIX = "dente_icd10_cache_v1:";
+export const DEFAULT_ICD10_DICTIONARY_ID = "icd10_dental_catalog";
+
+export async function cacheIcd10Dictionary(
+	items: Icd10DictionaryItem[],
+	dictionaryKey = DEFAULT_ICD10_DICTIONARY_ID,
+): Promise<CachedIcd10Dictionary> {
+	const nowMs = Date.now();
+	const record: CachedIcd10Dictionary = {
+		dictionaryKey,
+		items: Array.isArray(items) ? items : [],
+		cachedAt: new Date(nowMs).toISOString(),
+		cachedAtMs: nowMs,
+	};
+
+	inMemoryIcd10Map.set(dictionaryKey, record);
+	saveToLocalStorageSafe(`${LOCAL_STORAGE_ICD10_PREFIX}${dictionaryKey}`, JSON.stringify(record));
+
+	try {
+		await withIdbTransactionRetry(async (db) => {
+			if (!db.objectStoreNames.contains(ICD10_CACHE_STORE_NAME)) return;
+			return new Promise<void>((resolve, reject) => {
+				const tx = db.transaction(ICD10_CACHE_STORE_NAME, "readwrite");
+				const store = tx.objectStore(ICD10_CACHE_STORE_NAME);
+				const req = store.put(record);
+				req.onsuccess = () => resolve();
+				req.onerror = () => reject(req.error);
+			});
+		});
+	} catch (err) {
+		logger.warn(`[OfflineStorage] Failed to put icd10 dictionary in IDB`, err);
+	}
+
+	return record;
+}
+
+export async function getCachedIcd10Dictionary(
+	dictionaryKey = DEFAULT_ICD10_DICTIONARY_ID,
+): Promise<CachedIcd10Dictionary | null> {
+	let idbResult: CachedIcd10Dictionary | null = null;
+	try {
+		idbResult = await withIdbTransactionRetry(async (db) => {
+			if (!db.objectStoreNames.contains(ICD10_CACHE_STORE_NAME)) return null;
+			return new Promise<CachedIcd10Dictionary | null>((resolve, reject) => {
+				const tx = db.transaction(ICD10_CACHE_STORE_NAME, "readonly");
+				const store = tx.objectStore(ICD10_CACHE_STORE_NAME);
+				const req = store.get(dictionaryKey);
+				req.onsuccess = () => resolve((req.result as CachedIcd10Dictionary) ?? null);
+				req.onerror = () => reject(req.error);
+			});
+		});
+	} catch {}
+
+	if (idbResult) return idbResult;
+
+	const rawLocal = getFromLocalStorageSafe(`${LOCAL_STORAGE_ICD10_PREFIX}${dictionaryKey}`);
+	if (rawLocal) {
+		try {
+			const parsed = JSON.parse(rawLocal) as CachedIcd10Dictionary;
+			if (parsed && typeof parsed === "object") return parsed;
+		} catch {}
+	}
+
+	return inMemoryIcd10Map.get(dictionaryKey) ?? null;
+}
+
+export async function searchCachedIcd10Dictionary(
+	query: string,
+	dictionaryKey = DEFAULT_ICD10_DICTIONARY_ID,
+): Promise<Icd10DictionaryItem[]> {
+	const dict = await getCachedIcd10Dictionary(dictionaryKey);
+	if (!dict || !Array.isArray(dict.items)) return [];
+
+	const q = (query || "").trim().toLowerCase();
+	if (!q) return dict.items;
+
+	return dict.items.filter((item) => {
+		const codeMatch = item.code && item.code.toLowerCase().includes(q);
+		const nameMatch = item.name && item.name.toLowerCase().includes(q);
+		const catMatch = item.category && item.category.toLowerCase().includes(q);
+		return Boolean(codeMatch || nameMatch || catMatch);
+	});
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 15. Specialized Domain Outbox Mutation Helpers (043/u, Odontogram, Services)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function enqueueCard043Mutation(
+	input: Card043MutationInput,
+): Promise<OfflineMutation<Record<string, unknown>>> {
+	return enqueueOfflineMutation<Record<string, unknown>>({
+		entityType: "DIARY_043_DRAFT",
+		entityId: input.patientId,
+		action: input.action || "update",
+		payload: input.diaryData,
+		organizationId: input.organizationId,
+		authorUserId: input.authorUserId,
+	});
+}
+
+export async function enqueueOdontogramMutation(
+	input: OdontogramStampMutationInput,
+): Promise<OfflineMutation<Record<string, unknown>>> {
+	const payload: Record<string, unknown> = {
+		tooth: input.tooth,
+		surface: input.surface,
+		condition: input.condition,
+		...(input.state || {}),
+	};
+	return enqueueOfflineMutation<Record<string, unknown>>({
+		entityType: "ODONTOGRAM_STATUS",
+		entityId: input.patientId,
+		action: input.action || "update",
+		payload,
+		organizationId: input.organizationId,
+		authorUserId: input.authorUserId,
+	});
+}
+
+export async function enqueueServiceAdditionMutation(
+	input: ServiceAdditionMutationInput,
+): Promise<OfflineMutation<Record<string, unknown>>> {
+	const item = input.serviceItem;
+	const priceKop =
+		item.priceKopecks !== undefined
+			? item.priceKopecks
+			: Math.round((item.priceRub || 0) * 100);
+
+	const payload: Record<string, unknown> = {
+		visitId: input.visitId,
+		patientId: input.patientId,
+		code804n: item.code804n,
+		name: item.name,
+		priceRub: item.priceRub,
+		priceKopecks: priceKop,
+		quantity: item.quantity || 1,
+		toothNumber: item.toothNumber,
+		discountRub: item.discountRub || 0,
+	};
+
+	return enqueueOfflineMutation<Record<string, unknown>>({
+		entityType: "TREATMENT_PLAN_DRAFT",
+		entityId: input.visitId || input.patientId,
+		action: input.action || "create",
+		payload,
+		organizationId: input.organizationId,
+		authorUserId: input.authorUserId,
+	});
+}
+
 
 
 

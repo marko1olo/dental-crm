@@ -16,6 +16,7 @@ export * from "./finance/index.js";
 export * from "./imaging/index.js";
 export * from "./cda/index.js";
 export * from "./logging/index.js";
+export * from "./hardware/index.js";
 export declare function isHttpUrl(value: string): boolean;
 export declare const httpUrlSchema: z.ZodEffects<z.ZodString, string, string>;
 export declare const patientStatusSchema: z.ZodEnum<["active", "archived"]>;
@@ -1163,7 +1164,7 @@ export declare const speechGatewayStatusSchema: z.ZodObject<{
     };
     maxChunkBytes: number;
     requestedProviderId: "none" | "browser_speech" | "groq_whisper" | "openai_transcribe" | "deepgram_streaming" | "assemblyai_async" | "cloudflare_whisper" | "azure_speech" | "google_speech" | "huggingface_asr" | "mobile_native_speech" | "local_whisper" | "vosk_local";
-    providerSelectionMode: "manual" | "disabled" | "auto" | "fallback";
+    providerSelectionMode: "auto" | "manual" | "disabled" | "fallback";
     serverTranscriptionEnabled: boolean;
     serverTranscriptionCurrentlyAvailable: boolean;
     keyConfigured: boolean;
@@ -1216,7 +1217,7 @@ export declare const speechGatewayStatusSchema: z.ZodObject<{
     };
     maxChunkBytes: number;
     requestedProviderId: "none" | "browser_speech" | "groq_whisper" | "openai_transcribe" | "deepgram_streaming" | "assemblyai_async" | "cloudflare_whisper" | "azure_speech" | "google_speech" | "huggingface_asr" | "mobile_native_speech" | "local_whisper" | "vosk_local";
-    providerSelectionMode: "manual" | "disabled" | "auto" | "fallback";
+    providerSelectionMode: "auto" | "manual" | "disabled" | "fallback";
     serverTranscriptionEnabled: boolean;
     serverTranscriptionCurrentlyAvailable: boolean;
     keyConfigured: boolean;
@@ -1884,7 +1885,7 @@ export declare const speechTranscriptionResponseSchema: z.ZodObject<{
         };
         maxChunkBytes: number;
         requestedProviderId: "none" | "browser_speech" | "groq_whisper" | "openai_transcribe" | "deepgram_streaming" | "assemblyai_async" | "cloudflare_whisper" | "azure_speech" | "google_speech" | "huggingface_asr" | "mobile_native_speech" | "local_whisper" | "vosk_local";
-        providerSelectionMode: "manual" | "disabled" | "auto" | "fallback";
+        providerSelectionMode: "auto" | "manual" | "disabled" | "fallback";
         serverTranscriptionEnabled: boolean;
         serverTranscriptionCurrentlyAvailable: boolean;
         keyConfigured: boolean;
@@ -1937,7 +1938,7 @@ export declare const speechTranscriptionResponseSchema: z.ZodObject<{
         };
         maxChunkBytes: number;
         requestedProviderId: "none" | "browser_speech" | "groq_whisper" | "openai_transcribe" | "deepgram_streaming" | "assemblyai_async" | "cloudflare_whisper" | "azure_speech" | "google_speech" | "huggingface_asr" | "mobile_native_speech" | "local_whisper" | "vosk_local";
-        providerSelectionMode: "manual" | "disabled" | "auto" | "fallback";
+        providerSelectionMode: "auto" | "manual" | "disabled" | "fallback";
         serverTranscriptionEnabled: boolean;
         serverTranscriptionCurrentlyAvailable: boolean;
         keyConfigured: boolean;
@@ -2024,7 +2025,7 @@ export declare const speechTranscriptionResponseSchema: z.ZodObject<{
         };
         maxChunkBytes: number;
         requestedProviderId: "none" | "browser_speech" | "groq_whisper" | "openai_transcribe" | "deepgram_streaming" | "assemblyai_async" | "cloudflare_whisper" | "azure_speech" | "google_speech" | "huggingface_asr" | "mobile_native_speech" | "local_whisper" | "vosk_local";
-        providerSelectionMode: "manual" | "disabled" | "auto" | "fallback";
+        providerSelectionMode: "auto" | "manual" | "disabled" | "fallback";
         serverTranscriptionEnabled: boolean;
         serverTranscriptionCurrentlyAvailable: boolean;
         keyConfigured: boolean;
@@ -2111,7 +2112,7 @@ export declare const speechTranscriptionResponseSchema: z.ZodObject<{
         };
         maxChunkBytes: number;
         requestedProviderId: "none" | "browser_speech" | "groq_whisper" | "openai_transcribe" | "deepgram_streaming" | "assemblyai_async" | "cloudflare_whisper" | "azure_speech" | "google_speech" | "huggingface_asr" | "mobile_native_speech" | "local_whisper" | "vosk_local";
-        providerSelectionMode: "manual" | "disabled" | "auto" | "fallback";
+        providerSelectionMode: "auto" | "manual" | "disabled" | "fallback";
         serverTranscriptionEnabled: boolean;
         serverTranscriptionCurrentlyAvailable: boolean;
         keyConfigured: boolean;
@@ -4533,7 +4534,7 @@ export declare const treatmentPlanItemSchema: z.ZodObject<{
     plannedChairId: z.ZodNullable<z.ZodString>;
     notes: z.ZodNullable<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    status: "completed" | "in_progress" | "cancelled" | "proposed" | "approved";
+    status: "in_progress" | "completed" | "cancelled" | "proposed" | "approved";
     id: string;
     quantity: number;
     visitId: string | null;
@@ -4549,7 +4550,7 @@ export declare const treatmentPlanItemSchema: z.ZodObject<{
     plannedChairId: string | null;
     snapshotServiceCategory?: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents" | null | undefined;
 }, {
-    status: "completed" | "in_progress" | "cancelled" | "proposed" | "approved";
+    status: "in_progress" | "completed" | "cancelled" | "proposed" | "approved";
     id: string;
     quantity: number;
     visitId: string | null;
@@ -5079,7 +5080,7 @@ export declare const fiscalReceiptDetailsSchema: z.ZodObject<{
     fpd?: string | null | undefined;
     cashierName?: string | null | undefined;
     receiptUrl?: string | null | undefined;
-    calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+    calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
     calculationSubject?: "service" | "payment" | "goods" | null | undefined;
     quantityMeasure?: number | null | undefined;
     advancePaymentRub?: number | null | undefined;
@@ -5090,7 +5091,7 @@ export declare const fiscalReceiptDetailsSchema: z.ZodObject<{
     fpd?: string | null | undefined;
     cashierName?: string | null | undefined;
     receiptUrl?: string | null | undefined;
-    calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+    calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
     calculationSubject?: "service" | "payment" | "goods" | null | undefined;
     quantityMeasure?: number | null | undefined;
     advancePaymentRub?: number | null | undefined;
@@ -5132,7 +5133,7 @@ export declare const paymentSchema: z.ZodObject<{
         fpd?: string | null | undefined;
         cashierName?: string | null | undefined;
         receiptUrl?: string | null | undefined;
-        calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+        calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
         calculationSubject?: "service" | "payment" | "goods" | null | undefined;
         quantityMeasure?: number | null | undefined;
         advancePaymentRub?: number | null | undefined;
@@ -5143,7 +5144,7 @@ export declare const paymentSchema: z.ZodObject<{
         fpd?: string | null | undefined;
         cashierName?: string | null | undefined;
         receiptUrl?: string | null | undefined;
-        calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+        calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
         calculationSubject?: "service" | "payment" | "goods" | null | undefined;
         quantityMeasure?: number | null | undefined;
         advancePaymentRub?: number | null | undefined;
@@ -5180,7 +5181,7 @@ export declare const paymentSchema: z.ZodObject<{
         fpd?: string | null | undefined;
         cashierName?: string | null | undefined;
         receiptUrl?: string | null | undefined;
-        calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+        calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
         calculationSubject?: "service" | "payment" | "goods" | null | undefined;
         quantityMeasure?: number | null | undefined;
         advancePaymentRub?: number | null | undefined;
@@ -5214,7 +5215,7 @@ export declare const paymentSchema: z.ZodObject<{
         fpd?: string | null | undefined;
         cashierName?: string | null | undefined;
         receiptUrl?: string | null | undefined;
-        calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+        calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
         calculationSubject?: "service" | "payment" | "goods" | null | undefined;
         quantityMeasure?: number | null | undefined;
         advancePaymentRub?: number | null | undefined;
@@ -5310,7 +5311,7 @@ export declare const communicationTaskSchema: z.ZodObject<{
     lastEventAt: z.ZodNullable<z.ZodString>;
     createdAt: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    status: "queued" | "failed" | "completed" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
+    status: "completed" | "failed" | "queued" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
     id: string;
     visitId: string | null;
     documentId: string | null;
@@ -5329,7 +5330,7 @@ export declare const communicationTaskSchema: z.ZodObject<{
     workflowCode?: "telegram_tax_document_request" | "telegram_billing_document_request" | "telegram_medical_document_request" | "telegram_patient_forms_request" | "telegram_care_extraction_request" | "telegram_care_implant_request" | "telegram_care_filling_request" | "telegram_care_endo_request" | "telegram_care_surgery_request" | "telegram_care_anesthesia_request" | "telegram_care_hygiene_request" | "telegram_care_prosthetics_request" | "telegram_care_orthodontics_request" | "telegram_care_periodontology_request" | "telegram_appointment_reschedule_request" | "telegram_appointment_call_request" | "telegram_contact_request" | null | undefined;
     lastOutcome?: "callback_requested" | "no_answer" | "reschedule_requested" | "promised_payment" | "document_pickup" | null | undefined;
 }, {
-    status: "queued" | "failed" | "completed" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
+    status: "completed" | "failed" | "queued" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
     id: string;
     visitId: string | null;
     documentId: string | null;
@@ -5362,7 +5363,7 @@ export declare const communicationEventSchema: z.ZodObject<{
     createdAt: z.ZodString;
 }, "strip", z.ZodTypeAny, {
     message: string;
-    status: "queued" | "failed" | "completed" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
+    status: "completed" | "failed" | "queued" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
     id: string;
     patientId: string;
     organizationId: string;
@@ -5373,7 +5374,7 @@ export declare const communicationEventSchema: z.ZodObject<{
     direction: "inbound" | "outbound";
 }, {
     message: string;
-    status: "queued" | "failed" | "completed" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
+    status: "completed" | "failed" | "queued" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
     id: string;
     patientId: string;
     organizationId: string;
@@ -19078,7 +19079,7 @@ export declare const taxPaymentSnapshotSchema: z.ZodObject<{
             fpd?: string | null | undefined;
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
-            calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
             calculationSubject?: "service" | "payment" | "goods" | null | undefined;
             quantityMeasure?: number | null | undefined;
             advancePaymentRub?: number | null | undefined;
@@ -19089,7 +19090,7 @@ export declare const taxPaymentSnapshotSchema: z.ZodObject<{
             fpd?: string | null | undefined;
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
-            calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
             calculationSubject?: "service" | "payment" | "goods" | null | undefined;
             quantityMeasure?: number | null | undefined;
             advancePaymentRub?: number | null | undefined;
@@ -19126,7 +19127,7 @@ export declare const taxPaymentSnapshotSchema: z.ZodObject<{
             fpd?: string | null | undefined;
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
-            calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
             calculationSubject?: "service" | "payment" | "goods" | null | undefined;
             quantityMeasure?: number | null | undefined;
             advancePaymentRub?: number | null | undefined;
@@ -19160,7 +19161,7 @@ export declare const taxPaymentSnapshotSchema: z.ZodObject<{
             fpd?: string | null | undefined;
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
-            calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
             calculationSubject?: "service" | "payment" | "goods" | null | undefined;
             quantityMeasure?: number | null | undefined;
             advancePaymentRub?: number | null | undefined;
@@ -19198,7 +19199,7 @@ export declare const taxPaymentSnapshotSchema: z.ZodObject<{
             fpd?: string | null | undefined;
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
-            calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
             calculationSubject?: "service" | "payment" | "goods" | null | undefined;
             quantityMeasure?: number | null | undefined;
             advancePaymentRub?: number | null | undefined;
@@ -19239,7 +19240,7 @@ export declare const taxPaymentSnapshotSchema: z.ZodObject<{
             fpd?: string | null | undefined;
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
-            calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
             calculationSubject?: "service" | "payment" | "goods" | null | undefined;
             quantityMeasure?: number | null | undefined;
             advancePaymentRub?: number | null | undefined;
@@ -19894,7 +19895,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             fpd?: string | null | undefined;
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
-            calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
             calculationSubject?: "service" | "payment" | "goods" | null | undefined;
             quantityMeasure?: number | null | undefined;
             advancePaymentRub?: number | null | undefined;
@@ -19905,7 +19906,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             fpd?: string | null | undefined;
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
-            calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
             calculationSubject?: "service" | "payment" | "goods" | null | undefined;
             quantityMeasure?: number | null | undefined;
             advancePaymentRub?: number | null | undefined;
@@ -19942,7 +19943,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             fpd?: string | null | undefined;
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
-            calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
             calculationSubject?: "service" | "payment" | "goods" | null | undefined;
             quantityMeasure?: number | null | undefined;
             advancePaymentRub?: number | null | undefined;
@@ -19976,7 +19977,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             fpd?: string | null | undefined;
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
-            calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
             calculationSubject?: "service" | "payment" | "goods" | null | undefined;
             quantityMeasure?: number | null | undefined;
             advancePaymentRub?: number | null | undefined;
@@ -20048,7 +20049,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             fpd?: string | null | undefined;
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
-            calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
             calculationSubject?: "service" | "payment" | "goods" | null | undefined;
             quantityMeasure?: number | null | undefined;
             advancePaymentRub?: number | null | undefined;
@@ -20161,7 +20162,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             fpd?: string | null | undefined;
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
-            calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
             calculationSubject?: "service" | "payment" | "goods" | null | undefined;
             quantityMeasure?: number | null | undefined;
             advancePaymentRub?: number | null | undefined;
@@ -20292,7 +20293,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -20303,7 +20304,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -20340,7 +20341,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -20374,7 +20375,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -20412,7 +20413,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -20453,7 +20454,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -27849,7 +27850,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -27860,7 +27861,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -27897,7 +27898,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -27931,7 +27932,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -28003,7 +28004,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -28116,7 +28117,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -29422,7 +29423,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -29520,7 +29521,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -30811,7 +30812,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -30909,7 +30910,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -31102,7 +31103,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -31113,7 +31114,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -31150,7 +31151,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -31184,7 +31185,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -31222,7 +31223,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -31263,7 +31264,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -38659,7 +38660,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -38670,7 +38671,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -38707,7 +38708,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -38741,7 +38742,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -38813,7 +38814,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -38926,7 +38927,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 fpd?: string | null | undefined;
                 cashierName?: string | null | undefined;
                 receiptUrl?: string | null | undefined;
-                calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                 calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                 quantityMeasure?: number | null | undefined;
                 advancePaymentRub?: number | null | undefined;
@@ -39644,7 +39645,7 @@ export declare const importBatchSchema: z.ZodObject<{
     blockedRows: z.ZodNumber;
     createdAt: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    status: "failed" | "completed" | "previewed" | "completed_with_skips";
+    status: "completed" | "failed" | "previewed" | "completed_with_skips";
     id: string;
     organizationId: string;
     createdAt: string;
@@ -39655,7 +39656,7 @@ export declare const importBatchSchema: z.ZodObject<{
     warningRows: number;
     blockedRows: number;
 }, {
-    status: "failed" | "completed" | "previewed" | "completed_with_skips";
+    status: "completed" | "failed" | "previewed" | "completed_with_skips";
     id: string;
     organizationId: string;
     createdAt: string;
@@ -39683,8 +39684,8 @@ export declare const auditEventSchema: z.ZodObject<{
     createdAt: string;
     entityId: string;
     action: string;
-    actorUserId: string | null;
     entityType: string;
+    actorUserId: string | null;
 }, {
     id: string;
     reason: string | null;
@@ -39692,8 +39693,8 @@ export declare const auditEventSchema: z.ZodObject<{
     createdAt: string;
     entityId: string;
     action: string;
-    actorUserId: string | null;
     entityType: string;
+    actorUserId: string | null;
 }>;
 export type AuditEvent = z.infer<typeof auditEventSchema>;
 export declare const dashboardSchema: z.ZodObject<{
@@ -41190,7 +41191,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     fpd?: string | null | undefined;
                     cashierName?: string | null | undefined;
                     receiptUrl?: string | null | undefined;
-                    calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                    calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                     calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                     quantityMeasure?: number | null | undefined;
                     advancePaymentRub?: number | null | undefined;
@@ -41201,7 +41202,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     fpd?: string | null | undefined;
                     cashierName?: string | null | undefined;
                     receiptUrl?: string | null | undefined;
-                    calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                    calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                     calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                     quantityMeasure?: number | null | undefined;
                     advancePaymentRub?: number | null | undefined;
@@ -41238,7 +41239,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     fpd?: string | null | undefined;
                     cashierName?: string | null | undefined;
                     receiptUrl?: string | null | undefined;
-                    calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                    calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                     calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                     quantityMeasure?: number | null | undefined;
                     advancePaymentRub?: number | null | undefined;
@@ -41272,7 +41273,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     fpd?: string | null | undefined;
                     cashierName?: string | null | undefined;
                     receiptUrl?: string | null | undefined;
-                    calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                    calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                     calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                     quantityMeasure?: number | null | undefined;
                     advancePaymentRub?: number | null | undefined;
@@ -41310,7 +41311,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     fpd?: string | null | undefined;
                     cashierName?: string | null | undefined;
                     receiptUrl?: string | null | undefined;
-                    calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                    calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                     calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                     quantityMeasure?: number | null | undefined;
                     advancePaymentRub?: number | null | undefined;
@@ -41351,7 +41352,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     fpd?: string | null | undefined;
                     cashierName?: string | null | undefined;
                     receiptUrl?: string | null | undefined;
-                    calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                    calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                     calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                     quantityMeasure?: number | null | undefined;
                     advancePaymentRub?: number | null | undefined;
@@ -48747,7 +48748,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     fpd?: string | null | undefined;
                     cashierName?: string | null | undefined;
                     receiptUrl?: string | null | undefined;
-                    calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                    calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                     calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                     quantityMeasure?: number | null | undefined;
                     advancePaymentRub?: number | null | undefined;
@@ -48758,7 +48759,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     fpd?: string | null | undefined;
                     cashierName?: string | null | undefined;
                     receiptUrl?: string | null | undefined;
-                    calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                    calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                     calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                     quantityMeasure?: number | null | undefined;
                     advancePaymentRub?: number | null | undefined;
@@ -48795,7 +48796,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     fpd?: string | null | undefined;
                     cashierName?: string | null | undefined;
                     receiptUrl?: string | null | undefined;
-                    calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                    calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                     calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                     quantityMeasure?: number | null | undefined;
                     advancePaymentRub?: number | null | undefined;
@@ -48829,7 +48830,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     fpd?: string | null | undefined;
                     cashierName?: string | null | undefined;
                     receiptUrl?: string | null | undefined;
-                    calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                    calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                     calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                     quantityMeasure?: number | null | undefined;
                     advancePaymentRub?: number | null | undefined;
@@ -48901,7 +48902,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     fpd?: string | null | undefined;
                     cashierName?: string | null | undefined;
                     receiptUrl?: string | null | undefined;
-                    calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                    calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                     calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                     quantityMeasure?: number | null | undefined;
                     advancePaymentRub?: number | null | undefined;
@@ -49014,7 +49015,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     fpd?: string | null | undefined;
                     cashierName?: string | null | undefined;
                     receiptUrl?: string | null | undefined;
-                    calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+                    calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
                     calculationSubject?: "service" | "payment" | "goods" | null | undefined;
                     quantityMeasure?: number | null | undefined;
                     advancePaymentRub?: number | null | undefined;
@@ -49482,7 +49483,7 @@ export declare const dashboardSchema: z.ZodObject<{
         plannedChairId: z.ZodNullable<z.ZodString>;
         notes: z.ZodNullable<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        status: "completed" | "in_progress" | "cancelled" | "proposed" | "approved";
+        status: "in_progress" | "completed" | "cancelled" | "proposed" | "approved";
         id: string;
         quantity: number;
         visitId: string | null;
@@ -49498,7 +49499,7 @@ export declare const dashboardSchema: z.ZodObject<{
         plannedChairId: string | null;
         snapshotServiceCategory?: "other" | "therapy" | "surgery" | "orthodontics" | "hygiene" | "prosthetics" | "periodontology" | "consultation" | "imaging" | "documents" | null | undefined;
     }, {
-        status: "completed" | "in_progress" | "cancelled" | "proposed" | "approved";
+        status: "in_progress" | "completed" | "cancelled" | "proposed" | "approved";
         id: string;
         quantity: number;
         visitId: string | null;
@@ -49753,7 +49754,7 @@ export declare const dashboardSchema: z.ZodObject<{
             fpd?: string | null | undefined;
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
-            calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
             calculationSubject?: "service" | "payment" | "goods" | null | undefined;
             quantityMeasure?: number | null | undefined;
             advancePaymentRub?: number | null | undefined;
@@ -49764,7 +49765,7 @@ export declare const dashboardSchema: z.ZodObject<{
             fpd?: string | null | undefined;
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
-            calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
             calculationSubject?: "service" | "payment" | "goods" | null | undefined;
             quantityMeasure?: number | null | undefined;
             advancePaymentRub?: number | null | undefined;
@@ -49801,7 +49802,7 @@ export declare const dashboardSchema: z.ZodObject<{
             fpd?: string | null | undefined;
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
-            calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
             calculationSubject?: "service" | "payment" | "goods" | null | undefined;
             quantityMeasure?: number | null | undefined;
             advancePaymentRub?: number | null | undefined;
@@ -49835,7 +49836,7 @@ export declare const dashboardSchema: z.ZodObject<{
             fpd?: string | null | undefined;
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
-            calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
             calculationSubject?: "service" | "payment" | "goods" | null | undefined;
             quantityMeasure?: number | null | undefined;
             advancePaymentRub?: number | null | undefined;
@@ -49928,7 +49929,7 @@ export declare const dashboardSchema: z.ZodObject<{
         lastEventAt: z.ZodNullable<z.ZodString>;
         createdAt: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        status: "queued" | "failed" | "completed" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
+        status: "completed" | "failed" | "queued" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
         id: string;
         visitId: string | null;
         documentId: string | null;
@@ -49947,7 +49948,7 @@ export declare const dashboardSchema: z.ZodObject<{
         workflowCode?: "telegram_tax_document_request" | "telegram_billing_document_request" | "telegram_medical_document_request" | "telegram_patient_forms_request" | "telegram_care_extraction_request" | "telegram_care_implant_request" | "telegram_care_filling_request" | "telegram_care_endo_request" | "telegram_care_surgery_request" | "telegram_care_anesthesia_request" | "telegram_care_hygiene_request" | "telegram_care_prosthetics_request" | "telegram_care_orthodontics_request" | "telegram_care_periodontology_request" | "telegram_appointment_reschedule_request" | "telegram_appointment_call_request" | "telegram_contact_request" | null | undefined;
         lastOutcome?: "callback_requested" | "no_answer" | "reschedule_requested" | "promised_payment" | "document_pickup" | null | undefined;
     }, {
-        status: "queued" | "failed" | "completed" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
+        status: "completed" | "failed" | "queued" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
         id: string;
         visitId: string | null;
         documentId: string | null;
@@ -49979,7 +49980,7 @@ export declare const dashboardSchema: z.ZodObject<{
         createdAt: z.ZodString;
     }, "strip", z.ZodTypeAny, {
         message: string;
-        status: "queued" | "failed" | "completed" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
+        status: "completed" | "failed" | "queued" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
         id: string;
         patientId: string;
         organizationId: string;
@@ -49990,7 +49991,7 @@ export declare const dashboardSchema: z.ZodObject<{
         direction: "inbound" | "outbound";
     }, {
         message: string;
-        status: "queued" | "failed" | "completed" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
+        status: "completed" | "failed" | "queued" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
         id: string;
         patientId: string;
         organizationId: string;
@@ -50040,7 +50041,7 @@ export declare const dashboardSchema: z.ZodObject<{
         blockedRows: z.ZodNumber;
         createdAt: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        status: "failed" | "completed" | "previewed" | "completed_with_skips";
+        status: "completed" | "failed" | "previewed" | "completed_with_skips";
         id: string;
         organizationId: string;
         createdAt: string;
@@ -50051,7 +50052,7 @@ export declare const dashboardSchema: z.ZodObject<{
         warningRows: number;
         blockedRows: number;
     }, {
-        status: "failed" | "completed" | "previewed" | "completed_with_skips";
+        status: "completed" | "failed" | "previewed" | "completed_with_skips";
         id: string;
         organizationId: string;
         createdAt: string;
@@ -50112,8 +50113,8 @@ export declare const dashboardSchema: z.ZodObject<{
         createdAt: string;
         entityId: string;
         action: string;
-        actorUserId: string | null;
         entityType: string;
+        actorUserId: string | null;
     }, {
         id: string;
         reason: string | null;
@@ -50121,8 +50122,8 @@ export declare const dashboardSchema: z.ZodObject<{
         createdAt: string;
         entityId: string;
         action: string;
-        actorUserId: string | null;
         entityType: string;
+        actorUserId: string | null;
     }>, "many">;
     complianceWarnings: z.ZodArray<z.ZodString, "many">;
     insuranceContracts: z.ZodOptional<z.ZodArray<z.ZodAny, "many">>;
@@ -50281,7 +50282,7 @@ export declare const dashboardSchema: z.ZodObject<{
             fpd?: string | null | undefined;
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
-            calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
             calculationSubject?: "service" | "payment" | "goods" | null | undefined;
             quantityMeasure?: number | null | undefined;
             advancePaymentRub?: number | null | undefined;
@@ -50299,8 +50300,8 @@ export declare const dashboardSchema: z.ZodObject<{
         createdAt: string;
         entityId: string;
         action: string;
-        actorUserId: string | null;
         entityType: string;
+        actorUserId: string | null;
     }[];
     todayIso: string;
     clinicSettings: {
@@ -50623,7 +50624,7 @@ export declare const dashboardSchema: z.ZodObject<{
         taxDeductible: boolean;
     }[];
     treatmentPlanItems: {
-        status: "completed" | "in_progress" | "cancelled" | "proposed" | "approved";
+        status: "in_progress" | "completed" | "cancelled" | "proposed" | "approved";
         id: string;
         quantity: number;
         visitId: string | null;
@@ -50729,7 +50730,7 @@ export declare const dashboardSchema: z.ZodObject<{
         variables: string[];
     }[];
     communicationTasks: {
-        status: "queued" | "failed" | "completed" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
+        status: "completed" | "failed" | "queued" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
         id: string;
         visitId: string | null;
         documentId: string | null;
@@ -50750,7 +50751,7 @@ export declare const dashboardSchema: z.ZodObject<{
     }[];
     communicationEvents: {
         message: string;
-        status: "queued" | "failed" | "completed" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
+        status: "completed" | "failed" | "queued" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
         id: string;
         patientId: string;
         organizationId: string;
@@ -50771,7 +50772,7 @@ export declare const dashboardSchema: z.ZodObject<{
         postVisitInstructions: number;
     };
     importBatches: {
-        status: "failed" | "completed" | "previewed" | "completed_with_skips";
+        status: "completed" | "failed" | "previewed" | "completed_with_skips";
         id: string;
         organizationId: string;
         createdAt: string;
@@ -50951,7 +50952,7 @@ export declare const dashboardSchema: z.ZodObject<{
             fpd?: string | null | undefined;
             cashierName?: string | null | undefined;
             receiptUrl?: string | null | undefined;
-            calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+            calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
             calculationSubject?: "service" | "payment" | "goods" | null | undefined;
             quantityMeasure?: number | null | undefined;
             advancePaymentRub?: number | null | undefined;
@@ -50969,8 +50970,8 @@ export declare const dashboardSchema: z.ZodObject<{
         createdAt: string;
         entityId: string;
         action: string;
-        actorUserId: string | null;
         entityType: string;
+        actorUserId: string | null;
     }[];
     todayIso: string;
     clinicSettings: {
@@ -51293,7 +51294,7 @@ export declare const dashboardSchema: z.ZodObject<{
         aliases?: string[] | undefined;
     }[];
     treatmentPlanItems: {
-        status: "completed" | "in_progress" | "cancelled" | "proposed" | "approved";
+        status: "in_progress" | "completed" | "cancelled" | "proposed" | "approved";
         id: string;
         quantity: number;
         visitId: string | null;
@@ -51399,7 +51400,7 @@ export declare const dashboardSchema: z.ZodObject<{
         variables: string[];
     }[];
     communicationTasks: {
-        status: "queued" | "failed" | "completed" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
+        status: "completed" | "failed" | "queued" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
         id: string;
         visitId: string | null;
         documentId: string | null;
@@ -51420,7 +51421,7 @@ export declare const dashboardSchema: z.ZodObject<{
     }[];
     communicationEvents: {
         message: string;
-        status: "queued" | "failed" | "completed" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
+        status: "completed" | "failed" | "queued" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
         id: string;
         patientId: string;
         organizationId: string;
@@ -51441,7 +51442,7 @@ export declare const dashboardSchema: z.ZodObject<{
         postVisitInstructions: number;
     };
     importBatches: {
-        status: "failed" | "completed" | "previewed" | "completed_with_skips";
+        status: "completed" | "failed" | "previewed" | "completed_with_skips";
         id: string;
         organizationId: string;
         createdAt: string;
@@ -64506,7 +64507,7 @@ export declare const createPaymentSchema: z.ZodEffects<z.ZodObject<{
         fpd?: string | null | undefined;
         cashierName?: string | null | undefined;
         receiptUrl?: string | null | undefined;
-        calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+        calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
         calculationSubject?: "service" | "payment" | "goods" | null | undefined;
         quantityMeasure?: number | null | undefined;
         advancePaymentRub?: number | null | undefined;
@@ -64517,7 +64518,7 @@ export declare const createPaymentSchema: z.ZodEffects<z.ZodObject<{
         fpd?: string | null | undefined;
         cashierName?: string | null | undefined;
         receiptUrl?: string | null | undefined;
-        calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+        calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
         calculationSubject?: "service" | "payment" | "goods" | null | undefined;
         quantityMeasure?: number | null | undefined;
         advancePaymentRub?: number | null | undefined;
@@ -64549,7 +64550,7 @@ export declare const createPaymentSchema: z.ZodEffects<z.ZodObject<{
         fpd?: string | null | undefined;
         cashierName?: string | null | undefined;
         receiptUrl?: string | null | undefined;
-        calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+        calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
         calculationSubject?: "service" | "payment" | "goods" | null | undefined;
         quantityMeasure?: number | null | undefined;
         advancePaymentRub?: number | null | undefined;
@@ -64578,7 +64579,7 @@ export declare const createPaymentSchema: z.ZodEffects<z.ZodObject<{
         fpd?: string | null | undefined;
         cashierName?: string | null | undefined;
         receiptUrl?: string | null | undefined;
-        calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+        calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
         calculationSubject?: "service" | "payment" | "goods" | null | undefined;
         quantityMeasure?: number | null | undefined;
         advancePaymentRub?: number | null | undefined;
@@ -64607,7 +64608,7 @@ export declare const createPaymentSchema: z.ZodEffects<z.ZodObject<{
         fpd?: string | null | undefined;
         cashierName?: string | null | undefined;
         receiptUrl?: string | null | undefined;
-        calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+        calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
         calculationSubject?: "service" | "payment" | "goods" | null | undefined;
         quantityMeasure?: number | null | undefined;
         advancePaymentRub?: number | null | undefined;
@@ -64636,7 +64637,7 @@ export declare const createPaymentSchema: z.ZodEffects<z.ZodObject<{
         fpd?: string | null | undefined;
         cashierName?: string | null | undefined;
         receiptUrl?: string | null | undefined;
-        calculationMethod?: "full_prepayment" | "advance" | "partial_prepayment" | "full_settlement" | "credit" | "credit_settlement" | null | undefined;
+        calculationMethod?: "full_prepayment" | "advance" | "credit" | "partial_prepayment" | "full_settlement" | "credit_settlement" | null | undefined;
         calculationSubject?: "service" | "payment" | "goods" | null | undefined;
         quantityMeasure?: number | null | undefined;
         advancePaymentRub?: number | null | undefined;
@@ -99283,7 +99284,7 @@ export declare const aiRecognitionJobSchema: z.ZodObject<{
     createdAt: z.ZodString;
     updatedAt: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    status: "queued" | "rejected" | "failed" | "running" | "needs_review" | "accepted";
+    status: "failed" | "queued" | "rejected" | "running" | "needs_review" | "accepted";
     id: string;
     patientId: string | null;
     organizationId: string;
@@ -99299,7 +99300,7 @@ export declare const aiRecognitionJobSchema: z.ZodObject<{
     resultText: string;
     suggestedNextStep: string;
 }, {
-    status: "queued" | "rejected" | "failed" | "running" | "needs_review" | "accepted";
+    status: "failed" | "queued" | "rejected" | "running" | "needs_review" | "accepted";
     id: string;
     patientId: string | null;
     organizationId: string;
@@ -99357,7 +99358,7 @@ export declare const aiRecognitionJobResponseSchema: z.ZodObject<{
         createdAt: z.ZodString;
         updatedAt: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        status: "queued" | "rejected" | "failed" | "running" | "needs_review" | "accepted";
+        status: "failed" | "queued" | "rejected" | "running" | "needs_review" | "accepted";
         id: string;
         patientId: string | null;
         organizationId: string;
@@ -99373,7 +99374,7 @@ export declare const aiRecognitionJobResponseSchema: z.ZodObject<{
         resultText: string;
         suggestedNextStep: string;
     }, {
-        status: "queued" | "rejected" | "failed" | "running" | "needs_review" | "accepted";
+        status: "failed" | "queued" | "rejected" | "running" | "needs_review" | "accepted";
         id: string;
         patientId: string | null;
         organizationId: string;
@@ -99391,7 +99392,7 @@ export declare const aiRecognitionJobResponseSchema: z.ZodObject<{
     }>;
 }, "strip", z.ZodTypeAny, {
     job: {
-        status: "queued" | "rejected" | "failed" | "running" | "needs_review" | "accepted";
+        status: "failed" | "queued" | "rejected" | "running" | "needs_review" | "accepted";
         id: string;
         patientId: string | null;
         organizationId: string;
@@ -99409,7 +99410,7 @@ export declare const aiRecognitionJobResponseSchema: z.ZodObject<{
     };
 }, {
     job: {
-        status: "queued" | "rejected" | "failed" | "running" | "needs_review" | "accepted";
+        status: "failed" | "queued" | "rejected" | "running" | "needs_review" | "accepted";
         id: string;
         patientId: string | null;
         organizationId: string;
@@ -100076,6 +100077,7 @@ export declare const uiPreferencesSchema: z.ZodObject<{
     odontogramViewMode: z.ZodDefault<z.ZodEnum<["anatomical_svg", "compact_clinical", "classic_gost"]>>;
     savedAt: z.ZodDefault<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
+    paymentMethod: "other" | "card" | "online" | "cash" | "bank_transfer" | "insurance" | "family_wallet";
     version: 1;
     ohifBaseUrl: string;
     selectedSpecialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
@@ -100092,7 +100094,6 @@ export declare const uiPreferencesSchema: z.ZodObject<{
     scheduleDefaultChairId: string | null;
     scheduleStatusFilter: "completed" | "all" | "confirmed" | "cancelled" | "planned" | "arrived" | "in_treatment" | "no_show";
     scheduleDateFilter: string;
-    paymentMethod: "other" | "card" | "online" | "cash" | "bank_transfer" | "insurance" | "family_wallet";
     taxDocumentYear: number;
     selectedDocumentKind: "treatment_plan" | "paid_medical_services_contract" | "completed_works_act" | "tax_deduction_certificate" | "informed_consent" | "procedure_specific_consent_packet" | "treatment_plan_acceptance" | "anesthesia_consent_log" | "prescription_medication_order" | "personal_data_processing_consent" | "minor_legal_representative_consent" | "photo_video_consent" | "medical_intervention_refusal" | "treatment_cost_estimate" | "payment_invoice" | "payment_receipt" | "installment_payment_schedule" | "post_visit_recommendations" | "outpatient_medical_card_025u" | "dental_medical_card_043u" | "orthodontic_medical_card_043_1u" | "daily_dentist_diary_037u" | "summary_dentist_statement_039u" | "medical_record_extract" | "medical_record_copy_request" | "medical_document_release_receipt" | "xray_cbct_referral" | "radiation_dose_sheet" | "lab_work_order" | "visit_attendance_certificate" | "warranty_service_memo" | "payment_refund_correction_request" | "tax_deduction_application" | "legacy_tax_deduction_certificate" | "tax_deduction_registry" | "patient_intake_questionnaire";
     taxApplicationForm: "knd_1151156" | "legacy_2021_2023";
@@ -100110,7 +100111,7 @@ export declare const uiPreferencesSchema: z.ZodObject<{
     importSourceKind: "free_text" | "csv_text" | "xlsx_copy" | "mis_export" | "image_ocr" | "voice_dictation";
     documentIngestionTarget: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text";
     imagingImportSourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-    smartImportMode: "imaging" | "patients" | "auto" | "mixed";
+    smartImportMode: "auto" | "imaging" | "patients" | "mixed";
     imagingKindFilter: "other" | "all" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo";
     dicomWebEndpointUrl: string;
     telegramBotConfigId: string;
@@ -100125,6 +100126,7 @@ export declare const uiPreferencesSchema: z.ZodObject<{
     odontogramUseSurfaces: boolean;
     odontogramViewMode: "anatomical_svg" | "compact_clinical" | "classic_gost";
 }, {
+    paymentMethod?: "other" | "card" | "online" | "cash" | "bank_transfer" | "insurance" | "family_wallet" | undefined;
     version?: 1 | undefined;
     ohifBaseUrl?: string | undefined;
     selectedSpecialty?: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal" | undefined;
@@ -100141,7 +100143,6 @@ export declare const uiPreferencesSchema: z.ZodObject<{
     scheduleDefaultChairId?: string | null | undefined;
     scheduleStatusFilter?: "completed" | "all" | "confirmed" | "cancelled" | "planned" | "arrived" | "in_treatment" | "no_show" | undefined;
     scheduleDateFilter?: string | undefined;
-    paymentMethod?: "other" | "card" | "online" | "cash" | "bank_transfer" | "insurance" | "family_wallet" | undefined;
     taxDocumentYear?: number | undefined;
     selectedDocumentKind?: "treatment_plan" | "paid_medical_services_contract" | "completed_works_act" | "tax_deduction_certificate" | "informed_consent" | "procedure_specific_consent_packet" | "treatment_plan_acceptance" | "anesthesia_consent_log" | "prescription_medication_order" | "personal_data_processing_consent" | "minor_legal_representative_consent" | "photo_video_consent" | "medical_intervention_refusal" | "treatment_cost_estimate" | "payment_invoice" | "payment_receipt" | "installment_payment_schedule" | "post_visit_recommendations" | "outpatient_medical_card_025u" | "dental_medical_card_043u" | "orthodontic_medical_card_043_1u" | "daily_dentist_diary_037u" | "summary_dentist_statement_039u" | "medical_record_extract" | "medical_record_copy_request" | "medical_document_release_receipt" | "xray_cbct_referral" | "radiation_dose_sheet" | "lab_work_order" | "visit_attendance_certificate" | "warranty_service_memo" | "payment_refund_correction_request" | "tax_deduction_application" | "legacy_tax_deduction_certificate" | "tax_deduction_registry" | "patient_intake_questionnaire" | undefined;
     taxApplicationForm?: "knd_1151156" | "legacy_2021_2023" | undefined;
@@ -100159,7 +100160,7 @@ export declare const uiPreferencesSchema: z.ZodObject<{
     importSourceKind?: "free_text" | "csv_text" | "xlsx_copy" | "mis_export" | "image_ocr" | "voice_dictation" | undefined;
     documentIngestionTarget?: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text" | undefined;
     imagingImportSourceKind?: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch" | undefined;
-    smartImportMode?: "imaging" | "patients" | "auto" | "mixed" | undefined;
+    smartImportMode?: "auto" | "imaging" | "patients" | "mixed" | undefined;
     imagingKindFilter?: "other" | "all" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | undefined;
     dicomWebEndpointUrl?: string | undefined;
     telegramBotConfigId?: string | undefined;
@@ -100230,6 +100231,7 @@ export declare const uiPreferencesInputSchema: z.ZodObject<Omit<{
     version: z.ZodOptional<z.ZodLiteral<1>>;
     savedAt: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
+    paymentMethod: "other" | "card" | "online" | "cash" | "bank_transfer" | "insurance" | "family_wallet";
     ohifBaseUrl: string;
     selectedSpecialty: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal";
     uiLanguage: "ru";
@@ -100244,7 +100246,6 @@ export declare const uiPreferencesInputSchema: z.ZodObject<Omit<{
     scheduleDefaultChairId: string | null;
     scheduleStatusFilter: "completed" | "all" | "confirmed" | "cancelled" | "planned" | "arrived" | "in_treatment" | "no_show";
     scheduleDateFilter: string;
-    paymentMethod: "other" | "card" | "online" | "cash" | "bank_transfer" | "insurance" | "family_wallet";
     taxDocumentYear: number;
     selectedDocumentKind: "treatment_plan" | "paid_medical_services_contract" | "completed_works_act" | "tax_deduction_certificate" | "informed_consent" | "procedure_specific_consent_packet" | "treatment_plan_acceptance" | "anesthesia_consent_log" | "prescription_medication_order" | "personal_data_processing_consent" | "minor_legal_representative_consent" | "photo_video_consent" | "medical_intervention_refusal" | "treatment_cost_estimate" | "payment_invoice" | "payment_receipt" | "installment_payment_schedule" | "post_visit_recommendations" | "outpatient_medical_card_025u" | "dental_medical_card_043u" | "orthodontic_medical_card_043_1u" | "daily_dentist_diary_037u" | "summary_dentist_statement_039u" | "medical_record_extract" | "medical_record_copy_request" | "medical_document_release_receipt" | "xray_cbct_referral" | "radiation_dose_sheet" | "lab_work_order" | "visit_attendance_certificate" | "warranty_service_memo" | "payment_refund_correction_request" | "tax_deduction_application" | "legacy_tax_deduction_certificate" | "tax_deduction_registry" | "patient_intake_questionnaire";
     taxApplicationForm: "knd_1151156" | "legacy_2021_2023";
@@ -100262,7 +100263,7 @@ export declare const uiPreferencesInputSchema: z.ZodObject<Omit<{
     importSourceKind: "free_text" | "csv_text" | "xlsx_copy" | "mis_export" | "image_ocr" | "voice_dictation";
     documentIngestionTarget: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text";
     imagingImportSourceKind: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch";
-    smartImportMode: "imaging" | "patients" | "auto" | "mixed";
+    smartImportMode: "auto" | "imaging" | "patients" | "mixed";
     imagingKindFilter: "other" | "all" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo";
     dicomWebEndpointUrl: string;
     telegramBotConfigId: string;
@@ -100279,6 +100280,7 @@ export declare const uiPreferencesInputSchema: z.ZodObject<Omit<{
     version?: 1 | undefined;
     savedAt?: string | undefined;
 }, {
+    paymentMethod?: "other" | "card" | "online" | "cash" | "bank_transfer" | "insurance" | "family_wallet" | undefined;
     version?: 1 | undefined;
     ohifBaseUrl?: string | undefined;
     selectedSpecialty?: "pediatric" | "therapist" | "orthopedist" | "orthodontist" | "hygienist" | "surgeon" | "periodontist" | "implantologist" | "radiologist" | "universal" | undefined;
@@ -100295,7 +100297,6 @@ export declare const uiPreferencesInputSchema: z.ZodObject<Omit<{
     scheduleDefaultChairId?: string | null | undefined;
     scheduleStatusFilter?: "completed" | "all" | "confirmed" | "cancelled" | "planned" | "arrived" | "in_treatment" | "no_show" | undefined;
     scheduleDateFilter?: string | undefined;
-    paymentMethod?: "other" | "card" | "online" | "cash" | "bank_transfer" | "insurance" | "family_wallet" | undefined;
     taxDocumentYear?: number | undefined;
     selectedDocumentKind?: "treatment_plan" | "paid_medical_services_contract" | "completed_works_act" | "tax_deduction_certificate" | "informed_consent" | "procedure_specific_consent_packet" | "treatment_plan_acceptance" | "anesthesia_consent_log" | "prescription_medication_order" | "personal_data_processing_consent" | "minor_legal_representative_consent" | "photo_video_consent" | "medical_intervention_refusal" | "treatment_cost_estimate" | "payment_invoice" | "payment_receipt" | "installment_payment_schedule" | "post_visit_recommendations" | "outpatient_medical_card_025u" | "dental_medical_card_043u" | "orthodontic_medical_card_043_1u" | "daily_dentist_diary_037u" | "summary_dentist_statement_039u" | "medical_record_extract" | "medical_record_copy_request" | "medical_document_release_receipt" | "xray_cbct_referral" | "radiation_dose_sheet" | "lab_work_order" | "visit_attendance_certificate" | "warranty_service_memo" | "payment_refund_correction_request" | "tax_deduction_application" | "legacy_tax_deduction_certificate" | "tax_deduction_registry" | "patient_intake_questionnaire" | undefined;
     taxApplicationForm?: "knd_1151156" | "legacy_2021_2023" | undefined;
@@ -100313,7 +100314,7 @@ export declare const uiPreferencesInputSchema: z.ZodObject<Omit<{
     importSourceKind?: "free_text" | "csv_text" | "xlsx_copy" | "mis_export" | "image_ocr" | "voice_dictation" | undefined;
     documentIngestionTarget?: "imaging" | "patients" | "smart_import" | "pricelist" | "plain_text" | undefined;
     imagingImportSourceKind?: "manual_upload" | "dicom_file" | "dicomweb" | "pacs" | "twain_wia" | "sensor_bridge" | "folder_watch" | undefined;
-    smartImportMode?: "imaging" | "patients" | "auto" | "mixed" | undefined;
+    smartImportMode?: "auto" | "imaging" | "patients" | "mixed" | undefined;
     imagingKindFilter?: "other" | "all" | "cbct" | "periapical" | "bitewing" | "opg" | "ceph" | "photo" | undefined;
     dicomWebEndpointUrl?: string | undefined;
     telegramBotConfigId?: string | undefined;
@@ -100336,11 +100337,11 @@ export declare const smartImportRequestSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     sourceName: string;
     rawText: string;
-    mode: "imaging" | "patients" | "auto" | "mixed";
+    mode: "auto" | "imaging" | "patients" | "mixed";
 }, {
     rawText: string;
     sourceName?: string | undefined;
-    mode?: "imaging" | "patients" | "auto" | "mixed" | undefined;
+    mode?: "auto" | "imaging" | "patients" | "mixed" | undefined;
 }>;
 export type SmartImportRequest = z.infer<typeof smartImportRequestSchema>;
 export declare const smartImportLineKindSchema: z.ZodEnum<["patient", "imaging", "clinic", "legacy_source", "ignored"]>;
@@ -105177,11 +105178,11 @@ export declare const migrationAutopilotRequestSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         sourceName: string;
         rawText: string;
-        mode: "imaging" | "patients" | "auto" | "mixed";
+        mode: "auto" | "imaging" | "patients" | "mixed";
     }, {
         rawText: string;
         sourceName?: string | undefined;
-        mode?: "imaging" | "patients" | "auto" | "mixed" | undefined;
+        mode?: "auto" | "imaging" | "patients" | "mixed" | undefined;
     }>>;
     clinic: z.ZodOptional<z.ZodEffects<z.ZodObject<{
         inn: z.ZodOptional<z.ZodString>;
@@ -105267,7 +105268,7 @@ export declare const migrationAutopilotRequestSchema: z.ZodObject<{
     smartImport?: {
         sourceName: string;
         rawText: string;
-        mode: "imaging" | "patients" | "auto" | "mixed";
+        mode: "auto" | "imaging" | "patients" | "mixed";
     } | undefined;
 }, {
     clinic?: {
@@ -105312,7 +105313,7 @@ export declare const migrationAutopilotRequestSchema: z.ZodObject<{
     smartImport?: {
         rawText: string;
         sourceName?: string | undefined;
-        mode?: "imaging" | "patients" | "auto" | "mixed" | undefined;
+        mode?: "auto" | "imaging" | "patients" | "mixed" | undefined;
     } | undefined;
 }>;
 export type MigrationAutopilotRequest = z.infer<typeof migrationAutopilotRequestSchema>;
@@ -110410,12 +110411,12 @@ export declare const sharedBrowserImagingScanProgressSchema: z.ZodObject<{
     errorMessage: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     scannedFiles: number;
-    phase: "error" | "completed" | "scanning" | "parsing";
+    phase: "completed" | "error" | "scanning" | "parsing";
     totalFiles: number;
     errorMessage?: string | undefined;
 }, {
     scannedFiles: number;
-    phase: "error" | "completed" | "scanning" | "parsing";
+    phase: "completed" | "error" | "scanning" | "parsing";
     totalFiles: number;
     errorMessage?: string | undefined;
 }>;

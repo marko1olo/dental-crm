@@ -7,4 +7,5 @@ export * from "./kktLanPrinter.js";
 export * from "./fiscalReceiptQueueManager.js";
 export * from "./visiographPacsWatcher.js";
 export * from "./usbBarcodeScanner.js";
+export * from "./hardwareEmulators.js";
 

@@ -260,10 +260,6 @@ describe("ChiefPhysicianAuditService — Database Integration & Transaction Safe
 			const idList = sql.join(createdAuditIds.map((id) => sql`${id}::uuid`), sql`, `);
 			await db.execute(sql`DELETE FROM clinical_quality_audits WHERE id IN (${idList})`);
 		}
-		if (createdAuditLogIds.length > 0) {
-			const idList = sql.join(createdAuditLogIds.map((id) => sql`${id}::uuid`), sql`, `);
-			await db.execute(sql`DELETE FROM clinical_audit_logs WHERE id IN (${idList})`);
-		}
 		if (createdDiaryIds.length > 0) {
 			const idList = sql.join(createdDiaryIds.map((id) => sql`${id}::uuid`), sql`, `);
 			await db.execute(sql`DELETE FROM visit_diaries WHERE id IN (${idList})`);
@@ -542,10 +538,6 @@ describe("ChiefPhysicianAuditService — Fastify HTTP Endpoints", () => {
 		if (createdAuditIds.length > 0) {
 			const idList = sql.join(createdAuditIds.map((id) => sql`${id}::uuid`), sql`, `);
 			await db.execute(sql`DELETE FROM clinical_quality_audits WHERE id IN (${idList})`);
-		}
-		if (createdAuditLogIds.length > 0) {
-			const idList = sql.join(createdAuditLogIds.map((id) => sql`${id}::uuid`), sql`, `);
-			await db.execute(sql`DELETE FROM clinical_audit_logs WHERE id IN (${idList})`);
 		}
 		if (createdDiaryIds.length > 0) {
 			const idList = sql.join(createdDiaryIds.map((id) => sql`${id}::uuid`), sql`, `);

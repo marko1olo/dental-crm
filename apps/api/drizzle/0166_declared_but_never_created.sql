@@ -69,9 +69,15 @@ CREATE TABLE IF NOT EXISTS "sberbank_transactions" (
 	"amount" integer NOT NULL,
 	"status" text NOT NULL,
 	"patient_id" uuid NOT NULL,
+	"visit_id" text,
+	"document_id" text,
+	"invoice_id" text,
 	"created_at" timestamp with time zone NOT NULL DEFAULT now(),
 	"updated_at" timestamp with time zone
 );
+ALTER TABLE "sberbank_transactions" ADD COLUMN IF NOT EXISTS "visit_id" text;
+ALTER TABLE "sberbank_transactions" ADD COLUMN IF NOT EXISTS "document_id" text;
+ALTER TABLE "sberbank_transactions" ADD COLUMN IF NOT EXISTS "invoice_id" text;
 CREATE INDEX IF NOT EXISTS "sberbank_transactions_organizationId_idx"
 	ON "sberbank_transactions" USING btree ("organization_id");
 

@@ -1,1 +1,1 @@
-ALTER TABLE "visits" ADD COLUMN "quality_control_status" text DEFAULT 'pending';
+ALTER TABLE "visits" ADD COLUMN IF NOT EXISTS "quality_control_status" text DEFAULT 'pending';

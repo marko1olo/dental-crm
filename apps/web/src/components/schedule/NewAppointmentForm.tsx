@@ -17,6 +17,7 @@ import { matchesPatientSearch } from "../../utils/patientSearchUtils";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { showToast } from "../GlobalToast";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
+import { SeniorNurseBookingWizardModal } from "./SeniorNurseBookingWizardModal";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
@@ -71,6 +72,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 		useState<SmartParsedPayload | null>(null);
 	const [showHints, setShowHints] = useState(false);
 	const [patientSearchQuery, setPatientSearchQuery] = useState("");
+	const [isWizardOpen, setIsWizardOpen] = useState(false);
 
 	const filteredPatients = useMemo(() => {
 		const list = (dashboard.patients ?? []).filter((p) => p.status === "active");
@@ -502,6 +504,16 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 							{showCreateForm
 								? "Скрыть ручной ввод"
 								: "Показать все поля / Ручной ввод"}
+						</button>
+						<button
+							type="button"
+							onClick={() => setIsWizardOpen(true)}
+							className="secondary-button focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors font-bold text-[var(--teal-dark)]"
+							style={{ minHeight: "44px", padding: "0 12px", fontSize: "12px", borderColor: "var(--teal)" }}
+							title="Пошаговый мастер записи пациента (1-2-3)"
+							data-testid="open-senior-nurse-wizard-btn"
+						>
+							👵 Пошаговый мастер (1-2-3)
 						</button>
 						{showCreateForm && (
 							<label className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 cursor-pointer">
@@ -967,6 +979,12 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 					</div>
 				</div>
 			)}
+			<SeniorNurseBookingWizardModal
+				isOpen={isWizardOpen}
+				onClose={() => setIsWizardOpen(false)}
+				dashboard={dashboard}
+				auth={auth}
+			/>
 		</section>
 	);
 }

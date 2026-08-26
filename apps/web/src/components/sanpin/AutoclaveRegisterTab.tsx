@@ -24,6 +24,7 @@ import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { SanpinCycleModal } from "./SanpinCycleModal";
 import { KraftPackageBarcodeModal } from "./kraft/KraftPackageBarcodeModal";
+import { SeniorNurseKraftUnsealModal } from "./kraft/SeniorNurseKraftUnsealModal";
 import { AutoclaveLog257Modal } from "./autoclaveLog/AutoclaveLog257Modal";
 import { generateThermalStickerHtml, type KraftPackageRecord } from "./kraft/kraftPackageEngine";
 
@@ -34,6 +35,7 @@ export function AutoclaveRegisterTab() {
 	const [deviceFilter, setDeviceFilter] = useState<string>("all");
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [isKraftModalOpen, setIsKraftModalOpen] = useState(false);
+	const [isSeniorNurseUnsealOpen, setIsSeniorNurseUnsealOpen] = useState(false);
 	const [isJournal257ModalOpen, setIsJournal257ModalOpen] = useState(false);
 	const [kraftPrefill, setKraftPrefill] = useState<{
 		autoclaveId?: string | undefined;
@@ -212,9 +214,20 @@ export function AutoclaveRegisterTab() {
 				<div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
 					<button
 						type="button"
+						onClick={() => setIsSeniorNurseUnsealOpen(true)}
+						className="sanpin-btn sanpin-btn-primary"
+						style={{ minHeight: "44px", padding: "0.5rem 1.1rem", fontSize: "0.95rem", fontWeight: 800, background: "#0d9488" }}
+						title="Режим медсестры: Сканирование и вскрытие крафт-пакета автоклава"
+						data-testid="open-senior-nurse-kraft-btn"
+					>
+						<Tag size={18} /> [ 📷 Вскрыть крафт-пакет ]
+					</button>
+
+					<button
+						type="button"
 						onClick={() => window.print()}
 						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "40px", padding: "0.4rem 0.85rem", fontSize: "0.85rem" }}
+						style={{ minHeight: "44px", padding: "0.4rem 0.85rem", fontSize: "0.85rem" }}
 						title="Печать официальной формы 257/у для Роспотребнадзора"
 					>
 						<Printer size={16} /> Печать формы 257/у
@@ -223,8 +236,8 @@ export function AutoclaveRegisterTab() {
 					<button
 						type="button"
 						onClick={() => setIsModalOpen(true)}
-						className="sanpin-btn sanpin-btn-primary"
-						style={{ minHeight: "40px", padding: "0.45rem 1rem", fontSize: "0.88rem", fontWeight: 700 }}
+						className="sanpin-btn sanpin-btn-secondary"
+						style={{ minHeight: "44px", padding: "0.45rem 1rem", fontSize: "0.88rem", fontWeight: 700 }}
 					>
 						<Plus size={16} /> Зафиксировать цикл
 					</button>
@@ -428,6 +441,12 @@ export function AutoclaveRegisterTab() {
 				initialAutoclaveId={kraftPrefill.autoclaveId}
 				initialCycleNumber={kraftPrefill.cycleNumber || nextCycleNumber}
 				initialOperatorName={kraftPrefill.operatorName}
+			/>
+
+			{/* Senior Nurse Kraft Unseal Modal ("Бабушка-Proof") */}
+			<SeniorNurseKraftUnsealModal
+				isOpen={isSeniorNurseUnsealOpen}
+				onClose={() => setIsSeniorNurseUnsealOpen(false)}
 			/>
 
 			{/* Form 257/u Studio Modal: 5 Chamber Points, BioControl, Analytics */}

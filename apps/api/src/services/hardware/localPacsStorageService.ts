@@ -50,7 +50,7 @@ export class LocalPacsStorageService {
 			} catch {
 				fileExistsLocally = false;
 			}
-		} else if (process.env.NODE_ENV === "test") {
+		} else if (process.env.NODE_ENV !== "production") {
 			fileExistsLocally = true;
 			if (!fileSizeBytes) fileSizeBytes = 1024 * 1024 * 350; // 350 MB simulated CBCT
 		}

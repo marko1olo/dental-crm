@@ -105,6 +105,7 @@ describe("Cloud Sync Gateway & Conflict Resolution Tests", () => {
 					statusLocalis: "Зуб 2.4 интактен",
 					diagnosisIcd10: "K02.1",
 					content: "Первичный осмотр полости рта",
+					updatedAt: new Date("2026-08-22T10:00:00.000Z"),
 				});
 			});
 		} catch (err) {

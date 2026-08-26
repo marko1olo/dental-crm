@@ -41,7 +41,7 @@ import {
 import registerDiaryRoutes from "../../routes/diary.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
-import { withFixtureTenant } from "../support/fixtureOrganizations.js";
+import { fixtureUuid, purgeFixtureOrganizations, withFixtureTenant } from "../support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 /**
@@ -121,7 +121,7 @@ describe("церемония подписания дневника одинак�
 	 * `organizations` сверяет `id = current_tenant`: под таким контекстом создаётся
 	 * ровно названная строка, любая другая отвергается кодом 42501.
 	 */
-	const organizationId = crypto.randomUUID();
+	const organizationId = fixtureUuid("diarySigningCeremony", 1);
 	let doctorId: string;
 	let patientId: string;
 	let staffToken: string;
@@ -315,17 +315,13 @@ describe("церемония подписания дневника одинак�
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS = "1";
 		delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
 
-		/*
-		 * Клиника, врач и пациент сеются под тенант-контекстом: WITH CHECK у `users`
-		 * и `patients` знает только `organization_id = current_tenant`, без дизъюнкта
-		 * обхода, поэтому вставка без контекста отвергается кодом 42501.
-		 */
+		await purgeFixtureOrganizations([organizationId]);
+
 		await withFixtureTenant(organizationId, async (tx) => {
-			const [organization] = await tx
+			await tx
 				.insert(organizations)
 				.values({ id: organizationId, name: "U5 ceremony probe clinic" })
-				.returning({ id: organizations.id });
-			assert.ok(organization);
+				.onConflictDoNothing();
 
 			const [doctor] = await tx
 				.insert(users)
