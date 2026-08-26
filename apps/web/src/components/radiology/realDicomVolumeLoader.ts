@@ -57,9 +57,16 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
   let patientName = "Барабаш С.В.";
   let studyDate = "";
 
-  // Scan up to 8KB or byteLength for standard DICOM tags
-  const maxHeaderSearch = Math.min(byteLength - 8, 16384);
+  // Scan up to 16KB or byteLength for standard DICOM tags
+  const maxHeaderSearch = Math.min(byteLength - 8, 32768);
+  let hasImagePositionPatient = false;
+
   for (let i = 128; i < maxHeaderSearch; i += 2) {
+    // If we already reached or passed the pixel data offset, stop scanning
+    if (pixelDataOffset > 0 && i >= pixelDataOffset - 4) {
+      break;
+    }
+
     const group = view.getUint16(i, true);
     const element = view.getUint16(i + 2, true);
 
@@ -96,23 +103,28 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
         } catch {}
       }
     } else if (group === 0x0020 && element === 0x0032) {
-      // ImagePositionPatient
+      // ImagePositionPatient [X, Y, Z] (Cartesian coordinate in mm)
       const len = view.getUint16(i + 6, true);
       if (len > 0 && i + 8 + len <= byteLength) {
         try {
           const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, i + 8, len)).trim();
           const parts = str.split("\\").map((s) => Number.parseFloat(s.trim()));
-          if (parts.length >= 3 && !Number.isNaN(parts[2])) sliceLocationZ = parts[2] ?? 0.0;
+          if (parts.length >= 3 && !Number.isNaN(parts[2])) {
+            sliceLocationZ = parts[2] ?? 0.0;
+            hasImagePositionPatient = true;
+          }
         } catch {}
       }
     } else if (group === 0x0020 && element === 0x1041) {
-      // SliceLocation
+      // SliceLocation (only use if ImagePositionPatient is not available)
       const len = view.getUint16(i + 6, true);
       if (len > 0 && i + 8 + len <= byteLength) {
         try {
           const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, i + 8, len)).trim();
           const num = Number.parseFloat(str);
-          if (!Number.isNaN(num)) sliceLocationZ = num;
+          if (!Number.isNaN(num) && !hasImagePositionPatient) {
+            sliceLocationZ = num;
+          }
         } catch {}
       }
     } else if (group === 0x0020 && element === 0x0013) {
@@ -205,6 +217,8 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
         pixelDataLength = view.getUint32(i + 4, true);
         pixelDataOffset = i + 8;
       }
+      // Once PixelData tag is located, do not scan further into the raw pixel payload
+      break;
     }
   }
 
@@ -265,8 +279,9 @@ export async function buildVolumeFromDicomBuffers(
     }
   }
 
+  // Sort slices in ascending order of physical Z (Inferior/Caudal -> Superior/Cranial)
   sliceEntries.sort((a, b) => {
-    if (Math.abs(a.header.sliceLocationZ - b.header.sliceLocationZ) > 0.001) {
+    if (Math.abs(a.header.sliceLocationZ - b.header.sliceLocationZ) > 0.0001) {
       return a.header.sliceLocationZ - b.header.sliceLocationZ;
     }
     if (a.header.instanceNumber !== b.header.instanceNumber) {
@@ -287,7 +302,7 @@ export async function buildVolumeFromDicomBuffers(
     const zFirst = sliceEntries[0]!.header.sliceLocationZ;
     const zLast = sliceEntries[depth - 1]!.header.sliceLocationZ;
     const deltaZ = Math.abs(zLast - zFirst) / (depth - 1);
-    if (deltaZ > 0.01 && deltaZ < 10.0) computedSpacingZ = deltaZ;
+    if (deltaZ > 0.001 && deltaZ < 10.0) computedSpacingZ = deltaZ;
   }
 
   const totalVoxels = width * height * depth;
@@ -305,13 +320,14 @@ export async function buildVolumeFromDicomBuffers(
     const intercept = entry.header.rescaleIntercept;
     const baseIdx = z * sliceVoxelCount;
 
-    // Safely copy slice slice buffer to ensure alignment
+    // Safely copy slice buffer to ensure alignment
     const sliceArrayBuf = entry.buffer.slice(offset, offset + sliceVoxelCount * 2);
 
     if (isSigned) {
       const rawSlice = new Int16Array(sliceArrayBuf);
       for (let i = 0; i < sliceVoxelCount; i++) {
-        const hu = Math.round((rawSlice[i] ?? 0) * slope + intercept);
+        // Clamp to prevent Int16 integer overflow on dense metal/enamel
+        const hu = Math.max(-32768, Math.min(32767, Math.round((rawSlice[i] ?? 0) * slope + intercept)));
         voxelData[baseIdx + i] = hu;
         if (hu < minVoxelHU) minVoxelHU = hu;
         if (hu > maxVoxelHU) maxVoxelHU = hu;
@@ -319,7 +335,8 @@ export async function buildVolumeFromDicomBuffers(
     } else {
       const rawSlice = new Uint16Array(sliceArrayBuf);
       for (let i = 0; i < sliceVoxelCount; i++) {
-        const hu = Math.round((rawSlice[i] ?? 0) * slope + intercept);
+        // Clamp to prevent Int16 integer overflow on dense metal/enamel
+        const hu = Math.max(-32768, Math.min(32767, Math.round((rawSlice[i] ?? 0) * slope + intercept)));
         voxelData[baseIdx + i] = hu;
         if (hu < minVoxelHU) minVoxelHU = hu;
         if (hu > maxVoxelHU) maxVoxelHU = hu;
