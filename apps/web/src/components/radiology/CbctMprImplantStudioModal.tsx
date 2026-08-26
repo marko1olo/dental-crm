@@ -1576,7 +1576,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 			ctx.restore();
 		}
-	}, [activeCrossSection, currentCanal, currentImplantPose, currentImplantSpec, nerveAuditResult, studioMode]);
+
+		ctx.restore();
+	}, [activeCrossSection, currentCanal, currentImplantPose, currentImplantSpec, nerveAuditResult, studioMode, transforms.cross_section]);
 
 	// ─── INTERACTIVE PANORAMA CLICK & SCRUB TO JUMP TO CROSS-SECTION ──────────
 	const handlePanoMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -1822,24 +1824,47 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		return "crosshair";
 	}, [isShiftRotating, activeRotationHandle, hoveredHandle]);
 
-	const handleCanvasWheel = useCallback((plane: MprPlane, e: React.WheelEvent<HTMLCanvasElement>) => {
-		if (!volume) return;
+	// Mouse Wheel -> Cursor-anchored Zoom (0.5x - 5.0x) or Shift+Wheel for Slices
+	const handleCanvasWheel = useCallback((viewport: CbctViewportType, e: React.WheelEvent<HTMLCanvasElement>) => {
 		e.preventDefault();
-		const delta = e.deltaY > 0 ? -1 : 1;
-		setCrosshairMm((prev) => {
-			const vox = worldMmToVoxel(prev, volume);
-			if (plane === "axial") {
-				const newZ = Math.max(0, Math.min(volume.dimensions.depth - 1, vox.z + delta));
-				return voxelToWorldMm({ x: vox.x, y: vox.y, z: newZ }, volume);
-			}
-			if (plane === "coronal") {
-				const newY = Math.max(0, Math.min(volume.dimensions.height - 1, vox.y + delta));
-				return voxelToWorldMm({ x: vox.x, y: newY, z: vox.z }, volume);
-			}
-			const newX = Math.max(0, Math.min(volume.dimensions.width - 1, vox.x + delta));
-			return voxelToWorldMm({ x: newX, y: vox.y, z: vox.z }, volume);
-		});
-	}, [volume]);
+		if (e.shiftKey && volume) {
+			const delta = e.deltaY > 0 ? -1 : 1;
+			setCrosshairMm((prev) => {
+				const vox = worldMmToVoxel(prev, volume);
+				if (viewport === "axial" || viewport === "panoramic") {
+					const newZ = Math.max(0, Math.min(volume.dimensions.depth - 1, vox.z + delta));
+					return voxelToWorldMm({ x: vox.x, y: vox.y, z: newZ }, volume);
+				}
+				if (viewport === "coronal") {
+					const newY = Math.max(0, Math.min(volume.dimensions.height - 1, vox.y + delta));
+					return voxelToWorldMm({ x: vox.x, y: newY, z: vox.z }, volume);
+				}
+				if (viewport === "sagittal") {
+					const newX = Math.max(0, Math.min(volume.dimensions.width - 1, vox.x + delta));
+					return voxelToWorldMm({ x: newX, y: vox.y, z: vox.z }, volume);
+				}
+				if (viewport === "cross_section") {
+					setActiveCrossSectionIdx((prev) => Math.max(0, Math.min(crossSections.length - 1, prev + delta)));
+					return prev;
+				}
+				return prev;
+			});
+			return;
+		}
+
+		// Cursor-anchored smooth zoom
+		const canvas = e.currentTarget;
+		const rect = canvas.getBoundingClientRect();
+		const cursorPx = {
+			x: ((e.clientX - rect.left) / rect.width) * canvas.width,
+			y: ((e.clientY - rect.top) / rect.height) * canvas.height,
+		};
+
+		setTransforms((prev) => ({
+			...prev,
+			[viewport]: applyCursorZoom(prev[viewport] ?? DEFAULT_VIEWPORT_TRANSFORM, cursorPx, e.deltaY, 0.5, 5.0),
+		}));
+	}, [volume, crossSections.length]);
 
 	// ─── 1-CLICK CLINICAL EXPORT TO FORM 043/U ─────────────────────────────────
 	const handleExportForm043Diary = useCallback(() => {
@@ -1865,7 +1890,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const renderAxialViewport = (extraClassName = "flex-1 flex flex-col") => (
 		<div
 			onDoubleClick={() => handleToggleMaximize("axial")}
-			className={`relative bg-black rounded-md overflow-hidden border border-[#242a35] min-h-0 w-full h-full ${extraClassName}`}
+			onPointerDownCapture={() => setActiveViewport("axial")}
+			className={`relative bg-black rounded-md overflow-hidden transition-all min-h-0 w-full h-full ${
+				activeViewport === "axial"
+					? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
+					: "border border-[#242a35]"
+			} ${extraClassName}`}
 			data-testid="cbct-viewport-container-axial"
 		>
 			<div className="flex-1 flex items-center justify-center min-h-0 relative">
@@ -1889,6 +1919,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					onResetAngle={() => setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, "axial"))}
 					isMaximized={maximizedViewport === "axial"}
 					onToggleMaximize={() => handleToggleMaximize("axial")}
+					zoomFactor={transforms.axial?.zoom}
 				/>
 			</div>
 		</div>
@@ -1897,7 +1928,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const renderCoronalViewport = (extraClassName = "flex-1 flex flex-col") => (
 		<div
 			onDoubleClick={() => handleToggleMaximize("coronal")}
-			className={`relative bg-black rounded-md overflow-hidden border border-[#242a35] min-h-0 w-full h-full ${extraClassName}`}
+			onPointerDownCapture={() => setActiveViewport("coronal")}
+			className={`relative bg-black rounded-md overflow-hidden transition-all min-h-0 w-full h-full ${
+				activeViewport === "coronal"
+					? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
+					: "border border-[#242a35]"
+			} ${extraClassName}`}
 			data-testid="cbct-viewport-container-coronal"
 		>
 			<div className="flex-1 flex items-center justify-center min-h-0 relative">
@@ -1921,6 +1957,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					onResetAngle={() => setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, "coronal"))}
 					isMaximized={maximizedViewport === "coronal"}
 					onToggleMaximize={() => handleToggleMaximize("coronal")}
+					zoomFactor={transforms.coronal?.zoom}
 				/>
 			</div>
 		</div>
@@ -1929,7 +1966,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const renderSagittalViewport = (extraClassName = "flex-1 flex flex-col") => (
 		<div
 			onDoubleClick={() => handleToggleMaximize("sagittal")}
-			className={`relative bg-black rounded-md overflow-hidden border border-[#242a35] min-h-0 w-full h-full ${extraClassName}`}
+			onPointerDownCapture={() => setActiveViewport("sagittal")}
+			className={`relative bg-black rounded-md overflow-hidden transition-all min-h-0 w-full h-full ${
+				activeViewport === "sagittal"
+					? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
+					: "border border-[#242a35]"
+			} ${extraClassName}`}
 			data-testid="cbct-viewport-container-sagittal"
 		>
 			<div className="flex-1 flex items-center justify-center min-h-0 relative">
@@ -1953,6 +1995,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					onResetAngle={() => setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, "sagittal"))}
 					isMaximized={maximizedViewport === "sagittal"}
 					onToggleMaximize={() => handleToggleMaximize("sagittal")}
+					zoomFactor={transforms.sagittal?.zoom}
 				/>
 			</div>
 		</div>
@@ -1961,7 +2004,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const renderPanoramicViewport = (extraClassName = "flex-1 flex flex-col") => (
 		<div
 			onDoubleClick={() => handleToggleMaximize("panoramic")}
-			className={`relative bg-black rounded-md overflow-hidden border border-[#242a35] min-h-0 w-full h-full ${extraClassName}`}
+			onPointerDownCapture={() => setActiveViewport("panoramic")}
+			className={`relative bg-black rounded-md overflow-hidden transition-all min-h-0 w-full h-full ${
+				activeViewport === "panoramic"
+					? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
+					: "border border-[#242a35]"
+			} ${extraClassName}`}
 			data-testid="cbct-viewport-container-panoramic"
 		>
 			<div className="flex-1 flex items-center justify-center min-h-0 relative">
@@ -1971,6 +2019,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					onMouseMove={handlePanoMouseMove}
 					onMouseUp={handlePanoMouseUp}
 					onMouseLeave={handlePanoMouseUp}
+					onWheel={(e) => handleCanvasWheel("panoramic", e)}
 					className="max-w-full max-h-full object-contain cursor-pointer"
 					data-testid="cbct-panorama-canvas"
 				/>
@@ -1982,6 +2031,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
 					isMaximized={maximizedViewport === "panoramic"}
 					onToggleMaximize={() => handleToggleMaximize("panoramic")}
+					zoomFactor={transforms.panoramic?.zoom}
 				/>
 			</div>
 		</div>
@@ -1990,12 +2040,18 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const renderCrossSectionMaximizedViewport = () => (
 		<div
 			onDoubleClick={() => handleToggleMaximize("cross_section")}
-			className="relative bg-black rounded-md overflow-hidden border border-[#242a35] flex-1 flex flex-col min-h-0 w-full h-full"
+			onPointerDownCapture={() => setActiveViewport("cross_section")}
+			className={`relative bg-black rounded-md overflow-hidden transition-all flex-1 flex flex-col min-h-0 w-full h-full ${
+				activeViewport === "cross_section"
+					? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
+					: "border border-[#242a35]"
+			}`}
 			data-testid="cbct-viewport-container-cross-section"
 		>
 			<div className="flex-1 flex items-center justify-center min-h-0 relative">
 				<canvas
 					ref={crossSectionCanvasRef}
+					onWheel={(e) => handleCanvasWheel("cross_section", e)}
 					className="max-w-full max-h-full object-contain"
 				/>
 				<CbctViewportHud
@@ -2006,6 +2062,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					pixelSpacingMm={activeCrossSection?.pixelSpacingMm ?? 0.25}
 					isMaximized={true}
 					onToggleMaximize={() => handleToggleMaximize("cross_section")}
+					zoomFactor={transforms.cross_section?.zoom}
 				/>
 			</div>
 		</div>
@@ -2757,6 +2814,17 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				</aside>
 			)}
 			</div>
+
+			{/* ─── BOTTOM STATUS BAR: HOTKEY CHEATSHEET & TELEMETRY ────────── */}
+			<CbctHotkeysStatusBar
+				activeViewport={activeViewport}
+				onToggleHelp={toggleHelp}
+				isHelpOpen={isHelpOpen}
+				onToggleMaximize={handleToggleMaximizeActive}
+				isMaximized={maximizedViewport !== null}
+				onTogglePanel={handleTogglePanel}
+				isPanelOpen={isSidebarOpen}
+			/>
 		</div>,
 		document.body,
 	);

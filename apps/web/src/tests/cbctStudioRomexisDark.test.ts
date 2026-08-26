@@ -50,8 +50,12 @@ describe("CBCT Romexis Industrial Dark & Diagnostic Mode Architecture", () => {
 		it("validates StudioMode contract values", () => {
 			const diagnosticMode: StudioMode = "diagnostic";
 			const implantMode: StudioMode = "implant";
+			const endoMode: StudioMode = "endo";
+			const tmjMode: StudioMode = "tmj";
 			assert.equal(diagnosticMode, "diagnostic");
 			assert.equal(implantMode, "implant");
+			assert.equal(endoMode, "endo");
+			assert.equal(tmjMode, "tmj");
 		});
 
 		it("validates ViewLayoutMode contract values", () => {
