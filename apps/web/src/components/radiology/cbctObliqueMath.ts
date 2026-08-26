@@ -85,16 +85,18 @@ export interface ObliqueCrosshairDrawOptions {
 // ─── 2. 3D VECTOR & ROTATION MATRIX MATH ─────────────────────────────────────
 
 export function degToRad(deg: number): number {
+	if (!Number.isFinite(deg)) return 0;
 	return (deg * Math.PI) / 180.0;
 }
 
 export function radToDeg(rad: number): number {
+	if (!Number.isFinite(rad)) return 0;
 	return (rad * 180.0) / Math.PI;
 }
 
 export function normalizeVector3D(v: Point3D): Point3D {
 	const len = Math.hypot(v.x, v.y, v.z);
-	if (len < 1e-9) return { x: 0, y: 0, z: 1 };
+	if (len < 1e-9 || !Number.isFinite(len)) return { x: 0, y: 0, z: 1 };
 	return {
 		x: v.x / len,
 		y: v.y / len,
@@ -119,9 +121,9 @@ export function crossProduct3D(a: Point3D, b: Point3D): Point3D {
  * R = R_z(axialAngle) * R_y(coronalTilt) * R_x(sagittalTilt)
  */
 export function computeObliqueRotationMatrix(angles: ObliqueRotationAngles): number[][] {
-	const rz = degToRad(angles.axialAngleDeg || 0);
-	const ry = degToRad(angles.coronalTiltDeg || 0);
-	const rx = degToRad(angles.sagittalTiltDeg || 0);
+	const rz = degToRad(Number.isFinite(angles?.axialAngleDeg) ? angles.axialAngleDeg : 0);
+	const ry = degToRad(Number.isFinite(angles?.coronalTiltDeg) ? angles.coronalTiltDeg : 0);
+	const rx = degToRad(Number.isFinite(angles?.sagittalTiltDeg) ? angles.sagittalTiltDeg : 0);
 
 	const cz = Math.cos(rz);
 	const sz = Math.sin(rz);
@@ -213,7 +215,8 @@ export function sampleVoxelHUTrilinear(
 
 	const { width, height, depth } = volume.dimensions;
 
-	if (vx < 0 || vx > width - 1 || vy < 0 || vy > height - 1 || vz < 0 || vz > depth - 1) {
+	// Robust boundary check handling NaN, Infinity, and out-of-volume bounds
+	if (!(vx >= 0 && vx <= width - 1 && vy >= 0 && vy <= height - 1 && vz >= 0 && vz <= depth - 1)) {
 		return -1000;
 	}
 
@@ -229,14 +232,22 @@ export function sampleVoxelHUTrilinear(
 	const ty = vy - y0;
 	const tz = vz - z0;
 
-	const c000 = sampleVoxelHU(x0, y0, z0, volume);
-	const c100 = sampleVoxelHU(x1, y0, z0, volume);
-	const c010 = sampleVoxelHU(x0, y1, z0, volume);
-	const c110 = sampleVoxelHU(x1, y1, z0, volume);
-	const c001 = sampleVoxelHU(x0, y0, z1, volume);
-	const c101 = sampleVoxelHU(x1, y0, z1, volume);
-	const c011 = sampleVoxelHU(x0, y1, z1, volume);
-	const c111 = sampleVoxelHU(x1, y1, z1, volume);
+	const data = volume.data;
+	const sliceStride = width * height;
+
+	const row00 = z0 * sliceStride + y0 * width;
+	const row10 = z0 * sliceStride + y1 * width;
+	const row01 = z1 * sliceStride + y0 * width;
+	const row11 = z1 * sliceStride + y1 * width;
+
+	const c000 = data[row00 + x0] ?? -1000;
+	const c100 = data[row00 + x1] ?? -1000;
+	const c010 = data[row10 + x0] ?? -1000;
+	const c110 = data[row10 + x1] ?? -1000;
+	const c001 = data[row01 + x0] ?? -1000;
+	const c101 = data[row01 + x1] ?? -1000;
+	const c011 = data[row11 + x0] ?? -1000;
+	const c111 = data[row11 + x1] ?? -1000;
 
 	const c00 = c000 * (1.0 - tx) + c100 * tx;
 	const c10 = c010 * (1.0 - tx) + c110 * tx;
@@ -513,14 +524,33 @@ export function applyCursorZoom(
 	minZoom = 0.5,
 	maxZoom = 5.0,
 ): ViewportTransform {
+	const safeMin = Math.max(0.1, minZoom);
+	const safeMax = Math.max(safeMin, maxZoom);
+	const currentZoom = Number.isFinite(currentTransform?.zoom) && currentTransform.zoom >= safeMin
+		? Math.min(safeMax, currentTransform.zoom)
+		: 1.0;
+	const panX = Number.isFinite(currentTransform?.panX) ? currentTransform.panX : 0;
+	const panY = Number.isFinite(currentTransform?.panY) ? currentTransform.panY : 0;
+
+	if (!Number.isFinite(zoomDelta)) {
+		return {
+			zoom: Number(currentZoom.toFixed(3)),
+			panX: Number(panX.toFixed(1)),
+			panY: Number(panY.toFixed(1)),
+		};
+	}
+
 	const zoomFactor = Math.exp(-zoomDelta * 0.0015);
-	const newZoom = Math.max(minZoom, Math.min(maxZoom, currentTransform.zoom * zoomFactor));
+	const newZoom = Math.max(safeMin, Math.min(safeMax, currentZoom * zoomFactor));
 
-	const worldPointX = (cursorPx.x - currentTransform.panX) / currentTransform.zoom;
-	const worldPointY = (cursorPx.y - currentTransform.panY) / currentTransform.zoom;
+	const curX = Number.isFinite(cursorPx?.x) ? cursorPx.x : 0;
+	const curY = Number.isFinite(cursorPx?.y) ? cursorPx.y : 0;
 
-	const newPanX = cursorPx.x - worldPointX * newZoom;
-	const newPanY = cursorPx.y - worldPointY * newZoom;
+	const worldPointX = (curX - panX) / currentZoom;
+	const worldPointY = (curY - panY) / currentZoom;
+
+	const newPanX = curX - worldPointX * newZoom;
+	const newPanY = curY - worldPointY * newZoom;
 
 	return {
 		zoom: Number(newZoom.toFixed(3)),
@@ -537,10 +567,16 @@ export function applyPanDrag(
 	deltaX: number,
 	deltaY: number,
 ): ViewportTransform {
+	const currentZoom = Number.isFinite(currentTransform?.zoom) && currentTransform.zoom > 0 ? currentTransform.zoom : 1.0;
+	const currentPanX = Number.isFinite(currentTransform?.panX) ? currentTransform.panX : 0;
+	const currentPanY = Number.isFinite(currentTransform?.panY) ? currentTransform.panY : 0;
+	const safeDx = Number.isFinite(deltaX) ? deltaX : 0;
+	const safeDy = Number.isFinite(deltaY) ? deltaY : 0;
+
 	return {
-		zoom: currentTransform.zoom,
-		panX: Number((currentTransform.panX + deltaX).toFixed(1)),
-		panY: Number((currentTransform.panY + deltaY).toFixed(1)),
+		zoom: currentZoom,
+		panX: Number((currentPanX + safeDx).toFixed(1)),
+		panY: Number((currentPanY + safeDy).toFixed(1)),
 	};
 }
 
@@ -615,6 +651,7 @@ export function calculateAngleFromHandleDrag(
 ): number {
 	const dx = currentPointerPx.x - centerPx.x;
 	const dy = currentPointerPx.y - centerPx.y;
+	if (Math.abs(dx) < 1e-6 && Math.abs(dy) < 1e-6) return 0;
 	let angleRad = Math.atan2(dy, dx);
 
 	switch (handlePosition) {
@@ -791,13 +828,22 @@ export function mapCanvasPointerToWorldMmWithTransform(
 	transform: ViewportTransform,
 	volume: CbctVoxelVolume,
 ): Point3D {
-	const { zoom, panX, panY } = transform;
+	if (!volume || volume.isDisposed || !volume.physicalSizeMm) {
+		return crosshairMm ?? { x: 0, y: 0, z: 0 };
+	}
+
+	const zoom = Number.isFinite(transform?.zoom) && transform.zoom > 0 ? transform.zoom : 1.0;
+	const panX = Number.isFinite(transform?.panX) ? transform.panX : 0;
+	const panY = Number.isFinite(transform?.panY) ? transform.panY : 0;
+
+	const cWidth = canvasSize?.width > 0 ? canvasSize.width : 100;
+	const cHeight = canvasSize?.height > 0 ? canvasSize.height : 100;
 
 	const untransformedPxX = (pointerPx.x - panX) / zoom;
 	const untransformedPxY = (pointerPx.y - panY) / zoom;
 
-	const normX = untransformedPxX / canvasSize.width;
-	const normY = untransformedPxY / canvasSize.height;
+	const normX = untransformedPxX / cWidth;
+	const normY = untransformedPxY / cHeight;
 
 	const halfX = volume.physicalSizeMm.x / 2.0;
 	const halfY = volume.physicalSizeMm.y / 2.0;

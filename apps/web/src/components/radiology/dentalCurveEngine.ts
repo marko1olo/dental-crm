@@ -336,8 +336,9 @@ export function reconstructPanoramicView(
 	const nNodes = vectorField.length;
 
 	// Sweep along the spline
+	const denomW = Math.max(1, outW - 1);
 	for (let col = 0; col < outW; col++) {
-		const u = nNodes > 1 ? (col / (outW - 1)) * (nNodes - 1) : 0;
+		const u = nNodes > 1 ? (col / denomW) * (nNodes - 1) : 0;
 		const i0 = Math.floor(u);
 		const i1 = Math.min(nNodes - 1, i0 + 1);
 		const frac = u - i0;
@@ -632,7 +633,8 @@ export function mapSliceToPanoramicX(
 ): number {
 	if (totalArchLengthMm <= 0 || panoWidthPx <= 0) return 0;
 	const ratio = Math.max(0, Math.min(1, slice.distanceAlongArchMm / totalArchLengthMm));
-	return Math.round(ratio * (panoWidthPx - 1));
+	const denom = Math.max(1, panoWidthPx - 1);
+	return Math.round(ratio * denom);
 }
 
 /**
@@ -647,7 +649,8 @@ export function findNearestCrossSectionIndexByPanoX(
 	if (crossSections.length === 0) return 0;
 	if (totalArchLengthMm <= 0 || panoWidthPx <= 0) return 0;
 
-	const targetDist = (Math.max(0, Math.min(panoWidthPx - 1, panoX)) / (panoWidthPx - 1)) * totalArchLengthMm;
+	const denom = Math.max(1, panoWidthPx - 1);
+	const targetDist = (Math.max(0, Math.min(denom, panoX)) / denom) * totalArchLengthMm;
 
 	let closestIdx = 0;
 	let minDiff = Infinity;

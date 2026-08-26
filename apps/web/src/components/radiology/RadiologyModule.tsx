@@ -319,10 +319,10 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsCbctStudioOpen(true)}
-							className="flex items-center gap-2 min-h-[44px] px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs md:text-sm font-bold shadow-md hover:opacity-95 active:scale-95 transition-all"
+							className="flex items-center gap-2 min-h-[44px] px-4 py-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] hover:border-[var(--teal)] text-[var(--ink)] hover:text-[var(--teal)] text-xs md:text-sm font-bold shadow-sm transition-all"
 							data-testid="open-cbct-mpr-studio-btn"
 						>
-							<Box className="w-4 h-4" />
+							<Box className="w-4 h-4 text-[var(--teal)]" />
 							<span>3D КЛКТ MPR & Имплант-планировщик</span>
 						</button>
 

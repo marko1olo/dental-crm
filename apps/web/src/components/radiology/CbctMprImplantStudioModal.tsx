@@ -209,6 +209,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const panoCanvasRef = useRef<HTMLCanvasElement>(null);
 	const crossSectionCanvasRef = useRef<HTMLCanvasElement>(null);
 
+	const axialImgDataRef = useRef<ImageData | null>(null);
+	const coronalImgDataRef = useRef<ImageData | null>(null);
+	const sagittalImgDataRef = useRef<ImageData | null>(null);
+	const panoImgDataRef = useRef<ImageData | null>(null);
+	const crossSectionImgDataRef = useRef<ImageData | null>(null);
+
 	// Crosshair and Panorama dragging state
 	const [isDraggingCrosshair, setIsDraggingCrosshair] = useState<MprPlane | null>(null);
 	const [isDraggingPano, setIsDraggingPano] = useState<boolean>(false);
@@ -495,9 +501,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					canvas.width = metadata.widthPx;
 					canvas.height = metadata.heightPx;
 				}
-				const imgData = ctx.createImageData(metadata.widthPx, metadata.heightPx);
-				imgData.data.set(data);
-				ctx.putImageData(imgData, 0, 0);
+				if (!axialImgDataRef.current || axialImgDataRef.current.width !== metadata.widthPx || axialImgDataRef.current.height !== metadata.heightPx) {
+					axialImgDataRef.current = ctx.createImageData(metadata.widthPx, metadata.heightPx);
+				}
+				axialImgDataRef.current.data.set(data);
+				ctx.putImageData(axialImgDataRef.current, 0, 0);
 
 				// Draw Calibrated Millimeter Rulers (1mm, 5mm, 10mm + scale bar)
 				drawCalibratedMillimeterRulers(ctx, {
@@ -720,9 +728,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					canvas.width = metadata.widthPx;
 					canvas.height = metadata.heightPx;
 				}
-				const imgData = ctx.createImageData(metadata.widthPx, metadata.heightPx);
-				imgData.data.set(data);
-				ctx.putImageData(imgData, 0, 0);
+				if (!coronalImgDataRef.current || coronalImgDataRef.current.width !== metadata.widthPx || coronalImgDataRef.current.height !== metadata.heightPx) {
+					coronalImgDataRef.current = ctx.createImageData(metadata.widthPx, metadata.heightPx);
+				}
+				coronalImgDataRef.current.data.set(data);
+				ctx.putImageData(coronalImgDataRef.current, 0, 0);
 
 				// Draw Calibrated Millimeter Rulers
 				drawCalibratedMillimeterRulers(ctx, {
@@ -875,9 +885,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					canvas.width = metadata.widthPx;
 					canvas.height = metadata.heightPx;
 				}
-				const imgData = ctx.createImageData(metadata.widthPx, metadata.heightPx);
-				imgData.data.set(data);
-				ctx.putImageData(imgData, 0, 0);
+				if (!sagittalImgDataRef.current || sagittalImgDataRef.current.width !== metadata.widthPx || sagittalImgDataRef.current.height !== metadata.heightPx) {
+					sagittalImgDataRef.current = ctx.createImageData(metadata.widthPx, metadata.heightPx);
+				}
+				sagittalImgDataRef.current.data.set(data);
+				ctx.putImageData(sagittalImgDataRef.current, 0, 0);
 
 				// Draw Calibrated Millimeter Rulers
 				drawCalibratedMillimeterRulers(ctx, {
@@ -1046,9 +1058,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		if (!ctx) return;
 
 		// 1. Draw Panoramic Grayscale Radiograph
-		const imgData = ctx.createImageData(panoramicData.widthPx, panoramicData.heightPx);
-		imgData.data.set(panoramicData.pixelData);
-		ctx.putImageData(imgData, 0, 0);
+		if (!panoImgDataRef.current || panoImgDataRef.current.width !== panoramicData.widthPx || panoImgDataRef.current.height !== panoramicData.heightPx) {
+			panoImgDataRef.current = ctx.createImageData(panoramicData.widthPx, panoramicData.heightPx);
+		}
+		panoImgDataRef.current.data.set(panoramicData.pixelData);
+		ctx.putImageData(panoImgDataRef.current, 0, 0);
 
 		// Draw Calibrated Millimeter Rulers on Panorama
 		drawCalibratedMillimeterRulers(ctx, {
@@ -1242,9 +1256,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		if (!ctx) return;
 
 		// 1. Draw Resliced Bone Voxel Texture
-		const imgData = ctx.createImageData(activeCrossSection.widthPx, activeCrossSection.heightPx);
-		imgData.data.set(activeCrossSection.pixelData);
-		ctx.putImageData(imgData, 0, 0);
+		if (!crossSectionImgDataRef.current || crossSectionImgDataRef.current.width !== activeCrossSection.widthPx || crossSectionImgDataRef.current.height !== activeCrossSection.heightPx) {
+			crossSectionImgDataRef.current = ctx.createImageData(activeCrossSection.widthPx, activeCrossSection.heightPx);
+		}
+		crossSectionImgDataRef.current.data.set(activeCrossSection.pixelData);
+		ctx.putImageData(crossSectionImgDataRef.current, 0, 0);
 
 		const pxSpacing = activeCrossSection.pixelSpacingMm;
 		const centerX = canvas.width / 2;
@@ -1660,46 +1676,46 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				{/* Center Toolbar: Studio Modes, Viewport Layout, WW/WL Presets & Tools */}
 				<div className="flex items-center gap-2 overflow-x-auto shrink-0 py-1">
 					{/* 1. Clinical Studio Mode Selector (Diagnostic vs Implant) */}
-					<div className="flex items-center bg-[#0c0e12] p-0.5 rounded-md border border-[#242a35] shrink-0">
+					<div className="flex items-center bg-[#0c0e12] p-1 rounded-lg border border-[#242a35] shrink-0 gap-1">
 						<button
 							type="button"
 							onClick={() => setStudioMode("diagnostic")}
-							className={`px-2.5 py-1 rounded-sm text-xs font-bold whitespace-nowrap min-h-[36px] flex items-center gap-1.5 transition-colors ${
+							className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-2 transition-colors ${
 								studioMode === "diagnostic"
-									? "bg-[#2563eb] text-white shadow-xs"
-									: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0]"
+									? "bg-[#1e2430] text-[#38bdf8] border border-[#38bdf8]/40 shadow-xs"
+									: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"
 							}`}
 							data-testid="cbct-mode-diagnostic-btn"
 						>
-							<Search className="w-3.5 h-3.5" />
+							<Search className="w-4 h-4 text-[#38bdf8]" />
 							<span>Диагностика</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setStudioMode("implant")}
-							className={`px-2.5 py-1 rounded-sm text-xs font-bold whitespace-nowrap min-h-[36px] flex items-center gap-1.5 transition-colors ${
+							className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-2 transition-colors ${
 								studioMode === "implant"
-									? "bg-[#2563eb] text-white shadow-xs"
-									: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0]"
+									? "bg-[#1e2430] text-[#38bdf8] border border-[#38bdf8]/40 shadow-xs"
+									: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"
 							}`}
 							data-testid="cbct-mode-implant-btn"
 						>
-							<Compass className="w-3.5 h-3.5" />
+							<Compass className="w-4 h-4 text-[#38bdf8]" />
 							<span>Имплантация</span>
 						</button>
 					</div>
 
 					{/* 2. Viewport Layout Mode Selector */}
-					<div className="flex items-center bg-[#0c0e12] p-0.5 rounded-md border border-[#242a35] shrink-0">
+					<div className="flex items-center bg-[#0c0e12] p-1 rounded-lg border border-[#242a35] shrink-0 gap-1">
 						{maximizedViewport !== null ? (
 							<button
 								type="button"
 								onClick={() => setMaximizedViewport(null)}
-								className="px-2.5 py-1 rounded-sm text-xs font-bold whitespace-nowrap min-h-[36px] flex items-center gap-1.5 bg-[#1e2430] hover:bg-[#2a3242] text-amber-300 border border-amber-500/40 shadow-xs transition-colors"
+								className="px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-2 bg-[#1e2430] hover:bg-[#2a3242] text-amber-300 border border-amber-500/40 shadow-xs transition-colors"
 								data-testid="cbct-restore-grid-btn"
 								title="Восстановить сетку окон"
 							>
-								<Minimize2 className="w-3.5 h-3.5" />
+								<Minimize2 className="w-4 h-4" />
 								<span>Восстановить (2x2)</span>
 							</button>
 						) : (
@@ -1707,29 +1723,29 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 								<button
 									type="button"
 									onClick={() => setViewLayout("quad_view")}
-									className={`px-2.5 py-1 rounded-sm text-xs font-bold whitespace-nowrap min-h-[36px] flex items-center gap-1 transition-colors ${
+									className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
 										viewLayout === "quad_view"
-											? "bg-[#1e2430] text-white border border-[#334155]"
-											: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0]"
+											? "bg-[#1e2430] text-[#38bdf8] border border-[#38bdf8]/40 shadow-xs"
+											: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"
 									}`}
 									data-testid="cbct-layout-quad-btn"
 									title="Сетка 4 окна (2x2)"
 								>
-									<Grid2X2 className="w-3.5 h-3.5" />
+									<Grid2X2 className="w-4 h-4" />
 									<span>4 окна</span>
 								</button>
 								<button
 									type="button"
 									onClick={() => setViewLayout("layout_1_plus_3")}
-									className={`px-2.5 py-1 rounded-sm text-xs font-bold whitespace-nowrap min-h-[36px] flex items-center gap-1 transition-colors ${
+									className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
 										viewLayout === "layout_1_plus_3"
-											? "bg-[#1e2430] text-white border border-[#334155]"
-											: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0]"
+											? "bg-[#1e2430] text-[#38bdf8] border border-[#38bdf8]/40 shadow-xs"
+											: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"
 									}`}
 									data-testid="cbct-layout-1plus3-btn"
 									title="Раскладка 1+3 (Доминантный аксиал)"
 								>
-									<Columns2 className="w-3.5 h-3.5" />
+									<Columns2 className="w-4 h-4" />
 									<span>1+3</span>
 								</button>
 							</>
@@ -1737,16 +1753,16 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					</div>
 
 					{/* 3. HU Window/Level Presets */}
-					<div className="flex items-center bg-[#0c0e12] p-0.5 rounded-md border border-[#242a35] shrink-0">
+					<div className="flex items-center bg-[#0c0e12] p-1 rounded-lg border border-[#242a35] shrink-0 gap-1">
 						{CBCT_HOUNSFIELD_PRESETS.map((p) => (
 							<button
 								key={p.id}
 								type="button"
 								onClick={() => handleSelectPreset(p.id)}
-								className={`px-2.5 py-1 rounded-sm text-xs font-medium whitespace-nowrap min-h-[36px] transition-colors ${
+								className={`px-3 py-2 rounded-md text-xs font-medium whitespace-nowrap min-h-[44px] transition-colors ${
 									activePreset === p.id
-										? "bg-[#1e2430] text-[#38bdf8] font-bold border border-[#334155]"
-										: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0]"
+										? "bg-[#1e2430] text-[#38bdf8] font-bold border border-[#38bdf8]/40 shadow-xs"
+										: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"
 								}`}
 								data-testid={`cbct-hu-preset-${p.id}`}
 							>
@@ -1756,11 +1772,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					</div>
 
 					{/* 4. Slab Thickness Modes */}
-					<div className="flex items-center bg-[#0c0e12] p-0.5 rounded-md border border-[#242a35] shrink-0">
+					<div className="flex items-center bg-[#0c0e12] p-1 rounded-lg border border-[#242a35] shrink-0 gap-1">
 						<button
 							type="button"
 							onClick={() => setSlabMode("single")}
-							className={`px-2.5 py-1 rounded-sm text-xs font-medium whitespace-nowrap min-h-[36px] flex items-center justify-center transition-colors ${slabMode === "single" ? "bg-[#1e2430] text-white font-bold border border-[#334155]" : "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0]"}`}
+							className={`px-3 py-2 rounded-md text-xs font-medium whitespace-nowrap min-h-[44px] flex items-center justify-center transition-colors ${slabMode === "single" ? "bg-[#1e2430] text-[#38bdf8] font-bold border border-[#38bdf8]/40 shadow-xs" : "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"}`}
 							data-testid="cbct-mpr-slab-single-btn"
 						>
 							Срез 1 мм
@@ -1768,7 +1784,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						<button
 							type="button"
 							onClick={() => setSlabMode("mip")}
-							className={`px-2.5 py-1 rounded-sm text-xs font-medium whitespace-nowrap min-h-[36px] flex items-center justify-center transition-colors ${slabMode === "mip" ? "bg-[#1e2430] text-white font-bold border border-[#334155]" : "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0]"}`}
+							className={`px-3 py-2 rounded-md text-xs font-medium whitespace-nowrap min-h-[44px] flex items-center justify-center transition-colors ${slabMode === "mip" ? "bg-[#1e2430] text-[#38bdf8] font-bold border border-[#38bdf8]/40 shadow-xs" : "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"}`}
 							data-testid="cbct-mpr-slab-mip-btn"
 						>
 							Slab MIP
@@ -1776,7 +1792,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						<button
 							type="button"
 							onClick={() => setSlabMode("average")}
-							className={`px-2.5 py-1 rounded-sm text-xs font-medium whitespace-nowrap min-h-[36px] flex items-center justify-center transition-colors ${slabMode === "average" ? "bg-[#1e2430] text-white font-bold border border-[#334155]" : "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0]"}`}
+							className={`px-3 py-2 rounded-md text-xs font-medium whitespace-nowrap min-h-[44px] flex items-center justify-center transition-colors ${slabMode === "average" ? "bg-[#1e2430] text-[#38bdf8] font-bold border border-[#38bdf8]/40 shadow-xs" : "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"}`}
 							data-testid="cbct-mpr-slab-avg-btn"
 						>
 							Avg IP
@@ -1784,11 +1800,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					</div>
 
 					{/* 5. Jaw Toggle */}
-					<div className="flex items-center bg-[#0c0e12] p-0.5 rounded-md border border-[#242a35] shrink-0">
+					<div className="flex items-center bg-[#0c0e12] p-1 rounded-lg border border-[#242a35] shrink-0 gap-1">
 						<button
 							type="button"
 							onClick={() => handleToggleJawType("mandible")}
-							className={`px-2.5 py-1 rounded-sm text-xs font-bold whitespace-nowrap min-h-[36px] flex items-center justify-center transition-colors ${jawType === "mandible" ? "bg-[#1e2430] text-amber-300 border border-amber-500/40" : "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0]"}`}
+							className={`px-3 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center justify-center transition-colors ${jawType === "mandible" ? "bg-[#1e2430] text-amber-300 border border-amber-500/40 shadow-xs" : "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"}`}
 							data-testid="cbct-jaw-mandible-btn"
 						>
 							Н. челюсть
@@ -1796,7 +1812,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						<button
 							type="button"
 							onClick={() => handleToggleJawType("maxilla")}
-							className={`px-2.5 py-1 rounded-sm text-xs font-bold whitespace-nowrap min-h-[36px] flex items-center justify-center transition-colors ${jawType === "maxilla" ? "bg-[#1e2430] text-amber-300 border border-amber-500/40" : "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0]"}`}
+							className={`px-3 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center justify-center transition-colors ${jawType === "maxilla" ? "bg-[#1e2430] text-amber-300 border border-amber-500/40 shadow-xs" : "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"}`}
 							data-testid="cbct-jaw-maxilla-btn"
 						>
 							В. челюсть
@@ -1807,15 +1823,15 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					<button
 						type="button"
 						onClick={() => setIsAudioEnabled((prev) => !prev)}
-						className={`px-2.5 py-1 rounded-md text-xs font-bold whitespace-nowrap min-h-[36px] flex items-center gap-1.5 transition-colors border ${
+						className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-2 transition-colors border ${
 							isAudioEnabled
-								? "bg-[#1e2430] text-cyan-300 border-cyan-500/40"
-								: "bg-[#14171e] text-[#94a3b8] border-[#242a35] hover:text-[#e2e8f0]"
+								? "bg-[#1e2430] text-cyan-300 border-cyan-500/40 shadow-xs"
+								: "bg-[#14171e] text-[#94a3b8] border-[#242a35] hover:text-[#e2e8f0] hover:bg-[#1e2430]"
 						}`}
 						title={isAudioEnabled ? "Звуковой алерт нерва включен" : "Звуковой алерт нерва выключен"}
 						data-testid="cbct-audio-alarm-toggle-btn"
 					>
-						{isAudioEnabled ? <Volume2 className="w-3.5 h-3.5 text-cyan-400" /> : <VolumeX className="w-3.5 h-3.5 text-[#94a3b8]" />}
+						{isAudioEnabled ? <Volume2 className="w-4 h-4 text-cyan-400" /> : <VolumeX className="w-4 h-4 text-[#94a3b8]" />}
 						<span>{isAudioEnabled ? "Звук IAN" : "Без звука"}</span>
 					</button>
 
@@ -1841,30 +1857,30 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					<button
 						type="button"
 						onClick={() => folderInputRef.current?.click()}
-						className="px-2.5 py-1 rounded-md bg-[#1e2430] hover:bg-[#2a3242] text-[#e2e8f0] border border-[#242a35] text-xs font-bold whitespace-nowrap min-h-[36px] flex items-center gap-1.5 transition-colors shadow-xs"
+						className="px-3.5 py-2 rounded-md bg-[#1e2430] hover:bg-[#2a3242] text-[#e2e8f0] border border-[#242a35] text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-2 transition-colors shadow-xs"
 						data-testid="cbct-upload-dicom-folder-btn"
 						title="Загрузить папку реальных срезов DICOM (.dcm)"
 					>
-						<FolderOpen className="w-3.5 h-3.5 text-[#38bdf8]" />
+						<FolderOpen className="w-4 h-4 text-[#38bdf8]" />
 						<span>Папка DICOM</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => zipInputRef.current?.click()}
-						className="px-2.5 py-1 rounded-md bg-[#1e2430] hover:bg-[#2a3242] text-[#e2e8f0] border border-[#242a35] text-xs font-bold whitespace-nowrap min-h-[36px] flex items-center gap-1.5 transition-colors shadow-xs"
+						className="px-3.5 py-2 rounded-md bg-[#1e2430] hover:bg-[#2a3242] text-[#e2e8f0] border border-[#242a35] text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-2 transition-colors shadow-xs"
 						data-testid="cbct-upload-dicom-zip-btn"
 						title="Загрузить ZIP-архив КЛКТ"
 					>
-						<FileArchive className="w-3.5 h-3.5 text-[#94a3b8]" />
+						<FileArchive className="w-4 h-4 text-[#94a3b8]" />
 						<span>ZIP КТ</span>
 					</button>
 
 					{/* Real Patient Metadata Badge */}
 					<div
-						className="hidden xl:flex items-center gap-2 px-2.5 py-1 bg-[#0c0e12] rounded-md border border-[#242a35] text-[11px] font-mono shrink-0"
+						className="hidden xl:flex items-center gap-2 px-3 py-2 bg-[#0c0e12] rounded-md border border-[#242a35] text-[11px] font-mono shrink-0 min-h-[44px]"
 						data-testid="cbct-patient-metadata-badge"
 					>
-						<span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+						<span className="w-2 h-2 rounded-full bg-emerald-400" />
 						<span className="text-[#e2e8f0] font-bold">{patientDisplayName}</span>
 						<span className="text-[#64748b]">|</span>
 						<span className="text-cyan-300 font-semibold">{loadedSliceCount} срезов</span>
@@ -1884,21 +1900,21 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					<button
 						type="button"
 						onClick={handleExportForm043Diary}
-						className="px-3 py-1.5 rounded-md bg-[#1e2430] hover:bg-[#2a3242] text-emerald-300 border border-emerald-500/40 text-xs font-bold shadow-xs flex items-center gap-1.5 min-h-[36px] whitespace-nowrap transition-colors"
+						className="px-4 py-2 rounded-md bg-[#1e2430] hover:bg-[#2a3242] text-emerald-300 border border-emerald-500/40 text-xs font-bold shadow-xs flex items-center gap-2 min-h-[44px] whitespace-nowrap transition-colors"
 						data-testid="cbct-export-diary-btn"
 					>
-						<FileText className="w-3.5 h-3.5" />
+						<FileText className="w-4 h-4" />
 						<span>В карту 043/у</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={onClose}
-						className="w-9 h-9 rounded-md bg-[#1e2430] hover:bg-[#2a3242] text-[#94a3b8] hover:text-white flex items-center justify-center min-h-[36px] min-w-[36px] border border-[#242a35] transition-colors"
+						className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-md bg-[#1e2430] hover:bg-[#2a3242] text-[#94a3b8] hover:text-white flex items-center justify-center border border-[#242a35] transition-colors"
 						aria-label="Закрыть КЛКТ студию"
 						data-testid="close-cbct-mpr-3d-studio-btn"
 					>
-						<X className="w-4 h-4" />
+						<X className="w-5 h-5" />
 					</button>
 				</div>
 			</header>
@@ -1908,10 +1924,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				<button
 					type="button"
 					onClick={() => setMobileActiveTab("axial")}
-					className={`px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 ${
+					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "axial"
-							? "bg-[#2563eb] text-white shadow-xs"
-							: "bg-[#1e2430] text-[#94a3b8] hover:bg-[#2a3242]"
+							? "bg-[#1e2430] text-[#38bdf8] border-[#38bdf8]/40 shadow-xs"
+							: "bg-[#14171e] text-[#94a3b8] border-[#242a35] hover:bg-[#1e2430] hover:text-[#e2e8f0]"
 					}`}
 				>
 					<span className="w-2 h-2 rounded-full bg-cyan-400" />
@@ -1920,10 +1936,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				<button
 					type="button"
 					onClick={() => setMobileActiveTab("coronal")}
-					className={`px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 ${
+					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "coronal"
-							? "bg-[#2563eb] text-white shadow-xs"
-							: "bg-[#1e2430] text-[#94a3b8] hover:bg-[#2a3242]"
+							? "bg-[#1e2430] text-[#38bdf8] border-[#38bdf8]/40 shadow-xs"
+							: "bg-[#14171e] text-[#94a3b8] border-[#242a35] hover:bg-[#1e2430] hover:text-[#e2e8f0]"
 					}`}
 				>
 					<span className="w-2 h-2 rounded-full bg-amber-400" />
@@ -1932,10 +1948,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				<button
 					type="button"
 					onClick={() => setMobileActiveTab("sagittal")}
-					className={`px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 ${
+					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "sagittal"
-							? "bg-[#2563eb] text-white shadow-xs"
-							: "bg-[#1e2430] text-[#94a3b8] hover:bg-[#2a3242]"
+							? "bg-[#1e2430] text-[#38bdf8] border-[#38bdf8]/40 shadow-xs"
+							: "bg-[#14171e] text-[#94a3b8] border-[#242a35] hover:bg-[#1e2430] hover:text-[#e2e8f0]"
 					}`}
 				>
 					<span className="w-2 h-2 rounded-full bg-emerald-400" />
@@ -1944,10 +1960,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				<button
 					type="button"
 					onClick={() => setMobileActiveTab("panoramic")}
-					className={`px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 ${
+					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "panoramic"
-							? "bg-[#2563eb] text-white shadow-xs"
-							: "bg-[#1e2430] text-[#94a3b8] hover:bg-[#2a3242]"
+							? "bg-[#1e2430] text-[#38bdf8] border-[#38bdf8]/40 shadow-xs"
+							: "bg-[#14171e] text-[#94a3b8] border-[#242a35] hover:bg-[#1e2430] hover:text-[#e2e8f0]"
 					}`}
 				>
 					<span className="w-2 h-2 rounded-full bg-purple-400" />
@@ -1956,10 +1972,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				<button
 					type="button"
 					onClick={() => setMobileActiveTab("planner")}
-					className={`px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 ${
+					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "planner"
-							? "bg-[#2563eb] text-white shadow-xs"
-							: "bg-[#1e2430] text-[#94a3b8] hover:bg-[#2a3242]"
+							? "bg-[#1e2430] text-[#38bdf8] border-[#38bdf8]/40 shadow-xs"
+							: "bg-[#14171e] text-[#94a3b8] border-[#242a35] hover:bg-[#1e2430] hover:text-[#e2e8f0]"
 					}`}
 				>
 					<span className="w-2 h-2 rounded-full bg-yellow-400" />
@@ -2008,26 +2024,26 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							<span className="text-xs font-bold text-[#38bdf8]">
 								Срез #{activeCrossSection?.sliceIndex ?? 1} из {crossSections.length}
 							</span>
-							<span className="px-2 py-0.5 rounded bg-[#1e2430] text-[#e2e8f0] font-bold text-xs border border-[#242a35]">
+							<span className="px-2.5 py-1 rounded bg-[#1e2430] text-[#e2e8f0] font-bold text-xs border border-[#242a35]">
 								Зуб FDI: #{activeCrossSection?.nearestToothFdi ?? "46"}
 							</span>
 						</div>
-						<div className="flex items-center gap-1">
+						<div className="flex items-center gap-1.5">
 							<button
 								type="button"
 								onClick={() => setActiveCrossSectionIdx((prev) => Math.max(0, prev - 1))}
-								className="p-1 rounded bg-[#1e2430] hover:bg-[#2a3242] text-[#94a3b8] hover:text-[#e2e8f0] min-h-[32px] min-w-[32px] flex items-center justify-center border border-[#242a35] transition-colors"
+								className="p-2.5 rounded-md bg-[#1e2430] hover:bg-[#2a3242] text-[#94a3b8] hover:text-[#e2e8f0] min-h-[44px] min-w-[44px] flex items-center justify-center border border-[#242a35] transition-colors shadow-xs"
 								title="Предыдущий срез"
 							>
-								<ChevronLeft className="w-4 h-4" />
+								<ChevronLeft className="w-5 h-5" />
 							</button>
 							<button
 								type="button"
 								onClick={() => setActiveCrossSectionIdx((prev) => Math.min(crossSections.length - 1, prev + 1))}
-								className="p-1 rounded bg-[#1e2430] hover:bg-[#2a3242] text-[#94a3b8] hover:text-[#e2e8f0] min-h-[32px] min-w-[32px] flex items-center justify-center border border-[#242a35] transition-colors"
+								className="p-2.5 rounded-md bg-[#1e2430] hover:bg-[#2a3242] text-[#94a3b8] hover:text-[#e2e8f0] min-h-[44px] min-w-[44px] flex items-center justify-center border border-[#242a35] transition-colors shadow-xs"
 								title="Следующий срез"
 							>
-								<ChevronRight className="w-4 h-4" />
+								<ChevronRight className="w-5 h-5" />
 							</button>
 						</div>
 					</div>
@@ -2051,8 +2067,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							onToggleMaximize={() => handleToggleMaximize("cross_section")}
 						/>
 
-						{/* Quick Ridge Measurements Badge (positioned top-right to avoid overlapping bottom scale bar) */}
-						<div className="absolute top-2 right-12 px-2 py-0.5 rounded bg-[#14171e] text-[9px] text-[#94a3b8] border border-[#242a35] font-mono shadow-sm flex items-center gap-2">
+						{/* Quick Ridge Measurements Badge (positioned top-right to avoid overlapping bottom scale bar or top-right button) */}
+						<div className="absolute top-2 right-14 px-2.5 py-1 rounded bg-[#14171e]/90 text-[10px] text-[#94a3b8] border border-[#242a35] font-mono shadow-sm flex items-center gap-2">
 							<span>H: <strong className="text-[#38bdf8]">{activeCrossSection?.corticalCrestHeightMm ?? 14.2} мм</strong></span>
 							<span>W: <strong className="text-[#38bdf8]">{activeCrossSection?.alveolarRidgeWidthMm ?? 7.8} мм</strong></span>
 						</div>
@@ -2065,7 +2081,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							<div className="p-3 rounded-md bg-[#0c0e12] border border-[#242a35] flex flex-col gap-2">
 								<div className="flex items-center justify-between text-xs">
 									<span className="font-bold text-[#e2e8f0]">Плотность в курсоре:</span>
-									<span className="px-2 py-0.5 rounded bg-[#1e2430] text-[#38bdf8] font-mono font-bold border border-[#242a35]">
+									<span className="px-2.5 py-1 rounded bg-[#1e2430] text-[#38bdf8] font-mono font-bold border border-[#242a35]">
 										{sampledVoxelHU} HU
 									</span>
 								</div>
@@ -2083,21 +2099,21 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							{/* Radiological Anatomical Inspection Checklist */}
 							<div className="p-3 rounded-md bg-[#0c0e12] border border-[#242a35] flex flex-col gap-2">
 								<div className="text-xs font-bold text-[#e2e8f0] flex items-center gap-1.5">
-									<Search className="w-3.5 h-3.5 text-[#38bdf8]" />
+									<Search className="w-4 h-4 text-[#38bdf8]" />
 									<span>Анатомический осмотр зоны #{activeCrossSection?.nearestToothFdi ?? "46"}:</span>
 								</div>
-								<div className="flex flex-col gap-1 text-[11px] text-[#94a3b8]">
-									<div className="flex items-center gap-2 p-1.5 rounded bg-[#14171e] border border-[#242a35]">
-										<Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-										<span>Кортикальные пластинки & гребень сохранны</span>
+								<div className="flex flex-col gap-1.5 text-[11px] text-[#94a3b8]">
+									<div className="flex items-center gap-2.5 p-2 rounded bg-[#14171e] border border-[#242a35]">
+										<Check className="w-4 h-4 text-emerald-400 shrink-0" />
+										<span className="text-[#e2e8f0]">Кортикальные пластинки & гребень сохранны</span>
 									</div>
-									<div className="flex items-center gap-2 p-1.5 rounded bg-[#14171e] border border-[#242a35]">
-										<Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-										<span>Периодонтальная щель & апексы корней</span>
+									<div className="flex items-center gap-2.5 p-2 rounded bg-[#14171e] border border-[#242a35]">
+										<Check className="w-4 h-4 text-emerald-400 shrink-0" />
+										<span className="text-[#e2e8f0]">Периодонтальная щель & апексы корней</span>
 									</div>
-									<div className="flex items-center gap-2 p-1.5 rounded bg-[#14171e] border border-[#242a35]">
-										<Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-										<span>Пневматизация синуса / канал IAN</span>
+									<div className="flex items-center gap-2.5 p-2 rounded bg-[#14171e] border border-[#242a35]">
+										<Check className="w-4 h-4 text-emerald-400 shrink-0" />
+										<span className="text-[#e2e8f0]">Пневматизация синуса / канал IAN</span>
 									</div>
 								</div>
 							</div>
@@ -2106,7 +2122,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							<button
 								type="button"
 								onClick={() => setStudioMode("implant")}
-								className="w-full py-2 px-3 rounded-md bg-[#1e2430] hover:bg-[#2a3242] text-[#e2e8f0] hover:text-white border border-[#242a35] text-xs font-bold flex items-center justify-center gap-2 transition-colors min-h-[40px] shadow-xs"
+								className="w-full py-2.5 px-4 rounded-md bg-[#1e2430] hover:bg-[#2a3242] text-[#e2e8f0] hover:text-[#38bdf8] border border-[#242a35] hover:border-[#38bdf8]/40 text-xs font-bold flex items-center justify-center gap-2 transition-colors min-h-[44px] shadow-xs"
 								data-testid="cbct-switch-to-implant-mode-btn"
 							>
 								<Compass className="w-4 h-4 text-[#38bdf8]" />
@@ -2117,58 +2133,58 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						<div className="flex flex-col gap-3">
 							{/* ─── MANDIBULAR NERVE SAFETY ALARM BANNER (2.0 MM HALO SENTINEL) ── */}
 							<div
-								className={`p-2.5 rounded-md border flex items-start gap-2 transition-colors ${
+								className={`p-3 rounded-md border flex items-start gap-2.5 transition-colors ${
 									nerveAuditResult.isDangerous
-										? "bg-[#2d1215] border-rose-600 text-rose-200"
+										? "bg-[#2d1215] border-rose-600/80 text-rose-200"
 										: nerveAuditResult.isWarning
-											? "bg-[#2d2212] border-amber-600 text-amber-200"
-											: "bg-[#12241b] border-emerald-600 text-emerald-200"
+											? "bg-[#2d2212] border-amber-600/80 text-amber-200"
+											: "bg-[#12241b] border-emerald-600/80 text-emerald-200"
 								}`}
 								data-testid="cbct-nerve-safety-banner"
 							>
 								{nerveAuditResult.isDangerous ? (
-									<ShieldAlert className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+									<ShieldAlert className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
 								) : nerveAuditResult.isWarning ? (
-									<AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+									<AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
 								) : (
-									<ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+									<ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
 								)}
-								<div className="text-xs">
+								<div className="text-xs flex-1">
 									<div className="font-bold flex items-center justify-between">
 										<span>Зазор до нерва (IAN): {nerveAuditResult.netClearanceToCanalWallMm.toFixed(1)} мм</span>
-										<span className="text-[10px] px-1 py-0.2 rounded bg-black/40 font-mono">
+										<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/40 font-mono">
 											Норма {">="} 2.0 мм
 										</span>
 									</div>
-									<p className="text-[10px] mt-0.5 opacity-90 leading-tight">
+									<p className="text-[11px] mt-1 opacity-90 leading-tight">
 										{nerveAuditResult.clinicalMessageRu}
 									</p>
 								</div>
 							</div>
 
 							{/* ─── MISCH BONE DENSITY (HU) & DRILLING PROTOCOL ────────────── */}
-							<div className="p-2.5 rounded-md bg-[#0c0e12] border border-[#242a35] flex flex-col gap-2">
+							<div className="p-3 rounded-md bg-[#0c0e12] border border-[#242a35] flex flex-col gap-2">
 								<div className="flex items-center justify-between text-xs">
 									<span className="font-bold text-[#94a3b8]">Плотность кости (Misch):</span>
-									<span className="px-2 py-0.5 rounded bg-[#1e2430] text-[#38bdf8] font-bold border border-[#242a35]">
+									<span className="px-2 py-1 rounded bg-[#1e2430] text-[#38bdf8] font-bold border border-[#242a35]">
 										Класс {mischClassification.mischClass} ({huSamplingResult.overallMeanHU} HU)
 									</span>
 								</div>
-								<div className="grid grid-cols-3 gap-1 text-center text-[10px] bg-[#14171e] p-1.5 rounded border border-[#242a35]">
+								<div className="grid grid-cols-3 gap-1.5 text-center text-[10px] bg-[#14171e] p-2 rounded border border-[#242a35]">
 									<div>
 										<div className="text-[#94a3b8]">Кортекс</div>
-										<div className="font-mono font-bold text-[#38bdf8]">{huSamplingResult.coronalCrestalHU} HU</div>
+										<div className="font-mono font-bold text-[#38bdf8] text-xs">{huSamplingResult.coronalCrestalHU} HU</div>
 									</div>
 									<div>
 										<div className="text-[#94a3b8]">Спонгиоза</div>
-										<div className="font-mono font-bold text-[#38bdf8]">{huSamplingResult.trabecularCoreHU} HU</div>
+										<div className="font-mono font-bold text-[#38bdf8] text-xs">{huSamplingResult.trabecularCoreHU} HU</div>
 									</div>
 									<div>
 										<div className="text-[#94a3b8]">Апекс</div>
-										<div className="font-mono font-bold text-[#38bdf8]">{huSamplingResult.apicalBaseHU} HU</div>
+										<div className="font-mono font-bold text-[#38bdf8] text-xs">{huSamplingResult.apicalBaseHU} HU</div>
 									</div>
 								</div>
-								<div className="text-[10px] text-[#94a3b8]">
+								<div className="text-[11px] text-[#94a3b8]">
 									Протокол: <strong className="text-[#e2e8f0]">{mischClassification.recommendedDrillingRpm}</strong>.
 									{mischClassification.underdrillingRecommended && (
 										<span className="text-amber-400 font-semibold ml-1">Недопрепарирование (Underdrilling).</span>
@@ -2177,20 +2193,20 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							</div>
 
 							{/* ─── VIRTUAL IMPLANT CALIPER SELECTION ───────────────────────── */}
-							<div className="p-2.5 rounded-md bg-[#0c0e12] border border-[#242a35] flex flex-col gap-2">
+							<div className="p-3 rounded-md bg-[#0c0e12] border border-[#242a35] flex flex-col gap-2.5">
 								<div className="text-xs font-bold text-[#94a3b8]">Выбор имплантата (Библиотека):</div>
 
 								{/* Brand selector */}
-								<div className="grid grid-cols-4 gap-1">
+								<div className="grid grid-cols-4 gap-1.5">
 									{(["straumann", "nobel_biocare", "osstem", "dentium"] as ImplantBrandKey[]).map((b) => (
 										<button
 											key={b}
 											type="button"
 											onClick={() => setSelectedBrand(b)}
-											className={`py-1 rounded text-xs font-bold capitalize min-h-[32px] transition-colors border ${
+											className={`py-2 px-1 rounded-md text-xs font-bold capitalize min-h-[44px] transition-colors border flex items-center justify-center ${
 												selectedBrand === b
-													? "bg-[#2563eb] text-white border-blue-500 shadow-xs"
-													: "bg-[#1e2430] text-[#94a3b8] hover:text-[#e2e8f0] border-[#242a35]"
+													? "bg-[#1e2430] text-[#38bdf8] border-[#38bdf8]/50 shadow-xs"
+													: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] border-[#242a35] hover:bg-[#1e2430]"
 											}`}
 										>
 											{b === "straumann" ? "Straumann" : b === "nobel_biocare" ? "Nobel" : b === "osstem" ? "Osstem" : "Dentium"}
@@ -2201,11 +2217,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 								{/* Diameter & Length Selectors */}
 								<div className="grid grid-cols-2 gap-2 text-xs">
 									<div>
-										<label className="text-[10px] text-[#94a3b8] block mb-0.5">Диаметр (мм):</label>
+										<label className="text-[11px] text-[#94a3b8] block mb-1 font-semibold">Диаметр (мм):</label>
 										<select
 											value={selectedDiameterMm}
 											onChange={(e) => setSelectedDiameterMm(Number.parseFloat(e.target.value))}
-											className="w-full bg-[#1e2430] border border-[#242a35] rounded p-1 text-xs text-[#e2e8f0] min-h-[32px]"
+											className="w-full bg-[#1e2430] border border-[#242a35] rounded-md px-3 py-2 text-xs text-[#e2e8f0] min-h-[44px] focus:border-[#38bdf8] focus:outline-none"
 										>
 											<option value={3.5}>Ø 3.5 мм (Узкий)</option>
 											<option value={4.0}>Ø 4.0 мм (Стандарт)</option>
@@ -2216,11 +2232,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 									</div>
 
 									<div>
-										<label className="text-[10px] text-[#94a3b8] block mb-0.5">Длина (мм):</label>
+										<label className="text-[11px] text-[#94a3b8] block mb-1 font-semibold">Длина (мм):</label>
 										<select
 											value={selectedLengthMm}
 											onChange={(e) => setSelectedLengthMm(Number.parseFloat(e.target.value))}
-											className="w-full bg-[#1e2430] border border-[#242a35] rounded p-1 text-xs text-[#e2e8f0] min-h-[32px]"
+											className="w-full bg-[#1e2430] border border-[#242a35] rounded-md px-3 py-2 text-xs text-[#e2e8f0] min-h-[44px] focus:border-[#38bdf8] focus:outline-none"
 										>
 											<option value={8.0}>L 8.0 мм</option>
 											<option value={10.0}>L 10.0 мм</option>
@@ -2231,8 +2247,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 								</div>
 
 								{/* Angulation Slider */}
-								<div className="flex flex-col gap-0.5 text-xs">
-									<div className="flex items-center justify-between text-[10px] text-[#94a3b8]">
+								<div className="flex flex-col gap-1 text-xs">
+									<div className="flex items-center justify-between text-[11px] text-[#94a3b8]">
 										<span>Наклон оси (Tilt):</span>
 										<span className="font-mono font-bold text-[#e2e8f0]">{implantAngulationDeg}°</span>
 									</div>
@@ -2243,13 +2259,13 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 										step={1}
 										value={implantAngulationDeg}
 										onChange={(e) => setImplantAngulationDeg(Number.parseInt(e.target.value, 10))}
-										className="w-full accent-blue-500 min-h-[28px]"
+										className="w-full accent-[#38bdf8] min-h-[44px] py-2 cursor-pointer bg-transparent"
 									/>
 								</div>
 
 								{/* Horizontal Entry Offset Slider */}
-								<div className="flex flex-col gap-0.5 text-xs">
-									<div className="flex items-center justify-between text-[10px] text-[#94a3b8]">
+								<div className="flex flex-col gap-1 text-xs">
+									<div className="flex items-center justify-between text-[11px] text-[#94a3b8]">
 										<span>Смещение X на гребне:</span>
 										<span className="font-mono font-bold text-[#e2e8f0]">{implantEntryXOffsetMm.toFixed(1)} мм</span>
 									</div>
@@ -2260,7 +2276,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 										step={0.5}
 										value={implantEntryXOffsetMm}
 										onChange={(e) => setImplantEntryXOffsetMm(Number.parseFloat(e.target.value))}
-										className="w-full accent-blue-500 min-h-[28px]"
+										className="w-full accent-[#38bdf8] min-h-[44px] py-2 cursor-pointer bg-transparent"
 									/>
 								</div>
 							</div>

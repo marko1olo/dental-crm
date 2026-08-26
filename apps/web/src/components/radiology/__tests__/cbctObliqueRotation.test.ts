@@ -410,4 +410,52 @@ describe("CBCT Oblique MPR Rotation, Sub-Voxel Trilinear & Interactive Navigatio
 			assert.equal(fillTextCalls.length, 1, "Should render rotation degree badge text");
 		});
 	});
+
+	describe("11. Self-Criticism & Defensive Edge Cases (NaN, Infinity, Zero Division)", () => {
+		it("safely handles NaN and Infinity coordinates in sampleVoxelHUTrilinear without crashing", () => {
+			assert.equal(sampleVoxelHUTrilinear(testVolume, Number.NaN, 40, 30), -1000);
+			assert.equal(sampleVoxelHUTrilinear(testVolume, 40, Number.POSITIVE_INFINITY, 30), -1000);
+			assert.equal(sampleVoxelHUTrilinear(testVolume, Number.NEGATIVE_INFINITY, Number.NaN, 30), -1000);
+		});
+
+		it("safely handles disposed or empty volume in sampleVoxelHUTrilinear", () => {
+			const disposedVolume = {
+				...testVolume,
+				data: null,
+				isDisposed: true,
+			};
+			assert.equal(sampleVoxelHUTrilinear(disposedVolume, 40, 40, 30), -1000);
+		});
+
+		it("safely handles NaN and zero zoom in applyCursorZoom", () => {
+			const initialTransform: ViewportTransform = { zoom: 0, panX: 0, panY: 0 };
+			const result = applyCursorZoom(initialTransform, { x: 100, y: 100 }, Number.NaN);
+			assert.ok(result.zoom >= 0.5, "Zoom should fallback to valid range");
+			assert.ok(!Number.isNaN(result.panX));
+			assert.ok(!Number.isNaN(result.panY));
+		});
+
+		it("safely handles zero canvas dimensions in mapCanvasPointerToWorldMmWithTransform", () => {
+			const transform: ViewportTransform = { zoom: 1.0, panX: 0, panY: 0 };
+			const worldMm = mapCanvasPointerToWorldMmWithTransform(
+				{ x: 50, y: 50 },
+				{ width: 0, height: 0 },
+				"axial",
+				{ x: 0, y: 0, z: 0 },
+				DEFAULT_OBLIQUE_ROTATION,
+				transform,
+				testVolume,
+			);
+			assert.ok(!Number.isNaN(worldMm.x));
+			assert.ok(!Number.isNaN(worldMm.y));
+			assert.ok(!Number.isNaN(worldMm.z));
+		});
+
+		it("calculates sub-degree angle with precision during handle drag", () => {
+			const center = { x: 100, y: 100 };
+			// Drag to dx = 100, dy = 1 -> tiny angle
+			const angle = calculateAngleFromHandleDrag(center, { x: 200, y: 101 }, "u_pos");
+			assert.ok(Math.abs(angle - 0.6) <= 0.1, `Expected ~0.6 deg, got ${angle}`);
+		});
+	});
 });

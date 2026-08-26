@@ -185,7 +185,7 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 		>
 			{/* 1. TOP-LEFT CLINICAL HEADER BADGE */}
 			<div
-				className="absolute top-2 left-2 flex items-center gap-1.5 pointer-events-auto flex-wrap max-w-[85%]"
+				className="absolute top-2 left-2 flex items-center gap-1.5 pointer-events-auto flex-wrap max-w-[calc(100%-56px)]"
 				onDoubleClick={(e) => {
 					e.stopPropagation();
 					onToggleMaximize?.();
@@ -250,12 +250,12 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 							e.stopPropagation();
 							onToggleMaximize();
 						}}
-						className="p-1.5 rounded-md bg-[#14171e] hover:bg-[#2a3242] text-[#94a3b8] hover:text-[#e2e8f0] border border-[#242a35] shadow-sm transition-colors flex items-center justify-center min-w-[28px] min-h-[28px]"
+						className="p-2.5 rounded-md bg-[#14171e]/90 hover:bg-[#1e2430] text-[#94a3b8] hover:text-[#e2e8f0] border border-[#242a35] shadow-sm transition-colors flex items-center justify-center min-w-[44px] min-h-[44px]"
 						title={isMaximized ? "Свернуть в сетку (двойной клик)" : "Развернуть на 100% (двойной клик)"}
 						data-testid={`cbct-maximize-${viewportType}-btn`}
 						aria-label={isMaximized ? "Свернуть окно" : "Развернуть окно"}
 					>
-						{isMaximized ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+						{isMaximized ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
 					</button>
 				</div>
 			)}
