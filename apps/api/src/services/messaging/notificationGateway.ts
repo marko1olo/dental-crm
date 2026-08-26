@@ -385,14 +385,7 @@ export class NotificationGateway {
 
 		if (!row) return { updated: false };
 
-		let outboxStatus: "delivered" | "failed" | "sent" = "delivered";
-		if (event.status === "failed") {
-			outboxStatus = "failed";
-		} else if (event.status === "sent") {
-			outboxStatus = "sent";
-		} else {
-			outboxStatus = "delivered";
-		}
+		const outboxStatus: "delivered" | "failed" = event.status === "failed" ? "failed" : "delivered";
 
 		await db
 			.update(communicationOutbox)

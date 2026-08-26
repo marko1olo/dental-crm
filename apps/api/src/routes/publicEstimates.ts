@@ -172,9 +172,16 @@ export const registerPublicEstimatesRoutes: FastifyPluginAsync = async (server) 
 			const clientIp = typeof rawIp === "string" ? rawIp.split(",")[0]?.trim() || "127.0.0.1" : "127.0.0.1";
 			const userAgent = request.headers["user-agent"];
 
-			const result = PublicEstimatesService.acceptEstimate(token, parsed.data, {
+			const acceptPayload = {
+				signerName: parsed.data.signerName,
+				...(parsed.data.relationship ? { relationship: parsed.data.relationship } : {}),
+				...(parsed.data.signatureMethod ? { signatureMethod: parsed.data.signatureMethod } : {}),
+				...(parsed.data.signaturePng ? { signaturePng: parsed.data.signaturePng } : {}),
+				...(parsed.data.signatureSvg ? { signatureSvg: parsed.data.signatureSvg } : {}),
+			};
+			const result = PublicEstimatesService.acceptEstimate(token, acceptPayload, {
 				ipAddress: clientIp,
-				userAgent,
+				...(userAgent ? { userAgent } : {}),
 			});
 
 			if (!result.success) {
@@ -207,7 +214,11 @@ export const registerPublicEstimatesRoutes: FastifyPluginAsync = async (server) 
 				return { error: "InvalidRejectionData", message: "Укажите причину отклонения." };
 			}
 
-			const result = PublicEstimatesService.rejectEstimate(token, parsed.data);
+			const rejectPayload = {
+				reason: parsed.data.reason,
+				...(parsed.data.note ? { note: parsed.data.note } : {}),
+			};
+			const result = PublicEstimatesService.rejectEstimate(token, rejectPayload);
 			if (!result.success) {
 				reply.status(400);
 				return { error: "RejectionFailed", message: result.error };

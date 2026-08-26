@@ -1,26 +1,29 @@
-# BRIEFING — 2026-08-25T14:20:50Z
+# BRIEFING — 2026-08-26T21:25:50Z
 
 ## Mission
-Autonomous end-to-end clinical routine automation, adversarial friction audit, and machine verification for DENTE Dental CRM.
+Coordinate and monitor the complete port of Dentalpin Agentic Copilot & Tooling to @dental/api and @dental/web.
 
 ## 🔒 My Identity
 - Archetype: sentinel
 - Working directory: C:\Clinic_MVP\dental-crm\.agents\sentinel
-- Orchestrator: 1b235ed5-4da9-44a7-8084-d587284992fc
+- Orchestrator: Goose Daemon (CLINIC_COPILOT_PORT, task ID: 0804ab2e-3a66-4c2d-b8c0-a9de806940c1/task-231)
+- Proxy: AgentRouter Proxy (task ID: 0804ab2e-3a66-4c2d-b8c0-a9de806940c1/task-222, port 8318)
+- Progress Cron: task ID 0804ab2e-3a66-4c2d-b8c0-a9de806940c1/task-54 (*/8 * * * *)
+- Liveness Cron: task ID 0804ab2e-3a66-4c2d-b8c0-a9de806940c1/task-56 (*/10 * * * *)
 - Victory Auditor: to be spawned on victory claim
 
 ## 🔒 Key Constraints
 - No technical decisions — relay only
 - Victory Audit is MANDATORY before reporting completion
-- Must enforce zero mocks, 100% strict typecheck, and full test suite passing
+- Route: General (Orchestrator Execution Engine)
 
 ## User Context
-- **Last user request**: Clinical routine automation and adversarial friction audit for DENTE Dental CRM (R1-R4)
+- **Last user request**: Deep reverse-engineering and full code port of Dentalpin Agentic Copilot & Tooling (backend services, tool registry, guardrails, SSE streaming bridge, PHI redaction, frontend copilot drawer & approval cards, unit tests, and typecheck).
 - **Pending clarifications**: none
-- **Delivered results**: none
+- **Delivered results**: []
 
 ## Project Status
-- **Phase**: in progress
+- **Phase**: in progress (Goose daemon actively executing tools, reading dentalpin sources and implementing modules)
 
 ## Victory Audit Status
 - **Triggered**: no
@@ -29,4 +32,3 @@ Autonomous end-to-end clinical routine automation, adversarial friction audit, a
 
 ## Artifact Index
 - C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md — Authoritative record of user request
-- C:\Clinic_MVP\dental-crm\.agents\orchestrator\progress.md — Orchestrator live progress log
