@@ -40,6 +40,10 @@ import {
 	generateQrCodeSvg,
 	formatGostOrderNumber,
 } from "./labMath";
+import { rublesToKopecks } from "@dental/shared";
+import { DentalLabFinancialGate } from "./DentalLabFinancialGate";
+import { checkDentalLabFinancialGate } from "./dentalLabFinancialGateEngine";
+import { BankInstallmentQrModal } from "../payments/BankInstallmentQrModal";
 import { DentalLabRestorationTab } from "./DentalLabRestorationTab";
 import { DentalLabShadeSelector } from "./DentalLabShadeSelector";
 import { DentalLabOcclusionTab } from "./DentalLabOcclusionTab";
@@ -78,9 +82,24 @@ export function DentalLabOrderModal({
 	doctorId,
 	doctorName,
 	initialToothFdi,
+	patientDepositRub,
+	stageTotalRub,
+	stagePaidRub,
+	chiefDoctorName,
+	skipFinancialGate,
 	onOrderSaved,
 }: DentalLabOrderModalProps) {
 	const [activeTab, setActiveTab] = useState<TabKey>("main");
+
+	// Financial Gate & Installment States
+	const [isGateModalOpen, setIsGateModalOpen] = useState(false);
+	const [gateOverride, setGateOverride] = useState<{
+		authorized: boolean;
+		doctorName: string;
+		timestampIso: string;
+		reason: string;
+	} | null>(null);
+	const [isInstallmentModalOpen, setIsInstallmentModalOpen] = useState(false);
 
 	// Form State
 	const [formPatientId, setFormPatientId] = useState(patientId || initialOrder?.patientId || "");
@@ -241,8 +260,25 @@ export function DentalLabOrderModal({
 		setDoctorSharePct(doctor);
 	};
 
+	// ─── DENTAL LAB FINANCIAL GATE ──────────────────────────────────────────────
+	const financialGateResult = useMemo(() => {
+		const stageTotalKopecks = rublesToKopecks(stageTotalRub ?? totalLabPriceRub);
+		const paidKopecks = rublesToKopecks(stagePaidRub ?? 0);
+		const depositKopecks = rublesToKopecks(patientDepositRub ?? 0);
+		const orderPriceKopecks = rublesToKopecks(totalLabPriceRub);
+
+		return checkDentalLabFinancialGate({
+			stageTotalKopecks,
+			paidKopecks,
+			availableDepositKopecks: depositKopecks,
+			labOrderPriceKopecks: orderPriceKopecks,
+			minAdvancePercent: 50,
+			chiefDoctorOverride: gateOverride ?? undefined,
+		});
+	}, [stageTotalRub, totalLabPriceRub, stagePaidRub, patientDepositRub, gateOverride]);
+
 	// ─── SUBMIT HANDLER ────────────────────────────────────────────────────────
-	const handleSaveOrder = async (e?: React.FormEvent) => {
+	const handleSaveOrder = async (e?: React.FormEvent, forceSaveWithOverride = false) => {
 		if (e) e.preventDefault();
 
 		if (!formPatientId) {
@@ -252,6 +288,12 @@ export function DentalLabOrderModal({
 
 		if (selectedTeeth.length === 0) {
 			showToast("Выберите хотя бы один зуб в зубной формуле", "error");
+			return;
+		}
+
+		// Проверка финансового шлюза (50% аванс за этап)
+		if (!skipFinancialGate && !forceSaveWithOverride && !financialGateResult.isGatePassed) {
+			setIsGateModalOpen(true);
 			return;
 		}
 
@@ -713,6 +755,7 @@ export function DentalLabOrderModal({
 							onClick={() => handleSaveOrder()}
 							disabled={isSubmitting || selectedTeeth.length === 0}
 							className="min-h-[44px] px-5 py-2.5 text-xs font-bold rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white shadow-md shadow-teal-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all inline-flex items-center gap-2"
+							data-testid="submit-lab-order-btn"
 						>
 							{isSubmitting ? (
 								<>
@@ -728,6 +771,58 @@ export function DentalLabOrderModal({
 						</button>
 					</div>
 				</div>
+
+				{/* ─── DENTAL LAB FINANCIAL GATE MODAL ───────────────────────── */}
+				{isGateModalOpen && (
+					<DentalLabFinancialGate
+						isOpen={isGateModalOpen}
+						onClose={() => setIsGateModalOpen(false)}
+						gateResult={financialGateResult}
+						patientName={formPatientName}
+						stageTitle={`Наряд ЗТЛ: ${CONSTRUCTION_TYPES.find((c) => c.id === constructionType)?.name || constructionType}`}
+						defaultChiefDoctorName={chiefDoctorName || "Д-р Смирнов А. В. (Главный врач)"}
+						variant="modal"
+						onConfirmOverride={(override) => {
+							setGateOverride(override);
+							setIsGateModalOpen(false);
+							showToast(`Оверрайд главврача авторизован: ${override.doctorName}`, "success");
+							// Автоматически продолжаем сохранение наряда с оверрайдом
+							handleSaveOrder(undefined, true);
+						}}
+						onBlock={() => {
+							setIsGateModalOpen(false);
+							showToast("Отправка наряда в лабораторию заблокирована финансовым шлюзом", "warning");
+						}}
+						onOpenInstallmentModal={() => {
+							setIsGateModalOpen(false);
+							setIsInstallmentModalOpen(true);
+						}}
+						onAcceptAdvancePayment={() => {
+							setIsGateModalOpen(false);
+							showToast("Перейдите в кассовый модуль для приема аванса", "info");
+						}}
+					/>
+				)}
+
+				{/* ─── BANK INSTALLMENT QR MODAL ─────────────────────────────── */}
+				{isInstallmentModalOpen && (
+					<BankInstallmentQrModal
+						isOpen={isInstallmentModalOpen}
+						onClose={() => setIsInstallmentModalOpen(false)}
+						stageTitle={`Наряд ЗТЛ: ${CONSTRUCTION_TYPES.find((c) => c.id === constructionType)?.name || constructionType}`}
+						stageAmountKopecks={rublesToKopecks(totalLabPriceRub)}
+						patientId={formPatientId}
+						patientName={formPatientName}
+						onInstallmentApproved={(approval) => {
+							showToast(
+								`Рассрочка на сумму ${totalLabPriceRub.toLocaleString("ru-RU")} ₽ одобрена банком ${approval.providerId.toUpperCase()}! Наряд разблокирован.`,
+								"success",
+							);
+							// После одобрения банк покрыл сумму, отправляем наряд
+							handleSaveOrder(undefined, true);
+						}}
+					/>
+				)}
 
 			</div>
 		</div>

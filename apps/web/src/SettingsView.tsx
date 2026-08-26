@@ -103,6 +103,7 @@ import { SettingsMarketingTab } from "./components/settings/SettingsMarketingTab
 import { SettingsMessengersTab } from "./components/settings/SettingsMessengersTab";
 import { SettingsModulesTab } from "./components/settings/SettingsModulesTab";
 import { SettingsPricesTab } from "./components/settings/SettingsPricesTab";
+import { ProcedureBomsTab } from "./components/settings/ProcedureBomsTab";
 import { SettingsProfileTab } from "./components/settings/SettingsProfileTab";
 import { SettingsProtocolsTab } from "./components/settings/SettingsProtocolsTab";
 import { SettingsReportingTab } from "./components/settings/SettingsReportingTab";
@@ -2095,6 +2096,12 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 				{settingsTab === "rules" ? (
 					<ErrorBoundary moduleName="Правила и регламенты">
 						<SettingsRulesTab />
+					</ErrorBoundary>
+				) : null}
+
+				{settingsTab === "procedure-boms" ? (
+					<ErrorBoundary moduleName="Техкарты расхода материалов 804н">
+						<ProcedureBomsTab {...(appLogic?.auth?.currentUser?.organizationId ? { organizationId: appLogic.auth.currentUser.organizationId } : {})} />
 					</ErrorBoundary>
 				) : null}
 

@@ -12,6 +12,8 @@ export interface InventoryItem {
 	criticalThreshold: number;
 	unitCostRub: string;
 	updatedAt: string;
+	unit?: string;
+	unitOfMeasure?: string;
 	sku?: string;
 	barcode?: string;
 	expirationDate?: string;

@@ -7,6 +7,7 @@ import {
 	ChevronUp,
 	Clock,
 	Coins,
+	CreditCard,
 	FileText,
 	FlaskConical,
 	Layers,
@@ -31,6 +32,7 @@ interface TreatmentPlanStageCardProps {
 	readonly onRemoveItem?: (itemId: string) => void;
 	readonly onExecuteWriteOffStage?: (stage: TreatmentPlanStage) => void;
 	readonly onOpenLabOrder?: (teeth?: number[]) => void;
+	readonly onOpenInstallment?: (stage: TreatmentPlanStage) => void;
 	readonly className?: string;
 }
 
@@ -42,6 +44,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 	onRemoveItem,
 	onExecuteWriteOffStage,
 	onOpenLabOrder,
+	onOpenInstallment,
 	className = "",
 }) => {
 	const [isExpanded, setIsExpanded] = useState<boolean>(defaultExpanded);
@@ -351,6 +354,19 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 						</div>
 
 						<div className="flex flex-wrap items-center gap-2">
+							{onOpenInstallment && stage.totalRub > 0 && (
+								<button
+									type="button"
+									onClick={() => onOpenInstallment(stage)}
+									className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-800 dark:text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 cursor-pointer transition-colors"
+									title={`Оформить беспроцентную банковскую рассрочку (Сбер / Т-Банк / Подели) на этап №${stage.stageNumber}`}
+									data-testid={`stage-${stage.stageNumber}-installment-btn`}
+								>
+									<CreditCard size={13} className="text-emerald-600 dark:text-emerald-400" />
+									<span>💳 Оформить рассрочку на этап</span>
+								</button>
+							)}
+
 							{onOpenLabOrder &&
 								(stage.stageKind === "stage_3_orthopedics" ||
 									stage.stageNumber === 3 ||

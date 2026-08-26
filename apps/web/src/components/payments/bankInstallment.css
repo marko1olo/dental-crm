@@ -1,0 +1,107 @@
+/**
+ * bankInstallment.css — Стили для модального окна банковской рассрочки DENTE CRM.
+ */
+
+.bank-installment-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 60;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1rem;
+	background-color: rgba(15, 23, 42, 0.75);
+	backdrop-filter: blur(4px);
+	overflow-y: auto;
+}
+
+.bank-installment-container {
+	position: relative;
+	width: 100%;
+	max-width: 46rem;
+	background-color: var(--paper-strong, var(--paper, #ffffff));
+	border: 1px solid var(--border, #cbd5e1);
+	border-radius: 1.5rem;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+	overflow: hidden;
+	display: flex;
+	flex-col: column;
+	color: var(--ink, #0f172a);
+}
+
+.bank-installment-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1.25rem 1.5rem;
+	border-bottom: 1px solid var(--border, #cbd5e1);
+	background-color: var(--paper-soft, #f8fafc);
+}
+
+.bank-provider-tab {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.5rem 1rem;
+	border-radius: 0.75rem;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	border: 1px solid var(--border, #cbd5e1);
+	background-color: var(--paper-strong, #ffffff);
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: all 0.15s ease-in-out;
+	min-height: 44px;
+}
+
+.bank-provider-tab:hover {
+	color: var(--ink, #0f172a);
+	background-color: var(--paper-soft, #f8fafc);
+}
+
+.bank-provider-tab.active {
+	background-color: var(--teal-soft, var(--paper-soft));
+	color: var(--teal-dark, var(--teal));
+	border-color: var(--teal, var(--brand-primary));
+	box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.bank-term-chip {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.5rem 0.875rem;
+	border-radius: 0.75rem;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	border: 1px solid var(--border, #cbd5e1);
+	background-color: var(--paper-strong, #ffffff);
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: all 0.15s ease-in-out;
+	min-height: 44px;
+	min-width: 44px;
+}
+
+.bank-term-chip:hover {
+	color: var(--ink, #0f172a);
+	border-color: var(--teal, var(--brand-primary));
+}
+
+.bank-term-chip.active {
+	background-color: var(--teal, var(--brand-primary));
+	color: #ffffff;
+	border-color: var(--teal, var(--brand-primary));
+}
+
+.qr-display-box {
+	background-color: #ffffff;
+	border: 1px solid var(--border, #cbd5e1);
+	border-radius: 1.25rem;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}

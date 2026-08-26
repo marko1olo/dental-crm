@@ -56,6 +56,11 @@ export interface DentalLabOrderModalProps {
 	readonly doctorId?: string | undefined;
 	readonly doctorName?: string | undefined;
 	readonly initialToothFdi?: string | number | undefined;
+	readonly patientDepositRub?: number | undefined;
+	readonly stageTotalRub?: number | undefined;
+	readonly stagePaidRub?: number | undefined;
+	readonly chiefDoctorName?: string | undefined;
+	readonly skipFinancialGate?: boolean | undefined;
 	readonly onOrderSaved?: ((order: DentalLabOrderData) => void) | undefined;
 }
 
@@ -63,8 +68,12 @@ export interface LabTrackingDrawerProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly order: DentalLabOrderData | null;
-	readonly onStageUpdate?: (orderId: string, newStage: LabOrderStageKey, note?: string | undefined) => Promise<void> | void;
-	readonly onFittingDateUpdate?: (orderId: string, dates: { frameworkTrialDate?: string | undefined; ceramicTrialDate?: string | undefined; deliveryDate?: string | undefined }) => Promise<void> | void;
+	readonly patientDepositRub?: number | undefined;
+	readonly stageTotalRub?: number | undefined;
+	readonly stagePaidRub?: number | undefined;
+	readonly chiefDoctorName?: string | undefined;
+	readonly onStageUpdate?: ((orderId: string, newStage: LabOrderStageKey, note?: string) => Promise<void> | void) | undefined;
+	readonly onFittingDateUpdate?: ((orderId: string, dates: { frameworkTrialDate?: string; ceramicTrialDate?: string; deliveryDate?: string }) => Promise<void> | void) | undefined;
 }
 
 // ─── CONSTANTS & DICTIONARIES ──────────────────────────────────────────────────

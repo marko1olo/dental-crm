@@ -69,6 +69,7 @@ import {
 	generate54FzStageFiscalReceipt,
 	validateStageStateTransition,
 } from "./stagePaymentEngine.js";
+import { BankInstallmentQrModal } from "../../payments/BankInstallmentQrModal";
 import "./stagePayment.css";
 
 export type StagePaymentModalTab =
@@ -146,6 +147,10 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 	const [fiscalPaymentType, setFiscalPaymentType] = useState<"advance" | "completion" | "full">("advance");
 	const [fiscalPaymentMethod, setFiscalPaymentMethod] = useState<"CASH" | "BANK_CARD" | "PATIENT_DEPOSIT" | "SBP_QR">("BANK_CARD");
 	const [activeFiscalReceipt, setActiveFiscalReceipt] = useState<StageFiscalReceipt54Fz | null>(null);
+
+	// Состояние банковской рассрочки
+	const [selectedStageForInstallment, setSelectedStageForInstallment] = useState<MilestoneStage | null>(null);
+	const [isInstallmentModalOpen, setIsInstallmentModalOpen] = useState<boolean>(false);
 
 	// Уведомление
 	const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -657,6 +662,20 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 															<span>Закрыть актом</span>
 														</button>
 													)}
+
+													<button
+														type="button"
+														onClick={() => {
+															setSelectedStageForInstallment(stage);
+															setIsInstallmentModalOpen(true);
+														}}
+														className="stage-action-btn secondary text-xs"
+														title="Оформить беспроцентную банковскую рассрочку на этап (Сбер / Т-Банк / Подели)"
+														data-testid={`stage-installment-btn-${stage.id}`}
+													>
+														<CreditCard className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+														<span>Рассрочка</span>
+													</button>
 
 													<button
 														type="button"
@@ -1289,6 +1308,43 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 					)}
 				</main>
 			</div>
+
+			{/* Bank Installment QR Modal */}
+			{isInstallmentModalOpen && selectedStageForInstallment && (
+				<BankInstallmentQrModal
+					isOpen={isInstallmentModalOpen}
+					onClose={() => {
+						setIsInstallmentModalOpen(false);
+						setSelectedStageForInstallment(null);
+					}}
+					stageTitle={`Этап №${selectedStageForInstallment.stageNumber}: ${selectedStageForInstallment.title}`}
+					stageNumber={selectedStageForInstallment.stageNumber}
+					stageAmountKopecks={selectedStageForInstallment.totalKopecks}
+					patientId={patientId}
+					patientName={patientName}
+					clinicName={clinicName}
+					clinicInn={clinicInn}
+					planId={planTitle}
+					onInstallmentApproved={(approval) => {
+						const stageId = selectedStageForInstallment.id;
+						setStages((prev) =>
+							prev.map((s) =>
+								s.id === stageId
+									? {
+											...s,
+											status: "advance_paid",
+											advancePaidKopecks: s.advanceRequiredKopecks,
+											escrowLockedKopecks: s.advanceRequiredKopecks,
+										}
+									: s,
+							),
+						);
+						setStatusMessage(
+							`Рассрочка по этапу №${selectedStageForInstallment.stageNumber} одобрена! Аванс зачислен в эскроу.`,
+						);
+					}}
+				/>
+			)}
 		</div>
 	);
 };

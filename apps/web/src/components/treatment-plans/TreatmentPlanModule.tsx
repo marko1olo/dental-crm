@@ -50,6 +50,7 @@ import { StagePaymentPlanModal } from "./stagePayment/StagePaymentPlanModal";
 import { TreatmentPlanPriceValidatorModal } from "./validation/TreatmentPlanPriceValidatorModal";
 import { FiscalReceipt54FzModal } from "../finance/FiscalReceipt54FzModal";
 import { LabWorkOrderModal } from "../lab/orders/LabWorkOrderModal";
+import { BankInstallmentQrModal } from "../payments/BankInstallmentQrModal";
 import type {
 	CashierInvoiceExportData,
 	CompletedWorksActAndWriteOffData,
@@ -92,6 +93,8 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	const [isComparatorModalOpen, setIsComparatorModalOpen] = useState<boolean>(false);
 	const [isStagePaymentModalOpen, setIsStagePaymentModalOpen] = useState<boolean>(false);
 	const [isPriceValidatorModalOpen, setIsPriceValidatorModalOpen] = useState<boolean>(false);
+	const [isInstallmentModalOpen, setIsInstallmentModalOpen] = useState<boolean>(false);
+	const [selectedInstallmentStage, setSelectedInstallmentStage] = useState<TreatmentPlanStage | null>(null);
 
 	const [selectedLabTeeth, setSelectedLabTeeth] = useState<number[] | undefined>(undefined);
 	const [selectedActStage, setSelectedActStage] = useState<TreatmentPlanStage | null>(null);
@@ -600,6 +603,10 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 								: {})}
 							onExecuteWriteOffStage={handleExecuteWriteOffStage}
 							onOpenLabOrder={handleOpenLabOrder}
+							onOpenInstallment={(stageToFinance) => {
+								setSelectedInstallmentStage(stageToFinance);
+								setIsInstallmentModalOpen(true);
+							}}
 						/>
 					))}
 				</div>
@@ -742,6 +749,33 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					onSaveOrder={(order) => {
 						showToast(
 							`Наряд-заказ №${order.orderNumber} в зуботехническую лабораторию на сумму ${order.financials.patientPriceTotalRub.toLocaleString("ru-RU")} ₽ успешно сохранен!`,
+							"success",
+							5000,
+						);
+					}}
+				/>
+			)}
+
+			{/* Bank Installment QR Financing Modal */}
+			{isInstallmentModalOpen && selectedInstallmentStage && (
+				<BankInstallmentQrModal
+					isOpen={isInstallmentModalOpen}
+					onClose={() => {
+						setIsInstallmentModalOpen(false);
+						setSelectedInstallmentStage(null);
+					}}
+					stageTitle={`Этап №${selectedInstallmentStage.stageNumber}: ${selectedInstallmentStage.title}`}
+					stageNumber={selectedInstallmentStage.stageNumber}
+					stageAmountKopecks={selectedInstallmentStage.totalKopecks}
+					patientId={patientId}
+					patientName={patientName}
+					patientPhone={patientPhone}
+					clinicName={dashboard?.clinicSettings?.profile?.brandName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
+					clinicInn={dashboard?.clinicSettings?.requisites?.inn || "7701234567"}
+					planId={`PLAN-${patientId.slice(0, 6).toUpperCase()}`}
+					onInstallmentApproved={(approval) => {
+						showToast(
+							`Рассрочка на сумму ${selectedInstallmentStage.totalRub.toLocaleString("ru-RU")} ₽ одобрена банком!`,
 							"success",
 							5000,
 						);

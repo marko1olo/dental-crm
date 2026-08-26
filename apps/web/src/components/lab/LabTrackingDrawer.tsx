@@ -26,6 +26,10 @@ import {
 } from "lucide-react";
 import { money } from "../../AppHelpers";
 import { showToast } from "../GlobalToast";
+import { rublesToKopecks } from "@dental/shared";
+import { DentalLabFinancialGate } from "./DentalLabFinancialGate";
+import { checkDentalLabFinancialGate } from "./dentalLabFinancialGateEngine";
+import { BankInstallmentQrModal } from "../payments/BankInstallmentQrModal";
 import {
 	type DentalLabOrderData,
 	type LabOrderStageKey,
@@ -41,12 +45,27 @@ export function LabTrackingDrawer({
 	isOpen,
 	onClose,
 	order,
+	patientDepositRub,
+	stageTotalRub,
+	stagePaidRub,
+	chiefDoctorName,
 	onStageUpdate,
 	onFittingDateUpdate,
 }: LabTrackingDrawerProps) {
 	const [activeStage, setActiveStage] = useState<LabOrderStageKey>("sent_to_lab");
 	const [stageNote, setStageNote] = useState<string>("");
 	const [isUpdating, setIsUpdating] = useState<boolean>(false);
+
+	// Financial Gate & Installment States
+	const [isGateModalOpen, setIsGateModalOpen] = useState<boolean>(false);
+	const [pendingTargetStage, setPendingTargetStage] = useState<LabOrderStageKey | null>(null);
+	const [gateOverride, setGateOverride] = useState<{
+		authorized: boolean;
+		doctorName: string;
+		timestampIso: string;
+		reason: string;
+	} | null>(null);
+	const [isInstallmentModalOpen, setIsInstallmentModalOpen] = useState<boolean>(false);
 
 	// Trial fitting dates state
 	const [frameworkTrialDate, setFrameworkTrialDate] = useState<string>("");
@@ -68,12 +87,40 @@ export function LabTrackingDrawer({
 		order.doctorSharePct ?? 50,
 	);
 
+	const financialGateResult = React.useMemo(() => {
+		const orderPrice = order.priceRub || 0;
+		const stageTotalKopecks = rublesToKopecks(stageTotalRub ?? orderPrice);
+		const paidKopecks = rublesToKopecks(stagePaidRub ?? 0);
+		const depositKopecks = rublesToKopecks(patientDepositRub ?? 0);
+		const orderPriceKopecks = rublesToKopecks(orderPrice);
+
+		return checkDentalLabFinancialGate({
+			stageTotalKopecks,
+			paidKopecks,
+			availableDepositKopecks: depositKopecks,
+			labOrderPriceKopecks: orderPriceKopecks,
+			minAdvancePercent: 50,
+			chiefDoctorOverride: gateOverride ?? undefined,
+		});
+	}, [order, stageTotalRub, stagePaidRub, patientDepositRub, gateOverride]);
+
 	const currentStageIndex = LAB_ORDER_STAGES.findIndex((s) => s.id === activeStage);
 	const nextStage = currentStageIndex < LAB_ORDER_STAGES.length - 1 ? LAB_ORDER_STAGES[currentStageIndex + 1] : null;
 
-	const handleAdvanceStage = async (targetStage?: LabOrderStageKey) => {
+	const handleAdvanceStage = async (targetStage?: LabOrderStageKey, forceOverride = false) => {
 		const stageToSet = targetStage || nextStage?.id;
 		if (!stageToSet || !order.id) return;
+
+		// Проверка финансового шлюза при отправке в лабораторию или фрезеровании каркаса
+		if (
+			!forceOverride &&
+			(stageToSet === "sent_to_lab" || stageToSet === "model_cad_design" || stageToSet === "framework_wax_milling") &&
+			!financialGateResult.isGatePassed
+		) {
+			setPendingTargetStage(stageToSet);
+			setIsGateModalOpen(true);
+			return;
+		}
 
 		setIsUpdating(true);
 		try {
@@ -95,11 +142,16 @@ export function LabTrackingDrawer({
 		setIsUpdating(true);
 		try {
 			if (onFittingDateUpdate) {
-				await onFittingDateUpdate(order.id, {
-					frameworkTrialDate: frameworkTrialDate || undefined,
-					ceramicTrialDate: ceramicTrialDate || undefined,
-					deliveryDate: deliveryDate || undefined,
-				});
+				const datesPayload: {
+					frameworkTrialDate?: string;
+					ceramicTrialDate?: string;
+					deliveryDate?: string;
+				} = {};
+				if (frameworkTrialDate) datesPayload.frameworkTrialDate = frameworkTrialDate;
+				if (ceramicTrialDate) datesPayload.ceramicTrialDate = ceramicTrialDate;
+				if (deliveryDate) datesPayload.deliveryDate = deliveryDate;
+
+				await onFittingDateUpdate(order.id, datesPayload);
 			}
 			showToast("Даты клинических примерок успешно сохранены", "success");
 		} catch (err: any) {
@@ -387,6 +439,62 @@ export function LabTrackingDrawer({
 					</button>
 				</div>
 			</div>
+
+			{/* ─── DENTAL LAB FINANCIAL GATE MODAL ───────────────────────── */}
+			{isGateModalOpen && (
+				<DentalLabFinancialGate
+					isOpen={isGateModalOpen}
+					onClose={() => {
+						setIsGateModalOpen(false);
+						setPendingTargetStage(null);
+					}}
+					gateResult={financialGateResult}
+					patientName={order.patientName || "Пациент"}
+					stageTitle={`Наряд ЗТЛ (${order.constructionType || "Протезирование"})`}
+					defaultChiefDoctorName={chiefDoctorName || "Д-р Смирнов А. В. (Главный врач)"}
+					variant="modal"
+					onConfirmOverride={(override) => {
+						setGateOverride(override);
+						setIsGateModalOpen(false);
+						showToast(`Оверрайд главврача авторизован: ${override.doctorName}`, "success");
+						if (pendingTargetStage) {
+							handleAdvanceStage(pendingTargetStage, true);
+							setPendingTargetStage(null);
+						}
+					}}
+					onBlock={() => {
+						setIsGateModalOpen(false);
+						setPendingTargetStage(null);
+						showToast("Перевод этапа наряда заблокирован финансовым контролем", "warning");
+					}}
+					onOpenInstallmentModal={() => {
+						setIsGateModalOpen(false);
+						setIsInstallmentModalOpen(true);
+					}}
+				/>
+			)}
+
+			{/* ─── BANK INSTALLMENT QR MODAL ─────────────────────────────── */}
+			{isInstallmentModalOpen && (
+				<BankInstallmentQrModal
+					isOpen={isInstallmentModalOpen}
+					onClose={() => setIsInstallmentModalOpen(false)}
+					stageTitle={`Наряд ЗТЛ (${order.constructionType || "Протезирование"})`}
+					stageAmountKopecks={rublesToKopecks(order.priceRub || 0)}
+					patientId={order.patientId}
+					patientName={order.patientName || "Пациент"}
+					onInstallmentApproved={(approval) => {
+						showToast(
+							`Рассрочка на сумму ${(order.priceRub || 0).toLocaleString("ru-RU")} ₽ одобрена банком!`,
+							"success",
+						);
+						if (pendingTargetStage) {
+							handleAdvanceStage(pendingTargetStage, true);
+							setPendingTargetStage(null);
+						}
+					}}
+				/>
+			)}
 		</div>
 	);
 }
