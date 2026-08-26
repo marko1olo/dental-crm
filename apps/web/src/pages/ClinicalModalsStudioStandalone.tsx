@@ -50,6 +50,8 @@ import {
 	RadiologyModule,
 	RadiologyReferralModal,
 	RadiologyViewerModal,
+	CbctMpr3DStudioModal,
+	ImplantCrossSectionPlanner,
 	type RadiologyStudy,
 } from "../components/radiology";
 import { TreatmentPlanCompletedActPrint } from "../components/treatment-plans/TreatmentPlanCompletedActPrint";
@@ -361,6 +363,8 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isSickLeaveElnOpen, setIsSickLeaveElnOpen] = useState(false);
 	const [isAutoclaveLog257Open, setIsAutoclaveLog257Open] = useState(false);
 	const [isDoctorShiftRosterOpen, setIsDoctorShiftRosterOpen] = useState(false);
+	const [isCbctMpr3DStudioOpen, setIsCbctMpr3DStudioOpen] = useState(false);
+	const [isImplantCrossSectionPlannerOpen, setIsImplantCrossSectionPlannerOpen] = useState(false);
 
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -1653,6 +1657,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					</div>
 
 					{/* 46. Anesthesia QuickBar 1-Click Presets */}
+					{/* 46. Anesthesia QuickBar 1-Click Presets */}
 					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4 md:col-span-2 lg:col-span-3">
 						<div className="space-y-2">
 							<div className="flex items-center gap-2 text-[var(--teal)]">
@@ -1670,6 +1675,54 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 								console.log("[QuickBar Anesthesia Applied]:", diaryText);
 							}}
 						/>
+					</div>
+
+					{/* 47. 3D CBCT MPR & Dental Arch Spline Studio Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Boxes className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									3D КЛКТ MPR & Сплайн зубной дуги
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								4-квадрантный синхронный 3D MPR просмотрщик (Axial, Coronal, Sagittal, Cross-Sections), пресеты Хаунсфилда и развертка ОПТГ.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsCbctMpr3DStudioOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-cbct-mpr-3d-studio-modal-btn"
+						>
+							<Boxes size={15} />
+							<span>Открыть 3D КЛКТ Студию</span>
+						</button>
+					</div>
+
+					{/* 48. 2D Implant Cross-Section Planner Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Compass className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									2D Кросс-секционный планировщик имплантации
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Примерка имплантатов (Straumann/Nobel/Osstem/Dentium), контроль канала IAN 2.0 мм, плотность кости по Misch и протокол сверления.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsImplantCrossSectionPlannerOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-implant-cross-section-planner-modal-btn"
+						>
+							<Compass size={15} />
+							<span>Открыть кросс-секционный планировщик</span>
+						</button>
 					</div>
 				</div>
 
@@ -2229,6 +2282,55 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 								doctorName="Д-р Смирнов Алексей Петрович"
 								onBeforeSlotChange={() => {}}
 								onAfterSlotChange={() => {}}
+							/>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{isCbctMpr3DStudioOpen && (
+				<CbctMpr3DStudioModal
+					isOpen={isCbctMpr3DStudioOpen}
+					onClose={() => setIsCbctMpr3DStudioOpen(false)}
+					studyTitle="3D КЛКТ Челюсти (8x8 см) — Пациент: Смирнова Е. В."
+				/>
+			)}
+
+			{isImplantCrossSectionPlannerOpen && (
+				<div
+					className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/75 backdrop-blur-md p-2 sm:p-4 overflow-y-auto"
+					role="dialog"
+					aria-modal="true"
+					data-testid="implant-cross-section-planner-modal"
+				>
+					<div className="relative w-full max-w-5xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-2xl shadow-2xl p-4 sm:p-6 overflow-hidden max-h-[94vh] flex flex-col">
+						<div className="flex items-center justify-between pb-3 border-b border-[var(--line,#e2e8f0)] mb-4 shrink-0">
+							<div className="flex items-center gap-2.5">
+								<div className="w-9 h-9 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center font-bold">
+									<Compass className="w-5 h-5" />
+								</div>
+								<div>
+									<h3 className="text-base font-bold text-[var(--ink)]">
+										2D Кросс-секционный планировщик имплантации
+									</h3>
+									<p className="text-xs text-[var(--muted)]">
+										Аудит коридора безопасности нижнечелюстного нерва (IAN 2.0 мм) и плотности кости по Misch
+									</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={() => setIsImplantCrossSectionPlannerOpen(false)}
+								className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all flex items-center justify-center"
+								data-testid="close-implant-planner-modal-btn"
+								aria-label="Закрыть модальное окно"
+							>
+								<X className="w-5 h-5" />
+							</button>
+						</div>
+						<div className="flex-1 overflow-y-auto">
+							<ImplantCrossSectionPlanner
+								onPlanApproved={() => setIsImplantCrossSectionPlannerOpen(false)}
 							/>
 						</div>
 					</div>

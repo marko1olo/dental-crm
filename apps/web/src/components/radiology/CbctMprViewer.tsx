@@ -141,7 +141,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 	};
 
 	// Apply Hounsfield Preset
-	const handleSelectPreset = (preset: HounsfieldPreset) => {
+	const handleSelectPreset = (preset: { id: string; windowWidth: number; windowLevel: number }) => {
 		setActivePresetId(preset.id);
 		setWindowWidth(preset.windowWidth);
 		setWindowLevel(preset.windowLevel);
@@ -168,11 +168,13 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 			const ctx = canvas.getContext("2d");
 			if (ctx) {
 				const { data, metadata } = resliced.axial;
-				if (canvas.width !== metadata.widthPx || canvas.height !== metadata.heightPx) {
-					canvas.width = metadata.widthPx;
-					canvas.height = metadata.heightPx;
+				const w = metadata.widthPx || 100;
+				const h = metadata.heightPx || 100;
+				if (canvas.width !== w || canvas.height !== h) {
+					canvas.width = w;
+					canvas.height = h;
 				}
-				const imgData = ctx.createImageData(metadata.widthPx, metadata.heightPx);
+				const imgData = ctx.createImageData(w, h);
 				imgData.data.set(data);
 				ctx.putImageData(imgData, 0, 0);
 
@@ -224,11 +226,13 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 			const ctx = canvas.getContext("2d");
 			if (ctx) {
 				const { data, metadata } = resliced.coronal;
-				if (canvas.width !== metadata.widthPx || canvas.height !== metadata.heightPx) {
-					canvas.width = metadata.widthPx;
-					canvas.height = metadata.heightPx;
+				const w = metadata.widthPx || 100;
+				const h = metadata.heightPx || 100;
+				if (canvas.width !== w || canvas.height !== h) {
+					canvas.width = w;
+					canvas.height = h;
 				}
-				const imgData = ctx.createImageData(metadata.widthPx, metadata.heightPx);
+				const imgData = ctx.createImageData(w, h);
 				imgData.data.set(data);
 				ctx.putImageData(imgData, 0, 0);
 
@@ -254,11 +258,13 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 			const ctx = canvas.getContext("2d");
 			if (ctx) {
 				const { data, metadata } = resliced.sagittal;
-				if (canvas.width !== metadata.widthPx || canvas.height !== metadata.heightPx) {
-					canvas.width = metadata.widthPx;
-					canvas.height = metadata.heightPx;
+				const w = metadata.widthPx || 100;
+				const h = metadata.heightPx || 100;
+				if (canvas.width !== w || canvas.height !== h) {
+					canvas.width = w;
+					canvas.height = h;
 				}
-				const imgData = ctx.createImageData(metadata.widthPx, metadata.heightPx);
+				const imgData = ctx.createImageData(w, h);
 				imgData.data.set(data);
 				ctx.putImageData(imgData, 0, 0);
 
