@@ -578,6 +578,9 @@ export function DentalLabOrderModal({
 							setSurfaceTexture={setSurfaceTexture}
 							cementGapMicrons={cementGapMicrons}
 							setCementGapMicrons={setCementGapMicrons}
+							toothFdi={selectedTeeth[0] || initialToothFdi || 16}
+							materialId={material}
+							onMaterialChange={setMaterial}
 						/>
 					)}
 
