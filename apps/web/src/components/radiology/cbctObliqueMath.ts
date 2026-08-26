@@ -280,8 +280,8 @@ export function extractObliqueMprSlice(
 	options?: ObliqueSliceRenderOptions,
 ): MprSliceExtractionResult {
 	const {
-		windowWidth = 2000,
-		windowLevel = 400,
+		windowWidth = 4400,
+		windowLevel = 1300,
 		invert = false,
 		slabMode = "single",
 		slabThicknessMm = 2.0,

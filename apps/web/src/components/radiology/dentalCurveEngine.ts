@@ -316,8 +316,8 @@ export function reconstructPanoramicView(
 		heightMm = 38.0,
 		heightPx = 220,
 		widthPx,
-		windowWidth = 4000,
-		windowLevel = 900,
+		windowWidth = 4400,
+		windowLevel = 1300,
 		projectionMode = "average",
 	} = options as { heightMm?: number; heightPx?: number; widthPx?: number; windowWidth?: number; windowLevel?: number; projectionMode?: string };
 
@@ -437,8 +437,8 @@ export function extractSingleCrossSectionSlice(
 		widthMm = 24.0,
 		heightMm = 32.0,
 		pixelSpacingMm = 0.25,
-		windowWidth = 4000,
-		windowLevel = 900,
+		windowWidth = 4400,
+		windowLevel = 1300,
 	} = options;
 
 	const widthPx = Math.round(widthMm / pixelSpacingMm);

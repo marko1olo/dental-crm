@@ -118,6 +118,48 @@ describe("CBCT 3D MPR & Panoramic Dental Arch Spline Engine", () => {
 			assert.ok(Math.abs(invertedMid - 128) <= 1);
 		});
 
+		test("huToGrayscale provides Planmeca Romexis / Ez3D-i clinical differentiation under Dental preset (WW 4400 / WL 1300)", () => {
+			const ww = 4400;
+			const wl = 1300;
+
+			// Air (-1000 HU) -> Black (0)
+			assert.strictEqual(huToGrayscale(-1000, ww, wl), 0);
+
+			// Pulp & Soft tissue (+50..200 HU) -> Dark gray / black [55..64]
+			const pulpGray50 = huToGrayscale(50, ww, wl);
+			const pulpGray100 = huToGrayscale(100, ww, wl);
+			const pulpGray200 = huToGrayscale(200, ww, wl);
+			assert.ok(pulpGray50 >= 30 && pulpGray50 <= 60, `Pulp 50HU must be dark gray [30..60], got ${pulpGray50}`);
+			assert.ok(pulpGray100 >= 30 && pulpGray100 <= 60, `Pulp 100HU must be dark gray [30..60], got ${pulpGray100}`);
+			assert.ok(pulpGray200 >= 50 && pulpGray200 <= 70, `Pulp 200HU must be dark gray [50..70], got ${pulpGray200}`);
+
+			// Cancellous / Trabecular bone (+650..800 HU) -> Medium-dark gray [90..100]
+			const trabecularGray = huToGrayscale(650, ww, wl);
+			assert.ok(trabecularGray >= 85 && trabecularGray <= 110, `Trabecular 650HU must be [85..110], got ${trabecularGray}`);
+
+			// Cortical bone (+1450 HU) -> Medium gray [125..145]
+			const corticalGray = huToGrayscale(1450, ww, wl);
+			assert.ok(corticalGray >= 125 && corticalGray <= 145, `Cortical 1450HU must be [125..145], got ${corticalGray}`);
+
+			// Dentin (+1800..2500 HU) -> Light gray [156..197]
+			const dentin2100 = huToGrayscale(2100, ww, wl);
+			const dentin2400 = huToGrayscale(2400, ww, wl);
+			assert.ok(dentin2100 >= 165 && dentin2100 <= 185, `Dentin 2100HU must be light gray [165..185], got ${dentin2100}`);
+			assert.ok(dentin2400 >= 180 && dentin2400 <= 200, `Dentin 2400HU must be light gray [180..200], got ${dentin2400}`);
+
+			// Enamel (+3000..4000 HU) -> Bright white [226..255] without clipping dentin
+			const enamel3400 = huToGrayscale(3400, ww, wl);
+			const enamel3600 = huToGrayscale(3600, ww, wl);
+			assert.ok(enamel3400 >= 240 && enamel3400 <= 255, `Enamel 3400HU must be bright white [240..255], got ${enamel3400}`);
+			assert.strictEqual(enamel3600, 255);
+
+			// Gamma transfer curve enhances contrast between pulp and dentin
+			const gammaPulp = huToGrayscale(100, ww, wl, false, 1.15);
+			const gammaDentin = huToGrayscale(2100, ww, wl, false, 1.15);
+			assert.ok(gammaPulp < pulpGray100, "Gamma > 1.0 makes pulp deeper black");
+			assert.ok(gammaDentin >= 160 && gammaDentin <= 180, "Dentin remains light gray under gamma");
+		});
+
 		test("extractMprSlice generates valid 2D slice buffer with metadata", () => {
 			const result = extractMprSlice(testVolume, "axial", 25, {
 				windowWidth: 2000,
@@ -157,18 +199,33 @@ describe("CBCT 3D MPR & Panoramic Dental Arch Spline Engine", () => {
 	// =========================================================================
 	describe("2. Synthetic Anatomical CBCT Volume Generator", () => {
 		test("createSyntheticDentalCbctVolume generates volume with realistic mandibular and enamel structures", () => {
-			const synth = createSyntheticDentalCbctVolume(60, 60, 40, 0.5);
+			const synth = createSyntheticDentalCbctVolume(140, 140, 60, 0.4);
 
-			assert.strictEqual(synth.dimensions.width, 60);
-			assert.strictEqual(synth.dimensions.height, 60);
-			assert.strictEqual(synth.dimensions.depth, 40);
+			assert.strictEqual(synth.dimensions.width, 140);
+			assert.strictEqual(synth.dimensions.height, 140);
+			assert.strictEqual(synth.dimensions.depth, 60);
 			assert.ok(synth.data);
 			assert.strictEqual(synth.isDisposed, false);
+			assert.strictEqual(synth.defaultWindowWidth, 4400);
+			assert.strictEqual(synth.defaultWindowLevel, 1300);
 
 			// Test bone density sampling inside mandible region
 			const vox = worldMmToVoxel({ x: 0, y: -18.0, z: -10.0 }, synth);
 			const hu = sampleVoxelHU(vox.x, vox.y, vox.z, synth);
 			assert.ok(hu > 200); // Must have bone HU
+
+			// Test tooth #46 crown cross-section: pulp lumen, dentin core, and enamel outer cap
+			const voxPulp = worldMmToVoxel({ x: -23.0, y: 5.5, z: 2.0 }, synth);
+			const huPulp = sampleVoxelHU(voxPulp.x, voxPulp.y, voxPulp.z, synth);
+			assert.ok(huPulp <= 100, `Pulp chamber at crown center must be hypodense (<=100 HU), got ${huPulp}`);
+
+			const voxDentin = worldMmToVoxel({ x: -23.0 + 2.0, y: 5.5, z: 2.0 }, synth);
+			const huDentin = sampleVoxelHU(voxDentin.x, voxDentin.y, voxDentin.z, synth);
+			assert.ok(huDentin >= 1800 && huDentin <= 2500, `Dentin core must be [1800..2500 HU], got ${huDentin}`);
+
+			const voxEnamel = worldMmToVoxel({ x: -23.0 + 3.8, y: 5.5, z: 2.0 }, synth);
+			const huEnamel = sampleVoxelHU(voxEnamel.x, voxEnamel.y, voxEnamel.z, synth);
+			assert.ok(huEnamel >= 3000, `Enamel shell must be >=3000 HU, got ${huEnamel}`);
 
 			disposeCbctVolume(synth);
 			assert.strictEqual(synth.isDisposed, true);

@@ -638,9 +638,24 @@ export function sampleVoxelHU(
 }
 
 /**
- * Maps Hounsfield Unit (HU) to 8-bit grayscale intensity [0..255] via linear windowing.
+ * Maps Hounsfield Unit (HU) to 8-bit grayscale intensity [0..255] via linear or gamma windowing.
+ * Standards: DICOM Part 3 PS 3.3 (C.11.2.1.2 VOI LUT Windowing), Planmeca Romexis, Vatech Ez3D-i.
+ *
+ * Tissue HU Reference under WW 4400 / WL 1300:
+ * - Air (-1000 HU) -> 0 (Black)
+ * - Pulp / Nerve soft tissue (+50..200 HU) -> 55..64 (Dark gray / black)
+ * - Trabecular Bone (+600..900 HU) -> 90..104 (Medium gray)
+ * - Cortical Bone (+1300..1600 HU) -> 127..145 (Medium gray)
+ * - Dentin (+1800..2500 HU) -> 156..197 (Light gray)
+ * - Enamel (+3000..4000 HU) -> 226..255 (Bright white)
  */
-export function huToGrayscale(hu: number, windowWidth: number, windowLevel: number, invert = false): number {
+export function huToGrayscale(
+	hu: number,
+	windowWidth: number,
+	windowLevel: number,
+	invert = false,
+	gamma = 1.0,
+): number {
 	const low = windowLevel - windowWidth / 2.0;
 	const high = windowLevel + windowWidth / 2.0;
 
@@ -648,7 +663,8 @@ export function huToGrayscale(hu: number, windowWidth: number, windowLevel: numb
 	if (hu >= high) return invert ? 0 : 255;
 
 	const normalized = (hu - low) / windowWidth;
-	const val = Math.round(normalized * 255);
+	const corrected = gamma !== 1.0 && gamma > 0 ? Math.pow(normalized, gamma) : normalized;
+	const val = Math.round(corrected * 255);
 	return invert ? 255 - val : val;
 }
 
@@ -662,9 +678,9 @@ export function extractMprSlice(
 	volume: CbctVoxelVolume,
 	plane: MprPlane,
 	sliceIndex: number,
-	options: SliceRenderOptions = { windowWidth: 4000, windowLevel: 900 },
+	options: SliceRenderOptions = { windowWidth: 4400, windowLevel: 1300 },
 ): MprSliceExtractionResult {
-	const { windowWidth = 4000, windowLevel = 900, invert = false, slabMode = "single", slabThicknessMm = 2.0 } = options ?? {};
+	const { windowWidth = 4400, windowLevel = 1300, invert = false, slabMode = "single", slabThicknessMm = 2.0 } = options ?? {};
 
 	const dim = volume.dimensions;
 	const sp = volume.spacingMm;
@@ -892,8 +908,41 @@ export function mapCanvasPointerToWorldMm(
 
 // ─── 4. PROCEDURAL REALISTIC CBCT DENTAL VOLUME GENERATOR ────────────────────
 
+const SYNTHETIC_TEETH_LANDMARKS: ReadonlyArray<{
+	readonly x: number;
+	readonly y: number;
+	readonly radiusCrown: number;
+	readonly radiusPulp: number;
+	readonly rootLength: number;
+}> = [
+	{ x: -28.0, y: 22.0, radiusCrown: 4.2, radiusPulp: 0.9, rootLength: 12.0 }, // 48
+	{ x: -25.5, y: 14.0, radiusCrown: 4.0, radiusPulp: 0.85, rootLength: 12.0 }, // 47
+	{ x: -23.0, y: 5.5, radiusCrown: 4.2, radiusPulp: 0.9, rootLength: 13.0 }, // 46
+	{ x: -20.0, y: -2.5, radiusCrown: 3.2, radiusPulp: 0.65, rootLength: 12.0 }, // 45
+	{ x: -16.5, y: -9.5, radiusCrown: 3.2, radiusPulp: 0.65, rootLength: 12.0 }, // 44
+	{ x: -12.0, y: -16.0, radiusCrown: 3.4, radiusPulp: 0.7, rootLength: 14.0 }, // 43
+	{ x: -6.5, y: -20.5, radiusCrown: 2.4, radiusPulp: 0.5, rootLength: 11.0 }, // 42
+	{ x: -2.0, y: -22.5, radiusCrown: 2.2, radiusPulp: 0.45, rootLength: 10.0 }, // 41
+	{ x: 2.0, y: -22.5, radiusCrown: 2.2, radiusPulp: 0.45, rootLength: 10.0 }, // 31
+	{ x: 6.5, y: -20.5, radiusCrown: 2.4, radiusPulp: 0.5, rootLength: 11.0 }, // 32
+	{ x: 12.0, y: -16.0, radiusCrown: 3.4, radiusPulp: 0.7, rootLength: 14.0 }, // 33
+	{ x: 16.5, y: -9.5, radiusCrown: 3.2, radiusPulp: 0.65, rootLength: 12.0 }, // 34
+	{ x: 20.0, y: -2.5, radiusCrown: 3.2, radiusPulp: 0.65, rootLength: 12.0 }, // 35
+	{ x: 23.0, y: 5.5, radiusCrown: 4.2, radiusPulp: 0.9, rootLength: 13.0 }, // 36
+	{ x: 25.5, y: 14.0, radiusCrown: 4.0, radiusPulp: 0.85, rootLength: 12.0 }, // 37
+	{ x: 28.0, y: 22.0, radiusCrown: 4.2, radiusPulp: 0.9, rootLength: 12.0 }, // 38
+];
+
 /**
  * Generates an anatomically accurate synthetic CBCT dental volume for instant preview and tests.
+ * Accurately models:
+ * - Enamel crown shell (+3400 HU)
+ * - Dentin core (+2100 HU crown / +1950 HU root)
+ * - Pulp chamber & root canals (+60 HU, radiolucent)
+ * - Periodontal ligament space (+80 HU) & Lamina dura socket wall (+1600 HU)
+ * - Cortical bone (+1450 HU) & Spongiosa (+650 HU)
+ * - Inferior Alveolar Canal (+20 HU lumen / +1350 HU cortical wall)
+ * - Maxillary Sinus cavities (-850 HU air / +40 HU mucosal lining)
  */
 export function createSyntheticDentalCbctVolume(
 	width = 180,
@@ -937,7 +986,7 @@ export function createSyntheticDentalCbctVolume(
 					hu = 40; // Soft tissue (+40 HU)
 				}
 
-				// Mandibular U-shaped arch curve: y = 0.035 * x^2 - 12 (for Z in range [-16..0])
+				// Mandibular U-shaped arch curve: y = 0.035 * x^2 - 12 (for Z in range [-16..4])
 				if (zMm >= -16.0 && zMm <= 4.0) {
 					const archTargetY = 0.035 * (xMm * xMm) - 12.0;
 					const distToMandibleRidge = Math.hypot(xMm * 0.9, yMm - archTargetY);
@@ -957,12 +1006,53 @@ export function createSyntheticDentalCbctVolume(
 							const distToCanal = Math.hypot(yMm - canalY, zMm - canalZ);
 							if (distToCanal < 1.4) {
 								hu = 20; // Nerve soft tissue / hypodense lumen (+20 HU)
+							} else if (distToCanal < 2.0) {
+								hu = 1350; // Cortical canal boundary (+1350 HU)
 							}
 						}
+					}
+				}
 
-						// Teeth enamel crowns (Z in range [0..4])
-						if (zMm > 0.0 && distToMandibleRidge < 4.0) {
-							hu = 2800; // Enamel & Dentin (+2800 HU)
+				// Individual Dental Arch Teeth & Sockets (FDI 18..48)
+				if (zMm >= -14.0 && zMm <= 6.0) {
+					for (let tIdx = 0; tIdx < SYNTHETIC_TEETH_LANDMARKS.length; tIdx++) {
+						const t = SYNTHETIC_TEETH_LANDMARKS[tIdx]!;
+						if (Math.abs(xMm - t.x) > 6.0 || Math.abs(yMm - t.y) > 6.0) continue;
+
+						const distXY = Math.hypot(xMm - t.x, yMm - t.y);
+
+						// Crown portion (Z in range [0..5.5])
+						if (zMm >= 0.0 && zMm <= 5.5 && distXY <= t.radiusCrown) {
+							if (distXY < t.radiusPulp && zMm <= 4.0) {
+								hu = 60; // Pulp chamber / soft tissue lumen (+60 HU)
+							} else if (distXY < t.radiusCrown - 0.85) {
+								hu = 2100; // Dentin core (+2100 HU)
+							} else {
+								hu = 3400; // Dense enamel outer cap (+3400 HU)
+							}
+							break;
+						}
+
+						// Root & Alveolar Socket portion (Z in range [-t.rootLength..0])
+						if (zMm < 0.0 && zMm >= -t.rootLength && distXY <= t.radiusCrown + 1.0) {
+							const taper = (zMm - (-t.rootLength)) / t.rootLength; // 0 at apex, 1 at crest
+							const rRoot = (t.radiusCrown * 0.75) * (0.35 + 0.65 * taper);
+							const rCanal = Math.max(0.35, t.radiusPulp * 0.45 * (0.35 + 0.65 * taper));
+
+							if (distXY <= rRoot) {
+								if (distXY < rCanal) {
+									hu = 60; // Root canal lumen (+60 HU)
+								} else {
+									hu = 1950; // Root dentin (+1950 HU)
+								}
+								break;
+							} else if (distXY <= rRoot + 0.35) {
+								hu = 80; // Periodontal ligament space / PDL (+80 HU)
+								break;
+							} else if (distXY <= rRoot + 0.85) {
+								hu = 1600; // Lamina dura socket cortical plate (+1600 HU)
+								break;
+							}
 						}
 					}
 				}
@@ -992,6 +1082,8 @@ export function createSyntheticDentalCbctVolume(
 		data: buffer,
 		minHU,
 		maxHU,
+		defaultWindowWidth: 4400,
+		defaultWindowLevel: 1300,
 		isDisposed: false,
 	};
 }

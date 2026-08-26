@@ -154,8 +154,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	// ─── 3D CBCT VOXEL VOLUME STATE ───────────────────────────────────────────
 	const [volume, setVolume] = useState<CbctVoxelVolume | null>(null);
 	const [activePreset, setActivePreset] = useState<string>("bone_dense");
-	const [windowWidth, setWindowWidth] = useState<number>(4000);
-	const [windowLevel, setWindowLevel] = useState<number>(900);
+	const [windowWidth, setWindowWidth] = useState<number>(4400);
+	const [windowLevel, setWindowLevel] = useState<number>(1300);
 	const [invertColors, setInvertColors] = useState<boolean>(false);
 	const [slabMode, setSlabMode] = useState<SlabProjectionMode>("single");
 	const [slabThicknessMm, setSlabThicknessMm] = useState<number>(2.0);
@@ -277,7 +277,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			setVolume(vol);
 			setLoadedSliceCount(vol.dimensions.depth);
 			setPatientDisplayName("Барабаш С.В.");
-			setCrosshairMm({ x: 0, y: 0, z: 0 });
+			setCrosshairMm({ x: 0, y: -5, z: jawType === "mandible" ? 16.8 : -16.0 });
 			if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
 			if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
 			const arch = buildDentalArchCurve(
@@ -311,7 +311,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 			setVolume(vol);
 			setLoadedSliceCount(vol.dimensions.depth);
-			setCrosshairMm({ x: 0, y: 0, z: 0 });
+			setCrosshairMm({ x: 0, y: -5, z: jawType === "mandible" ? 16.8 : -16.0 });
 			if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
 			if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
 			const arch = buildDentalArchCurve(
@@ -348,7 +348,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				});
 				setVolume(vol);
 				setLoadedSliceCount(vol.dimensions.depth);
-				setCrosshairMm({ x: 0, y: 0, z: 0 });
+				setCrosshairMm({ x: 0, y: -5, z: jawType === "mandible" ? 16.8 : -16.0 });
 				if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
 				if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
 				setDicomLoadingStatus(null);
@@ -373,7 +373,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				});
 				setVolume(vol);
 				setLoadedSliceCount(vol.dimensions.depth);
-				setCrosshairMm({ x: 0, y: 0, z: 0 });
+				setCrosshairMm({ x: 0, y: -5, z: jawType === "mandible" ? 16.8 : -16.0 });
 				if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
 				if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
 				setDicomLoadingStatus(null);
@@ -383,7 +383,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				showToast(err instanceof Error ? err.message : "Ошибка DICOM", "error");
 			}
 		}
-	}, []);
+	}, [jawType]);
 
 	// Update Dental Arch when jaw type changes
 	const handleToggleJawType = useCallback((type: "mandible" | "maxilla") => {
@@ -1934,6 +1934,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				<button
 					type="button"
 					onClick={() => setMobileActiveTab("axial")}
+					data-testid="cbct-mobile-tab-axial"
 					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "axial"
 							? "bg-[#1e2430] text-[#38bdf8] border-[#38bdf8]/40 shadow-xs"
@@ -1946,6 +1947,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				<button
 					type="button"
 					onClick={() => setMobileActiveTab("coronal")}
+					data-testid="cbct-mobile-tab-coronal"
 					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "coronal"
 							? "bg-[#1e2430] text-[#38bdf8] border-[#38bdf8]/40 shadow-xs"
@@ -1958,6 +1960,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				<button
 					type="button"
 					onClick={() => setMobileActiveTab("sagittal")}
+					data-testid="cbct-mobile-tab-sagittal"
 					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "sagittal"
 							? "bg-[#1e2430] text-[#38bdf8] border-[#38bdf8]/40 shadow-xs"
@@ -1970,6 +1973,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				<button
 					type="button"
 					onClick={() => setMobileActiveTab("panoramic")}
+					data-testid="cbct-mobile-tab-panoramic"
 					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "panoramic"
 							? "bg-[#1e2430] text-[#38bdf8] border-[#38bdf8]/40 shadow-xs"
@@ -1982,6 +1986,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				<button
 					type="button"
 					onClick={() => setMobileActiveTab("planner")}
+					data-testid="cbct-mobile-tab-planner"
 					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "planner"
 							? "bg-[#1e2430] text-[#38bdf8] border-[#38bdf8]/40 shadow-xs"
