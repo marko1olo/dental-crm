@@ -131,6 +131,172 @@ export function resolveEntityConflict<T extends Record<string, unknown> = Record
 	};
 }
 
+export interface Clinical043DiaryRecord {
+	id?: string;
+	patientId?: string;
+	visitId?: string;
+	complaints?: string | null;
+	anamnesis?: string | null;
+	objective?: string | null;
+	diagnosis?: string | null;
+	icd10Code?: string | null;
+	treatment?: string | null;
+	recommendations?: string | null;
+	toothNumbers?: number[] | string[] | null;
+	serviceCodes804n?: string[] | null;
+	updatedAt?: string | null;
+	authorName?: string | null;
+	authorRole?: string | null;
+	deviceId?: string | null;
+	[key: string]: unknown;
+}
+
+export interface Clinical043SectionDiff {
+	field: string;
+	labelRu: string;
+	doctorValue: string;
+	cloudValue: string;
+	isDifferent: boolean;
+	recommendedStrategy: "doctor" | "cloud" | "merge" | "identical";
+}
+
+export const CLINICAL_043_SECTIONS: Array<{ field: string; labelRu: string }> = [
+	{ field: "complaints", labelRu: "Жалобы пациента" },
+	{ field: "anamnesis", labelRu: "Анамнез заболевания и жизни" },
+	{ field: "objective", labelRu: "Объективный осмотр (полость рта, слизистая)" },
+	{ field: "diagnosis", labelRu: "Клинический диагноз" },
+	{ field: "icd10Code", labelRu: "Код МКБ-10" },
+	{ field: "treatment", labelRu: "Проведенное лечение и протокол манипуляций" },
+	{ field: "recommendations", labelRu: "Рекомендации, назначения и уход" },
+	{ field: "toothNumbers", labelRu: "Формула зубов (FDI)" },
+	{ field: "serviceCodes804n", labelRu: "Номенклатура услуг 804н" },
+];
+
+/**
+ * Calculates side-by-side differences between doctor's offline diary and cloud/assistant diary.
+ */
+export function calculate043ClinicalDiff(
+	doctorVersion: Clinical043DiaryRecord,
+	cloudVersion: Clinical043DiaryRecord,
+): Clinical043SectionDiff[] {
+	const diffs: Clinical043SectionDiff[] = [];
+
+	for (const section of CLINICAL_043_SECTIONS) {
+		const docRaw = doctorVersion[section.field];
+		const cloudRaw = cloudVersion[section.field];
+
+		const docStr = Array.isArray(docRaw)
+			? docRaw.join(", ")
+			: typeof docRaw === "string"
+				? docRaw.trim()
+				: docRaw !== null && docRaw !== undefined
+					? String(docRaw)
+					: "";
+
+		const cloudStr = Array.isArray(cloudRaw)
+			? cloudRaw.join(", ")
+			: typeof cloudRaw === "string"
+				? cloudRaw.trim()
+				: cloudRaw !== null && cloudRaw !== undefined
+					? String(cloudRaw)
+					: "";
+
+		const isDifferent = docStr !== cloudStr;
+
+		let recommendedStrategy: "doctor" | "cloud" | "merge" | "identical" = "identical";
+		if (isDifferent) {
+			if (!docStr && cloudStr) {
+				recommendedStrategy = "cloud";
+			} else if (docStr && !cloudStr) {
+				recommendedStrategy = "doctor";
+			} else if (section.field === "diagnosis" || section.field === "icd10Code") {
+				// Doctor has final medical authority on diagnosis
+				recommendedStrategy = "doctor";
+			} else {
+				recommendedStrategy = "merge";
+			}
+		}
+
+		diffs.push({
+			field: section.field,
+			labelRu: section.labelRu,
+			doctorValue: docStr,
+			cloudValue: cloudStr,
+			isDifferent,
+			recommendedStrategy,
+		});
+	}
+
+	return diffs;
+}
+
+/**
+ * Merges two clinical diary records non-destructively without losing text.
+ */
+export function mergeClinical043DiariesNonDestructive(
+	doctorVersion: Clinical043DiaryRecord,
+	cloudVersion: Clinical043DiaryRecord,
+	overrides?: Record<string, "doctor" | "cloud" | "merge">,
+): Clinical043DiaryRecord {
+	const merged: Clinical043DiaryRecord = {
+		...cloudVersion,
+		...doctorVersion,
+	};
+
+	const doctorAuthor = doctorVersion.authorName || "Врач (офлайн)";
+	const cloudAuthor = cloudVersion.authorName || "Ассистент / Облако";
+
+	for (const section of CLINICAL_043_SECTIONS) {
+		const field = section.field;
+		const choice = overrides?.[field] || "merge";
+
+		const docVal = doctorVersion[field];
+		const cloudVal = cloudVersion[field];
+
+		if (choice === "doctor") {
+			merged[field] = docVal;
+			continue;
+		}
+		if (choice === "cloud") {
+			merged[field] = cloudVal;
+			continue;
+		}
+
+		// Choice is "merge"
+		if (Array.isArray(docVal) || Array.isArray(cloudVal)) {
+			const docArr = Array.isArray(docVal) ? docVal : [];
+			const cloudArr = Array.isArray(cloudVal) ? cloudVal : [];
+			// Non-destructive array union
+			merged[field] = Array.from(new Set([...docArr, ...cloudArr]));
+			continue;
+		}
+
+		const docText = typeof docVal === "string" ? docVal.trim() : "";
+		const cloudText = typeof cloudVal === "string" ? cloudVal.trim() : "";
+
+		if (!docText && cloudText) {
+			merged[field] = cloudText;
+		} else if (docText && !cloudText) {
+			merged[field] = docText;
+		} else if (docText === cloudText) {
+			merged[field] = docText;
+		} else if (docText && cloudText) {
+			// Combine with clear attribution
+			if (field === "diagnosis" || field === "icd10Code") {
+				// Doctor diagnosis takes precedence, cloud added as concomitant
+				merged[field] = `${docText} (Сопутств. из облака: ${cloudText})`;
+			} else {
+				merged[field] = `[${doctorAuthor}]: ${docText}\n\n[${cloudAuthor}]: ${cloudText}`;
+			}
+		} else {
+			merged[field] = "";
+		}
+	}
+
+	merged.updatedAt = new Date().toISOString();
+	return merged;
+}
+
 export {
 	mergeOdontogramTeethCrdt,
 	resolveCashOperationCrdt,

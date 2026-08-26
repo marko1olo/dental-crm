@@ -1,0 +1,545 @@
+/**
+ * DENTE CRM — Clinical Conflict Modal Styles (Form 043/u Split-Brain Merge)
+ *
+ * Designed for clinical precision, high legibility, side-by-side readability,
+ * and touch-friendly (>=44x44px) controls.
+ */
+
+.clinical-conflict-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(15, 23, 42, 0.7);
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 9999;
+	padding: 16px;
+	box-sizing: border-box;
+	animation: ccmFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes ccmFadeIn {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+
+.clinical-conflict-modal {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.12));
+	border-radius: 16px;
+	width: 100%;
+	max-width: 1100px;
+	max-height: 92vh;
+	display: flex;
+	flex-direction: column;
+	box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+	overflow: hidden;
+	color: var(--ink, #0f172a);
+	font-family: inherit;
+}
+
+[data-theme="dark"] .clinical-conflict-modal,
+[data-theme="night"] .clinical-conflict-modal {
+	background: var(--paper, #1e293b);
+	border-color: rgba(255, 255, 255, 0.15);
+	color: var(--ink, #f8fafc);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   1. Modal Header
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.clinical-conflict-modal__header {
+	padding: 18px 24px;
+	background: var(--paper-strong, rgba(248, 250, 252, 0.8));
+	border-bottom: 1px solid var(--glass-border, rgba(0, 0, 0, 0.08));
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	flex-shrink: 0;
+}
+
+[data-theme="dark"] .clinical-conflict-modal__header,
+[data-theme="night"] .clinical-conflict-modal__header {
+	background: var(--paper-strong, rgba(30, 41, 59, 0.9));
+	border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.clinical-conflict-modal__title-area {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.clinical-conflict-modal__title-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.clinical-conflict-modal__title {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 700;
+	line-height: 1.25;
+}
+
+.clinical-conflict-modal__badge {
+	font-size: 12px;
+	font-weight: 600;
+	padding: 3px 8px;
+	border-radius: 6px;
+	background: rgba(245, 158, 11, 0.15);
+	color: #d97706;
+	border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+[data-theme="dark"] .clinical-conflict-modal__badge {
+	background: rgba(245, 158, 11, 0.25);
+	color: #fbbf24;
+	border-color: rgba(251, 191, 36, 0.4);
+}
+
+.clinical-conflict-modal__subtitle {
+	margin: 0;
+	font-size: 13px;
+	color: var(--muted, #64748b);
+}
+
+.clinical-conflict-modal__close-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	border-radius: 8px;
+	border: none;
+	background: transparent;
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	font-size: 20px;
+	transition: background 0.2s, color 0.2s;
+}
+
+.clinical-conflict-modal__close-btn:hover {
+	background: rgba(0, 0, 0, 0.06);
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .clinical-conflict-modal__close-btn:hover {
+	background: rgba(255, 255, 255, 0.08);
+	color: #ffffff;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   2. Global 1-Click Fast Action Bar
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.clinical-conflict-modal__quick-actions {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 24px;
+	background: rgba(241, 245, 249, 0.6);
+	border-bottom: 1px solid var(--glass-border, rgba(0, 0, 0, 0.06));
+	gap: 12px;
+	flex-wrap: wrap;
+	flex-shrink: 0;
+}
+
+[data-theme="dark"] .clinical-conflict-modal__quick-actions {
+	background: rgba(15, 23, 42, 0.4);
+	border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.clinical-conflict-modal__quick-label {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.clinical-conflict-modal__quick-buttons {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.clinical-conflict-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 44px;
+	padding: 0 16px;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 600;
+	border: 1px solid transparent;
+	cursor: pointer;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	box-sizing: border-box;
+	user-select: none;
+}
+
+.clinical-conflict-btn--doctor {
+	background: rgba(16, 185, 129, 0.12);
+	color: #065f46;
+	border-color: rgba(16, 185, 129, 0.35);
+}
+
+.clinical-conflict-btn--doctor:hover {
+	background: #10b981;
+	color: #ffffff;
+}
+
+[data-theme="dark"] .clinical-conflict-btn--doctor {
+	background: rgba(16, 185, 129, 0.2);
+	color: #6ee7b7;
+	border-color: rgba(52, 211, 153, 0.4);
+}
+
+[data-theme="dark"] .clinical-conflict-btn--doctor:hover {
+	background: #059669;
+	color: #ffffff;
+}
+
+.clinical-conflict-btn--cloud {
+	background: rgba(59, 130, 246, 0.12);
+	color: #1e40af;
+	border-color: rgba(59, 130, 246, 0.35);
+}
+
+.clinical-conflict-btn--cloud:hover {
+	background: #3b82f6;
+	color: #ffffff;
+}
+
+[data-theme="dark"] .clinical-conflict-btn--cloud {
+	background: rgba(59, 130, 246, 0.2);
+	color: #93c5fd;
+	border-color: rgba(96, 165, 250, 0.4);
+}
+
+[data-theme="dark"] .clinical-conflict-btn--cloud:hover {
+	background: #2563eb;
+	color: #ffffff;
+}
+
+.clinical-conflict-btn--merge {
+	background: rgba(139, 92, 246, 0.12);
+	color: #5b21b6;
+	border-color: rgba(139, 92, 246, 0.35);
+}
+
+.clinical-conflict-btn--merge:hover {
+	background: #8b5cf6;
+	color: #ffffff;
+}
+
+[data-theme="dark"] .clinical-conflict-btn--merge {
+	background: rgba(139, 92, 246, 0.2);
+	color: #c4b5fd;
+	border-color: rgba(167, 139, 250, 0.4);
+}
+
+[data-theme="dark"] .clinical-conflict-btn--merge:hover {
+	background: #7c3aed;
+	color: #ffffff;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   3. Modal Body: Side-by-Side Diff Content
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.clinical-conflict-modal__body {
+	padding: 20px 24px;
+	overflow-y: auto;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+.clinical-conflict-diff-card {
+	background: var(--paper-strong, rgba(248, 250, 252, 0.6));
+	border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.08));
+	border-radius: 12px;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	transition: border-color 0.2s;
+}
+
+[data-theme="dark"] .clinical-conflict-diff-card {
+	background: var(--paper-strong, rgba(15, 23, 42, 0.5));
+	border-color: rgba(255, 255, 255, 0.08);
+}
+
+.clinical-conflict-diff-card--conflict {
+	border-left: 4px solid #f59e0b;
+}
+
+.clinical-conflict-diff-card--identical {
+	border-left: 4px solid #10b981;
+	opacity: 0.85;
+}
+
+.clinical-conflict-diff-card__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.clinical-conflict-diff-card__title-area {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.clinical-conflict-diff-card__title {
+	font-size: 14px;
+	font-weight: 700;
+	margin: 0;
+}
+
+.clinical-conflict-diff-card__status-tag {
+	font-size: 11px;
+	font-weight: 600;
+	padding: 2px 6px;
+	border-radius: 4px;
+}
+
+.clinical-conflict-diff-card__status-tag--diff {
+	background: rgba(245, 158, 11, 0.15);
+	color: #b45309;
+}
+
+[data-theme="dark"] .clinical-conflict-diff-card__status-tag--diff {
+	background: rgba(245, 158, 11, 0.25);
+	color: #fcd34d;
+}
+
+.clinical-conflict-diff-card__status-tag--same {
+	background: rgba(16, 185, 129, 0.15);
+	color: #047857;
+}
+
+[data-theme="dark"] .clinical-conflict-diff-card__status-tag--same {
+	background: rgba(16, 185, 129, 0.25);
+	color: #6ee7b7;
+}
+
+/* Choice Segmented Control */
+.clinical-conflict-segmented {
+	display: inline-flex;
+	background: rgba(0, 0, 0, 0.06);
+	border-radius: 8px;
+	padding: 3px;
+	gap: 2px;
+}
+
+[data-theme="dark"] .clinical-conflict-segmented {
+	background: rgba(255, 255, 255, 0.08);
+}
+
+.clinical-conflict-segmented__btn {
+	border: none;
+	background: transparent;
+	padding: 6px 12px;
+	border-radius: 6px;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	min-height: 38px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.15s;
+}
+
+.clinical-conflict-segmented__btn:hover {
+	color: var(--ink, #0f172a);
+}
+
+.clinical-conflict-segmented__btn--active {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="dark"] .clinical-conflict-segmented__btn--active {
+	background: var(--paper, #334155);
+	color: #ffffff;
+}
+
+/* Side-by-Side Columns */
+.clinical-conflict-columns {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 14px;
+}
+
+@media (max-width: 768px) {
+	.clinical-conflict-columns {
+		grid-template-columns: 1fr;
+	}
+}
+
+.clinical-conflict-col {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.08));
+	border-radius: 8px;
+	padding: 10px 12px;
+}
+
+[data-theme="dark"] .clinical-conflict-col {
+	background: var(--paper, #1e293b);
+	border-color: rgba(255, 255, 255, 0.08);
+}
+
+.clinical-conflict-col--selected {
+	border-color: #3b82f6;
+	box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.clinical-conflict-col__meta {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+	border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+	padding-bottom: 4px;
+}
+
+[data-theme="dark"] .clinical-conflict-col__meta {
+	border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.clinical-conflict-col__content {
+	font-size: 13px;
+	line-height: 1.5;
+	white-space: pre-wrap;
+	word-break: break-word;
+	min-height: 24px;
+	color: var(--ink, #1e293b);
+}
+
+[data-theme="dark"] .clinical-conflict-col__content {
+	color: var(--ink, #f1f5f9);
+}
+
+.clinical-conflict-col__empty {
+	font-style: italic;
+	color: var(--muted, #94a3b8);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   4. Live Preview Area
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.clinical-conflict-preview {
+	background: var(--paper-strong, rgba(248, 250, 252, 0.8));
+	border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
+	border-radius: 12px;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+[data-theme="dark"] .clinical-conflict-preview {
+	background: var(--paper-strong, rgba(15, 23, 42, 0.7));
+	border-color: rgba(255, 255, 255, 0.1);
+}
+
+.clinical-conflict-preview__title {
+	font-size: 13px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: var(--muted, #64748b);
+	margin: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   5. Modal Footer
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.clinical-conflict-modal__footer {
+	padding: 16px 24px;
+	background: var(--paper-strong, rgba(248, 250, 252, 0.9));
+	border-top: 1px solid var(--glass-border, rgba(0, 0, 0, 0.08));
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	flex-wrap: wrap;
+	flex-shrink: 0;
+}
+
+[data-theme="dark"] .clinical-conflict-modal__footer {
+	background: var(--paper-strong, rgba(30, 41, 59, 0.95));
+	border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.clinical-conflict-modal__footer-status {
+	font-size: 13px;
+	color: var(--muted, #64748b);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.clinical-conflict-modal__footer-buttons {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.clinical-conflict-btn--cancel {
+	background: transparent;
+	color: var(--muted, #64748b);
+	border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.15));
+}
+
+.clinical-conflict-btn--cancel:hover {
+	background: rgba(0, 0, 0, 0.05);
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .clinical-conflict-btn--cancel {
+	border-color: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .clinical-conflict-btn--cancel:hover {
+	background: rgba(255, 255, 255, 0.08);
+	color: #ffffff;
+}
+
+.clinical-conflict-btn--submit {
+	background: #2563eb;
+	color: #ffffff;
+	border-color: #1d4ed8;
+	font-weight: 700;
+}
+
+.clinical-conflict-btn--submit:hover {
+	background: #1d4ed8;
+}

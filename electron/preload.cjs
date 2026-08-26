@@ -77,6 +77,22 @@ contextBridge.exposeInMainWorld("denteDesktopNative", {
 		return await ipcRenderer.invoke("dente:get-window-state");
 	},
 
+	printAtol10FiscalReceipt: async (params) => {
+		return await ipcRenderer.invoke("dente:print-atol10-fiscal-receipt", params);
+	},
+
+	printShtrihMFiscalReceipt: async (params) => {
+		return await ipcRenderer.invoke("dente:print-shtrih-fiscal-receipt", params);
+	},
+
+	getLocalServerStatus: async () => {
+		return await ipcRenderer.invoke("dente:get-local-server-status");
+	},
+
+	switchLocalDatabaseMode: async (mode) => {
+		return await ipcRenderer.invoke("dente:switch-local-database-mode", mode);
+	},
+
 	checkForUpdates: async () => {
 		return await ipcRenderer.invoke("dente:check-for-updates");
 	},

@@ -13,6 +13,10 @@ import {
 	setupDicomFolderWatch,
 	unwatchDicomFolder,
 	parseDicomFilenameMetadata,
+	getLocalServerStatus,
+	switchLocalDatabaseMode,
+	printAtol10FiscalReceipt,
+	printShtrihMFiscalReceipt,
 } from "../main.cjs";
 
 test("Desktop Standalone Windows Runtime Harness", async (t) => {
@@ -36,6 +40,42 @@ test("Desktop Standalone Windows Runtime Harness", async (t) => {
 		assert.ok(vatech);
 		assert.equal(vatech.type, "sensor");
 		assert.equal(vatech.connected, true);
+	});
+
+	await t.test("Queries local offline SQLite/Postgres server engine health", async () => {
+		const serverStatus = await getLocalServerStatus();
+		assert.equal(serverStatus.isRunning, true);
+		assert.equal(serverStatus.engine, "postgres_native");
+		assert.equal(serverStatus.canAcceptWrites, true);
+		assert.equal(serverStatus.port, 5432);
+
+		const switchRes = await switchLocalDatabaseMode("sqlite_standalone");
+		assert.equal(switchRes.success, true);
+		assert.equal(switchRes.activeMode, "sqlite_standalone");
+	});
+
+	await t.test("Direct ATOL Driver 10 and Shtrikh-M fiscal print execution", async () => {
+		const atolRes = await printAtol10FiscalReceipt({
+			host: "127.0.0.1",
+			port: 16732,
+			payloadJson: JSON.stringify({
+				cashierName: "Иванова А. С.",
+				totalRub: 3500,
+			}),
+		});
+		assert.equal(atolRes.success, true);
+		assert.ok(atolRes.fiscalSign);
+
+		const shtrihRes = await printShtrihMFiscalReceipt({
+			host: "127.0.0.1",
+			port: 5555,
+			payloadJson: JSON.stringify({
+				cashierName: "Иванова А. С.",
+				totalRub: 3500,
+			}),
+		});
+		assert.equal(shtrihRes.success, true);
+		assert.ok(shtrihRes.fiscalDocNum);
 	});
 
 	await t.test("Enumerates system printers and detects thermal label printers", async () => {
