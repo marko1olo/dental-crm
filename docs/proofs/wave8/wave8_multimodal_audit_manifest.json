@@ -1,0 +1,1087 @@
+{
+  "timestamp": "2026-08-26T14:43:55.396Z",
+  "totalExpected": 120,
+  "totalCaptured": 120,
+  "results": [
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "light",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "EndodonticCanalMaster_light_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "dark",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "EndodonticCanalMaster_dark_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "night",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "EndodonticCanalMaster_night_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "calm_teal",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "EndodonticCanalMaster_calm_teal_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "contrast",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "EndodonticCanalMaster_contrast_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "sakura",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "EndodonticCanalMaster_sakura_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "ocean",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "EndodonticCanalMaster_ocean_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "emerald",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "EndodonticCanalMaster_emerald_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "cyber_xray",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "EndodonticCanalMaster_cyber_xray_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "warm_sand",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "EndodonticCanalMaster_warm_sand_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "light",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "CadCamOcclusionHeatmap_light_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "dark",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "CadCamOcclusionHeatmap_dark_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "night",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "CadCamOcclusionHeatmap_night_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "calm_teal",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "CadCamOcclusionHeatmap_calm_teal_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "contrast",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "CadCamOcclusionHeatmap_contrast_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "sakura",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "CadCamOcclusionHeatmap_sakura_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "ocean",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "CadCamOcclusionHeatmap_ocean_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "emerald",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "CadCamOcclusionHeatmap_emerald_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "cyber_xray",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "CadCamOcclusionHeatmap_cyber_xray_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "warm_sand",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "CadCamOcclusionHeatmap_warm_sand_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "light",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "ImplantAbutmentStudio_light_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "dark",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "ImplantAbutmentStudio_dark_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "night",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "ImplantAbutmentStudio_night_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "calm_teal",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "ImplantAbutmentStudio_calm_teal_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "contrast",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "ImplantAbutmentStudio_contrast_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "sakura",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "ImplantAbutmentStudio_sakura_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "ocean",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "ImplantAbutmentStudio_ocean_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "emerald",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "ImplantAbutmentStudio_emerald_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "cyber_xray",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "ImplantAbutmentStudio_cyber_xray_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "warm_sand",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "ImplantAbutmentStudio_warm_sand_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "light",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "BeforeAfterComparison_light_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "dark",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "BeforeAfterComparison_dark_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "night",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "BeforeAfterComparison_night_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "calm_teal",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "BeforeAfterComparison_calm_teal_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "contrast",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "BeforeAfterComparison_contrast_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "sakura",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "BeforeAfterComparison_sakura_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "ocean",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "BeforeAfterComparison_ocean_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "emerald",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "BeforeAfterComparison_emerald_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "cyber_xray",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "BeforeAfterComparison_cyber_xray_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "warm_sand",
+      "resolution": "desktop",
+      "dimensions": "1440x900",
+      "file": "BeforeAfterComparison_warm_sand_desktop.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "light",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "EndodonticCanalMaster_light_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "dark",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "EndodonticCanalMaster_dark_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "night",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "EndodonticCanalMaster_night_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "calm_teal",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "EndodonticCanalMaster_calm_teal_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "contrast",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "EndodonticCanalMaster_contrast_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "sakura",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "EndodonticCanalMaster_sakura_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "ocean",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "EndodonticCanalMaster_ocean_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "emerald",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "EndodonticCanalMaster_emerald_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "cyber_xray",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "EndodonticCanalMaster_cyber_xray_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "warm_sand",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "EndodonticCanalMaster_warm_sand_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "light",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "CadCamOcclusionHeatmap_light_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "dark",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "CadCamOcclusionHeatmap_dark_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "night",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "CadCamOcclusionHeatmap_night_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "calm_teal",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "CadCamOcclusionHeatmap_calm_teal_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "contrast",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "CadCamOcclusionHeatmap_contrast_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "sakura",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "CadCamOcclusionHeatmap_sakura_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "ocean",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "CadCamOcclusionHeatmap_ocean_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "emerald",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "CadCamOcclusionHeatmap_emerald_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "cyber_xray",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "CadCamOcclusionHeatmap_cyber_xray_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "warm_sand",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "CadCamOcclusionHeatmap_warm_sand_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "light",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "ImplantAbutmentStudio_light_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "dark",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "ImplantAbutmentStudio_dark_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "night",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "ImplantAbutmentStudio_night_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "calm_teal",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "ImplantAbutmentStudio_calm_teal_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "contrast",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "ImplantAbutmentStudio_contrast_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "sakura",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "ImplantAbutmentStudio_sakura_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "ocean",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "ImplantAbutmentStudio_ocean_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "emerald",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "ImplantAbutmentStudio_emerald_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "cyber_xray",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "ImplantAbutmentStudio_cyber_xray_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "warm_sand",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "ImplantAbutmentStudio_warm_sand_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "light",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "BeforeAfterComparison_light_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "dark",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "BeforeAfterComparison_dark_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "night",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "BeforeAfterComparison_night_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "calm_teal",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "BeforeAfterComparison_calm_teal_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "contrast",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "BeforeAfterComparison_contrast_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "sakura",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "BeforeAfterComparison_sakura_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "ocean",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "BeforeAfterComparison_ocean_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "emerald",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "BeforeAfterComparison_emerald_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "cyber_xray",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "BeforeAfterComparison_cyber_xray_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "warm_sand",
+      "resolution": "tablet",
+      "dimensions": "768x1024",
+      "file": "BeforeAfterComparison_warm_sand_tablet.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "light",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "EndodonticCanalMaster_light_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "dark",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "EndodonticCanalMaster_dark_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "night",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "EndodonticCanalMaster_night_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "calm_teal",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "EndodonticCanalMaster_calm_teal_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "contrast",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "EndodonticCanalMaster_contrast_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "sakura",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "EndodonticCanalMaster_sakura_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "ocean",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "EndodonticCanalMaster_ocean_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "emerald",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "EndodonticCanalMaster_emerald_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "cyber_xray",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "EndodonticCanalMaster_cyber_xray_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "EndodonticCanalMaster",
+      "titleRu": "Эндодонтия и электронный апекслокатор",
+      "theme": "warm_sand",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "EndodonticCanalMaster_warm_sand_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "light",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "CadCamOcclusionHeatmap_light_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "dark",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "CadCamOcclusionHeatmap_dark_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "night",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "CadCamOcclusionHeatmap_night_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "calm_teal",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "CadCamOcclusionHeatmap_calm_teal_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "contrast",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "CadCamOcclusionHeatmap_contrast_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "sakura",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "CadCamOcclusionHeatmap_sakura_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "ocean",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "CadCamOcclusionHeatmap_ocean_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "emerald",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "CadCamOcclusionHeatmap_emerald_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "cyber_xray",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "CadCamOcclusionHeatmap_cyber_xray_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "CadCamOcclusionHeatmap",
+      "titleRu": "CAD/CAM окклюзионный Heatmap",
+      "theme": "warm_sand",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "CadCamOcclusionHeatmap_warm_sand_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "light",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "ImplantAbutmentStudio_light_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "dark",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "ImplantAbutmentStudio_dark_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "night",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "ImplantAbutmentStudio_night_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "calm_teal",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "ImplantAbutmentStudio_calm_teal_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "contrast",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "ImplantAbutmentStudio_contrast_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "sakura",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "ImplantAbutmentStudio_sakura_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "ocean",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "ImplantAbutmentStudio_ocean_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "emerald",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "ImplantAbutmentStudio_emerald_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "cyber_xray",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "ImplantAbutmentStudio_cyber_xray_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "ImplantAbutmentStudio",
+      "titleRu": "Студия профиля прорезывания и Абатментов",
+      "theme": "warm_sand",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "ImplantAbutmentStudio_warm_sand_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "light",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "BeforeAfterComparison_light_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "dark",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "BeforeAfterComparison_dark_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "night",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "BeforeAfterComparison_night_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "calm_teal",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "BeforeAfterComparison_calm_teal_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "contrast",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "BeforeAfterComparison_contrast_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "sakura",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "BeforeAfterComparison_sakura_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "ocean",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "BeforeAfterComparison_ocean_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "emerald",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "BeforeAfterComparison_emerald_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "cyber_xray",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "BeforeAfterComparison_cyber_xray_mobile.png",
+      "status": "OK"
+    },
+    {
+      "module": "BeforeAfterComparison",
+      "titleRu": "Фотопротокол — Слайдер До/После и VITA Shade",
+      "theme": "warm_sand",
+      "resolution": "mobile",
+      "dimensions": "390x844",
+      "file": "BeforeAfterComparison_warm_sand_mobile.png",
+      "status": "OK"
+    }
+  ]
+}

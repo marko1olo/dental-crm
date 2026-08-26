@@ -358,7 +358,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 						type="button"
 						className={`photo-touch-btn ${comparisonType === 'split' ? 'primary' : ''}`}
 						onClick={() => setComparisonType('split')}
-						style={{ minHeight: '38px', minWidth: '44px', padding: '6px 12px', fontSize: '13px' }}
+						style={{ minHeight: '44px', minWidth: '44px', padding: '6px 12px', fontSize: '13px' }}
 					>
 						Шторка До/После
 					</button>
@@ -366,7 +366,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 						type="button"
 						className={`photo-touch-btn ${comparisonType === 'side_by_side' ? 'primary' : ''}`}
 						onClick={() => setComparisonType('side_by_side')}
-						style={{ minHeight: '38px', minWidth: '44px', padding: '6px 12px', fontSize: '13px' }}
+						style={{ minHeight: '44px', minWidth: '44px', padding: '6px 12px', fontSize: '13px' }}
 					>
 						Бок о бок
 					</button>
@@ -374,7 +374,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 						type="button"
 						className={`photo-touch-btn ${comparisonType === 'blend' ? 'primary' : ''}`}
 						onClick={() => setComparisonType('blend')}
-						style={{ minHeight: '38px', minWidth: '44px', padding: '6px 12px', fontSize: '13px' }}
+						style={{ minHeight: '44px', minWidth: '44px', padding: '6px 12px', fontSize: '13px' }}
 					>
 						Наложение
 					</button>
@@ -466,7 +466,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 							type="button"
 							className={`photo-touch-btn ${activeGuides.bipupillary ? 'primary' : ''}`}
 							onClick={() => toggleGuide('bipupillary')}
-							style={{ minHeight: '38px', minWidth: '44px', fontSize: '12px' }}
+							style={{ minHeight: '44px', minWidth: '44px', fontSize: '12px' }}
 						>
 							Межзрачковая линия
 						</button>
@@ -474,7 +474,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 							type="button"
 							className={`photo-touch-btn ${activeGuides.incisal ? 'primary' : ''}`}
 							onClick={() => toggleGuide('incisal')}
-							style={{ minHeight: '38px', minWidth: '44px', fontSize: '12px' }}
+							style={{ minHeight: '44px', minWidth: '44px', fontSize: '12px' }}
 						>
 							Резцовый край
 						</button>
@@ -482,7 +482,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 							type="button"
 							className={`photo-touch-btn ${activeGuides.midline ? 'primary' : ''}`}
 							onClick={() => toggleGuide('midline')}
-							style={{ minHeight: '38px', minWidth: '44px', fontSize: '12px' }}
+							style={{ minHeight: '44px', minWidth: '44px', fontSize: '12px' }}
 						>
 							Срединная линия
 						</button>
@@ -490,7 +490,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 							type="button"
 							className={`photo-touch-btn ${activeGuides.golden_ratio ? 'primary' : ''}`}
 							onClick={() => toggleGuide('golden_ratio')}
-							style={{ minHeight: '38px', minWidth: '44px', fontSize: '12px' }}
+							style={{ minHeight: '44px', minWidth: '44px', fontSize: '12px' }}
 						>
 							Золотое сечение
 						</button>
@@ -498,7 +498,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 							type="button"
 							className={`photo-touch-btn ${activeGuides.thirds ? 'primary' : ''}`}
 							onClick={() => toggleGuide('thirds')}
-							style={{ minHeight: '38px', minWidth: '44px', fontSize: '12px' }}
+							style={{ minHeight: '44px', minWidth: '44px', fontSize: '12px' }}
 						>
 							Сетка третей
 						</button>

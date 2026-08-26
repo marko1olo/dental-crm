@@ -39,6 +39,8 @@
 	justify-content: space-between;
 	background: var(--surface, #f8fafc);
 	flex-shrink: 0;
+	flex-wrap: wrap;
+	gap: 0.75rem;
 }
 
 .implant-studio-body {

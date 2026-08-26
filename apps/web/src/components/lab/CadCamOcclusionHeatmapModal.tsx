@@ -832,12 +832,12 @@ export function CadCamOcclusionHeatmapModal({
 				</div>
 
 				{/* ═══ MODAL FOOTER ══════════════════════════════════════════════ */}
-				<div className="px-5 py-3 border-t border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between shrink-0">
+				<div className="px-4 sm:px-5 py-3 border-t border-[var(--line)] bg-[var(--paper-soft)] flex flex-wrap items-center justify-between gap-3 shrink-0">
 					<div className="text-xs text-[var(--muted)] font-medium">
 						ISO 6872:2015 Стоматологическая керамика • Рекомендации Ivoclar & Katana
 					</div>
 
-					<div className="flex items-center gap-3">
+					<div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto justify-end">
 						<button
 							type="button"
 							onClick={onClose}

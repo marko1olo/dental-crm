@@ -38,6 +38,7 @@ import {
 
 	Truck,
 	User,
+	X,
 } from "lucide-react";
 import type { Kopecks } from "@dental/shared";
 import { AnesthesiaCalculator } from "../components/visit/AnesthesiaCalculator";
@@ -97,6 +98,13 @@ import { SickLeaveElnModal } from "../components/documents/sickLeave/SickLeaveEl
 import { AutoclaveLog257Modal } from "../components/sanpin/autoclaveLog/AutoclaveLog257Modal";
 import { DoctorShiftRosterModal } from "../components/schedule/roster/DoctorShiftRosterModal";
 import { AnesthesiaQuickBar } from "../components/anesthesia/AnesthesiaQuickBar";
+import { EndodonticCanalMasterModal } from "../components/clinical/endo/EndodonticCanalMasterModal";
+import { CadCamOcclusionHeatmapModal } from "../components/lab/CadCamOcclusionHeatmapModal";
+import { BeforeAfterComparisonView } from "../components/photography/BeforeAfterComparisonView";
+import {
+	STANDARD_12_SLOT_PROTOCOL,
+	type PhotoSlotRecord,
+} from "../components/photography/photoGridPresets";
 import type { CompletedWorksActAndWriteOffData, TreatmentPlanItem } from "../components/treatment-plans/types";
 import type { DiaryState } from "../components/useVisitDiaryLogic";
 
@@ -282,6 +290,25 @@ const SAMPLE_STUDY: RadiologyStudy = {
 	],
 };
 
+const SAMPLE_PHOTO_SLOTS: Record<string, PhotoSlotRecord> = {
+	portrait_smile: {
+		slotId: "portrait_smile",
+		imageUrl:
+			"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='600' viewBox='0 0 800 600'><rect width='800' height='600' fill='%23221b18'/><ellipse cx='400' cy='320' rx='280' ry='120' fill='%23632828'/><path d='M200 320 Q400 240 600 320 Q400 420 200 320 Z' fill='%231a0808'/><rect x='250' y='270' width='50' height='70' rx='10' fill='%23e6c99c' stroke='%23332211' stroke-width='2'/><rect x='305' y='265' width='45' height='75' rx='10' fill='%23e0c395' stroke='%23332211' stroke-width='2'/><rect x='355' y='260' width='42' height='80' rx='10' fill='%23dbbe8e' stroke='%23332211' stroke-width='2'/><rect x='402' y='260' width='42' height='80' rx='10' fill='%23dbbe8e' stroke='%23332211' stroke-width='2'/><rect x='449' y='265' width='45' height='75' rx='10' fill='%23e0c395' stroke='%23332211' stroke-width='2'/><rect x='499' y='270' width='50' height='70' rx='10' fill='%23e6c99c' stroke='%23332211' stroke-width='2'/><text x='400' y='120' fill='%23ffffff' font-size='28' font-family='sans-serif' font-weight='bold' text-anchor='middle'>ДО ЛЕЧЕНИЯ (VITA A3)</text><text x='400' y='160' fill='%23fb923c' font-size='18' font-family='sans-serif' text-anchor='middle'>Дисколорит · Скученность во фронтальном отделе</text></svg>",
+		detectedVitaShade: "A3",
+		stage: "before",
+		uploadedAt: "2026-08-20T10:15:00.000Z",
+	},
+	intraoral_frontal_occlusion: {
+		slotId: "intraoral_frontal_occlusion",
+		imageUrl:
+			"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='600' viewBox='0 0 800 600'><rect width='800' height='600' fill='%23141a29'/><ellipse cx='400' cy='320' rx='280' ry='120' fill='%23782d2d'/><path d='M200 320 Q400 240 600 320 Q400 420 200 320 Z' fill='%231f0a0a'/><rect x='250' y='265' width='50' height='75' rx='10' fill='%23ffffff' stroke='%2394a3b8' stroke-width='2'/><rect x='305' y='260' width='45' height='80' rx='10' fill='%23f8fafc' stroke='%2394a3b8' stroke-width='2'/><rect x='355' y='255' width='42' height='88' rx='10' fill='%23ffffff' stroke='%2306b6d4' stroke-width='2'/><rect x='402' y='255' width='42' height='88' rx='10' fill='%23ffffff' stroke='%2306b6d4' stroke-width='2'/><rect x='449' y='260' width='45' height='80' rx='10' fill='%23f8fafc' stroke='%2394a3b8' stroke-width='2'/><rect x='499' y='265' width='50' height='75' rx='10' fill='%23ffffff' stroke='%2394a3b8' stroke-width='2'/><text x='400' y='120' fill='%23ffffff' font-size='28' font-family='sans-serif' font-weight='bold' text-anchor='middle'>ПОСЛЕ ЛЕЧЕНИЯ (VITA BL2)</text><text x='400' y='160' fill='%2338bdf8' font-size='18' font-family='sans-serif' text-anchor='middle'>E.max Виниры · Идеальная зенитная симметрия</text></svg>",
+		detectedVitaShade: "BL2",
+		stage: "after",
+		uploadedAt: "2026-08-26T14:30:00.000Z",
+	},
+};
+
 export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [activeTheme, setActiveTheme] = useState<string>("dark");
 	const [isPrescriptionOpen, setIsPrescriptionOpen] = useState(false);
@@ -308,6 +335,9 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isPortalOpen, setIsPortalOpen] = useState(false);
 	const [isImplantPlanningOpen, setIsImplantPlanningOpen] = useState(false);
 	const [isImplantAbutmentStudioOpen, setIsImplantAbutmentStudioOpen] = useState(false);
+	const [isEndodonticOpen, setIsEndodonticOpen] = useState(false);
+	const [isCadCamHeatmapOpen, setIsCadCamHeatmapOpen] = useState(false);
+	const [isBeforeAfterOpen, setIsBeforeAfterOpen] = useState(false);
 	const [isVoiceAssistantOpen, setIsVoiceAssistantOpen] = useState(false);
 	const [isConsent323Open, setIsConsent323Open] = useState(false);
 	const [isAnesthesiaProtocolOpen, setIsAnesthesiaProtocolOpen] = useState(false);
@@ -350,7 +380,27 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	};
 
 	useEffect(() => {
-		handleThemeChange(activeTheme);
+		const handleHashOrSearch = () => {
+			const raw = window.location.hash || window.location.search;
+			const queryPart = raw.includes("?") ? raw.split("?")[1] : "";
+			if (queryPart) {
+				const params = new URLSearchParams(queryPart);
+				const requestedTheme = params.get("theme");
+				if (requestedTheme && THEMES.some((t) => t.id === requestedTheme)) {
+					handleThemeChange(requestedTheme);
+				}
+				const requestedModal = params.get("modal");
+				if (requestedModal) {
+					setIsEndodonticOpen(requestedModal === "endo" || requestedModal === "endodontic");
+					setIsCadCamHeatmapOpen(requestedModal === "cadcam" || requestedModal === "heatmap" || requestedModal === "occlusion");
+					setIsImplantAbutmentStudioOpen(requestedModal === "implant" || requestedModal === "abutment" || requestedModal === "emergence");
+					setIsBeforeAfterOpen(requestedModal === "before_after" || requestedModal === "photo_comparison" || requestedModal === "photography");
+				}
+			}
+		};
+		handleHashOrSearch();
+		window.addEventListener("hashchange", handleHashOrSearch);
+		return () => window.removeEventListener("hashchange", handleHashOrSearch);
 	}, []);
 
 	return (
@@ -1001,6 +1051,78 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						>
 							<Crown size={15} />
 							<span>Открыть Emergence Studio</span>
+						</button>
+					</div>
+
+					{/* 22c. Endodontic Canal Master & Electronic Apex Locator Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Activity className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Эндодонтия & Апекслокатор (EAL)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Морфология каналов, MAF ISO 15..80, симулятор апекслокатора с аудио, протоколы ирригации и 043/у.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsEndodonticOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-endodontic-modal-btn"
+						>
+							<Activity size={15} />
+							<span>Открыть эндодонтию (EAL)</span>
+						</button>
+					</div>
+
+					{/* 22d. CAD/CAM Occlusion Clearance Heatmap Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Layers className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									CAD/CAM Окклюзионный Heatmap
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								2D/3D окклюзионный зазор (0.1..2.5 мм), допуски материалов ZrO2/E.max, артикулятор и наряд в лабораторию.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsCadCamHeatmapOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-cadcam-heatmap-modal-btn"
+						>
+							<Layers size={15} />
+							<span>Открыть CAD/CAM Heatmap</span>
+						</button>
+					</div>
+
+					{/* 22e. Clinical Photo Protocol & Before/After Slider Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Camera className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Фотопротокол & Слайдер До/После
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Сплит-вайпер До/После, VITA 3D-Master расцветка, лицевые эстетические направляющие и экспорт буклета.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsBeforeAfterOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-before-after-modal-btn"
+						>
+							<Camera size={15} />
+							<span>Открыть слайдер До/После</span>
 						</button>
 					</div>
 
@@ -2113,6 +2235,77 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					isOpen={isDoctorShiftRosterOpen}
 					onClose={() => setIsDoctorShiftRosterOpen(false)}
 				/>
+			)}
+
+			{isEndodonticOpen && (
+				<EndodonticCanalMasterModal
+					isOpen={isEndodonticOpen}
+					onClose={() => setIsEndodonticOpen(false)}
+					initialToothNumber={16}
+					initialDiagnosisCode="K04.0"
+					initialDiagnosisTitle="Пульпит острый необратимый"
+					patientName={SAMPLE_PATIENT.fullName}
+				/>
+			)}
+
+			{isCadCamHeatmapOpen && (
+				<CadCamOcclusionHeatmapModal
+					isOpen={isCadCamHeatmapOpen}
+					onClose={() => setIsCadCamHeatmapOpen(false)}
+					initialToothFdi={16}
+					initialMaterialId="zirconia_ultra_translucent"
+					initialCementGapMicrons={40}
+				/>
+			)}
+
+			{isBeforeAfterOpen && (
+				<div
+					className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-md p-2 sm:p-4 overflow-y-auto"
+					role="dialog"
+					aria-modal="true"
+					data-testid="before-after-modal-container"
+				>
+					<div className="relative w-full max-w-5xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-2xl shadow-2xl p-4 sm:p-6 overflow-hidden max-h-[94vh] flex flex-col">
+						<div className="flex items-center justify-between pb-3 border-b border-[var(--line,#e2e8f0)] mb-4 shrink-0">
+							<div className="flex items-center gap-2.5">
+								<div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+									<Camera className="w-5 h-5" />
+								</div>
+								<div>
+									<h3 className="text-base font-bold text-[var(--ink)]">
+										Фотопротокол — Сравнение До/После & VITA Shade
+									</h3>
+									<p className="text-xs text-[var(--muted)]">
+										Интерактивный сплит-вайпер, VITA 3D-Master расцветка и эстетические направляющие
+									</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={() => setIsBeforeAfterOpen(false)}
+								className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all flex items-center justify-center"
+								data-testid="close-before-after-modal-btn"
+								aria-label="Закрыть модальное окно"
+							>
+								<X className="w-5 h-5" />
+							</button>
+						</div>
+						<div className="flex-1 overflow-y-auto">
+							<BeforeAfterComparisonView
+								preset={STANDARD_12_SLOT_PROTOCOL}
+								slotsData={SAMPLE_PHOTO_SLOTS}
+								beforeSlotId="portrait_smile"
+								afterSlotId="intraoral_frontal_occlusion"
+								clinicName="Стоматология ДЕНТЕ ПРЕМИУМ"
+								patientName={SAMPLE_PATIENT.fullName}
+								patientCardNumber={SAMPLE_PATIENT.cardNumber}
+								doctorName="Д-р Смирнов Алексей Петрович"
+								onBeforeSlotChange={() => {}}
+								onAfterSlotChange={() => {}}
+							/>
+						</div>
+					</div>
+				</div>
 			)}
 		</div>
 	);

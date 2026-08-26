@@ -220,11 +220,3 @@
 	gap: 0.75rem;
 	flex-shrink: 0;
 }
-`;
-
-fs.writeFileSync(path.join(orthoDir, 'OrthodonticBracketMatrixModal.css'), cssContent, 'utf8');
-console.log('Saved OrthodonticBracketMatrixModal.css successfully!');
-`;
-
-fs.writeFileSync(path.join('C:', 'Users', 'Admin', '.gemini', 'antigravity', 'brain', 'a440e3e3-26a7-4c43-98cc-1f24babea98f', 'scratch', 'writeModalClean.cjs'), cssContent, 'utf8');
-console.log('Saved writeModalClean.cjs!')

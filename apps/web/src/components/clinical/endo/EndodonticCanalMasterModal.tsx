@@ -340,7 +340,7 @@ export function EndodonticCanalMasterModal({
 			<div className="relative w-full max-w-5xl rounded-2xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-2xl border border-[var(--glass-border,rgba(0,0,0,0.1))] flex flex-col max-h-[94vh] overflow-hidden">
 				
 				{/* ── HEADER ────────────────────────────────────────────────────────── */}
-				<div className="flex items-center justify-between px-5 py-4 border-b border-[var(--glass-border,rgba(0,0,0,0.08))] bg-slate-50/80 dark:bg-slate-900/50">
+				<div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5 py-3 sm:py-4 border-b border-[var(--glass-border,rgba(0,0,0,0.08))] bg-slate-50/80 dark:bg-slate-900/50">
 					<div className="flex items-center gap-3">
 						<div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-500/20">
 							<Radio className="h-6 w-6" />
@@ -997,7 +997,7 @@ export function EndodonticCanalMasterModal({
 						Каналов: <strong>{canals.length}</strong> • Обтурация: <strong>{canals.filter((c) => c.isObturated).length} запломбировано</strong>
 					</div>
 
-					<div className="flex items-center gap-2">
+					<div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
 						<button
 							type="button"
 							onClick={handleCopy043}
