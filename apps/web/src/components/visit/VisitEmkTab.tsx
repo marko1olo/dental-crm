@@ -46,6 +46,7 @@ import { PrescriptionModal } from "./PrescriptionModal";
 import { PatientBillingModal } from "../finance/PatientBillingModal";
 import { InformedConsentModal } from "../consents/InformedConsentModal";
 import { VisitFlowProgress } from "./VisitFlowProgress";
+import { EmkVoicePilot } from "./EmkVoicePilot";
 import {
 	ClinicalQuickPresetsBar,
 	type ClinicalQuickPreset,
@@ -242,6 +243,67 @@ export function VisitEmkTab() {
 			setIsCompletingVisit(false);
 		}
 	}, [flushPendingVisitSaves, appLogic, dashboard, activePatient, visitNoteForm]);
+
+	const handleApplyVoiceSoapNotes = React.useCallback(
+		(notes: Record<string, string>) => {
+			if (!updateVisitNoteField) return;
+			if (notes.subjective) {
+				const curr = visitNoteForm.complaint || "";
+				updateVisitNoteField("complaint", appendClinicalText(curr, notes.subjective, "; "));
+			}
+			if (notes.objective) {
+				const curr = visitNoteForm.objectiveStatus || "";
+				updateVisitNoteField("objectiveStatus", appendClinicalText(curr, notes.objective, "; "));
+			}
+			if (notes.assessment) {
+				const curr = visitNoteForm.diagnosis || "";
+				updateVisitNoteField("diagnosis", appendClinicalText(curr, notes.assessment, "; "));
+			}
+			if (notes.plan) {
+				const curr = visitNoteForm.treatmentPlan || "";
+				updateVisitNoteField("treatmentPlan", appendClinicalText(curr, notes.plan, "\n\n"));
+			}
+			if (notes.recommendations) {
+				const curr = visitNoteForm.recommendations || "";
+				updateVisitNoteField("recommendations", appendClinicalText(curr, notes.recommendations, "\n"));
+			}
+		},
+		[updateVisitNoteField, visitNoteForm],
+	);
+
+	const handleApplyVoiceToothState = React.useCallback(
+		(toothNumber: number, state: any, surfaces?: string[]) => {
+			setActiveSelectedTooth(toothNumber);
+			if ((appLogic as any)?.updateOdontogramTooth) {
+				(appLogic as any).updateOdontogramTooth(toothNumber, state, surfaces);
+			}
+		},
+		[appLogic],
+	);
+
+	const handleApplyVoiceAnesthesia = React.useCallback((anes: any) => {
+		if (anes?.drugKey) {
+			setSelectedAnesDrugKey(anes.drugKey);
+		}
+		if (anes?.cartridgeCount) {
+			setSelectedCarpulesCount(anes.cartridgeCount);
+		}
+	}, []);
+
+	const handleApplyVoiceProcedures = React.useCallback(
+		(procs: any[]) => {
+			if (!updateVisitNoteField || !Array.isArray(procs) || procs.length === 0) return;
+			const lines = procs.map(
+				(p) => `• [${p.code804n}] ${p.name}${p.toothNumber ? ` (зуб ${p.toothNumber})` : ""}`,
+			);
+			const currPlan = visitNoteForm.treatmentPlan || "";
+			const newPlan = currPlan
+				? `${currPlan}\n\nВыполненные манипуляции (804н):\n${lines.join("\n")}`
+				: `Выполненные манипуляции (804н):\n${lines.join("\n")}`;
+			updateVisitNoteField("treatmentPlan", newPlan);
+		},
+		[updateVisitNoteField, visitNoteForm.treatmentPlan],
+	);
 
 	React.useEffect(() => {
 		const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -816,6 +878,16 @@ export function VisitEmkTab() {
 			{visitFlowResult && !visitFlowResultIsOfAnotherVisit ? (
 				<VisitFlowProgress result={visitFlowResult} />
 			) : null}
+
+			{/* Умный голосовой AI-Пилот ЭМК (0 кликов на приёме) */}
+			<EmkVoicePilot
+				onApplyToothState={handleApplyVoiceToothState}
+				onApplySoapNotes={handleApplyVoiceSoapNotes}
+				onApplyAnesthesia={handleApplyVoiceAnesthesia}
+				onApplyProcedures={handleApplyVoiceProcedures}
+				activeSelectedTooth={activeSelectedTooth}
+				className="my-2"
+			/>
 
 			{/* Быстрые клинические протоколы SOAP + МКБ-10 (1 клик) */}
 			<ClinicalQuickPresetsBar

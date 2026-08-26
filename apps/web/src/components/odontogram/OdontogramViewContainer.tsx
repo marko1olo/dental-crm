@@ -7,6 +7,7 @@ import {
 	EyeOff,
 	FileText,
 	Mic,
+	MicOff,
 	Paintbrush,
 	Radio,
 	Sparkles,
@@ -16,6 +17,7 @@ import {
 	Zap,
 } from "lucide-react";
 import type { OdontogramViewMode } from "@dental/shared";
+import { globalDentalVoiceEngine } from "../../services/voice";
 import {
 	loadUiPreferences,
 	saveUiPreferences,
@@ -161,6 +163,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 	const [activeStampTool, setActiveStampTool] = useState<ToothState | null>(null);
 	const [isConfirmSanitationModalOpen, setIsConfirmSanitationModalOpen] = useState<boolean>(false);
 	const [contextDrawerTooth, setContextDrawerTooth] = useState<number | null>(null);
+	const [isVoiceListening, setIsVoiceListening] = useState<boolean>(false);
 
 	// 3. Radial Menu Active Anchor
 	const [radialMenuData, setRadialMenuData] = useState<{
@@ -251,6 +254,21 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 		window.addEventListener("keydown", handleGlobalKeyDown);
 		return () => window.removeEventListener("keydown", handleGlobalKeyDown);
 	}, [activeStampTool]);
+
+	// Listen to global dental voice engine for real-time tooth updates
+	useEffect(() => {
+		const unsub = globalDentalVoiceEngine.addListener({
+			onListeningChange: (isL) => setIsVoiceListening(isL),
+			onIntentParsed: (intent) => {
+				if (onQuickStateChange && intent.teethUpdates.length > 0) {
+					for (const t of intent.teethUpdates) {
+						onQuickStateChange([t.toothNumber], t.state, t.surfaces);
+					}
+				}
+			},
+		});
+		return () => unsub();
+	}, [onQuickStateChange]);
 
 	const handleRadialSelectState = useCallback(
 		(state: ToothState, surfaces?: readonly string[]) => {
@@ -654,17 +672,26 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 						</button>
 
 						{/* Voice Dictation Trigger */}
-						{onOpenVoiceDictation && (
-							<button
-								type="button"
-								onClick={onOpenVoiceDictation}
-								className="min-h-[48px] flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-black whitespace-nowrap bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs shrink-0 cursor-pointer transition-all active:scale-95"
-								title="Голосовая диктовка зубной формулы («16 кариес, 24 пломба, 36 отсутствует»)"
-							>
-								<Mic size={16} />
-								<span>Голос</span>
-							</button>
-						)}
+						<button
+							type="button"
+							onClick={() => {
+								if (onOpenVoiceDictation) {
+									onOpenVoiceDictation();
+								} else {
+									globalDentalVoiceEngine.toggle();
+								}
+							}}
+							className={`min-h-[48px] flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-black whitespace-nowrap shadow-xs shrink-0 cursor-pointer transition-all active:scale-95 ${
+								isVoiceListening
+									? "bg-rose-600 hover:bg-rose-500 text-white animate-pulse ring-4 ring-rose-500/30"
+									: "bg-indigo-600 hover:bg-indigo-500 text-white"
+							}`}
+							title={isVoiceListening ? "Остановить диктовку" : "Голосовая диктовка зубной формулы («16 кариес, 24 пломба, 36 отсутствует»)"}
+							aria-pressed={isVoiceListening}
+						>
+							{isVoiceListening ? <MicOff size={16} /> : <Mic size={16} />}
+							<span>{isVoiceListening ? "Слушаю..." : "Голос"}</span>
+						</button>
 					</div>
 				</div>
 			)}

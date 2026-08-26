@@ -1220,7 +1220,13 @@ export function parseDentalVoiceSpeech(rawTranscript: string): DentalVoiceIntent
 		}
 	}
 
-	const enrichedSoap: Record<string, string> = { ...soapNotes };
+	const enrichedSoap: {
+		subjective?: string | undefined;
+		objective?: string | undefined;
+		assessment?: string | undefined;
+		plan?: string | undefined;
+		recommendations?: string | undefined;
+	} = { ...soapNotes };
 
 	if (!enrichedSoap.assessment && teethUpdates.length > 0) {
 		enrichedSoap.assessment = teethUpdates
