@@ -49,8 +49,11 @@ import {
 	type MprPlane,
 	type Point3D,
 	type SlabProjectionMode,
+	ROMEXIS_COLORS,
 	createSyntheticDentalCbctVolume,
 	disposeCbctVolume,
+	drawCalibratedMillimeterRulers,
+	drawRomexisSlabCorridor,
 	extractMprSlice,
 	huToGrayscale,
 	sampleVoxelHU,
@@ -70,11 +73,13 @@ import {
 	findNearestCrossSectionIndexByPanoX,
 	generateCrossSectionSlices,
 	generateCrossSectionsAlongArch,
+	getFocalTroughBoundaryCurves,
 	getPanoramicSliceFanTicks,
 	mapSliceToPanoramicX,
 	reconstructPanoramicOpg,
 	reconstructPanoramicView,
 } from "./dentalCurveEngine";
+import { CbctViewportHud } from "./CbctViewportHud";
 import {
 	STANDARD_IMPLANT_CATALOG,
 	type CrossSectionImplantPose,
@@ -445,7 +450,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 		const vox = worldMmToVoxel(crosshairMm, volume);
 
-		// 1. Axial Viewport (Z-Plane)
+		// 1. Axial Viewport (Z-Plane: Intersects with Coronal (Amber) & Sagittal (Green))
 		if (axialCanvasRef.current) {
 			const canvas = axialCanvasRef.current;
 			const ctx = canvas.getContext("2d");
@@ -465,9 +470,64 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				imgData.data.set(data);
 				ctx.putImageData(imgData, 0, 0);
 
-				// Draw Dental Arch Spline on Axial
-				ctx.strokeStyle = "rgba(6, 182, 212, 0.85)";
-				ctx.lineWidth = 1.5;
+				// Draw Calibrated Millimeter Rulers (1mm, 5mm, 10mm + scale bar)
+				drawCalibratedMillimeterRulers(ctx, {
+					widthPx: metadata.widthPx,
+					heightPx: metadata.heightPx,
+					pixelSpacingMmX: metadata.pixelSpacingX,
+					pixelSpacingMmY: metadata.pixelSpacingY,
+					showScaleBar: true,
+				});
+
+				// Draw Focal Trough Corridor on Axial (Purple dashed bounds)
+				if (archCurve.focalTroughThicknessMm > 0 && archCurve.splinePointsMm.length > 1) {
+					const { innerBoundary, outerBoundary } = getFocalTroughBoundaryCurves(
+						archCurve.splinePointsMm,
+						archCurve.focalTroughThicknessMm,
+					);
+
+					// Focal trough translucent fill corridor
+					ctx.save();
+					ctx.fillStyle = ROMEXIS_COLORS.panoramicRgba(0.06);
+					ctx.beginPath();
+					for (let i = 0; i < outerBoundary.length; i++) {
+						const v = worldMmToVoxel({ x: outerBoundary[i]!.x, y: outerBoundary[i]!.y, z: crosshairMm.z }, volume);
+						if (i === 0) ctx.moveTo(v.x, v.y);
+						else ctx.lineTo(v.x, v.y);
+					}
+					for (let i = innerBoundary.length - 1; i >= 0; i--) {
+						const v = worldMmToVoxel({ x: innerBoundary[i]!.x, y: innerBoundary[i]!.y, z: crosshairMm.z }, volume);
+						ctx.lineTo(v.x, v.y);
+					}
+					ctx.closePath();
+					ctx.fill();
+
+					// Inner and outer dashed curves
+					ctx.strokeStyle = ROMEXIS_COLORS.panoramicRgba(0.5);
+					ctx.lineWidth = 1.0;
+					ctx.setLineDash([4, 3]);
+
+					ctx.beginPath();
+					for (let i = 0; i < innerBoundary.length; i++) {
+						const v = worldMmToVoxel({ x: innerBoundary[i]!.x, y: innerBoundary[i]!.y, z: crosshairMm.z }, volume);
+						if (i === 0) ctx.moveTo(v.x, v.y);
+						else ctx.lineTo(v.x, v.y);
+					}
+					ctx.stroke();
+
+					ctx.beginPath();
+					for (let i = 0; i < outerBoundary.length; i++) {
+						const v = worldMmToVoxel({ x: outerBoundary[i]!.x, y: outerBoundary[i]!.y, z: crosshairMm.z }, volume);
+						if (i === 0) ctx.moveTo(v.x, v.y);
+						else ctx.lineTo(v.x, v.y);
+					}
+					ctx.stroke();
+					ctx.restore();
+				}
+
+				// Draw Dental Arch Spline on Axial (Purple #a855f7)
+				ctx.strokeStyle = ROMEXIS_COLORS.panoramicRgba(0.95);
+				ctx.lineWidth = 2.0;
 				ctx.beginPath();
 				const spline = archCurve.splinePointsMm;
 				for (let i = 0; i < spline.length; i++) {
@@ -478,7 +538,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				}
 				ctx.stroke();
 
-				// Draw Active Cross-Section Reslice Ray across Ridge
+				// Draw Active Cross-Section Reslice Ray across Ridge (Yellow #eab308)
 				if (activeCrossSection) {
 					const norm2D = activeCrossSection.normalVector2D;
 					const rayHalfLenMm = activeCrossSection.widthMm / 2.0;
@@ -495,14 +555,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					const v1 = worldMmToVoxel(rayP1Mm, volume);
 					const v2 = worldMmToVoxel(rayP2Mm, volume);
 
-					ctx.strokeStyle = "rgba(245, 158, 11, 0.75)";
-					ctx.lineWidth = 1.5;
-					ctx.setLineDash([3, 2]);
+					ctx.strokeStyle = ROMEXIS_COLORS.crossSection;
+					ctx.lineWidth = 2.0;
 					ctx.beginPath();
 					ctx.moveTo(v1.x, v1.y);
 					ctx.lineTo(v2.x, v2.y);
 					ctx.stroke();
-					ctx.setLineDash([]);
 				}
 
 				// Synchronized Virtual Implant 3D Projection on Axial (Z)
@@ -573,16 +631,43 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					ctx.restore();
 				}
 
-				// Draw Crosshair lines
-				ctx.strokeStyle = "rgba(239, 68, 68, 0.85)";
-				ctx.lineWidth = 1.0;
-				// Horizontal
+				// Coronal Slab MIP Bounding Corridor (Orange #f59e0b)
+				if (slabMode !== "single" && slabThicknessMm > 1.0) {
+					drawRomexisSlabCorridor(ctx, {
+						orientation: "horizontal",
+						centerPx: vox.y,
+						thicknessMm: slabThicknessMm,
+						pixelSpacingMm: metadata.pixelSpacingY,
+						lengthPx: metadata.widthPx,
+						colorRgba: ROMEXIS_COLORS.coronalRgba(0.65),
+						fillColorRgba: ROMEXIS_COLORS.coronalRgba(0.08),
+					});
+				}
+
+				// Coronal Crosshair Line (Horizontal: Orange #f59e0b)
+				ctx.strokeStyle = ROMEXIS_COLORS.coronal;
+				ctx.lineWidth = 1.2;
 				ctx.beginPath();
 				ctx.moveTo(0, vox.y);
 				ctx.lineTo(canvas.width, vox.y);
 				ctx.stroke();
-				// Vertical
-				ctx.strokeStyle = "rgba(59, 130, 246, 0.85)";
+
+				// Sagittal Slab MIP Bounding Corridor (Emerald Green #10b981)
+				if (slabMode !== "single" && slabThicknessMm > 1.0) {
+					drawRomexisSlabCorridor(ctx, {
+						orientation: "vertical",
+						centerPx: vox.x,
+						thicknessMm: slabThicknessMm,
+						pixelSpacingMm: metadata.pixelSpacingX,
+						lengthPx: metadata.heightPx,
+						colorRgba: ROMEXIS_COLORS.sagittalRgba(0.65),
+						fillColorRgba: ROMEXIS_COLORS.sagittalRgba(0.08),
+					});
+				}
+
+				// Sagittal Crosshair Line (Vertical: Emerald Green #10b981)
+				ctx.strokeStyle = ROMEXIS_COLORS.sagittal;
+				ctx.lineWidth = 1.2;
 				ctx.beginPath();
 				ctx.moveTo(vox.x, 0);
 				ctx.lineTo(vox.x, canvas.height);
@@ -590,7 +675,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			}
 		}
 
-		// 2. Coronal Viewport (Y-Plane)
+		// 2. Coronal Viewport (Y-Plane: Intersects with Axial (Cyan) & Sagittal (Green))
 		if (coronalCanvasRef.current) {
 			const canvas = coronalCanvasRef.current;
 			const ctx = canvas.getContext("2d");
@@ -609,6 +694,15 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				const imgData = ctx.createImageData(metadata.widthPx, metadata.heightPx);
 				imgData.data.set(data);
 				ctx.putImageData(imgData, 0, 0);
+
+				// Draw Calibrated Millimeter Rulers
+				drawCalibratedMillimeterRulers(ctx, {
+					widthPx: metadata.widthPx,
+					heightPx: metadata.heightPx,
+					pixelSpacingMmX: metadata.pixelSpacingX,
+					pixelSpacingMmY: metadata.pixelSpacingY,
+					showScaleBar: true,
+				});
 
 				// Synchronized Virtual Implant 3D Projection on Coronal (Y)
 				if (implant3DWorld) {
@@ -690,23 +784,53 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					ctx.fillText(`#${implant3DWorld.targetToothFdi}`, pEntry.x, Math.max(2, pEntry.y - 16) + 10);
 				}
 
-				// Coronal crosshair: X = vox.x (Blue), Y = vox.z (Green)
-				ctx.strokeStyle = "rgba(59, 130, 246, 0.85)";
-				ctx.lineWidth = 1.0;
+				const zPx = metadata.heightPx - 1 - vox.z;
+
+				// Axial Slab MIP Bounding Corridor (Cyan #06b6d4)
+				if (slabMode !== "single" && slabThicknessMm > 1.0) {
+					drawRomexisSlabCorridor(ctx, {
+						orientation: "horizontal",
+						centerPx: zPx,
+						thicknessMm: slabThicknessMm,
+						pixelSpacingMm: metadata.pixelSpacingY,
+						lengthPx: metadata.widthPx,
+						colorRgba: ROMEXIS_COLORS.axialRgba(0.65),
+						fillColorRgba: ROMEXIS_COLORS.axialRgba(0.08),
+					});
+				}
+
+				// Axial Crosshair Line (Horizontal: Cyan #06b6d4)
+				ctx.strokeStyle = ROMEXIS_COLORS.axial;
+				ctx.lineWidth = 1.2;
+				ctx.beginPath();
+				ctx.moveTo(0, zPx);
+				ctx.lineTo(canvas.width, zPx);
+				ctx.stroke();
+
+				// Sagittal Slab MIP Bounding Corridor (Emerald Green #10b981)
+				if (slabMode !== "single" && slabThicknessMm > 1.0) {
+					drawRomexisSlabCorridor(ctx, {
+						orientation: "vertical",
+						centerPx: vox.x,
+						thicknessMm: slabThicknessMm,
+						pixelSpacingMm: metadata.pixelSpacingX,
+						lengthPx: metadata.heightPx,
+						colorRgba: ROMEXIS_COLORS.sagittalRgba(0.65),
+						fillColorRgba: ROMEXIS_COLORS.sagittalRgba(0.08),
+					});
+				}
+
+				// Sagittal Crosshair Line (Vertical: Emerald Green #10b981)
+				ctx.strokeStyle = ROMEXIS_COLORS.sagittal;
+				ctx.lineWidth = 1.2;
 				ctx.beginPath();
 				ctx.moveTo(vox.x, 0);
 				ctx.lineTo(vox.x, canvas.height);
 				ctx.stroke();
-
-				ctx.strokeStyle = "rgba(34, 197, 94, 0.85)";
-				ctx.beginPath();
-				ctx.moveTo(0, vox.z);
-				ctx.lineTo(canvas.width, vox.z);
-				ctx.stroke();
 			}
 		}
 
-		// 3. Sagittal Viewport (X-Plane)
+		// 3. Sagittal Viewport (X-Plane: Intersects with Axial (Cyan) & Coronal (Amber))
 		if (sagittalCanvasRef.current) {
 			const canvas = sagittalCanvasRef.current;
 			const ctx = canvas.getContext("2d");
@@ -725,6 +849,15 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				const imgData = ctx.createImageData(metadata.widthPx, metadata.heightPx);
 				imgData.data.set(data);
 				ctx.putImageData(imgData, 0, 0);
+
+				// Draw Calibrated Millimeter Rulers
+				drawCalibratedMillimeterRulers(ctx, {
+					widthPx: metadata.widthPx,
+					heightPx: metadata.heightPx,
+					pixelSpacingMmX: metadata.pixelSpacingX,
+					pixelSpacingMmY: metadata.pixelSpacingY,
+					showScaleBar: true,
+				});
 
 				// Synchronized Virtual Implant 3D Projection on Sagittal (X)
 				if (implant3DWorld) {
@@ -806,18 +939,48 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					ctx.fillText(`#${implant3DWorld.targetToothFdi}`, pEntry.x, Math.max(2, pEntry.y - 16) + 10);
 				}
 
-				// Sagittal crosshair: X = vox.y (Red), Y = vox.z (Green)
-				ctx.strokeStyle = "rgba(239, 68, 68, 0.85)";
-				ctx.lineWidth = 1.0;
+				const zPx = metadata.heightPx - 1 - vox.z;
+
+				// Axial Slab MIP Bounding Corridor (Cyan #06b6d4)
+				if (slabMode !== "single" && slabThicknessMm > 1.0) {
+					drawRomexisSlabCorridor(ctx, {
+						orientation: "horizontal",
+						centerPx: zPx,
+						thicknessMm: slabThicknessMm,
+						pixelSpacingMm: metadata.pixelSpacingY,
+						lengthPx: metadata.widthPx,
+						colorRgba: ROMEXIS_COLORS.axialRgba(0.65),
+						fillColorRgba: ROMEXIS_COLORS.axialRgba(0.08),
+					});
+				}
+
+				// Axial Crosshair Line (Horizontal: Cyan #06b6d4)
+				ctx.strokeStyle = ROMEXIS_COLORS.axial;
+				ctx.lineWidth = 1.2;
+				ctx.beginPath();
+				ctx.moveTo(0, zPx);
+				ctx.lineTo(canvas.width, zPx);
+				ctx.stroke();
+
+				// Coronal Slab MIP Bounding Corridor (Orange #f59e0b)
+				if (slabMode !== "single" && slabThicknessMm > 1.0) {
+					drawRomexisSlabCorridor(ctx, {
+						orientation: "vertical",
+						centerPx: vox.y,
+						thicknessMm: slabThicknessMm,
+						pixelSpacingMm: metadata.pixelSpacingX,
+						lengthPx: metadata.heightPx,
+						colorRgba: ROMEXIS_COLORS.coronalRgba(0.65),
+						fillColorRgba: ROMEXIS_COLORS.coronalRgba(0.08),
+					});
+				}
+
+				// Coronal Crosshair Line (Vertical: Orange #f59e0b)
+				ctx.strokeStyle = ROMEXIS_COLORS.coronal;
+				ctx.lineWidth = 1.2;
 				ctx.beginPath();
 				ctx.moveTo(vox.y, 0);
 				ctx.lineTo(vox.y, canvas.height);
-				ctx.stroke();
-
-				ctx.strokeStyle = "rgba(34, 197, 94, 0.85)";
-				ctx.beginPath();
-				ctx.moveTo(0, vox.z);
-				ctx.lineTo(canvas.width, vox.z);
 				ctx.stroke();
 			}
 		}
@@ -858,9 +1021,45 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		imgData.data.set(panoramicData.pixelData);
 		ctx.putImageData(imgData, 0, 0);
 
+		// Draw Calibrated Millimeter Rulers on Panorama
+		drawCalibratedMillimeterRulers(ctx, {
+			widthPx: canvas.width,
+			heightPx: canvas.height,
+			pixelSpacingMmX: volume?.spacingMm.x ?? 0.4,
+			pixelSpacingMmY: volume?.spacingMm.z ?? 0.4,
+			showScaleBar: true,
+		});
+
+		// Draw Axial Plane Intersection Line (Cyan #06b6d4)
+		if (volume) {
+			const vox = worldMmToVoxel(crosshairMm, volume);
+			const zNorm = 1.0 - (vox.z / (volume.dimensions.depth - 1));
+			const zPx = Math.round(zNorm * canvas.height);
+
+			// Axial Slab corridor on Panorama
+			if (slabMode !== "single" && slabThicknessMm > 1.0) {
+				drawRomexisSlabCorridor(ctx, {
+					orientation: "horizontal",
+					centerPx: zPx,
+					thicknessMm: slabThicknessMm,
+					pixelSpacingMm: volume.spacingMm.z,
+					lengthPx: canvas.width,
+					colorRgba: ROMEXIS_COLORS.axialRgba(0.6),
+					fillColorRgba: ROMEXIS_COLORS.axialRgba(0.08),
+				});
+			}
+
+			ctx.strokeStyle = ROMEXIS_COLORS.axial;
+			ctx.lineWidth = 1.2;
+			ctx.beginPath();
+			ctx.moveTo(0, zPx);
+			ctx.lineTo(canvas.width, zPx);
+			ctx.stroke();
+		}
+
 		// 2. Draw Tooth Markers on Panorama
 		for (const tm of panoramicData.toothMarkersOnPano) {
-			ctx.strokeStyle = "rgba(148, 163, 184, 0.35)";
+			ctx.strokeStyle = ROMEXIS_COLORS.panoramicRgba(0.4);
 			ctx.lineWidth = 1;
 			ctx.setLineDash([2, 3]);
 			ctx.beginPath();
@@ -886,8 +1085,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			const isActive = i === activeCrossSectionIdx;
 
 			if (isActive) {
-				// Highlighted active slice line with vibrant glow
-				ctx.strokeStyle = "rgba(6, 182, 212, 0.95)";
+				// Highlighted active slice line with vibrant Romexis Yellow
+				ctx.strokeStyle = ROMEXIS_COLORS.crossSection;
 				ctx.lineWidth = 2.0;
 				ctx.beginPath();
 				ctx.moveTo(tick.panoX, 0);
@@ -895,7 +1094,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				ctx.stroke();
 
 				// Active slice top/bottom badge
-				ctx.fillStyle = "#06b6d4";
+				ctx.fillStyle = ROMEXIS_COLORS.crossSection;
 				ctx.beginPath();
 				ctx.roundRect(tick.panoX - 16, canvas.height - 18, 32, 16, 4);
 				ctx.fill();
@@ -1001,7 +1200,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.textAlign = "center";
 			ctx.fillText(`FDI #${implant3DWorld.targetToothFdi}`, panoX, Math.max(2, yEntryPx - 18) + 10);
 		}
-	}, [panoramicData, crossSections, activeCrossSectionIdx, activeCrossSection, implant3DWorld, nerveAuditResult, archCurve.totalArcLengthMm]);
+	}, [panoramicData, crossSections, activeCrossSectionIdx, activeCrossSection, implant3DWorld, nerveAuditResult, archCurve.totalArcLengthMm, volume, crosshairMm, slabMode, slabThicknessMm]);
 
 	// ─── RENDER ACTIVE CROSS-SECTION WITH IMPLANT & NERVE ─────────────────────
 	useEffect(() => {
@@ -1022,22 +1221,26 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		const centerX = canvas.width / 2;
 		const topY = 20; // Alveolar crest baseline in pixels
 
-		// 2. Draw Millimeter Scale Grid
-		ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
-		ctx.lineWidth = 1;
-		const stepPx = 5.0 / pxSpacing; // 5 mm major lines
-		for (let x = 0; x <= canvas.width; x += stepPx) {
-			ctx.beginPath();
-			ctx.moveTo(x, 0);
-			ctx.lineTo(x, canvas.height);
-			ctx.stroke();
-		}
-		for (let y = 0; y <= canvas.height; y += stepPx) {
-			ctx.beginPath();
-			ctx.moveTo(0, y);
-			ctx.lineTo(canvas.width, y);
-			ctx.stroke();
-		}
+		// 2. Draw Calibrated Millimeter Rulers and Grid
+		drawCalibratedMillimeterRulers(ctx, {
+			widthPx: canvas.width,
+			heightPx: canvas.height,
+			pixelSpacingMmX: pxSpacing,
+			pixelSpacingMmY: pxSpacing,
+			showGrid: true,
+			showScaleBar: true,
+		});
+
+		// Draw Axial Reference Plane Line (Cyan #06b6d4)
+		const centerY = canvas.height / 2;
+		ctx.strokeStyle = ROMEXIS_COLORS.axialRgba(0.75);
+		ctx.lineWidth = 1.0;
+		ctx.setLineDash([3, 3]);
+		ctx.beginPath();
+		ctx.moveTo(0, centerY);
+		ctx.lineTo(canvas.width, centerY);
+		ctx.stroke();
+		ctx.setLineDash([]);
 
 		// 3. Draw Mandibular Canal & 2.0 mm Safety Corridor
 		const canalCenterX = centerX + (currentCanal.center.x / pxSpacing);
@@ -1095,11 +1298,6 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		ctx.strokeStyle = statusStroke;
 		ctx.lineWidth = 1.5;
 		ctx.setLineDash([4, 3]);
-		ctx.beginPath();
-		ctx.moveTo(-haloRadiusPx, -2);
-		ctx.lineTo(haloRadiusPx, -2);
-		ctx.lineTo(haloRadiusPx * 0.75, haloLengthPx);
-		ctx.lineTo(-haloRadiusPx * 0.75, haloLengthPx);
 		ctx.closePath();
 		ctx.stroke();
 		ctx.setLineDash([]);
@@ -1526,13 +1724,6 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				<div className={`lg:col-span-8 ${mobileActiveTab === "planner" ? "hidden lg:grid" : "flex-1 flex flex-col"} lg:grid lg:grid-cols-2 lg:grid-rows-2 gap-1 min-h-0`}>
 					{/* 1. AXIAL VIEWPORT (Z-PLANE) */}
 					<div className={`relative bg-black rounded-lg overflow-hidden border border-slate-800 ${mobileActiveTab === "axial" ? "flex-1 flex flex-col min-h-0" : "hidden lg:flex lg:flex-col"}`}>
-						<div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded bg-slate-900/80 border border-cyan-500/40 text-[11px] font-bold text-cyan-300 flex items-center gap-1.5">
-							<span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-							AXIAL (Горизонтальный срез)
-						</div>
-						<div className="absolute top-2 right-2 z-10 text-[10px] text-slate-400 font-mono">
-							Z: {crosshairMm.z.toFixed(1)} мм
-						</div>
 						<div className="flex-1 flex items-center justify-center min-h-0 relative">
 							<canvas
 								ref={axialCanvasRef}
@@ -1542,18 +1733,18 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 								onWheel={(e) => handleCanvasWheel("axial", e)}
 								className="max-w-full max-h-full object-contain cursor-crosshair"
 							/>
+							<CbctViewportHud
+								viewportType="axial"
+								coordinateMm={{ z: crosshairMm.z }}
+								slabMode={slabMode}
+								slabThicknessMm={slabThicknessMm}
+								pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
+							/>
 						</div>
 					</div>
 
 					{/* 2. CORONAL VIEWPORT (Y-PLANE) */}
 					<div className={`relative bg-black rounded-lg overflow-hidden border border-slate-800 ${mobileActiveTab === "coronal" ? "flex-1 flex flex-col min-h-0" : "hidden lg:flex lg:flex-col"}`}>
-						<div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded bg-slate-900/80 border border-blue-500/40 text-[11px] font-bold text-blue-300 flex items-center gap-1.5">
-							<span className="w-2 h-2 rounded-full bg-blue-400" />
-							CORONAL (Фронтальный срез)
-						</div>
-						<div className="absolute top-2 right-2 z-10 text-[10px] text-slate-400 font-mono">
-							Y: {crosshairMm.y.toFixed(1)} мм
-						</div>
 						<div className="flex-1 flex items-center justify-center min-h-0 relative">
 							<canvas
 								ref={coronalCanvasRef}
@@ -1563,18 +1754,18 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 								onWheel={(e) => handleCanvasWheel("coronal", e)}
 								className="max-w-full max-h-full object-contain cursor-crosshair"
 							/>
+							<CbctViewportHud
+								viewportType="coronal"
+								coordinateMm={{ y: crosshairMm.y }}
+								slabMode={slabMode}
+								slabThicknessMm={slabThicknessMm}
+								pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
+							/>
 						</div>
 					</div>
 
 					{/* 3. SAGITTAL VIEWPORT (X-PLANE) */}
 					<div className={`relative bg-black rounded-lg overflow-hidden border border-slate-800 ${mobileActiveTab === "sagittal" ? "flex-1 flex flex-col min-h-0" : "hidden lg:flex lg:flex-col"}`}>
-						<div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded bg-slate-900/80 border border-emerald-500/40 text-[11px] font-bold text-emerald-300 flex items-center gap-1.5">
-							<span className="w-2 h-2 rounded-full bg-emerald-400" />
-							SAGITTAL (Сагиттальный профиль)
-						</div>
-						<div className="absolute top-2 right-2 z-10 text-[10px] text-slate-400 font-mono">
-							X: {crosshairMm.x.toFixed(1)} мм
-						</div>
 						<div className="flex-1 flex items-center justify-center min-h-0 relative">
 							<canvas
 								ref={sagittalCanvasRef}
@@ -1584,18 +1775,18 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 								onWheel={(e) => handleCanvasWheel("sagittal", e)}
 								className="max-w-full max-h-full object-contain cursor-crosshair"
 							/>
+							<CbctViewportHud
+								viewportType="sagittal"
+								coordinateMm={{ x: crosshairMm.x }}
+								slabMode={slabMode}
+								slabThicknessMm={slabThicknessMm}
+								pixelSpacingMm={volume?.spacingMm.y ?? 0.4}
+							/>
 						</div>
 					</div>
 
 					{/* 4. UNFOLDED PANORAMA (OPG FOCAL TROUGH & INTERACTIVE SLICE FAN) */}
 					<div className={`relative bg-black rounded-lg overflow-hidden border border-slate-800 ${mobileActiveTab === "panoramic" ? "flex-1 flex flex-col min-h-0" : "hidden lg:flex lg:flex-col"}`}>
-						<div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded bg-slate-900/80 border border-purple-500/40 text-[11px] font-bold text-purple-300 flex items-center gap-1.5">
-							<span className="w-2 h-2 rounded-full bg-purple-400" />
-							UNFOLDED PANORAMA (ОПТГ) · Срез #{activeCrossSection?.sliceIndex ?? 1}
-						</div>
-						<div className="absolute top-2 right-2 z-10 text-[10px] text-slate-400 font-mono">
-							Клик/Скраб по ОПТГ для перехода к срезу
-						</div>
 						<div className="flex-1 flex items-center justify-center min-h-0 relative">
 							<canvas
 								ref={panoCanvasRef}
@@ -1605,6 +1796,13 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 								onMouseLeave={handlePanoMouseUp}
 								className="max-w-full max-h-full object-contain cursor-pointer"
 								data-testid="cbct-panorama-canvas"
+							/>
+							<CbctViewportHud
+								viewportType="panoramic"
+								coordinateMm={{ z: crosshairMm.z }}
+								slabMode={slabMode}
+								slabThicknessMm={archCurve.focalTroughThicknessMm}
+								pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
 							/>
 						</div>
 					</div>
@@ -1645,6 +1843,13 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						<canvas
 							ref={crossSectionCanvasRef}
 							className="max-w-full max-h-full object-contain"
+						/>
+						<CbctViewportHud
+							viewportType="cross_section"
+							toothFdi={activeCrossSection?.nearestToothFdi}
+							sliceIndex={activeCrossSectionIdx}
+							totalSlices={crossSections.length}
+							pixelSpacingMm={activeCrossSection?.pixelSpacingMm ?? 0.25}
 						/>
 
 						{/* Quick Ridge Measurements Badge */}

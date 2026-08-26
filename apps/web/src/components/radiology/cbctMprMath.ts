@@ -116,6 +116,370 @@ export interface MprSliceExtractionResult {
 	readonly metadata: MprSliceMetadata;
 }
 
+// ─── ROMEXIS 6.X & VATECH EZ3D-I STANDARDS & PALETTES ────────────────────────
+
+export const ROMEXIS_COLORS = {
+	axial: "#06b6d4", // Cyan (Horizontal / Z-plane)
+	axialRgba: (alpha = 1) => `rgba(6, 182, 212, ${alpha})`,
+	coronal: "#f59e0b", // Orange / Amber (Frontal / Y-plane)
+	coronalRgba: (alpha = 1) => `rgba(245, 158, 11, ${alpha})`,
+	sagittal: "#10b981", // Emerald Green (Profile / X-plane)
+	sagittalRgba: (alpha = 1) => `rgba(16, 185, 129, ${alpha})`,
+	panoramic: "#a855f7", // Purple (Dental Arch Spline)
+	panoramicRgba: (alpha = 1) => `rgba(168, 85, 247, ${alpha})`,
+	crossSection: "#eab308", // Yellow (Transverse Cross-Section)
+	crossSectionRgba: (alpha = 1) => `rgba(234, 179, 8, ${alpha})`,
+	rulerGrid: "rgba(148, 163, 184, 0.15)",
+	rulerMajor: "rgba(226, 232, 240, 0.85)",
+	rulerMinor: "rgba(148, 163, 184, 0.45)",
+	rulerText: "rgba(203, 213, 225, 0.9)",
+	compassBg: "rgba(15, 23, 42, 0.75)",
+	compassBorder: "rgba(51, 65, 85, 0.8)",
+} as const;
+
+export type CbctViewportType = MprPlane | "panoramic" | "cross_section";
+
+export interface ViewportOrientationLabels {
+	readonly top: string;
+	readonly bottom: string;
+	readonly left: string;
+	readonly right: string;
+	readonly topTooltipRu: string;
+	readonly bottomTooltipRu: string;
+	readonly leftTooltipRu: string;
+	readonly rightTooltipRu: string;
+	readonly planeColor: string;
+	readonly planeNameRu: string;
+	readonly planeNameEn: string;
+}
+
+/**
+ * Returns anatomical orientation indicators adhering strictly to radiological convention:
+ * Patient's RIGHT side (R) is displayed on the LEFT of the screen for Axial and Coronal views.
+ */
+export function getViewportOrientationLabels(viewport: CbctViewportType): ViewportOrientationLabels {
+	switch (viewport) {
+		case "axial":
+			return {
+				top: "A",
+				bottom: "P",
+				left: "R",
+				right: "L",
+				topTooltipRu: "Anterior (Передняя сторона / Лицо)",
+				bottomTooltipRu: "Posterior (Задняя сторона / Затылок)",
+				leftTooltipRu: "Right (Правая сторона пациента — слева на экране)",
+				rightTooltipRu: "Left (Левая сторона пациента — справа на экране)",
+				planeColor: ROMEXIS_COLORS.axial,
+				planeNameRu: "Аксиальный (Горизонтальный срез)",
+				planeNameEn: "AXIAL",
+			};
+		case "coronal":
+			return {
+				top: "S",
+				bottom: "I",
+				left: "R",
+				right: "L",
+				topTooltipRu: "Superior (Верхняя сторона / Череп)",
+				bottomTooltipRu: "Inferior (Нижняя сторона / Шея)",
+				leftTooltipRu: "Right (Правая сторона пациента — слева на экране)",
+				rightTooltipRu: "Left (Левая сторона пациента — справа на экране)",
+				planeColor: ROMEXIS_COLORS.coronal,
+				planeNameRu: "Корональный (Фронтальный срез)",
+				planeNameEn: "CORONAL",
+			};
+		case "sagittal":
+			return {
+				top: "S",
+				bottom: "I",
+				left: "A",
+				right: "P",
+				topTooltipRu: "Superior (Верхняя сторона / Череп)",
+				bottomTooltipRu: "Inferior (Нижняя сторона / Шея)",
+				leftTooltipRu: "Anterior (Передняя сторона / Лицо)",
+				rightTooltipRu: "Posterior (Задняя сторона / Затылок)",
+				planeColor: ROMEXIS_COLORS.sagittal,
+				planeNameRu: "Сагиттальный (Профиль)",
+				planeNameEn: "SAGITTAL",
+			};
+		case "panoramic":
+			return {
+				top: "S",
+				bottom: "I",
+				left: "R",
+				right: "L",
+				topTooltipRu: "Superior (Верхняя челюсть / Коронально)",
+				bottomTooltipRu: "Inferior (Нижняя челюсть / Базально)",
+				leftTooltipRu: "Right (Правая сторона / Квадранты 1 и 4)",
+				rightTooltipRu: "Left (Левая сторона / Квадранты 2 и 3)",
+				planeColor: ROMEXIS_COLORS.panoramic,
+				planeNameRu: "Развернутая панорама (ОПТГ)",
+				planeNameEn: "PANORAMA",
+			};
+		case "cross_section":
+			return {
+				top: "S",
+				bottom: "I",
+				left: "B",
+				right: "L",
+				topTooltipRu: "Superior (Вершина альвеолярного гребня / Crestal)",
+				bottomTooltipRu: "Inferior (Базальная кость / Apical)",
+				leftTooltipRu: "Buccal (Вестибулярно / Щечно)",
+				rightTooltipRu: "Lingual (Язычно / Небно)",
+				planeColor: ROMEXIS_COLORS.crossSection,
+				planeNameRu: "Кросс-секция (Трансверзальный срез)",
+				planeNameEn: "CROSS-SECTION",
+			};
+	}
+}
+
+export interface RulerDrawingOptions {
+	readonly widthPx: number;
+	readonly heightPx: number;
+	readonly pixelSpacingMmX: number;
+	readonly pixelSpacingMmY: number;
+	readonly originMmX?: number;
+	readonly originMmY?: number;
+	readonly showXAxis?: boolean;
+	readonly showYAxis?: boolean;
+	readonly showGrid?: boolean;
+	readonly showScaleBar?: boolean;
+}
+
+/**
+ * Draws precision calibrated millimeter rulers (1 mm minor ticks, 5 mm medium ticks, 10 mm major ticks + labels)
+ * and a 10 mm scale reference bar onto the 2D canvas.
+ */
+export function drawCalibratedMillimeterRulers(
+	ctx: CanvasRenderingContext2D,
+	options: RulerDrawingOptions,
+): void {
+	const {
+		widthPx,
+		heightPx,
+		pixelSpacingMmX,
+		pixelSpacingMmY,
+		showXAxis = true,
+		showYAxis = true,
+		showGrid = false,
+		showScaleBar = true,
+	} = options;
+
+	if (pixelSpacingMmX <= 0 || pixelSpacingMmY <= 0) return;
+
+	const pxPerMmX = 1.0 / pixelSpacingMmX;
+	const pxPerMmY = 1.0 / pixelSpacingMmY;
+
+	ctx.save();
+	ctx.font = "bold 9px monospace";
+	ctx.textBaseline = "top";
+
+	// 1. Optional background grid (every 5mm)
+	if (showGrid) {
+		ctx.strokeStyle = ROMEXIS_COLORS.rulerGrid;
+		ctx.lineWidth = 0.5;
+		const gridStepX = 5.0 * pxPerMmX;
+		const gridStepY = 5.0 * pxPerMmY;
+		for (let x = gridStepX; x < widthPx; x += gridStepX) {
+			ctx.beginPath();
+			ctx.moveTo(x, 0);
+			ctx.lineTo(x, heightPx);
+			ctx.stroke();
+		}
+		for (let y = gridStepY; y < heightPx; y += gridStepY) {
+			ctx.beginPath();
+			ctx.moveTo(0, y);
+			ctx.lineTo(widthPx, y);
+			ctx.stroke();
+		}
+	}
+
+	// 2. Horizontal (X-axis) ruler along top border
+	if (showXAxis) {
+		const totalMmX = widthPx * pixelSpacingMmX;
+		for (let mm = 0; mm <= totalMmX; mm += 1) {
+			const x = Math.round(mm * pxPerMmX);
+			if (x > widthPx - 2) break;
+
+			const isMajor = mm % 10 === 0;
+			const isMedium = mm % 5 === 0 && !isMajor;
+
+			ctx.beginPath();
+			ctx.moveTo(x, 0);
+			if (isMajor) {
+				ctx.strokeStyle = ROMEXIS_COLORS.rulerMajor;
+				ctx.lineWidth = 1.0;
+				ctx.lineTo(x, 8);
+				ctx.stroke();
+				if (mm > 0 && x + 14 < widthPx) {
+					ctx.fillStyle = ROMEXIS_COLORS.rulerText;
+					ctx.fillText(`${mm}`, x + 2, 2);
+				}
+			} else if (isMedium) {
+				ctx.strokeStyle = ROMEXIS_COLORS.rulerMinor;
+				ctx.lineWidth = 0.75;
+				ctx.lineTo(x, 5);
+				ctx.stroke();
+			} else {
+				ctx.strokeStyle = ROMEXIS_COLORS.rulerMinor;
+				ctx.lineWidth = 0.5;
+				ctx.lineTo(x, 3);
+				ctx.stroke();
+			}
+		}
+	}
+
+	// 3. Vertical (Y-axis) ruler along left border
+	if (showYAxis) {
+		const totalMmY = heightPx * pixelSpacingMmY;
+		for (let mm = 0; mm <= totalMmY; mm += 1) {
+			const y = Math.round(mm * pxPerMmY);
+			if (y > heightPx - 2) break;
+
+			const isMajor = mm % 10 === 0;
+			const isMedium = mm % 5 === 0 && !isMajor;
+
+			ctx.beginPath();
+			ctx.moveTo(0, y);
+			if (isMajor) {
+				ctx.strokeStyle = ROMEXIS_COLORS.rulerMajor;
+				ctx.lineWidth = 1.0;
+				ctx.lineTo(8, y);
+				ctx.stroke();
+				if (mm > 0 && y + 10 < heightPx) {
+					ctx.fillStyle = ROMEXIS_COLORS.rulerText;
+					ctx.fillText(`${mm}`, 2, y + 2);
+				}
+			} else if (isMedium) {
+				ctx.strokeStyle = ROMEXIS_COLORS.rulerMinor;
+				ctx.lineWidth = 0.75;
+				ctx.lineTo(5, y);
+				ctx.stroke();
+			} else {
+				ctx.strokeStyle = ROMEXIS_COLORS.rulerMinor;
+				ctx.lineWidth = 0.5;
+				ctx.lineTo(3, y);
+				ctx.stroke();
+			}
+		}
+	}
+
+	// 4. Calibrated Scale Legend Bar (10 mm) in bottom corner
+	if (showScaleBar) {
+		const barWidthPx = 10.0 * pxPerMmX;
+		const barX = 14;
+		const barY = heightPx - 14;
+
+		ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
+		ctx.fillRect(barX - 4, barY - 12, barWidthPx + 8, 16);
+
+		ctx.strokeStyle = ROMEXIS_COLORS.rulerMajor;
+		ctx.lineWidth = 1.5;
+		ctx.beginPath();
+		ctx.moveTo(barX, barY - 4);
+		ctx.lineTo(barX, barY);
+		ctx.lineTo(barX + barWidthPx, barY);
+		ctx.lineTo(barX + barWidthPx, barY - 4);
+		ctx.stroke();
+
+		ctx.fillStyle = ROMEXIS_COLORS.rulerText;
+		ctx.textAlign = "center";
+		ctx.fillText("10 mm", barX + barWidthPx / 2, barY - 11);
+	}
+
+	ctx.restore();
+}
+
+export interface SlabCorridorParams {
+	readonly orientation: "horizontal" | "vertical";
+	readonly centerPx: number;
+	readonly thicknessMm: number;
+	readonly pixelSpacingMm: number;
+	readonly lengthPx: number;
+	readonly colorRgba: string;
+	readonly fillColorRgba?: string;
+}
+
+/**
+ * Draws two parallel dashed bounding lines and a subtle fill corridor on intersecting planes
+ * when slab thickness > 1 mm.
+ */
+export function drawRomexisSlabCorridor(
+	ctx: CanvasRenderingContext2D,
+	params: SlabCorridorParams,
+): void {
+	const {
+		orientation,
+		centerPx,
+		thicknessMm,
+		pixelSpacingMm,
+		lengthPx,
+		colorRgba,
+		fillColorRgba,
+	} = params;
+
+	if (thicknessMm <= 1.0 || pixelSpacingMm <= 0) return;
+
+	const halfThicknessPx = (thicknessMm / 2.0) / pixelSpacingMm;
+	if (halfThicknessPx < 1.0) return;
+
+	const minPos = Math.round(centerPx - halfThicknessPx);
+	const maxPos = Math.round(centerPx + halfThicknessPx);
+
+	ctx.save();
+
+	// Translucent corridor fill
+	if (fillColorRgba) {
+		ctx.fillStyle = fillColorRgba;
+		if (orientation === "horizontal") {
+			ctx.fillRect(0, minPos, lengthPx, Math.max(1, maxPos - minPos));
+		} else {
+			ctx.fillRect(minPos, 0, Math.max(1, maxPos - minPos), lengthPx);
+		}
+	}
+
+	// Two parallel dashed bounding lines
+	ctx.strokeStyle = colorRgba;
+	ctx.lineWidth = 1.0;
+	ctx.setLineDash([4, 3]);
+
+	if (orientation === "horizontal") {
+		ctx.beginPath();
+		ctx.moveTo(0, minPos);
+		ctx.lineTo(lengthPx, minPos);
+		ctx.moveTo(0, maxPos);
+		ctx.lineTo(lengthPx, maxPos);
+		ctx.stroke();
+	} else {
+		ctx.beginPath();
+		ctx.moveTo(minPos, 0);
+		ctx.lineTo(minPos, lengthPx);
+		ctx.moveTo(maxPos, 0);
+		ctx.lineTo(maxPos, lengthPx);
+		ctx.stroke();
+	}
+
+	ctx.restore();
+}
+
+/**
+ * Computes min and max voxel indices for slab projection boundaries.
+ */
+export function calculateSlabVoxelBounds(
+	centerVoxel: number,
+	slabThicknessMm: number,
+	voxelSpacingMm: number,
+	maxVoxelIndex: number,
+): { startVoxel: number; endVoxel: number; halfSlabVoxels: number } {
+	if (slabThicknessMm <= voxelSpacingMm) {
+		return { startVoxel: centerVoxel, endVoxel: centerVoxel, halfSlabVoxels: 0 };
+	}
+	const slabVoxelCount = Math.max(1, Math.round(slabThicknessMm / voxelSpacingMm));
+	const halfSlabVoxels = Math.floor(slabVoxelCount / 2);
+	const startVoxel = Math.max(0, centerVoxel - halfSlabVoxels);
+	const endVoxel = Math.min(maxVoxelIndex, centerVoxel + halfSlabVoxels);
+	return { startVoxel, endVoxel, halfSlabVoxels };
+}
+
 // ─── 1. COORDINATE CONVERSION & CLAMPING MATH ─────────────────────────────────
 
 /**
@@ -289,9 +653,9 @@ export function extractMprSlice(
 	volume: CbctVoxelVolume,
 	plane: MprPlane,
 	sliceIndex: number,
-	options: SliceRenderOptions,
+	options: SliceRenderOptions = { windowWidth: 2000, windowLevel: 400 },
 ): MprSliceExtractionResult {
-	const { windowWidth, windowLevel, invert = false, slabMode = "single", slabThicknessMm = 2.0 } = options;
+	const { windowWidth = 2000, windowLevel = 400, invert = false, slabMode = "single", slabThicknessMm = 2.0 } = options ?? {};
 
 	const dim = volume.dimensions;
 	const sp = volume.spacingMm;

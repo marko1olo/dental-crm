@@ -44,10 +44,13 @@ import {
 	type MprPlane,
 	type Point3D,
 	type SlabProjectionMode,
+	ROMEXIS_COLORS,
 	calculateMprSliceIndex,
 	clampCoordinateToVolume,
 	createSyntheticDentalCbctVolume,
 	disposeCbctVolume,
+	drawCalibratedMillimeterRulers,
+	drawRomexisSlabCorridor,
 	extractMprSlice,
 	mapCanvasPointerToWorldMm,
 	resliceMprSynchronized,
@@ -62,9 +65,11 @@ import {
 	type PanoramicReconstructionResult,
 	buildDentalArchCurve,
 	generateCrossSectionSlices,
+	getFocalTroughBoundaryCurves,
 	measureAlveolarRidgeCrossSection,
 	reconstructPanoramicView,
 } from "./dentalCurveEngine";
+import { CbctViewportHud } from "./CbctViewportHud";
 import type { RadiologyStudy } from "./types";
 
 export interface CbctMprViewerProps {
@@ -162,7 +167,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 
 		const vox = worldMmToVoxel(crosshairMm, volume);
 
-		// 1. Axial Viewport
+		// 1. Axial Viewport (Z-Plane: Intersects with Coronal (Amber) & Sagittal (Green))
 		if (axialCanvasRef.current) {
 			const canvas = axialCanvasRef.current;
 			const ctx = canvas.getContext("2d");
@@ -178,9 +183,64 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				imgData.data.set(data);
 				ctx.putImageData(imgData, 0, 0);
 
-				// Draw Dental Arch Spline
-				ctx.strokeStyle = "rgba(6, 182, 212, 0.9)";
-				ctx.lineWidth = 1.8;
+				// Draw Calibrated Millimeter Rulers (1mm, 5mm, 10mm + scale bar)
+				drawCalibratedMillimeterRulers(ctx, {
+					widthPx: w,
+					heightPx: h,
+					pixelSpacingMmX: metadata.pixelSpacingX,
+					pixelSpacingMmY: metadata.pixelSpacingY,
+					showScaleBar: true,
+				});
+
+				// Draw Focal Trough Corridor on Axial (Purple dashed bounds)
+				if (archCurve.focalTroughThicknessMm > 0 && archCurve.splinePointsMm.length > 1) {
+					const { innerBoundary, outerBoundary } = getFocalTroughBoundaryCurves(
+						archCurve.splinePointsMm,
+						archCurve.focalTroughThicknessMm,
+					);
+
+					// Focal trough translucent fill corridor
+					ctx.save();
+					ctx.fillStyle = ROMEXIS_COLORS.panoramicRgba(0.06);
+					ctx.beginPath();
+					for (let i = 0; i < outerBoundary.length; i++) {
+						const v = worldMmToVoxel({ x: outerBoundary[i]!.x, y: outerBoundary[i]!.y, z: crosshairMm.z }, volume);
+						if (i === 0) ctx.moveTo(v.x, v.y);
+						else ctx.lineTo(v.x, v.y);
+					}
+					for (let i = innerBoundary.length - 1; i >= 0; i--) {
+						const v = worldMmToVoxel({ x: innerBoundary[i]!.x, y: innerBoundary[i]!.y, z: crosshairMm.z }, volume);
+						ctx.lineTo(v.x, v.y);
+					}
+					ctx.closePath();
+					ctx.fill();
+
+					// Inner and outer dashed curves
+					ctx.strokeStyle = ROMEXIS_COLORS.panoramicRgba(0.5);
+					ctx.lineWidth = 1.0;
+					ctx.setLineDash([4, 3]);
+
+					ctx.beginPath();
+					for (let i = 0; i < innerBoundary.length; i++) {
+						const v = worldMmToVoxel({ x: innerBoundary[i]!.x, y: innerBoundary[i]!.y, z: crosshairMm.z }, volume);
+						if (i === 0) ctx.moveTo(v.x, v.y);
+						else ctx.lineTo(v.x, v.y);
+					}
+					ctx.stroke();
+
+					ctx.beginPath();
+					for (let i = 0; i < outerBoundary.length; i++) {
+						const v = worldMmToVoxel({ x: outerBoundary[i]!.x, y: outerBoundary[i]!.y, z: crosshairMm.z }, volume);
+						if (i === 0) ctx.moveTo(v.x, v.y);
+						else ctx.lineTo(v.x, v.y);
+					}
+					ctx.stroke();
+					ctx.restore();
+				}
+
+				// Draw Dental Arch Spline (Purple #a855f7)
+				ctx.strokeStyle = ROMEXIS_COLORS.panoramicRgba(0.95);
+				ctx.lineWidth = 2.0;
 				ctx.beginPath();
 				const spline = archCurve.splinePointsMm;
 				for (let i = 0; i < spline.length; i++) {
@@ -195,24 +255,84 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				for (const anchor of archCurve.anchors) {
 					const v = worldMmToVoxel({ x: anchor.positionMm.x, y: anchor.positionMm.y, z: crosshairMm.z }, volume);
 					const isSelected = selectedAnchorId === anchor.id;
-					ctx.fillStyle = isSelected ? "#eab308" : "#06b6d4";
-					ctx.strokeStyle = "#000";
-					ctx.lineWidth = 1.0;
+					ctx.fillStyle = isSelected ? ROMEXIS_COLORS.crossSection : ROMEXIS_COLORS.panoramic;
+					ctx.strokeStyle = "#ffffff";
+					ctx.lineWidth = 1.2;
 					ctx.beginPath();
-					ctx.arc(v.x, v.y, isSelected ? 4.5 : 3.0, 0, Math.PI * 2);
+					ctx.arc(v.x, v.y, isSelected ? 5.0 : 3.2, 0, Math.PI * 2);
 					ctx.fill();
 					ctx.stroke();
 				}
 
-				// Draw Synchronized Crosshair Reticle (Axial: Green Y, Blue X)
-				ctx.strokeStyle = "rgba(239, 68, 68, 0.85)";
-				ctx.lineWidth = 1.0;
+				// Active Cross-Section Slice indicator line on Axial (Yellow #eab308)
+				if (crossSections.length > 0) {
+					const activeCS = crossSections[selectedCrossSectionIndex];
+					if (activeCS) {
+						const norm = activeCS.normalVector2D;
+						const centerV = worldMmToVoxel(activeCS.centerPointMm, volume);
+						const halfLenMm = 10.0;
+						const p1 = worldMmToVoxel({
+							x: activeCS.centerPointMm.x - norm.x * halfLenMm,
+							y: activeCS.centerPointMm.y - norm.y * halfLenMm,
+							z: crosshairMm.z,
+						}, volume);
+						const p2 = worldMmToVoxel({
+							x: activeCS.centerPointMm.x + norm.x * halfLenMm,
+							y: activeCS.centerPointMm.y + norm.y * halfLenMm,
+							z: crosshairMm.z,
+						}, volume);
+
+						ctx.strokeStyle = ROMEXIS_COLORS.crossSection;
+						ctx.lineWidth = 2.0;
+						ctx.beginPath();
+						ctx.moveTo(p1.x, p1.y);
+						ctx.lineTo(p2.x, p2.y);
+						ctx.stroke();
+
+						ctx.fillStyle = ROMEXIS_COLORS.crossSection;
+						ctx.beginPath();
+						ctx.arc(centerV.x, centerV.y, 4.0, 0, Math.PI * 2);
+						ctx.fill();
+					}
+				}
+
+				// Coronal Slab MIP Bounding Corridor (Orange #f59e0b)
+				if (slabMode !== "single" && slabThicknessMm > 1.0) {
+					drawRomexisSlabCorridor(ctx, {
+						orientation: "horizontal",
+						centerPx: vox.y,
+						thicknessMm: slabThicknessMm,
+						pixelSpacingMm: metadata.pixelSpacingY,
+						lengthPx: w,
+						colorRgba: ROMEXIS_COLORS.coronalRgba(0.65),
+						fillColorRgba: ROMEXIS_COLORS.coronalRgba(0.08),
+					});
+				}
+
+				// Coronal Crosshair Line (Horizontal: Orange #f59e0b)
+				ctx.strokeStyle = ROMEXIS_COLORS.coronal;
+				ctx.lineWidth = 1.2;
 				ctx.beginPath();
 				ctx.moveTo(0, vox.y);
 				ctx.lineTo(canvas.width, vox.y);
 				ctx.stroke();
 
-				ctx.strokeStyle = "rgba(59, 130, 246, 0.85)";
+				// Sagittal Slab MIP Bounding Corridor (Green #10b981)
+				if (slabMode !== "single" && slabThicknessMm > 1.0) {
+					drawRomexisSlabCorridor(ctx, {
+						orientation: "vertical",
+						centerPx: vox.x,
+						thicknessMm: slabThicknessMm,
+						pixelSpacingMm: metadata.pixelSpacingX,
+						lengthPx: h,
+						colorRgba: ROMEXIS_COLORS.sagittalRgba(0.65),
+						fillColorRgba: ROMEXIS_COLORS.sagittalRgba(0.08),
+					});
+				}
+
+				// Sagittal Crosshair Line (Vertical: Emerald Green #10b981)
+				ctx.strokeStyle = ROMEXIS_COLORS.sagittal;
+				ctx.lineWidth = 1.2;
 				ctx.beginPath();
 				ctx.moveTo(vox.x, 0);
 				ctx.lineTo(vox.x, canvas.height);
@@ -220,7 +340,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 			}
 		}
 
-		// 2. Coronal Viewport
+		// 2. Coronal Viewport (Y-Plane: Intersects with Axial (Cyan) & Sagittal (Green))
 		if (coronalCanvasRef.current) {
 			const canvas = coronalCanvasRef.current;
 			const ctx = canvas.getContext("2d");
@@ -236,23 +356,62 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				imgData.data.set(data);
 				ctx.putImageData(imgData, 0, 0);
 
-				// Coronal crosshair: X = vox.x (Blue), Y = vox.z (Green)
-				ctx.strokeStyle = "rgba(59, 130, 246, 0.85)";
-				ctx.lineWidth = 1.0;
+				// Draw Calibrated Millimeter Rulers
+				drawCalibratedMillimeterRulers(ctx, {
+					widthPx: w,
+					heightPx: h,
+					pixelSpacingMmX: metadata.pixelSpacingX,
+					pixelSpacingMmY: metadata.pixelSpacingY,
+					showScaleBar: true,
+				});
+
+				const zPx = h - 1 - vox.z;
+
+				// Axial Slab MIP Bounding Corridor (Cyan #06b6d4)
+				if (slabMode !== "single" && slabThicknessMm > 1.0) {
+					drawRomexisSlabCorridor(ctx, {
+						orientation: "horizontal",
+						centerPx: zPx,
+						thicknessMm: slabThicknessMm,
+						pixelSpacingMm: metadata.pixelSpacingY,
+						lengthPx: w,
+						colorRgba: ROMEXIS_COLORS.axialRgba(0.65),
+						fillColorRgba: ROMEXIS_COLORS.axialRgba(0.08),
+					});
+				}
+
+				// Axial Crosshair Line (Horizontal: Cyan #06b6d4)
+				ctx.strokeStyle = ROMEXIS_COLORS.axial;
+				ctx.lineWidth = 1.2;
+				ctx.beginPath();
+				ctx.moveTo(0, zPx);
+				ctx.lineTo(canvas.width, zPx);
+				ctx.stroke();
+
+				// Sagittal Slab MIP Bounding Corridor (Emerald Green #10b981)
+				if (slabMode !== "single" && slabThicknessMm > 1.0) {
+					drawRomexisSlabCorridor(ctx, {
+						orientation: "vertical",
+						centerPx: vox.x,
+						thicknessMm: slabThicknessMm,
+						pixelSpacingMm: metadata.pixelSpacingX,
+						lengthPx: h,
+						colorRgba: ROMEXIS_COLORS.sagittalRgba(0.65),
+						fillColorRgba: ROMEXIS_COLORS.sagittalRgba(0.08),
+					});
+				}
+
+				// Sagittal Crosshair Line (Vertical: Emerald Green #10b981)
+				ctx.strokeStyle = ROMEXIS_COLORS.sagittal;
+				ctx.lineWidth = 1.2;
 				ctx.beginPath();
 				ctx.moveTo(vox.x, 0);
 				ctx.lineTo(vox.x, canvas.height);
 				ctx.stroke();
-
-				ctx.strokeStyle = "rgba(34, 197, 94, 0.85)";
-				ctx.beginPath();
-				ctx.moveTo(0, vox.z);
-				ctx.lineTo(canvas.width, vox.z);
-				ctx.stroke();
 			}
 		}
 
-		// 3. Sagittal Viewport
+		// 3. Sagittal Viewport (X-Plane: Intersects with Axial (Cyan) & Coronal (Amber))
 		if (sagittalCanvasRef.current) {
 			const canvas = sagittalCanvasRef.current;
 			const ctx = canvas.getContext("2d");
@@ -268,22 +427,61 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				imgData.data.set(data);
 				ctx.putImageData(imgData, 0, 0);
 
-				// Sagittal crosshair: X = vox.y (Red), Y = vox.z (Green)
-				ctx.strokeStyle = "rgba(239, 68, 68, 0.85)";
-				ctx.lineWidth = 1.0;
+				// Draw Calibrated Millimeter Rulers
+				drawCalibratedMillimeterRulers(ctx, {
+					widthPx: w,
+					heightPx: h,
+					pixelSpacingMmX: metadata.pixelSpacingX,
+					pixelSpacingMmY: metadata.pixelSpacingY,
+					showScaleBar: true,
+				});
+
+				const zPx = h - 1 - vox.z;
+
+				// Axial Slab MIP Bounding Corridor (Cyan #06b6d4)
+				if (slabMode !== "single" && slabThicknessMm > 1.0) {
+					drawRomexisSlabCorridor(ctx, {
+						orientation: "horizontal",
+						centerPx: zPx,
+						thicknessMm: slabThicknessMm,
+						pixelSpacingMm: metadata.pixelSpacingY,
+						lengthPx: w,
+						colorRgba: ROMEXIS_COLORS.axialRgba(0.65),
+						fillColorRgba: ROMEXIS_COLORS.axialRgba(0.08),
+					});
+				}
+
+				// Axial Crosshair Line (Horizontal: Cyan #06b6d4)
+				ctx.strokeStyle = ROMEXIS_COLORS.axial;
+				ctx.lineWidth = 1.2;
+				ctx.beginPath();
+				ctx.moveTo(0, zPx);
+				ctx.lineTo(canvas.width, zPx);
+				ctx.stroke();
+
+				// Coronal Slab MIP Bounding Corridor (Orange #f59e0b)
+				if (slabMode !== "single" && slabThicknessMm > 1.0) {
+					drawRomexisSlabCorridor(ctx, {
+						orientation: "vertical",
+						centerPx: vox.y,
+						thicknessMm: slabThicknessMm,
+						pixelSpacingMm: metadata.pixelSpacingX,
+						lengthPx: h,
+						colorRgba: ROMEXIS_COLORS.coronalRgba(0.65),
+						fillColorRgba: ROMEXIS_COLORS.coronalRgba(0.08),
+					});
+				}
+
+				// Coronal Crosshair Line (Vertical: Orange #f59e0b)
+				ctx.strokeStyle = ROMEXIS_COLORS.coronal;
+				ctx.lineWidth = 1.2;
 				ctx.beginPath();
 				ctx.moveTo(vox.y, 0);
 				ctx.lineTo(vox.y, canvas.height);
 				ctx.stroke();
-
-				ctx.strokeStyle = "rgba(34, 197, 94, 0.85)";
-				ctx.beginPath();
-				ctx.moveTo(0, vox.z);
-				ctx.lineTo(canvas.width, vox.z);
-				ctx.stroke();
 			}
 		}
-	}, [volume, crosshairMm, windowWidth, windowLevel, slabMode, slabThicknessMm, archCurve, selectedAnchorId]);
+	}, [volume, crosshairMm, windowWidth, windowLevel, slabMode, slabThicknessMm, archCurve, selectedAnchorId, crossSections, selectedCrossSectionIndex]);
 
 	useEffect(() => {
 		renderMprPlanes();
@@ -371,8 +569,59 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				imgData.data.set(panoramicResult.pixelData);
 				ctx.putImageData(imgData, 0, 0);
 
+				// Draw Calibrated Millimeter Rulers on Panorama
+				drawCalibratedMillimeterRulers(ctx, {
+					widthPx: canvas.width,
+					heightPx: canvas.height,
+					pixelSpacingMmX: volume?.spacingMm.x ?? 0.4,
+					pixelSpacingMmY: volume?.spacingMm.z ?? 0.4,
+					showScaleBar: true,
+				});
+
+				// Draw Axial Plane Intersection Line (Cyan #06b6d4)
+				if (volume) {
+					const vox = worldMmToVoxel(crosshairMm, volume);
+					const zNorm = 1.0 - (vox.z / (volume.dimensions.depth - 1));
+					const zPx = Math.round(zNorm * canvas.height);
+
+					// Axial Slab corridor on Panorama
+					if (slabMode !== "single" && slabThicknessMm > 1.0) {
+						drawRomexisSlabCorridor(ctx, {
+							orientation: "horizontal",
+							centerPx: zPx,
+							thicknessMm: slabThicknessMm,
+							pixelSpacingMm: volume.spacingMm.z,
+							lengthPx: canvas.width,
+							colorRgba: ROMEXIS_COLORS.axialRgba(0.6),
+							fillColorRgba: ROMEXIS_COLORS.axialRgba(0.08),
+						});
+					}
+
+					ctx.strokeStyle = ROMEXIS_COLORS.axial;
+					ctx.lineWidth = 1.2;
+					ctx.beginPath();
+					ctx.moveTo(0, zPx);
+					ctx.lineTo(canvas.width, zPx);
+					ctx.stroke();
+				}
+
+				// Draw Active Cross-Section Line on Panorama (Yellow #eab308)
+				if (crossSections.length > 0 && selectedCrossSectionIndex < crossSections.length) {
+					const cs = crossSections[selectedCrossSectionIndex];
+					if (cs && panoramicResult.widthPx > 0) {
+						const normX = cs.distanceAlongArchMm / (archCurve.totalArcLengthMm || 1.0);
+						const csX = Math.round(normX * canvas.width);
+						ctx.strokeStyle = ROMEXIS_COLORS.crossSection;
+						ctx.lineWidth = 2.0;
+						ctx.beginPath();
+						ctx.moveTo(csX, 0);
+						ctx.lineTo(csX, canvas.height);
+						ctx.stroke();
+					}
+				}
+
 				// Draw FDI tooth marker lines
-				ctx.strokeStyle = "rgba(6, 182, 212, 0.7)";
+				ctx.strokeStyle = ROMEXIS_COLORS.panoramicRgba(0.7);
 				ctx.lineWidth = 1.0;
 				ctx.fillStyle = "#38bdf8";
 				ctx.font = "bold 10px monospace";
@@ -386,7 +635,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				}
 			}
 		}
-	}, [panoramicResult]);
+	}, [panoramicResult, volume, crosshairMm, slabMode, slabThicknessMm, crossSections, selectedCrossSectionIndex, archCurve]);
 
 	// Render Selected Cross-Section Slice on Canvas
 	const activeCrossSection = crossSections[selectedCrossSectionIndex];
@@ -403,17 +652,26 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				imgData.data.set(activeCrossSection.pixelData);
 				ctx.putImageData(imgData, 0, 0);
 
-				// Draw 5mm grid ticks
-				ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
-				ctx.lineWidth = 0.5;
-				const pxPerMm = 1.0 / activeCrossSection.pixelSpacingMm;
-				for (let mm = -10; mm <= 10; mm += 5) {
-					const y = (activeCrossSection.heightMm / 2 - mm) * pxPerMm;
-					ctx.beginPath();
-					ctx.moveTo(0, y);
-					ctx.lineTo(canvas.width, y);
-					ctx.stroke();
-				}
+				// Draw Calibrated Millimeter Rulers and Grid
+				drawCalibratedMillimeterRulers(ctx, {
+					widthPx: canvas.width,
+					heightPx: canvas.height,
+					pixelSpacingMmX: activeCrossSection.pixelSpacingMm,
+					pixelSpacingMmY: activeCrossSection.pixelSpacingMm,
+					showGrid: true,
+					showScaleBar: true,
+				});
+
+				// Draw Axial Plane Reference Line (Cyan #06b6d4)
+				const centerY = canvas.height / 2;
+				ctx.strokeStyle = ROMEXIS_COLORS.axialRgba(0.75);
+				ctx.lineWidth = 1.0;
+				ctx.setLineDash([3, 3]);
+				ctx.beginPath();
+				ctx.moveTo(0, centerY);
+				ctx.lineTo(canvas.width, centerY);
+				ctx.stroke();
+				ctx.setLineDash([]);
 			}
 		}
 	}, [activeCrossSection]);
@@ -548,7 +806,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 							onChange={(e) => setSlabMode(e.target.value as SlabProjectionMode)}
 							className="min-h-[44px] px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-xs focus:outline-none focus:border-[var(--teal)]"
 						>
-							<option value="single">Одинарный срез (0 мм)</option>
+							<option value="single">Одинарный срез (1 мм)</option>
 							<option value="mip">MIP (Макс. интенсивность)</option>
 							<option value="minip">MinIP (Пазухи / Воздух)</option>
 							<option value="average">Average IP (Усреднение)</option>
@@ -606,10 +864,6 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					<div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2 p-2 bg-slate-950 min-h-0 overflow-hidden">
 						{/* Axial Plane */}
 						<div className="flex flex-col rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden relative shadow-lg">
-							<div className="flex items-center justify-between px-3 py-1.5 bg-slate-900/90 border-b border-slate-800 text-xs font-bold text-emerald-400">
-								<span>1. Аксиальный (Горизонтальный)</span>
-								<span className="font-mono text-[11px] text-slate-400">Z={crosshairMm.z.toFixed(1)} мм</span>
-							</div>
 							<div className="flex-1 flex items-center justify-center relative p-1 bg-black min-h-0 overflow-hidden">
 								<canvas
 									ref={axialCanvasRef}
@@ -619,15 +873,18 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 									onWheel={(e) => handleWheelScroll("axial", e)}
 									className="max-h-full max-w-full object-contain cursor-crosshair rounded-lg"
 								/>
+								<CbctViewportHud
+									viewportType="axial"
+									coordinateMm={{ z: crosshairMm.z }}
+									slabMode={slabMode}
+									slabThicknessMm={slabThicknessMm}
+									pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
+								/>
 							</div>
 						</div>
 
 						{/* Coronal Plane */}
 						<div className="flex flex-col rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden relative shadow-lg">
-							<div className="flex items-center justify-between px-3 py-1.5 bg-slate-900/90 border-b border-slate-800 text-xs font-bold text-rose-400">
-								<span>2. Корональный (Фронтальный)</span>
-								<span className="font-mono text-[11px] text-slate-400">Y={crosshairMm.y.toFixed(1)} мм</span>
-							</div>
 							<div className="flex-1 flex items-center justify-center relative p-1 bg-black min-h-0 overflow-hidden">
 								<canvas
 									ref={coronalCanvasRef}
@@ -637,15 +894,18 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 									onWheel={(e) => handleWheelScroll("coronal", e)}
 									className="max-h-full max-w-full object-contain cursor-crosshair rounded-lg"
 								/>
+								<CbctViewportHud
+									viewportType="coronal"
+									coordinateMm={{ y: crosshairMm.y }}
+									slabMode={slabMode}
+									slabThicknessMm={slabThicknessMm}
+									pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
+								/>
 							</div>
 						</div>
 
 						{/* Sagittal Plane */}
 						<div className="flex flex-col rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden relative shadow-lg">
-							<div className="flex items-center justify-between px-3 py-1.5 bg-slate-900/90 border-b border-slate-800 text-xs font-bold text-blue-400">
-								<span>3. Сагиттальный (Профиль)</span>
-								<span className="font-mono text-[11px] text-slate-400">X={crosshairMm.x.toFixed(1)} мм</span>
-							</div>
 							<div className="flex-1 flex items-center justify-center relative p-1 bg-black min-h-0 overflow-hidden">
 								<canvas
 									ref={sagittalCanvasRef}
@@ -654,6 +914,13 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 									onPointerUp={handlePointerUp}
 									onWheel={(e) => handleWheelScroll("sagittal", e)}
 									className="max-h-full max-w-full object-contain cursor-crosshair rounded-lg"
+								/>
+								<CbctViewportHud
+									viewportType="sagittal"
+									coordinateMm={{ x: crosshairMm.x }}
+									slabMode={slabMode}
+									slabThicknessMm={slabThicknessMm}
+									pixelSpacingMm={volume?.spacingMm.y ?? 0.4}
 								/>
 							</div>
 						</div>
@@ -685,12 +952,21 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 							</div>
 						</div>
 
-						<div className="flex-1 flex items-center justify-center bg-black rounded-2xl border border-slate-800 p-2 min-h-[300px] overflow-hidden">
+						<div className="flex-1 flex items-center justify-center bg-black rounded-2xl border border-slate-800 p-2 min-h-[300px] overflow-hidden relative">
 							{panoramicResult ? (
-								<canvas
-									ref={panoCanvasRef}
-									className="max-h-full max-w-full object-contain rounded-lg shadow-2xl"
-								/>
+								<>
+									<canvas
+										ref={panoCanvasRef}
+										className="max-h-full max-w-full object-contain rounded-lg shadow-2xl"
+									/>
+									<CbctViewportHud
+										viewportType="panoramic"
+										coordinateMm={{ z: crosshairMm.z }}
+										slabMode={slabMode}
+										slabThicknessMm={focalTroughThicknessMm}
+										pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
+									/>
+								</>
 							) : (
 								<div className="text-xs text-slate-500 italic">Нажмите «Обновить ОПТГ» для построения панорамы</div>
 							)}
@@ -738,10 +1014,19 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 							{/* Canvas */}
 							<div className="flex-1 flex items-center justify-center bg-black rounded-2xl border border-slate-800 p-2 min-h-0 overflow-hidden relative">
 								{activeCrossSection ? (
-									<canvas
-										ref={crossSectionCanvasRef}
-										className="max-h-full max-w-full object-contain rounded-lg shadow-2xl"
-									/>
+									<>
+										<canvas
+											ref={crossSectionCanvasRef}
+											className="max-h-full max-w-full object-contain rounded-lg shadow-2xl"
+										/>
+										<CbctViewportHud
+											viewportType="cross_section"
+											toothFdi={activeCrossSection.nearestToothFdi}
+											sliceIndex={selectedCrossSectionIndex}
+											totalSlices={crossSections.length}
+											pixelSpacingMm={activeCrossSection.pixelSpacingMm}
+										/>
+									</>
 								) : (
 									<div className="text-xs text-slate-500 italic">Срезы еще не рассчитаны</div>
 								)}

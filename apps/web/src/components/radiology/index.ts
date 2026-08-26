@@ -14,3 +14,4 @@ export * from "./implantSafetyEngine";
 export * from "./ImplantCrossSectionPlanner";
 export * from "./CbctMprImplantStudioModal";
 export * from "./CbctMpr3DStudioModal";
+export * from "./CbctViewportHud";
