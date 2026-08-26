@@ -605,12 +605,12 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 
 							<div className="grid grid-cols-1 gap-1">
 								{Object.values(ANESTHETIC_DRUGS_CATALOG).map((d) => {
-									const isSelected = drugKey === d.key;
+									const isSelected = drugKey === d.drugId;
 									return (
 										<button
-											key={d.key}
+											key={d.drugId}
 											type="button"
-											onClick={() => setDrugKey(d.key)}
+											onClick={() => setDrugKey(d.drugId)}
 											className={`p-2 rounded-lg border text-left transition-all min-h-[44px] flex items-center justify-between ${
 												isSelected
 													? 'bg-blue-600/20 border-blue-500 text-blue-100'

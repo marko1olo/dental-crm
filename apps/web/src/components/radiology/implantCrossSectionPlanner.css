@@ -1,0 +1,307 @@
+/**
+ * STYLING FOR CBCT IMPLANT CROSS-SECTION PLANNER & NERVE SAFETY ALARM
+ */
+
+.implant-cross-section-planner {
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+	width: 100%;
+	color: var(--ink, #0f172a);
+	font-family: inherit;
+}
+
+.planner-header-panel {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 1rem;
+	padding: 1rem 1.25rem;
+	background: var(--paper-strong, var(--paper, #ffffff));
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 1rem;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.planner-title-group {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.planner-grid-layout {
+	display: grid;
+	grid-template-columns: 1.2fr 1fr;
+	gap: 1.25rem;
+}
+
+@media (max-width: 1024px) {
+	.planner-grid-layout {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* ─── CANVAS & VIEWPORT ────────────────────────────────────────────────────── */
+
+.planner-viewport-card {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	background: var(--paper-strong, var(--paper, #ffffff));
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 1rem;
+	padding: 1rem;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.cbct-slice-canvas-wrapper {
+	position: relative;
+	width: 100%;
+	aspect-ratio: 4 / 5;
+	max-height: 480px;
+	background: #090d16;
+	border-radius: 0.75rem;
+	overflow: hidden;
+	border: 1px solid #1e293b;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.cbct-svg-viewport {
+	width: 100%;
+	height: 100%;
+	user-select: none;
+	touch-action: none;
+}
+
+.nerve-alarm-banner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.75rem 1rem;
+	border-radius: 0.75rem;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	transition: all 0.2s ease;
+}
+
+.nerve-alarm-banner.safe {
+	background: rgba(16, 185, 129, 0.12);
+	color: #059669;
+	border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.nerve-alarm-banner.warning {
+	background: rgba(245, 158, 11, 0.14);
+	color: #d97706;
+	border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.nerve-alarm-banner.danger {
+	background: rgba(239, 68, 68, 0.16);
+	color: #dc2626;
+	border: 1px solid rgba(239, 68, 68, 0.4);
+	animation: pulseDanger 1.2s infinite ease-in-out;
+}
+
+@keyframes pulseDanger {
+	0%, 100% {
+		box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+	}
+	50% {
+		box-shadow: 0 0 12px 3px rgba(239, 68, 68, 0.45);
+	}
+}
+
+/* ─── CONTROLS & TELEMETRY ─────────────────────────────────────────────────── */
+
+.planner-controls-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.planner-section-card {
+	background: var(--paper-strong, var(--paper, #ffffff));
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 1rem;
+	padding: 1rem 1.25rem;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+	display: flex;
+	flex-direction: column;
+	gap: 0.875rem;
+}
+
+.section-title {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.chip-selector-group {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
+.chip-button {
+	min-height: 44px;
+	padding: 0.5rem 0.875rem;
+	border-radius: 0.625rem;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	background: var(--paper, #f8fafc);
+	border: 1px solid var(--line, #cbd5e1);
+	color: var(--ink, #334155);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+}
+
+.chip-button:hover {
+	background: var(--line, #e2e8f0);
+}
+
+.chip-button.active {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.25);
+}
+
+.range-slider-row {
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
+}
+
+.slider-label-bar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+}
+
+.planner-range-input {
+	width: 100%;
+	height: 6px;
+	border-radius: 3px;
+	background: var(--line, #cbd5e1);
+	outline: none;
+	cursor: pointer;
+	accent-color: var(--teal, #0d9488);
+}
+
+/* ─── MISCH DENSITY HUD ────────────────────────────────────────────────────── */
+
+.misch-badge-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.375rem 0.75rem;
+	border-radius: 9999px;
+	font-size: 0.75rem;
+	font-weight: 700;
+}
+
+.misch-badge-pill.D1 { background: rgba(59, 130, 246, 0.15); color: #2563eb; }
+.misch-badge-pill.D2 { background: rgba(16, 185, 129, 0.15); color: #059669; }
+.misch-badge-pill.D3 { background: rgba(245, 158, 11, 0.15); color: #d97706; }
+.misch-badge-pill.D4 { background: rgba(239, 68, 68, 0.15); color: #dc2626; }
+.misch-badge-pill.D5 { background: rgba(168, 85, 247, 0.15); color: #9333ea; }
+
+.drilling-step-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	max-height: 200px;
+	overflow-y: auto;
+}
+
+.drilling-step-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.625rem;
+	padding: 0.5rem 0.75rem;
+	background: var(--paper, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 0.5rem;
+	font-size: 0.75rem;
+}
+
+.step-num-badge {
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	font-size: 0.6875rem;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+/* ─── ACTION BUTTONS ───────────────────────────────────────────────────────── */
+
+.planner-actions-bar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	padding-top: 0.5rem;
+}
+
+.action-btn-primary {
+	min-height: 48px;
+	padding: 0.625rem 1.25rem;
+	border-radius: 0.75rem;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border: none;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	transition: all 0.2s ease;
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.3);
+}
+
+.action-btn-primary:hover {
+	opacity: 0.92;
+	transform: translateY(-1px);
+}
+
+.action-btn-secondary {
+	min-height: 48px;
+	padding: 0.625rem 1.125rem;
+	border-radius: 0.75rem;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	background: var(--paper, #f1f5f9);
+	border: 1px solid var(--line, #cbd5e1);
+	color: var(--ink, #334155);
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	transition: all 0.15s ease;
+}
+
+.action-btn-secondary:hover {
+	background: var(--line, #e2e8f0);
+}

@@ -243,7 +243,7 @@ export function compileTomorrowReminders(
 
 		return {
 			appointmentId: appt.id,
-			patientId: appt.patientId,
+			patientId: appt.patientId || null,
 			patientName,
 			patientPhone,
 			telegramUsername,
@@ -267,7 +267,7 @@ export function compileTomorrowReminders(
 			hasAllergyWarning,
 			allergyWarningText,
 			isQuietHours: quietHoursStatus.isQuietHours && !isCito,
-			quietHoursWarning: quietHoursStatus.warningRu,
+			quietHoursWarning: quietHoursStatus.warningRu ?? null,
 		};
 	});
 
@@ -289,7 +289,7 @@ export function compileTomorrowReminders(
 		whatsAppAvailableCount,
 		smsAvailableCount,
 		isQuietHoursActive: quietHoursStatus.isQuietHours,
-		quietHoursAlertText: quietHoursStatus.warningRu,
+		quietHoursAlertText: quietHoursStatus.warningRu ?? null,
 		reminders,
 	};
 }

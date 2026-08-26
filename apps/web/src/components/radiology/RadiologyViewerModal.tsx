@@ -57,6 +57,9 @@ import {
 	LANDMARK_TYPE_LABELS,
 	MANDIBULAR_NERVE_SAFETY_MARGIN_MM,
 } from "./radiologyMath";
+import { CbctMprImplantStudioModal } from "./CbctMprImplantStudioModal";
+import { CbctMprViewer } from "./CbctMprViewer";
+
 import {
 	DEFAULT_WW_WL_PRESETS,
 	type AlveolarRidgeCaliperMeasurement,
@@ -128,6 +131,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 	const [isHudVisible, setIsHudVisible] = useState<boolean>(true);
 	const [isSideDrawerOpen, setIsSideDrawerOpen] = useState<boolean>(true);
 	const [isControlsExpanded, setIsControlsExpanded] = useState<boolean>(false);
+	const [isCbctStudioOpen, setIsCbctStudioOpen] = useState<boolean>(false);
+	const [isMprViewerOpen, setIsMprViewerOpen] = useState<boolean>(false);
 
 	// Dragging state
 	const [isDragging, setIsDragging] = useState<boolean>(false);
@@ -595,6 +600,30 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						>
 							<FileText className="w-4 h-4 text-[var(--teal)]" />
 							<span>Направление</span>
+						</button>
+					)}
+
+					<button
+						type="button"
+						onClick={() => setIsMprViewerOpen(true)}
+						className="flex items-center gap-2 min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] hover:bg-[var(--teal)] text-[var(--teal)] hover:text-white text-xs font-bold transition-all shadow-sm"
+						title="Открыть 3D MPR мультипланарную реконструкцию и панораму зубной дуги"
+						data-testid="open-mpr-viewer-modal-btn"
+					>
+						<Layers className="w-4 h-4" />
+						<span>3D MPR / ОПТГ</span>
+					</button>
+
+					{study?.modality === "cbct_3d" && (
+						<button
+							type="button"
+							onClick={() => setIsCbctStudioOpen(true)}
+							className="flex items-center gap-2 min-h-[44px] px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-md transition-all"
+							title="Открыть 3D MPR имплант-планировщик"
+							data-testid="open-cbct-mpr-studio-from-viewer-btn"
+						>
+							<Box className="w-4 h-4" />
+							<span>Имплант-студия</span>
 						</button>
 					)}
 
@@ -1296,8 +1325,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 										)}
 										{mousePosPercent && activeNervePoints.length >= 1 && activeNervePoints[activeNervePoints.length - 1] && (
 											<line
-												x1={`${activeNervePoints[activeNervePoints.length - 1]!.x}%`}
-												y1={`${activeNervePoints[activeNervePoints.length - 1]!.y}%`}
+												x1={`${activeNervePoints[activeNervePoints.length - 1]?.x ?? 0}%`}
+												y1={`${activeNervePoints[activeNervePoints.length - 1]?.y ?? 0}%`}
 												x2={`${mousePosPercent.x}%`}
 												y2={`${mousePosPercent.y}%`}
 												stroke="var(--warn-fg, #f59e0b)"
@@ -1903,6 +1932,21 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 					</aside>
 				)}
 			</div>
+
+			{isCbctStudioOpen && (
+				<CbctMprImplantStudioModal
+					isOpen={isCbctStudioOpen}
+					onClose={() => setIsCbctStudioOpen(false)}
+					study={study}
+				/>
+			)}
+
+			{isMprViewerOpen && (
+				<CbctMprViewer
+					study={study}
+					onClose={() => setIsMprViewerOpen(false)}
+				/>
+			)}
 		</div>,
 		document.body,
 	);
