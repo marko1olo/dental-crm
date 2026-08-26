@@ -12,6 +12,7 @@ import {
 	Layers,
 	Maximize2,
 	Plus,
+	Box,
 	Printer,
 	RotateCw,
 	Scan,
@@ -25,6 +26,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useMemo, useState } from "react";
+import { CbctMprImplantStudioModal } from "./CbctMprImplantStudioModal";
 import { RadiationDoseSheetModal } from "./RadiationDoseSheetModal";
 import { formatRadiationDose } from "./radiologyMath";
 import { RadiologyReferralModal } from "./RadiologyReferralModal";
@@ -203,6 +205,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 		useState<boolean>(false);
 	const [isDoseSheetModalOpen, setIsDoseSheetModalOpen] =
 		useState<boolean>(false);
+	const [isCbctStudioOpen, setIsCbctStudioOpen] = useState<boolean>(false);
 
 	// Comparative Split-View state
 	const [isCompareMode, setIsCompareMode] = useState<boolean>(false);
@@ -310,6 +313,17 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 						>
 							<Activity className="w-4 h-4 text-[var(--teal)]" />
 							<span>Лист дозовых нагрузок</span>
+						</button>
+
+						{/* 3D CBCT MPR & Implant Studio Button */}
+						<button
+							type="button"
+							onClick={() => setIsCbctStudioOpen(true)}
+							className="flex items-center gap-2 min-h-[44px] px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs md:text-sm font-bold shadow-md hover:opacity-95 active:scale-95 transition-all"
+							data-testid="open-cbct-mpr-studio-btn"
+						>
+							<Box className="w-4 h-4" />
+							<span>3D КЛКТ MPR & Имплант-планировщик</span>
 						</button>
 
 						{/* Split-view Comparison Toggle */}
@@ -565,6 +579,14 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 					medicalCardNumber={patientCard}
 					clinicName={clinicName ?? undefined}
 					doctorName={doctorName ?? undefined}
+				/>
+			)}
+
+			{isCbctStudioOpen && (
+				<CbctMprImplantStudioModal
+					isOpen={isCbctStudioOpen}
+					onClose={() => setIsCbctStudioOpen(false)}
+					study={activeViewerStudy}
 				/>
 			)}
 		</div>

@@ -3,13 +3,16 @@ import type {
 	AlveolarRidgeCaliperMeasurement,
 	MandibularNerveSpline,
 	Point2D,
+	Point3D,
 } from "./cbctCaliperNerveMath";
 
 export type {
 	AlveolarRidgeCaliperMeasurement,
 	MandibularNerveSpline,
 	Point2D,
+	Point3D,
 };
+
 
 /** Модальности лучевой диагностики */
 export type RadiologyModality =

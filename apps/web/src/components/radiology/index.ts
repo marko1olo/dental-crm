@@ -8,6 +8,7 @@ export * from "./RadiologyViewerModal";
 export * from "./types";
 export * from "./boneDensityMischMath";
 export * from "./cbctMprMath";
+export * from "./cbctObliqueMath";
 export * from "./dentalCurveEngine";
 export * from "./CbctMprViewer";
 export * from "./implantSafetyEngine";

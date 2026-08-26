@@ -996,3 +996,7 @@ export function disposeCbctVolume(volume: CbctVoxelVolume): void {
 		(volume as { isDisposed: boolean }).isDisposed = true;
 	}
 }
+
+// ─── 5. FORWARDING RE-EXPORTS FOR OBLIQUE MPR ENGINE ────────────────────────
+export * from "./cbctObliqueMath";
+

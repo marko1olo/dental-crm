@@ -3,5 +3,6 @@
  */
 
 export * from "./cbctMprMath";
+export * from "./cbctObliqueMath";
 export * from "./dentalCurveEngine";
 export * from "./boneDensityMischMath";
