@@ -66,6 +66,7 @@ import { registerPrescriptionRoutes } from "./routes/prescriptions.js";
 import { registerMigrationRoutes } from "./routes/migration.js";
 import { registerMigrationRunRoutes } from "./routes/migrationRuns.js";
 import { registerOdontogramRoutes } from "./routes/odontogram.js";
+import registerToothHistoryRoutes from "./routes/toothHistory.js";
 import { registerPatientDuplicateRoutes } from "./routes/patientDuplicates.js";
 import { registerPatientRecallRoutes } from "./routes/patientRecall.js";
 import { registerPatientRoutes } from "./routes/patients.js";
@@ -98,7 +99,8 @@ import {
 } from "./routes/telegram.js";
 import { telephonyRoutes } from "./routes/telephony.js";
 import registerTemplateRoutes from "./routes/templates.js";
-import registerToothHistoryRoutes from "./routes/toothHistory.js";
+import { copilotRoutes } from "./routes/copilot.js";
+import { treatmentConsumablesRoutes } from "./routes/treatmentConsumables.js";
 import { registerVisitRoutes } from "./routes/visits.js";
 import { registerVkRoutes } from "./routes/vk.js";
 import { registerWaitlistRoutes } from "./routes/waitlist.js";
@@ -724,6 +726,10 @@ export async function createDenteApiApp(
 	// apps/web обращается к /api/templates, а маршрута не существовало.
 	await registerTemplateRoutes(app);
 	await app.register(inventoryRoutes, { prefix: "/api/inventory" });
+	await app.register(treatmentConsumablesRoutes, {
+		prefix: "/api/treatment-consumables",
+	});
+	await app.register(copilotRoutes);
 	await app.register(patientPortalRoutes, { prefix: "/api/portal" });
 	await app.register(registerPublicEstimatesRoutes);
 	await app.register(registerPublicBookingRoutes, {

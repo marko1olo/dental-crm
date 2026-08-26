@@ -6,6 +6,8 @@ import type { z } from "zod";
 import { recordAuditEvent } from "../../../audit.js";
 import type { AgentContext } from "../context.js";
 import { checkGuardrails, permissionMatches } from "../guardrails.js";
+import { registerClinicalNotesTools } from "./clinicalNotesTool.js";
+import { registerClinicalTools } from "./clinicalTools.js";
 import { toolToAnthropicSchema, toolToOpenAiSchema } from "./schemaSerializer.js";
 import type { ToolDefinition, ToolResult } from "./tool.js";
 
@@ -221,4 +223,12 @@ export class ToolRegistry {
 	}
 }
 
-export const defaultToolRegistry = new ToolRegistry();
+export function createDefaultToolRegistry(): ToolRegistry {
+	const registry = new ToolRegistry();
+	registerClinicalTools(registry, "clinical");
+	registerClinicalNotesTools(registry, "clinical_notes");
+	return registry;
+}
+
+export const defaultToolRegistry = createDefaultToolRegistry();
+

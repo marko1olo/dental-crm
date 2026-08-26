@@ -247,7 +247,7 @@ export class SymbolTable {
 	}
 
 	public clear(): void {
-		this.toToken.clear;
+		this.toToken.clear();
 		this.toReal.clear();
 	}
 }

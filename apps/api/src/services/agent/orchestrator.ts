@@ -258,3 +258,15 @@ export class TokenBudgetGuard implements BudgetGuard {
 		};
 	}
 }
+
+/**
+ * AgentOrchestrator — facade coordinating agent execution turns.
+ */
+export class AgentOrchestrator {
+	public static runTurnStream(
+		options: RunTurnOptions,
+	): AsyncGenerator<TurnEvent, void, unknown> {
+		return runTurn(options);
+	}
+}
+

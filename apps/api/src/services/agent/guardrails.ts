@@ -9,7 +9,7 @@
  */
 
 import type { AgentContext } from "./context.js";
-import type { ToolCategory, ToolDefinition } from "./tools/tool.js";
+import type { ToolDefinition } from "./tools/tool.js";
 
 export type GuardrailDecision = "allow" | "require_approval" | "block";
 

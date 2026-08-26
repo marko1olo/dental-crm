@@ -21,8 +21,12 @@ import {
 } from "./orchestrator.js";
 import { Redactor, SymbolTable } from "./redaction.js";
 import {
+	checkDrugInteractionsTool,
 	findPatientTool,
 	getEmrCardTool,
+	getFamilyBalanceTool,
+	getLabOrdersTool,
+	getPatientTimelineTool,
 	registerClinicalTools,
 	suggestIcd10PlanTool,
 } from "./tools/clinicalTools.js";
@@ -53,7 +57,7 @@ function createMockContext(overrides: Partial<AgentContext> = {}): AgentContext 
 		userId: USER_ID,
 		sessionId: "test-session-" + Math.random().toString(36).slice(2),
 		mode: "autonomous",
-		permissions: ["patients.read", "clinical.read", "schedule.write"],
+		permissions: ["patients.read", "clinical.read", "schedule.write", "billing.read"],
 		tools: registry,
 		db: null,
 		...overrides,
@@ -148,7 +152,6 @@ describe("PHI Redaction Engine (SymbolTable & Redactor)", () => {
 		const name = "Смирнов Алексей";
 		const token = redactor.table.tokenize(name, "NAME");
 
-		// Simulate token split across 3 streaming deltas
 		const chunk1 = "Пациент " + token.slice(0, 3);
 		const chunk2 = token.slice(3, 7);
 		const chunk3 = token.slice(7) + " прибыл в клинику.";
@@ -368,6 +371,245 @@ describe("Clinical Tools Specification & ICD-10 Validator", () => {
 	});
 });
 
+describe("New Clinical Tools (Timeline, Drug Safety, Lab, Family)", () => {
+	test("check_drug_interactions catches allergy clashes and dangerous drug-drug pairs", async () => {
+		// Mock db returning a penicillin allergy
+		const mockDb = {
+			select: () => ({
+				from: () => ({
+					where: async () => [
+						{
+							allergenGroup: "Пенициллины",
+							drugInnLatin: "Amoxicillin",
+							reactionSeverity: "critical",
+							clinicalManifestations: "Отек Квинке",
+							hasSamterTriad: false,
+						},
+					],
+				}),
+			}),
+		};
+
+		const ctx = createMockContext({ db: mockDb });
+
+		// 1. Check with Amoxicillin (Allergy clash) + Metronidazole & Warfarin (Drug-drug clash)
+		const result = (await checkDrugInteractionsTool.handler(ctx, {
+			patientId: PATIENT_ID,
+			proposedMedicationIds: ["med_amox_500", "med_metron_500"],
+			existingMedicationIds: ["warfarin"],
+		})) as any;
+
+		assert.strictEqual(result.isSafe, false);
+		assert.strictEqual(result.hasAllergyClash, true);
+		assert.strictEqual(result.allergyWarnings.length, 1);
+		assert.strictEqual(result.allergyWarnings[0].proposedDrug, "med_amox_500");
+
+		assert.ok(result.drugInteractionsCount >= 1);
+		const warfarinRule = result.drugInteractions.find(
+			(i: any) => i.drugAId === "med_metron_500" && i.drugBId === "warfarin",
+		);
+		assert.ok(warfarinRule, "Must detect metronidazole + warfarin critical interaction");
+		assert.strictEqual(warfarinRule.severity, "critical");
+	});
+
+	test("get_patient_timeline aggregates and sorts chronologically", async () => {
+		const now = new Date("2026-08-20T10:00:00Z");
+		const yesterday = new Date("2026-08-19T10:00:00Z");
+		const lastWeek = new Date("2026-08-12T10:00:00Z");
+
+		let callCount = 0;
+		const mockDb = {
+			select: () => ({
+				from: () => ({
+					where: () => ({
+						orderBy: () => ({
+							limit: async () => {
+								callCount++;
+								if (callCount === 1) {
+									// Visits
+									return [
+										{
+											id: "v-1",
+											complaint: "Боль",
+											diagnosis: "K02.1 Кариес",
+											doctorSummary: "Пломбирование",
+											status: "signed",
+											signedAt: now,
+											createdAt: now,
+										},
+									];
+								}
+								if (callCount === 2) {
+									// Treatment plans
+									return [
+										{
+											id: "tp-1",
+											title: "Санация",
+											status: "active",
+											totalAmountRub: "15000.00",
+											createdAt: lastWeek,
+										},
+									];
+								}
+								if (callCount === 3) {
+									// Payments
+									return [
+										{
+											id: "p-1",
+											amountRub: 5000,
+											method: "card",
+											status: "paid",
+											createdAt: yesterday,
+										},
+									];
+								}
+								// Lab orders
+								return [
+									{
+										id: "lab-1",
+										toothFdi: "46",
+										material: "Цирконий",
+										colorVita: "A2",
+										status: "in_progress",
+										dueDate: now,
+										clinicalNotes: "Коронка",
+										createdAt: yesterday,
+									},
+								];
+							},
+						}),
+					}),
+				}),
+			}),
+		};
+
+		const ctx = createMockContext({ db: mockDb });
+		const res = (await getPatientTimelineTool.handler(ctx, {
+			patientId: PATIENT_ID,
+			limit: 10,
+		})) as any;
+
+		assert.strictEqual(res.patientId, PATIENT_ID);
+		assert.strictEqual(res.totalEventsCount, 4);
+		assert.strictEqual(res.timeline[0].type, "visit", "Latest event must be first");
+		assert.strictEqual(res.timeline[0].id, "v-1");
+	});
+
+	test("get_lab_orders retrieves laboratory prosthetic tracking details", async () => {
+		const mockDb = {
+			select: () => ({
+				from: () => ({
+					where: () => ({
+						orderBy: async () => [
+							{
+								id: "lab-123",
+								doctorName: "Доктор Смирнов",
+								toothFdi: "24",
+								material: "E-max Пресс",
+								colorVita: "A1",
+								status: "shipped",
+								dueDate: new Date("2026-09-01T12:00:00Z"),
+								clinicalNotes: "Винир",
+								labComments: "Готово к отправке",
+								priceRub: 18000,
+								sentAt: new Date("2026-08-25T10:00:00Z"),
+								completedAt: null,
+								createdAt: new Date("2026-08-24T10:00:00Z"),
+							},
+						],
+					}),
+				}),
+			}),
+		};
+
+		const ctx = createMockContext({ db: mockDb });
+		const res = (await getLabOrdersTool.handler(ctx, {
+			patientId: PATIENT_ID,
+			statusFilter: "active",
+		})) as any;
+
+		assert.strictEqual(res.count, 1);
+		assert.strictEqual(res.orders[0].toothFdi, "24");
+		assert.strictEqual(res.orders[0].colorVita, "A1");
+		assert.strictEqual(res.orders[0].material, "E-max Пресс");
+		assert.strictEqual(res.orders[0].status, "shipped");
+	});
+
+	test("get_family_balance fetches linked accounts and head patient balance", async () => {
+		const FAMILY_ID = "00000000-0000-7000-8000-000000000099";
+
+		let selectStep = 0;
+		const mockDb = {
+			select: () => ({
+				from: () => ({
+					where: (clause?: any) => ({
+						limit: async () => {
+							selectStep++;
+							if (selectStep === 1) {
+								// Patient lookup
+								return [
+									{
+										id: PATIENT_ID,
+										fullName: "Иванов Иван (Сын)",
+										phone: "+79991112233",
+										familyGroupId: FAMILY_ID,
+									},
+								];
+							}
+							if (selectStep === 2) {
+								// Family group
+								return [
+									{
+										id: FAMILY_ID,
+										name: "Семья Ивановых",
+										groupName: "Семья Ивановых",
+										headPatientId: "00000000-0000-7000-8000-000000000088",
+										balance: "24500.50",
+									},
+								];
+							}
+							return [];
+						},
+						then: async (resolve: any) => {
+							// Step 3: members list
+							const members = [
+								{
+									id: "00000000-0000-7000-8000-000000000088",
+									fullName: "Иванов Петр (Отец)",
+									phone: "+79990001122",
+									birthDate: "1975-01-10",
+									status: "active",
+								},
+								{
+									id: PATIENT_ID,
+									fullName: "Иванов Иван (Сын)",
+									phone: "+79991112233",
+									birthDate: "2005-06-15",
+									status: "active",
+								},
+							];
+							return resolve ? resolve(members) : members;
+						},
+					}),
+				}),
+			}),
+		};
+
+		const ctx = createMockContext({ db: mockDb });
+		const res = (await getFamilyBalanceTool.handler(ctx, {
+			patientId: PATIENT_ID,
+		})) as any;
+
+		assert.strictEqual(res.hasFamilyAccount, true);
+		assert.strictEqual(res.familyGroupId, FAMILY_ID);
+		assert.strictEqual(res.groupName, "Семья Ивановых");
+		assert.strictEqual(res.balanceRub, "24500.50");
+		assert.strictEqual(res.membersCount, 2);
+		assert.strictEqual(res.members[0].isHead, true);
+		assert.strictEqual(res.members[1].isHead, false);
+	});
+});
+
 describe("Agent Orchestrator Loop & Turn Suspension", () => {
 	test("Orchestrator executes READ tools automatically and writes assistant turn in real space", async () => {
 		const redactor = new Redactor();
@@ -389,7 +631,6 @@ describe("Agent Orchestrator Loop & Turn Suspension", () => {
 
 		const ctx = createMockContext({ tools: registry });
 
-		// Mock LLM provider that streams tool use, then text response
 		let step = 0;
 		const mockProvider: LLMProvider = {
 			async *complete() {
