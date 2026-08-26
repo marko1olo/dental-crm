@@ -10,6 +10,7 @@ export interface CbctMpr3DStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly study?: RadiologyStudy | null | undefined;
+	readonly studyTitle?: string | undefined;
 	readonly patientName?: string | undefined;
 	readonly studyDate?: string | undefined;
 	readonly onApplySurgeryProtocolToSoap?: ((soapText: string) => void) | undefined;

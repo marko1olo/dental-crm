@@ -85,6 +85,14 @@
 	font-size: 0.8125rem;
 	font-weight: 600;
 	transition: all 0.2s ease;
+	gap: 0.5rem;
+}
+
+@media (max-width: 640px) {
+	.nerve-alarm-banner {
+		flex-direction: column;
+		align-items: flex-start;
+	}
 }
 
 .nerve-alarm-banner.safe {

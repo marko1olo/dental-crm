@@ -275,16 +275,17 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
       <div className="planner-grid-layout">
         {/* LEFT: CBCT CROSS-SECTION VIEWPORT */}
         <div className="planner-viewport-card">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-[var(--muted)] flex items-center gap-1.5">
+          <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2">
+            <span className="text-xs font-bold text-[var(--muted)] flex items-center gap-1.5 whitespace-nowrap">
               <Layers size={14} /> Кросс-секционный срез КЛКТ (масштаб 1:1)
             </span>
             <button
               type="button"
               onClick={handleResetCenter}
-              className="text-xs font-semibold text-[var(--teal)] hover:underline flex items-center gap-1"
+              className="text-xs font-semibold text-[var(--teal,#0d9488)] hover:opacity-80 flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] transition-all min-h-[36px]"
             >
-              <RotateCw size={12} /> Центрировать
+              <RotateCw size={12} />
+              <span>Центрировать</span>
             </button>
           </div>
 

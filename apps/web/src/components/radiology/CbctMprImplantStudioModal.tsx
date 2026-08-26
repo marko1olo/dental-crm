@@ -113,6 +113,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 	// ─── SYNCHRONIZED 3D CROSSHAIR COORDINATE (PHYSICAL MM) ───────────────────
 	const [crosshairMm, setCrosshairMm] = useState<Point3D>({ x: 0, y: 0, z: 0 });
+	const [mobileActiveTab, setMobileActiveTab] = useState<"axial" | "coronal" | "sagittal" | "panoramic" | "planner">("axial");
 
 	// Viewport Layout Mode
 	const [viewLayout, setViewLayout] = useState<"3plane_mpr" | "panoramic_cross_sections" | "quad_view">("quad_view");
@@ -623,113 +624,185 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			className="fixed inset-0 z-[100] flex flex-col bg-slate-950 text-slate-100 font-sans select-none overflow-hidden"
 		>
 			{/* ─── HEADER BAR (TIER 1 HOT CONTROLS) ───────────────────────────── */}
-			<header className="h-14 px-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between shrink-0">
-				<div className="flex items-center gap-3">
-					<div className="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400">
+			<header className="min-h-14 px-4 py-1.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between shrink-0 gap-3 overflow-x-auto">
+				<div className="flex items-center gap-3 shrink-0 min-w-max">
+					<div className="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shrink-0">
 						<Box className="w-5 h-5" />
 					</div>
-					<div>
-						<h2 id={`cbct-studio-title-${modalId}`} className="text-sm font-bold text-white tracking-wide flex items-center gap-2">
+					<div className="shrink-0 min-w-max">
+						<h2 id={`cbct-studio-title-${modalId}`} className="text-sm font-bold text-white tracking-wide flex items-center gap-2 whitespace-nowrap">
 							3D КЛКТ MPR & Имплант-планировщик
 							<span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/30">
 								60 FPS Sync
 							</span>
 						</h2>
-						<p className="text-[11px] text-slate-400">
+						<p className="text-[11px] text-slate-400 whitespace-nowrap">
 							Панорамная кривая · Косоугольные срезы · Коридор безопасности N. Alveolaris Inferior (2.0 мм) · Шкала Misch (HU)
 						</p>
 					</div>
 				</div>
 
 				{/* Center Toolbar: WW/WL Presets & Slab Modes */}
-				<div className="flex items-center gap-2">
-					<div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
+				<div className="flex items-center gap-2 overflow-x-auto shrink-0 py-1">
+					<div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 shrink-0">
 						{CBCT_HOUNSFIELD_PRESETS.map((p) => (
 							<button
 								key={p.id}
 								type="button"
 								onClick={() => handleSelectPreset(p.id)}
-								className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all min-h-[36px] ${
+								className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all min-h-[44px] flex items-center justify-center ${
 									activePreset === p.id
 										? "bg-cyan-600 text-white shadow"
 										: "text-slate-400 hover:text-slate-200"
 								}`}
+								data-testid={`cbct-hu-preset-${p.id}`}
 							>
 								{p.label.split(" ")[0]}
 							</button>
 						))}
 					</div>
 
-					<div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
+					<div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 shrink-0">
 						<button
 							type="button"
 							onClick={() => setSlabMode("single")}
-							className={`px-2 py-1 rounded-lg text-xs font-medium min-h-[36px] ${slabMode === "single" ? "bg-slate-700 text-white" : "text-slate-400"}`}
+							className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap min-h-[44px] flex items-center justify-center ${slabMode === "single" ? "bg-slate-700 text-white font-bold" : "text-slate-400"}`}
+							data-testid="cbct-mpr-slab-single-btn"
 						>
 							Срез 1 мм
 						</button>
 						<button
 							type="button"
 							onClick={() => setSlabMode("mip")}
-							className={`px-2 py-1 rounded-lg text-xs font-medium min-h-[36px] ${slabMode === "mip" ? "bg-slate-700 text-white" : "text-slate-400"}`}
+							className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap min-h-[44px] flex items-center justify-center ${slabMode === "mip" ? "bg-slate-700 text-white font-bold" : "text-slate-400"}`}
+							data-testid="cbct-mpr-slab-mip-btn"
 						>
 							Slab MIP
 						</button>
 						<button
 							type="button"
 							onClick={() => setSlabMode("average")}
-							className={`px-2 py-1 rounded-lg text-xs font-medium min-h-[36px] ${slabMode === "average" ? "bg-slate-700 text-white" : "text-slate-400"}`}
+							className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap min-h-[44px] flex items-center justify-center ${slabMode === "average" ? "bg-slate-700 text-white font-bold" : "text-slate-400"}`}
+							data-testid="cbct-mpr-slab-avg-btn"
 						>
 							Avg IP
 						</button>
 					</div>
 
-					<div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
+					<div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 shrink-0">
 						<button
 							type="button"
 							onClick={() => handleToggleJawType("mandible")}
-							className={`px-2.5 py-1 rounded-lg text-xs font-bold min-h-[36px] ${jawType === "mandible" ? "bg-amber-600/30 text-amber-300 border border-amber-500/50" : "text-slate-400"}`}
+							className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center justify-center ${jawType === "mandible" ? "bg-amber-600/30 text-amber-300 border border-amber-500/50" : "text-slate-400"}`}
+							data-testid="cbct-jaw-mandible-btn"
 						>
-							Нижняя челюсть
+							Н. челюсть
 						</button>
 						<button
 							type="button"
 							onClick={() => handleToggleJawType("maxilla")}
-							className={`px-2.5 py-1 rounded-lg text-xs font-bold min-h-[36px] ${jawType === "maxilla" ? "bg-amber-600/30 text-amber-300 border border-amber-500/50" : "text-slate-400"}`}
+							className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center justify-center ${jawType === "maxilla" ? "bg-amber-600/30 text-amber-300 border border-amber-500/50" : "text-slate-400"}`}
+							data-testid="cbct-jaw-maxilla-btn"
 						>
-							Верхняя челюсть
+							В. челюсть
 						</button>
 					</div>
 				</div>
 
 				{/* Right Actions: 1-Click Form 043 & Close */}
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-2 shrink-0">
 					<button
 						type="button"
 						onClick={handleExportForm043Diary}
-						className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow flex items-center gap-1.5 min-h-[44px] transition-all"
+						className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow flex items-center gap-1.5 min-h-[44px] whitespace-nowrap transition-all"
+						data-testid="cbct-export-diary-btn"
 					>
 						<FileText className="w-4 h-4" />
-						В карту 043/у
+						<span>В карту 043/у</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={onClose}
-						className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center min-h-[44px] min-w-[44px] transition-all"
+						className="w-11 h-11 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center min-h-[44px] min-w-[44px] transition-all"
 						aria-label="Закрыть КЛКТ студию"
+						data-testid="close-cbct-mpr-3d-studio-btn"
 					>
 						<X className="w-5 h-5" />
 					</button>
 				</div>
 			</header>
 
+			{/* ─── MOBILE VIEWPORT TABS (VISIBLE ONLY ON < LG SCREENS) ─────────── */}
+			<div className="lg:hidden flex items-center bg-slate-900 border-b border-slate-800 p-2 shrink-0 gap-2 overflow-x-auto min-w-0">
+				<button
+					type="button"
+					onClick={() => setMobileActiveTab("axial")}
+					className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-all flex items-center gap-1.5 ${
+						mobileActiveTab === "axial"
+							? "bg-cyan-600 text-white shadow"
+							: "bg-slate-800 text-slate-300 hover:bg-slate-700"
+					}`}
+				>
+					<span className="w-2 h-2 rounded-full bg-cyan-400" />
+					Аксиальный (Z)
+				</button>
+				<button
+					type="button"
+					onClick={() => setMobileActiveTab("coronal")}
+					className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-all flex items-center gap-1.5 ${
+						mobileActiveTab === "coronal"
+							? "bg-cyan-600 text-white shadow"
+							: "bg-slate-800 text-slate-300 hover:bg-slate-700"
+					}`}
+				>
+					<span className="w-2 h-2 rounded-full bg-blue-400" />
+					Фронтальный (Y)
+				</button>
+				<button
+					type="button"
+					onClick={() => setMobileActiveTab("sagittal")}
+					className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-all flex items-center gap-1.5 ${
+						mobileActiveTab === "sagittal"
+							? "bg-cyan-600 text-white shadow"
+							: "bg-slate-800 text-slate-300 hover:bg-slate-700"
+					}`}
+				>
+					<span className="w-2 h-2 rounded-full bg-emerald-400" />
+					Сагиттальный (X)
+				</button>
+				<button
+					type="button"
+					onClick={() => setMobileActiveTab("panoramic")}
+					className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-all flex items-center gap-1.5 ${
+						mobileActiveTab === "panoramic"
+							? "bg-purple-600 text-white shadow"
+							: "bg-slate-800 text-slate-300 hover:bg-slate-700"
+					}`}
+				>
+					<span className="w-2 h-2 rounded-full bg-purple-400" />
+					ОПТГ
+				</button>
+				<button
+					type="button"
+					onClick={() => setMobileActiveTab("planner")}
+					className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-all flex items-center gap-1.5 ${
+						mobileActiveTab === "planner"
+							? "bg-emerald-600 text-white shadow"
+							: "bg-slate-800 text-slate-300 hover:bg-slate-700"
+					}`}
+				>
+					<span className="w-2 h-2 rounded-full bg-emerald-400" />
+					Имплант-план
+				</button>
+			</div>
+
 			{/* ─── MAIN WORKSPACE (4 VIEWPORTS + IMPLANT & NERVE PANEL) ───────── */}
-			<div className="flex-1 grid grid-cols-12 gap-1 p-1 bg-slate-950 min-h-0 overflow-hidden">
-				{/* ─── 4 VIEWPORTS GRID (COLS 1..8) ────────────────────────────── */}
-				<div className="col-span-8 grid grid-cols-2 grid-rows-2 gap-1 min-h-0">
+			<div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-1 p-1 bg-slate-950 min-h-0 overflow-hidden">
+				{/* ─── 4 VIEWPORTS GRID (COLS 1..8 ON DESKTOP) ────────────────── */}
+				<div className={`lg:col-span-8 ${mobileActiveTab === "planner" ? "hidden lg:grid" : "flex-1 flex flex-col"} lg:grid lg:grid-cols-2 lg:grid-rows-2 gap-1 min-h-0`}>
 					{/* 1. AXIAL VIEWPORT (Z-PLANE) */}
-					<div className="relative bg-black rounded-lg overflow-hidden border border-slate-800 flex flex-col">
+					<div className={`relative bg-black rounded-lg overflow-hidden border border-slate-800 ${mobileActiveTab === "axial" ? "flex-1 flex flex-col min-h-0" : "hidden lg:flex lg:flex-col"}`}>
 						<div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded bg-slate-900/80 border border-cyan-500/40 text-[11px] font-bold text-cyan-300 flex items-center gap-1.5">
 							<span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
 							AXIAL (Горизонтальный срез)
@@ -750,7 +823,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					</div>
 
 					{/* 2. CORONAL VIEWPORT (Y-PLANE) */}
-					<div className="relative bg-black rounded-lg overflow-hidden border border-slate-800 flex flex-col">
+					<div className={`relative bg-black rounded-lg overflow-hidden border border-slate-800 ${mobileActiveTab === "coronal" ? "flex-1 flex flex-col min-h-0" : "hidden lg:flex lg:flex-col"}`}>
 						<div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded bg-slate-900/80 border border-blue-500/40 text-[11px] font-bold text-blue-300 flex items-center gap-1.5">
 							<span className="w-2 h-2 rounded-full bg-blue-400" />
 							CORONAL (Фронтальный срез)
@@ -771,7 +844,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					</div>
 
 					{/* 3. SAGITTAL VIEWPORT (X-PLANE) */}
-					<div className="relative bg-black rounded-lg overflow-hidden border border-slate-800 flex flex-col">
+					<div className={`relative bg-black rounded-lg overflow-hidden border border-slate-800 ${mobileActiveTab === "sagittal" ? "flex-1 flex flex-col min-h-0" : "hidden lg:flex lg:flex-col"}`}>
 						<div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded bg-slate-900/80 border border-emerald-500/40 text-[11px] font-bold text-emerald-300 flex items-center gap-1.5">
 							<span className="w-2 h-2 rounded-full bg-emerald-400" />
 							SAGITTAL (Сагиттальный профиль)
@@ -792,7 +865,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					</div>
 
 					{/* 4. UNFOLDED PANORAMA (OPG FOCAL TROUGH) */}
-					<div className="relative bg-black rounded-lg overflow-hidden border border-slate-800 flex flex-col">
+					<div className={`relative bg-black rounded-lg overflow-hidden border border-slate-800 ${mobileActiveTab === "panoramic" ? "flex-1 flex flex-col min-h-0" : "hidden lg:flex lg:flex-col"}`}>
 						<div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded bg-slate-900/80 border border-purple-500/40 text-[11px] font-bold text-purple-300 flex items-center gap-1.5">
 							<span className="w-2 h-2 rounded-full bg-purple-400" />
 							UNFOLDED PANORAMA (ОПТГ) · Толщина {archCurve.focalTroughThicknessMm} мм
@@ -807,7 +880,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				</div>
 
 				{/* ─── RIGHT WORKSPACE: CROSS-SECTION & IMPLANT PLANNER (COLS 9..12) ─── */}
-				<aside className="col-span-4 bg-slate-900 rounded-lg border border-slate-800 flex flex-col min-h-0 overflow-y-auto p-3 gap-3">
+				<aside className={`lg:col-span-4 ${mobileActiveTab === "planner" ? "flex-1 flex flex-col min-h-0" : "hidden lg:flex lg:flex-col"} bg-slate-900 rounded-lg border border-slate-800 min-h-0 overflow-y-auto p-3 gap-3`}>
 					{/* Active Cross-Section Carousel Header */}
 					<div className="flex items-center justify-between pb-2 border-b border-slate-800">
 						<div className="flex items-center gap-2">
