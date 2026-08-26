@@ -298,27 +298,23 @@ describe("CBCT Keyboard Shortcuts Engine", () => {
 			};
 
 			// axial -> coronal
-			handleCbctKeyDown(createMockEvent({ key: "Tab", code: "Tab", shiftKey: false }), options);
+			handleCbctKeyDown(createMockEvent({ key: "Tab", code: "Tab", shiftKey: false }), { ...options, activeViewport: currentViewport });
 			assert.equal(currentViewport, "coronal");
 
 			// coronal -> sagittal
-			options.activeViewport = "coronal";
-			handleCbctKeyDown(createMockEvent({ key: "Tab", code: "Tab", shiftKey: false }), options);
+			handleCbctKeyDown(createMockEvent({ key: "Tab", code: "Tab", shiftKey: false }), { ...options, activeViewport: currentViewport });
 			assert.equal(currentViewport, "sagittal");
 
 			// sagittal -> panoramic
-			options.activeViewport = "sagittal";
-			handleCbctKeyDown(createMockEvent({ key: "Tab", code: "Tab", shiftKey: false }), options);
+			handleCbctKeyDown(createMockEvent({ key: "Tab", code: "Tab", shiftKey: false }), { ...options, activeViewport: currentViewport });
 			assert.equal(currentViewport, "panoramic");
 
 			// panoramic -> cross_section
-			options.activeViewport = "panoramic";
-			handleCbctKeyDown(createMockEvent({ key: "Tab", code: "Tab", shiftKey: false }), options);
+			handleCbctKeyDown(createMockEvent({ key: "Tab", code: "Tab", shiftKey: false }), { ...options, activeViewport: currentViewport });
 			assert.equal(currentViewport, "cross_section");
 
 			// cross_section -> axial (wrap around)
-			options.activeViewport = "cross_section";
-			handleCbctKeyDown(createMockEvent({ key: "Tab", code: "Tab", shiftKey: false }), options);
+			handleCbctKeyDown(createMockEvent({ key: "Tab", code: "Tab", shiftKey: false }), { ...options, activeViewport: currentViewport });
 			assert.equal(currentViewport, "axial");
 		});
 
@@ -333,12 +329,11 @@ describe("CBCT Keyboard Shortcuts Engine", () => {
 			};
 
 			// axial -> cross_section (backward wrap)
-			handleCbctKeyDown(createMockEvent({ key: "Tab", code: "Tab", shiftKey: true }), options);
+			handleCbctKeyDown(createMockEvent({ key: "Tab", code: "Tab", shiftKey: true }), { ...options, activeViewport: currentViewport });
 			assert.equal(currentViewport, "cross_section");
 
 			// cross_section -> panoramic
-			options.activeViewport = "cross_section";
-			handleCbctKeyDown(createMockEvent({ key: "Tab", code: "Tab", shiftKey: true }), options);
+			handleCbctKeyDown(createMockEvent({ key: "Tab", code: "Tab", shiftKey: true }), { ...options, activeViewport: currentViewport });
 			assert.equal(currentViewport, "panoramic");
 		});
 	});

@@ -144,7 +144,7 @@ export const DEFAULT_VIEWPORT_CYCLE: readonly CbctNavViewport[] = [
 export interface CbctKeyboardShortcutsOptions {
 	readonly enabled?: boolean;
 	readonly activeViewport: CbctNavViewport;
-	readonly setActiveViewport: (viewport: CbctNavViewport) => void;
+	readonly setActiveViewport?: ((viewport: CbctNavViewport) => void) | undefined;
 	readonly viewports?: readonly CbctNavViewport[];
 	readonly onScrollSlice?: (direction: "prev" | "next", stepCount: number) => void;
 	readonly onNavigateCrossSection?: (direction: "prev" | "next", stepCount: number) => void;
@@ -329,7 +329,7 @@ export function handleCbctKeyDown(
 			const nextIdx = (currentIdx + delta + total) % total;
 			const nextViewport = viewports[nextIdx];
 			if (nextViewport) {
-				options.setActiveViewport(nextViewport);
+				options.setActiveViewport?.(nextViewport);
 			}
 		}
 		return true;
