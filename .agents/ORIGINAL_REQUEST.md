@@ -256,9 +256,190 @@ Remove and decouple all synthetic/academic simulation toys that distract from re
 
 ### UI & Theme Ergonomics
 - [x] Zero broken links or dead buttons in `VisitDiagnosticsTab`, `DentalLabOcclusionTab`, `RadiologyModule`, and `ClinicalModalsStudioStandalone`.
-- [x] Full 4-state visual contrast (PC Light, PC Dark, Mobile Light, Mobile Dark).
 - [x] Minimum 44x44px touch targets on all primary and secondary buttons.
 
+## 2026-08-26T17:12:53Z
 
+Build a high-performance, professional browser-based Dental CBCT (Cone-Beam CT) & DICOM Viewer inside Dental CRM (`apps/web/src/components/radiology/`) with 3-Plane Multi-Planar Reconstruction (MPR), Synchronized Crosshair Navigation, Panoramic Dental Arch Curve, Transverse Cross-Sections, Virtual Implant Caliper Planning, and Mandibular Nerve Safety Detection.
 
+Working directory: `C:\Clinic_MVP\dental-crm`
+Integrity mode: `development`
+
+## Requirements
+
+### R1. Multi-Planar Reconstruction (MPR 3-Plane Viewport & Crosshair Sync)
+- **Synchronized 3-Plane Viewports**: Axial (horizontal), Coronal (frontal), and Sagittal (profile) viewports with synced crosshair reticle. Clicking or dragging on any plane updates the corresponding orthogonal slice coordinates in 60 FPS.
+- **Slice Scroll & Slab MIP**: Smooth wheel slice navigation, slice thickness adjustments (1–30 mm Slab MIP / MinIP), and calibrated Hounsfield Window/Level presets (Bone 2000/400, Soft Tissue 400/40, Enamel 3000/1000, Custom).
+
+### R2. Panoramic Dental Arch Curve & Transverse Cross-Sections
+- **Anatomical Dental Spline Curve**: Interactive cubic bezier / spline curve mapped along the dental arch on the axial plane with FDI tooth landmark anchors (18..48).
+- **Unfolded Dental Panorama (OPG)**: Real-time reconstructed panoramic focal trough with adjustable thickness (5–20 mm).
+- **Pararadicular Cross-Section Carousel**: Perpendicular cross-sections generated along the dental arch curve with 1–2 mm step spacing, displaying exact cortical crest height, width, and tooth FDI labels.
+
+### R3. Implant Planning, Bone Density (HU) & Mandibular Nerve Safety
+- **Virtual Implant Library & Placement**: Standard implant presets (Ø 3.0–5.0 mm, Length 8.0–13.0 mm; Straumann, Nobel, Osstem, Dentium profiles) positioned directly on cross-section slices.
+- **Mandibular Nerve Safety Corridor**: 3D spline tracking of *Nervus alveolaris inferior* with mandatory 2.0 mm warning corridor (visual red alert & distance readout if implant enters < 2.0 mm safety envelope).
+- **Hounsfield Bone Density (Misch Criteria)**: Automatic HU sampling across cortical crest and spongiosa (D1 > 1250 HU, D2 850–1250 HU, D3 350–850 HU, D4 150–350 HU) with drilling protocol recommendations.
+
+### R4. Performance, Touch Ergonomics & 1-Click Form 043/u Integration
+- **Zero-GC Hot Path Rendering**: Fast Canvas2D / WebGL / ArrayBuffer voxel sampling, zero-lag mouse wheel slice pagination, and strict memory resource disposal on modal unmount.
+- **1-Click Clinical Export**: Instant transfer of bone height/width, Misch density, and implant specs into Form 043/u surgery protocol and stage treatment plans.
+- **Ergonomics & Themes**: Full 4-state visual contrast (PC/Mobile, Light/Dark/Night), minimum 44x44px touch targets.
+
+## Acceptance Criteria
+
+### Technical & Compilation Guardrails
+- [ ] `npm run typecheck -w @dental/web` passes with Exit Code 0.
+- [ ] Comprehensive unit & integration test suite (`apps/web/src/tests/cbctMprImplantStudio.test.ts`) passes with 100% pass rate.
+- [ ] Zero memory leaks on slice navigation and modal close (explicit image/canvas buffer disposal).
+### Clinical & Functional Verification
+- [ ] MPR 3-view crosshair coordinates stay strictly aligned across Axial, Coronal, and Sagittal viewports.
+- [ ] Dental curve generates accurate transverse cross-sections with FDI tooth labels and millimeter grid.
+- [ ] Nerve proximity check triggers < 2.0 mm safety warnings and rejects collision placements.
+- [ ] 1-click export populates Form 043/u diary with exact bone measurements and Misch bone classification.
+
+## 2026-08-26T18:25:17Z
+
+Transform the dental CRM radiology subsystem into a production-grade, clinically authentic 3D CBCT Multi-Planar Reconstruction (MPR) and Virtual Implant Planning Studio indistinguishable from Planmeca Romexis 6 and Vatech Ez3D-i, fully integrated into Dente CRM's visual design system, patient chart, and Form 043/u clinical workflow.
+
+Working directory: C:\Clinic_MVP\dental-crm\apps\web
+Integrity mode: development
+
+## Requirements
+
+### R1. Real Patient DICOM Series Ingestion & Multi-Source Loading
+- Seamless multi-slice DICOM series loading via drag-and-drop, folder picker, or ZIP archive (tested on the patient dataset `BARABASH_SVETLANA_VIKTOROVNA_09141256`, 400 slices, 800x800 Int16).
+- Extraction of true anatomical Hounsfield Units (HU range [-1024..+30720]), slice location, voxel spacing, and rescale intercept/slope.
+- Instant fallback/demo mode with realistic tissue attenuation without blank/toy placeholder shapes.
+
+### R2. Planmeca Romexis 6 Industrial Cockpit & UI Integration
+- Seamless integration with Dente CRM design system tokens (`var(--paper)`, `var(--ink)`, `var(--teal)`), dark/light theme support, and medical ergonomics (>= 44x44px touch targets).
+- **Romexis 3D Orientation Cube** in the corner of each viewport with anatomical labels (**A / P / L / R / S / I**), respecting radiological convention (patient right is on screen left).
+- **Standardized color crosshairs**:
+  * Axial = **Cyan** (`#06b6d4`)
+  * Coronal = **Orange/Amber** (`#f59e0b`)
+  * Sagittal = **Emerald Green** (`#10b981`)
+  * Panoramic Spline = **Purple** (`#a855f7`)
+  * Cross-Section = **Yellow** (`#eab308`)
+- **Calibrated millimeter rulers** with 1 mm ticks and 5/10 mm labeled markers along viewport axes.
+- **Slab MIP bounding lines**: dynamic dashed corridors indicating the exact physical thickness of the integrated slab layer on orthogonal views.
+
+### R3. Synchronized 4-Viewport Virtual Implant Placement & Multi-Planar Projection
+- Placing or adjusting an implant in the cross-section view immediately projects its **3D cylindrical/conical outline, central axis, and 2.0 mm safety halo across ALL 4 viewports**:
+  * Axial: elliptical/circular cross-section at current Z plane.
+  * Coronal & Sagittal: projected axis line and bounding envelope.
+  * Panoramic (OPG): silhouette of the implant projected onto the dental arch at the tooth FDI landmark.
+- Interactive 3D Mandibular Nerve (IAN) canal safety sentinel: real-time acoustic feedback and visual flashing warning when apex clearance drops < 2.0 mm.
+- Automated Carl Misch bone density classification (D1-D5) with surgical drilling sequence recommendations.
+
+### R4. Interactive Panoramic Dental Arch Curve & Reslicable Cross-Section Carousel
+- Interactive Catmull-Rom spline on the axial plane with draggable control anchors for mandible and maxilla.
+- Live unfolded dental panorama (OPG) with FDI tooth markers (18..48, 11..28) and a **fan of numbered cross-section slice indicator lines (#1..#80)**.
+- 1-Click navigation: clicking any slice line on the panorama instantly focuses the cross-section viewport and updates the implant planner.
+- 1-Click export to Form 043/u clinical diary and dental CRM treatment plan.
+
+## Acceptance Criteria
+
+### DICOM & Slicing Fidelity
+- [ ] Real DICOM series loads from folder/ZIP with authentic anatomical density in < 250 ms.
+- [ ] 3-Plane orthogonal reslicing updates synchronously in < 16 ms (60 FPS) during crosshair drag.
+- [ ] Window/Level presets (Bone, Soft Tissue, Enamel, Metal, Airways) dynamically remap grayscale in real time.
+
+### UI & Romexis Standard Compliance
+- [ ] Orientation cubes (A/P/L/R/S/I), millimeter scales, and standardized color crosshairs are rendered on all viewports.
+- [ ] Virtual implant is visible simultaneously across Axial, Coronal, Sagittal, and Panoramic views.
+- [ ] Clicking a slice line on the panorama jumps directly to that cross-section.
+- [ ] Nerve distance is measured with sub-millimeter precision (+-0.1 mm) with acoustic/visual safety warning.
+
+### Quality & Platform Gates
+- [ ] 4-State visual screenshots (PC Dark, PC Light, Mobile Dark, Mobile Light) pass visual inspection with zero UI overlap.
+- [ ] Pre-commit Iron Gate passes (`check:encoding`, `check:stub-overrides`, `check:fetch-response`, `typecheck`, `panelsAreMounted.test.ts`).
+- [ ] All automated unit tests in `apps/web/src/tests/` pass with 100% success rate.
+
+## 2026-08-26T18:48:01Z
+
+[TEAMWORK 1: CBCT STUDIO DIAGNOSTIC MODE & VIEWPORT MAXIMIZER / LAYOUT ENGINE]
+Рабочая директория: `C:\Clinic_MVP\dental-crm`
+Цель: Превратить КЛКТ-модуль из узкого «имплант-онли» калькулятора в универсальную радиологическую станцию (Planmeca Romexis 6 / Ez3D-i) с чистым диагностическим режимом по умолчанию (для кариеса, периодонтита, эндодонтии, пазух) и интерактивным управлением окнами.
+
+Задачи:
+1. Внедрить разделение на клинические режимы (`studioMode`):
+   - `diagnostic` (РЕЖИМ ПО УМОЛЧАНИЮ): Универсальная диагностика (поиск кариеса, периодонтита, кист, переломов, осмотр пазух). Чистый экран, четкие срезы, линейки, 3D-компас. НИКАКИХ навязчивых имплантатов, силуэтов и алертов нерва на экране!
+   - `implant`: Режим планирования имплантации (активирует виртуальный имплантат, трассировку нерва IAN, замер до канала и плотность Misch).
+   - `endo`: Эндодонтический режим (высококонтрастное окно корней зубов, зум верхушек, калибровка длины каналов).
+   - `tmd`: ВНЧС / суставы (сравнение левого и правого мыщелков).
+2. Реализовать интерактивное переключение раскладок окон (`viewportLayout`):
+   - `grid_4` (2x2): Сетка 4-х окон (Аксиал, Коронал, Сагиттал, Панорама / Кросс-секция).
+   - `maximized`: Разворот ЛЮБОГО выбранного окна (Аксиал, Коронал, Сагиттал, Панорама или Кросс-секция) на 100% ширины и высоты по клику на кнопку `[ ⛶ ]` или по двойному клику на заголовок вьюпорта. Кнопка `[ 🗗 Восстановить сетку ]`.
+   - `dominant_1_plus_3`: 1 доминантное увеличенное окно (например, Аксиал или Панорама) слева + 3 компактных окна в колонке справа.
+3. Добавить панель инструментов Romexis / Ez3D-i:
+   - Селектор режимов: `[ 🔍 Диагностика ]`, `[ 🔩 Имплантация ]`, `[ 🦷 Эндодонтия ]`, `[ 📐 ВНЧС ]`.
+   - Селектор раскладки: `[ ⊞ 4 окна ]`, `[ ◫ 1+3 ]`, `[ 🗖 Полный экран ]`.
+   - Быстрые фильтры анатомии: `[ Обе челюсти ]`, `[ В. челюсть ]`, `[ Н. челюсть ]`.
+4. Написать 15+ unit-тестов в `apps/web/src/components/radiology/__tests__/cbctLayoutAndModes.test.ts`.
+5. Проверить `npm run typecheck -w @dental/web`, обеспечить Exit Code 0 и закоммитить атомарно.
+
+## 2026-08-26T18:48:02Z
+
+[TEAMWORK 2: CBCT OBLIQUE MPR ROTATION, INTERACTIVE W/L & CANVAS NAVIGATION]
+Рабочая директория: `C:\Clinic_MVP\dental-crm`
+Цель: Реализовать полноценное вращение осей КЛКТ (Oblique MPR reslicing), зум/панорамирование холстов и регулировку контрастности/яркости (Window/Level) перетаскиванием мыши.
+
+Задачи:
+1. Математика вращения осей срезов (Oblique MPR) в `cbctMprMath.ts`:
+   - Углы поворота осей: `axialRotationDeg` (поворот плоскостей на аксиале вокруг Z), `coronalTiltDeg` (наклон плоскости вокруг X), `sagittalTiltDeg` (наклон плоскости вокруг Y).
+   - Функция `resliceObliqueMprSlice`: расчет косого сечения воксельного буфера $800\times 800\times 400$ с тригонометрической интерполяцией направления луча.
+   - Отрисовка интерактивных рукояток вращения (rotation gizmo/knobs) на концах линий перекрестия на холсте.
+2. Интерактивная навигация на вьюпортах:
+   - **Right-Click Drag (или перетаскивание с зажатой правой кнопкой)**: Плавная регулировка Window Width (по горизонтали) и Window Level (по вертикали) в реальном времени с выводом W/L бейджа.
+   - **Mouse Wheel / Пинч**: Плавный зум (0.5x .. 5.0x) с центрированием относительно курсора.
+   - **Middle-Click / Инструмент Панорама (Hand)**: Перемещение/панорамирование увеличенного среза по холсту.
+   - Кнопка мгновенного сброса `[ 🔄 Сброс W/L & Зума ]`.
+3. Написать 15+ unit-тестов в `apps/web/src/components/radiology/__tests__/cbctObliqueRotation.test.ts`.
+4. Обновить скрипт скриншотов `captureCbctScreenshots.mjs` и зафиксировать реальные скриншоты в диагностическом режиме и режиме развернутого окна.
+5. Проверить `npm run typecheck -w @dental/web`, обеспечить Exit Code 0 и закоммитить атомарно.
+
+## 2026-08-26T20:45:41Z
+
+# Teamwork Project Prompt — CBCT Color Harmonization & Adversarial UI Audit
+
+Working directory: `C:\Clinic_MVP\dental-crm`
+Integrity mode: development
+Requested team: Romexis Adversarial UI/UX Critics, Visual Harmonizers & Re-Architects
+
+## Requirements
+
+### R1. Полная цветовая монолитность палитры (Planmeca Romexis 6 Dark Matte)
+- В `apps/web/src/components/radiology/CbctLeftToolDock.tsx`, `CbctMprImplantStudioModal.tsx`, `CbctViewportHud.tsx`:
+  - Гарантировать 100% темную монохромную палитру: фон `#0c0e12`, панели `#14171e`, рамки `#242a35`, активный циан `#1e2430 text-cyan-400 border-cyan-500/60`.
+  - Устранить любые артефакты разных цветов кнопок или случайных светлых плашек.
+  - На канвасе ОПТГ панорамы и вьюпортах убрать любые ядовитые негармоничные заливки (желтые сплошные плашки) и сделать бейджи полупрозрачными темными матовыми.
+
+### R2. Проверка компиляции и тестов
+- Запустить `npm run typecheck -w @dental/web` и проверить отсутствие ошибок типов.
+- Запустить unit-тесты `npm test -w @dental/web apps/web/src/components/radiology/__tests__/*.test.ts`.
+
+### R3. Снятие скриншотов и мультимодальный аудит
+- Обновить и запустить `node apps/web/scripts/captureCbctScreenshots.mjs`.
+- Проверить скриншоты мультимодальным зрением и зафиксировать отсутствие цветового разнобоя.
+
+## 2026-08-26T20:45:41Z_visual_proof_audit
+
+# Teamwork Project Prompt — Adversarial Visual Auditor & Proof Verifier
+
+Working directory: `C:\Clinic_MVP\dental-crm`
+Integrity mode: development
+Requested team: Adversarial Screenshot & Visual Proof Auditor
+
+## Requirements
+
+### R1. Независимый мультимодальный аудит всех скриншотов
+- Открыть каждый свежий скриншот КЛКТ из `C:\Clinic_MVP\dental-crm\docs\proofs\cbct\`:
+  - Проверить левый Tool Dock: все кнопки строго темные `#14171e` с рамками `#242a35`, активная подсвечена цианом, никаких белых плашек.
+  - Проверить верхнюю шапку: кнопки выровнены, аккуратные, цвет единый.
+  - Проверить 4 окна КТ: срезы отображаются четко, перекрестия тонкие, координаты и шкалы не слепят.
+- Если обнаружен любой дефект цвета или верстки — немедленно зафиксировать и устранить в коде.
+
+### R2. Контроль компиляции
+- Запустить `npm run typecheck -w @dental/web`.
 
