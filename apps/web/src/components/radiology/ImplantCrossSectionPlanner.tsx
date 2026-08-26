@@ -34,6 +34,7 @@ import {
   calculateApexCoordinates,
   findImplantSpec,
   performCbctPlanningAudit,
+  playNerveSafetyAudioAlarm,
   STANDARD_IMPLANT_CATALOG,
   type AlveolarRidgeEnvelope,
   type ComprehensiveCbctPlanAudit,
@@ -79,8 +80,6 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
   const [isAudioEnabled, setIsAudioEnabled] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<"viewport" | "misch" | "diary">("viewport");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  const audioCtxRef = useRef<AudioContext | null>(null);
 
   const canal: MandibularCanalCrossSection = useMemo(() => ({
     center: { x: 14.0, y: 26.5 },
@@ -132,31 +131,9 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
 
   useEffect(() => {
     if (audit.nerveSafety.shouldTriggerAudioAlarm && isAudioEnabled) {
-      try {
-        const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-        if (!audioCtxRef.current) {
-          audioCtxRef.current = new AudioContextClass();
-        }
-        const ctx = audioCtxRef.current;
-        if (ctx.state === "suspended") {
-          ctx.resume();
-        }
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = "sawtooth";
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.15);
-        gain.gain.setValueAtTime(0.12, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.16);
-      } catch (e) {
-        // AudioContext ignored in unsupported environments
-      }
+      playNerveSafetyAudioAlarm(audit.nerveSafety.safetyStatus, isAudioEnabled);
     }
-  }, [audit.nerveSafety.shouldTriggerAudioAlarm, isAudioEnabled]);
+  }, [audit.nerveSafety.shouldTriggerAudioAlarm, audit.nerveSafety.safetyStatus, isAudioEnabled]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);

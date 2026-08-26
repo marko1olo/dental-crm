@@ -411,4 +411,194 @@ export function sampleCrossSectionHUProfile(
 	return computeHUZoneProfile(coronal, trabecular, apical);
 }
 
+// ─── 3D SYNCHRONIZED MULTI-VIEWPORT PROJECTION MATH ─────────────────────────
+
+export interface Implant3DWorldProjection {
+	readonly entry3D: { readonly x: number; readonly y: number; readonly z: number };
+	readonly apex3D: { readonly x: number; readonly y: number; readonly z: number };
+	readonly axisUnit3D: { readonly x: number; readonly y: number; readonly z: number };
+	readonly lengthMm: number;
+	readonly diameterMm: number;
+	readonly platformDiameterMm: number;
+	readonly apexDiameterMm: number;
+	readonly angulationDeg: number;
+	readonly targetToothFdi: number;
+	readonly normal2D: { readonly x: number; readonly y: number };
+}
+
+export interface AxialImplantIntersection {
+	readonly isInsideSpan: boolean;
+	readonly centerMm: { readonly x: number; readonly y: number; readonly z: number };
+	readonly radiusMm: number;
+	readonly semiMajorMm: number;
+	readonly semiMinorMm: number;
+	readonly rotationRad: number;
+	readonly safetyHaloSemiMajorMm: number;
+	readonly safetyHaloSemiMinorMm: number;
+	readonly signedDistanceToZMm: number;
+}
+
+/**
+ * Calculates 3D world coordinates (physical millimeters) of the virtual implant in CBCT volume space.
+ */
+export function calculateImplant3DWorldPose(
+	implantPose: CrossSectionImplantPose,
+	sliceCenterMm: { readonly x: number; readonly y: number; readonly z: number },
+	normal2D: { readonly x: number; readonly y: number },
+	sliceHeightMm = 32.0,
+	topCrestMarginMm = 4.0,
+): Implant3DWorldProjection {
+	const apex2D = calculateApexCoordinates(
+		implantPose.entryPoint,
+		implantPose.angulationDeg,
+		implantPose.implantSpec.lengthMm,
+	);
+
+	const crestZ = sliceCenterMm.z + (sliceHeightMm / 2.0 - topCrestMarginMm);
+
+	const entry3D = {
+		x: Number((sliceCenterMm.x + normal2D.x * implantPose.entryPoint.x).toFixed(2)),
+		y: Number((sliceCenterMm.y + normal2D.y * implantPose.entryPoint.x).toFixed(2)),
+		z: Number((crestZ - implantPose.entryPoint.y).toFixed(2)),
+	};
+
+	const apex3D = {
+		x: Number((sliceCenterMm.x + normal2D.x * apex2D.x).toFixed(2)),
+		y: Number((sliceCenterMm.y + normal2D.y * apex2D.x).toFixed(2)),
+		z: Number((crestZ - apex2D.y).toFixed(2)),
+	};
+
+	const dx = apex3D.x - entry3D.x;
+	const dy = apex3D.y - entry3D.y;
+	const dz = apex3D.z - entry3D.z;
+	const len = Math.hypot(dx, dy, dz) || 1.0;
+
+	return {
+		entry3D,
+		apex3D,
+		axisUnit3D: { x: dx / len, y: dy / len, z: dz / len },
+		lengthMm: implantPose.implantSpec.lengthMm,
+		diameterMm: implantPose.implantSpec.diameterMm,
+		platformDiameterMm: implantPose.implantSpec.platformDiameterMm,
+		apexDiameterMm: implantPose.implantSpec.apexDiameterMm,
+		angulationDeg: implantPose.angulationDeg,
+		targetToothFdi: implantPose.targetToothFdi ?? 46,
+		normal2D,
+	};
+}
+
+/**
+ * Computes intersection of the virtual implant cylinder with an Axial horizontal plane (Z = constant).
+ */
+export function calculateAxialImplantIntersection(
+	implant3D: Implant3DWorldProjection,
+	zWorldMm: number,
+	safetyMarginMm = 2.0,
+): AxialImplantIntersection {
+	const zTop = Math.max(implant3D.entry3D.z, implant3D.apex3D.z);
+	const zBottom = Math.min(implant3D.entry3D.z, implant3D.apex3D.z);
+	const span = zTop - zBottom;
+
+	const isInside = zWorldMm <= zTop + 0.5 && zWorldMm >= zBottom - 0.5;
+	const signedDist = zWorldMm > zTop ? zWorldMm - zTop : zWorldMm < zBottom ? zWorldMm - zBottom : 0;
+
+	let t = 0;
+	if (span > 0.001) {
+		t = Math.max(0, Math.min(1, (implant3D.entry3D.z - zWorldMm) / (implant3D.entry3D.z - implant3D.apex3D.z)));
+	}
+
+	const centerX = implant3D.entry3D.x + t * (implant3D.apex3D.x - implant3D.entry3D.x);
+	const centerY = implant3D.entry3D.y + t * (implant3D.apex3D.y - implant3D.entry3D.y);
+
+	const diameterAtZ =
+		implant3D.platformDiameterMm + t * (implant3D.apexDiameterMm - implant3D.platformDiameterMm);
+	const radiusAtZ = Math.max(1.0, diameterAtZ / 2.0);
+
+	const tiltRad = (Math.abs(implant3D.angulationDeg) * Math.PI) / 180.0;
+	const cosTilt = Math.max(0.2, Math.cos(tiltRad));
+
+	const semiMajor = Number((radiusAtZ / cosTilt).toFixed(2));
+	const semiMinor = Number(radiusAtZ.toFixed(2));
+
+	const safetyRadius = radiusAtZ + safetyMarginMm;
+	const safetySemiMajor = Number((safetyRadius / cosTilt).toFixed(2));
+	const safetySemiMinor = Number(safetyRadius.toFixed(2));
+
+	const rotRad = Math.atan2(implant3D.normal2D.y, implant3D.normal2D.x);
+
+	return {
+		isInsideSpan: isInside,
+		centerMm: { x: Number(centerX.toFixed(2)), y: Number(centerY.toFixed(2)), z: zWorldMm },
+		radiusMm: Number(radiusAtZ.toFixed(2)),
+		semiMajorMm: semiMajor,
+		semiMinorMm: semiMinor,
+		rotationRad: rotRad,
+		safetyHaloSemiMajorMm: safetySemiMajor,
+		safetyHaloSemiMinorMm: safetySemiMinor,
+		signedDistanceToZMm: Number(signedDist.toFixed(2)),
+	};
+}
+
+// ─── WEB AUDIO API SAFETY SOUND ALARM ENGINE ────────────────────────────────
+
+let sharedAudioContext: AudioContext | null = null;
+
+/**
+ * Triggers clinical Web Audio safety alarm according to proximity status.
+ */
+export function playNerveSafetyAudioAlarm(
+	safetyStatus: "safe" | "warning" | "danger",
+	isAudioEnabled = true,
+): void {
+	if (!isAudioEnabled || safetyStatus === "safe" || typeof window === "undefined") return;
+
+	try {
+		const AudioContextClass =
+			window.AudioContext ||
+			(window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+		if (!AudioContextClass) return;
+
+		if (!sharedAudioContext) {
+			sharedAudioContext = new AudioContextClass();
+		}
+		const ctx = sharedAudioContext;
+		if (ctx.state === "suspended") {
+			ctx.resume().catch(() => {});
+		}
+
+		const now = ctx.currentTime;
+
+		if (safetyStatus === "danger") {
+			// Urgent dual-pulse sawtooth alarm (880 Hz -> 440 Hz)
+			const osc = ctx.createOscillator();
+			const gain = ctx.createGain();
+			osc.type = "sawtooth";
+			osc.frequency.setValueAtTime(880, now);
+			osc.frequency.exponentialRampToValueAtTime(440, now + 0.16);
+			gain.gain.setValueAtTime(0.14, now);
+			gain.gain.exponentialRampToValueAtTime(0.01, now + 0.16);
+			osc.connect(gain);
+			gain.connect(ctx.destination);
+			osc.start(now);
+			osc.stop(now + 0.17);
+		} else if (safetyStatus === "warning") {
+			// Gentle warning sine chime (520 Hz -> 390 Hz)
+			const osc = ctx.createOscillator();
+			const gain = ctx.createGain();
+			osc.type = "sine";
+			osc.frequency.setValueAtTime(520, now);
+			osc.frequency.exponentialRampToValueAtTime(390, now + 0.12);
+			gain.gain.setValueAtTime(0.08, now);
+			gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+			osc.connect(gain);
+			gain.connect(ctx.destination);
+			osc.start(now);
+			osc.stop(now + 0.13);
+		}
+	} catch {
+		// AudioContext ignored in unsupported environments
+	}
+}
+
+
 

@@ -233,6 +233,36 @@ export function calculateArchTangentsAndNormals(spline: readonly Point2D[]): Arr
 }
 
 /**
+ * Computes the parallel inner and outer boundary curves of the focal trough
+ * offset by +/- (thickness / 2) along the normal vectors.
+ */
+export function getFocalTroughBoundaryCurves(
+	spline: readonly Point2D[],
+	thicknessMm: number,
+): {
+	innerBoundary: Point2D[];
+	outerBoundary: Point2D[];
+} {
+	const halfThickness = thicknessMm / 2.0;
+	const vectorField = calculateArchTangentsAndNormals(spline);
+	const innerBoundary: Point2D[] = [];
+	const outerBoundary: Point2D[] = [];
+
+	for (const node of vectorField) {
+		innerBoundary.push({
+			x: Number((node.point.x - node.normal.x * halfThickness).toFixed(2)),
+			y: Number((node.point.y - node.normal.y * halfThickness).toFixed(2)),
+		});
+		outerBoundary.push({
+			x: Number((node.point.x + node.normal.x * halfThickness).toFixed(2)),
+			y: Number((node.point.y + node.normal.y * halfThickness).toFixed(2)),
+		});
+	}
+
+	return { innerBoundary, outerBoundary };
+}
+
+/**
  * Builds a complete DentalArchCurve model from anchor points.
  */
 export function buildDentalArchCurve(
@@ -564,3 +594,80 @@ export function findNearestAnchorToPoint(pointMm: Point2D, archCurve: DentalArch
 	}
 	return closest;
 }
+
+// ─── 4. PANORAMIC CROSS-SECTION FAN & SLICE COORDINATE MAPPING ──────────────
+
+export interface PanoramicSliceFanTick {
+	readonly sliceIndex: number;
+	readonly panoX: number;
+	readonly distanceMm: number;
+	readonly nearestToothFdi: string;
+	readonly isMajor: boolean;
+}
+
+/**
+ * Maps a transverse cross-section slice to its horizontal X pixel column on the panoramic radiograph.
+ */
+export function mapSliceToPanoramicX(
+	slice: CrossSectionSliceData,
+	panoWidthPx: number,
+	totalArchLengthMm: number,
+): number {
+	if (totalArchLengthMm <= 0 || panoWidthPx <= 0) return 0;
+	const ratio = Math.max(0, Math.min(1, slice.distanceAlongArchMm / totalArchLengthMm));
+	return Math.round(ratio * (panoWidthPx - 1));
+}
+
+/**
+ * Finds the nearest cross-section slice index given a click/hover X pixel position on the panorama.
+ */
+export function findNearestCrossSectionIndexByPanoX(
+	panoX: number,
+	panoWidthPx: number,
+	crossSections: readonly CrossSectionSliceData[],
+	totalArchLengthMm: number,
+): number {
+	if (crossSections.length === 0) return 0;
+	if (totalArchLengthMm <= 0 || panoWidthPx <= 0) return 0;
+
+	const targetDist = (Math.max(0, Math.min(panoWidthPx - 1, panoX)) / (panoWidthPx - 1)) * totalArchLengthMm;
+
+	let closestIdx = 0;
+	let minDiff = Infinity;
+
+	for (let i = 0; i < crossSections.length; i++) {
+		const diff = Math.abs((crossSections[i]?.distanceAlongArchMm ?? 0) - targetDist);
+		if (diff < minDiff) {
+			minDiff = diff;
+			closestIdx = i;
+		}
+	}
+
+	return closestIdx;
+}
+
+/**
+ * Generates numbered slice fan tick marks along the panorama for interactive navigation.
+ */
+export function getPanoramicSliceFanTicks(
+	crossSections: readonly CrossSectionSliceData[],
+	panoWidthPx: number,
+	totalArchLengthMm: number,
+): readonly PanoramicSliceFanTick[] {
+	if (crossSections.length === 0 || panoWidthPx <= 0 || totalArchLengthMm <= 0) {
+		return [];
+	}
+
+	return crossSections.map((cs) => {
+		const px = mapSliceToPanoramicX(cs, panoWidthPx, totalArchLengthMm);
+		const isMajor = cs.sliceIndex === 1 || cs.sliceIndex % 5 === 0 || cs.sliceIndex === crossSections.length;
+		return {
+			sliceIndex: cs.sliceIndex,
+			panoX: px,
+			distanceMm: cs.distanceAlongArchMm,
+			nearestToothFdi: cs.nearestToothFdi,
+			isMajor,
+		};
+	});
+}
+
