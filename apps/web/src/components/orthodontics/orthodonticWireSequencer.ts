@@ -17,7 +17,7 @@
  * - Form 043/y structured SOAP visit note generation
  */
 
-import type { BracketPrescriptionId, SlotSize } from "./bracketPrescriptions";
+import type { BracketPrescriptionId, SlotSize, ToothBracketStatus } from "./bracketPrescriptions";
 
 export type WireMaterial =
 	| "niti_superelastic" // Суперэластичный никель-титан (SE NiTi)
@@ -78,18 +78,18 @@ export interface TorquePlayCalculation {
 export interface ArchwireVisitLog {
 	readonly id: string;
 	readonly visitDate: string;
-	readonly patientId?: string;
+	readonly patientId?: string | undefined;
 	readonly arch: "upper" | "lower" | "both";
-	readonly upperWireSize?: WireSize;
-	readonly upperWireMaterial?: WireMaterial;
-	readonly lowerWireSize?: WireSize;
-	readonly lowerWireMaterial?: WireMaterial;
-	readonly elasticsPattern?: string;
+	readonly upperWireSize?: WireSize | undefined;
+	readonly upperWireMaterial?: WireMaterial | undefined;
+	readonly lowerWireSize?: WireSize | undefined;
+	readonly lowerWireMaterial?: WireMaterial | undefined;
+	readonly elasticsPattern?: string | undefined;
 	readonly bracketActions: Array<{
 		readonly toothNumber: number;
-		readonly action: "fixed" | "rebonded" | "lost" | "debonded" | "hook_added";
-		readonly bracketSystem?: string;
-		readonly reason?: string;
+		readonly action: ToothBracketStatus | "hook_added";
+		readonly bracketSystem?: string | undefined;
+		readonly reason?: string | undefined;
 	}>;
 	readonly doctorName: string;
 	readonly appointmentIntervalWeeks: number;
@@ -505,6 +505,14 @@ export function validateWireProgression(
 		};
 	}
 
+	if (slotSize === ".018" && (nextWireSize === ".019x.025" || nextWireSize === ".021x.025")) {
+		return {
+			isValid: false,
+			warning: "Дуга не поместится в паз .018! Максимальный размер для паза .018 — .017x.025 или .016x.022.",
+			transitionDescription: "Несовместимость с пазом .018",
+		};
+	}
+
 	const diff = nextIndex - currentIndex;
 
 	if (diff === 0) {
@@ -530,14 +538,6 @@ export function validateWireProgression(
 		};
 	}
 
-	if (slotSize === ".018" && (nextWireSize === ".019x.025" || nextWireSize === ".021x.025")) {
-		return {
-			isValid: false,
-			warning: "Дуга не поместится в паз .018! Максимальный размер для паза .018 — .017x.025 или .016x.022.",
-			transitionDescription: "Несовместимость с пазом .018",
-		};
-	}
-
 	return {
 		isValid: true,
 		transitionDescription: "Последовательный клинический переход",
@@ -557,7 +557,6 @@ export function getStandardSequenceForPrescription(
 				"niti_018",
 				"ss_016x022",
 				"tma_017x025",
-				"braided_019x025",
 			].includes(w.id),
 		);
 	}
@@ -636,7 +635,11 @@ export function generateOrthodonticVisitSoapNote(log: ArchwireVisitLog): string 
 							? "скол замка"
 							: act.action === "debonded"
 								? "дебондинг"
-								: "установка крючка";
+								: act.action === "planned"
+									? "запланирована фиксация"
+									: act.action === "not_indicated"
+										? "не показан (отсутствует)"
+										: "установка крючка";
 			const reasonStr = act.reason ? " (причина: " + act.reason + ")" : "";
 			lines.push("   - Зуб " + act.toothNumber + ": " + actName + reasonStr);
 		}

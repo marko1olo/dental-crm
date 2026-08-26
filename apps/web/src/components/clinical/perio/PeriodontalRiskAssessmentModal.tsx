@@ -49,7 +49,7 @@ import {
 export interface PeriodontalRiskAssessmentModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly teeth: readonly PerioToothRecord[];
+	readonly teeth?: readonly PerioToothRecord[] | undefined;
 	readonly patientName?: string | undefined;
 	readonly patientAgeYears?: number | undefined;
 	readonly initialSmokingStatus?: SmokingCategory | undefined;
@@ -68,9 +68,10 @@ export interface PeriodontalRiskAssessmentModalProps {
 export function PeriodontalRiskAssessmentModal({
 	isOpen,
 	onClose,
-	teeth,
+	teeth = [],
 	patientName,
 	patientAgeYears = 45,
+
 	initialSmokingStatus = "non_smoker",
 	initialDiabetesStatus = "none",
 	initialBoneLossPercent,
