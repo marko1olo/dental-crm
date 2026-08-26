@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from "react";
 import { BootErrorBoundary } from "./bootErrorBoundary";
 import { GlobalToast } from "./components/GlobalToast";
 import { DiagnosticDrawer } from "./components/diagnostic/DiagnosticDrawer";
+import { CopilotGlobalHost } from "./components/copilot/CopilotGlobalHost";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 
@@ -15,9 +16,6 @@ function ThemeController() {
 	useEffect(() => {
 		const media = window.matchMedia("(prefers-color-scheme: dark)");
 		const applyTheme = () => {
-			// Разрешение темы вынесено в lib/themeClasses.ts и покрыто тестами: здесь
-			// жила ошибка, из-за которой в ночной теме не оставалось ни класса dark,
-			// ни light, и варианты Tailwind `dark:` в ней не срабатывали.
 			applyThemeToRoot(
 				document.documentElement,
 				resolveTheme(themeMode, media.matches),
@@ -50,7 +48,7 @@ export function AppShell() {
 			</Suspense>
 			<GlobalToast />
 			<DiagnosticDrawer />
+			<CopilotGlobalHost />
 		</BootErrorBoundary>
 	);
 }
-

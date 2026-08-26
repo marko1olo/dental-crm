@@ -42,7 +42,7 @@ import {
 	VisitDiaryPhotoUpload,
 } from "../VisitDiaryPhotoUpload";
 import { VisitDiaryTemplateSelector } from "../VisitDiaryTemplateSelector";
-import { AnesthesiaCalculator } from "./AnesthesiaCalculator";
+import { ToothAnesthesiaCalculator } from "../diagnostic/ToothAnesthesiaCalculator";
 import {
 	generatePerio043DiaryText,
 	derivePeriodontalDiagnosis,
@@ -914,11 +914,12 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							Калькулятор дозировок анестезии и карпул...
 						</summary>
 						<div className="pt-2">
-							<AnesthesiaCalculator
-								isLocked={fieldsDisabled}
-								{...(diary.diagnosisTooth ? { defaultToothNumber: diary.diagnosisTooth } : {})}
-								initialSomaticProfile={extractSomaticRiskProfileFromText(diary.comorbidities)}
-								onApplyToDiary={(text) => {
+							<ToothAnesthesiaCalculator
+								toothNumber={typeof diary.diagnosisTooth === "number" ? diary.diagnosisTooth : Number.parseInt(String(diary.diagnosisTooth ?? 16), 10) || 16}
+								hasCardioRisk={diary.comorbidities?.toLowerCase().includes("сердц") || diary.comorbidities?.toLowerCase().includes("давлен")}
+								hasSulfiteAllergy={diary.comorbidities?.toLowerCase().includes("сульфит")}
+								hasAsthma={diary.comorbidities?.toLowerCase().includes("астм")}
+								onInsertToProtocol={(text) => {
 									applyAnesthesiaPreset(text);
 								}}
 							/>

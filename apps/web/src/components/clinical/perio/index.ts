@@ -1,6 +1,3 @@
-export * from "./perio6PointMath";
-export * from "./perioPraCalculator";
-export * from "./PeriodontalRiskAssessmentModal";
 export * from "../../odontogram/PeriodontalChartModule";
 export * from "../../odontogram/PerioFullMouthGrid";
 export * from "../../odontogram/PerioKeypad";

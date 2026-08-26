@@ -43,7 +43,7 @@ import {
 	X,
 } from "lucide-react";
 import type { Kopecks } from "@dental/shared";
-import { AnesthesiaCalculator } from "../components/visit/AnesthesiaCalculator";
+import { ToothAnesthesiaCalculator } from "../components/diagnostic/ToothAnesthesiaCalculator";
 import { PrescriptionModal } from "../components/visit/PrescriptionModal";
 import { InformedConsentModal } from "../components/documents/InformedConsentModal";
 import {
@@ -63,24 +63,19 @@ import { FastCheckoutModal } from "../components/payments/checkout/FastCheckoutM
 import { MedicalPrescriptionModal } from "../components/prescriptions/generator/MedicalPrescriptionModal";
 import { CashShiftWidget } from "../components/finance/CashShiftWidget";
 import { CephalometricAnalysisModal } from "../components/orthodontics/CephalometricAnalysisModal";
-import { OrthodonticBracketMatrixModal } from "../components/orthodontics/OrthodonticBracketMatrixModal";
 import { ImplantIsqProtocolModal } from "../components/implant/isq/ImplantIsqProtocolModal";
 import { DentalLabOrderModal } from "../components/lab/DentalLabOrderModal";
 import { ClinicalPhotoProtocolModal } from "../components/photography/ClinicalPhotoProtocolModal";
 import { PatientRecallManagerModal } from "../components/recalls/PatientRecallManagerModal";
 import { AutoclaveCycleModal } from "../components/sanpin/autoclave/AutoclaveCycleModal";
 import { InsurancePreAuthModal } from "../components/insurance/InsurancePreAuthModal";
-import { LabStlViewerModal } from "../components/lab3d/LabStlViewerModal";
 import { TreatmentPlanComparatorModal } from "../components/treatment-plans/comparator/TreatmentPlanComparatorModal";
 import { WarehouseTransferModal } from "../components/inventory/transfers/WarehouseTransferModal";
 import { PatientPortalTimelineModal } from "../components/portal/timeline/PatientPortalTimelineModal";
 import { ImplantPlanningModal } from "../components/implant/ImplantPlanningModal";
-import { ImplantAbutmentStudioModal } from "../components/implant/ImplantAbutmentStudioModal";
 import { VoiceDictationAssistantModal } from "../components/voice/VoiceDictationAssistantModal";
 import { InformedConsentModal as InformedConsent323FzModal } from "../components/consents/InformedConsentModal";
 import { AnesthesiaProtocolModal } from "../components/anesthesia/AnesthesiaProtocolModal";
-import { AnesthesiaMrdCaliperModal } from "../components/visit/AnesthesiaMrdCaliperModal";
-import { PeriodontalRiskAssessmentModal } from "../components/clinical/perio/PeriodontalRiskAssessmentModal";
 import { MedicalWasteJournalModal } from "../components/sanpin/waste/MedicalWasteJournalModal";
 import { EmergencyRescueModal } from "../components/emergency/EmergencyRescueModal";
 import { WarrantyPassportModal } from "../components/warranty/WarrantyPassportModal";
@@ -324,25 +319,20 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isFastCheckoutOpen, setIsFastCheckoutOpen] = useState(false);
 	const [isMedicalPrescriptionOpen, setIsMedicalPrescriptionOpen] = useState(false);
 	const [isCephOpen, setIsCephOpen] = useState(false);
-	const [isBracketMatrixOpen, setIsBracketMatrixOpen] = useState(false);
 	const [isIsqOpen, setIsIsqOpen] = useState(false);
 	const [isLabOrderOpen, setIsLabOrderOpen] = useState(false);
 	const [isPhotoProtocolOpen, setIsPhotoProtocolOpen] = useState(false);
 	const [isRecallOpen, setIsRecallOpen] = useState(false);
 	const [isAutoclaveOpen, setIsAutoclaveOpen] = useState(false);
 	const [isInsuranceOpen, setIsInsuranceOpen] = useState(false);
-	const [isLabStlOpen, setIsLabStlOpen] = useState(false);
 	const [isPlanComparatorOpen, setIsPlanComparatorOpen] = useState(false);
 	const [isTransferOpen, setIsTransferOpen] = useState(false);
 	const [isPortalOpen, setIsPortalOpen] = useState(false);
 	const [isImplantPlanningOpen, setIsImplantPlanningOpen] = useState(false);
-	const [isImplantAbutmentStudioOpen, setIsImplantAbutmentStudioOpen] = useState(false);
 	const [isBeforeAfterOpen, setIsBeforeAfterOpen] = useState(false);
 	const [isVoiceAssistantOpen, setIsVoiceAssistantOpen] = useState(false);
 	const [isConsent323Open, setIsConsent323Open] = useState(false);
 	const [isAnesthesiaProtocolOpen, setIsAnesthesiaProtocolOpen] = useState(false);
-	const [isAnesthesiaMrdOpen, setIsAnesthesiaMrdOpen] = useState(false);
-	const [isPerioRiskOpen, setIsPerioRiskOpen] = useState(false);
 	const [isMedicalWasteOpen, setIsMedicalWasteOpen] = useState(false);
 	const [isEmergencyRescueOpen, setIsEmergencyRescueOpen] = useState(false);
 	const [isWarrantyPassportOpen, setIsWarrantyPassportOpen] = useState(false);
@@ -393,7 +383,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				}
 				const requestedModal = params.get("modal");
 				if (requestedModal) {
-					setIsImplantAbutmentStudioOpen(requestedModal === "implant" || requestedModal === "abutment" || requestedModal === "emergence");
+					setIsImplantPlanningOpen(requestedModal === "implant" || requestedModal === "abutment" || requestedModal === "emergence");
 					setIsBeforeAfterOpen(requestedModal === "before_after" || requestedModal === "photo_comparison" || requestedModal === "photography");
 				}
 			}
@@ -718,30 +708,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</button>
 					</div>
 
-					{/* Orthodontic Bracket Matrix & Wire Sequencer Trigger */}
-					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
-						<div className="space-y-2">
-							<div className="flex items-center gap-2 text-[var(--teal)]">
-								<Sliders className="w-5 h-5" />
-								<span className="font-bold text-sm text-[var(--ink)]">
-									Матрица брекетов & Торк (Roth, MBT, Damon Q, Alexander)
-								</span>
-							</div>
-							<p className="text-xs text-[var(--muted)] leading-relaxed">
-								Таблица торка/ангуляции 18..48, физика люфта дуги в пазе, протокол смены дуг и генератор протокола 043/у.
-							</p>
-						</div>
-						<button
-							type="button"
-							onClick={() => setIsBracketMatrixOpen(true)}
-							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
-							data-testid="open-bracket-matrix-modal-btn"
-						>
-							<Sliders size={15} />
-							<span>Матрица брекетов & Дуги</span>
-						</button>
-					</div>
-
 					{/* 12. Implant ISQ & RFA Osstell Stability Trigger (Wave 12 / Task 39) */}
 					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
 						<div className="space-y-2">
@@ -901,12 +867,12 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</div>
 						<button
 							type="button"
-							onClick={() => setIsLabStlOpen(true)}
+							onClick={() => setIsLabOrderOpen(true)}
 							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
 							data-testid="open-lab-stl-modal-btn"
 						>
 							<Eye size={15} />
-							<span>Открыть 3D STL просмотрщик</span>
+							<span>Открыть заказ-наряд ЗТЛ</span>
 						</button>
 					</div>
 
@@ -1045,12 +1011,12 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</div>
 						<button
 							type="button"
-							onClick={() => setIsImplantAbutmentStudioOpen(true)}
+							onClick={() => setIsImplantPlanningOpen(true)}
 							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
 							data-testid="open-implant-abutment-studio-modal-btn"
 						>
 							<Crown size={15} />
-							<span>Открыть Emergence Studio</span>
+							<span>Открыть планирование имплантации</span>
 						</button>
 					</div>
 
@@ -1166,12 +1132,12 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</div>
 						<button
 							type="button"
-							onClick={() => setIsAnesthesiaMrdOpen(true)}
+							onClick={() => setIsAnesthesiaProtocolOpen(true)}
 							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
 							data-testid="open-anesthesia-mrd-caliper-modal-btn"
 						>
 							<Activity size={15} />
-							<span>Открыть калипер MRD</span>
+							<span>Открыть протокол анестезии</span>
 						</button>
 					</div>
 
@@ -1740,10 +1706,10 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</span>
 					</div>
 
-					<AnesthesiaCalculator
-						defaultToothNumber={16}
-						defaultWeightKg={70}
-						onApplyToDiary={(text) => {
+					<ToothAnesthesiaCalculator
+						toothNumber={16}
+						initialWeightKg={70}
+						onInsertToProtocol={(text) => {
 							console.log("[Anesthesia Applied]:", text);
 						}}
 					/>
@@ -1892,14 +1858,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				/>
 			)}
 
-			{isBracketMatrixOpen && (
-				<OrthodonticBracketMatrixModal
-					isOpen={isBracketMatrixOpen}
-					onClose={() => setIsBracketMatrixOpen(false)}
-					patientName="Смирнова Екатерина Васильевна"
-				/>
-			)}
-
 			{isIsqOpen && (
 				<ImplantIsqProtocolModal
 					isOpen={isIsqOpen}
@@ -1959,15 +1917,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				/>
 			)}
 
-			{isLabStlOpen && (
-				<LabStlViewerModal
-					isOpen={isLabStlOpen}
-					onClose={() => setIsLabStlOpen(false)}
-					modelName="Crown_16_Anatomical.stl"
-					toothFdi="16"
-				/>
-			)}
-
 			{isPlanComparatorOpen && (
 				<TreatmentPlanComparatorModal
 					isOpen={isPlanComparatorOpen}
@@ -2018,15 +1967,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				/>
 			)}
 
-			{isImplantAbutmentStudioOpen && (
-				<ImplantAbutmentStudioModal
-					isOpen={isImplantAbutmentStudioOpen}
-					onClose={() => setIsImplantAbutmentStudioOpen(false)}
-					initialToothFdi={11}
-				/>
-			)}
-
-
 			{isVoiceAssistantOpen && (
 				<VoiceDictationAssistantModal
 					isOpen={isVoiceAssistantOpen}
@@ -2059,25 +1999,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					initialToothNumber={46}
 					initialPatientWeightKg={70}
 					initialPatientAgeYears={35}
-				/>
-			)}
-
-			{isAnesthesiaMrdOpen && (
-				<AnesthesiaMrdCaliperModal
-					isOpen={isAnesthesiaMrdOpen}
-					onClose={() => setIsAnesthesiaMrdOpen(false)}
-					initialToothNumber={16}
-					initialWeightKg={70}
-					initialAgeYears={35}
-				/>
-			)}
-
-			{isPerioRiskOpen && (
-
-				<PeriodontalRiskAssessmentModal
-					isOpen={isPerioRiskOpen}
-					onClose={() => setIsPerioRiskOpen(false)}
-					patientName="Смирнова Екатерина Васильевна"
 				/>
 			)}
 

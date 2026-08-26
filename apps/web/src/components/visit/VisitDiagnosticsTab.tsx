@@ -7,7 +7,6 @@ import { EMPTY_DIARY } from "../useVisitDiaryLogic";
 import { VisiographAnalyzer } from "../imaging/VisiographAnalyzer";
 import { EndoCanalLogModal } from "../odontogram/EndoCanalLogModal";
 import { CephalometricAnalysisModal } from "../orthodontics/CephalometricAnalysisModal";
-import { OrthodonticBracketMatrixModal } from "../orthodontics/OrthodonticBracketMatrixModal";
 import { LabOrdersPanel } from "../schedule/LabOrdersPanel";
 import { RadiologyReferralModal } from "./RadiologyReferralModal";
 import { ClinicalPhotoProtocolModal } from "../photography/ClinicalPhotoProtocolModal";
@@ -56,7 +55,6 @@ export function VisitDiagnosticsTab(props?: {
 	const activePatient = props?.activePatient ?? ctx?.activePatient;
 	const workspaceFlags = useWorkspaceProfile();
 	const [isCephModalOpen, setIsCephModalOpen] = useState<boolean>(false);
-	const [isBracketMatrixModalOpen, setIsBracketMatrixModalOpen] = useState<boolean>(false);
 	const [isEndoLogModalOpen, setIsEndoLogModalOpen] = useState<boolean>(false);
 	const [isRadiologyModalOpen, setIsRadiologyModalOpen] = useState<boolean>(false);
 	const [isPhotoProtocolModalOpen, setIsPhotoProtocolModalOpen] = useState<boolean>(false);
@@ -443,36 +441,12 @@ export function VisitDiagnosticsTab(props?: {
 					<Layers size={16} />
 					<span>Эндодонтия: Журнал длины каналов (WL)</span>
 				</button>
-				<button
-					type="button"
-					onClick={() => setIsBracketMatrixModalOpen(true)}
-					className="flex items-center gap-2 px-4 py-2.5 min-h-[48px] text-xs sm:text-sm font-bold rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 border border-[var(--line,#cbd5e1)] dark:border-slate-700 cursor-pointer transition-all shadow-sm active:scale-95 touch-manipulation"
-					data-testid="btn-open-bracket-matrix-modal"
-				>
-					<Activity size={16} className="text-[var(--teal,var(--brand-primary))]" />
-					<span>Ортодонтия: Матрица брекетов & Торк</span>
-				</button>
 			</div>
 
 			{/* Orthodontic Cephalometric Modal */}
 			<CephalometricAnalysisModal
 				isOpen={isCephModalOpen}
 				onClose={() => setIsCephModalOpen(false)}
-				patientId={visitPatientId ?? activePatient?.id}
-				patientName={visitPatientName ?? activePatient?.fullName}
-				onInsertToProtocol={(text) => {
-					if (props?.onInsertToProtocol) {
-						props.onInsertToProtocol(text);
-					} else if (typeof ctx?.appendToTranscript === "function") {
-						ctx.appendToTranscript(`\n\n${text}`);
-					}
-				}}
-			/>
-
-			{/* Orthodontic Bracket Matrix & Wire Sequencer Modal */}
-			<OrthodonticBracketMatrixModal
-				isOpen={isBracketMatrixModalOpen}
-				onClose={() => setIsBracketMatrixModalOpen(false)}
 				patientId={visitPatientId ?? activePatient?.id}
 				patientName={visitPatientName ?? activePatient?.fullName}
 				onInsertToProtocol={(text) => {

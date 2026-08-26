@@ -27,7 +27,6 @@ import {
 	playSterileSuccessTone,
 	playExpiredErrorTone,
 } from "../components/sanpin/kraft/seniorNurseKraftAudio";
-import { COMMON_DENTAL_SERVICES } from "../components/schedule/SeniorNurseBookingWizardModal";
 import { checkAppointmentResourceCollision } from "../utils/scheduleCollisionUtils";
 import {
 	calculateCashChangeKop,
@@ -35,6 +34,15 @@ import {
 	splitStateToCheckoutPayments,
 	validateCheckoutSplit,
 } from "../components/payments/checkout/fastCheckoutEngine";
+
+const COMMON_DENTAL_SERVICES = [
+	{ id: "consult", titleRu: "Осмотр и консультация", durationMin: 30, icon: "🦷" },
+	{ id: "caries", titleRu: "Лечение кариеса (пломба)", durationMin: 45, icon: "🩺" },
+	{ id: "cito", titleRu: "Острая боль (CITO)", durationMin: 20, icon: "⚡" },
+	{ id: "hygiene", titleRu: "Профгигиена и чистка", durationMin: 60, icon: "✨" },
+	{ id: "surgery", titleRu: "Удаление зуба (хирургия)", durationMin: 45, icon: "💉" },
+	{ id: "prostho", titleRu: "Коронка / протезирование", durationMin: 60, icon: "👑" },
+];
 
 describe("FOOLPROOF & SENIOR NURSE UX SIMPLIFIER («БАБУШКА-PROOF»)", () => {
 	// ========================================================================

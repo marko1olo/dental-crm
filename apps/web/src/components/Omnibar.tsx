@@ -8,6 +8,7 @@ import {
 	MessageSquare,
 	Search,
 	Settings,
+	Sparkles,
 	Stethoscope,
 	Users,
 	X,
@@ -123,6 +124,21 @@ export function Omnibar() {
 			category: "Быстрые действия",
 			action: () => {
 				setCurrentView("shift");
+			},
+		},
+		{
+			id: "action-copilot",
+			title: "Клинический Copilot (ИИ-ассистент)",
+			icon: <Sparkles className="text-[var(--teal)]" />,
+			category: "Быстрые действия",
+			action: () => {
+				if (typeof window !== "undefined") {
+					if (window.__denteCopilot) {
+						window.__denteCopilot.open();
+					} else {
+						window.dispatchEvent(new CustomEvent("dente:toggle-copilot"));
+					}
+				}
 			},
 		},
 	];

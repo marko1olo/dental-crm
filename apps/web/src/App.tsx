@@ -44,6 +44,7 @@ import { OnboardingWizardModal } from "./components/onboarding/OnboardingWizardM
 import { Omnibar } from "./components/Omnibar";
 import { OfflineConflictReviewDrawer } from "./components/offline/OfflineConflictReviewDrawer";
 import { VoiceAssistantUI } from "./components/VoiceAssistantUI";
+import { CopilotDrawer, useCopilot } from "./components/copilot";
 import { AppLogicProvider } from "./contexts/AppLogicContext";
 import { CtPlanningToolsPanel } from "./ctPlanningTools";
 import { resolveClinicMode, staffRoleChoices } from "./lib/clinicCapabilities";
@@ -186,6 +187,17 @@ export function App() {
 		});
 	};
 	const perspective = usePerspectiveStore((s) => s.perspective);
+	const copilot = useCopilot();
+	useEffect(() => {
+		const onKeyDown = (e: KeyboardEvent) => {
+			if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+				e.preventDefault();
+				copilot.toggle();
+			}
+		};
+		window.addEventListener("keydown", onKeyDown);
+		return () => window.removeEventListener("keydown", onKeyDown);
+	}, [copilot]);
 	const appLogicValue = useAppLogic();
 	const { networkState } = useNetworkConnectivity();
 	const {
@@ -4151,6 +4163,39 @@ export function App() {
 						// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 						onNavigate={(view) => setCurrentView(view as any)}
 					/>
+					<CopilotDrawer
+						isOpen={copilot.isOpen}
+						messages={copilot.messages}
+						busy={copilot.busy}
+						phase={copilot.phase}
+						pending={copilot.pending}
+						nameCache={copilot.nameCache}
+						nudges={copilot.nudges}
+						activeTab={copilot.activeTab}
+						onTabChange={copilot.setActiveTab}
+						onClose={copilot.closeDrawer}
+						onSend={copilot.send}
+						onConfirm={copilot.confirm}
+						onReset={copilot.reset}
+						onDismissNudge={copilot.dismissNudge}
+						onSelectPatient={(id) => {
+							setSelectedPatientId(id);
+							setCurrentView("patients");
+						}}
+						onSelectAppointment={() => {
+							setCurrentView("schedule");
+						}}
+					/>
+					<button
+						type="button"
+						className="copilot-trigger-btn"
+						onClick={copilot.toggle}
+						title="Открыть AI Copilot (Ctrl+K / ⌘K)"
+						aria-label="AI Copilot"
+					>
+						<Sparkles className="w-4 h-4 animate-pulse" />
+						<span>Copilot</span>
+					</button>
 				</section>
 				<nav className="dnt-bottom-nav" aria-label="Мобильная навигация">
 					{(["shift", "schedule", "patients", "visit"] as const).map((view) => (

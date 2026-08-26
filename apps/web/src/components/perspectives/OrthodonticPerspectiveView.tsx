@@ -32,10 +32,8 @@ import { actionFailureToast } from "../../lib/panelStateText";
 import { countLabel } from "../../lib/russianPlural";
 import { usePatientStore } from "../../store/patientStore";
 import { usePerspectiveStore } from "../../store/perspectiveStore";
-import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 import { CephalometricAnalysisModal } from "../orthodontics/CephalometricAnalysisModal";
-import { OrthodonticBracketMatrixModal } from "../orthodontics/OrthodonticBracketMatrixModal";
 
 interface OrthoStage {
 	number: number;
@@ -76,7 +74,6 @@ export function OrthodonticPerspectiveView() {
 	const [sliderPosition, setSliderPosition] = useState<number>(50);
 	const [activeAngle, setActiveAngle] = useState<"frontal" | "occlusal_up" | "occlusal_low" | "profile">("frontal");
 	const [isCephModalOpen, setIsCephModalOpen] = useState<boolean>(false);
-	const [isBracketMatrixOpen, setIsBracketMatrixOpen] = useState<boolean>(false);
 
 	// Clinical Timeline Stages
 	const stages: OrthoStage[] = useMemo(
@@ -223,19 +220,8 @@ export function OrthodonticPerspectiveView() {
 					</div>
 				</div>
 
-				{/* Top Right Actions: TRG Analysis, Bracket Matrix & Patient Selector */}
+				{/* Top Right Actions: TRG Analysis & Patient Selector */}
 				<div className="flex items-center gap-3 flex-wrap">
-					<button
-						type="button"
-						onClick={() => setIsBracketMatrixOpen(true)}
-						data-testid="open-bracket-matrix-btn"
-						className="min-h-[48px] px-4 py-2.5 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 font-bold flex items-center gap-2 border border-[var(--line,#cbd5e1)] dark:border-slate-700 active:scale-95 transition-all text-sm cursor-pointer shadow-sm"
-						title="Открыть матрицу брекетов, значения торка/ангуляции и протокол смены дуг"
-					>
-						<Sliders size={18} className="text-[var(--teal,var(--brand-primary))]" />
-						<span>Матрица брекетов & Дуги</span>
-					</button>
-
 					<button
 						type="button"
 						onClick={() => setIsCephModalOpen(true)}
@@ -602,14 +588,6 @@ export function OrthodonticPerspectiveView() {
 			<CephalometricAnalysisModal
 				isOpen={isCephModalOpen}
 				onClose={() => setIsCephModalOpen(false)}
-				patientId={activePatient?.id}
-				patientName={activePatient?.fullName}
-			/>
-
-			{/* Orthodontic Bracket Matrix & Wire Sequencer Modal */}
-			<OrthodonticBracketMatrixModal
-				isOpen={isBracketMatrixOpen}
-				onClose={() => setIsBracketMatrixOpen(false)}
 				patientId={activePatient?.id}
 				patientName={activePatient?.fullName}
 			/>

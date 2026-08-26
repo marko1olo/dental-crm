@@ -7,5 +7,3 @@ export * from './anesthesiaEngine';
 export * from './AnesthesiaProtocolModal';
 export * from './AnesthesiaQuickBar';
 export * from '../visit/anesthesiaMrdMath';
-export * from '../visit/AnesthesiaMrdCaliperModal';
-

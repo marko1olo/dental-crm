@@ -22,13 +22,13 @@ import {
 	Plus,
 	ReceiptText,
 	ScanLine,
+	Sparkles,
 	Stethoscope,
 	TrendingUp,
 	UserPlus,
 	Users,
 } from "lucide-react";
 import { IncomingCallPopup } from "./components/telephony/IncomingCallPopup";
-import { TelephonySimulatorModal } from "./components/telephony/TelephonySimulatorModal";
 import { TelephonyFloatingWidget } from "./components/telephony/TelephonyFloatingWidget";
 import { RecentPatientHistoryWidget } from "./components/workspace/RecentPatientHistoryWidget";
 import { WorkspaceActionsMount } from "./components/workspaceActions/WorkspaceActions";
@@ -83,7 +83,6 @@ export {
 	viewHints,
 	viewLabels,
 	IncomingCallPopup,
-	TelephonySimulatorModal,
 	TelephonyFloatingWidget,
 };
 
@@ -773,6 +772,38 @@ export function WorkspaceTopbar({
 				<WorkspaceActionsMount />
 
 				{/*
+          КОПИЛОТ / КЛИНИЧЕСКИЙ ИИ-АССИСТЕНТ — крупная кнопка в шапке в 1 клик.
+          Позволяет врачам и администраторам мгновенно открыть чат и задачи ассистента без горячих клавиш.
+        */}
+				<button
+					id="topbar-copilot-btn"
+					className="secondary-button topbar-copilot-button"
+					type="button"
+					title="DENTE Copilot — Клинический ИИ-ассистент (Ctrl+K)"
+					onClick={() => {
+						if (typeof window !== "undefined") {
+							if (window.__denteCopilot) {
+								window.__denteCopilot.toggle();
+							} else {
+								window.dispatchEvent(new CustomEvent("dente:toggle-copilot"));
+							}
+						}
+					}}
+					style={{
+						display: "inline-flex",
+						alignItems: "center",
+						gap: "6px",
+						backgroundColor: "var(--teal-soft)",
+						color: "var(--teal)",
+						borderColor: "var(--teal-surface, var(--teal))",
+						fontWeight: 600,
+					}}
+				>
+					<Sparkles className="w-4 h-4 text-[var(--teal)] animate-pulse" aria-hidden="true" />
+					<span>Copilot</span>
+				</button>
+
+				{/*
           НЕОБЯЗАТЕЛЬНЫЕ КНОПКИ — ПОСЛЕДНИМИ, потому что перенос забирает
           последних. Обе несут `.compact-top-button` и потому скрыты до 1140px
           (`dente-redesign.css:610`): там в строке остаются только «Запись»,
@@ -830,7 +861,6 @@ export function WorkspaceTopbar({
 				) : null}
 			</div>
 			<IncomingCallPopup />
-			<TelephonySimulatorModal />
 			<TelephonyFloatingWidget />
 		</header>
 	);

@@ -4,6 +4,7 @@
 @import "./modules/odontogram.css";
 @import "./modules/patient-workspace.css";
 @import "./modules/mobile-touch.css";
+@import "../components/copilot/CopilotDrawer.css";
 
 :root {
 	/* LIGHT THEME (Premium Aesthetics) */
