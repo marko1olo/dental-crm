@@ -395,9 +395,9 @@ export function calculateTorquePlay(wireSize: WireSize, slotSize: SlotSize): Tor
 	let wireW = 0;
 
 	if (wireSize.includes("x")) {
-		const parts = wireSize.replace(".", "").split("x");
-		wireH = Number("0." + parts[0]);
-		wireW = Number("0." + parts[1]);
+		const parts = wireSize.split("x");
+		wireH = Number(parts[0]);
+		wireW = Number(parts[1]);
 	} else {
 		wireH = Number(wireSize);
 		wireW = Number(wireSize);

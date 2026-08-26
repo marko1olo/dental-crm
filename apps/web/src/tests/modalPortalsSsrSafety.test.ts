@@ -7,6 +7,7 @@ import { SberbankTerminalPaymentModal } from "../components/finance/SberbankTerm
 import { InventoryConfirmDialog } from "../components/inventory/InventoryConfirmDialog";
 import { EndoCanalLogModal } from "../components/odontogram/EndoCanalLogModal";
 import { CephalometricAnalysisModal } from "../components/orthodontics/CephalometricAnalysisModal";
+import { OrthodonticBracketMatrixModal } from "../components/orthodontics/OrthodonticBracketMatrixModal";
 import { WaitlistDrawer } from "../components/schedule/WaitlistDrawer";
 import { WaitlistQuickFillModal } from "../components/schedule/WaitlistQuickFillModal";
 import { CryptoProSigner } from "../components/visit/CryptoProSigner";
@@ -118,16 +119,17 @@ describe("Modal Portals & SSR Safety Hardening", () => {
 		assert.ok(html.includes("data-testid=\"waitlist-drawer\""));
 	});
 
-	it("CryptoProSigner renders SSR-safe static button", () => {
+	it("OrthodonticBracketMatrixModal renders SSR-safe static markup when open", () => {
 		const html = renderToStaticMarkup(
-			createElement(CryptoProSigner, {
-				diaryHash: "hash123",
-				isLocked: false,
-				lockedAt: null,
-				ensureDraftSaved: async () => null,
-				onLock: async () => {},
+			createElement(OrthodonticBracketMatrixModal, {
+				isOpen: true,
+				onClose: () => {},
+				patientId: "pat-ortho-1",
+				patientName: "Смирнова Екатерина",
 			}),
 		);
-		assert.ok(html.includes("Подписать и закрыть"));
+		assert.ok(html.includes("data-testid=\"orthodontic-bracket-matrix-modal\""));
+		assert.ok(html.includes("Смирнова Екатерина"));
+		assert.ok(html.includes("Damon Q"));
 	});
 });
