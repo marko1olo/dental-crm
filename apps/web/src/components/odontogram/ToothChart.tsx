@@ -6,7 +6,16 @@ import {
 	getNextFocusedTooth,
 	getToothStateFromHotkey,
 } from "./ClassicGostOdontogram";
+import {
+	isPrimaryTooth,
+	getPrimaryToothResorptionVisual,
+	type ResorptionVisualProps,
+	type DentitionMode,
+} from "./pediatricDentitionEngine";
 import "./odontogram.css";
+
+export { getNextFocusedTooth, getToothStateFromHotkey };
+export type { DentitionMode };
 
 export type ToothState =
 	| "Caries"
@@ -253,16 +262,20 @@ export interface ToothChartProps {
 	teethData: ToothData[];
 	pediatricMode?: boolean | undefined;
 	mixedDentition?: boolean | undefined;
+	dentitionMode?: DentitionMode | undefined;
+	onDentitionModeChange?: ((mode: DentitionMode) => void) | undefined;
 	topTeeth?: number[] | undefined;
 	bottomTeeth?: number[] | undefined;
 	selectedTeeth?: number[] | undefined;
 	activeStamp?: ToothState | null | undefined;
 	onToothClick: (num: number, rect: DOMRect, surface?: string | undefined) => void;
 	onQuickStateChange?: ((targets: number[], state: ToothState, surfaces?: readonly string[] | undefined) => void) | undefined;
+	onResorptionChange?: ((targets: number[], stage: RootResorptionStage) => void) | undefined;
 	useSurfaces?: boolean | undefined;
 	hideHeader?: boolean | undefined;
 	hideLegend?: boolean | undefined;
 	hideQuadrantSwitcher?: boolean | undefined;
+	hideDentitionSwitcher?: boolean | undefined;
 	showPulpAndCanals?: boolean | undefined;
 	showPeriapicalHalos?: boolean | undefined;
 	showPeriodontalBoneLoss?: boolean | undefined;
@@ -917,6 +930,7 @@ const ToothSVG = ({
 	postType,
 	boneLossLevel,
 	boneLossType,
+	rootResorptionStage,
 	periapicalLesion,
 	pocketDepth,
 	pocketDepthMm,
@@ -926,6 +940,7 @@ const ToothSVG = ({
 	activeStamp,
 	onClick,
 	onQuickStateChange,
+	onResorptionChange,
 	pediatricMode,
 	surfaces,
 	useSurfaces,
@@ -942,6 +957,7 @@ const ToothSVG = ({
 	postType?: PostCoreType | undefined;
 	boneLossLevel?: number | undefined;
 	boneLossType?: PeriodontalBoneLossPattern | undefined;
+	rootResorptionStage?: RootResorptionStage | number | undefined;
 	periapicalLesion?: boolean | undefined;
 	pocketDepth?: number | undefined;
 	pocketDepthMm?: number | undefined;
@@ -951,6 +967,7 @@ const ToothSVG = ({
 	activeStamp?: ToothState | null | undefined;
 	onClick: (e: React.MouseEvent, num: number, surface?: string) => void;
 	onQuickStateChange?: ((targets: number[], state: ToothState, surfaces?: readonly string[] | undefined) => void) | undefined;
+	onResorptionChange?: ((targets: number[], stage: RootResorptionStage) => void) | undefined;
 	pediatricMode?: boolean | undefined;
 	surfaces?: readonly string[] | undefined;
 	useSurfaces?: boolean | undefined;
@@ -960,6 +977,10 @@ const ToothSVG = ({
 }) => {
 	const effectivePocketDepth = pocketDepth ?? pocketDepthMm ?? maxPocketDepth;
 	const isTop = number < 30 || (number >= 51 && number <= 65);
+	const isPrimary = isPrimaryTooth(number);
+	const resorptionVisual = isPrimary && rootResorptionStage !== undefined
+		? getPrimaryToothResorptionVisual(number, rootResorptionStage)
+		: null;
 	const geom = getToothPath(number);
 	const cfg = getToothConfig(number);
 	const colors = getToothColors(state, material);
@@ -1124,10 +1145,21 @@ const ToothSVG = ({
 					fill={colors.rootFill}
 					stroke={colors.isMissing ? "var(--tooth-root-stroke, #94a3b8)" : "var(--tooth-root-stroke, #64748b)"}
 					strokeWidth={colors.isMissing ? "1.4" : "1.8"}
-					strokeDasharray={colors.isMissing ? "4 3" : undefined}
+					strokeDasharray={resorptionVisual?.rootStrokeDasharray ?? (colors.isMissing ? "4 3" : undefined)}
 					strokeLinejoin="round"
+					opacity={resorptionVisual ? resorptionVisual.rootOpacity : (colors.isMissing ? "0.12" : "1")}
 					className="tooth-root-path"
 				/>
+
+				{/* Primary Tooth Root Resorption Hatch Pattern Area (Stage 50% / 75%) */}
+				{resorptionVisual && resorptionVisual.stage >= 50 && resorptionVisual.stage < 100 && (
+					<path
+						d={geom.root}
+						fill="url(#resorption-hatch-pattern)"
+						opacity="0.65"
+						pointerEvents="none"
+					/>
+				)}
 
 				{/* Periodontal Bone Loss Resorption Area & Crest Line */}
 				{boneLossInfo && (
@@ -1609,86 +1641,197 @@ const ToothSVG = ({
 						}`}
 						onClick={(e) => e.stopPropagation()}
 					>
-						<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-							onQuickStateChange(targets, "Caries", surfaces);
-						}}
-						className="px-2.5 py-1 min-h-[34px] rounded-lg bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
-						title="Кариес"
-					>
-						<span className="w-2 h-2 rounded-full bg-amber-500 inline-block shadow-xs" />
-						<span>Кариес</span>
-					</button>
-					<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-							onQuickStateChange(targets, "Filled", surfaces);
-						}}
-						className="px-2.5 py-1 min-h-[34px] rounded-lg bg-[var(--teal-soft,rgba(13,148,136,0.15))] hover:bg-[var(--teal)] text-[var(--teal)] hover:text-[var(--on-teal,#ffffff)] border border-[var(--teal)]/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
-						title="Пломба"
-					>
-						<span className="w-2 h-2 rounded-full bg-[var(--teal)] inline-block shadow-xs" />
-						<span>Пломба</span>
-					</button>
-					<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-							onQuickStateChange(targets, "Pulpitis", surfaces);
-						}}
-						className="px-2.5 py-1 min-h-[34px] rounded-lg bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
-						title="Пульпит"
-					>
-						<span className="w-2 h-2 rounded-full bg-rose-500 inline-block shadow-xs" />
-						<span>Пульпит</span>
-					</button>
-					<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-							onQuickStateChange(targets, "Crown", surfaces);
-						}}
-						className="px-2.5 py-1 min-h-[34px] rounded-lg bg-[var(--brand-500,#3b82f6)]/15 hover:bg-[var(--brand-500,#3b82f6)] text-[var(--brand-500,#3b82f6)] hover:text-white border border-[var(--brand-500,#3b82f6)]/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
-						title="Коронка"
-					>
-						<span className="w-2 h-2 rounded-full bg-[var(--brand-500,#3b82f6)] inline-block shadow-xs" />
-						<span>Коронка</span>
-					</button>
-					<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-							onQuickStateChange(targets, "Missing", surfaces);
-						}}
-						className="px-2.5 py-1 min-h-[34px] rounded-lg bg-red-600/15 hover:bg-red-600 text-red-800 dark:text-red-300 hover:text-white border border-red-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
-						title="Удален"
-					>
-						<span className="w-2 h-2 rounded-full bg-red-600 inline-block shadow-xs" />
-						<span>Удален</span>
-					</button>
-					<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-							onQuickStateChange(targets, "Healthy", surfaces);
-						}}
-						className="px-2.5 py-1 min-h-[34px] rounded-lg bg-slate-500/15 hover:bg-slate-500 text-slate-800 dark:text-slate-300 hover:text-white border border-slate-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
-						title="Здоров (Интактный)"
-					>
-						<span className="w-2 h-2 rounded-full bg-slate-400 inline-block shadow-xs" />
-						<span>Здоров</span>
-					</button>
-				</div>
-			)}
+						{isPrimary ? (
+							<>
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+										onQuickStateChange(targets, "Caries", surfaces);
+									}}
+									className="px-2.5 py-1 min-h-[34px] rounded-lg bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
+									title="Кариес молочного зуба"
+									data-testid={`quick-caries-${number}`}
+								>
+									<span className="w-2 h-2 rounded-full bg-amber-500 inline-block shadow-xs" />
+									<span>Кариес</span>
+								</button>
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+										onQuickStateChange(targets, "Pulpitis", surfaces);
+									}}
+									className="px-2.5 py-1 min-h-[34px] rounded-lg bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
+									title="Витальная пульпотомия молочного зуба (Biodentine/MTA)"
+									data-testid={`quick-pulpotomy-${number}`}
+								>
+									<span className="w-2 h-2 rounded-full bg-rose-500 inline-block shadow-xs" />
+									<span>Пульпотомия</span>
+								</button>
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+										onQuickStateChange(targets, "Filled", surfaces);
+									}}
+									className="px-2.5 py-1 min-h-[34px] rounded-lg bg-[var(--teal-soft,rgba(13,148,136,0.15))] hover:bg-[var(--teal)] text-[var(--teal)] hover:text-[var(--on-teal,#ffffff)] border border-[var(--teal)]/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
+									title="Пломба стеклоиономерным цементом (СИЦ / Композит)"
+									data-testid={`quick-filled-${number}`}
+								>
+									<span className="w-2 h-2 rounded-full bg-[var(--teal)] inline-block shadow-xs" />
+									<span>Пломба / СИЦ</span>
+								</button>
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+										onQuickStateChange(targets, "Crown", surfaces);
+									}}
+									className="px-2.5 py-1 min-h-[34px] rounded-lg bg-[var(--brand-500,#3b82f6)]/15 hover:bg-[var(--brand-500,#3b82f6)] text-[var(--brand-500,#3b82f6)] hover:text-white border border-[var(--brand-500,#3b82f6)]/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
+									title="Эстетическая циркониевая коронка NuSmile / 3M"
+									data-testid={`quick-nusmile-${number}`}
+								>
+									<span className="w-2 h-2 rounded-full bg-[var(--brand-500,#3b82f6)] inline-block shadow-xs" />
+									<span>Коронка NuSmile</span>
+								</button>
+								{onResorptionChange && (
+									<button
+										type="button"
+										onClick={(e) => {
+											e.stopPropagation();
+											const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+											const currentStage = (rootResorptionStage ?? 0) as RootResorptionStage;
+											const stages: RootResorptionStage[] = [0, 25, 50, 75, 100];
+											const nextIdx = (stages.indexOf(currentStage) + 1) % stages.length;
+											const nextStage = stages[nextIdx] ?? 0;
+											onResorptionChange(targets, nextStage);
+										}}
+										className="px-2.5 py-1 min-h-[34px] rounded-lg bg-orange-500/15 hover:bg-orange-500 text-orange-800 dark:text-orange-300 hover:text-white border border-orange-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
+										title={`Сменить стадию физиологической резорбции корня (текущая: ${rootResorptionStage ?? 0}%)`}
+										data-testid={`quick-resorption-${number}`}
+									>
+										<span className="w-2 h-2 rounded-full bg-orange-500 inline-block shadow-xs" />
+										<span>Резорбция {rootResorptionStage ? `${rootResorptionStage}%` : "R+"}</span>
+									</button>
+								)}
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+										onQuickStateChange(targets, "Missing", surfaces);
+									}}
+									className="px-2.5 py-1 min-h-[34px] rounded-lg bg-slate-500/15 hover:bg-slate-600 text-slate-800 dark:text-slate-300 hover:text-white border border-slate-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
+									title="Физиологическая смена зуба (выпал / эксфолиация)"
+									data-testid={`quick-exfoliated-${number}`}
+								>
+									<span className="w-2 h-2 rounded-full bg-slate-500 inline-block shadow-xs" />
+									<span>Смена (Выпал)</span>
+								</button>
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+										onQuickStateChange(targets, "Healthy", surfaces);
+									}}
+									className="px-2.5 py-1 min-h-[34px] rounded-lg bg-emerald-500/15 hover:bg-emerald-500 text-emerald-800 dark:text-emerald-300 hover:text-white border border-emerald-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
+									title="Здоровый интактный молочный зуб"
+									data-testid={`quick-healthy-${number}`}
+								>
+									<span className="w-2 h-2 rounded-full bg-emerald-500 inline-block shadow-xs" />
+									<span>Здоров</span>
+								</button>
+							</>
+						) : (
+							<>
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+										onQuickStateChange(targets, "Caries", surfaces);
+									}}
+									className="px-2.5 py-1 min-h-[34px] rounded-lg bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
+									title="Кариес"
+								>
+									<span className="w-2 h-2 rounded-full bg-amber-500 inline-block shadow-xs" />
+									<span>Кариес</span>
+								</button>
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+										onQuickStateChange(targets, "Filled", surfaces);
+									}}
+									className="px-2.5 py-1 min-h-[34px] rounded-lg bg-[var(--teal-soft,rgba(13,148,136,0.15))] hover:bg-[var(--teal)] text-[var(--teal)] hover:text-[var(--on-teal,#ffffff)] border border-[var(--teal)]/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
+									title="Пломба"
+								>
+									<span className="w-2 h-2 rounded-full bg-[var(--teal)] inline-block shadow-xs" />
+									<span>Пломба</span>
+								</button>
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+										onQuickStateChange(targets, "Pulpitis", surfaces);
+									}}
+									className="px-2.5 py-1 min-h-[34px] rounded-lg bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
+									title="Пульпит"
+								>
+									<span className="w-2 h-2 rounded-full bg-rose-500 inline-block shadow-xs" />
+									<span>Пульпит</span>
+								</button>
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+										onQuickStateChange(targets, "Crown", surfaces);
+									}}
+									className="px-2.5 py-1 min-h-[34px] rounded-lg bg-[var(--brand-500,#3b82f6)]/15 hover:bg-[var(--brand-500,#3b82f6)] text-[var(--brand-500,#3b82f6)] hover:text-white border border-[var(--brand-500,#3b82f6)]/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
+									title="Коронка"
+								>
+									<span className="w-2 h-2 rounded-full bg-[var(--brand-500,#3b82f6)] inline-block shadow-xs" />
+									<span>Коронка</span>
+								</button>
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+										onQuickStateChange(targets, "Missing", surfaces);
+									}}
+									className="px-2.5 py-1 min-h-[34px] rounded-lg bg-red-600/15 hover:bg-red-600 text-red-800 dark:text-red-300 hover:text-white border border-red-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
+									title="Удален"
+								>
+									<span className="w-2 h-2 rounded-full bg-red-600 inline-block shadow-xs" />
+									<span>Удален</span>
+								</button>
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+										onQuickStateChange(targets, "Healthy", surfaces);
+									}}
+									className="px-2.5 py-1 min-h-[34px] rounded-lg bg-slate-500/15 hover:bg-slate-500 text-slate-800 dark:text-slate-300 hover:text-white border border-slate-500/40 text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-manipulation"
+									title="Здоров (Интактный)"
+								>
+									<span className="w-2 h-2 rounded-full bg-slate-400 inline-block shadow-xs" />
+									<span>Здоров</span>
+								</button>
+							</>
+						)}
+					</div>
+				)}
 
 			<span
 				className={`tooth-number-badge ${isSelected ? "selected" : ""}`}
@@ -1699,6 +1842,19 @@ const ToothSVG = ({
 					style={{ backgroundColor: colors.badgeColor }}
 				/>
 				<span className="tooth-number-text font-black">{number}</span>
+				{resorptionVisual && resorptionVisual.stage > 0 && (
+					<span
+						className="ml-1 px-1 py-0.5 rounded text-[10px] font-black leading-none shadow-2xs"
+						style={{
+							backgroundColor: resorptionVisual.badgeBg,
+							color: resorptionVisual.badgeColor,
+						}}
+						title={`Физиологическая резорбция корня: ${resorptionVisual.badgeText} (${resorptionVisual.descriptionRu})`}
+						data-testid={`resorption-badge-${number}`}
+					>
+						R{resorptionVisual.stage}%
+					</span>
+				)}
 				{effectivePocketDepth !== undefined && effectivePocketDepth > 4 && (
 					<span
 						className={`ml-1 px-1.5 py-0.5 rounded text-xs font-black text-white shadow-2xs leading-none ${
@@ -2141,16 +2297,20 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 	teethData = [],
 	pediatricMode,
 	mixedDentition,
+	dentitionMode,
+	onDentitionModeChange,
 	topTeeth: customTopTeeth,
 	bottomTeeth: customBottomTeeth,
 	selectedTeeth = [],
 	activeStamp = null,
 	onToothClick,
 	onQuickStateChange,
+	onResorptionChange,
 	useSurfaces,
 	hideHeader = false,
 	hideLegend = false,
 	hideQuadrantSwitcher = false,
+	hideDentitionSwitcher = false,
 	showPulpAndCanals = false,
 	showPeriapicalHalos = true,
 	showPeriodontalBoneLoss = true,
@@ -2163,6 +2323,24 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 	const [archScale, setArchScale] = useState(1);
 	const appliedArchScaleRef = useRef(1);
 
+	const [localDentitionMode, setLocalDentitionMode] = useState<DentitionMode>(
+		dentitionMode ?? (mixedDentition ? "mixed" : pediatricMode ? "pediatric" : "adult"),
+	);
+	const effectiveDentitionMode = dentitionMode ?? localDentitionMode;
+
+	useEffect(() => {
+		if (dentitionMode !== undefined) {
+			setLocalDentitionMode(dentitionMode);
+		} else if (mixedDentition) {
+			setLocalDentitionMode("mixed");
+		} else if (pediatricMode) {
+			setLocalDentitionMode("pediatric");
+		}
+	}, [dentitionMode, mixedDentition, pediatricMode]);
+
+	const isPediatricEffective = effectiveDentitionMode === "pediatric";
+	const isMixedEffective = effectiveDentitionMode === "mixed";
+
 	const [localQuadrant, setLocalQuadrant] = useState<OdontogramQuadrantId>(
 		controlledQuadrant ?? "all",
 	);
@@ -2173,6 +2351,18 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 		onQuadrantChange?.(q);
 	};
 
+	const handleSelectDentitionMode = (mode: DentitionMode) => {
+		setLocalDentitionMode(mode);
+		onDentitionModeChange?.(mode);
+		if (currentQuadrant !== "all") {
+			if (mode === "pediatric" && !["Q5", "Q6", "Q7", "Q8"].includes(currentQuadrant)) {
+				handleSelectQuadrant("Q5");
+			} else if (mode === "adult" && !["Q1", "Q2", "Q3", "Q4"].includes(currentQuadrant)) {
+				handleSelectQuadrant("Q1");
+			}
+		}
+	};
+
 	useEffect(() => {
 		if (controlledQuadrant !== undefined) {
 			setLocalQuadrant(controlledQuadrant);
@@ -2181,16 +2371,16 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 
 	const topTeethList =
 		customTopTeeth ??
-		(mixedDentition
+		(isMixedEffective
 			? MIXED_TOP_TEETH
-			: pediatricMode
+			: isPediatricEffective
 				? PEDIATRIC_TOP_TEETH
 				: TOP_TEETH);
 	const bottomTeethList =
 		customBottomTeeth ??
-		(mixedDentition
+		(isMixedEffective
 			? MIXED_BOTTOM_TEETH
-			: pediatricMode
+			: isPediatricEffective
 				? PEDIATRIC_BOTTOM_TEETH
 				: BOTTOM_TEETH);
 
@@ -2399,6 +2589,79 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 			{/* Shared SVG Shaders & Gradients */}
 			<DenteToothSvgDefs />
 
+			{/* Responsive Dentition Formula Switcher (Adult 11–48 / Pediatric 51–85 / Mixed 24) */}
+			{!hideDentitionSwitcher && (
+				<div
+					className="odontogram-dentition-switcher mb-2.5 select-none"
+					data-testid="odontogram-dentition-switcher"
+				>
+					<div className="flex items-center justify-between gap-1 p-1 rounded-2xl bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] shadow-xs">
+						<div
+							className="flex items-center gap-1 w-full"
+							role="tablist"
+							aria-label="Переключение зубной формулы"
+						>
+							<button
+								type="button"
+								role="tab"
+								aria-selected={effectiveDentitionMode === "adult"}
+								onClick={() => handleSelectDentitionMode("adult")}
+								className={`flex-1 min-h-[44px] px-3 py-2 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none ${
+									effectiveDentitionMode === "adult"
+										? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-md border border-[var(--teal-dark,var(--teal))] font-black"
+										: "bg-transparent text-[var(--odontogram-ink-muted)] hover:text-[var(--odontogram-ink)] hover:bg-[var(--odontogram-surface-hover)] border border-transparent"
+								}`}
+								data-testid="dentition-mode-adult-btn"
+								title="Постоянный прикус взрослых (11–48, 32 зуба)"
+							>
+								<span>Постоянный 11–48</span>
+								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/15 font-mono font-black">
+									32
+								</span>
+							</button>
+
+							<button
+								type="button"
+								role="tab"
+								aria-selected={effectiveDentitionMode === "pediatric"}
+								onClick={() => handleSelectDentitionMode("pediatric")}
+								className={`flex-1 min-h-[44px] px-3 py-2 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none ${
+									effectiveDentitionMode === "pediatric"
+										? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-md border border-[var(--teal-dark,var(--teal))] font-black"
+										: "bg-transparent text-[var(--odontogram-ink-muted)] hover:text-[var(--odontogram-ink)] hover:bg-[var(--odontogram-surface-hover)] border border-transparent"
+								}`}
+								data-testid="dentition-mode-pediatric-btn"
+								title="Детский молочный прикус (51–85, 20 зубов)"
+							>
+								<span>Молочный 51–85</span>
+								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/15 font-mono font-black">
+									20
+								</span>
+							</button>
+
+							<button
+								type="button"
+								role="tab"
+								aria-selected={effectiveDentitionMode === "mixed"}
+								onClick={() => handleSelectDentitionMode("mixed")}
+								className={`flex-1 min-h-[44px] px-3 py-2 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none ${
+									effectiveDentitionMode === "mixed"
+										? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-md border border-[var(--teal-dark,var(--teal))] font-black"
+										: "bg-transparent text-[var(--odontogram-ink-muted)] hover:text-[var(--odontogram-ink)] hover:bg-[var(--odontogram-surface-hover)] border border-transparent"
+								}`}
+								data-testid="dentition-mode-mixed-btn"
+								title="Сменный прикус: молочные зубы + первые постоянные моляры (16, 26, 36, 46)"
+							>
+								<span>Сменный прикус</span>
+								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/15 font-mono font-black">
+									24
+								</span>
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+
 			{/* Responsive Mobile & Desktop Quadrant Adapter Bar */}
 			{!hideQuadrantSwitcher && (
 				<div className="odontogram-quadrant-bar mb-3 select-none" data-testid="odontogram-quadrant-bar">
@@ -2421,10 +2684,10 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 									? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] font-black border-[var(--teal-dark,var(--teal))] shadow-xs"
 									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink-muted)] hover:text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:bg-[var(--odontogram-surface-hover)]"
 							}`}
-							title="Показать полную зубную формулу (все 32 зуба)"
+							title="Показать полную зубную формулу"
 							data-testid="quadrant-btn-all"
 						>
-							Все зубы ({pediatricMode ? "20" : "32"})
+							Все зубы ({isMixedEffective ? "24" : isPediatricEffective ? "20" : "32"})
 						</button>
 					</div>
 
@@ -2433,64 +2696,64 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 						{/* Upper Right Quadrant: Q1 18–11 (or Q5 55–51) */}
 						<button
 							type="button"
-							onClick={() => handleSelectQuadrant(pediatricMode ? "Q5" : "Q1")}
+							onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q5" : "Q1")}
 							className={`quadrant-btn min-h-[48px] px-3 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between border transition-all cursor-pointer select-none ${
-								currentQuadrant === (pediatricMode ? "Q5" : "Q1")
+								currentQuadrant === (isPediatricEffective ? "Q5" : "Q1")
 									? "bg-indigo-600 text-white font-black border-indigo-700 shadow-md ring-2 ring-indigo-400/50"
 									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
 							}`}
-							title={pediatricMode ? "Q5 55–51 (Верхняя челюсть, Правый)" : "Q1 18–11 (Верхняя челюсть, Правый)"}
-							data-testid={pediatricMode ? "quadrant-btn-Q5" : "quadrant-btn-Q1"}
+							title={isPediatricEffective ? "Q5 55–51 (Верхняя челюсть, Правый)" : "Q1 18–11 (Верхняя челюсть, Правый)"}
+							data-testid={isPediatricEffective ? "quadrant-btn-Q5" : "quadrant-btn-Q1"}
 						>
-							<span className="font-extrabold">{pediatricMode ? "Q5 55–51 (Правый)" : "Q1 18–11 (Правый)"}</span>
+							<span className="font-extrabold">{isPediatricEffective ? "Q5 55–51 (Правый)" : "Q1 18–11 (Правый)"}</span>
 							<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase">ВЧ</span>
 						</button>
 
 						{/* Upper Left Quadrant: Q2 21–28 (or Q6 61–65) */}
 						<button
 							type="button"
-							onClick={() => handleSelectQuadrant(pediatricMode ? "Q6" : "Q2")}
+							onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q6" : "Q2")}
 							className={`quadrant-btn min-h-[48px] px-3 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between border transition-all cursor-pointer select-none ${
-								currentQuadrant === (pediatricMode ? "Q6" : "Q2")
+								currentQuadrant === (isPediatricEffective ? "Q6" : "Q2")
 									? "bg-indigo-600 text-white font-black border-indigo-700 shadow-md ring-2 ring-indigo-400/50"
 									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
 							}`}
-							title={pediatricMode ? "Q6 61–65 (Верхняя челюсть, Левый)" : "Q2 21–28 (Верхняя челюсть, Левый)"}
-							data-testid={pediatricMode ? "quadrant-btn-Q6" : "quadrant-btn-Q2"}
+							title={isPediatricEffective ? "Q6 61–65 (Верхняя челюсть, Левый)" : "Q2 21–28 (Верхняя челюсть, Левый)"}
+							data-testid={isPediatricEffective ? "quadrant-btn-Q6" : "quadrant-btn-Q2"}
 						>
-							<span className="font-extrabold">{pediatricMode ? "Q6 61–65 (Левый)" : "Q2 21–28 (Левый)"}</span>
+							<span className="font-extrabold">{isPediatricEffective ? "Q6 61–65 (Левый)" : "Q2 21–28 (Левый)"}</span>
 							<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase">ВЧ</span>
 						</button>
 
 						{/* Lower Right Quadrant: Q4 48–41 (or Q8 85–81) */}
 						<button
 							type="button"
-							onClick={() => handleSelectQuadrant(pediatricMode ? "Q8" : "Q4")}
+							onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q8" : "Q4")}
 							className={`quadrant-btn min-h-[48px] px-3 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between border transition-all cursor-pointer select-none ${
-								currentQuadrant === (pediatricMode ? "Q8" : "Q4")
+								currentQuadrant === (isPediatricEffective ? "Q8" : "Q4")
 									? "bg-indigo-600 text-white font-black border-indigo-700 shadow-md ring-2 ring-indigo-400/50"
 									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
 							}`}
-							title={pediatricMode ? "Q8 85–81 (Нижняя челюсть, Правый)" : "Q4 48–41 (Нижняя челюсть, Правый)"}
-							data-testid={pediatricMode ? "quadrant-btn-Q8" : "quadrant-btn-Q4"}
+							title={isPediatricEffective ? "Q8 85–81 (Нижняя челюсть, Правый)" : "Q4 48–41 (Нижняя челюсть, Правый)"}
+							data-testid={isPediatricEffective ? "quadrant-btn-Q8" : "quadrant-btn-Q4"}
 						>
-							<span className="font-extrabold">{pediatricMode ? "Q8 85–81 (Правый)" : "Q4 48–41 (Правый)"}</span>
+							<span className="font-extrabold">{isPediatricEffective ? "Q8 85–81 (Правый)" : "Q4 48–41 (Правый)"}</span>
 							<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase">НЧ</span>
 						</button>
 
 						{/* Lower Left Quadrant: Q3 31–38 (or Q7 71–75) */}
 						<button
 							type="button"
-							onClick={() => handleSelectQuadrant(pediatricMode ? "Q7" : "Q3")}
+							onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q7" : "Q3")}
 							className={`quadrant-btn min-h-[48px] px-3 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between border transition-all cursor-pointer select-none ${
-								currentQuadrant === (pediatricMode ? "Q7" : "Q3")
+								currentQuadrant === (isPediatricEffective ? "Q7" : "Q3")
 									? "bg-indigo-600 text-white font-black border-indigo-700 shadow-md ring-2 ring-indigo-400/50"
 									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
 							}`}
-							title={pediatricMode ? "Q7 71–75 (Нижняя челюсть, Левый)" : "Q3 31–38 (Нижняя челюсть, Левый)"}
-							data-testid={pediatricMode ? "quadrant-btn-Q7" : "quadrant-btn-Q3"}
+							title={isPediatricEffective ? "Q7 71–75 (Нижняя челюсть, Левый)" : "Q3 31–38 (Нижняя челюсть, Левый)"}
+							data-testid={isPediatricEffective ? "quadrant-btn-Q7" : "quadrant-btn-Q3"}
 						>
-							<span className="font-extrabold">{pediatricMode ? "Q7 71–75 (Левый)" : "Q3 31–38 (Левый)"}</span>
+							<span className="font-extrabold">{isPediatricEffective ? "Q7 71–75 (Левый)" : "Q3 31–38 (Левый)"}</span>
 							<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase">НЧ</span>
 						</button>
 					</div>
@@ -2504,26 +2767,35 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 							<span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm" /> Кариес
 						</span>
 						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm" /> Пульпит
+							<span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm" /> {isPediatricEffective ? "Пульпотомия / Пульпит" : "Пульпит"}
 						</span>
 						<span className="tooth-chart-legend-item">
 							<span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm" /> Периодонтит
 						</span>
 						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-[var(--teal,#0d9488)] shadow-sm" /> Пломба
+							<span className="w-2.5 h-2.5 rounded-full bg-[var(--teal,#0d9488)] shadow-sm" /> {isPediatricEffective ? "Пломба (СИЦ / Композит)" : "Пломба"}
 						</span>
 						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-[var(--brand-500,#3b82f6)] shadow-sm" /> Коронка
+							<span className="w-2.5 h-2.5 rounded-full bg-[var(--brand-500,#3b82f6)] shadow-sm" /> {isPediatricEffective ? "Коронка NuSmile / 3M" : "Коронка"}
 						</span>
+						{!isPediatricEffective && (
+							<span className="tooth-chart-legend-item">
+								<span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm" /> Имплант
+							</span>
+						)}
+						{!isPediatricEffective && (
+							<span className="tooth-chart-legend-item">
+								<span className="w-2.5 h-2.5 rounded-full bg-indigo-400 border border-indigo-500" /> План
+							</span>
+						)}
 						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm" /> Имплант
+							<span className="w-2.5 h-2.5 rounded-full bg-slate-400 opacity-50" /> {isPediatricEffective ? "Смена (Выпал)" : "Отсутствует"}
 						</span>
-						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-indigo-400 border border-indigo-500" /> План
-						</span>
-						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-slate-400 opacity-50" /> Отсутствует
-						</span>
+						{(isPediatricEffective || isMixedEffective) && (
+							<span className="tooth-chart-legend-item" title="Физиологическая резорбция корней молочных зубов">
+								<span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm" /> Резорбция (25–100%)
+							</span>
+						)}
 					</div>
 				</div>
 			)}
@@ -2580,6 +2852,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 											postType={tData?.postType}
 											boneLossLevel={tData?.boneLossLevel}
 											boneLossType={tData?.boneLossType}
+											rootResorptionStage={tData?.rootResorptionStage ?? tData?.rootResorption}
 											periapicalLesion={tData?.periapicalLesion}
 											pocketDepth={tData?.pocketDepth}
 											pocketDepthMm={tData?.pocketDepthMm}
@@ -2594,7 +2867,8 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 											activeStamp={activeStamp}
 											onClick={handleToothClick}
 											onQuickStateChange={onQuickStateChange}
-											pediatricMode={pediatricMode}
+											onResorptionChange={onResorptionChange}
+											pediatricMode={isPediatricEffective}
 										/>
 									);
 								})}
@@ -2602,7 +2876,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 						</div>
 					</div>
 				) : (
-					/* Full Dual-Arch View (All 32 adult teeth or 20 pediatric teeth) */
+					/* Full Dual-Arch View (All 32 adult teeth, 20 pediatric teeth, or 24 mixed dentition teeth) */
 					<div
 						className="tooth-chart-arch-wrapper"
 						style={{
@@ -2629,6 +2903,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 											postType={tData?.postType}
 											boneLossLevel={tData?.boneLossLevel}
 											boneLossType={tData?.boneLossType}
+											rootResorptionStage={tData?.rootResorptionStage ?? tData?.rootResorption}
 											periapicalLesion={tData?.periapicalLesion}
 											pocketDepth={tData?.pocketDepth}
 											pocketDepthMm={tData?.pocketDepthMm}
@@ -2643,7 +2918,8 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 											activeStamp={activeStamp}
 											onClick={handleToothClick}
 											onQuickStateChange={onQuickStateChange}
-											pediatricMode={pediatricMode}
+											onResorptionChange={onResorptionChange}
+											pediatricMode={isPediatricEffective}
 										/>
 									);
 								})}
@@ -2670,6 +2946,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 											postType={tData?.postType}
 											boneLossLevel={tData?.boneLossLevel}
 											boneLossType={tData?.boneLossType}
+											rootResorptionStage={tData?.rootResorptionStage ?? tData?.rootResorption}
 											periapicalLesion={tData?.periapicalLesion}
 											pocketDepth={tData?.pocketDepth}
 											pocketDepthMm={tData?.pocketDepthMm}
@@ -2684,7 +2961,8 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 											activeStamp={activeStamp}
 											onClick={handleToothClick}
 											onQuickStateChange={onQuickStateChange}
-											pediatricMode={pediatricMode}
+											onResorptionChange={onResorptionChange}
+											pediatricMode={isPediatricEffective}
 										/>
 									);
 								})}
@@ -2717,6 +2995,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 											postType={tData?.postType}
 											boneLossLevel={tData?.boneLossLevel}
 											boneLossType={tData?.boneLossType}
+											rootResorptionStage={tData?.rootResorptionStage ?? tData?.rootResorption}
 											periapicalLesion={tData?.periapicalLesion}
 											pocketDepth={tData?.pocketDepth}
 											pocketDepthMm={tData?.pocketDepthMm}
@@ -2731,7 +3010,8 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 											activeStamp={activeStamp}
 											onClick={handleToothClick}
 											onQuickStateChange={onQuickStateChange}
-											pediatricMode={pediatricMode}
+											onResorptionChange={onResorptionChange}
+											pediatricMode={isPediatricEffective}
 										/>
 									);
 								})}
@@ -2758,6 +3038,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 											postType={tData?.postType}
 											boneLossLevel={tData?.boneLossLevel}
 											boneLossType={tData?.boneLossType}
+											rootResorptionStage={tData?.rootResorptionStage ?? tData?.rootResorption}
 											periapicalLesion={tData?.periapicalLesion}
 											pocketDepth={tData?.pocketDepth}
 											pocketDepthMm={tData?.pocketDepthMm}
@@ -2772,7 +3053,8 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 											activeStamp={activeStamp}
 											onClick={handleToothClick}
 											onQuickStateChange={onQuickStateChange}
-											pediatricMode={pediatricMode}
+											onResorptionChange={onResorptionChange}
+											pediatricMode={isPediatricEffective}
 										/>
 									);
 								})}

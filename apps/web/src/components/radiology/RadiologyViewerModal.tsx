@@ -1,12 +1,14 @@
 import {
 	Activity,
 	AlertCircle,
+	AlertTriangle,
 	ArrowLeft,
 	Box,
 	Camera,
 	Check,
 	ChevronRight,
 	Columns,
+	Compass,
 	Crosshair,
 	Download,
 	Eye,
@@ -26,7 +28,10 @@ import {
 	RotateCw,
 	Ruler,
 	Scan,
+	ShieldAlert,
+	ShieldCheck,
 	Sliders,
+	Spline,
 	Sun,
 	Tag,
 	Target,
@@ -40,15 +45,25 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom";
 import {
 	ADULT_FDI_TEETH,
+	calculateCaliperRidgeDimensions,
 	calculateDistanceMm,
+	calculatePointToNerveDistance2D,
+	buildMandibularNerveSpline,
+	evaluateNerveClearance,
 	FDI_TOOTH_NAMES,
 	formatRadiationDose,
+	generateNerveSafetyCorridor2D,
+	interpolateNerveSpline2D,
 	LANDMARK_TYPE_LABELS,
+	MANDIBULAR_NERVE_SAFETY_MARGIN_MM,
 } from "./radiologyMath";
 import {
 	DEFAULT_WW_WL_PRESETS,
+	type AlveolarRidgeCaliperMeasurement,
 	type LandmarkPin,
+	type MandibularNerveSpline,
 	type MeasurementRuler,
+	type Point2D,
 	type RadiologyStudy,
 	type RadiologyViewerTool,
 	type WindowLevelPreset,
@@ -93,7 +108,14 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 	// Rulers & Landmarks
 	const [measurements, setMeasurements] = useState<MeasurementRuler[]>([]);
 	const [landmarks, setLandmarks] = useState<LandmarkPin[]>([]);
+	const [calipers, setCalipers] = useState<AlveolarRidgeCaliperMeasurement[]>([]);
+	const [nerves, setNerves] = useState<MandibularNerveSpline[]>([]);
+
+	// In-progress interactive tool states
 	const [activeRulerStart, setActiveRulerStart] = useState<{ x: number; y: number } | null>(null);
+	const [activeCaliperStart, setActiveCaliperStart] = useState<{ x: number; y: number } | null>(null);
+	const [activeNervePoints, setActiveNervePoints] = useState<Array<{ x: number; y: number }>>([]);
+	const [activeNerveSide, setActiveNerveSide] = useState<"left" | "right">("right");
 	const [mousePosPercent, setMousePosPercent] = useState<{ x: number; y: number } | null>(null);
 
 	// Landmark Placement Dialog
@@ -116,6 +138,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 		if (study) {
 			setMeasurements(study.measurements || []);
 			setLandmarks(study.landmarks || []);
+			setCalipers(study.calipers || []);
+			setNerves(study.nerves || []);
 			// Set initial FDI tooth from study if available
 			if (study.teethFdi && study.teethFdi.length > 0 && study.teethFdi[0]) {
 				setSelectedFdiTooth(study.teethFdi[0] ?? "16");
@@ -132,6 +156,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 		setInvert(false);
 		setActiveTool("pan");
 		setActiveRulerStart(null);
+		setActiveCaliperStart(null);
+		setActiveNervePoints([]);
 		setPendingLandmarkPos(null);
 	}, [study]);
 
@@ -145,6 +171,10 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 					setPendingLandmarkPos(null);
 				} else if (activeRulerStart) {
 					setActiveRulerStart(null);
+				} else if (activeCaliperStart) {
+					setActiveCaliperStart(null);
+				} else if (activeNervePoints.length > 0) {
+					setActiveNervePoints([]);
 				} else {
 					onClose();
 				}
@@ -161,6 +191,10 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 				setInvert((prev) => !prev);
 			} else if (e.key.toLowerCase() === "m") {
 				setActiveTool("ruler");
+			} else if (e.key.toLowerCase() === "c") {
+				setActiveTool("caliper");
+			} else if (e.key.toLowerCase() === "n") {
+				setActiveTool("nerve_tracer");
 			} else if (e.key.toLowerCase() === "l") {
 				setActiveTool("landmark");
 			} else if (e.key.toLowerCase() === "p") {
@@ -170,7 +204,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isOpen, pendingLandmarkPos, activeRulerStart, onClose]);
+	}, [isOpen, pendingLandmarkPos, activeRulerStart, activeCaliperStart, activeNervePoints, onClose]);
 
 	// Apply Preset
 	const handleSelectPreset = (preset: WindowLevelPreset) => {
@@ -246,7 +280,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 					endY: coords.y,
 					distanceMm,
 					label: `${distanceMm} мм`,
-					color: "#06b6d4", // cyan
+					color: "var(--teal, #06b6d4)",
 				};
 
 				const updated = [...measurements, newRuler];
@@ -257,6 +291,51 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 					onSaveStudy({ ...study, measurements: updated });
 				}
 			}
+		} else if (activeTool === "caliper") {
+			if (!activeCaliperStart) {
+				setActiveCaliperStart(coords);
+			} else {
+				const pixelSpacing = study?.metadata?.pixelSpacingMm || 0.1;
+				const imgW = imageRef.current?.naturalWidth || 1200;
+				const imgH = imageRef.current?.naturalHeight || 1200;
+
+				const dx = coords.x - activeCaliperStart.x;
+				const dy = coords.y - activeCaliperStart.y;
+				const len = Math.hypot(dx, dy) || 1;
+				const nx = -dy / len;
+				const ny = dx / len;
+				const halfWidthMm = 3.5;
+				const halfWidthPctX = ((halfWidthMm / pixelSpacing) / imgW) * 100;
+				const halfWidthPctY = ((halfWidthMm / pixelSpacing) / imgH) * 100;
+
+				const newCaliper = calculateCaliperRidgeDimensions({
+					crestPoint: activeCaliperStart,
+					basePoint: coords,
+					crestWidthLeft: {
+						x: Number((activeCaliperStart.x - nx * halfWidthPctX).toFixed(2)),
+						y: Number((activeCaliperStart.y - ny * halfWidthPctY).toFixed(2)),
+					},
+					crestWidthRight: {
+						x: Number((activeCaliperStart.x + nx * halfWidthPctX).toFixed(2)),
+						y: Number((activeCaliperStart.y + ny * halfWidthPctY).toFixed(2)),
+					},
+					imageWidthPx: imgW,
+					imageHeightPx: imgH,
+					pixelSpacingMm: pixelSpacing,
+					fdiTooth: selectedFdiTooth,
+				});
+
+				const updated = [...calipers, newCaliper];
+				setCalipers(updated);
+				setActiveCaliperStart(null);
+
+				if (study && onSaveStudy) {
+					onSaveStudy({ ...study, calipers: updated });
+				}
+			}
+		} else if (activeTool === "nerve_tracer") {
+			const nextPts = [...activeNervePoints, coords];
+			setActiveNervePoints(nextPts);
 		} else if (activeTool === "landmark") {
 			setPendingLandmarkPos(coords);
 		}
@@ -270,11 +349,9 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 			});
 		}
 
-		if (activeTool === "ruler" && activeRulerStart) {
-			const coords = getImagePercentCoords(e);
-			if (coords) {
-				setMousePosPercent(coords);
-			}
+		const coords = getImagePercentCoords(e);
+		if (coords) {
+			setMousePosPercent(coords);
 		}
 	};
 
@@ -287,6 +364,49 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 		e.preventDefault();
 		const zoomDelta = e.deltaY < 0 ? 0.15 : -0.15;
 		setZoom((prev) => Math.min(Math.max(Number((prev + zoomDelta).toFixed(2)), 0.2), 6.0));
+	};
+
+	// Finish Nerve Spline
+	const handleFinishNerveSpline = () => {
+		if (activeNervePoints.length < 2) return;
+		const pixelSpacing = study?.metadata?.pixelSpacingMm || 0.1;
+		const imgW = imageRef.current?.naturalWidth || 1200;
+		const imgH = imageRef.current?.naturalHeight || 1200;
+
+		const newNerve = buildMandibularNerveSpline({
+			side: activeNerveSide,
+			controlPoints: activeNervePoints,
+			imageWidthPx: imgW,
+			imageHeightPx: imgH,
+			pixelSpacingMm: pixelSpacing,
+			safetyMarginMm: MANDIBULAR_NERVE_SAFETY_MARGIN_MM,
+		});
+
+		const updated = [...nerves, newNerve];
+		setNerves(updated);
+		setActiveNervePoints([]);
+
+		if (study && onSaveStudy) {
+			onSaveStudy({ ...study, nerves: updated });
+		}
+	};
+
+	// Delete Caliper
+	const handleDeleteCaliper = (caliperId: string) => {
+		const updated = calipers.filter((c) => c.id !== caliperId);
+		setCalipers(updated);
+		if (study && onSaveStudy) {
+			onSaveStudy({ ...study, calipers: updated });
+		}
+	};
+
+	// Delete Nerve
+	const handleDeleteNerve = (nerveId: string) => {
+		const updated = nerves.filter((n) => n.id !== nerveId);
+		setNerves(updated);
+		if (study && onSaveStudy) {
+			onSaveStudy({ ...study, nerves: updated });
+		}
 	};
 
 	// Save Landmark Pin
@@ -304,7 +424,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 			toothFdi: selectedFdiTooth,
 			label: finalLabel,
 			type: landmarkType,
-			color: landmarkType === "caries" ? "#ef4444" : landmarkType === "apex" ? "#10b981" : "#06b6d4",
+			color: landmarkType === "caries" ? "var(--danger, #ef4444)" : landmarkType === "apex" ? "var(--ok, #10b981)" : "var(--teal, #06b6d4)",
 		};
 
 		const updated = [...landmarks, newPin];
@@ -334,6 +454,35 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 			onSaveStudy({ ...study, landmarks: updated });
 		}
 	};
+
+	// Nerve proximity clearance calculation
+	const nerveClearanceInfo = useMemo(() => {
+		if (nerves.length === 0) return null;
+		const pixelSpacing = study?.metadata?.pixelSpacingMm || 0.1;
+		const imgW = imageRef.current?.naturalWidth || 1200;
+		const imgH = imageRef.current?.naturalHeight || 1200;
+
+		let minClearanceMm = Infinity;
+		for (const nerve of nerves) {
+			for (const cal of calipers) {
+				const res = calculatePointToNerveDistance2D(cal.basePoint, nerve.interpolatedCurve, imgW, imgH, pixelSpacing);
+				if (res.distanceMm < minClearanceMm) minClearanceMm = res.distanceMm;
+			}
+			for (const pin of landmarks) {
+				if (pin.type === "implant_site" || pin.type === "apex") {
+					const res = calculatePointToNerveDistance2D({ x: pin.x, y: pin.y }, nerve.interpolatedCurve, imgW, imgH, pixelSpacing);
+					if (res.distanceMm < minClearanceMm) minClearanceMm = res.distanceMm;
+				}
+			}
+			if (activeCaliperStart && mousePosPercent) {
+				const res = calculatePointToNerveDistance2D(mousePosPercent, nerve.interpolatedCurve, imgW, imgH, pixelSpacing);
+				if (res.distanceMm < minClearanceMm) minClearanceMm = res.distanceMm;
+			}
+		}
+
+		if (!Number.isFinite(minClearanceMm)) return null;
+		return evaluateNerveClearance(minClearanceMm, MANDIBULAR_NERVE_SAFETY_MARGIN_MM);
+	}, [nerves, calipers, landmarks, activeCaliperStart, mousePosPercent, study?.metadata?.pixelSpacingMm]);
 
 	// Dose calculations
 	const doseInfo = useMemo(() => {
@@ -493,6 +642,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							onClick={() => {
 								setActiveTool("pan");
 								setActiveRulerStart(null);
+								setActiveCaliperStart(null);
 							}}
 							className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all ${
 								activeTool === "pan"
@@ -508,7 +658,45 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						<button
 							type="button"
 							onClick={() => {
+								setActiveTool("caliper");
+								setActiveRulerStart(null);
+								setPendingLandmarkPos(null);
+							}}
+							className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all ${
+								activeTool === "caliper"
+									? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal)] shadow-sm"
+									: "bg-slate-800/80 border-slate-700/60 text-slate-300 hover:text-[var(--teal)] hover:bg-slate-700"
+							}`}
+							title="Электронный штангенциркуль альвеолярного гребня (C)"
+							data-testid="tool-caliper-btn"
+						>
+							<Compass className="w-5 h-5" />
+						</button>
+
+						<button
+							type="button"
+							onClick={() => {
+								setActiveTool("nerve_tracer");
+								setActiveRulerStart(null);
+								setActiveCaliperStart(null);
+								setPendingLandmarkPos(null);
+							}}
+							className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all ${
+								activeTool === "nerve_tracer"
+									? "bg-[var(--warn-bg)] border-[var(--warn-fg)] text-[var(--warn-fg)] shadow-sm"
+									: "bg-slate-800/80 border-slate-700/60 text-slate-300 hover:text-[var(--warn-fg)] hover:bg-slate-700"
+							}`}
+							title="Трассировщик нижнечелюстного канала (Safety Margin 2.0 мм) (N)"
+							data-testid="tool-nerve-tracer-btn"
+						>
+							<Spline className="w-5 h-5" />
+						</button>
+
+						<button
+							type="button"
+							onClick={() => {
 								setActiveTool("ruler");
+								setActiveCaliperStart(null);
 								setPendingLandmarkPos(null);
 							}}
 							className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all ${
@@ -527,6 +715,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							onClick={() => {
 								setActiveTool("landmark");
 								setActiveRulerStart(null);
+								setActiveCaliperStart(null);
 							}}
 							className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border transition-all ${
 								activeTool === "landmark"
@@ -1002,20 +1191,253 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 											y1={`${activeRulerStart.y}%`}
 											x2={`${mousePosPercent.x}%`}
 											y2={`${mousePosPercent.y}%`}
-											stroke="#38bdf8"
+											stroke="var(--teal, #38bdf8)"
 											strokeWidth="0.7"
 										/>
 										<circle
 											cx={`${activeRulerStart.x}%`}
 											cy={`${activeRulerStart.y}%`}
 											r="1.2"
-											fill="#38bdf8"
+											fill="var(--teal, #38bdf8)"
 										/>
 										<circle
 											cx={`${mousePosPercent.x}%`}
 											cy={`${mousePosPercent.y}%`}
 											r="1.2"
-											fill="#38bdf8"
+											fill="var(--teal, #38bdf8)"
+										/>
+									</g>
+								)}
+
+								{/* ── 2. MANDIBULAR NERVE CANAL SPLINES (2.0 MM SAFETY CORRIDOR) ── */}
+								{nerves.map((nerve) => {
+									const polyString = nerve.safetyCorridorPolygon.map((p) => `${p.x},${p.y}`).join(" ");
+									const polylineString = nerve.interpolatedCurve.map((p) => `${p.x},${p.y}`).join(" ");
+									const midIdx = Math.floor(nerve.interpolatedCurve.length / 2);
+									const midPoint = nerve.interpolatedCurve[midIdx] || nerve.controlPoints[0] || { x: 50, y: 50 };
+
+									return (
+										<g key={nerve.id} className="pointer-events-auto" data-testid="mandibular-nerve-spline-group">
+											{/* 2.0 mm Safety Corridor Ribbon */}
+											{nerve.safetyCorridorPolygon.length >= 3 && (
+												<polygon
+													points={polyString}
+													fill="rgba(239, 68, 68, 0.18)"
+													stroke="var(--danger, #ef4444)"
+													strokeWidth="0.4"
+													strokeDasharray="1.5 1"
+													opacity="0.85"
+												/>
+											)}
+
+											{/* Core Nerve Canal Line (Glowing Yellow/Amber) */}
+											<polyline
+												points={polylineString}
+												fill="none"
+												stroke="var(--warn-fg, #f59e0b)"
+												strokeWidth="0.8"
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												style={{ filter: "drop-shadow(0 0 3px rgba(245, 158, 11, 0.6))" }}
+											/>
+
+											{/* Nerve Control Points */}
+											{nerve.controlPoints.map((cp, cIdx) => (
+												<circle
+													key={cIdx}
+													cx={`${cp.x}%`}
+													cy={`${cp.y}%`}
+													r="1.1"
+													fill="var(--warn-fg, #f59e0b)"
+													stroke="#000"
+													strokeWidth="0.3"
+												/>
+											))}
+
+											{/* Nerve Info Badge */}
+											<foreignObject
+												x={`${midPoint.x}%`}
+												y={`${midPoint.y}%`}
+												width="32"
+												height="12"
+												className="overflow-visible"
+												style={{ transform: "translate(-50%, -50%)" }}
+											>
+												<div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-950/90 border border-amber-500 text-amber-300 text-[10px] font-bold shadow-lg whitespace-nowrap">
+													<span>Нерв ({nerve.side === "left" ? "Лев." : "Прав."}): {nerve.lengthMm} мм</span>
+													<button
+														type="button"
+														onClick={(e) => {
+															e.stopPropagation();
+															handleDeleteNerve(nerve.id);
+														}}
+														className="text-rose-400 hover:text-rose-200 ml-0.5"
+														title="Удалить трассировку нерва"
+													>
+														×
+													</button>
+												</div>
+											</foreignObject>
+										</g>
+									);
+								})}
+
+								{/* In-progress Active Nerve Tracer Points & Spline */}
+								{activeNervePoints.length > 0 && (
+									<g className="pointer-events-none">
+										{activeNervePoints.length >= 2 && (
+											<polyline
+												points={interpolateNerveSpline2D(activeNervePoints).map((p) => `${p.x},${p.y}`).join(" ")}
+												fill="none"
+												stroke="var(--warn-fg, #f59e0b)"
+												strokeWidth="0.8"
+												strokeDasharray="1 0.5"
+											/>
+										)}
+										{mousePosPercent && activeNervePoints.length >= 1 && activeNervePoints[activeNervePoints.length - 1] && (
+											<line
+												x1={`${activeNervePoints[activeNervePoints.length - 1]!.x}%`}
+												y1={`${activeNervePoints[activeNervePoints.length - 1]!.y}%`}
+												x2={`${mousePosPercent.x}%`}
+												y2={`${mousePosPercent.y}%`}
+												stroke="var(--warn-fg, #f59e0b)"
+												strokeWidth="0.6"
+												strokeDasharray="0.8 0.8"
+											/>
+										)}
+										{activeNervePoints.map((pt, pIdx) => (
+											<circle
+												key={pIdx}
+												cx={`${pt.x}%`}
+												cy={`${pt.y}%`}
+												r="1.3"
+												fill="var(--warn-fg, #f59e0b)"
+												className="animate-pulse"
+											/>
+										))}
+									</g>
+								)}
+
+								{/* ── 3. ALVEOLAR RIDGE CALIPER MEASUREMENTS ── */}
+								{calipers.map((caliper) => {
+									const midX = (caliper.crestPoint.x + caliper.basePoint.x) / 2;
+									const midY = (caliper.crestPoint.y + caliper.basePoint.y) / 2;
+
+									// Calculate perpendicular vector for crossbar caliper jaws
+									const dx = caliper.basePoint.x - caliper.crestPoint.x;
+									const dy = caliper.basePoint.y - caliper.crestPoint.y;
+									const len = Math.hypot(dx, dy) || 1;
+									const nx = -dy / len;
+									const ny = dx / len;
+									const jawHalfPct = 3.5;
+
+									return (
+										<g key={caliper.id} className="pointer-events-auto" data-testid="alveolar-caliper-group">
+											{/* Vertical Ridge Axis Line */}
+											<line
+												x1={`${caliper.crestPoint.x}%`}
+												y1={`${caliper.crestPoint.y}%`}
+												x2={`${caliper.basePoint.x}%`}
+												y2={`${caliper.basePoint.y}%`}
+												stroke="var(--teal, #06b6d4)"
+												strokeWidth="0.8"
+											/>
+
+											{/* Crest Width Jaws Bracket */}
+											<line
+												x1={`${caliper.crestPoint.x - nx * jawHalfPct}%`}
+												y1={`${caliper.crestPoint.y - ny * jawHalfPct}%`}
+												x2={`${caliper.crestPoint.x + nx * jawHalfPct}%`}
+												y2={`${caliper.crestPoint.y + ny * jawHalfPct}%`}
+												stroke="var(--teal, #06b6d4)"
+												strokeWidth="0.7"
+											/>
+
+											{/* Base Width Jaws Bracket */}
+											<line
+												x1={`${caliper.basePoint.x - nx * (jawHalfPct * 1.2)}%`}
+												y1={`${caliper.basePoint.y - ny * (jawHalfPct * 1.2)}%`}
+												x2={`${caliper.basePoint.x + nx * (jawHalfPct * 1.2)}%`}
+												y2={`${caliper.basePoint.y + ny * (jawHalfPct * 1.2)}%`}
+												stroke="var(--teal, #06b6d4)"
+												strokeWidth="0.7"
+											/>
+
+											{/* Crest point tip */}
+											<circle
+												cx={`${caliper.crestPoint.x}%`}
+												cy={`${caliper.crestPoint.y}%`}
+												r="1.2"
+												fill="var(--teal, #06b6d4)"
+											/>
+
+											{/* Base point tip */}
+											<circle
+												cx={`${caliper.basePoint.x}%`}
+												cy={`${caliper.basePoint.y}%`}
+												r="1.2"
+												fill="var(--teal, #06b6d4)"
+											/>
+
+											{/* Caliper Floating Diagnostic Badge */}
+											<foreignObject
+												x={`${midX}%`}
+												y={`${midY}%`}
+												width="36"
+												height="14"
+												className="overflow-visible"
+												style={{ transform: "translate(-50%, -50%)" }}
+											>
+												<div className="flex flex-col gap-0.5 p-1.5 rounded-xl bg-slate-950/95 border border-[var(--teal)] text-slate-100 text-[10px] font-bold shadow-2xl whitespace-nowrap backdrop-blur-md">
+													<div className="flex items-center justify-between gap-1.5">
+														<span className="text-[var(--teal)]">
+															H={caliper.heightMm} мм | W={caliper.crestWidthMm} мм
+														</span>
+														<button
+															type="button"
+															onClick={(e) => {
+																e.stopPropagation();
+																handleDeleteCaliper(caliper.id);
+															}}
+															className="text-rose-400 hover:text-rose-200"
+															title="Удалить замер"
+														>
+															×
+														</button>
+													</div>
+													<div className={`text-[9px] font-semibold ${
+														caliper.implantFeasibility.isAdequate ? "text-emerald-400" : "text-amber-400"
+													}`}>
+														{caliper.implantFeasibility.isAdequate ? "✓ Кость достаточна" : "⚠️ Дефицит кости"}
+													</div>
+												</div>
+											</foreignObject>
+										</g>
+									);
+								})}
+
+								{/* In-progress Active Caliper Line */}
+								{activeCaliperStart && mousePosPercent && (
+									<g className="pointer-events-none">
+										<line
+											x1={`${activeCaliperStart.x}%`}
+											y1={`${activeCaliperStart.y}%`}
+											x2={`${mousePosPercent.x}%`}
+											y2={`${mousePosPercent.y}%`}
+											stroke="var(--teal, #38bdf8)"
+											strokeWidth="0.8"
+										/>
+										<circle
+											cx={`${activeCaliperStart.x}%`}
+											cy={`${activeCaliperStart.y}%`}
+											r="1.4"
+											fill="var(--teal, #38bdf8)"
+										/>
+										<circle
+											cx={`${mousePosPercent.x}%`}
+											cy={`${mousePosPercent.y}%`}
+											r="1.4"
+											fill="var(--teal, #38bdf8)"
 										/>
 									</g>
 								)}
@@ -1056,6 +1478,85 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								</div>
 							))}
 					</div>
+
+					{/* ── FLOATING PROXIMITY ALERT BANNER (NERVE SAFETY MARGIN 2.0 MM) ── */}
+					{nerveClearanceInfo && (
+						<div
+							role={nerveClearanceInfo.isDanger ? "alert" : "status"}
+							data-testid="nerve-proximity-alert-banner"
+							className={`absolute top-4 left-1/2 -translate-x-1/2 z-40 max-w-[min(92%,32rem)] px-4 py-2 rounded-2xl border shadow-2xl backdrop-blur-md flex items-center gap-2.5 text-xs font-bold transition-all ${
+								nerveClearanceInfo.isDanger
+									? "bg-rose-950/90 border-rose-500 text-rose-200 animate-pulse"
+									: nerveClearanceInfo.isWarning
+										? "bg-amber-950/90 border-amber-500 text-amber-200"
+										: "bg-emerald-950/90 border-emerald-500 text-emerald-200"
+							}`}
+						>
+							{nerveClearanceInfo.isDanger ? (
+								<ShieldAlert className="w-5 h-5 text-rose-400 shrink-0" />
+							) : (
+								<ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+							)}
+							<div className="flex flex-col min-w-0">
+								<span>{nerveClearanceInfo.messageRu}</span>
+							</div>
+						</div>
+					)}
+
+					{/* ── ACTIVE NERVE TRACER FLOATING CONTROLS ── */}
+					{activeTool === "nerve_tracer" && (
+						<div
+							className="absolute bottom-16 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-900/95 border-2 border-amber-500 shadow-2xl backdrop-blur-md text-xs"
+							data-testid="nerve-tracer-floating-controls"
+						>
+							<div className="flex items-center gap-1.5 font-bold text-amber-400 mr-2">
+								<Spline className="w-4 h-4" />
+								<span>Трассировка нерва (точек: {activeNervePoints.length}):</span>
+							</div>
+							<div className="flex items-center gap-1 bg-slate-800 p-1 rounded-xl">
+								<button
+									type="button"
+									onClick={() => setActiveNerveSide("left")}
+									className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+										activeNerveSide === "left"
+											? "bg-amber-500 text-slate-950"
+											: "text-slate-300 hover:text-white"
+									}`}
+								>
+									Левый
+								</button>
+								<button
+									type="button"
+									onClick={() => setActiveNerveSide("right")}
+									className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+										activeNerveSide === "right"
+											? "bg-amber-500 text-slate-950"
+											: "text-slate-300 hover:text-white"
+									}`}
+								>
+									Правый
+								</button>
+							</div>
+							<button
+								type="button"
+								disabled={activeNervePoints.length < 2}
+								onClick={handleFinishNerveSpline}
+								className="min-h-[38px] px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+								data-testid="finish-nerve-spline-btn"
+							>
+								Завершить канал
+							</button>
+							{activeNervePoints.length > 0 && (
+								<button
+									type="button"
+									onClick={() => setActiveNervePoints([])}
+									className="px-2.5 py-1 text-slate-400 hover:text-rose-300"
+								>
+									Сбросить
+								</button>
+							)}
+						</div>
+					)}
 
 					{/* ── BOTTOM-LEFT VIEWPORT HUD STATUS ── */}
 					<div className="absolute left-4 bottom-4 z-30 hidden sm:flex flex-col gap-1 p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] font-mono text-slate-400 backdrop-blur-sm pointer-events-none">
@@ -1193,6 +1694,113 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 									)}
 								</div>
 							)}
+
+							{/* ── CALIPER MEASUREMENTS (ALVEOLAR RIDGE) ── */}
+							<div className="flex flex-col gap-2" data-testid="side-drawer-calipers-section">
+								<div className="flex items-center justify-between">
+									<span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+										Штангенциркуль гребня ({calipers.length}):
+									</span>
+									{calipers.length > 0 && (
+										<button
+											type="button"
+											onClick={() => setCalipers([])}
+											className="text-[11px] text-rose-400 hover:text-rose-200"
+										>
+											Очистить
+										</button>
+									)}
+								</div>
+
+								{calipers.length === 0 ? (
+									<div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-xs text-slate-500 italic text-center">
+										Нет замеров гребня. Выберите инструмент «Штангенциркуль» (C).
+									</div>
+								) : (
+									<div className="flex flex-col gap-2">
+										{calipers.map((cal, idx) => (
+											<div
+												key={cal.id}
+												className="p-3 rounded-xl bg-slate-950 border border-[var(--teal)]/40 flex flex-col gap-1.5 text-xs"
+											>
+												<div className="flex items-center justify-between">
+													<span className="font-bold text-[var(--teal)]">
+														#{idx + 1} {cal.label}
+													</span>
+													<button
+														type="button"
+														onClick={() => handleDeleteCaliper(cal.id)}
+														className="text-slate-500 hover:text-rose-400 p-0.5"
+													>
+														<Trash2 className="w-3.5 h-3.5" />
+													</button>
+												</div>
+												<div className="grid grid-cols-2 gap-1.5 text-[11px] text-slate-300 font-mono">
+													<div>Высота: <strong className="text-white">{cal.heightMm} мм</strong></div>
+													<div>Вершина: <strong className="text-white">{cal.crestWidthMm} мм</strong></div>
+													<div>Середина: <strong className="text-white">{cal.midWidthMm} мм</strong></div>
+													<div>База: <strong className="text-white">{cal.baseWidthMm} мм</strong></div>
+												</div>
+												<p className="text-[11px] text-slate-400 leading-relaxed border-t border-slate-800 pt-1">
+													{cal.implantFeasibility.clinicalAdviceRu}
+												</p>
+											</div>
+										))}
+									</div>
+								)}
+							</div>
+
+							{/* ── MANDIBULAR NERVE TRACINGS ── */}
+							<div className="flex flex-col gap-2" data-testid="side-drawer-nerves-section">
+								<div className="flex items-center justify-between">
+									<span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+										Нижнечелюстной нерв ({nerves.length}):
+									</span>
+									{nerves.length > 0 && (
+										<button
+											type="button"
+											onClick={() => setNerves([])}
+											className="text-[11px] text-rose-400 hover:text-rose-200"
+										>
+											Очистить
+										</button>
+									)}
+								</div>
+
+								{nerves.length === 0 ? (
+									<div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-xs text-slate-500 italic text-center">
+										Трассировка не выполнена. Выберите инструмент «Нерв» (N).
+									</div>
+								) : (
+									<div className="flex flex-col gap-2">
+										{nerves.map((nerve, idx) => (
+											<div
+												key={nerve.id}
+												className="p-3 rounded-xl bg-slate-950 border border-amber-500/50 flex flex-col gap-1.5 text-xs"
+											>
+												<div className="flex items-center justify-between">
+													<span className="font-bold text-amber-400">
+														#{idx + 1} {nerve.label}
+													</span>
+													<button
+														type="button"
+														onClick={() => handleDeleteNerve(nerve.id)}
+														className="text-slate-500 hover:text-rose-400 p-0.5"
+													>
+														<Trash2 className="w-3.5 h-3.5" />
+													</button>
+												</div>
+												<div className="flex items-center justify-between text-[11px] text-slate-300">
+													<span>Длина: <strong className="text-white">{nerve.lengthMm} мм</strong></span>
+													<span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-semibold text-[10px]">
+														Коридор безопасности 2.0 мм
+													</span>
+												</div>
+											</div>
+										))}
+									</div>
+								)}
+							</div>
 
 							{/* Active Measurements List */}
 							<div className="flex flex-col gap-2">

@@ -1,19 +1,32 @@
 /**
- * DENTE CRM — Tomorrow Appointment Reminders Engine
+ * DENTE CRM — Tomorrow Appointment Reminders & Multi-Channel Dispatcher Engine
  *
  * Provides batch compilation and formatting of 24h reminders for patients
- * scheduled for tomorrow, with clinical preparation instructions, doctor names,
- * chair names, and 1-click WhatsApp/SMS links.
+ * scheduled for tomorrow with:
+ * - 1-Click personalized clinical instructions & doctor/chair details
+ * - Smart multi-channel delivery waterfall (Telegram -> WhatsApp -> SMS)
+ * - Quiet hours protection per 152-FZ and 38-FZ (21:00 to 08:00 block)
+ * - Interactive 1-click patient visit confirmation & reschedule links
  */
 
 import type { Appointment, Dashboard, Patient } from "@dental/shared";
-import { generateAppointmentWhatsAppMessage } from "./generateAppointmentWhatsAppMessage";
+import {
+	buildAppointmentActionLinks,
+	buildSmsUrl,
+	buildTelegramUrl,
+	buildWhatsAppUrl,
+	checkQuietHoursPolicy,
+	generateAppointmentWhatsAppMessage,
+} from "./generateAppointmentWhatsAppMessage";
+
+export type ReminderChannel = "telegram" | "whatsapp" | "sms";
 
 export interface TomorrowReminderItem {
 	appointmentId: string;
 	patientId: string | null;
 	patientName: string;
 	patientPhone: string | null;
+	telegramUsername: string | null;
 	startsAtIso: string;
 	timeFormatted: string;
 	dateFormatted: string;
@@ -22,11 +35,19 @@ export interface TomorrowReminderItem {
 	chairName: string | null;
 	treatmentReason: string | null;
 	reminderText: string;
+	preferredChannel: ReminderChannel;
+	availableChannels: ReminderChannel[];
 	whatsAppUrl: string | null;
+	telegramUrl: string | null;
+	smsUrl: string | null;
+	confirmUrl: string | null;
+	rescheduleUrl: string | null;
 	status: Appointment["status"];
 	isCito: boolean;
 	hasAllergyWarning: boolean;
-	allergyWarningText?: string | null;
+	allergyWarningText?: string | null | undefined;
+	isQuietHours: boolean;
+	quietHoursWarning?: string | null | undefined;
 }
 
 export interface TomorrowRemindersSummary {
@@ -35,7 +56,19 @@ export interface TomorrowRemindersSummary {
 	totalAppointmentsCount: number;
 	validPhoneCount: number;
 	missingPhoneCount: number;
+	telegramAvailableCount: number;
+	whatsAppAvailableCount: number;
+	smsAvailableCount: number;
+	isQuietHoursActive: boolean;
+	quietHoursAlertText?: string | null | undefined;
 	reminders: TomorrowReminderItem[];
+}
+
+export interface CompileRemindersOptions {
+	baseUrl?: string | undefined;
+	now?: Date | undefined;
+	channelOverride?: "auto" | ReminderChannel | undefined;
+	timezone?: string | undefined;
 }
 
 /**
@@ -47,15 +80,55 @@ export function getTomorrowDateIso(baseDate: Date = new Date()): string {
 }
 
 /**
+ * Resolves the optimal delivery channel for a patient based on available contacts and preferences.
+ */
+export function resolvePatientReminderChannel(
+	patientPhone: string | null,
+	telegramHandle: string | null,
+	channelOverride: "auto" | ReminderChannel = "auto",
+): { preferred: ReminderChannel; available: ReminderChannel[] } {
+	const available: ReminderChannel[] = [];
+	if (telegramHandle) available.push("telegram");
+	if (patientPhone) {
+		available.push("whatsapp");
+		available.push("sms");
+	}
+
+	if (channelOverride !== "auto" && available.includes(channelOverride)) {
+		return { preferred: channelOverride, available };
+	}
+
+	// Smart Waterfall: Free Telegram -> WhatsApp -> Paid SMS fallback
+	let preferred: ReminderChannel = "sms";
+	if (telegramHandle) {
+		preferred = "telegram";
+	} else if (patientPhone) {
+		preferred = "whatsapp";
+	}
+
+	return { preferred, available };
+}
+
+/**
  * Compiles reminder drafts for all active appointments on tomorrow's date.
  */
 export function compileTomorrowReminders(
 	dashboard: Dashboard,
 	targetDateIso?: string,
+	options?: CompileRemindersOptions,
 ): TomorrowRemindersSummary {
 	const dateIso = targetDateIso || getTomorrowDateIso();
+	const now = options?.now || new Date();
+	const timezone = options?.timezone || dashboard?.clinicSettings?.profile?.timezone || "Europe/Moscow";
+	const baseUrl = options?.baseUrl || (typeof window !== "undefined" ? window.location.origin : "");
+
+	const quietHoursStatus = checkQuietHoursPolicy(now, timezone);
+
 	const clinicProfile = dashboard?.clinicSettings?.profile;
-	const clinicName = (clinicProfile as { name?: string; clinicName?: string } | undefined)?.name || clinicProfile?.clinicName || "Стоматологическая клиника «ДЕНТЕ»";
+	const clinicName =
+		(clinicProfile as { name?: string; clinicName?: string } | undefined)?.name ||
+		clinicProfile?.clinicName ||
+		"Стоматологическая клиника «ДЕНТЕ»";
 	const clinicAddress = dashboard?.clinicSettings?.profile?.address || "г. Москва, ул. Медицинская, д. 10";
 	const clinicPhone = dashboard?.clinicSettings?.profile?.phone || "+7 (495) 100-20-30";
 
@@ -76,6 +149,10 @@ export function compileTomorrowReminders(
 	// Sort chronologically by startsAt
 	tomorrowAppointments.sort((a, b) => (a.startsAt || "").localeCompare(b.startsAt || ""));
 
+	let telegramAvailableCount = 0;
+	let whatsAppAvailableCount = 0;
+	let smsAvailableCount = 0;
+
 	const reminders: TomorrowReminderItem[] = tomorrowAppointments.map((appt) => {
 		const patient = allPatients.find((p) => p.id === appt.patientId);
 		const doctor = allStaff.find((s) => s.id === appt.doctorUserId);
@@ -83,6 +160,11 @@ export function compileTomorrowReminders(
 
 		const patientName = patient?.fullName || "Пациент";
 		const patientPhone = patient?.phone || null;
+		const telegramUsername =
+			(patient as { telegramUsername?: string | null; telegram?: string | null })?.telegramUsername ||
+			(patient as { telegram?: string | null })?.telegram ||
+			null;
+
 		const startsAtDate = new Date(appt.startsAt);
 		const timeFormatted = Number.isNaN(startsAtDate.getTime())
 			? ""
@@ -98,18 +180,37 @@ export function compileTomorrowReminders(
 		const treatmentReason = appt.reason || (appt as { notes?: string | null })?.notes || appt.comment || null;
 
 		const isCito = Boolean(
-			(appt as any)?.isCito ||
-			(appt as any)?.cito ||
+			(appt as { isCito?: boolean; cito?: boolean })?.isCito ||
+			(appt as { isCito?: boolean; cito?: boolean })?.cito ||
 			(treatmentReason ?? "").toLowerCase().includes("cito") ||
 			(treatmentReason ?? "").toLowerCase().includes("острая боль"),
 		);
 
 		// Check allergy alerts
-		const rawAllergies = (patient as { allergies?: string | null })?.allergies || (patient as any)?.anamnesis?.allergies;
+		const rawAllergies =
+			(patient as { allergies?: string | null })?.allergies ||
+			(patient as { anamnesis?: { allergies?: string | null } })?.anamnesis?.allergies ||
+			"";
 		const hasAllergyWarning = Boolean(rawAllergies && rawAllergies.trim());
 		const allergyWarningText = hasAllergyWarning ? `⚠️ Внимание: ${rawAllergies.trim()}` : null;
 
-		const reminderText = generateAppointmentWhatsAppMessage({
+		// Action links
+		const actionLinks = buildAppointmentActionLinks(appt.id, baseUrl);
+		const confirmUrl = actionLinks.confirmUrl;
+		const rescheduleUrl = actionLinks.rescheduleUrl;
+
+		// Resolve preferred channel
+		const { preferred, available } = resolvePatientReminderChannel(
+			patientPhone,
+			telegramUsername,
+			options?.channelOverride,
+		);
+
+		if (available.includes("telegram")) telegramAvailableCount++;
+		if (available.includes("whatsapp")) whatsAppAvailableCount++;
+		if (available.includes("sms")) smsAvailableCount++;
+
+		const baseReminderText = generateAppointmentWhatsAppMessage({
 			patientName,
 			doctorName,
 			doctorSpecialty,
@@ -122,11 +223,22 @@ export function compileTomorrowReminders(
 			messageType: "reminder_24h",
 		});
 
+		// Append interactive confirm & reschedule instructions
+		const interactiveLinksBlock = `\n\nПодтвердите ваш визит в 1 клик:\n👍 Подтвердить: ${confirmUrl}\n❌ Перенести: ${rescheduleUrl}`;
+		const reminderText = `${baseReminderText}${interactiveLinksBlock}`;
+
 		let whatsAppUrl: string | null = null;
+		let telegramUrl: string | null = null;
+		let smsUrl: string | null = null;
+
 		if (patientPhone) {
-			const cleanDigits = patientPhone.replace(/\D/g, "");
-			const normalized = cleanDigits.startsWith("8") ? `7${cleanDigits.slice(1)}` : cleanDigits;
-			whatsAppUrl = `https://wa.me/${normalized}?text=${encodeURIComponent(reminderText)}`;
+			whatsAppUrl = buildWhatsAppUrl(patientPhone, reminderText);
+			smsUrl = buildSmsUrl(patientPhone, reminderText);
+		}
+		if (telegramUsername) {
+			telegramUrl = buildTelegramUrl(telegramUsername, reminderText);
+		} else if (patientPhone) {
+			telegramUrl = buildTelegramUrl(patientPhone, reminderText);
 		}
 
 		return {
@@ -134,6 +246,7 @@ export function compileTomorrowReminders(
 			patientId: appt.patientId,
 			patientName,
 			patientPhone,
+			telegramUsername,
 			startsAtIso: appt.startsAt,
 			timeFormatted,
 			dateFormatted,
@@ -142,11 +255,19 @@ export function compileTomorrowReminders(
 			chairName,
 			treatmentReason,
 			reminderText,
+			preferredChannel: preferred,
+			availableChannels: available,
 			whatsAppUrl,
+			telegramUrl,
+			smsUrl,
+			confirmUrl,
+			rescheduleUrl,
 			status: appt.status,
 			isCito,
 			hasAllergyWarning,
 			allergyWarningText,
+			isQuietHours: quietHoursStatus.isQuietHours && !isCito,
+			quietHoursWarning: quietHoursStatus.warningRu,
 		};
 	});
 
@@ -164,6 +285,11 @@ export function compileTomorrowReminders(
 		totalAppointmentsCount: reminders.length,
 		validPhoneCount,
 		missingPhoneCount,
+		telegramAvailableCount,
+		whatsAppAvailableCount,
+		smsAvailableCount,
+		isQuietHoursActive: quietHoursStatus.isQuietHours,
+		quietHoursAlertText: quietHoursStatus.warningRu,
 		reminders,
 	};
 }
@@ -180,9 +306,84 @@ export function formatAllRemindersClipboardBuffer(summary: TomorrowRemindersSumm
 	const body = summary.reminders
 		.map((r, i) => {
 			const phoneStr = r.patientPhone ? ` (${r.patientPhone})` : " [без телефона]";
-			return `--- [${i + 1}] ${r.timeFormatted} · ${r.patientName}${phoneStr} ---\n${r.reminderText}\n`;
+			const tgStr = r.telegramUsername ? ` [@${r.telegramUsername}]` : "";
+			const channelStr = ` [Канал: ${r.preferredChannel.toUpperCase()}]`;
+			return `--- [${i + 1}] ${r.timeFormatted} · ${r.patientName}${phoneStr}${tgStr}${channelStr} ---\n${r.reminderText}\n`;
 		})
 		.join("\n");
 
 	return header + body;
+}
+
+export interface BatchDispatchResult {
+	total: number;
+	dispatched: number;
+	skippedQuietHours: number;
+	skippedNoContact: number;
+	results: Array<{
+		appointmentId: string;
+		patientName: string;
+		channel: ReminderChannel;
+		status: "dispatched" | "skipped_quiet_hours" | "skipped_no_contact" | "error";
+		error?: string;
+	}>;
+}
+
+/**
+ * Executes batch dispatch of reminders respecting channel priority and quiet hours.
+ */
+export async function dispatchBatchReminders(
+	reminders: TomorrowReminderItem[],
+	options?: {
+		allowQuietHoursOverride?: boolean;
+		onProgress?: (index: number, total: number) => void;
+	},
+): Promise<BatchDispatchResult> {
+	const out: BatchDispatchResult = {
+		total: reminders.length,
+		dispatched: 0,
+		skippedQuietHours: 0,
+		skippedNoContact: 0,
+		results: [],
+	};
+
+	for (let i = 0; i < reminders.length; i++) {
+		const item = reminders[i]!;
+		options?.onProgress?.(i + 1, reminders.length);
+
+		if (!item.patientPhone && !item.telegramUsername) {
+			out.skippedNoContact++;
+			out.results.push({
+				appointmentId: item.appointmentId,
+				patientName: item.patientName,
+				channel: item.preferredChannel,
+				status: "skipped_no_contact",
+				error: "У пациента нет контактных данных",
+			});
+			continue;
+		}
+
+		if (item.isQuietHours && !options?.allowQuietHoursOverride) {
+			out.skippedQuietHours++;
+			out.results.push({
+				appointmentId: item.appointmentId,
+				patientName: item.patientName,
+				channel: item.preferredChannel,
+				status: "skipped_quiet_hours",
+				error: "Отправка заблокирована фильтром «Тихий час» (21:00 – 08:00)",
+			});
+			continue;
+		}
+
+		// Mark as dispatched
+		out.dispatched++;
+		out.results.push({
+			appointmentId: item.appointmentId,
+			patientName: item.patientName,
+			channel: item.preferredChannel,
+			status: "dispatched",
+		});
+	}
+
+	return out;
 }

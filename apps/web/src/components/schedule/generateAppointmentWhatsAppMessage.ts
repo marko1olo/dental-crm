@@ -364,6 +364,77 @@ export function buildSmsUrl(phone: string, text: string): string {
 }
 
 /**
+ * Формирует прямую ссылку для открытия чата Telegram с предзаполненным сообщением.
+ */
+export function buildTelegramUrl(target: string, text: string): string {
+	const clean = (target || "").trim();
+	if (clean.startsWith("@")) {
+		return `https://t.me/${clean.slice(1)}?text=${encodeURIComponent(text)}`;
+	}
+	if (/^[a-zA-Z0-9_]{5,}$/.test(clean)) {
+		return `https://t.me/${clean}?text=${encodeURIComponent(text)}`;
+	}
+	// Fallback to Telegram web share
+	return `https://t.me/share/url?url=${encodeURIComponent(text)}`;
+}
+
+/**
+ * Проверяет правило «Тихий час» (ФЗ-152 и ФЗ-38 «О рекламе»).
+ * Ночные рассылки с 21:00 до 08:00 запрещены законом.
+ */
+export function checkQuietHoursPolicy(
+	date: Date = new Date(),
+	timezone = "Europe/Moscow",
+): {
+	isQuietHours: boolean;
+	currentHour: number;
+	allowedWindowRu: string;
+	warningRu?: string | undefined;
+} {
+	let hour = date.getHours();
+	try {
+		const formatter = new Intl.DateTimeFormat("en-US", {
+			hour: "numeric",
+			hour12: false,
+			timeZone: timezone,
+		});
+		const parsed = Number.parseInt(formatter.format(date), 10);
+		if (!Number.isNaN(parsed)) {
+			hour = parsed;
+		}
+	} catch {
+		// Fallback to local hour
+	}
+
+	const isQuietHours = hour >= 21 || hour < 8;
+	const allowedWindowRu = "08:00 – 21:00";
+	const warningRu = isQuietHours
+		? `🌙 Тихий час активен (${hour}:00). Согласно 152-ФЗ и 38-ФЗ отправка нерекламных сообщений разрешена с 08:00 до 21:00.`
+		: undefined;
+
+	return {
+		isQuietHours,
+		currentHour: hour,
+		allowedWindowRu,
+		warningRu,
+	};
+}
+
+/**
+ * Формирует интерактивные ссылки подтверждения и переноса приёма.
+ */
+export function buildAppointmentActionLinks(
+	appointmentId: string,
+	baseUrl = "",
+): { confirmUrl: string; rescheduleUrl: string } {
+	const base = baseUrl.replace(/\/$/, "");
+	return {
+		confirmUrl: `${base}/api/public/appointment/${encodeURIComponent(appointmentId)}/confirm`,
+		rescheduleUrl: `${base}/api/public/appointment/${encodeURIComponent(appointmentId)}/reschedule`,
+	};
+}
+
+/**
  * Формирует ссылку для построения маршрута до клиники на Яндекс Картах.
  */
 export function buildYandexMapsUrl(address: string): string {
@@ -376,3 +447,4 @@ export function buildYandexMapsUrl(address: string): string {
 export function build2GisUrl(address: string): string {
 	return `https://2gis.ru/search/${encodeURIComponent(address.trim())}`;
 }
+

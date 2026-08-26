@@ -25,7 +25,7 @@ import {
 import { MedicalWasteJournalModal } from "../components/sanpin/waste/MedicalWasteJournalModal.js";
 
 test("Medical Waste Presets: statutory SanPiN 2.1.3684-21 waste classes integrity", () => {
-	assert.equal(SANPIN_MEDICAL_WASTE_CLASSES.length, 3, "Must define Class A, B, and G");
+	assert.equal(SANPIN_MEDICAL_WASTE_CLASSES.length, 4, "Must define Class A, B, V, and G");
 
 	const classA = getMedicalWasteClass("class_A");
 	assert.equal(classA.letterCode, "А");
@@ -38,6 +38,11 @@ test("Medical Waste Presets: statutory SanPiN 2.1.3684-21 waste classes integrit
 	assert.ok(classB.dentalSpecificItemsRu.some((item) => item.includes("ватные валики") || item.includes("иглы")));
 	assert.ok(classB.mandatoryPackaging.includes("yellow_sharps_box_needle_remover"));
 	assert.ok(classB.allowedDecontamination.includes("physical_autoclave_134"));
+
+	const classV = getMedicalWasteClass("class_V");
+	assert.equal(classV.letterCode, "В");
+	assert.equal(classV.colorTheme.bagColorRu, "Красный");
+	assert.ok(classV.mandatoryPackaging.includes("red_bag"));
 
 	const classG = getMedicalWasteClass("class_G");
 	assert.equal(classG.letterCode, "Г");

@@ -37,27 +37,93 @@ export interface IncomingCallPayload {
 	callStartedAt?: number | undefined;
 }
 
+export type CallOutcome =
+	| "booked"
+	| "callback_15m"
+	| "consultation"
+	| "spam"
+	| "accepted"
+	| "rejected"
+	| "dismissed"
+	| "missed"
+	| "whatsapp_sent"
+	| "sms_sent"
+	| "transferred";
+
+export interface CallOutcomeMeta {
+	readonly id: CallOutcome;
+	readonly label: string;
+	readonly shortLabel: string;
+	readonly iconName: string;
+	readonly color: string;
+	readonly badgeBg: string;
+	readonly badgeBorder: string;
+	readonly descriptionRu: string;
+}
+
+export const CALL_OUTCOME_PRESETS: Record<
+	"booked" | "callback_15m" | "consultation" | "spam",
+	CallOutcomeMeta
+> = {
+	booked: {
+		id: "booked",
+		label: "Записан на прием",
+		shortLabel: "Записан",
+		iconName: "CalendarCheck",
+		color: "#0d9488",
+		badgeBg: "rgba(13, 148, 136, 0.12)",
+		badgeBorder: "rgba(13, 148, 136, 0.35)",
+		descriptionRu: "Пациент записан на прием в клинику",
+	},
+	callback_15m: {
+		id: "callback_15m",
+		label: "Перезвонить через 15 мин",
+		shortLabel: "Перезвонить 15м",
+		iconName: "PhoneCall",
+		color: "#d97706",
+		badgeBg: "rgba(245, 158, 11, 0.12)",
+		badgeBorder: "rgba(245, 158, 11, 0.35)",
+		descriptionRu: "Требуется обратный звонок через 15 минут",
+	},
+	consultation: {
+		id: "consultation",
+		label: "Консультация",
+		shortLabel: "Консультация",
+		iconName: "Info",
+		color: "#0284c7",
+		badgeBg: "rgba(2, 132, 199, 0.12)",
+		badgeBorder: "rgba(2, 132, 199, 0.35)",
+		descriptionRu: "Проведена устная телефонная консультация",
+	},
+	spam: {
+		id: "spam",
+		label: "Спам / Ошиблись",
+		shortLabel: "Спам / Ошибка",
+		iconName: "XCircle",
+		color: "#e11d48",
+		badgeBg: "rgba(225, 29, 72, 0.12)",
+		badgeBorder: "rgba(225, 29, 72, 0.35)",
+		descriptionRu: "Спам-звонок, рекламный робот или ошибочный номер",
+	},
+};
+
 export interface CallHistoryItem extends IncomingCallPayload {
 	id: string;
 	status: TelephonyCallStatus;
-	actionTaken?:
-		| "accepted"
-		| "rejected"
-		| "booked"
-		| "dismissed"
-		| "missed"
-		| "whatsapp_sent"
-		| "sms_sent"
-		| "transferred"
-		| undefined;
+	actionTaken?: CallOutcome | undefined;
+	outcome?: CallOutcome | undefined;
+	outcomeNote?: string | undefined;
 	transferTarget?: string | undefined;
 	transcript?: SpeechTranscriptUtterance[] | undefined;
+	acutePain?: boolean | undefined;
+	callbackDueAt?: string | undefined;
 }
 
 export interface TelephonyStore {
 	activeCall: IncomingCallPayload | null;
 	callHistory: CallHistoryItem[];
 	isSimulatorOpen: boolean;
+	isCallHistoryModalOpen: boolean;
 	isMuted: boolean;
 	volumeLevel: number; // 0.0 to 1.0 (default 0.8)
 	playbackSpeed: PlaybackSpeed; // 1 | 1.25 | 1.5 | 2 (default 1)
@@ -71,11 +137,15 @@ export interface TelephonyStore {
 	acceptCall: () => void;
 	rejectCall: () => void;
 	dismissCall: () => void;
+	recordCallOutcome: (outcome: CallOutcome, note?: string) => void;
+	logAcutePainCall: (phone: string, patientName?: string, reason?: string) => void;
 	startCallTransfer: (targetExtension: string, transferType?: CallTransferType) => void;
 	completeCallTransfer: () => void;
 	cancelCallTransfer: () => void;
 	openSimulator: () => void;
 	closeSimulator: () => void;
+	openCallHistoryModal: () => void;
+	closeCallHistoryModal: () => void;
 	toggleMute: () => void;
 	setVolumeLevel: (volume: number) => void;
 	setPlaybackSpeed: (speed: PlaybackSpeed) => void;
@@ -479,6 +549,263 @@ export function resolvePatientUpcomingAppointment(
 }
 
 /**
+ * Extracts and classifies structured somatic alerts, allergies, and contraindications for a patient.
+ */
+export interface PatientSomaticAlert {
+	readonly id: string;
+	readonly label: string;
+	readonly category: "allergy" | "chronic" | "alert" | "pain" | "risk";
+	readonly severity: "high" | "medium" | "info";
+	readonly icon: string;
+}
+
+export function resolvePatientSomaticAlerts(
+	patient: Patient | null | undefined,
+	insight?: PatientInsight | null | undefined,
+): PatientSomaticAlert[] {
+	if (!patient && !insight) return [];
+
+	const alerts: PatientSomaticAlert[] = [];
+	const seenLabels = new Set<string>();
+
+	const addAlert = (
+		label: string,
+		category: PatientSomaticAlert["category"],
+		severity: PatientSomaticAlert["severity"],
+		icon: string,
+	) => {
+		const norm = label.trim().toLowerCase();
+		if (!norm || seenLabels.has(norm)) return;
+		seenLabels.add(norm);
+		alerts.push({
+			id: `alert-${alerts.length + 1}`,
+			label: label.trim(),
+			category,
+			severity,
+			icon,
+		});
+	};
+
+	// 1. Check notes for allergies, somatics, contraindications
+	if (patient?.notes) {
+		const rawNotes = patient.notes;
+		const lower = rawNotes.toLowerCase();
+
+		// Specific allergy detections
+		if (
+			lower.includes("лидокаин") ||
+			lower.includes("анестети") ||
+			lower.includes("ультракаин") ||
+			lower.includes("новокаин") ||
+			lower.includes("артикаин")
+		) {
+			addAlert("Аллергия на анестетики (лидокаин / артикаин)", "allergy", "high", "AlertTriangle");
+		}
+		if (
+			lower.includes("пенициллин") ||
+			lower.includes("антибиотик") ||
+			lower.includes("амоксициллин")
+		) {
+			addAlert("Аллергия на пенициллиновый ряд", "allergy", "high", "AlertTriangle");
+		}
+		if (lower.includes("латекс")) {
+			addAlert("Непереносимость латекса (безлатексные перчатки)", "allergy", "medium", "AlertCircle");
+		}
+		if (
+			lower.includes("аллерги") &&
+			!lower.includes("лидокаин") &&
+			!lower.includes("пенициллин") &&
+			!lower.includes("латекс")
+		) {
+			addAlert(rawNotes, "allergy", "high", "AlertTriangle");
+		}
+
+		// Specific somatic pathology detections
+		if (lower.includes("беременн") || lower.includes("триместр")) {
+			addAlert("Беременность (ограничения по рентгену и адреналину)", "chronic", "high", "ShieldAlert");
+		}
+		if (
+			lower.includes("кардиостимулятор") ||
+			lower.includes("пейсмейкер") ||
+			lower.includes("электрокардиостимулятор")
+		) {
+			addAlert("Кардиостимулятор (запрет ультразвуковых скейлеров)", "chronic", "high", "ShieldAlert");
+		}
+		if (lower.includes("диабет") || lower.includes("сахарн")) {
+			addAlert("Сахарный диабет (риск замедленного заживления)", "chronic", "medium", "AlertCircle");
+		}
+		if (lower.includes("гипертон") || lower.includes("давлен") || lower.includes("аг ")) {
+			addAlert("Артериальная гипертензия", "chronic", "medium", "AlertCircle");
+		}
+		if (
+			lower.includes("антикоагулянт") ||
+			lower.includes("варфарин") ||
+			lower.includes("ксарелто") ||
+			lower.includes("кровотеч")
+		) {
+			addAlert("Прием антикоагулянтов (риск кровотечения)", "chronic", "high", "AlertTriangle");
+		}
+		if (lower.includes("гепатит") || lower.includes("вич") || lower.includes("вирусн")) {
+			addAlert("Особый санитарно-эпидемиологический режим", "alert", "high", "ShieldAlert");
+		}
+		if (
+			lower.includes("острая боль") ||
+			lower.includes("пульпит") ||
+			lower.includes("периодонтит") ||
+			lower.includes("отек")
+		) {
+			addAlert("Острая боль / Экстренное состояние", "pain", "high", "Zap");
+		}
+	}
+
+	// 2. Check clinical flags from PatientInsight
+	if (insight?.clinicalFlags && Array.isArray(insight.clinicalFlags)) {
+		for (const flag of insight.clinicalFlags) {
+			const lower = flag.toLowerCase();
+			const severity: PatientSomaticAlert["severity"] =
+				lower.includes("аллерг") || lower.includes("кардио") || lower.includes("беремен")
+					? "high"
+					: "medium";
+			const cat: PatientSomaticAlert["category"] = lower.includes("аллерг") ? "allergy" : "alert";
+			addAlert(flag, cat, severity, "AlertTriangle");
+		}
+	}
+
+	// 3. High risk level from PatientInsight
+	if (insight?.riskLevel === "high") {
+		if (insight.riskReasons && insight.riskReasons.length > 0) {
+			for (const reason of insight.riskReasons) {
+				addAlert(`Риск: ${reason}`, "risk", "high", "ShieldAlert");
+			}
+		} else {
+			addAlert("Высокий клинический / организационный риск", "risk", "high", "ShieldAlert");
+		}
+	}
+
+	return alerts;
+}
+
+/**
+ * Resolves upcoming next visit date with full descriptive summary.
+ */
+export interface PatientNextVisitSummary {
+	readonly hasNextVisit: boolean;
+	readonly appointmentId: string | null;
+	readonly formattedDate: string;
+	readonly formattedTime: string;
+	readonly doctorName: string | null;
+	readonly doctorSpecialty: string | null;
+	readonly reason: string | null;
+	readonly isToday: boolean;
+	readonly isTomorrow: boolean;
+	readonly startsAt: string | null;
+	readonly fullTextRu: string;
+}
+
+export function resolvePatientNextVisit(
+	patientId: string | null | undefined,
+	appointments: Appointment[] | null | undefined,
+	staff: StaffMember[] | null | undefined,
+	nowIso = new Date().toISOString(),
+): PatientNextVisitSummary {
+	if (!patientId || !appointments || appointments.length === 0) {
+		return {
+			hasNextVisit: false,
+			appointmentId: null,
+			formattedDate: "—",
+			formattedTime: "—",
+			doctorName: null,
+			doctorSpecialty: null,
+			reason: null,
+			isToday: false,
+			isTomorrow: false,
+			startsAt: null,
+			fullTextRu: "Следующий визит не запланирован",
+		};
+	}
+
+	const upcoming = appointments
+		.filter((a) => a.patientId === patientId)
+		.filter((a) => a.status === "planned" || a.status === "confirmed")
+		.filter((a) => a.startsAt >= nowIso)
+		.sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
+
+	const nextAppt = upcoming[0];
+	if (!nextAppt) {
+		return {
+			hasNextVisit: false,
+			appointmentId: null,
+			formattedDate: "—",
+			formattedTime: "—",
+			doctorName: null,
+			doctorSpecialty: null,
+			reason: null,
+			isToday: false,
+			isTomorrow: false,
+			startsAt: null,
+			fullTextRu: "Следующий визит не запланирован",
+		};
+	}
+
+	let doctorName: string | null = null;
+	let doctorSpecialty: string | null = null;
+	if (nextAppt.doctorUserId && staff) {
+		const doctor = staff.find((s) => s.id === nextAppt.doctorUserId);
+		if (doctor) {
+			doctorName = doctor.fullName;
+			if (doctor.specialties && doctor.specialties.length > 0) {
+				doctorSpecialty = doctor.specialties[0] ?? null;
+			}
+		}
+	}
+
+	const dateObj = new Date(nextAppt.startsAt);
+	const nowDate = new Date(nowIso);
+
+	const isToday =
+		dateObj.getFullYear() === nowDate.getFullYear() &&
+		dateObj.getMonth() === nowDate.getMonth() &&
+		dateObj.getDate() === nowDate.getDate();
+
+	const tomorrowDate = new Date(nowDate);
+	tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+	const isTomorrow =
+		dateObj.getFullYear() === tomorrowDate.getFullYear() &&
+		dateObj.getMonth() === tomorrowDate.getMonth() &&
+		dateObj.getDate() === tomorrowDate.getDate();
+
+	const formattedDate = new Intl.DateTimeFormat("ru-RU", {
+		day: "numeric",
+		month: "long",
+		weekday: "short",
+	}).format(dateObj);
+
+	const formattedTime = new Intl.DateTimeFormat("ru-RU", {
+		hour: "2-digit",
+		minute: "2-digit",
+	}).format(dateObj);
+
+	const prefix = isToday ? "Сегодня" : isTomorrow ? "Завтра" : formattedDate;
+	const docStr = doctorName ? ` (${doctorName})` : "";
+	const reasonStr = nextAppt.reason ? ` — ${nextAppt.reason}` : "";
+	const fullTextRu = `Следующий визит: ${prefix} в ${formattedTime}${docStr}${reasonStr}`;
+
+	return {
+		hasNextVisit: true,
+		appointmentId: nextAppt.id,
+		formattedDate,
+		formattedTime,
+		doctorName,
+		doctorSpecialty,
+		reason: nextAppt.reason || nextAppt.comment || null,
+		isToday,
+		isTomorrow,
+		startsAt: nextAppt.startsAt,
+		fullTextRu,
+	};
+}
+
+/**
  * Generates an appointment confirmation message for WhatsApp / SMS.
  */
 export function generateAppointmentConfirmationMessage(params: {
@@ -796,6 +1123,7 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 	activeCall: null,
 	callHistory: [],
 	isSimulatorOpen: false,
+	isCallHistoryModalOpen: false,
 	isMuted: false,
 	volumeLevel: 0.8,
 	playbackSpeed: 1,
@@ -896,6 +1224,75 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 		});
 	},
 
+	recordCallOutcome: (outcome, note) => {
+		const { activeCall, callHistory } = get();
+		const now = Date.now();
+		const callbackDueAt =
+			outcome === "callback_15m" ? new Date(now + 15 * 60 * 1000).toISOString() : undefined;
+
+		let updatedHistory = [...callHistory];
+		if (activeCall) {
+			let found = false;
+			updatedHistory = callHistory.map((item, idx) => {
+				if (idx === 0 && item.phone === activeCall.phone) {
+					found = true;
+					return {
+						...item,
+						status: outcome === "rejected" || outcome === "spam" ? ("rejected" as const) : ("answered" as const),
+						actionTaken: outcome,
+						outcome,
+						outcomeNote: note || undefined,
+						callbackDueAt,
+					};
+				}
+				return item;
+			});
+			if (!found) {
+				const id = `call-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+				const newItem: CallHistoryItem = {
+					...activeCall,
+					id,
+					status: outcome === "rejected" || outcome === "spam" ? "rejected" : "answered",
+					actionTaken: outcome,
+					outcome,
+					outcomeNote: note || undefined,
+					callbackDueAt,
+				};
+				updatedHistory = [newItem, ...updatedHistory.slice(0, 49)];
+			}
+		}
+
+		set({
+			activeCall: null,
+			callHistory: updatedHistory,
+			transferState: initialTransferState,
+		});
+	},
+
+	logAcutePainCall: (phone, patientName, reason = "Острая боль / Экстренное обращение") => {
+		const id = `call-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+		const newItem: CallHistoryItem = {
+			id,
+			phone,
+			patientId: null,
+			patientName: patientName || "Экстренный вызов (Острая боль)",
+			provider: "mango",
+			timestamp: new Date().toISOString(),
+			status: "answered",
+			actionTaken: "booked",
+			outcome: "booked",
+			outcomeNote: reason,
+			acutePain: true,
+			callStartedAt: Date.now(),
+			durationSeconds: 60,
+			transcript: generateCallTranscript(phone, 60),
+		};
+
+		set((state) => ({
+			callHistory: [newItem, ...state.callHistory.slice(0, 49)],
+		}));
+	},
+
 	startCallTransfer: (targetExtension, transferType = "blind") => {
 		const { activeCall, callHistory } = get();
 		if (!activeCall) return;
@@ -943,6 +1340,8 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 
 	openSimulator: () => set({ isSimulatorOpen: true }),
 	closeSimulator: () => set({ isSimulatorOpen: false }),
+	openCallHistoryModal: () => set({ isCallHistoryModalOpen: true }),
+	closeCallHistoryModal: () => set({ isCallHistoryModalOpen: false }),
 	toggleMute: () => set((state) => ({ isMuted: !state.isMuted })),
 	setVolumeLevel: (volumeLevel) => set({ volumeLevel: Math.max(0, Math.min(1, volumeLevel)) }),
 

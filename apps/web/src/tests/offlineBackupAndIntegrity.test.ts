@@ -319,13 +319,10 @@ describe("AUTOMATED OFFLINE ENCRYPTED BACKUP VAULT & INTEGRITY SUITE", () => {
 		);
 
 		// 7. Seed ICD-10 dictionary
-		await cacheIcd10Dictionary(
-			[
-				{ code: "K02.1", name: "Кариес дентина" },
-				{ code: "K04.0", name: "Пульпит" },
-			],
-			"icd10_catalog",
-		);
+		await cacheIcd10Dictionary([
+			{ code: "K02.1", name: "Кариес дентина" },
+			{ code: "K04.0", name: "Пульпит" },
+		]);
 
 		// Execute 1-Click Vault Export
 		const exportResult = await exportOfflineClinicBackup({
@@ -523,8 +520,9 @@ describe("AUTOMATED OFFLINE ENCRYPTED BACKUP VAULT & INTEGRITY SUITE", () => {
 		});
 
 		const container = JSON.parse(backupString);
-		// Alter container signature by 1 character
-		container.containerSignature = "a" + container.containerSignature.slice(1);
+		// Alter container signature by flipping the first character
+		const firstChar = container.containerSignature[0] === "a" ? "b" : "a";
+		container.containerSignature = firstChar + container.containerSignature.slice(1);
 		const tamperedString = JSON.stringify(container);
 
 		const validation = inspectDenteBackup(tamperedString);
