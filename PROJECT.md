@@ -1,111 +1,75 @@
-# Project: EGISZ, SEMD 108, FNS Tax, and Legal Compliance
+# Project: DENTE Dental CRM (Round 43 — 3-Tier Clinical UX & Full-System Audit)
 
 ## Architecture
-DENTE Dental CRM monorepo with Fastify backend (`apps/api`), React frontend (`apps/web`), shared contracts (`packages/shared`), and native PostgreSQL 18 with Row-Level Security.
-
-### Subsystem Interaction & Data Flow
-```
-[React Web Client]
-  ├── Tooth Chart & FDI 5-Surface Odontogram (ISO 3950)
-  ├── Doctor UKEP Signing (CryptoPro Browser Plugin / Rutoken CAdES-BES)
-  ├── FNS Tax Application & KND 1151156 Preview
-  ├── 4 Specialty IDS Forms & Refusal Speech Scripts
-  └── Live WebSocket Status Updates (/api/ws/schedule)
-         │
-         ▼ (HTTP JSON REST / WebSocket)
-[Fastify API Backend]
-  ├── EGISZ Controller & Document Routes (/api/egisz, /api/documents)
-  ├── SEMD 108 HL7 CDA R2 Generator & Validator (apps/api/src/services/cda/)
-  ├── Dual CAdES-BES & CryptoPro Bridge (apps/api/src/services/crypto/)
-  ├── FNS Tax KND 1151156 Generator & XSD Validator (apps/api/src/services/fns/)
-  ├── MIAC Form 039/u SQL Reporting Aggregator (apps/api/src/services/reports/)
-  ├── OIIS / MedFlex Gateway Outbox Processor (apps/api/src/services/egisz/)
-  └── SHA-256 Cryptographic Hash-Chain Ledger (egisz_audit_logs)
-         │
-         ▼
-[PostgreSQL 18 Database]
-  ├── egisz_outbox (status queue, lease lock, dedupe)
-  ├── egisz_audit_logs (previous_hash -> current_hash with SELECT FOR UPDATE)
-  ├── service_catalog_items (order_804n_code, uet_adult, uet_child, is_decree_458_expensive)
-  └── generated_documents (dual detached signature metadata, CDA XML snapshots)
-```
+- Module/package boundaries:
+  - `@dental/shared`: Canonical clinical models, DTOs, CRDT LWW sync logic, Vector Clocks, 54-FZ kopecks arithmetic (`roundHalfEven`, `splitKopecks`), Statutory Form 043/u & Order 804n/834n EMR engines, SanPiN 3.3686-21 Kraft package verification, Multi-Currency CBR engine, Theme token definitions.
+  - `@dental/api`: Fastify 4 backend, PostgreSQL 18 with Drizzle ORM, ACID transactions (payments, fiscal receipt queue, inventory stock deduction), Cloud Sync Gateway, 54-FZ Idempotency-Key handling, EGISZ SEMD XML generation, MDLP Schema 10560.
+  - `@dental/web`: React 19 SPA, Tailwind CSS with design tokens (`var(--paper)`, `var(--ink)`), 3 strictly segregated tiers:
+    * **Tier 1 (Hot Path / In-Chair Cockpit — 0 clicks, always visible)**: Large dental arch (FDI 11..48 adult, 51..85 pediatric, >=140-160px tooth height), 1-click diagnosis & status selection (Caries, Pulpitis, Filling, Crown, Extracted, Healthy) via stamp tools & radial menus, Order 804n live invoice with 1-click tenders (Cash, Card, SBP QR, Deposit balance), Form 043/u SOAP diary with non-intrusive banner chips and `smart_append` overwrite protection, always-visible red medical safety alert beacon. Zero blocking surface modals.
+    * **Tier 2 (Warm Context / Tooth Drawer — 1 click, slide-out drawer per tooth/visit)**: 5-surface cavity breakdown (MOD), endodontic canal logs, periodontal mobility cards, weight/age express anesthesia calculator, 1-click SanPiN 3.3686-21 Kraft-package link with GOST R ISO 11607 validation, family deposit & loyalty point deduction (54-FZ Tag 1215), 200x200 viziograph image preview attached to selected tooth.
+    * **Tier 3 (Cold Backoffice / Dedicated Fullscreen Modes — outside chair)**: 3D DICOM / PACS MPR viewer with mandibular nerve/sinus safety bounds ($<2.0\text{ mm}$ alert) and HU bone density calibration; Legal EGISZ CDA R3 export with CryptoPro UKEP signing; Doctor Payroll Form T-51 piece-rate and Timesheet T-13; FNS Tax payment certificate (Form 1151156 / KND 1151156); Warehouse inventory audits & MDLP Chestny ZNAK Schema 10560; Multi-Currency CBR medical tourism calculator.
+    * **Multi-Theme & WCAG 2.1 AA Visual Quality**: 10 design themes (`light`, `dark`, `night`, `calm_teal`, `contrast`, `sakura`, `ocean`, `emerald`, `cyber_xray`, `warm_sand`), $\ge 4.5:1$ contrast ratio, $\ge 44\times 44\text{px}$ touch targets across PC (1440px), Tablet (1024px), and Mobile (390px).
 
 ## Feature Inventory
+Every feature from the Survey phase assigned to a milestone:
 | # | Feature | Description | Milestone | Source |
 |---|---------|-------------|-----------|--------|
-| 1 | DB Schema & Migrations | `egisz_outbox`, `egisz_audit_logs`, `service_catalog_items` UET fields, `generated_documents` UKEP fields, RLS policies | M1 | Backend Survey |
-| 2 | SHA-256 Audit Hash Chain | Cryptographic immutable hash chain with PostgreSQL `SELECT FOR UPDATE` row locking | M1 | R6 / Spec Miner |
-| 3 | SEMD 108 CDA R2 Generator | HL7 CDA R2 XML generator for Minzdrav Template `1.2.643.5.1.13.13.11.108` | M2 | R1 / Spec Miner |
-| 4 | 5-Surface Odontogram Encoder | FDI ISO 3950 5-surface table (V, L/P, O/I, M, D) & condition codes in CDA Section 2 | M2 | R1 / Spec Miner |
-| 5 | FRNSI/FRMO/FRMR Validator | Strict OID dictionary validation and SNILS checksum verification | M2 | R1 / Spec Miner |
-| 6 | C14N XML Canonicalization | Deterministic XML normalization prior to Streebog-256 hashing | M2 | R2 / Spec Miner |
-| 7 | Doctor UKEP Client Signing | CryptoPro browser plugin bridge generating detached CAdES-BES signatures | M3 | R2 / Frontend Survey |
-| 8 | MO Clinic UKEP Server Bridge | Server-side CryptoPro CSP adapter for Medical Organization signature | M3 | R2 / Backend Survey |
-| 9 | CAdES-BES GOST Verifier | Verification of GOST R 34.10-2012 / 34.11-2012 detached signatures & certificate trust | M3 | R2 / Spec Miner |
-| 10 | OIIS Gateway REST Client | REST client for MedFlex / N3.Health (`POST /cdagen/api/Emd/SendEmd`) with sandbox mode | M4 | R3 / Backend Survey |
-| 11 | EGISZ Outbox Queue & Worker | Background poller tracking `QUEUED` -> `VALIDATING` -> `REGISTERED_IN_REMD` -> `DELIVERED_TO_EPGU` | M4 | R3 / Backend Survey |
-| 12 | Live WebSocket Status Stream | WebSocket dispatcher via `wsBroker` and frontend hook for real-time document status | M4 | R3 / Frontend Survey |
-| 13 | FNS KND 1151156 Generator | XML generator for FNS Order EA-7-11/824@ (Format 5.01) with integer kopecks | M5 | R4 / Spec Miner |
-| 14 | Decree 458 Code Categorizer | Automated classification of services into Code 1 (Standard) vs Code 2 (Expensive) | M5 | R4 / Spec Miner |
-| 15 | FNS XSD Schema Validator | Schema validation against official `UT_SVOPLMEDUSL_1_278_00_05_01_02.xsd` | M5 | R4 / Spec Miner |
-| 16 | Order 804n UET Coefficients | Service nomenclature with adult (`uet_adult`) and child (`uet_child`) labor units | M6 | R5 / Spec Miner |
-| 17 | MIAC Form 039/u SQL Aggregator | Monthly doctor journal query service aggregating patients, UET, and nosologies | M6 | R5 / Backend Survey |
-| 18 | MIAC Form 039/u CMO UI | Chief Medical Officer reporting panel for Form 039/u in frontend | M6 | R5 / Frontend Survey |
-| 19 | 4 Specialty IDS Templates | Informed Consent forms (Therapy/Endo, Surgery/Implants, Prosthetics, Orthodontics) in DocumentsView | M7 | R7 / Frontend Survey |
-| 20 | Staff Speech Scripts | Administrator/Doctor guidance drawer for patient refusal handling (323-FZ, 152-FZ, KoAP 14.1) | M7 | R7 / Spec Miner |
-| 21 | Full E2E Test Suite | Comprehensive 4-tier requirement-driven E2E tests + Tier 5 adversarial hardening | M8 | Testing Track |
+| 1 | Large Anatomical Dental Arch | FDI 11..48 adult, 51..85 pediatric, 140-160px tooth height, full-width top layout | M1 | survey |
+| 2 | 1-Click Diagnosis & Status Stamp | 1-click status assignment (Caries, Pulpitis, Filling, Crown, Extracted, Healthy) with radial menu & ICD-10 | M1 | survey |
+| 3 | Order 804n Live Invoice & 1-Click Tenders | Penny-exact total in RUB, 1-click tenders (Cash, Card, SBP QR, Balance), Cash Change HUD | M1 | survey |
+| 4 | Non-Intrusive SOAP Diary & Safety Alert | Form 043/u SOAP fields, soft chip suggestions, smart_append overwrite protection, persistent red alert beacon | M1 | survey |
+| 5 | Zero Blocking Popups on Hot Path | Primary in-chair cockpit opens directly without modal barriers; sub-tools deferred to Tier 2/3 | M1 | survey |
+| 6 | 5-Surface Cavity (MOD) & Canal Log Drawer | Tier 2 slide-out drawer for MOD surface selection, IROPZ > 0.6 alert, ISO canal logs, periodontal mobility | M2 | survey |
+| 7 | Express Weight/Age Anesthesia Calculator | Anesthetic max dosage limits, pediatric mode (<=40kg / <18yo), aspiration check, SOAP insertion | M2 | survey |
+| 8 | 1-Click SanPiN Kraft-Package Attachment | 2D DataMatrix scan, GOST R ISO 11607 shelf-life check, SanPiN 3.3686-21 cl. 3632 diary link, BOM deduction | M2 | survey |
+| 9 | Family Deposit & Loyalty Points Deduction | 54-FZ Tag 1215 advance offset, family balance allocation, statutory loyalty cashback | M2 | survey |
+| 10 | 200x200 Viziograph Thumbnail Preview | IndexedDB media query, 200x200 WebP card tied to active tooth | M2 | survey |
+| 11 | 3D DICOM / PACS MPR & Implant Planning | Tri-planar MPR (Axial, Coronal, Sagittal), mandibular nerve (<2.0mm alert), sinus metric, Misch HU density | M3 | survey |
+| 12 | Legal EGISZ CDA R3 Export & CryptoPro UKEP | SEMD 108/111 HL7 CDA R3 XML generation, SNILS/OID validation, detached CAdES-BES / Rutoken signing | M3 | survey |
+| 13 | Doctor Payroll Form T-51 & Timesheet T-13 | Piece-rate payroll calculation, lab/material deduction, Form T-51 CSV export, Goskomstat T-13 engine | M3 | survey |
+| 14 | FNS Tax Payment Certificate (1151156) | Order ED-7-11/824@ certificate, Code 01 vs 02 classification, NO_MEDOPL 5.01 XML & QR payload | M3 | survey |
+| 15 | Warehouse Audits & MDLP Chestny ZNAK | MDLP Schema 10560 disposal, 2D DataMatrix parsing, FEFO queue, Senior Nurse acts, TORG-13/TORG-2 transfers | M3 | survey |
+| 16 | Multi-Currency CBR Tourism Calculator | 10 currencies (USD/EUR/KZT/BYN/CNY/AED/GEL/AMD/UZS), official CBR conversion, bank spread, RU/EN quote | M3 | survey |
+| 17 | 10 Cohesive Design Themes | Light, Dark, Night, Calm Teal, Contrast, Sakura, Ocean, Emerald, Cyber X-Ray, Warm Sand | M4 | survey |
+| 18 | WCAG 2.1 AA Contrast & Multi-Viewport | Luminance thresholds (dark < 0.15, light > 0.60), >=4.5:1 text/badge contrast, 390px/1024px/1440px layouts | M4 | survey |
+| 19 | Medical Touch Ergonomics (>=44-52px) | Touch targets >= 44x44px base, 48-52px primary clinical buttons for gloved tablet operation | M4 | survey |
+| 20 | 54-FZ Idempotency & Remediation Polish | Idempotency-Key handling, Banker's rounding, SanPiN mutation headers, typofix, complete panels mounting | M5 | survey |
+| 21 | Dual Track Acceptance & Adversarial Hardening | Comprehensive E2E test suites (Tiers 1-5), 100% pass across shared, api, and web | M6 | survey |
 
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| M1 | Database Schema & Audit Trail | Drizzle schema additions (`egisz_audit_logs`, `egisz_outbox`, `service_catalog_items` UET, `generated_documents`), migration SQL, RLS, SHA-256 hash-chain service | none | DONE |
-| M2 | Dental SEMD 108 CDA R2 | CDA R2 generator for Template `1.2.643.5.1.13.13.11.108`, 5 mandatory sections, FDI ISO 3950 5-surface table, OID validation, C14N canonicalization | M1 | PLANNED |
-| M3 | Dual CAdES-BES & CryptoPro | Doctor client-side signing bridge, server-side MO CryptoPro bridge, GOST R 34.10/34.11 CAdES-BES detached signature verifier | M2 | PLANNED |
-| M4 | OIIS Gateway Outbox & WebSocket | OIIS REST client (`/cdagen/api/Emd/SendEmd`), background outbox poller, WebSocket live status pushes, frontend monitor hook | M1, M3 | PLANNED |
-| M5 | FNS Tax KND 1151156 Generator | FNS format 5.01 XML builder, Decree 458 Code 1 / Code 2 auto-categorization, integer kopecks, official XSD validation | M1 | PLANNED |
-| M6 | MIAC Form 039/u & UET Reports | SQL aggregation query service for Form 039/u-02, UET calculations, REST endpoint, CMO reporting UI | M1 | PLANNED |
-| M7 | Legal Consents & Speech Scripts | 4 specialty IDS templates in DocumentsView, refusal speech scripts drawer under 323-FZ / 152-FZ / KoAP | M1 | PLANNED |
-| M8 | Final Integration & E2E Test Suite | 100% E2E test suite execution across Tiers 1-4 + Tier 5 adversarial hardening, zero lint/type errors, git commit | M1-M7 | PLANNED |
+| 1 | M1: Tier 1 Hot Path In-Chair Cockpit | Features 1–5: Large arch 140-160px, 1-click status stamp, Order 804n tenders, SOAP diary, zero popups | none | DONE |
+| 2 | M2: Tier 2 Warm Context Tooth Drawer | Features 6–10: MOD drawer, canal logs, anesthesia calc, SanPiN Kraft link, family balance, 200x200 thumb | M1 | DONE |
+| 3 | M3: Tier 3 Cold Backoffice Workspaces | Features 11–16: 3D DICOM MPR, EGISZ CDA R3, Payroll T-51/T-13, FNS 1151156, MDLP 10560, Multi-currency CBR | M2 | DONE |
+| 4 | M4: Multi-Theme & WCAG 2.1 AA Gating | Features 17–19: 10 themes token compliance, WCAG >=4.5:1 contrast, >=44px touch ergonomics | M3 | DONE |
+| 5 | M5: 54-FZ & Statutory Remediation Polish | Feature 20: 54-FZ idempotency, banker's rounding, mutation headers, typofix, panels mounting | M4 | DONE |
+| 6 | M6: E2E Dual Track Acceptance & Adversarial Hardening | Feature 21: Full E2E verification across Tiers 1-5, 100% test pass, visual proof | M1..M5 | IN_PROGRESS |
 
 ## Interface Contracts
+### @dental/web ↔ @dental/shared
+- `mergeSoapDiaryState(current: SoapDiaryState, incoming: SoapDiaryState, options: { strategy: "smart_append" }): SoapDiaryState`
+- `attachKraftPackageTo043Diary(diary: SoapDiaryState, packageData: KraftPackagePayload): SoapDiaryState`
+- `calculateDoctorPieceRate(services: ExecutedService[], rules: PayrollRules): DoctorPayrollResult`
+- `generateTaxDeduction1151156Xml(data: TaxDeductionPayload): TaxDeductionXmlResult`
+- `convertMultiCurrency(amountKopecks: number, from: CurrencyCode, to: CurrencyCode, rates: CbrRates): CurrencyConversionResult`
+- `roundHalfEven(amount: number): number`
 
-### 1. `egisz_audit_logs` Hash-Chain Contract
-- `previous_hash`: 64-char hex SHA-256 of preceding tenant record (or 64 zeros for genesis).
-- `current_hash = SHA256(previous_hash || sequence_number || organization_id || event_type || entity_type || entity_id || payload_sha256 || iso_timestamp || actor_user_id)`
-- Concurrency: `SELECT sequence_number, current_hash FROM egisz_audit_logs WHERE organization_id = $1 ORDER BY sequence_number DESC LIMIT 1 FOR UPDATE`
-
-### 2. SEMD 108 CDA R2 Contract
-- Root Template: `1.2.643.5.1.13.13.11.108` (Dental Consultation Protocol), document type code `108`.
-- 5 Sections:
-  1. Anamnesis (LOINC `10164-2`)
-  2. Dental Status (LOINC `29545-1`, FDI ISO 3950 5-surface observations V, L/P, O/I, M, D)
-  3. ICD-10 Diagnosis (LOINC `29548-5`, OID `1.2.643.5.1.13.13.11.1005`)
-  4. Services Rendered (LOINC `47519-4`, OID `1.2.643.5.1.13.13.11.1070`)
-  5. Recommendations (LOINC `18776-5`)
-
-### 3. Dual CAdES-BES Signature Contract
-- Algorithms: GOST R 34.10-2012 (`1.2.643.7.1.1.1.1` 256-bit or `1.2.643.7.1.1.1.2` 512-bit) with GOST R 34.11-2012 Streebog-256 (`1.2.643.7.1.1.2.2`).
-- Payload: C14N canonicalized XML.
-- Storage: Base64 detached PKCS#7 in `doctor_signature_pkcs7` and `mo_signature_pkcs7`.
-
-### 4. FNS Tax Deduction (KND 1151156 Format 5.01) Contract
-- Root: `<Файл ИдФайл=... ВерсФорм="5.01">`, `<Документ КНД="1184043" ...>`.
-- Expense Node: `<СведРасхУсл СуммаКод1="..." СуммаКод2="...">`.
-- Categorization: Code 2 for implants (`A16.07.054`), sinus-lift (`A16.07.055`), bone grafting (`A16.07.041`/`040`), all-on-4/6; Code 1 for all standard therapy, hygiene, fillings, standard crowns.
-- Math: exact integer kopecks.
-
-### 5. MIAC Form 039/u Contract
-- DTO: `Miac039uDoctorSummary` with total visits, primary/repeat, adult/child, adult/child UET totals, and nosology counts (caries, pulpitis, periodontitis, extractions, fillings, implants).
+### @dental/web ↔ @dental/api
+- `POST /api/billing/payments`: Headers `Idempotency-Key: <key>`, Body `PaymentPayload`, Returns `PaymentRecord`
+- `POST /api/fiscal/receipts`: Headers `Idempotency-Key: <key>`, Body `FiscalReceiptPayload`, Returns `FiscalReceiptRecord`
+- `POST /api/egisz/cda/export`: Body `EgiszCdaPayload`, Returns `{ xml: string, sha256: string, oids: string[] }`
+- `POST /api/inventory/mdlp/disposal`: Body `MdlpDisposalPayload`, Returns `MdlpDocumentResult`
 
 ## Code Layout
-- `apps/api/src/db/schema/clinical.ts`: Drizzle schema for `egisz_outbox`, `egisz_audit_logs`, `serviceCatalogItems` fields, `generatedDocuments` fields.
-- `apps/api/src/services/cda/`: HL7 CDA R2 SEMD 108 generator, 5-surface table, validator, C14N.
-- `apps/api/src/services/crypto/`: CryptoPro CSP adapter, CAdES-BES verifier, Streebog-256 digest.
-- `apps/api/src/services/egisz/`: OIIS gateway client, outbox service & background worker.
-- `apps/api/src/services/fns/`: FNS KND 1151156 builder, Decree 458 classifier, XSD validator.
-- `apps/api/src/services/reports/`: MIAC Form 039/u aggregation service.
-- `apps/api/src/routes/`: API routes for EGISZ, documents, tax XML, and reports.
-- `apps/web/src/components/documents/`: Signing buttons, tax forms, IDS consent forms.
-- `apps/web/src/components/egisz/`: SEMD 108 export modal & live status monitor.
-- `apps/web/src/components/reports/`: MIAC Form 039/u reporting panel.
-- `apps/web/src/components/legal/`: Refusal speech scripts slide-over drawer.
+- `packages/shared/`: Shared business logic, types, CRDT, arithmetic, SanPiN protocols, Statutory EMR, multi-currency engines.
+- `apps/api/`: Fastify 4 backend, PostgreSQL 18 schemas (Drizzle ORM), billing, sync, EGISZ, MDLP routes.
+- `apps/web/`: React 19 frontend:
+  * `src/components/odontogram/`: Tier 1 large dental arch, stamp tools, radial menu, live invoice.
+  * `src/components/visit/`: Tier 1 Form 043/u diary, SOAP autopilot, allergy safety banner, Tier 2 anesthesia calculator.
+  * `src/components/visiograph/`: Tier 3 3D DICOM Cornerstone viewer, MPR slices, nerve/sinus safety guards.
+  * `src/components/egisz/`: Tier 3 SEMD CDA R3 export and CryptoPro UKEP modal.
+  * `src/components/finance/`: Tier 3 Doctor Payroll Form T-51, Timesheet T-13, FNS 1151156 Tax Certificate, Sberbank POS.
+  * `src/components/inventory/`: Tier 3 MDLP Chestny ZNAK Schema 10560 disposal, Senior Nurse acts, TORG transfers.
+  * `src/styles/`: Design tokens (`var(--paper)`, `var(--ink)`), 10 WCAG themes, touch target ergonomics.
+- `scripts/`: Quality gate scripts (`check-encoding.mjs`, `check-css-tokens.mjs`, `check-dynamic-imports.mjs`, `check-env-contract.mjs`).

@@ -1,21 +1,20 @@
-## 2026-08-25T15:33:34Z
-<USER_REQUEST>
-You are the Clinical UX Explorer for DENTE Dental CRM.
-Working directory: C:\Clinic_MVP\dental-crm\.agents\survey_explorer_1
+## 2026-08-25T18:04:33Z
+You are survey_explorer_1 (Survey Explorer - Tier 1 Hot Path).
+Your working directory is C:\Clinic_MVP\dental-crm\.agents\survey_explorer_1.
+Your parent is orchestrator_r43 (ID: f783ee66-ee25-4c93-9b7c-faf36f019546).
 
-Your task is to conduct a complete, in-depth architectural reconnaissance and survey of Requirement R1:
-- Read C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md and C:\Clinic_MVP\dental-crm\.agents\AGENTS.md.
-- Investigate packages/web and packages/shared for:
-  1. SOAP protocols (Subjective, Objective, Assessment, Plan) and clinical record editing components.
-  2. Autopilot / smart suggestions mechanisms (auto-filling SOAP fields, diagnosis suggestions, template insertion like "Подставить шаблон СтАР?").
-  3. Overwrite protection logic: verify how existing manual inputs in complaints/anamnesis are handled and how non-intrusive soft chips/badges with "Применить" and "✕ Не надо" are implemented or need to be designed.
-  4. Touch targets sizing across clinical UI (ensuring >= 48-52px for medical gloves on tablets).
-  5. Russian terminology audit: check for technical leaks (undefined, null, NaN, [object Object], Error: ...).
-  6. Existing unit/integration tests for clinical forms.
+You MUST read the following files before starting your investigation:
+- C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md
+- C:\Clinic_MVP\dental-crm\.agents\AGENTS.md
+- C:\Clinic_MVP\dental-crm\PROJECT.md
 
-Output requirements:
-- Maintain progress in C:\Clinic_MVP\dental-crm\.agents\survey_explorer_1\progress.md
-- Write detailed survey and feature inventory in C:\Clinic_MVP\dental-crm\.agents\survey_explorer_1\analysis.md
-- Write final handoff in C:\Clinic_MVP\dental-crm\.agents\survey_explorer_1\handoff.md following Handoff Protocol (Observation, Logic Chain, Caveats, Conclusion, Verification Method).
-- Notify caller via send_message when done.
-</USER_REQUEST>
+Investigate and audit Tier 1 (Hot Path / In-Chair Cockpit — 0 clicks, always visible):
+1. Full-width large dental arch (FDI 11..48 adult, 51..85 pediatric, tooth height >= 140-160px) in apps/web/src/components/ and related odontogram components.
+2. 1-click diagnosis & status selection (Caries, Pulpitis, Filling, Crown, Extracted, Healthy).
+3. Total due in RUB + 1-click tender selection (Cash, Card, SBP QR, Deposit balance).
+4. Form 043/u visit diary & allergy/somatic red safety alerts.
+5. Verify ZERO blocking surface modals or intrusive popups by default on the in-chair doctor workspace.
+6. Check call chains, component mounting, and state management in useAppLogic.tsx and store files.
+
+Write your findings to C:\Clinic_MVP\dental-crm\.agents\survey_explorer_1\analysis.md and your structured handoff to C:\Clinic_MVP\dental-crm\.agents\survey_explorer_1\handoff.md.
+When done, use send_message to notify parent.

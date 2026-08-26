@@ -1,179 +1,224 @@
 # Original User Request
 
-## 2026-08-22T19:04:25Z
+## Initial Request — 2026-08-25T15:30:59Z
 
-# Teamwork Project Prompt — DENTE Universal Multi-Platform & Network Resilience Architecture
+You are the Project Orchestrator for DENTE Dental CRM.
+
+Working directory: C:\Clinic_MVP\dental-crm
+Your metadata directory: C:\Clinic_MVP\dental-crm\.agents\orchestrator_r42
+Original Request file: C:\Clinic_MVP\dental-crm\ORIGINAL_REQUEST.md (and C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md)
+
+Execute full-lifecycle implementation, verification, and autonomous visual audits for the following requirements:
+
+## Requirements:
+1. R1. Ненавязчивый и деликатный клинический автопилот (Non-Intrusive & Nurse-Proof UX):
+   - Автозаполнение протоколов SOAP и предложений диагнозов никогда не должно перебивать ручной ввод врача или блокировать экран всплывающими окнами.
+   - Все автоматические предложения оформляются как аккуратные, мягкие и легко скрываемые чипы/плашки («Подставить шаблон СтАР?») с кнопками «Применить» и «✕ Не надо».
+   - Если врач уже ввел жалобы или анамнез вручную, автозаполнение ни при каких условиях не затирает введенный текст.
+   - Крупные touch targets (>= 48–52px) для комфортной работы в медицинских перчатках на планшетах.
+   - 100% понятная русская терминология без технических артефактов (undefined, null, NaN, [object Object], Error: ...).
+
+2. R2. Трехуровневая сетевая устойчивость (3-Tier Offline, Wi-Fi LAN Mesh & Cloud):
+   - Уровень 1 (Облако): Автоматическая синхронизация с PostgreSQL 18 через Fastify API при стабильном интернете.
+   - Уровень 2 (Локальная сеть клиники): Обмен мутациями между планшетами врачей и ПК администратора по локальному Wi-Fi P2P брокеру при падении внешнего провайдера интернета.
+   - Уровень 3 (Одиночный офлайн): Локальный буфер в IndexedDB/памяти с последующим бесконфликтным слиянием (CRDT LWW) без потери записей приемов и кассовых операций.
+
+3. R3. Кросс-платформенная портируемость и аппаратная интеграция (PWA / EXE / APK):
+   - Web PWA: Офлайн-кэширование критических ассетов через Service Worker для мгновенного холодного старта.
+   - Desktop Windows EXE: Полноэкранный киоск-режим (Kiosk Fullscreen), глобальный перехватчик USB 2D DataMatrix сканеров штрихкодов без необходимости предварительного клика в текстовое поле, прямая ESC/POS термопечать.
+   - Mobile Android APK: Адаптивность для экранов 375–414px с инерционным скроллом и тактильным виброоткликом (Haptic) на клики по одонтограмме.
+
+4. R4. Мультимодальный визуальный аудит и WCAG контрастность (10 тем оформления):
+   - Сплошная проверка интерфейсов на 3 вьюпортах (Mobile 390px, Tablet 1024px, PC 1440px) во всех 10 темах (Light, Dark, Calm Teal, Contrast, Emerald, Ocean, Sakura, Warm Sand, Night, Cyber X-Ray).
+   - Устранение наездов текста, обрезания длинных русских слов, выпадения за границы и слепящих белых пятен в темных темах.
+   - Контрастность текста к фону >= 4.5:1 по WCAG.
+
+5. R5. Финансовая надежность и идемпотентность (54-ФЗ):
+   - Idempotency-Key на всех платежных эндпоинтах для защиты от двойного списания денег при сбоях Wi-Fi.
+   - Банковское округление roundHalfEven и транзакционная атомарность в PostgreSQL (платеж + чек + списание со склада).
+
+## Operational Standards & Quality Gates:
+- Maintain your BRIEFING.md and progress.md in C:\Clinic_MVP\dental-crm\.agents\orchestrator_r42\
+- Strictly adhere to DENTE AGENTS.md mandates (HEAD-hash reporting, compiles != works, per-file git add, kopeck-exact money, complete migrations, ast-grep read/write split).
+- Typecheck Gate: `npm run typecheck` passes with Exit Code 0 across @dental/shared, @dental/api, @dental/web.
+- Encoding Gate: `node scripts/check-encoding.mjs` passes with Exit Code 0.
+- CSS Token Gate: `node scripts/check-css-tokens.mjs` passes with Exit Code 0.
+- Unit & Integration Test Gate: All tests pass with 100% success (Exit Code 0).
+
+## 2026-08-25T17:55:20Z
+
+Comprehensive full-system audit and clinical UX refactoring of DENTE Dental CRM (`C:/Clinic_MVP/dental-crm`). Eliminates cognitive overload and UI clutter across every screen by strictly separating **Tier 1 (Critical Base: always visible, 1-click, high-contrast, glove-friendly)** from **Tier 2 (Optional/Deep Tools: strictly collapsible, accordions, modals, secondary tabs)**.
+
+Working directory: `C:/Clinic_MVP/dental-crm`
+Integrity mode: `development`
+
+## Requirements
+
+### R1. Clinical Workflow & Odontogram (Tier 1 vs Tier 2)
+- **Tier 1 (Base):** Full-width large dental arch (FDI 11..48 adult, 51..85 pediatric), 1-click diagnosis & status selection (Caries, Pulpitis, Filling, Crown, Extracted, Healthy), ICD-10 link, Form 043/u diary. Zero blocking surface widgets by default.
+- **Tier 2 (Collapsible):** 5-surface cavity breakdown, Cariogram risk doughnut, root resorption sliders, photo-protocol 12-slot grids, and detailed technological deduction cards must be tucked under accordions or secondary tabs.
+
+### R2. Cash Desk, Billing & 54-FZ (Tier 1 vs Tier 2)
+- **Tier 1 (Base):** Clean total due in RUB, 1-click tender selection (Cash, Card, SBP QR, Deposit balance), instant 54-FZ receipt printing with penny-exact arithmetic and idempotency protection.
+- **Tier 2 (Collapsible):** Multi-currency tourism calculators (USD/EUR/KZT/BYN), complex family deposit allocations, and granular loyalty point breakdown must reside strictly within dropdowns or secondary sub-panels.
+
+### R3. SanPiN 3.3686-21 Sterilization & Inventory (Tier 1 vs Tier 2)
+- **Tier 1 (Base):** 1-click / 2D scan Kraft-package verification attached directly to visit diary 043/u with expiration safety gate.
+- **Tier 2 (Collapsible):** Granular BOM material deduction tables (Order 804n grams/milliliters of composite, bond, gutta-percha) must operate quietly in background with expandable details on demand.
+
+### R4. Multi-Theme Visual Quality & WCAG 2.1 AA Gating
+- Zero text occlusion, zero cut-offs of long Russian clinical terms, 44px+ touch targets, 10 theme compliance (`light`, `dark`, `night`, `calm_teal`, `contrast`, `sakura`, `ocean`, `emerald`, `cyber_xray`, `warm_sand`).
+- Zero hardcoded colors (`var(--paper)`, `var(--ink)` tokens only).
+
+## Acceptance Criteria
+
+### Clinical & Functional Criteria
+- [ ] `npm run typecheck` passes with Exit Code 0 across `@dental/shared`, `@dental/api`, `@dental/web`.
+- [ ] `node scripts/check-encoding.mjs` verifies 100% of files are valid UTF-8 (0 errors).
+- [ ] `node scripts/check-css-tokens.mjs` verifies all 10 themes have 0 unresolved tokens and 0 light fallback leaks in dark themes.
+- [ ] All unit, integration and E2E test suites pass with 100% success (0 failed).
+- [ ] Visual verification of all primary screens across PC (1440px), Tablet (1024px), and Mobile (390px) confirms zero clutter on the primary doctor workspace.
+
+## 2026-08-25T17:56:44Z
+
+[МАНДАТ АРХИТЕКТОРА — ФИКСАЦИЯ 3-УРОВНЕВОЙ АРХИТЕКТУРЫ (3 TIERS)]
+
+Ввести строгое 3-уровневое разделение интерфейса и доменов во всех задачах и подсистемах:
+
+1. TIER 1: ГОРЯЧИЙ ПОТОК (Hot Path — 0 кликов, на экране всегда):
+   - Крупная зубная формула (FDI), 1-клик статус (Кариес, Пульпит, Пломба, Коронка, Удален, Здоров).
+   - Сумма к оплате в рублях + 1-клик выбор метода оплаты.
+   - Дневник приема формы 043/у.
+   - Красные алерты аллергий/соматики.
+
+2. TIER 2: КЛИНИЧЕСКИЙ КОНТЕКСТ (Warm Path — 1 клик, выдвижная шторка/спойлер у конкретного зуба/визита):
+   - Поверхности кариеса (MOD), каналы корней.
+   - Калькулятор анестезии по весу/возрасту.
+   - 1-клик привязка крафт-пакета СанПиН.
+   - Семейный счет и бонусы пациента.
+   - Превью снимка визиографа 200x200 у зуба.
+
+3. TIER 3: СПЕЦИАЛИЗИРОВАННЫЙ БЭКОФИС (Cold Path — отдельный воркспейс / полноэкранный режим вне приема):
+   - 3D DICOM / PACS (MPR-срезы, замер до нерва/пазухи).
+   - Юридический экспорт CDA R3 в ЕГИСЗ и подписание УКЭП (КриптоПро).
+   - Финансы: расчет сдельной зарплаты по форме Т-51, табель Т-13, эквайринг Сбера.
+   - Справка об оплате медуслуг в ФНС (КНД 1151156).
+   - Складские ревизии, МДЛП Честный ЗНАК.
+   - Мультивалютный калькулятор медтуризма (USD/EUR/KZT).
+
+Запрещено сваливать Tier 2 и Tier 3 в одну кучу. Всему рою следовать этой структуре.
+
+## 2026-08-25T18:03:28Z
+
+[ВОЗРОЖДЕНИЕ РОЯ ПОСЛЕ ПЕРЕЗАГРУЗКИ СЕРВЕРА — МАНДАТ 3-ТИРОВОЙ АРХИТЕКТУРЫ]
+
+Сервер перезапущен. Твоя задача: скоординировать и возглавить тотальный аудит и рефакторинг монорепозитория DENTE по 3 изолированным тирам:
+
+1. TIER 1 (Hot Path / In-Chair Cockpit — 0 кликов):
+   - Крупная зубная дуга (FDI 11..48, 51..85), 1-клик статус (Кариес, Пульпит, Пломба, Коронка, Удален, Здоров).
+   - Сумма чека в ₽ + 1-клик выбор оплаты (Наличные, Карта, СБП, Баланс).
+   - Дневник 043/у и аллерго-алерты. 0 блокирующих модалок.
+
+2. TIER 2 (Warm Context / Tooth Drawer — 1 клик):
+   - Выдвижная шторка у выбранного зуба: поверхности MOD, каналы, калькулятор анестезии по весу, привязка крафт-пакета СанПиН, списание семейного баланса, превью снимка 200x200.
+
+3. TIER 3 (Cold Backoffice / Dedicated Modes):
+   - Полноэкранные кабинеты вне приема: 3D DICOM MPR, ЕГИСЗ CDA R3 + УКЭП КриптоПро, зарплата Т-51, справка ФНС 1151156, складские ревизии МДЛП, мультивалютный расчет ЦБ РФ.
+
+Продолжай координацию дочерних агентов и веди прогресс в BRIEFING.md / handoff.md.
+
+## 2026-08-25T18:18:17Z
+
+[ВОЗРОЖДЕНИЕ РОЯ ПОСЛЕ ПЕРЕЗАГРУЗКИ — УНИВЕРСАЛЬНЫЙ 3-ТИРОВЫЙ СТАНДАРТ]
+
+Глобальные правила системы обновлены:
+- `rules/core.md` (п. 10): Универсальная 3-уровневая архитектура для ЛЮБОГО проекта (Hot Path -> Warm Context -> Cold Backoffice).
+- `rules/frontend.md` (п. 7): Универсальный закон эргономики UI/UX.
+- `AGENTS.md` (Мандат 8c): Закреплен универсальный закон трехуровневой декомпозиции.
+
+Продолжай координацию работ по монорепозиторию DENTE, веди раунд r43 и следи за прохождением тестов и гейтов.
+
+## 2026-08-25T18:24:11Z
+
+# Teamwork Multi-Agent Swarm — Universal 3-Tier Architectural Hardening
+
+> Status: Launched
+> Goal: Multi-agent execution of Universal 3-Tier Architecture verification & hardening
+> Requested team: Full multi-agent teamwork swarm
+
+Universal 3-Tier Architecture & Clinical/System Hardening across all modules in `C:\Clinic_MVP\dental-crm`.
 
 Working directory: C:\Clinic_MVP\dental-crm
 Integrity mode: development
 
-DENTE Dental CRM is an industrial-grade clinical ecosystem engineered for real-world conditions across medical clinics in Russia. The system must operate seamlessly across 3 Universal Runtime Targets: (1) Modern Web App / PWA, (2) Standalone Desktop Executable (.exe via Electron/Tauri), and (3) Mobile/Tablet App (.apk via Capacitor/Android WebView), while guaranteeing 100% data integrity across 3 Network Tiers: Local In-Cabinet Offline, Clinic LAN/Wi-Fi Subnet, and Remote Cloud Synchronization.
-
 ## Requirements
 
-### R1. Universal Multi-Platform Portability (Web / Desktop EXE / Mobile APK)
-- **Web & PWA (`apps/web`)**: Web App Manifest (`manifest.webmanifest`), Service Worker with cache-first and stale-while-revalidate strategies for assets, offline IndexedDB outbox.
-- **Desktop Windows Executable (.exe)**: Direct integration with workstation hardware (COM/USB ports for TWAIN dental sensors, direct TCP sockets for АТОЛ/Штрих-М KKT, local folder watching for Visiograph/PACS files).
-- **Mobile Android (.apk) & Tablet UI**: Touch-first responsive interface (>= 44x44px touch targets), camera-based Barcode/DataMatrix scanner (Честный ЗНАК / МДЛП), biometric PIN lock, adaptive tooth formula scaling.
+### R1. Universal 3-Tier Architecture Enforcement
+- **Tier 1 (Hot Path / In-The-Zone / 0-Click Core Loop):** Dominant interactive workspace (large FDI dental arch FDI 11..48/51..85, $\ge 140\text{--}160\text{px}$), 1-click status/action triggers, instant total due in ₽ + 1-click payment tender, active visit diary 043/u, red emergency/allergy alerts. Always visible on the main screen with ZERO modal barriers.
+- **Tier 2 (Warm Context / Entity Drawer / 1-Click Accordions):** Entity-bound parameters (MOD surfaces, weight-based anesthesia dosage calculator, SanPiN Kraft link, family balance allocation, $200\times 200\text{px}$ X-ray thumb). Sits strictly in collapsible accordions or context side-sheets tied to the active entity.
+- **Tier 3 (Cold Backoffice / Dedicated Workspace / Studio Mode):** Heavy specialized operations (3D DICOM PACS MPR series, CDA R3 EGISZ + UKEP CryptoPro, Doctor Payroll T-51, Timesheet T-13, Tax Deduction FNS 1151156, Multi-currency CBR calculations, MDLP warehouse audits). Dedicated fullscreen workspaces/modal cabinets completely decoupled from Tier 1.
+- **Strict Ban on 4+ Tiers & Junk-Drawer Bloat:** Tier 2 and Tier 3 must NEVER be merged into a single cluttered dumping ground. Max modal nesting depth is strictly 1.
 
-### R2. 3-Tier Network & Hardware Topology
-- **Tier 1 — Autonomous Offline**: Doctor fills Form 043/u SOAP, selects odontogram pathologies, writes 107-1/u prescriptions, and accepts payments into the offline queue without network blockers or data loss.
-- **Tier 2 — Local Clinic Subnet (LAN / Wi-Fi 192.168.x.x)**:
-  - Direct network printing on fiscal registers (АТОЛ ДТО 10 / Штрих-М). If paper runs out or KKT is powered off, receipts buffer in `fiscal_receipt_queue` (`hardware_offline`) with automatic background retry.
-  - Local radiology viewing without cloud round-trip delay (`local_offline_available`).
-  - Local Asterisk WebRTC SIP telephony with automatic failover to cloud webhooks (Mango/Zadarma).
-- **Tier 3 — Remote Cloud Synchronization**: Bi-directional replication with PostgreSQL, background queue draining, and retry backoff.
+### R2. Strict Static Gates & Multi-Theme Visual Compliance
+- All 3 workspaces (`@dental/shared`, `@dental/api`, `@dental/web`) MUST compile with `npm run typecheck` (`tsc -b --noEmit`, Exit Code 0).
+- `node scripts/check-encoding.mjs` MUST verify 100% UTF-8 without mojibake across all 3,800+ files.
+- `node scripts/check-css-tokens.mjs` MUST pass with 0 unresolved CSS tokens across all 112 CSS files and all 10 themes.
+- `src/tests/panelsAreMounted.test.ts` MUST verify 100% component reachability from `main.tsx` (all 406 components mounted, 0 unreachable).
 
-### R3. Strict Financial Idempotency & CRDT Field-Level Merging
-- Every transaction and mutation carries a composite `Idempotency-Key` (`<uuid>#<sha256(canonicalJson(payload))>`).
-- Re-sending offline payments or invoices guarantees **exactly-once execution**: no double charges, no duplicate fiscal receipts.
-- Concurrent edits by doctors and receptionists merge deterministically via Field-Level Last-Write-Wins (LWW) CRDT without field clobbering.
-
-### R4. Automated Verification & Resilience Test Suite
-- Automated unit and integration test suites covering:
-  - Network disconnection mid-typing in Form 043/u -> IndexedDB persistence -> 100% character recovery.
-  - KKT power interruption -> offline buffer -> recovery.
-  - Multi-platform packaging contracts, Web Manifest validity, and icon assets.
-  - Monorepo typecheck (`npm run typecheck`), CSS tokens check (`node scripts/check-css-tokens.mjs`), and UTF-8 encoding check (`npm run check:encoding`).
+### R3. Comprehensive Multi-Subsystem Unit & E2E Test Suites
+- All 696+ unit tests in `@dental/shared` and all 3,400+ unit tests in `@dental/web` must pass with 0 failures.
+- Verification of financial exactness (kopeck-precision balancing, 54-FZ fiscal receipts, Form T-13 timesheets, FNS KND 1151156 certificates).
 
 ## Acceptance Criteria
 
-### Universal Runtime & Resilience Integrity
-- [ ] PWA Web Manifest is valid and passes standalone installability checks.
-- [ ] Offline typing in Form 043/u with `navigator.onLine = false` preserves 100% of entered text in IndexedDB without data loss.
-- [ ] Restoring network connection automatically syncs all queued changes to backend with `EXIT 0`.
-- [ ] Financial operations maintain strict idempotency — duplicate payments are recognized and deduplicated in PostgreSQL.
-- [ ] All 10 CRM themes render with compliant WCAG AAA contrast and >= 44x44px touch targets.
-- [ ] Full monorepo typecheck (`npm run typecheck`) and encoding tests (`npm run check:encoding`) pass with 0 errors.
+### Code Quality & Compilation
+- [ ] `npm run typecheck` passes with Exit Code 0.
+- [ ] `node scripts/check-encoding.mjs` returns 0 encoding errors.
+- [ ] `node scripts/check-css-tokens.mjs` returns 0 unresolved tokens.
+- [ ] `src/tests/panelsAreMounted.test.ts` passes with 0 unmounted components.
+- [ ] `npm test -w @dental/shared` passes 100% of suites.
+- [ ] `npm test -w @dental/web` passes 100% of suites.
 
-## 2026-08-22T19:15:11Z
+### Architectural Invariants
+- [ ] Tier 1 Hot Path operates without modal interruptions.
+- [ ] Tier 2 Warm Drawers are non-blocking accordions bound to active entities.
+- [ ] Tier 3 Cold Workspaces operate in dedicated fullscreen modes.
+- [ ] Russian Matryoshka nesting is strictly eliminated (max depth = 1).
 
-# Teamwork Project Prompt — DENTE Multi-Platform Packaging & Native Runtime Engine
+## 2026-08-25T18:28:55Z
 
-Working directory: C:\Clinic_MVP\dental-crm
-Integrity mode: development
+[ЖЕСТКИЙ ПРИКАЗ ПО АУДИТУ ТЕМ: ТОЛЬКО ПРЯМОЕ ЧТЕНИЕ СКРИНШОТОВ]
 
-DENTE Dental CRM must be packaged, runnable, and verifiable across all 3 major platforms: (1) Windows Desktop Standalone (.EXE via Electron/Tauri harness with native hardware drivers), (2) Mobile Android (.APK via Capacitor/Android WebView with camera DataMatrix scanning and biometric lock), and (3) Modern Web App / PWA (Browser Standalone with Service Worker caching and IndexedDB outbox). All platforms share the identical @dental/shared business logic and state synchronization protocols.
+Запрещено принимать темы оформления по коду или по прохождению линтеров.
+Все 10 тем (Light, Dark, Ocean, Sakura, Emerald, Cyber X-Ray, Night, Warm Sand, Calm Teal, Contrast) обязаны проверяться ИСКЛЮЧИТЕЛЬНО прямым визуальным открытием PNG-скриншотов через `view_file` и анализом в `thought`. Любые слепящие пятна или неконтрастные тексты должны устраняться немедленно. Применяй этот закон ко всем субагентам роя.
 
-## Requirements
+## 2026-08-25T18:42:34Z
 
-### R1. Desktop Standalone Windows Runtime (.EXE)
-- Native desktop wrapper configuration (Electron / Tauri / Node Host) for Windows.
-- Native hardware bridges:
-  - Local COM/USB serial port access for TWAIN dental sensors and visiographs.
-  - Direct TCP/IP socket printing for АТОЛ and Штрих-М fiscal registers without cloud latency.
-  - Local filesystem watch for incoming X-ray DICOMs.
+[ПРОДОЛЖИТЬ РАБОТУ /teamwork-preview]
+Сервер перезапущен. Продолжай выполнение задач роя: сплошной аудит трехуровневой архитектуры (Tier 1, Tier 2, Tier 3) и визуальную верификацию 10 тем по реальным скриншотам.
 
-### R2. Mobile Android & Tablet App (.APK)
-- Native mobile wrapper configuration (Capacitor / Android WebView).
-- Native mobile hardware integration:
-  - Camera-based GS1 DataMatrix / Barcode scanner for Честный ЗНАК / МДЛП medication verification.
-  - Biometric PIN / TouchID / FaceID staff authentication.
-  - Touch-first responsive interface (>= 44x44px touch targets, no layout shift).
+## 2026-08-25T18:42:41Z
 
-### R3. Web PWA Standalone Runtime
-- Fully validated Web App Manifest (manifest.webmanifest) with standalone display, shortcuts, and icon assets.
-- Production Service Worker (sw.js) with cache-first and stale-while-revalidate strategies for assets.
-- Offline IndexedDB Mutation Outbox with auto-draining upon reconnection.
+[ПРОДОЛЖИТЬ РАБОТУ СЕНТИНЕЛЯ]
+Сервер перезапущен. Возобнови циклы мониторинга и координацию раунда r44. Контролируй прямое визуальное чтение скриншотов по всем 10 темам.
 
-### R4. Universal Cross-Platform Verification Suite
-- Comprehensive automated verification suite:
-  - Cross-platform build scripts (npm run build, packaging configs).
-  - Validation of PWA manifests, icons, and native hardware wrapper interfaces.
-  - Monorepo typecheck (npm run typecheck), CSS tokens check (node scripts/check-css-tokens.mjs), and UTF-8 encoding check (npm run check:encoding).
+## 2026-08-25T19:13:24Z
 
-## Acceptance Criteria
+[СЕНТИНЕЛЬ: ПРОДОЛЖИТЬ КООРДИНАЦИЮ РОЯ]
+Сервер перезапущен. Все 4 субагента токенизации тем возобновлены. Контролируй ход работы, проверку компиляции и пересъемку визуальных скриншотов.
 
-### Multi-Platform Packaging & Runtime Integrity
-- [ ] Desktop packaging contracts and hardware bridge configs are valid and typed.
-- [ ] Mobile Capacitor / Android WebView configuration is complete with DataMatrix camera scanner bridge.
-- [ ] PWA Web Manifest is valid and passes standalone installability checks.
-- [ ] Full monorepo typecheck (npm run typecheck) and encoding tests (npm run check:encoding) pass with 0 errors.
-- [ ] All 10 CRM themes render with compliant WCAG AAA contrast and >= 44x44px touch targets.
+## 2026-08-25T19:51:54Z
 
-## 2026-08-22T20:06:33Z
+[СЕНТИНЕЛЬ: КОНТРОЛЬ ВЫПОЛНЕНИЯ ПУНКТОВ 1-5 /teamwork-preview]
+Сервер перезапущен. Все 4 оставшихся субагента (Пункт 1: 1-Click Smart-Bundles, Пункт 3: Fast Checkout Split, Пункт 4: Mobile Quadrant Odontogram, Пункт 5: Payroll Drill-Down) перезапущены с точными директивами. Пункт 2 (Fuzzy Search & Duplication Guard) уже успешно завершен и закоммичен.
+Контролируй ход работы, отсутствие дедлоков и финальную компиляцию монорепозитория.
 
-# DENTE CRM Multi-Domain Autonomous Swarm — Teamwork Execution
+## 2026-08-25T20:06:47Z
 
-Working directory: C:\Clinic_MVP\dental-crm
-Integrity mode: development
+[СЕНТИНЕЛЬ: КОНТРОЛЬ WAVE 2]
+Все 5 пунктов Wave 1 (1-Click Bundles, Fuzzy Search, Fast Checkout Split, Mobile Quadrant, Payroll Drill-Down) ПОЛНОСТЬЮ ЗАВЕРШЕНЫ И ЗАКОММИЧЕНЫ.
+Все 4 субагента Wave 2 (Warehouse BOM, CMO EGISZ Hub, Voice AI, Lab Gate) возобновили работу. Контролируй выполнение.
 
-## Requirements
 
-### R1. Clinical EMR, Odontogram & SOAP Protocol 043/u
-- Touch-first responsive tooth formula with 1-click pathology selection.
-- Automatic ICD-10 binding per tooth (K02, K04, K05, K08).
-- Order 1094n statutory prescription generation and Articaine max safe dosage calculator (mg/kg).
 
-### R2. Finance, 54-FZ Fiscalization & Doctor Payroll
-- Multi-tender split payment (Cash, Card, SBP QR, Advance offset, Family wallet).
-- FFD 1.2 tags (1214, 1212, 1030) and dynamic FNS QR verification string.
-- T-51 doctor payroll calculation deducting lab costs and materials.
 
-### R3. Inventory, Order 804n Clinical Writeoff & Inter-Branch Transfers
-- Procedure BOM auto-writeoff for dental services (A16.07.002.001).
-- FEFO expiration sorting and бракераж of expired batches.
-- Statutory acts generation: Form 0504230, M-11, TORG-2 discrepancy acts, and TORG-13 transfer notes.
-
-### R4. SanPiN 3.3686-21 Sterilization & Autoclave Log
-- Form 257/u digital autoclave log with 5-point chamber chemical indicator audit (KT-1..KT-5).
-- Form 366/u pre-sterilization cleansing (ПСО) quality control tests (Azopyram, Phenolphthalein, Sudan III).
-- Pure TypeScript vector DataMatrix & Code128 kraft package label generation.
-
-### R5. Telephony, Schedule & Multi-Platform Offline Resilience
-- WebRTC SIP integration with incoming call HUD, patient debt/last visit preview, and 1-click booking.
-- Chair and doctor collision prevention with Postgres 18 exclusion constraints and 0–100 waitlist matching.
-- Offline-first IndexedDB CRDT mutation queue with automatic background sync upon reconnection.
-
-## Acceptance Criteria
-
-### Verification Gates
-- [x] All packages (@dental/shared, @dental/api, @dental/web) pass npm run typecheck with 0 errors.
-- [x] check:encoding passes on all 3420+ source files (UTF-8 clean).
-- [x] check:css-tokens verifies all 6900+ var() usages resolve across all 10 clinical themes.
-- [x] All domain unit and integration test suites pass with Exit Code 0.
-## 2026-08-22T20:33:42Z
-
-# DENTE CRM — Full Autonomous Engineering & Multimodal Verification Swarm
-
-Working directory: C:\Clinic_MVP\dental-crm
-Integrity mode: development
-
-Perform comprehensive engineering, verification, and autonomous visual audits across all 5 core clinical and operational domains of the DENTE Dental CRM platform.
-
-## Requirements
-
-### R1. Clinical EMR, Odontogram & SOAP Protocol 043/u
-- Standardized odontogram with fast pediatric (51–85) vs permanent (11–48) dentition toggles, mixed dentition tooth replacement stages (6–12 years), and 140px minimum tooth height.
-- Clinical SOAP Protocol 043/u generator with 11 standardized complaint presets, automated ICD-10 tooth diagnosis auto-binding (K02.1, K04.0, K04.5, K05.3, K08.1), and Order 1094n Form 107-1/u statutory prescriptions.
-- Articaine 4% safety dosage engine (7.0 mg/kg adult, 5.0 mg/kg pediatric, 0.04 mg epinephrine ceiling for cardiovascular patients).
-
-### R2. Finance, 54-FZ Fiscalization & Doctor Payroll
-- 54-FZ FFD 1.2 QR code validation (t, s, fn, i, fp, n) with kopeck-exact arithmetic.
-- Split-payment processing (Cash, SBP QR, Card, Family Wallet balance).
-- Statutory Form T-51 doctor payroll calculation with automatic lab CAD/CAM & material expense deduction.
-
-### R3. Inventory, Order 804n Clinical Writeoff & Inter-Branch Transfers
-- Automated BOM material write-off based on Ministry of Health Order 804n service codes (A16.07.002.001 Composite filling, A16.07.030.001 Anesthesia).
-- Statutory TORG-13 inter-cabinet and inter-branch transfer forms, and TORG-2 discrepancy acts.
-- Expiration tracking with FEFO (First-Expired, First-Out) and nurse re-stock alerts.
-
-### R4. SanPiN 3.3686-21 Sterilization & Autoclave Log
-- Form 257/u digital autoclave cycle logger with 5-point chemical indicator validation (KT-1..KT-5, class 4/5 integrators) and spore tests.
-- Form 366/u Pre-Sterilization Cleansing (PSO) quality control (1% statutory sampling, Azopyram, Phenolphthalein, Sudan III).
-- Pure TypeScript vector DataMatrix 2D & Code128 1D thermal label printers for kraft packages with 50/60/180-day sterility limits.
-
-### R5. Telephony, Schedule & Multi-Platform Resilience
-- SIP WebRTC softphone with 48x48px mobile floating action button (FAB) inside React Portal with safe-area-inset support.
-- Schedule conflict detection using Postgres 18 tsrange exclusion constraints for doctors, chairs, assistants, and patients.
-- Waitlist quick-fill matching engine with 0–100 score priority ranking.
-
-## Acceptance Criteria
-
-### Automated Verification Gates
-- [ ] TypeScript Typecheck: npm run typecheck exits with code 0 across all workspaces (@dental/shared, @dental/api, @dental/web).
-- [ ] Encoding: npm run check:encoding reports 0 issues across all repository files.
-- [ ] CSS Design Tokens: node scripts/check-css-tokens.mjs verifies 0 unresolved variables across all 10 clinical themes.
-- [ ] Automated Test Suites: 100% pass rate across domain test suites (@dental/shared, @dental/api, @dental/web).
-- [ ] Pre-commit Iron Gate: all 5 pre-commit checks pass cleanly.
-- [ ] Visual Proof: 4-state visual confirmation (Mobile Light, Mobile Dark, PC Light, PC Dark) inspected and verified.

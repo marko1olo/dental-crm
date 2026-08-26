@@ -128,6 +128,20 @@ graph LR
 
 ---
 
+### 🏛️ The 3-Tier Clinical Interaction Architecture (Hot -> Warm -> Cold)
+
+To ensure zero cognitive overload and instant in-chair operation, DENTE strictly separates clinical tools into 3 distinct functional tiers:
+
+| Tier | Name & Interaction Path | Latency & Access | Primary Clinical Responsibilities |
+|---|---|---|---|
+| **Tier 1** | **Hot Path (In-Chair Base)** | **0 Clicks (Always On-Screen)** | Full-width large FDI dental arch (11..48 adult, 51..85 pediatric), 1-click diagnosis & status selection (Caries, Pulpitis, Filling, Crown, Extracted, Healthy), 54-FZ total due in ₽ + 1-click payment tender, Form 043/u diary, critical allergy & somatic safety alerts. |
+| **Tier 2** | **Warm Context (Tooth Drawer)** | **1 Click (Context Drawer / Accordion)** | MOD 5-surface breakdown, weight-based local anesthesia dosage calculator, SanPiN 3.3686-21 Kraft-package autoclave cycle link, family deposit allocation & loyalty cashback points, instant 200x200 RVG X-ray preview tied to active tooth. |
+| **Tier 3** | **Cold Backoffice (Specialized Tool)** | **Dedicated Fullscreen Mode / Modal** | 3D CBCT/DICOM Multi-Planar Reconstruction (MPR) & nerve distance measurement, EGISZ REMD CDA R3 XML export with CryptoPro UKEP signing, Doctor Payroll T-51 & Timesheet T-13, FNS KND 1151156 Tax Certificates, MDLP Chestny ZNAK audits, Multi-Currency CBR conversion (USD/EUR/KZT/BYN). |
+
+> ⚠️ **Anti-Bloat Law**: Max modal nesting depth is strictly 1. Tier 2 and Tier 3 tools must never be dumped into a single cluttered panel.
+
+---
+
 ### 🦷 1. Interactive FDI Odontogram & Surface State Engine
 
 Every tooth (permanent 11–48, deciduous 51–85) maintains an independent state machine across its 5 physical anatomical surfaces:

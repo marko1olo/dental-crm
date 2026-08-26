@@ -1,34 +1,36 @@
-# BRIEFING — 2026-08-25T19:33:35+04:00
+# BRIEFING — 2026-08-25T18:12:00Z
 
 ## Mission
-Conduct a complete, in-depth architectural reconnaissance and survey of Requirements R2 (3-Tier Network Architecture) and R3 (Cross-Platform & Hardware Portability) in DENTE Dental CRM.
+Investigate and audit Tier 2 (Warm Context / Tooth Drawer) and Tier 3 (Cold Backoffice / Dedicated Modes) implementations, features, gaps, and strict tier isolation in dental-crm.
 
 ## 🔒 My Identity
 - Archetype: explorer
-- Roles: Network & Hardware Architecture Explorer
+- Roles: explorer, auditor, investigator
 - Working directory: C:\Clinic_MVP\dental-crm\.agents\survey_explorer_2
-- Original parent: 6a66f79d-fdbf-43b8-b82a-2700d5984395
-- Milestone: Survey R2 & R3 (3-Tier Sync & Cross-Platform Hardware)
+- Original parent: f783ee66-ee25-4c93-9b7c-faf36f019546
+- Milestone: Survey & Audit of Tier 2 & Tier 3 Architecture
 
 ## 🔒 Key Constraints
 - Read-only investigation — do NOT implement
-- Zero-skimming: read all relevant files completely
-- Empirical facts only: cite exact file paths and line numbers
-- Report structured findings in analysis.md and handoff.md
+- Follow 3-Pass Verification Protocol
+- Strict isolation verification: max modal nesting depth = 1, no cluttered junk-drawer
+- Exact file paths, line numbers, and verifiable facts only
 
 ## Current Parent
-- Conversation ID: 6a66f79d-fdbf-43b8-b82a-2700d5984395
-- Updated: not yet
+- Conversation ID: f783ee66-ee25-4c93-9b7c-faf36f019546
+- Updated: 2026-08-25T18:12:00Z
 
 ## Investigation State
-- **Explored paths**: None yet
-- **Key findings**: [TBD]
-- **Unexplored areas**: packages/shared, packages/api, packages/web sync protocols, LAN mesh, IndexedDB CRDT, Service Worker, Desktop/Electron/Scanner/Printer, Android haptics/layout
+- **Explored paths**: `RadialToothMenu.tsx`, `EndoCanalLogModal.tsx`, `PerioToothDetailCard.tsx`, `AnesthesiaCalculator.tsx`, `kraftPackageProtocolLink.ts`, `FastCheckoutModal.tsx`, `ToothHistoryChronicle.tsx`, `Cornerstone3DViewer.tsx`, `EgiszCdaExportModal.tsx`, `DoctorPayrollModal.tsx`, `TaxDeductionCertificateModal.tsx`, `MdlpDisposalQueueModal.tsx`, `multiCurrency.ts`.
+- **Key findings**: Complete implementation across all Tier 2 and Tier 3 subsystems; strict isolation and single-level root portal nesting confirmed; 3820 files UTF-8 clean; 112 CSS files 10-theme clean; 696 shared tests passing.
+- **Unexplored areas**: None within assigned scope.
 
 ## Key Decisions Made
-- Starting survey from reading project authorities (ORIGINAL_REQUEST.md, AGENTS.md, ARCHITECTURE.md).
+- Fully audited and verified all Tier 2 and Tier 3 requirements. Documented findings and compiler diagnostics in `analysis.md` and `handoff.md`.
 
 ## Artifact Index
-- C:\Clinic_MVP\dental-crm\.agents\survey_explorer_2\analysis.md — Detailed survey & feature inventory
+- C:\Clinic_MVP\dental-crm\.agents\survey_explorer_2\DISPATCH.md — Initial task dispatch
+- C:\Clinic_MVP\dental-crm\.agents\survey_explorer_2\BRIEFING.md — Situational awareness
+- C:\Clinic_MVP\dental-crm\.agents\survey_explorer_2\progress.md — Progress & heartbeat log
+- C:\Clinic_MVP\dental-crm\.agents\survey_explorer_2\analysis.md — In-depth analysis report
 - C:\Clinic_MVP\dental-crm\.agents\survey_explorer_2\handoff.md — 5-component handoff report
-- C:\Clinic_MVP\dental-crm\.agents\survey_explorer_2\progress.md — Liveness & progress tracking

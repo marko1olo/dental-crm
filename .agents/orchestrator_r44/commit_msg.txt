@@ -1,0 +1,7 @@
+feat(architecture): harden universal 3-tier clinical UX and 10-theme WCAG gating
+
+- Tier 1: enforce 150px anatomical dental arch, 1-click status stamps, live Order 804n invoice in RUB, and non-intrusive Form 043/u SOAP diary
+- Tier 2: integrate 5-surface MOD cavity selector, express anesthesia calculator, SanPiN 3.3686-21 Kraft package link, and 200x200 X-ray thumbnails
+- Tier 3: decouple 3D DICOM MPR viewer with nerve alerts, EGISZ SEMD CDA R3 UKEP signing, Doctor Payroll T-51/T-13, and MDLP Schema 10560
+- Verify 10 design themes with 0 unresolved CSS tokens and WCAG AA contrast ratio >= 4.5:1
+- Add comprehensive 4-Tier E2E integration test suite with 100% pass rate

@@ -5,6 +5,7 @@ import type {
 } from "@dental/shared";
 import {
 	ArrowRight,
+	ArrowRightLeft,
 	Gift,
 	Plus,
 	Search,
@@ -31,6 +32,7 @@ import { CreatePatientModal } from "./components/patients/CreatePatientModal";
 import { PatientAttachmentsPanel } from "./components/patients/PatientAttachmentsPanel";
 import { PatientCommunicationConsentsPanel } from "./components/patients/PatientCommunicationConsentsPanel";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
+import { PatientBranchTransferModal } from "./components/patients/transfer/PatientBranchTransferModal";
 import { PatientWhatsappSendPanel } from "./components/patients/PatientWhatsappSendPanel";
 import { PatientCardSavePill } from "./components/patients/patientCardSavePill";
 import {
@@ -119,6 +121,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 	const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
+	const [isBranchTransferModalOpen, setIsBranchTransferModalOpen] = useState(false);
 	const searchInputRef = useRef<HTMLInputElement>(null);
 
 	const {
@@ -699,6 +702,22 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							<Gift size={16} aria-hidden="true" />
 							<span>Программа лояльности и бонусы (54-ФЗ)</span>
 						</button>
+						<button
+							type="button"
+							className="secondary-button"
+							onClick={() => setIsBranchTransferModalOpen(true)}
+							title="Межфилиальный трансфер пациента, карты 043/у и нарядов ЗТЛ (152-ФЗ)"
+							data-testid="open-branch-transfer-modal-btn"
+							style={{
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "6px",
+								minHeight: "44px",
+							}}
+						>
+							<ArrowRightLeft size={16} aria-hidden="true" />
+							<span>Трансфер в филиал</span>
+						</button>
 					</div>
 					{patientCoreSaveGuidance ? (
 						<p
@@ -896,6 +915,25 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 					? { medicalCardNumber: `043/у-${selectedPatient.id.slice(0, 8)}` }
 					: {})}
 			/>
+
+			{/* Multi-Branch Patient Transfer & Centralized Lab Sync Modal */}
+			{selectedPatient ? (
+				<PatientBranchTransferModal
+					isOpen={isBranchTransferModalOpen}
+					onClose={() => setIsBranchTransferModalOpen(false)}
+					patientId={selectedPatient.id}
+					patientFullName={selectedPatient.fullName}
+					patientBirthDate={selectedPatient.birthDate}
+					patientPhone={selectedPatient.phone}
+					patientPassport={selectedPatient.administrativeProfile?.identityDocument}
+					patientSnils={selectedPatient.administrativeProfile?.snils}
+					patientInn={selectedPatient.administrativeProfile?.taxpayerInn}
+					balanceRub={selectedPatient.balanceRub ?? 0}
+					onTransferCompleted={(snapshot) => {
+						showToast(`Пациент ${snapshot.patientFullName} успешно передан в ${snapshot.targetBranch.shortNameRu}!`);
+					}}
+				/>
+			) : null}
 		</div>
 	);
 }

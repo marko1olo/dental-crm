@@ -1,16 +1,17 @@
-# Survey Explorer 1 Progress
+# Progress — Survey Explorer (Tier 1 Hot Path)
 
-Last visited: 2026-08-25T15:38:00Z
-Status: COMPLETED
+Last visited: 2026-08-25T18:09:05Z
+Status: Completed
 
-## Steps
-- [x] Workspace and briefing initialization
-- [x] Read and analyze ORIGINAL_REQUEST.md & .agents/AGENTS.md
-- [x] Map out all SOAP / clinical record editing components in `apps/web` & `packages/shared`
-- [x] Investigate Autopilot / smart suggestions mechanisms (SOAP auto-fill, diagnosis suggestions, СтАР templates)
-- [x] Investigate overwrite protection logic & non-intrusive soft chips/badges ("Применить" / "✕ Не надо")
-- [x] Audit touch targets sizing across clinical UI (>= 48-52px for gloves on tablets)
-- [x] Russian terminology audit (check technical leaks: undefined, null, NaN, [object Object], Error: ...)
-- [x] Audit existing unit/integration tests for clinical forms
-- [x] Write analysis.md & handoff.md
-- [x] Deliver report to orchestrator parent via send_message
+## Tasks
+- [x] Create DISPATCH.md and BRIEFING.md
+- [x] Read ORIGINAL_REQUEST.md, AGENTS.md, PROJECT.md
+- [x] Investigate Dental Arch & Odontogram components (FDI 11..48 adult, 51..85 pediatric, tooth sizing >= 140-160px)
+- [x] Investigate 1-click diagnosis & status selection
+- [x] Investigate Total due in RUB + 1-click tender selection
+- [x] Investigate Form 043/u visit diary & allergy/somatic red safety alerts
+- [x] Investigate blocking surface modals / popups
+- [x] Investigate useAppLogic.tsx and store files call chains
+- [x] Synthesize findings and write analysis.md
+- [x] Write 5-component handoff.md
+- [x] Send message to orchestrator parent

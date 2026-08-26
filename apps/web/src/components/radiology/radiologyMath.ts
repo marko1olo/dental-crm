@@ -1,27 +1,6 @@
 import type { LandmarkPin, MeasurementRuler, RadiologyStudy } from "./types";
 
 export * from "./cbctCaliperNerveMath";
-export type {
-	DentalArchPreset,
-	ArchControlPoint,
-	PanoramicCurveSample,
-	CrossSectionPlane,
-	GenerateCrossSectionsParams,
-} from "./cbctPanoramicCurveMath";
-export {
-	getStandardDentalArchControlPoints,
-	catmullRom2D,
-	catmullRomDerivative2D,
-	interpolateArchSpline,
-	pointDistanceMm,
-	buildArcLengthParameterizedCurve,
-	verifyNormalTangentOrthogonality,
-	generateCrossSectionPlanes,
-	classifyArchRegion,
-	estimateFdiToothAtParam,
-	projectPointToArchCurve,
-} from "./cbctPanoramicCurveMath";
-export * from "./cbctCrossSectionEngine";
 
 /**
  * Расчет физического расстояния в миллиметрах между двумя точками на снимке.

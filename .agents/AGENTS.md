@@ -81,13 +81,17 @@ Use these exclusively. Blind terminal navigation is banned.
 - Money and legal documents are exact to the kopeck.
 - A migration is complete only as `.sql` + journal + snapshot, proven against a clean database.
 
-**8c. CLINICAL & DENTAL UX INVARIANTS (THE ZERO-BLOAT & TOUCH-FIRST LAW)**:
-- **Large Anatomical Scale (Анти-мелочь):** Teeth are primary clinical objects. Height must be $\ge 140\text{--}160\text{px}$. Micro-fonts ($\le 11\text{px}$) on buttons and pills are banned. Primary action text is $\ge 13\text{--}14\text{px}$ bold.
-- **1-Click Popups & Zero Surface Bloat:** Fast 1-tap diagnosis selection (Кариес, Пульпит, Пломба, Коронка, Удален, Здоров). Giant 5-surface selector diagrams must never block the screen by default.
-- **Touch-First Over Hotkeys:** Clinicians work in gloves and on touchscreens. Rely on prominent interactive touch targets ($\ge 44\times 44\text{ px}$), not obscure keyboard shortcuts.
-- **Vertical Clinical Workspace:** Odontogram spans full width on top; Form 043/u diary and protocols sit cleanly below. Never squeeze the dental arch horizontally with bulky sidebars.
+**8c. UNIVERSAL 3-TIER ARCHITECTURE & ERGONOMIC INVARIANTS**:
+- **The Universal 3-Tier Interaction Doctrine (Hot Path -> Warm Context -> Cold Backoffice):**
+  * **TIER 1 (Hot Path / In-The-Zone / 0-Click Core Loop):** Dominant workspace (e.g. large dental arch FDI 11..48/51..85, $\ge 140\text{--}160\text{px}$), 1-click status/action triggers, instant total due in ₽ + 1-click payment tender, active visit diary 043/u, red emergency/allergy alerts. Always visible on the main screen with ZERO modal barriers.
+  * **TIER 2 (Warm Context / Entity Drawer / 1-Click Accordions):** Entity-bound parameters (e.g. MOD surfaces, weight-based anesthesia dosage calculator, SanPiN Kraft link, family balance allocation, $200\times 200\text{px}$ X-ray thumb). Sits strictly in collapsible accordions or context side-sheets tied to the active entity.
+  * **TIER 3 (Cold Backoffice / Dedicated Workspace / Studio Mode):** Heavy specialized operations (e.g. 3D DICOM PACS MPR series, CDA R3 EGISZ + UKEP CryptoPro, Doctor Payroll T-51, Tax Deduction FNS 1151156, Multi-currency CBR calculations, MDLP warehouse audits). Dedicated fullscreen workspaces/modal cabinets completely decoupled from Tier 1.
+  * **Strict Ban on 4+ Tiers & Junk-Drawer Bloat:** Tier 2 and Tier 3 must NEVER be merged into a single cluttered dumping ground. Max modal nesting depth is strictly 1.
+- **Dominant Workspace Scale (Анти-мелочь):** Primary interactive objects must dominate screen space. Micro-fonts ($\le 11\text{px}$) on buttons and pills are banned. Primary action text is $\ge 13\text{--}14\text{px}$ bold.
+- **1-Click Popups & Zero Surface Bloat:** Fast 1-tap state selection. Giant multi-surface selector diagrams must never block the screen by default.
+- **Touch-First Over Hotkeys:** Gloved/touch operation standard. Rely on prominent interactive touch targets ($\ge 44\times 44\text{ px}$), not obscure keyboard shortcuts.
 - **No Card-in-Card Nesting:** Modals and screens are clean, monolithic panels. No cards inside cards or nested boxes.
-- **Premium Documents Typography:** Outpatient records (043/u), informed consents, completed treatment acts, and bills must render in magazine-grade print typography with live field customization.
+- **Premium Documents Typography:** Outpatient records (043/у), informed consents, completed treatment acts, and bills must render in magazine-grade print typography with live field customization.
 - **Interactive State Visual Audit:** Screenshots must audit open Hover HUDs, open radial context menus, and modals. Check for long Russian text overflow (`min-w-0`, `truncate`, `break-words`).
 - **Anatomical Color & Geometry Fidelity:** No neon/fantasy colors (pulp is anatomically red `#ef4444`). Root canals in incisors/canines (11–43) must run continuously to the root apex.
 - **Ban on Intermediate Idle Stalls:** Never stop turns with messages like "Waiting for build...". Run through to empirical proof.

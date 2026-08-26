@@ -1,37 +1,43 @@
-# E2E Test Infra: EGISZ, SEMD 108, FNS Tax, and Legal Compliance
+# E2E Test Infra: DENTE Dental CRM (Round 43)
 
 ## Test Philosophy
-- Opaque-box, requirement-driven.
-- Derived strictly from `ORIGINAL_REQUEST.md`, federal regulations (Minzdrav 947n/804n, FNS EA-7-11/824@, Decree 458, 323-FZ, 152-FZ, KoAP 14.1), and Russian cryptographic standards (GOST R 34.10-2012 / 34.11-2012).
-- Zero tolerance for mocks in production verification.
+- Opaque-box & requirement-driven verification across the 3 strictly isolated tiers.
+- Complete coverage across all 21 inventoried features in `PROJECT.md § Feature Inventory`.
+- Multi-tier testing hierarchy: Category-Partition (Tier 1), Boundary & Corner Cases (Tier 2), Cross-Feature Interactions (Tier 3), Real-World Clinical Workloads (Tier 4), and Adversarial Coverage Hardening (Tier 5).
 
-## Feature Inventory & Test Coverage Goals
-| # | Feature | Requirement Source | Tier 1 (Target) | Tier 2 (Target) | Tier 3 (Target) |
-|---|---------|-------------------|:---------------:|:---------------:|:---------------:|
-| 1 | DB Schema & Hash-Chained Audit Trail | R6 (323-FZ/152-FZ) | 5 | 5 | ✓ |
-| 2 | SEMD 108 CDA R2 Generator & 5-Surface Odontogram | R1 (Minzdrav 108/804n) | 5 | 5 | ✓ |
-| 3 | Dual CAdES-BES & CryptoPro Verifier | R2 (GOST 34.10/34.11) | 5 | 5 | ✓ |
-| 4 | OIIS Gateway REST Outbox & WebSockets | R3 (EGISZ REMD/EPGU) | 5 | 5 | ✓ |
-| 5 | FNS Tax Deduction (KND 1151156 5.01) | R4 (Decree 458/XSD 5.01) | 5 | 5 | ✓ |
-| 6 | MIAC Form 039/u & Order 804n UET | R5 (Form 039/u-02) | 5 | 5 | ✓ |
-| 7 | 4 Specialty IDS Consents & Refusal Scripts | R7 (323-FZ Art. 20) | 5 | 5 | ✓ |
+## Feature Inventory & Test Mapping
+| # | Feature | Requirement | Tier 1 (Feature) | Tier 2 (Boundary) | Tier 3 (Pairwise) | Tier 4 (Scenario) |
+|---|---------|-------------|:----------------:|:-----------------:|:-----------------:|:-----------------:|
+| 1 | Large Anatomical Dental Arch | FDI 11..48 & 51..85, 140-160px height | 5 | 5 | ✓ | ✓ |
+| 2 | 1-Click Diagnosis & Status Stamp | Caries, Pulpitis, Filling, Crown, Extracted | 5 | 5 | ✓ | ✓ |
+| 3 | Order 804n Live Invoice & Tenders | Cash, Card, SBP, Balance, Cash Change HUD | 5 | 5 | ✓ | ✓ |
+| 4 | Non-Intrusive SOAP Diary & Alerts | Form 043/u, chip suggestions, smart_append | 5 | 5 | ✓ | ✓ |
+| 5 | Zero Blocking Popups on Hot Path | Direct cockpit mount, 0 modal barriers | 5 | 5 | ✓ | ✓ |
+| 6 | 5-Surface Cavity & Canal Drawer | MOD surfaces, IROPZ > 0.6, ISO canal logs | 5 | 5 | ✓ | ✓ |
+| 7 | Express Weight/Age Anesthesia Calc | Dosage limits, pediatric <=40kg, aspiration | 5 | 5 | ✓ | ✓ |
+| 8 | SanPiN Kraft-Package Attachment | 2D scan, ISO 11607 shelf life, BOM deduction | 5 | 5 | ✓ | ✓ |
+| 9 | Family Deposit & Loyalty Deductions | 54-FZ Tag 1215, family balance, cashback | 5 | 5 | ✓ | ✓ |
+| 10 | 200x200 Viziograph Thumbnail Preview | IndexedDB media query, 200x200 WebP card | 5 | 5 | ✓ | ✓ |
+| 11 | 3D DICOM / PACS MPR Viewer | Nerve <2.0mm alert, sinus metric, HU density | 5 | 5 | ✓ | ✓ |
+| 12 | EGISZ CDA R3 Export & CryptoPro | SEMD 108/111 HL7 XML, SNILS/OID, UKEP sign | 5 | 5 | ✓ | ✓ |
+| 13 | Doctor Payroll Form T-51 & T-13 | Piece-rate payroll, lab deduction, CSV export | 5 | 5 | ✓ | ✓ |
+| 14 | FNS Tax Payment Certificate (1151156) | Order ED-7-11/824@, Code 01/02, NO_MEDOPL | 5 | 5 | ✓ | ✓ |
+| 15 | Warehouse Audits & MDLP 10560 | Schema 10560 disposal, FEFO queue, TORG acts | 5 | 5 | ✓ | ✓ |
+| 16 | Multi-Currency CBR Tourism Calc | 10 currencies, CBR rates, bank spread | 5 | 5 | ✓ | ✓ |
+| 17 | 10 Cohesive Design Themes | 10 themes token compliance, 0 light leaks | 5 | 5 | ✓ | ✓ |
+| 18 | WCAG 2.1 AA Contrast & Viewports | >=4.5:1 contrast, 390px / 1024px / 1440px | 5 | 5 | ✓ | ✓ |
+| 19 | Medical Touch Ergonomics | >=44px base, 48-52px primary action buttons | 5 | 5 | ✓ | ✓ |
+| 20 | 54-FZ Idempotency & Remediation | Idempotency keys, Banker's rounding, ACID | 5 | 5 | ✓ | ✓ |
+| 21 | Dual Track Acceptance & Gating | 100% test pass across shared, api, and web | 5 | 5 | ✓ | ✓ |
 
-## Test Architecture
-- Test Runner: Vitest / Node native test runner (`apps/api/src/services/**/*.test.ts`, `apps/web/src/tests/**/*.test.ts`) + E2E integration runner.
-- Test Suite Location: `apps/api/src/services/` (unit & integration), `apps/web/src/tests/` (frontend component & store tests), and dedicated regulatory compliance suites.
-
-## Real-World Application Scenarios (Tier 4)
-| # | Scenario | Features Exercised | Complexity |
-|---|----------|--------------------|------------|
-| 1 | **Complex Dental Consultation & EGISZ Registration**: Doctor completes visit for patient with multiple carious lesions, records 5-surface odontogram (FDI 46 O/D, 36 O), attaches ICD-10 K02.1 and Order 804n restorative procedures, signs with Doctor UKEP, triggers Clinic MO UKEP, and transmits to OIIS Outbox with live WebSocket status updates to REMD. | R1, R2, R3, R6 | High |
-| 2 | **Full Family Tax Deduction Package**: Patient requests NDFL tax deduction certificate for calendar year 2026 covering personal therapy (Code 1) and child implant surgery (Code 2, Decree 458), verifying integer kopeck math and XSD 5.01 schema validation. | R4, R6 | High |
-| 3 | **Monthly Chief Medical Officer Regulatory Audit**: CMO generates Form 039/u monthly report across 5 clinic doctors, validating adult vs child UET calculations, primary/repeat ratios, and caries/pulpitis/extraction pathology breakdowns against rendered services. | R5, R6 | Medium |
-| 4 | **Surgical Implant Intervention with Specialty IDS & Refusal Handling**: Patient scheduled for bilateral sinus-lift and 4 dental implants signs specialty Surgery/Implant IDS with acknowledged clinical risks; on refusing preoperative dental CT scan, receptionist triggers 323-FZ refusal speech script and executes formal refusal document. | R7, R6 | High |
-| 5 | **Cryptographic Audit Tamper Detection**: Concurrent multi-user actions write to hash-chained `egisz_audit_logs`; a simulated malicious DB update modifying historical payload is detected by validation routine which flags broken SHA-256 link. | R6 | High |
-
-## Coverage Thresholds
-- **Tier 1 (Feature Coverage)**: ≥ 35 test cases (≥5 per feature)
-- **Tier 2 (Boundary & Corner Cases)**: ≥ 35 test cases (≥5 per feature)
-- **Tier 3 (Cross-Feature Interaction)**: ≥ 10 test cases (pairwise coverage)
-- **Tier 4 (Real-World Workloads)**: ≥ 5 end-to-end application scenarios
-- **Total Minimum Test Count**: ≥ 85 test cases
+## Test Runner Commands
+- Shared Business Logic & Statutory Tests:
+  `npm test -w @dental/shared`
+- Web UI, Odontogram, & Clinical Tests:
+  `node --import tsx --import ./testCssStub.mjs --test "src/components/odontogram/**/*.test.ts" "src/components/visit/**/*.test.ts" "src/tests/nurseProofUx.test.ts" "src/tests/perspectiveOdontogram.test.ts" "src/tests/challenger10ThemesWcagAudit.test.ts"`
+- Typecheck Gate:
+  `npm run typecheck`
+- Encoding Gate:
+  `node scripts/check-encoding.mjs`
+- CSS Token Gate:
+  `node scripts/check-css-tokens.mjs`

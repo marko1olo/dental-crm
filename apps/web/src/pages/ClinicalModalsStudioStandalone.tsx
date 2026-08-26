@@ -47,7 +47,6 @@ import { AnesthesiaCalculator } from "../components/visit/AnesthesiaCalculator";
 import { PrescriptionModal } from "../components/visit/PrescriptionModal";
 import { InformedConsentModal } from "../components/documents/InformedConsentModal";
 import {
-	CbctPanoramicResliceModal,
 	RadiologyModule,
 	RadiologyReferralModal,
 	RadiologyViewerModal,
@@ -82,7 +81,6 @@ import { AnesthesiaMrdCaliperModal } from "../components/visit/AnesthesiaMrdCali
 import { PeriodontalRiskAssessmentModal } from "../components/clinical/perio/PeriodontalRiskAssessmentModal";
 import { MedicalWasteJournalModal } from "../components/sanpin/waste/MedicalWasteJournalModal";
 import { EmergencyRescueModal } from "../components/emergency/EmergencyRescueModal";
-import { EmergencyVitalsMonitorModal } from "../components/visit/emergency/EmergencyVitalsMonitorModal";
 import { WarrantyPassportModal } from "../components/warranty/WarrantyPassportModal";
 import { CmoEmrAuditModal } from "../components/emr/audit/CmoEmrAuditModal";
 import { FnsNdflXmlModal } from "../components/documents/ndflXml/index";
@@ -102,8 +100,6 @@ import { SickLeaveElnModal } from "../components/documents/sickLeave/SickLeaveEl
 import { AutoclaveLog257Modal } from "../components/sanpin/autoclaveLog/AutoclaveLog257Modal";
 import { DoctorShiftRosterModal } from "../components/schedule/roster/DoctorShiftRosterModal";
 import { AnesthesiaQuickBar } from "../components/anesthesia/AnesthesiaQuickBar";
-import { EndodonticCanalMasterModal } from "../components/clinical/endo/EndodonticCanalMasterModal";
-import { CadCamOcclusionHeatmapModal } from "../components/lab/CadCamOcclusionHeatmapModal";
 import { BeforeAfterComparisonView } from "../components/photography/BeforeAfterComparisonView";
 import {
 	STANDARD_12_SLOT_PROTOCOL,
@@ -322,7 +318,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isPediatricOpen, setIsPediatricOpen] = useState(false);
 	const [isConsentOpen, setIsConsentOpen] = useState(false);
 	const [isViewerOpen, setIsViewerOpen] = useState(false);
-	const [isCbctResliceOpen, setIsCbctResliceOpen] = useState(false);
 	const [isPayrollOpen, setIsPayrollOpen] = useState(false);
 	const [isFastCheckoutOpen, setIsFastCheckoutOpen] = useState(false);
 	const [isMedicalPrescriptionOpen, setIsMedicalPrescriptionOpen] = useState(false);
@@ -340,8 +335,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isPortalOpen, setIsPortalOpen] = useState(false);
 	const [isImplantPlanningOpen, setIsImplantPlanningOpen] = useState(false);
 	const [isImplantAbutmentStudioOpen, setIsImplantAbutmentStudioOpen] = useState(false);
-	const [isEndodonticOpen, setIsEndodonticOpen] = useState(false);
-	const [isCadCamHeatmapOpen, setIsCadCamHeatmapOpen] = useState(false);
 	const [isBeforeAfterOpen, setIsBeforeAfterOpen] = useState(false);
 	const [isVoiceAssistantOpen, setIsVoiceAssistantOpen] = useState(false);
 	const [isConsent323Open, setIsConsent323Open] = useState(false);
@@ -350,7 +343,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isPerioRiskOpen, setIsPerioRiskOpen] = useState(false);
 	const [isMedicalWasteOpen, setIsMedicalWasteOpen] = useState(false);
 	const [isEmergencyRescueOpen, setIsEmergencyRescueOpen] = useState(false);
-	const [isVitalsMonitorOpen, setIsVitalsMonitorOpen] = useState(false);
 	const [isWarrantyPassportOpen, setIsWarrantyPassportOpen] = useState(false);
 	const [isCmoEmrAuditOpen, setIsCmoEmrAuditOpen] = useState(false);
 	const [isFnsNdflXmlOpen, setIsFnsNdflXmlOpen] = useState(false);
@@ -397,8 +389,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				}
 				const requestedModal = params.get("modal");
 				if (requestedModal) {
-					setIsEndodonticOpen(requestedModal === "endo" || requestedModal === "endodontic");
-					setIsCadCamHeatmapOpen(requestedModal === "cadcam" || requestedModal === "heatmap" || requestedModal === "occlusion");
 					setIsImplantAbutmentStudioOpen(requestedModal === "implant" || requestedModal === "abutment" || requestedModal === "emergence");
 					setIsBeforeAfterOpen(requestedModal === "before_after" || requestedModal === "photo_comparison" || requestedModal === "photography");
 				}
@@ -625,30 +615,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						>
 							<Scan size={15} />
 							<span>Открыть визиограф</span>
-						</button>
-					</div>
-
-					{/* 7b. CBCT Panoramic Arch Curve & Cross-Section Reslicer (Wave 9) */}
-					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
-						<div className="space-y-2">
-							<div className="flex items-center gap-2 text-[var(--teal)]">
-								<Spline className="w-5 h-5" />
-								<span className="font-bold text-sm text-[var(--ink)]">
-									КЛКТ Панорамная кривая & Кросс-секции (Wave 9)
-								</span>
-							</div>
-							<p className="text-xs text-[var(--muted)] leading-relaxed">
-								Адаптивная кривая зубной дуги, нормали с шагом 1-2 мм, фокальный слой 5/10/20 мм, оценка дна пазухи/канала и 1-клик перенос в план имплантации.
-							</p>
-						</div>
-						<button
-							type="button"
-							onClick={() => setIsCbctResliceOpen(true)}
-							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
-							data-testid="open-cbct-reslice-modal-btn"
-						>
-							<Spline size={15} />
-							<span>Открыть КЛКТ реслайсер</span>
 						</button>
 					</div>
 
@@ -1084,54 +1050,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</button>
 					</div>
 
-					{/* 22c. Endodontic Canal Master & Electronic Apex Locator Trigger */}
-					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
-						<div className="space-y-2">
-							<div className="flex items-center gap-2 text-[var(--teal)]">
-								<Activity className="w-5 h-5" />
-								<span className="font-bold text-sm text-[var(--ink)]">
-									Эндодонтия & Апекслокатор (EAL)
-								</span>
-							</div>
-							<p className="text-xs text-[var(--muted)] leading-relaxed">
-								Морфология каналов, MAF ISO 15..80, симулятор апекслокатора с аудио, протоколы ирригации и 043/у.
-							</p>
-						</div>
-						<button
-							type="button"
-							onClick={() => setIsEndodonticOpen(true)}
-							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
-							data-testid="open-endodontic-modal-btn"
-						>
-							<Activity size={15} />
-							<span>Открыть эндодонтию (EAL)</span>
-						</button>
-					</div>
-
-					{/* 22d. CAD/CAM Occlusion Clearance Heatmap Trigger */}
-					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
-						<div className="space-y-2">
-							<div className="flex items-center gap-2 text-[var(--teal)]">
-								<Layers className="w-5 h-5" />
-								<span className="font-bold text-sm text-[var(--ink)]">
-									CAD/CAM Окклюзионный Heatmap
-								</span>
-							</div>
-							<p className="text-xs text-[var(--muted)] leading-relaxed">
-								2D/3D окклюзионный зазор (0.1..2.5 мм), допуски материалов ZrO2/E.max, артикулятор и наряд в лабораторию.
-							</p>
-						</div>
-						<button
-							type="button"
-							onClick={() => setIsCadCamHeatmapOpen(true)}
-							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
-							data-testid="open-cadcam-heatmap-modal-btn"
-						>
-							<Layers size={15} />
-							<span>Открыть CAD/CAM Heatmap</span>
-						</button>
-					</div>
-
 					{/* 22e. Clinical Photo Protocol & Before/After Slider Trigger */}
 					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
 						<div className="space-y-2">
@@ -1299,30 +1217,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						>
 							<Activity size={15} />
 							<span>Открыть экстренный HUD</span>
-						</button>
-					</div>
-
-					{/* 27b. Intraoperative Vitals Monitor & Emergency Protocols (Wave 9) */}
-					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
-						<div className="space-y-2">
-							<div className="flex items-center gap-2 text-rose-600">
-								<HeartPulse className="w-5 h-5" />
-								<span className="font-bold text-sm text-[var(--ink)]">
-									Монитор витальных функций (Wave 9)
-								</span>
-							</div>
-							<p className="text-xs text-[var(--muted)] leading-relaxed">
-								Минздрав РФ & ФАР: АД, ЧСС, SpO2, глюкоза, блокада адреналина при кризе (&gt;180/110), 1-клик алгоритмы и экспорт 043/у.
-							</p>
-						</div>
-						<button
-							type="button"
-							onClick={() => setIsVitalsMonitorOpen(true)}
-							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
-							data-testid="open-vitals-monitor-modal-btn"
-						>
-							<HeartPulse size={15} />
-							<span>Открыть монитор витальных функций</span>
 						</button>
 					</div>
 
@@ -1912,14 +1806,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				/>
 			)}
 
-			{isCbctResliceOpen && (
-				<CbctPanoramicResliceModal
-					isOpen={isCbctResliceOpen}
-					onClose={() => setIsCbctResliceOpen(false)}
-					study={SAMPLE_STUDY}
-				/>
-			)}
-
 			{isPayrollOpen && (
 				<DoctorPayrollModal
 					isOpen={isPayrollOpen}
@@ -2164,21 +2050,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				/>
 			)}
 
-			{isVitalsMonitorOpen && (
-				<EmergencyVitalsMonitorModal
-					isOpen={isVitalsMonitorOpen}
-					onClose={() => setIsVitalsMonitorOpen(false)}
-					initialPatientName={SAMPLE_PATIENT.fullName}
-					initialPatientAgeYears={38}
-					initialPatientWeightKg={70}
-					clinicName="Стоматологическая клиника «ДЕНТЕ»"
-					clinicAddress="г. Москва, ул. Клиническая, д. 10, стр. 2"
-					cabinetNumber="1"
-					doctorFullName="Д-р Смирнов Алексей Петрович"
-					assistantFullName="Медсестра Петрова Е. С."
-				/>
-			)}
-
 			{isWarrantyPassportOpen && (
 				<WarrantyPassportModal
 					isOpen={isWarrantyPassportOpen}
@@ -2311,27 +2182,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				<DoctorShiftRosterModal
 					isOpen={isDoctorShiftRosterOpen}
 					onClose={() => setIsDoctorShiftRosterOpen(false)}
-				/>
-			)}
-
-			{isEndodonticOpen && (
-				<EndodonticCanalMasterModal
-					isOpen={isEndodonticOpen}
-					onClose={() => setIsEndodonticOpen(false)}
-					initialToothNumber={16}
-					initialDiagnosisCode="K04.0"
-					initialDiagnosisTitle="Пульпит острый необратимый"
-					patientName={SAMPLE_PATIENT.fullName}
-				/>
-			)}
-
-			{isCadCamHeatmapOpen && (
-				<CadCamOcclusionHeatmapModal
-					isOpen={isCadCamHeatmapOpen}
-					onClose={() => setIsCadCamHeatmapOpen(false)}
-					initialToothFdi={16}
-					initialMaterialId="zirconia_ultra_translucent"
-					initialCementGapMicrons={40}
 				/>
 			)}
 
