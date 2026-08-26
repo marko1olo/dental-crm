@@ -19,6 +19,7 @@ import {
 	procedureMaterialRules,
 	serviceCatalogItems,
 } from "../db/schema.js";
+import { seedDefaultProcedureMaterialRules } from "../services/inventory/defaultBomSeeds.js";
 
 /**
  * Тела склада раньше читались через bare destructure `const { … } = request.body`.
@@ -63,10 +64,13 @@ const inventoryRuleBodySchema = z.object({
 			invalid_type_error: "Missing required fields",
 		})
 		.min(1, { message: "Missing required fields" }),
-	quantityToDeduct: z.number({
-		required_error: "Missing required fields",
-		invalid_type_error: "Missing required fields",
-	}),
+	quantityToDeduct: z
+		.number({
+			required_error: "Missing required fields",
+			invalid_type_error: "Missing required fields",
+		})
+		.finite({ message: "Количество должно быть числом" })
+		.positive({ message: "Количество должно быть больше 0" }),
 });
 
 /**
@@ -609,6 +613,92 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 		return { success: true };
 	});
 
+	// GET all procedure material rules for the organization (or optionally filtered by service)
+	server.get<{
+		Params: { organizationId: string };
+		Querystring: { serviceId?: string };
+	}>("/:organizationId/rules", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"inventory rules read all",
+		);
+		if (!resolvedOrgId) return;
+
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		const { serviceId } = request.query;
+
+		const conditions = [
+			eq(procedureMaterialRules.organizationId, organizationId),
+			eq(inventoryItems.organizationId, organizationId),
+			eq(serviceCatalogItems.organizationId, organizationId),
+		];
+		if (serviceId) {
+			conditions.push(eq(procedureMaterialRules.serviceId, serviceId));
+		}
+
+		const rules = await db
+			.select({
+				id: procedureMaterialRules.id,
+				serviceId: procedureMaterialRules.serviceId,
+				serviceCode: serviceCatalogItems.code,
+				serviceTitle: serviceCatalogItems.title,
+				serviceCategory: serviceCatalogItems.category,
+				specialty: serviceCatalogItems.specialty,
+				inventoryItemId: procedureMaterialRules.inventoryItemId,
+				itemName: inventoryItems.name,
+				category: inventoryItems.category,
+				unit: inventoryItems.unit,
+				stockQuantity: inventoryItems.stockQuantity,
+				unitCostRub: inventoryItems.unitCostRub,
+				criticalThreshold: inventoryItems.criticalThreshold,
+				quantityToDeduct: procedureMaterialRules.quantityToDeduct,
+				requiredQty: procedureMaterialRules.requiredQty,
+				createdAt: procedureMaterialRules.createdAt,
+			})
+			.from(procedureMaterialRules)
+			.innerJoin(
+				serviceCatalogItems,
+				eq(procedureMaterialRules.serviceId, serviceCatalogItems.id),
+			)
+			.innerJoin(
+				inventoryItems,
+				eq(procedureMaterialRules.inventoryItemId, inventoryItems.id),
+			)
+			.where(and(...conditions));
+
+		return rules;
+	});
+
+	// POST seed default Order 804n clinical BOM rules
+	server.post<{ Params: { organizationId: string } }>(
+		"/:organizationId/rules/seed-defaults",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+				request,
+				reply,
+				"inventory rules seed defaults",
+			);
+			if (!resolvedOrgId) return;
+
+			const { organizationId } = request.params;
+			if (resolvedOrgId !== organizationId) {
+				return reply.code(403).send({ error: "Forbidden" });
+			}
+
+			const result = await seedDefaultProcedureMaterialRules(organizationId);
+			return {
+				success: true,
+				...result,
+				message: `Засеяно ${result.createdRulesCount} технологических карт 804н (${result.createdServicesCount} услуг, ${result.createdItemsCount} расходников). Всего активных правил: ${result.totalRulesCount}.`,
+			};
+		},
+	);
+
 	// GET all procedure material rules for a specific service (authenticated)
 	server.get<{ Params: { organizationId: string; serviceId: string } }>(
 		"/:organizationId/rules/:serviceId",
@@ -646,8 +736,11 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 					serviceId: procedureMaterialRules.serviceId,
 					inventoryItemId: procedureMaterialRules.inventoryItemId,
 					quantityToDeduct: procedureMaterialRules.quantityToDeduct,
+					requiredQty: procedureMaterialRules.requiredQty,
 					createdAt: procedureMaterialRules.createdAt,
 					itemName: inventoryItems.name,
+					unit: inventoryItems.unit,
+					unitCostRub: inventoryItems.unitCostRub,
 					stockQuantity: inventoryItems.stockQuantity,
 				})
 				.from(procedureMaterialRules)
@@ -696,7 +789,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 		// Both the service and the inventory item must belong to this org — else a
 		// caller could wire another clinic's item into their own service rule.
 		const [service] = await db
-			.select({ id: serviceCatalogItems.id })
+			.select({ id: serviceCatalogItems.id, code: serviceCatalogItems.code })
 			.from(serviceCatalogItems)
 			.where(
 				and(
@@ -708,7 +801,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 		if (!service) return reply.status(404).send({ error: "Service not found" });
 
 		const [item] = await db
-			.select({ id: inventoryItems.id })
+			.select({ id: inventoryItems.id, name: inventoryItems.name })
 			.from(inventoryItems)
 			.where(
 				and(
@@ -719,10 +812,8 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			.limit(1);
 		if (!item) return reply.status(404).send({ error: "Item not found" });
 
-		// БЫЛО: SELECT/UPDATE правила по serviceId+itemId / id без organizationId;
-		// INSERT не писал organizationId (колонка nullable есть в схеме) — чужая
-		// клиника могла пересечься по UUID услуги/материала, а UPDATE шёл id-only.
-		// СТАЛО: фильтр по organizationId на SELECT/UPDATE; INSERT выставляет org.
+		const normalizedQty = String(Math.max(0.0001, quantityToDeduct));
+
 		const [existing] = await db
 			.select()
 			.from(procedureMaterialRules)
@@ -739,7 +830,11 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			const [updated] = await db
 				.update(procedureMaterialRules)
 				.set({
-					quantityToDeduct: String(Math.max(1, quantityToDeduct)),
+					quantityToDeduct: normalizedQty,
+					requiredQty: normalizedQty,
+					serviceCode: service.code,
+					materialItemId: item.id,
+					materialName: item.name,
 				})
 				.where(
 					and(
@@ -764,7 +859,11 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 				organizationId,
 				serviceId,
 				inventoryItemId,
-				quantityToDeduct: String(Math.max(1, quantityToDeduct)),
+				serviceCode: service.code,
+				materialItemId: item.id,
+				materialName: item.name,
+				quantityToDeduct: normalizedQty,
+				requiredQty: normalizedQty,
 			})
 			.returning();
 
@@ -794,8 +893,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			return reply.code(403).send({ error: "Forbidden" });
 		}
 
-		// Confirm the rule belongs to a service owned by this org before deleting,
-		// otherwise the bare id would allow deleting another clinic's rule (IDOR).
+		// Confirm the rule belongs to a service owned by this org before deleting
 		const [rule] = await db
 			.select({ id: procedureMaterialRules.id })
 			.from(procedureMaterialRules)
@@ -812,11 +910,6 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			.limit(1);
 		if (!rule) return reply.status(404).send({ error: "Rule not found" });
 
-		// БЫЛО: DELETE id-only после join-проверки org через service; 0 строк → success.
-		// СТАЛО: organizationId в WHERE (колонка есть) + RETURNING.
-		// Старые строки с organizationId NULL: join SELECT выше уже подтвердил
-		// владение через serviceCatalogItems — fallback DELETE по id только для них,
-		// с RETURNING (без фейкового success на 0 строк).
 		const [deleted] = await db
 			.delete(procedureMaterialRules)
 			.where(
@@ -827,10 +920,37 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			)
 			.returning({ id: procedureMaterialRules.id });
 		if (!deleted) {
-			// No id-only fallback: nullable organizationId legacy rows must be repaired
-			// by migration, not deleted without org defense-in-depth.
 			return reply.status(404).send({ error: "Rule not found" });
 		}
 		return { success: true };
+	});
+
+	// DELETE all rules for a service
+	server.delete<{
+		Params: { organizationId: string; serviceId: string };
+	}>("/:organizationId/rules/service/:serviceId", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory rules delete by service",
+		);
+		if (!resolvedOrgId) return;
+
+		const { organizationId, serviceId } = request.params;
+		if (resolvedOrgId !== organizationId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		const deleted = await db
+			.delete(procedureMaterialRules)
+			.where(
+				and(
+					eq(procedureMaterialRules.serviceId, serviceId),
+					eq(procedureMaterialRules.organizationId, organizationId),
+				),
+			)
+			.returning({ id: procedureMaterialRules.id });
+
+		return { success: true, count: deleted.length };
 	});
 };

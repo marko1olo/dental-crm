@@ -239,6 +239,7 @@ export const settingsTabs = [
 	{ id: "telegram", title: "Мессенджеры", group: "main" },
 	{ id: "protocols", title: "Протоколы", group: "clinical" },
 	{ id: "rules", title: "Правила", group: "clinical" },
+	{ id: "procedure-boms", title: "Техкарты 804н", group: "clinical" },
 	{ id: "prices", title: "Прайс", group: "clinical" },
 	{ id: "ai", title: "ИИ", group: "clinical" },
 	{ id: "insurance", title: "Страховые", group: "stock" },

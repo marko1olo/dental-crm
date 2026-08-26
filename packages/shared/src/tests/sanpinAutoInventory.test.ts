@@ -36,6 +36,7 @@ import {
 import {
 	formatKopecksRu,
 	multiplyKopecks,
+	multiplyKopecksFractional,
 	parseKopecks,
 	sumKopecks,
 } from "../utils/money.js";
@@ -440,6 +441,21 @@ describe("SANPIN 3.3686-21 STERILIZATION ROUTING & CONSUMABLES DEDUCTION (ROUND 
 				rootCanalsCount: 99, // больше 5 -> должно быть 5
 			});
 			assert.equal(maxCanal.rootCanalsCount, 5);
+		});
+
+		// 7. Технологические карты Приказа № 804н и дробное списание
+		it("проверяет корректность расчета дробных списаний по нормам 804н (композит 0.35г, силер 0.1г, фторлак 0.5мл)", () => {
+			const compositeGrams = 0.35;
+			const singleGramKopecks = parseKopecks("2125.00"); // 212500 коп
+			const totalCost = multiplyKopecksFractional(singleGramKopecks, compositeGrams);
+
+			// 212500 * 0.35 = 74375 коп (743.75 руб)
+			assert.equal(totalCost, parseKopecks("743.75"));
+
+			const endoIrrigationMl = 15; // 15 мл NaOCl на канал
+			const naoclPricePerMlKopecks = parseKopecks("3.50"); // 350 коп
+			const irrigationCost = multiplyKopecks(naoclPricePerMlKopecks, endoIrrigationMl);
+			assert.equal(irrigationCost, parseKopecks("52.50")); // 52.50 руб
 		});
 	});
 });

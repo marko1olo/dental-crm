@@ -132,6 +132,20 @@ export function multiplyKopecks(unit: Kopecks, quantity: number): Kopecks {
 	return unit * quantity;
 }
 
+/** Цена за единицу × дробное количество (граммы, миллилитры). Округляет до целых копеек. */
+export function multiplyKopecksFractional(
+	unit: Kopecks,
+	quantity: number,
+): Kopecks {
+	assertWholeKopecks(unit);
+	if (!Number.isFinite(quantity) || quantity < 0) {
+		throw new Error(
+			`Количество должно быть конечным неотрицательным числом, получено ${quantity}`,
+		);
+	}
+	return Math.round(unit * quantity) as Kopecks;
+}
+
 /**
  * Доля от суммы по проценту — для страхового покрытия и скидок.
  *

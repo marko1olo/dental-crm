@@ -1,0 +1,463 @@
+/* MaterialBomsSettingsPanel.css — Стили для панели управления нормами расхода материалов (техкартами 804н) */
+
+.material-boms-container {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	width: 100%;
+	color: var(--ink);
+}
+
+/* Header & Banner */
+.material-boms-header {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	gap: 16px;
+	padding: 20px 24px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+}
+
+.material-boms-header-info {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.material-boms-header-icon {
+	width: 48px;
+	height: 48px;
+	border-radius: 12px;
+	background: var(--teal-soft, rgba(20, 184, 166, 0.12));
+	color: var(--teal-dark, #0f766e);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.material-boms-title {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.material-boms-subtitle {
+	margin: 4px 0 0 0;
+	font-size: 13px;
+	color: var(--muted);
+}
+
+.material-boms-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.material-boms-btn {
+	min-height: 44px;
+	padding: 10px 18px;
+	border-radius: 10px;
+	font-size: 14px;
+	font-weight: 600;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	transition: all 0.15s ease;
+	border: 1px solid transparent;
+}
+
+.material-boms-btn-primary {
+	background: var(--teal, #14b8a6);
+	color: var(--on-teal, #ffffff);
+	border: none;
+}
+
+.material-boms-btn-primary:hover:not(:disabled) {
+	filter: brightness(1.08);
+}
+
+.material-boms-btn-secondary {
+	background: var(--paper-soft, rgba(0, 0, 0, 0.04));
+	color: var(--ink);
+	border: 1px solid var(--line);
+}
+
+.material-boms-btn-secondary:hover:not(:disabled) {
+	background: var(--paper-strong);
+}
+
+.material-boms-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* Stats Row */
+.material-boms-stats-row {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 14px;
+}
+
+.material-boms-stat-card {
+	padding: 16px 20px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.material-boms-stat-label {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--muted);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.material-boms-stat-value {
+	font-size: 22px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.material-boms-stat-desc {
+	font-size: 12px;
+	color: var(--muted);
+}
+
+/* Search & Filters */
+.material-boms-filter-bar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 18px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+}
+
+.material-boms-search-wrap {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex: 1;
+	min-width: 260px;
+	background: var(--paper-soft, rgba(0, 0, 0, 0.03));
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	padding: 8px 14px;
+}
+
+.material-boms-search-input {
+	flex: 1;
+	border: none;
+	background: transparent;
+	color: var(--ink);
+	font-size: 14px;
+	outline: none;
+}
+
+.material-boms-category-tabs {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.material-boms-cat-btn {
+	min-height: 38px;
+	padding: 6px 14px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: transparent;
+	color: var(--muted);
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.material-boms-cat-btn:hover {
+	color: var(--ink);
+	background: var(--paper-soft);
+}
+
+.material-boms-cat-btn.active {
+	background: var(--teal-soft, rgba(20, 184, 166, 0.12));
+	color: var(--teal-dark, #0f766e);
+	border-color: var(--teal, #14b8a6);
+	font-weight: 600;
+}
+
+/* Procedures List */
+.material-boms-procedures-list {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.material-boms-service-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	overflow: hidden;
+	transition: border-color 0.15s ease;
+}
+
+.material-boms-service-card:hover {
+	border-color: var(--line-strong, #cbd5e1);
+}
+
+.material-boms-service-header {
+	padding: 16px 20px;
+	background: var(--paper-strong, rgba(0, 0, 0, 0.02));
+	border-bottom: 1px solid var(--line);
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	gap: 12px;
+}
+
+.material-boms-service-info {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.material-boms-service-code {
+	padding: 4px 8px;
+	border-radius: 6px;
+	background: var(--teal-soft, rgba(20, 184, 166, 0.12));
+	color: var(--teal-dark, #0f766e);
+	font-size: 13px;
+	font-weight: 700;
+	font-family: ui-monospace, monospace;
+}
+
+.material-boms-service-title {
+	margin: 0;
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.material-boms-service-cost {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+}
+
+.material-boms-prime-cost {
+	font-size: 13px;
+	color: var(--muted);
+}
+
+.material-boms-prime-cost strong {
+	color: var(--ink);
+	font-weight: 700;
+}
+
+/* Materials Table within Service Card */
+.material-boms-table-wrap {
+	width: 100%;
+	overflow-x: auto;
+}
+
+.material-boms-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+	text-align: left;
+}
+
+.material-boms-table th {
+	padding: 10px 18px;
+	background: var(--paper-soft, rgba(0, 0, 0, 0.02));
+	color: var(--muted);
+	font-weight: 600;
+	font-size: 12px;
+	text-transform: uppercase;
+	border-bottom: 1px solid var(--line);
+}
+
+.material-boms-table td {
+	padding: 12px 18px;
+	border-bottom: 1px solid var(--line);
+	color: var(--ink);
+	vertical-align: middle;
+}
+
+.material-boms-table tr:last-child td {
+	border-bottom: none;
+}
+
+.material-boms-stock-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 3px 8px;
+	border-radius: 6px;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.material-boms-stock-ok {
+	background: rgba(16, 185, 129, 0.12);
+	color: #059669;
+}
+
+.material-boms-stock-warn {
+	background: rgba(245, 158, 11, 0.12);
+	color: #d97706;
+}
+
+.material-boms-stock-crit {
+	background: rgba(239, 68, 68, 0.12);
+	color: #dc2626;
+}
+
+/* Action buttons */
+.material-boms-icon-btn {
+	min-width: 38px;
+	min-height: 38px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: transparent;
+	color: var(--muted);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.material-boms-icon-btn:hover {
+	color: var(--ink);
+	background: var(--paper-soft);
+}
+
+.material-boms-icon-btn-danger:hover {
+	color: #dc2626;
+	background: rgba(239, 68, 68, 0.1);
+	border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Add / Edit Modal */
+.material-boms-modal-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 10000;
+	background: rgba(0, 0, 0, 0.5);
+	backdrop-filter: blur(4px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+}
+
+.material-boms-modal {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 18px;
+	width: 100%;
+	max-width: 520px;
+	box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+
+.material-boms-modal-header {
+	padding: 18px 24px;
+	border-bottom: 1px solid var(--line);
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.material-boms-modal-title {
+	margin: 0;
+	font-size: 17px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.material-boms-modal-body {
+	padding: 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+}
+
+.material-boms-form-group {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.material-boms-form-label {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--muted);
+}
+
+.material-boms-form-select,
+.material-boms-form-input {
+	width: 100%;
+	padding: 10px 14px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft, rgba(0, 0, 0, 0.03));
+	color: var(--ink);
+	font-size: 14px;
+	outline: none;
+}
+
+.material-boms-form-select:focus,
+.material-boms-form-input:focus {
+	border-color: var(--teal, #14b8a6);
+}
+
+.material-boms-chips-row {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+	margin-top: 4px;
+}
+
+.material-boms-chip {
+	padding: 4px 10px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.15s;
+}
+
+.material-boms-chip:hover {
+	background: var(--teal-soft, rgba(20, 184, 166, 0.15));
+	color: var(--teal-dark, #0f766e);
+}
+
+.material-boms-modal-footer {
+	padding: 16px 24px;
+	border-top: 1px solid var(--line);
+	display: flex;
+	justify-content: flex-end;
+	gap: 12px;
+}

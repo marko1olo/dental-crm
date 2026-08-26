@@ -443,82 +443,111 @@ export async function runDiarySigningCeremony(
 				);
 			completedTreatmentItems = visitTreatmentItems.length;
 
-			for (const item of visitTreatmentItems) {
-				if (!item.serviceId) continue;
+			// Собираем все правила списания по услугам визита
+			const serviceIds = visitTreatmentItems
+				.map((item) => item.serviceId)
+				.filter((id): id is string => typeof id === "string" && id.length > 0);
+
+			if (serviceIds.length > 0) {
 				const rules = await tx
 					.select()
 					.from(procedureMaterialRules)
 					.where(
 						and(
-							eq(procedureMaterialRules.serviceId, item.serviceId),
 							or(
 								eq(procedureMaterialRules.organizationId, organizationId),
 								isNull(procedureMaterialRules.organizationId),
 							),
 						),
 					);
-				for (const rule of rules) {
-					if (!rule.inventoryItemId) continue;
-					const [inv] = await tx
-						.select()
-						.from(inventoryItems)
-						.where(
-							and(
-								eq(inventoryItems.id, rule.inventoryItemId),
-								eq(inventoryItems.organizationId, organizationId),
-							),
-						)
-						.for("update");
-					if (!inv) continue;
 
-					const ruleQuantity = Number(rule.quantityToDeduct);
+				// Агрегируем требуемые количества по каждому inventoryItemId
+				const requiredByItem = new Map<string, number>();
+
+				for (const item of visitTreatmentItems) {
+					if (!item.serviceId) continue;
 					const serviceQuantity = Number(item.quantity);
-					if (
-						!isDeductibleQuantity(ruleQuantity) ||
-						!isDeductibleQuantity(serviceQuantity)
-					) {
-						continue;
-					}
-					const qtyToDeduct = ruleQuantity * serviceQuantity;
-					const currentStock = Number(inv.stockQuantity ?? 0);
-					if (!Number.isFinite(currentStock) || currentStock < qtyToDeduct) {
-						throw new DiarySigningError(
-							"InsufficientStock",
-							`Недостаточно материалов: ${inv.name}`,
-						);
-					}
-					const quantityChanged = String(-qtyToDeduct);
-					await tx
-						.update(inventoryItems)
-						.set({ stockQuantity: String(currentStock - qtyToDeduct) })
-						.where(
-							and(
-								eq(inventoryItems.id, inv.id),
-								eq(inventoryItems.organizationId, organizationId),
-							),
-						);
+					if (!isDeductibleQuantity(serviceQuantity)) continue;
 
-					transactionsToInsert.push({
-						organizationId,
-						visitId: diary.visitId,
-						inventoryItemId: inv.id,
-						quantityChanged,
-						unitCostRub:
-							inv.unitCostRub != null ? String(inv.unitCostRub) : null,
-						transactionType: "auto_deduct" as const,
-						userId,
-					});
+					const matchingRules = rules.filter((r) => r.serviceId === item.serviceId);
+					for (const rule of matchingRules) {
+						if (!rule.inventoryItemId) continue;
+						const ruleQuantity = Number(rule.quantityToDeduct ?? rule.requiredQty ?? 0);
+						if (!isDeductibleQuantity(ruleQuantity)) continue;
 
-					deductions.push({
-						inventoryItemId: inv.id,
-						inventoryItemName: inv.name,
-						quantityChanged,
-					});
+						const qtyToDeduct = ruleQuantity * serviceQuantity;
+						const prev = requiredByItem.get(rule.inventoryItemId) ?? 0;
+						requiredByItem.set(rule.inventoryItemId, prev + qtyToDeduct);
+					}
 				}
-			}
 
-			if (transactionsToInsert.length > 0) {
-				await tx.insert(inventoryTransactions).values(transactionsToInsert);
+				if (requiredByItem.size > 0) {
+					// Блокировка строк в строго сортированном порядке (Deadlock-free locking)
+					const sortedItemIds = Array.from(requiredByItem.keys()).sort();
+
+					for (const itemId of sortedItemIds) {
+						const qtyNeeded = requiredByItem.get(itemId) ?? 0;
+						if (qtyNeeded <= 0) continue;
+
+						const [inv] = await tx
+							.select()
+							.from(inventoryItems)
+							.where(
+								and(
+									eq(inventoryItems.id, itemId),
+									eq(inventoryItems.organizationId, organizationId),
+								),
+							)
+							.for("update");
+
+						if (!inv) continue;
+
+						const currentStock = Number(inv.stockQuantity ?? inv.currentQty ?? 0);
+						if (!Number.isFinite(currentStock) || currentStock < qtyNeeded) {
+							throw new DiarySigningError(
+								"InsufficientStock",
+								`Недостаточно материалов на складе: «${inv.name}» (требуется ${qtyNeeded}, в наличии ${Number.isFinite(currentStock) ? currentStock : 0}).`,
+							);
+						}
+
+						const newStock = Math.max(0, currentStock - qtyNeeded);
+						const quantityChanged = String(-qtyNeeded);
+
+						await tx
+							.update(inventoryItems)
+							.set({
+								stockQuantity: String(newStock),
+								currentQty: String(newStock),
+							})
+							.where(
+								and(
+									eq(inventoryItems.id, inv.id),
+									eq(inventoryItems.organizationId, organizationId),
+								),
+							);
+
+						transactionsToInsert.push({
+							organizationId,
+							visitId: diary.visitId,
+							inventoryItemId: inv.id,
+							quantityChanged,
+							unitCostRub:
+								inv.unitCostRub != null ? String(inv.unitCostRub) : null,
+							transactionType: "auto_deduct" as const,
+							userId,
+						});
+
+						deductions.push({
+							inventoryItemId: inv.id,
+							inventoryItemName: inv.name,
+							quantityChanged,
+						});
+					}
+
+					if (transactionsToInsert.length > 0) {
+						await tx.insert(inventoryTransactions).values(transactionsToInsert);
+					}
+				}
 			}
 		}
 	}
