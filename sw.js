@@ -1,5 +1,5 @@
-// Adolf Petushkov High-Speed PWA Service Worker
-const CACHE_NAME = 'adolf-eco-v1';
+// DENTE CRM — High-Speed PWA Service Worker
+const CACHE_NAME = 'dente-pwa-shell-v7';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -26,3 +26,4 @@ self.addEventListener('fetch', (e) => {
     caches.match(e.request).then((res) => res || fetch(e.request))
   );
 });
+
