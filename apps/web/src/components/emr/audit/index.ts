@@ -1,9 +1,11 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * CMO EMR QUALITY AUDIT & FORM 043/U APPROVAL MODULE
+ * CMO EMR QUALITY AUDIT & COMPLIANCE HUB MODULE
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
 export * from "./cmoEmrAuditPresets";
 export * from "./cmoEmrAuditEngine";
 export * from "./CmoEmrAuditModal";
+export * from "./cmoComplianceHubEngine";
+export * from "./CmoComplianceHub";
