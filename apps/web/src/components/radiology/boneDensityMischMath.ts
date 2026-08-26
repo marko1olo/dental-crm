@@ -233,10 +233,11 @@ export const classifyMischBoneQuality = analyzeMischBoneQuality;
  */
 
 export function generateMischDrillSequence(
-	mischClass: MischBoneClass,
+	mischClassOrResult: MischBoneClass | MischClassificationResult,
 	targetDiameterMm: number,
-	targetLengthMm: number,
+	targetLengthMm = 10.0,
 ): readonly ImplantSiteDrillingStep[] {
+	const cls = typeof mischClassOrResult === "string" ? mischClassOrResult : mischClassOrResult.mischClass;
 	const steps: ImplantSiteDrillingStep[] = [
 		{
 			stepNumber: 1,
@@ -267,7 +268,7 @@ export function generateMischDrillSequence(
 		});
 	}
 
-	if (targetDiameterMm >= 4.0 && (mischClass !== "D4" && mischClass !== "D5")) {
+	if (targetDiameterMm >= 4.0 && (cls !== "D4" && cls !== "D5")) {
 		steps.push({
 			stepNumber: steps.length + 1,
 			drillName: "Формирующее сверло Ø3.5 мм",
@@ -279,7 +280,7 @@ export function generateMischDrillSequence(
 		});
 	}
 
-	if (targetDiameterMm >= 4.5 && (mischClass === "D1" || mischClass === "D2")) {
+	if (targetDiameterMm >= 4.5 && (cls === "D1" || cls === "D2")) {
 		steps.push({
 			stepNumber: steps.length + 1,
 			drillName: "Формирующее сверло Ø4.0/4.2 мм",
@@ -290,7 +291,7 @@ export function generateMischDrillSequence(
 		});
 	}
 
-	if (mischClass === "D1") {
+	if (cls === "D1") {
 		steps.push({
 			stepNumber: steps.length + 1,
 			drillName: "Кортикальный метчик (Bone Tap) Ø" + targetDiameterMm.toFixed(1) + " мм",
