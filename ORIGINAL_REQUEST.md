@@ -31,3 +31,18 @@ Reference cloned repo: `C:\Users\Admin\.gemini\antigravity\scratch\dentalpin`
    - В чем DENTE опережает `dentalpin` на порядок (3D CBCT томография Romexis, ЕГИСЗ/РЭМД, ЭМК 043/у ГОСТ, Честный Знак МДЛП, фискализация ФНС РФ, ISQ денситометрия, многослойный 5-поверхностный одонтограм).
    - Какие концепции и архитектурные решения из `dentalpin` нам выгодно заимствовать (Agent tools, PHI anonymizer, WhatsApp Kapso адаптер, 2FA links для смет).
 3. Создать отчет в `docs/audit/DENTALPIN_INGESTION_REPORT.md`.
+
+## 2026-08-26T23:03:22Z
+
+[MASSIVE DIRECTIVE: EXPANDING CLINICAL TOOLS IN AGENT REGISTRY]
+Working directory: `C:\Clinic_MVP\dental-crm`
+
+You own the tool expansion of the AI Agentic Core:
+1. In `apps/api/src/services/agent/tools/clinicalTools.ts`, implement and register 4 new high-value clinical tools:
+   - `get_patient_timeline`: retrieves unified chronological history (past visits, diagnoses, treatment plan stages, payments, lab orders).
+   - `check_drug_interactions`: validates proposed medications against patient known allergies and active prescriptions using `checkDentalMedicationInteractions`.
+   - `get_lab_orders`: returns prosthetics lab order status, tracking ETA and shade info for a patient.
+   - `get_family_balance`: returns aggregated balance and kinship links for family accounts.
+2. Update `apps/api/src/services/agent/agent.test.ts` to include unit test coverage for each new tool.
+3. Run `node --import tsx --test apps/api/src/services/agent/agent.test.ts` and `npm run typecheck -w @dental/api`.
+4. Report completed results with test logs.

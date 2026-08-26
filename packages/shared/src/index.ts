@@ -18,6 +18,10 @@ export * from "./imaging/index.js";
 export * from "./cda/index.js";
 export * from "./logging/index.js";
 export * from "./hardware/index.js";
+export * from "./inventory/consumables.js";
+export * from "./lab/index.js";
+export * from "./communications/index.js";
+
 
 
 
