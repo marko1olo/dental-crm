@@ -42,6 +42,8 @@ export interface CbctVoxelVolume {
 	data: Int16Array | null; // Calibrated HU data in 1D contiguous buffer: index = z * (W * H) + y * W + x
 	readonly minHU: number;
 	readonly maxHU: number;
+	readonly defaultWindowWidth?: number;
+	readonly defaultWindowLevel?: number;
 	readonly isDisposed: boolean;
 }
 
@@ -57,22 +59,22 @@ export const CBCT_HOUNSFIELD_PRESETS: readonly HounsfieldPreset[] = [
 	{
 		id: "bone_dense",
 		label: "Зубы и Кость (Dental)",
-		windowWidth: 4000,
-		windowLevel: 900,
-		descriptionRu: "Стандарт Romexis/Ez3D-i: четкая дифференциация пульпы, дентина, эмали и трабекул",
+		windowWidth: 4400,
+		windowLevel: 1300,
+		descriptionRu: "Стандарт Romexis/HDXWILL: идеальная видимость пульпы, дентина, эмали и трабекул без засветки",
 	},
 	{
 		id: "enamel_dentin",
 		label: "Эндодонтия / Кариес",
-		windowWidth: 5000,
-		windowLevel: 1400,
+		windowWidth: 5500,
+		windowLevel: 1600,
 		descriptionRu: "Максимальная детализация корневых каналов, апексов, кариозных полостей и периодонтальной щели",
 	},
 	{
 		id: "bone_cortical",
 		label: "Кортикал / Гребень",
-		windowWidth: 3000,
-		windowLevel: 700,
+		windowWidth: 3500,
+		windowLevel: 900,
 		descriptionRu: "Оценка кортикальных пластинок альвеолярного гребня и плотности по Misch",
 	},
 	{
@@ -85,8 +87,8 @@ export const CBCT_HOUNSFIELD_PRESETS: readonly HounsfieldPreset[] = [
 	{
 		id: "implant_metal",
 		label: "Имплантаты / Металл",
-		windowWidth: 7000,
-		windowLevel: 2000,
+		windowWidth: 8000,
+		windowLevel: 2500,
 		descriptionRu: "Подавление металл-артефактов титановых имплантатов, вкладок и циркониевых коронок",
 	},
 	{

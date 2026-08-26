@@ -160,6 +160,8 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 	useEffect(() => {
 		if (propVolume) {
 			setVolume(propVolume);
+			if (propVolume.defaultWindowWidth) setWindowWidth(propVolume.defaultWindowWidth);
+			if (propVolume.defaultWindowLevel) setWindowLevel(propVolume.defaultWindowLevel);
 		} else {
 			const synth = createSyntheticDentalCbctVolume(160, 160, 100, 0.4);
 			setVolume(synth);

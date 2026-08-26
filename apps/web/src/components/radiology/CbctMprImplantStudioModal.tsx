@@ -229,6 +229,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				setVolume(vol);
 				setLoadedSliceCount(vol.dimensions.depth);
 				setCrosshairMm({ x: 0, y: 0, z: 0 });
+				if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
+				if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
 				if (name) setPatientDisplayName(name);
 				const anchors = jawType === "mandible" ? DEFAULT_MANDIBULAR_ARCH_ANCHORS : DEFAULT_MAXILLARY_ARCH_ANCHORS;
 				const arch = buildDentalArchCurve(anchors, jawType);
@@ -276,6 +278,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			setLoadedSliceCount(vol.dimensions.depth);
 			setPatientDisplayName("Барабаш С.В.");
 			setCrosshairMm({ x: 0, y: 0, z: 0 });
+			if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
+			if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
 			const arch = buildDentalArchCurve(
 				jawType === "mandible" ? DEFAULT_MANDIBULAR_ARCH_ANCHORS : DEFAULT_MAXILLARY_ARCH_ANCHORS,
 				jawType,
@@ -308,6 +312,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			setVolume(vol);
 			setLoadedSliceCount(vol.dimensions.depth);
 			setCrosshairMm({ x: 0, y: 0, z: 0 });
+			if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
+			if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
 			const arch = buildDentalArchCurve(
 				jawType === "mandible" ? DEFAULT_MANDIBULAR_ARCH_ANCHORS : DEFAULT_MAXILLARY_ARCH_ANCHORS,
 				jawType,
@@ -343,6 +349,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				setVolume(vol);
 				setLoadedSliceCount(vol.dimensions.depth);
 				setCrosshairMm({ x: 0, y: 0, z: 0 });
+				if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
+				if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
 				setDicomLoadingStatus(null);
 				showToast(`Загружен архив КТ: ${vol.dimensions.depth} срезов`, "success");
 			} catch (err: unknown) {
@@ -366,6 +374,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				setVolume(vol);
 				setLoadedSliceCount(vol.dimensions.depth);
 				setCrosshairMm({ x: 0, y: 0, z: 0 });
+				if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
+				if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
 				setDicomLoadingStatus(null);
 				showToast(`Загружено ${vol.dimensions.depth} срезов реального КТ`, "success");
 			} catch (err: unknown) {

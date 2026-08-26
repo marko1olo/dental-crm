@@ -347,6 +347,8 @@ export async function buildVolumeFromDicomBuffers(
     data: voxelData,
     minHU: minVoxelHU,
     maxHU: maxVoxelHU,
+    defaultWindowWidth: refHeader.windowWidth > 0 ? refHeader.windowWidth : 4400,
+    defaultWindowLevel: refHeader.windowCenter !== 0 ? refHeader.windowCenter : 1300,
     isDisposed: false,
   };
 }
