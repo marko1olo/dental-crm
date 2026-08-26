@@ -19,6 +19,7 @@ import {
 	Flame,
 	FlaskConical,
 	Gauge,
+	HeartPulse,
 	Layers,
 	Moon,
 	PackageCheck,
@@ -79,6 +80,7 @@ import { AnesthesiaMrdCaliperModal } from "../components/visit/AnesthesiaMrdCali
 import { PeriodontalRiskAssessmentModal } from "../components/clinical/perio/PeriodontalRiskAssessmentModal";
 import { MedicalWasteJournalModal } from "../components/sanpin/waste/MedicalWasteJournalModal";
 import { EmergencyRescueModal } from "../components/emergency/EmergencyRescueModal";
+import { EmergencyVitalsMonitorModal } from "../components/visit/emergency/EmergencyVitalsMonitorModal";
 import { WarrantyPassportModal } from "../components/warranty/WarrantyPassportModal";
 import { CmoEmrAuditModal } from "../components/emr/audit/CmoEmrAuditModal";
 import { FnsNdflXmlModal } from "../components/documents/ndflXml/index";
@@ -345,6 +347,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isPerioRiskOpen, setIsPerioRiskOpen] = useState(false);
 	const [isMedicalWasteOpen, setIsMedicalWasteOpen] = useState(false);
 	const [isEmergencyRescueOpen, setIsEmergencyRescueOpen] = useState(false);
+	const [isVitalsMonitorOpen, setIsVitalsMonitorOpen] = useState(false);
 	const [isWarrantyPassportOpen, setIsWarrantyPassportOpen] = useState(false);
 	const [isCmoEmrAuditOpen, setIsCmoEmrAuditOpen] = useState(false);
 	const [isFnsNdflXmlOpen, setIsFnsNdflXmlOpen] = useState(false);
@@ -1272,6 +1275,30 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</button>
 					</div>
 
+					{/* 27b. Intraoperative Vitals Monitor & Emergency Protocols (Wave 9) */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-rose-600">
+								<HeartPulse className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Монитор витальных функций (Wave 9)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Минздрав РФ & ФАР: АД, ЧСС, SpO2, глюкоза, блокада адреналина при кризе (&gt;180/110), 1-клик алгоритмы и экспорт 043/у.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsVitalsMonitorOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+							data-testid="open-vitals-monitor-modal-btn"
+						>
+							<HeartPulse size={15} />
+							<span>Открыть монитор витальных функций</span>
+						</button>
+					</div>
+
 					{/* 28. Dental Warranty Certificate & Guarantee Passport Trigger */}
 					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
 						<div className="space-y-2">
@@ -2091,6 +2118,21 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				<EmergencyRescueModal
 					isOpen={isEmergencyRescueOpen}
 					onClose={() => setIsEmergencyRescueOpen(false)}
+					initialPatientName={SAMPLE_PATIENT.fullName}
+					initialPatientAgeYears={38}
+					initialPatientWeightKg={70}
+					clinicName="Стоматологическая клиника «ДЕНТЕ»"
+					clinicAddress="г. Москва, ул. Клиническая, д. 10, стр. 2"
+					cabinetNumber="1"
+					doctorFullName="Д-р Смирнов Алексей Петрович"
+					assistantFullName="Медсестра Петрова Е. С."
+				/>
+			)}
+
+			{isVitalsMonitorOpen && (
+				<EmergencyVitalsMonitorModal
+					isOpen={isVitalsMonitorOpen}
+					onClose={() => setIsVitalsMonitorOpen(false)}
 					initialPatientName={SAMPLE_PATIENT.fullName}
 					initialPatientAgeYears={38}
 					initialPatientWeightKg={70}

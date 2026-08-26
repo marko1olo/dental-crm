@@ -13,6 +13,7 @@ import { RadiologyReferralModal } from "./RadiologyReferralModal";
 import { ClinicalPhotoProtocolModal } from "../photography/ClinicalPhotoProtocolModal";
 import { CbctMprWorkspace } from "../dicom/CbctMprWorkspace";
 import { MedicalTourismQuoteModal } from "../finance/MedicalTourismQuoteModal";
+import { EmergencyVitalsMonitorModal } from "./emergency/EmergencyVitalsMonitorModal";
 import { imagingWriteTarget, realVisitFieldId } from "./visitIdentity";
 import {
 	type ClinicalPhotoAttachment,
@@ -62,6 +63,7 @@ export function VisitDiagnosticsTab(props?: {
 	const [isPhotoProtocolModalOpen, setIsPhotoProtocolModalOpen] = useState<boolean>(false);
 	const [isCbctModalOpen, setIsCbctModalOpen] = useState<boolean>(false);
 	const [isMedicalTourismModalOpen, setIsMedicalTourismModalOpen] = useState<boolean>(false);
+	const [isVitalsMonitorModalOpen, setIsVitalsMonitorModalOpen] = useState<boolean>(false);
 
 	const [photoAttachments, setPhotoAttachments] = useState<ClinicalPhotoAttachment[]>([]);
 	const initialToothNumber = Number(ctx?.dashboard?.activeVisit?.diagnosisTooth) || 16;
@@ -452,6 +454,15 @@ export function VisitDiagnosticsTab(props?: {
 					<Activity size={16} className="text-[var(--teal,var(--brand-primary))]" />
 					<span>Ортодонтия: Матрица брекетов & Торк</span>
 				</button>
+				<button
+					type="button"
+					onClick={() => setIsVitalsMonitorModalOpen(true)}
+					className="flex items-center gap-2 px-4 py-2.5 min-h-[48px] text-xs sm:text-sm font-bold rounded-xl bg-rose-600 hover:bg-rose-500 text-white cursor-pointer transition-all shadow-sm active:scale-95 touch-manipulation"
+					data-testid="btn-open-vitals-emergency-modal"
+				>
+					<Activity size={16} />
+					<span>Монитор витальных функций / Неотложка</span>
+				</button>
 			</div>
 
 			{/* Orthodontic Cephalometric Modal */}
@@ -567,6 +578,33 @@ export function VisitDiagnosticsTab(props?: {
 				isOpen={isMedicalTourismModalOpen}
 				onClose={() => setIsMedicalTourismModalOpen(false)}
 				initialPatientName={visitPatientName ?? activePatient?.fullName}
+			/>
+
+			{/* Intraoperative Vitals Monitor & Emergency Resuscitation Modal (Wave 9) */}
+			<EmergencyVitalsMonitorModal
+				isOpen={isVitalsMonitorModalOpen}
+				onClose={() => setIsVitalsMonitorModalOpen(false)}
+				initialPatientName={visitPatientName ?? activePatient?.fullName}
+				onApplyToDiary={(protocolText) => {
+					if (props?.onInsertToProtocol) {
+						props.onInsertToProtocol(protocolText);
+					} else {
+						try {
+							window.dispatchEvent(
+								new CustomEvent("dente-apply-soap-protocol", {
+									detail: {
+										soap: {
+											complications: protocolText,
+										},
+										mode: "smart_append",
+									},
+								}),
+							);
+						} catch {
+							// ignore
+						}
+					}
+				}}
 			/>
 		</div>
 	);
