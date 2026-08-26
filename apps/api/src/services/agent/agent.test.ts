@@ -21,13 +21,16 @@ import {
 } from "./orchestrator.js";
 import { Redactor, SymbolTable } from "./redaction.js";
 import {
+	cancelAppointmentTool,
 	checkDrugInteractionsTool,
 	findPatientTool,
+	getDoctorScheduleTool,
 	getEmrCardTool,
 	getFamilyBalanceTool,
 	getLabOrdersTool,
 	getPatientTimelineTool,
 	registerClinicalTools,
+	rescheduleAppointmentTool,
 	suggestIcd10PlanTool,
 } from "./tools/clinicalTools.js";
 import { ToolRegistry } from "./tools/registry.js";
@@ -46,6 +49,7 @@ const ORG_ID = "00000000-0000-7000-8000-000000000001";
 const CLINIC_ID = "00000000-0000-7000-8000-000000000002";
 const USER_ID = "00000000-0000-7000-8000-000000000003";
 const PATIENT_ID = "00000000-0000-7000-8000-000000000004";
+const APPOINTMENT_ID = "00000000-0000-7000-8000-000000000005";
 
 function createMockContext(overrides: Partial<AgentContext> = {}): AgentContext {
 	const registry = new ToolRegistry();
@@ -57,7 +61,13 @@ function createMockContext(overrides: Partial<AgentContext> = {}): AgentContext 
 		userId: USER_ID,
 		sessionId: "test-session-" + Math.random().toString(36).slice(2),
 		mode: "autonomous",
-		permissions: ["patients.read", "clinical.read", "schedule.write", "billing.read"],
+		permissions: [
+			"patients.read",
+			"clinical.read",
+			"schedule.read",
+			"schedule.write",
+			"billing.read",
+		],
 		tools: registry,
 		db: null,
 		...overrides,
@@ -373,7 +383,6 @@ describe("Clinical Tools Specification & ICD-10 Validator", () => {
 
 describe("New Clinical Tools (Timeline, Drug Safety, Lab, Family)", () => {
 	test("check_drug_interactions catches allergy clashes and dangerous drug-drug pairs", async () => {
-		// Mock db returning a penicillin allergy
 		const mockDb = {
 			select: () => ({
 				from: () => ({
@@ -392,7 +401,6 @@ describe("New Clinical Tools (Timeline, Drug Safety, Lab, Family)", () => {
 
 		const ctx = createMockContext({ db: mockDb });
 
-		// 1. Check with Amoxicillin (Allergy clash) + Metronidazole & Warfarin (Drug-drug clash)
 		const result = (await checkDrugInteractionsTool.handler(ctx, {
 			patientId: PATIENT_ID,
 			proposedMedicationIds: ["med_amox_500", "med_metron_500"],
@@ -426,7 +434,6 @@ describe("New Clinical Tools (Timeline, Drug Safety, Lab, Family)", () => {
 							limit: async () => {
 								callCount++;
 								if (callCount === 1) {
-									// Visits
 									return [
 										{
 											id: "v-1",
@@ -440,19 +447,19 @@ describe("New Clinical Tools (Timeline, Drug Safety, Lab, Family)", () => {
 									];
 								}
 								if (callCount === 2) {
-									// Treatment plans
 									return [
 										{
 											id: "tp-1",
+											name: "Санация",
 											title: "Санация",
 											status: "active",
-											totalAmountRub: "15000.00",
+											totalPriceRub: "15000.00",
+											totalPrice: "15000.00",
 											createdAt: lastWeek,
 										},
 									];
 								}
 								if (callCount === 3) {
-									// Payments
 									return [
 										{
 											id: "p-1",
@@ -463,7 +470,6 @@ describe("New Clinical Tools (Timeline, Drug Safety, Lab, Family)", () => {
 										},
 									];
 								}
-								// Lab orders
 								return [
 									{
 										id: "lab-1",
@@ -542,11 +548,10 @@ describe("New Clinical Tools (Timeline, Drug Safety, Lab, Family)", () => {
 		const mockDb = {
 			select: () => ({
 				from: () => ({
-					where: (clause?: any) => ({
+					where: () => ({
 						limit: async () => {
 							selectStep++;
 							if (selectStep === 1) {
-								// Patient lookup
 								return [
 									{
 										id: PATIENT_ID,
@@ -557,7 +562,6 @@ describe("New Clinical Tools (Timeline, Drug Safety, Lab, Family)", () => {
 								];
 							}
 							if (selectStep === 2) {
-								// Family group
 								return [
 									{
 										id: FAMILY_ID,
@@ -571,7 +575,6 @@ describe("New Clinical Tools (Timeline, Drug Safety, Lab, Family)", () => {
 							return [];
 						},
 						then: async (resolve: any) => {
-							// Step 3: members list
 							const members = [
 								{
 									id: "00000000-0000-7000-8000-000000000088",
@@ -607,6 +610,193 @@ describe("New Clinical Tools (Timeline, Drug Safety, Lab, Family)", () => {
 		assert.strictEqual(res.membersCount, 2);
 		assert.strictEqual(res.members[0].isHead, true);
 		assert.strictEqual(res.members[1].isHead, false);
+	});
+});
+
+describe("Interactive Schedule Mutation Tools (Reschedule, Cancel, Doctor Schedule)", () => {
+	test("reschedule_appointment detects schedule conflict and updates valid time", async () => {
+		const existingApp = {
+			id: APPOINTMENT_ID,
+			organizationId: ORG_ID,
+			patientId: PATIENT_ID,
+			doctorUserId: USER_ID,
+			chairId: "00000000-0000-7000-8000-000000000077",
+			status: "planned",
+			startsAt: new Date("2026-09-01T10:00:00Z"),
+			endsAt: new Date("2026-09-01T11:00:00Z"),
+			comment: null,
+		};
+
+		// 1. Conflict test: mockDb returns a conflict
+		const conflictDb = {
+			select: () => ({
+				from: () => ({
+					where: () => ({
+						limit: async () => [existingApp],
+					}),
+				}),
+			}),
+		};
+
+		const ctxConflict = createMockContext({ db: conflictDb });
+
+		await assert.rejects(
+			() =>
+				rescheduleAppointmentTool.handler(ctxConflict, {
+					appointmentId: APPOINTMENT_ID,
+					newStartsAt: "2026-09-01T14:00:00Z",
+					newEndsAt: "2026-09-01T15:00:00Z",
+					reason: "Пациент попросил перенести на вечер",
+				}),
+			/Конфликт расписания/,
+		);
+
+		// 2. Success test: mockDb has no conflict and performs update
+		let queryStep = 0;
+		const successDb = {
+			select: () => ({
+				from: () => ({
+					where: () => ({
+						limit: async () => {
+							queryStep++;
+							if (queryStep === 1) {
+								// Fetch current appointment
+								return [existingApp];
+							}
+							// Conflict check -> empty (no conflicts)
+							return [];
+						},
+					}),
+				}),
+			}),
+			update: () => ({
+				set: (values: any) => ({
+					where: () => ({
+						returning: async () => [
+							{
+								...existingApp,
+								startsAt: values.startsAt,
+								endsAt: values.endsAt,
+								comment: values.comment,
+							},
+						],
+					}),
+				}),
+			}),
+		};
+
+		const ctxSuccess = createMockContext({ db: successDb });
+		const result = (await rescheduleAppointmentTool.handler(ctxSuccess, {
+			appointmentId: APPOINTMENT_ID,
+			newStartsAt: "2026-09-02T12:00:00Z",
+			newEndsAt: "2026-09-02T13:00:00Z",
+			reason: "Пациент свободен только во вторник",
+		})) as any;
+
+		assert.strictEqual(result.success, true);
+		assert.strictEqual(result.appointmentId, APPOINTMENT_ID);
+		assert.strictEqual(result.newStartsAt, "2026-09-02T12:00:00.000Z");
+		assert.strictEqual(result.newEndsAt, "2026-09-02T13:00:00.000Z");
+	});
+
+	test("cancel_appointment cancels appointment and sets reason", async () => {
+		const existingApp = {
+			id: APPOINTMENT_ID,
+			organizationId: ORG_ID,
+			patientId: PATIENT_ID,
+			doctorUserId: USER_ID,
+			status: "planned",
+			comment: "Первичная консультация",
+		};
+
+		const mockDb = {
+			select: () => ({
+				from: () => ({
+					where: () => ({
+						limit: async () => [existingApp],
+					}),
+				}),
+			}),
+			update: () => ({
+				set: (values: any) => ({
+					where: () => ({
+						returning: async () => [
+							{
+								...existingApp,
+								status: values.status,
+								comment: values.comment,
+							},
+						],
+					}),
+				}),
+			}),
+		};
+
+		const ctx = createMockContext({ db: mockDb });
+		const result = (await cancelAppointmentTool.handler(ctx, {
+			appointmentId: APPOINTMENT_ID,
+			cancellationReason: "Пациент уехал в командировку",
+		})) as any;
+
+		assert.strictEqual(result.success, true);
+		assert.strictEqual(result.status, "cancelled");
+		assert.strictEqual(result.cancellationReason, "Пациент уехал в командировку");
+		assert.ok(result.cancelledAt);
+	});
+
+	test("get_doctor_schedule computes booked minutes and free capacity", async () => {
+		const shiftStart = new Date("2026-09-01T09:00:00Z");
+		const shiftEnd = new Date("2026-09-01T18:00:00Z"); // 9 hours = 540 min
+
+		const mockDb = {
+			select: () => ({
+				from: () => ({
+					leftJoin: () => ({
+						where: () => ({
+							orderBy: async () => [
+								{
+									id: "app-1",
+									patientId: PATIENT_ID,
+									patientName: "Сидоров Алексей",
+									chairId: "chair-1",
+									status: "confirmed",
+									startsAt: new Date("2026-09-01T10:00:00Z"),
+									endsAt: new Date("2026-09-01T11:00:00Z"), // 60 min
+									reason: "Лечение пульпита 36 зуба",
+									comment: null,
+								},
+								{
+									id: "app-2",
+									patientId: PATIENT_ID,
+									patientName: "Кузнецова Ольга",
+									chairId: "chair-1",
+									status: "planned",
+									startsAt: new Date("2026-09-01T14:00:00Z"),
+									endsAt: new Date("2026-09-01T15:30:00Z"), // 90 min
+									reason: "Профгигиена Air-Flow",
+									comment: null,
+								},
+							],
+						}),
+					}),
+				}),
+			}),
+		};
+
+		const ctx = createMockContext({ db: mockDb });
+		const result = (await getDoctorScheduleTool.handler(ctx, {
+			doctorUserId: USER_ID,
+			dateFrom: shiftStart.toISOString(),
+			dateTo: shiftEnd.toISOString(),
+		})) as any;
+
+		assert.strictEqual(result.doctorUserId, USER_ID);
+		assert.strictEqual(result.totalAppointmentsCount, 2);
+		assert.strictEqual(result.totalBookedMinutes, 150); // 60 + 90
+		assert.strictEqual(result.freeCapacityMinutes, 390); // 540 - 150
+		assert.strictEqual(result.bookedSlots.length, 2);
+		assert.strictEqual(result.bookedSlots[0].patientName, "Сидоров Алексей");
+		assert.strictEqual(result.bookedSlots[0].durationMinutes, 60);
 	});
 });
 

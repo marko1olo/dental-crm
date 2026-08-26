@@ -1,23 +1,25 @@
 /**
  * clinicalTools.ts — Clinical agent tools for EMR exploration, ICD-10 diagnostic assistance, scheduling,
- * patient timeline, drug-drug interaction safety, dental laboratory tracking, and family balance management.
+ * patient timeline, drug-drug interaction safety, dental laboratory tracking, family balance, and appointment mutations.
  */
 
 import {
 	checkDentalMedicationInteractions,
 	type DentalDrugInteractionRule,
 } from "@dental/shared";
-import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, lte, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../../db/client.js";
 import {
 	appointments,
+	chairs,
 	familyGroups,
 	labOrders,
 	patientDrugAllergies,
 	patients,
 	payments,
 	treatmentPlans,
+	users,
 	visits,
 } from "../../../db/schema.js";
 import {
@@ -993,22 +995,349 @@ export const getFamilyBalanceTool: ToolDefinition<
 	},
 };
 
+// ─── 9. reschedule_appointment ──────────────────────────────────────────────
+
+const rescheduleAppointmentSchema = z.object({
+	appointmentId: z
+		.string()
+		.uuid("Некорректный UUID записи")
+		.describe("ID существующей записи приема"),
+	newStartsAt: z
+		.string()
+		.datetime({ offset: true })
+		.describe("Новое время начала приема в ISO 8601"),
+	newEndsAt: z
+		.string()
+		.datetime({ offset: true })
+		.describe("Новое время окончания приема в ISO 8601"),
+	reason: z
+		.string()
+		.optional()
+		.describe("Причина переноса записи приема"),
+});
+
+export const rescheduleAppointmentTool: ToolDefinition<
+	typeof rescheduleAppointmentSchema
+> = {
+	name: "reschedule_appointment",
+	description:
+		"Перенос существующей записи приема на другое время с проверкой пересечений и занятости врача/кресла. Требует подтверждения (supervised/write).",
+	parameters: rescheduleAppointmentSchema,
+	permissions: ["schedule.write"],
+	category: "write",
+	handler: async (ctx, args) => {
+		const targetDb = ctx.db ?? db;
+
+		const newStart = new Date(args.newStartsAt);
+		const newEnd = new Date(args.newEndsAt);
+
+		if (Number.isNaN(newStart.getTime()) || Number.isNaN(newEnd.getTime())) {
+			throw new Error("Некорректный формат даты/времени начала или окончания приема");
+		}
+
+		if (newStart >= newEnd) {
+			throw new Error("Новое время начала приема должно быть строго раньше времени окончания");
+		}
+
+		// 1. Fetch current appointment
+		const [currentApp] = await targetDb
+			.select()
+			.from(appointments)
+			.where(
+				and(
+					eq(appointments.organizationId, ctx.organizationId),
+					eq(appointments.id, args.appointmentId),
+				),
+			)
+			.limit(1);
+
+		if (!currentApp) {
+			throw new Error(`Запись приема с ID ${args.appointmentId} не найдена`);
+		}
+
+		if (currentApp.status === "cancelled") {
+			throw new Error("Нельзя перенести ранее отмененную запись приема");
+		}
+
+		// 2. Conflict checking for doctor and chair
+		if (currentApp.doctorUserId || currentApp.chairId) {
+			const conflictConditions = [
+				...(currentApp.doctorUserId ? [eq(appointments.doctorUserId, currentApp.doctorUserId)] : []),
+				...(currentApp.chairId ? [eq(appointments.chairId, currentApp.chairId)] : []),
+			];
+
+			if (conflictConditions.length > 0) {
+				const conflicts = await targetDb
+					.select({
+						id: appointments.id,
+						startsAt: appointments.startsAt,
+						endsAt: appointments.endsAt,
+					})
+					.from(appointments)
+					.where(
+						and(
+							eq(appointments.organizationId, ctx.organizationId),
+							ne(appointments.id, args.appointmentId),
+							ne(appointments.status, "cancelled"),
+							or(...conflictConditions),
+							sql`${appointments.startsAt} < ${newEnd} AND ${appointments.endsAt} > ${newStart}`,
+						),
+					)
+					.limit(1);
+
+				if (conflicts.length > 0) {
+					throw new Error(
+						`Конфликт расписания: выбранный интервал (${args.newStartsAt} — ${args.newEndsAt}) пересекается с другой записью врача или кресла.`,
+					);
+				}
+			}
+		}
+
+		// 3. Update appointment
+		const updateNote = args.reason
+			? `[Перенесено]: ${args.reason}`
+			: `[Перенесено с ${currentApp.startsAt.toISOString()}]`;
+
+		const newComment = currentApp.comment
+			? `${currentApp.comment}\n${updateNote}`
+			: updateNote;
+
+		const [updated] = await targetDb
+			.update(appointments)
+			.set({
+				startsAt: newStart,
+				endsAt: newEnd,
+				comment: newComment,
+			})
+			.where(
+				and(
+					eq(appointments.organizationId, ctx.organizationId),
+					eq(appointments.id, args.appointmentId),
+				),
+			)
+			.returning();
+
+		return {
+			success: true,
+			appointmentId: updated.id,
+			patientId: updated.patientId,
+			doctorUserId: updated.doctorUserId,
+			chairId: updated.chairId,
+			previousStartsAt: currentApp.startsAt.toISOString(),
+			previousEndsAt: currentApp.endsAt.toISOString(),
+			newStartsAt: updated.startsAt.toISOString(),
+			newEndsAt: updated.endsAt.toISOString(),
+			status: updated.status,
+		};
+	},
+};
+
+// ─── 10. cancel_appointment ─────────────────────────────────────────────────
+
+const cancelAppointmentSchema = z.object({
+	appointmentId: z
+		.string()
+		.uuid("Некорректный UUID записи")
+		.describe("ID отменяемой записи приема"),
+	cancellationReason: z
+		.string()
+		.min(1, "Укажите причину отмены приема")
+		.describe("Причина отмены приема (пациент заболел, передумал, форс-мажор врача)"),
+});
+
+export const cancelAppointmentTool: ToolDefinition<
+	typeof cancelAppointmentSchema
+> = {
+	name: "cancel_appointment",
+	description:
+		"Отмена записи на прием в расписании клиники с фиксацией причины отмены. Требует подтверждения (supervised/write).",
+	parameters: cancelAppointmentSchema,
+	permissions: ["schedule.write"],
+	category: "write",
+	handler: async (ctx, args) => {
+		const targetDb = ctx.db ?? db;
+
+		const [currentApp] = await targetDb
+			.select()
+			.from(appointments)
+			.where(
+				and(
+					eq(appointments.organizationId, ctx.organizationId),
+					eq(appointments.id, args.appointmentId),
+				),
+			)
+			.limit(1);
+
+		if (!currentApp) {
+			throw new Error(`Запись приема с ID ${args.appointmentId} не найдена`);
+		}
+
+		if (currentApp.status === "cancelled") {
+			return {
+				success: true,
+				appointmentId: currentApp.id,
+				status: "cancelled",
+				message: "Запись приема уже была отменена ранее",
+			};
+		}
+
+		const cancelNote = `[Отменено]: ${args.cancellationReason}`;
+		const newComment = currentApp.comment
+			? `${currentApp.comment}\n${cancelNote}`
+			: cancelNote;
+
+		const [updated] = await targetDb
+			.update(appointments)
+			.set({
+				status: "cancelled",
+				comment: newComment,
+			})
+			.where(
+				and(
+					eq(appointments.organizationId, ctx.organizationId),
+					eq(appointments.id, args.appointmentId),
+				),
+			)
+			.returning();
+
+		return {
+			success: true,
+			appointmentId: updated.id,
+			patientId: updated.patientId,
+			doctorUserId: updated.doctorUserId,
+			status: "cancelled",
+			cancellationReason: args.cancellationReason,
+			cancelledAt: new Date().toISOString(),
+		};
+	},
+};
+
+// ─── 11. get_doctor_schedule ────────────────────────────────────────────────
+
+const getDoctorScheduleSchema = z.object({
+	doctorUserId: z
+		.string()
+		.uuid("Некорректный UUID врача")
+		.describe("ID врача для получения расписания и занятости"),
+	dateFrom: z
+		.string()
+		.datetime({ offset: true })
+		.describe("Начало временного интервала в ISO 8601"),
+	dateTo: z
+		.string()
+		.datetime({ offset: true })
+		.describe("Конец временного интервала в ISO 8601"),
+});
+
+export const getDoctorScheduleTool: ToolDefinition<
+	typeof getDoctorScheduleSchema
+> = {
+	name: "get_doctor_schedule",
+	description:
+		"Запрос рабочего расписания врача, занятых слотов и свободной емкости в заданном временном диапазоне.",
+	parameters: getDoctorScheduleSchema,
+	permissions: ["schedule.read"],
+	category: "read",
+	handler: async (ctx, args) => {
+		const targetDb = ctx.db ?? db;
+
+		const fromDate = new Date(args.dateFrom);
+		const toDate = new Date(args.dateTo);
+
+		if (Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime())) {
+			throw new Error("Некорректный формат диапазона дат dateFrom / dateTo");
+		}
+
+		if (fromDate >= toDate) {
+			throw new Error("dateFrom должно быть строго раньше dateTo");
+		}
+
+		// Fetch all appointments for the doctor in range
+		const doctorApps = await targetDb
+			.select({
+				id: appointments.id,
+				patientId: appointments.patientId,
+				patientName: patients.fullName,
+				chairId: appointments.chairId,
+				status: appointments.status,
+				startsAt: appointments.startsAt,
+				endsAt: appointments.endsAt,
+				reason: appointments.reason,
+				comment: appointments.comment,
+			})
+			.from(appointments)
+			.leftJoin(patients, eq(patients.id, appointments.patientId))
+			.where(
+				and(
+					eq(appointments.organizationId, ctx.organizationId),
+					eq(appointments.doctorUserId, args.doctorUserId),
+					ne(appointments.status, "cancelled"),
+					sql`${appointments.startsAt} < ${toDate} AND ${appointments.endsAt} > ${fromDate}`,
+				),
+			)
+			.orderBy(appointments.startsAt);
+
+		let totalBookedMinutes = 0;
+		const slots = doctorApps.map((a) => {
+			const startMs = Math.max(a.startsAt.getTime(), fromDate.getTime());
+			const endMs = Math.min(a.endsAt.getTime(), toDate.getTime());
+			const durationMin = Math.round((endMs - startMs) / 60000);
+			if (durationMin > 0) {
+				totalBookedMinutes += durationMin;
+			}
+
+			return {
+				appointmentId: a.id,
+				patientId: a.patientId,
+				patientName: a.patientName || "Пациент",
+				chairId: a.chairId,
+				status: a.status,
+				startsAt: a.startsAt.toISOString(),
+				endsAt: a.endsAt.toISOString(),
+				durationMinutes: durationMin,
+				reason: a.reason,
+			};
+		});
+
+		const totalRangeMinutes = Math.round(
+			(toDate.getTime() - fromDate.getTime()) / 60000,
+		);
+		const freeCapacityMinutes = Math.max(
+			0,
+			totalRangeMinutes - totalBookedMinutes,
+		);
+
+		return {
+			doctorUserId: args.doctorUserId,
+			dateFrom: args.dateFrom,
+			dateTo: args.dateTo,
+			totalAppointmentsCount: doctorApps.length,
+			totalBookedMinutes,
+			freeCapacityMinutes,
+			bookedSlots: slots,
+		};
+	},
+};
+
 /**
- * Registers all clinical tools into the specified ToolRegistry.
+ * Registers all clinical and scheduling tools into the specified ToolRegistry.
  */
 export function registerClinicalTools(
 	registry: ToolRegistry,
 	moduleName = "clinical",
 ): void {
-	// Original 4 clinical tools
+	// 1. Exploration & Diagnostic Tools
 	registry.register(findPatientTool, moduleName);
 	registry.register(getEmrCardTool, moduleName);
 	registry.register(suggestIcd10PlanTool, moduleName);
-	registry.register(bookVisitTool, moduleName);
-
-	// 4 New high-value tools
 	registry.register(getPatientTimelineTool, moduleName);
 	registry.register(checkDrugInteractionsTool, moduleName);
 	registry.register(getLabOrdersTool, moduleName);
 	registry.register(getFamilyBalanceTool, moduleName);
+
+	// 2. Interactive Schedule Tools (READ & WRITE with confirmation)
+	registry.register(bookVisitTool, moduleName);
+	registry.register(rescheduleAppointmentTool, moduleName);
+	registry.register(cancelAppointmentTool, moduleName);
+	registry.register(getDoctorScheduleTool, moduleName);
 }

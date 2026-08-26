@@ -1,7 +1,9 @@
-# BRIEFING — 2026-08-27T03:24:00+04:00
+# BRIEFING — 2026-08-27T03:38:50+04:00
 
 ## Mission
-Execution of Directive 2: Pruning bloat files in implant, lab3d, and anesthesia caliper components and cleaning barrel exports.
+Reconnaissance & porting of Dentalpin agenda & treatment_plan modules into DENTE CRM `@dental/shared`:
+1. Multi-chair schedule collision engine & emergency reserve buffer.
+2. 4-Stage clinical treatment plan engine & penny-exact payment distribution.
 
 ## 🔒 My Identity
 - Archetype: sentinel / subagent
@@ -10,24 +12,31 @@ Execution of Directive 2: Pruning bloat files in implant, lab3d, and anesthesia 
 - Victory Auditor: N/A (Subagent mode)
 
 ## 🔒 Key Constraints
-- Zero-skimming, complete execution
+- Zero-skimming, complete implementation (Zero Mocks / No TODOs)
 - All findings delivered via send_message to parent
 - Working directory: C:\Clinic_MVP\dental-crm
+- Reference repo: C:\Users\Admin\.gemini\antigravity\scratch\dentalpin\backend\app\modules
 
 ## User Context
-- **Last directive**: Delete 9 bloat files in implant, lab3d, visit anesthesia; clean index.ts barrel exports and test files.
+- **Last directive**: Port `agenda` collision/reserve logic into `packages/shared/src/schedule/shiftCollisionEngine.ts` and `treatment_plan` stages into `packages/shared/src/finance/treatmentPlanStages.ts`, write unit tests in `treatmentPlanStagesMining.test.ts`.
 - **Pending clarifications**: none
 - **Delivered results**: 
-  - Deleted 9 bloat files + 2 obsolete test files.
-  - Cleaned `apps/web/src/components/implant/index.ts`, `apps/web/src/components/lab3d/index.ts`, `apps/web/src/components/anesthesia/index.ts`.
-  - Replaced deleted components in `VisitDiarySection.tsx` and `ClinicalModalsStudioStandalone.tsx` with canonical `ToothAnesthesiaCalculator`.
-  - Verified `@dental/shared` build, typechecks, and tests (764/764 PASS, Exit Code 0).
-  - Sent completion report to parent agent.
+  - `packages/shared/src/schedule/shiftCollisionEngine.ts`
+  - `packages/shared/src/schedule/index.ts`
+  - `packages/shared/src/finance/treatmentPlanStages.ts`
+  - `packages/shared/src/tests/treatmentPlanStagesMining.test.ts`
+  - `@dental/shared` test suite: 778/778 PASS (0 failed, Exit Code 0).
+  - Built, typechecked, and reported to parent agent.
 
 ## Project Status
 - **Phase**: complete
-- **Route**: Subagent Execution -> Pruning Complete
+- **Route**: Subagent Execution -> All Gates Passed -> Report Delivered
 
 ## Victory Audit Status
 - **Triggered**: no
 - **Verdict**: completed and reported to parent
+
+## Artifact Index
+- `packages/shared/src/schedule/shiftCollisionEngine.ts` — Collision detection, emergency reserve slots & DSU timeline layout
+- `packages/shared/src/finance/treatmentPlanStages.ts` — 4-stage clinical plan & penny-exact payment engine
+- `packages/shared/src/tests/treatmentPlanStagesMining.test.ts` — Unit tests suite
