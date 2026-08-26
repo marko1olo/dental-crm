@@ -1493,10 +1493,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	if (!isOpen) return null;
 
 	// Helper render functions for each viewport
-	const renderAxialViewport = () => (
+	const renderAxialViewport = (extraClassName = "flex-1 flex flex-col") => (
 		<div
 			onDoubleClick={() => handleToggleMaximize("axial")}
-			className="relative bg-black rounded-md overflow-hidden border border-[#242a35] flex-1 flex flex-col min-h-0 w-full h-full"
+			className={`relative bg-black rounded-md overflow-hidden border border-[#242a35] min-h-0 w-full h-full ${extraClassName}`}
 			data-testid="cbct-viewport-container-axial"
 		>
 			<div className="flex-1 flex items-center justify-center min-h-0 relative">
@@ -1521,10 +1521,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		</div>
 	);
 
-	const renderCoronalViewport = () => (
+	const renderCoronalViewport = (extraClassName = "flex-1 flex flex-col") => (
 		<div
 			onDoubleClick={() => handleToggleMaximize("coronal")}
-			className="relative bg-black rounded-md overflow-hidden border border-[#242a35] flex-1 flex flex-col min-h-0 w-full h-full"
+			className={`relative bg-black rounded-md overflow-hidden border border-[#242a35] min-h-0 w-full h-full ${extraClassName}`}
 			data-testid="cbct-viewport-container-coronal"
 		>
 			<div className="flex-1 flex items-center justify-center min-h-0 relative">
@@ -1549,10 +1549,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		</div>
 	);
 
-	const renderSagittalViewport = () => (
+	const renderSagittalViewport = (extraClassName = "flex-1 flex flex-col") => (
 		<div
 			onDoubleClick={() => handleToggleMaximize("sagittal")}
-			className="relative bg-black rounded-md overflow-hidden border border-[#242a35] flex-1 flex flex-col min-h-0 w-full h-full"
+			className={`relative bg-black rounded-md overflow-hidden border border-[#242a35] min-h-0 w-full h-full ${extraClassName}`}
 			data-testid="cbct-viewport-container-sagittal"
 		>
 			<div className="flex-1 flex items-center justify-center min-h-0 relative">
@@ -1577,10 +1577,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		</div>
 	);
 
-	const renderPanoramicViewport = () => (
+	const renderPanoramicViewport = (extraClassName = "flex-1 flex flex-col") => (
 		<div
 			onDoubleClick={() => handleToggleMaximize("panoramic")}
-			className="relative bg-black rounded-md overflow-hidden border border-[#242a35] flex-1 flex flex-col min-h-0 w-full h-full"
+			className={`relative bg-black rounded-md overflow-hidden border border-[#242a35] min-h-0 w-full h-full ${extraClassName}`}
 			data-testid="cbct-viewport-container-panoramic"
 		>
 			<div className="flex-1 flex items-center justify-center min-h-0 relative">
@@ -1667,7 +1667,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							className={`px-2.5 py-1 rounded-sm text-xs font-bold whitespace-nowrap min-h-[36px] flex items-center gap-1.5 transition-colors ${
 								studioMode === "diagnostic"
 									? "bg-[#2563eb] text-white shadow-xs"
-									: "text-[#94a3b8] hover:text-[#e2e8f0]"
+									: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0]"
 							}`}
 							data-testid="cbct-mode-diagnostic-btn"
 						>
@@ -1680,7 +1680,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							className={`px-2.5 py-1 rounded-sm text-xs font-bold whitespace-nowrap min-h-[36px] flex items-center gap-1.5 transition-colors ${
 								studioMode === "implant"
 									? "bg-[#2563eb] text-white shadow-xs"
-									: "text-[#94a3b8] hover:text-[#e2e8f0]"
+									: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0]"
 							}`}
 							data-testid="cbct-mode-implant-btn"
 						>
@@ -1710,7 +1710,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 									className={`px-2.5 py-1 rounded-sm text-xs font-bold whitespace-nowrap min-h-[36px] flex items-center gap-1 transition-colors ${
 										viewLayout === "quad_view"
 											? "bg-[#1e2430] text-white border border-[#334155]"
-											: "text-[#94a3b8] hover:text-[#e2e8f0]"
+											: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0]"
 									}`}
 									data-testid="cbct-layout-quad-btn"
 									title="Сетка 4 окна (2x2)"
@@ -1724,7 +1724,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 									className={`px-2.5 py-1 rounded-sm text-xs font-bold whitespace-nowrap min-h-[36px] flex items-center gap-1 transition-colors ${
 										viewLayout === "layout_1_plus_3"
 											? "bg-[#1e2430] text-white border border-[#334155]"
-											: "text-[#94a3b8] hover:text-[#e2e8f0]"
+											: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0]"
 									}`}
 									data-testid="cbct-layout-1plus3-btn"
 									title="Раскладка 1+3 (Доминантный аксиал)"
@@ -1746,7 +1746,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 								className={`px-2.5 py-1 rounded-sm text-xs font-medium whitespace-nowrap min-h-[36px] transition-colors ${
 									activePreset === p.id
 										? "bg-[#1e2430] text-[#38bdf8] font-bold border border-[#334155]"
-										: "text-[#94a3b8] hover:text-[#e2e8f0]"
+										: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0]"
 								}`}
 								data-testid={`cbct-hu-preset-${p.id}`}
 							>
@@ -1760,7 +1760,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						<button
 							type="button"
 							onClick={() => setSlabMode("single")}
-							className={`px-2.5 py-1 rounded-sm text-xs font-medium whitespace-nowrap min-h-[36px] flex items-center justify-center transition-colors ${slabMode === "single" ? "bg-[#1e2430] text-white font-bold border border-[#334155]" : "text-[#94a3b8] hover:text-[#e2e8f0]"}`}
+							className={`px-2.5 py-1 rounded-sm text-xs font-medium whitespace-nowrap min-h-[36px] flex items-center justify-center transition-colors ${slabMode === "single" ? "bg-[#1e2430] text-white font-bold border border-[#334155]" : "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0]"}`}
 							data-testid="cbct-mpr-slab-single-btn"
 						>
 							Срез 1 мм
@@ -1768,7 +1768,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						<button
 							type="button"
 							onClick={() => setSlabMode("mip")}
-							className={`px-2.5 py-1 rounded-sm text-xs font-medium whitespace-nowrap min-h-[36px] flex items-center justify-center transition-colors ${slabMode === "mip" ? "bg-[#1e2430] text-white font-bold border border-[#334155]" : "text-[#94a3b8] hover:text-[#e2e8f0]"}`}
+							className={`px-2.5 py-1 rounded-sm text-xs font-medium whitespace-nowrap min-h-[36px] flex items-center justify-center transition-colors ${slabMode === "mip" ? "bg-[#1e2430] text-white font-bold border border-[#334155]" : "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0]"}`}
 							data-testid="cbct-mpr-slab-mip-btn"
 						>
 							Slab MIP
@@ -1776,7 +1776,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						<button
 							type="button"
 							onClick={() => setSlabMode("average")}
-							className={`px-2.5 py-1 rounded-sm text-xs font-medium whitespace-nowrap min-h-[36px] flex items-center justify-center transition-colors ${slabMode === "average" ? "bg-[#1e2430] text-white font-bold border border-[#334155]" : "text-[#94a3b8] hover:text-[#e2e8f0]"}`}
+							className={`px-2.5 py-1 rounded-sm text-xs font-medium whitespace-nowrap min-h-[36px] flex items-center justify-center transition-colors ${slabMode === "average" ? "bg-[#1e2430] text-white font-bold border border-[#334155]" : "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0]"}`}
 							data-testid="cbct-mpr-slab-avg-btn"
 						>
 							Avg IP
@@ -1788,7 +1788,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						<button
 							type="button"
 							onClick={() => handleToggleJawType("mandible")}
-							className={`px-2.5 py-1 rounded-sm text-xs font-bold whitespace-nowrap min-h-[36px] flex items-center justify-center transition-colors ${jawType === "mandible" ? "bg-[#1e2430] text-amber-300 border border-amber-500/40" : "text-[#94a3b8] hover:text-[#e2e8f0]"}`}
+							className={`px-2.5 py-1 rounded-sm text-xs font-bold whitespace-nowrap min-h-[36px] flex items-center justify-center transition-colors ${jawType === "mandible" ? "bg-[#1e2430] text-amber-300 border border-amber-500/40" : "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0]"}`}
 							data-testid="cbct-jaw-mandible-btn"
 						>
 							Н. челюсть
@@ -1796,7 +1796,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						<button
 							type="button"
 							onClick={() => handleToggleJawType("maxilla")}
-							className={`px-2.5 py-1 rounded-sm text-xs font-bold whitespace-nowrap min-h-[36px] flex items-center justify-center transition-colors ${jawType === "maxilla" ? "bg-[#1e2430] text-amber-300 border border-amber-500/40" : "text-[#94a3b8] hover:text-[#e2e8f0]"}`}
+							className={`px-2.5 py-1 rounded-sm text-xs font-bold whitespace-nowrap min-h-[36px] flex items-center justify-center transition-colors ${jawType === "maxilla" ? "bg-[#1e2430] text-amber-300 border border-amber-500/40" : "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0]"}`}
 							data-testid="cbct-jaw-maxilla-btn"
 						>
 							В. челюсть
@@ -1971,44 +1971,33 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			<div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-1 p-1 bg-[#0c0e12] min-h-0 overflow-hidden">
 				{/* ─── VIEWPORTS DISPLAY (COLS 1..8 ON DESKTOP) ────────────────── */}
 				<div className={`lg:col-span-8 ${mobileActiveTab === "planner" ? "hidden lg:flex" : "flex-1 flex flex-col"} min-h-0`}>
-					{/* Mobile single view according to active tab */}
-					<div className="lg:hidden flex-1 flex flex-col min-h-0 w-full">
-						{mobileActiveTab === "axial" && renderAxialViewport()}
-						{mobileActiveTab === "coronal" && renderCoronalViewport()}
-						{mobileActiveTab === "sagittal" && renderSagittalViewport()}
-						{mobileActiveTab === "panoramic" && renderPanoramicViewport()}
-					</div>
-
-					{/* Desktop layout based on maximizedViewport and viewLayout */}
-					<div className="hidden lg:flex flex-1 flex-col min-h-0 w-full">
-						{maximizedViewport !== null ? (
-							<div className="flex-1 flex flex-col min-h-0 w-full">
-								{maximizedViewport === "axial" && renderAxialViewport()}
-								{maximizedViewport === "coronal" && renderCoronalViewport()}
-								{maximizedViewport === "sagittal" && renderSagittalViewport()}
-								{maximizedViewport === "panoramic" && renderPanoramicViewport()}
-								{maximizedViewport === "cross_section" && renderCrossSectionMaximizedViewport()}
+					{maximizedViewport !== null ? (
+						<div className="flex-1 flex flex-col min-h-0 w-full">
+							{maximizedViewport === "axial" && renderAxialViewport("flex-1 flex flex-col")}
+							{maximizedViewport === "coronal" && renderCoronalViewport("flex-1 flex flex-col")}
+							{maximizedViewport === "sagittal" && renderSagittalViewport("flex-1 flex flex-col")}
+							{maximizedViewport === "panoramic" && renderPanoramicViewport("flex-1 flex flex-col")}
+							{maximizedViewport === "cross_section" && renderCrossSectionMaximizedViewport()}
+						</div>
+					) : viewLayout === "layout_1_plus_3" ? (
+						<div className="flex-1 grid grid-cols-12 gap-1 min-h-0">
+							<div className={`col-span-12 lg:col-span-8 min-h-0 ${mobileActiveTab === "axial" ? "flex-1 flex flex-col" : "hidden lg:flex lg:flex-col"}`}>
+								{renderAxialViewport("flex-1 flex flex-col")}
 							</div>
-						) : viewLayout === "layout_1_plus_3" ? (
-							<div className="flex-1 grid grid-cols-12 gap-1 min-h-0">
-								<div className="col-span-8 flex flex-col min-h-0">
-									{renderAxialViewport()}
-								</div>
-								<div className="col-span-4 flex flex-col gap-1 min-h-0">
-									{renderCoronalViewport()}
-									{renderSagittalViewport()}
-									{renderPanoramicViewport()}
-								</div>
+							<div className="col-span-12 lg:col-span-4 min-h-0 flex flex-col lg:grid lg:grid-rows-3 gap-1">
+								{renderCoronalViewport(mobileActiveTab === "coronal" ? "flex-1 flex flex-col" : "hidden lg:flex lg:flex-col")}
+								{renderSagittalViewport(mobileActiveTab === "sagittal" ? "flex-1 flex flex-col" : "hidden lg:flex lg:flex-col")}
+								{renderPanoramicViewport(mobileActiveTab === "panoramic" ? "flex-1 flex flex-col" : "hidden lg:flex lg:flex-col")}
 							</div>
-						) : (
-							<div className="flex-1 grid grid-cols-2 grid-rows-2 gap-1 min-h-0">
-								{renderAxialViewport()}
-								{renderCoronalViewport()}
-								{renderSagittalViewport()}
-								{renderPanoramicViewport()}
-							</div>
-						)}
-					</div>
+						</div>
+					) : (
+						<div className="flex-1 grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-2 gap-1 min-h-0">
+							{renderAxialViewport(mobileActiveTab === "axial" ? "flex-1 flex flex-col" : "hidden lg:flex lg:flex-col")}
+							{renderCoronalViewport(mobileActiveTab === "coronal" ? "flex-1 flex flex-col" : "hidden lg:flex lg:flex-col")}
+							{renderSagittalViewport(mobileActiveTab === "sagittal" ? "flex-1 flex flex-col" : "hidden lg:flex lg:flex-col")}
+							{renderPanoramicViewport(mobileActiveTab === "panoramic" ? "flex-1 flex flex-col" : "hidden lg:flex lg:flex-col")}
+						</div>
+					)}
 				</div>
 
 				{/* ─── RIGHT SIDEBAR: DIAGNOSTIC INSPECTOR & IMPLANT PLANNER (COLS 9..12) ─── */}
@@ -2046,7 +2035,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					{/* Cross-Section Viewport Canvas */}
 					<div
 						onDoubleClick={() => handleToggleMaximize("cross_section")}
-						className="relative h-52 bg-black rounded-md overflow-hidden border border-[#242a35] flex items-center justify-center shrink-0"
+						className="relative h-56 bg-black rounded-md overflow-hidden border border-[#242a35] flex items-center justify-center shrink-0"
 					>
 						<canvas
 							ref={crossSectionCanvasRef}
@@ -2062,10 +2051,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							onToggleMaximize={() => handleToggleMaximize("cross_section")}
 						/>
 
-						{/* Quick Ridge Measurements Badge */}
-						<div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-[#14171e] text-[10px] text-[#94a3b8] border border-[#242a35] font-mono shadow-sm">
-							<div>Высота: <strong className="text-[#38bdf8]">{activeCrossSection?.corticalCrestHeightMm ?? 14.2} мм</strong></div>
-							<div>Ширина: <strong className="text-[#38bdf8]">{activeCrossSection?.alveolarRidgeWidthMm ?? 7.8} мм</strong></div>
+						{/* Quick Ridge Measurements Badge (positioned top-right to avoid overlapping bottom scale bar) */}
+						<div className="absolute top-2 right-12 px-2 py-0.5 rounded bg-[#14171e] text-[9px] text-[#94a3b8] border border-[#242a35] font-mono shadow-sm flex items-center gap-2">
+							<span>H: <strong className="text-[#38bdf8]">{activeCrossSection?.corticalCrestHeightMm ?? 14.2} мм</strong></span>
+							<span>W: <strong className="text-[#38bdf8]">{activeCrossSection?.alveolarRidgeWidthMm ?? 7.8} мм</strong></span>
 						</div>
 					</div>
 

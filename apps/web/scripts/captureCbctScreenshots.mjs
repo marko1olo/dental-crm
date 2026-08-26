@@ -5,7 +5,7 @@ import path from "node:path";
 
 const DATA_DIR = "C:/Users/Admin/Downloads/Telegram Desktop/BARABASH_SVETLANA_VIKTOROVNA_09141256/BARABASH_SVETLANA_VIKTOROVNA_09141256/Data";
 const PROOFS_DIR = "C:/Clinic_MVP/dental-crm/docs/proofs/cbct";
-const ARTIFACT_DIR = "C:/Users/Admin/.gemini/antigravity/brain/d398a0a7-28c8-440a-ac32-576815e1bc3b";
+const ARTIFACT_DIR = "C:/Users/Admin/.gemini/antigravity/brain/0284cf50-cf45-4b19-be4c-f6f53b03120f";
 
 if (!fs.existsSync(PROOFS_DIR)) fs.mkdirSync(PROOFS_DIR, { recursive: true });
 if (!fs.existsSync(ARTIFACT_DIR)) fs.mkdirSync(ARTIFACT_DIR, { recursive: true });
@@ -119,7 +119,7 @@ async function run() {
 
         await sleep(2000);
 
-        // Capture 4-Viewport CBCT MPR Studio with real patient anatomy
+        // Capture 4-Viewport CBCT MPR Studio with real patient anatomy (Diagnostic Mode)
         const cbctMprPath = path.join(PROOFS_DIR, `02_cbct_mpr_4viewport_${vp.name}.png`);
         await page.screenshot({ path: cbctMprPath, fullPage: false });
         fs.copyFileSync(cbctMprPath, path.join(ARTIFACT_DIR, `02_cbct_mpr_4viewport_${vp.name}.png`));
@@ -129,14 +129,7 @@ async function run() {
         const mipBtn = page.locator('[data-testid="cbct-mpr-slab-mip-btn"]');
         if (await mipBtn.isVisible()) {
           await mipBtn.click();
-          await sleep(600);
-        }
-
-        // Switch to Maxilla jaw
-        const maxillaBtn = page.locator('[data-testid="cbct-jaw-maxilla-btn"]');
-        if (await maxillaBtn.isVisible()) {
-          await maxillaBtn.click();
-          await sleep(600);
+          await sleep(800);
         }
 
         // Capture MIP Slab state
@@ -145,30 +138,23 @@ async function run() {
         fs.copyFileSync(cbctMipPath, path.join(ARTIFACT_DIR, `03_cbct_mpr_slab_mip_${vp.name}.png`));
         console.log(`Saved MIP Slab: ${cbctMipPath}`);
 
-        // Close modal
-        const closeBtn = page.locator('[data-testid="close-cbct-mpr-3d-studio-btn"]').first();
-        if (await closeBtn.isVisible()) {
-          await closeBtn.click();
-          await sleep(500);
+        // Click Implant Mode button inside 3D CBCT Studio
+        const implantModeBtn = page.locator('[data-testid="cbct-mode-implant-btn"]');
+        if (await implantModeBtn.isVisible()) {
+          await implantModeBtn.click();
+          await sleep(800);
         }
-      }
 
-      // 2. Open 2D Implant Cross-Section Planner Modal
-      const openImplantBtn = page.locator('[data-testid="open-implant-cross-section-planner-modal-btn"]');
-      if (await openImplantBtn.isVisible()) {
-        await openImplantBtn.click();
-        await sleep(1000);
-
-        // Capture 2D Cross Section Implant Planner
+        // Capture 3D CBCT Implant Planning Studio state
         const implantPlannerPath = path.join(PROOFS_DIR, `04_implant_cross_section_planner_${vp.name}.png`);
         await page.screenshot({ path: implantPlannerPath, fullPage: false });
         fs.copyFileSync(implantPlannerPath, path.join(ARTIFACT_DIR, `04_implant_cross_section_planner_${vp.name}.png`));
         console.log(`Saved Implant Planner: ${implantPlannerPath}`);
 
         // Close modal
-        const closeImplantBtn = page.locator('[data-testid="close-implant-planner-modal-btn"]').first();
-        if (await closeImplantBtn.isVisible()) {
-          await closeImplantBtn.click();
+        const closeBtn = page.locator('[data-testid="close-cbct-mpr-3d-studio-btn"]').first();
+        if (await closeBtn.isVisible()) {
+          await closeBtn.click();
           await sleep(500);
         }
       }

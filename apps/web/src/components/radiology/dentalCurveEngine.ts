@@ -314,31 +314,40 @@ export function reconstructPanoramicView(
 
 	const {
 		heightMm = 38.0,
-		heightPx = 300,
+		heightPx = 220,
+		widthPx,
 		windowWidth = 2000,
 		windowLevel = 400,
-	} = options;
+	} = options as { heightMm?: number; heightPx?: number; widthPx?: number; windowWidth?: number; windowLevel?: number };
 
 	const splinePoints = archCurve.splinePointsMm;
-	const outW = Math.max(100, splinePoints.length);
+	const vectorField = calculateArchTangentsAndNormals(splinePoints);
+	const outW = widthPx ?? Math.max(500, Math.round(archCurve.totalArcLengthMm / (volume.spacingMm.x || 0.35)));
 	const outH = heightPx;
 	const pixelBuffer = new Uint8ClampedArray(outW * outH * 4);
 
-	const vectorField = calculateArchTangentsAndNormals(splinePoints);
-
 	// Focal trough slab sampling
 	const focalRadiusMm = archCurve.focalTroughThicknessMm / 2.0;
-	const slabSamples = Math.max(3, Math.round(focalRadiusMm / 0.4));
+	const slabSamples = Math.max(3, Math.round(focalRadiusMm / 0.5));
 
 	const zTopMm = heightMm / 2.0;
 	const zBottomMm = -heightMm / 2.0;
 	const zStepMm = (zTopMm - zBottomMm) / outH;
+	const nNodes = vectorField.length;
 
 	// Sweep along the spline
 	for (let col = 0; col < outW; col++) {
-		const node = vectorField[col] || vectorField[0]!;
-		const pt = node.point;
-		const norm = node.normal;
+		const u = nNodes > 1 ? (col / (outW - 1)) * (nNodes - 1) : 0;
+		const i0 = Math.floor(u);
+		const i1 = Math.min(nNodes - 1, i0 + 1);
+		const frac = u - i0;
+		const n0 = vectorField[i0] || vectorField[0]!;
+		const n1 = vectorField[i1] || n0;
+
+		const ptX = n0.point.x + (n1.point.x - n0.point.x) * frac;
+		const ptY = n0.point.y + (n1.point.y - n0.point.y) * frac;
+		const normX = n0.normal.x + (n1.normal.x - n0.normal.x) * frac;
+		const normY = n0.normal.y + (n1.normal.y - n0.normal.y) * frac;
 
 		for (let row = 0; row < outH; row++) {
 			const zMm = zTopMm - row * zStepMm;
@@ -347,8 +356,8 @@ export function reconstructPanoramicView(
 			let maxHU = -32768;
 			for (let s = -slabSamples; s <= slabSamples; s++) {
 				const offsetMm = (s / slabSamples) * focalRadiusMm;
-				const sampleX = pt.x + norm.x * offsetMm;
-				const sampleY = pt.y + norm.y * offsetMm;
+				const sampleX = ptX + normX * offsetMm;
+				const sampleY = ptY + normY * offsetMm;
 
 				const vox = worldMmToVoxel({ x: sampleX, y: sampleY, z: zMm }, volume);
 				const hu = sampleVoxelHU(vox.x, vox.y, vox.z, volume);
@@ -369,9 +378,17 @@ export function reconstructPanoramicView(
 		let closestCol = 0;
 		let minDistance = Infinity;
 
-		for (let col = 0; col < splinePoints.length; col++) {
-			const p = splinePoints[col]!;
-			const dist = Math.hypot(p.x - anchor.positionMm.x, p.y - anchor.positionMm.y);
+		for (let col = 0; col < outW; col++) {
+			const u = nNodes > 1 ? (col / (outW - 1)) * (nNodes - 1) : 0;
+			const i0 = Math.floor(u);
+			const i1 = Math.min(nNodes - 1, i0 + 1);
+			const frac = u - i0;
+			const n0 = vectorField[i0] || vectorField[0]!;
+			const n1 = vectorField[i1] || n0;
+			const px = n0.point.x + (n1.point.x - n0.point.x) * frac;
+			const py = n0.point.y + (n1.point.y - n0.point.y) * frac;
+
+			const dist = Math.hypot(px - anchor.positionMm.x, py - anchor.positionMm.y);
 			if (dist < minDistance) {
 				minDistance = dist;
 				closestCol = col;
