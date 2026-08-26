@@ -81,6 +81,7 @@ import {
 	UserCheck,
 } from "lucide-react";
 import type { ChangeEvent, CSSProperties, KeyboardEvent } from "react";
+import { OfflineBackupVaultPanel } from "./OfflineBackupVaultPanel";
 import { importSourceLabels, ingestionTargetLabels } from "../../AppConstants";
 import type {
 	CtImplantLibraryItem,
@@ -2973,6 +2974,10 @@ export function SettingsAuditTab(props: Record<string, any>) {
 										</div>
 										<span>без фоновой подготовки</span>
 									</article>
+									<OfflineBackupVaultPanel
+										organizationId={props.organizationId}
+										clinicName={props.clinicSettings?.name}
+									/>
 								</>
 							) : (
 								<article className="ops-empty">

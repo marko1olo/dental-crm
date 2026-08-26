@@ -6,7 +6,7 @@
  * ============================================================================
  */
 
-export type MedicalWasteClassId = "class_A" | "class_B" | "class_G";
+export type MedicalWasteClassId = "class_A" | "class_B" | "class_V" | "class_G";
 
 export type MedicalWastePackagingTypeId =
 	| "white_bag"
@@ -14,6 +14,8 @@ export type MedicalWastePackagingTypeId =
 	| "yellow_bag"
 	| "yellow_puncture_proof_container"
 	| "yellow_sharps_box_needle_remover"
+	| "red_bag"
+	| "red_puncture_proof_container"
 	| "black_container_mercury"
 	| "black_bag_g";
 
@@ -32,7 +34,7 @@ export type WasteStorageLocationId =
 
 export interface MedicalWasteClassDefinition {
 	readonly id: MedicalWasteClassId;
-	readonly letterCode: "А" | "Б" | "Г";
+	readonly letterCode: "А" | "Б" | "В" | "Г";
 	readonly nameRu: string;
 	readonly dangerCategoryRu: string;
 	readonly colorTheme: {
@@ -144,7 +146,31 @@ export const SANPIN_MEDICAL_WASTE_CLASSES: readonly MedicalWasteClassDefinition[
 			"chemical_soaking_disinfectant",
 			"centralized_licensed_incineration",
 		],
-		sanpinNormRefRu: "СанПиН 2.1.3684-21 разд. X п. 158–175",
+		sanpinNormRefRu: "СанПиН 2.1.3684-21 разд. X п. 158",
+	},
+	{
+		id: "class_V",
+		letterCode: "В",
+		nameRu: "Класс В — Чрезвычайно эпидемиологически опасные отходы",
+		dangerCategoryRu: "Чрезвычайно опасные (инфицированные ООИ, туберкулез, COVID-19, анаэробная инфекция)",
+		colorTheme: {
+			bagColorRu: "Красный",
+			hexBadgeBg: "#fee2e2",
+			hexBadgeFg: "#991b1b",
+			hexBorder: "#ef4444",
+		},
+		standardCompositionRu: [
+			"Материалы и инструмент от пациентов с особо опасными инфекциями",
+			"Отходы лабораторий, работающих с микроорганизмами 1-2 групп патогенности",
+			"Отходы фтизиатрических отделений и анаэробных инфекций",
+		],
+		dentalSpecificItemsRu: [
+			"Материалы после приема пациентов с открытыми формами инфекций / туберкулезом",
+			"Биологические отходы операционных с подтвержденной анаэробной инфекцией",
+		],
+		mandatoryPackaging: ["red_bag", "red_puncture_proof_container"],
+		allowedDecontamination: ["physical_autoclave_134", "centralized_licensed_incineration"],
+		sanpinNormRefRu: "СанПиН 2.1.3684-21 разд. X п. 182–189",
 	},
 	{
 		id: "class_G",
@@ -228,6 +254,26 @@ export const SANPIN_PACKAGING_TYPES: readonly MedicalWastePackagingDefinition[] 
 		defaultTareWeightKg: 0.18,
 		maxCapacityLiters: 3,
 		colorRu: "Желтый",
+	},
+	{
+		id: "red_bag",
+		nameRu: "Пакет полиэтиленовый красный плотный (Класс В)",
+		wasteClass: "class_V",
+		isPunctureProof: false,
+		isHermeticSealed: true,
+		defaultTareWeightKg: 0.08,
+		maxCapacityLiters: 30,
+		colorRu: "Красный",
+	},
+	{
+		id: "red_puncture_proof_container",
+		nameRu: "Контейнер красный непрокалываемый с иглосъемником (Класс В)",
+		wasteClass: "class_V",
+		isPunctureProof: true,
+		isHermeticSealed: true,
+		defaultTareWeightKg: 0.22,
+		maxCapacityLiters: 3,
+		colorRu: "Красный",
 	},
 	{
 		id: "black_container_mercury",
