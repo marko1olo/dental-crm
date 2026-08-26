@@ -1,3 +1,4 @@
+export { getTissueNameFromHU } from "./cbctMprMath";
 export * from "./RadiationDoseSheetModal";
 export * from "./doseSheet";
 export * from "./radiologyMath";
@@ -16,3 +17,4 @@ export * from "./ImplantCrossSectionPlanner";
 export * from "./CbctMprImplantStudioModal";
 export * from "./CbctMpr3DStudioModal";
 export * from "./CbctViewportHud";
+export * from "./CbctLeftToolDock";

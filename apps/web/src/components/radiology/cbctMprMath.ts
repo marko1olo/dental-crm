@@ -148,6 +148,31 @@ export const ROMEXIS_COLORS = {
 
 export type CbctViewportType = MprPlane | "panoramic" | "cross_section";
 
+export type CbctActiveMouseTool =
+	| "crosshair"
+	| "pan"
+	| "zoom"
+	| "window_level"
+	| "rotate"
+	| "ruler"
+	| "probe";
+
+export interface CbctMeasurementRuler {
+	readonly id: string;
+	readonly plane: CbctViewportType;
+	readonly startMm: Point3D;
+	readonly endMm: Point3D;
+	readonly distanceMm: number;
+}
+
+export interface CbctProbeMarker {
+	readonly id: string;
+	readonly plane: CbctViewportType;
+	readonly worldMm: Point3D;
+	readonly hu: number;
+	readonly tissueName: string;
+}
+
 export interface ViewportOrientationLabels {
 	readonly top: string;
 	readonly bottom: string;
@@ -468,6 +493,230 @@ export function drawRomexisSlabCorridor(
 	}
 
 	ctx.restore();
+}
+
+/**
+ * Translates HU value to Russian anatomical tissue label.
+ */
+export function getTissueNameFromHU(hu: number): string {
+	if (hu >= 2000) return "Эмаль / Пломбировочный материал";
+	if (hu >= 1000) return "Кортикальная кость / Дентин";
+	if (hu >= 300) return "Трабекулярная губчатая кость";
+	if (hu >= 0) return "Мягкие ткани / Пульпа / Десна";
+	if (hu >= -400) return "Жировая клетчатка / Экссудат";
+	return "Воздух / Синус / Дыхательные пути";
+}
+
+/**
+ * Returns CSS cursor style corresponding to active mouse tool and interaction state.
+ */
+export function getCbctToolCursor(
+	tool: CbctActiveMouseTool,
+	isDragging: boolean,
+	hoveredHandle?: boolean,
+): string {
+	if (hoveredHandle) return "grab";
+	switch (tool) {
+		case "crosshair":
+			return "crosshair";
+		case "pan":
+			return isDragging ? "grabbing" : "grab";
+		case "zoom":
+			return isDragging ? "ns-resize" : "zoom-in";
+		case "window_level":
+			return isDragging ? "move" : "ns-resize";
+		case "rotate":
+			return isDragging ? "grabbing" : "grab";
+		case "probe":
+			return "crosshair";
+		case "ruler":
+			return "crosshair";
+		default:
+			return "crosshair";
+	}
+}
+
+/**
+ * Draws precision calibrated measurement ruler between two points on the slice canvas.
+ */
+export function drawCbctMeasurementRuler(
+	ctx: CanvasRenderingContext2D,
+	startPx: { readonly x: number; readonly y: number },
+	endPx: { readonly x: number; readonly y: number },
+	distanceMm: number,
+	isActive = false,
+): void {
+	const dx = endPx.x - startPx.x;
+	const dy = endPx.y - startPx.y;
+	const len = Math.hypot(dx, dy);
+	if (len < 1) return;
+
+	const nx = -dy / len;
+	const ny = dx / len;
+	const tickHalfLen = 5;
+
+	ctx.save();
+	ctx.strokeStyle = isActive ? "#38bdf8" : "#22d3ee";
+	ctx.lineWidth = 1.5;
+
+	// Main connecting line
+	ctx.beginPath();
+	ctx.moveTo(startPx.x, startPx.y);
+	ctx.lineTo(endPx.x, endPx.y);
+	ctx.stroke();
+
+	// Perpendicular tick at start point
+	ctx.beginPath();
+	ctx.moveTo(startPx.x + nx * tickHalfLen, startPx.y + ny * tickHalfLen);
+	ctx.lineTo(startPx.x - nx * tickHalfLen, startPx.y - ny * tickHalfLen);
+	ctx.stroke();
+
+	// Perpendicular tick at end point
+	ctx.beginPath();
+	ctx.moveTo(endPx.x + nx * tickHalfLen, endPx.y + ny * tickHalfLen);
+	ctx.lineTo(endPx.x - nx * tickHalfLen, endPx.y - ny * tickHalfLen);
+	ctx.stroke();
+
+	// End anchor circles
+	ctx.fillStyle = "#38bdf8";
+	ctx.beginPath();
+	ctx.arc(startPx.x, startPx.y, 2.5, 0, Math.PI * 2);
+	ctx.arc(endPx.x, endPx.y, 2.5, 0, Math.PI * 2);
+	ctx.fill();
+
+	// Floating distance pill badge at midpoint
+	const midX = (startPx.x + endPx.x) / 2;
+	const midY = (startPx.y + endPx.y) / 2;
+	const text = `${distanceMm.toFixed(1)} мм`;
+
+	ctx.font = "bold 10px monospace";
+	const textWidth = ctx.measureText(text).width;
+	const padX = 5;
+	const badgeW = textWidth + padX * 2;
+	const badgeH = 16;
+
+	ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+	ctx.strokeStyle = "#38bdf8";
+	ctx.lineWidth = 1.0;
+	ctx.beginPath();
+	ctx.roundRect(midX - badgeW / 2, midY - badgeH / 2, badgeW, badgeH, 3);
+	ctx.fill();
+	ctx.stroke();
+
+	ctx.fillStyle = "#ffffff";
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.fillText(text, midX, midY);
+
+	ctx.restore();
+}
+
+/**
+ * Draws point HU densitometry probe marker with target reticle and label badge.
+ */
+export function drawCbctProbeMarker(
+	ctx: CanvasRenderingContext2D,
+	posPx: { readonly x: number; readonly y: number },
+	hu: number,
+	tissueName?: string,
+): void {
+	ctx.save();
+
+	// Target reticle
+	ctx.strokeStyle = "#38bdf8";
+	ctx.lineWidth = 1.5;
+	ctx.beginPath();
+	ctx.arc(posPx.x, posPx.y, 6, 0, Math.PI * 2);
+	ctx.stroke();
+
+	// Center dot
+	ctx.fillStyle = "#f59e0b";
+	ctx.beginPath();
+	ctx.arc(posPx.x, posPx.y, 2, 0, Math.PI * 2);
+	ctx.fill();
+
+	// Crosshair ticks
+	ctx.strokeStyle = "rgba(56, 189, 248, 0.75)";
+	ctx.lineWidth = 1.0;
+	ctx.beginPath();
+	ctx.moveTo(posPx.x - 10, posPx.y);
+	ctx.lineTo(posPx.x - 6, posPx.y);
+	ctx.moveTo(posPx.x + 6, posPx.y);
+	ctx.lineTo(posPx.x + 10, posPx.y);
+	ctx.moveTo(posPx.x, posPx.y - 10);
+	ctx.lineTo(posPx.x, posPx.y - 6);
+	ctx.moveTo(posPx.x, posPx.y + 6);
+	ctx.lineTo(posPx.x, posPx.y + 10);
+	ctx.stroke();
+
+	// Info label badge
+	const label = tissueName ? `${hu} HU · ${tissueName}` : `${hu} HU`;
+	ctx.font = "bold 9px monospace";
+	const textWidth = ctx.measureText(label).width;
+	const badgeW = textWidth + 8;
+	const badgeH = 16;
+	const badgeX = posPx.x + 10;
+	const badgeY = posPx.y - 18;
+
+	ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
+	ctx.strokeStyle = "#38bdf8";
+	ctx.lineWidth = 1.0;
+	ctx.beginPath();
+	ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 3);
+	ctx.fill();
+	ctx.stroke();
+
+	ctx.fillStyle = "#38bdf8";
+	ctx.textAlign = "left";
+	ctx.textBaseline = "middle";
+	ctx.fillText(label, badgeX + 4, badgeY + badgeH / 2);
+
+	ctx.restore();
+}
+
+/**
+ * Converts a 3D physical world point (mm) to slice pixel coordinates on a given viewport.
+ */
+export function worldMmToSlicePx(
+	pointMm: Point3D,
+	plane: CbctViewportType,
+	volume: CbctVoxelVolume,
+): { x: number; y: number } {
+	const vox = worldMmToVoxel(pointMm, volume);
+	const depthMax = volume.dimensions.depth - 1;
+	switch (plane) {
+		case "axial":
+			return { x: vox.x, y: vox.y };
+		case "coronal":
+			return { x: vox.x, y: depthMax - vox.z };
+		case "sagittal":
+			return { x: vox.y, y: depthMax - vox.z };
+		default:
+			return { x: vox.x, y: vox.y };
+	}
+}
+
+/**
+ * Converts slice pixel coordinates on a given viewport back to a 3D physical world point (mm).
+ */
+export function slicePxToWorldMm(
+	pixel: { readonly x: number; readonly y: number },
+	plane: CbctViewportType,
+	currentCrosshairMm: Point3D,
+	volume: CbctVoxelVolume,
+): Point3D {
+	const curVox = worldMmToVoxel(currentCrosshairMm, volume);
+	const depthMax = volume.dimensions.depth - 1;
+	switch (plane) {
+		case "axial":
+			return voxelToWorldMm({ x: Math.round(pixel.x), y: Math.round(pixel.y), z: curVox.z }, volume);
+		case "coronal":
+			return voxelToWorldMm({ x: Math.round(pixel.x), y: curVox.y, z: depthMax - Math.round(pixel.y) }, volume);
+		case "sagittal":
+			return voxelToWorldMm({ x: curVox.x, y: Math.round(pixel.x), z: depthMax - Math.round(pixel.y) }, volume);
+		default:
+			return voxelToWorldMm({ x: Math.round(pixel.x), y: Math.round(pixel.y), z: curVox.z }, volume);
+	}
 }
 
 /**

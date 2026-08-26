@@ -56,15 +56,24 @@ import {
 	type ObliqueRotationAngles,
 	type RotationHandlePosition,
 	type ViewportTransform,
+	type CbctActiveMouseTool,
+	type CbctMeasurementRuler,
+	type CbctProbeMarker,
 	DEFAULT_OBLIQUE_ROTATION,
 	DEFAULT_VIEWPORT_TRANSFORM,
 	applyCursorZoom,
+	applyWindowLevelDrag,
 	ROMEXIS_COLORS,
 	createSyntheticDentalCbctVolume,
 	disposeCbctVolume,
 	drawCalibratedMillimeterRulers,
 	drawRomexisSlabCorridor,
 	drawObliqueCrosshairWithRotationHandles,
+	drawCbctMeasurementRuler,
+	drawCbctProbeMarker,
+	getCbctToolCursor,
+	worldMmToSlicePx,
+	slicePxToWorldMm,
 	extractMprSlice,
 	extractObliqueMprSlice,
 	getRotationHandles,
@@ -74,6 +83,7 @@ import {
 	hitTestCrosshairCenter,
 	resetPlaneObliqueAngle,
 	resetObliqueRotationAngles,
+	getTissueNameFromHU,
 	mapCanvasPointerToWorldMmWithTransform,
 	huToGrayscale,
 	sampleVoxelHU,
@@ -132,18 +142,12 @@ import {
 import type { RadiologyStudy } from "./types";
 import { showToast } from "../GlobalToast";
 import type { CbctViewportType } from "./cbctMprMath";
+import { CbctLeftToolDock, type CbctToolMode } from "./CbctLeftToolDock";
 
 export type StudioMode = "diagnostic" | "implant" | "endo" | "tmj";
 export type ViewLayoutMode = "quad_view" | "layout_1_plus_3";
 
-export function getTissueNameFromHU(hu: number): string {
-	if (hu >= 2000) return "Эмаль / Пломбировочный материал";
-	if (hu >= 1000) return "Кортикальная кость / Дентин";
-	if (hu >= 300) return "Трабекулярная губчатая кость";
-	if (hu >= 0) return "Мягкие ткани / Пульпа / Десна";
-	if (hu >= -400) return "Жировая клетчатка / Экссудат";
-	return "Воздух / Синус / Дыхательные пути";
-}
+export { getTissueNameFromHU } from "./cbctMprMath";
 
 export interface CbctMprImplantStudioModalProps {
 	readonly isOpen: boolean;
@@ -264,9 +268,18 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		cross_section: DEFAULT_VIEWPORT_TRANSFORM,
 	});
 
-	// Crosshair, Panorama and Pan dragging state
+	// Active tool mode from left dock
+	const [activeTool, setActiveTool] = useState<CbctToolMode>("crosshair");
+
+	// Crosshair, Panorama, Pan and W/L dragging state
 	const [isDraggingCrosshair, setIsDraggingCrosshair] = useState<MprPlane | null>(null);
 	const [isDraggingPano, setIsDraggingPano] = useState<boolean>(false);
+	const [isDraggingWL, setIsDraggingWL] = useState<{
+		startX: number;
+		startY: number;
+		startWW: number;
+		startWL: number;
+	} | null>(null);
 	const [isPanning, setIsPanning] = useState<{
 		plane: CbctViewportType;
 		startX: number;
@@ -274,6 +287,45 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		startPanX: number;
 		startPanY: number;
 	} | null>(null);
+
+	// Measurement rulers and HU probe markers
+	const [rulers, setRulers] = useState<CbctMeasurementRuler[]>([]);
+	const [activeRuler, setActiveRuler] = useState<{
+		plane: CbctViewportType;
+		startMm: Point3D;
+		currentMm: Point3D;
+	} | null>(null);
+	const [probeMarkers, setProbeMarkers] = useState<CbctProbeMarker[]>([]);
+	const [activeProbe, setActiveProbe] = useState<CbctProbeMarker | null>(null);
+
+	// Zoom dragging state (vertical drag)
+	const [isDraggingZoom, setIsDraggingZoom] = useState<{
+		plane: CbctViewportType;
+		startY: number;
+		startZoom: number;
+	} | null>(null);
+
+	// Modal Fullscreen State & Handler
+	const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+	const handleToggleFullscreenModal = useCallback(() => {
+		if (!document.fullscreenElement) {
+			document.documentElement.requestFullscreen?.().catch(() => {});
+			setIsFullscreen(true);
+		} else {
+			document.exitFullscreen?.().catch(() => {});
+			setIsFullscreen(false);
+		}
+	}, []);
+
+	useEffect(() => {
+		const handleFullscreenChange = () => {
+			setIsFullscreen(Boolean(document.fullscreenElement));
+		};
+		document.addEventListener("fullscreenchange", handleFullscreenChange);
+		return () => {
+			document.removeEventListener("fullscreenchange", handleFullscreenChange);
+		};
+	}, []);
 
 	// ─── KEYBOARD NAVIGATION ENGINE HANDLERS ─────────────────────────────────
 	const handleScrollSlice = useCallback((direction: "prev" | "next", stepCount: number) => {
@@ -321,6 +373,22 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		}));
 		setCrosshairMm({ x: 0, y: 0, z: 0 });
 	}, [activeViewport]);
+
+	const handleResetAll = useCallback(() => {
+		setTransforms({
+			axial: DEFAULT_VIEWPORT_TRANSFORM,
+			coronal: DEFAULT_VIEWPORT_TRANSFORM,
+			sagittal: DEFAULT_VIEWPORT_TRANSFORM,
+			panoramic: DEFAULT_VIEWPORT_TRANSFORM,
+			cross_section: DEFAULT_VIEWPORT_TRANSFORM,
+		});
+		setObliqueAngles(DEFAULT_OBLIQUE_ROTATION);
+		setCrosshairMm({ x: 0, y: 0, z: 0 });
+		setRulers([]);
+		setActiveRuler(null);
+		setProbeMarkers([]);
+		setActiveProbe(null);
+	}, []);
 
 	const handleToggleMaximizeActive = useCallback(() => {
 		setMaximizedViewport((prev) => (prev === activeViewport ? null : activeViewport));
@@ -1646,14 +1714,51 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			? obliqueAngles.coronalTiltDeg
 			: obliqueAngles.sagittalTiltDeg;
 
-		// 1. Shift + Left Click -> In-plane Oblique Rotation
-		if (e.shiftKey) {
+		// 1. Shift + Left Click or Rotate tool -> In-plane Oblique Rotation
+		if (e.shiftKey || activeTool === "rotate") {
 			setIsShiftRotating({
 				plane,
 				centerPx,
 				startPointerPx: pointerPx,
 				initialAngleDeg: rotDeg,
 			});
+			return;
+		}
+
+		// 1b. Window/Level Tool Drag
+		if (activeTool === "window_level") {
+			setIsDraggingWL({
+				startX: e.clientX,
+				startY: e.clientY,
+				startWW: windowWidth,
+				startWL: windowLevel,
+			});
+			return;
+		}
+
+		// 1c. Pan Tool Drag
+		if (activeTool === "pan" || e.button === 1) {
+			const currentTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
+			setIsPanning({
+				plane,
+				startX: e.clientX,
+				startY: e.clientY,
+				startPanX: currentTransform.panX,
+				startPanY: currentTransform.panY,
+			});
+			return;
+		}
+
+		// 1d. Zoom Tool Click / Drag
+		if (activeTool === "zoom") {
+			const zoomDelta = e.altKey ? 0.85 : 1.15;
+			setTransforms((prev) => ({
+				...prev,
+				[plane]: {
+					...prev[plane],
+					zoom: Math.max(0.5, Math.min(8.0, prev[plane].zoom * zoomDelta)),
+				},
+			}));
 			return;
 		}
 
@@ -1687,7 +1792,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			const vz = Math.round((1 - normY) * (dims.depth - 1));
 			return voxelToWorldMm({ x: v.x, y: vy, z: vz }, volume);
 		});
-	}, [volume, crosshairMm, obliqueAngles]);
+	}, [volume, crosshairMm, obliqueAngles, activeTool, windowWidth, windowLevel, transforms]);
 
 	const handleCanvasMouseMove = useCallback((plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (!volume) return;
@@ -1697,6 +1802,30 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			x: ((e.clientX - rect.left) / rect.width) * canvas.width,
 			y: ((e.clientY - rect.top) / rect.height) * canvas.height,
 		};
+
+		// 0a. Window/Level Drag
+		if (isDraggingWL) {
+			const dx = e.clientX - isDraggingWL.startX;
+			const dy = e.clientY - isDraggingWL.startY;
+			setWindowWidth(Math.max(100, Math.min(10000, Math.round(isDraggingWL.startWW + dx * 8))));
+			setWindowLevel(Math.max(-1000, Math.min(4000, Math.round(isDraggingWL.startWL - dy * 4))));
+			return;
+		}
+
+		// 0b. Viewport Pan Drag
+		if (isPanning && isPanning.plane === plane) {
+			const dx = e.clientX - isPanning.startX;
+			const dy = e.clientY - isPanning.startY;
+			setTransforms((prev) => ({
+				...prev,
+				[plane]: {
+					...prev[plane],
+					panX: isPanning.startPanX + dx,
+					panY: isPanning.startPanY + dy,
+				},
+			}));
+			return;
+		}
 
 		// 1. Shift Drag Rotation
 		if (isShiftRotating && isShiftRotating.plane === plane) {
@@ -1783,12 +1912,14 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				setHoveredHandle(null);
 			}
 		}
-	}, [volume, isShiftRotating, activeRotationHandle, isDraggingCrosshair, crosshairMm, obliqueAngles, hoveredHandle]);
+	}, [volume, isDraggingWL, isPanning, isShiftRotating, activeRotationHandle, isDraggingCrosshair, crosshairMm, obliqueAngles, hoveredHandle]);
 
 	const handleCanvasMouseUp = useCallback(() => {
 		setIsDraggingCrosshair(null);
 		setActiveRotationHandle(null);
 		setIsShiftRotating(null);
+		setIsPanning(null);
+		setIsDraggingWL(null);
 	}, []);
 
 	const handleCanvasDoubleClick = useCallback((plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -1821,8 +1952,14 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const getCanvasCursor = useCallback((plane: MprPlane) => {
 		if (isShiftRotating?.plane === plane || activeRotationHandle?.plane === plane) return "grabbing";
 		if (hoveredHandle?.plane === plane) return "grab";
+		if (activeTool === "pan") return "grab";
+		if (activeTool === "zoom") return "zoom-in";
+		if (activeTool === "window_level") return "col-resize";
+		if (activeTool === "rotate") return "crosshair";
+		if (activeTool === "ruler") return "crosshair";
+		if (activeTool === "probe") return "help";
 		return "crosshair";
-	}, [isShiftRotating, activeRotationHandle, hoveredHandle]);
+	}, [isShiftRotating, activeRotationHandle, hoveredHandle, activeTool]);
 
 	// Mouse Wheel -> Cursor-anchored Zoom (0.5x - 5.0x) or Shift+Wheel for Slices
 	const handleCanvasWheel = useCallback((viewport: CbctViewportType, e: React.WheelEvent<HTMLCanvasElement>) => {
@@ -2076,88 +2213,111 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			aria-labelledby={`cbct-studio-title-${modalId}`}
 			className="fixed inset-0 z-[100] flex flex-col bg-[#0c0e12] text-[#e2e8f0] font-sans select-none overflow-hidden"
 		>
-			{/* ─── HEADER BAR (TIER 1 HOT CONTROLS) ───────────────────────────── */}
-			<header className="min-h-14 px-4 py-1.5 bg-[#14171e] border-b border-[#242a35] flex items-center justify-between shrink-0 gap-3 overflow-x-auto">
+			{/* Real DICOM Ingestion Controls (Hidden file inputs for Left Tool Dock) */}
+			<input
+				type="file"
+				multiple
+				ref={folderInputRef}
+				onChange={handleSelectDicomFolder}
+				data-testid="cbct-dicom-files-input"
+				className="hidden"
+				aria-hidden="true"
+			/>
+			<input
+				type="file"
+				accept=".zip"
+				ref={zipInputRef}
+				onChange={handleSelectDicomZip}
+				data-testid="cbct-dicom-zip-input"
+				className="hidden"
+				aria-hidden="true"
+			/>
+
+			{/* ─── HEADER BAR (TIER 1 CLEAN STATUS & WORKSPACE SWITCHER) ─────────── */}
+			<header className="min-h-14 px-4 py-1.5 bg-[#14171e] border-b border-[#242a35] flex items-center justify-between shrink-0 gap-3">
+				{/* Left: 3D Cube Icon + Title + Quiet Study Status */}
 				<div className="flex items-center gap-2.5 shrink-0 min-w-max">
-					<div className="w-8 h-8 rounded-md bg-[#1e2430] border border-[#242a35] flex items-center justify-center text-[#38bdf8] shrink-0">
+					<div className="w-8 h-8 rounded-lg bg-[#1e2430] border border-[#242a35] flex items-center justify-center text-cyan-400 shrink-0 shadow-inner">
 						<Box className="w-4 h-4" />
 					</div>
-					<div className="shrink-0 min-w-max">
-						<h2 id={`cbct-studio-title-${modalId}`} className="text-xs font-bold text-[#e2e8f0] tracking-wide flex items-center gap-1.5 whitespace-nowrap">
-							3D КЛКТ MPR & Диагностическая Студия
-							<span className="text-[9px] px-1.5 py-0.2 rounded bg-[#1e2430] text-[#94a3b8] font-mono border border-[#242a35]">
-								Romexis 6 / Ez3D-i
-							</span>
-						</h2>
-						<p className="text-[10px] text-[#94a3b8] whitespace-nowrap">
-							Сквозная 3D проекция · Веер срезов ОПТГ · Анатомическая плотность (HU)
+					<div className="flex flex-col min-w-0">
+						<div className="flex items-center gap-2">
+							<h2 id={`cbct-studio-title-${modalId}`} className="text-xs font-bold text-[#e2e8f0] tracking-wide flex items-center gap-1.5 whitespace-nowrap">
+								3D CBCT Studio
+								<span className="text-[9px] px-1.5 py-0.5 rounded bg-[#1e2430] text-[#94a3b8] font-mono border border-[#242a35]">
+									Romexis 6 / Ez3D-i
+								</span>
+							</h2>
+						</div>
+						<p className="text-[10px] text-[#94a3b8] whitespace-nowrap" data-testid="cbct-study-quiet-status">
+							{patientDisplayName || "Барабаш С.В."} • {loadedSliceCount > 0 ? loadedSliceCount : 400} срезов • {volume ? volume.spacingMm.x.toFixed(1) : "0.2"} мм изотропный воксель
 						</p>
 					</div>
 				</div>
 
-				{/* Center Toolbar: Studio Modes, Viewport Layout, WW/WL Presets & Tools */}
-				<div className="flex items-center gap-2 overflow-x-auto shrink-0 py-1">
-					{/* 1. Clinical Studio Mode Selector (Diagnostic vs Implant vs Endo vs TMJ) */}
-					<div className="flex items-center bg-[#0c0e12] p-1 rounded-lg border border-[#242a35] shrink-0 gap-1">
-						<button
-							type="button"
-							onClick={() => handleSelectStudioMode("diagnostic")}
-							className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
-								studioMode === "diagnostic"
-									? "bg-[#1e2430] text-[#38bdf8] border border-[#38bdf8]/40 shadow-xs"
-									: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"
-							}`}
-							data-testid="cbct-mode-diagnostic-btn"
-							title="Режим общей 3D диагностики (панель свернута)"
-						>
-							<Search className="w-3.5 h-3.5 text-[#38bdf8]" />
-							<span>Диагностика</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => handleSelectStudioMode("implant")}
-							className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
-								studioMode === "implant"
-									? "bg-[#1e2430] text-[#38bdf8] border border-[#38bdf8]/40 shadow-xs"
-									: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"
-							}`}
-							data-testid="cbct-mode-implant-btn"
-							title="Планирование имплантации и контроль нерва"
-						>
-							<Compass className="w-3.5 h-3.5 text-[#38bdf8]" />
-							<span>Имплантация</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => handleSelectStudioMode("endo")}
-							className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
-								studioMode === "endo"
-									? "bg-[#1e2430] text-[#38bdf8] border border-[#38bdf8]/40 shadow-xs"
-									: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"
-							}`}
-							data-testid="cbct-mode-endo-btn"
-							title="Эндодонтия: корневые каналы и апексы"
-						>
-							<Activity className="w-3.5 h-3.5 text-[#38bdf8]" />
-							<span>Эндо</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => handleSelectStudioMode("tmj")}
-							className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
-								studioMode === "tmj"
-									? "bg-[#1e2430] text-[#38bdf8] border border-[#38bdf8]/40 shadow-xs"
-									: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"
-							}`}
-							data-testid="cbct-mode-tmj-btn"
-							title="ВНЧС: суставные головки и ямки"
-						>
-							<Ruler className="w-3.5 h-3.5 text-[#38bdf8]" />
-							<span>ВНЧС</span>
-						</button>
-					</div>
+				{/* Center: 4 Clean Workspace Modes (Romexis Segmented Switcher) */}
+				<div className="flex items-center bg-[#0c0e12] p-1 rounded-lg border border-[#242a35] shrink-0 gap-1">
+					<button
+						type="button"
+						onClick={() => handleSelectStudioMode("diagnostic")}
+						className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
+							studioMode === "diagnostic"
+								? "bg-[#1e2430] text-cyan-300 border border-cyan-500/40 shadow-xs"
+								: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"
+						}`}
+						data-testid="cbct-mode-diagnostic-btn"
+						title="Режим общей 3D диагностики (панель свернута)"
+					>
+						<Search className="w-3.5 h-3.5 text-cyan-400" />
+						<span>Диагностика</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => handleSelectStudioMode("implant")}
+						className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
+							studioMode === "implant"
+								? "bg-[#1e2430] text-cyan-300 border border-cyan-500/40 shadow-xs"
+								: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"
+						}`}
+						data-testid="cbct-mode-implant-btn"
+						title="Планирование имплантации и контроль нерва"
+					>
+						<Compass className="w-3.5 h-3.5 text-cyan-400" />
+						<span>Имплантация</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => handleSelectStudioMode("endo")}
+						className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
+							studioMode === "endo"
+								? "bg-[#1e2430] text-cyan-300 border border-cyan-500/40 shadow-xs"
+								: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"
+						}`}
+						data-testid="cbct-mode-endo-btn"
+						title="Эндодонтия: корневые каналы и апексы"
+					>
+						<Activity className="w-3.5 h-3.5 text-cyan-400" />
+						<span>Эндо</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => handleSelectStudioMode("tmj")}
+						className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
+							studioMode === "tmj"
+								? "bg-[#1e2430] text-cyan-300 border border-cyan-500/40 shadow-xs"
+								: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"
+						}`}
+						data-testid="cbct-mode-tmj-btn"
+						title="ВНЧС: суставные головки и ямки"
+					>
+						<Ruler className="w-3.5 h-3.5 text-cyan-400" />
+						<span>ВНЧС</span>
+					</button>
+				</div>
 
-					{/* 2. Viewport Layout Mode Selector */}
+				{/* Right: Layout Switcher, Sidebar Toggle with Indicator, Maximize, Close */}
+				<div className="flex items-center gap-2 shrink-0">
+					{/* Layout Switcher */}
 					<div className="flex items-center bg-[#0c0e12] p-1 rounded-lg border border-[#242a35] shrink-0 gap-1">
 						{maximizedViewport !== null ? (
 							<button
@@ -2204,7 +2364,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						)}
 					</div>
 
-					{/* 2b. Collapsible Sidebar Toggle Button */}
+					{/* Sidebar Toggle Button with Colored Indicator */}
 					<button
 						type="button"
 						onClick={() => setIsSidebarOpen((prev) => !prev)}
@@ -2216,199 +2376,28 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						title={isSidebarOpen ? "Скрыть боковую панель" : "Показать боковую панель"}
 						data-testid="cbct-toggle-sidebar-btn"
 					>
+						<span className={`w-2 h-2 rounded-full transition-colors ${isSidebarOpen ? "bg-[#38bdf8] shadow-[0_0_8px_rgba(56,189,248,0.8)]" : "bg-[#64748b]"}`} />
 						<Columns2 className="w-4 h-4" />
-						<span>{isSidebarOpen ? "Скрыть панель" : "Панель"}</span>
+						<span>Панель</span>
 					</button>
 
-					{/* 2c. Reset Oblique Angles Button */}
+					{/* Modal Maximize / Fullscreen Button */}
 					<button
 						type="button"
-						onClick={() => setObliqueAngles(DEFAULT_OBLIQUE_ROTATION)}
-						className="px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors border shadow-xs bg-[#1e2430] hover:bg-[#2a3242] text-[#38bdf8] border-[#38bdf8]/40"
-						title="Сбросить все углы наклона и вращения осей в исходные 0.0°"
-						data-testid="cbct-reset-oblique-angles-modal-btn"
-					>
-						<RotateCw className="w-4 h-4 text-sky-400" />
-						<span>↺ 0° Оси</span>
-					</button>
-
-					{/* 3. HU Window/Level Presets */}
-					<div className="flex items-center bg-[#0c0e12] p-1 rounded-lg border border-[#242a35] shrink-0 gap-1">
-						{CBCT_HOUNSFIELD_PRESETS.map((p) => (
-							<button
-								key={p.id}
-								type="button"
-								onClick={() => handleSelectPreset(p.id)}
-								className={`px-3 py-2 rounded-md text-xs font-medium whitespace-nowrap min-h-[44px] transition-colors ${
-									activePreset === p.id
-										? "bg-[#1e2430] text-[#38bdf8] font-bold border border-[#38bdf8]/40 shadow-xs"
-										: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"
-								}`}
-								data-testid={`cbct-hu-preset-${p.id}`}
-							>
-								{p.label.split(" ")[0]}
-							</button>
-						))}
-					</div>
-
-					{/* 4. Slab Thickness Modes */}
-					<div className="flex items-center bg-[#0c0e12] p-1 rounded-lg border border-[#242a35] shrink-0 gap-1">
-						<button
-							type="button"
-							onClick={() => setSlabMode("single")}
-							className={`px-3 py-2 rounded-md text-xs font-medium whitespace-nowrap min-h-[44px] flex items-center justify-center transition-colors ${slabMode === "single" ? "bg-[#1e2430] text-[#38bdf8] font-bold border border-[#38bdf8]/40 shadow-xs" : "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"}`}
-							data-testid="cbct-mpr-slab-single-btn"
-						>
-							Срез 1 мм
-						</button>
-						<button
-							type="button"
-							onClick={() => setSlabMode("mip")}
-							className={`px-3 py-2 rounded-md text-xs font-medium whitespace-nowrap min-h-[44px] flex items-center justify-center transition-colors ${slabMode === "mip" ? "bg-[#1e2430] text-[#38bdf8] font-bold border border-[#38bdf8]/40 shadow-xs" : "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"}`}
-							data-testid="cbct-mpr-slab-mip-btn"
-						>
-							Slab MIP
-						</button>
-						<button
-							type="button"
-							onClick={() => setSlabMode("average")}
-							className={`px-3 py-2 rounded-md text-xs font-medium whitespace-nowrap min-h-[44px] flex items-center justify-center transition-colors ${slabMode === "average" ? "bg-[#1e2430] text-[#38bdf8] font-bold border border-[#38bdf8]/40 shadow-xs" : "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"}`}
-							data-testid="cbct-mpr-slab-avg-btn"
-						>
-							Avg IP
-						</button>
-					</div>
-
-					{/* 4b. Oblique Rotation Toggle Button */}
-					<button
-						type="button"
-						onClick={() =>
-							setObliqueAngles((prev) =>
-								prev.axialAngleDeg === 0
-									? { axialAngleDeg: 25.0, coronalTiltDeg: -15.0, sagittalTiltDeg: 10.0 }
-									: DEFAULT_OBLIQUE_ROTATION,
-							)
-						}
-						className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors border shadow-xs ${
-							obliqueAngles.axialAngleDeg !== 0
-								? "bg-[#1e2430] text-sky-400 border-sky-500/40"
-								: "bg-[#14171e] text-[#94a3b8] border-[#242a35] hover:text-[#e2e8f0] hover:bg-[#1e2430]"
+						onClick={handleToggleFullscreenModal}
+						className={`w-11 h-11 min-h-[44px] min-w-[44px] rounded-md flex items-center justify-center border transition-colors ${
+							isFullscreen
+								? "bg-[#1e2430] text-[#38bdf8] border-[#38bdf8]/40 shadow-xs"
+								: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border-[#242a35]"
 						}`}
-						data-testid="cbct-toggle-oblique-btn"
-						title={obliqueAngles.axialAngleDeg !== 0 ? "Сбросить наклон осей (↺ 0°)" : "Вращение осей (Oblique MPR)"}
+						title={isFullscreen ? "Свернуть из полноэкранного режима" : "Развернуть на весь экран"}
+						aria-label="Полноэкранный режим"
+						data-testid="cbct-modal-maximize-btn"
 					>
-						<RotateCw className="w-4 h-4 text-sky-400" />
-						<span>{obliqueAngles.axialAngleDeg !== 0 ? `∡ ${obliqueAngles.axialAngleDeg > 0 ? "+" : ""}${obliqueAngles.axialAngleDeg.toFixed(0)}°` : "Косые оси"}</span>
+						{isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
 					</button>
 
-					{/* 5. Jaw Toggle */}
-					<div className="flex items-center bg-[#0c0e12] p-1 rounded-lg border border-[#242a35] shrink-0 gap-1">
-						<button
-							type="button"
-							onClick={() => handleToggleJawType("mandible")}
-							className={`px-3 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center justify-center transition-colors ${jawType === "mandible" ? "bg-[#1e2430] text-amber-300 border border-amber-500/40 shadow-xs" : "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"}`}
-							data-testid="cbct-jaw-mandible-btn"
-						>
-							Н. челюсть
-						</button>
-						<button
-							type="button"
-							onClick={() => handleToggleJawType("maxilla")}
-							className={`px-3 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center justify-center transition-colors ${jawType === "maxilla" ? "bg-[#1e2430] text-amber-300 border border-amber-500/40 shadow-xs" : "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"}`}
-							data-testid="cbct-jaw-maxilla-btn"
-						>
-							В. челюсть
-						</button>
-					</div>
-
-					{/* Web Audio Sentinel Mute/Unmute Toggle */}
-					<button
-						type="button"
-						onClick={() => setIsAudioEnabled((prev) => !prev)}
-						className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-2 transition-colors border ${
-							isAudioEnabled
-								? "bg-[#1e2430] text-cyan-300 border-cyan-500/40 shadow-xs"
-								: "bg-[#14171e] text-[#94a3b8] border-[#242a35] hover:text-[#e2e8f0] hover:bg-[#1e2430]"
-						}`}
-						title={isAudioEnabled ? "Звуковой алерт нерва включен" : "Звуковой алерт нерва выключен"}
-						data-testid="cbct-audio-alarm-toggle-btn"
-					>
-						{isAudioEnabled ? <Volume2 className="w-4 h-4 text-cyan-400" /> : <VolumeX className="w-4 h-4 text-[#94a3b8]" />}
-						<span>{isAudioEnabled ? "Звук IAN" : "Без звука"}</span>
-					</button>
-
-					{/* Real DICOM Ingestion Controls */}
-					<input
-						type="file"
-						multiple
-						ref={folderInputRef}
-						onChange={handleSelectDicomFolder}
-						data-testid="cbct-dicom-files-input"
-						className="hidden"
-						aria-hidden="true"
-					/>
-					<input
-						type="file"
-						accept=".zip"
-						ref={zipInputRef}
-						onChange={handleSelectDicomZip}
-						data-testid="cbct-dicom-zip-input"
-						className="hidden"
-						aria-hidden="true"
-					/>
-					<button
-						type="button"
-						onClick={() => folderInputRef.current?.click()}
-						className="px-3.5 py-2 rounded-md bg-[#1e2430] hover:bg-[#2a3242] text-[#e2e8f0] border border-[#242a35] text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-2 transition-colors shadow-xs"
-						data-testid="cbct-upload-dicom-folder-btn"
-						title="Загрузить папку реальных срезов DICOM (.dcm)"
-					>
-						<FolderOpen className="w-4 h-4 text-[#38bdf8]" />
-						<span>Папка DICOM</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => zipInputRef.current?.click()}
-						className="px-3.5 py-2 rounded-md bg-[#1e2430] hover:bg-[#2a3242] text-[#e2e8f0] border border-[#242a35] text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-2 transition-colors shadow-xs"
-						data-testid="cbct-upload-dicom-zip-btn"
-						title="Загрузить ZIP-архив КЛКТ"
-					>
-						<FileArchive className="w-4 h-4 text-[#94a3b8]" />
-						<span>ZIP КТ</span>
-					</button>
-
-					{/* Real Patient Metadata Badge */}
-					<div
-						className="hidden xl:flex items-center gap-2 px-3 py-2 bg-[#0c0e12] rounded-md border border-[#242a35] text-[11px] font-mono shrink-0 min-h-[44px]"
-						data-testid="cbct-patient-metadata-badge"
-					>
-						<span className="w-2 h-2 rounded-full bg-emerald-400" />
-						<span className="text-[#e2e8f0] font-bold">{patientDisplayName}</span>
-						<span className="text-[#64748b]">|</span>
-						<span className="text-cyan-300 font-semibold">{loadedSliceCount} срезов</span>
-						{volume && (
-							<>
-								<span className="text-[#64748b]">|</span>
-								<span className="text-[#94a3b8]">{volume.dimensions.width}x{volume.dimensions.height}x{volume.dimensions.depth}</span>
-								<span className="text-[#64748b]">|</span>
-								<span className="text-amber-300 font-semibold">{volume.spacingMm.x.toFixed(2)} мм/vox</span>
-							</>
-						)}
-					</div>
-				</div>
-
-				{/* Right Actions: 1-Click Form 043 & Close */}
-				<div className="flex items-center gap-2 shrink-0">
-					<button
-						type="button"
-						onClick={handleExportForm043Diary}
-						className="px-4 py-2 rounded-md bg-[#1e2430] hover:bg-[#2a3242] text-emerald-300 border border-emerald-500/40 text-xs font-bold shadow-xs flex items-center gap-2 min-h-[44px] whitespace-nowrap transition-colors"
-						data-testid="cbct-export-diary-btn"
-					>
-						<FileText className="w-4 h-4" />
-						<span>В карту 043/у</span>
-					</button>
-
+					{/* Modal Close Button */}
 					<button
 						type="button"
 						onClick={onClose}
@@ -2493,8 +2482,24 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				</button>
 			</div>
 
-			{/* ─── MAIN WORKSPACE (VIEWPORTS + SIDEBAR INSPECTOR) ─────────────── */}
-			<div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-1 p-1 bg-[#0c0e12] min-h-0 overflow-hidden">
+			{/* ─── MAIN WORKSPACE ROW (LEFT TOOL DOCK + VIEWPORTS + SIDEBAR) ─── */}
+			<div className="flex-1 flex flex-row min-h-0 overflow-hidden">
+				<CbctLeftToolDock
+					activeTool={activeTool}
+					onSelectTool={setActiveTool}
+					slabMode={slabMode}
+					onSelectSlabMode={setSlabMode}
+					slabThicknessMm={slabThicknessMm}
+					onChangeSlabThicknessMm={setSlabThicknessMm}
+					activePresetId={activePreset}
+					onSelectPreset={handleSelectPreset}
+					onResetAll={handleResetAll}
+					onOpenDicomFolder={() => folderInputRef.current?.click()}
+					onOpenDicomZip={() => zipInputRef.current?.click()}
+				/>
+
+				{/* ─── VIEWPORTS & SIDEBAR GRID (COLS 1..12) ───────────────────── */}
+				<div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-1 p-1 bg-[#0c0e12] min-h-0 overflow-hidden">
 				{/* ─── VIEWPORTS DISPLAY (COLS 1..8 ON DESKTOP OR 1..12 WHEN SIDEBAR COLLAPSED) ─── */}
 				<div className={`${isSidebarOpen ? "lg:col-span-8" : "lg:col-span-12"} ${mobileActiveTab === "planner" ? "hidden lg:flex" : "flex-1 flex flex-col"} min-h-0 transition-all`}>
 					{maximizedViewport !== null ? (
@@ -2813,6 +2818,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					)}
 				</aside>
 			)}
+				</div>
 			</div>
 
 			{/* ─── BOTTOM STATUS BAR: HOTKEY CHEATSHEET & TELEMETRY ────────── */}
