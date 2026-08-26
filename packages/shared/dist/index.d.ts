@@ -5311,7 +5311,7 @@ export declare const communicationTaskSchema: z.ZodObject<{
     lastEventAt: z.ZodNullable<z.ZodString>;
     createdAt: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    status: "completed" | "failed" | "queued" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
+    status: "completed" | "failed" | "queued" | "scheduled" | "sent" | "skipped" | "needs_call" | "delivered";
     id: string;
     visitId: string | null;
     documentId: string | null;
@@ -5330,7 +5330,7 @@ export declare const communicationTaskSchema: z.ZodObject<{
     workflowCode?: "telegram_tax_document_request" | "telegram_billing_document_request" | "telegram_medical_document_request" | "telegram_patient_forms_request" | "telegram_care_extraction_request" | "telegram_care_implant_request" | "telegram_care_filling_request" | "telegram_care_endo_request" | "telegram_care_surgery_request" | "telegram_care_anesthesia_request" | "telegram_care_hygiene_request" | "telegram_care_prosthetics_request" | "telegram_care_orthodontics_request" | "telegram_care_periodontology_request" | "telegram_appointment_reschedule_request" | "telegram_appointment_call_request" | "telegram_contact_request" | null | undefined;
     lastOutcome?: "callback_requested" | "no_answer" | "reschedule_requested" | "promised_payment" | "document_pickup" | null | undefined;
 }, {
-    status: "completed" | "failed" | "queued" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
+    status: "completed" | "failed" | "queued" | "scheduled" | "sent" | "skipped" | "needs_call" | "delivered";
     id: string;
     visitId: string | null;
     documentId: string | null;
@@ -5363,7 +5363,7 @@ export declare const communicationEventSchema: z.ZodObject<{
     createdAt: z.ZodString;
 }, "strip", z.ZodTypeAny, {
     message: string;
-    status: "completed" | "failed" | "queued" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
+    status: "completed" | "failed" | "queued" | "scheduled" | "sent" | "skipped" | "needs_call" | "delivered";
     id: string;
     patientId: string;
     organizationId: string;
@@ -5374,7 +5374,7 @@ export declare const communicationEventSchema: z.ZodObject<{
     direction: "inbound" | "outbound";
 }, {
     message: string;
-    status: "completed" | "failed" | "queued" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
+    status: "completed" | "failed" | "queued" | "scheduled" | "sent" | "skipped" | "needs_call" | "delivered";
     id: string;
     patientId: string;
     organizationId: string;
@@ -20225,17 +20225,17 @@ export declare const taxXmlSnapshotSchema: z.ZodObject<{
     sourceSnapshotSha256: z.ZodString;
 }, "strict", z.ZodTypeAny, {
     createdAt: string;
+    sha256: string;
     xml: string;
     sourceSnapshotSha256: string;
     fileName: string;
-    sha256: string;
     taxOfficeCode: string;
 }, {
     createdAt: string;
+    sha256: string;
     xml: string;
     sourceSnapshotSha256: string;
     fileName: string;
-    sha256: string;
     taxOfficeCode: string;
 }>;
 export type TaxXmlSnapshot = z.infer<typeof taxXmlSnapshotSchema>;
@@ -28179,17 +28179,17 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         sourceSnapshotSha256: z.ZodString;
     }, "strict", z.ZodTypeAny, {
         createdAt: string;
+        sha256: string;
         xml: string;
         sourceSnapshotSha256: string;
         fileName: string;
-        sha256: string;
         taxOfficeCode: string;
     }, {
         createdAt: string;
+        sha256: string;
         xml: string;
         sourceSnapshotSha256: string;
         fileName: string;
-        sha256: string;
         taxOfficeCode: string;
     }>>>;
     storagePath: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -29576,10 +29576,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
     } | null | undefined;
     taxXmlSnapshot?: {
         createdAt: string;
+        sha256: string;
         xml: string;
         sourceSnapshotSha256: string;
         fileName: string;
-        sha256: string;
         taxOfficeCode: string;
     } | null | undefined;
     storagePath?: string | null | undefined;
@@ -30965,10 +30965,10 @@ export declare const generatedDocumentSchema: z.ZodObject<{
     } | null | undefined;
     taxXmlSnapshot?: {
         createdAt: string;
+        sha256: string;
         xml: string;
         sourceSnapshotSha256: string;
         fileName: string;
-        sha256: string;
         taxOfficeCode: string;
     } | null | undefined;
     storagePath?: string | null | undefined;
@@ -38989,17 +38989,17 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         sourceSnapshotSha256: z.ZodString;
     }, "strict", z.ZodTypeAny, {
         createdAt: string;
+        sha256: string;
         xml: string;
         sourceSnapshotSha256: string;
         fileName: string;
-        sha256: string;
         taxOfficeCode: string;
     }, {
         createdAt: string;
+        sha256: string;
         xml: string;
         sourceSnapshotSha256: string;
         fileName: string;
-        sha256: string;
         taxOfficeCode: string;
     }>>>;
     storagePath: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -49077,17 +49077,17 @@ export declare const dashboardSchema: z.ZodObject<{
             sourceSnapshotSha256: z.ZodString;
         }, "strict", z.ZodTypeAny, {
             createdAt: string;
+            sha256: string;
             xml: string;
             sourceSnapshotSha256: string;
             fileName: string;
-            sha256: string;
             taxOfficeCode: string;
         }, {
             createdAt: string;
+            sha256: string;
             xml: string;
             sourceSnapshotSha256: string;
             fileName: string;
-            sha256: string;
             taxOfficeCode: string;
         }>>>;
         storagePath: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -49929,7 +49929,7 @@ export declare const dashboardSchema: z.ZodObject<{
         lastEventAt: z.ZodNullable<z.ZodString>;
         createdAt: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        status: "completed" | "failed" | "queued" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
+        status: "completed" | "failed" | "queued" | "scheduled" | "sent" | "skipped" | "needs_call" | "delivered";
         id: string;
         visitId: string | null;
         documentId: string | null;
@@ -49948,7 +49948,7 @@ export declare const dashboardSchema: z.ZodObject<{
         workflowCode?: "telegram_tax_document_request" | "telegram_billing_document_request" | "telegram_medical_document_request" | "telegram_patient_forms_request" | "telegram_care_extraction_request" | "telegram_care_implant_request" | "telegram_care_filling_request" | "telegram_care_endo_request" | "telegram_care_surgery_request" | "telegram_care_anesthesia_request" | "telegram_care_hygiene_request" | "telegram_care_prosthetics_request" | "telegram_care_orthodontics_request" | "telegram_care_periodontology_request" | "telegram_appointment_reschedule_request" | "telegram_appointment_call_request" | "telegram_contact_request" | null | undefined;
         lastOutcome?: "callback_requested" | "no_answer" | "reschedule_requested" | "promised_payment" | "document_pickup" | null | undefined;
     }, {
-        status: "completed" | "failed" | "queued" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
+        status: "completed" | "failed" | "queued" | "scheduled" | "sent" | "skipped" | "needs_call" | "delivered";
         id: string;
         visitId: string | null;
         documentId: string | null;
@@ -49980,7 +49980,7 @@ export declare const dashboardSchema: z.ZodObject<{
         createdAt: z.ZodString;
     }, "strip", z.ZodTypeAny, {
         message: string;
-        status: "completed" | "failed" | "queued" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
+        status: "completed" | "failed" | "queued" | "scheduled" | "sent" | "skipped" | "needs_call" | "delivered";
         id: string;
         patientId: string;
         organizationId: string;
@@ -49991,7 +49991,7 @@ export declare const dashboardSchema: z.ZodObject<{
         direction: "inbound" | "outbound";
     }, {
         message: string;
-        status: "completed" | "failed" | "queued" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
+        status: "completed" | "failed" | "queued" | "scheduled" | "sent" | "skipped" | "needs_call" | "delivered";
         id: string;
         patientId: string;
         organizationId: string;
@@ -50730,7 +50730,7 @@ export declare const dashboardSchema: z.ZodObject<{
         variables: string[];
     }[];
     communicationTasks: {
-        status: "completed" | "failed" | "queued" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
+        status: "completed" | "failed" | "queued" | "scheduled" | "sent" | "skipped" | "needs_call" | "delivered";
         id: string;
         visitId: string | null;
         documentId: string | null;
@@ -50751,7 +50751,7 @@ export declare const dashboardSchema: z.ZodObject<{
     }[];
     communicationEvents: {
         message: string;
-        status: "completed" | "failed" | "queued" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
+        status: "completed" | "failed" | "queued" | "scheduled" | "sent" | "skipped" | "needs_call" | "delivered";
         id: string;
         patientId: string;
         organizationId: string;
@@ -51400,7 +51400,7 @@ export declare const dashboardSchema: z.ZodObject<{
         variables: string[];
     }[];
     communicationTasks: {
-        status: "completed" | "failed" | "queued" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
+        status: "completed" | "failed" | "queued" | "scheduled" | "sent" | "skipped" | "needs_call" | "delivered";
         id: string;
         visitId: string | null;
         documentId: string | null;
@@ -51421,7 +51421,7 @@ export declare const dashboardSchema: z.ZodObject<{
     }[];
     communicationEvents: {
         message: string;
-        status: "completed" | "failed" | "queued" | "scheduled" | "skipped" | "needs_call" | "sent" | "delivered";
+        status: "completed" | "failed" | "queued" | "scheduled" | "sent" | "skipped" | "needs_call" | "delivered";
         id: string;
         patientId: string;
         organizationId: string;
