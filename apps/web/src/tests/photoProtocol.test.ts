@@ -41,6 +41,7 @@ import {
 	classifyHueGroup,
 	sortShadesByLightness,
 	VITA_CLASSICAL_SHADES,
+	VITA_CLASSICAL_STANDARD_SHADES,
 	VITA_3D_MASTER_SHADES,
 	Point2D,
 	ColorRGB,
@@ -313,8 +314,8 @@ describe("Clinical Dental Photography & Photo Protocol Suite", () => {
 			const hueB = classifyHueGroup({ r: 245, g: 238, b: 210 }); // Yellowish B
 			assert.equal(hueB === "B" || hueB === "Bleach", true);
 
-			const sorted = sortShadesByLightness(VITA_CLASSICAL_SHADES);
-			assert.equal(sorted[0]?.code, "B1"); // B1 is lightest
+			const sorted = sortShadesByLightness(VITA_CLASSICAL_STANDARD_SHADES);
+			assert.equal(sorted[0]?.code, "B1"); // B1 is lightest among standard 16 classical
 			assert.equal(sorted[sorted.length - 1]?.code, "C4"); // C4 is among darkest
 		});
 	});

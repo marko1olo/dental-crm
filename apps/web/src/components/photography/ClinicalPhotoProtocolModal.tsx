@@ -287,8 +287,13 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 							slotsData={slotsData}
 							beforeSlotId={beforeSlotId}
 							afterSlotId={afterSlotId}
+							clinicName={clinicName}
+							patientName={patientName}
+							patientCardNumber={patientCardNumber}
+							doctorName={doctorName}
 							onBeforeSlotChange={setBeforeSlotId}
 							onAfterSlotChange={setAfterSlotId}
+							onUpdateSlotRecord={updateSlotRecord}
 						/>
 					)}
 

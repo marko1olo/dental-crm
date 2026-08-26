@@ -14,27 +14,44 @@ import type {
 	ColorRGB,
 	ColorLab,
 	VitaShade,
-	VitaSystemType
+	VitaSystemType,
+	ShadeDeltaResult,
 } from './vitaShadesCatalog';
 import {
 	rgbToLab,
+	labToRgb,
+	colorDistanceDeltaE76,
+	colorDistanceDeltaE2000,
+	calculateShadeDelta,
+	getVitaShadeByCode,
+	VITA_CLASSICAL_BLEACH_SHADES,
+	VITA_CLASSICAL_STANDARD_SHADES,
 	VITA_CLASSICAL_SHADES,
 	VITA_3D_MASTER_SHADES,
-	ALL_VITA_SHADES
+	ALL_VITA_SHADES,
 } from './vitaShadesCatalog';
 
 export type {
 	ColorRGB,
 	ColorLab,
 	VitaShade,
-	VitaSystemType
+	VitaSystemType,
+	ShadeDeltaResult,
 };
 export {
 	rgbToLab,
+	labToRgb,
+	colorDistanceDeltaE76,
+	colorDistanceDeltaE2000,
+	calculateShadeDelta,
+	getVitaShadeByCode,
+	VITA_CLASSICAL_BLEACH_SHADES,
+	VITA_CLASSICAL_STANDARD_SHADES,
 	VITA_CLASSICAL_SHADES,
 	VITA_3D_MASTER_SHADES,
-	ALL_VITA_SHADES
+	ALL_VITA_SHADES,
 };
+
 
 export interface Point2D {
 	x: number;
@@ -200,6 +217,104 @@ export function calculateAutoLevelTransform(
 		y: (p1.y + p2.y) / 2,
 	};
 	return { rotationDegrees, center };
+}
+
+export interface BipupillaryAlignmentResult {
+	angleDegrees: number;
+	center: Point2D;
+	distancePx: number;
+	isLevel: boolean; // within +/- 0.5 degrees
+	correctionAngleDegrees: number; // angle to rotate to level
+}
+
+/**
+ * Evaluates Bipupillary Guide Line (Межзрачковая линия) alignment.
+ */
+export function calculateBipupillaryAlignment(
+	leftPupil: Point2D,
+	rightPupil: Point2D,
+	levelToleranceDegrees = 0.5
+): BipupillaryAlignmentResult {
+	const dx = rightPupil.x - leftPupil.x;
+	const dy = rightPupil.y - leftPupil.y;
+	const distancePx = Math.sqrt(dx * dx + dy * dy);
+	if (distancePx === 0) {
+		return {
+			angleDegrees: 0,
+			center: { ...leftPupil },
+			distancePx: 0,
+			isLevel: true,
+			correctionAngleDegrees: 0,
+		};
+	}
+	const angleDegrees = radiansToDegrees(Math.atan2(dy, dx));
+	const isLevel = Math.abs(angleDegrees) <= levelToleranceDegrees;
+	const center = {
+		x: (leftPupil.x + rightPupil.x) / 2,
+		y: (leftPupil.y + rightPupil.y) / 2,
+	};
+	const angleRounded = Math.round(angleDegrees * 100) / 100 || 0;
+	return {
+		angleDegrees: angleRounded,
+		center,
+		distancePx: Math.round(distancePx * 10) / 10,
+		isLevel,
+		correctionAngleDegrees: Math.round(-angleRounded * 100) / 100 || 0,
+	};
+}
+
+export interface IncisalEdgeAlignmentResult {
+	cantingAngleDegrees: number;
+	cantingDirection: 'left_high' | 'right_high' | 'level';
+	isWithinTolerance: boolean;
+	cantingMm: number;
+	descriptionRu: string;
+}
+
+/**
+ * Evaluates Incisal Edge Plane alignment and canting angle (Крен резцовой линии).
+ */
+export function calculateIncisalEdgeAlignment(
+	leftIncisalCorner: Point2D,
+	rightIncisalCorner: Point2D,
+	referenceAngleDegrees = 0,
+	toleranceDegrees = 1.0,
+	pixelToMmScale = 0.05
+): IncisalEdgeAlignmentResult {
+	const dx = rightIncisalCorner.x - leftIncisalCorner.x;
+	const dy = rightIncisalCorner.y - leftIncisalCorner.y;
+	if (dx === 0 && dy === 0) {
+		return {
+			cantingAngleDegrees: 0,
+			cantingDirection: 'level',
+			isWithinTolerance: true,
+			cantingMm: 0,
+			descriptionRu: 'Резцовая линия строго горизонтальна',
+		};
+	}
+	const rawAngle = radiansToDegrees(Math.atan2(dy, dx));
+	const cantingAngleDegrees = Math.round((rawAngle - referenceAngleDegrees) * 100) / 100 || 0;
+	const cantingMm = Math.round(Math.abs(dy * pixelToMmScale) * 10) / 10;
+	const isWithinTolerance = Math.abs(cantingAngleDegrees) <= toleranceDegrees;
+
+	let cantingDirection: 'left_high' | 'right_high' | 'level' = 'level';
+	let descriptionRu = 'Резцовая линия сбалансирована (угол в пределах нормы)';
+
+	if (cantingAngleDegrees > toleranceDegrees) {
+		cantingDirection = 'left_high';
+		descriptionRu = `Крен резцовой линии (наклон вправо вниз на ${cantingAngleDegrees.toFixed(1)}°, ~${cantingMm} мм)`;
+	} else if (cantingAngleDegrees < -toleranceDegrees) {
+		cantingDirection = 'right_high';
+		descriptionRu = `Крен резцовой линии (наклон влево вниз на ${Math.abs(cantingAngleDegrees).toFixed(1)}°, ~${cantingMm} мм)`;
+	}
+
+	return {
+		cantingAngleDegrees,
+		cantingDirection,
+		isWithinTolerance,
+		cantingMm,
+		descriptionRu,
+	};
 }
 
 // ---------------------------------------------------------------------------
@@ -445,6 +560,96 @@ export function calculateBlendDifferenceScore(rgbA: ColorRGB, rgbB: ColorRGB): n
 	return Math.sqrt(dr * dr + dg * dg + db * db) / 441.67;
 }
 
+export function calculateWiperWheelDelta(
+	currentPercent: number,
+	wheelDeltaY: number,
+	stepPercent = 2
+): number {
+	const direction = wheelDeltaY > 0 ? 1 : -1;
+	return clamp(Math.round(currentPercent + direction * stepPercent), 0, 100);
+}
+
+export function calculateKeyboardWiperDelta(
+	currentPercent: number,
+	key: string,
+	shiftKey = false
+): number {
+	const step = shiftKey ? 5 : 1;
+	switch (key) {
+		case 'ArrowLeft':
+		case 'ArrowUp':
+			return clamp(currentPercent - step, 0, 100);
+		case 'ArrowRight':
+		case 'ArrowDown':
+			return clamp(currentPercent + step, 0, 100);
+		case 'Home':
+			return 0;
+		case 'End':
+			return 100;
+		default:
+			return currentPercent;
+	}
+}
+
+export type CollageFormatType = 'A4_portrait' | 'A4_landscape' | '16_9_hd' | '16_9_4k';
+
+export interface CollageDimensionConfig {
+	widthPx: number;
+	heightPx: number;
+	aspectRatio: number;
+	labelRu: string;
+	dpi: number;
+}
+
+export function calculateCollageDimensions(format: CollageFormatType): CollageDimensionConfig {
+	switch (format) {
+		case 'A4_portrait':
+			return {
+				widthPx: 2480,
+				heightPx: 3508,
+				aspectRatio: 2480 / 3508,
+				labelRu: 'A4 Портрет (210 x 297 мм, 300 DPI)',
+				dpi: 300,
+			};
+		case 'A4_landscape':
+			return {
+				widthPx: 3508,
+				heightPx: 2480,
+				aspectRatio: 3508 / 2480,
+				labelRu: 'A4 Альбомный (297 x 210 мм, 300 DPI)',
+				dpi: 300,
+			};
+		case '16_9_4k':
+			return {
+				widthPx: 3840,
+				heightPx: 2160,
+				aspectRatio: 16 / 9,
+				labelRu: 'Презентация 4K UHD (3840 x 2160, 16:9)',
+				dpi: 150,
+			};
+		case '16_9_hd':
+		default:
+			return {
+				widthPx: 1920,
+				heightPx: 1080,
+				aspectRatio: 16 / 9,
+				labelRu: 'Презентация Full HD (1920 x 1080, 16:9)',
+				dpi: 96,
+			};
+	}
+}
+
+export function generateCollageWatermarkText(
+	clinicName: string,
+	patientName: string,
+	patientCardNumber: string,
+	doctorName: string,
+	dateStr?: string
+): string {
+	const date = dateStr || new Date().toLocaleDateString('ru-RU');
+	return `${clinicName.toUpperCase()} • Пациент: ${patientName} (${patientCardNumber}) • Врач: ${doctorName} • ${date}`;
+}
+
 // ---------------------------------------------------------------------------
 // 5. Aspect Ratio, Cropping, and Mirroring
 // ---------------------------------------------------------------------------
@@ -527,111 +732,6 @@ export function mirrorCoordinates(
 // ---------------------------------------------------------------------------
 // 6. VITA Tooth Shade Matching Engine (sRGB <-> CIELAB & Delta E)
 // ---------------------------------------------------------------------------
-
-function labInvF(t: number): number {
-	const delta = 6 / 29;
-	return t > delta ? t * t * t : 3 * delta * delta * (t - 4 / 29);
-}
-
-function linearToSRGB(c: number): number {
-	const val = c <= 0.0031308 ? c * 12.92 : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
-	return Math.max(0, Math.min(255, Math.round(val * 255)));
-}
-
-export function labToRgb(lab: ColorLab): ColorRGB {
-	const fy = (lab.L + 16) / 116;
-	const fx = lab.a / 500 + fy;
-	const fz = fy - lab.b / 200;
-
-	let x = 0.95047 * labInvF(fx);
-	let y = 1.00000 * labInvF(fy);
-	let z = 1.08883 * labInvF(fz);
-
-	const rLinear = x * 3.2404542 + y * -1.5371385 + z * -0.4985314;
-	const gLinear = x * -0.9692660 + y * 1.8760108 + z * 0.0415560;
-	const bLinear = x * 0.0556434 + y * -0.2040259 + z * 1.0572252;
-
-	return {
-		r: linearToSRGB(rLinear),
-		g: linearToSRGB(gLinear),
-		b: linearToSRGB(bLinear),
-	};
-}
-
-export function colorDistanceDeltaE76(lab1: ColorLab, lab2: ColorLab): number {
-	const dL = lab1.L - lab2.L;
-	const da = lab1.a - lab2.a;
-	const db = lab1.b - lab2.b;
-	return Math.sqrt(dL * dL + da * da + db * db);
-}
-
-export function colorDistanceDeltaE2000(lab1: ColorLab, lab2: ColorLab): number {
-	const L1 = lab1.L, a1 = lab1.a, b1 = lab1.b;
-	const L2 = lab2.L, a2 = lab2.a, b2 = lab2.b;
-
-	const avgL = (L1 + L2) / 2;
-	const C1 = Math.sqrt(a1 * a1 + b1 * b1);
-	const C2 = Math.sqrt(a2 * a2 + b2 * b2);
-	const avgC = (C1 + C2) / 2;
-
-	const G = 0.5 * (1 - Math.sqrt(Math.pow(avgC, 7) / (Math.pow(avgC, 7) + Math.pow(25, 7))));
-	const a1p = (1 + G) * a1;
-	const a2p = (1 + G) * a2;
-
-	const C1p = Math.sqrt(a1p * a1p + b1 * b1);
-	const C2p = Math.sqrt(a2p * a2p + b2 * b2);
-	const avgCp = (C1p + C2p) / 2;
-
-	let h1p = Math.atan2(b1, a1p);
-	if (h1p < 0) h1p += 2 * Math.PI;
-	let h2p = Math.atan2(b2, a2p);
-	if (h2p < 0) h2p += 2 * Math.PI;
-
-	let dhp: number;
-	if (Math.abs(h1p - h2p) <= Math.PI) {
-		dhp = h2p - h1p;
-	} else if (h2p <= h1p) {
-		dhp = h2p - h1p + 2 * Math.PI;
-	} else {
-		dhp = h2p - h1p - 2 * Math.PI;
-	}
-
-	const dLp = L2 - L1;
-	const dCp = C2p - C1p;
-	const dHp = 2 * Math.sqrt(C1p * C2p) * Math.sin(dhp / 2);
-
-	let avghp = (h1p + h2p) / 2;
-	if (Math.abs(h1p - h2p) > Math.PI) {
-		if (h1p + h2p < 2 * Math.PI) {
-			avghp += Math.PI;
-		} else {
-			avghp -= Math.PI;
-		}
-	}
-
-	const T =
-		1 -
-		0.17 * Math.cos(avghp - degreesToRadians(30)) +
-		0.24 * Math.cos(2 * avghp) +
-		0.32 * Math.cos(3 * avghp + degreesToRadians(6)) -
-		0.20 * Math.cos(4 * avghp - degreesToRadians(63));
-
-	const dTheta = degreesToRadians(30) * Math.exp(-Math.pow((radiansToDegrees(avghp) - 275) / 25, 2));
-	const RC = 2 * Math.sqrt(Math.pow(avgCp, 7) / (Math.pow(avgCp, 7) + Math.pow(25, 7)));
-	const SL = 1 + (0.015 * Math.pow(avgL - 50, 2)) / Math.sqrt(20 + Math.pow(avgL - 50, 2));
-	const SC = 1 + 0.045 * avgCp;
-	const SH = 1 + 0.015 * avgCp * T;
-	const RT = -Math.sin(2 * dTheta) * RC;
-
-	const deltaE = Math.sqrt(
-		Math.pow(dLp / SL, 2) +
-		Math.pow(dCp / SC, 2) +
-		Math.pow(dHp / SH, 2) +
-		RT * (dCp / SC) * (dHp / SH)
-	);
-
-	return deltaE;
-}
 
 export interface ShadeMatchResult {
 	shade: VitaShade;

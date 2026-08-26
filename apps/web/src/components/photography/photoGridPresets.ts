@@ -24,11 +24,13 @@ export type StandardSlotId =
 	| 'profile_90_smile'
 	| 'portrait_45_smile'
 	| 'intraoral_frontal_occlusion'
+	| 'intraoral_frontal_disclusion'
 	| 'intraoral_right_buccal'
 	| 'intraoral_left_buccal'
 	| 'intraoral_maxillary_occlusal'
 	| 'intraoral_mandibular_occlusal'
-	| 'intraoral_overjet';
+	| 'intraoral_overjet'
+	| 'intraoral_enamel_macro';
 
 export interface PhotoProtocolSlotDefinition {
 	id: StandardSlotId;
@@ -91,14 +93,18 @@ export const SILHOUETTE_PATHS = {
 	profileFace: "M70,30 C95,30 130,45 130,70 C130,85 120,95 125,105 Q145,115 130,125 Q145,135 128,145 C125,160 115,185 85,190 C60,195 45,165 45,110 C45,60 55,30 70,30 Z",
 	// 45 degree semi-profile
 	semiProfileFace: "M90,30 C125,30 155,55 155,100 C155,145 135,180 95,190 C60,180 40,150 40,105 C40,60 60,30 90,30 Z M75,85 A7,7 0 1,0 75,99 A7,7 0 1,0 75,85 Z M122,85 A7,7 0 1,0 122,99 A7,7 0 1,0 122,85 Z M85,148 Q102,160 118,148",
-	// Intraoral frontal arch & incisors
+	// Intraoral frontal arch & incisors in occlusion
 	intraoralFrontal: "M30,70 Q100,50 170,70 Q180,100 170,130 Q100,150 30,130 Q20,100 30,70 Z M65,80 L75,115 L95,115 L90,80 Z M95,78 L100,118 L108,118 L105,78 Z M110,80 L105,115 L125,115 L135,80 Z",
+	// Intraoral frontal disclusion (with 2-4mm interocclusal gap)
+	intraoralFrontalDisclusion: "M30,65 Q100,45 170,65 Q180,95 170,135 Q100,155 30,135 Q20,95 30,65 Z M65,75 L75,100 L95,100 L90,75 Z M105,75 L100,100 L120,100 L130,75 Z M65,115 L75,135 L95,135 L90,115 Z M105,115 L100,135 L120,135 L130,115 Z",
 	// Intraoral buccal lateral segment (canine-molar)
 	intraoralBuccal: "M30,80 Q100,60 170,75 L165,125 Q100,140 30,120 Z M50,90 L65,115 L85,113 L75,88 Z M90,87 L98,113 L120,112 L115,86 Z M125,85 L132,110 L155,108 L150,84 Z",
 	// Intraoral occlusal arch mirror view
 	intraoralOcclusal: "M100,35 C150,35 175,80 170,165 C145,170 125,160 100,160 C75,160 55,170 30,165 C25,80 50,35 100,35 Z M80,60 Q100,50 120,60 Q145,90 145,140 Q100,130 55,140 Q55,90 80,60 Z",
 	// Overjet / Sagittal bite close-up
 	intraoralOverjet: "M50,60 C70,60 110,65 130,85 C140,95 140,110 120,115 C95,120 70,110 50,110 Z M65,105 C80,105 105,110 115,125 C120,135 110,145 95,145 C75,145 60,135 50,135 Z",
+	// 1:1 Enamel Macro texture & perikymata close-up
+	intraoralEnamelMacro: "M40,30 L160,30 L155,160 C155,175 140,185 100,185 C60,185 45,175 45,160 Z M60,60 Q100,55 140,60 M60,85 Q100,80 140,85 M60,110 Q100,105 140,110 M75,160 Q85,175 100,175 Q115,175 125,160",
 };
 
 // ---------------------------------------------------------------------------
@@ -399,12 +405,91 @@ export const DENTAL_PHOTO_SLOTS: Record<StandardSlotId, PhotoProtocolSlotDefinit
 			'Глубина вертикального резцового перекрытия',
 			'Микрорельеф и мамелоны режущего края'
 		]
+	},
+
+	intraoral_frontal_disclusion: {
+		id: 'intraoral_frontal_disclusion',
+		category: 'intraoral',
+		titleRu: 'Фронтальный вид с разобщением (дезокклюзия)',
+		shortLabelRu: 'Фронт разобщение',
+		descriptionRu: 'Оценка режущих краев резцов верхней и нижней челюсти, формы резцовых амбразур, мамелонов, прозрачности эмали и микрорельефа без окклюзионного перекрытия.',
+		guideInstructionsRu: 'Установите двусторонние ретракторы. Пациент слегка приоткрывает рот (разобщение 2-4 мм), кончик языка убран назад. Объектив строго горизонтален.',
+		recommendedAspectRatio: '3:2',
+		recommendedFlashSetting: 'twin_flash',
+		recommendedFlashSettingRu: 'Биполярная вспышка 1:2',
+		cameraAngleDegrees: 0,
+		focalLengthMm: 100,
+		magnification: '1:2 (Фронтальный сегмент)',
+		requiresMirror: false,
+		requiresRetractor: true,
+		retractorType: 'vestibular_clear',
+		silhouetteSvgPath: SILHOUETTE_PATHS.intraoralFrontalDisclusion,
+		clinicalCheckpointsRu: [
+			'Разобщение резцов на 2-4 мм без окклюзионного контакта',
+			'Четкая визуализация формы режущих краев и резцовых амбразур',
+			'Отсутствие слюны и пузырьков в межзубных промежутках',
+			'Темный фон полости рта без видимости языка'
+		]
+	},
+
+	intraoral_enamel_macro: {
+		id: 'intraoral_enamel_macro',
+		category: 'intraoral',
+		titleRu: '1:1 Макро текстуры эмали и микрорельефа',
+		shortLabelRu: '1:1 Макро эмали',
+		descriptionRu: 'Сверхвысокая детализация текстуры эмали, перикимат, трещин, флюорозных пятен, гипоплазии и эффекта опалесценции для высокоэстетических реставраций и виниров.',
+		guideInstructionsRu: 'Макрообъектив 1:1. Установите черные фотоконтрастеры за верхние резцы. Боковой свет вспышки под углом 45° для подчеркивания текстуры и микрорельефа.',
+		recommendedAspectRatio: '3:2',
+		recommendedFlashSetting: 'dual_point',
+		recommendedFlashSettingRu: 'Боковая макровспышка с поляризационным фильтром (Cross-Polarized)',
+		cameraAngleDegrees: 0,
+		focalLengthMm: 100,
+		magnification: '1:1 (Макро текстуры)',
+		requiresMirror: false,
+		requiresRetractor: true,
+		retractorType: 'contraster',
+		silhouetteSvgPath: SILHOUETTE_PATHS.intraoralEnamelMacro,
+		clinicalCheckpointsRu: [
+			'Максимальная резкость микротекстуры (перикиматы, вертикальные валики)',
+			'Глубина и градиент опалесценции режущего края',
+			'Отсутствие паразитных бликов (поляризация / софтбокс)',
+			'Черный матовый фон контрастера'
+		]
 	}
 };
 
 // ---------------------------------------------------------------------------
 // Clinical Protocol Presets
 // ---------------------------------------------------------------------------
+
+export const AACD_DSD_12_SLOT_PROTOCOL: PhotoProtocolPreset = {
+	id: 'aacd_dsd_12_aesthetic',
+	nameRu: 'Клинический фотопротокол AACD / DSD (12 стандартных ракурсов)',
+	shortNameRu: 'AACD / DSD 12 ракурсов',
+	descriptionRu: 'Официальный международный стандарт эстетической стоматологии AACD и DSD: 4 портретных ракурса + 8 внутриротовых макроснимков 1:1.',
+	slots: [
+		DENTAL_PHOTO_SLOTS.portrait_rest,
+		DENTAL_PHOTO_SLOTS.portrait_smile_wide,
+		DENTAL_PHOTO_SLOTS.profile_90_rest,
+		DENTAL_PHOTO_SLOTS.portrait_45_smile,
+		DENTAL_PHOTO_SLOTS.intraoral_frontal_occlusion,
+		DENTAL_PHOTO_SLOTS.intraoral_frontal_disclusion,
+		DENTAL_PHOTO_SLOTS.intraoral_right_buccal,
+		DENTAL_PHOTO_SLOTS.intraoral_left_buccal,
+		DENTAL_PHOTO_SLOTS.intraoral_maxillary_occlusal,
+		DENTAL_PHOTO_SLOTS.intraoral_mandibular_occlusal,
+		DENTAL_PHOTO_SLOTS.intraoral_overjet,
+		DENTAL_PHOTO_SLOTS.intraoral_enamel_macro,
+	],
+	totalSlots: 12,
+	categoryCount: {
+		extraoral: 4,
+		intraoral: 8
+	}
+};
+
+export const AACD_12_SLOT_PROTOCOL = AACD_DSD_12_SLOT_PROTOCOL;
+export const DSD_12_SLOT_PROTOCOL = AACD_DSD_12_SLOT_PROTOCOL;
 
 export const STANDARD_12_SLOT_PROTOCOL: PhotoProtocolPreset = {
 	id: 'standard_12_ortho_aesthetic',
@@ -493,6 +578,7 @@ export const MINIMAL_3_SLOT_PROTOCOL: PhotoProtocolPreset = {
 
 export const CLINICAL_PROTOCOLS_REGISTRY: PhotoProtocolPreset[] = [
 	STANDARD_12_SLOT_PROTOCOL,
+	AACD_DSD_12_SLOT_PROTOCOL,
 	AESTHETIC_8_SLOT_PROTOCOL,
 	EXPRESS_6_SLOT_PROTOCOL,
 	MINIMAL_3_SLOT_PROTOCOL

@@ -11,6 +11,7 @@ import {
 	Coins,
 	Compass,
 	CreditCard,
+	Crown,
 	Eye,
 	FileBadge,
 	FileCheck2,
@@ -69,6 +70,7 @@ import { TreatmentPlanComparatorModal } from "../components/treatment-plans/comp
 import { WarehouseTransferModal } from "../components/inventory/transfers/WarehouseTransferModal";
 import { PatientPortalTimelineModal } from "../components/portal/timeline/PatientPortalTimelineModal";
 import { ImplantPlanningModal } from "../components/implant/ImplantPlanningModal";
+import { ImplantAbutmentStudioModal } from "../components/implant/ImplantAbutmentStudioModal";
 import { VoiceDictationAssistantModal } from "../components/voice/VoiceDictationAssistantModal";
 import { InformedConsentModal as InformedConsent323FzModal } from "../components/consents/InformedConsentModal";
 import { AnesthesiaProtocolModal } from "../components/anesthesia/AnesthesiaProtocolModal";
@@ -305,6 +307,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isTransferOpen, setIsTransferOpen] = useState(false);
 	const [isPortalOpen, setIsPortalOpen] = useState(false);
 	const [isImplantPlanningOpen, setIsImplantPlanningOpen] = useState(false);
+	const [isImplantAbutmentStudioOpen, setIsImplantAbutmentStudioOpen] = useState(false);
 	const [isVoiceAssistantOpen, setIsVoiceAssistantOpen] = useState(false);
 	const [isConsent323Open, setIsConsent323Open] = useState(false);
 	const [isAnesthesiaProtocolOpen, setIsAnesthesiaProtocolOpen] = useState(false);
@@ -976,6 +979,31 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 							<span>Открыть 3D-планировщик</span>
 						</button>
 					</div>
+
+					{/* 22b. Implant Abutment & Emergence Profile Studio Trigger */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Crown className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									Студия профиля прорезывания & Абатментов
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Расчет угла α (&lt; 30°), Platform Switching, моменты затяжки (25-35 N·cm), ASC и заказ-наряд ЗТЛ.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsImplantAbutmentStudioOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
+							data-testid="open-implant-abutment-studio-modal-btn"
+						>
+							<Crown size={15} />
+							<span>Открыть Emergence Studio</span>
+						</button>
+					</div>
+
 
 					{/* 23. Voice Dictation Assistant Modal Trigger */}
 					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
@@ -1866,6 +1894,15 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					patientName="Смирнова Екатерина Васильевна"
 				/>
 			)}
+
+			{isImplantAbutmentStudioOpen && (
+				<ImplantAbutmentStudioModal
+					isOpen={isImplantAbutmentStudioOpen}
+					onClose={() => setIsImplantAbutmentStudioOpen(false)}
+					initialToothFdi={11}
+				/>
+			)}
+
 
 			{isVoiceAssistantOpen && (
 				<VoiceDictationAssistantModal

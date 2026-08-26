@@ -6,3 +6,7 @@
 export * from "./implantCatalog";
 export * from "./implantPlanningMath";
 export * from "./ImplantPlanningModal";
+export * from "./implantEmergenceMath";
+export * from "./implantTorqueCatalog";
+export * from "./ImplantAbutmentStudioModal";
+

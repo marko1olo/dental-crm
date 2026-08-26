@@ -308,7 +308,7 @@ describe("Offline PWA, Capacitor Camera & Hardware Telemetry Suite", () => {
 			assert.strictEqual(EXPRESS_6_SLOT_PROTOCOL.totalSlots, 6);
 			assert.strictEqual(MINIMAL_3_SLOT_PROTOCOL.totalSlots, 3);
 
-			assert.strictEqual(CLINICAL_PROTOCOLS_REGISTRY.length, 4);
+			assert.strictEqual(CLINICAL_PROTOCOLS_REGISTRY.length, 5);
 			assert.strictEqual(getPresetById("aesthetic_8_prosthodontic").id, "aesthetic_8_prosthodontic");
 			assert.strictEqual(getPresetById("express_6_monitoring").id, "express_6_monitoring");
 			assert.strictEqual(getPresetById("minimal_3_therapy").id, "minimal_3_therapy");
