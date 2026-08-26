@@ -1,7 +1,7 @@
-# BRIEFING — 2026-08-27T01:23:30+04:00
+# BRIEFING — 2026-08-27T02:55:00+04:00
 
 ## Mission
-Deep Mining & Full Extraction of All 35 Dentalpin Modules & Clinical Best Practices into DENTE CRM (@dental/shared, @dental/web, docs/audit/DENTALPIN_FULL_CODEBASE_MINING.md).
+Deep Mining & Full Extraction of All 35 Dentalpin Modules, Clinical Best Practices, Laboratory Orders, Medication Catalog, Activity Journal, and Expenses into DENTE CRM.
 
 ## 🔒 My Identity
 - Archetype: sentinel
@@ -16,14 +16,16 @@ Deep Mining & Full Extraction of All 35 Dentalpin Modules & Clinical Best Practi
 - Do not write code or make technical decisions directly; keep sentinel context ultra-light
 
 ## User Context
-- **Last user request**: Domain directive to systematically inspect all 35 modules in `backend/app/modules/`, extract dental catalog structures, medication databases, ICD-10 dental mappings, ingest SEPA 6-point periodontal indices, O'Leary PCR, mobility/furcation staging into `@dental/shared` and `@dental/web`, and create master technical index in `docs/audit/DENTALPIN_FULL_CODEBASE_MINING.md`.
+- **Last user request**: Deeply inspect the remaining modules in `dentalpin/backend/app/modules/` (`lab_orders`, `medication_catalog`, `activity_journal`, `expenses`), ingest/port schemas, algorithms, and Zod contracts into `@dental/shared` and `@dental/api`, update `docs/audit/DENTALPIN_FULL_CODEBASE_MINING.md`, and achieve Exit Code 0 in `npm run typecheck`.
 - **Pending clarifications**: none
 - **Delivered results**:
-  - `docs/audit/DENTALPIN_FULL_CODEBASE_MINING.md` master technical mining index created covering all 35 modules.
-  - O'Leary Plaque Control Record (PCR) and Bleeding Index engine implemented in `packages/shared/src/perio/oleary.ts`.
-  - SEPA 6-point theoretical denominator anchoring and clinical attachment level (CAL) formulas verified in `packages/shared/src/perio/sepaIndices.ts`.
-  - Automated unit test suite in `packages/shared/src/perio/__tests__/oleary.test.ts` (718/718 tests passing in `@dental/shared`).
-  - Full TypeScript typecheck verified (`npm run typecheck` Exit Code 0 across `@dental/shared`, `@dental/api`, `@dental/web`).
+  - `packages/shared/src/lab/labOrders.ts` & `packages/shared/src/lab/index.ts`: Lab orders lifecycle, SLA calculation, VITA classical shades, state machine.
+  - `packages/shared/src/emr/medicationCatalog.ts`: 56 canonical dental medications formulary, pregnancy categories, drug-drug interaction checker.
+  - `packages/shared/src/logging/auditJournal.ts`: Immutable activity journal schema, actor/patient attribution, payload redaction.
+  - `packages/shared/src/finance/clinicExpenses.ts`: Fixed vs Variable overhead cost breakdown, chairside hourly cost calculations.
+  - `packages/shared/src/tests/dentalpinModulesMining.test.ts`: Automated test suite (735/735 tests passing in `@dental/shared`).
+  - Master technical index `docs/audit/DENTALPIN_FULL_CODEBASE_MINING.md` updated.
+  - Monorepo `npm run typecheck` verified with Exit Code 0 across `@dental/shared`, `@dental/api`, `@dental/web`.
 
 ## Project Status
 - **Phase**: complete
@@ -37,5 +39,8 @@ Deep Mining & Full Extraction of All 35 Dentalpin Modules & Clinical Best Practi
 ## Artifact Index
 - `C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md` — Authoritative record of user requests
 - `docs/audit/DENTALPIN_FULL_CODEBASE_MINING.md` — Master technical index across all 35 modules
-- `packages/shared/src/perio/oleary.ts` — O'Leary PCR & Bleeding Index calculation engine
-- `packages/shared/src/perio/__tests__/oleary.test.ts` — Unit test suite for O'Leary PCR
+- `packages/shared/src/lab/labOrders.ts` — Lab work orders & prosthodontic job tracking
+- `packages/shared/src/emr/medicationCatalog.ts` — Dental formulary & interaction checker
+- `packages/shared/src/logging/auditJournal.ts` — Activity journal & audit trail engine
+- `packages/shared/src/finance/clinicExpenses.ts` — Clinic overhead & expenses engine
+- `packages/shared/src/tests/dentalpinModulesMining.test.ts` — Unit test suite

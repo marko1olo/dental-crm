@@ -61,3 +61,37 @@ You own the UI ergonomics and deep tool card rendering:
 3. Verify with unit tests: `node --import tsx --import ./apps/web/testCssStub.mjs --test "apps/web/src/components/copilot/__tests__/CopilotDrawer.test.tsx"`.
 4. Run `npm run typecheck -w @dental/web` and report results.
 
+## 2026-08-26T23:12:41Z
+
+[AUDIT DIRECTIVE: CODEBASE CENSUS FOR ACADEMIC OVERENGINEERING & BLOAT]
+Working directory: `C:\Clinic_MVP\dental-crm`
+
+Scan `apps/web/src/components/` and `apps/web/src/`:
+Search for academic/theoretical bloat that real clinic staff never use in real commercial practice:
+1. Academic diagnostic forms with 50+ manual inputs (like theoretical TMJ condyle angle calculators, cephalometric tracing simulators, complex bite kinematic simulators, academic hygiene indexes nobody calculates).
+2. Complex multi-step wizards for trivial tasks.
+3. Unused experimental research panels or synthetic mock simulators.
+4. Mathematical formulas that complicate simple clinic workflows (e.g. theoretical bone resorption decay curves, biomechanical load distribution).
+
+List exact files, line numbers, and provide a brutal assessment: what it is, why it's useless for a commercial clinic, and what simple 1-click alternative is actually needed.
+
+## 2026-08-26T23:20:24Z
+
+[DIRECTIVE 3: WIZARD, TELEPHONY & MONOREPO CALLER CLEANUP]
+Working directory: `C:\Clinic_MVP\dental-crm`
+
+Execute the following actions:
+1. **DELETE THE FOLLOWING BLOAT FILES**:
+   - `apps/web/src/components/schedule/SeniorNurseBookingWizardModal.tsx`
+   - `apps/web/src/components/telephony/TelephonySimulatorModal.tsx`
+2. **CLEAN ALL UNREFERENCED CALLERS ACROSS**:
+   - `apps/web/src/App.tsx`
+   - `apps/web/src/AppShell.tsx`
+   - `apps/web/src/pages/ClinicalModalsStudioStandalone.tsx`
+   - `apps/web/src/components/workspace/WorkspaceFeaturesSelector.tsx`
+   - `apps/web/src/components/visit/VisitDiagnosticsTab.tsx`
+   - `apps/web/src/tests/modalPortalsSsrSafety.test.ts`
+3. Run `npm run typecheck` across all packages to verify **0 errors (Exit Code 0)**.
+4. Report back with raw typecheck output.
+
+

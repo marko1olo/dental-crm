@@ -46,3 +46,36 @@ You own the tool expansion of the AI Agentic Core:
 2. Update `apps/api/src/services/agent/agent.test.ts` to include unit test coverage for each new tool.
 3. Run `node --import tsx --test apps/api/src/services/agent/agent.test.ts` and `npm run typecheck -w @dental/api`.
 4. Report completed results with test logs.
+
+## 2026-08-26T23:12:41Z
+
+[AUDIT DIRECTIVE: CODEBASE CENSUS FOR ACADEMIC OVERENGINEERING & BLOAT]
+Working directory: `C:\Clinic_MVP\dental-crm`
+
+Scan `apps/web/src/components/` and `apps/web/src/`:
+Search for academic/theoretical bloat that real clinic staff never use in real commercial practice:
+1. Academic diagnostic forms with 50+ manual inputs (like theoretical TMJ condyle angle calculators, cephalometric tracing simulators, complex bite kinematic simulators, academic hygiene indexes nobody calculates).
+2. Complex multi-step wizards for trivial tasks.
+3. Unused experimental research panels or synthetic mock simulators.
+4. Mathematical formulas that complicate simple clinic workflows (e.g. theoretical bone resorption decay curves, biomechanical load distribution).
+
+List exact files, line numbers, and provide a brutal assessment: what it is, why it's useless for a commercial clinic, and what simple 1-click alternative is actually needed.
+
+## 2026-08-26T23:20:09Z
+
+[DIRECTIVE 1: ORTHODONTICS & PERIO BLOAT PRUNING]
+Working directory: `C:\Clinic_MVP\dental-crm`
+
+Execute the following actions:
+1. **PRESERVE TRG INTACT**:
+   - Do NOT touch or delete `apps/web/src/components/orthodontics/CephalometricAnalysisModal.tsx`, `CephalometricCanvas.tsx`, `cephalometricMath.ts`. Ensure TRG tests in `apps/web/src/components/orthodontics/__tests__/` continue to pass.
+2. **DELETE / PRUNE THE FOLLOWING BLOAT FILES**:
+   - `apps/web/src/components/orthodontics/OrthodonticBracketMatrixModal.tsx`
+   - `apps/web/src/components/orthodontics/OrthodonticBracketMatrixModal.css`
+   - `apps/web/src/components/orthodontics/bracketPrescriptions.ts`
+   - `apps/web/src/components/orthodontics/orthodonticWireSequencer.ts`
+   - `apps/web/src/components/clinical/perio/PeriodontalRiskAssessmentModal.tsx`
+   - `apps/web/src/components/clinical/perio/perioPraCalculator.ts`
+   - `apps/web/src/components/clinical/perio/perio6PointMath.ts`
+3. Clean all re-exports in `apps/web/src/components/clinical/perio/index.ts` and `apps/web/src/components/orthodontics/index.ts`.
+4. Report back when deleted and cleaned.
