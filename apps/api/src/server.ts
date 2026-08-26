@@ -70,6 +70,7 @@ import { registerPatientDuplicateRoutes } from "./routes/patientDuplicates.js";
 import { registerPatientRecallRoutes } from "./routes/patientRecall.js";
 import { registerPatientRoutes } from "./routes/patients.js";
 import { registerPerioRoutes } from "./routes/perio.js";
+import { patientPortalRoutes } from "./routes/patientPortal.js";
 import { portalRoutes } from "./routes/portal.js";
 import { registerPricelistRoutes } from "./routes/pricelist.js";
 import { registerPublicAppointmentActionRoutes } from "./routes/publicAppointmentActions.js";
@@ -721,7 +722,7 @@ export async function createDenteApiApp(
 	// apps/web обращается к /api/templates, а маршрута не существовало.
 	await registerTemplateRoutes(app);
 	await app.register(inventoryRoutes, { prefix: "/api/inventory" });
-	await app.register(portalRoutes, { prefix: "/api/portal" });
+	await app.register(patientPortalRoutes, { prefix: "/api/portal" });
 	await app.register(registerPublicBookingRoutes, {
 		prefix: "/api/public/booking",
 	});

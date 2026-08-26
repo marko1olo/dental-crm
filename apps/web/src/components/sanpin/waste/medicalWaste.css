@@ -156,6 +156,11 @@
 	background: rgba(245, 158, 11, 0.1);
 }
 
+.waste-class-card.selected-class-v {
+	border-color: #ef4444;
+	background: rgba(239, 68, 68, 0.1);
+}
+
 .waste-class-card.selected-class-g {
 	border-color: #334155;
 	background: rgba(15, 23, 42, 0.08);
@@ -223,6 +228,12 @@
 	background: #fef3c7;
 	color: #92400e;
 	border: 1px solid #f59e0b;
+}
+
+.waste-badge-class-v {
+	background: #fee2e2;
+	color: #991b1b;
+	border: 1px solid #ef4444;
 }
 
 .waste-badge-class-g {

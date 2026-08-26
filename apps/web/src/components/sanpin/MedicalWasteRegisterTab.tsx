@@ -14,15 +14,17 @@ import {
 	Filter,
 	Plus,
 	Printer,
-	Recycle,
 	Search,
 	ShieldAlert,
+	Tag,
 	Trash2,
 	Truck,
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import { MedicalWasteJournalModal } from "./waste/MedicalWasteJournalModal";
+import { generateWasteThermalStickerHtml, type MedicalWasteJournalRecord } from "./waste/medicalWasteEngine";
 
 export function MedicalWasteRegisterTab() {
 	const [logs, setLogs] = useState<MedicalWasteLog[]>([]);
@@ -30,6 +32,40 @@ export function MedicalWasteRegisterTab() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [classFilter, setClassFilter] = useState<string>("all");
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [isWasteJournalModalOpen, setIsWasteJournalModalOpen] = useState(false);
+
+	const handlePrintStickerForLog = (log: MedicalWasteLog) => {
+		const rec: MedicalWasteJournalRecord = {
+			id: log.id,
+			timestamp: log.logDate || new Date().toISOString().slice(0, 16),
+			// biome-ignore lint/suspicious/noExplicitAny: mapping
+			wasteClass: (log.wasteClass as any) || "class_B",
+			departmentNameRu: "Стоматологическое отделение",
+			// biome-ignore lint/suspicious/noExplicitAny: mapping
+			packageType: (log.packageType as any) || "yellow_bag",
+			packageCount: log.packageCount || 1,
+			grossWeightKg: Math.round(((log.weightKg || 1) + 0.1) * 100) / 100,
+			tareWeightKg: 0.1,
+			netWeightKg: log.weightKg || 1,
+			sealNumber: `ПЛ-Б-${new Date().getFullYear()}-001`,
+			barcode: `WASTE-${log.wasteClass?.toUpperCase() || "CLASS_B"}-DENT-${log.id.slice(0, 6)}`,
+			decontaminationMethod: "physical_autoclave_134",
+			storageLocation: "cabinet_room_temp",
+			operatorStaffFullName: log.responsibleStaffName || "Старшая медсестра",
+			operatorStaffPosition: "Медсестра",
+			status: log.operationType === "transfer_to_disposal_company" ? "transferred_for_disposal" : "accumulating",
+		};
+		const html = generateWasteThermalStickerHtml(rec, {
+			clinicName: "ООО «Стоматологическая клиника ДЕНТЕ»",
+			disposalContractNo: log.contractNumber || "ДОГ-МЕД-2026/04",
+		});
+		const printWin = window.open("", "_blank", "width=450,height=350");
+		if (printWin) {
+			printWin.document.write(html);
+			printWin.document.close();
+			printWin.focus();
+		}
+	};
 
 	// Form state
 	const [formOpType, setFormOpType] = useState<MedicalWasteOperationType>("accumulation");
@@ -216,14 +252,25 @@ export function MedicalWasteRegisterTab() {
 					</select>
 				</div>
 
-				<div style={{ display: "flex", gap: "0.5rem" }}>
+				<div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
+					<button
+						type="button"
+						onClick={() => setIsWasteJournalModalOpen(true)}
+						className="sanpin-btn sanpin-btn-primary"
+						style={{ minHeight: "44px", padding: "0.5rem 1.1rem", fontSize: "0.92rem", fontWeight: 800, background: "#0d9488" }}
+						title="Интерактивный технологический журнал учета отходов СанПиН 2.1.3684-21 и печать термоэтикеток"
+						data-testid="open-waste-journal-modal-btn"
+					>
+						<Tag size={16} /> [ 🏷️ Термоэтикетка 58x40 мм / Журнал СанПиН ]
+					</button>
 					<button type="button" onClick={() => window.print()} className="sanpin-btn sanpin-btn-secondary">
 						<Printer size={15} /> Печать журнала отходов
 					</button>
 					<button
 						type="button"
 						onClick={() => setIsModalOpen(true)}
-						className="sanpin-btn sanpin-btn-primary"
+						className="sanpin-btn sanpin-btn-secondary"
+						style={{ fontWeight: 700 }}
 					>
 						<Plus size={15} /> Зафиксировать отходы
 					</button>
@@ -243,6 +290,7 @@ export function MedicalWasteRegisterTab() {
 							<th>Обеззараживание на месте</th>
 							<th>Вывоз / Организация</th>
 							<th>Ответственный</th>
+							<th style={{ textAlign: "center" }}>Этикетка</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -321,6 +369,18 @@ export function MedicalWasteRegisterTab() {
 										)}
 									</td>
 									<td style={{ fontSize: "0.8rem" }}>{log.responsibleStaffName || "Медсестра ЦСО"}</td>
+									<td style={{ textAlign: "center" }}>
+										<button
+											type="button"
+											onClick={() => handlePrintStickerForLog(log)}
+											className="sanpin-btn sanpin-btn-secondary"
+											style={{ minHeight: "36px", padding: "0.3rem 0.6rem", fontSize: "0.78rem", fontWeight: 700 }}
+											title="Печать термоэтикетки 58x40 мм со штрихкодом"
+											data-testid={`print-waste-sticker-${log.id}`}
+										>
+											<Printer size={13} /> 58x40 мм
+										</button>
+									</td>
 								</tr>
 							))
 						)}
@@ -481,6 +541,12 @@ export function MedicalWasteRegisterTab() {
 					</div>
 				</div>
 			)}
+
+			{/* Full Interactive Medical Waste Accounting & Thermal Label Modal */}
+			<MedicalWasteJournalModal
+				isOpen={isWasteJournalModalOpen}
+				onClose={() => setIsWasteJournalModalOpen(false)}
+			/>
 		</div>
 	);
 }

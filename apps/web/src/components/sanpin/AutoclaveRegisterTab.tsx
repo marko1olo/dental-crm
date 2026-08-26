@@ -26,6 +26,7 @@ import { SanpinCycleModal } from "./SanpinCycleModal";
 import { KraftPackageBarcodeModal } from "./kraft/KraftPackageBarcodeModal";
 import { SeniorNurseKraftUnsealModal } from "./kraft/SeniorNurseKraftUnsealModal";
 import { AutoclaveLog257Modal } from "./autoclaveLog/AutoclaveLog257Modal";
+import { MedicalWasteJournalModal } from "./waste/MedicalWasteJournalModal";
 import { generateThermalStickerHtml, type KraftPackageRecord } from "./kraft/kraftPackageEngine";
 
 export function AutoclaveRegisterTab() {
@@ -37,6 +38,7 @@ export function AutoclaveRegisterTab() {
 	const [isKraftModalOpen, setIsKraftModalOpen] = useState(false);
 	const [isSeniorNurseUnsealOpen, setIsSeniorNurseUnsealOpen] = useState(false);
 	const [isJournal257ModalOpen, setIsJournal257ModalOpen] = useState(false);
+	const [isWasteJournalOpen, setIsWasteJournalOpen] = useState(false);
 	const [kraftPrefill, setKraftPrefill] = useState<{
 		autoclaveId?: string | undefined;
 		cycleNumber?: number | undefined;
@@ -221,6 +223,17 @@ export function AutoclaveRegisterTab() {
 						data-testid="open-senior-nurse-kraft-btn"
 					>
 						<Tag size={18} /> [ 📷 Вскрыть крафт-пакет ]
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setIsWasteJournalOpen(true)}
+						className="sanpin-btn sanpin-btn-secondary"
+						style={{ minHeight: "44px", padding: "0.45rem 0.95rem", fontSize: "0.85rem", fontWeight: 700, borderColor: "#f59e0b" }}
+						title="Журнал и утилизация медотходов классов Б и В после автоклавирования (СанПиН 2.1.3684-21)"
+						data-testid="open-autoclave-waste-btn"
+					>
+						<Tag size={16} className="text-amber-500" /> ☣️ Медотходы (СанПиН 2.1.3684-21)
 					</button>
 
 					<button
@@ -453,6 +466,12 @@ export function AutoclaveRegisterTab() {
 			<AutoclaveLog257Modal
 				isOpen={isJournal257ModalOpen}
 				onClose={() => setIsJournal257ModalOpen(false)}
+			/>
+
+			{/* Medical Waste Disposal & Decontamination Accounting Modal (SanPiN 2.1.3684-21) */}
+			<MedicalWasteJournalModal
+				isOpen={isWasteJournalOpen}
+				onClose={() => setIsWasteJournalOpen(false)}
 			/>
 		</div>
 	);

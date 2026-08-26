@@ -124,7 +124,14 @@ export function generateWasteSealNumber(
 	counter: number = Math.floor(1000 + Math.random() * 9000),
 	year: number = new Date().getFullYear(),
 ): string {
-	const letter = wasteClass === "class_A" ? "А" : wasteClass === "class_B" ? "Б" : "Г";
+	const letter =
+		wasteClass === "class_A"
+			? "А"
+			: wasteClass === "class_B"
+				? "Б"
+				: wasteClass === "class_V"
+					? "В"
+					: "Г";
 	const padded = counter.toString().padStart(5, "0");
 	return `ПЛ-${letter}-${year}-${padded}`;
 }
@@ -139,7 +146,14 @@ export function generateWasteBarcode(
 	dateStr: string = new Date().toISOString().slice(0, 10),
 	uniqueSeq?: number | undefined,
 ): string {
-	const classPart = wasteClass === "class_A" ? "CLASS_A" : wasteClass === "class_B" ? "CLASS_B" : "CLASS_G";
+	const classPart =
+		wasteClass === "class_A"
+			? "CLASS_A"
+			: wasteClass === "class_B"
+				? "CLASS_B"
+				: wasteClass === "class_V"
+					? "CLASS_V"
+					: "CLASS_G";
 	const cleanDept = departmentCode.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4) || "CAB1";
 	const datePart = dateStr.replace(/[^0-9]/g, "").slice(0, 8);
 	const seq = uniqueSeq ?? Math.floor(1000 + Math.random() * 9000);
@@ -157,7 +171,7 @@ export function parseWasteBarcode(barcode: string): {
 	sequenceId?: string | undefined;
 } {
 	const trimmed = barcode.trim();
-	const match = trimmed.match(/^WASTE-(CLASS_A|CLASS_B|CLASS_G)-([A-Z0-9]{2,6})-(\d{8})-(\d+)$/);
+	const match = trimmed.match(/^WASTE-(CLASS_A|CLASS_B|CLASS_V|CLASS_G)-([A-Z0-9]{2,6})-(\d{8})-(\d+)$/);
 	if (!match) {
 		return { isValid: false };
 	}
@@ -169,6 +183,7 @@ export function parseWasteBarcode(barcode: string): {
 
 	let wasteClass: MedicalWasteClassId = "class_B";
 	if (classPart === "CLASS_A") wasteClass = "class_A";
+	else if (classPart === "CLASS_V") wasteClass = "class_V";
 	else if (classPart === "CLASS_G") wasteClass = "class_G";
 
 	const formattedDate = rawDate
@@ -286,6 +301,7 @@ export function generateMedicalWasteTransferAct(params: {
 	> = {
 		class_A: { count: 0, totalNetWeightKg: 0, totalGrossWeightKg: 0 },
 		class_B: { count: 0, totalNetWeightKg: 0, totalGrossWeightKg: 0 },
+		class_V: { count: 0, totalNetWeightKg: 0, totalGrossWeightKg: 0 },
 		class_G: { count: 0, totalNetWeightKg: 0, totalGrossWeightKg: 0 },
 	};
 
@@ -476,6 +492,7 @@ export function generateWasteTransferActHtml(act: MedicalWasteTransferAct): stri
 		Сводка по классам опасности:<br>
 		- Класс А (эпидемиологически безопасные): ${act.totalsByClass.class_A.count} мест, масса ${act.totalsByClass.class_A.totalNetWeightKg.toFixed(2)} кг.<br>
 		- Класс Б (эпидемиологически опасные): ${act.totalsByClass.class_B.count} мест, масса ${act.totalsByClass.class_B.totalNetWeightKg.toFixed(2)} кг.<br>
+		- Класс В (чрезвычайно опасные): ${act.totalsByClass.class_V.count} мест, масса ${act.totalsByClass.class_V.totalNetWeightKg.toFixed(2)} кг.<br>
 		- Класс Г (токсикологически опасные): ${act.totalsByClass.class_G.count} мест, масса ${act.totalsByClass.class_G.totalNetWeightKg.toFixed(2)} кг.<br>
 		<strong>Общая масса нетто: ${act.totalNetWeightKg.toFixed(2)} кг (${act.totalPackagesCount} упаковочных мест/контейнеров).</strong>
 	</div>
@@ -495,6 +512,165 @@ export function generateWasteTransferActHtml(act: MedicalWasteTransferAct): stri
 			________________ / ${act.disposalCompanyInfo.driverFullName} /<br>
 			М.П.
 		</div>
+	</div>
+</body>
+</html>`;
+}
+
+/**
+ * 8. Генератор термоэтикетки (58x40 мм) для маркировки пакетов/баков медотходов СанПиН 2.1.3684-21
+ */
+export interface WasteThermalStickerOptions {
+	readonly clinicName?: string;
+	readonly clinicAddress?: string;
+	readonly disposalContractNo?: string;
+}
+
+export function generateWasteThermalStickerHtml(
+	record: MedicalWasteJournalRecord,
+	options: WasteThermalStickerOptions = {},
+): string {
+	const classDef = getMedicalWasteClass(record.wasteClass);
+	const packDef = getMedicalWastePackaging(record.packageType);
+	const decontamDef = getDecontaminationMethod(record.decontaminationMethod);
+	const clinic = options.clinicName || "ООО «ДЕНТЕ КЛИНИК»";
+	const contract = options.disposalContractNo || "ДОГ-МЕД-2026/04";
+
+	const bagColorText =
+		record.wasteClass === "class_B"
+			? "ЖЕЛТЫЙ ПАКЕТ / БАК"
+			: record.wasteClass === "class_V"
+				? "КРАСНЫЙ ПАКЕТ / БАК"
+				: record.wasteClass === "class_A"
+					? "БЕЛЫЙ ПАКЕТ"
+					: "ЧЕРНЫЙ СПЕЦКОНТЕЙНЕР";
+
+	return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8">
+	<title>Этикетка 58x40 мм СанПиН ${record.barcode}</title>
+	<style>
+		@page {
+			size: 58mm 40mm;
+			margin: 0;
+		}
+		* {
+			box-sizing: border-box;
+			margin: 0;
+			padding: 0;
+		}
+		body {
+			width: 58mm;
+			height: 40mm;
+			font-family: 'Arial', sans-serif;
+			font-size: 7pt;
+			line-height: 1.15;
+			color: #000;
+			padding: 1.5mm 2mm;
+			background: #fff;
+			overflow: hidden;
+		}
+		.header {
+			font-size: 6.5pt;
+			font-weight: bold;
+			text-align: center;
+			border-bottom: 1px solid #000;
+			padding-bottom: 1px;
+			margin-bottom: 1px;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+		.class-badge {
+			font-size: 8.5pt;
+			font-weight: 900;
+			text-align: center;
+			border: 1.5px solid #000;
+			padding: 1px 0;
+			margin: 1px 0;
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+		}
+		.grid-info {
+			display: flex;
+			justify-content: space-between;
+			margin: 1px 0;
+		}
+		.field-label {
+			font-size: 6pt;
+			color: #333;
+		}
+		.field-val {
+			font-size: 7.5pt;
+			font-weight: bold;
+		}
+		.barcode-box {
+			text-align: center;
+			margin-top: 1px;
+			border-top: 0.5px dashed #000;
+			padding-top: 1px;
+		}
+		.barcode-font {
+			font-family: 'Courier New', monospace;
+			font-size: 7.5pt;
+			font-weight: bold;
+			letter-spacing: 0.5px;
+		}
+		.barcode-bars {
+			height: 4.5mm;
+			letter-spacing: -1px;
+			font-size: 11pt;
+			font-family: 'Libre Barcode 128', 'Courier New', monospace;
+			overflow: hidden;
+			line-height: 1;
+		}
+		.footer {
+			font-size: 5.5pt;
+			display: flex;
+			justify-content: space-between;
+			margin-top: 1px;
+		}
+	</style>
+</head>
+<body onload="window.print()">
+	<div class="header">${clinic} • СанПиН 2.1.3684-21</div>
+	<div class="class-badge">ОТХОДЫ КЛАСС ${classDef.letterCode} (${bagColorText})</div>
+
+	<div class="grid-info">
+		<div>
+			<div class="field-label">Подразделение:</div>
+			<div class="field-val" style="max-width: 32mm; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${record.departmentNameRu}</div>
+		</div>
+		<div style="text-align: right;">
+			<div class="field-label">Масса НЕТТО:</div>
+			<div class="field-val" style="font-size: 8.5pt;">${record.netWeightKg.toFixed(2)} кг</div>
+		</div>
+	</div>
+
+	<div class="grid-info">
+		<div>
+			<div class="field-label">Дата/время:</div>
+			<div class="field-val">${record.timestamp.replace("T", " ")}</div>
+		</div>
+		<div style="text-align: right;">
+			<div class="field-label">Пломба / Мест:</div>
+			<div class="field-val">${record.sealNumber || "Б/П"} (${record.packageCount} шт)</div>
+		</div>
+	</div>
+
+	<div style="font-size: 5.8pt; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+		<strong>Обезвреживание:</strong> ${decontamDef.nameRu.split("(")[0]}
+	</div>
+
+	<div class="barcode-box">
+		<div class="barcode-bars">||||| | |||| || |||||| | ||||| ||||</div>
+		<div class="barcode-font">${record.barcode}</div>
+	</div>
+
+	<div class="footer">
+		<span>Отв: ${record.operatorStaffFullName}</span>
+		<span>${contract}</span>
 	</div>
 </body>
 </html>`;

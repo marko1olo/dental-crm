@@ -1,5 +1,7 @@
 import type { LandmarkPin, MeasurementRuler, RadiologyStudy } from "./types";
 
+export * from "./cbctCaliperNerveMath";
+
 /**
  * Расчет физического расстояния в миллиметрах между двумя точками на снимке.
  * @param startX - координата X начальной точки в % (0..100)

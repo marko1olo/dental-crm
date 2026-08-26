@@ -1,4 +1,15 @@
 import type { DentalRadiologyStudyType, RadiologyReferralGoal } from "@dental/shared";
+import type {
+	AlveolarRidgeCaliperMeasurement,
+	MandibularNerveSpline,
+	Point2D,
+} from "./cbctCaliperNerveMath";
+
+export type {
+	AlveolarRidgeCaliperMeasurement,
+	MandibularNerveSpline,
+	Point2D,
+};
 
 /** Модальности лучевой диагностики */
 export type RadiologyModality =
@@ -219,6 +230,8 @@ export interface RadiologyStudy {
 	metadata?: RadiologyStudyMetadata;
 	measurements?: MeasurementRuler[];
 	landmarks?: LandmarkPin[];
+	calipers?: AlveolarRidgeCaliperMeasurement[];
+	nerves?: MandibularNerveSpline[];
 	tags?: string[];
 }
 
@@ -227,6 +240,8 @@ export type RadiologyViewerTool =
 	| "pan"
 	| "zoom"
 	| "ruler"
+	| "caliper"
+	| "nerve_tracer"
 	| "landmark"
 	| "window_level";
 
@@ -245,6 +260,8 @@ export interface RadiologyViewerState {
 	activeToothSelection: string | null;
 	measurements: MeasurementRuler[];
 	landmarks: LandmarkPin[];
+	calipers: AlveolarRidgeCaliperMeasurement[];
+	nerves: MandibularNerveSpline[];
 	isHudVisible: boolean;
 	isCalibrating: boolean;
 	calibratedMmPerPixel: number; // по умолчанию 0.1 мм/пиксель

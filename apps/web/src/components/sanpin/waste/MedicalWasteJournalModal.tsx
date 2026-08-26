@@ -46,6 +46,7 @@ import {
 	generateWasteBarcode,
 	generateWasteSealNumber,
 	generateWasteTransferActHtml,
+	generateWasteThermalStickerHtml,
 	type MedicalWasteJournalRecord,
 	type MedicalWasteTransferAct,
 	validateStorageDuration,
@@ -278,6 +279,20 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 		}
 	};
 
+	// 1-клик печать термоэтикетки 58x40 мм
+	const handlePrintThermalSticker = (record: MedicalWasteJournalRecord) => {
+		const html = generateWasteThermalStickerHtml(record, {
+			clinicName: "ООО «Стоматологическая клиника ДЕНТЕ»",
+			disposalContractNo: disposalContractNo,
+		});
+		const printWin = window.open("", "_blank", "width=450,height=350");
+		if (printWin) {
+			printWin.document.write(html);
+			printWin.document.close();
+			printWin.focus();
+		}
+	};
+
 	if (!isOpen) return null;
 
 	const modalContent = (
@@ -356,7 +371,7 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 								<div className="text-xs font-bold uppercase text-muted mb-2">
 									1. Класс медицинских отходов (СанПиН 2.1.3684-21)
 								</div>
-								<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+								<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 									{SANPIN_MEDICAL_WASTE_CLASSES.map((cls) => {
 										const isSelected = selectedClass === cls.id;
 										return (
@@ -367,6 +382,8 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 														? "selected-class-a"
 														: cls.id === "class_B" && isSelected
 														? "selected-class-b"
+														: cls.id === "class_V" && isSelected
+														? "selected-class-v"
 														: isSelected
 														? "selected-class-g"
 														: ""
@@ -574,6 +591,7 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 											<th>Метод обеззараживания</th>
 											<th>Хранение / Срок</th>
 											<th>Статус</th>
+											<th className="text-center">Этикетка</th>
 										</tr>
 									</thead>
 									<tbody>
@@ -622,6 +640,18 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 																Вывезено ({r.transferActNumber})
 															</span>
 														)}
+													</td>
+													<td className="text-center">
+														<button
+															type="button"
+															onClick={() => handlePrintThermalSticker(r)}
+															className="waste-btn waste-btn-secondary min-h-[38px] px-2.5 py-1 text-xs font-bold whitespace-nowrap cursor-pointer hover:border-[var(--teal,#0d9488)]"
+															title="Печать термоэтикетки со штрихкодом 58x40 мм для бака/пакета"
+															data-testid={`print-sticker-${r.id}`}
+														>
+															<Printer size={13} className="text-[var(--teal,#0d9488)]" />
+															<span>58×40 мм</span>
+														</button>
 													</td>
 												</tr>
 											);

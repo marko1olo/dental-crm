@@ -42,6 +42,7 @@ import { CommandPalette } from "./components/CommandPalette";
 import { showToast } from "./components/GlobalToast";
 import { OnboardingWizardModal } from "./components/onboarding/OnboardingWizardModal";
 import { Omnibar } from "./components/Omnibar";
+import { OfflineConflictReviewDrawer } from "./components/offline/OfflineConflictReviewDrawer";
 import { VoiceAssistantUI } from "./components/VoiceAssistantUI";
 import { AppLogicProvider } from "./contexts/AppLogicContext";
 import { CtPlanningToolsPanel } from "./ctPlanningTools";
@@ -4135,6 +4136,12 @@ export function App() {
 						}}
 					/>
 					<Omnibar />
+					<OfflineConflictReviewDrawer
+						isOpen={false}
+						onClose={() => {}}
+						conflicts={[]}
+						onResolveConflict={() => {}}
+					/>
 					<CommandPalette
 						patients={filteredPatients}
 						onSelectPatient={(id) => {
