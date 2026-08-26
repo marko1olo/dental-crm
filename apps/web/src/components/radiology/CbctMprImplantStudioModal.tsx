@@ -53,17 +53,35 @@ import {
 	type MprPlane,
 	type Point3D,
 	type SlabProjectionMode,
+	type ObliqueRotationAngles,
+	type RotationHandlePosition,
+	type ViewportTransform,
+	DEFAULT_OBLIQUE_ROTATION,
+	DEFAULT_VIEWPORT_TRANSFORM,
+	applyCursorZoom,
 	ROMEXIS_COLORS,
 	createSyntheticDentalCbctVolume,
 	disposeCbctVolume,
 	drawCalibratedMillimeterRulers,
 	drawRomexisSlabCorridor,
+	drawObliqueCrosshairWithRotationHandles,
 	extractMprSlice,
+	extractObliqueMprSlice,
+	getRotationHandles,
+	hitTestRotationHandle,
+	calculateAngleFromHandleDrag,
+	calculateAngleFromShiftDrag,
+	hitTestCrosshairCenter,
+	resetPlaneObliqueAngle,
+	resetObliqueRotationAngles,
+	mapCanvasPointerToWorldMmWithTransform,
 	huToGrayscale,
 	sampleVoxelHU,
 	voxelToWorldMm,
 	worldMmToVoxel,
 } from "./cbctMprMath";
+import { useCbctKeyboardShortcuts, applyStepZoom } from "./useCbctKeyboardShortcuts";
+import { CbctHotkeysStatusBar } from "./CbctHotkeysStatusBar";
 import {
 	DEFAULT_MANDIBULAR_ARCH_ANCHORS,
 	DEFAULT_MAXILLARY_ARCH_ANCHORS,
@@ -115,7 +133,7 @@ import type { RadiologyStudy } from "./types";
 import { showToast } from "../GlobalToast";
 import type { CbctViewportType } from "./cbctMprMath";
 
-export type StudioMode = "diagnostic" | "implant";
+export type StudioMode = "diagnostic" | "implant" | "endo" | "tmj";
 export type ViewLayoutMode = "quad_view" | "layout_1_plus_3";
 
 export function getTissueNameFromHU(hu: number): string {
@@ -144,11 +162,21 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 	// ─── CLINICAL STUDIO MODE & VIEWPORT LAYOUT ──────────────────────────────
 	const [studioMode, setStudioMode] = useState<StudioMode>("diagnostic");
+	const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 	const [viewLayout, setViewLayout] = useState<ViewLayoutMode>("quad_view");
 	const [maximizedViewport, setMaximizedViewport] = useState<CbctViewportType | null>(null);
 
 	const handleToggleMaximize = useCallback((type: CbctViewportType) => {
 		setMaximizedViewport((prev) => (prev === type ? null : type));
+	}, []);
+
+	const handleSelectStudioMode = useCallback((mode: StudioMode) => {
+		setStudioMode(mode);
+		if (mode === "implant") {
+			setIsSidebarOpen(true);
+		} else {
+			setIsSidebarOpen(false);
+		}
 	}, []);
 
 	// ─── 3D CBCT VOXEL VOLUME STATE ───────────────────────────────────────────
@@ -160,8 +188,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const [slabMode, setSlabMode] = useState<SlabProjectionMode>("single");
 	const [slabThicknessMm, setSlabThicknessMm] = useState<number>(2.0);
 
-	// ─── SYNCHRONIZED 3D CROSSHAIR COORDINATE (PHYSICAL MM) ───────────────────
+	// ─── SYNCHRONIZED 3D CROSSHAIR COORDINATE (PHYSICAL MM) & OBLIQUE ANGLES ──
 	const [crosshairMm, setCrosshairMm] = useState<Point3D>({ x: 0, y: 0, z: 0 });
+	const [obliqueAngles, setObliqueAngles] = useState<ObliqueRotationAngles>(DEFAULT_OBLIQUE_ROTATION);
+	const [activeRotationHandle, setActiveRotationHandle] = useState<{ plane: MprPlane; handle: RotationHandlePosition; centerPx: { x: number; y: number } } | null>(null);
+	const [hoveredHandle, setHoveredHandle] = useState<{ plane: MprPlane; handle: RotationHandlePosition } | null>(null);
+	const [isShiftRotating, setIsShiftRotating] = useState<{ plane: MprPlane; centerPx: { x: number; y: number }; startPointerPx: { x: number; y: number }; initialAngleDeg: number } | null>(null);
 	const [mobileActiveTab, setMobileActiveTab] = useState<"axial" | "coronal" | "sagittal" | "panoramic" | "planner">("axial");
 
 	const sampledVoxelHU = useMemo(() => {
@@ -215,9 +247,122 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const panoImgDataRef = useRef<ImageData | null>(null);
 	const crossSectionImgDataRef = useRef<ImageData | null>(null);
 
-	// Crosshair and Panorama dragging state
+	// Offscreen canvas refs for zero-GC zoom & pan rendering
+	const axialOffscreenRef = useRef<HTMLCanvasElement | null>(null);
+	const coronalOffscreenRef = useRef<HTMLCanvasElement | null>(null);
+	const sagittalOffscreenRef = useRef<HTMLCanvasElement | null>(null);
+	const panoOffscreenRef = useRef<HTMLCanvasElement | null>(null);
+	const crossSectionOffscreenRef = useRef<HTMLCanvasElement | null>(null);
+
+	// Active viewport and transforms state
+	const [activeViewport, setActiveViewport] = useState<CbctViewportType>("axial");
+	const [transforms, setTransforms] = useState<Record<CbctViewportType, ViewportTransform>>({
+		axial: DEFAULT_VIEWPORT_TRANSFORM,
+		coronal: DEFAULT_VIEWPORT_TRANSFORM,
+		sagittal: DEFAULT_VIEWPORT_TRANSFORM,
+		panoramic: DEFAULT_VIEWPORT_TRANSFORM,
+		cross_section: DEFAULT_VIEWPORT_TRANSFORM,
+	});
+
+	// Crosshair, Panorama and Pan dragging state
 	const [isDraggingCrosshair, setIsDraggingCrosshair] = useState<MprPlane | null>(null);
 	const [isDraggingPano, setIsDraggingPano] = useState<boolean>(false);
+	const [isPanning, setIsPanning] = useState<{
+		plane: CbctViewportType;
+		startX: number;
+		startY: number;
+		startPanX: number;
+		startPanY: number;
+	} | null>(null);
+
+	// ─── KEYBOARD NAVIGATION ENGINE HANDLERS ─────────────────────────────────
+	const handleScrollSlice = useCallback((direction: "prev" | "next", stepCount: number) => {
+		if (!volume) return;
+		const vox = worldMmToVoxel(crosshairMm, volume);
+		const delta = (direction === "next" ? 1 : -1) * stepCount;
+		if (activeViewport === "axial" || activeViewport === "panoramic") {
+			const newZ = Math.max(0, Math.min(volume.dimensions.depth - 1, vox.z + delta));
+			setCrosshairMm((prev) => voxelToWorldMm({ x: vox.x, y: vox.y, z: newZ }, volume));
+		} else if (activeViewport === "coronal") {
+			const newY = Math.max(0, Math.min(volume.dimensions.height - 1, vox.y + delta));
+			setCrosshairMm((prev) => voxelToWorldMm({ x: vox.x, y: newY, z: vox.z }, volume));
+		} else if (activeViewport === "sagittal") {
+			const newX = Math.max(0, Math.min(volume.dimensions.width - 1, vox.x + delta));
+			setCrosshairMm((prev) => voxelToWorldMm({ x: newX, y: vox.y, z: vox.z }, volume));
+		} else if (activeViewport === "cross_section") {
+			setActiveCrossSectionIdx((prev) => Math.max(0, Math.min(crossSections.length - 1, prev + delta)));
+		}
+	}, [volume, crosshairMm, activeViewport, crossSections.length]);
+
+	const handleNavigateCrossSection = useCallback((direction: "prev" | "next", stepCount: number) => {
+		if (crossSections.length === 0) return;
+		const delta = (direction === "next" ? 1 : -1) * stepCount;
+		setActiveCrossSectionIdx((prev) => {
+			const nextIdx = Math.max(0, Math.min(crossSections.length - 1, prev + delta));
+			const cs = crossSections[nextIdx];
+			if (cs) {
+				setCrosshairMm(cs.centerPointMm);
+			}
+			return nextIdx;
+		});
+	}, [crossSections]);
+
+	const handleKeyboardZoom = useCallback((direction: "in" | "out", percent = 10) => {
+		setTransforms((prev) => ({
+			...prev,
+			[activeViewport]: applyStepZoom(prev[activeViewport] ?? DEFAULT_VIEWPORT_TRANSFORM, direction, percent),
+		}));
+	}, [activeViewport]);
+
+	const handleResetTransform = useCallback(() => {
+		setTransforms((prev) => ({
+			...prev,
+			[activeViewport]: DEFAULT_VIEWPORT_TRANSFORM,
+		}));
+		setCrosshairMm({ x: 0, y: 0, z: 0 });
+	}, [activeViewport]);
+
+	const handleToggleMaximizeActive = useCallback(() => {
+		setMaximizedViewport((prev) => (prev === activeViewport ? null : activeViewport));
+	}, [activeViewport]);
+
+	const handleTogglePanel = useCallback(() => {
+		setIsSidebarOpen((prev) => !prev);
+	}, []);
+
+	const handleToggleStudioMode = useCallback(() => {
+		setStudioMode((prev) => (prev === "diagnostic" ? "implant" : "diagnostic"));
+	}, []);
+
+	// Update Window/Level when preset selected
+	const handleSelectPreset = useCallback((presetId: string) => {
+		setActivePreset(presetId);
+		const found = CBCT_HOUNSFIELD_PRESETS.find((p) => p.id === presetId);
+		if (found) {
+			setWindowWidth(found.windowWidth);
+			setWindowLevel(found.windowLevel);
+		}
+	}, []);
+
+	const handleSelectPresetShortcut = useCallback((preset: "bone" | "endo" | "soft") => {
+		const presetId = preset === "bone" ? "bone_dense" : preset === "endo" ? "enamel_dentin" : "soft_tissue";
+		handleSelectPreset(presetId);
+	}, [handleSelectPreset]);
+
+	const { isHelpOpen, toggleHelp } = useCbctKeyboardShortcuts({
+		enabled: isOpen,
+		activeViewport,
+		setActiveViewport,
+		viewports: ["axial", "coronal", "sagittal", "panoramic", "cross_section"],
+		onScrollSlice: handleScrollSlice,
+		onNavigateCrossSection: handleNavigateCrossSection,
+		onZoom: handleKeyboardZoom,
+		onResetTransform: handleResetTransform,
+		onToggleMaximize: handleToggleMaximizeActive,
+		onTogglePanel: handleTogglePanel,
+		onToggleMode: handleToggleStudioMode,
+		onSelectPreset: handleSelectPresetShortcut,
+	});
 
 	// Initialize Volume on Open
 	useEffect(() => {
@@ -235,6 +380,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				const anchors = jawType === "mandible" ? DEFAULT_MANDIBULAR_ARCH_ANCHORS : DEFAULT_MAXILLARY_ARCH_ANCHORS;
 				const arch = buildDentalArchCurve(anchors, jawType);
 				setArchCurve(arch);
+			};
+			(window as unknown as { __SET_CBCT_OBLIQUE_ANGLES__?: (angles: ObliqueRotationAngles) => void }).__SET_CBCT_OBLIQUE_ANGLES__ = (angles: ObliqueRotationAngles) => {
+				setObliqueAngles(angles);
 			};
 		}
 
@@ -393,16 +541,6 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		setArchCurve(newArch);
 	}, []);
 
-	// Update Window/Level when preset selected
-	const handleSelectPreset = useCallback((presetId: string) => {
-		setActivePreset(presetId);
-		const found = CBCT_HOUNSFIELD_PRESETS.find((p) => p.id === presetId);
-		if (found) {
-			setWindowWidth(found.windowWidth);
-			setWindowLevel(found.windowLevel);
-		}
-	}, []);
-
 	// Active implant spec
 	const currentImplantSpec: VirtualImplantSpec = useMemo(() => {
 		const match = STANDARD_IMPLANT_CATALOG.find(
@@ -484,10 +622,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 	// ─── AUDIO ALARM SENTINEL EFFECT ──────────────────────────────────────────
 	useEffect(() => {
-		if (nerveAuditResult.shouldTriggerAudioAlarm && isAudioEnabled) {
+		if (studioMode === "implant" && nerveAuditResult.shouldTriggerAudioAlarm && isAudioEnabled) {
 			playNerveSafetyAudioAlarm(nerveAuditResult.safetyStatus, isAudioEnabled);
 		}
-	}, [nerveAuditResult.shouldTriggerAudioAlarm, nerveAuditResult.safetyStatus, isAudioEnabled]);
+	}, [studioMode, nerveAuditResult.shouldTriggerAudioAlarm, nerveAuditResult.safetyStatus, isAudioEnabled]);
 
 	// ─── RENDER 3-PLANE MPR SLICES (ZERO-GC CANVAS) ───────────────────────────
 	useEffect(() => {
@@ -500,22 +638,42 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			const canvas = axialCanvasRef.current;
 			const ctx = canvas.getContext("2d");
 			if (ctx) {
-				const { data, metadata } = extractMprSlice(volume, "axial", vox.z, {
+				const { data, metadata } = extractObliqueMprSlice(volume, "axial", crosshairMm, obliqueAngles, {
 					windowWidth,
 					windowLevel,
 					invert: invertColors,
 					slabMode,
 					slabThicknessMm,
+					interpolation: "trilinear",
 				});
+				if (!axialOffscreenRef.current) {
+					axialOffscreenRef.current = document.createElement("canvas");
+				}
+				const off = axialOffscreenRef.current;
+				if (off.width !== metadata.widthPx || off.height !== metadata.heightPx) {
+					off.width = metadata.widthPx;
+					off.height = metadata.heightPx;
+				}
+				const offCtx = off.getContext("2d");
+				if (offCtx) {
+					if (!axialImgDataRef.current || axialImgDataRef.current.width !== metadata.widthPx || axialImgDataRef.current.height !== metadata.heightPx) {
+						axialImgDataRef.current = offCtx.createImageData(metadata.widthPx, metadata.heightPx);
+					}
+					axialImgDataRef.current.data.set(data);
+					offCtx.putImageData(axialImgDataRef.current, 0, 0);
+				}
+
 				if (canvas.width !== metadata.widthPx || canvas.height !== metadata.heightPx) {
 					canvas.width = metadata.widthPx;
 					canvas.height = metadata.heightPx;
 				}
-				if (!axialImgDataRef.current || axialImgDataRef.current.width !== metadata.widthPx || axialImgDataRef.current.height !== metadata.heightPx) {
-					axialImgDataRef.current = ctx.createImageData(metadata.widthPx, metadata.heightPx);
-				}
-				axialImgDataRef.current.data.set(data);
-				ctx.putImageData(axialImgDataRef.current, 0, 0);
+
+				ctx.save();
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
+				const transform = transforms.axial ?? DEFAULT_VIEWPORT_TRANSFORM;
+				ctx.translate(transform.panX, transform.panY);
+				ctx.scale(transform.zoom, transform.zoom);
+				ctx.drawImage(off, 0, 0);
 
 				// Draw Calibrated Millimeter Rulers (1mm, 5mm, 10mm + scale bar)
 				drawCalibratedMillimeterRulers(ctx, {
@@ -691,34 +849,20 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					});
 				}
 
-				// Coronal Crosshair Line (Horizontal: Orange #f59e0b)
-				ctx.strokeStyle = ROMEXIS_COLORS.coronal;
-				ctx.lineWidth = 1.2;
-				ctx.beginPath();
-				ctx.moveTo(0, vox.y);
-				ctx.lineTo(canvas.width, vox.y);
-				ctx.stroke();
+				// Draw Oblique Crosshair with Rotation Handles & Clinical Rotation Badge
+				drawObliqueCrosshairWithRotationHandles(ctx, {
+					widthPx: metadata.widthPx,
+					heightPx: metadata.heightPx,
+					centerPx: { x: vox.x, y: vox.y },
+					plane: "axial",
+					rotationDeg: obliqueAngles.axialAngleDeg,
+					activeHandle: activeRotationHandle?.plane === "axial" ? activeRotationHandle.handle : null,
+					hoveredHandle: hoveredHandle?.plane === "axial" ? hoveredHandle.handle : null,
+					showHandles: true,
+					showAngleBadge: true,
+				});
 
-				// Sagittal Slab MIP Bounding Corridor (Emerald Green #10b981)
-				if (slabMode !== "single" && slabThicknessMm > 1.0) {
-					drawRomexisSlabCorridor(ctx, {
-						orientation: "vertical",
-						centerPx: vox.x,
-						thicknessMm: slabThicknessMm,
-						pixelSpacingMm: metadata.pixelSpacingX,
-						lengthPx: metadata.heightPx,
-						colorRgba: ROMEXIS_COLORS.sagittalRgba(0.65),
-						fillColorRgba: ROMEXIS_COLORS.sagittalRgba(0.08),
-					});
-				}
-
-				// Sagittal Crosshair Line (Vertical: Emerald Green #10b981)
-				ctx.strokeStyle = ROMEXIS_COLORS.sagittal;
-				ctx.lineWidth = 1.2;
-				ctx.beginPath();
-				ctx.moveTo(vox.x, 0);
-				ctx.lineTo(vox.x, canvas.height);
-				ctx.stroke();
+				ctx.restore();
 			}
 		}
 
@@ -727,22 +871,42 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			const canvas = coronalCanvasRef.current;
 			const ctx = canvas.getContext("2d");
 			if (ctx) {
-				const { data, metadata } = extractMprSlice(volume, "coronal", vox.y, {
+				const { data, metadata } = extractObliqueMprSlice(volume, "coronal", crosshairMm, obliqueAngles, {
 					windowWidth,
 					windowLevel,
 					invert: invertColors,
 					slabMode,
 					slabThicknessMm,
+					interpolation: "trilinear",
 				});
+				if (!coronalOffscreenRef.current) {
+					coronalOffscreenRef.current = document.createElement("canvas");
+				}
+				const off = coronalOffscreenRef.current;
+				if (off.width !== metadata.widthPx || off.height !== metadata.heightPx) {
+					off.width = metadata.widthPx;
+					off.height = metadata.heightPx;
+				}
+				const offCtx = off.getContext("2d");
+				if (offCtx) {
+					if (!coronalImgDataRef.current || coronalImgDataRef.current.width !== metadata.widthPx || coronalImgDataRef.current.height !== metadata.heightPx) {
+						coronalImgDataRef.current = offCtx.createImageData(metadata.widthPx, metadata.heightPx);
+					}
+					coronalImgDataRef.current.data.set(data);
+					offCtx.putImageData(coronalImgDataRef.current, 0, 0);
+				}
+
 				if (canvas.width !== metadata.widthPx || canvas.height !== metadata.heightPx) {
 					canvas.width = metadata.widthPx;
 					canvas.height = metadata.heightPx;
 				}
-				if (!coronalImgDataRef.current || coronalImgDataRef.current.width !== metadata.widthPx || coronalImgDataRef.current.height !== metadata.heightPx) {
-					coronalImgDataRef.current = ctx.createImageData(metadata.widthPx, metadata.heightPx);
-				}
-				coronalImgDataRef.current.data.set(data);
-				ctx.putImageData(coronalImgDataRef.current, 0, 0);
+
+				ctx.save();
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
+				const transform = transforms.coronal ?? DEFAULT_VIEWPORT_TRANSFORM;
+				ctx.translate(transform.panX, transform.panY);
+				ctx.scale(transform.zoom, transform.zoom);
+				ctx.drawImage(off, 0, 0);
 
 				// Draw Calibrated Millimeter Rulers
 				drawCalibratedMillimeterRulers(ctx, {
@@ -848,34 +1012,20 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					});
 				}
 
-				// Axial Crosshair Line (Horizontal: Cyan #06b6d4)
-				ctx.strokeStyle = ROMEXIS_COLORS.axial;
-				ctx.lineWidth = 1.2;
-				ctx.beginPath();
-				ctx.moveTo(0, zPx);
-				ctx.lineTo(canvas.width, zPx);
-				ctx.stroke();
+				// Draw Oblique Crosshair with Rotation Handles & Clinical Tilt Badge
+				drawObliqueCrosshairWithRotationHandles(ctx, {
+					widthPx: metadata.widthPx,
+					heightPx: metadata.heightPx,
+					centerPx: { x: vox.x, y: zPx },
+					plane: "coronal",
+					rotationDeg: obliqueAngles.coronalTiltDeg,
+					activeHandle: activeRotationHandle?.plane === "coronal" ? activeRotationHandle.handle : null,
+					hoveredHandle: hoveredHandle?.plane === "coronal" ? hoveredHandle.handle : null,
+					showHandles: true,
+					showAngleBadge: true,
+				});
 
-				// Sagittal Slab MIP Bounding Corridor (Emerald Green #10b981)
-				if (slabMode !== "single" && slabThicknessMm > 1.0) {
-					drawRomexisSlabCorridor(ctx, {
-						orientation: "vertical",
-						centerPx: vox.x,
-						thicknessMm: slabThicknessMm,
-						pixelSpacingMm: metadata.pixelSpacingX,
-						lengthPx: metadata.heightPx,
-						colorRgba: ROMEXIS_COLORS.sagittalRgba(0.65),
-						fillColorRgba: ROMEXIS_COLORS.sagittalRgba(0.08),
-					});
-				}
-
-				// Sagittal Crosshair Line (Vertical: Emerald Green #10b981)
-				ctx.strokeStyle = ROMEXIS_COLORS.sagittal;
-				ctx.lineWidth = 1.2;
-				ctx.beginPath();
-				ctx.moveTo(vox.x, 0);
-				ctx.lineTo(vox.x, canvas.height);
-				ctx.stroke();
+				ctx.restore();
 			}
 		}
 
@@ -884,22 +1034,42 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			const canvas = sagittalCanvasRef.current;
 			const ctx = canvas.getContext("2d");
 			if (ctx) {
-				const { data, metadata } = extractMprSlice(volume, "sagittal", vox.x, {
+				const { data, metadata } = extractObliqueMprSlice(volume, "sagittal", crosshairMm, obliqueAngles, {
 					windowWidth,
 					windowLevel,
 					invert: invertColors,
 					slabMode,
 					slabThicknessMm,
+					interpolation: "trilinear",
 				});
+				if (!sagittalOffscreenRef.current) {
+					sagittalOffscreenRef.current = document.createElement("canvas");
+				}
+				const off = sagittalOffscreenRef.current;
+				if (off.width !== metadata.widthPx || off.height !== metadata.heightPx) {
+					off.width = metadata.widthPx;
+					off.height = metadata.heightPx;
+				}
+				const offCtx = off.getContext("2d");
+				if (offCtx) {
+					if (!sagittalImgDataRef.current || sagittalImgDataRef.current.width !== metadata.widthPx || sagittalImgDataRef.current.height !== metadata.heightPx) {
+						sagittalImgDataRef.current = offCtx.createImageData(metadata.widthPx, metadata.heightPx);
+					}
+					sagittalImgDataRef.current.data.set(data);
+					offCtx.putImageData(sagittalImgDataRef.current, 0, 0);
+				}
+
 				if (canvas.width !== metadata.widthPx || canvas.height !== metadata.heightPx) {
 					canvas.width = metadata.widthPx;
 					canvas.height = metadata.heightPx;
 				}
-				if (!sagittalImgDataRef.current || sagittalImgDataRef.current.width !== metadata.widthPx || sagittalImgDataRef.current.height !== metadata.heightPx) {
-					sagittalImgDataRef.current = ctx.createImageData(metadata.widthPx, metadata.heightPx);
-				}
-				sagittalImgDataRef.current.data.set(data);
-				ctx.putImageData(sagittalImgDataRef.current, 0, 0);
+
+				ctx.save();
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
+				const transform = transforms.sagittal ?? DEFAULT_VIEWPORT_TRANSFORM;
+				ctx.translate(transform.panX, transform.panY);
+				ctx.scale(transform.zoom, transform.zoom);
+				ctx.drawImage(off, 0, 0);
 
 				// Draw Calibrated Millimeter Rulers
 				drawCalibratedMillimeterRulers(ctx, {
@@ -1005,37 +1175,23 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					});
 				}
 
-				// Axial Crosshair Line (Horizontal: Cyan #06b6d4)
-				ctx.strokeStyle = ROMEXIS_COLORS.axial;
-				ctx.lineWidth = 1.2;
-				ctx.beginPath();
-				ctx.moveTo(0, zPx);
-				ctx.lineTo(canvas.width, zPx);
-				ctx.stroke();
+				// Draw Oblique Crosshair with Rotation Handles & Clinical Tilt Badge
+				drawObliqueCrosshairWithRotationHandles(ctx, {
+					widthPx: metadata.widthPx,
+					heightPx: metadata.heightPx,
+					centerPx: { x: vox.y, y: zPx },
+					plane: "sagittal",
+					rotationDeg: obliqueAngles.sagittalTiltDeg,
+					activeHandle: activeRotationHandle?.plane === "sagittal" ? activeRotationHandle.handle : null,
+					hoveredHandle: hoveredHandle?.plane === "sagittal" ? hoveredHandle.handle : null,
+					showHandles: true,
+					showAngleBadge: true,
+				});
 
-				// Coronal Slab MIP Bounding Corridor (Orange #f59e0b)
-				if (slabMode !== "single" && slabThicknessMm > 1.0) {
-					drawRomexisSlabCorridor(ctx, {
-						orientation: "vertical",
-						centerPx: vox.y,
-						thicknessMm: slabThicknessMm,
-						pixelSpacingMm: metadata.pixelSpacingX,
-						lengthPx: metadata.heightPx,
-						colorRgba: ROMEXIS_COLORS.coronalRgba(0.65),
-						fillColorRgba: ROMEXIS_COLORS.coronalRgba(0.08),
-					});
-				}
-
-				// Coronal Crosshair Line (Vertical: Orange #f59e0b)
-				ctx.strokeStyle = ROMEXIS_COLORS.coronal;
-				ctx.lineWidth = 1.2;
-				ctx.beginPath();
-				ctx.moveTo(vox.y, 0);
-				ctx.lineTo(vox.y, canvas.height);
-				ctx.stroke();
+				ctx.restore();
 			}
 		}
-	}, [volume, isOpen, crosshairMm, windowWidth, windowLevel, invertColors, slabMode, slabThicknessMm, archCurve, activeCrossSection, implant3DWorld, nerveAuditResult, studioMode]);
+	}, [volume, isOpen, crosshairMm, obliqueAngles, activeRotationHandle, hoveredHandle, windowWidth, windowLevel, invertColors, slabMode, slabThicknessMm, archCurve, activeCrossSection, implant3DWorld, nerveAuditResult, studioMode, transforms.axial, transforms.coronal, transforms.sagittal]);
 
 	// ─── RECONSTRUCT PANORAMIC & CROSS SECTIONS ───────────────────────────────
 	useEffect(() => {
@@ -1068,11 +1224,29 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		if (!ctx) return;
 
 		// 1. Draw Panoramic Grayscale Radiograph
-		if (!panoImgDataRef.current || panoImgDataRef.current.width !== panoramicData.widthPx || panoImgDataRef.current.height !== panoramicData.heightPx) {
-			panoImgDataRef.current = ctx.createImageData(panoramicData.widthPx, panoramicData.heightPx);
+		if (!panoOffscreenRef.current) {
+			panoOffscreenRef.current = document.createElement("canvas");
 		}
-		panoImgDataRef.current.data.set(panoramicData.pixelData);
-		ctx.putImageData(panoImgDataRef.current, 0, 0);
+		const off = panoOffscreenRef.current;
+		if (off.width !== panoramicData.widthPx || off.height !== panoramicData.heightPx) {
+			off.width = panoramicData.widthPx;
+			off.height = panoramicData.heightPx;
+		}
+		const offCtx = off.getContext("2d");
+		if (offCtx) {
+			if (!panoImgDataRef.current || panoImgDataRef.current.width !== panoramicData.widthPx || panoImgDataRef.current.height !== panoramicData.heightPx) {
+				panoImgDataRef.current = offCtx.createImageData(panoramicData.widthPx, panoramicData.heightPx);
+			}
+			panoImgDataRef.current.data.set(panoramicData.pixelData);
+			offCtx.putImageData(panoImgDataRef.current, 0, 0);
+		}
+
+		ctx.save();
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		const transform = transforms.panoramic ?? DEFAULT_VIEWPORT_TRANSFORM;
+		ctx.translate(transform.panX, transform.panY);
+		ctx.scale(transform.zoom, transform.zoom);
+		ctx.drawImage(off, 0, 0);
 
 		// Draw Calibrated Millimeter Rulers on Panorama
 		drawCalibratedMillimeterRulers(ctx, {
@@ -1253,7 +1427,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			ctx.textAlign = "center";
 			ctx.fillText(`FDI #${implant3DWorld.targetToothFdi}`, panoX, Math.max(2, yEntryPx - 18) + 10);
 		}
-	}, [panoramicData, crossSections, activeCrossSectionIdx, activeCrossSection, implant3DWorld, nerveAuditResult, archCurve.totalArcLengthMm, volume, crosshairMm, slabMode, slabThicknessMm, studioMode]);
+
+		ctx.restore();
+	}, [panoramicData, crossSections, activeCrossSectionIdx, activeCrossSection, implant3DWorld, nerveAuditResult, archCurve.totalArcLengthMm, volume, crosshairMm, slabMode, slabThicknessMm, studioMode, transforms.panoramic]);
 
 	// ─── RENDER ACTIVE CROSS-SECTION WITH IMPLANT & NERVE ─────────────────────
 	useEffect(() => {
@@ -1266,11 +1442,29 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		if (!ctx) return;
 
 		// 1. Draw Resliced Bone Voxel Texture
-		if (!crossSectionImgDataRef.current || crossSectionImgDataRef.current.width !== activeCrossSection.widthPx || crossSectionImgDataRef.current.height !== activeCrossSection.heightPx) {
-			crossSectionImgDataRef.current = ctx.createImageData(activeCrossSection.widthPx, activeCrossSection.heightPx);
+		if (!crossSectionOffscreenRef.current) {
+			crossSectionOffscreenRef.current = document.createElement("canvas");
 		}
-		crossSectionImgDataRef.current.data.set(activeCrossSection.pixelData);
-		ctx.putImageData(crossSectionImgDataRef.current, 0, 0);
+		const off = crossSectionOffscreenRef.current;
+		if (off.width !== activeCrossSection.widthPx || off.height !== activeCrossSection.heightPx) {
+			off.width = activeCrossSection.widthPx;
+			off.height = activeCrossSection.heightPx;
+		}
+		const offCtx = off.getContext("2d");
+		if (offCtx) {
+			if (!crossSectionImgDataRef.current || crossSectionImgDataRef.current.width !== activeCrossSection.widthPx || crossSectionImgDataRef.current.height !== activeCrossSection.heightPx) {
+				crossSectionImgDataRef.current = offCtx.createImageData(activeCrossSection.widthPx, activeCrossSection.heightPx);
+			}
+			crossSectionImgDataRef.current.data.set(activeCrossSection.pixelData);
+			offCtx.putImageData(crossSectionImgDataRef.current, 0, 0);
+		}
+
+		ctx.save();
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		const transform = transforms.cross_section ?? DEFAULT_VIEWPORT_TRANSFORM;
+		ctx.translate(transform.panX, transform.panY);
+		ctx.scale(transform.zoom, transform.zoom);
+		ctx.drawImage(off, 0, 0);
 
 		const pxSpacing = activeCrossSection.pixelSpacingMm;
 		const centerX = canvas.width / 2;
@@ -1429,55 +1623,204 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	// ─── INTERACTIVE CROSSHAIR DRAGGING & WHEEL NAVIGATION ────────────────────
 	const handleCanvasMouseDown = useCallback((plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (!volume) return;
-		setIsDraggingCrosshair(plane);
-		const rect = e.currentTarget.getBoundingClientRect();
-		const normX = (e.clientX - rect.left) / rect.width;
-		const normY = (e.clientY - rect.top) / rect.height;
+		const canvas = e.currentTarget;
+		const rect = canvas.getBoundingClientRect();
+		const pointerPx = {
+			x: ((e.clientX - rect.left) / rect.width) * canvas.width,
+			y: ((e.clientY - rect.top) / rect.height) * canvas.height,
+		};
 
+		const vox = worldMmToVoxel(crosshairMm, volume);
+		const zPx = volume.dimensions.depth - 1 - vox.z;
+		const centerPx = plane === "axial"
+			? { x: vox.x, y: vox.y }
+			: plane === "coronal"
+			? { x: vox.x, y: zPx }
+			: { x: vox.y, y: zPx };
+
+		const rotDeg = plane === "axial"
+			? obliqueAngles.axialAngleDeg
+			: plane === "coronal"
+			? obliqueAngles.coronalTiltDeg
+			: obliqueAngles.sagittalTiltDeg;
+
+		// 1. Shift + Left Click -> In-plane Oblique Rotation
+		if (e.shiftKey) {
+			setIsShiftRotating({
+				plane,
+				centerPx,
+				startPointerPx: pointerPx,
+				initialAngleDeg: rotDeg,
+			});
+			return;
+		}
+
+		// 2. Click on rotation handle knobs
+		const handles = getRotationHandles(plane, canvas.width, canvas.height, centerPx, 65, rotDeg);
+		const hitHandle = hitTestRotationHandle(pointerPx, handles, 14);
+		if (hitHandle) {
+			setActiveRotationHandle({ plane, handle: hitHandle.position, centerPx });
+			return;
+		}
+
+		// 3. Normal Crosshair Translation Drag
+		setIsDraggingCrosshair(plane);
+		const normX = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+		const normY = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
 		const dims = volume.dimensions;
 		setCrosshairMm((prev) => {
-			const vox = worldMmToVoxel(prev, volume);
+			const v = worldMmToVoxel(prev, volume);
 			if (plane === "axial") {
 				const vx = Math.round(normX * (dims.width - 1));
 				const vy = Math.round(normY * (dims.height - 1));
-				return voxelToWorldMm({ x: vx, y: vy, z: vox.z }, volume);
+				return voxelToWorldMm({ x: vx, y: vy, z: v.z }, volume);
 			}
 			if (plane === "coronal") {
 				const vx = Math.round(normX * (dims.width - 1));
-				const vz = Math.round(normY * (dims.depth - 1));
-				return voxelToWorldMm({ x: vx, y: vox.y, z: vz }, volume);
+				const vz = Math.round((1 - normY) * (dims.depth - 1));
+				return voxelToWorldMm({ x: vx, y: v.y, z: vz }, volume);
 			}
 			// Sagittal
 			const vy = Math.round(normX * (dims.height - 1));
-			const vz = Math.round(normY * (dims.depth - 1));
-			return voxelToWorldMm({ x: vox.x, y: vy, z: vz }, volume);
+			const vz = Math.round((1 - normY) * (dims.depth - 1));
+			return voxelToWorldMm({ x: v.x, y: vy, z: vz }, volume);
 		});
-	}, [volume]);
+	}, [volume, crosshairMm, obliqueAngles]);
 
 	const handleCanvasMouseMove = useCallback((plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => {
-		if (!volume || isDraggingCrosshair !== plane) return;
-		const rect = e.currentTarget.getBoundingClientRect();
-		const normX = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-		const normY = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+		if (!volume) return;
+		const canvas = e.currentTarget;
+		const rect = canvas.getBoundingClientRect();
+		const pointerPx = {
+			x: ((e.clientX - rect.left) / rect.width) * canvas.width,
+			y: ((e.clientY - rect.top) / rect.height) * canvas.height,
+		};
 
-		const dims = volume.dimensions;
-		setCrosshairMm((prev) => {
-			const vox = worldMmToVoxel(prev, volume);
-			if (plane === "axial") {
-				const vx = Math.round(normX * (dims.width - 1));
-				const vy = Math.round(normY * (dims.height - 1));
-				return voxelToWorldMm({ x: vx, y: vy, z: vox.z }, volume);
+		// 1. Shift Drag Rotation
+		if (isShiftRotating && isShiftRotating.plane === plane) {
+			const newAngle = calculateAngleFromShiftDrag(
+				isShiftRotating.centerPx,
+				pointerPx,
+				isShiftRotating.startPointerPx,
+				isShiftRotating.initialAngleDeg,
+			);
+			setObliqueAngles((prev) => ({
+				...prev,
+				...(plane === "axial"
+					? { axialAngleDeg: newAngle }
+					: plane === "coronal"
+					? { coronalTiltDeg: newAngle }
+					: { sagittalTiltDeg: newAngle }),
+			}));
+			return;
+		}
+
+		// 2. Rotation Handle Drag
+		if (activeRotationHandle && activeRotationHandle.plane === plane) {
+			const newAngle = calculateAngleFromHandleDrag(
+				activeRotationHandle.centerPx,
+				pointerPx,
+				activeRotationHandle.handle,
+			);
+			setObliqueAngles((prev) => ({
+				...prev,
+				...(plane === "axial"
+					? { axialAngleDeg: newAngle }
+					: plane === "coronal"
+					? { coronalTiltDeg: newAngle }
+					: { sagittalTiltDeg: newAngle }),
+			}));
+			return;
+		}
+
+		// 3. Normal Crosshair Drag
+		if (isDraggingCrosshair === plane) {
+			const normX = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+			const normY = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+			const dims = volume.dimensions;
+			setCrosshairMm((prev) => {
+				const v = worldMmToVoxel(prev, volume);
+				if (plane === "axial") {
+					const vx = Math.round(normX * (dims.width - 1));
+					const vy = Math.round(normY * (dims.height - 1));
+					return voxelToWorldMm({ x: vx, y: vy, z: v.z }, volume);
+				}
+				if (plane === "coronal") {
+					const vx = Math.round(normX * (dims.width - 1));
+					const vz = Math.round((1 - normY) * (dims.depth - 1));
+					return voxelToWorldMm({ x: vx, y: v.y, z: vz }, volume);
+				}
+				const vy = Math.round(normX * (dims.height - 1));
+				const vz = Math.round((1 - normY) * (dims.depth - 1));
+				return voxelToWorldMm({ x: v.x, y: vy, z: vz }, volume);
+			});
+			return;
+		}
+
+		// 4. Hover Detection for Rotation Handles
+		if (!isShiftRotating && !activeRotationHandle && !isDraggingCrosshair) {
+			const vox = worldMmToVoxel(crosshairMm, volume);
+			const zPx = volume.dimensions.depth - 1 - vox.z;
+			const centerPx = plane === "axial"
+				? { x: vox.x, y: vox.y }
+				: plane === "coronal"
+				? { x: vox.x, y: zPx }
+				: { x: vox.y, y: zPx };
+
+			const rotDeg = plane === "axial"
+				? obliqueAngles.axialAngleDeg
+				: plane === "coronal"
+				? obliqueAngles.coronalTiltDeg
+				: obliqueAngles.sagittalTiltDeg;
+
+			const handles = getRotationHandles(plane, canvas.width, canvas.height, centerPx, 65, rotDeg);
+			const hitHandle = hitTestRotationHandle(pointerPx, handles, 14);
+			if (hitHandle) {
+				setHoveredHandle({ plane, handle: hitHandle.position });
+			} else if (hoveredHandle?.plane === plane) {
+				setHoveredHandle(null);
 			}
-			if (plane === "coronal") {
-				const vx = Math.round(normX * (dims.width - 1));
-				const vz = Math.round(normY * (dims.depth - 1));
-				return voxelToWorldMm({ x: vx, y: vox.y, z: vz }, volume);
-			}
-			const vy = Math.round(normX * (dims.height - 1));
-			const vz = Math.round(normY * (dims.depth - 1));
-			return voxelToWorldMm({ x: vox.x, y: vy, z: vz }, volume);
-		});
-	}, [volume, isDraggingCrosshair]);
+		}
+	}, [volume, isShiftRotating, activeRotationHandle, isDraggingCrosshair, crosshairMm, obliqueAngles, hoveredHandle]);
+
+	const handleCanvasMouseUp = useCallback(() => {
+		setIsDraggingCrosshair(null);
+		setActiveRotationHandle(null);
+		setIsShiftRotating(null);
+	}, []);
+
+	const handleCanvasDoubleClick = useCallback((plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => {
+		e.preventDefault();
+		e.stopPropagation();
+		if (!volume) return;
+		const canvas = e.currentTarget;
+		const rect = canvas.getBoundingClientRect();
+		const pointerPx = {
+			x: ((e.clientX - rect.left) / rect.width) * canvas.width,
+			y: ((e.clientY - rect.top) / rect.height) * canvas.height,
+		};
+		const vox = worldMmToVoxel(crosshairMm, volume);
+		const zPx = volume.dimensions.depth - 1 - vox.z;
+		const centerPx = plane === "axial"
+			? { x: vox.x, y: vox.y }
+			: plane === "coronal"
+			? { x: vox.x, y: zPx }
+			: { x: vox.y, y: zPx };
+
+		if (hitTestCrosshairCenter(pointerPx, centerPx, 18)) {
+			// 1-Click / Double-Click quick reset of angle back to 0.0°
+			setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, plane));
+			return;
+		}
+
+		handleToggleMaximize(plane);
+	}, [volume, crosshairMm, handleToggleMaximize]);
+
+	const getCanvasCursor = useCallback((plane: MprPlane) => {
+		if (isShiftRotating?.plane === plane || activeRotationHandle?.plane === plane) return "grabbing";
+		if (hoveredHandle?.plane === plane) return "grab";
+		return "crosshair";
+	}, [isShiftRotating, activeRotationHandle, hoveredHandle]);
 
 	const handleCanvasWheel = useCallback((plane: MprPlane, e: React.WheelEvent<HTMLCanvasElement>) => {
 		if (!volume) return;
@@ -1528,11 +1871,13 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			<div className="flex-1 flex items-center justify-center min-h-0 relative">
 				<canvas
 					ref={axialCanvasRef}
+					onDoubleClick={(e) => handleCanvasDoubleClick("axial", e)}
 					onMouseDown={(e) => handleCanvasMouseDown("axial", e)}
 					onMouseMove={(e) => handleCanvasMouseMove("axial", e)}
-					onMouseUp={() => setIsDraggingCrosshair(null)}
+					onMouseUp={handleCanvasMouseUp}
 					onWheel={(e) => handleCanvasWheel("axial", e)}
-					className="max-w-full max-h-full object-contain cursor-crosshair"
+					style={{ cursor: getCanvasCursor("axial") }}
+					className="max-w-full max-h-full object-contain"
 				/>
 				<CbctViewportHud
 					viewportType="axial"
@@ -1540,6 +1885,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					slabMode={slabMode}
 					slabThicknessMm={slabThicknessMm}
 					pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
+					obliqueAngleDeg={obliqueAngles.axialAngleDeg}
+					onResetAngle={() => setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, "axial"))}
 					isMaximized={maximizedViewport === "axial"}
 					onToggleMaximize={() => handleToggleMaximize("axial")}
 				/>
@@ -1556,11 +1903,13 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			<div className="flex-1 flex items-center justify-center min-h-0 relative">
 				<canvas
 					ref={coronalCanvasRef}
+					onDoubleClick={(e) => handleCanvasDoubleClick("coronal", e)}
 					onMouseDown={(e) => handleCanvasMouseDown("coronal", e)}
 					onMouseMove={(e) => handleCanvasMouseMove("coronal", e)}
-					onMouseUp={() => setIsDraggingCrosshair(null)}
+					onMouseUp={handleCanvasMouseUp}
 					onWheel={(e) => handleCanvasWheel("coronal", e)}
-					className="max-w-full max-h-full object-contain cursor-crosshair"
+					style={{ cursor: getCanvasCursor("coronal") }}
+					className="max-w-full max-h-full object-contain"
 				/>
 				<CbctViewportHud
 					viewportType="coronal"
@@ -1568,6 +1917,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					slabMode={slabMode}
 					slabThicknessMm={slabThicknessMm}
 					pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
+					obliqueAngleDeg={obliqueAngles.coronalTiltDeg}
+					onResetAngle={() => setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, "coronal"))}
 					isMaximized={maximizedViewport === "coronal"}
 					onToggleMaximize={() => handleToggleMaximize("coronal")}
 				/>
@@ -1584,11 +1935,13 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			<div className="flex-1 flex items-center justify-center min-h-0 relative">
 				<canvas
 					ref={sagittalCanvasRef}
+					onDoubleClick={(e) => handleCanvasDoubleClick("sagittal", e)}
 					onMouseDown={(e) => handleCanvasMouseDown("sagittal", e)}
 					onMouseMove={(e) => handleCanvasMouseMove("sagittal", e)}
-					onMouseUp={() => setIsDraggingCrosshair(null)}
+					onMouseUp={handleCanvasMouseUp}
 					onWheel={(e) => handleCanvasWheel("sagittal", e)}
-					className="max-w-full max-h-full object-contain cursor-crosshair"
+					style={{ cursor: getCanvasCursor("sagittal") }}
+					className="max-w-full max-h-full object-contain"
 				/>
 				<CbctViewportHud
 					viewportType="sagittal"
@@ -1596,6 +1949,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					slabMode={slabMode}
 					slabThicknessMm={slabThicknessMm}
 					pixelSpacingMm={volume?.spacingMm.y ?? 0.4}
+					obliqueAngleDeg={obliqueAngles.sagittalTiltDeg}
+					onResetAngle={() => setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, "sagittal"))}
 					isMaximized={maximizedViewport === "sagittal"}
 					onToggleMaximize={() => handleToggleMaximize("sagittal")}
 				/>
@@ -1685,33 +2040,63 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 				{/* Center Toolbar: Studio Modes, Viewport Layout, WW/WL Presets & Tools */}
 				<div className="flex items-center gap-2 overflow-x-auto shrink-0 py-1">
-					{/* 1. Clinical Studio Mode Selector (Diagnostic vs Implant) */}
+					{/* 1. Clinical Studio Mode Selector (Diagnostic vs Implant vs Endo vs TMJ) */}
 					<div className="flex items-center bg-[#0c0e12] p-1 rounded-lg border border-[#242a35] shrink-0 gap-1">
 						<button
 							type="button"
-							onClick={() => setStudioMode("diagnostic")}
-							className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-2 transition-colors ${
+							onClick={() => handleSelectStudioMode("diagnostic")}
+							className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
 								studioMode === "diagnostic"
 									? "bg-[#1e2430] text-[#38bdf8] border border-[#38bdf8]/40 shadow-xs"
 									: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"
 							}`}
 							data-testid="cbct-mode-diagnostic-btn"
+							title="Режим общей 3D диагностики (панель свернута)"
 						>
-							<Search className="w-4 h-4 text-[#38bdf8]" />
+							<Search className="w-3.5 h-3.5 text-[#38bdf8]" />
 							<span>Диагностика</span>
 						</button>
 						<button
 							type="button"
-							onClick={() => setStudioMode("implant")}
-							className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-2 transition-colors ${
+							onClick={() => handleSelectStudioMode("implant")}
+							className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
 								studioMode === "implant"
 									? "bg-[#1e2430] text-[#38bdf8] border border-[#38bdf8]/40 shadow-xs"
 									: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"
 							}`}
 							data-testid="cbct-mode-implant-btn"
+							title="Планирование имплантации и контроль нерва"
 						>
-							<Compass className="w-4 h-4 text-[#38bdf8]" />
+							<Compass className="w-3.5 h-3.5 text-[#38bdf8]" />
 							<span>Имплантация</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => handleSelectStudioMode("endo")}
+							className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
+								studioMode === "endo"
+									? "bg-[#1e2430] text-[#38bdf8] border border-[#38bdf8]/40 shadow-xs"
+									: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"
+							}`}
+							data-testid="cbct-mode-endo-btn"
+							title="Эндодонтия: корневые каналы и апексы"
+						>
+							<Activity className="w-3.5 h-3.5 text-[#38bdf8]" />
+							<span>Эндо</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => handleSelectStudioMode("tmj")}
+							className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors ${
+								studioMode === "tmj"
+									? "bg-[#1e2430] text-[#38bdf8] border border-[#38bdf8]/40 shadow-xs"
+									: "bg-transparent text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#14171e]"
+							}`}
+							data-testid="cbct-mode-tmj-btn"
+							title="ВНЧС: суставные головки и ямки"
+						>
+							<Ruler className="w-3.5 h-3.5 text-[#38bdf8]" />
+							<span>ВНЧС</span>
 						</button>
 					</div>
 
@@ -1762,6 +2147,34 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						)}
 					</div>
 
+					{/* 2b. Collapsible Sidebar Toggle Button */}
+					<button
+						type="button"
+						onClick={() => setIsSidebarOpen((prev) => !prev)}
+						className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-2 transition-colors border shadow-xs ${
+							isSidebarOpen
+								? "bg-[#1e2430] text-[#38bdf8] border-[#38bdf8]/40"
+								: "bg-[#14171e] text-[#94a3b8] border-[#242a35] hover:text-[#e2e8f0] hover:bg-[#1e2430]"
+						}`}
+						title={isSidebarOpen ? "Скрыть боковую панель" : "Показать боковую панель"}
+						data-testid="cbct-toggle-sidebar-btn"
+					>
+						<Columns2 className="w-4 h-4" />
+						<span>{isSidebarOpen ? "Скрыть панель" : "Панель"}</span>
+					</button>
+
+					{/* 2c. Reset Oblique Angles Button */}
+					<button
+						type="button"
+						onClick={() => setObliqueAngles(DEFAULT_OBLIQUE_ROTATION)}
+						className="px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors border shadow-xs bg-[#1e2430] hover:bg-[#2a3242] text-[#38bdf8] border-[#38bdf8]/40"
+						title="Сбросить все углы наклона и вращения осей в исходные 0.0°"
+						data-testid="cbct-reset-oblique-angles-modal-btn"
+					>
+						<RotateCw className="w-4 h-4 text-sky-400" />
+						<span>↺ 0° Оси</span>
+					</button>
+
 					{/* 3. HU Window/Level Presets */}
 					<div className="flex items-center bg-[#0c0e12] p-1 rounded-lg border border-[#242a35] shrink-0 gap-1">
 						{CBCT_HOUNSFIELD_PRESETS.map((p) => (
@@ -1808,6 +2221,28 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							Avg IP
 						</button>
 					</div>
+
+					{/* 4b. Oblique Rotation Toggle Button */}
+					<button
+						type="button"
+						onClick={() =>
+							setObliqueAngles((prev) =>
+								prev.axialAngleDeg === 0
+									? { axialAngleDeg: 25.0, coronalTiltDeg: -15.0, sagittalTiltDeg: 10.0 }
+									: DEFAULT_OBLIQUE_ROTATION,
+							)
+						}
+						className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap min-h-[44px] flex items-center gap-1.5 transition-colors border shadow-xs ${
+							obliqueAngles.axialAngleDeg !== 0
+								? "bg-[#1e2430] text-sky-400 border-sky-500/40"
+								: "bg-[#14171e] text-[#94a3b8] border-[#242a35] hover:text-[#e2e8f0] hover:bg-[#1e2430]"
+						}`}
+						data-testid="cbct-toggle-oblique-btn"
+						title={obliqueAngles.axialAngleDeg !== 0 ? "Сбросить наклон осей (↺ 0°)" : "Вращение осей (Oblique MPR)"}
+					>
+						<RotateCw className="w-4 h-4 text-sky-400" />
+						<span>{obliqueAngles.axialAngleDeg !== 0 ? `∡ ${obliqueAngles.axialAngleDeg > 0 ? "+" : ""}${obliqueAngles.axialAngleDeg.toFixed(0)}°` : "Косые оси"}</span>
+					</button>
 
 					{/* 5. Jaw Toggle */}
 					<div className="flex items-center bg-[#0c0e12] p-1 rounded-lg border border-[#242a35] shrink-0 gap-1">
@@ -1985,7 +2420,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				</button>
 				<button
 					type="button"
-					onClick={() => setMobileActiveTab("planner")}
+					onClick={() => {
+						setMobileActiveTab("planner");
+						setIsSidebarOpen(true);
+					}}
 					data-testid="cbct-mobile-tab-planner"
 					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "planner"
@@ -1994,14 +2432,14 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					}`}
 				>
 					<span className="w-2 h-2 rounded-full bg-yellow-400" />
-					{studioMode === "diagnostic" ? "Срезы & HU" : "Имплант-план"}
+					{studioMode === "implant" ? "Имплант-план" : studioMode === "endo" ? "Эндо & HU" : studioMode === "tmj" ? "ВНЧС & HU" : "Срезы & HU"}
 				</button>
 			</div>
 
 			{/* ─── MAIN WORKSPACE (VIEWPORTS + SIDEBAR INSPECTOR) ─────────────── */}
 			<div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-1 p-1 bg-[#0c0e12] min-h-0 overflow-hidden">
-				{/* ─── VIEWPORTS DISPLAY (COLS 1..8 ON DESKTOP) ────────────────── */}
-				<div className={`lg:col-span-8 ${mobileActiveTab === "planner" ? "hidden lg:flex" : "flex-1 flex flex-col"} min-h-0`}>
+				{/* ─── VIEWPORTS DISPLAY (COLS 1..8 ON DESKTOP OR 1..12 WHEN SIDEBAR COLLAPSED) ─── */}
+				<div className={`${isSidebarOpen ? "lg:col-span-8" : "lg:col-span-12"} ${mobileActiveTab === "planner" ? "hidden lg:flex" : "flex-1 flex flex-col"} min-h-0 transition-all`}>
 					{maximizedViewport !== null ? (
 						<div className="flex-1 flex flex-col min-h-0 w-full">
 							{maximizedViewport === "axial" && renderAxialViewport("flex-1 flex flex-col")}
@@ -2032,36 +2470,46 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				</div>
 
 				{/* ─── RIGHT SIDEBAR: DIAGNOSTIC INSPECTOR & IMPLANT PLANNER (COLS 9..12) ─── */}
-				<aside className={`lg:col-span-4 ${mobileActiveTab === "planner" ? "flex-1 flex flex-col min-h-0" : "hidden lg:flex lg:flex-col"} bg-[#14171e] rounded-md border border-[#242a35] min-h-0 overflow-y-auto p-3 flex flex-col gap-3`}>
-					{/* Active Cross-Section Carousel Header */}
-					<div className="flex items-center justify-between pb-2 border-b border-[#242a35]">
-						<div className="flex items-center gap-2">
-							<span className="text-xs font-bold text-[#38bdf8]">
-								Срез #{activeCrossSection?.sliceIndex ?? 1} из {crossSections.length}
-							</span>
-							<span className="px-2.5 py-1 rounded bg-[#1e2430] text-[#e2e8f0] font-bold text-xs border border-[#242a35]">
-								Зуб FDI: #{activeCrossSection?.nearestToothFdi ?? "46"}
-							</span>
+				{(isSidebarOpen || mobileActiveTab === "planner") && (
+					<aside className={`lg:col-span-4 ${isSidebarOpen ? "" : "lg:hidden"} ${mobileActiveTab === "planner" ? "flex-1 flex flex-col min-h-0" : "hidden lg:flex lg:flex-col"} bg-[#14171e] rounded-md border border-[#242a35] min-h-0 overflow-y-auto p-3 flex flex-col gap-3`}>
+						{/* Active Cross-Section Carousel Header */}
+						<div className="flex items-center justify-between pb-2 border-b border-[#242a35]">
+							<div className="flex items-center gap-2">
+								<span className="text-xs font-bold text-[#38bdf8]">
+									Срез #{activeCrossSection?.sliceIndex ?? 1} из {crossSections.length}
+								</span>
+								<span className="px-2.5 py-1 rounded bg-[#1e2430] text-[#e2e8f0] font-bold text-xs border border-[#242a35]">
+									Зуб FDI: #{activeCrossSection?.nearestToothFdi ?? "46"}
+								</span>
+							</div>
+							<div className="flex items-center gap-1.5">
+								<button
+									type="button"
+									onClick={() => setActiveCrossSectionIdx((prev) => Math.max(0, prev - 1))}
+									className="p-2.5 rounded-md bg-[#1e2430] hover:bg-[#2a3242] text-[#94a3b8] hover:text-[#e2e8f0] min-h-[44px] min-w-[44px] flex items-center justify-center border border-[#242a35] transition-colors shadow-xs"
+									title="Предыдущий срез"
+								>
+									<ChevronLeft className="w-5 h-5" />
+								</button>
+								<button
+									type="button"
+									onClick={() => setActiveCrossSectionIdx((prev) => Math.min(crossSections.length - 1, prev + 1))}
+									className="p-2.5 rounded-md bg-[#1e2430] hover:bg-[#2a3242] text-[#94a3b8] hover:text-[#e2e8f0] min-h-[44px] min-w-[44px] flex items-center justify-center border border-[#242a35] transition-colors shadow-xs"
+									title="Следующий срез"
+								>
+									<ChevronRight className="w-5 h-5" />
+								</button>
+								<button
+									type="button"
+									onClick={() => setIsSidebarOpen(false)}
+									className="p-2.5 rounded-md bg-[#1e2430] hover:bg-[#2a3242] text-[#94a3b8] hover:text-[#e2e8f0] min-h-[44px] min-w-[44px] flex items-center justify-center border border-[#242a35] transition-colors shadow-xs ml-1"
+									title="Скрыть панель"
+									data-testid="cbct-close-sidebar-btn"
+								>
+									<X className="w-4 h-4" />
+								</button>
+							</div>
 						</div>
-						<div className="flex items-center gap-1.5">
-							<button
-								type="button"
-								onClick={() => setActiveCrossSectionIdx((prev) => Math.max(0, prev - 1))}
-								className="p-2.5 rounded-md bg-[#1e2430] hover:bg-[#2a3242] text-[#94a3b8] hover:text-[#e2e8f0] min-h-[44px] min-w-[44px] flex items-center justify-center border border-[#242a35] transition-colors shadow-xs"
-								title="Предыдущий срез"
-							>
-								<ChevronLeft className="w-5 h-5" />
-							</button>
-							<button
-								type="button"
-								onClick={() => setActiveCrossSectionIdx((prev) => Math.min(crossSections.length - 1, prev + 1))}
-								className="p-2.5 rounded-md bg-[#1e2430] hover:bg-[#2a3242] text-[#94a3b8] hover:text-[#e2e8f0] min-h-[44px] min-w-[44px] flex items-center justify-center border border-[#242a35] transition-colors shadow-xs"
-								title="Следующий срез"
-							>
-								<ChevronRight className="w-5 h-5" />
-							</button>
-						</div>
-					</div>
 
 					{/* Cross-Section Viewport Canvas */}
 					<div
@@ -2082,15 +2530,15 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							onToggleMaximize={() => handleToggleMaximize("cross_section")}
 						/>
 
-						{/* Quick Ridge Measurements Badge (positioned top-right to avoid overlapping bottom scale bar or top-right button) */}
-						<div className="absolute top-2 right-14 px-2.5 py-1 rounded bg-[#14171e]/90 text-[10px] text-[#94a3b8] border border-[#242a35] font-mono shadow-sm flex items-center gap-2">
+						{/* Quick Ridge Measurements Badge (compact matte HUD) */}
+						<div className="absolute top-1.5 right-10 px-2 py-0.5 rounded bg-black/50 backdrop-blur-sm text-[10px] text-[#94a3b8] border border-white/10 font-mono shadow-xs flex items-center gap-2">
 							<span>H: <strong className="text-[#38bdf8]">{activeCrossSection?.corticalCrestHeightMm ?? 14.2} мм</strong></span>
 							<span>W: <strong className="text-[#38bdf8]">{activeCrossSection?.alveolarRidgeWidthMm ?? 7.8} мм</strong></span>
 						</div>
 					</div>
 
-					{/* ─── CONDITIONAL SIDEBAR CONTENT: DIAGNOSTIC vs IMPLANT ───────── */}
-					{studioMode === "diagnostic" ? (
+					{/* ─── CONDITIONAL SIDEBAR CONTENT: DIAGNOSTIC / ENDO / TMJ vs IMPLANT ───────── */}
+					{studioMode !== "implant" ? (
 						<div className="flex flex-col gap-3">
 							{/* Diagnostic HU & Tissue Structure Inspector */}
 							<div className="p-3 rounded-md bg-[#0c0e12] border border-[#242a35] flex flex-col gap-2">
@@ -2115,7 +2563,13 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							<div className="p-3 rounded-md bg-[#0c0e12] border border-[#242a35] flex flex-col gap-2">
 								<div className="text-xs font-bold text-[#e2e8f0] flex items-center gap-1.5">
 									<Search className="w-4 h-4 text-[#38bdf8]" />
-									<span>Анатомический осмотр зоны #{activeCrossSection?.nearestToothFdi ?? "46"}:</span>
+									<span>
+										{studioMode === "endo"
+											? "Эндодонтический осмотр корней & каналов:"
+											: studioMode === "tmj"
+											? "Анатомический осмотр суставных головок ВНЧС:"
+											: `Анатомический осмотр зоны #${activeCrossSection?.nearestToothFdi ?? "46"}:`}
+									</span>
 								</div>
 								<div className="flex flex-col gap-1.5 text-[11px] text-[#94a3b8]">
 									<div className="flex items-center gap-2.5 p-2 rounded bg-[#14171e] border border-[#242a35]">
@@ -2136,7 +2590,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							{/* Fast Switch to Implant Planning Button */}
 							<button
 								type="button"
-								onClick={() => setStudioMode("implant")}
+								onClick={() => {
+									setStudioMode("implant");
+									setIsSidebarOpen(true);
+								}}
 								className="w-full py-2.5 px-4 rounded-md bg-[#1e2430] hover:bg-[#2a3242] text-[#e2e8f0] hover:text-[#38bdf8] border border-[#242a35] hover:border-[#38bdf8]/40 text-xs font-bold flex items-center justify-center gap-2 transition-colors min-h-[44px] shadow-xs"
 								data-testid="cbct-switch-to-implant-mode-btn"
 							>
@@ -2298,6 +2755,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						</div>
 					)}
 				</aside>
+			)}
 			</div>
 		</div>,
 		document.body,

@@ -67,8 +67,14 @@ import {
 	hitTestRotationHandle,
 	getRotationHandles,
 	calculateAngleFromHandleDrag,
+	calculateAngleFromShiftDrag,
+	hitTestCrosshairCenter,
+	resetPlaneObliqueAngle,
+	resetObliqueRotationAngles,
+	getObliqueRotationLabel,
 	mapCanvasPointerToWorldMmWithTransform,
 	worldMmToVoxel,
+	voxelToWorldMm,
 } from "./cbctMprMath";
 import {
 	DEFAULT_MANDIBULAR_ARCH_ANCHORS,
@@ -84,6 +90,8 @@ import {
 	reconstructPanoramicView,
 } from "./dentalCurveEngine";
 import { CbctViewportHud } from "./CbctViewportHud";
+import { useCbctKeyboardShortcuts, applyStepZoom } from "./useCbctKeyboardShortcuts";
+import { CbctHotkeysStatusBar } from "./CbctHotkeysStatusBar";
 import type { RadiologyStudy } from "./types";
 
 export interface CbctMprViewerProps {
@@ -105,10 +113,13 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 	const [volume, setVolume] = useState<CbctVoxelVolume | null>(null);
 	const [crosshairMm, setCrosshairMm] = useState<Point3D>({ x: 0, y: -10, z: -10 });
 	const [obliqueAngles, setObliqueAngles] = useState<ObliqueRotationAngles>(DEFAULT_OBLIQUE_ROTATION);
-	const [transforms, setTransforms] = useState<Record<MprPlane, ViewportTransform>>({
+	const [activeViewport, setActiveViewport] = useState<CbctViewportType>("axial");
+	const [transforms, setTransforms] = useState<Record<CbctViewportType, ViewportTransform>>({
 		axial: DEFAULT_VIEWPORT_TRANSFORM,
 		coronal: DEFAULT_VIEWPORT_TRANSFORM,
 		sagittal: DEFAULT_VIEWPORT_TRANSFORM,
+		panoramic: DEFAULT_VIEWPORT_TRANSFORM,
+		cross_section: DEFAULT_VIEWPORT_TRANSFORM,
 	});
 	const [maximizedViewport, setMaximizedViewport] = useState<CbctViewportType | null>(null);
 
@@ -122,6 +133,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 	const [isPanning, setIsPanning] = useState<{ plane: MprPlane; startX: number; startY: number; startPanX: number; startPanY: number } | null>(null);
 	const [activeRotationHandle, setActiveRotationHandle] = useState<{ plane: MprPlane; handle: RotationHandlePosition; centerPx: { x: number; y: number } } | null>(null);
 	const [hoveredHandle, setHoveredHandle] = useState<{ plane: MprPlane; handle: RotationHandlePosition } | null>(null);
+	const [isShiftRotating, setIsShiftRotating] = useState<{ plane: MprPlane; centerPx: { x: number; y: number }; startPointerPx: { x: number; y: number }; initialAngleDeg: number } | null>(null);
 
 	// Offscreen canvas & ImageData refs for zero-GC canvas rendering
 	const axialOffscreenRef = useRef<HTMLCanvasElement | null>(null);
@@ -525,17 +537,19 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 			axial: DEFAULT_VIEWPORT_TRANSFORM,
 			coronal: DEFAULT_VIEWPORT_TRANSFORM,
 			sagittal: DEFAULT_VIEWPORT_TRANSFORM,
+			panoramic: DEFAULT_VIEWPORT_TRANSFORM,
+			cross_section: DEFAULT_VIEWPORT_TRANSFORM,
 		});
 		setMaximizedViewport(null);
 	};
 
 	const getCanvasCursor = useCallback((plane: MprPlane) => {
-		if (activeRotationHandle?.plane === plane) return "grabbing";
+		if (isShiftRotating?.plane === plane || activeRotationHandle?.plane === plane) return "grabbing";
 		if (hoveredHandle?.plane === plane) return "grab";
 		if (isDraggingWL) return "ns-resize";
 		if (isPanning?.plane === plane) return "move";
 		return "crosshair";
-	}, [activeRotationHandle, hoveredHandle, isDraggingWL, isPanning]);
+	}, [isShiftRotating, activeRotationHandle, hoveredHandle, isDraggingWL, isPanning]);
 
 	// ─── 6. INTERACTIVE MOUSE HANDLERS (W/L, ZOOM, PAN & ROTATION) ───────────
 	const handlePointerDown = (plane: MprPlane, e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -572,7 +586,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 			return;
 		}
 
-		// 3. Left Click -> Check rotation handle hit vs Crosshair translation
+		// 3. Left Click -> Check Shift rotation vs handle drag vs Crosshair translation
 		if (e.button === 0) {
 			if (!volume) return;
 			const vox = worldMmToVoxel(crosshairMm, volume);
@@ -593,6 +607,17 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				: plane === "coronal"
 				? obliqueAngles.coronalTiltDeg
 				: obliqueAngles.sagittalTiltDeg;
+
+			// Shift + Left Drag -> Rotate slice plane around axis
+			if (e.shiftKey) {
+				setIsShiftRotating({
+					plane,
+					centerPx,
+					startPointerPx: untransformedPx,
+					initialAngleDeg: rotDeg,
+				});
+				return;
+			}
 
 			const handles = getRotationHandles(plane, canvas.width, canvas.height, centerPx, 65, rotDeg);
 			const hitHandle = hitTestRotationHandle(untransformedPx, handles, 14);
@@ -656,7 +681,32 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 			return;
 		}
 
-		// 3. Rotation Handle Drag -> Oblique Axis Rotation
+		// 3. Shift Drag -> Smooth Oblique Axis Rotation
+		if (isShiftRotating && isShiftRotating.plane === plane) {
+			const transform = transforms[plane];
+			const untransformedPx = {
+				x: (pointerPx.x - transform.panX) / transform.zoom,
+				y: (pointerPx.y - transform.panY) / transform.zoom,
+			};
+			const newAngle = calculateAngleFromShiftDrag(
+				isShiftRotating.centerPx,
+				untransformedPx,
+				isShiftRotating.startPointerPx,
+				isShiftRotating.initialAngleDeg,
+			);
+
+			setObliqueAngles((prev) => ({
+				...prev,
+				...(plane === "axial"
+					? { axialAngleDeg: newAngle }
+					: plane === "coronal"
+					? { coronalTiltDeg: newAngle }
+					: { sagittalTiltDeg: newAngle }),
+			}));
+			return;
+		}
+
+		// 4. Rotation Handle Drag -> Oblique Axis Rotation
 		if (activeRotationHandle && activeRotationHandle.plane === plane) {
 			const transform = transforms[plane];
 			const untransformedPx = {
@@ -680,7 +730,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 			return;
 		}
 
-		// 4. Crosshair Drag -> Center Slicing Position
+		// 5. Crosshair Drag -> Center Slicing Position
 		if (activeDraggingPlane === plane && volume) {
 			const newCrosshair = mapCanvasPointerToWorldMmWithTransform(
 				pointerPx,
@@ -695,8 +745,8 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 			return;
 		}
 
-		// 5. Hover Detection for Rotation Handles (Cursor change)
-		if (!isDraggingWL && !isPanning && !activeRotationHandle && !activeDraggingPlane && volume) {
+		// 6. Hover Detection for Rotation Handles (Cursor change)
+		if (!isDraggingWL && !isPanning && !activeRotationHandle && !activeDraggingPlane && !isShiftRotating && volume) {
 			const vox = worldMmToVoxel(crosshairMm, volume);
 			const centerPx = plane === "axial"
 				? { x: vox.x, y: vox.y }
@@ -736,11 +786,44 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 		setIsDraggingWL(null);
 		setIsPanning(null);
 		setActiveRotationHandle(null);
+		setIsShiftRotating(null);
 		setActiveDraggingPlane(null);
 	};
 
-	// Mouse Wheel -> Cursor-anchored Smooth Zoom (0.5x - 5.0x)
-	const handleWheelZoom = (plane: MprPlane, e: React.WheelEvent<HTMLCanvasElement>) => {
+	// Double click on canvas: if near crosshair center -> reset angles to 0°, else toggle maximize
+	const handleCanvasDoubleClick = (plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => {
+		e.preventDefault();
+		e.stopPropagation();
+		if (!volume) return;
+		const canvas = e.currentTarget;
+		const rect = canvas.getBoundingClientRect();
+		const pointerPx = {
+			x: ((e.clientX - rect.left) / rect.width) * canvas.width,
+			y: ((e.clientY - rect.top) / rect.height) * canvas.height,
+		};
+		const transform = transforms[plane];
+		const untransformedPx = {
+			x: (pointerPx.x - transform.panX) / transform.zoom,
+			y: (pointerPx.y - transform.panY) / transform.zoom,
+		};
+		const vox = worldMmToVoxel(crosshairMm, volume);
+		const centerPx = plane === "axial"
+			? { x: vox.x, y: vox.y }
+			: plane === "coronal"
+			? { x: vox.x, y: canvas.height - 1 - vox.z }
+			: { x: vox.y, y: canvas.height - 1 - vox.z };
+
+		if (hitTestCrosshairCenter(untransformedPx, centerPx, 18)) {
+			// Quick 1-click / double-click reset of oblique angle for this plane
+			setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, plane));
+			return;
+		}
+
+		handleToggleMaximize(plane);
+	};
+
+	// Mouse Wheel -> Cursor-anchored Smooth Zoom (0.5x - 5.0x) on all viewports
+	const handleWheelZoom = (viewport: CbctViewportType, e: React.WheelEvent<HTMLCanvasElement>) => {
 		e.preventDefault();
 		const canvas = e.currentTarget;
 		const rect = canvas.getBoundingClientRect();
@@ -751,11 +834,87 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 
 		setTransforms((prev) => ({
 			...prev,
-			[plane]: applyCursorZoom(prev[plane], cursorPx, e.deltaY, 0.5, 5.0),
+			[viewport]: applyCursorZoom(prev[viewport] ?? DEFAULT_VIEWPORT_TRANSFORM, cursorPx, e.deltaY, 0.5, 5.0),
 		}));
 	};
 
 	const handleWheelScroll = handleWheelZoom;
+
+	// ─── KEYBOARD HOTKEY NAVIGATION HANDLERS ─────────────────────────────────
+	const handleScrollSlice = useCallback((direction: "prev" | "next", stepCount: number) => {
+		if (!volume) return;
+		const vox = worldMmToVoxel(crosshairMm, volume);
+		const delta = (direction === "next" ? 1 : -1) * stepCount;
+		if (activeViewport === "axial" || activeViewport === "panoramic") {
+			const newZ = Math.max(0, Math.min(volume.dimensions.depth - 1, vox.z + delta));
+			setCrosshairMm(voxelToWorldMm({ x: vox.x, y: vox.y, z: newZ }, volume));
+		} else if (activeViewport === "coronal") {
+			const newY = Math.max(0, Math.min(volume.dimensions.height - 1, vox.y + delta));
+			setCrosshairMm(voxelToWorldMm({ x: vox.x, y: newY, z: vox.z }, volume));
+		} else if (activeViewport === "sagittal") {
+			const newX = Math.max(0, Math.min(volume.dimensions.width - 1, vox.x + delta));
+			setCrosshairMm(voxelToWorldMm({ x: newX, y: vox.y, z: vox.z }, volume));
+		} else if (activeViewport === "cross_section") {
+			if (crossSections.length > 0) {
+				setSelectedCrossSectionIndex((prev) => Math.max(0, Math.min(crossSections.length - 1, prev + delta)));
+			}
+		}
+	}, [volume, crosshairMm, activeViewport, crossSections.length]);
+
+	const handleNavigateCrossSection = useCallback((direction: "prev" | "next", stepCount: number) => {
+		if (crossSections.length === 0) return;
+		const delta = (direction === "next" ? 1 : -1) * stepCount;
+		setSelectedCrossSectionIndex((prev) => {
+			const nextIdx = Math.max(0, Math.min(crossSections.length - 1, prev + delta));
+			const cs = crossSections[nextIdx];
+			if (cs && volume) {
+				setCrosshairMm(cs.centerPointMm);
+			}
+			return nextIdx;
+		});
+	}, [crossSections, volume]);
+
+	const handleKeyboardZoom = useCallback((direction: "in" | "out", percent = 10) => {
+		setTransforms((prev) => ({
+			...prev,
+			[activeViewport]: applyStepZoom(prev[activeViewport] ?? DEFAULT_VIEWPORT_TRANSFORM, direction, percent),
+		}));
+	}, [activeViewport]);
+
+	const handleResetTransform = useCallback(() => {
+		setTransforms((prev) => ({
+			...prev,
+			[activeViewport]: DEFAULT_VIEWPORT_TRANSFORM,
+		}));
+		setObliqueAngles(DEFAULT_OBLIQUE_ROTATION);
+	}, [activeViewport]);
+
+	const handleToggleMaximizeActive = useCallback(() => {
+		setMaximizedViewport((prev) => (prev === activeViewport ? null : activeViewport));
+	}, [activeViewport]);
+
+	const handleSelectPresetShortcut = useCallback((preset: "bone" | "endo" | "soft") => {
+		const presetId = preset === "bone" ? "bone_dense" : preset === "endo" ? "enamel_dentin" : "soft_tissue";
+		setActivePresetId(presetId);
+		const found = CBCT_HOUNSFIELD_PRESETS.find((p) => p.id === presetId);
+		if (found) {
+			setWindowWidth(found.windowWidth);
+			setWindowLevel(found.windowLevel);
+		}
+	}, []);
+
+	const { isHelpOpen, toggleHelp } = useCbctKeyboardShortcuts({
+		enabled: true,
+		activeViewport,
+		setActiveViewport,
+		viewports: ["axial", "coronal", "sagittal", "panoramic", "cross_section"],
+		onScrollSlice: handleScrollSlice,
+		onNavigateCrossSection: handleNavigateCrossSection,
+		onZoom: handleKeyboardZoom,
+		onResetTransform: handleResetTransform,
+		onToggleMaximize: handleToggleMaximizeActive,
+		onSelectPreset: handleSelectPresetShortcut,
+	});
 
 	// ─── 7. RECONSTRUCT PANORAMA & CROSS-SECTIONS ─────────────────────────────
 	const handleReconstructPanorama = () => {
@@ -979,6 +1138,16 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				<div className="flex items-center gap-2">
 					<button
 						type="button"
+						onClick={() => setObliqueAngles(DEFAULT_OBLIQUE_ROTATION)}
+						className="flex items-center gap-1.5 min-h-[44px] px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold hover:bg-slate-700 hover:text-white transition-all shadow-sm"
+						title="Сбросить все углы вращения и наклона осей в 0.0°"
+						data-testid="cbct-reset-oblique-angles-btn"
+					>
+						<RotateCcw className="w-4 h-4 text-sky-400" />
+						<span>↺ 0° Оси</span>
+					</button>
+					<button
+						type="button"
 						onClick={handleResetViewAndWL}
 						className="flex items-center gap-1.5 min-h-[44px] px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold hover:bg-slate-700 hover:text-white transition-all shadow-sm"
 						title="Сбросить Window/Level, Зум, Панорамирование и Углы поворота"
@@ -1101,7 +1270,12 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 							<div
 								onDoubleClick={() => handleToggleMaximize("axial")}
 								onContextMenu={(e) => e.preventDefault()}
-								className={`flex flex-col rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden relative shadow-lg ${
+								onPointerDownCapture={() => setActiveViewport("axial")}
+								className={`flex flex-col rounded-2xl bg-slate-900 overflow-hidden relative shadow-lg transition-all ${
+									activeViewport === "axial"
+										? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
+										: "border border-slate-800"
+								} ${
 									maximizedViewport === "axial" ? "flex-1 w-full h-full" : "flex-1 min-w-0"
 								}`}
 								data-testid="cbct-viewport-container-axial"
@@ -1110,6 +1284,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 									<canvas
 										ref={axialCanvasRef}
 										onContextMenu={(e) => e.preventDefault()}
+										onDoubleClick={(e) => handleCanvasDoubleClick("axial", e)}
 										onPointerDown={(e) => handlePointerDown("axial", e)}
 										onPointerMove={(e) => handlePointerMove("axial", e)}
 										onPointerUp={handlePointerUp}
@@ -1124,6 +1299,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 										slabThicknessMm={slabThicknessMm}
 										pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
 										obliqueAngleDeg={obliqueAngles.axialAngleDeg}
+										onResetAngle={() => setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, "axial"))}
 										zoomFactor={transforms.axial.zoom}
 										windowWidth={windowWidth}
 										windowLevel={windowLevel}
@@ -1139,7 +1315,12 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 							<div
 								onDoubleClick={() => handleToggleMaximize("coronal")}
 								onContextMenu={(e) => e.preventDefault()}
-								className={`flex flex-col rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden relative shadow-lg ${
+								onPointerDownCapture={() => setActiveViewport("coronal")}
+								className={`flex flex-col rounded-2xl bg-slate-900 overflow-hidden relative shadow-lg transition-all ${
+									activeViewport === "coronal"
+										? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
+										: "border border-slate-800"
+								} ${
 									maximizedViewport === "coronal" ? "flex-1 w-full h-full" : "flex-1 min-w-0 ml-2"
 								}`}
 								data-testid="cbct-viewport-container-coronal"
@@ -1148,6 +1329,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 									<canvas
 										ref={coronalCanvasRef}
 										onContextMenu={(e) => e.preventDefault()}
+										onDoubleClick={(e) => handleCanvasDoubleClick("coronal", e)}
 										onPointerDown={(e) => handlePointerDown("coronal", e)}
 										onPointerMove={(e) => handlePointerMove("coronal", e)}
 										onPointerUp={handlePointerUp}
@@ -1162,6 +1344,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 										slabThicknessMm={slabThicknessMm}
 										pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
 										obliqueAngleDeg={obliqueAngles.coronalTiltDeg}
+										onResetAngle={() => setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, "coronal"))}
 										zoomFactor={transforms.coronal.zoom}
 										windowWidth={windowWidth}
 										windowLevel={windowLevel}
@@ -1177,7 +1360,12 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 							<div
 								onDoubleClick={() => handleToggleMaximize("sagittal")}
 								onContextMenu={(e) => e.preventDefault()}
-								className={`flex flex-col rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden relative shadow-lg ${
+								onPointerDownCapture={() => setActiveViewport("sagittal")}
+								className={`flex flex-col rounded-2xl bg-slate-900 overflow-hidden relative shadow-lg transition-all ${
+									activeViewport === "sagittal"
+										? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
+										: "border border-slate-800"
+								} ${
 									maximizedViewport === "sagittal" ? "flex-1 w-full h-full" : "flex-1 min-w-0 ml-2"
 								}`}
 								data-testid="cbct-viewport-container-sagittal"
@@ -1186,6 +1374,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 									<canvas
 										ref={sagittalCanvasRef}
 										onContextMenu={(e) => e.preventDefault()}
+										onDoubleClick={(e) => handleCanvasDoubleClick("sagittal", e)}
 										onPointerDown={(e) => handlePointerDown("sagittal", e)}
 										onPointerMove={(e) => handlePointerMove("sagittal", e)}
 										onPointerUp={handlePointerUp}
@@ -1200,6 +1389,7 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 										slabThicknessMm={slabThicknessMm}
 										pixelSpacingMm={volume?.spacingMm.y ?? 0.4}
 										obliqueAngleDeg={obliqueAngles.sagittalTiltDeg}
+										onResetAngle={() => setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, "sagittal"))}
 										zoomFactor={transforms.sagittal.zoom}
 										windowWidth={windowWidth}
 										windowLevel={windowLevel}
@@ -1239,13 +1429,19 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 
 						<div
 							onDoubleClick={() => handleToggleMaximize("panoramic")}
-							className="flex-1 flex items-center justify-center bg-black rounded-2xl border border-slate-800 p-2 min-h-[300px] overflow-hidden relative"
+							onPointerDownCapture={() => setActiveViewport("panoramic")}
+							className={`flex-1 flex items-center justify-center bg-black rounded-2xl p-2 min-h-[300px] overflow-hidden relative transition-all ${
+								activeViewport === "panoramic"
+									? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
+									: "border border-slate-800"
+							}`}
 							data-testid="cbct-viewport-container-panoramic"
 						>
 							{panoramicResult ? (
 								<>
 									<canvas
 										ref={panoCanvasRef}
+										onWheel={(e) => handleWheelZoom("panoramic", e)}
 										className="max-h-full max-w-full object-contain rounded-lg shadow-2xl cursor-pointer"
 										data-testid="cbct-panorama-canvas"
 									/>
@@ -1306,13 +1502,19 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 							{/* Canvas */}
 							<div
 								onDoubleClick={() => handleToggleMaximize("cross_section")}
-								className="flex-1 flex items-center justify-center bg-black rounded-2xl border border-slate-800 p-2 min-h-0 overflow-hidden relative"
+								onPointerDownCapture={() => setActiveViewport("cross_section")}
+								className={`flex-1 flex items-center justify-center bg-black rounded-2xl p-2 min-h-0 overflow-hidden relative transition-all ${
+									activeViewport === "cross_section"
+										? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
+										: "border border-slate-800"
+								}`}
 								data-testid="cbct-viewport-container-cross-section"
 							>
 								{activeCrossSection ? (
 									<>
 										<canvas
 											ref={crossSectionCanvasRef}
+											onWheel={(e) => handleWheelZoom("cross_section", e)}
 											className="max-h-full max-w-full object-contain rounded-lg shadow-2xl"
 										/>
 										<CbctViewportHud
@@ -1374,6 +1576,15 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					</div>
 				)}
 			</main>
+
+			{/* Bottom Status Bar & Hotkey Hints */}
+			<CbctHotkeysStatusBar
+				activeViewport={activeViewport}
+				onToggleHelp={toggleHelp}
+				isHelpOpen={isHelpOpen}
+				onToggleMaximize={handleToggleMaximizeActive}
+				isMaximized={maximizedViewport !== null}
+			/>
 		</div>
 	);
 };

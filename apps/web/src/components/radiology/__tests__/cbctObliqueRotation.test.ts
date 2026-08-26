@@ -9,6 +9,11 @@ import {
 	applyPanDrag,
 	applyWindowLevelDrag,
 	calculateAngleFromHandleDrag,
+	calculateAngleFromShiftDrag,
+	hitTestCrosshairCenter,
+	resetPlaneObliqueAngle,
+	resetObliqueRotationAngles,
+	getObliqueRotationLabel,
 	computeObliquePlaneBasis,
 	computeObliqueRotationMatrix,
 	createSyntheticDentalCbctVolume,
@@ -456,6 +461,102 @@ describe("CBCT Oblique MPR Rotation, Sub-Voxel Trilinear & Interactive Navigatio
 			// Drag to dx = 100, dy = 1 -> tiny angle
 			const angle = calculateAngleFromHandleDrag(center, { x: 200, y: 101 }, "u_pos");
 			assert.ok(Math.abs(angle - 0.6) <= 0.1, `Expected ~0.6 deg, got ${angle}`);
+		});
+	});
+
+	describe("12. Interactive Shift-Drag Rotation, Crosshair Center Hit-Test & 1-Click Reset", () => {
+		const centerPx = { x: 200, y: 200 };
+
+		it("returns initial angle when Shift-drag pointer position has not changed", () => {
+			const startPointer = { x: 300, y: 200 }; // 0 rad from center
+			const currentPointer = { x: 300, y: 200 };
+			const result = calculateAngleFromShiftDrag(centerPx, currentPointer, startPointer, 15.0);
+			assert.equal(result, 15.0);
+		});
+
+		it("calculates positive angle change when dragging clockwise around center", () => {
+			const startPointer = { x: 300, y: 200 }; // 0 deg
+			const currentPointer = { x: 200, y: 300 }; // 90 deg down (in canvas coords +Y is down, clockwise)
+			const result = calculateAngleFromShiftDrag(centerPx, currentPointer, startPointer, 0.0);
+			assert.equal(result, 90.0);
+		});
+
+		it("calculates negative angle change when dragging counter-clockwise", () => {
+			const startPointer = { x: 300, y: 200 }; // 0 deg
+			const currentPointer = { x: 200, y: 100 }; // -90 deg up
+			const result = calculateAngleFromShiftDrag(centerPx, currentPointer, startPointer, 0.0);
+			assert.equal(result, -90.0);
+		});
+
+		it("wraps angles cleanly within [-180, 180] range during continuous Shift-drag rotation", () => {
+			const startPointer = { x: 300, y: 200 }; // 0 deg
+			const currentPointer = { x: 100, y: 200 }; // 180 deg
+			const result = calculateAngleFromShiftDrag(centerPx, currentPointer, startPointer, 45.0);
+			// 45 + 180 = 225 -> wrapped to -135
+			assert.equal(result, -135.0);
+		});
+
+		it("handles pointer at exact center without NaN or zero division", () => {
+			const startPointer = { x: 200, y: 200 }; // center
+			const currentPointer = { x: 200, y: 200 }; // center
+			const result = calculateAngleFromShiftDrag(centerPx, currentPointer, startPointer, 20.0);
+			assert.equal(result, 20.0);
+		});
+
+		it("detects clicks on central reticle with hitTestCrosshairCenter", () => {
+			assert.equal(hitTestCrosshairCenter({ x: 200, y: 200 }, centerPx, 14), true);
+			assert.equal(hitTestCrosshairCenter({ x: 210, y: 200 }, centerPx, 14), true);
+			assert.equal(hitTestCrosshairCenter({ x: 200, y: 213 }, centerPx, 14), true);
+			assert.equal(hitTestCrosshairCenter({ x: 215, y: 200 }, centerPx, 14), false);
+			assert.equal(hitTestCrosshairCenter({ x: 300, y: 300 }, centerPx, 14), false);
+		});
+
+		it("resets individual plane angle while preserving other planes with resetPlaneObliqueAngle", () => {
+			const initial: ObliqueRotationAngles = {
+				axialAngleDeg: 25.5,
+				coronalTiltDeg: -12.0,
+				sagittalTiltDeg: 8.4,
+			};
+
+			const resetAxial = resetPlaneObliqueAngle(initial, "axial");
+			assert.deepEqual(resetAxial, {
+				axialAngleDeg: 0.0,
+				coronalTiltDeg: -12.0,
+				sagittalTiltDeg: 8.4,
+			});
+
+			const resetCoronal = resetPlaneObliqueAngle(initial, "coronal");
+			assert.deepEqual(resetCoronal, {
+				axialAngleDeg: 25.5,
+				coronalTiltDeg: 0.0,
+				sagittalTiltDeg: 8.4,
+			});
+
+			const resetSagittal = resetPlaneObliqueAngle(initial, "sagittal");
+			assert.deepEqual(resetSagittal, {
+				axialAngleDeg: 25.5,
+				coronalTiltDeg: -12.0,
+				sagittalTiltDeg: 0.0,
+			});
+		});
+
+		it("resets all plane angles to 0.0 with resetObliqueRotationAngles", () => {
+			const resetAll = resetObliqueRotationAngles();
+			assert.deepEqual(resetAll, {
+				axialAngleDeg: 0.0,
+				coronalTiltDeg: 0.0,
+				sagittalTiltDeg: 0.0,
+			});
+		});
+
+		it("formats clinical rotation and tilt badges correctly with getObliqueRotationLabel", () => {
+			assert.equal(getObliqueRotationLabel("axial", 15.2), "Поворот: +15.2°");
+			assert.equal(getObliqueRotationLabel("axial", -8.0), "Поворот: -8.0°");
+			assert.equal(getObliqueRotationLabel("coronal", -5.5), "Наклон: -5.5°");
+			assert.equal(getObliqueRotationLabel("coronal", 10.0), "Наклон: +10.0°");
+			assert.equal(getObliqueRotationLabel("sagittal", 8.4), "Наклон: +8.4°");
+			assert.equal(getObliqueRotationLabel("axial", 0.0), "Поворот: 0.0°");
+			assert.equal(getObliqueRotationLabel("coronal", 0.0), "Наклон: 0.0°");
 		});
 	});
 });

@@ -39,6 +39,48 @@ export const DEFAULT_OBLIQUE_ROTATION: ObliqueRotationAngles = Object.freeze({
 	sagittalTiltDeg: 0,
 });
 
+/**
+ * Returns clinical localized rotation label for the given plane.
+ */
+export function getObliqueRotationLabel(plane: MprPlane, angleDeg: number): string {
+	const safeAngle = Number.isFinite(angleDeg) ? angleDeg : 0;
+	const sign = safeAngle > 0 ? "+" : "";
+	const formatted = `${sign}${safeAngle.toFixed(1)}°`;
+	switch (plane) {
+		case "axial":
+			return `Поворот: ${formatted}`;
+		case "coronal":
+			return `Наклон: ${formatted}`;
+		case "sagittal":
+			return `Наклон: ${formatted}`;
+	}
+}
+
+/**
+ * Resets all 3 oblique rotation angles back to 0.0°.
+ */
+export function resetObliqueRotationAngles(): ObliqueRotationAngles {
+	return { ...DEFAULT_OBLIQUE_ROTATION };
+}
+
+/**
+ * Resets the oblique rotation angle for a single plane back to 0.0°.
+ */
+export function resetPlaneObliqueAngle(
+	angles: ObliqueRotationAngles,
+	plane: MprPlane,
+): ObliqueRotationAngles {
+	const current = angles ?? DEFAULT_OBLIQUE_ROTATION;
+	switch (plane) {
+		case "axial":
+			return { ...current, axialAngleDeg: 0 };
+		case "coronal":
+			return { ...current, coronalTiltDeg: 0 };
+		case "sagittal":
+			return { ...current, sagittalTiltDeg: 0 };
+	}
+}
+
 export interface ViewportTransform {
 	readonly zoom: number; // 0.5 .. 5.0
 	readonly panX: number; // Pixel horizontal pan offset
@@ -675,10 +717,51 @@ export function calculateAngleFromHandleDrag(
 	return Number(deg.toFixed(1));
 }
 
+/**
+ * Calculates in-plane rotation angle (in degrees) when dragging anywhere on canvas with Shift key held.
+ */
+export function calculateAngleFromShiftDrag(
+	centerPx: { readonly x: number; readonly y: number },
+	currentPointerPx: { readonly x: number; readonly y: number },
+	startPointerPx: { readonly x: number; readonly y: number },
+	initialAngleDeg: number,
+): number {
+	const dx0 = startPointerPx.x - centerPx.x;
+	const dy0 = startPointerPx.y - centerPx.y;
+	const dx1 = currentPointerPx.x - centerPx.x;
+	const dy1 = currentPointerPx.y - centerPx.y;
+
+	if (Math.hypot(dx0, dy0) < 1e-3 || Math.hypot(dx1, dy1) < 1e-3) {
+		return initialAngleDeg;
+	}
+
+	const angle0 = Math.atan2(dy0, dx0);
+	const angle1 = Math.atan2(dy1, dx1);
+	let deltaDeg = radToDeg(angle1 - angle0);
+
+	let newDeg = initialAngleDeg + deltaDeg;
+	while (newDeg > 180) newDeg -= 360;
+	while (newDeg < -180) newDeg += 360;
+
+	return Number(newDeg.toFixed(1));
+}
+
+/**
+ * Hit tests pointer coordinates against the central reticle ring (for 1-click or double-click reset).
+ */
+export function hitTestCrosshairCenter(
+	pointerPx: { readonly x: number; readonly y: number },
+	centerPx: { readonly x: number; readonly y: number },
+	hitTolerancePx = 14,
+): boolean {
+	const dist = Math.hypot(pointerPx.x - centerPx.x, pointerPx.y - centerPx.y);
+	return dist <= hitTolerancePx;
+}
+
 // ─── 7. CANVAS OBLIQUE CROSSHAIR & ROTATION HANDLES RENDERER ────────────────
 
 /**
- * Draws rotated crosshair reticles, tick marks, rotation handles, and angle badges onto the canvas.
+ * Draws rotated crosshair reticles, tick marks, circular sector arc, rotation handles, and angle badges onto the canvas.
  */
 export function drawObliqueCrosshairWithRotationHandles(
 	ctx: CanvasRenderingContext2D,
@@ -697,25 +780,30 @@ export function drawObliqueCrosshairWithRotationHandles(
 		showAngleBadge = true,
 	} = options;
 
-	const rotRad = degToRad(rotationDeg);
+	const safeRotationDeg = Number.isFinite(rotationDeg) ? rotationDeg : 0;
+	const rotRad = degToRad(safeRotationDeg);
 	const cosA = Math.cos(rotRad);
 	const sinA = Math.sin(rotRad);
 
 	let axisColor1: string;
 	let axisColor2: string;
+	let planeAccentColor: string;
 
 	switch (plane) {
 		case "axial":
-			axisColor1 = ROMEXIS_COLORS.coronal;
-			axisColor2 = ROMEXIS_COLORS.sagittal;
+			axisColor1 = ROMEXIS_COLORS.coronal; // Amber
+			axisColor2 = ROMEXIS_COLORS.sagittal; // Emerald
+			planeAccentColor = ROMEXIS_COLORS.axial; // Cyan
 			break;
 		case "coronal":
-			axisColor1 = ROMEXIS_COLORS.axial;
-			axisColor2 = ROMEXIS_COLORS.sagittal;
+			axisColor1 = ROMEXIS_COLORS.axial; // Cyan
+			axisColor2 = ROMEXIS_COLORS.sagittal; // Emerald
+			planeAccentColor = ROMEXIS_COLORS.coronal; // Amber
 			break;
 		case "sagittal":
-			axisColor1 = ROMEXIS_COLORS.axial;
-			axisColor2 = ROMEXIS_COLORS.coronal;
+			axisColor1 = ROMEXIS_COLORS.axial; // Cyan
+			axisColor2 = ROMEXIS_COLORS.coronal; // Amber
+			planeAccentColor = ROMEXIS_COLORS.sagittal; // Emerald
 			break;
 	}
 
@@ -723,7 +811,7 @@ export function drawObliqueCrosshairWithRotationHandles(
 
 	const diag = Math.hypot(widthPx, heightPx);
 
-	// 1. Axis 1 (Horizontal when rotation = 0)
+	// 1. Axis 1 (Primary horizontal axis when rotation = 0)
 	ctx.strokeStyle = axisColor1;
 	ctx.lineWidth = 1.2;
 	ctx.beginPath();
@@ -731,7 +819,7 @@ export function drawObliqueCrosshairWithRotationHandles(
 	ctx.lineTo(centerPx.x + diag * cosA, centerPx.y + diag * sinA);
 	ctx.stroke();
 
-	// 2. Axis 2 (Vertical when rotation = 0)
+	// 2. Axis 2 (Secondary vertical axis when rotation = 0)
 	ctx.strokeStyle = axisColor2;
 	ctx.lineWidth = 1.2;
 	ctx.beginPath();
@@ -739,18 +827,29 @@ export function drawObliqueCrosshairWithRotationHandles(
 	ctx.lineTo(centerPx.x - diag * sinA, centerPx.y + diag * cosA);
 	ctx.stroke();
 
-	// 3. Central Reticle Ring
+	// 3. Central Reticle Target Ring (Double circle for precision navigation and 1-click reset hit target)
+	ctx.strokeStyle = "rgba(15, 23, 42, 0.9)";
+	ctx.lineWidth = 3.0;
+	ctx.beginPath();
+	ctx.arc(centerPx.x, centerPx.y, 4.5, 0, Math.PI * 2);
+	ctx.stroke();
+
 	ctx.strokeStyle = "#ffffff";
 	ctx.lineWidth = 1.5;
 	ctx.beginPath();
-	ctx.arc(centerPx.x, centerPx.y, 4.0, 0, Math.PI * 2);
+	ctx.arc(centerPx.x, centerPx.y, 4.5, 0, Math.PI * 2);
 	ctx.stroke();
 
-	// 4. Rotation Handles
-	if (showHandles) {
-		const handles = getRotationHandles(plane, widthPx, heightPx, centerPx, handleDistancePx, rotationDeg);
+	ctx.fillStyle = planeAccentColor;
+	ctx.beginPath();
+	ctx.arc(centerPx.x, centerPx.y, 1.5, 0, Math.PI * 2);
+	ctx.fill();
 
-		// Circular guide track
+	// 4. Rotation Handles & Circular Arc Indicator
+	if (showHandles) {
+		const handles = getRotationHandles(plane, widthPx, heightPx, centerPx, handleDistancePx, safeRotationDeg);
+
+		// Circular guide track (Dashed background ring)
 		ctx.strokeStyle = "rgba(148, 163, 184, 0.25)";
 		ctx.lineWidth = 1.0;
 		ctx.setLineDash([2, 3]);
@@ -759,10 +858,27 @@ export function drawObliqueCrosshairWithRotationHandles(
 		ctx.stroke();
 		ctx.setLineDash([]);
 
+		// Rotational Arc Sector (Visualizes angle swept from 0 deg to current rotation)
+		if (Math.abs(safeRotationDeg) > 0.1) {
+			ctx.save();
+			ctx.strokeStyle = planeAccentColor;
+			ctx.lineWidth = 2.0;
+			ctx.shadowColor = planeAccentColor;
+			ctx.shadowBlur = 4;
+			ctx.beginPath();
+			if (safeRotationDeg > 0) {
+				ctx.arc(centerPx.x, centerPx.y, handleDistancePx, 0, rotRad, false);
+			} else {
+				ctx.arc(centerPx.x, centerPx.y, handleDistancePx, rotRad, 0, false);
+			}
+			ctx.stroke();
+			ctx.restore();
+		}
+
+		// 4 Handle Knobs at the axis ends
 		for (const h of handles) {
 			const isActive = activeHandle === h.position;
 			const isHovered = hoveredHandle === h.position;
-
 			const color = h.position.startsWith("u") ? axisColor1 : axisColor2;
 
 			ctx.save();
@@ -789,23 +905,24 @@ export function drawObliqueCrosshairWithRotationHandles(
 		}
 	}
 
-	// 5. Rotation Angle HUD Badge
-	if (showAngleBadge && Math.abs(rotationDeg) > 0.1) {
-		const badgeText = `∡ ${rotationDeg > 0 ? "+" : ""}${rotationDeg.toFixed(1)}°`;
+	// 5. Real-time Rotation Angle HUD Badge (e.g. "Поворот: +15.0°" or "Наклон: -5.0°")
+	if (showAngleBadge && Math.abs(safeRotationDeg) > 0.1) {
+		const badgeText = getObliqueRotationLabel(plane, safeRotationDeg);
 		ctx.font = "bold 10px monospace";
 		ctx.textAlign = "center";
 		ctx.textBaseline = "middle";
 
-		const badgeX = centerPx.x + (handleDistancePx + 20) * cosA;
-		const badgeY = centerPx.y + (handleDistancePx + 20) * sinA;
+		const badgeDist = handleDistancePx + 24;
+		const badgeX = centerPx.x + badgeDist * cosA;
+		const badgeY = centerPx.y + badgeDist * sinA;
 
-		ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
-		ctx.strokeStyle = "rgba(51, 65, 85, 0.9)";
+		ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
+		ctx.strokeStyle = "rgba(56, 189, 248, 0.5)";
 		ctx.lineWidth = 1.0;
 
 		const textW = ctx.measureText(badgeText).width;
 		ctx.beginPath();
-		ctx.roundRect(badgeX - textW / 2 - 4, badgeY - 8, textW + 8, 16, 4);
+		ctx.roundRect(badgeX - textW / 2 - 5, badgeY - 9, textW + 10, 18, 4);
 		ctx.fill();
 		ctx.stroke();
 
