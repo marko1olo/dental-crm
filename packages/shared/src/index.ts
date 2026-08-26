@@ -21,6 +21,7 @@ export * from "./hardware/index.js";
 export * from "./inventory/consumables.js";
 export * from "./lab/index.js";
 export * from "./communications/index.js";
+export * from "./schedule/index.js";
 
 
 

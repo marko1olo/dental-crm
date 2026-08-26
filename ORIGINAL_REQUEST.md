@@ -47,35 +47,31 @@ You own the tool expansion of the AI Agentic Core:
 3. Run `node --import tsx --test apps/api/src/services/agent/agent.test.ts` and `npm run typecheck -w @dental/api`.
 4. Report completed results with test logs.
 
-## 2026-08-26T23:12:41Z
+## 2026-08-26T23:34:09Z
 
-[AUDIT DIRECTIVE: CODEBASE CENSUS FOR ACADEMIC OVERENGINEERING & BLOAT]
+[MASSIVE DOMAIN DIRECTIVE: AGENTIC SCHEDULE MUTATION TOOLS]
 Working directory: `C:\Clinic_MVP\dental-crm`
 
-Scan `apps/web/src/components/` and `apps/web/src/`:
-Search for academic/theoretical bloat that real clinic staff never use in real commercial practice:
-1. Academic diagnostic forms with 50+ manual inputs (like theoretical TMJ condyle angle calculators, cephalometric tracing simulators, complex bite kinematic simulators, academic hygiene indexes nobody calculates).
-2. Complex multi-step wizards for trivial tasks.
-3. Unused experimental research panels or synthetic mock simulators.
-4. Mathematical formulas that complicate simple clinic workflows (e.g. theoretical bone resorption decay curves, biomechanical load distribution).
+You own the implementation of interactive appointment mutation tools in the Agent Tool Registry:
+1. In `apps/api/src/services/agent/tools/clinicalTools.ts`, add 3 new tools with human-in-the-loop confirmation:
+   - `reschedule_appointment`: changes start/end time of appointment with conflict checking. Category: `"write"`, requires confirmation.
+   - `cancel_appointment`: cancels appointment with reason. Category: `"write"`, requires confirmation.
+   - `get_doctor_schedule`: retrieves doctor work shifts, booked slots, and free capacity for a given date range. Category: `"read"`.
+2. Update unit tests in `apps/api/src/services/agent/agent.test.ts`.
+3. Run `node --import tsx --test apps/api/src/services/agent/agent.test.ts` and verify 100% pass.
+4. Run `npm run typecheck -w @dental/api` and report results.
 
-List exact files, line numbers, and provide a brutal assessment: what it is, why it's useless for a commercial clinic, and what simple 1-click alternative is actually needed.
+## 2026-08-26T23:35:18Z
 
-## 2026-08-26T23:20:09Z
-
-[DIRECTIVE 1: ORTHODONTICS & PERIO BLOAT PRUNING]
+[GLOBAL EXPEDITION: DEEP SCAN FOR ANY REMAINING ACADEMIC / THEORETICAL BLOAT]
 Working directory: `C:\Clinic_MVP\dental-crm`
 
-Execute the following actions:
-1. **PRESERVE TRG INTACT**:
-   - Do NOT touch or delete `apps/web/src/components/orthodontics/CephalometricAnalysisModal.tsx`, `CephalometricCanvas.tsx`, `cephalometricMath.ts`. Ensure TRG tests in `apps/web/src/components/orthodontics/__tests__/` continue to pass.
-2. **DELETE / PRUNE THE FOLLOWING BLOAT FILES**:
-   - `apps/web/src/components/orthodontics/OrthodonticBracketMatrixModal.tsx`
-   - `apps/web/src/components/orthodontics/OrthodonticBracketMatrixModal.css`
-   - `apps/web/src/components/orthodontics/bracketPrescriptions.ts`
-   - `apps/web/src/components/orthodontics/orthodonticWireSequencer.ts`
-   - `apps/web/src/components/clinical/perio/PeriodontalRiskAssessmentModal.tsx`
-   - `apps/web/src/components/clinical/perio/perioPraCalculator.ts`
-   - `apps/web/src/components/clinical/perio/perio6PointMath.ts`
-3. Clean all re-exports in `apps/web/src/components/clinical/perio/index.ts` and `apps/web/src/components/orthodontics/index.ts`.
-4. Report back when deleted and cleaned.
+Scan 100% of remaining files in the entire project:
+1. `apps/web/src/components/sanpin/` (400+ KB of SanPin tabs: find if there are theoretical autoclave chamber point matrices, complex disinfectant concentration cubic equations, or fake test logs).
+2. `apps/web/src/components/documents/` (Check all medical forms for 50-field obsolete questionnaires, complex theoretical indices like PMA/Fedorov-Volodkina).
+3. `apps/web/src/components/radiology/` and `apps/web/src/components/diagnostic/`.
+4. `apps/api/src/` and `packages/shared/src/`.
+
+Check every single folder line-by-line.
+List every found academic bloat module with exact file paths, line numbers, line counts, and why it's useless for a real commercial dental clinic.
+Generate a structured report in `docs/audit/GLOBAL_BLOAT_INVENTORY.md`.

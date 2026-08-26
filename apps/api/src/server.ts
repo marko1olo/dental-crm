@@ -107,6 +107,7 @@ import { registerWaitlistRoutes } from "./routes/waitlist.js";
 import { registerWaitlistMatchRoutes } from "./routes/waitlistMatches.js";
 import { registerWebsocketRoutes } from "./routes/websocket.js";
 import { registerWhatsappRoutes } from "./routes/whatsapp.js";
+import { registerWhatsappWebhookRoutes } from "./routes/whatsappWebhook.js";
 import { workspaceProfileRoutes } from "./routes/workspaceProfile.js";
 import { registerXrayRoutes } from "./routes/xray.js";
 import { registerYandexCalendarRoutes } from "./routes/yandexCalendar.js";
@@ -682,6 +683,7 @@ export async function createDenteApiApp(
 	await registerVkRoutes(app);
 	await registerWaitlistRoutes(app);
 	await app.register(registerWhatsappRoutes);
+	await registerWhatsappWebhookRoutes(app);
 	await registerPatientRoutes(app);
 	await registerPricelistRoutes(app);
 	await registerScheduleRoutes(app);

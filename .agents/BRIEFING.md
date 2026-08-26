@@ -1,11 +1,11 @@
-# BRIEFING — 2026-08-26T23:12:00Z
+# BRIEFING — 2026-08-26T23:40:00Z
 
 ## Mission
-Extract and port Communications & Recalls subsystem from dentalpin (`backend/app/modules/whatsapp_kapso/`, `recalls/`, `recall_reminders/`) into `@dental/shared` contracts, pure domain algorithms, and automated test suites.
+Build inbound WhatsApp Meta Webhook router in Fastify (`apps/api/src/routes/whatsappWebhook.ts`), automated interactive appointment confirmation/cancellation lifecycle, WebSocket reception broadcast, and test suite.
 
 ## 🔒 My Identity
 - Archetype: sentinel
-- Working directory: C:\Clinic_MVP\dental-crm\.agents\sentinel_r53
+- Working directory: C:\Clinic_MVP\dental-crm\.agents\sentinel_r54
 - Orchestrator: TBD
 - Victory Auditor: to be spawned on victory claim
 
@@ -15,14 +15,13 @@ Extract and port Communications & Recalls subsystem from dentalpin (`backend/app
 - Follow DENTE Dental CRM mandates (HEAD-hash reporting, compiles != works, per-file git add, kopeck-exact money, complete migrations, ast-grep read/write split)
 
 ## User Context
-- **Last user request**: MASSIVE RECONNAISSANCE & EXTRACTION DIRECTIVE: COMMUNICATIONS & RECALLS (WhatsApp Business API / Kapso gateway schemas, incoming webhook handler, delivery status updates, interactive button & list message payloads, automated hygiene & checkup recall intervals, dynamic reminder generator with `{var}` / `{{var}}` substitution, multi-channel cascade logic WhatsApp -> SMS -> Push -> Call task).
+- **Last user request**: MASSIVE DOMAIN DIRECTIVE: WHATSAPP WEBHOOK ROUTER & APPOINTMENT AUTO-CONFIRMATION.
 - **Pending clarifications**: none
 - **Delivered results**:
-  - `packages/shared/src/communications/whatsappKapso.ts`: Full Zod schemas and TypeScript contracts for Meta WABA / Kapso gateway settings, webhook events, delivery receipts, interactive button and list payloads, and payload builders.
-  - `packages/shared/src/communications/recallCascade.ts`: Zod schemas for recall CRUD, snooze, attempt logging, and channel cascade execution plan, plus pure domain calculation routines (`calculateNextRecallDueMonth`, `renderRecallReminderTemplate`, `planCascadeDispatchSchedule`, `evaluateCascadeStepAdvance`).
-  - `packages/shared/src/communications/index.ts` & `packages/shared/src/index.ts`: Re-exported through the root shared package.
-  - `packages/shared/src/tests/communicationsMining.test.ts`: 14 unit tests covering WhatsApp payloads, interactive messages, delivery receipts, recall intervals, variable interpolators, and cascade schedules (**14/14 passed**).
-  - 100% clean full root `npm run typecheck` across `@dental/shared`, `@dental/api`, and `@dental/web` (**Exit Code 0**).
+  - `apps/api/src/routes/whatsappWebhook.ts`: Handshake verification (`GET /api/v1/webhooks/whatsapp`) and webhook receiver (`POST /api/v1/webhooks/whatsapp`) with interactive button reply parsing (`confirm_appointment_<id>`, `cancel_appointment_<id>`, `APPT_CONFIRM`, `APPT_CANCEL`), PostgreSQL appointment status updates (`confirmed` / `cancelled`), communication event logging, WhatsApp confirmation receipt sending, and live WebSocket broadcasts to reception.
+  - `apps/api/src/routes/whatsappWebhook.test.ts`: 9 unit and Fastify inject tests for verification handshake, 403 handling, button parsing, and webhook event processing (**9/9 passed**).
+  - `apps/api/src/server.ts`: Registered `registerWhatsappWebhookRoutes(app)`.
+  - Full messaging test suite (35/35 passed) and full root typecheck (Exit Code 0).
 
 ## Project Status
 - **Phase**: complete
@@ -35,7 +34,5 @@ Extract and port Communications & Recalls subsystem from dentalpin (`backend/app
 ## Artifact Index
 - C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md — user intent record
 - C:\Clinic_MVP\dental-crm\.agents\BRIEFING.md — Sentinel persistent briefing
-- C:\Clinic_MVP\dental-crm\packages\shared\src\communications\whatsappKapso.ts — Shared WhatsApp Kapso schemas & builders
-- C:\Clinic_MVP\dental-crm\packages\shared\src\communications\recallCascade.ts — Shared recall intervals & cascade dispatch contracts
-- C:\Clinic_MVP\dental-crm\packages\shared\src\communications\index.ts — Communications re-exports
-- C:\Clinic_MVP\dental-crm\packages\shared\src\tests\communicationsMining.test.ts — Unit tests suite
+- C:\Clinic_MVP\dental-crm\apps\api\src\routes\whatsappWebhook.ts — Inbound WhatsApp webhook router
+- C:\Clinic_MVP\dental-crm\apps\api\src\routes\whatsappWebhook.test.ts — Webhook unit & inject tests

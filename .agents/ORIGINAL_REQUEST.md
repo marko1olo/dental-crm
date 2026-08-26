@@ -47,51 +47,46 @@ You own the tool expansion of the AI Agentic Core:
 3. Run `node --import tsx --test apps/api/src/services/agent/agent.test.ts` and `npm run typecheck -w @dental/api`.
 4. Report completed results with test logs.
 
-## 2026-08-26T23:03:32Z
+## 2026-08-26T23:34:09Z
 
-[MASSIVE DIRECTIVE: COPILOT 1-CLICK TOP BAR TRIGGER & RESULT CARDS]
+[MASSIVE DOMAIN DIRECTIVE: AGENTIC SCHEDULE MUTATION TOOLS]
 Working directory: `C:\Clinic_MVP\dental-crm`
 
-You own the UI ergonomics and deep tool card rendering:
-1. Ensure the Copilot trigger button is visibly placed in the main navigation top bar (`apps/web/src/components/Omnibar.tsx` or `App.tsx` header) as a large, obvious 1-click button with tooltip and icon so doctors never need hotkeys.
-2. In `apps/web/src/components/copilot/CopilotResultCard.tsx`, add rich specialized renderers:
-   - Lab Order Card: shows order ID, prosthesis kind, VITA shade pill (e.g. `A2`), delivery status badge, and ETA.
-   - Drug Interaction Alert Card: shows red/amber contraindication warning box with severity and medical advice.
-   - Patient Timeline Card: shows interactive chronological list with clickable visit dates and diagnostic tags.
-3. Verify with unit tests: `node --import tsx --import ./apps/web/testCssStub.mjs --test "apps/web/src/components/copilot/__tests__/CopilotDrawer.test.tsx"`.
-4. Run `npm run typecheck -w @dental/web` and report results.
+You own the implementation of interactive appointment mutation tools in the Agent Tool Registry:
+1. In `apps/api/src/services/agent/tools/clinicalTools.ts`, add 3 new tools with human-in-the-loop confirmation:
+   - `reschedule_appointment`: changes start/end time of appointment with conflict checking. Category: `"write"`, requires confirmation.
+   - `cancel_appointment`: cancels appointment with reason. Category: `"write"`, requires confirmation.
+   - `get_doctor_schedule`: retrieves doctor work shifts, booked slots, and free capacity for a given date range. Category: `"read"`.
+2. Update unit tests in `apps/api/src/services/agent/agent.test.ts`.
+3. Run `node --import tsx --test apps/api/src/services/agent/agent.test.ts` and verify 100% pass.
+4. Run `npm run typecheck -w @dental/api` and report results.
 
-## 2026-08-26T23:12:41Z
+## 2026-08-26T23:34:14Z
 
-[AUDIT DIRECTIVE: CODEBASE CENSUS FOR ACADEMIC OVERENGINEERING & BLOAT]
+[MASSIVE DOMAIN DIRECTIVE: 1C:ENTERPRISE XML EXPORT & ESTIMATE GENERATION]
+Reference repo: `C:\Users\Admin\.gemini\antigravity\scratch\dentalpin\backend\app\modules`
+Target project: `C:\Clinic_MVP\dental-crm`
+
+You own the implementation of Russian statutory 1C:Enterprise XML invoice/payment export and estimate generator:
+1. `packages/shared/src/finance/oneCEnterpriseExport.ts`:
+   - Generates compliant 1C:Enterprise (1С:Бухгалтерия 8.3 / УТ) XML documents for invoices, completed medical acts, and cash operations.
+   - Exact kopeck matching, Russian INN/KPP validation, VAT exemptions (НДС Не облагается ст. 149 НК РФ).
+2. `packages/shared/src/finance/estimateHtmlRenderer.ts`:
+   - Generates clean, printable HTML/PDF estimate sheets with treatment plan stages, tooth numbers, and statutory clinic signatures.
+3. Unit tests: `packages/shared/src/tests/oneCEnterpriseExport.test.ts`.
+4. Run `npm test -w @dental/shared` and `npm run typecheck -w @dental/shared`. Report verified results.
+
+## 2026-08-26T23:35:18Z
+
+[GLOBAL EXPEDITION: DEEP SCAN FOR ANY REMAINING ACADEMIC / THEORETICAL BLOAT]
 Working directory: `C:\Clinic_MVP\dental-crm`
 
-Scan `apps/web/src/components/` and `apps/web/src/`:
-Search for academic/theoretical bloat that real clinic staff never use in real commercial practice:
-1. Academic diagnostic forms with 50+ manual inputs (like theoretical TMJ condyle angle calculators, cephalometric tracing simulators, complex bite kinematic simulators, academic hygiene indexes nobody calculates).
-2. Complex multi-step wizards for trivial tasks.
-3. Unused experimental research panels or synthetic mock simulators.
-4. Mathematical formulas that complicate simple clinic workflows (e.g. theoretical bone resorption decay curves, biomechanical load distribution).
+Scan 100% of remaining files in the entire project:
+1. `apps/web/src/components/sanpin/` (400+ KB of SanPin tabs: find if there are theoretical autoclave chamber point matrices, complex disinfectant concentration cubic equations, or fake test logs).
+2. `apps/web/src/components/documents/` (Check all medical forms for 50-field obsolete questionnaires, complex theoretical indices like PMA/Fedorov-Volodkina).
+3. `apps/web/src/components/radiology/` and `apps/web/src/components/diagnostic/`.
+4. `apps/api/src/` and `packages/shared/src/`.
 
-List exact files, line numbers, and provide a brutal assessment: what it is, why it's useless for a commercial clinic, and what simple 1-click alternative is actually needed.
-
-## 2026-08-26T23:20:24Z
-
-[DIRECTIVE 3: WIZARD, TELEPHONY & MONOREPO CALLER CLEANUP]
-Working directory: `C:\Clinic_MVP\dental-crm`
-
-Execute the following actions:
-1. **DELETE THE FOLLOWING BLOAT FILES**:
-   - `apps/web/src/components/schedule/SeniorNurseBookingWizardModal.tsx`
-   - `apps/web/src/components/telephony/TelephonySimulatorModal.tsx`
-2. **CLEAN ALL UNREFERENCED CALLERS ACROSS**:
-   - `apps/web/src/App.tsx`
-   - `apps/web/src/AppShell.tsx`
-   - `apps/web/src/pages/ClinicalModalsStudioStandalone.tsx`
-   - `apps/web/src/components/workspace/WorkspaceFeaturesSelector.tsx`
-   - `apps/web/src/components/visit/VisitDiagnosticsTab.tsx`
-   - `apps/web/src/tests/modalPortalsSsrSafety.test.ts`
-3. Run `npm run typecheck` across all packages to verify **0 errors (Exit Code 0)**.
-4. Report back with raw typecheck output.
-
-
+Check every single folder line-by-line.
+List every found academic bloat module with exact file paths, line numbers, line counts, and why it's useless for a real commercial dental clinic.
+Generate a structured report in `docs/audit/GLOBAL_BLOAT_INVENTORY.md`.

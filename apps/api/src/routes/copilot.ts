@@ -178,6 +178,104 @@ export const copilotRoutes: FastifyPluginAsync = async (
 		},
 	);
 
+	// POST /api/v1/copilot/chat — Unified SSE conversation endpoint
+	server.post<{
+		Body: { conversationId?: string; sessionId?: string; content?: string; message?: string; text?: string };
+	}>(
+		"/api/v1/copilot/chat",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot chat",
+			);
+			if (!resolvedOrgId) return;
+
+			const body = request.body ?? {};
+			const sessionId = body.conversationId ?? body.sessionId ?? `sess_${Date.now()}`;
+			const userText = (body.content ?? body.message ?? body.text ?? "").trim();
+
+			if (!userText) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Текст сообщения не может быть пустым",
+				});
+			}
+
+			const identity = getRequestIdentity(request);
+			const userId = identity.userId ?? "00000000-0000-7000-8000-000000000001";
+
+			let session = sessionStore.get(sessionId);
+			if (!session) {
+				session = {
+					history: [],
+					redactor: new Redactor(),
+					updatedAt: Date.now(),
+				};
+				sessionStore.set(sessionId, session);
+			}
+			session.updatedAt = Date.now();
+
+			session.history.push({
+				role: "user",
+				content: userText,
+			});
+
+			reply.raw.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+			reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
+			reply.raw.setHeader("Connection", "keep-alive");
+			reply.raw.setHeader("X-Accel-Buffering", "no");
+			reply.raw.flushHeaders?.();
+
+			const ctx: AgentContext = {
+				organizationId: resolvedOrgId,
+				clinicId: resolvedOrgId,
+				userId,
+				sessionId,
+				mode: "supervised",
+				permissions: [...PERMISSIONS],
+				tools: defaultToolRegistry,
+				db,
+			};
+
+			try {
+				const stream = AgentOrchestrator.runTurnStream({
+					ctx,
+					provider: defaultLlmProvider,
+					system: DENTE_COPILOT_SYSTEM_PROMPT,
+					history: session.history,
+					toolNames: defaultToolRegistry.list(),
+					redactor: session.redactor,
+				});
+
+				for await (const event of stream) {
+					if (event.type === "confirmation_required") {
+						defaultCopilotActionManager.registerPending(
+							sessionId,
+							event.callId,
+							event.name,
+							event.arguments,
+						);
+					}
+					const chunk = formatSseEvent(event);
+					reply.raw.write(chunk);
+				}
+			} catch (err) {
+				const errorMsg = err instanceof Error ? err.message : String(err);
+				const errorEvent: TurnEvent = {
+					type: "token",
+					text: `\n\n⚠️ Ошибка выполнения: ${errorMsg}`,
+				};
+				reply.raw.write(formatSseEvent(errorEvent));
+				reply.raw.write(formatSseEvent({ type: "final", stopReason: "error" }));
+			} finally {
+				reply.raw.end();
+			}
+		},
+	);
+
+
 	// POST /api/v1/copilot/sessions/:sessionId/confirmations/:callId — Doctor confirmation/rejection
 	server.post<{
 		Params: { sessionId: string; callId: string };

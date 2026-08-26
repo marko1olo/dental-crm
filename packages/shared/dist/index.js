@@ -20,6 +20,7 @@ export * from "./hardware/index.js";
 export * from "./inventory/consumables.js";
 export * from "./lab/index.js";
 export * from "./communications/index.js";
+export * from "./schedule/index.js";
 import { procedureSpecificConsentProcedureSchema } from "./legal/legalContractsAndConsents.js";
 import { dailyDentistDiary037uPayloadSchema, fullForm043uPayloadSchema, medicalCardExtract003vuPayloadSchema, orthodonticCard043_1uPayloadSchema, radiationDoseSheetPayloadSchema, summaryDentistStatement039uPayloadSchema, } from "./documents/index.js";
 import { moneyRubSchema, nonNegativeMoneyRubSchema, positiveMoneyRubSchema, } from "./money.js";
