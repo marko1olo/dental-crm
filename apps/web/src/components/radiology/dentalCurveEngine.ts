@@ -316,9 +316,10 @@ export function reconstructPanoramicView(
 		heightMm = 38.0,
 		heightPx = 220,
 		widthPx,
-		windowWidth = 2000,
-		windowLevel = 400,
-	} = options as { heightMm?: number; heightPx?: number; widthPx?: number; windowWidth?: number; windowLevel?: number };
+		windowWidth = 4000,
+		windowLevel = 900,
+		projectionMode = "average",
+	} = options as { heightMm?: number; heightPx?: number; widthPx?: number; windowWidth?: number; windowLevel?: number; projectionMode?: string };
 
 	const splinePoints = archCurve.splinePointsMm;
 	const vectorField = calculateArchTangentsAndNormals(splinePoints);
@@ -436,8 +437,8 @@ export function extractSingleCrossSectionSlice(
 		widthMm = 24.0,
 		heightMm = 32.0,
 		pixelSpacingMm = 0.25,
-		windowWidth = 2000,
-		windowLevel = 400,
+		windowWidth = 4000,
+		windowLevel = 900,
 	} = options;
 
 	const widthPx = Math.round(widthMm / pixelSpacingMm);

@@ -56,38 +56,45 @@ export interface HounsfieldPreset {
 export const CBCT_HOUNSFIELD_PRESETS: readonly HounsfieldPreset[] = [
 	{
 		id: "bone_dense",
-		label: "Кость (Bone)",
-		windowWidth: 2000,
-		windowLevel: 400,
-		descriptionRu: "Оптимальный контраст кортикальной пластинки, губчатой кости и трабекул",
-	},
-	{
-		id: "soft_tissue",
-		label: "Мягкие ткани (Soft Tissue)",
-		windowWidth: 400,
-		windowLevel: 40,
-		descriptionRu: "Визуализация слизистой оболочки, десны, гайморовой пазухи и мягкотканных тяжей",
+		label: "Зубы и Кость (Dental)",
+		windowWidth: 4000,
+		windowLevel: 900,
+		descriptionRu: "Стандарт Romexis/Ez3D-i: четкая дифференциация пульпы, дентина, эмали и трабекул",
 	},
 	{
 		id: "enamel_dentin",
-		label: "Эмаль / Дентин / Пульпа",
+		label: "Эндодонтия / Кариес",
+		windowWidth: 5000,
+		windowLevel: 1400,
+		descriptionRu: "Максимальная детализация корневых каналов, апексов, кариозных полостей и периодонтальной щели",
+	},
+	{
+		id: "bone_cortical",
+		label: "Кортикал / Гребень",
 		windowWidth: 3000,
-		windowLevel: 1000,
-		descriptionRu: "Высокая детализация эмалево-дентинной границы, цемента корня и каналов",
+		windowLevel: 700,
+		descriptionRu: "Оценка кортикальных пластинок альвеолярного гребня и плотности по Misch",
+	},
+	{
+		id: "soft_tissue",
+		label: "Мягкие ткани",
+		windowWidth: 600,
+		windowLevel: 50,
+		descriptionRu: "Визуализация слизистой оболочки, десны, гайморовой пазухи и мягкотканных тяжей",
 	},
 	{
 		id: "implant_metal",
 		label: "Имплантаты / Металл",
-		windowWidth: 4000,
-		windowLevel: 1200,
-		descriptionRu: "Подавление металл-артефактов титановых имплантатов и циркониевых коронок",
+		windowWidth: 7000,
+		windowLevel: 2000,
+		descriptionRu: "Подавление металл-артефактов титановых имплантатов, вкладок и циркониевых коронок",
 	},
 	{
 		id: "airways_sinus",
-		label: "Пазухи / Воздух (MinIP)",
-		windowWidth: 1000,
-		windowLevel: -500,
-		descriptionRu: "Оценка проходимости верхнечелюстных синусов и носоглотки",
+		label: "Пазухи / ЛОР",
+		windowWidth: 1600,
+		windowLevel: -400,
+		descriptionRu: "Оценка проходимости верхнечелюстных синусов, носоглотки и остиомеатального комплекса",
 	},
 ];
 
@@ -653,9 +660,9 @@ export function extractMprSlice(
 	volume: CbctVoxelVolume,
 	plane: MprPlane,
 	sliceIndex: number,
-	options: SliceRenderOptions = { windowWidth: 2000, windowLevel: 400 },
+	options: SliceRenderOptions = { windowWidth: 4000, windowLevel: 900 },
 ): MprSliceExtractionResult {
-	const { windowWidth = 2000, windowLevel = 400, invert = false, slabMode = "single", slabThicknessMm = 2.0 } = options ?? {};
+	const { windowWidth = 4000, windowLevel = 900, invert = false, slabMode = "single", slabThicknessMm = 2.0 } = options ?? {};
 
 	const dim = volume.dimensions;
 	const sp = volume.spacingMm;

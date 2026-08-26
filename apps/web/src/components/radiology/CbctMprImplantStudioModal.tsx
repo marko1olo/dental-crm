@@ -154,8 +154,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	// ─── 3D CBCT VOXEL VOLUME STATE ───────────────────────────────────────────
 	const [volume, setVolume] = useState<CbctVoxelVolume | null>(null);
 	const [activePreset, setActivePreset] = useState<string>("bone_dense");
-	const [windowWidth, setWindowWidth] = useState<number>(2000);
-	const [windowLevel, setWindowLevel] = useState<number>(400);
+	const [windowWidth, setWindowWidth] = useState<number>(4000);
+	const [windowLevel, setWindowLevel] = useState<number>(900);
 	const [invertColors, setInvertColors] = useState<boolean>(false);
 	const [slabMode, setSlabMode] = useState<SlabProjectionMode>("single");
 	const [slabThicknessMm, setSlabThicknessMm] = useState<number>(2.0);
