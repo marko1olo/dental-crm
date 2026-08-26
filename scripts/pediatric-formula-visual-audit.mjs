@@ -31,11 +31,6 @@ const edgePath = [
 	"C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
 ].find((p) => existsSync(p));
 
-if (!edgePath) {
-	console.error("Microsoft Edge/Chromium not found!");
-	process.exit(1);
-}
-
 const browser = await chromium.launch({
 	executablePath: edgePath,
 	headless: true,
@@ -76,7 +71,7 @@ async function applyTheme(page, theme) {
 		document.body.className = isDark ? "dark" : "light";
 		document.documentElement.style.colorScheme = isDark ? "dark" : "light";
 	}, theme);
-	await page.waitForTimeout(200);
+	await page.waitForTimeout(300);
 }
 
 const VIEWPORTS = [
@@ -102,36 +97,38 @@ for (const vp of VIEWPORTS) {
 	const page = await context.newPage();
 
 	for (const theme of THEMES) {
-		console.log(`[AUDIT] Capturing Pediatric Studio — Theme: ${theme.padEnd(12)} | Viewport: ${vp.name}`);
+		console.log(`[AUDIT] Capturing Odontogram Studio — Theme: ${theme.padEnd(12)} | Viewport: ${vp.name}`);
 
-		// 1. Load Odontogram Studio Standalone
-		await page.goto(`${BASE_URL}/odontogram-studio?theme=${theme}`, { waitUntil: "domcontentloaded", timeout: 15000 }).catch(() => {});
-		await page.waitForTimeout(500);
+		await page.goto(`${BASE_URL}/?odontogram-studio=1`, { waitUntil: "networkidle", timeout: 15000 }).catch(() => {});
+		await page.waitForTimeout(400);
 		await applyTheme(page, theme);
 
-		// Switch to pediatric mode
-		const pedBtn = page.locator('[data-testid="dentition-mode-pediatric-btn"]');
+		// Adult permanent baseline (32 teeth)
+		await saveScreenshot(page, `audit_adult_formula_${theme}_${vp.name}.png`);
+
+		// Switch to pediatric formula (51–85) via "Детский" preset
+		const pedBtn = page.locator('button:has-text("Детский")').first();
 		if (await pedBtn.isVisible()) {
 			await pedBtn.click();
-			await page.waitForTimeout(250);
+			await page.waitForTimeout(300);
+			await saveScreenshot(page, `audit_pediatric_formula_${theme}_${vp.name}.png`);
 		}
 
-		await saveScreenshot(page, `audit_pediatric_formula_${theme}_${vp.name}.png`);
-
-		// Switch to mixed dentition mode
-		const mixedBtn = page.locator('[data-testid="dentition-mode-mixed-btn"]');
-		if (await mixedBtn.isVisible()) {
-			await mixedBtn.click();
-			await page.waitForTimeout(250);
-			await saveScreenshot(page, `audit_mixed_dentition_${theme}_${vp.name}.png`);
+		// Switch to 5-surface clinical mode
+		const fiveSurfaceBtn = page.locator('button:has-text("5-Поверхностный")').first();
+		if (await fiveSurfaceBtn.isVisible()) {
+			await fiveSurfaceBtn.click();
+			await page.waitForTimeout(300);
+			await saveScreenshot(page, `audit_pediatric_5surface_${theme}_${vp.name}.png`);
 		}
 
-		// 2. Load Pediatric Perspective View with Cariogram & Timeline
-		await page.goto(`${BASE_URL}/pediatric-perspective?theme=${theme}`, { waitUntil: "domcontentloaded", timeout: 15000 }).catch(() => {});
-		await page.waitForTimeout(500);
-		await applyTheme(page, theme);
-
-		await saveScreenshot(page, `audit_pediatric_perspective_${theme}_${vp.name}.png`);
+		// Switch to GOST 043/u mode
+		const gostBtn = page.locator('button:has-text("ГОСТ 043/у")').first();
+		if (await gostBtn.isVisible()) {
+			await gostBtn.click();
+			await page.waitForTimeout(300);
+			await saveScreenshot(page, `audit_pediatric_gost_${theme}_${vp.name}.png`);
+		}
 	}
 
 	await context.close();
