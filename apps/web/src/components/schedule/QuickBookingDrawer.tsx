@@ -6,11 +6,14 @@ import {
 	Clock,
 	Flame,
 	Plus,
+	RotateCw,
 	Search,
+	ShieldAlert,
 	Sparkles,
 	User,
 	UserPlus,
 	X,
+	Zap,
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -27,6 +30,16 @@ import {
 	searchPatientsQuick,
 	type PatientSearchResultItem,
 } from "./patientSearchEngine";
+import {
+	APPOINTMENT_TYPE_PRESETS,
+	DURATION_PRESETS,
+	calculatePatientReliability,
+	formatPatientBalanceBadge,
+	type AppointmentTypePreset,
+	type DurationPreset,
+	type PatientReliabilityAssessment,
+	type QuickBookingAppointmentType,
+} from "./patientReliabilityScore";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { showToast } from "../GlobalToast";
 import { specialtyLabels } from "../../workspaceUiLabels";
@@ -63,7 +76,7 @@ export interface QuickBookingDrawerProps {
 }
 
 const COMMON_REASONS = [
-	"Первичный",
+	"Первичный осмотр",
 	"Осмотр",
 	"Кариес",
 	"Пульпит",
@@ -72,10 +85,8 @@ const COMMON_REASONS = [
 	"Удаление",
 	"Коронка",
 	"Имплантация",
-	"Острая боль",
+	"CITO! Острая боль",
 ];
-
-const COMMON_DURATIONS = [15, 30, 45, 60, 90, 120];
 
 export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 	const {
@@ -118,14 +129,59 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 	);
 
 	// Form states
-	const [patientId, setPatientId] = useState<string>("");
-	const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-	const [doctorUserId, setDoctorUserId] = useState<string>("");
+	const [appointmentType, setAppointmentType] =
+		useState<QuickBookingAppointmentType>(() => {
+			if (
+				initialSlot?.isCitoEmergency ||
+				initialSlot?.reason?.includes("CITO") ||
+				initialSlot?.reason?.includes("Острая боль")
+			) {
+				return "emergency";
+			}
+			if (
+				initialSlot?.reason?.includes("Первичн") ||
+				initialSlot?.reason?.includes("Консультация")
+			) {
+				return "primary";
+			}
+			if (initialSlot?.reason) {
+				return "secondary";
+			}
+			return "primary";
+		});
+	const [patientId, setPatientId] = useState<string>(
+		() => initialSlot?.patientId || "",
+	);
+	const [selectedPatient, setSelectedPatient] = useState<Patient | null>(() => {
+		if (!initialSlot?.patientId || !dashboard?.patients) return null;
+		return (
+			dashboard.patients.find((p) => p.id === initialSlot.patientId) || null
+		);
+	});
+	const [doctorUserId, setDoctorUserId] = useState<string>(
+		() => initialSlot?.doctorUserId || "",
+	);
 	const [assistantUserId, setAssistantUserId] = useState<string>("");
-	const [chairId, setChairId] = useState<string>("");
+	const [chairId, setChairId] = useState<string>(
+		() => initialSlot?.chairId || "",
+	);
 	const [startsAtLocal, setStartsAtLocal] = useState<string>("");
-	const [durationMinutes, setDurationMinutes] = useState<number>(30);
-	const [reason, setReason] = useState<string>("Осмотр");
+	const [durationMinutes, setDurationMinutes] = useState<number>(() => {
+		if (initialSlot?.durationMinutes) return initialSlot.durationMinutes;
+		if (initialSlot?.endsAt && initialSlot?.startsAt) {
+			const sMs = Date.parse(initialSlot.startsAt);
+			const eMs = Date.parse(initialSlot.endsAt);
+			if (eMs > sMs) {
+				return Math.round((eMs - sMs) / 60_000);
+			}
+		}
+		return 30;
+	});
+	const [reason, setReason] = useState<string>(() => {
+		if (initialSlot?.reason) return initialSlot.reason;
+		if (initialSlot?.isCitoEmergency) return "CITO! Острая боль";
+		return "Первичный осмотр";
+	});
 	const [comment, setComment] = useState<string>("");
 	const [status, setStatus] = useState<Appointment["status"]>("planned");
 
@@ -164,6 +220,12 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 	);
 	const isSoloDoctor = dashboard?.clinicSettings?.profile?.mode === "solo_doctor";
 	const patients = useMemo(() => dashboard?.patients ?? [], [dashboard?.patients]);
+
+	// Patient Discipline & Reliability assessment memo
+	const patientReliability: PatientReliabilityAssessment | null = useMemo(() => {
+		if (!selectedPatient) return null;
+		return calculatePatientReliability(selectedPatient, dashboard?.appointments);
+	}, [selectedPatient, dashboard?.appointments]);
 
 	// Initialize fields on open
 	useEffect(() => {
@@ -246,14 +308,30 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		);
 
 		if (isCito) {
+			setAppointmentType("emergency");
 			setReason(initialSlot?.reason || "CITO! Острая боль");
 			setComment("Экстренный прием по острой боли (CITO)");
 			setStatus("confirmed");
 			if (!initialSlot?.durationMinutes) {
-				setDurationMinutes(20);
+				setDurationMinutes(30);
 			}
+		} else if (
+			initialSlot?.reason?.includes("Первичн") ||
+			initialSlot?.reason?.includes("Консультация") ||
+			initialSlot?.reason?.includes("Осмотр")
+		) {
+			setAppointmentType("primary");
+			setReason(initialSlot?.reason || "Первичный осмотр");
+			setComment("");
+			setStatus("planned");
+		} else if (initialSlot?.reason) {
+			setAppointmentType("secondary");
+			setReason(initialSlot.reason);
+			setComment("");
+			setStatus("planned");
 		} else {
-			setReason(initialSlot?.reason || "Осмотр");
+			setAppointmentType("primary");
+			setReason("Первичный осмотр");
 			setComment("");
 			setStatus("planned");
 
@@ -264,6 +342,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 					if (rawDraft) {
 						const saved = JSON.parse(rawDraft);
 						if (saved && typeof saved === "object") {
+							if (saved.appointmentType) setAppointmentType(saved.appointmentType);
 							if (saved.comment) setComment(saved.comment);
 							if (saved.reason) setReason(saved.reason);
 							if (saved.durationMinutes) setDurationMinutes(saved.durationMinutes);
@@ -297,14 +376,36 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		chairs,
 		assistants,
 		isSoloDoctor,
+		dashboard?.patients,
 	]);
+
+	const handleSelectAppointmentType = (type: QuickBookingAppointmentType) => {
+		setAppointmentType(type);
+		const preset = APPOINTMENT_TYPE_PRESETS.find((p) => p.type === type);
+		if (!preset) return;
+
+		if (type === "emergency") {
+			setReason("CITO! Острая боль");
+			setComment((prev) => prev || "Экстренный прием по острой боли (CITO)");
+			setStatus("confirmed");
+			if (durationMinutes > 45) {
+				setDurationMinutes(30);
+			}
+		} else if (type === "primary") {
+			setReason(preset.defaultReason);
+			setStatus("planned");
+		} else {
+			setReason(preset.defaultReason);
+			setStatus("planned");
+		}
+	};
 
 	// Check if form has uncommitted user modifications (dirty guard)
 	const isDirty = useMemo(() => {
 		if (comment.trim().length > 0) return true;
 		if (newPatientFullName.trim().length > 0 || newPatientPhone.trim().length > 0) return true;
 		if (patientId && patientId !== (initialSlot?.patientId || "")) return true;
-		const initialReason = initialSlot?.reason || (initialSlot?.isCitoEmergency ? "CITO! Острая боль" : "Осмотр");
+		const initialReason = initialSlot?.reason || (initialSlot?.isCitoEmergency ? "CITO! Острая боль" : "Первичный осмотр");
 		if (reason.trim() !== initialReason.trim()) return true;
 		return false;
 	}, [comment, newPatientFullName, newPatientPhone, patientId, initialSlot, reason]);
@@ -578,6 +679,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 	const handleSaveDraftAndClose = useCallback(() => {
 		try {
 			const draftData = {
+				appointmentType,
 				patientId,
 				selectedPatient,
 				doctorUserId,
@@ -595,6 +697,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		setShowDirtyConfirm(false);
 		onClose();
 	}, [
+		appointmentType,
 		patientId,
 		selectedPatient,
 		doctorUserId,
@@ -640,6 +743,14 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		}
 	};
 
+	const isEmergencyMode =
+		appointmentType === "emergency" ||
+		Boolean(
+			initialSlot?.isCitoEmergency ||
+			initialSlot?.reason?.includes("CITO") ||
+			initialSlot?.reason?.includes("Острая боль")
+		);
+
 	if (!isOpen) return null;
 
 	const drawerElement = (
@@ -662,24 +773,46 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			{/* Drawer Surface */}
 			<div className="relative w-full max-w-lg h-full bg-[var(--paper)] border-l border-[var(--line)] shadow-2xl flex flex-col z-10 text-[var(--ink)] overflow-hidden animate-slide-in">
 				{/* Header */}
-				<div className={`p-5 border-b border-[var(--line)] flex items-center justify-between ${initialSlot?.isCitoEmergency ? "bg-rose-500/10 dark:bg-rose-950/40 border-rose-500/30" : "bg-[var(--paper-soft)]"}`}>
+				<div
+					className={`p-5 border-b flex items-center justify-between transition-colors ${
+						isEmergencyMode
+							? "bg-rose-500/15 dark:bg-rose-950/50 border-rose-500/40 text-rose-900 dark:text-rose-100"
+							: "bg-[var(--paper-soft)] border-[var(--line)]"
+					}`}
+				>
 					<div className="flex items-center gap-3">
-						<div className={`p-2 rounded-xl border ${initialSlot?.isCitoEmergency ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/40 animate-pulse" : "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border-[var(--teal,var(--brand-primary))]/20"}`}>
-							{initialSlot?.isCitoEmergency ? <Flame size={20} /> : <Sparkles size={20} />}
+						<div
+							className={`p-2.5 rounded-xl border transition-all ${
+								isEmergencyMode
+									? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/50 ring-2 ring-rose-500/40 animate-pulse"
+									: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border-[var(--teal,var(--brand-primary))]/20"
+							}`}
+						>
+							{isEmergencyMode ? (
+								<Flame size={22} className="text-rose-600 dark:text-rose-400" />
+							) : (
+								<Sparkles size={20} />
+							)}
 						</div>
 						<div>
 							<div className="flex items-center gap-2">
 								<h3 className="text-base font-bold tracking-tight text-[var(--ink)] m-0">
-									{initialSlot?.isCitoEmergency ? "Экстренный прием (CITO!)" : "Быстрая запись на прием"}
+									{isEmergencyMode ? "Экстренный прием (CITO!)" : "Быстрая запись на прием"}
 								</h3>
-								{initialSlot?.isCitoEmergency && (
-									<span className="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-extrabold uppercase tracking-wider">
+								{isEmergencyMode && (
+									<span
+										className="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-extrabold uppercase tracking-wider animate-pulse shadow-xs"
+										data-testid="cito-header-badge"
+									>
 										Острая боль
 									</span>
 								)}
 							</div>
 							<p className="text-xs text-[var(--muted)] m-0 mt-0.5">
-								{startsAtLocal ? `${startsAtLocal.slice(0, 10)} в ${startsAtLocal.slice(11, 16)}` : "1-клик бронирование"} · {durationMinutes} мин
+								{startsAtLocal
+									? `${startsAtLocal.slice(0, 10)} в ${startsAtLocal.slice(11, 16)}`
+									: "1-клик бронирование"}{" "}
+								· {durationMinutes} мин
 							</p>
 						</div>
 					</div>
@@ -695,12 +828,88 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 
 				{/* Body Content */}
 				<div className="flex-1 overflow-y-auto p-5 space-y-5">
+					{/* Quick Appointment Type Selector */}
+					<div className="space-y-1.5" data-testid="quick-booking-type-selector">
+						<div className="flex items-center justify-between">
+							<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+								<Sparkles size={14} className="text-[var(--teal)]" />
+								<span>Тип приема *</span>
+							</span>
+							{appointmentType === "emergency" && (
+								<span
+									className="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-extrabold uppercase tracking-wider animate-pulse"
+									data-testid="cito-slot-priority-badge"
+								>
+									Приоритетный слот
+								</span>
+							)}
+						</div>
+						<div className="grid grid-cols-3 gap-2">
+							{APPOINTMENT_TYPE_PRESETS.map((preset) => {
+								const isSelected = appointmentType === preset.type;
+								const isEm = preset.isEmergency;
+								return (
+									<button
+										key={preset.type}
+										type="button"
+										onClick={() => handleSelectAppointmentType(preset.type)}
+										className={`min-h-[48px] p-2.5 rounded-xl border text-left flex flex-col justify-center transition-all cursor-pointer ${
+											isSelected
+												? isEm
+													? "bg-rose-500/20 text-rose-950 dark:text-rose-100 border-rose-500 ring-2 ring-rose-500/50 shadow-md"
+													: "bg-[var(--teal-dark)] text-[var(--on-teal)] border-[var(--teal)] shadow-md"
+												: isEm
+													? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/15"
+													: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper)]"
+										}`}
+										data-testid={`quick-booking-type-${preset.type}`}
+										title={preset.description}
+									>
+										<div className="flex items-center gap-1.5 font-bold text-xs sm:text-sm">
+											{isEm ? (
+												<Flame
+													size={15}
+													className={
+														isSelected ? "text-rose-500 animate-bounce" : "text-rose-600"
+													}
+												/>
+											) : isSelected ? (
+												<Check size={14} />
+											) : null}
+											<span>{preset.label}</span>
+										</div>
+										<span
+											className={`text-[10px] truncate block mt-0.5 ${
+												isSelected
+													? isEm
+														? "text-rose-800 dark:text-rose-200"
+														: "text-white/80"
+													: "text-[var(--muted)]"
+											}`}
+										>
+											{preset.description}
+										</span>
+									</button>
+								);
+							})}
+						</div>
+					</div>
+
 					{/* CITO Emergency Callout Banner */}
-					{initialSlot?.isCitoEmergency && (
-						<div className="p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/40 text-rose-900 dark:text-rose-100 text-xs font-bold flex items-center justify-between gap-2 shadow-xs">
+					{isEmergencyMode && (
+						<div
+							className="p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/40 text-rose-900 dark:text-rose-100 text-xs font-bold flex items-center justify-between gap-2 shadow-xs animate-in fade-in"
+							data-testid="cito-emergency-banner"
+						>
 							<div className="flex items-center gap-2">
-								<Flame size={18} className="text-rose-600 dark:text-rose-400 shrink-0 animate-bounce" />
-								<span>Экстренный слот дежурному врачу (острая боль, пульпит, абсцесс). Заполнение карты можно завершить во время или после приема.</span>
+								<Flame
+									size={18}
+									className="text-rose-600 dark:text-rose-400 shrink-0 animate-bounce"
+								/>
+								<span>
+									Экстренный слот дежурному врачу (острая боль, пульпит, абсцесс). Заполнение
+									карты можно завершить во время или после приема.
+								</span>
 							</div>
 						</div>
 					)}
@@ -725,7 +934,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 							</label>
 							{!showInlineNewPatient && (
 								<div className="flex items-center gap-2">
-									{initialSlot?.isCitoEmergency && (
+									{isEmergencyMode && (
 										<button
 											type="button"
 											onClick={() => {
@@ -762,35 +971,151 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 
 						{/* Selected Patient Card */}
 						{selectedPatient ? (
-							<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-between">
-								<div className="flex items-center gap-3">
-									<div className="w-9 h-9 rounded-full bg-[var(--teal-surface)] text-[var(--teal-dark)] font-bold text-sm flex items-center justify-center border border-[var(--teal)]/30 shrink-0">
-										{selectedPatient.fullName.slice(0, 2).toUpperCase()}
-									</div>
-									<div className="min-w-0">
-										<h4 className="text-sm font-bold text-[var(--ink)] m-0 leading-snug truncate">
-											{selectedPatient.fullName}
-										</h4>
-										<div className="text-xs text-[var(--muted)] flex gap-2 mt-0.5">
-											{selectedPatient.phone && <span>{selectedPatient.phone}</span>}
-											{selectedPatient.birthDate && <span>д.р. {selectedPatient.birthDate}</span>}
+							<div
+								className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-3"
+								data-testid="selected-patient-card"
+							>
+								<div className="flex items-center justify-between">
+									<div className="flex items-center gap-3">
+										<div className="w-10 h-10 rounded-full bg-[var(--teal-surface)] text-[var(--teal-dark)] font-bold text-sm flex items-center justify-center border border-[var(--teal)]/30 shrink-0">
+											{selectedPatient.fullName.slice(0, 2).toUpperCase()}
+										</div>
+										<div className="min-w-0">
+											<h4 className="text-sm font-bold text-[var(--ink)] m-0 leading-snug truncate">
+												{selectedPatient.fullName}
+											</h4>
+											<div className="text-xs text-[var(--muted)] flex gap-2 mt-0.5">
+												{selectedPatient.phone && <span>{selectedPatient.phone}</span>}
+												{selectedPatient.birthDate && (
+													<span>д.р. {selectedPatient.birthDate}</span>
+												)}
+											</div>
 										</div>
 									</div>
+									<button
+										type="button"
+										onClick={() => {
+											setSelectedPatient(null);
+											setPatientId("");
+											setSearchQuery("");
+											setTimeout(() => searchInputRef.current?.focus(), 50);
+										}}
+										className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-xs text-[var(--muted)] hover:text-rose-600 rounded-lg hover:bg-[var(--paper)] transition-colors cursor-pointer"
+										title="Выбрать другого пациента"
+										aria-label="Сменить пациента"
+									>
+										<X size={16} />
+									</button>
 								</div>
-								<button
-									type="button"
-									onClick={() => {
-										setSelectedPatient(null);
-										setPatientId("");
-										setSearchQuery("");
-										setTimeout(() => searchInputRef.current?.focus(), 50);
-									}}
-									className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-xs text-[var(--muted)] hover:text-rose-600 rounded-lg hover:bg-[var(--paper)] transition-colors"
-									title="Выбрать другого пациента"
-									aria-label="Сменить пациента"
-								>
-									<X size={16} />
-								</button>
+
+								{/* Reliability & Discipline Assessment */}
+								{patientReliability && (
+									<div
+										className="pt-2.5 border-t border-[var(--line)] space-y-2"
+										data-testid="patient-reliability-section"
+									>
+										<div className="flex items-center justify-between gap-2 flex-wrap">
+											{/* Reliability Badge */}
+											<div
+												className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${patientReliability.reliabilityBadge.badgeClass}`}
+												data-testid={`patient-reliability-badge-${patientReliability.category}`}
+												title={patientReliability.reliabilityBadge.summary}
+											>
+												<span>{patientReliability.reliabilityBadge.emoji}</span>
+												<span>{patientReliability.reliabilityBadge.badgeText}</span>
+											</div>
+
+											{/* Financial Badge */}
+											<div
+												className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold font-mono border ${patientReliability.financialBadge.badgeClass}`}
+												data-testid="patient-financial-badge"
+												title={`Баланс пациента: ${patientReliability.financialBadge.label}`}
+											>
+												<span>{patientReliability.financialBadge.label}</span>
+											</div>
+										</div>
+
+										{/* Stats Summary Line */}
+										<div className="text-[11px] text-[var(--muted)] flex items-center justify-between gap-2">
+											<span>Дисциплина: {patientReliability.reliabilityBadge.summary}</span>
+											{patientReliability.stats.totalAppointments > 0 && (
+												<span>Визитов вовремя: {patientReliability.stats.onTimeRatePercent}%</span>
+											)}
+										</div>
+
+										{/* Receptionist Guidance Alert Banner */}
+										{patientReliability.category === "risk" && (
+											<div
+												className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-900 dark:text-rose-100 text-xs font-bold flex items-start gap-2 animate-pulse"
+												data-testid="patient-reliability-risk-alert"
+											>
+												<AlertTriangle
+													size={16}
+													className="text-rose-600 dark:text-rose-400 shrink-0 mt-0.5"
+												/>
+												<div className="space-y-0.5">
+													<p className="m-0 font-extrabold text-rose-700 dark:text-rose-300">
+														🔴 Требуется подтверждение за 2 часа!
+													</p>
+													<p className="m-0 font-normal text-[11px]">
+														{patientReliability.receptionistAlert ||
+															"У пациента зафиксированы повторные неявки. Обязательно подтвердить явку перед приемом."}
+													</p>
+												</div>
+											</div>
+										)}
+
+										{patientReliability.category === "attention" && (
+											<div
+												className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-900 dark:text-amber-100 text-xs font-semibold flex items-start gap-2"
+												data-testid="patient-reliability-attention-alert"
+											>
+												<AlertTriangle
+													size={15}
+													className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5"
+												/>
+												<div className="space-y-0.5">
+													<p className="m-0 font-bold text-amber-800 dark:text-amber-300">
+														⚠️ Зона внимания регистратуры
+													</p>
+													<p className="m-0 font-normal text-[11px]">
+														{patientReliability.receptionistAlert ||
+															"Рекомендуется контрольный звонок накануне визита."}
+													</p>
+												</div>
+											</div>
+										)}
+
+										{patientReliability.category === "reliable" && (
+											<div
+												className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-200 text-xs flex items-center gap-1.5"
+												data-testid="patient-reliability-reliable-notice"
+											>
+												<Check
+													size={14}
+													className="text-emerald-600 dark:text-emerald-400 shrink-0"
+												/>
+												<span>Высокая надежность: 0 срывов визитов. Стандартная запись.</span>
+											</div>
+										)}
+
+										{/* Financial Debt Notification if debt > 0 */}
+										{patientReliability.financialBadge.isDebt && (
+											<div
+												className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-800 dark:text-rose-200 text-xs flex items-center justify-between gap-2"
+												data-testid="patient-reliability-debt-alert"
+											>
+												<span className="font-semibold">
+													Финансовый долг:{" "}
+													{patientReliability.financialBadge.formattedAmount}
+												</span>
+												<span className="text-[11px] text-rose-700 dark:text-rose-300">
+													Напомнить об оплате
+												</span>
+											</div>
+										)}
+									</div>
+								)}
 							</div>
 						) : (
 							/* Typeahead Search Input */
@@ -849,6 +1174,10 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 										{searchResults.length > 0 ? (
 											searchResults.map((item, idx) => {
 												const p = item.patient;
+												const itemReliability = calculatePatientReliability(
+													p,
+													dashboard?.appointments,
+												);
 												return (
 													<button
 														key={p.id}
@@ -863,7 +1192,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 														aria-selected={idx === highlightedIndex}
 														data-testid={`quick-booking-patient-option-${p.id}`}
 													>
-														<div className="min-w-0 flex-1">
+														<div className="min-w-0 flex-1 pr-2">
 															<div className="flex items-center gap-2 flex-wrap">
 																<span className="text-sm font-semibold text-[var(--ink)] truncate">
 																	{p.fullName}
@@ -884,7 +1213,30 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 																{p.birthDate && <span>д.р. {p.birthDate}</span>}
 															</div>
 														</div>
-														<Check size={14} className="text-[var(--teal)] opacity-0 group-hover:opacity-100 shrink-0" />
+														<div className="flex items-center gap-1.5 shrink-0">
+															<span
+																className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${itemReliability.reliabilityBadge.badgeClass}`}
+																title={itemReliability.reliabilityBadge.summary}
+															>
+																{itemReliability.reliabilityBadge.emoji} {itemReliability.reliabilityBadge.shortLabel}
+															</span>
+															{itemReliability.financialBadge.isDebt && (
+																<span
+																	className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/15 text-rose-700 dark:text-rose-200 border border-rose-500/30 font-mono"
+																	title={`Долг: ${itemReliability.financialBadge.formattedAmount}`}
+																>
+																	-{itemReliability.financialBadge.formattedAmount}
+																</span>
+															)}
+															{itemReliability.financialBadge.isDeposit && (
+																<span
+																	className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-200 border border-emerald-500/30 font-mono"
+																	title={`Депозит: ${itemReliability.financialBadge.formattedAmount}`}
+																>
+																	+{itemReliability.financialBadge.formattedAmount}
+																</span>
+															)}
+														</div>
 													</button>
 												);
 											})
@@ -1066,25 +1418,36 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 						</div>
 
 						{/* Fast Duration Chips */}
-						<div>
+						<div data-testid="quick-booking-duration-presets">
 							<span className="text-xs font-bold text-[var(--muted)] block mb-1.5">
 								Быстрый выбор длительности:
 							</span>
 							<div className="flex flex-wrap gap-2">
-								{COMMON_DURATIONS.map((mins) => (
-									<button
-										key={mins}
-										type="button"
-										onClick={() => setDurationMinutes(mins)}
-										className={`min-h-[44px] px-3.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-											durationMinutes === mins
-												? "bg-[var(--teal-dark)] text-white shadow-sm ring-1 ring-[var(--teal)]"
-												: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper)]"
-										}`}
-									>
-										{mins} мин
-									</button>
-								))}
+								{DURATION_PRESETS.map((preset) => {
+									const isSelected = durationMinutes === preset.minutes;
+									return (
+										<button
+											key={preset.minutes}
+											type="button"
+											onClick={() => setDurationMinutes(preset.minutes)}
+											className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+												isSelected
+													? "bg-[var(--teal-dark)] text-white shadow-sm ring-2 ring-[var(--teal)]"
+													: "bg-[var(--paper-soft)] text-[var(--ink)] hover:text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper)]"
+											}`}
+											data-testid={`duration-preset-${preset.minutes}`}
+										>
+											<span>{preset.label}</span>
+											<span
+												className={`text-[11px] font-normal ${
+													isSelected ? "text-white/90" : "text-[var(--muted)]"
+												}`}
+											>
+												({preset.serviceHint})
+											</span>
+										</button>
+									);
+								})}
 							</div>
 						</div>
 					</div>

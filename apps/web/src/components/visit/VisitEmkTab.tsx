@@ -52,6 +52,12 @@ import {
 	type ClinicalQuickPreset,
 } from "./ClinicalQuickPresetsBar";
 import {
+	VisitSoapTemplatesModal,
+} from "./VisitSoapTemplatesModal";
+import type {
+	ClinicalSoapPreset,
+} from "./clinicalSoapPresets";
+import {
 	CARPULE_ANESTHESIA_PRESETS,
 	evaluateAnesthesiaRisk,
 	calculateAnesthesiaCarpulesSafety,
@@ -64,6 +70,7 @@ import {
 } from "../../lib/clinicalProtocols043";
 import { PatientMemoPrintModal } from "./PatientMemoPrintModal";
 import { AnesthesiaProtocolModal } from "../anesthesia/AnesthesiaProtocolModal";
+import { AnesthesiaAspirationJournalModal } from "./anesthesia/AnesthesiaAspirationJournalModal";
 import {
 	EndoCanalLogModal,
 	getDefaultCanalsForTooth,
@@ -147,6 +154,7 @@ export function VisitEmkTab() {
 	 * выносить незачем: держим его здесь.
 	 */
 	const [activeEmkTab, setActiveEmkTab] = React.useState<string>("all");
+	const [isSoapTemplatesModalOpen, setIsSoapTemplatesModalOpen] = React.useState<boolean>(false);
 	const [isPrescriptionModalOpen, setIsPrescriptionModalOpen] = React.useState<boolean>(false);
 	const [selectedPrescriptionDrugIds, setSelectedPrescriptionDrugIds] = React.useState<string[]>([
 		"amoxiclav_875_125",
@@ -157,6 +165,7 @@ export function VisitEmkTab() {
 	const [isPatientMemoModalOpen, setIsPatientMemoModalOpen] = React.useState<boolean>(false);
 	const [selectedMemoIdForPrint, setSelectedMemoIdForPrint] = React.useState<PostOpMemoId>("surgery_extraction");
 	const [isAnesthesiaProtocolModalOpen, setIsAnesthesiaProtocolModalOpen] = React.useState<boolean>(false);
+	const [isAnesthesiaAspirationModalOpen, setIsAnesthesiaAspirationModalOpen] = React.useState<boolean>(false);
 	const [selectedAnesDrugKey, setSelectedAnesDrugKey] = React.useState<string>("ultracain_ds_forte");
 	const [selectedCarpulesCount, setSelectedCarpulesCount] = React.useState<number>(1.0);
 	const [patientWeightKg, setPatientWeightKg] = React.useState<number>(
@@ -366,6 +375,193 @@ export function VisitEmkTab() {
 		anesthesiaRisk.hasHypertensionRisk,
 		activePatient,
 	]);
+
+	const handleApplyClinicalSoapPreset = React.useCallback(
+		(
+			preset: ClinicalSoapPreset,
+			chosenTooth?: number | null,
+			mode: "clean_replace" | "smart_append" = "clean_replace",
+		) => {
+			if (!updateVisitNoteField) return;
+			const targetTooth =
+				chosenTooth ||
+				activeSelectedTooth ||
+				(typeof visitNoteForm?.diagnosis === "string"
+					? visitNoteForm.diagnosis.match(
+							/\b([1-4][1-8]|5[1-5]|6[1-5]|7[1-5]|8[1-5])\b/,
+						)?.[0]
+					: null) ||
+				preset.defaultTooth ||
+				16;
+			const toothSuffix =
+				preset.category !== "hygiene" && targetTooth ? ` (Зуб ${targetTooth})` : "";
+			const toothPrefix =
+				preset.category !== "hygiene" && targetTooth ? `Зуб ${targetTooth}: ` : "";
+
+			const cleanComplaint = preset.complaint || preset.anamnesis;
+			const cleanAnamnesis = preset.anamnesis;
+			const formattedStatus = `${toothPrefix}${preset.statusLocalis}`;
+			const formattedDiagnosis = preset.icd10Label
+				? `${preset.icd10} ${preset.icd10Label}${toothSuffix}`
+				: `${preset.icd10} ${preset.title}${toothSuffix}`;
+
+			let chosenAnesDrug = preset.anesthetic?.drugKey || "ultracain_ds_forte";
+			let anesText = "";
+
+			const hasCardioOrHypertension =
+				anesthesiaRisk.hasHypertensionRisk ||
+				(activePatient as any)?.medicalAlerts?.some((a: string) =>
+					/гипертон|давлен|сердц|ссз|аритми/i.test(a),
+				);
+			const hasSulfiteRisk =
+				Array.isArray((activePatient as any)?.allergies) &&
+				(activePatient as any).allergies.some((a: string) =>
+					/сульфит|метабисульфит/i.test(a),
+				);
+
+			if (preset.category !== "hygiene") {
+				if (hasCardioOrHypertension || hasSulfiteRisk) {
+					chosenAnesDrug = "scandonest_3";
+					setSelectedAnesDrugKey("scandonest_3");
+					setSelectedCarpulesCount(1.0);
+					anesText =
+						"Инфильтрационная/проводниковая анестезия: Sol. Scandonest 3% (Мепивакаин 3% без вазоконстриктора) — 1.7 мл (по кардио-соматическому профилю пациента).";
+					showToast(
+						"⚠️ Выбран Скандонест 3% (без адреналина) по соматическому профилю пациента",
+						"warning",
+						4000,
+					);
+				} else {
+					setSelectedAnesDrugKey(chosenAnesDrug);
+					setSelectedCarpulesCount(preset.anesthetic?.carpulesCount || 1.0);
+					anesText =
+						chosenAnesDrug === "ultracain_ds"
+							? "Инфильтрационная/проводниковая анестезия: Sol. Ultracaini D-S 1:200 000 — 1.7 мл."
+							: "Инфильтрационная/проводниковая анестезия: Sol. Ultracaini D-S Forte 1:100 000 — 1.7 мл.";
+				}
+			}
+
+			let billLine = "";
+			if (preset.service804n) {
+				billLine = `Выполнено: [Код 804н ${preset.service804n.code804n}] ${preset.service804n.title}${toothSuffix} — ${preset.service804n.basePriceRub.toLocaleString("ru-RU")} ₽`;
+			}
+
+			const materialsList = preset.materialsToDeduct ?? [];
+			const materialsSummary =
+				materialsList.length > 0
+					? materialsList.map((m) => `${m.name} (${m.quantity} ${m.unit})`).join("; ")
+					: "";
+			const materialsLine = materialsSummary
+				? `Списание со склада (Норма 804н): ${materialsSummary}`
+				: "";
+
+			const fullPlanText = [anesText, preset.treatmentDescription, billLine, materialsLine]
+				.filter(Boolean)
+				.join("\n\n");
+
+			if (mode === "clean_replace") {
+				updateVisitNoteField("complaint", cleanComplaint);
+				updateVisitNoteField("anamnesis", cleanAnamnesis);
+				updateVisitNoteField("objectiveStatus", formattedStatus);
+				updateVisitNoteField("diagnosis", formattedDiagnosis);
+				updateVisitNoteField("treatmentPlan", fullPlanText);
+			} else {
+				updateVisitNoteField(
+					"complaint",
+					appendClinicalText(visitNoteForm?.complaint || "", cleanComplaint, "; "),
+				);
+				updateVisitNoteField(
+					"anamnesis",
+					appendClinicalText(visitNoteForm?.anamnesis || "", cleanAnamnesis, "; "),
+				);
+				updateVisitNoteField(
+					"objectiveStatus",
+					appendClinicalText(visitNoteForm?.objectiveStatus || "", formattedStatus, "\n"),
+				);
+				updateVisitNoteField(
+					"diagnosis",
+					appendClinicalText(visitNoteForm?.diagnosis || "", formattedDiagnosis, ", "),
+				);
+				updateVisitNoteField(
+					"treatmentPlan",
+					appendClinicalText(visitNoteForm?.treatmentPlan || "", fullPlanText, "\n\n"),
+				);
+			}
+
+			if (preset.recommendations) {
+				updateVisitNoteField(
+					"recommendations",
+					mode === "clean_replace"
+						? preset.recommendations
+						: appendClinicalText(
+								visitNoteForm?.recommendations || "",
+								preset.recommendations,
+								"\n",
+							),
+				);
+			}
+
+			// Синхронизация с Одонтограммой и Дневником 043/у
+			if (preset.toothState && targetTooth) {
+				const toothNum = Number(targetTooth);
+				try {
+					window.dispatchEvent(
+						new CustomEvent("clinical-finding-detected", {
+							detail: {
+								toothNumber: toothNum,
+								finding: preset.toothState,
+							},
+						}),
+					);
+					window.dispatchEvent(
+						new CustomEvent("dente-odontogram-update", {
+							detail: {
+								patientId: realVisitFieldId(activePatient?.id),
+								states: [{ toothNumber: toothNum, state: preset.toothState }],
+							},
+						}),
+					);
+					window.dispatchEvent(
+						new CustomEvent("dente-apply-soap-protocol", {
+							detail: {
+								finding: { toothNumber: toothNum, state: preset.toothState },
+								soap: {
+									anamnesis: cleanAnamnesis,
+									statusLocalis: formattedStatus,
+									diagnosisIcd10: preset.icd10,
+									diagnosisTooth: String(toothNum),
+									treatmentDescription: fullPlanText,
+								},
+								mode,
+							},
+						}),
+					);
+					const patId = realVisitFieldId(activePatient?.id);
+					if (patId) {
+						fetch(`/api/patients/${patId}/tooth-states/batch`, {
+							method: "POST",
+							headers: denteAdminSecretRequestHeaders({
+								"Content-Type": "application/json",
+							}),
+							body: JSON.stringify({
+								toothNumbers: [toothNum],
+								state: preset.toothState,
+							}),
+						}).catch(() => {});
+					}
+				} catch {
+					// safe event dispatch
+				}
+			}
+		},
+		[
+			updateVisitNoteField,
+			activeSelectedTooth,
+			visitNoteForm,
+			anesthesiaRisk.hasHypertensionRisk,
+			activePatient,
+		],
+	);
 	/*
 	 * БЫЛО: appLogic.visitDraft. Черновик лежит в контексте под именем `draft`
 	 * (useAppLogic.tsx возвращает именно его), а `visitDraft` не существует.
@@ -893,105 +1089,10 @@ export function VisitEmkTab() {
 			<ClinicalQuickPresetsBar
 				activeTooth={activeSelectedTooth}
 				onSelectActiveTooth={(tooth) => setActiveSelectedTooth(tooth)}
-				onSelectPreset={(preset, chosenTooth) => {
-					if (!updateVisitNoteField) return;
-					const targetTooth = chosenTooth || activeSelectedTooth || (typeof visitNoteForm?.diagnosis === "string" ? visitNoteForm.diagnosis.match(/\b([1-4][1-8]|5[1-5]|6[1-5]|7[1-5]|8[1-5])\b/)?.[0] : null) || preset.defaultTooth || 16;
-					const cleanComplaint = preset.complaint || preset.anamnesis;
-					const cleanAnamnesis = preset.anamnesis;
-					const formattedStatus = preset.category !== "hygiene" && targetTooth ? `Зуб ${targetTooth}: ${preset.statusLocalis}` : preset.statusLocalis;
-					const formattedDiagnosis = preset.icd10Label
-						? `${preset.icd10} ${preset.icd10Label}${preset.category !== "hygiene" && targetTooth ? ` (Зуб ${targetTooth})` : ""}`
-						: `${preset.icd10} ${preset.title}${preset.category !== "hygiene" && targetTooth ? ` (Зуб ${targetTooth})` : ""}`;
-
-					let chosenAnesDrug = preset.anesthetic?.drugKey || "ultracain_ds_forte";
-					let anesText = "";
-
-					const hasCardioOrHypertension = anesthesiaRisk.hasHypertensionRisk || (activePatient as any)?.medicalAlerts?.some((a: string) => /гипертон|давлен|сердц|ссз|аритми/i.test(a));
-					const hasSulfiteRisk = Array.isArray((activePatient as any)?.allergies) && (activePatient as any).allergies.some((a: string) => /сульфит|метабисульфит/i.test(a));
-
-					if (preset.category !== "hygiene") {
-						if (hasCardioOrHypertension || hasSulfiteRisk) {
-							chosenAnesDrug = "scandonest_3";
-							setSelectedAnesDrugKey("scandonest_3");
-							setSelectedCarpulesCount(1.0);
-							anesText = "Инфильтрационная/проводниковая анестезия: Sol. Scandonest 3% (Мепивакаин 3% без вазоконстриктора) — 1.7 мл (по кардио-соматическому профилю пациента).";
-							showToast("⚠️ Выбран Скандонест 3% (без адреналина) по соматическому профилю пациента", "warning", 4000);
-						} else {
-							setSelectedAnesDrugKey(chosenAnesDrug);
-							setSelectedCarpulesCount(preset.anesthetic?.carpulesCount || 1.0);
-							anesText = chosenAnesDrug === "ultracain_ds"
-								? "Инфильтрационная/проводниковая анестезия: Sol. Ultracaini D-S 1:200 000 — 1.7 мл."
-								: "Инфильтрационная/проводниковая анестезия: Sol. Ultracaini D-S Forte 1:100 000 — 1.7 мл.";
-						}
-					}
-
-					let billLine = "";
-					if (preset.service804n) {
-						billLine = `Выполнено: [Код 804н ${preset.service804n.code804n}] ${preset.service804n.title} — ${preset.service804n.basePriceRub.toLocaleString("ru-RU")} ₽`;
-					}
-					const fullPlanText = [anesText, preset.treatmentDescription, billLine].filter(Boolean).join("\n\n");
-
-					updateVisitNoteField("complaint", cleanComplaint);
-					updateVisitNoteField("anamnesis", cleanAnamnesis);
-					updateVisitNoteField("objectiveStatus", formattedStatus);
-					updateVisitNoteField("diagnosis", formattedDiagnosis);
-					updateVisitNoteField("treatmentPlan", fullPlanText);
-
-					// Синхронизация с Одонтограммой и Дневником 043/у
-					if (preset.toothState && targetTooth) {
-						const toothNum = Number(targetTooth);
-						try {
-							window.dispatchEvent(
-								new CustomEvent("clinical-finding-detected", {
-									detail: {
-										toothNumber: toothNum,
-										finding: preset.toothState,
-									},
-								}),
-							);
-							window.dispatchEvent(
-								new CustomEvent("dente-odontogram-update", {
-									detail: {
-										patientId: realVisitFieldId(activePatient?.id),
-										states: [{ toothNumber: toothNum, state: preset.toothState }],
-									},
-								}),
-							);
-							window.dispatchEvent(
-								new CustomEvent("dente-apply-soap-protocol", {
-									detail: {
-										finding: { toothNumber: toothNum, state: preset.toothState },
-										soap: {
-											anamnesis: cleanAnamnesis,
-											statusLocalis: formattedStatus,
-											diagnosisIcd10: preset.icd10,
-											diagnosisTooth: String(toothNum),
-											treatmentDescription: fullPlanText,
-										},
-										mode: "clean_replace",
-									},
-								}),
-							);
-							const patId = realVisitFieldId(activePatient?.id);
-							if (patId) {
-								fetch(`/api/patients/${patId}/tooth-states/batch`, {
-									method: "POST",
-									headers: denteAdminSecretRequestHeaders({
-										"Content-Type": "application/json",
-									}),
-									body: JSON.stringify({
-										toothNumbers: [toothNum],
-										state: preset.toothState,
-									}),
-								}).catch(() => {});
-							}
-						} catch {
-							// safe event dispatch
-						}
-					}
-				}}
+				onSelectPreset={(preset, chosenTooth) => handleApplyClinicalSoapPreset(preset, chosenTooth, "clean_replace")}
 				isLocked={Boolean(dashboard?.activeVisit?.status === "signed")}
 				onOpenPriceSearch={() => setIsPriceSearchModalOpen(true)}
+				onOpenTemplatesModal={() => setIsSoapTemplatesModalOpen(true)}
 			/>
 
 			{/* Красивые вкладки (EMK Tabs) для уменьшения перегруженности */}
@@ -1242,15 +1343,26 @@ export function VisitEmkTab() {
 													</span>
 												</div>
 											</div>
-											<button
-												type="button"
-												onClick={() => setIsAnesthesiaProtocolModalOpen(true)}
-												className="text-xs font-bold px-3 py-1.5 rounded-lg border border-[var(--teal,var(--line))]/30 bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-soft,var(--paper-soft))] transition-colors inline-flex items-center gap-1.5 cursor-pointer touch-manipulation"
-												data-testid="btn-open-anesthesia-protocol-modal"
-											>
-												<Sparkles className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
-												<span>Расширенный калькулятор СтАР</span>
-											</button>
+											<div className="flex items-center gap-2 flex-wrap">
+												<button
+													type="button"
+													onClick={() => setIsAnesthesiaProtocolModalOpen(true)}
+													className="text-xs font-bold px-3 py-1.5 rounded-lg border border-[var(--teal,var(--line))]/30 bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-soft,var(--paper-soft))] transition-colors inline-flex items-center gap-1.5 cursor-pointer touch-manipulation"
+													data-testid="btn-open-anesthesia-protocol-modal"
+												>
+													<Sparkles className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
+													<span>Расширенный калькулятор СтАР</span>
+												</button>
+												<button
+													type="button"
+													onClick={() => setIsAnesthesiaAspirationModalOpen(true)}
+													className="text-xs font-bold px-3 py-1.5 rounded-lg border border-[var(--teal,var(--line))]/30 bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-soft,var(--paper-soft))] transition-colors inline-flex items-center gap-1.5 cursor-pointer touch-manipulation"
+													data-testid="btn-open-anesthesia-aspiration-modal"
+												>
+													<ShieldCheck className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
+													<span>Журнал аспирационных проб</span>
+												</button>
+											</div>
 										</div>
 
 										{/* Выбор препарата анестетика */}
@@ -1971,6 +2083,16 @@ export function VisitEmkTab() {
 					</div>
 					<div className="flex items-center gap-2 flex-wrap">
 						<button
+							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer text-[var(--teal,var(--brand-primary))] border-[var(--teal,var(--line))]/30 hover:bg-[var(--teal-soft,var(--paper-soft))]"
+							type="button"
+							onClick={() => setIsSoapTemplatesModalOpen(true)}
+							data-testid="btn-open-soap-templates-modal"
+							title="Шаблоны протоколов Формы 043/у по МКБ-10 с услугами 804н и списанием со склада"
+						>
+							<Sparkles className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
+							Шаблоны 043/у (МКБ-10 + 804н + Склад)
+						</button>
+						<button
 							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer"
 							type="button"
 							onClick={() => window.print()}
@@ -2161,6 +2283,23 @@ export function VisitEmkTab() {
 						const curr = visitNoteForm.treatmentPlan || "";
 						updateVisitNoteField("treatmentPlan", appendClinicalText(curr, diaryText, "\n\n"));
 						showToast("Протокол анестезии СтАР внесён в карту 043/у", "success", 3500);
+					}}
+				/>
+
+				{/* Модальное окно журнала аспирационных проб */}
+				<AnesthesiaAspirationJournalModal
+					isOpen={isAnesthesiaAspirationModalOpen}
+					onClose={() => setIsAnesthesiaAspirationModalOpen(false)}
+					initialPatientFullName={activePatient?.fullName || "Пациент"}
+					initialMedCardNumber={`043/у-${activePatient?.id?.slice(0, 8) || "2026"}`}
+					initialPatientAgeYears={35}
+					initialPatientWeightKg={patientWeightKg}
+					initialToothNumber={typeof visitNoteForm?.diagnosis === "string" ? visitNoteForm.diagnosis.match(/\b\d{2}\b/)?.[0] || 46 : 46}
+					onApplyToDiary={(diaryText) => {
+						if (!updateVisitNoteField) return;
+						const curr = visitNoteForm.treatmentPlan || "";
+						updateVisitNoteField("treatmentPlan", appendClinicalText(curr, diaryText, "\n\n"));
+						showToast("Протокол аспирационной пробы внесён в карту 043/у", "success", 3500);
 					}}
 				/>
 
@@ -2590,6 +2729,15 @@ export function VisitEmkTab() {
 					</div>
 				</div>
 			)}
+
+			{/* Форма 043/у Каталог Клинических Протоколов со списанием и услугами 804н */}
+			<VisitSoapTemplatesModal
+				isOpen={isSoapTemplatesModalOpen}
+				onClose={() => setIsSoapTemplatesModalOpen(false)}
+				onApplyPreset={handleApplyClinicalSoapPreset}
+				activeTooth={activeSelectedTooth}
+				isLocked={Boolean(dashboard?.activeVisit?.status === "signed")}
+			/>
 
 			{/* ── ПЕЧАТНАЯ ВЕРСИЯ КАРТЫ 043/У И ДНЕВНИКА ПРИЁМА ДЛЯ А4 ── */}
 			<div id="visit-emk-print-a4" className="hidden print:block font-sans text-slate-900 bg-white p-6">
