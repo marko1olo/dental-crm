@@ -91,6 +91,12 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 	readonly reason: string;
 }> = [
 	{
+		file: "components/clinical/endo/EndodonticCanalMasterModal.tsx",
+		name: "EndodonticCanalMasterModal",
+		reason:
+			"Интерактивный эндодонтический модуль измерения корневых каналов и телеметрии апекслокатора по стандартам СтАР / ISO 3630 с цветовой кодировкой файлов, аудиогенератором частот апекса, протоколами ирригации (NaOCl/EDTA/CHX) и экспортом в дневник Формы 043/у.",
+	},
+	{
 		file: "components/emr/Form043PrintModal.tsx",
 		name: "Form043PrintModal",
 		reason:
