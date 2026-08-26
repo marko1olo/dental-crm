@@ -76,6 +76,7 @@ export interface RadiologyViewerModalProps {
 	onSaveStudy?: (updatedStudy: RadiologyStudy) => void;
 	onOpenReferralModal?: (study: RadiologyStudy) => void;
 	onOpenDoseSheetModal?: (study: RadiologyStudy) => void;
+	onOpenResliceModal?: (study: RadiologyStudy) => void;
 }
 
 export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
@@ -85,6 +86,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 	onSaveStudy,
 	onOpenReferralModal,
 	onOpenDoseSheetModal,
+	onOpenResliceModal,
 }) => {
 	const modalId = useId();
 	const viewportRef = useRef<HTMLDivElement>(null);
@@ -585,6 +587,19 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 					>
 						{isHudVisible ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
 					</button>
+
+					{onOpenResliceModal && study && (
+						<button
+							type="button"
+							onClick={() => onOpenResliceModal(study)}
+							className="hidden sm:flex items-center gap-2 min-h-[44px] px-3.5 py-2 rounded-xl bg-slate-800 border border-[var(--teal-soft)]/40 hover:border-[var(--teal)] text-slate-200 hover:text-[var(--teal)] text-xs font-bold transition-all shadow-sm"
+							title="Панорамная кривая зубной дуги и кросс-секционный реслайсер"
+							data-testid="open-cbct-reslice-btn"
+						>
+							<Spline className="w-4 h-4 text-[var(--teal)]" />
+							<span>Панорамный срез (MPR)</span>
+						</button>
+					)}
 
 					{onOpenReferralModal && study && (
 						<button

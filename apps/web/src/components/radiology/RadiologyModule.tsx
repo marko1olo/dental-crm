@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useMemo, useState } from "react";
+import { CbctPanoramicResliceModal } from "./CbctPanoramicResliceModal";
 import { RadiationDoseSheetModal } from "./RadiationDoseSheetModal";
 import { formatRadiationDose } from "./radiologyMath";
 import { RadiologyReferralModal } from "./RadiologyReferralModal";
@@ -199,6 +200,9 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 	const [activeViewerStudy, setActiveViewerStudy] =
 		useState<RadiologyStudy | null>(null);
 	const [isViewerModalOpen, setIsViewerModalOpen] = useState<boolean>(false);
+	const [activeResliceStudy, setActiveResliceStudy] =
+		useState<RadiologyStudy | null>(null);
+	const [isResliceModalOpen, setIsResliceModalOpen] = useState<boolean>(false);
 	const [isReferralModalOpen, setIsReferralModalOpen] =
 		useState<boolean>(false);
 	const [isDoseSheetModalOpen, setIsDoseSheetModalOpen] =
@@ -535,6 +539,23 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 						setIsViewerModalOpen(false);
 						setIsDoseSheetModalOpen(true);
 					}}
+					onOpenResliceModal={(study) => {
+						setIsViewerModalOpen(false);
+						setActiveResliceStudy(study);
+						setIsResliceModalOpen(true);
+					}}
+				/>
+			)}
+
+			{isResliceModalOpen && activeResliceStudy && (
+				<CbctPanoramicResliceModal
+					isOpen={isResliceModalOpen}
+					onClose={() => {
+						setIsResliceModalOpen(false);
+						setActiveResliceStudy(null);
+					}}
+					study={activeResliceStudy}
+					onSaveStudy={handleSaveStudy}
 				/>
 			)}
 

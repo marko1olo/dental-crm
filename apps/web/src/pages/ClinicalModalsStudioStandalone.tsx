@@ -34,6 +34,7 @@ import {
 	ShieldCheck,
 	Sliders,
 	Sparkles,
+	Spline,
 	Sun,
 	Syringe,
 
@@ -46,6 +47,7 @@ import { AnesthesiaCalculator } from "../components/visit/AnesthesiaCalculator";
 import { PrescriptionModal } from "../components/visit/PrescriptionModal";
 import { InformedConsentModal } from "../components/documents/InformedConsentModal";
 import {
+	CbctPanoramicResliceModal,
 	RadiologyModule,
 	RadiologyReferralModal,
 	RadiologyViewerModal,
@@ -320,6 +322,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isPediatricOpen, setIsPediatricOpen] = useState(false);
 	const [isConsentOpen, setIsConsentOpen] = useState(false);
 	const [isViewerOpen, setIsViewerOpen] = useState(false);
+	const [isCbctResliceOpen, setIsCbctResliceOpen] = useState(false);
 	const [isPayrollOpen, setIsPayrollOpen] = useState(false);
 	const [isFastCheckoutOpen, setIsFastCheckoutOpen] = useState(false);
 	const [isMedicalPrescriptionOpen, setIsMedicalPrescriptionOpen] = useState(false);
@@ -622,6 +625,30 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						>
 							<Scan size={15} />
 							<span>Открыть визиограф</span>
+						</button>
+					</div>
+
+					{/* 7b. CBCT Panoramic Arch Curve & Cross-Section Reslicer (Wave 9) */}
+					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2 text-[var(--teal)]">
+								<Spline className="w-5 h-5" />
+								<span className="font-bold text-sm text-[var(--ink)]">
+									КЛКТ Панорамная кривая & Кросс-секции (Wave 9)
+								</span>
+							</div>
+							<p className="text-xs text-[var(--muted)] leading-relaxed">
+								Адаптивная кривая зубной дуги, нормали с шагом 1-2 мм, фокальный слой 5/10/20 мм, оценка дна пазухи/канала и 1-клик перенос в план имплантации.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsCbctResliceOpen(true)}
+							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+							data-testid="open-cbct-reslice-modal-btn"
+						>
+							<Spline size={15} />
+							<span>Открыть КЛКТ реслайсер</span>
 						</button>
 					</div>
 
@@ -1881,6 +1908,14 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				<RadiologyViewerModal
 					isOpen={isViewerOpen}
 					onClose={() => setIsViewerOpen(false)}
+					study={SAMPLE_STUDY}
+				/>
+			)}
+
+			{isCbctResliceOpen && (
+				<CbctPanoramicResliceModal
+					isOpen={isCbctResliceOpen}
+					onClose={() => setIsCbctResliceOpen(false)}
 					study={SAMPLE_STUDY}
 				/>
 			)}
