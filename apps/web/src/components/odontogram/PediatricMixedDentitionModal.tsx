@@ -67,6 +67,47 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 		[selectedAge],
 	);
 
+	// 12-column mixed dentition arch models (unsevered anatomical 12 columns per jaw)
+	const upperRow12 = useMemo(() => {
+		const pairs: Array<{ primary: number; permanent: number }> = [
+			{ primary: 55, permanent: 15 },
+			{ primary: 54, permanent: 14 },
+			{ primary: 53, permanent: 13 },
+			{ primary: 52, permanent: 12 },
+			{ primary: 51, permanent: 11 },
+			{ primary: 61, permanent: 21 },
+			{ primary: 62, permanent: 22 },
+			{ primary: 63, permanent: 23 },
+			{ primary: 64, permanent: 24 },
+			{ primary: 65, permanent: 25 },
+		];
+		const mid = pairs.map(({ primary, permanent }) => {
+			const st = timelineAnalysis.toothStatuses.find((t) => t.predecessorPrimaryFdi === primary);
+			return st?.status === "future_permanent" ? permanent : primary;
+		});
+		return [16, ...mid, 26];
+	}, [timelineAnalysis.toothStatuses]);
+
+	const lowerRow12 = useMemo(() => {
+		const pairs: Array<{ primary: number; permanent: number }> = [
+			{ primary: 85, permanent: 45 },
+			{ primary: 84, permanent: 44 },
+			{ primary: 83, permanent: 43 },
+			{ primary: 82, permanent: 42 },
+			{ primary: 81, permanent: 41 },
+			{ primary: 71, permanent: 31 },
+			{ primary: 72, permanent: 32 },
+			{ primary: 73, permanent: 33 },
+			{ primary: 74, permanent: 34 },
+			{ primary: 75, permanent: 35 },
+		];
+		const mid = pairs.map(({ primary, permanent }) => {
+			const st = timelineAnalysis.toothStatuses.find((t) => t.predecessorPrimaryFdi === primary);
+			return st?.status === "future_permanent" ? permanent : primary;
+		});
+		return [46, ...mid, 36];
+	}, [timelineAnalysis.toothStatuses]);
+
 	// 2. Cariogram State
 	const [cariogramInput, setCariogramInput] = useState<CariogramInput>(DEFAULT_CARIOGRAM_INPUT);
 	const cariogramResult = useMemo(
@@ -284,11 +325,15 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 				</div>
 
 				{/* Navigation Tabs */}
-				<div className="flex items-center gap-2 px-6 pt-3 border-b border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] overflow-x-auto scrollbar-none">
+				<div
+					className="flex items-center gap-2 px-4 sm:px-6 pt-3 border-b border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex-nowrap shrink-0"
+					style={{ display: "flex", overflowX: "auto", flexWrap: "nowrap", gap: "8px" }}
+				>
 					<button
 						type="button"
 						onClick={() => setActiveTab("timeline")}
-						className={`flex items-center gap-2 px-5 py-3 min-h-[44px] rounded-t-xl text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer select-none ${
+						style={{ flexShrink: 0, whiteSpace: "nowrap" }}
+						className={`flex items-center gap-2 px-4 sm:px-5 py-3 min-h-[44px] rounded-t-xl text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer select-none shrink-0 flex-shrink-0 ${
 							activeTab === "timeline"
 								? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--odontogram-paper,var(--paper,#ffffff))] shadow-xs"
 								: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] hover:text-[var(--odontogram-ink,var(--ink,#0f172a))]"
@@ -301,7 +346,8 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 					<button
 						type="button"
 						onClick={() => setActiveTab("cariogram")}
-						className={`flex items-center gap-2 px-5 py-3 min-h-[44px] rounded-t-xl text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer select-none ${
+						style={{ flexShrink: 0, whiteSpace: "nowrap" }}
+						className={`flex items-center gap-2 px-4 sm:px-5 py-3 min-h-[44px] rounded-t-xl text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer select-none shrink-0 flex-shrink-0 ${
 							activeTab === "cariogram"
 								? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--odontogram-paper,var(--paper,#ffffff))] shadow-xs"
 								: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] hover:text-[var(--odontogram-ink,var(--ink,#0f172a))]"
@@ -314,7 +360,8 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 					<button
 						type="button"
 						onClick={() => setActiveTab("resorption")}
-						className={`flex items-center gap-2 px-5 py-3 min-h-[44px] rounded-t-xl text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer select-none ${
+						style={{ flexShrink: 0, whiteSpace: "nowrap" }}
+						className={`flex items-center gap-2 px-4 sm:px-5 py-3 min-h-[44px] rounded-t-xl text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer select-none shrink-0 flex-shrink-0 ${
 							activeTab === "resorption"
 								? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--odontogram-paper,var(--paper,#ffffff))] shadow-xs"
 								: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] hover:text-[var(--odontogram-ink,var(--ink,#0f172a))]"
@@ -327,7 +374,8 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 					<button
 						type="button"
 						onClick={() => setActiveTab("frankl")}
-						className={`flex items-center gap-2 px-5 py-3 min-h-[44px] rounded-t-xl text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer select-none ${
+						style={{ flexShrink: 0, whiteSpace: "nowrap" }}
+						className={`flex items-center gap-2 px-4 sm:px-5 py-3 min-h-[44px] rounded-t-xl text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer select-none shrink-0 flex-shrink-0 ${
 							activeTab === "frankl"
 								? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--odontogram-paper,var(--paper,#ffffff))] shadow-xs"
 								: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] hover:text-[var(--odontogram-ink,var(--ink,#0f172a))]"
@@ -380,12 +428,12 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 										aria-label="Возраст ребенка для расчета смены прикуса"
 									/>
 									<div className="flex justify-between text-xs sm:text-sm text-[var(--odontogram-ink-muted,var(--muted,#64748b))] font-mono font-semibold">
-										<span>5.0 лет</span>
-										<span>6.0 (1-е моляры)</span>
-										<span>8.0 (Резцы)</span>
-										<span>10.0 (Премоляры)</span>
-										<span>12.0 (2-е моляры)</span>
-										<span>13.5 лет</span>
+										<span>5.0<span className="hidden sm:inline"> лет</span></span>
+										<span>6.0<span className="hidden sm:inline"> (1-е моляры)</span></span>
+										<span>8.0<span className="hidden sm:inline"> (Резцы)</span></span>
+										<span>10.0<span className="hidden sm:inline"> (Премоляры)</span></span>
+										<span>12.0<span className="hidden sm:inline"> (2-е моляры)</span></span>
+										<span>13.5<span className="hidden sm:inline"> лет</span></span>
 									</div>
 								</div>
 
@@ -394,7 +442,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 									<span className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))] mr-1">
 										Пресеты:
 									</span>
-									{[5.5, 6.0, 7.0, 8.5, 10.5, 12.0].map((age) => (
+									{[5.5, 6.0, 7.0, 7.5, 8.5, 10.5, 12.0].map((age) => (
 										<button
 											key={age}
 											type="button"
@@ -423,61 +471,69 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 									</h4>
 								</div>
 
-								{/* Upper Arch Pills */}
-								<div className="space-y-2">
-									<div className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
-										Верхняя челюсть ({timelineAnalysis.expectedUpperArchTeeth.length} зубов):
-									</div>
-									<div className="flex flex-wrap gap-2">
-										{timelineAnalysis.expectedUpperArchTeeth.map((num) => {
-											const isPrim = isPrimaryTooth(num);
-											const isErupting = timelineAnalysis.activelyEruptingPermanentTeeth.includes(num);
-											return (
-												<span
-													key={num}
-													className={`min-w-[50px] min-h-[44px] px-3.5 py-2 rounded-xl text-sm font-mono font-black border flex items-center justify-center gap-1.5 shadow-xs select-none ${
-														isErupting
-															? "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40 animate-pulse"
-															: isPrim
-																? "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30"
-																: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30"
-													}`}
-													title={isPrim ? `Молочный зуб ${num}` : `Постоянный зуб ${num}`}
-												>
-													<span>{num}</span>
-													<span className="text-xs font-bold font-sans opacity-80">{isPrim ? "Мол." : "Пост."}</span>
-												</span>
-											);
-										})}
-									</div>
-								</div>
+								<div className="overflow-x-auto pb-1">
+									<div className="min-w-[660px] space-y-4">
+										{/* Upper Arch 12-column grid */}
+										<div className="space-y-1.5">
+											<div className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
+												Верхняя челюсть (12 зубов):
+											</div>
+											<div className="grid grid-cols-12 gap-1.5 sm:gap-2">
+												{upperRow12.map((num) => {
+													const isPrim = isPrimaryTooth(num);
+													const isErupting = timelineAnalysis.activelyEruptingPermanentTeeth.includes(num);
+													return (
+														<span
+															key={num}
+															className={`min-h-[46px] px-1 py-1.5 rounded-xl text-xs sm:text-sm font-mono font-black border flex flex-col items-center justify-center gap-0.5 shadow-xs select-none ${
+																isErupting
+																	? "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40 animate-pulse"
+																	: isPrim
+																		? "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30"
+																		: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30"
+															}`}
+															title={isPrim ? `Молочный зуб ${num}` : `Постоянный зуб ${num}`}
+														>
+															<span className="leading-none">{num}</span>
+															<span className="text-[10px] font-bold font-sans opacity-80 leading-none">
+																{isPrim ? "Мол." : "Пост."}
+															</span>
+														</span>
+													);
+												})}
+											</div>
+										</div>
 
-								{/* Lower Arch Pills */}
-								<div className="space-y-2">
-									<div className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
-										Нижняя челюсть ({timelineAnalysis.expectedLowerArchTeeth.length} зубов):
-									</div>
-									<div className="flex flex-wrap gap-2">
-										{timelineAnalysis.expectedLowerArchTeeth.map((num) => {
-											const isPrim = isPrimaryTooth(num);
-											const isErupting = timelineAnalysis.activelyEruptingPermanentTeeth.includes(num);
-											return (
-												<span
-													key={num}
-													className={`min-w-[50px] min-h-[44px] px-3.5 py-2 rounded-xl text-sm font-mono font-black border flex items-center justify-center gap-1.5 shadow-xs select-none ${
-														isErupting
-															? "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40 animate-pulse"
-															: isPrim
-																? "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30"
-																: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30"
-													}`}
-													title={isPrim ? `Молочный зуб ${num}` : `Постоянный зуб ${num}`}
-												>
-													<span>{num}</span>
-													<span className="text-xs font-bold font-sans opacity-80">{isPrim ? "Мол." : "Пост."}</span>
-												</span>
-											);
-										})}
+										{/* Lower Arch 12-column grid */}
+										<div className="space-y-1.5">
+											<div className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
+												Нижняя челюсть (12 зубов):
+											</div>
+											<div className="grid grid-cols-12 gap-1.5 sm:gap-2">
+												{lowerRow12.map((num) => {
+													const isPrim = isPrimaryTooth(num);
+													const isErupting = timelineAnalysis.activelyEruptingPermanentTeeth.includes(num);
+													return (
+														<span
+															key={num}
+															className={`min-h-[46px] px-1 py-1.5 rounded-xl text-xs sm:text-sm font-mono font-black border flex flex-col items-center justify-center gap-0.5 shadow-xs select-none ${
+																isErupting
+																	? "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40 animate-pulse"
+																	: isPrim
+																		? "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30"
+																		: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30"
+															}`}
+															title={isPrim ? `Молочный зуб ${num}` : `Постоянный зуб ${num}`}
+														>
+															<span className="leading-none">{num}</span>
+															<span className="text-[10px] font-bold font-sans opacity-80 leading-none">
+																{isPrim ? "Мол." : "Пост."}
+															</span>
+														</span>
+													);
+												})}
+											</div>
+										</div>
 									</div>
 								</div>
 
@@ -1145,7 +1201,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] px-7 py-2.5 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] hover:bg-[var(--odontogram-surface-hover,var(--paper-strong,#f1f5f9))] border border-[var(--odontogram-border,var(--line,#cbd5e1))] text-sm font-bold text-[var(--odontogram-ink,var(--ink,#0f172a))] transition-all cursor-pointer shadow-xs select-none"
+						className="min-h-[44px] px-8 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer select-none active:scale-95"
 					>
 						Готово
 					</button>

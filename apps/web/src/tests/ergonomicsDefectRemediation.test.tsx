@@ -5,6 +5,8 @@ import { describe, it } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { PatientBillingModal } from "../components/finance/PatientBillingModal";
+import { OneCExportButton } from "../components/finance/OneCExportButton";
+import { PediatricMixedDentitionModal } from "../components/odontogram/PediatricMixedDentitionModal";
 import { CbctHotkeysStatusBar } from "../components/radiology/CbctHotkeysStatusBar";
 import { ScheduleView } from "../ScheduleView";
 import { AppLogicProvider } from "../contexts/AppLogicContext";
@@ -210,6 +212,47 @@ describe("Frontend Ergonomics & Layout Defects Remediation", () => {
     assert.ok(
       html.includes("divide-y"),
       "Service items must use divide-y without nested double borders",
+    );
+  });
+
+  it("6. Pediatrics tabs overflow-x & age slider compact brackets; 1C button inline-flex center", () => {
+    // 1. PediatricMixedDentitionModal
+    const pediaHtml = renderToStaticMarkup(
+      createElement(PediatricMixedDentitionModal, {
+        isOpen: true,
+        onClose: () => {},
+      }),
+    );
+
+    assert.ok(
+      pediaHtml.includes("overflow-x: auto") || pediaHtml.includes("overflow-x:auto") || pediaHtml.includes("overflow-x-auto"),
+      "Pediatric modal tabs container must support horizontal scrolling without wrapping",
+    );
+    assert.ok(
+      pediaHtml.includes("flex-shrink: 0") || pediaHtml.includes("flex-shrink:0") || pediaHtml.includes("shrink-0"),
+      "Pediatric modal tabs must have flex-shrink: 0",
+    );
+    assert.ok(
+      pediaHtml.includes("hidden sm:inline"),
+      "Age slider scale must hide verbose text in brackets on mobile (<640px)",
+    );
+
+    // 2. OneCExportButton
+    const btnHtml = renderToStaticMarkup(
+      createElement(OneCExportButton, {
+        actNumber: "АКТ-2026-101",
+        items: [],
+        totalRub: 1000,
+      }),
+    );
+
+    assert.ok(
+      btnHtml.includes("display: inline-flex") || btnHtml.includes("display:inline-flex") || btnHtml.includes("inline-flex"),
+      "OneCExportButton must use inline-flex alignment",
+    );
+    assert.ok(
+      btnHtml.includes("gap: 6px") || btnHtml.includes("gap:6px") || btnHtml.includes("gap-1.5"),
+      "OneCExportButton must have 6px physical gap between icon and text",
     );
   });
 });

@@ -171,14 +171,15 @@ export const OneCExportButton: React.FC<OneCExportButtonProps> = ({
       disabled={isExporting}
       title="Сформировать и скачать официальный файл выгрузки в 1С:Бухгалтерия 8.3 / УТ (CommerceML 2.09)"
       data-testid="1c-export-xml-button"
-      className={`h-9 px-3.5 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 select-none ${variantStyles[variant]} ${className}`.trim()}
+      className={`h-9 px-3.5 rounded-xl text-xs inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 select-none whitespace-nowrap ${variantStyles[variant]} ${className}`.trim()}
+      style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
     >
       {isExported ? (
-        <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+        <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
       ) : (
         <FileCode2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
       )}
-      <span>{isExported ? '1C XML Скачан' : label}</span>
+      <span className="whitespace-nowrap">{isExported ? '1C XML Скачан' : label}</span>
     </button>
   );
 };

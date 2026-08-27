@@ -13,12 +13,12 @@ import {
 	FileCheck,
 	FileText,
 	Layers,
+	MessageSquare,
 	Percent,
 	Phone,
 	Printer,
 	QrCode,
 	Receipt,
-	Send,
 	ShieldCheck,
 	Smartphone,
 	Sparkles,
@@ -236,45 +236,58 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 				)}
 
 				{/* Top Header */}
-				<div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0 gap-3">
-					<div className="flex items-center gap-3 min-w-0 flex-1">
-						<div className="w-9 h-9 rounded-xl bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] flex items-center justify-center border border-[var(--teal,#0d9488)]/25 shrink-0">
-							<FileCheck className="w-4 h-4" />
-						</div>
-						<div className="min-w-0 flex-1">
-							<div className="flex items-center gap-2 flex-wrap">
-								<h3 className="text-xs sm:text-base font-extrabold text-[var(--ink)] m-0 leading-snug break-normal [overflow-wrap:normal]">
-									Акт выполненных работ & Гарантийный талон (А4)
-								</h3>
-								<span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 uppercase shrink-0">
-									Официальный бланк
-								</span>
+				<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 py-3 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0 gap-2.5 sm:gap-3">
+					<div className="flex items-start sm:items-center justify-between gap-3 w-full sm:w-auto min-w-0 flex-1">
+						<div className="flex items-center gap-3 min-w-0 flex-1">
+							<div className="w-9 h-9 rounded-xl bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] flex items-center justify-center border border-[var(--teal,#0d9488)]/25 shrink-0">
+								<FileCheck className="w-4 h-4" />
 							</div>
-							<p className="text-[11px] sm:text-xs text-[var(--muted)] m-0 mt-0.5 leading-snug flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-								<span>Лицензия № {clinicLicenseNumber}</span>
-								<span className="text-[var(--muted)]/50">•</span>
-								<span>Приказ МЗ РФ № 804н</span>
-								<span className="text-[var(--muted)]/50">•</span>
-								<span>Закон РФ № 2300-1</span>
-							</p>
+							<div className="min-w-0 flex-1 w-full">
+								<div className="flex items-center gap-2 flex-wrap">
+									<h3 className="text-sm sm:text-base font-extrabold text-[var(--ink)] m-0 leading-snug break-normal [overflow-wrap:normal]">
+										Акт выполненных работ & Гарантийный талон (А4)
+									</h3>
+									<span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 uppercase shrink-0">
+										Официальный бланк
+									</span>
+								</div>
+								<p className="text-[11px] sm:text-xs text-[var(--muted)] m-0 mt-0.5 leading-snug flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+									<span className="whitespace-nowrap">Лицензия № {clinicLicenseNumber}</span>
+									<span className="text-[var(--muted)]/50">•</span>
+									<span className="whitespace-nowrap">Приказ МЗ РФ № 804н</span>
+									<span className="text-[var(--muted)]/50">•</span>
+									<span className="whitespace-nowrap">Закон РФ № 2300-1</span>
+								</p>
+							</div>
 						</div>
+
+						{/* Mobile Top Close Button (Touch target >= 44px) */}
+						<button
+							type="button"
+							onClick={onClose}
+							className="sm:hidden min-h-[44px] min-w-[44px] h-11 w-11 rounded-xl bg-slate-200/60 dark:bg-slate-800/60 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer flex items-center justify-center shrink-0"
+							aria-label="Закрыть окно"
+						>
+							<X className="w-5 h-5" />
+						</button>
 					</div>
 
-					<div className="flex items-center gap-2 shrink-0">
+					{/* Mobile Actions Toolbar Row / Desktop Header Actions */}
+					<div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto shrink-0 pt-1 sm:pt-0 border-t border-[var(--line)]/40 sm:border-t-0">
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="px-3.5 py-1.5 h-8 sm:h-9 rounded-xl text-xs font-bold bg-[var(--teal,#0d9488)] hover:opacity-90 text-[var(--on-teal,#ffffff)] shadow-md flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0"
+							className="min-h-[44px] sm:min-h-0 px-3.5 py-1.5 h-11 sm:h-9 rounded-xl text-xs font-bold bg-[var(--teal,#0d9488)] hover:opacity-90 text-[var(--on-teal,#ffffff)] shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 flex-1 sm:flex-initial shrink-0"
 							data-testid="btn-print-billing-act"
 						>
 							<Printer className="w-4 h-4 shrink-0" />
 							<span className="hidden sm:inline">Печать бланка А4 (Ctrl+P)</span>
-							<span className="sm:hidden">Печать А4</span>
+							<span className="sm:hidden">Печать бланка А4</span>
 						</button>
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-8 w-8 rounded-xl bg-slate-200/60 dark:bg-slate-800/60 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer flex items-center justify-center border border-transparent hover:border-[var(--line)] shrink-0"
+							className="hidden sm:flex h-9 w-9 rounded-xl bg-slate-200/60 dark:bg-slate-800/60 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer items-center justify-center border border-transparent hover:border-[var(--line)] shrink-0"
 							aria-label="Закрыть окно"
 						>
 							<X className="w-4 h-4" />
@@ -316,7 +329,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						<button
 							type="button"
 							onClick={() => setActiveTab("details")}
-							className={`h-8 px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-semibold shrink-0 ${
+							className={`h-8 px-2.5 sm:px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-semibold shrink-0 ${
 								activeTab === "details"
 									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -324,7 +337,8 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							data-testid="btn-tab-details-act"
 						>
 							<Layers className="w-3.5 h-3.5 shrink-0" />
-							<span>Спецификация и гарантии ({summary.items.length} поз.)</span>
+							<span className="hidden sm:inline whitespace-nowrap">Спецификация и гарантии ({summary.items.length} поз.)</span>
+							<span className="sm:hidden whitespace-nowrap">Спецификация</span>
 						</button>
 					</div>
 
@@ -351,10 +365,10 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 					</div>
 				</div>
 
-				{/* Loyalty Discount & Presets Toolbar (Compact h-8 Controls) */}
-				<div className="px-4 sm:px-6 py-2 border-b border-[var(--line)] bg-[var(--paper-soft)] flex flex-wrap items-center justify-between gap-2 shrink-0 text-xs">
+				{/* Loyalty Discount & Presets Toolbar (Touch >=44px Controls) */}
+				<div className="px-4 sm:px-6 py-2.5 border-b border-[var(--line)] bg-[var(--paper-soft)] flex flex-wrap items-center justify-between gap-2.5 shrink-0 text-xs">
 					<div className="flex items-center gap-2 font-bold text-[var(--ink)]">
-						<Percent className="w-3.5 h-3.5 text-[var(--brand-primary,#0d9488)]" />
+						<Percent className="w-4 h-4 text-[var(--brand-primary,#0d9488)]" />
 						<span>Скидка:</span>
 					</div>
 
@@ -364,7 +378,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								key={preset.id}
 								type="button"
 								onClick={() => setDiscountPreset(preset.id)}
-								className={`h-8 px-2.5 rounded-lg font-bold transition-all cursor-pointer ${
+								className={`min-h-[44px] px-3.5 py-2 rounded-xl font-bold transition-all cursor-pointer flex items-center justify-center ${
 									discountPreset === preset.id
 										? "bg-[var(--brand-primary,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
 										: "bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink)] hover:border-[var(--brand-primary,#0d9488)]"
@@ -385,7 +399,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								value={customDiscountPercent || ""}
 								onChange={(e) => setCustomDiscountPercent(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
 								placeholder="0%"
-								className="h-8 w-20 px-2 py-1 text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] rounded-lg text-[var(--ink)]"
+								className="min-h-[44px] h-11 w-20 px-2.5 py-1 text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] rounded-xl text-[var(--ink)]"
 							/>
 							<span>%</span>
 						</div>
@@ -400,15 +414,15 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								value={customDiscountRub || ""}
 								onChange={(e) => setCustomDiscountRub(Math.max(0, parseFloat(e.target.value) || 0))}
 								placeholder="0 ₽"
-								className="h-8 w-24 px-2 py-1 text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] rounded-lg text-[var(--ink)]"
+								className="min-h-[44px] h-11 w-24 px-2.5 py-1 text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] rounded-xl text-[var(--ink)]"
 							/>
 							<span>₽</span>
 						</div>
 					)}
 
 					{discountResult.totalDiscountRub > 0 && (
-						<div className="h-8 px-2.5 rounded-lg bg-[var(--ok-bg,#f0fdf4)] border border-[var(--ok-fg,#059669)]/30 text-[var(--ok-fg,#059669)] font-extrabold flex items-center gap-1">
-							<Sparkles className="w-3 h-3 text-[var(--ok-fg,#059669)]" />
+						<div className="min-h-[44px] px-3.5 rounded-xl bg-[var(--ok-bg,#f0fdf4)] border border-[var(--ok-fg,#059669)]/30 text-[var(--ok-fg,#059669)] font-extrabold flex items-center gap-1.5">
+							<Sparkles className="w-4 h-4 text-[var(--ok-fg,#059669)]" />
 							<span>{discountResult.savingsText} ({discountResult.effectivePercent}%)</span>
 						</div>
 					)}
@@ -425,7 +439,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 										<div className="flex items-center gap-2">
 											<Sparkles className="w-5 h-5 text-[var(--teal,#0d9488)] shrink-0" />
 											<h4 className="text-base font-extrabold text-[var(--ink)] m-0">
-												Понятная расшифровка счета для пациента
+												Понятная расшифровка счета для {patient?.fullName || actParams.patient.fullName || "пациента"}
 											</h4>
 										</div>
 										<p className="text-xs text-[var(--muted)] m-0 mt-1">
@@ -617,7 +631,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								<div className="border border-black p-2.5 rounded-lg bg-slate-50 space-y-1.5">
 									<div className="font-sans font-bold text-xs uppercase flex items-center gap-1.5 text-[var(--ok-fg,#059669)]">
 										<ShieldCheck className="w-4 h-4 text-[var(--ok-fg,#059669)] inline" />
-										<span>2. Гарантийный талон и обязательства клиники (СтАР & Закон РФ № 2300-1):</span>
+										<span>2. Гарантийный талон и обязательства клиники (СтАР & <span className="whitespace-nowrap">Закон РФ № 2300-1</span>):</span>
 									</div>
 									<table className="w-full border-collapse border border-slate-400 text-[10px] bg-white">
 										<thead>
@@ -779,7 +793,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								className="h-10 sm:h-9 px-3.5 rounded-xl text-xs font-bold bg-[#25d366] hover:bg-[#20ba59] text-white shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0"
 								data-testid="btn-footer-send-whatsapp"
 							>
-								<Send className="w-3.5 h-3.5 shrink-0" />
+								<MessageSquare className="w-3.5 h-3.5 shrink-0" />
 								<span className="whitespace-nowrap shrink-0">В WhatsApp</span>
 							</button>
 
