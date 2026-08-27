@@ -201,37 +201,39 @@ describe("IDEMPOTENT DISTRIBUTED LAN/CLOUD TRANSACTION & 54-FZ BUFFER SUITE", ()
 
 		// Fire 4 parallel requests with the identical composite key
 		const parallelPromises = Array.from({ length: 4 }).map(() =>
-			IdempotentTransactionService.executeIdempotentTransaction({
-				organizationId: ORG_ID,
-				idempotencyKey: compositeKey,
-				entityKind: "payment",
-				action: "create_payment",
-				payload: signature,
-				handler: async () => {
-					// Real payment creation
-					const [newPayment] = await db
-						.insert(payments)
-						.values({
-							organizationId: ORG_ID,
-							patientId: PATIENT_ID,
-							visitId: VISIT_ID,
-							amountRub: 7500,
-							method: "card",
-							clientMutationId: mutationUuid,
-						})
-						.returning();
+			withFixtureTenant(ORG_ID, async () => {
+				return IdempotentTransactionService.executeIdempotentTransaction({
+					organizationId: ORG_ID,
+					idempotencyKey: compositeKey,
+					entityKind: "payment",
+					action: "create_payment",
+					payload: signature,
+					handler: async () => {
+						// Real payment creation
+						const [newPayment] = await db
+							.insert(payments)
+							.values({
+								organizationId: ORG_ID,
+								patientId: PATIENT_ID,
+								visitId: VISIT_ID,
+								amountRub: 7500,
+								method: "card",
+								clientMutationId: mutationUuid,
+							})
+							.returning();
 
-					return {
-						responseStatus: 201,
-						responseJson: {
-							success: true,
-							paymentId: newPayment!.id,
-							amountRub: 7500,
-							method: "card",
-						},
-						entityId: newPayment!.id,
-					};
-				},
+						return {
+							responseStatus: 201,
+							responseJson: {
+								success: true,
+								paymentId: newPayment!.id,
+								amountRub: 7500,
+								method: "card",
+							},
+							entityId: newPayment!.id,
+						};
+					},
+				});
 			}),
 		);
 
@@ -355,47 +357,51 @@ describe("IDEMPOTENT DISTRIBUTED LAN/CLOUD TRANSACTION & 54-FZ BUFFER SUITE", ()
 		const compositeKey = generateFinancialCompositeIdempotencyKey(timeoutMutationId, signature);
 
 		// Step 1: Initial call completes on server (even if client dropped connection right after)
-		const firstAttempt = await IdempotentTransactionService.executeIdempotentTransaction({
-			organizationId: ORG_ID,
-			idempotencyKey: compositeKey,
-			entityKind: "payment",
-			action: "print_receipt",
-			payload: signature,
-			handler: async () => {
-				const spoolerResult = await OfflineFiscalSpooler.enqueueFiscalReceipt({
-					organizationId: ORG_ID,
-					patientId: PATIENT_ID,
-					receiptType: "income",
-					payload: receiptPayload,
-					clientMutationId: timeoutMutationId,
-				});
+		const firstAttempt = await withFixtureTenant(ORG_ID, async () => {
+			return IdempotentTransactionService.executeIdempotentTransaction({
+				organizationId: ORG_ID,
+				idempotencyKey: compositeKey,
+				entityKind: "payment",
+				action: "print_receipt",
+				payload: signature,
+				handler: async () => {
+					const spoolerResult = await OfflineFiscalSpooler.enqueueFiscalReceipt({
+						organizationId: ORG_ID,
+						patientId: PATIENT_ID,
+						receiptType: "income",
+						payload: receiptPayload,
+						clientMutationId: timeoutMutationId,
+					});
 
-				return {
-					responseStatus: 200,
-					responseJson: {
-						success: true,
-						queueId: spoolerResult.queueId,
-						status: spoolerResult.status,
-						fiscalDetails: spoolerResult.fiscalDetails,
-					},
-					entityId: spoolerResult.queueId,
-				};
-			},
+					return {
+						responseStatus: 200,
+						responseJson: {
+							success: true,
+							queueId: spoolerResult.queueId,
+							status: spoolerResult.status,
+							fiscalDetails: spoolerResult.fiscalDetails,
+						},
+						entityId: spoolerResult.queueId,
+					};
+				},
+			});
 		});
 
 		assert.equal(firstAttempt.isReplay, false);
 		assert.equal(firstAttempt.success, true);
 
 		// Step 2: Client retries 5 seconds later due to network timeout
-		const retryAttempt = await IdempotentTransactionService.executeIdempotentTransaction({
-			organizationId: ORG_ID,
-			idempotencyKey: compositeKey,
-			entityKind: "payment",
-			action: "print_receipt",
-			payload: signature,
-			handler: async () => {
-				throw new Error("Handler should not be called on replay!");
-			},
+		const retryAttempt = await withFixtureTenant(ORG_ID, async () => {
+			return IdempotentTransactionService.executeIdempotentTransaction({
+				organizationId: ORG_ID,
+				idempotencyKey: compositeKey,
+				entityKind: "payment",
+				action: "print_receipt",
+				payload: signature,
+				handler: async () => {
+					throw new Error("Handler should not be called on replay!");
+				},
+			});
 		});
 
 		assert.equal(retryAttempt.isReplay, true);
@@ -468,11 +474,13 @@ describe("IDEMPOTENT DISTRIBUTED LAN/CLOUD TRANSACTION & 54-FZ BUFFER SUITE", ()
 			],
 		});
 
-		const enqueueResult = await OfflineFiscalSpooler.enqueueFiscalReceipt({
-			organizationId: ORG_ID,
-			patientId: PATIENT_ID,
-			receiptType: "income",
-			payload: receiptPayload,
+		const enqueueResult = await withFixtureTenant(ORG_ID, async () => {
+			return OfflineFiscalSpooler.enqueueFiscalReceipt({
+				organizationId: ORG_ID,
+				patientId: PATIENT_ID,
+				receiptType: "income",
+				payload: receiptPayload,
+			});
 		});
 
 		assert.equal(enqueueResult.success, true);
@@ -482,7 +490,9 @@ describe("IDEMPOTENT DISTRIBUTED LAN/CLOUD TRANSACTION & 54-FZ BUFFER SUITE", ()
 		assert.ok(enqueueResult.queueId);
 
 		// Check queue stats
-		const stats = await OfflineFiscalSpooler.getQueueStatistics(ORG_ID);
+		const stats = await withFixtureTenant(ORG_ID, async () => {
+			return OfflineFiscalSpooler.getQueueStatistics(ORG_ID);
+		});
 		assert.ok(stats.totalHardwareOffline >= 1);
 	});
 
@@ -491,7 +501,9 @@ describe("IDEMPOTENT DISTRIBUTED LAN/CLOUD TRANSACTION & 54-FZ BUFFER SUITE", ()
 		delete process.env.KKM_FORCE_OFFLINE;
 		delete process.env.KKM_OUT_OF_PAPER;
 
-		const flushResult = await OfflineFiscalSpooler.flushOrganizationQueue(ORG_ID);
+		const flushResult = await withFixtureTenant(ORG_ID, async () => {
+			return OfflineFiscalSpooler.flushOrganizationQueue(ORG_ID);
+		});
 
 		assert.equal(flushResult.isDeviceOnline, true);
 		assert.equal(flushResult.isPaperPresent, true);
@@ -499,7 +511,9 @@ describe("IDEMPOTENT DISTRIBUTED LAN/CLOUD TRANSACTION & 54-FZ BUFFER SUITE", ()
 		assert.equal(flushResult.failedCount, 0);
 
 		// Verify that the queue item is now printed
-		const statsAfter = await OfflineFiscalSpooler.getQueueStatistics(ORG_ID);
+		const statsAfter = await withFixtureTenant(ORG_ID, async () => {
+			return OfflineFiscalSpooler.getQueueStatistics(ORG_ID);
+		});
 		assert.equal(statsAfter.totalHardwareOffline, 0);
 		assert.ok(statsAfter.totalPrinted >= 1);
 	});
@@ -531,11 +545,13 @@ describe("IDEMPOTENT DISTRIBUTED LAN/CLOUD TRANSACTION & 54-FZ BUFFER SUITE", ()
 			],
 		});
 
-		const enq = await OfflineFiscalSpooler.enqueueFiscalReceipt({
-			organizationId: ORG_ID,
-			patientId: PATIENT_ID,
-			receiptType: "income",
-			payload: offlinePayload,
+		const enq = await withFixtureTenant(ORG_ID, async () => {
+			return OfflineFiscalSpooler.enqueueFiscalReceipt({
+				organizationId: ORG_ID,
+				patientId: PATIENT_ID,
+				receiptType: "income",
+				payload: offlinePayload,
+			});
 		});
 
 		assert.equal(enq.status, "hardware_offline");
@@ -543,7 +559,9 @@ describe("IDEMPOTENT DISTRIBUTED LAN/CLOUD TRANSACTION & 54-FZ BUFFER SUITE", ()
 		// Restore hardware and retry item directly
 		delete process.env.KKM_FORCE_OFFLINE;
 
-		const retryRes = await OfflineFiscalSpooler.retryQueuedReceipt(ORG_ID, enq.queueId);
+		const retryRes = await withFixtureTenant(ORG_ID, async () => {
+			return OfflineFiscalSpooler.retryQueuedReceipt(ORG_ID, enq.queueId);
+		});
 		assert.equal(retryRes.success, true);
 		assert.equal(retryRes.status, "printed");
 		assert.ok(retryRes.item?.printedAt);
@@ -555,16 +573,18 @@ describe("IDEMPOTENT DISTRIBUTED LAN/CLOUD TRANSACTION & 54-FZ BUFFER SUITE", ()
 
 	it("3.1 Collaborative Doctor & Assistant edit conflict detection prevents Lost Updates", async () => {
 		// 1. Assistant reads diary at version 1 and saves update
-		const assistantSave = await ClinicalRecordLockService.saveDiaryOptimistic({
-			organizationId: ORG_ID,
-			diaryId: DIARY_ID,
-			userId: ASSISTANT_USER_ID,
-			userRole: "assistant",
-			expectedVersion: 1,
-			fields: {
-				anamnesis: "Пациент жалуется на ноющие боли в зубе 2.6. Аллергоанамнез не отягощен.",
-				instrumentTrayBarcode: "TRAY-STERIL-0091",
-			},
+		const assistantSave = await withFixtureTenant(ORG_ID, async () => {
+			return ClinicalRecordLockService.saveDiaryOptimistic({
+				organizationId: ORG_ID,
+				diaryId: DIARY_ID,
+				userId: ASSISTANT_USER_ID,
+				userRole: "assistant",
+				expectedVersion: 1,
+				fields: {
+					anamnesis: "Пациент жалуется на ноющие боли в зубе 2.6. Аллергоанамнез не отягощен.",
+					instrumentTrayBarcode: "TRAY-STERIL-0091",
+				},
+			});
 		});
 
 		assert.equal(assistantSave.success, true);
@@ -575,15 +595,17 @@ describe("IDEMPOTENT DISTRIBUTED LAN/CLOUD TRANSACTION & 54-FZ BUFFER SUITE", ()
 		// 2. Doctor (who opened the tab simultaneously at version 1) attempts to save with stale expectedVersion: 1
 		await assert.rejects(
 			async () => {
-				await ClinicalRecordLockService.saveDiaryOptimistic({
-					organizationId: ORG_ID,
-					diaryId: DIARY_ID,
-					userId: DOCTOR_USER_ID,
-					userRole: "doctor",
-					expectedVersion: 1, // Stale version!
-					fields: {
-						treatmentDescription: "Эндодонтическая обработка каналов 2.6 файлами ProTaper.",
-					},
+				await withFixtureTenant(ORG_ID, async () => {
+					return ClinicalRecordLockService.saveDiaryOptimistic({
+						organizationId: ORG_ID,
+						diaryId: DIARY_ID,
+						userId: DOCTOR_USER_ID,
+						userRole: "doctor",
+						expectedVersion: 1, // Stale version!
+						fields: {
+							treatmentDescription: "Эндодонтическая обработка каналов 2.6 файлами ProTaper.",
+						},
+					});
 				});
 			},
 			(err: Error) => {
@@ -599,15 +621,17 @@ describe("IDEMPOTENT DISTRIBUTED LAN/CLOUD TRANSACTION & 54-FZ BUFFER SUITE", ()
 		);
 
 		// 3. Doctor resolves conflict by fetching v2 and saving with expectedVersion: 2
-		const doctorSave = await ClinicalRecordLockService.saveDiaryOptimistic({
-			organizationId: ORG_ID,
-			diaryId: DIARY_ID,
-			userId: DOCTOR_USER_ID,
-			userRole: "doctor",
-			expectedVersion: 2, // Up to date!
-			fields: {
-				treatmentDescription: "Эндодонтическая обработка каналов 2.6 файлами ProTaper.",
-			},
+		const doctorSave = await withFixtureTenant(ORG_ID, async () => {
+			return ClinicalRecordLockService.saveDiaryOptimistic({
+				organizationId: ORG_ID,
+				diaryId: DIARY_ID,
+				userId: DOCTOR_USER_ID,
+				userRole: "doctor",
+				expectedVersion: 2, // Up to date!
+				fields: {
+					treatmentDescription: "Эндодонтическая обработка каналов 2.6 файлами ProTaper.",
+				},
+			});
 		});
 
 		assert.equal(doctorSave.success, true);

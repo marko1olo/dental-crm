@@ -64,31 +64,35 @@ export type RefundSettlementOutcome = {
 	}[];
 };
 
+import { withTenantCtx } from "../db/rls.js";
+
 export async function settleRefundedPaymentsForPatient(
 	organizationId: string,
 	patientId: string,
 ): Promise<RefundSettlementOutcome> {
-	const [payments, documents] = await Promise.all([
-		getPaymentsByPatientIdInDb(organizationId, patientId),
-		getDocumentsByPatientId(organizationId, patientId),
-	]);
-	const settlements = paymentRefundSettlements(payments, documents);
-	if (settlements.length === 0) {
-		return { refunded: [], restored: [], partiallyRefunded: [] };
-	}
-	const applied = await applyPaymentRefundSettlementsInDb(
-		organizationId,
-		settlements,
-	);
-	return {
-		refunded: applied.refunded,
-		restored: applied.restored,
-		partiallyRefunded: settlements
-			.filter((item) => !item.fullyRefunded && item.refundedKopecks > 0)
-			.map((item) => ({
-				paymentId: item.paymentId,
-				refundedKopecks: item.refundedKopecks,
-				amountKopecks: item.amountKopecks,
-			})),
-	};
+	return withTenantCtx(organizationId, async () => {
+		const [payments, documents] = await Promise.all([
+			getPaymentsByPatientIdInDb(organizationId, patientId),
+			getDocumentsByPatientId(organizationId, patientId),
+		]);
+		const settlements = paymentRefundSettlements(payments, documents);
+		if (settlements.length === 0) {
+			return { refunded: [], restored: [], partiallyRefunded: [] };
+		}
+		const applied = await applyPaymentRefundSettlementsInDb(
+			organizationId,
+			settlements,
+		);
+		return {
+			refunded: applied.refunded,
+			restored: applied.restored,
+			partiallyRefunded: settlements
+				.filter((item) => !item.fullyRefunded && item.refundedKopecks > 0)
+				.map((item) => ({
+					paymentId: item.paymentId,
+					refundedKopecks: item.refundedKopecks,
+					amountKopecks: item.amountKopecks,
+				})),
+		};
+	});
 }

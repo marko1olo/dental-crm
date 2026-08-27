@@ -23,14 +23,17 @@ import { Redactor, SymbolTable } from "./redaction.js";
 import {
 	cancelAppointmentTool,
 	checkDrugInteractionsTool,
+	createStaffTaskTool,
 	findPatientTool,
 	getDoctorScheduleTool,
 	getEmrCardTool,
 	getFamilyBalanceTool,
 	getLabOrdersTool,
+	getPatientRecallsTool,
 	getPatientTimelineTool,
 	registerClinicalTools,
 	rescheduleAppointmentTool,
+	scheduleRecallTool,
 	suggestIcd10PlanTool,
 } from "./tools/clinicalTools.js";
 import { ToolRegistry } from "./tools/registry.js";
@@ -64,9 +67,13 @@ function createMockContext(overrides: Partial<AgentContext> = {}): AgentContext 
 		permissions: [
 			"patients.read",
 			"clinical.read",
+			"clinical.write",
 			"schedule.read",
 			"schedule.write",
 			"billing.read",
+			"tasks.write",
+			"communications.read",
+			"communications.write",
 		],
 		tools: registry,
 		db: null,
@@ -627,7 +634,6 @@ describe("Interactive Schedule Mutation Tools (Reschedule, Cancel, Doctor Schedu
 			comment: null,
 		};
 
-		// 1. Conflict test: mockDb returns a conflict
 		const conflictDb = {
 			select: () => ({
 				from: () => ({
@@ -651,7 +657,6 @@ describe("Interactive Schedule Mutation Tools (Reschedule, Cancel, Doctor Schedu
 			/Конфликт расписания/,
 		);
 
-		// 2. Success test: mockDb has no conflict and performs update
 		let queryStep = 0;
 		const successDb = {
 			select: () => ({
@@ -660,10 +665,8 @@ describe("Interactive Schedule Mutation Tools (Reschedule, Cancel, Doctor Schedu
 						limit: async () => {
 							queryStep++;
 							if (queryStep === 1) {
-								// Fetch current appointment
 								return [existingApp];
 							}
-							// Conflict check -> empty (no conflicts)
 							return [];
 						},
 					}),
@@ -746,7 +749,7 @@ describe("Interactive Schedule Mutation Tools (Reschedule, Cancel, Doctor Schedu
 
 	test("get_doctor_schedule computes booked minutes and free capacity", async () => {
 		const shiftStart = new Date("2026-09-01T09:00:00Z");
-		const shiftEnd = new Date("2026-09-01T18:00:00Z"); // 9 hours = 540 min
+		const shiftEnd = new Date("2026-09-01T18:00:00Z");
 
 		const mockDb = {
 			select: () => ({
@@ -761,7 +764,7 @@ describe("Interactive Schedule Mutation Tools (Reschedule, Cancel, Doctor Schedu
 									chairId: "chair-1",
 									status: "confirmed",
 									startsAt: new Date("2026-09-01T10:00:00Z"),
-									endsAt: new Date("2026-09-01T11:00:00Z"), // 60 min
+									endsAt: new Date("2026-09-01T11:00:00Z"),
 									reason: "Лечение пульпита 36 зуба",
 									comment: null,
 								},
@@ -772,7 +775,7 @@ describe("Interactive Schedule Mutation Tools (Reschedule, Cancel, Doctor Schedu
 									chairId: "chair-1",
 									status: "planned",
 									startsAt: new Date("2026-09-01T14:00:00Z"),
-									endsAt: new Date("2026-09-01T15:30:00Z"), // 90 min
+									endsAt: new Date("2026-09-01T15:30:00Z"),
 									reason: "Профгигиена Air-Flow",
 									comment: null,
 								},
@@ -792,11 +795,189 @@ describe("Interactive Schedule Mutation Tools (Reschedule, Cancel, Doctor Schedu
 
 		assert.strictEqual(result.doctorUserId, USER_ID);
 		assert.strictEqual(result.totalAppointmentsCount, 2);
-		assert.strictEqual(result.totalBookedMinutes, 150); // 60 + 90
-		assert.strictEqual(result.freeCapacityMinutes, 390); // 540 - 150
+		assert.strictEqual(result.totalBookedMinutes, 150);
+		assert.strictEqual(result.freeCapacityMinutes, 390);
 		assert.strictEqual(result.bookedSlots.length, 2);
 		assert.strictEqual(result.bookedSlots[0].patientName, "Сидоров Алексей");
 		assert.strictEqual(result.bookedSlots[0].durationMinutes, 60);
+	});
+});
+
+describe("Staff Tasks & Preventive Recall Tools", () => {
+	test("create_staff_task inserts clinic task for admin/nurse with due date", async () => {
+		const mockPatient = {
+			id: PATIENT_ID,
+			fullName: "Васильева Елена Михайловна",
+		};
+
+		const mockDb = {
+			select: () => ({
+				from: () => ({
+					where: () => ({
+						limit: async () => [mockPatient],
+					}),
+				}),
+			}),
+			insert: () => ({
+				values: (vals: any) => ({
+					returning: async () => [
+						{
+							id: "task-001",
+							organizationId: ORG_ID,
+							patientId: vals.patientId,
+							assignedRole: vals.assignedRole,
+							title: vals.title,
+							body: vals.body,
+							priority: vals.priority,
+							status: "needs_call",
+							dueAt: vals.dueAt,
+							createdAt: new Date("2026-08-27T10:00:00Z"),
+						},
+					],
+				}),
+			}),
+		};
+
+		const ctx = createMockContext({ db: mockDb });
+		const res = (await createStaffTaskTool.handler(ctx, {
+			patientId: PATIENT_ID,
+			title: "Перезвонить по поводу плана имплантации",
+			description: "Пациент просил уточнить стоимость коронки из диоксида циркония",
+			priority: "high",
+			assignedRole: "admin",
+			dueDate: "2026-08-28T12:00:00Z",
+		})) as any;
+
+		assert.strictEqual(res.success, true);
+		assert.strictEqual(res.taskId, "task-001");
+		assert.strictEqual(res.patientName, "Васильева Елена Михайловна");
+		assert.strictEqual(res.title, "Перезвонить по поводу плана имплантации");
+		assert.strictEqual(res.priority, "high");
+		assert.strictEqual(res.assignedRole, "admin");
+		assert.strictEqual(res.dueAt, "2026-08-28T12:00:00.000Z");
+	});
+
+	test("get_patient_recalls evaluates active recalls and medical recommendations", async () => {
+		const now = new Date();
+		const upcomingRecallDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+		let step = 0;
+		const mockDb = {
+			select: () => ({
+				from: () => ({
+					where: () => ({
+						orderBy: () => {
+							step++;
+							if (step === 1) {
+								// Existing communication tasks (recalls)
+								const recallsList = [
+									{
+										id: "recall-1",
+										title: "Профгигиена полости рта (Recall)",
+										body: "Плановый осмотр и гигиена",
+										channel: "whatsapp",
+										status: "queued",
+										priority: "normal",
+										dueAt: upcomingRecallDate,
+										createdAt: now,
+									},
+								];
+								return Object.assign(Promise.resolve(recallsList), {
+									limit: async () => recallsList,
+									then: (resolve: any) => Promise.resolve(recallsList).then(resolve),
+								});
+							}
+							// Last completed visit for recommendation
+							const visitList = [
+								{
+									id: "visit-123",
+									diagnosis: "K05.1 Хронический гингивит, дентальный имплантат 36",
+									treatmentPlan: "Установка имплантата",
+									signedAt: new Date("2026-08-01T10:00:00Z"),
+									createdAt: new Date("2026-08-01T10:00:00Z"),
+								},
+							];
+							return Object.assign(Promise.resolve(visitList), {
+								limit: async () => visitList,
+								then: (resolve: any) => Promise.resolve(visitList).then(resolve),
+							});
+						},
+					}),
+				}),
+			}),
+		};
+
+		const ctx = createMockContext({ db: mockDb });
+		const res = (await getPatientRecallsTool.handler(ctx, {
+			patientId: PATIENT_ID,
+			statusFilter: "all",
+		})) as any;
+
+		assert.strictEqual(res.patientId, PATIENT_ID);
+		assert.strictEqual(res.totalActiveRecallsCount, 1);
+		assert.strictEqual(res.recalls[0].title, "Профгигиена полости рта (Recall)");
+		assert.strictEqual(res.recalls[0].urgency, "upcoming");
+
+		assert.ok(res.medicalRecommendations.length >= 2);
+		const hygieneRec = res.medicalRecommendations.find((r: any) => r.reason === "hygiene");
+		const implantRec = res.medicalRecommendations.find((r: any) => r.reason === "implant_review");
+		assert.ok(hygieneRec, "Must have hygiene recall recommendation");
+		assert.ok(implantRec, "Must have implant review recommendation");
+		assert.strictEqual(hygieneRec.recommendedIntervalMonths, 6);
+	});
+
+	test("schedule_recall schedules preventive recall with channel and priority", async () => {
+		const mockPatient = {
+			id: PATIENT_ID,
+			fullName: "Кузнецов Артем Дмитриевич",
+		};
+
+		const mockDb = {
+			select: () => ({
+				from: () => ({
+					where: () => ({
+						limit: async () => [mockPatient],
+					}),
+				}),
+			}),
+			insert: () => ({
+				values: (vals: any) => ({
+					returning: async () => [
+						{
+							id: "recall-002",
+							organizationId: ORG_ID,
+							patientId: vals.patientId,
+							assignedRole: vals.assignedRole,
+							channel: vals.channel,
+							intent: vals.intent,
+							title: vals.title,
+							body: vals.body,
+							priority: vals.priority,
+							status: vals.status,
+							dueAt: vals.dueAt,
+							createdAt: new Date("2026-08-27T11:00:00Z"),
+						},
+					],
+				}),
+			}),
+		};
+
+		const ctx = createMockContext({ db: mockDb });
+		const res = (await scheduleRecallTool.handler(ctx, {
+			patientId: PATIENT_ID,
+			recallReason: "implant_review",
+			dueAt: "2027-02-27T10:00:00Z",
+			channel: "whatsapp",
+			priority: "high",
+			notes: "Контроль остеоинтеграции и прицельный снимок",
+		})) as any;
+
+		assert.strictEqual(res.success, true);
+		assert.strictEqual(res.recallTaskId, "recall-002");
+		assert.strictEqual(res.recallReason, "implant_review");
+		assert.strictEqual(res.title, "Контрольный осмотр имплантов и прикуса (Recall)");
+		assert.strictEqual(res.channel, "whatsapp");
+		assert.strictEqual(res.dueAt, "2027-02-27T10:00:00.000Z");
 	});
 });
 
@@ -870,7 +1051,6 @@ describe("Agent Orchestrator Loop & Turn Suspension", () => {
 		assert.ok(events.some((e) => e.type === "token" && e.text.includes("Пациент ожидает")));
 		assert.ok(events.some((e) => e.type === "final"));
 
-		// Verify history contains un-redacted cleartext
 		const lastAssistant = history[history.length - 1]!;
 		assert.strictEqual(lastAssistant.role, "assistant");
 	});
@@ -925,7 +1105,7 @@ describe("Agent Orchestrator Loop & Turn Suspension", () => {
 
 	test("TokenBudgetGuard prevents calls when threshold is exceeded", async () => {
 		const guard = new TokenBudgetGuard(100);
-		guard.record(60, 50); // total 110 >= 100
+		guard.record(60, 50);
 		assert.strictEqual(guard.check(), false);
 
 		const ctx = createMockContext();
@@ -962,7 +1142,6 @@ describe("Copilot Action Manager & SSE Formatting", () => {
 		assert.ok(pending);
 		assert.strictEqual(pending.toolName, "clinical.find_patient");
 
-		// SSE formatting check
 		const sseChunk = formatSseEvent({
 			type: "confirmation_required",
 			callId: "call_xyz",
@@ -974,7 +1153,6 @@ describe("Copilot Action Manager & SSE Formatting", () => {
 		assert.ok(sseChunk.includes('"callId":"call_xyz"'));
 		assert.ok(sseChunk.endsWith("\n\n"));
 
-		// Rejection check
 		const rejected = manager.rejectAction("call_xyz", "Отменено врачом");
 		assert.strictEqual(rejected.ok, true);
 		assert.strictEqual(manager.getPending("call_xyz"), undefined);

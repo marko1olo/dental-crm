@@ -28,7 +28,7 @@ export interface ToolDefinition<
 	readonly name: string;
 	readonly description: string;
 	readonly parameters: TSchema;
-	readonly handler: ToolHandler<z.infer<TSchema>, TResult>;
+	readonly handler: ToolHandler<z.input<TSchema>, TResult>;
 	readonly permissions: string[];
 	readonly category: ToolCategory;
 	/**

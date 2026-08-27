@@ -96,9 +96,6 @@ export interface IdempotentExecutionResult<T> {
 	readonly executedAt: string;
 }
 
-// In-memory fast lock cache to eliminate unnecessary DB roundtrips for hot concurrent clicks
-const activeInFlightKeys = new Set<string>();
-
 export class IdempotentTransactionService {
 	/**
 	 * Computes 64-bit integer hash for PostgreSQL advisory lock key.
@@ -132,17 +129,8 @@ export class IdempotentTransactionService {
 			});
 		}
 
-		const memoryLockKey = `${params.organizationId}:${rawKey}`;
-		if (activeInFlightKeys.has(memoryLockKey)) {
-			// Fast check for parallel burst
-			throw new IdempotencyInProgressError(params.idempotencyKey);
-		}
-
-		activeInFlightKeys.add(memoryLockKey);
-
-		try {
-			// 2. Perform DB advisory lock & existing record check inside transaction
-			return await db.transaction(async (tx) => {
+		// 2. Perform DB advisory lock & existing record check inside transaction
+		return await db.transaction(async (tx) => {
 				const lockId = this.computeAdvisoryLockKey(params.organizationId, rawKey);
 				await tx.execute(sql`SELECT pg_advisory_xact_lock(${lockId})`);
 
@@ -212,9 +200,6 @@ export class IdempotentTransactionService {
 					executedAt: (inserted?.createdAt ?? new Date()).toISOString(),
 				};
 			});
-		} finally {
-			activeInFlightKeys.delete(memoryLockKey);
-		}
 	}
 
 	/**

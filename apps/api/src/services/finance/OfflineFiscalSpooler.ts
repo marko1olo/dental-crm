@@ -452,12 +452,12 @@ export class OfflineFiscalSpooler {
 			if (row.status === "pending_print" || row.status === "offline_pending") {
 				totalPending += row.count;
 				if (row.oldestCreatedAt && !oldestPendingCreatedAt) {
-					oldestPendingCreatedAt = row.oldestCreatedAt.toISOString();
+					oldestPendingCreatedAt = row.oldestCreatedAt instanceof Date ? row.oldestCreatedAt.toISOString() : new Date(row.oldestCreatedAt).toISOString();
 				}
 			} else if (row.status === "hardware_offline") {
 				totalHardwareOffline += row.count;
 				if (row.oldestCreatedAt && !oldestPendingCreatedAt) {
-					oldestPendingCreatedAt = row.oldestCreatedAt.toISOString();
+					oldestPendingCreatedAt = row.oldestCreatedAt instanceof Date ? row.oldestCreatedAt.toISOString() : new Date(row.oldestCreatedAt).toISOString();
 				}
 			} else if (row.status === "printed") {
 				totalPrinted += row.count;
