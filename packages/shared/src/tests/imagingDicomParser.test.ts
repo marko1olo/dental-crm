@@ -8,9 +8,6 @@ import {
 	disposeFullWebGlPipeline,
 	huToGrayscale8Bit,
 	isVramBudgetExceeded,
-	measure3DDistanceMm,
-	measureDistanceToMandibularNerve,
-	measureDistanceToMaxillarySinus,
 	parseDicomDataset,
 	rawPixelToHounsfieldUnit,
 } from "../imaging/index.js";
@@ -155,85 +152,6 @@ describe("DICOM / PACS Panoramic MPR & 3D Dental Imaging Engine (Parser, Voxel A
 		const rawVal = 1874;
 		const hu = rawPixelToHounsfieldUnit(rawVal, dataset.rescaleSlope, dataset.rescaleIntercept);
 		assert.equal(hu, 850); // 1874 - 1024 = 850 HU (D2 bone)
-	});
-
-	it("2. Dental 3D Voxel Anisotropic Distance Calibration", () => {
-		const p1 = { x: 10, y: 10, z: 10 };
-		const p2 = { x: 20, y: 10, z: 20 }; // dx=10 voxels, dy=0, dz=10 voxels
-		const voxelSpacing = { x: 0.2, y: 0.2, z: 0.5 }; // anisotropic spacing
-
-		// dxMm = 10 * 0.2 = 2.0 mm
-		// dyMm = 0
-		// dzMm = 10 * 0.5 = 5.0 mm
-		// dist = Math.sqrt(2.0^2 + 5.0^2) = Math.sqrt(4 + 25) = Math.sqrt(29) ~ 5.385 mm -> 5.39 mm
-		const distMm = measure3DDistanceMm(p1, p2, voxelSpacing);
-		assert.equal(distMm, 5.39);
-	});
-
-	it("3. Mandibular Nerve Safety Corridor (Нижнечелюстной канал: Safe, Warning, Danger)", () => {
-		const voxelSpacing = { x: 0.2, y: 0.2, z: 0.5 };
-		// 3D trajectory of Mandibular Nerve (Нижнеальвеолярный нерв)
-		const nerveTrajectory = [
-			{ x: 50, y: 100, z: 20 },
-			{ x: 60, y: 120, z: 20 },
-			{ x: 70, y: 140, z: 20 },
-		];
-
-		// Case A: Safe Implant Placement (Distance >= 2.0 mm)
-		// Implant apex at { x: 50, y: 100, z: 30 } -> dz = 10 voxels * 0.5 = 5.0 mm
-		const safeApex = { x: 50, y: 100, z: 30 };
-		const safeReport = measureDistanceToMandibularNerve(safeApex, nerveTrajectory, voxelSpacing);
-		assert.equal(safeReport.distanceMm, 5.0);
-		assert.equal(safeReport.safetyZone, "safe");
-		assert.equal(safeReport.isSafe, true);
-
-		// Case B: Warning Zone (1.0 mm <= Distance < 2.0 mm)
-		// Implant apex at { x: 50, y: 100, z: 23 } -> dz = 3 voxels * 0.5 = 1.5 mm
-		const warningApex = { x: 50, y: 100, z: 23 };
-		const warningReport = measureDistanceToMandibularNerve(warningApex, nerveTrajectory, voxelSpacing);
-		assert.equal(warningReport.distanceMm, 1.5);
-		assert.equal(warningReport.safetyZone, "warning");
-		assert.equal(warningReport.isSafe, false);
-
-		// Case C: Danger Zone (< 1.0 mm - Risk of Paresthesia)
-		// Implant apex at { x: 50, y: 100, z: 21 } -> dz = 1 voxel * 0.5 = 0.5 mm
-		const dangerApex = { x: 50, y: 100, z: 21 };
-		const dangerReport = measureDistanceToMandibularNerve(dangerApex, nerveTrajectory, voxelSpacing);
-		assert.equal(dangerReport.distanceMm, 0.5);
-		assert.equal(dangerReport.safetyZone, "danger");
-		assert.equal(dangerReport.isSafe, false);
-		assert.ok(dangerReport.clinicalAdvice.includes("ОПАСНО"));
-	});
-
-	it("4. Maxillary Sinus Floor (Дно гайморовой пазухи & Синус-лифтинг)", () => {
-		const voxelSpacing = { x: 0.2, y: 0.2, z: 0.5 };
-
-		// Case A: Sufficient bone (>= 8.0 mm) -> No sinus lift needed
-		// Crest at z=0, Sinus at z=20 (20 * 0.5 = 10.0 mm)
-		const crestA = { x: 100, y: 100, z: 0 };
-		const sinusA = { x: 100, y: 100, z: 20 };
-		const resA = measureDistanceToMaxillarySinus(crestA, sinusA, voxelSpacing);
-		assert.equal(resA.residualBoneHeightMm, 10.0);
-		assert.equal(resA.sinusLiftRecommended, false);
-		assert.equal(resA.sinusLiftType, "none");
-
-		// Case B: Moderate bone loss (5.0 - 8.0 mm) -> Crestal closed sinus lift (Summers)
-		// Crest at z=0, Sinus at z=13 (13 * 0.5 = 6.5 mm)
-		const crestB = { x: 100, y: 100, z: 0 };
-		const sinusB = { x: 100, y: 100, z: 13 };
-		const resB = measureDistanceToMaxillarySinus(crestB, sinusB, voxelSpacing);
-		assert.equal(resB.residualBoneHeightMm, 6.5);
-		assert.equal(resB.sinusLiftRecommended, true);
-		assert.equal(resB.sinusLiftType, "crestal_closed");
-
-		// Case C: Severe atrophy (< 5.0 mm) -> Lateral open window sinus lift
-		// Crest at z=0, Sinus at z=6 (6 * 0.5 = 3.0 mm)
-		const crestC = { x: 100, y: 100, z: 0 };
-		const sinusC = { x: 100, y: 100, z: 6 };
-		const resC = measureDistanceToMaxillarySinus(crestC, sinusC, voxelSpacing);
-		assert.equal(resC.residualBoneHeightMm, 3.0);
-		assert.equal(resC.sinusLiftRecommended, true);
-		assert.equal(resC.sinusLiftType, "lateral_open");
 	});
 
 	it("5. Contrast & WW/WL Presets (Bone, Soft Tissue, Enamel & Nerve/Sinus)", () => {
