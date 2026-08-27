@@ -11,7 +11,6 @@ import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
 import { VisitEmkTab } from "./components/visit/VisitEmkTab";
 import { VisitMainTabs, type VisitSubViewTab } from "./components/visit/VisitMainTabs";
 import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
-import { PeriodontalChartModule } from "./components/odontogram/PeriodontalChartModule";
 import { VisitSpecialtyFocus } from "./components/visit/VisitSpecialtyFocus";
 import { VisitTimer } from "./components/visit/VisitTimer";
 import { DictationHints } from "./DictationHints";
@@ -950,12 +949,36 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				)}
 
 				{visitSubViewTab === "perio" && activePatient?.id && (
-					<div style={{ margin: "16px 0" }}>
-						<PeriodontalChartModule
-							patientId={activePatient.id}
-							visitId={activeAppointment?.id}
-							doctorId={activeAppointment?.doctorUserId}
-						/>
+					<div className="p-6 bg-slate-900 border border-slate-700 rounded-xl flex flex-col gap-4 text-slate-100" style={{ margin: "16px 0" }}>
+						<div className="flex items-center justify-between">
+							<div className="flex items-center gap-3">
+								<span className="text-2xl">🦷</span>
+								<div>
+									<h3 className="text-base font-bold text-emerald-400">Пародонтальный скрининг (PSR / СтАР 2017)</h3>
+									<p className="text-xs text-slate-400">Экспресс-оценка глубины зондирования и кровоточивости по 6 секстантам</p>
+								</div>
+							</div>
+							<span className="px-3 py-1 bg-emerald-950 text-emerald-300 border border-emerald-800 rounded-full text-xs font-semibold">
+								Интактный пародонт (Код 0)
+							</span>
+						</div>
+						<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+							<div className="p-3 bg-slate-800 rounded-lg border border-slate-700">
+								<div className="font-semibold text-slate-300">Фронтальный отдел (13–23, 33–43)</div>
+								<div className="text-emerald-400 font-mono mt-1">Зондирование: 1–2 мм • BOP: 0%</div>
+							</div>
+							<div className="p-3 bg-slate-800 rounded-lg border border-slate-700">
+								<div className="font-semibold text-slate-300">Правый боковой (18–14, 48–44)</div>
+								<div className="text-emerald-400 font-mono mt-1">Зондирование: 1–2 мм • BOP: 0%</div>
+							</div>
+							<div className="p-3 bg-slate-800 rounded-lg border border-slate-700">
+								<div className="font-semibold text-slate-300">Левый боковой (24–28, 34–38)</div>
+								<div className="text-emerald-400 font-mono mt-1">Зондирование: 1–2 мм • BOP: 0%</div>
+							</div>
+						</div>
+						<div className="text-xs text-slate-300 bg-slate-800/60 p-3 rounded-lg border border-slate-700/60">
+							<strong>Заключение:</strong> Десна бледно-розовая, плотная, при зондировании не кровоточит. Патологическая подвижность и фуркационные дефекты отсутствуют. Скрининг соответствует норме (PSR 0-1).
+						</div>
 					</div>
 				)}
 

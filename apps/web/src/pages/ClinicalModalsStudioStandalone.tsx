@@ -72,7 +72,6 @@ import { InsurancePreAuthModal } from "../components/insurance/InsurancePreAuthM
 import { TreatmentPlanComparatorModal } from "../components/treatment-plans/comparator/TreatmentPlanComparatorModal";
 import { WarehouseTransferModal } from "../components/inventory/transfers/WarehouseTransferModal";
 import { PatientPortalTimelineModal } from "../components/portal/timeline/PatientPortalTimelineModal";
-import { ImplantPlanningModal } from "../components/implant/ImplantPlanningModal";
 import { VoiceDictationAssistantModal } from "../components/voice/VoiceDictationAssistantModal";
 import { InformedConsentModal as InformedConsent323FzModal } from "../components/consents/InformedConsentModal";
 import { AnesthesiaProtocolModal } from "../components/anesthesia/AnesthesiaProtocolModal";
@@ -326,7 +325,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isPlanComparatorOpen, setIsPlanComparatorOpen] = useState(false);
 	const [isTransferOpen, setIsTransferOpen] = useState(false);
 	const [isPortalOpen, setIsPortalOpen] = useState(false);
-	const [isImplantPlanningOpen, setIsImplantPlanningOpen] = useState(false);
 	const [isBeforeAfterOpen, setIsBeforeAfterOpen] = useState(false);
 	const [isVoiceAssistantOpen, setIsVoiceAssistantOpen] = useState(false);
 	const [isConsent323Open, setIsConsent323Open] = useState(false);
@@ -379,7 +377,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				}
 				const requestedModal = params.get("modal");
 				if (requestedModal) {
-					setIsImplantPlanningOpen(requestedModal === "implant" || requestedModal === "abutment" || requestedModal === "emergence");
+					setIsImplantCrossSectionPlannerOpen(requestedModal === "implant" || requestedModal === "abutment" || requestedModal === "emergence");
 					setIsBeforeAfterOpen(requestedModal === "before_after" || requestedModal === "photo_comparison" || requestedModal === "photography");
 				}
 			}
@@ -983,7 +981,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</div>
 						<button
 							type="button"
-							onClick={() => setIsImplantPlanningOpen(true)}
+							onClick={() => setIsImplantCrossSectionPlannerOpen(true)}
 							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
 							data-testid="open-implant-planning-modal-btn"
 						>
@@ -1007,7 +1005,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</div>
 						<button
 							type="button"
-							onClick={() => setIsImplantPlanningOpen(true)}
+							onClick={() => setIsImplantCrossSectionPlannerOpen(true)}
 							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
 							data-testid="open-implant-abutment-studio-modal-btn"
 						>
@@ -1896,15 +1894,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				<PatientPortalTimelineModal
 					isOpen={isPortalOpen}
 					onClose={() => setIsPortalOpen(false)}
-				/>
-			)}
-
-			{isImplantPlanningOpen && (
-				<ImplantPlanningModal
-					isOpen={isImplantPlanningOpen}
-					onClose={() => setIsImplantPlanningOpen(false)}
-					initialToothFdi={46}
-					patientName="Смирнова Екатерина Васильевна"
 				/>
 			)}
 

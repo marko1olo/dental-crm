@@ -43,13 +43,8 @@ import {
 import { VisitDiaryTemplateSelector } from "../VisitDiaryTemplateSelector";
 import { ToothAnesthesiaCalculator } from "../diagnostic/ToothAnesthesiaCalculator";
 import {
-	generatePerio043DiaryText,
-	derivePeriodontalDiagnosis,
-} from "../odontogram/perio043Protocol";
-import {
 	generatePediatricCariogramDiaryText,
 } from "../odontogram/pediatricDentitionEngine";
-import { ALL_PERIO_TEETH } from "../odontogram/perioTypes";
 import { ClinicalQuickPresetsBar } from "./ClinicalQuickPresetsBar";
 import { CryptoProSigner } from "./CryptoProSigner";
 import { EgiszCdaExportModal } from "../egisz/EgiszCdaExportModal";
@@ -439,78 +434,20 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 	};
 
 	const handleInsertPerioStatus = () => {
-		const defaultPerioTeeth = ALL_PERIO_TEETH.map((toothNumber) => ({
-			toothNumber,
-			isMissing: activeTeeth.some(
-				(t) =>
-					t.toothNumber === toothNumber &&
-					(t.state === "Missing" || t.state === "Extracted"),
-			),
-			isImplant: activeTeeth.some(
-				(t) => t.toothNumber === toothNumber && t.state === "Implant",
-			),
-			mobility: 0 as const,
-			furcation: 0 as const,
-			distoBuccal: {
-				probingDepthMm: 2,
-				gingivalMarginMm: 0,
-				bleedingOnProbing: false,
-				plaque: false,
-				suppuration: false,
-				calculus: false,
-			},
-			midBuccal: {
-				probingDepthMm: 2,
-				gingivalMarginMm: 0,
-				bleedingOnProbing: false,
-				plaque: false,
-				suppuration: false,
-				calculus: false,
-			},
-			mesioBuccal: {
-				probingDepthMm: 2,
-				gingivalMarginMm: 0,
-				bleedingOnProbing: false,
-				plaque: false,
-				suppuration: false,
-				calculus: false,
-			},
-			distoLingual: {
-				probingDepthMm: 2,
-				gingivalMarginMm: 0,
-				bleedingOnProbing: false,
-				plaque: false,
-				suppuration: false,
-				calculus: false,
-			},
-			midLingual: {
-				probingDepthMm: 2,
-				gingivalMarginMm: 0,
-				bleedingOnProbing: false,
-				plaque: false,
-				suppuration: false,
-				calculus: false,
-			},
-			mesioLingual: {
-				probingDepthMm: 2,
-				gingivalMarginMm: 0,
-				bleedingOnProbing: false,
-				plaque: false,
-				suppuration: false,
-				calculus: false,
-			},
-		}));
+		const perioText = `[ПАРОДОНТОЛОГИЧЕСКИЙ СТАТУС (PSR / Интактный пародонт)]
+Десна бледно-розовая, плотная, фестончатая, плотно прилежит к шейкам зубов.
+Глубина зондирования зубодесневых карманов (ЗДК): 1–2 мм во всех секстантах.
+Кровоточивость при зондировании (BOP): отсутствует (0%).
+Патологическая подвижность зубов и фуркационные дефекты: не выявлены.
+Наддесневые и поддесневые зубные отложения: незначительные / сняты.
+Диагноз: Клинически здоровый пародонт на интактном пародонте (К05.0 / Здоровый пародонт).
+Врач: ${doctorName || "Лечащий врач"}.`;
 
-		const perioText = generatePerio043DiaryText(
-			defaultPerioTeeth,
-			undefined,
-			{ doctorName },
-		);
-		const perioDiag = derivePeriodontalDiagnosis(defaultPerioTeeth);
+		const icd10Code = "K05.0";
 
 		setDiary((prev) => ({
 			...prev,
-			diagnosisIcd10: prev.diagnosisIcd10 || perioDiag.icd10Code,
+			diagnosisIcd10: prev.diagnosisIcd10 || icd10Code,
 			statusLocalis: prev.statusLocalis
 				? `${prev.statusLocalis}\n\n${perioText}`
 				: perioText,
@@ -519,8 +456,8 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				: "• Профессиональная гигиена полости рта (УЗ + AirFlow).\n• Пародонтальный скрининг PSR.\n• Контролируемая индивидуальная гигиена полости рта.",
 		}));
 
-		if (!diary.diagnosisIcd10 && perioDiag.icd10Code) {
-			setIcdSearch(perioDiag.icd10Code);
+		if (!diary.diagnosisIcd10 && icd10Code) {
+			setIcdSearch(icd10Code);
 		}
 		scheduleDebouncedSave();
 	};

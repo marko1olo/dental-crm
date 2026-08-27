@@ -1,9 +1,7 @@
 /**
- * DENTAL IMPLANT PLANNING & SURGICAL SAFETY MODULE
- * Re-exports for clinical implant planning, catalog queries, 3D math & HUD modal.
+ * DENTAL IMPLANT CATALOG & SURGICAL SAFETY MODULE
+ * Re-exports for clinical implant catalog queries and torque specifications.
  */
 
 export * from "./implantCatalog";
-export * from "./implantPlanningMath";
-export * from "./ImplantPlanningModal";
 export * from "./implantTorqueCatalog";

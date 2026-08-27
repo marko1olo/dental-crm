@@ -11,7 +11,6 @@ import { LabOrdersPanel } from "../schedule/LabOrdersPanel";
 import { RadiologyReferralModal } from "./RadiologyReferralModal";
 import { ClinicalPhotoProtocolModal } from "../photography/ClinicalPhotoProtocolModal";
 import { CbctMprWorkspace } from "../dicom/CbctMprWorkspace";
-import { MedicalTourismQuoteModal } from "../finance/MedicalTourismQuoteModal";
 import { imagingWriteTarget, realVisitFieldId } from "./visitIdentity";
 import {
 	type ClinicalPhotoAttachment,
@@ -59,7 +58,6 @@ export function VisitDiagnosticsTab(props?: {
 	const [isRadiologyModalOpen, setIsRadiologyModalOpen] = useState<boolean>(false);
 	const [isPhotoProtocolModalOpen, setIsPhotoProtocolModalOpen] = useState<boolean>(false);
 	const [isCbctModalOpen, setIsCbctModalOpen] = useState<boolean>(false);
-	const [isMedicalTourismModalOpen, setIsMedicalTourismModalOpen] = useState<boolean>(false);
 
 	const [photoAttachments, setPhotoAttachments] = useState<ClinicalPhotoAttachment[]>([]);
 	const initialToothNumber = Number(ctx?.dashboard?.activeVisit?.diagnosisTooth) || 16;
@@ -534,13 +532,6 @@ export function VisitDiagnosticsTab(props?: {
 				onClose={() => setIsCbctModalOpen(false)}
 				patientId={visitPatientId ?? activePatient?.id}
 				patientName={visitPatientName ?? activePatient?.fullName}
-			/>
-
-			{/* Medical Tourism Multi-Currency Quote Modal (Tier 3 on-demand) */}
-			<MedicalTourismQuoteModal
-				isOpen={isMedicalTourismModalOpen}
-				onClose={() => setIsMedicalTourismModalOpen(false)}
-				initialPatientName={visitPatientName ?? activePatient?.fullName}
 			/>
 		</div>
 	);

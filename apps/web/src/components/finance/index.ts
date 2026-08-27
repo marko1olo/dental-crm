@@ -1,7 +1,6 @@
 /**
  * @dental/web finance components re-exports
  */
-export * from "./MedicalTourismQuoteModal";
 export * from "./TaxDeductionCertificateModal";
 export * from "./FiscalReceipt54FzModal";
 export * from "./PatientBillingModal";

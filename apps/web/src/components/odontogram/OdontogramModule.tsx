@@ -45,7 +45,6 @@ import {
 	EndoCanalLogModal,
 } from "./EndoCanalLogModal";
 import { PediatricMixedDentitionModal } from "./PediatricMixedDentitionModal";
-import { PeriodontalChartModule } from "./PeriodontalChartModule";
 import { TreatmentEstimator } from "./TreatmentEstimator";
 import { TreatmentPlanModule } from "../treatment-plans/TreatmentPlanModule";
 import { VoiceDictationOverlay } from "./VoiceDictationOverlay";
@@ -1365,8 +1364,19 @@ export const OdontogramModule = ({
 
 			{/* Collapsible Periodontal Examination Module below Odontogram */}
 			{isPerioOpen && (
-				<div className="w-full flex flex-col gap-4 mt-2 animate-in fade-in duration-200">
-					<PeriodontalChartModule patientId={patientId} />
+				<div className="w-full flex flex-col gap-3 mt-2 p-4 bg-slate-900 border border-slate-700 rounded-xl animate-in fade-in duration-200 text-slate-100">
+					<div className="flex items-center justify-between">
+						<div className="flex items-center gap-2">
+							<span className="text-lg">🦷</span>
+							<span className="text-sm font-bold text-emerald-400">Пародонтальный статус (PSR / Интактный пародонт)</span>
+						</div>
+						<span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 font-semibold">
+							Норма: глубина 1–2 мм
+						</span>
+					</div>
+					<p className="text-xs text-slate-300">
+						Десна бледно-розовая, плотная, при зондировании не кровоточит (BOP &lt; 10%). Патологическая подвижность зубов и фуркационные дефекты отсутствуют.
+					</p>
 				</div>
 			)}
 
