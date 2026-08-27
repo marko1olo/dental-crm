@@ -418,6 +418,9 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						setActiveStudy(SAMPLE_STUDY);
 						setIsViewerOpen(true);
 					}
+					if (requestedModal === "cbct" || requestedModal === "cbct_mpr" || requestedModal === "cbct_studio" || requestedModal === "mpr") {
+						setIsCbctMpr3DStudioOpen(true);
+					}
 					if (requestedModal === "schedule_roster" || requestedModal === "roster") {
 						setIsDoctorShiftRosterOpen(true);
 					}

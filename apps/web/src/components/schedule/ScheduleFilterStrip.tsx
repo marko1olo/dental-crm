@@ -331,7 +331,7 @@ export function ScheduleFilterStrip({
 			</div>
 
 			{/* Row 2: Horizontal Scrollable Chips Container */}
-			<div className="schedule-filter-chips flex items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none w-full py-1 border-t border-[var(--line)]/50 pt-2">
+			<div className="schedule-filter-chips flex items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none w-full py-1 border-t border-[var(--line)]/50 pt-2 pr-16 sm:pr-0">
 				{/* "Все записи" filter chip button */}
 				<button
 					type="button"

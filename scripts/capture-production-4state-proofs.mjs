@@ -235,6 +235,15 @@ const TARGET_SCREENS = [
     all4States: true,
   },
   {
+    prefix: "03_patient_billing_modal",
+    name: "03. Patient Billing Modal (Completed Works Act & Implant Care Titanium Badge)",
+    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=patient_billing",
+    setup: async (page) => {
+      await page.waitForTimeout(800);
+    },
+    all4States: true,
+  },
+  {
     prefix: "04_odontogram_psr",
     name: "04. Odontogram with 1-Click PSR Status Assessment",
     url: "http://127.0.0.1:5173/#odontogram-studio",

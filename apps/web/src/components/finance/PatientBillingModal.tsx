@@ -243,7 +243,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						</div>
 						<div className="min-w-0 flex-1">
 							<div className="flex items-center gap-2 flex-wrap">
-								<h3 className="text-sm sm:text-base font-extrabold text-[var(--ink)] m-0 whitespace-normal sm:whitespace-nowrap leading-tight">
+								<h3 className="text-xs sm:text-base font-extrabold text-[var(--ink)] m-0 leading-snug break-normal [overflow-wrap:normal]">
 									Акт выполненных работ & Гарантийный талон (А4)
 								</h3>
 								<span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 uppercase shrink-0">
@@ -283,12 +283,12 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 				</div>
 
 				{/* Tabs Navigation (Compact 32px SegmentedControl) */}
-				<div className="flex flex-wrap items-center justify-between gap-2.5 px-4 sm:px-6 py-2 border-b border-[var(--line)] bg-[var(--paper)] text-xs font-bold shrink-0">
-					<div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-xs shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden max-w-full">
+				<div className="flex items-center justify-between gap-2 px-3 sm:px-6 py-2 border-b border-[var(--line)] bg-[var(--paper)] text-xs font-bold shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+					<div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-xs shrink-0 max-w-full">
 						<button
 							type="button"
 							onClick={() => setActiveTab("friendly")}
-							className={`h-8 px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-semibold shrink-0 ${
+							className={`h-8 px-2.5 sm:px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-semibold shrink-0 ${
 								activeTab === "friendly"
 									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -296,12 +296,13 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							data-testid="btn-tab-friendly-bill"
 						>
 							<Sparkles className="w-3.5 h-3.5 shrink-0" />
-							<span>Понятный счет (без латыни)</span>
+							<span className="hidden sm:inline">Понятный счет (без латыни)</span>
+							<span className="sm:hidden">Понятный счет</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setActiveTab("preview")}
-							className={`h-8 px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-semibold shrink-0 ${
+							className={`h-8 px-2.5 sm:px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-semibold shrink-0 ${
 								activeTab === "preview"
 									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -309,7 +310,8 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							data-testid="btn-tab-preview-act"
 						>
 							<Eye className="w-3.5 h-3.5 shrink-0" />
-							<span>Официальный бланк А4</span>
+							<span className="hidden sm:inline">Официальный бланк А4</span>
+							<span className="sm:hidden">Бланк А4</span>
 						</button>
 						<button
 							type="button"
@@ -749,23 +751,25 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							<button
 								type="button"
 								onClick={handlePrint}
-								className="h-10 sm:h-9 px-3.5 rounded-xl text-xs font-extrabold bg-[var(--teal,#0d9488)] hover:opacity-90 text-[var(--on-teal,#ffffff)] shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0"
+								className="h-10 sm:h-9 px-2.5 sm:px-3.5 rounded-xl text-xs font-extrabold bg-[var(--teal,#0d9488)] hover:opacity-90 text-[var(--on-teal,#ffffff)] shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0"
 								data-testid="btn-print-billing-act-footer"
 							>
 								<Printer className="w-3.5 h-3.5 shrink-0" />
-								<span className="whitespace-nowrap">Печать бланка А4</span>
+								<span className="hidden sm:inline whitespace-nowrap">Печать бланка А4</span>
+								<span className="sm:hidden whitespace-nowrap">Печать А4</span>
 							</button>
 
 							{/* 2. Fiscalize 54-FZ */}
 							<button
 								type="button"
 								onClick={() => (onFiscalize ? onFiscalize() : setIsFiscalOpen(true))}
-								className="h-10 sm:h-9 px-3.5 rounded-xl text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] hover:bg-[var(--teal-soft,#f0fdfa)] shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0"
+								className="h-10 sm:h-9 px-2.5 sm:px-3.5 rounded-xl text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] hover:bg-[var(--teal-soft,#f0fdfa)] shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0"
 								data-testid="btn-fiscalize-54fz"
 								title="Фискализировать чек по 54-ФЗ"
 							>
 								<Receipt className="w-3.5 h-3.5 shrink-0" />
-								<span className="whitespace-nowrap">Фискализировать (54-ФЗ)</span>
+								<span className="hidden sm:inline whitespace-nowrap">Фискализировать (54-ФЗ)</span>
+								<span className="sm:hidden whitespace-nowrap">Чек 54-ФЗ</span>
 							</button>
 
 							{/* 3. Send WhatsApp */}
