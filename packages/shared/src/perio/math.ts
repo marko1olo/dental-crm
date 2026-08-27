@@ -321,3 +321,5 @@ export function calculatePerioIndices(teeth: PerioToothRecord[]): PerioChartSumm
 		aapStage,
 	};
 }
+
+export { calculateClinicalAttachmentLevel as calculateSepaCal };

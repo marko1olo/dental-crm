@@ -137,39 +137,25 @@ describe("Pediatric & Mixed Dentition Engine (packages/shared)", () => {
 		assert.equal(perm14.stageCategory, "permanent");
 	});
 
-	it("6. Douglas Bratthall Cariogram Multi-Factor Risk Assessment (calculateCariogramRisk)", () => {
-		// High risk profile: high sugar diet, heavy plaque, no fluoride, past caries
+	it("6. 3-State Clinical Cariogram Risk Assessment (calculateCariogramRisk)", () => {
+		// High risk profile
 		const highRisk = calculateCariogramRisk({
-			dietContents: 3,
-			dietFrequency: 3,
-			plaqueAmount: 3,
-			streptococcusMutans: 3,
-			fluorideProgram: 3,
-			pastCariesExperience: 3,
+			cariesRiskLevel: "high",
 		});
 
-		assert.ok(highRisk.chanceOfAvoidingCariesPercent < 40);
-		assert.ok(highRisk.riskCategory === "high" || highRisk.riskCategory === "very_high");
+		assert.equal(highRisk.chanceOfAvoidingCariesPercent, 20);
+		assert.equal(highRisk.riskCategory, "high");
 		assert.ok(highRisk.preventiveProgram.professionalHygieneRu.length > 0);
 		assert.ok(highRisk.sectors.dietSectorPercent > 0);
 		assert.ok(highRisk.sectors.bacteriaSectorPercent > 0);
 
-		// Low risk profile: excellent hygiene, fluoridated toothpaste, low sugar
+		// Low risk profile
 		const lowRisk = calculateCariogramRisk({
-			dietContents: 0,
-			dietFrequency: 0,
-			plaqueAmount: 0,
-			streptococcusMutans: 0,
-			fluorideProgram: 0,
-			pastCariesExperience: 0,
-			salivaSecretionRate: 0,
-			salivaBufferCapacity: 0,
-			systemicDiseases: 0,
-			clinicalJudgment: 0,
+			cariesRiskLevel: "low",
 		});
 
-		assert.ok(lowRisk.chanceOfAvoidingCariesPercent >= 80);
-		assert.ok(lowRisk.riskCategory === "very_low" || lowRisk.riskCategory === "low");
+		assert.equal(lowRisk.chanceOfAvoidingCariesPercent, 85);
+		assert.equal(lowRisk.riskCategory, "low");
 	});
 
 	it("7. Form 043/u Pediatric Clinical Protocol and Cariogram diary text generation", () => {
@@ -186,7 +172,7 @@ describe("Pediatric & Mixed Dentition Engine (packages/shared)", () => {
 		assert.ok(diary.includes("ПРОТОКОЛ ДЕТСКОГО СТОМАТОЛОГИЧЕСКОГО ОСМОТРА"));
 		assert.ok(diary.includes("Хронологический возраст: 7.5"));
 		assert.ok(diary.includes("Зуб #71: резорбция 75%"));
-		assert.ok(diary.includes("Кариограмме"));
+		assert.ok(diary.includes("риска кариеса"));
 		assert.ok(diary.includes("Проведена герметизация"));
 	});
 

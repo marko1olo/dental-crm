@@ -22,6 +22,9 @@ export * from "./inventory/consumables.js";
 export * from "./lab/index.js";
 export * from "./communications/index.js";
 export * from "./schedule/index.js";
+export * from "./recalls/index.js";
+export * from "./tasks/index.js";
+
 
 
 

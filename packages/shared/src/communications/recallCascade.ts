@@ -48,6 +48,7 @@ export const recallStatusSchema = z.enum([
 	"done",
 	"cancelled",
 	"needs_review",
+	"snoozed",
 ]);
 export type RecallStatus = z.infer<typeof recallStatusSchema>;
 

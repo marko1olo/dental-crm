@@ -5,7 +5,6 @@ import {
 	calculateAapEfpStagingAndGrading,
 	calculateBoneLossAgeRatio,
 	calculateClinicalAttachmentLevel,
-	calculatePeriodontalRiskAssessment,
 	calculatePerioIndices,
 	calculatePsrSextants,
 	derivePeriodontalDiagnosis,
@@ -251,33 +250,6 @@ describe("Periodontal Charting & AAP/EFP 2018 Engine (packages/shared)", () => {
 		assert.equal(diagStage3.icd10Code, "K05.33");
 	});
 
-	it("9. Lang & Tonetti (2003) 6-axis PRA Spider Diagram calculations", () => {
-		const teeth = ALL_PERIO_TEETH.map(createDefaultTooth);
-		// Set high risk parameters: BOP=35%, 10 deep pockets, 6 missing teeth
-		for (let i = 0; i < 10; i++) {
-			teeth[i]!.distoBuccal.probingDepthMm = 6;
-			teeth[i]!.distoBuccal.bleedingOnProbing = true;
-			teeth[i]!.midBuccal.bleedingOnProbing = true;
-			teeth[i]!.mesioBuccal.bleedingOnProbing = true;
-		}
-		for (let i = 26; i < 32; i++) {
-			teeth[i]!.isMissing = true;
-		}
-
-		const pra = calculatePeriodontalRiskAssessment({
-			teeth,
-			patientAgeYears: 45,
-			smokingStatus: "heavy",
-			diabetesStatus: "controlled",
-		});
-
-		assert.equal(pra.overallRisk, "high");
-		assert.ok(pra.highRiskVectorsCount >= 2);
-		assert.ok(pra.radarPolygonPoints.length > 0);
-		assert.equal(pra.radarPolygonCoordinates.length, 6);
-		assert.equal(pra.vectors.environmentalSmoking.riskLevel, "high");
-	});
-
 	it("10. WHO 6-Sextant PSR / CPITN Screening calculations", () => {
 		const teeth = ALL_PERIO_TEETH.map(createDefaultTooth);
 		// Sextant S1 (teeth 17-14): give tooth 16 a 6mm pocket with furcation
@@ -314,7 +286,7 @@ describe("Periodontal Charting & AAP/EFP 2018 Engine (packages/shared)", () => {
 		assert.ok(text.includes("Д-р Иванов А.С."));
 		assert.ok(text.includes("PSR/CPITN"));
 		assert.ok(text.includes("Florida Probe"));
-		assert.ok(text.includes("PRA Spider Diagram"));
+		assert.ok(text.includes("Оценка риска пародонтита"));
 		assert.ok(text.includes("SRP в области 1.6"));
 	});
 

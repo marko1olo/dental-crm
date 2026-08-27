@@ -184,7 +184,7 @@ describe("Pediatric Frankl Behavior Scale & Adaptive Clinical Protocols (package
 		assert.ok(diary.includes("Психоэмоциональный статус (Шкала Франкла)"));
 		assert.ok(diary.includes("Рейтинг 2 (-)"));
 		assert.ok(diary.includes("Зуб #71: резорбция 75%"));
-		assert.ok(diary.includes("Кариограмме"));
+		assert.ok(diary.includes("риска кариеса"));
 		assert.ok(diary.includes("Выполненные клинические манипуляции"));
 		assert.ok(diary.includes("Пульпотомия зуба 74"));
 		assert.ok(diary.includes("Герметизация фиссур (16, 26)"));

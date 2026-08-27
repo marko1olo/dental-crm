@@ -3,25 +3,21 @@ import {
 	type AapClassificationOptions,
 } from "./grading.js";
 import { calculatePerioIndices } from "./math.js";
-import { calculatePeriodontalRiskAssessment, type PraSpiderResult } from "./pra.js";
 import { calculatePsrSextants, formatPsrSextantsSummary } from "./psr.js";
 import type {
-	DiabetesStatus,
 	PerioChartSummary,
 	PerioToothRecord,
 	PraRiskLevel,
-	SmokingStatus,
 } from "./types.js";
 
 export interface GenerateProtocol043Options extends AapClassificationOptions {
 	readonly doctorName?: string | undefined;
 	readonly customNotes?: string | undefined;
-	readonly praResult?: PraSpiderResult | undefined;
 }
 
 /**
  * Generates an exhaustive, structured clinical diary text for Form 043/u (Форма 043/у)
- * with complete Florida probe 6-point charting, PRA spider assessment, AAP/EFP 2018 staging/grading, and treatment plan.
+ * with complete 6-point charting, AAP/EFP 2018 staging/grading, and treatment plan.
  */
 export function generateComprehensivePerio043Text(
 	teeth: readonly PerioToothRecord[],
@@ -33,20 +29,17 @@ export function generateComprehensivePerio043Text(
 	const psrSummary = formatPsrSextantsSummary(psr);
 	const diagnosis = calculateAapEfpStagingAndGrading(teeth, currentSummary, options);
 
-	const pra =
-		options?.praResult ??
-		calculatePeriodontalRiskAssessment({
-			teeth,
-			summary: currentSummary,
-			...(options?.patientAgeYears !== undefined ? { patientAgeYears: options.patientAgeYears } : {}),
-			...(options?.smokingStatus !== undefined ? { smokingStatus: options.smokingStatus } : {}),
-			...(options?.diabetesStatus !== undefined ? { diabetesStatus: options.diabetesStatus } : {}),
-		});
+	let overallRisk: PraRiskLevel = "low";
+	if (currentSummary.fmbsPercent > 30 || currentSummary.deepPocketsCount >= 4) {
+		overallRisk = "high";
+	} else if (currentSummary.fmbsPercent > 10 || currentSummary.moderatePocketsCount > 0) {
+		overallRisk = "moderate";
+	}
 
 	const riskLabels: Record<PraRiskLevel, string> = {
-		low: "Низкий (благоприятный прогноз)",
-		moderate: "Средний (требуется активная пародонтальная терапия)",
-		high: "Высокий (высокий риск рецидива и потери зубов)",
+		low: "Низкий (благоприятный прогноз, поддерживающая терапия)",
+		moderate: "Умеренный (требуется активная пародонтальная терапия SRP)",
+		high: "Высокий (высокий риск прогрессирования и потери зубов)",
 	};
 
 	const lines: string[] = [];
@@ -76,14 +69,9 @@ export function generateComprehensivePerio043Text(
 		lines.push(`   • Зубы с патологической подвижностью (I-III степень): ${currentSummary.teethWithMobilityCount} шт.`);
 	}
 	lines.push("");
-	lines.push("3. Оценка пародонтального риска (PRA Spider Diagram по Lang & Tonetti / ВОЗ):");
-	lines.push(`   • Интегральный риск: ${riskLabels[pra.overallRisk]}`);
-	lines.push(`   • BOP-вектор: ${pra.vectors.bop.valueDisplay} (${pra.vectors.bop.riskLevel.toUpperCase()})`);
-	lines.push(`   • Карманы PPD ≥ 5 мм: ${pra.vectors.deepPockets.valueDisplay} (${pra.vectors.deepPockets.riskLevel.toUpperCase()})`);
-	lines.push(`   • Утрата зубов: ${pra.vectors.toothLoss.valueDisplay} (${pra.vectors.toothLoss.riskLevel.toUpperCase()})`);
-	lines.push(`   • Костная потеря/Возраст (BL/Age): ${pra.vectors.boneLossAgeRatio.valueDisplay} (${pra.vectors.boneLossAgeRatio.riskLevel.toUpperCase()})`);
-	lines.push(`   • Системный статус (Диабет): ${pra.vectors.systemicDiabetes.valueDisplay}`);
-	lines.push(`   • Фактор среды (Курение): ${pra.vectors.environmentalSmoking.valueDisplay}`);
+	lines.push("3. Оценка риска пародонтита:");
+	lines.push(`   • Интегральный статус риска: ${riskLabels[overallRisk]}`);
+	lines.push(`   • Риск-профиль: BOP ${currentSummary.fmbsPercent}% | Глубокие карманы ≥5мм: ${currentSummary.deepPocketsCount}`);
 	lines.push("");
 	lines.push("4. Клинический диагноз (МКБ-10 / Классификация AAP/EFP 2018):");
 	lines.push(`   ${diagnosis.icd10Code} — ${diagnosis.diagnosisNameRu}`);

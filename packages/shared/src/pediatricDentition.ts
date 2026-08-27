@@ -479,33 +479,29 @@ export function calculateEruptionTimelineByAge(ageYears: number): EruptionTimeli
 }
 
 // ------------------------------------------------------------------------------------------------
-// CARIOGRAM RISK CLASSIFIER (DOUGLAS BRATTHALL MODEL)
+// CARIOGRAM RISK CLASSIFIER (3-STATE CLINICAL RISK MODEL)
 // ------------------------------------------------------------------------------------------------
 
 /**
- * Standard Cariogram Multi-Factor Risk Assessment Inputs.
- * All factors scaled 0 (best/lowest risk) to 2 or 3 (worst/highest risk) per Bratthall WHO standard.
+ * Simplified 3-State Cariogram Clinical Risk Assessment.
+ * 1-click selection: "low" | "moderate" | "high".
  */
+export const cariogramRiskLevelSchema = z.enum(["low", "moderate", "high"]);
+export type CariogramRiskLevel = z.infer<typeof cariogramRiskLevelSchema>;
+
 export const cariogramInputSchema = z.object({
-	// Sector 1: Diet (Диета)
-	dietContents: z.number().int().min(0).max(3).default(1), // 0: low fermentable carbs, 3: high sugar/sticky
-	dietFrequency: z.number().int().min(0).max(3).default(1), // 0: <=3 meals/day, 1: 4-5, 2: 6-7, 3: >7 snacks/day
-
-	// Sector 2: Bacteria (Бактерии)
-	plaqueAmount: z.number().int().min(0).max(3).default(1), // 0: excellent hygiene, 3: heavy plaque index >2
-	streptococcusMutans: z.number().int().min(0).max(3).default(1), // 0: class 0, 1: class 1, 2: class 2, 3: class 3 (>10^6 CFU)
-
-	// Sector 3: Susceptibility (Восприимчивость / Фтор и Слюна)
-	fluorideProgram: z.number().int().min(0).max(3).default(1), // 0: optimal (paste 1450ppm + varnish), 3: none
-	salivaSecretionRate: z.number().int().min(0).max(3).default(0), // 0: normal >1.2ml/min, 3: severe xerostomia <0.5ml/min
-	salivaBufferCapacity: z.number().int().min(0).max(2).default(0), // 0: high pH>=6.0, 1: medium, 2: low pH<4.0
-
-	// Sector 4: Circumstances (Сопутствующие факторы / Анамнез)
-	pastCariesExperience: z.number().int().min(0).max(3).default(1), // 0: no new caries past year, 3: >4 new lesions/yr
-	systemicDiseases: z.number().int().min(0).max(2).default(0), // 0: healthy, 1: mild/moderate, 2: high-risk/syrups
-
-	// Sector 5: Clinical Judgment Weight (Клиническое суждение врача)
-	clinicalJudgment: z.number().int().min(0).max(3).default(1), // 0: better than tests, 1: normal, 2: worse, 3: severe
+	cariesRiskLevel: cariogramRiskLevelSchema.optional().default("low"),
+	// Backwards-compatible legacy fields
+	dietContents: z.number().int().min(0).max(3).optional().default(1),
+	dietFrequency: z.number().int().min(0).max(3).optional().default(1),
+	plaqueAmount: z.number().int().min(0).max(3).optional().default(1),
+	streptococcusMutans: z.number().int().min(0).max(3).optional().default(1),
+	fluorideProgram: z.number().int().min(0).max(3).optional().default(1),
+	salivaSecretionRate: z.number().int().min(0).max(3).optional().default(0),
+	salivaBufferCapacity: z.number().int().min(0).max(2).optional().default(0),
+	pastCariesExperience: z.number().int().min(0).max(3).optional().default(1),
+	systemicDiseases: z.number().int().min(0).max(2).optional().default(0),
+	clinicalJudgment: z.number().int().min(0).max(3).optional().default(1),
 });
 
 export type CariogramInput = z.infer<typeof cariogramInputSchema>;
@@ -545,165 +541,104 @@ export interface CariogramResult {
 }
 
 /**
- * Calculates the Cariogram caries risk and chance of avoiding caries per Bratthall algorithm.
+ * Calculates the Cariogram caries risk and chance of avoiding caries per 3-state clinical model.
  */
-export function calculateCariogramRisk(rawInput: Partial<CariogramInput>): CariogramResult {
+export function calculateCariogramRisk(rawInput: Partial<CariogramInput> = {}): CariogramResult {
 	const input = cariogramInputSchema.parse(rawInput);
 
-	// 1. Calculate raw sector scores (Higher score = higher pathology risk)
-	// Diet raw score: (Contents 0..3 + Frequency 0..3 * 1.5) -> Max ~ 7.5
-	const dietRaw = input.dietContents * 1.2 + input.dietFrequency * 1.8;
+	let riskLevel: "low" | "moderate" | "high" = input.cariesRiskLevel ?? "low";
 
-	// Bacteria raw score: (Plaque 0..3 + Mutans 0..3 * 1.5) -> Max ~ 7.5
-	const bacteriaRaw = input.plaqueAmount * 1.3 + input.streptococcusMutans * 1.7;
-
-	// Susceptibility raw score: (Fluoride 0..3 * 1.5 + SalivaSecretion 0..3 + SalivaBuffer 0..2 * 1.5) -> Max ~ 10.5
-	const susceptibilityRaw =
-		input.fluorideProgram * 1.6 +
-		input.salivaSecretionRate * 1.2 +
-		input.salivaBufferCapacity * 1.4;
-
-	// Circumstances raw score: (PastCaries 0..3 * 1.5 + Systemic 0..2 * 1.5) -> Max ~ 7.5
-	const circumstancesRaw =
-		input.pastCariesExperience * 1.8 + input.systemicDiseases * 1.6;
-
-	// Clinical Judgment multiplier: 0 -> 0.8, 1 -> 1.0, 2 -> 1.25, 3 -> 1.5
-	const judgmentMultiplier = [0.8, 1.0, 1.25, 1.5][input.clinicalJudgment] ?? 1.0;
-
-	// Total combined risk burden
-	const rawTotalRisk =
-		(dietRaw + bacteriaRaw + susceptibilityRaw + circumstancesRaw) *
-		judgmentMultiplier;
-
-	// Max possible risk score ~ (7.5 + 7.5 + 10.5 + 7.5) * 1.5 = 49.5
-	const maxPossibleRisk = 48.0;
-
-	// Calculate % Chance of avoiding caries (Bratthall Green sector): 100% - normalized risk
-	const riskRatio = Math.min(1.0, Math.max(0.0, rawTotalRisk / maxPossibleRisk));
-	const chanceOfAvoidingCaries = Math.round(Math.max(1, Math.min(99, (1.0 - Math.pow(riskRatio, 0.9)) * 100)));
-
-	// Distribute remaining (100 - actualChance)% among the 4 pathological sectors proportionally
-	const pathologyTotal = 100 - chanceOfAvoidingCaries;
-	const sumRawRisk = dietRaw + bacteriaRaw + susceptibilityRaw + circumstancesRaw;
-
-	let dietPercent = 0;
-	let bacteriaPercent = 0;
-	let susceptibilityPercent = 0;
-	let circumstancesPercent = 0;
-
-	if (sumRawRisk > 0) {
-		dietPercent = Math.round((dietRaw / sumRawRisk) * pathologyTotal);
-		bacteriaPercent = Math.round((bacteriaRaw / sumRawRisk) * pathologyTotal);
-		susceptibilityPercent = Math.round((susceptibilityRaw / sumRawRisk) * pathologyTotal);
-		circumstancesPercent = Math.max(
-			0,
-			pathologyTotal - (dietPercent + bacteriaPercent + susceptibilityPercent),
-		);
-	} else {
-		// Zero risk case
-		dietPercent = 0;
-		bacteriaPercent = 0;
-		susceptibilityPercent = 0;
-		circumstancesPercent = 0;
+	if (rawInput.cariesRiskLevel === undefined) {
+		const highRiskSignals =
+			(input.pastCariesExperience >= 2 ? 1 : 0) +
+			(input.plaqueAmount >= 2 ? 1 : 0) +
+			(input.dietFrequency >= 2 ? 1 : 0) +
+			(input.fluorideProgram >= 2 ? 1 : 0);
+		if (highRiskSignals >= 3 || input.pastCariesExperience >= 3) {
+			riskLevel = "high";
+		} else if (highRiskSignals >= 1) {
+			riskLevel = "moderate";
+		}
 	}
 
-	// 2. Classify Risk Category
-	let riskCategory: CariogramRiskCategory = "moderate";
-	let riskCategoryNameRu = "Умеренный риск кариеса";
-	let riskCategoryDescriptionRu = "Средняя вероятность возникновения новых кариозных поражений.";
-	let badgeColor = "#f59e0b";
-	let badgeBg = "rgba(245, 158, 11, 0.15)";
-	let hygieneRecallMonths = 6;
-
-	if (chanceOfAvoidingCaries >= 81) {
-		riskCategory = "very_low";
-		riskCategoryNameRu = "Очень низкий риск (81–100%)";
-		riskCategoryDescriptionRu = "Высокая естественная резистентность эмали и отличная гигиена.";
-		badgeColor = "#10b981";
-		badgeBg = "rgba(16, 185, 129, 0.15)";
-		hygieneRecallMonths = 12;
-	} else if (chanceOfAvoidingCaries >= 61) {
-		riskCategory = "low";
-		riskCategoryNameRu = "Низкий риск (61–80%)";
-		riskCategoryDescriptionRu = "Благоприятная клиническая картина с минимальными факторами риска.";
-		badgeColor = "#06b6d4";
-		badgeBg = "rgba(6, 182, 212, 0.15)";
-		hygieneRecallMonths = 6;
-	} else if (chanceOfAvoidingCaries >= 41) {
-		riskCategory = "moderate";
-		riskCategoryNameRu = "Умеренный риск (41–60%)";
-		riskCategoryDescriptionRu = "Требуется коррекция диеты и усиление фторпрофилактики.";
-		badgeColor = "#f59e0b";
-		badgeBg = "rgba(245, 158, 11, 0.15)";
-		hygieneRecallMonths = 4;
-	} else if (chanceOfAvoidingCaries >= 21) {
-		riskCategory = "high";
-		riskCategoryNameRu = "Высокий риск (21–40%)";
-		riskCategoryDescriptionRu = "Высокая кариесогенная нагрузка, частые рецидивы деминерализации.";
-		badgeColor = "#ea580c";
-		badgeBg = "rgba(234, 88, 12, 0.15)";
-		hygieneRecallMonths = 3;
-	} else {
-		riskCategory = "very_high";
-		riskCategoryNameRu = "Очень высокий риск (0–20%)";
-		riskCategoryDescriptionRu = "Критический кариесогенный риск: декомпенсированная форма кариеса.";
-		badgeColor = "#ef4444";
-		badgeBg = "rgba(239, 68, 68, 0.15)";
-		hygieneRecallMonths = 2;
+	if (riskLevel === "low") {
+		return {
+			chanceOfAvoidingCariesPercent: 85,
+			riskCategory: "low",
+			riskCategoryNameRu: "Низкий риск кариеса (85%)",
+			riskCategoryDescriptionRu: "Благоприятная клиническая картина, высокая естественная резистентность эмали.",
+			badgeColor: "#10b981",
+			badgeBg: "rgba(16, 185, 129, 0.15)",
+			sectors: {
+				actualChanceOfAvoidingCaries: 85,
+				dietSectorPercent: 5,
+				bacteriaSectorPercent: 4,
+				susceptibilitySectorPercent: 3,
+				circumstancesSectorPercent: 3,
+			},
+			dominantRiskFactorRu: "Факторы риска компенсированы",
+			preventiveProgram: {
+				hygieneRecallIntervalMonths: 6,
+				professionalHygieneRu: "Профессиональная гигиена полости рта 1 раз в 6 месяцев.",
+				fluorideVarnishProtocolRu: "Фторирование эмали фторлаком 2 раза в год после профгигиены.",
+				homeCareProtocolRu: "Чистка зубов 2 раза в день фторсодержащей зубной пастой (1000-1450 ppm F-), флосс.",
+				dietaryGuidanceRu: "Сбалансированное питание, ограничение легкоусвояемых углеводов перед сном.",
+				fissureSealingIndicationRu: "Неинвазивная герметизация фиссур прорезавшихся постоянных моляров силантом.",
+			},
+		};
 	}
 
-	// Identify dominant risk factor sector
-	const sectorWeights = [
-		{ name: "Кариесогенная диета и сахара", val: dietPercent },
-		{ name: "Зубной налёт и бактерии (S. mutans)", val: bacteriaPercent },
-		{ name: "Дефицит фтора и сниженная буферная емкость слюны", val: susceptibilityPercent },
-		{ name: "Анамнез кариеса и соматические факторы", val: circumstancesPercent },
-	];
-	sectorWeights.sort((a, b) => b.val - a.val);
-	const dominantRiskFactorRu =
-		chanceOfAvoidingCaries >= 80
-			? "Факторы риска компенсированы"
-			: (sectorWeights[0]?.name ?? "Комплексный кариесогенный профиль");
+	if (riskLevel === "moderate") {
+		return {
+			chanceOfAvoidingCariesPercent: 55,
+			riskCategory: "moderate",
+			riskCategoryNameRu: "Умеренный риск кариеса (55%)",
+			riskCategoryDescriptionRu: "Средняя вероятность деминерализации эмали. Требуется коррекция гигиены и фторпрофилактика.",
+			badgeColor: "#f59e0b",
+			badgeBg: "rgba(245, 158, 11, 0.15)",
+			sectors: {
+				actualChanceOfAvoidingCaries: 55,
+				dietSectorPercent: 15,
+				bacteriaSectorPercent: 15,
+				susceptibilitySectorPercent: 8,
+				circumstancesSectorPercent: 7,
+			},
+			dominantRiskFactorRu: "Недостаточная гигиена и кариесогенная диета",
+			preventiveProgram: {
+				hygieneRecallIntervalMonths: 4,
+				professionalHygieneRu: "Профессиональная гигиена полости рта каждые 4 месяца с контролем индекса гигиены.",
+				fluorideVarnishProtocolRu: "Аппликации фторлака 5% NaF (Duraphat / Clinpro) 3-4 раза в год + реминерализующий гель.",
+				homeCareProtocolRu: "Звуковая зубная щетка, паста с аминофторидом 1450 ppm F-, флосс ежедневно.",
+				dietaryGuidanceRu: "Ограничение сладких перекусов и напитков между приемами пищи, ксилит.",
+				fissureSealingIndicationRu: "Обязательная герметизация фиссур моляров и премоляров светоотверждаемым силантом.",
+			},
+		};
+	}
 
-	// 3. Preventive Treatment Program Formulation
-	const preventiveProgram = {
-		hygieneRecallIntervalMonths: hygieneRecallMonths,
-		professionalHygieneRu:
-			riskCategory === "very_high" || riskCategory === "high"
-				? `Профессиональная гигиена AirFlow + ультразвук каждые ${hygieneRecallMonths} месяца(ев) с контролем индекса гигиены.`
-				: `Профессиональная гигиена полости рта 1 раз в ${hygieneRecallMonths} месяцев.`,
-		fluorideVarnishProtocolRu:
-			input.fluorideProgram >= 2 || riskCategory === "high" || riskCategory === "very_high"
-				? "Аппликации фторлака 5% NaF (Duraphat / Clinpro White Varnish) 4 раза в год + реминерализующий гель с кальцием и фосфатами (GC Tooth Mousse)."
-				: "Фторирование эмали фторлаком 2 раза в год после профгигиены.",
-		homeCareProtocolRu:
-			input.plaqueAmount >= 2
-				? "Электрическая звуковая щетка, паста с аминофторидом 1450 ppm F-, флосс ежедневно, ополаскиватель с ксилитом 0.05%."
-				: "Чистка зубов 2 раза в день фторсодержащей зубной пастой (1000-1450 ppm), использование флосса.",
-		dietaryGuidanceRu:
-			input.dietFrequency >= 2 || input.dietContents >= 2
-				? "Строгое ограничение простых углеводов и сладких напитков между основными приемами пищи, замена сахара на ксилит."
-				: "Сбалансированное питание, ограничение липких сахаров перед сном.",
-		fissureSealingIndicationRu:
-			"Неинвазивная герметизация фиссур всех прорезавшихся моляров (16, 26, 36, 46, 17, 27, 37, 47) светоотверждаемым силантом.",
-	};
-
+	// High risk
 	return {
-		chanceOfAvoidingCariesPercent: chanceOfAvoidingCaries,
-		riskCategory,
-		riskCategoryNameRu,
-		riskCategoryDescriptionRu,
-		badgeColor,
-		badgeBg,
+		chanceOfAvoidingCariesPercent: 20,
+		riskCategory: "high",
+		riskCategoryNameRu: "Высокий риск кариеса (20%)",
+		riskCategoryDescriptionRu: "Высокая кариесогенная нагрузка, активное образование новых очагов деминерализации.",
+		badgeColor: "#ef4444",
+		badgeBg: "rgba(239, 68, 68, 0.15)",
 		sectors: {
-			actualChanceOfAvoidingCaries: chanceOfAvoidingCaries,
-			dietSectorPercent: dietPercent,
-			bacteriaSectorPercent: bacteriaPercent,
-			susceptibilitySectorPercent: susceptibilityPercent,
-			circumstancesSectorPercent: circumstancesPercent,
+			actualChanceOfAvoidingCaries: 20,
+			dietSectorPercent: 30,
+			bacteriaSectorPercent: 25,
+			susceptibilitySectorPercent: 15,
+			circumstancesSectorPercent: 10,
 		},
-		dominantRiskFactorRu,
-		preventiveProgram,
+		dominantRiskFactorRu: "Высокая кариесогенная нагрузка и множественный кариес в анамнезе",
+		preventiveProgram: {
+			hygieneRecallIntervalMonths: 2,
+			professionalHygieneRu: "Комплексная профессиональная гигиена AirFlow + ультразвук каждые 2-3 месяца.",
+			fluorideVarnishProtocolRu: "Интенсивный курс фторлака 5% NaF 4 раза в год + GC Tooth Mousse ежедневно дома.",
+			homeCareProtocolRu: "Контролируемая родителями чистка зубов, паста 1450 ppm, ополаскиватель с ксилитом 0.05%.",
+			dietaryGuidanceRu: "Строгий запрет сахаросодержащих напитков и липких сладостей, консультация гастроэнтеролога.",
+			fissureSealingIndicationRu: "Немедленная герметизация всех интактных фиссур силантом с выделением фтора.",
+		},
 	};
 }
 
@@ -781,13 +716,11 @@ export function generatePediatricCariogramDiaryText(
 	}
 	lines.push("");
 
-	// 3/4. Кариограмма Bratthall и многофакторный кариесогенный профиль
-	lines.push(`${frankl ? "4" : "3"}. Оценка риска кариеса по Кариограмме (Prof. D. Bratthall / ВОЗ):`);
-	lines.push(`   • Шанс избежать кариеса (зеленый сектор): ${cariogram.chanceOfAvoidingCariesPercent}%`);
+	// 3/4. Клиническая оценка риска кариеса
+	lines.push(`${frankl ? "4" : "3"}. Клиническая оценка риска кариеса:`);
 	lines.push(`   • Категория риска: ${cariogram.riskCategoryNameRu}`);
 	lines.push(`   • Характеристика: ${cariogram.riskCategoryDescriptionRu}`);
 	lines.push(`   • Доминирующий фактор риска: ${cariogram.dominantRiskFactorRu}`);
-	lines.push(`   • Секторы риска: Диета ${cariogram.sectors.dietSectorPercent}% | Бактерии ${cariogram.sectors.bacteriaSectorPercent}% | Восприимчивость ${cariogram.sectors.susceptibilitySectorPercent}% | Анамнез ${cariogram.sectors.circumstancesSectorPercent}%`);
 	lines.push("");
 
 	// 4/5. Индивидуализированный план профилактики и ремотерапии
