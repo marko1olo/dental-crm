@@ -204,11 +204,11 @@ export function CephalometricAnalysisModal({
 				</header>
 
 				{/* ── Main Content Body ───────────────────────────────────────── */}
-				<div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden">
+				<div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-y-auto lg:overflow-hidden">
 					{/* ── Left Column: Lateral Cephalogram Viewer & Image Controls (7 Cols) ── */}
-					<div className="lg:col-span-7 flex flex-col p-2.5 sm:p-3 bg-slate-950 border-r border-slate-800 overflow-hidden">
-						{/* Unified Ultra-Compact Clinical Toolbar (34-36px height) */}
-						<div className="mb-2 flex items-center justify-between gap-1.5 bg-slate-900/95 border border-slate-800 rounded-xl px-2 py-1 shadow-md shrink-0 overflow-x-auto select-none ceph-toolbar-compact">
+					<div className="lg:col-span-7 flex flex-col p-2.5 sm:p-3 bg-slate-950 border-r border-slate-800 shrink-0 lg:overflow-hidden">
+						{/* Clean 32px Clinical Toolbar with flex-wrap Segmented Controls (No Truncation) */}
+						<div className="mb-2 flex flex-wrap items-center justify-between gap-1.5 bg-slate-900/95 border border-slate-800 rounded-xl p-1.5 shadow-md shrink-0 select-none ceph-toolbar-compact">
 							{/* Filter Modes Segmented Pill */}
 							<div className="flex items-center gap-0.5 bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0">
 								{(
@@ -223,7 +223,7 @@ export function CephalometricAnalysisModal({
 										key={flt.id}
 										type="button"
 										onClick={() => setFilterMode(flt.id)}
-										className={`h-7 px-2.5 rounded-md text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center whitespace-nowrap ${
+										className={`h-8 px-2.5 rounded-md text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center whitespace-nowrap ${
 											filterMode === flt.id
 												? "bg-[var(--teal)] text-white shadow-xs"
 												: "text-slate-300 hover:text-white hover:bg-slate-800"
@@ -240,53 +240,55 @@ export function CephalometricAnalysisModal({
 								<button
 									type="button"
 									onClick={() => setShowPolygon((prev) => !prev)}
-									className={`h-7 px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+									className={`h-8 px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
 										showPolygon
 											? "bg-[var(--teal)] text-white shadow-xs"
 											: "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
 									}`}
 									title="Включить / отключить цефалометрический полигон"
 								>
-									<Layers size={13} />
+									<Layers size={14} />
 									<span>Полигон</span>
 								</button>
 								<button
 									type="button"
 									onClick={() => setShowPlanes((prev) => !prev)}
-									className={`h-7 px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+									className={`h-8 px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
 										showPlanes
 											? "bg-[var(--teal)] text-white shadow-xs"
 											: "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
 									}`}
 									title="Включить / отключить плоскости (SN, FH, MP, OP)"
 								>
+									<Sliders size={14} />
 									<span>Плоскости</span>
 								</button>
 								<button
 									type="button"
 									onClick={() => setShowLabels((prev) => !prev)}
-									className={`h-7 px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+									className={`h-8 px-2.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
 										showLabels
 											? "bg-[var(--teal)] text-white shadow-xs"
 											: "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
 									}`}
 									title="Включить / отключить подписи анатомических точек"
 								>
+									<Eye size={14} />
 									<span>Подписи</span>
 								</button>
 							</div>
 
 							{/* Actions (Upload, Preset, Reset) */}
-							<div className="flex items-center gap-1 shrink-0">
+							<div className="flex items-center gap-1.5 flex-wrap shrink-0">
 								<label
-									className="h-7 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors border border-slate-700 shadow-sm whitespace-nowrap"
+									className="h-8 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors border border-slate-700 shadow-sm whitespace-nowrap"
 									title="Загрузить пользовательский снимок ТРГ"
 								>
 									<UploadCloud size={14} />
 									<span>Загрузить снимок ТРГ</span>
 									<input
 										type="file"
-										accept="image/*"
+										accept="image/*,.dcm"
 										onChange={handleFileUpload}
 										className="hidden"
 									/>
@@ -294,7 +296,7 @@ export function CephalometricAnalysisModal({
 								<button
 									type="button"
 									onClick={handleLoadPreset}
-									className="h-7 px-2.5 rounded-lg bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] text-[var(--teal)] text-xs font-bold flex items-center gap-1.5 transition-colors border border-[var(--teal-soft)] cursor-pointer shadow-sm whitespace-nowrap"
+									className="h-8 px-2.5 rounded-lg bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] text-[var(--teal)] text-xs font-bold flex items-center gap-1.5 transition-colors border border-[var(--teal-soft)] cursor-pointer shadow-sm whitespace-nowrap"
 									title="Загрузить эталонную анатомическую разметку"
 								>
 									<Sparkles size={14} />
@@ -303,7 +305,7 @@ export function CephalometricAnalysisModal({
 								<button
 									type="button"
 									onClick={handleResetLandmarks}
-									className="h-7 px-2.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 text-xs font-bold flex items-center gap-1.5 transition-colors border border-rose-800/40 cursor-pointer shadow-sm whitespace-nowrap"
+									className="h-8 px-2.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 text-xs font-bold flex items-center gap-1.5 transition-colors border border-rose-800/40 cursor-pointer shadow-sm whitespace-nowrap"
 									title="Сбросить все точки"
 								>
 									<Trash2 size={13} />
@@ -313,7 +315,7 @@ export function CephalometricAnalysisModal({
 						</div>
 
 						{/* X-ray Canvas Component with Maximum Vertical Screen Utilization */}
-						<div className="flex-1 min-h-[500px] lg:min-h-[620px] flex items-center justify-center relative overflow-hidden">
+						<div className="flex-1 min-h-[340px] sm:min-h-[440px] lg:min-h-[620px] flex items-center justify-center relative overflow-hidden">
 							<CephalometricCanvas
 								landmarks={landmarks}
 								onLandmarkChange={handleLandmarkChange}
@@ -321,6 +323,10 @@ export function CephalometricAnalysisModal({
 								activeTargetKey={activeTargetKey}
 								onSelectTargetKey={setActiveTargetKey}
 								imageUrl={imageUrl}
+								onImageUpload={(url) => {
+									setImageUrl(url);
+									showToast("Снимок ТРГ успешно загружен", "success");
+								}}
 								filterMode={filterMode}
 								brightness={brightness}
 								contrast={contrast}

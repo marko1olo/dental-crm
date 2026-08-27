@@ -8,6 +8,7 @@ import {
 	Ruler,
 	Sliders,
 	Sparkles,
+	UploadCloud,
 	ZoomIn,
 	ZoomOut,
 } from "lucide-react";
@@ -34,6 +35,7 @@ export interface CephalometricCanvasProps {
 	activeTargetKey: LandmarkKey | null;
 	onSelectTargetKey: (key: LandmarkKey | null) => void;
 	imageUrl: string | null;
+	onImageUpload?: (imageUrl: string) => void;
 	filterMode: XrayFilterMode;
 	brightness: number;
 	contrast: number;
@@ -51,6 +53,7 @@ export function CephalometricCanvas({
 	activeTargetKey,
 	onSelectTargetKey,
 	imageUrl,
+	onImageUpload,
 	filterMode,
 	brightness,
 	contrast,
@@ -62,6 +65,49 @@ export function CephalometricCanvas({
 }: CephalometricCanvasProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const svgRef = useRef<SVGSVGElement>(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
+	const [isDragOver, setIsDragOver] = useState(false);
+
+	const handleFileProcess = useCallback(
+		(file: File) => {
+			if (!file.type.startsWith("image/") && !file.name.toLowerCase().endsWith(".dcm")) {
+				return;
+			}
+			const reader = new FileReader();
+			reader.onload = (ev) => {
+				if (typeof ev.target?.result === "string" && onImageUpload) {
+					onImageUpload(ev.target.result);
+				}
+			};
+			reader.readAsDataURL(file);
+		},
+		[onImageUpload],
+	);
+
+	const handleDrop = useCallback(
+		(e: React.DragEvent) => {
+			e.preventDefault();
+			e.stopPropagation();
+			setIsDragOver(false);
+			const file = e.dataTransfer.files?.[0];
+			if (file) {
+				handleFileProcess(file);
+			}
+		},
+		[handleFileProcess],
+	);
+
+	const handleDragOver = useCallback((e: React.DragEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setIsDragOver(true);
+	}, []);
+
+	const handleDragLeave = useCallback((e: React.DragEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setIsDragOver(false);
+	}, []);
 
 	// Viewport transformations (Pan and Zoom)
 	const [zoom, setZoom] = useState<number>(1.0);
@@ -250,405 +296,182 @@ export function CephalometricCanvas({
 		<div
 			ref={containerRef}
 			data-testid="cephalometric-canvas-container"
-			className="relative w-full h-full min-h-[520px] md:min-h-[620px] bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center select-none"
-			onWheel={handleWheel}
-			onMouseDown={handleMouseDown}
-			onMouseMove={handleMouseMove}
-			onMouseUp={handleMouseUp}
-			onMouseLeave={handleMouseUp}
-			style={{ cursor: isPanning ? "grabbing" : activeTargetKey ? "crosshair" : "default" }}
+			className="relative w-full h-full min-h-[340px] sm:min-h-[440px] lg:min-h-[620px] bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center select-none"
+			onWheel={imageUrl ? handleWheel : undefined}
+			onMouseDown={imageUrl ? handleMouseDown : undefined}
+			onMouseMove={imageUrl ? handleMouseMove : undefined}
+			onMouseUp={imageUrl ? handleMouseUp : undefined}
+			onMouseLeave={imageUrl ? handleMouseUp : undefined}
+			onDragOver={handleDragOver}
+			onDragEnter={handleDragOver}
+			onDragLeave={handleDragLeave}
+			onDrop={handleDrop}
+			style={{ cursor: isPanning ? "grabbing" : (activeTargetKey && imageUrl) ? "crosshair" : "default" }}
 		>
-			{/* Canvas Top Floating Toolbar with High-Contrast Dark HUD (Theme-Agnostic) */}
-			<div className="absolute top-3 left-3 right-3 z-30 flex items-center justify-between gap-2 flex-wrap pointer-events-none">
-				{/* Active Target Indicator Badge */}
-				<div className="pointer-events-auto flex items-center gap-2 !bg-[#0f172a] backdrop-blur-md px-3 py-1.5 rounded-lg border !border-[#334155] shadow-xl h-8">
-					<Crosshair size={15} className="text-teal-400 animate-pulse shrink-0" />
-					<div className="text-xs font-bold !text-[#f8fafc] min-w-0">
-						{activeTargetKey ? (
-							<span>
-								<span className="!text-[#94a3b8] font-normal mr-1">Установите точку:</span>
-								<span className="text-teal-300 font-extrabold uppercase">
-									{CEPHALOMETRIC_LANDMARKS.find((l) => l.key === activeTargetKey)?.nameRu}
-								</span>
-							</span>
-						) : (
-							<span className="!text-[#cbd5e1] font-medium">
-								Выберите ориентир в списке или перетаскивайте точки на снимке
-							</span>
-						)}
+			{!imageUrl ? (
+				/* Strict Medical Radiology Dropzone (Drag & Drop ТРГ / DICOM / JPG / PNG) */
+				<div
+					data-testid="ceph-dropzone"
+					className={`w-full max-w-xl mx-3 sm:mx-4 p-5 sm:p-8 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center text-center select-none ${
+						isDragOver
+							? "!border-teal-400 !bg-teal-950/60 shadow-2xl scale-[1.01]"
+							: "!border-[#334155] hover:!border-teal-500 !bg-[#0b1329] shadow-xl"
+					}`}
+				>
+					<input
+						ref={fileInputRef}
+						type="file"
+						accept="image/*,.dcm"
+						className="hidden"
+						onChange={(e) => {
+							const file = e.target.files?.[0];
+							if (file) {
+								handleFileProcess(file);
+							}
+						}}
+					/>
+					<div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl !bg-[#1e293b] border !border-[#334155] flex items-center justify-center text-teal-400 mb-3 sm:mb-4 shadow-lg shrink-0">
+						<UploadCloud size={30} />
+					</div>
+					<h3 className="text-sm sm:text-lg font-bold !text-[#f8fafc] mb-1 sm:mb-1.5">
+						Боковая телерентгенограмма черепа (ТРГ)
+					</h3>
+					<p className="text-xs sm:text-sm !text-[#cbd5e1] max-w-md mb-2 leading-relaxed">
+						Для проведения цефалометрического анализа требуется реальный рентгеновский снимок пациента.
+					</p>
+					<p className="text-[11px] sm:text-xs !text-[#94a3b8] mb-4 sm:mb-5 font-mono">
+						Drag & Drop боковой ТРГ / DICOM / JPG / PNG
+					</p>
+
+					<div className="flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
+						<button
+							type="button"
+							onClick={() => fileInputRef.current?.click()}
+							className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-xl !bg-[var(--teal,#0d9488)] hover:opacity-90 !text-white text-xs sm:text-sm font-bold shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2"
+						>
+							<UploadCloud size={16} />
+							<span>Выбрать снимок ТРГ</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => fileInputRef.current?.click()}
+							className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-xl !bg-[#1e293b] hover:!bg-[#334155] !text-[#f8fafc] border !border-[#334155] text-xs sm:text-sm font-bold shadow-sm transition-colors cursor-pointer flex items-center justify-center gap-2"
+						>
+							<span>Загрузить клинический снимок ТРГ пациента</span>
+						</button>
+					</div>
+
+					<div className="flex items-center gap-2 mt-4 sm:mt-5 text-[11px] !text-[#94a3b8] font-medium flex-wrap justify-center">
+						<span className="px-2 py-0.5 rounded !bg-[#1e293b] border !border-[#334155]">DICOM</span>
+						<span className="px-2 py-0.5 rounded !bg-[#1e293b] border !border-[#334155]">JPG</span>
+						<span className="px-2 py-0.5 rounded !bg-[#1e293b] border !border-[#334155]">PNG</span>
+						<span className="px-2 py-0.5 rounded !bg-[#1e293b] border !border-[#334155]">WebP</span>
 					</div>
 				</div>
+			) : (
+				<>
+					{/* Canvas Top Floating Toolbar with High-Contrast Dark HUD (Theme-Agnostic) */}
+					<div className="absolute top-3 left-3 right-3 z-30 flex items-center justify-between gap-2 flex-wrap pointer-events-none">
+						{/* Active Target Indicator Badge */}
+						<div className="pointer-events-auto flex items-center gap-2 !bg-[#0f172a] backdrop-blur-md px-3 py-1.5 rounded-lg border !border-[#334155] shadow-xl h-8">
+							<Crosshair size={15} className="text-teal-400 animate-pulse shrink-0" />
+							<div className="text-xs font-bold !text-[#f8fafc] min-w-0">
+								{activeTargetKey ? (
+									<span>
+										<span className="!text-[#94a3b8] font-normal mr-1">Установите точку:</span>
+										<span className="text-teal-300 font-extrabold uppercase">
+											{CEPHALOMETRIC_LANDMARKS.find((l) => l.key === activeTargetKey)?.nameRu}
+										</span>
+									</span>
+								) : (
+									<span className="!text-[#cbd5e1] font-medium">
+										Выберите ориентир в списке или перетаскивайте точки на снимке
+									</span>
+								)}
+							</div>
+						</div>
 
-				{/* Zoom, View & Calibration Controls */}
-				<div className="pointer-events-auto flex items-center gap-1 !bg-[#0f172a] backdrop-blur-md p-1 rounded-lg border !border-[#334155] shadow-xl h-8">
-					<button
-						type="button"
-						onClick={() => setZoom((prev) => Math.min(3.5, Number((prev + 0.2).toFixed(1))))}
-						className="w-7 h-7 rounded-md flex items-center justify-center !text-[#e2e8f0] hover:!text-white hover:!bg-[#1e293b] transition-colors cursor-pointer"
-						title="Приблизить (Масштаб +)"
-						aria-label="Приблизить масштаб"
-					>
-						<ZoomIn size={14} />
-					</button>
-					<span className="text-xs font-mono font-bold !text-[#f8fafc] px-1 min-w-[40px] text-center">
-						{Math.round(zoom * 100)}%
-					</span>
-					<button
-						type="button"
-						onClick={() => setZoom((prev) => Math.max(0.4, Number((prev - 0.2).toFixed(1))))}
-						className="w-7 h-7 rounded-md flex items-center justify-center !text-[#e2e8f0] hover:!text-white hover:!bg-[#1e293b] transition-colors cursor-pointer"
-						title="Отдалить (Масштаб -)"
-						aria-label="Отдалить масштаб"
-					>
-						<ZoomOut size={14} />
-					</button>
-					<div className="w-[1px] h-4 bg-[#334155] mx-0.5" />
-					<button
-						type="button"
-						onClick={handleResetView}
-						className="w-7 h-7 rounded-md flex items-center justify-center !text-[#e2e8f0] hover:!text-white hover:!bg-[#1e293b] transition-colors cursor-pointer"
-						title="Сбросить масштаб и положение (100%)"
-						aria-label="Сбросить масштаб"
-					>
-						<RotateCcw size={14} />
-					</button>
-					<button
-						type="button"
-						onClick={() => {
-							setIsCalibrating((prev) => !prev);
-							setCalibrationPoints([]);
+						{/* Zoom, View & Calibration Controls */}
+						<div className="pointer-events-auto flex items-center gap-1.5 !bg-[#0f172a] backdrop-blur-md p-1 rounded-lg border !border-[#334155] shadow-xl h-8">
+							<button
+								type="button"
+								onClick={() => setZoom((prev) => Math.min(3.5, Number((prev + 0.2).toFixed(1))))}
+								className="w-7 h-7 rounded-md flex items-center justify-center !bg-[#1e293b] !text-[#f8fafc] hover:!bg-[#334155] border !border-[#334155] transition-colors cursor-pointer"
+								title="Приблизить (Масштаб +)"
+								aria-label="Приблизить масштаб"
+							>
+								<ZoomIn size={14} />
+							</button>
+							<span className="text-xs font-mono font-bold !text-[#f8fafc] px-1 min-w-[40px] text-center">
+								{Math.round(zoom * 100)}%
+							</span>
+							<button
+								type="button"
+								onClick={() => setZoom((prev) => Math.max(0.4, Number((prev - 0.2).toFixed(1))))}
+								className="w-7 h-7 rounded-md flex items-center justify-center !bg-[#1e293b] !text-[#f8fafc] hover:!bg-[#334155] border !border-[#334155] transition-colors cursor-pointer"
+								title="Отдалить (Масштаб -)"
+								aria-label="Отдалить масштаб"
+							>
+								<ZoomOut size={14} />
+							</button>
+							<div className="w-[1px] h-4 bg-[#334155] mx-0.5" />
+							<button
+								type="button"
+								onClick={handleResetView}
+								className="h-7 px-2 rounded-md flex items-center gap-1 !bg-[#1e293b] !text-[#f8fafc] hover:!bg-[#334155] border !border-[#334155] transition-colors cursor-pointer text-xs font-bold"
+								title="Сбросить масштаб и положение (100%)"
+								aria-label="Сбросить масштаб"
+							>
+								<RotateCcw size={13} />
+								<span>100%</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									setIsCalibrating((prev) => !prev);
+									setCalibrationPoints([]);
+								}}
+								className={`h-7 px-2.5 rounded-md flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer ${
+									isCalibrating
+										? "!bg-amber-500 !text-slate-950 font-black border !border-amber-400 shadow-sm"
+										: "!bg-[#1e293b] !text-[#f8fafc] hover:!bg-[#334155] border !border-[#334155] shadow-sm"
+								}`}
+								title="Калибровка масштаба по линейке (мм/px)"
+								aria-label="Калибровка масштаба"
+							>
+								<Ruler size={13} className="shrink-0 text-teal-400" />
+								<span>Линейка</span>
+							</button>
+						</div>
+					</div>
+
+					{/* SVG Coordinate Space & Lateral Ceph View */}
+					<div
+						className="relative transition-transform duration-75 origin-center"
+						style={{
+							transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+							width: VIEWBOX_WIDTH,
+							height: VIEWBOX_HEIGHT,
 						}}
-						className={`h-7 px-2 rounded-md flex items-center gap-1 text-xs font-bold transition-colors cursor-pointer ${
-							isCalibrating
-								? "!bg-amber-600 !text-white"
-								: "!text-[#e2e8f0] hover:!text-white hover:!bg-[#1e293b]"
-						}`}
-						title="Калибровка масштаба по линейке (мм/px)"
-						aria-label="Калибровка масштаба"
 					>
-						<Ruler size={13} />
-						<span className="hidden sm:inline">Линейка</span>
-					</button>
-				</div>
-			</div>
-
-			{/* SVG Coordinate Space & Lateral Ceph View */}
-			<div
-				className="relative transition-transform duration-75 origin-center"
-				style={{
-					transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-					width: VIEWBOX_WIDTH,
-					height: VIEWBOX_HEIGHT,
-				}}
-			>
-				{/* 1. Underlying Cephalogram Image (or Vector Anatomical Lateral Ceph) */}
-				<div
-					className="absolute inset-0 w-full h-full rounded-xl overflow-hidden bg-black"
-					style={getFilterStyle()}
-				>
-					{imageUrl ? (
-						<img
-							src={imageUrl}
-							alt="Lateral Cephalogram X-Ray (ТРГ боковая)"
-							className="w-full h-full object-contain pointer-events-none"
-						/>
-					) : (
-						/* High-Detail Vector Anatomical Lateral Cephalogram Backdrop */
-						<svg
-							viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
-							className="w-full h-full"
-							aria-label="Векторная анатомическая модель ТРГ в боковой проекции"
+						{/* Real Clinical Cephalogram Image with Filters */}
+						<div
+							className="absolute inset-0 w-full h-full rounded-xl overflow-hidden bg-black"
+							style={getFilterStyle()}
 						>
-							{/* Radiographic Density Gradients & Filters */}
-							<defs>
-								{/* Conical X-Ray Beam Density Field */}
-								<radialGradient id="cephBeamGlow" cx="48%" cy="46%" r="58%">
-									<stop offset="0%" stopColor="#1e293b" stopOpacity="0.95" />
-									<stop offset="50%" stopColor="#0f172a" stopOpacity="0.98" />
-									<stop offset="85%" stopColor="#050814" stopOpacity="1" />
-									<stop offset="100%" stopColor="#020617" stopOpacity="1" />
-								</radialGradient>
+							<img
+								src={imageUrl}
+								alt="Lateral Cephalogram X-Ray (ТРГ боковая)"
+								className="w-full h-full object-contain pointer-events-none"
+							/>
+						</div>
 
-								{/* Cortical Bone High-Contrast Gradient */}
-								<linearGradient id="boneCortexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-									<stop offset="0%" stopColor="#cbd5e1" stopOpacity="0.95" />
-									<stop offset="40%" stopColor="#94a3b8" stopOpacity="0.9" />
-									<stop offset="80%" stopColor="#64748b" stopOpacity="0.85" />
-									<stop offset="100%" stopColor="#475569" stopOpacity="0.8" />
-								</linearGradient>
-
-								{/* Sphenoid & Sella Turcica Gradient */}
-								<linearGradient id="sellaGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-									<stop offset="0%" stopColor="#38bdf8" stopOpacity="0.9" />
-									<stop offset="50%" stopColor="#06b6d4" stopOpacity="0.85" />
-									<stop offset="100%" stopColor="#0284c7" stopOpacity="0.9" />
-								</linearGradient>
-
-								{/* Symphysis Heavy Cortical Shell Gradient */}
-								<linearGradient id="symphysisShellGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-									<stop offset="0%" stopColor="#e2e8f0" stopOpacity="0.95" />
-									<stop offset="60%" stopColor="#94a3b8" stopOpacity="0.9" />
-									<stop offset="100%" stopColor="#475569" stopOpacity="0.85" />
-								</linearGradient>
-
-								{/* Cervical Vertebrae Texture */}
-								<linearGradient id="cervicalBoneGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-									<stop offset="0%" stopColor="#334155" stopOpacity="0.9" />
-									<stop offset="50%" stopColor="#64748b" stopOpacity="0.95" />
-									<stop offset="100%" stopColor="#1e293b" stopOpacity="0.9" />
-								</linearGradient>
-
-								{/* Tooth Enamel Radiopaque Gradient */}
-								<linearGradient id="toothEnamelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-									<stop offset="0%" stopColor="#f8fafc" stopOpacity="0.98" />
-									<stop offset="50%" stopColor="#e2e8f0" stopOpacity="0.95" />
-									<stop offset="100%" stopColor="#cbd5e1" stopOpacity="0.9" />
-								</linearGradient>
-							</defs>
-
-							{/* 1. Deep Space Dark Radiograph Background */}
-							<rect width={VIEWBOX_WIDTH} height={VIEWBOX_HEIGHT} fill="#020617" />
-							<rect width={VIEWBOX_WIDTH} height={VIEWBOX_HEIGHT} fill="url(#cephBeamGlow)" />
-
-							{/* 2. Soft Tissue Profile Silhouette with Compensating Filter Shadow */}
-							<path
-								d="M 390 60 C 435 90, 458 115, 452 140 C 448 155, 470 195, 492 245 C 504 270, 508 285, 496 296 C 484 304, 478 308, 482 320 C 488 335, 504 355, 498 372 C 490 384, 472 388, 468 398 C 478 408, 488 428, 484 450 C 478 472, 484 498, 472 525 C 458 552, 424 578, 375 595 L 340 670 L 190 670 L 190 60 Z"
-								fill="#0b1120"
-								stroke="#1e293b"
-								strokeWidth="1.5"
-								opacity="0.8"
-							/>
-							{/* Outer Soft Tissue E-Line Profile Trace */}
-							<path
-								d="M 452 140 C 448 155, 470 195, 492 245 C 504 270, 508 285, 496 296 C 484 304, 478 308, 482 320 C 488 335, 504 355, 498 372 C 490 384, 472 388, 468 398 C 478 408, 488 428, 484 450 C 478 472, 484 498, 472 525 C 458 552, 424 578, 375 595"
-								fill="none"
-								stroke="#64748b"
-								strokeWidth="1.8"
-								strokeDasharray="4 2"
-								opacity="0.85"
-							/>
-
-							{/* 3. Pharyngeal Airway Space (Дыхательные пути: носоглотка, ротоглотка, гортаноглотка) */}
-							<path
-								d="M 320 310 Q 315 360, 310 420 Q 305 480, 300 560 L 285 560 Q 290 480, 295 420 Q 300 360, 305 310 Z"
-								fill="#020617"
-								stroke="#0f172a"
-								strokeWidth="1.2"
-								opacity="0.98"
-							/>
-							{/* Soft Palate & Uvula Shadow */}
-							<path
-								d="M 305 325 Q 320 350, 325 385 Q 318 395, 312 385 Q 310 355, 305 330 Z"
-								fill="#1e293b"
-								stroke="#334155"
-								strokeWidth="1"
-								opacity="0.9"
-							/>
-							{/* Hyoid Bone (Подъязычная кость) */}
-							<path
-								d="M 300 560 Q 320 558, 335 564 Q 320 572, 300 568 Z"
-								fill="#334155"
-								stroke="#64748b"
-								strokeWidth="1.5"
-								opacity="0.85"
-							/>
-
-							{/* 4. Cranial Vault Outer & Inner Cortex (Свод черепа: Lamina externa & interna, Diploe) */}
-							<path
-								d="M 210 270 C 180 180, 220 90, 310 70 C 400 50, 455 95, 442 155 C 395 168, 335 178, 280 190 C 248 196, 235 235, 238 255 Z"
-								fill="#1e293b"
-								stroke="url(#boneCortexGrad)"
-								strokeWidth="2.5"
-								opacity="0.9"
-							/>
-							{/* Diploe Space Inner Shadow */}
-							<path
-								d="M 220 255 C 195 185, 230 105, 310 85 C 390 68, 440 105, 432 150"
-								fill="none"
-								stroke="#475569"
-								strokeWidth="4"
-								opacity="0.7"
-							/>
-							{/* Frontal Sinus (Sinus frontalis) Radiolucency above Nasion */}
-							<path
-								d="M 432 110 C 445 115, 448 135, 440 148 C 432 145, 428 125, 432 110 Z"
-								fill="#050814"
-								stroke="#475569"
-								strokeWidth="1.2"
-								opacity="0.9"
-							/>
-
-							{/* 5. Sella Turcica, Sphenoid Bone & Clivus (Турецкое седло, клиновидная пазуха и скат) */}
-							{/* Sphenoid Sinus Radiolucency */}
-							<ellipse
-								cx="290"
-								cy="220"
-								rx="16"
-								ry="12"
-								fill="#050814"
-								stroke="#334155"
-								strokeWidth="1.2"
-								opacity="0.85"
-							/>
-							{/* Sella Turcica & Clivus Base */}
-							<path
-								d="M 265 182 L 272 184 Q 280 198, 288 184 L 298 182 L 315 220 L 290 270 L 255 245 Z"
-								fill="#0f172a"
-								stroke="#94a3b8"
-								strokeWidth="2"
-								opacity="0.95"
-							/>
-							{/* Sella Turcica Fossa Outline (S-point pocket at S(280, 190)) */}
-							<path
-								d="M 270 183 Q 280 198, 290 183"
-								fill="none"
-								stroke="url(#sellaGrad)"
-								strokeWidth="3"
-							/>
-
-							{/* 6. Orbital Cavity & Orbitale Rim (Глазница и подглазничный край Or(415, 230)) */}
-							<path
-								d="M 435 175 C 445 195, 440 230, 415 230 C 390 230, 395 195, 410 178 Z"
-								fill="#090d16"
-								stroke="#64748b"
-								strokeWidth="2"
-								opacity="0.95"
-							/>
-							{/* Orbitale Floor Marker at Or(415, 230) */}
-							<path
-								d="M 405 230 Q 415 233, 425 228"
-								fill="none"
-								stroke="#38bdf8"
-								strokeWidth="2.5"
-							/>
-
-							{/* 7. Porion / External Auditory Meatus (Слуховой проход Po(245, 245)) */}
-							<ellipse
-								cx="245"
-								cy="245"
-								rx="8"
-								ry="11"
-								fill="#020617"
-								stroke="#94a3b8"
-								strokeWidth="2"
-							/>
-							{/* Petrous Temporal Ridge High Radiodensity */}
-							<path
-								d="M 230 230 L 265 240 L 255 265 L 225 255 Z"
-								fill="#334155"
-								opacity="0.6"
-							/>
-
-							{/* 8. Maxilla, Hard Palate, Maxillary Sinus & Pterygomaxillary Fissure */}
-							{/* Pterygomaxillary Fissure (Fissura pterygomaxillaris) Teardrop */}
-							<path
-								d="M 318 265 C 322 275, 324 290, 320 302 C 316 295, 314 280, 318 265 Z"
-								fill="#020617"
-								stroke="#475569"
-								strokeWidth="1.2"
-								opacity="0.9"
-							/>
-							{/* Maxillary Sinus Radiolucency */}
-							<path
-								d="M 370 260 C 430 250, 445 280, 440 310 C 410 320, 360 315, 355 285 Z"
-								fill="#090d16"
-								stroke="#334155"
-								strokeWidth="1.4"
-								opacity="0.85"
-							/>
-							{/* Hard Palate Bone Beam (ANS(475, 310) -> PNS(305, 325)) */}
-							<path
-								d="M 475 310 Q 400 312, 305 325 L 305 332 Q 400 320, 475 315 Z"
-								fill="#334155"
-								stroke="url(#boneCortexGrad)"
-								strokeWidth="2.2"
-								opacity="0.98"
-							/>
-							{/* Anterior Maxillary Basal Profile (Nasion(440, 155) -> Point A(462, 342) -> ANS(475, 310)) */}
-							<path
-								d="M 440 155 L 455 210 L 442 240 L 475 310 Q 460 328, 462 342 L 468 395"
-								fill="none"
-								stroke="url(#boneCortexGrad)"
-								strokeWidth="2.6"
-								opacity="0.98"
-							/>
-
-							{/* 9. Mandible (Нижняя челюсть: мыщелок, ветвь, угол Go(250, 435), тело, симфиз) */}
-							<path
-								d="M 268 258 C 265 250, 275 245, 280 252 L 285 290 Q 305 280, 318 295 L 305 335 L 275 340 L 250 435 Q 260 495, 335 515 L 415 540 Q 448 535, 452 490 Q 450 460, 446 440 L 458 400 L 425 495 Q 380 485, 330 465 L 280 355 Z"
-								fill="#1e293b"
-								stroke="url(#boneCortexGrad)"
-								strokeWidth="2.6"
-								opacity="0.95"
-							/>
-							{/* Mandibular Symphysis Cortical Contour (Point B(446, 440) -> Pog(452, 490) -> Gn(442, 520) -> Me(420, 540)) */}
-							<path
-								d="M 446 440 Q 454 465, 452 490 Q 448 515, 442 520 Q 432 538, 420 540 Q 385 538, 380 500 Q 385 450, 425 440 Z"
-								fill="#334155"
-								stroke="url(#symphysisShellGrad)"
-								strokeWidth="2.4"
-								opacity="0.98"
-							/>
-							{/* Mandibular Neurovascular Canal (Нижнечелюстной канал) */}
-							<path
-								d="M 275 340 Q 265 430, 335 480 Q 385 500, 420 480"
-								fill="none"
-								stroke="#64748b"
-								strokeWidth="2"
-								strokeDasharray="4 3"
-								opacity="0.8"
-							/>
-
-							{/* 10. Cervical Spine C1–C5 (Шейные позвонки с зубовидным отростком) */}
-							<g fill="url(#cervicalBoneGrad)" stroke="#64748b" strokeWidth="2" opacity="0.85">
-								{/* C1 Atlas */}
-								<rect x="235" y="280" width="28" height="20" rx="4" />
-								{/* C2 Axis with Dens */}
-								<path d="M 230 305 L 245 285 L 252 285 L 258 305 L 262 330 L 225 330 Z" />
-								{/* C3 */}
-								<rect x="220" y="340" width="36" height="26" rx="5" />
-								{/* C4 */}
-								<rect x="215" y="375" width="38" height="28" rx="5" />
-								{/* C5 */}
-								<rect x="210" y="412" width="40" height="30" rx="5" />
-							</g>
-
-							{/* 11. Central Incisors with Anatomical Roots & Pulp Chambers (Резцы U1 и L1) */}
-							<g stroke="#cbd5e1" strokeWidth="2" fill="#475569">
-								{/* Upper Central Incisor (U1a(438, 325) -> U1t(468, 395)) */}
-								<path
-									d="M 438 325 Q 448 350, 460 380 L 468 395 Q 472 396, 470 392 L 452 335 Q 445 322, 438 325 Z"
-									fill="url(#toothEnamelGrad)"
-								/>
-								{/* Upper Pulp Canal */}
-								<line x1="442" y1="332" x2="464" y2="390" stroke="#020617" strokeWidth="1.4" />
-
-								{/* Lower Central Incisor (L1a(425, 495) -> L1t(458, 400)) */}
-								<path
-									d="M 425 495 Q 438 460, 448 415 L 458 400 Q 462 401, 460 405 L 440 485 Q 430 498, 425 495 Z"
-									fill="url(#toothEnamelGrad)"
-								/>
-								{/* Lower Pulp Canal */}
-								<line x1="428" y1="488" x2="454" y2="406" stroke="#020617" strokeWidth="1.4" />
-							</g>
-
-							{/* First Molars in Class I Occlusion */}
-							<g stroke="#94a3b8" strokeWidth="1.5" fill="#334155" opacity="0.9">
-								{/* Upper First Molar */}
-								<path d="M 365 330 Q 375 365, 382 390 L 388 390 Q 385 365, 392 330 Z" />
-								{/* Lower First Molar */}
-								<path d="M 362 460 Q 372 425, 380 395 L 386 395 Q 382 425, 390 460 Z" />
-							</g>
-						</svg>
-					)}
-				</div>
-
-				{/* 2. Interactive Cephalometric SVG Overlay (Polygons, Angles, Points) */}
-				<svg
-					ref={svgRef}
-					viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
-					className="absolute inset-0 w-full h-full overflow-visible pointer-events-auto"
-				>
+						{/* 2. Interactive Cephalometric SVG Overlay (Polygons, Angles, Points) */}
+						<svg
+							ref={svgRef}
+							viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
+							className="absolute inset-0 w-full h-full overflow-visible pointer-events-auto"
+						>
 					{/* Planes and Guides */}
 					{showPlanes && (
 						<g className="planes-layer opacity-75">
@@ -1067,6 +890,8 @@ export function CephalometricCanvas({
 						{draggingKey ?? hoveredKey} ({Math.round(cursorImgPos.x)}, {Math.round(cursorImgPos.y)})
 					</div>
 				</div>
+			)}
+				</>
 			)}
 		</div>
 	);

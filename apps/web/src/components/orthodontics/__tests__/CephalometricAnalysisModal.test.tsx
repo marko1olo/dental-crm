@@ -102,7 +102,7 @@ describe("CephalometricAnalysisModal Component (ТРГ боковая)", () => {
 		}
 	});
 
-	it("renders CephalometricCanvas with vector lateral cephalogram, touch hit areas and SVG overlays", () => {
+	it("renders honest medical dropzone when imageUrl is null, without fake vector skull", () => {
 		const html = renderToStaticMarkup(
 			createElement(CephalometricCanvas, {
 				landmarks: DEFAULT_CEPH_LANDMARKS_PRESET,
@@ -125,23 +125,108 @@ describe("CephalometricAnalysisModal Component (ТРГ боковая)", () => {
 			"Contains canvas container testid",
 		);
 
-		// SVG anatomical model
+		// Honest medical dropzone
 		assert.ok(
-			html.includes("Векторная анатомическая модель ТРГ"),
-			"Renders anatomical lateral ceph vector model",
+			html.includes('data-testid="ceph-dropzone"'),
+			"Renders honest clinical dropzone",
+		);
+		assert.ok(
+			html.includes("Боковая телерентгенограмма черепа (ТРГ)"),
+			"Displays clinical modality title in dropzone",
+		);
+		assert.ok(
+			html.includes("DICOM / JPG / PNG"),
+			"Specifies accepted clinical radiology formats",
+		);
+		assert.ok(
+			html.includes("Выбрать снимок ТРГ"),
+			"Contains primary select ceph image button",
+		);
+		assert.ok(
+			html.includes("Загрузить клинический снимок ТРГ пациента"),
+			"Contains patient clinical ceph upload button",
 		);
 
-		// Sella, Nasion, Incisors, Orbitale, Porion handles in SVG
-		assert.ok(html.includes('class="landmark-handle cursor-pointer"'));
-		assert.ok(html.includes('class="touch-hit-area"'));
-		assert.ok(html.includes('class="polygon-layer"'));
-		assert.ok(html.includes('class="planes-layer opacity-75"'));
+		// ABSOLUTE ZERO FAKE VECTOR SKULL
+		assert.ok(
+			!html.includes("Векторная анатомическая модель ТРГ"),
+			"Does NOT contain fake vector anatomical skull model",
+		);
+		assert.ok(
+			!html.includes("cephBeamGlow"),
+			"Does NOT contain fake skull procedural gradients",
+		);
+	});
 
-		// Toolbars with >= 44x44px controls
+	it("renders cephalometric landmarks and planes overlay directly on top of real X-ray image without vector skull", () => {
+		const testImageUrl = "https://clinic.dente.ru/radiology/ceph-lateral-042.jpg";
+		const html = renderToStaticMarkup(
+			createElement(CephalometricCanvas, {
+				landmarks: DEFAULT_CEPH_LANDMARKS_PRESET,
+				onLandmarkChange: () => {},
+				activeTargetKey: "S",
+				onSelectTargetKey: () => {},
+				imageUrl: testImageUrl,
+				filterMode: "normal",
+				brightness: 100,
+				contrast: 100,
+				showPolygon: true,
+				showPlanes: true,
+				showLabels: true,
+				scaleMmPerPixel: 0.15,
+			}),
+		);
+
+		assert.ok(
+			html.includes('data-testid="cephalometric-canvas-container"'),
+			"Contains canvas container testid",
+		);
+
+		// Renders real X-Ray image
+		assert.ok(
+			html.includes(testImageUrl),
+			"Renders underlying clinical X-ray image",
+		);
+		assert.ok(
+			html.includes('alt="Lateral Cephalogram X-Ray (ТРГ боковая)"'),
+			"Includes clinical image alt attribute",
+		);
+
+		// Interactive Cephalometric SVG Overlay
+		assert.ok(
+			html.includes('class="landmark-handle cursor-pointer"'),
+			"Renders interactive landmark handles",
+		);
+		assert.ok(
+			html.includes('class="touch-hit-area"'),
+			"Renders WCAG touch hit targets",
+		);
+		assert.ok(
+			html.includes('class="polygon-layer"'),
+			"Renders cephalometric polygon layer",
+		);
+		assert.ok(
+			html.includes('class="planes-layer opacity-75"'),
+			"Renders cephalometric planes layer (Steiner/Tweed/Downs)",
+		);
+
+		// HUD Controls
 		assert.ok(html.includes("Установите точку:"));
 		assert.ok(html.includes("Sella (Седло)"));
 		assert.ok(html.includes("100%"));
+		assert.ok(html.includes("Линейка"));
 		assert.ok(html.includes('aria-label="Приблизить масштаб"'));
 		assert.ok(html.includes('aria-label="Отдалить масштаб"'));
+
+		// Dropzone is hidden when real image is present
+		assert.ok(
+			!html.includes('data-testid="ceph-dropzone"'),
+			"Dropzone is not shown when real image is loaded",
+		);
+		// Zero fake skull
+		assert.ok(
+			!html.includes("Векторная анатомическая модель ТРГ"),
+			"No fake vector skull backdrop on real image",
+		);
 	});
 });

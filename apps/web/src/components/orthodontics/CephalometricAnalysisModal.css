@@ -10,11 +10,9 @@
 	border: 1px solid var(--line);
 }
 
-/* Ultra-compact 1-line Clinical Toolbar (34-36px height) */
+/* Clean Clinical Toolbar with 32px interactive controls */
 .ceph-toolbar-compact {
-	height: 36px;
 	min-height: 36px;
-	max-height: 36px;
 	scrollbar-width: none;
 	-ms-overflow-style: none;
 }
