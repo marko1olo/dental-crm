@@ -410,7 +410,7 @@ export function translateMedicalTermToFriendly(
 			friendlyName: `Установка дентального имплантата${toothStr}`,
 			categoryGroup: "implant",
 			categoryGroupRu: "Дентальная имплантация",
-			groupIcon: "⚙️",
+			groupIcon: "🔩",
 			plainDescriptionRu:
 				"Установка премиального биосовместимого титанового имплантата с пожизненной гарантией производителя",
 		};

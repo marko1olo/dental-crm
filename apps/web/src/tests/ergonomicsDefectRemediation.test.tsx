@@ -115,4 +115,101 @@ describe("Frontend Ergonomics & Layout Defects Remediation", () => {
       "Must have data-testid='btn-retry-schedule-connection'",
     );
   });
+
+  it("5. PatientBillingModal Audit Remediation: legal requisites, single WhatsApp button, titanium implant icon, dark close button, 2x2 footer & anti-matryoshka", () => {
+    const html = renderToStaticMarkup(
+      createElement(PatientBillingModal, {
+        isOpen: true,
+        onClose: () => {},
+        patient: {
+          id: "pat-1",
+          fullName: "Иванов Иван Иванович",
+          phone: "+7 (999) 123-45-67",
+        },
+        doctor: {
+          fullName: "Д-р Смирнов А. П.",
+        },
+        initialServices: [
+          {
+            id: "srv-1",
+            name: "Восстановление зуба пломбой Filtek Ultimate",
+            code804n: "A16.07.002.001",
+            toothNumber: "16",
+            quantity: 1,
+            priceRub: 6500,
+            category: "therapy",
+          },
+          {
+            id: "srv-2",
+            name: "Установка дентального имплантата Straumann BLX",
+            code804n: "A16.07.054",
+            toothNumber: "26",
+            quantity: 1,
+            priceRub: 55000,
+            category: "implantology",
+          },
+        ],
+      }),
+    );
+
+    // 1. Legal requisites: no truncate, full text with Order 804n & Law 2300-1
+    assert.ok(
+      html.includes("Приказ МЗ РФ № 804н") && html.includes("Закон РФ № 2300-1"),
+      "Legal requisites must include both Order 804n and Law 2300-1",
+    );
+    assert.ok(
+      html.includes("flex-wrap"),
+      "Legal requisites line must use flex-wrap to prevent clipping on mobile",
+    );
+
+    // 2. WhatsApp Spam elimination: giant banner and duplicate tab removed, single footer button left
+    assert.ok(
+      !html.includes("btn-send-bill-whatsapp"),
+      "Giant WhatsApp advertising banner in center must be removed",
+    );
+    assert.ok(
+      !html.includes("btn-quick-whatsapp-bill"),
+      "Duplicate WhatsApp tab in upper toolbar must be removed",
+    );
+    assert.ok(
+      html.includes("btn-footer-send-whatsapp"),
+      "Strict single WhatsApp button in bottom toolbar must be present",
+    );
+
+    // 3. Implant icon: no industrial gear emoji in implant group, uses medical icon
+    assert.ok(
+      !html.includes("⚙️"),
+      "No industrial gear emoji should be used in dental implantology billing",
+    );
+    assert.ok(
+      html.includes("Дентальный титановый имплантат"),
+      "Implant badge title must be present",
+    );
+
+    // 4. Dark mode close button: no blinding white #f1f5f9
+    assert.ok(
+      html.includes("dark:bg-slate-800/60") && html.includes("dark:hover:bg-slate-700"),
+      "Close button must use dark:bg-slate-800/60 and dark:hover:bg-slate-700 for Dark Mode",
+    );
+
+    // 5. Mobile footer 2x2 grid & 96px scroll container padding
+    assert.ok(
+      html.includes("grid-cols-2"),
+      "Mobile footer must use 2x2 grid layout for action buttons",
+    );
+    assert.ok(
+      html.includes("padding-bottom: 96px") || html.includes("padding-bottom:96px") || html.includes("pb-24"),
+      "Scroll container must have padding-bottom: 96px to prevent fixed footer collision",
+    );
+    assert.ok(
+      html.includes("btn-fiscalize-54fz") && html.includes("Фискализировать (54-ФЗ)"),
+      "Bottom toolbar must contain 54-FZ fiscalization button",
+    );
+
+    // 6. Anti-Matryoshka: items inside group use divide-y without nested double border
+    assert.ok(
+      html.includes("divide-y"),
+      "Service items must use divide-y without nested double borders",
+    );
+  });
 });
