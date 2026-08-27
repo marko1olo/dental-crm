@@ -246,49 +246,49 @@ const TARGET_SCREENS = [
   {
     prefix: "05_trg_cephalometrics",
     name: "05. TRG Cephalometric Analysis Canvas (Empty Honest Dropzone 0%)",
-    url: "http://127.0.0.1:5173/#clinical-modals-studio",
+    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=trg&state=empty",
     setup: async (page) => {
       const btn = page.locator('[data-testid="open-ceph-empty-btn"]');
       if (await btn.isVisible()) {
         await btn.scrollIntoViewIfNeeded();
         await btn.click();
-        await page.waitForTimeout(600);
       }
+      await page.waitForTimeout(800);
     },
     all4States: true,
   },
   {
     prefix: "05_trg_cephalometrics_loaded",
     name: "05. TRG Cephalometric Analysis Canvas with 16 Anatomical Landmarks & Reference X-Ray",
-    url: "http://127.0.0.1:5173/#clinical-modals-studio",
+    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=trg&loaded=true",
     setup: async (page) => {
       const btn = page.locator('[data-testid="open-ceph-modal-btn"]');
       if (await btn.isVisible()) {
         await btn.scrollIntoViewIfNeeded();
         await btn.click();
-        await page.waitForTimeout(800);
       }
+      await page.waitForTimeout(800);
     },
     all4States: true,
   },
   {
     prefix: "06_sanpin_registers_12tabs",
     name: "06. SanPiN 12-Tab Production Control Center",
-    url: "http://127.0.0.1:5173/#clinical-modals-studio",
+    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=sanpin",
     setup: async (page) => {
       const btn = page.locator('[data-testid="open-autoclave-log-257-modal-btn"]');
       if (await btn.isVisible()) {
         await btn.scrollIntoViewIfNeeded();
         await btn.click();
-        await page.waitForTimeout(600);
       }
+      await page.waitForTimeout(600);
     },
     all4States: true,
   },
   {
     prefix: "07_cbct_mpr_viewer",
     name: "07. 3D CBCT MPR Multi-Planar Reconstruction (Romexis/Ez3D-i Orthogonal Viewer)",
-    url: "http://127.0.0.1:5173/#clinical-modals-studio",
+    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=cbct",
     setup: async (page) => {
       const btn = page.locator('[data-testid="open-cbct-mpr-3d-studio-modal-btn"]');
       if (await btn.isVisible()) {
@@ -319,28 +319,28 @@ const TARGET_SCREENS = [
   {
     prefix: "08_radiology_dicom_viewer",
     name: "08. 2D Dental Radiology & DICOM Viewer (Tooth 16, Sinus maxillaris, Delicate Pin)",
-    url: "http://127.0.0.1:5173/#clinical-modals-studio",
+    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=viewer",
     setup: async (page) => {
       const btn = page.locator('[data-testid="open-viewer-modal-btn"]');
       if (await btn.isVisible()) {
         await btn.scrollIntoViewIfNeeded();
         await btn.click();
-        await page.waitForTimeout(800);
       }
+      await page.waitForTimeout(800);
     },
     all4States: true,
   },
   {
     prefix: "08_radiology_dropzone",
     name: "08. 2D Dental Radiology Dropzone (Dark Graphite Radiation Protection Theme)",
-    url: "http://127.0.0.1:5173/#clinical-modals-studio",
+    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=dropzone",
     setup: async (page) => {
       const btn = page.locator('[data-testid="open-dropzone-viewer-btn"]');
       if (await btn.isVisible()) {
         await btn.scrollIntoViewIfNeeded();
         await btn.click();
-        await page.waitForTimeout(800);
       }
+      await page.waitForTimeout(800);
     },
     all4States: true,
   },
