@@ -40,13 +40,24 @@ export {
 	validateRussianOgrn,
 	validateRussianPassport,
 	validateRussianSnils,
+	generateCode128Svg,
+	generateFnsFormKnd1151156BarcodeSvg,
+	generateFamilyTaxDeductionBatch,
+	generateFnsBatchNoMedoplXml,
+	renderOfficialTaxCertificateBatchKnd1151156Html,
+	type FamilyMemberPayerConfig,
+	type GenerateFamilyTaxDeductionBatchOptions,
+	type FamilyTaxDeductionBatchResult,
+	type FamilyMemberBatchCertificateSummary,
 } from "@dental/shared";
 
 import {
 	generateFnsNoMedoplXml,
 	generateFnsTaxDeductionBatchXml,
+	generateFnsBatchNoMedoplXml,
 	generateFnsTaxDeductionXml,
 	renderOfficialTaxCertificateKnd1151156Html,
+	renderOfficialTaxCertificateBatchKnd1151156Html,
 	type TaxDeductionBatchParams,
 	type TaxDeductionCertificateParams,
 } from "@dental/shared";
@@ -100,8 +111,31 @@ export function downloadFnsBatchTaxXmlFile(batch: TaxDeductionBatchParams): void
 }
 
 /**
+ * Triggers a browser download of NO_MEDOPL batch XML registry (Format 5.01) for direct TCS submission.
+ */
+export function downloadFnsBatchNoMedoplXmlFile(batch: TaxDeductionBatchParams): void {
+	const { fileName, xmlContent } = generateFnsBatchNoMedoplXml(batch);
+	const blob = new Blob([xmlContent], { type: "application/xml;charset=utf-8" });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement("a");
+	a.href = url;
+	a.download = fileName;
+	document.body.appendChild(a);
+	a.click();
+	document.body.removeChild(a);
+	URL.revokeObjectURL(url);
+}
+
+/**
  * Generates official printable HTML for the KND 1151156 Certificate according to Order EA-7-11/824@.
  */
 export function renderTaxDeductionCertificateHtml(params: TaxDeductionCertificateParams): string {
 	return renderOfficialTaxCertificateKnd1151156Html(params);
+}
+
+/**
+ * Generates combined multi-page printable HTML for all family certificates in batch.
+ */
+export function renderTaxDeductionBatchCertificateHtml(batch: TaxDeductionBatchParams): string {
+	return renderOfficialTaxCertificateBatchKnd1151156Html(batch);
 }

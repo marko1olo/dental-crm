@@ -10,8 +10,9 @@
 
 import { z } from "zod";
 import { generateQrCodeSvg, generateQrCodeDataUri, type QrSvgOptions } from "./qrGenerator.js";
+import { generateCode128Svg, generateFnsFormKnd1151156BarcodeSvg, type Code128SvgOptions } from "./barcodeGenerator.js";
 import { escapeXml } from "../cda/c14n.js";
-import { kopecksToRub } from "./kopecksArithmetic.js";
+import { kopecksToRub, rubToKopecks } from "./kopecksArithmetic.js";
 
 /**
  * Нормативные константы регламента ФНС России № ЕА-7-11/824@
@@ -242,6 +243,12 @@ export const EXPENSIVE_TREATMENT_804N_CODES: readonly string[] = [
 	"A16.07.055.002",  // Реконструкция альвеолярного отростка с остеотомией
 	"A16.07.096",      // Расщепление альвеолярного гребня (split-crest)
 	"A16.07.097",      // Транспозиция нижнелуночкового нерва при имплантации
+
+	// Ортопедическое лечение с опорой на имплантаты (п. 4 Постановления № 458)
+	"A16.07.006.002",  // Протезирование зубного ряда с опорой на дентальные имплантаты
+	"A16.07.006.003",  // Протезирование съемными протезами с опорой на имплантаты
+	"A16.07.006.004",  // Протезирование условно-съемными протезами с балочной фиксацией на имплантатах
+	"A16.07.004.004",  // Восстановление зуба коронкой с фиксацией на дентальном имплантате
 ];
 
 /**
@@ -254,12 +261,13 @@ export function resolveTaxDeductionCategoryShared(code804n?: string, serviceName
 		if (EXPENSIVE_TREATMENT_804N_CODES.includes(trimmedCode)) {
 			return "2";
 		}
-		// Проверка по префиксам имплантации/костной пластики
+		// Проверка по префиксам имплантации/костной пластики/остеопластики
 		if (
 			trimmedCode.startsWith("A16.07.054") ||
 			trimmedCode.startsWith("A16.07.041") ||
 			trimmedCode.startsWith("A16.07.055") ||
-			trimmedCode.startsWith("A16.07.096")
+			trimmedCode.startsWith("A16.07.096") ||
+			trimmedCode.startsWith("A16.07.040")
 		) {
 			return "2";
 		}
@@ -275,20 +283,45 @@ export function resolveTaxDeductionCategoryShared(code804n?: string, serviceName
 			lower.includes("синуслифтинг") ||
 			lower.includes("субантральн") ||
 			lower.includes("костная пластика") ||
+			lower.includes("костной пластик") ||
 			lower.includes("остеопластик") ||
+			lower.includes("остеотоми") ||
+			lower.includes("остеосинтез") ||
 			lower.includes("аугментация") ||
+			lower.includes("аугментаци") ||
 			lower.includes("расщепление гребня") ||
+			lower.includes("расщепление альвеолярного") ||
 			lower.includes("реконструкция челюсти") ||
+			lower.includes("реконструктивные операции") ||
 			lower.includes("костный трансплантат") ||
 			lower.includes("костный блок") ||
+			lower.includes("костный материал") ||
+			lower.includes("костная ткань") ||
+			lower.includes("костная регенерация") ||
+			lower.includes("нкр") ||
 			lower.includes("мембрана bio-gide") ||
 			lower.includes("bio-oss") ||
+			lower.includes("био-осс") ||
+			lower.includes("титановая сетка") ||
+			lower.includes("титановая мембрана") ||
+			lower.includes("коллагеновая мембрана") ||
 			lower.includes("all-on-4") ||
 			lower.includes("all-on-6") ||
 			lower.includes("all-on-x") ||
+			lower.includes("all on 4") ||
+			lower.includes("all on 6") ||
+			lower.includes("all on x") ||
 			lower.includes("trefoil") ||
 			lower.includes("zygoma") ||
-			lower.includes("скулов")
+			lower.includes("зигома") ||
+			lower.includes("скулов") ||
+			lower.includes("мультиюнит") ||
+			lower.includes("multi-unit") ||
+			lower.includes("multiunit") ||
+			lower.includes("протезирование на имплант") ||
+			lower.includes("протез на имплант") ||
+			lower.includes("коронка на имплант") ||
+			lower.includes("балочный протез")
 		) {
 			return "2";
 		}
@@ -306,7 +339,9 @@ export interface TaxDeductionPaymentItem {
 	readonly serviceName: string;
 	readonly code804n?: string | undefined;
 	readonly amountRub: number;
+	readonly amountKopecks?: number | undefined;
 	readonly taxCode?: "1" | "2" | undefined;
+	readonly payerRelationship?: TaxDeductionRelationship | undefined;
 }
 
 export interface TaxDeductionYearSummary {
@@ -319,9 +354,13 @@ export interface TaxDeductionYearSummary {
 	readonly totalKopecks: number;
 	readonly receiptsCount: number;
 	readonly code01StatutoryLimitRub: number;
+	readonly code01StatutoryLimitKopecks: number;
 	readonly code01EligibleRub: number;
+	readonly code01EligibleKopecks: number;
 	readonly refund13EstimateRub: number;
+	readonly refund13EstimateKopecks: number;
 	readonly refund15EstimateRub: number;
+	readonly refund15EstimateKopecks: number;
 }
 
 export interface TaxDeductionCalculationResult {
@@ -333,7 +372,9 @@ export interface TaxDeductionCalculationResult {
 	readonly grandTotalRub: number;
 	readonly grandTotalKopecks: number;
 	readonly grandTotalRefund13Rub: number;
+	readonly grandTotalRefund13Kopecks: number;
 	readonly grandTotalRefund15Rub: number;
+	readonly grandTotalRefund15Kopecks: number;
 	readonly totalReceiptsCount: number;
 	readonly totalAmountInWordsRu: string;
 }
@@ -352,7 +393,12 @@ export function calculateTaxDeductionSummary(
 	for (const p of payments) {
 		const year = new Date(p.dateIso).getFullYear();
 		const cat = p.taxCode || resolveTaxDeductionCategoryShared(p.code804n, p.serviceName);
-		const amountKop = Number.isFinite(p.amountRub) ? Math.max(0, Math.round(p.amountRub * 100)) : 0;
+		const amountKop =
+			typeof p.amountKopecks === "number" && Number.isFinite(p.amountKopecks)
+				? Math.max(0, Math.round(p.amountKopecks))
+				: Number.isFinite(p.amountRub)
+					? Math.max(0, Math.round(p.amountRub * 100))
+					: 0;
 
 		const current = yearMap.get(year) || { code01Kop: 0, code02Kop: 0, count: 0 };
 		if (cat === "2") {
@@ -373,12 +419,16 @@ export function calculateTaxDeductionSummary(
 			const totalRub = kopecksToRub(totalKopecks);
 
 			// Лимит социального вычета: 150 000 ₽ с 2024 года, 120 000 ₽ до 2024 года
-			const statutoryLimit = taxYear >= 2024 ? ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024 : ANNUAL_TAX_DEDUCTION_LIMIT_RUB_PRE2024;
-			const code01Eligible = Math.min(code01Rub, statutoryLimit);
+			const statutoryLimitRub = taxYear >= 2024 ? ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024 : ANNUAL_TAX_DEDUCTION_LIMIT_RUB_PRE2024;
+			const statutoryLimitKopecks = statutoryLimitRub * 100;
+			const code01EligibleKopecks = Math.min(data.code01Kop, statutoryLimitKopecks);
+			const code01EligibleRub = kopecksToRub(code01EligibleKopecks);
 
-			// Расчетный возврат 13% и 15% (по Коду 01 с лимитом, по Коду 02 без ограничений)
-			const refund13 = Math.round((code01Eligible * 0.13 + code02Rub * 0.13) * 100) / 100;
-			const refund15 = Math.round((code01Eligible * 0.15 + code02Rub * 0.15) * 100) / 100;
+			// Расчетный возврат 13% и 15% в целых копейках (по Коду 01 с лимитом, по Коду 02 без ограничений)
+			const refund13EstimateKopecks = Math.round(code01EligibleKopecks * 0.13) + Math.round(data.code02Kop * 0.13);
+			const refund15EstimateKopecks = Math.round(code01EligibleKopecks * 0.15) + Math.round(data.code02Kop * 0.15);
+			const refund13EstimateRub = kopecksToRub(refund13EstimateKopecks);
+			const refund15EstimateRub = kopecksToRub(refund15EstimateKopecks);
 
 			return {
 				taxYear,
@@ -389,24 +439,28 @@ export function calculateTaxDeductionSummary(
 				totalRub,
 				totalKopecks,
 				receiptsCount: data.count,
-				code01StatutoryLimitRub: statutoryLimit,
-				code01EligibleRub: code01Eligible,
-				refund13EstimateRub: refund13,
-				refund15EstimateRub: refund15,
+				code01StatutoryLimitRub: statutoryLimitRub,
+				code01StatutoryLimitKopecks: statutoryLimitKopecks,
+				code01EligibleRub: code01EligibleRub,
+				code01EligibleKopecks: code01EligibleKopecks,
+				refund13EstimateRub: refund13EstimateRub,
+				refund13EstimateKopecks: refund13EstimateKopecks,
+				refund15EstimateRub: refund15EstimateRub,
+				refund15EstimateKopecks: refund15EstimateKopecks,
 			};
 		});
 
 	let grandTotalCode01Kopecks = 0;
 	let grandTotalCode02Kopecks = 0;
-	let grandTotalRefund13Rub = 0;
-	let grandTotalRefund15Rub = 0;
+	let grandTotalRefund13Kopecks = 0;
+	let grandTotalRefund15Kopecks = 0;
 	let totalReceiptsCount = 0;
 
 	for (const y of yearsSummary) {
 		grandTotalCode01Kopecks += y.code01Kopecks;
 		grandTotalCode02Kopecks += y.code02Kopecks;
-		grandTotalRefund13Rub += y.refund13EstimateRub;
-		grandTotalRefund15Rub += y.refund15EstimateRub;
+		grandTotalRefund13Kopecks += y.refund13EstimateKopecks;
+		grandTotalRefund15Kopecks += y.refund15EstimateKopecks;
 		totalReceiptsCount += y.receiptsCount;
 	}
 
@@ -420,8 +474,10 @@ export function calculateTaxDeductionSummary(
 		grandTotalCode02Kopecks,
 		grandTotalRub: kopecksToRub(grandTotalKopecks),
 		grandTotalKopecks,
-		grandTotalRefund13Rub: Math.round(grandTotalRefund13Rub * 100) / 100,
-		grandTotalRefund15Rub: Math.round(grandTotalRefund15Rub * 100) / 100,
+		grandTotalRefund13Rub: kopecksToRub(grandTotalRefund13Kopecks),
+		grandTotalRefund13Kopecks,
+		grandTotalRefund15Rub: kopecksToRub(grandTotalRefund15Kopecks),
+		grandTotalRefund15Kopecks,
 		totalReceiptsCount,
 		totalAmountInWordsRu: amountToWordsRu(grandTotalKopecks),
 	};

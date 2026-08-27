@@ -13,6 +13,7 @@
  */
 
 import { generateQrCodeDataUri, generateQrCodeSvg, type QrSvgOptions } from "./qrGenerator.js";
+import { generateFnsFormKnd1151156BarcodeSvg, generateCode128Svg } from "./barcodeGenerator.js";
 import { escapeXml } from "../cda/c14n.js";
 import { rubToKopecks, kopecksToRub } from "./kopecksArithmetic.js";
 import {
@@ -284,7 +285,13 @@ export function renderOfficialTaxCertificateKnd1151156Html(params: TaxDeductionC
 
 	const rel = TAX_DEDUCTION_RELATIONSHIP_MAP[params.payer.relationship];
 	const isSelf = rel.samePatientFlag === "1";
-	const qrSvg = generateTaxCertificateQrSvg(params, { size: 110, margin: 1 });
+	const qrSvg = generateTaxCertificateQrSvg(params, { size: 96, margin: 1 });
+	const barcodeSvg = generateFnsFormKnd1151156BarcodeSvg({
+		certificateNumber: params.certificateNumber,
+		taxYear: params.taxYear,
+		height: 38,
+		width: 175,
+	});
 
 	const yearPayments = params.payments.filter(
 		(p) => new Date(p.dateIso).getFullYear() === params.taxYear
@@ -321,22 +328,63 @@ export function renderOfficialTaxCertificateKnd1151156Html(params: TaxDeductionC
 		.header-container {
 			display: flex;
 			justify-content: space-between;
-			align-items: flex-start;
-			margin-bottom: 8px;
+			align-items: center;
+			margin-bottom: 10px;
+			padding-bottom: 8px;
+			border-bottom: 1.5px solid #000;
+		}
+		.header-qr-block {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 2px;
 		}
 		.qr-box {
-			width: 110px;
-			height: 110px;
+			width: 96px;
+			height: 96px;
+		}
+		.qr-label {
+			font-size: 7pt;
+			font-weight: bold;
+			letter-spacing: 0.5px;
+			color: #1e293b;
+			text-align: center;
+		}
+		.header-barcode-block {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			padding: 0 10px;
+		}
+		.barcode-svg-wrap {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+		.barcode-subtext {
+			font-size: 7.5pt;
+			font-weight: bold;
+			letter-spacing: 0.5px;
+			color: #334155;
+			margin-top: 3px;
+			text-align: center;
 		}
 		.header-right {
 			text-align: right;
-			font-size: 9pt;
-			line-height: 1.2;
+			font-size: 8.5pt;
+			line-height: 1.25;
 		}
 		.knd-badge {
 			font-weight: bold;
 			font-size: 10.5pt;
 			margin-top: 3px;
+			font-family: 'Courier New', Courier, monospace;
+		}
+		.format-badge {
+			font-size: 7.5pt;
+			color: #64748b;
+			margin-top: 2px;
 		}
 		.title {
 			text-align: center;
@@ -453,13 +501,24 @@ export function renderOfficialTaxCertificateKnd1151156Html(params: TaxDeductionC
 </head>
 <body>
 	<div class="header-container">
-		<div class="qr-box">
-			${qrSvg}
+		<div class="header-qr-block">
+			<div class="qr-box" title="Проверка подлинности справки в ФНС России">
+				${qrSvg}
+			</div>
+			<div class="qr-label">ФНС РОССИИ • КНД 1151156</div>
+		</div>
+		<div class="header-barcode-block">
+			<div class="barcode-svg-wrap">
+				${barcodeSvg}
+			</div>
+			<div class="barcode-subtext">ФОРМА ПО КНД 1151156 (ПРИКАЗ ФНС № ЕА-7-11/824@)</div>
 		</div>
 		<div class="header-right">
 			Приложение № 1 к Приказу ФНС России<br>
 			от 08.11.2023 № ЕА-7-11/824@<br>
+			(в ред. 2024 г., Формат 5.01)<br>
 			<div class="knd-badge">Форма по КНД 1151156</div>
+			<div class="format-badge">Формат реестра: КНД 1184043</div>
 		</div>
 	</div>
 

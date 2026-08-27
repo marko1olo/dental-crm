@@ -14,4 +14,6 @@ export * from "./familyFiscalBillingEngine.js";
 export * from "./qrGenerator.js";
 export * from "./taxDeduction.js";
 export * from "./fnsTaxDeductionEngine.js";
+export * from "./barcodeGenerator.js";
+export * from "./familyTaxBatchEngine.js";
 export * from "./idempotency.js";
