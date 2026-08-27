@@ -24,7 +24,6 @@ import { useEffect, useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { getIcdColor, ICD10_DICTIONARY } from "../../lib/icd10";
 import type { DiaryState } from "../useVisitDiaryLogic";
-import { DocumentCustomizerModal } from "../documents/DocumentCustomizerModal";
 import { AppointmentModal } from "../schedule/AppointmentModal";
 import type { Appointment } from "@dental/shared";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -160,7 +159,6 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 		url: string;
 		title?: string;
 	} | null>(null);
-	const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
 	const [isProtocolGeneratorOpen, setIsProtocolGeneratorOpen] = useState(false);
 	const [synthesizedDiaryPreview, setSynthesizedDiaryPreview] = useState<VisitDiaryEntry043 | null>(null);
 
@@ -775,16 +773,6 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 							<Sparkles className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
 							<span>⚡ Протокол 043/у (1 клик)</span>
 						</button>
-						<button
-							type="button"
-							onClick={() => setIsCustomizerOpen(true)}
-							className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl border border-[var(--teal,var(--line))]/30 bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] text-sm font-bold hover:bg-[var(--teal-soft,var(--paper-soft))] transition-colors cursor-pointer"
-							title="Настроить фирменный бланк клиники, цвета, логотип и реквизиты"
-							data-testid="summary-customize-branding-btn"
-						>
-							<Palette className="w-4 h-4" />
-							<span>Настроить бланк</span>
-						</button>
 						{onOpenPrescription ? (
 							<button
 								type="button"
@@ -933,23 +921,6 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 				}}
 				activeVisitLockedAppointmentStatuses={new Set()}
 			/>
-
-			<DocumentCustomizerModal
-				isOpen={isCustomizerOpen}
-				onClose={() => setIsCustomizerOpen(false)}
-				samplePatient={{
-					fullName: patientName !== "—" ? patientName : undefined,
-					birthDate: patientBirth || undefined,
-					medicalCardNumber: patientCard || undefined,
-					passport: patientPassport || undefined,
-					omsPolis: patientOms || undefined,
-					snils: patientSnils || undefined,
-					phone: typeof patient?.phone === "string" ? patient.phone : undefined,
-				}}
-				sampleDoctorName={doctorName !== "—" ? (doctorName ?? undefined) : undefined}
-				sampleDoctorSpecialty={doctorSpecialty ?? undefined}
-			/>
-
 
 			{/* Zoom Lightbox Modal */}
 			{zoomImage && (

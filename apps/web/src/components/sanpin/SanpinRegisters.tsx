@@ -47,13 +47,12 @@ import { TemperatureHumidityRegisterTab } from "./TemperatureHumidityRegisterTab
 import { RetroactiveBatchTab } from "./RetroactiveBatchTab";
 import { RetroactiveSanpinBatchModal } from "./RetroactiveSanpinBatchModal";
 import { SanpinCycleModal } from "./SanpinCycleModal";
-import { SanpinJournalsModal } from "./journals/SanpinJournalsModal";
 import { KraftPackageBarcodeModal } from "./kraft/KraftPackageBarcodeModal";
 import { AutoclaveLog257Modal } from "./autoclaveLog/AutoclaveLog257Modal";
 import {
 	generateSanpinConsolidatedInspectionHtml,
 	exportSanpinConsolidatedArchiveToCsv,
-} from "./journals/sanpinJournalsEngine";
+} from "@dental/shared";
 import "./SanpinRegisters.css";
 
 export type SanpinRegisterTab =
@@ -76,9 +75,7 @@ export function SanpinRegisters() {
 	const [isCycleModalOpen, setIsCycleModalOpen] = useState(false);
 	const [isKraftModalOpen, setIsKraftModalOpen] = useState(false);
 	const [isJournal257ModalOpen, setIsJournal257ModalOpen] = useState(false);
-	const [isSanpinJournalsModalOpen, setIsSanpinJournalsModalOpen] = useState(false);
 	const [isRetroactiveBatchModalOpen, setIsRetroactiveBatchModalOpen] = useState(false);
-	const [sanpinJournalsTab, setSanpinJournalsTab] = useState<"pso" | "bactericidal" | "cleaning" | "disinfectants">("pso");
 	const [isNurseSignModalOpen, setIsNurseSignModalOpen] = useState(false);
 	const [nurseSignName, setNurseSignName] = useState("Медсестра ЦСО");
 	const [nurseSignPin, setNurseSignPin] = useState("");
@@ -222,7 +219,7 @@ export function SanpinRegisters() {
 					sterilizerCode: "АВТОКЛАВ-01",
 					sterilizerBrandModel: "Euronda E9 Next (Класс B)",
 					sterilizerSerialNumber: "SN-EUR-99824",
-					regimeId: "b_134_universal",
+					regimeId: "steam_134_5min",
 					regimeNameRu: "134°C Универсальный (фракционированный вакуум)",
 					targetTemperatureCelsius: 134,
 					targetPressureBar: 2.1,
@@ -364,7 +361,7 @@ export function SanpinRegisters() {
 					sterilizerCode: "АВТОКЛАВ-01",
 					sterilizerBrandModel: "Euronda E9 Next (Класс B)",
 					sterilizerSerialNumber: "SN-EUR-99824",
-					regimeId: "b_134_universal",
+					regimeId: "steam_134_5min",
 					regimeNameRu: "134°C Универсальный (фракционированный вакуум)",
 					targetTemperatureCelsius: 134,
 					targetPressureBar: 2.1,
@@ -463,17 +460,6 @@ export function SanpinRegisters() {
 		document.body.removeChild(link);
 		URL.revokeObjectURL(url);
 		showToast("Сводный архив СанПиН (CSV) успешно экспортирован", "success");
-	};
-
-	const handleOpenSanpinJournals = (tab?: "pso" | "bactericidal" | "cleaning" | "disinfectants") => {
-		if (tab) {
-			setSanpinJournalsTab(tab);
-		} else if (activeTab === "bactericidal" || activeTab === "cleaning" || activeTab === "pso") {
-			setSanpinJournalsTab(activeTab);
-		} else {
-			setSanpinJournalsTab("pso");
-		}
-		setIsSanpinJournalsModalOpen(true);
 	};
 
 	return (
@@ -575,23 +561,6 @@ export function SanpinRegisters() {
 						data-testid="open-journal-257-header-btn"
 					>
 						<FileSpreadsheet size={16} color="var(--brand-primary)" /> Журнал 257/у
-					</button>
-
-					<button
-						type="button"
-						onClick={() => handleOpenSanpinJournals()}
-						className="sanpin-btn sanpin-btn-secondary"
-						style={{
-							minHeight: "44px",
-							padding: "0.5rem 0.9rem",
-							fontSize: "0.875rem",
-							fontWeight: 600,
-							cursor: "pointer",
-						}}
-						title="Журналы СанПиН 3.3686-21 (ПСО Азопирам, Бактерицидные лампы, Генеральные уборки)"
-						data-testid="open-sanpin-journals-modal-btn"
-					>
-						<FileSpreadsheet size={16} color="var(--brand-primary, #2563eb)" /> Журналы СанПиН
 					</button>
 
 					<button
@@ -836,13 +805,6 @@ export function SanpinRegisters() {
 				isOpen={isCycleModalOpen}
 				onClose={() => setIsCycleModalOpen(false)}
 				onSuccess={fetchSummary}
-			/>
-
-			{/* SanPiN Disinfection & Sterilization Journals Studio Modal */}
-			<SanpinJournalsModal
-				isOpen={isSanpinJournalsModalOpen}
-				onClose={() => setIsSanpinJournalsModalOpen(false)}
-				initialTab={sanpinJournalsTab}
 			/>
 
 			{/* Electronic Nurse Signature Shift Stamp Modal */}

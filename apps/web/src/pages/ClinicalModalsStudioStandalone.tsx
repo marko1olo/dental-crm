@@ -86,13 +86,11 @@ import { SberPosTerminalModal } from "../components/payments/sberPos/SberPosTerm
 import { PatientPortalModal } from "../components/portal/PatientPortalModal";
 import { EgiszRemdXmlModal } from "../components/egisz/remdXml/EgiszRemdXmlModal";
 import { LabWorkOrderModal } from "../components/lab/orders/LabWorkOrderModal";
-import { SanpinJournalsModal } from "../components/sanpin/journals/SanpinJournalsModal";
 import { ClinicalWriteoffModal } from "../components/inventory/writeoff/ClinicalWriteoffModal";
 import { DmsInsuranceManagerModal } from "../components/insurance/dmsManager/DmsInsuranceManagerModal";
 import { KraftPackageBarcodeModal } from "../components/sanpin/kraft/KraftPackageBarcodeModal";
 import { ServicePricelistManagerModal } from "../components/catalog/pricelist/ServicePricelistManagerModal";
 import { LoyaltyProgramModal } from "../components/loyalty/program/LoyaltyProgramModal";
-import { MedicalReferral057Modal } from "../components/documents/referral057/MedicalReferral057Modal";
 import { SickLeaveElnModal } from "../components/documents/sickLeave/SickLeaveElnModal";
 import { AutoclaveLog257Modal } from "../components/sanpin/autoclaveLog/AutoclaveLog257Modal";
 import { DoctorShiftRosterModal } from "../components/schedule/roster/DoctorShiftRosterModal";
@@ -344,12 +342,10 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isEgiszRemdOpen, setIsEgiszRemdOpen] = useState(false);
 	const [isLabWorkOrderOpen, setIsLabWorkOrderOpen] = useState(false);
 	const [isClinicalWriteoffOpen, setIsClinicalWriteoffOpen] = useState(false);
-	const [isSanpinJournalsOpen, setIsSanpinJournalsOpen] = useState(false);
 	const [isDmsManagerOpen, setIsDmsManagerOpen] = useState(false);
 	const [isKraftBarcodeOpen, setIsKraftBarcodeOpen] = useState(false);
 	const [isServicePricelistOpen, setIsServicePricelistOpen] = useState(false);
 	const [isLoyaltyProgramOpen, setIsLoyaltyProgramOpen] = useState(false);
-	const [isReferral057Open, setIsReferral057Open] = useState(false);
 	const [isSickLeaveElnOpen, setIsSickLeaveElnOpen] = useState(false);
 	const [isAutoclaveLog257Open, setIsAutoclaveLog257Open] = useState(false);
 	const [isDoctorShiftRosterOpen, setIsDoctorShiftRosterOpen] = useState(false);
@@ -1382,30 +1378,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</button>
 					</div>
 
-					{/* 36. Statutory SanPiN 3.3686-21 Registers Studio Trigger */}
-					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
-						<div className="space-y-2">
-							<div className="flex items-center gap-2 text-[var(--teal)]">
-								<Layers className="w-5 h-5" />
-								<span className="font-bold text-sm text-[var(--ink)]">
-									Журналы СанПиН 3.3686-21 (ПСО / УФ / Уборки)
-								</span>
-							</div>
-							<p className="text-xs text-[var(--muted)] leading-relaxed">
-								Учет качества ПСО (Азопирам, Фенолфталеин ф. 366/у), наработка бактерицидных ламп Дезар, генуборки и дезсредства.
-							</p>
-						</div>
-						<button
-							type="button"
-							onClick={() => setIsSanpinJournalsOpen(true)}
-							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
-							data-testid="open-sanpin-journals-modal-btn"
-						>
-							<Layers size={15} />
-							<span>Открыть журналы СанПиН</span>
-						</button>
-					</div>
-
 					{/* 37. Clinical Material Auto-Writeoff Order 804n Trigger */}
 					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
 						<div className="space-y-2">
@@ -1523,30 +1495,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						>
 							<Award size={15} />
 							<span>Открыть программу лояльности</span>
-						</button>
-					</div>
-
-					{/* 42. Statutory Form 057/u-04 Medical Referral Studio Trigger */}
-					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
-						<div className="space-y-2">
-							<div className="flex items-center gap-2 text-[var(--teal)]">
-								<FileBadge className="w-5 h-5" />
-								<span className="font-bold text-sm text-[var(--ink)]">
-									Направление (Форма № 057/у-04)
-								</span>
-							</div>
-							<p className="text-xs text-[var(--muted)] leading-relaxed">
-								Приказ Минздравсоцразвития № 255: направления в стационар ЧЛХ, на МРТ ВНЧС, КЛКТ 3D, к аллергологу/ЛОРу с печатью А4.
-							</p>
-						</div>
-						<button
-							type="button"
-							onClick={() => setIsReferral057Open(true)}
-							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
-							data-testid="open-referral-057-modal-btn"
-						>
-							<FileBadge size={15} />
-							<span>Открыть форму 057/у-04</span>
 						</button>
 					</div>
 
@@ -1944,13 +1892,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 				/>
 			)}
 
-			{isSanpinJournalsOpen && (
-				<SanpinJournalsModal
-					isOpen={isSanpinJournalsOpen}
-					onClose={() => setIsSanpinJournalsOpen(false)}
-				/>
-			)}
-
 			{isPortalOpen && (
 				<PatientPortalTimelineModal
 					isOpen={isPortalOpen}
@@ -2120,19 +2061,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 					onClose={() => setIsLoyaltyProgramOpen(false)}
 					patientName={SAMPLE_PATIENT.fullName}
 					medicalCardNumber={SAMPLE_PATIENT.cardNumber}
-				/>
-			)}
-
-			{isReferral057Open && (
-				<MedicalReferral057Modal
-					isOpen={isReferral057Open}
-					onClose={() => setIsReferral057Open(false)}
-					patient={{
-						fullName: SAMPLE_PATIENT.fullName,
-						birthDate: SAMPLE_PATIENT.birthDate,
-						phone: SAMPLE_PATIENT.phone,
-						omsPolicyNumber: "7700001234567890",
-					}}
 				/>
 			)}
 

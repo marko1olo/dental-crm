@@ -10,4 +10,5 @@ export * from "./TreatmentPlan3TierComparison";
 export * from "./TreatmentPlanSignatureModal";
 export * from "./TreatmentPlanContractPrint";
 export * from "./TreatmentPlanCompletedActPrint";
+export * from "./TreatmentPlanPhased4StageView";
 export * from "./TreatmentPlanModule";

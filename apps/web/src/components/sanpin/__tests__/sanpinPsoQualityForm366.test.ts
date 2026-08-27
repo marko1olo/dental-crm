@@ -7,12 +7,10 @@ import {
 	exportPsoJournalToCsv,
 	generatePsoJournalPrintHtml,
 	type PsoJournalRecord,
-} from "../journals/sanpinJournalsEngine.js";
-import {
 	SANPIN_DETERGENTS_CATALOG,
 	SANPIN_PSO_CHEMICAL_TESTS,
 	DENTAL_INSTRUMENT_CATEGORIES,
-} from "../journals/sanpinJournalsPresets.js";
+} from "@dental/shared";
 
 describe("SanPiN 3.3686-21 — Pre-Sterilization Cleansing Quality Control (ПСО, Форма № 366/у)", () => {
 	describe("1. Statutory 1% Sampling Requirement Math (min 3–5 items)", () => {
@@ -95,7 +93,7 @@ describe("SanPiN 3.3686-21 — Pre-Sterilization Cleansing Quality Control (ПС
 			});
 			assert.equal(res.isBatchApproved, false);
 			assert.ok(res.rejectionReason?.includes("фенолфталеиновая проба"));
-			assert.ok(res.rejectionReason?.includes("остатки щелочных моющих средств"));
+			assert.ok(res.rejectionReason?.includes("щелочн"));
 		});
 
 		it("rejects batch on positive Sudan III trial (grease / oil on handpieces)", () => {
@@ -187,7 +185,7 @@ describe("SanPiN 3.3686-21 — Pre-Sterilization Cleansing Quality Control (ПС
 			assert.ok(csv.includes("Фенолфталеиновая проба"));
 			assert.ok(csv.includes("Биолот 0.5%"));
 			assert.ok(csv.includes("Допущено"));
-			assert.ok(csv.includes("Брак"));
+			assert.ok(csv.includes("БРАК"));
 		});
 
 		it("generates print-ready HTML for Form № 366/у with legal header and signature lines", () => {

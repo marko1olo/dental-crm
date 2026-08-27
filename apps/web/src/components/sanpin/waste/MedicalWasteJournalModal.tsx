@@ -59,7 +59,7 @@ import {
 	getWasteStorageLocation,
 	SANPIN_DECONTAMINATION_METHODS,
 	SANPIN_MEDICAL_WASTE_CLASSES,
-	SANPIN_PACKAGING_TYPES,
+	SANPIN_WASTE_PACKAGING_TYPES,
 	SANPIN_STORAGE_LOCATIONS,
 	type DecontaminationMethodType,
 	type MedicalWasteClassId,
@@ -426,7 +426,7 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 										onChange={(e) => setSelectedPackaging(e.target.value as MedicalWastePackagingTypeId)}
 										className="w-full h-10 px-3 rounded-lg border border-line bg-paper text-ink text-sm font-medium focus:outline-none focus:ring-2 focus:ring-focus-ring"
 									>
-										{SANPIN_PACKAGING_TYPES.filter((p) => p.wasteClass === selectedClass).map((pkg) => (
+										{SANPIN_WASTE_PACKAGING_TYPES.filter((p) => p.wasteClass === selectedClass).map((pkg) => (
 											<option key={pkg.id} value={pkg.id}>
 												{pkg.nameRu} (тара {pkg.defaultTareWeightKg} кг)
 											</option>

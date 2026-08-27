@@ -25,7 +25,6 @@ import { DocumentUkepSignButton } from "./components/documents/DocumentUkepSignB
 import { appendChipToText } from "./components/documents/documentChipText";
 import { FnsNdflXmlModal } from "./components/documents/ndflXml/FnsNdflXmlModal";
 import { EgiszRemdXmlModal } from "./components/egisz/remdXml/EgiszRemdXmlModal";
-import { MedicalReferral057Modal } from "./components/documents/referral057/MedicalReferral057Modal";
 import { SickLeaveElnModal } from "./components/documents/sickLeave/SickLeaveElnModal";
 import { AutoclaveLog257Modal } from "./components/sanpin/autoclaveLog/AutoclaveLog257Modal";
 import "./components/documents/documentNavigation.css";
@@ -471,7 +470,6 @@ export function DocumentsView(props: DocumentsViewProps) {
 	const documentFormsPatientRef = useRef<string | null>(null);
 	const [isFnsNdflXmlOpen, setIsFnsNdflXmlOpen] = useState(false);
 	const [isEgiszRemdOpen, setIsEgiszRemdOpen] = useState(false);
-	const [isReferral057Open, setIsReferral057Open] = useState(false);
 	const [isSickLeaveElnOpen, setIsSickLeaveElnOpen] = useState(false);
 	const [isAutoclaveLogOpen, setIsAutoclaveLogOpen] = useState(false);
 	const [isPrimaryIntakeOpen, setIsPrimaryIntakeOpen] = useState(false);
@@ -1249,14 +1247,6 @@ export function DocumentsView(props: DocumentsViewProps) {
 			<div className="panel-heading">
 				<h2>Документы и Реестр</h2>
 				<div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-					<button
-						type="button"
-						className="secondary-button"
-						onClick={() => setIsReferral057Open(true)}
-						data-testid="open-referral-057-modal-btn"
-					>
-						Направление (Форма № 057/у-04)
-					</button>
 					<button
 						type="button"
 						className="secondary-button"
@@ -6491,7 +6481,6 @@ export function DocumentsView(props: DocumentsViewProps) {
 				onClose={() => setIsHospitalSanpinOpen(false)}
 				patient={activePatient ?? null}
 				existingDocuments={typedActiveDocuments ?? []}
-				onOpenReferral057={() => setIsReferral057Open(true)}
 				onOpenSickLeaveEln={() => setIsSickLeaveElnOpen(true)}
 				onOpenAutoclaveLog257={() => setIsAutoclaveLogOpen(true)}
 				onOpenEgiszRemd={() => setIsEgiszRemdOpen(true)}
@@ -6527,12 +6516,6 @@ export function DocumentsView(props: DocumentsViewProps) {
 					initialPayload={egiszInitialPayload}
 				/>
 			)}
-
-			<MedicalReferral057Modal
-				isOpen={isReferral057Open}
-				onClose={() => setIsReferral057Open(false)}
-				patient={{ fullName: activePatient?.fullName }}
-			/>
 
 			<SickLeaveElnModal
 				isOpen={isSickLeaveElnOpen}

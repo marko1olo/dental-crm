@@ -34,7 +34,7 @@ import {
 	getWasteStorageLocation,
 	SANPIN_DECONTAMINATION_METHODS,
 	SANPIN_MEDICAL_WASTE_CLASSES,
-	SANPIN_PACKAGING_TYPES,
+	SANPIN_WASTE_PACKAGING_TYPES,
 	SANPIN_STORAGE_LOCATIONS,
 	type MedicalWasteClassId,
 } from "../components/sanpin/waste/medicalWastePresets";

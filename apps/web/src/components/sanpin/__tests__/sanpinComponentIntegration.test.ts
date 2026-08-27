@@ -12,7 +12,7 @@ import {
 	calculateLampOperatingHours,
 	exportBactericidalJournalToCsv,
 	exportGeneralCleaningJournalToCsv,
-} from "../journals/sanpinJournalsEngine.js";
+} from "@dental/shared";
 import {
 	KRAFT_PACKAGE_MATERIALS,
 	KRAFT_PACKAGE_SIZES,

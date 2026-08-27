@@ -204,7 +204,7 @@ export const SANPIN_MEDICAL_WASTE_CLASSES: readonly MedicalWasteClassDefinition[
 /**
  * 2. Классификатор упаковочной тары для медицинских отходов
  */
-export const SANPIN_PACKAGING_TYPES: readonly MedicalWastePackagingDefinition[] = [
+export const SANPIN_WASTE_PACKAGING_TYPES: readonly MedicalWastePackagingDefinition[] = [
 	{
 		id: "white_bag",
 		nameRu: "Пакет полиэтиленовый белый (Класс А)",
@@ -397,8 +397,8 @@ export function getMedicalWasteClass(id: MedicalWasteClassId): MedicalWasteClass
  * Получить определение тары по ID
  */
 export function getMedicalWastePackaging(id: MedicalWastePackagingTypeId): MedicalWastePackagingDefinition {
-	const found = SANPIN_PACKAGING_TYPES.find((p) => p.id === id);
-	return found || SANPIN_PACKAGING_TYPES[2]!; // fallback to yellow_bag
+	const found = SANPIN_WASTE_PACKAGING_TYPES.find((p) => p.id === id);
+	return found || SANPIN_WASTE_PACKAGING_TYPES[2]!; // fallback to yellow_bag
 }
 
 /**

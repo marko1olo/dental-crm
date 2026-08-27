@@ -20,7 +20,6 @@ import {
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
-import { SanpinJournalsModal } from "./journals/SanpinJournalsModal";
 
 export function PsoRegisterTab() {
 	const [logs, setLogs] = useState<PsoCleaningLog[]>([]);
@@ -28,7 +27,6 @@ export function PsoRegisterTab() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [testFilter, setTestFilter] = useState<string>("all");
 	const [isModalOpen, setIsModalOpen] = useState(false);
-	const [isJournalsModalOpen, setIsJournalsModalOpen] = useState(false);
 	const [stampedRows, setStampedRows] = useState<Record<string, boolean>>({});
 
 	// New entry form state
@@ -535,13 +533,6 @@ export function PsoRegisterTab() {
 					</div>
 				</div>
 			)}
-
-			{/* SanPiN Disinfection & Sterilization Journals Studio Modal (PSO Form 366/u) */}
-			<SanpinJournalsModal
-				isOpen={isJournalsModalOpen}
-				onClose={() => setIsJournalsModalOpen(false)}
-				initialTab="pso"
-			/>
 		</div>
 	);
 }

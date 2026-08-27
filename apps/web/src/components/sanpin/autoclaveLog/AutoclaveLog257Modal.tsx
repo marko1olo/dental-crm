@@ -20,9 +20,6 @@ import {
 	X,
 } from "lucide-react";
 import React, { useState } from "react";
-import { AutoclaveAnalyticsTab } from "./AutoclaveAnalyticsTab.js";
-import { AutoclaveBioControlTab } from "./AutoclaveBioControlTab.js";
-import { AutoclaveChamberPointsTab } from "./AutoclaveChamberPointsTab.js";
 import { AutoclaveJournal257Tab } from "./AutoclaveJournal257Tab.js";
 import "./autoclaveLog.css";
 import {
@@ -177,9 +174,7 @@ export function AutoclaveLog257Modal({
 	initialTab = "new_cycle",
 	clinicInfo = DEFAULT_CLINIC_LEGAL_INFO,
 }: AutoclaveLog257ModalProps) {
-	const [activeTab, setActiveTab] = useState<
-		"new_cycle" | "journal_257" | "chamber_points" | "biocontrol" | "analytics"
-	>(initialTab);
+	const [activeTab, setActiveTab] = useState<"new_cycle" | "journal_257">("new_cycle");
 
 	const [records, setRecords] = useState<Form257Record[]>([...INITIAL_FORM257_RECORDS]);
 	const [bioRecords, setBioRecords] = useState<BiologicalControlTestRecord[]>([...INITIAL_BIO_RECORDS]);
@@ -259,33 +254,6 @@ export function AutoclaveLog257Modal({
 						<FileText size={16} />
 						Реестр Журнала 257/у ({records.length})
 					</button>
-
-					<button
-						type="button"
-						className={`autoclave-log-tab-btn ${activeTab === "chamber_points" ? "active" : ""}`}
-						onClick={() => setActiveTab("chamber_points")}
-					>
-						<Layers size={16} />
-						Карта 5 контрольных точек
-					</button>
-
-					<button
-						type="button"
-						className={`autoclave-log-tab-btn ${activeTab === "biocontrol" ? "active" : ""}`}
-						onClick={() => setActiveTab("biocontrol")}
-					>
-						<FlaskConical size={16} />
-						Бактериологический контроль ({bioRecords.length})
-					</button>
-
-					<button
-						type="button"
-						className={`autoclave-log-tab-btn ${activeTab === "analytics" ? "active" : ""}`}
-						onClick={() => setActiveTab("analytics")}
-					>
-						<Activity size={16} />
-						Аналитика ЦСО
-					</button>
 				</div>
 
 				{/* Body Content Area */}
@@ -307,18 +275,6 @@ export function AutoclaveLog257Modal({
 							clinicInfo={clinicInfo}
 						/>
 					)}
-
-					{activeTab === "chamber_points" && <AutoclaveChamberPointsTab />}
-
-					{activeTab === "biocontrol" && (
-						<AutoclaveBioControlTab
-							bioRecords={bioRecords}
-							onAddBioRecord={handleAddBioRecord}
-							defaultResponsibleSpecialist={clinicInfo.headNurse}
-						/>
-					)}
-
-					{activeTab === "analytics" && <AutoclaveAnalyticsTab records={records} bioRecords={bioRecords} />}
 				</div>
 			</div>
 		</div>

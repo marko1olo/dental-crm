@@ -9,14 +9,6 @@
 import assert from "node:assert/strict";
 import test, { describe, it } from "node:test";
 import {
-	AutoclaveAnalyticsTab,
-	AutoclaveBioControlTab,
-	AutoclaveChamberPointsTab,
-	AutoclaveJournal257Tab,
-	AutoclaveLog257Modal,
-	AutoclaveNewCycleTab,
-} from "../components/sanpin/autoclaveLog/index.js";
-import {
 	calculateDigitalStampHash,
 	calculateSterilizerStatistics,
 	checkNextBioControlDeadline,
@@ -500,20 +492,6 @@ describe("SanPiN 3.3686-21 Autoclave & Sterilization Log (Form 257/u) Studio Sui
 			assert.ok(html.includes(DEFAULT_CLINIC_LEGAL_INFO.ogrn));
 			assert.ok(html.includes("СТЕРИЛЬНО"));
 			assert.ok(html.includes("Ответственный за стерилизацию в ЦСО"));
-		});
-	});
-
-	// ─────────────────────────────────────────────────────────────────────────
-	// 8. REACT COMPONENTS INTEGRITY & EXPORTS
-	// ─────────────────────────────────────────────────────────────────────────
-	describe("8. React Components Integrity & Contracts", () => {
-		it("verifies all UI Studio components are valid functions", () => {
-			assert.equal(typeof AutoclaveLog257Modal, "function");
-			assert.equal(typeof AutoclaveNewCycleTab, "function");
-			assert.equal(typeof AutoclaveJournal257Tab, "function");
-			assert.equal(typeof AutoclaveChamberPointsTab, "function");
-			assert.equal(typeof AutoclaveBioControlTab, "function");
-			assert.equal(typeof AutoclaveAnalyticsTab, "function");
 		});
 	});
 });

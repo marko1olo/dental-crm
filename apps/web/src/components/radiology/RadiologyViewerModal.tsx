@@ -78,7 +78,6 @@ export interface RadiologyViewerModalProps {
 	study: RadiologyStudy | null;
 	onSaveStudy?: (updatedStudy: RadiologyStudy) => void;
 	onOpenReferralModal?: (study: RadiologyStudy) => void;
-	onOpenDoseSheetModal?: (study: RadiologyStudy) => void;
 }
 
 export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
@@ -87,7 +86,6 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 	study,
 	onSaveStudy,
 	onOpenReferralModal,
-	onOpenDoseSheetModal,
 }) => {
 	const modalId = useId();
 	const viewportRef = useRef<HTMLDivElement>(null);
@@ -624,18 +622,6 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						>
 							<Box className="w-4 h-4" />
 							<span>Имплант-студия</span>
-						</button>
-					)}
-
-					{onOpenDoseSheetModal && study && (
-						<button
-							type="button"
-							onClick={() => onOpenDoseSheetModal(study)}
-							className="hidden md:flex items-center gap-2 min-h-[44px] px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 hover:border-[var(--teal-soft)] text-slate-200 hover:text-[var(--teal)] text-xs font-bold transition-all"
-							title="Лист учета дозовых нагрузок (СанПиН)"
-						>
-							<Activity className="w-4 h-4 text-[var(--teal)]" />
-							<span>Лист доз</span>
 						</button>
 					)}
 

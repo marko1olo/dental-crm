@@ -25,7 +25,6 @@ import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalSt
 import { SanpinCycleModal } from "./SanpinCycleModal";
 import { KraftPackageBarcodeModal } from "./kraft/KraftPackageBarcodeModal";
 import { SeniorNurseKraftUnsealModal } from "./kraft/SeniorNurseKraftUnsealModal";
-import { SterilizationKraftLogbookModal } from "./kraft/SterilizationKraftLogbookModal";
 import { AutoclaveLog257Modal } from "./autoclaveLog/AutoclaveLog257Modal";
 import { MedicalWasteJournalModal } from "./waste/MedicalWasteJournalModal";
 import { generateThermalStickerHtml, type KraftPackageRecord } from "./kraft/kraftPackageEngine";
@@ -37,7 +36,6 @@ export function AutoclaveRegisterTab() {
 	const [deviceFilter, setDeviceFilter] = useState<string>("all");
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [isKraftModalOpen, setIsKraftModalOpen] = useState(false);
-	const [isKraftLogbookOpen, setIsKraftLogbookOpen] = useState(false);
 	const [isSeniorNurseUnsealOpen, setIsSeniorNurseUnsealOpen] = useState(false);
 	const [isJournal257ModalOpen, setIsJournal257ModalOpen] = useState(false);
 	const [isWasteJournalOpen, setIsWasteJournalOpen] = useState(false);
@@ -216,17 +214,6 @@ export function AutoclaveRegisterTab() {
 				</div>
 
 				<div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
-					<button
-						type="button"
-						onClick={() => setIsKraftLogbookOpen(true)}
-						className="sanpin-btn sanpin-btn-primary"
-						style={{ minHeight: "44px", padding: "0.5rem 1.1rem", fontSize: "0.95rem", fontWeight: 800, background: "#0d9488" }}
-						title="Журнал стерилизации и крафт-пакетов (СанПиН 3.3686-21, индикаторы класс 4/5/6, термопечать 58x40)"
-						data-testid="open-kraft-logbook-modal-btn"
-					>
-						<FileBadge size={18} /> 🏷️ Журнал крафт-пакетов (СанПиН)
-					</button>
-
 					<button
 						type="button"
 						onClick={() => setIsSeniorNurseUnsealOpen(true)}
@@ -473,12 +460,6 @@ export function AutoclaveRegisterTab() {
 			<SeniorNurseKraftUnsealModal
 				isOpen={isSeniorNurseUnsealOpen}
 				onClose={() => setIsSeniorNurseUnsealOpen(false)}
-			/>
-
-			{/* Sterilization Kraft Logbook Modal (SanPiN 3.3686-21) */}
-			<SterilizationKraftLogbookModal
-				isOpen={isKraftLogbookOpen}
-				onClose={() => setIsKraftLogbookOpen(false)}
 			/>
 
 			{/* Form 257/u Studio Modal: 5 Chamber Points, BioControl, Analytics */}

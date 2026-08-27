@@ -229,6 +229,7 @@ export function getPrimaryToothResorptionVisual(
  * Standard Default Cariogram Initial Values
  */
 export const DEFAULT_CARIOGRAM_INPUT: CariogramInput = {
+	cariesRiskLevel: "low",
 	dietContents: 1,
 	dietFrequency: 1,
 	plaqueAmount: 1,
@@ -240,6 +241,8 @@ export const DEFAULT_CARIOGRAM_INPUT: CariogramInput = {
 	systemicDiseases: 0,
 	clinicalJudgment: 1,
 };
+
+export type CariogramRiskLevel = "low" | "moderate" | "high";
 
 export interface CariogramPieSlice {
 	readonly id: keyof CariogramSectorBreakdown;

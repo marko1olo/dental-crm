@@ -10,6 +10,5 @@ export * from "./kraftBagSanpinMath";
 export * from "./chemicalIntegratorsCatalog";
 export * from "./KraftPackageBarcodeModal";
 export * from "./SeniorNurseKraftUnsealModal";
-export * from "./SterilizationKraftLogbookModal";
 export * from "./seniorNurseKraftAudio";
 export { KraftPackageBarcodeModal as default } from "./KraftPackageBarcodeModal";

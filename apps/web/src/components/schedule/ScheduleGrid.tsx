@@ -1,4 +1,11 @@
-import type { Appointment, Dashboard, DentalSpecialty } from "@dental/shared";
+import {
+	type Appointment,
+	type Dashboard,
+	type DentalSpecialty,
+	calculateEmergencyReserveSlots,
+	type DoctorShiftSchedule,
+	type EmergencyReserveSlot,
+} from "@dental/shared";
 import {
 	AlertTriangle,
 	CalendarCheck,
@@ -94,6 +101,44 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 			return localDate === dateKey;
 		});
 	}, [appointments, dateKey, toDateTimeLocalValue, timezone]);
+
+	// Calculate dedicated 30-min emergency reserve buffers per doctor shift
+	const emergencyReserveSlots = useMemo(() => {
+		const staff = dashboard?.clinicSettings?.staff ?? [];
+		const doctors = staff.filter((s) => s.role === "doctor" || !s.role);
+		const targetDocs = selectedDoctorId ? doctors.filter((d) => d.id === selectedDoctorId) : doctors;
+
+		const slots: EmergencyReserveSlot[] = [];
+		for (const doc of targetDocs) {
+			const shift: DoctorShiftSchedule = {
+				id: `shift-${doc.id}-${dateKey}`,
+				clinicId: dashboard?.clinicSettings?.profile?.organizationId || "clinic-1",
+				doctorId: doc.id,
+				doctorFullName: doc.fullName,
+				shiftDate: dateKey,
+				startTime: `${dateKey}T08:00:00.000Z`,
+				endTime: `${dateKey}T20:00:00.000Z`,
+				isEmergencyReserveEnabled: true,
+				emergencyReserveMinutes: 30,
+			};
+			const res = calculateEmergencyReserveSlots(
+				shift,
+				dayAppointments.map((a) => ({
+					id: a.id,
+					clinicId: dashboard?.clinicSettings?.profile?.organizationId || "clinic-1",
+					doctorId: a.doctorUserId || "doc-1",
+					cabinetId: a.chairId || "chair-1",
+					patientId: a.patientId || "pat-1",
+					startTime: a.startsAt,
+					endTime: a.endsAt,
+					status: a.status === "cancelled" ? "cancelled" : "scheduled",
+					isEmergency: Boolean((a as any)?.isCito || (a as any)?.isEmergency),
+				})),
+			);
+			slots.push(...res);
+		}
+		return slots;
+	}, [dashboard?.clinicSettings?.staff, dashboard?.clinicSettings?.profile, selectedDoctorId, dateKey, dayAppointments]);
 
 	// Calculate cross-chair and intra-chair collisions on the active date
 	const collisionMap = useMemo(() => {
@@ -737,24 +782,58 @@ export function ScheduleGrid(props: ScheduleGridProps) {
 											}
 										}}
 									>
-										<button
-											type="button"
-											onClick={() =>
-												onSlotClick({
-													dateKey,
-													startTime: hour,
-													chairId: chair.id !== "default-chair" ? chair.id : null,
-													doctorUserId: selectedDoctorId || null,
-													durationMinutes: 30,
-												})
+										{(() => {
+											const isEmergencyBuffer = emergencyReserveSlots.some((r) => {
+												const rHour = toDateTimeLocalValue(r.startTime, timezone).slice(11, 13);
+												return rHour === hour.slice(0, 2);
+											});
+
+											if (isEmergencyBuffer) {
+												return (
+													<button
+														type="button"
+														onClick={() =>
+															onSlotClick({
+																dateKey,
+																startTime: hour,
+																chairId: chair.id !== "default-chair" ? chair.id : null,
+																doctorUserId: selectedDoctorId || null,
+																durationMinutes: 30,
+																reason: "Острая боль (CITO Резерв)",
+															})
+														}
+														className="w-full h-full min-h-[48px] rounded-xl border border-dashed border-amber-400/80 dark:border-amber-600 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-amber-500 focus:outline-none shadow-xs"
+														title={`Экстренный резерв (CITO): ${hour} (${chair.name}). Буфер 30 мин для пациентов с острой болью`}
+														aria-label={`Экстренный резерв на ${hour}, кресло ${chair.name}. Буфер 30 минут по острой боли`}
+														data-testid="schedule-emergency-buffer-slot"
+													>
+														<Zap size={14} className="text-amber-600 dark:text-amber-400 animate-pulse shrink-0" />
+														<span className="text-xs">⚡ Резерв: Острая боль ({hour})</span>
+													</button>
+												);
 											}
-											className="w-full h-full min-h-[48px] rounded-xl border border-dashed border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
-											title={`Записать на ${hour} (${chair.name})`}
-											aria-label={`Свободно на ${hour}, кресло ${chair.name}. Нажмите для быстрой записи`}
-										>
-											<Plus size={14} className="text-[var(--teal)] opacity-60 group-hover:opacity-100" />
-											<span className="text-xs">+ Записать на {hour}</span>
-										</button>
+
+											return (
+												<button
+													type="button"
+													onClick={() =>
+														onSlotClick({
+															dateKey,
+															startTime: hour,
+															chairId: chair.id !== "default-chair" ? chair.id : null,
+															doctorUserId: selectedDoctorId || null,
+															durationMinutes: 30,
+														})
+													}
+													className="w-full h-full min-h-[48px] rounded-xl border border-dashed border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
+													title={`Записать на ${hour} (${chair.name})`}
+													aria-label={`Свободно на ${hour}, кресло ${chair.name}. Нажмите для быстрой записи`}
+												>
+													<Plus size={14} className="text-[var(--teal)] opacity-60 group-hover:opacity-100" />
+													<span className="text-xs">+ Записать на {hour}</span>
+												</button>
+											);
+										})()}
 									</div>
 								);
 							})}

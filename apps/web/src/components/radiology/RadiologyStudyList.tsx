@@ -35,7 +35,6 @@ export interface RadiologyStudyListProps {
 	studies: RadiologyStudy[];
 	onSelectStudy: (study: RadiologyStudy) => void;
 	onOpenReferralModal?: (study?: RadiologyStudy) => void;
-	onOpenDoseSheetModal?: (study?: RadiologyStudy) => void;
 	onDeleteStudy?: (studyId: string) => void;
 	activeStudyId?: string | null;
 	className?: string;
@@ -45,7 +44,6 @@ export const RadiologyStudyList: React.FC<RadiologyStudyListProps> = ({
 	studies,
 	onSelectStudy,
 	onOpenReferralModal,
-	onOpenDoseSheetModal,
 	onDeleteStudy,
 	activeStudyId,
 	className = "",

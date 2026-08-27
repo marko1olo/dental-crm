@@ -45,6 +45,7 @@ import { TreatmentPlanContractPrint } from "./TreatmentPlanContractPrint";
 import { TreatmentPlanCompletedActPrint } from "./TreatmentPlanCompletedActPrint";
 import { TreatmentPlanSignatureModal } from "./TreatmentPlanSignatureModal";
 import { TreatmentPlanStageCard } from "./TreatmentPlanStageCard";
+import { TreatmentPlanPhased4StageView } from "./TreatmentPlanPhased4StageView";
 import { TreatmentPlanComparatorModal } from "./comparator/TreatmentPlanComparatorModal";
 import { StagePaymentPlanModal } from "./stagePayment/StagePaymentPlanModal";
 import { TreatmentPlanPriceValidatorModal } from "./validation/TreatmentPlanPriceValidatorModal";
@@ -79,7 +80,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	className = "",
 }) => {
 	const { dashboard, auth } = useAppLogicContext();
-	const [activeViewTab, setActiveViewTab] = useState<"3tier" | "stages">("3tier");
+	const [activeViewTab, setActiveViewTab] = useState<"3tier" | "stages" | "phased4">("3tier");
 	const [selectedTierId, setSelectedTierId] = useState<TreatmentPlanTierId>("optimum");
 	const [discountPercent, setDiscountPercent] = useState<number>(0);
 	const [bonusPointsToUseRub, setBonusPointsToUseRub] = useState<number>(0);
@@ -403,6 +404,17 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						>
 							Поэтапный план (I, II, III)
 						</button>
+						<button
+							type="button"
+							onClick={() => setActiveViewTab("phased4")}
+							className={`min-h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+								activeViewTab === "phased4"
+									? "bg-[var(--teal,#0d9488)] text-white shadow-xs font-black"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+							}`}
+						>
+							4 Клинических этапа
+						</button>
 					</div>
 
 					{/* 3-Tier Comparator Studio Trigger */}
@@ -590,6 +602,16 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					onOpenComparatorStudio={() => setIsComparatorModalOpen(true)}
 					onOpenStagePaymentStudio={() => setIsStagePaymentModalOpen(true)}
 					onOpenPriceValidatorStudio={() => setIsPriceValidatorModalOpen(true)}
+				/>
+			) : activeViewTab === "phased4" ? (
+				<TreatmentPlanPhased4StageView
+					stages={stages}
+					planTierTitle={currentTier.title}
+					patientName={patientName}
+					onExecuteStage={(cat) => {
+						showToast(`Переход к выполнению этапа «${cat}»`, "info");
+					}}
+					onOpenStagePayment={() => setIsStagePaymentModalOpen(true)}
 				/>
 			) : (
 				<div className="flex flex-col gap-4">

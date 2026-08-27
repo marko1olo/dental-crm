@@ -1,6 +1,4 @@
 export { getTissueNameFromHU } from "./cbctMprMath";
-export * from "./RadiationDoseSheetModal";
-export * from "./doseSheet";
 export * from "./radiologyMath";
 export * from "./RadiologyModule";
 export * from "./RadiologyReferralModal";

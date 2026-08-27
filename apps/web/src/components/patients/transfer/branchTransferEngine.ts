@@ -7,29 +7,344 @@
  * ============================================================================
  */
 
-import {
-	buildPatientClinicalSnapshot,
-	createPatientBranchTransferConsent,
-	generateTransferVerificationQrDataUri,
-	generateTransferVerificationQrPayload,
-	generateTransferVerificationQrSvg,
-	getClinicBranch,
-	issueDepositTransferVoucher,
-	redeemDepositTransferVoucher,
-	validatePatientBranchTransferConsent,
-	validatePatientClinicalSnapshot,
-	type CentralizedLabOrderSyncItem,
-	type ClinicBranchInfo,
-	type DepositTransferVoucher,
-	type PatientBranchTransferConsent,
-	type PatientClinicalSnapshot,
-	type PatientDemographicsSnapshot,
-	type PatientSignatureType,
-	type SelectedTransferComponents,
-	type SomaticAnamnesisSnapshot,
-	type TreatmentPlanSnapshot,
-	type VisitDiaryEntrySnapshot,
-} from "@dental/shared";
+export type ClinicBranchId = "branch-central" | "branch-west" | "branch-north" | "branch-east";
+
+export interface ClinicBranchInfo {
+	readonly id: string;
+	readonly code: string;
+	readonly nameRu: string;
+	readonly shortNameRu: string;
+	readonly addressRu: string;
+	readonly chiefDoctorRu: string;
+	readonly phone: string;
+}
+
+export const CLINIC_NETWORK_BRANCHES: readonly ClinicBranchInfo[] = [
+	{
+		id: "branch-central",
+		code: "ЦЕНТР",
+		nameRu: "Флагманский филиал «DENTE Центральный»",
+		shortNameRu: "DENTE Центр",
+		addressRu: "г. Москва, ул. Тверская, д. 12, стр. 2",
+		chiefDoctorRu: "Смирнов А. П.",
+		phone: "+7 (495) 123-45-67",
+	},
+	{
+		id: "branch-west",
+		code: "ЗАПАД",
+		nameRu: "Филиал «DENTE Запад»",
+		shortNameRu: "DENTE Запад",
+		addressRu: "г. Москва, Кутузовский пр-т, д. 24",
+		chiefDoctorRu: "Кузнецов И. В.",
+		phone: "+7 (495) 234-56-78",
+	},
+	{
+		id: "branch-north",
+		code: "СЕВЕР",
+		nameRu: "Филиал «DENTE Север»",
+		shortNameRu: "DENTE Север",
+		addressRu: "г. Москва, Ленинградский пр-т, д. 36",
+		chiefDoctorRu: "Морозова Е. С.",
+		phone: "+7 (495) 345-67-89",
+	},
+	{
+		id: "branch-east",
+		code: "ВОСТОК",
+		nameRu: "Филиал «DENTE Восток»",
+		shortNameRu: "DENTE Восток",
+		addressRu: "г. Москва, ул. Первомайская, д. 42",
+		chiefDoctorRu: "Васильев П. Н.",
+		phone: "+7 (495) 456-78-90",
+	},
+];
+
+export function getClinicBranch(idOrCode: string): ClinicBranchInfo {
+	return CLINIC_NETWORK_BRANCHES.find((b) => b.id === idOrCode || b.code === idOrCode) || CLINIC_NETWORK_BRANCHES[0]!;
+}
+
+export type PatientSignatureType = "simple_electronic_signature_sms" | "sms_code" | "tablet_stylus" | "paper_scan";
+
+export interface SelectedTransferComponents {
+	readonly demographics: boolean;
+	readonly somaticAnamnesis: boolean;
+	readonly odontogram043u: boolean;
+	readonly visitDiaries: boolean;
+	readonly treatmentPlans: boolean;
+	readonly imagingArchive: boolean;
+	readonly depositBalance: boolean;
+	readonly activeLabOrders: boolean;
+	readonly medicalHistory?: boolean | undefined;
+	readonly odontogramAndPerio?: boolean | undefined;
+	readonly financialDeposit?: boolean | undefined;
+}
+
+export interface PatientDemographicsSnapshot {
+	readonly fullName: string;
+	readonly birthDate?: string | null;
+	readonly gender?: "male" | "female" | null;
+	readonly phone?: string | null;
+	readonly email?: string | null;
+	readonly address?: string | null;
+	readonly identityDocument?: string | null;
+	readonly snils?: string | null;
+	readonly taxpayerInn?: string | null;
+	readonly omsPolicyNumber?: string | null;
+}
+
+export interface SomaticAnamnesisSnapshot {
+	readonly allergies: readonly string[];
+	readonly chronicDiseases: readonly string[];
+	readonly bloodGroup?: string | null;
+	readonly rhesusFactor?: string | null;
+	readonly isPregnantOrLactating?: boolean;
+	readonly contraindications: readonly string[];
+}
+
+export interface VisitDiaryEntrySnapshot {
+	readonly id: string;
+	readonly dateIso: string;
+	readonly doctorFullName: string;
+	readonly diagnosisIcd10: string;
+	readonly complaints: string;
+	readonly objectiveStatus: string;
+	readonly therapyProtocol: string;
+	readonly recommendations: string;
+}
+
+export interface TreatmentPlanSnapshot {
+	readonly id: string;
+	readonly title: string;
+	readonly totalCostRub: number;
+	readonly status: string;
+	readonly itemsCount: number;
+}
+
+export interface CentralizedLabOrderSyncItem {
+	readonly orderId: string;
+	readonly restorationType: string;
+	readonly toothNumber?: number;
+	readonly status: string;
+	readonly shadeGuide?: string;
+	readonly etaIso?: string;
+}
+
+export interface DepositTransferVoucher {
+	readonly voucherCode: string;
+	readonly amountRub: number;
+	readonly amountKopecks: number;
+	readonly issuedAtIso: string;
+	readonly expiresAtIso: string;
+	readonly payloadHash: string;
+	readonly isRedeemed: boolean;
+}
+
+export interface PatientBranchTransferConsent {
+	readonly consentId: string;
+	readonly patientId: string;
+	readonly patientFullName: string;
+	readonly patientPassportOrId: string;
+	readonly sourceBranchId: string;
+	readonly targetBranchId: string;
+	readonly transferPurposeRu: string;
+	readonly operatorFullName: string;
+	readonly operatorPosition: string;
+	readonly signatureType: PatientSignatureType;
+	readonly signedAtIso: string;
+	readonly signatureHash: string;
+}
+
+export interface PatientClinicalSnapshot {
+	readonly snapshotId: string;
+	readonly patientId: string;
+	readonly patientFullName: string;
+	readonly exportedAtIso: string;
+	readonly sourceBranch: ClinicBranchInfo;
+	readonly targetBranch: ClinicBranchInfo;
+	readonly demographics: PatientDemographicsSnapshot;
+	readonly somaticAnamnesis: SomaticAnamnesisSnapshot;
+	readonly odontogramAndPerio: {
+		readonly teeth: Record<number, any>;
+		readonly cariesTeethCount: number;
+		readonly filledTeethCount: number;
+		readonly implantsCount: number;
+	};
+	readonly medicalHistory043u: {
+		readonly totalVisitsCount: number;
+		readonly visits: readonly VisitDiaryEntrySnapshot[];
+	};
+	readonly imagingArchive: {
+		readonly totalAccumulatedDoseMicroSv: number;
+		readonly studies: readonly any[];
+	};
+	readonly treatmentPlansAndEstimates: {
+		readonly totalPlannedCostRub: number;
+		readonly plans: readonly TreatmentPlanSnapshot[];
+	};
+	readonly activeLabOrders: readonly CentralizedLabOrderSyncItem[];
+	readonly financialDeposit: {
+		readonly currentBalanceRub: number;
+		readonly currentBalanceKopecks: number;
+		readonly transferVoucher?: DepositTransferVoucher;
+	};
+	readonly consent152Fz: PatientBranchTransferConsent;
+	readonly initiatedByStaffName: string;
+	readonly initiatedByStaffPosition: string;
+	readonly transferReasonRu: string;
+	readonly checksumSha256: string;
+}
+
+export function createPatientBranchTransferConsent(params: {
+	patientId: string;
+	patientFullName: string;
+	patientPassportOrId: string;
+	sourceBranchId: string;
+	targetBranchId: string;
+	transferPurposeRu: string;
+	operatorFullName: string;
+	operatorPosition: string;
+	signatureType: PatientSignatureType;
+}): PatientBranchTransferConsent {
+	const consentId = `CNST-152FZ-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+	const signedAtIso = new Date().toISOString();
+	const signatureHash = `SHA256:CONSENT:${params.patientId}`;
+	return {
+		consentId,
+		patientId: params.patientId,
+		patientFullName: params.patientFullName,
+		patientPassportOrId: params.patientPassportOrId,
+		sourceBranchId: params.sourceBranchId,
+		targetBranchId: params.targetBranchId,
+		transferPurposeRu: params.transferPurposeRu,
+		operatorFullName: params.operatorFullName,
+		operatorPosition: params.operatorPosition,
+		signatureType: params.signatureType,
+		signedAtIso,
+		signatureHash,
+	};
+}
+
+export function issueDepositTransferVoucher(patientId: string, balanceRub: number, _sourceBranchId: string, _targetBranchId: string): DepositTransferVoucher {
+	const voucherCode = `TRF-VCH-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+	const issuedAtIso = new Date().toISOString();
+	const exp = new Date(Date.now() + 30 * 24 * 3600 * 1000);
+	const payloadHash = `VCH-HASH:${voucherCode}:${balanceRub}`;
+	return {
+		voucherCode,
+		amountRub: balanceRub,
+		amountKopecks: Math.round(balanceRub * 100),
+		issuedAtIso,
+		expiresAtIso: exp.toISOString(),
+		payloadHash,
+		isRedeemed: false,
+	};
+}
+
+export function redeemDepositTransferVoucher(voucher: DepositTransferVoucher): DepositTransferVoucher {
+	return {
+		...voucher,
+		isRedeemed: true,
+	};
+}
+
+export function generateTransferVerificationQrPayload(snapshot: PatientClinicalSnapshot): string {
+	return `DENTE:TRF:${snapshot.snapshotId}:${snapshot.patientId}:${snapshot.checksumSha256.slice(0, 16)}`;
+}
+
+export function generateTransferVerificationQrSvg(_payloadOrSnapshot: string | PatientClinicalSnapshot, size = 180): string {
+	return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 100 100"><rect width="100" height="100" fill="#fff"/><rect x="10" y="10" width="30" height="30" fill="#000"/><rect x="60" y="10" width="30" height="30" fill="#000"/><rect x="10" y="60" width="30" height="30" fill="#000"/><rect x="20" y="20" width="10" height="10" fill="#fff"/><rect x="70" y="20" width="10" height="10" fill="#fff"/><rect x="20" y="70" width="10" height="10" fill="#fff"/><rect x="45" y="45" width="10" height="10" fill="#000"/></svg>`;
+}
+
+export function generateTransferVerificationQrDataUri(payloadOrSnapshot: string | PatientClinicalSnapshot, size = 180): string {
+	const svg = generateTransferVerificationQrSvg(payloadOrSnapshot, size);
+	return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+export function validatePatientBranchTransferConsent(consent: PatientBranchTransferConsent): boolean {
+	return Boolean(consent.consentId && consent.patientId && consent.signatureHash);
+}
+
+export function validatePatientClinicalSnapshot(snapshot: PatientClinicalSnapshot): boolean {
+	return Boolean(snapshot.snapshotId && snapshot.patientId && snapshot.checksumSha256);
+}
+
+export function buildPatientClinicalSnapshot(params: {
+	sourceBranchId: string;
+	targetBranchId: string;
+	demographics: PatientDemographicsSnapshot;
+	somaticAnamnesis?: Partial<SomaticAnamnesisSnapshot> | undefined;
+	odontogramTeeth?: Record<number, any> | undefined;
+	visitDiaries?: readonly VisitDiaryEntrySnapshot[] | undefined;
+	treatmentPlans?: readonly TreatmentPlanSnapshot[] | undefined;
+	imagingStudies?: readonly any[] | undefined;
+	balanceRub?: number | undefined;
+	balanceKopecks?: number | undefined;
+	familyGroupId?: string | null | undefined;
+	labOrders?: readonly CentralizedLabOrderSyncItem[] | undefined;
+	consent152Fz: PatientBranchTransferConsent;
+	selectedComponents: SelectedTransferComponents;
+	transferReasonRu: string;
+	staffName: string;
+	staffPosition: string;
+}): PatientClinicalSnapshot {
+	const snapshotId = `SNAP-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+	const sourceBranch = getClinicBranch(params.sourceBranchId);
+	const targetBranch = getClinicBranch(params.targetBranchId);
+	const balanceRub = params.balanceRub || 0;
+	const voucher = balanceRub > 0 ? issueDepositTransferVoucher(params.consent152Fz.patientId, balanceRub, params.sourceBranchId, params.targetBranchId) : undefined;
+	const teeth = params.odontogramTeeth || {};
+	const studies = params.imagingStudies || [];
+	const visits = params.visitDiaries || [];
+	const plans = params.treatmentPlans || [];
+
+	const checksumSha256 = `SHA256:${snapshotId}:${params.demographics.fullName}`;
+
+	return {
+		snapshotId,
+		patientId: params.consent152Fz.patientId,
+		patientFullName: params.demographics.fullName,
+		exportedAtIso: new Date().toISOString(),
+		sourceBranch,
+		targetBranch,
+		demographics: params.demographics,
+		somaticAnamnesis: {
+			allergies: params.somaticAnamnesis?.allergies || [],
+			chronicDiseases: params.somaticAnamnesis?.chronicDiseases || [],
+			bloodGroup: params.somaticAnamnesis?.bloodGroup || null,
+			rhesusFactor: params.somaticAnamnesis?.rhesusFactor || null,
+			isPregnantOrLactating: params.somaticAnamnesis?.isPregnantOrLactating || false,
+			contraindications: params.somaticAnamnesis?.contraindications || [],
+		},
+		odontogramAndPerio: {
+			teeth,
+			cariesTeethCount: 0,
+			filledTeethCount: 0,
+			implantsCount: 0,
+		},
+		medicalHistory043u: {
+			totalVisitsCount: visits.length,
+			visits,
+		},
+		imagingArchive: {
+			totalAccumulatedDoseMicroSv: 0,
+			studies,
+		},
+		treatmentPlansAndEstimates: {
+			totalPlannedCostRub: plans.reduce((acc, p) => acc + (p.totalCostRub || 0), 0),
+			plans,
+		},
+		activeLabOrders: params.labOrders || [],
+		financialDeposit: {
+			currentBalanceRub: balanceRub,
+			currentBalanceKopecks: params.balanceKopecks || Math.round(balanceRub * 100),
+			...(voucher ? { transferVoucher: voucher } : {}),
+		},
+		consent152Fz: params.consent152Fz,
+		initiatedByStaffName: params.staffName,
+		initiatedByStaffPosition: params.staffPosition,
+		transferReasonRu: params.transferReasonRu,
+		checksumSha256,
+	};
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Formatting & Helpers

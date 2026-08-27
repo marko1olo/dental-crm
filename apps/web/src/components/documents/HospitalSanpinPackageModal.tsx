@@ -22,7 +22,6 @@ export interface HospitalSanpinPackageModalProps {
 	readonly onClose: () => void;
 	readonly patient: Patient | null;
 	readonly existingDocuments: GeneratedDocument[];
-	readonly onOpenReferral057: () => void;
 	readonly onOpenSickLeaveEln: () => void;
 	readonly onOpenAutoclaveLog257: () => void;
 	readonly onOpenEgiszRemd: () => void;
@@ -35,7 +34,6 @@ export function HospitalSanpinPackageModal({
 	onClose,
 	patient,
 	existingDocuments,
-	onOpenReferral057,
 	onOpenSickLeaveEln,
 	onOpenAutoclaveLog257,
 	onOpenEgiszRemd,
@@ -54,57 +52,37 @@ export function HospitalSanpinPackageModal({
 			className="document-package-modal-overlay"
 			role="dialog"
 			aria-modal="true"
-			aria-labelledby="hospital-sanpin-modal-title"
+			aria-labelledby="hospital-package-title"
 			onClick={(e) => {
 				if (e.target === e.currentTarget) onClose();
 			}}
 		>
-			<div className="document-package-modal-content">
+			<div className="document-package-modal-card">
 				<div className="document-package-modal-header">
-					<h3 className="document-package-modal-title" id="hospital-sanpin-modal-title">
-						<span>🏥</span>
-						<span>Госпитализация, СанПиН и Экспертиза</span>
-					</h3>
+					<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+						<Building size={24} color="var(--brand-700, #0d9488)" aria-hidden="true" />
+						<div>
+							<h3 id="hospital-package-title" style={{ margin: 0 }}>
+								Пакет «Стационар, СанПиН и Гос. Реестры»
+							</h3>
+							<span style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
+								{patient ? `Пациент: ${patient.fullName}` : "Гос. реестры, СанПиН и взаимодействие со стационарами"}
+							</span>
+						</div>
+					</div>
 					<button
 						type="button"
-						className="secondary-button"
+						className="document-package-close-btn"
 						onClick={onClose}
 						aria-label="Закрыть модальное окно"
 					>
-						<X size={18} aria-hidden="true" />
+						<X size={20} aria-hidden="true" />
 					</button>
 				</div>
 
 				<div className="document-package-modal-body">
-					<div className="document-package-checklist">
-						{/* 1. НАПРАВЛЕНИЕ 057/У-04 */}
-						<div className="document-package-item-card">
-							<div className="document-package-item-info">
-								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-									<HeartPulse size={18} color="var(--brand-700, #0d9488)" aria-hidden="true" />
-									<span className="document-package-item-title">
-										Направление на госпитализацию / обследование (Форма № 057/у-04)
-									</span>
-								</div>
-								<span className="document-package-item-sub">
-									<strong>Приказ Минздравсоцразвития РФ от 22.11.2004 № 255</strong> — Официальное направление в стационар, ЧЛХ, онкодиспансер или консультативно-диагностический центр.
-								</span>
-							</div>
-							<div className="document-package-item-actions">
-								<button
-									type="button"
-									className="primary-button"
-									onClick={() => {
-										onClose();
-										onOpenReferral057();
-									}}
-								>
-									Открыть форму 057/у-04
-								</button>
-							</div>
-						</div>
-
-						{/* 2. БОЛЬНИЧНЫЙ ЛИСТ ЭЛН 1089н */}
+					<div className="document-package-items-list">
+						{/* 1. БОЛЬНИЧНЫЙ ЛИСТ ЭЛН 1089н */}
 						<div className="document-package-item-card">
 							<div className="document-package-item-info">
 								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>

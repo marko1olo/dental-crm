@@ -40,6 +40,7 @@ import {
 	buildWhatsAppLink,
 } from "../portal/patientCabinet/patientCareInstructionsEngine";
 import { generateQrCodeSvg } from "../portal/patientCabinet/patientCabinetEngine";
+import { OneCExportButton } from "./OneCExportButton";
 
 export interface PatientBillingModalProps {
 	readonly isOpen: boolean;
@@ -744,6 +745,46 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							<Printer className="w-4 h-4" />
 							<span>Печать (А4)</span>
 						</button>
+						<OneCExportButton
+							actNumber={summary.actNumber}
+							documentDate={new Date().toISOString().slice(0, 10)}
+							docType="act"
+							patientName={actParams.patient.fullName}
+							patientId={patient?.id || "pat-1"}
+							patientPhone={patient?.phone || ""}
+							patientAddress={patient?.address || ""}
+							doctorName={actParams.doctor.fullName}
+							clinicName={actParams.clinic.legalName}
+							clinicInn={actParams.clinic.inn}
+							clinicKpp={actParams.clinic.kpp || ""}
+							items={summary.items.map((it) => {
+								const itemObj: {
+									id: string;
+									code804n: string;
+									name: string;
+									quantity: number;
+									priceRub: number;
+									toothNumber?: number;
+									discountRub?: number;
+								} = {
+									id: it.id,
+									code804n: it.code804n || "A16.07.002",
+									name: it.name,
+									quantity: it.quantity,
+									priceRub: it.priceRub,
+								};
+								if (it.toothNumber) {
+									itemObj.toothNumber = Number(it.toothNumber);
+								}
+								if (it.discountRub !== undefined) {
+									itemObj.discountRub = it.discountRub;
+								}
+								return itemObj;
+							})}
+							totalRub={summary.totalNetRub}
+							contractNumber={actParams.contractNumber}
+							contractDate={actParams.contractDateIso?.split("T")[0] || new Date().toISOString().split("T")[0]}
+						/>
 						<button
 							type="button"
 							onClick={onClose}

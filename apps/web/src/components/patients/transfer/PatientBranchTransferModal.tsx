@@ -38,8 +38,6 @@ import {
 	type PatientDemographicsSnapshot,
 	type PatientSignatureType,
 	type SelectedTransferComponents,
-} from "@dental/shared";
-import {
 	executePatientBranchTransfer,
 	formatDateRu,
 	formatDateTimeRu,

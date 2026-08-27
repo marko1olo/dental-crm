@@ -19,7 +19,7 @@ import {
 	getWasteStorageLocation,
 	SANPIN_DECONTAMINATION_METHODS,
 	SANPIN_MEDICAL_WASTE_CLASSES,
-	SANPIN_PACKAGING_TYPES,
+	SANPIN_WASTE_PACKAGING_TYPES,
 	SANPIN_STORAGE_LOCATIONS,
 } from "../components/sanpin/waste/medicalWastePresets.js";
 import { MedicalWasteJournalModal } from "../components/sanpin/waste/MedicalWasteJournalModal.js";
@@ -51,7 +51,7 @@ test("Medical Waste Presets: statutory SanPiN 2.1.3684-21 waste classes integrit
 });
 
 test("Medical Waste Packaging: puncture-proof flags, colors, and tare weights", () => {
-	assert.ok(SANPIN_PACKAGING_TYPES.length >= 6);
+	assert.ok(SANPIN_WASTE_PACKAGING_TYPES.length >= 6);
 
 	const sharpsBox = getMedicalWastePackaging("yellow_sharps_box_needle_remover");
 	assert.equal(sharpsBox.wasteClass, "class_B");

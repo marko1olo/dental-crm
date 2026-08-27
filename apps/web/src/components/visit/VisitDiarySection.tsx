@@ -20,7 +20,6 @@ import {
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { DocumentCustomizerModal } from "../documents/DocumentCustomizerModal";
 import { PremiumDocumentPrintSheet } from "../documents/PremiumDocumentPrintSheet";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
