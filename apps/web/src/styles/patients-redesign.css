@@ -324,14 +324,20 @@
 .patient-core-form-grid,
 .patient-admin-form-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-	gap: 0.85rem;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 10px 14px;
+}
+
+.patient-core-form-grid .form-span-2,
+.patient-admin-form-grid .form-span-2 {
+	grid-column: 1 / -1;
 }
 
 @media (max-width: 768px) {
 	.patient-core-form-grid,
 	.patient-admin-form-grid {
 		grid-template-columns: 1fr !important;
+		gap: 8px;
 	}
 	.patient-core-form-grid .form-span-2,
 	.patient-admin-form-grid .form-span-2 {
@@ -353,7 +359,7 @@
 .patient-core-form-grid select,
 .patient-admin-form-grid input,
 .patient-admin-form-grid select {
-	min-height: 34px;
+	min-height: 36px;
 	padding: 6px 10px;
 	border-radius: 8px;
 	border: 1px solid var(--line-strong);
@@ -374,16 +380,19 @@
 }
 
 /* Collapsible Details Block */
-.patient-docs-collapsible {
+.patient-docs-collapsible,
+.patient-secondary-accordion {
 	border: 1px solid var(--line);
 	border-radius: 12px;
 	background: var(--paper-soft);
 	overflow: hidden;
+	transition: all 0.2s ease;
 }
 
-.patient-docs-collapsible summary {
-	padding: 8px 12px;
-	min-height: 38px;
+.patient-docs-collapsible summary,
+.patient-secondary-accordion summary {
+	padding: 10px 14px;
+	min-height: 40px;
 	background: var(--paper-soft);
 	color: var(--ink);
 	cursor: pointer;
@@ -392,12 +401,23 @@
 	justify-content: space-between;
 	font-weight: 700;
 	font-size: 13px;
+	user-select: none;
 }
 
-.patient-docs-collapsible .settings-advanced-form {
-	padding: 16px;
+.patient-docs-collapsible summary:hover,
+.patient-secondary-accordion summary:hover {
+	background: var(--paper-strong);
+	color: var(--teal);
+}
+
+.patient-docs-collapsible .settings-advanced-form,
+.patient-secondary-accordion .patient-secondary-accordion__body {
+	padding: 14px;
 	background: var(--paper);
 	border-top: 1px solid var(--line);
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
 }
 
 /* Quick Chips */

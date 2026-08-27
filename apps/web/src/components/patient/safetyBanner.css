@@ -179,10 +179,10 @@
 	align-items: center;
 	justify-content: center;
 	gap: 6px;
-	min-height: 44px;
-	min-width: 44px;
-	padding: 0 14px;
-	border-radius: 12px;
+	min-height: 34px;
+	min-width: 34px;
+	padding: 0 12px;
+	border-radius: 10px;
 	font-size: 12px;
 	font-weight: 700;
 	cursor: pointer;
@@ -190,6 +190,14 @@
 	border: 1px solid transparent;
 	text-decoration: none;
 	box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+	.safety-btn {
+		min-height: 44px;
+		min-width: 44px;
+		padding: 0 14px;
+	}
 }
 
 .safety-btn--primary-red {
@@ -208,7 +216,8 @@
 	border-color: var(--line, #e2e8f0);
 }
 [data-theme="dark"] .safety-btn--outline,
-[data-theme="night"] .safety-btn--outline {
+[data-theme="night"] .safety-btn--outline,
+[data-theme="cyber_xray"] .safety-btn--outline {
 	background: var(--paper-soft, #1e293b);
 	color: #f1f5f9;
 	border-color: #475569;
@@ -234,16 +243,17 @@
 
 .patient-safety-banner__drawer {
 	border-top: 1px solid rgba(239, 68, 68, 0.25);
-	padding: 16px;
+	padding: 14px;
 	display: flex;
 	flex-direction: column;
-	gap: 14px;
-	background: rgba(255, 255, 255, 0.6);
+	gap: 12px;
+	background: var(--paper-soft, rgba(248, 250, 252, 0.8));
 }
 
 [data-theme="dark"] .patient-safety-banner__drawer,
-[data-theme="night"] .patient-safety-banner__drawer {
-	background: rgba(15, 23, 42, 0.6);
+[data-theme="night"] .patient-safety-banner__drawer,
+[data-theme="cyber_xray"] .patient-safety-banner__drawer {
+	background: rgba(15, 23, 42, 0.85);
 	border-top-color: rgba(239, 68, 68, 0.35);
 }
 
@@ -262,8 +272,9 @@
 }
 
 [data-theme="dark"] .safety-flag-card,
-[data-theme="night"] .safety-flag-card {
-	background: rgba(30, 41, 59, 0.9);
+[data-theme="night"] .safety-flag-card,
+[data-theme="cyber_xray"] .safety-flag-card {
+	background: var(--paper, #1e293b);
 	border-color: #334155;
 }
 
@@ -357,14 +368,50 @@
 	color: #38bdf8;
 }
 
-.safety-flag-card__list {
-	margin: 0;
-	padding-left: 18px;
-	color: var(--muted, #475569);
+.safety-flag-card__anesthesia-badge {
+	margin-top: 6px;
+	padding: 8px 12px;
+	border-radius: 8px;
+	font-size: 11.5px;
+	font-weight: 600;
+	background: var(--good-bg, rgba(16, 185, 129, 0.12));
+	color: var(--good-fg, #047857);
+	border: 1px solid var(--good-border, rgba(16, 185, 129, 0.3));
+	display: flex;
+	align-items: center;
+	gap: 6px;
 }
 
-[data-theme="dark"] .safety-flag-card__list {
-	color: #94a3b8;
+[data-theme="dark"] .safety-flag-card__anesthesia-badge,
+[data-theme="night"] .safety-flag-card__anesthesia-badge,
+[data-theme="cyber_xray"] .safety-flag-card__anesthesia-badge {
+	background: rgba(6, 78, 59, 0.4);
+	border-color: rgba(52, 211, 153, 0.35);
+	color: #6ee7b7;
+}
+
+.safety-beacon-ping {
+	width: 8px;
+	height: 8px;
+	border-radius: 9999px;
+	background-color: #ef4444;
+	display: inline-block;
+	animation: safety-beacon-pulse 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes safety-beacon-pulse {
+	0% {
+		transform: scale(0.95);
+		box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+	}
+	70% {
+		transform: scale(1);
+		box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+	}
+	100% {
+		transform: scale(0.95);
+		box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+	}
 }
 
 /* =========================================================================

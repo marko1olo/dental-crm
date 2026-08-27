@@ -511,13 +511,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 					</div>
 
 					{/* Core Info Form */}
-					<div
-						className="clinic-profile-form-grid patient-core-form-grid"
-						style={{
-							gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-						}}
-					>
-						<label className="form-span-2">
+					<div className="clinic-profile-form-grid patient-core-form-grid">
+						<label>
 							ФИО пациента
 							<input
 								autoComplete="name"
@@ -584,9 +579,9 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							>
 								<span
 									style={{
-										fontSize: "13px",
-										fontWeight: 600,
-										color: "var(--ink)",
+										fontSize: "12px",
+										fontWeight: 700,
+										color: "var(--muted)",
 									}}
 								>
 									Заметки и особенности
@@ -608,16 +603,17 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									updatePatientCoreDraft("notes", event.target.value)
 								}
 								placeholder="Особые пожелания, аллергии, примечания"
-								rows={3}
+								rows={2}
 								style={{
 									width: "100%",
 									padding: "8px 12px",
 									borderRadius: "8px",
 									border: "1px solid var(--line)",
-									fontSize: "14px",
+									fontSize: "13px",
 									resize: "vertical",
 									background: "var(--paper)",
 									color: "var(--ink)",
+									boxSizing: "border-box",
 								}}
 							/>
 							<div
@@ -668,7 +664,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 					<div
 						className="patient-admin-actions"
 						style={{
-							marginTop: "16px",
+							marginTop: "12px",
 							display: "flex",
 							flexWrap: "wrap",
 							gap: "8px",
@@ -683,8 +679,9 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							aria-busy={patientCoreSaveState === "saving" || undefined}
 							aria-describedby={patientCoreSaveGuidance ? patientCoreSaveGuidanceId : undefined}
 							disabled={!patientCoreReadyToSave}
+							style={{ minHeight: "36px" }}
 						>
-							<UserCheck aria-hidden="true" /> Сохранить данные
+							<UserCheck size={16} aria-hidden="true" /> Сохранить данные
 						</button>
 						<button
 							type="button"
@@ -696,11 +693,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								display: "inline-flex",
 								alignItems: "center",
 								gap: "6px",
-								minHeight: "44px",
+								minHeight: "36px",
 							}}
 						>
 							<Gift size={16} aria-hidden="true" />
-							<span>Программа лояльности и бонусы (54-ФЗ)</span>
+							<span>Программа лояльности (54-ФЗ)</span>
 						</button>
 						<button
 							type="button"
@@ -712,7 +709,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								display: "inline-flex",
 								alignItems: "center",
 								gap: "6px",
-								minHeight: "44px",
+								minHeight: "36px",
 							}}
 						>
 							<ArrowRightLeft size={16} aria-hidden="true" />
@@ -733,7 +730,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 					{/* PROMINENT OVERVIEW TAB: FAMILY, LOYALTY, RECLAMATIONS, ORTHODONTIC, TIMELINE, ARCHIVE */}
 					{selectedPatient ? (
 						<div
-							style={{ marginTop: "24px" }}
+							style={{ marginTop: "16px" }}
 							data-testid="patient-overview-tab"
 						>
 							<PatientOverviewTab />
@@ -742,7 +739,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 
 					{/* Clinical Tools: Odontogram & 2D X-Ray Analyzer */}
 					{selectedPatient ? (
-						<div style={{ marginTop: "24px", marginBottom: "16px" }}>
+						<div style={{ marginTop: "16px", marginBottom: "12px" }}>
 							<OdontogramModule patientId={selectedPatient.id} />
 						</div>
 					) : null}
@@ -752,7 +749,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 					{/* Administrative / Passport Documents Collapsible */}
 					<details
 						className="settings-advanced-block patient-docs-collapsible"
-						style={{ marginTop: "24px" }}
+						style={{ marginTop: "16px" }}
 					>
 						<summary className="settings-advanced-toggle">
 							<span className="settings-advanced-label">
@@ -818,7 +815,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							<div
 								className="patient-admin-actions"
 								style={{
-									marginTop: "16px",
+									marginTop: "12px",
 									display: "flex",
 									justifyContent: "flex-start",
 								}}
@@ -830,8 +827,9 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									aria-busy={patientAdministrativeProfileSaveState === "saving" || undefined}
 									aria-describedby={patientAdministrativeSaveGuidance ? patientAdministrativeSaveGuidanceId : undefined}
 									disabled={!patientAdministrativeProfileReadyToSave}
+									style={{ minHeight: "36px" }}
 								>
-									<ShieldCheck aria-hidden="true" /> Сохранить реквизиты
+									<ShieldCheck size={16} aria-hidden="true" /> Сохранить реквизиты
 								</button>
 							</div>
 							{patientAdministrativeSaveGuidance ? (

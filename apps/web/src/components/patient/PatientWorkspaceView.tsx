@@ -27,13 +27,13 @@ const TreatmentPlanCardItem: React.FC<{
 	const statusColorClass = useMemo(() => {
 		switch (item.status) {
 			case "completed":
-				return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30";
+				return "bg-[var(--good-bg,rgba(16,185,129,0.12))] text-[var(--good-fg,#047857)] border border-[var(--good-border,rgba(16,185,129,0.3))]";
 			case "in_progress":
-				return "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/30";
+				return "bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/30";
 			case "cancelled":
-				return "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30";
+				return "bg-[var(--bad-bg,rgba(239,68,68,0.12))] text-[var(--bad-fg,#b91c1c)] border border-[var(--bad-border,rgba(239,68,68,0.3))]";
 			default:
-				return "bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30";
+				return "bg-[var(--warn-bg,rgba(245,158,11,0.12))] text-[var(--warn-fg,#b45309)] border border-[var(--warn-border,rgba(245,158,11,0.3))]";
 		}
 	}, [item.status]);
 
@@ -51,16 +51,16 @@ const TreatmentPlanCardItem: React.FC<{
 	}, [item.status]);
 
 	return (
-		<div className="p-4 rounded-xl flex flex-col gap-2 bg-[var(--paper-soft)] border border-[var(--line)] transition-colors shadow-sm">
+		<div className="p-3 rounded-lg flex flex-col gap-1.5 bg-[var(--paper-soft)] border border-[var(--line)] transition-colors shadow-xs">
 			<div className="flex items-center justify-between gap-2 flex-wrap">
-				<div className="flex items-center gap-2">
-					<Stethoscope className="w-4 h-4 text-[var(--teal)] shrink-0" />
-					<span className="font-bold text-sm text-[var(--ink)]">
+				<div className="flex items-center gap-1.5 min-w-0">
+					<Stethoscope className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+					<span className="font-bold text-xs text-[var(--ink)] truncate">
 						{item.snapshotServiceName || "Услуга плана лечения"}
 					</span>
 				</div>
 				<span
-					className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${statusColorClass}`}
+					className={`text-[11px] px-2 py-0.5 rounded-md font-bold shrink-0 ${statusColorClass}`}
 				>
 					{statusLabel}
 				</span>
@@ -70,15 +70,15 @@ const TreatmentPlanCardItem: React.FC<{
 					Зуб / область: <strong className="text-[var(--ink)]">{item.toothCode}</strong>
 				</div>
 			) : null}
-			<div className="flex items-center justify-between mt-1 pt-2 border-t border-[var(--line)] text-sm">
-				<span className="text-[var(--ink)] font-bold font-mono text-sm">
+			<div className="flex items-center justify-between mt-0.5 pt-1.5 border-t border-[var(--line)] text-xs">
+				<span className="text-[var(--ink)] font-bold font-mono text-xs">
 					{item.unitPriceRub !== undefined && item.unitPriceRub !== null ? money(item.unitPriceRub) : "—"}
 				</span>
 				{onOpenPlan ? (
 					<button
 						type="button"
 						onClick={() => onOpenPlan(item.id)}
-						className="min-h-[44px] px-2 text-[var(--teal)] hover:underline font-bold bg-transparent border-0 cursor-pointer text-xs inline-flex items-center"
+						className="min-h-[32px] px-1.5 text-[var(--teal)] hover:underline font-bold bg-transparent border-0 cursor-pointer text-xs inline-flex items-center"
 					>
 						Открыть план &rarr;
 					</button>
@@ -125,13 +125,13 @@ const VisitHistoryCardItem: React.FC<{
 	}, [appointment.status]);
 
 	return (
-		<div className="p-4 rounded-xl flex flex-col gap-2 bg-[var(--paper-soft)] border border-[var(--line)] transition-colors shadow-sm">
+		<div className="p-3 rounded-lg flex flex-col gap-1.5 bg-[var(--paper-soft)] border border-[var(--line)] transition-colors shadow-xs">
 			<div className="flex items-center justify-between gap-2 flex-wrap">
-				<div className="flex items-center gap-1.5 text-sm font-bold text-[var(--ink)]">
-					<Calendar className="w-4 h-4 text-[var(--teal)] shrink-0" />
+				<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink)]">
+					<Calendar className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
 					<span>{formattedDate}</span>
 				</div>
-				<span className="text-xs px-2.5 py-0.5 rounded-full bg-[var(--paper)] text-[var(--ink)] font-bold border border-[var(--line-strong)]">
+				<span className="text-[11px] px-2 py-0.5 rounded-md bg-[var(--paper)] text-[var(--ink)] font-bold border border-[var(--line-strong)] shrink-0">
 					{statusLabel}
 				</span>
 			</div>
@@ -144,11 +144,11 @@ const VisitHistoryCardItem: React.FC<{
 				</div>
 			) : null}
 			{onOpenVisit ? (
-				<div className="mt-1 flex justify-end">
+				<div className="mt-0.5 flex justify-end">
 					<button
 						type="button"
 						onClick={() => onOpenVisit(appointment.id)}
-						className="min-h-[44px] px-2 text-[var(--teal)] hover:underline font-bold bg-transparent border-0 cursor-pointer text-xs inline-flex items-center"
+						className="min-h-[32px] px-1.5 text-[var(--teal)] hover:underline font-bold bg-transparent border-0 cursor-pointer text-xs inline-flex items-center"
 					>
 						К визиту &rarr;
 					</button>
@@ -252,7 +252,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 			return (
 				<div
 					data-testid="patient-workspace-view"
-					className="patient-workspace-view flex flex-col gap-4 rounded-2xl bg-[var(--paper)] p-4 md:p-6 text-[var(--ink)] border border-[var(--line)] shadow-sm"
+					className="patient-workspace-view flex flex-col gap-3 rounded-xl bg-[var(--paper)] p-3 md:p-4 text-[var(--ink)] border border-[var(--line)] shadow-xs"
 				>
 					{/* Clinical Safety & Allergy Red-Flag Emergency Banner */}
 					<PatientAllergySafetyBanner
@@ -264,83 +264,83 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 					{/* Patient Duplicate Alert Guard */}
 					<PatientDuplicateAlert patientId={patientId} />
 
-					<div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] pb-4">
-						<div className="flex items-center gap-2">
-							<span className="text-base md:text-lg font-black text-[var(--ink)]">
+					<div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-[var(--line)] pb-3">
+						<div className="flex items-center gap-2 min-w-0">
+							<span className="text-sm md:text-base font-black text-[var(--ink)] truncate">
 								{patientName || "Карточка пациента"}
 							</span>
-							<span className="text-xs font-mono font-bold text-[var(--muted)] bg-[var(--paper-soft)] px-2.5 py-1 rounded-lg border border-[var(--line)]">
+							<span className="text-xs font-mono font-bold text-[var(--muted)] bg-[var(--paper-soft)] px-2 py-0.5 rounded-md border border-[var(--line)] shrink-0">
 								{patientId ? `043/у-${patientId.slice(0, 8)}` : "—"}
 							</span>
 						</div>
 
-						<div className="flex items-center gap-2 flex-wrap">
+						<div className="flex items-center gap-1.5 flex-wrap">
 							<button
 								type="button"
-								className="min-h-[44px] px-3.5 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer border border-[var(--line-strong)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)]"
+								className="min-h-[34px] px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer border border-[var(--line-strong)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] inline-flex items-center"
 								onClick={() => setIsLoyaltyModalOpen(true)}
 								title="Программа лояльности и бонусы (54-ФЗ)"
 								aria-label="Программа лояльности и бонусы (54-ФЗ)"
 								data-testid="open-loyalty-program-modal-btn"
 							>
-								<Gift className="w-4 h-4 inline mr-1.5 text-amber-500" />
-								Лояльность (54-ФЗ)
+								<Gift className="w-3.5 h-3.5 mr-1 text-amber-500 shrink-0" />
+								<span>Лояльность (54-ФЗ)</span>
 							</button>
 							<button
 								type="button"
-								className="min-h-[44px] px-3.5 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer border border-[var(--line-strong)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)]"
+								className="min-h-[34px] px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer border border-[var(--line-strong)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] inline-flex items-center"
 								onClick={() => setIsDmsManagerOpen(true)}
 								title="Управление полисами ДМС и гарантийными письмами (СОГАЗ, Ингосстрах, РЕСО)"
 								aria-label="Управление полисами ДМС и гарантийными письмами (СОГАЗ, Ингосстрах, РЕСО)"
 								data-testid="patient-dms-manager-btn"
 							>
-								<Shield className="w-4 h-4 inline mr-1.5 text-[var(--teal,var(--brand-primary))]" />
-								Управление ДМС
+								<Shield className="w-3.5 h-3.5 mr-1 text-[var(--teal,var(--brand-primary))] shrink-0" />
+								<span>Управление ДМС</span>
 							</button>
 							<button
 								type="button"
-								className="min-h-[44px] px-3.5 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer border border-[var(--line-strong)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)]"
+								className="min-h-[34px] px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer border border-[var(--line-strong)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] inline-flex items-center"
 								onClick={() => setIsDmsRegistryOpen(true)}
 								title="Экспорт реестра услуг ДМС"
 							>
-								<FileSpreadsheet className="w-4 h-4 inline mr-1.5 text-emerald-500" />
-								Реестр ДМС
+								<FileSpreadsheet className="w-3.5 h-3.5 mr-1 text-emerald-500 shrink-0" />
+								<span>Реестр ДМС</span>
 							</button>
-							<div className="flex items-center gap-1 bg-[var(--paper-soft)] p-1 rounded-xl border border-[var(--line)] flex-wrap">
+							<div className="flex items-center gap-0.5 bg-[var(--paper-soft)] p-0.5 rounded-lg border border-[var(--line)] flex-wrap">
 								<button
 									type="button"
-									className={`min-h-[44px] px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
+									className={`min-h-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
 										activeTab === "timeline"
-											? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-sm"
+											? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-xs"
 											: "bg-transparent text-[var(--muted)] border-transparent hover:text-[var(--ink)]"
 									}`}
 									onClick={() => setActiveTab("timeline")}
 								>
-									<Clock className="w-3.5 h-3.5 inline mr-1.5" />
+									<Clock className="w-3 h-3 inline mr-1" />
 									Лента
 								</button>
 								<button
 									type="button"
-									className={`min-h-[44px] px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
+									className={`min-h-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
 										activeTab === "plans"
-											? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-sm"
+											? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-xs"
 											: "bg-transparent text-[var(--muted)] border-transparent hover:text-[var(--ink)]"
 									}`}
 									onClick={() => setActiveTab("plans")}
 								>
-									<FileText className="w-3.5 h-3.5 inline mr-1.5" />
+									<FileText className="w-3 h-3 inline mr-1" />
 									Планы лечения ({patientPlanItems.length})
 								</button>
 								<button
 									type="button"
-									className={`min-h-[44px] px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
+									className={`min-h-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
 										activeTab === "visits"
-											? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-sm"
+											? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-xs"
 											: "bg-transparent text-[var(--muted)] border-transparent hover:text-[var(--ink)]"
 									}`}
 									onClick={() => setActiveTab("visits")}
 								>
-									<Calendar className="w-3.5 h-3.5 inline mr-1.5" />
+									<Calendar className="w-3 h-3 inline mr-1" />
 									Визиты ({patientAppointments.length})
 								</button>
 							</div>
@@ -355,18 +355,18 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 					)}
 
 					{activeTab === "plans" && (
-						<div className="flex flex-col gap-3">
+						<div className="flex flex-col gap-2.5">
 							<div className="flex items-center justify-between">
-								<h4 className="text-sm font-bold text-[var(--ink,#1e293b)] dark:text-white m-0">
+								<h4 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] m-0">
 									Позиции плана лечения ({patientPlanItems.length})
 								</h4>
 							</div>
 							{patientPlanItems.length === 0 ? (
-								<div className="p-8 text-center text-xs text-[var(--muted,#64748b)] dark:text-slate-400 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/60 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800">
+								<div className="p-6 text-center text-xs text-[var(--muted)] bg-[var(--paper-soft)] rounded-xl border border-[var(--line)]">
 									Планы лечения для пациента пока не составлены.
 								</div>
 							) : (
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
 									{patientPlanItems.map((item) => (
 										<TreatmentPlanCardItem
 											key={item.id}
@@ -380,18 +380,18 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 					)}
 
 					{activeTab === "visits" && (
-						<div className="flex flex-col gap-3">
+						<div className="flex flex-col gap-2.5">
 							<div className="flex items-center justify-between">
-								<h4 className="text-sm font-bold text-[var(--ink,#1e293b)] dark:text-white m-0">
+								<h4 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] m-0">
 									История визитов и записей ({patientAppointments.length})
 								</h4>
 							</div>
 							{patientAppointments.length === 0 ? (
-								<div className="p-8 text-center text-xs text-[var(--muted,#64748b)] dark:text-slate-400 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/60 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800">
+								<div className="p-6 text-center text-xs text-[var(--muted)] bg-[var(--paper-soft)] rounded-xl border border-[var(--line)]">
 									История приёмов пациента пуста.
 								</div>
 							) : (
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
 									{patientAppointments.map((appt) => (
 										<VisitHistoryCardItem
 											key={appt.id}

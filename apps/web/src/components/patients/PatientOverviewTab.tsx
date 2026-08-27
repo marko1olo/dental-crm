@@ -211,22 +211,6 @@ export function PatientOverviewTab() {
 						<PatientNoShowRisk patientId={selectedPatientId} />
 					)}
 
-					{selectedPatientId && workspaceFlags.hasOrthodontics && (
-						<OrthodonticProgressWidget patientId={selectedPatientId} />
-					)}
-
-					{selectedPatientId && (
-						<LabOrdersPanel patientId={selectedPatientId} />
-					)}
-
-					{selectedPatientId && workspaceFlags.hasReclamations && (
-						<PatientReclamationsWidget patientId={selectedPatientId} />
-					)}
-
-					{selectedPatientId && workspaceFlags.hasTasks && (
-						<PatientTaskTicketsWidget patientId={selectedPatientId} />
-					)}
-
 					{selectedPatientId && (
 						<PatientWhatsappSendPanel
 							patientId={selectedPatientId}
@@ -235,21 +219,72 @@ export function PatientOverviewTab() {
 						/>
 					)}
 
-					{selectedPatientId && (
-						<PatientCommunicationConsentsPanel
-							patientId={selectedPatientId}
-						/>
+					{/* 1-Click Accordion: Orthodontics & Lab Orders */}
+					{selectedPatientId && (workspaceFlags.hasOrthodontics || true) && (
+						<details className="patient-secondary-accordion">
+							<summary>
+								<span className="flex items-center gap-2">
+									<span>🦷</span>
+									<span>Ортодонтия и наряды ЗТЛ</span>
+								</span>
+								<span className="text-xs text-[var(--muted)] font-normal">
+									Развернуть &darr;
+								</span>
+							</summary>
+							<div className="patient-secondary-accordion__body">
+								{workspaceFlags.hasOrthodontics && (
+									<OrthodonticProgressWidget patientId={selectedPatientId} />
+								)}
+								<LabOrdersPanel patientId={selectedPatientId} />
+							</div>
+						</details>
 					)}
 
+					{/* 1-Click Accordion: Tasks, Reclamations & Consents */}
 					{selectedPatientId && (
-						<PatientCommunicationTimelineWidget patientId={selectedPatientId} />
+						<details className="patient-secondary-accordion">
+							<summary>
+								<span className="flex items-center gap-2">
+									<span>📋</span>
+									<span>Задачи, рекламации и согласия</span>
+								</span>
+								<span className="text-xs text-[var(--muted)] font-normal">
+									Развернуть &darr;
+								</span>
+							</summary>
+							<div className="patient-secondary-accordion__body">
+								{workspaceFlags.hasReclamations && (
+									<PatientReclamationsWidget patientId={selectedPatientId} />
+								)}
+								{workspaceFlags.hasTasks && (
+									<PatientTaskTicketsWidget patientId={selectedPatientId} />
+								)}
+								<PatientCommunicationConsentsPanel
+									patientId={selectedPatientId}
+								/>
+							</div>
+						</details>
 					)}
 
+					{/* 1-Click Accordion: Timeline & CRM Archive */}
 					{selectedPatientId && (
-						<PatientArchiveAndBlacklistWidget patientId={selectedPatientId} />
+						<details className="patient-secondary-accordion">
+							<summary>
+								<span className="flex items-center gap-2">
+									<span>⏳</span>
+									<span>История коммуникаций и CRM</span>
+								</span>
+								<span className="text-xs text-[var(--muted)] font-normal">
+									Развернуть &darr;
+								</span>
+							</summary>
+							<div className="patient-secondary-accordion__body">
+								<PatientCommunicationTimelineWidget patientId={selectedPatientId} />
+								<PatientArchiveAndBlacklistWidget patientId={selectedPatientId} />
+								<PatientDuplicateMergeQueuesWidget />
+							</div>
+						</details>
 					)}
-
-					{selectedPatientId && <PatientDuplicateMergeQueuesWidget />}
 				</div>
 			</div>
 		</div>

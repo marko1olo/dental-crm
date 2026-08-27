@@ -130,34 +130,6 @@ export function PatientAdministrativeForm({
 				/>
 			</label>
 			<label>
-				Адрес регистрации
-				<input
-					autoComplete="street-address"
-					value={patientAdministrativeProfileDraft.registrationAddress}
-					onChange={(event: TextFieldChangeEvent) =>
-						updatePatientAdministrativeProfileDraft(
-							"registrationAddress",
-							event.target.value,
-						)
-					}
-					placeholder="Индекс, город, улица, дом"
-				/>
-			</label>
-			<label>
-				Адрес проживания
-				<input
-					autoComplete="street-address"
-					value={patientAdministrativeProfileDraft.residentialAddress}
-					onChange={(event: TextFieldChangeEvent) =>
-						updatePatientAdministrativeProfileDraft(
-							"residentialAddress",
-							event.target.value,
-						)
-					}
-					placeholder="Если отличается"
-				/>
-			</label>
-			<label>
 				Полис ДМС / ОМС
 				<input
 					autoComplete="off"
@@ -185,6 +157,34 @@ export function PatientAdministrativeForm({
 						)
 					}
 					placeholder="000-000-000 00"
+				/>
+			</label>
+			<label>
+				Адрес регистрации
+				<input
+					autoComplete="street-address"
+					value={patientAdministrativeProfileDraft.registrationAddress}
+					onChange={(event: TextFieldChangeEvent) =>
+						updatePatientAdministrativeProfileDraft(
+							"registrationAddress",
+							event.target.value,
+						)
+					}
+					placeholder="Индекс, город, улица, дом"
+				/>
+			</label>
+			<label>
+				Адрес проживания
+				<input
+					autoComplete="street-address"
+					value={patientAdministrativeProfileDraft.residentialAddress}
+					onChange={(event: TextFieldChangeEvent) =>
+						updatePatientAdministrativeProfileDraft(
+							"residentialAddress",
+							event.target.value,
+						)
+					}
+					placeholder="Если отличается"
 				/>
 			</label>
 			<label>

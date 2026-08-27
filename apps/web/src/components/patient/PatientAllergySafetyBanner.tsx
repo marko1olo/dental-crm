@@ -132,7 +132,7 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 									<h2 className="patient-safety-banner__title">
 										{evaluation.hasCriticalStopFlags ? (
 											<span className="inline-flex items-center gap-1.5 font-black uppercase text-xs tracking-wider">
-												<span className="w-2 h-2 rounded-full bg-red-600 animate-ping inline-block" />
+												<span className="safety-beacon-ping" aria-hidden="true" />
 												КРИТИЧЕСКИЕ СТОП-ФАКТОРЫ ПАЦИЕНТА:
 											</span>
 										) : evaluation.hasHighRiskFlags ? (
@@ -280,7 +280,7 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 
 											{/* Рекомендации по анестезии */}
 											{flag.recommendedAnesthesiaNotes && (
-												<div className="safety-flag-card__section text-xs font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 p-2 rounded-lg border border-emerald-200 dark:border-emerald-800/40">
+												<div className="safety-flag-card__anesthesia-badge">
 													💉 Обезболивание: {flag.recommendedAnesthesiaNotes}
 												</div>
 											)}
