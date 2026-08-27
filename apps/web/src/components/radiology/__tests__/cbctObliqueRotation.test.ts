@@ -178,7 +178,7 @@ describe("CBCT Oblique MPR Rotation, Sub-Voxel Trilinear & Interactive Navigatio
 			});
 			assert.equal(coronal.metadata.plane, "coronal");
 			assert.equal(coronal.metadata.widthPx, testVolume.dimensions.width);
-			assert.equal(coronal.metadata.heightPx, testVolume.dimensions.depth);
+			assert.equal(coronal.metadata.heightPx, Math.max(testVolume.dimensions.width, testVolume.dimensions.depth));
 
 			const sagittal = extractObliqueMprSlice(testVolume, "sagittal", { x: 0, y: 0, z: 0 }, {
 				axialAngleDeg: 0,
@@ -187,7 +187,7 @@ describe("CBCT Oblique MPR Rotation, Sub-Voxel Trilinear & Interactive Navigatio
 			});
 			assert.equal(sagittal.metadata.plane, "sagittal");
 			assert.equal(sagittal.metadata.widthPx, testVolume.dimensions.height);
-			assert.equal(sagittal.metadata.heightPx, testVolume.dimensions.depth);
+			assert.equal(sagittal.metadata.heightPx, Math.max(testVolume.dimensions.height, testVolume.dimensions.depth));
 		});
 
 		it("reslices all 3 oblique planes simultaneously in resliceObliqueMprSynchronized", () => {

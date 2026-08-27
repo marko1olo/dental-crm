@@ -2473,8 +2473,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							: "bg-[#14171e] text-[#94a3b8] border-[#242a35] hover:bg-[#1e2430] hover:text-[#e2e8f0]"
 					}`}
 				>
-					<span className="w-2 h-2 rounded-full bg-emerald-400" />
-					Сагиттальный (X)
+					<span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+					<span className="whitespace-nowrap">• Сагитт. (X)</span>
 				</button>
 				<button
 					type="button"

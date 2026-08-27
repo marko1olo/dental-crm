@@ -20,15 +20,16 @@
 	max-width: 380px;
 }
 
-/* Position toast in top-right when CBCT Studio / 3D viewer is active so it does not occlude the bottom slice toolbar */
+/* Position toast in top-right below the modal header when CBCT Studio / 3D viewer is active so it does not occlude layout and window controls */
 body:has([id^="cbct-mpr-studio-modal"]) .sa-toast,
 body:has([data-testid="cbct-mpr-studio-modal"]) .sa-toast,
 body:has([data-testid="cbct-viewport-container-axial"]) .sa-toast {
-	top: 1rem !important;
-	right: 1rem !important;
+	top: 76px !important;
+	right: 20px !important;
 	bottom: auto !important;
 	left: auto !important;
-	z-index: 10001 !important;
+	z-index: 9999 !important;
+	max-width: 320px !important;
 }
 
 @keyframes sa-slide-up {

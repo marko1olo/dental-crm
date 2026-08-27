@@ -439,14 +439,11 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					showScaleBar: true,
 				});
 
-				const zNorm = volume ? Math.max(0, Math.min(1, 1.0 - (vox.z / Math.max(1, volume.dimensions.depth - 1)))) : 0.5;
-				const zPx = Math.round(zNorm * (h - 1));
-
 				// Draw Oblique Crosshair with Rotation Handles
 				drawObliqueCrosshairWithRotationHandles(ctx, {
 					widthPx: w,
 					heightPx: h,
-					centerPx: { x: vox.x, y: zPx },
+					centerPx: { x: Math.round(w / 2), y: Math.round(h / 2) },
 					plane: "coronal",
 					rotationDeg: obliqueAngles.coronalTiltDeg,
 					activeHandle: activeRotationHandle?.plane === "coronal" ? activeRotationHandle.handle : null,
@@ -506,14 +503,11 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 					showScaleBar: true,
 				});
 
-				const zNorm = volume ? Math.max(0, Math.min(1, 1.0 - (vox.z / Math.max(1, volume.dimensions.depth - 1)))) : 0.5;
-				const zPx = Math.round(zNorm * (h - 1));
-
 				// Draw Oblique Crosshair with Rotation Handles
 				drawObliqueCrosshairWithRotationHandles(ctx, {
 					widthPx: w,
 					heightPx: h,
-					centerPx: { x: vox.y, y: zPx },
+					centerPx: { x: Math.round(w / 2), y: Math.round(h / 2) },
 					plane: "sagittal",
 					rotationDeg: obliqueAngles.sagittalTiltDeg,
 					activeHandle: activeRotationHandle?.plane === "sagittal" ? activeRotationHandle.handle : null,
@@ -1297,8 +1291,8 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 										: "bg-slate-800 text-slate-400 border-slate-700 hover:text-white"
 								}`}
 							>
-								<Eye className="w-3.5 h-3.5" />
-								<span>Сагиттал</span>
+								<Eye className="w-3.5 h-3.5 shrink-0" />
+								<span className="whitespace-nowrap">• Сагитт.</span>
 							</button>
 							<button
 								type="button"

@@ -411,9 +411,9 @@ export function CephalometricAnalysisModal({
 
 						{/* Tab 1: Landmarks List & Placement Guidance (All Landmarks with >= 44x44px Touch Targets) */}
 						{activeTab === "landmarks" && (
-							<div className="flex-1 flex flex-col p-3 sm:p-4 overflow-y-auto">
+							<div className="flex-1 flex flex-col p-3 sm:p-4 overflow-hidden">
 								{/* Progress Bar */}
-								<div className="mb-3.5 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800/80 p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800">
+								<div className="mb-3.5 bg-[var(--surface,#f1f5f9)] dark:bg-slate-800/80 p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 shrink-0">
 									<div className="flex items-center justify-between text-xs sm:text-sm font-bold mb-1.5">
 										<span className="text-[var(--ink,#0f172a)] dark:text-slate-200">
 											Прогресс разметки ТРГ
@@ -434,7 +434,7 @@ export function CephalometricAnalysisModal({
 								</div>
 
 								{/* Landmark Item Cards with Touch Targets >= 44x44px (min-h-[52px]) */}
-								<div className="space-y-2 flex-1 overflow-y-auto pr-1 pb-24">
+								<div className="space-y-2 flex-1 overflow-y-auto pr-1 pb-28">
 									{CEPHALOMETRIC_LANDMARKS.map((lm) => {
 										const isPlaced = isImageLoaded && landmarks[lm.key] !== undefined;
 										const isTarget = isImageLoaded && activeTargetKey === lm.key;
@@ -492,7 +492,7 @@ export function CephalometricAnalysisModal({
 								</div>
 
 								{/* Bottom Action */}
-								<div className="mt-3 pt-3 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">
+								<div className="mt-3 pt-3 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800 shrink-0">
 									<button
 										type="button"
 										disabled={!isImageLoaded || placedPercent === 0}
