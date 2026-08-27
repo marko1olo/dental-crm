@@ -1,30 +1,30 @@
-# Handoff Report: Interactive Schedule Mutation Tools
+# Handoff Report: Agentic Recalls & Staff Task Tools
 
 ## 1. Observation
-- Implemented 3 interactive schedule mutation tools in `apps/api/src/services/agent/tools/clinicalTools.ts`:
-  1. `reschedule_appointment`: Mutates appointment start/end times with conflict checking against existing doctor/chair bookings, appending reschedule reason to audit comments. Category: `"write"` (suspends for human confirmation in supervised mode).
-  2. `cancel_appointment`: Sets appointment status to `"cancelled"`, records the cancellation reason in notes. Category: `"write"` (suspends for human confirmation in supervised mode).
-  3. `get_doctor_schedule`: Queries doctor appointments within any ISO 8601 date range, calculates booked minutes per slot, total booked duration, and remaining free capacity. Category: `"read"`.
-- Registered all 11 tools into `registerClinicalTools`.
-- Updated unit test suite in `apps/api/src/services/agent/agent.test.ts` to test all 3 new tools with conflict, cancellation, and capacity scenarios.
+- Implemented 3 new clinical tools in `apps/api/src/services/agent/tools/clinicalTools.ts`:
+  1. `create_staff_task`: Creates an internal clinic task for admin/nurse/doctor (`communicationTasks`) attached to a patient with priority, assignedRole, and due date. Category: `"write"` (suspends for confirmation in supervised mode).
+  2. `get_patient_recalls`: Retrieves active recall tasks for a patient and calculates medical recall intervals (hygiene 6m, implant review 6m) based on completed visits and `@dental/shared` domain logic. Category: `"read"`.
+  3. `schedule_recall`: Creates a preventive recall reminder in `communicationTasks` with intent `"recall"`, supporting multiple channels (`whatsapp`, `sms`, `phone`, `telegram`, `email`). Category: `"write"` (suspends for confirmation in supervised mode).
+- Total tools registered in `ToolRegistry` via `registerClinicalTools`: 14 tools.
+- Fixed TS2538 indexing in `clinicalTools.ts` and `exactOptionalPropertyTypes` across `@dental/api`.
 
 ## 2. Logic Chain
-- All database operations strictly filter by `organizationId = ctx.organizationId`.
+- All database queries strictly filter by `organizationId = ctx.organizationId`.
 - RBAC permissions:
-  * `reschedule_appointment`: `["schedule.write"]`
-  * `cancel_appointment`: `["schedule.write"]`
-  * `get_doctor_schedule`: `["schedule.read"]`
-- Guardrail checks automatically categorize `reschedule_appointment` and `cancel_appointment` as mutating write actions, requiring approval when `ctx.mode === 'supervised'`.
+  * `create_staff_task`: `["clinical.write", "tasks.write"]`
+  * `get_patient_recalls`: `["clinical.read", "communications.read"]`
+  * `schedule_recall`: `["clinical.write", "communications.write"]`
+- In supervised mode, `create_staff_task` and `schedule_recall` yield `confirmation_required` events to enforce human-in-the-loop safety before executing write mutations.
 
 ## 3. Caveats & Assumptions
-- Overlap detection excludes the appointment being rescheduled and any previously cancelled appointments (`status != 'cancelled'`).
-- Capacity calculations compute minutes between `dateFrom` and `dateTo`.
+- Medical recall intervals use `RECALL_INTERVAL_MONTHS` from `@dental/shared` and calculate normalized due months via `calculateNextRecallDueMonth`.
+- Default channels and roles: channel default is `"whatsapp"`, role default is `"admin"`.
 
 ## 4. Conclusion
-- All 11 clinical and schedule tools are fully implemented, typed, tested, and passing all compiler gates.
+- All 14 agent tools are fully implemented, typed, tested, and passing all compiler gates.
 
 ## 5. Verification Method
-- `npm run check:encoding` -> 4083 files checked, 0 errors.
-- `node --import tsx --test apps/api/src/services/agent/agent.test.ts` -> 24 passed, 0 failed.
+- `npm run check:encoding` -> 4065 files checked, 0 errors.
+- `node --import tsx --test apps/api/src/services/agent/agent.test.ts` -> 27 passed, 0 failed.
 - `npm run typecheck -w @dental/api` -> exit code 0.
 - `npm run typecheck:tests -w @dental/api` -> exit code 0.

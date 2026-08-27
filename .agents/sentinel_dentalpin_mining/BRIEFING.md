@@ -1,7 +1,7 @@
-# BRIEFING — 2026-08-27T03:39:10+04:00
+# BRIEFING — 2026-08-27T11:27:30+04:00
 
 ## Mission
-1C:Enterprise XML Invoice & Payment Export Engine and Printable Treatment Plan Estimate HTML/PDF Renderer in DENTE CRM (@dental/shared).
+Reconnaissance & Porting of Dentalpin's Recalls, Reminders & Staff Tasks into DENTE CRM (@dental/shared).
 
 ## 🔒 My Identity
 - Archetype: sentinel
@@ -16,13 +16,17 @@
 - Do not write code or make technical decisions directly; keep sentinel context ultra-light
 
 ## User Context
-- **Last user request**: Implement Russian statutory 1C:Enterprise (1С:Бухгалтерия 8.3 / УТ) XML invoice/payment export and printable treatment plan estimate generator in `@dental/shared`, unit test suite in `packages/shared/src/tests/oneCEnterpriseExport.test.ts`, and verify with `npm test -w @dental/shared` and `npm run typecheck`.
+- **Last user request**: Reconnaissance and porting of Dentalpin's `recalls`, `recall_reminders`, and `staff_tasks`:
+  1. Recalls & Preventive Checkup Engine (`packages/shared/src/recalls/recallEngine.ts`): hygiene (180d), implant check (90/365d), ortho adjustment (30d), caries control (180d). Functions: `calculateNextRecallDate`, `filterDueRecalls`, `formatRecallMessage`.
+  2. Staff Tasks & Clinic Delegation (`packages/shared/src/tasks/staffTasksEngine.ts`): roles, priority, status, due dates, transitions, overdue checks.
+  3. Unit tests in `packages/shared/src/tests/recallsAndStaffTasksMining.test.ts`.
+  4. Export in `packages/shared/src/index.ts`. Run `npm test -w @dental/shared` and verify 100% pass.
 - **Pending clarifications**: none
 - **Delivered results**:
-  - `packages/shared/src/finance/oneCEnterpriseExport.ts`: Statutory 1C:Enterprise CommerceML 2.09 XML generator with Russian INN/KPP validation, VAT exemption clauses, and kopeck-exact math.
-  - `packages/shared/src/finance/estimateHtmlRenderer.ts`: Printable, responsive HTML/PDF treatment plan estimate renderer with tooth numbers, 804n nomenclature codes, and statutory clinic signatures.
-  - `packages/shared/src/tests/oneCEnterpriseExport.test.ts`: Complete unit test suite (778/778 tests passing in `@dental/shared`).
-  - Monorepo `npm run typecheck` verified with Exit Code 0 across `@dental/shared`, `@dental/api`, `@dental/web`.
+  - `packages/shared/src/recalls/recallEngine.ts` & `packages/shared/src/recalls/index.ts`: Preventive dental checkups cadence calculations, message templating, and status state machine.
+  - `packages/shared/src/tasks/staffTasksEngine.ts` & `packages/shared/src/tasks/index.ts`: Role-based delegation, urgency filtering, overdue checks, and state transitions.
+  - `packages/shared/src/tests/recallsAndStaffTasksMining.test.ts`: Complete unit test suite (765/765 tests passing in `@dental/shared`).
+  - Monorepo `npm run typecheck -w @dental/shared` verified with Exit Code 0.
 
 ## Project Status
 - **Phase**: complete
@@ -35,6 +39,6 @@
 
 ## Artifact Index
 - `C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md` — Authoritative record of user requests
-- `packages/shared/src/finance/oneCEnterpriseExport.ts` — 1C:Enterprise CommerceML 2.09 XML export engine
-- `packages/shared/src/finance/estimateHtmlRenderer.ts` — Printable treatment plan estimate renderer
-- `packages/shared/src/tests/oneCEnterpriseExport.test.ts` — Unit test suite
+- `packages/shared/src/recalls/recallEngine.ts` — Recalls & preventive checkup engine
+- `packages/shared/src/tasks/staffTasksEngine.ts` — Staff tasks & clinic delegation engine
+- `packages/shared/src/tests/recallsAndStaffTasksMining.test.ts` — Unit test suite

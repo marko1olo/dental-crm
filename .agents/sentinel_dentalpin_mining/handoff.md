@@ -1,29 +1,28 @@
-# Handoff Report: 1C:Enterprise XML Export & Printable Estimate Generator
+# Handoff Report: Dentalpin Mining — Recalls, Reminders & Staff Tasks
 
 ## Observation
-- Implemented statutory Russian 1C:Enterprise XML accounting export and printable treatment plan estimate rendering engines in `@dental/shared`:
-  1. `packages/shared/src/finance/oneCEnterpriseExport.ts`:
-     - Generates compliant 1C:Enterprise (1С:Бухгалтерия 8.3 / 1С:УТ / CommerceML 2.09) XML documents for invoices, completed medical acts, and cash operations.
-     - Enforces exact kopeck matching ($\sum \text{Item totals} \equiv \text{Document total}$).
-     - Russian INN/KPP validation (10 digits for company, 12 digits for individual).
-     - Statutory VAT exemption clause («Без НДС (пп. 2 п. 2 ст. 149 НК РФ)»).
-  2. `packages/shared/src/finance/estimateHtmlRenderer.ts`:
-     - Generates clean, responsive, printable HTML/PDF estimate sheets with treatment plan stages, tooth numbers, Nomenclature 804n codes, and clinic/doctor signature sections.
-  3. `packages/shared/src/tests/oneCEnterpriseExport.test.ts`:
-     - Unit tests covering 1C XML structure, tax validation, item parsing, and printable HTML layout.
+- Inspected `backend/app/modules/recalls/service.py`, `backend/app/modules/recall_reminders/handlers.py`, `backend/app/modules/staff_tasks/models.py`, and `service.py` in Dentalpin OSS.
+- Implemented and ported:
+  1. `packages/shared/src/recalls/recallEngine.ts`:
+     - Recall types: `hygiene_recall` (180d), `implant_check` (90d), `ortho_adjustment` (30d), `caries_control` (180d), `perio_maintenance` (90d), `prosthetic_check` (180d).
+     - Automated cadence calculation (`calculateNextRecallDate`), due/overdue filter (`filterDueRecalls`), personalized reminder notification formatter (`formatRecallMessage`), and transition validator (`canTransitionRecallStatus`).
+  2. `packages/shared/src/tasks/staffTasksEngine.ts`:
+     - Staff roles (`doctor`, `administrator`, `assistant`, `nurse`, `coordinator`, `technician`, `management`), urgency priority, status lifecycle (`pending` -> `in_progress` -> `completed` / `cancelled`), overdue detection (`isStaffTaskOverdue`), and operational filtering (`filterStaffTasks`).
+  3. `packages/shared/src/tests/recallsAndStaffTasksMining.test.ts`:
+     - Unit test suite covering all clinical cadences, overdue checks, notification formatting, task delegation, and state transitions.
 
 ## Logic Chain
-- Both modules are fully integrated into `@dental/shared` and exported via `packages/shared/src/finance/index.ts` and `packages/shared/src/index.ts`.
-- Zero-mock exact arithmetic and strict typing (`exactOptionalPropertyTypes`) are adhered to throughout.
+- All contracts adhere strictly to Zod schemas and TypeScript exact optional property rules.
+- Modules exported cleanly via `packages/shared/src/index.ts`.
 
 ## Caveats
-- All monetary values are maintained in kopecks (`priceKopecks`, `totalKopecks`) and converted to rubles with 2 decimal places in XML/HTML output.
+- Recall notifications support clinical personalization (patient first name, clinic name, specific clinical advice per treatment category).
 
 ## Conclusion
-- 1C:Enterprise XML export and printable treatment plan estimate rendering engines are 100% complete and verified.
-- Unit tests: 778/778 passing.
-- Monorepo typecheck: Exit Code 0 across `@dental/shared`, `@dental/api`, `@dental/web`.
+- Recalls, Reminders, and Staff Tasks engines are 100% complete, tested, and verified.
+- Automated tests: 765/765 passing (100%).
+- Typecheck: Exit Code 0 in `@dental/shared`.
 
 ## Verification Method
-- Automated test runner: `npm test -w @dental/shared` $\implies$ 778/778 tests passing.
-- Static typecheck: `npm run typecheck` in workspace root $\implies$ Exit Code 0.
+- Automated test runner: `npm test -w @dental/shared` $\implies$ 765/765 tests passing.
+- TypeScript static check: `npm run typecheck -w @dental/shared` $\implies$ Exit Code 0.
