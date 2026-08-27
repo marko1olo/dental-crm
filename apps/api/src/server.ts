@@ -48,6 +48,7 @@ import { registerFilesRoutes } from "./routes/files.js";
 import { registerFamilyFinanceRoutes } from "./routes/finance_family.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerImagingRoutes } from "./routes/imaging.js";
+import { registerImagingPlanningRoutes } from "./routes/imaging_planning.js";
 import { registerImportRoutes } from "./routes/imports.js";
 import { registerIngestionRoutes } from "./routes/ingestion.js";
 import { registerInsuranceRoutes } from "./routes/insurance.js";
@@ -626,6 +627,7 @@ export async function createDenteApiApp(
 	await registerDashboardRoutes(app);
 	await registerDocumentRoutes(app);
 	await registerImagingRoutes(app);
+	await registerImagingPlanningRoutes(app);
 	await registerIngestionRoutes(app);
 	await registerImportRoutes(app);
 	// Движок переноса чужой базы: стейджинг, карантин, сверка, откат.

@@ -74,3 +74,59 @@ You own the implementation of Recalls & Staff Tasks tools in the AI Copilot Tool
 2. Register the 3 tools in `ToolRegistry`.
 3. Update `apps/api/src/services/agent/agent.test.ts` with test coverage for the new tools.
 4. Run `node --import tsx --test apps/api/src/services/agent/agent.test.ts` and `npm run typecheck -w @dental/api`. Report verified results.
+
+## 2026-08-27T07:38:17Z
+
+[MICROSCOPIC BLOAT EXPEDITION — PHASE 3]
+Working directory: `C:\Clinic_MVP\dental-crm`
+
+Perform a microscopic, file-by-file search for any remaining dead code, academic over-engineering, synthetic toys, or theoretical formulas across:
+1. `apps/web/src/components/odontogram/` (look for unused physics, tooth stress vectors, deciduous/permanent resonance calculations, unreferenced SVG tools).
+2. `apps/web/src/components/visit/` (look for unused diagnostic calculators, 40-step wizard popups, or theoretical scoring).
+3. `apps/web/src/components/clinical/` (look for any leftover academic perio/endo/surgery toys).
+4. `apps/web/src/components/analytics/` and `components/finance/` (look for theoretical econometric forecasting / Monte Carlo simulators).
+5. `apps/web/src/components/radiology/` (look for leftover math, synthetic filters, or unused DICOM shaders).
+6. `apps/api/src/` and `packages/shared/src/`.
+
+Check all files symbol by symbol.
+For every bloat item found, report:
+- Exact file path and line numbers
+- Total line count
+- Why it is useless/academic bloat in a commercial dental clinic
+- Recommended action (delete / simplify to 1-click)
+
+Save findings to `docs/audit/BLOAT_CENSUS_PHASE_3.md` and report back.
+
+## 2026-08-27T07:41:18Z
+
+[EXECUTION DIRECTIVE 1: PRUNE PERIODONTOGRAM SPIDER BLOAT]
+Working directory: `C:\Clinic_MVP\dental-crm`
+
+You own the complete pruning of the Florida 6-point probing & Lang-Tonetti Spider PRA Radar bloat:
+1. Delete:
+   - `apps/web/src/components/odontogram/PeriodontalChartModule.tsx`
+   - `apps/web/src/components/odontogram/periodontalMath.ts`
+   - `apps/web/src/components/odontogram/PerioFullMouthGrid.tsx`
+   - `apps/web/src/components/odontogram/PerioKeypad.tsx`
+   - `apps/web/src/components/odontogram/PerioToothDetailCard.tsx`
+   - `apps/web/src/components/odontogram/perioTypes.ts`
+   - `apps/web/src/components/odontogram/PeriodontalChartModule.css`
+   - `apps/web/src/components/odontogram/perio043Protocol.ts`
+   - `apps/web/src/components/clinical/perio/` (entire directory)
+   - `apps/api/src/routes/perio.ts`
+2. Clean callers in `OdontogramModule.tsx`, `ChairsiderPerspectiveView.tsx`, `VisitView.tsx`, and `apps/api/src/server.ts`.
+   - In `VisitView.tsx` / `OdontogramModule.tsx`: replace complex perio chart modal with 1-click periodontal assessment badge in the tooth context drawer.
+3. Run `npm run typecheck` across all workspaces to guarantee **Exit Code 0**. Report raw verification output.
+
+## 2026-08-27T07:41:24Z
+
+[ADVERSARIAL VERIFICATION & TRG INTEGRITY AUDIT]
+Working directory: `C:\Clinic_MVP\dental-crm`
+
+Your tasks:
+1. Verify TRG Cephalometrics (`apps/web/src/components/orthodontics/CephalometricAnalysisModal.tsx`, `CephalometricCanvas.tsx`, `cephalometricMath.ts`) remains 100% untouched and run `node --import tsx --test apps/web/src/components/orthodontics/__tests__/*.test.ts` (14/14 tests pass).
+2. As soon as Subagents 1 and 2 finish deleting the bloat modules, verify:
+   - `npm run typecheck` across all 3 workspaces passes with **Exit Code 0**.
+   - `npm run check:encoding` passes.
+   - Run shared & api test suites.
+3. Report full audit results.
