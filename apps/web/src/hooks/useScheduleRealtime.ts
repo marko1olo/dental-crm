@@ -27,6 +27,7 @@ export function useScheduleRealtime(
 			import.meta as unknown as { env?: Record<string, string> }
 		).env?.VITE_WS_URL;
 		if (configured) return configured;
+		if (typeof window === "undefined") return "";
 		// Через хост страницы, а не жёстко на :4100: так работает и прокси
 		// разработки, и боевая сборка за одним доменом.
 		const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";

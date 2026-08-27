@@ -221,7 +221,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 			aria-label="Акт выполненных работ и гарантийный талон"
 			data-testid="patient-billing-modal"
 		>
-			<div className="bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] w-full max-w-4xl max-h-[92vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+			<div className="bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] w-full max-w-5xl max-h-[92vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
 				{/* Toast Notification */}
 				{toastMsg && (
 					<div className="bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] px-4 py-2 text-xs font-bold flex items-center justify-between shrink-0">
@@ -232,13 +232,13 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 
 				{/* Top Header */}
 				<div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0 gap-3">
-					<div className="flex items-center gap-3 min-w-0">
+					<div className="flex items-center gap-3 min-w-0 flex-1">
 						<div className="w-9 h-9 rounded-xl bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] flex items-center justify-center border border-[var(--teal,#0d9488)]/25 shrink-0">
 							<FileCheck className="w-4 h-4" />
 						</div>
-						<div className="min-w-0">
-							<div className="flex items-center gap-2">
-								<h3 className="text-sm sm:text-base font-extrabold text-[var(--ink)] m-0 truncate">
+						<div className="min-w-0 flex-1">
+							<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+								<h3 className="text-sm sm:text-base font-extrabold text-[var(--ink)] m-0 whitespace-nowrap">
 									Акт выполненных работ & Гарантийный талон (А4)
 								</h3>
 								<span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 uppercase shrink-0">
@@ -255,17 +255,17 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="px-3.5 py-1.5 h-8 sm:h-9 rounded-xl text-xs font-bold bg-[var(--teal,#0d9488)] hover:opacity-90 text-[var(--on-teal,#ffffff)] shadow-md flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+							className="px-3.5 py-1.5 h-8 sm:h-9 rounded-xl text-xs font-bold bg-[var(--teal,#0d9488)] hover:opacity-90 text-[var(--on-teal,#ffffff)] shadow-md flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0"
 							data-testid="btn-print-billing-act"
 						>
-							<Printer className="w-4 h-4" />
+							<Printer className="w-4 h-4 shrink-0" />
 							<span className="hidden sm:inline">Печать бланка А4 (Ctrl+P)</span>
 							<span className="sm:hidden">Печать А4</span>
 						</button>
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-8 w-8 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer flex items-center justify-center border border-transparent hover:border-[var(--line)]"
+							className="h-8 w-8 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer flex items-center justify-center border border-transparent hover:border-[var(--line)] shrink-0"
 							aria-label="Закрыть окно"
 						>
 							<X className="w-4 h-4" />
@@ -274,76 +274,78 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 				</div>
 
 				{/* Tabs Navigation (Compact 32px SegmentedControl) */}
-				<div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-2 border-b border-[var(--line)] bg-[var(--paper)] text-xs font-bold shrink-0 overflow-x-auto">
-					<div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-xs min-w-max">
+				<div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-2 border-b border-[var(--line)] bg-[var(--paper)] text-xs font-bold shrink-0">
+					<div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-xs shrink-0 overflow-x-auto max-w-full">
 						<button
 							type="button"
 							onClick={() => setActiveTab("friendly")}
-							className={`h-8 px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-semibold ${
+							className={`h-8 px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-semibold shrink-0 ${
 								activeTab === "friendly"
 									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 							data-testid="btn-tab-friendly-bill"
 						>
-							<Sparkles className="w-3.5 h-3.5" />
+							<Sparkles className="w-3.5 h-3.5 shrink-0" />
 							<span>Понятный счет (без латыни)</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setActiveTab("preview")}
-							className={`h-8 px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-semibold ${
+							className={`h-8 px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-semibold shrink-0 ${
 								activeTab === "preview"
 									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 							data-testid="btn-tab-preview-act"
 						>
-							<Eye className="w-3.5 h-3.5" />
+							<Eye className="w-3.5 h-3.5 shrink-0" />
 							<span>Официальный бланк А4</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setActiveTab("details")}
-							className={`h-8 px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-semibold ${
+							className={`h-8 px-3 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-semibold shrink-0 ${
 								activeTab === "details"
 									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 							data-testid="btn-tab-details-act"
 						>
-							<Layers className="w-3.5 h-3.5" />
+							<Layers className="w-3.5 h-3.5 shrink-0" />
 							<span>Спецификация и гарантии ({summary.items.length} поз.)</span>
 						</button>
 					</div>
 
-					<div className="flex items-center gap-1.5 shrink-0 min-w-max">
+					<div className="flex items-center gap-1.5 shrink-0">
 						{patient?.phone && (
 							<a
 								href={`tel:+${patient.phone.replace(/\D/g, "")}`}
-								className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--ok-bg,#f0fdf4)] border border-[var(--ok-fg,#059669)]/30 text-[var(--ok-fg,#059669)] hover:opacity-90 flex items-center gap-1 cursor-pointer transition-colors"
+								className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--ok-bg,#f0fdf4)] border border-[var(--ok-fg,#059669)]/30 text-[var(--ok-fg,#059669)] hover:opacity-90 flex items-center gap-1 cursor-pointer transition-colors shrink-0 whitespace-nowrap"
 								title="Позвонить пациенту"
 							>
-								<Phone className="w-3 h-3 text-[var(--ok-fg,#059669)]" />
+								<Phone className="w-3 h-3 text-[var(--ok-fg,#059669)] shrink-0" />
 								<span>Позвонить</span>
 							</a>
 						)}
 						<button
 							type="button"
 							onClick={handleSendWhatsApp}
-							className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[#25d366] hover:bg-[#20ba59] text-white flex items-center gap-1 cursor-pointer transition-colors"
+							className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[#25d366] hover:bg-[#20ba59] text-white flex items-center gap-1 cursor-pointer transition-colors shrink-0 whitespace-nowrap"
 							data-testid="btn-quick-whatsapp-bill"
+							title="Отправить понятный счет в WhatsApp"
 						>
-							<Send className="w-3 h-3" />
-							<span>В WhatsApp</span>
+							<Send className="w-3 h-3 shrink-0" />
+							<span className="shrink-0 whitespace-nowrap">В WhatsApp</span>
 						</button>
 						<button
 							type="button"
 							onClick={handleCopyText}
-							className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink)] flex items-center gap-1 cursor-pointer transition-colors"
+							className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink)] flex items-center gap-1 cursor-pointer transition-colors shrink-0 whitespace-nowrap"
+							title="Скопировать акт и гарантийные условия в буфер обмена"
 						>
-							<Copy className="w-3 h-3" />
-							<span>{copied ? "Скопировано!" : "Копировать"}</span>
+							<Copy className="w-3 h-3 shrink-0" />
+							<span className="shrink-0 whitespace-nowrap">{copied ? "Скопировано!" : "Копировать"}</span>
 						</button>
 					</div>
 				</div>

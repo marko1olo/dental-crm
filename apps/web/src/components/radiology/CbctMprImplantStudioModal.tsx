@@ -2383,32 +2383,35 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						<span>Панель</span>
 					</button>
 
-					{/* Modal Maximize / Fullscreen Button */}
-					<button
-						type="button"
-						onClick={handleToggleFullscreenModal}
-						className={`w-11 h-11 min-h-[44px] min-w-[44px] rounded-md flex items-center justify-center border transition-colors ${
-							isFullscreen
-								? "bg-[#1e2430] text-cyan-400 border-cyan-500/60 shadow-xs"
-								: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border-[#242a35]"
-						}`}
-						title={isFullscreen ? "Свернуть из полноэкранного режима" : "Развернуть на весь экран"}
-						aria-label="Полноэкранный режим"
-						data-testid="cbct-modal-maximize-btn"
-					>
-						{isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-					</button>
+					{/* Window Control Actions: Maximize & Close with comfortable spacing */}
+					<div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-[#242a35] shrink-0">
+						{/* Modal Maximize / Fullscreen Button */}
+						<button
+							type="button"
+							onClick={handleToggleFullscreenModal}
+							className={`w-11 h-11 min-h-[44px] min-w-[44px] rounded-md flex items-center justify-center border transition-colors ${
+								isFullscreen
+									? "bg-[#1e2430] text-cyan-400 border-cyan-500/60 shadow-xs"
+									: "bg-[#14171e] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#1e2430] border-[#242a35]"
+							}`}
+							title={isFullscreen ? "Свернуть из полноэкранного режима" : "Развернуть на весь экран"}
+							aria-label="Полноэкранный режим"
+							data-testid="cbct-modal-maximize-btn"
+						>
+							{isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+						</button>
 
-					{/* Modal Close Button */}
-					<button
-						type="button"
-						onClick={onClose}
-						className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-md bg-[#14171e] hover:bg-[#1e2430] text-[#94a3b8] hover:text-white flex items-center justify-center border border-[#242a35] transition-colors"
-						aria-label="Закрыть КЛКТ студию"
-						data-testid="close-cbct-mpr-3d-studio-btn"
-					>
-						<X className="w-5 h-5" />
-					</button>
+						{/* Modal Close Button */}
+						<button
+							type="button"
+							onClick={onClose}
+							className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-md bg-[#14171e] hover:bg-[#1e2430] text-[#94a3b8] hover:text-white flex items-center justify-center border border-[#242a35] transition-colors"
+							aria-label="Закрыть КЛКТ студию"
+							data-testid="close-cbct-mpr-3d-studio-btn"
+						>
+							<X className="w-5 h-5" />
+						</button>
+					</div>
 				</div>
 			</header>
 

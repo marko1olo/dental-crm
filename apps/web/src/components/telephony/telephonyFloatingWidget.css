@@ -4,8 +4,8 @@
 
 .dnt-telephony-floating {
 	position: fixed;
-	bottom: calc(76px + env(safe-area-inset-bottom, 0px));
-	right: calc(12px + env(safe-area-inset-right, 0px));
+	bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+	right: calc(16px + env(safe-area-inset-right, 0px));
 	z-index: 40;
 	display: flex;
 	flex-direction: column;
@@ -42,8 +42,8 @@ body:has([data-testid="doctor-shift-roster-modal"]) .dnt-telephony-floating {
 
 @media (min-width: 768px) {
 	.dnt-telephony-floating {
-		bottom: 20px;
-		right: 20px;
+		bottom: 84px;
+		right: 24px;
 		z-index: 40;
 	}
 }

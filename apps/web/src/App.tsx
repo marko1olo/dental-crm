@@ -2589,16 +2589,22 @@ export function App() {
 									<Suspense
 										fallback={
 											<section
-												className="panel schedule-panel"
+												className="panel schedule-panel min-w-0 max-w-full overflow-hidden"
 												id="schedule"
 												aria-label="Расписание"
 												aria-busy="true"
 											>
-												<div className="panel-heading">
-													<h2>Расписание</h2>
+												<div className="panel-heading flex items-center justify-between gap-3">
+													<h2>Расписание приемов</h2>
 													<span className="status-pill status-planned">
-														загрузка
+														Загрузка...
 													</span>
+												</div>
+												<div className="p-8 sm:p-12 flex flex-col items-center justify-center gap-3 text-center min-h-[350px]">
+													<RefreshCw className="w-8 h-8 animate-spin text-[var(--teal,#0d9488)]" />
+													<p className="text-sm font-medium text-[var(--muted)]">
+														Подготовка модулей расписания...
+													</p>
 												</div>
 											</section>
 										}

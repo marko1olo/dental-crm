@@ -62,38 +62,43 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 				{/* Center: Interactive Hotkey Badges */}
 				<div className="flex items-center gap-1.5 overflow-x-auto shrink-0 py-0.5">
 					<span
-						className="px-2 py-0.5 rounded bg-[#14171e] border border-[#242a35] font-mono text-[10px] text-[#cbd5e1] whitespace-nowrap"
+						className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#14171e] border border-[#242a35] font-mono text-[10px] text-[#cbd5e1] whitespace-nowrap"
 						title="Прокрутка срезов активного окна (шаг 0.2 мм). Быстро: PgUp/PgDn"
 					>
-						<strong className="text-cyan-400">↑↓ / W/S</strong> Срезы
+						<strong className="text-cyan-400">↑↓ / W/S</strong>
+						<span>Срезы</span>
 					</span>
 
 					<span
-						className="px-2 py-0.5 rounded bg-[#14171e] border border-[#242a35] font-mono text-[10px] text-[#cbd5e1] whitespace-nowrap"
+						className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#14171e] border border-[#242a35] font-mono text-[10px] text-[#cbd5e1] whitespace-nowrap"
 						title="Перемещение по кросс-секциям или горизонтальной оси"
 					>
-						<strong className="text-cyan-400">←→ / A/D</strong> Кросс-секции
+						<strong className="text-cyan-400">←→ / A/D</strong>
+						<span>Кросс-секции</span>
 					</span>
 
 					<span
-						className="px-2 py-0.5 rounded bg-[#14171e] border border-[#242a35] font-mono text-[10px] text-[#cbd5e1] whitespace-nowrap"
+						className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#14171e] border border-[#242a35] font-mono text-[10px] text-[#cbd5e1] whitespace-nowrap"
 						title="Масштабирование в точку под курсором или клавишами +/-"
 					>
-						<strong className="text-cyan-400">Колесо / ±</strong> Зум
+						<strong className="text-cyan-400">Колесо / ±</strong>
+						<span>Зум</span>
 					</span>
 
 					<span
-						className="px-2 py-0.5 rounded bg-[#14171e] border border-[#242a35] font-mono text-[10px] text-[#cbd5e1] whitespace-nowrap"
+						className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#14171e] border border-[#242a35] font-mono text-[10px] text-[#cbd5e1] whitespace-nowrap"
 						title="Перемещение холста или регулировка окна W/L"
 					>
-						<strong className="text-cyan-400">ПКМ / СКМ</strong> Панорама / W/L
+						<strong className="text-cyan-400">ПКМ / СКМ</strong>
+						<span>Панорама / W/L</span>
 					</span>
 
 					<span
-						className="hidden md:inline-flex px-2 py-0.5 rounded bg-[#14171e] border border-[#242a35] font-mono text-[10px] text-[#cbd5e1] whitespace-nowrap"
+						className="hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#14171e] border border-[#242a35] font-mono text-[10px] text-[#cbd5e1] whitespace-nowrap"
 						title="Вращение осей КЛКТ с зажатым Shift или перетаскиванием маркеров"
 					>
-						<strong className="text-cyan-400">Shift+ЛКМ</strong> Вращение
+						<strong className="text-cyan-400">Shift+ЛКМ</strong>
+						<span>Вращение</span>
 					</span>
 
 					{onToggleMaximize && (

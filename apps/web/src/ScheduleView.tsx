@@ -6,7 +6,7 @@ import type {
 	ScheduleSuggestion,
 	StaffRole,
 } from "@dental/shared";
-import { Calendar, LayoutGrid, List, Plus, ShieldCheck, Sparkles } from "lucide-react";
+import { Calendar, LayoutGrid, List, Plus, RefreshCw, ShieldCheck, Sparkles, WifiOff } from "lucide-react";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import {
 	Fragment,
@@ -356,10 +356,12 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 
 	const todayScheduleDate = useCallback(
 		() =>
-			toDateTimeLocalValue(
-				new Date().toISOString(),
-				dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow",
-			).slice(0, 10),
+			toDateTimeLocalValue
+				? toDateTimeLocalValue(
+						new Date().toISOString(),
+						dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow",
+					).slice(0, 10)
+				: new Date().toISOString().slice(0, 10),
 		[toDateTimeLocalValue, dashboard?.clinicSettings?.profile?.timezone],
 	);
 
@@ -624,7 +626,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 			Number.isFinite(endsAtMs) &&
 			endsAtMs > startsAtMs
 				? endsAtMs - startsAtMs
-				: (dashboard.clinicSettings?.profile?.defaultVisitMinutes ?? 30) *
+				: (dashboard?.clinicSettings?.profile?.defaultVisitMinutes ?? 30) *
 					60_000;
 		const weekMs = 7 * 24 * 60 * 60_000;
 		const nextSameWeekdayMs = () => {
@@ -646,12 +648,12 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
       «Создать запись» была бы заперта у записи, которая в базе живёт без
       ассистента: сервер такие записи принимает.
     */
-		const fallbackAssistant = (dashboard.clinicSettings?.staff ?? []).find(
+		const fallbackAssistant = (dashboard?.clinicSettings?.staff ?? []).find(
 			(member) => member.active && member.role === "assistant",
 		);
 		const repeatAssistantId =
 			appointment.assistantUserId ??
-			(dashboard.clinicSettings?.profile?.mode === "solo_doctor"
+			(dashboard?.clinicSettings?.profile?.mode === "solo_doctor"
 				? null
 				: (fallbackAssistant?.id ?? null));
 
@@ -694,7 +696,9 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	 * Исходная запись в сетке не трогается.
 	 */
 	const copyAppointmentToBuffer = async (appointment: Appointment) => {
-		const patientLabel = patientName(dashboard.patients, appointment.patientId);
+		const patientLabel = patientName
+			? patientName(dashboard?.patients ?? [], appointment.patientId)
+			: "Пациент";
 		try {
 			let response: Response;
 			try {
@@ -768,11 +772,11 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	const appointmentDraftMissingSteps = (draft: AppointmentScheduleDraft) =>
 		appointmentScheduleMissingFields(
 			draft,
-			dashboard.clinicSettings?.profile?.mode ?? "clinic",
-			dashboard.clinicSettings?.staff ?? [],
+			dashboard?.clinicSettings?.profile?.mode ?? "clinic",
+			dashboard?.clinicSettings?.staff ?? [],
 			{
-				chairs: dashboard.clinicSettings?.chairs ?? [],
-				patients: dashboard.patients ?? [],
+				chairs: dashboard?.clinicSettings?.chairs ?? [],
+				patients: dashboard?.patients ?? [],
 			},
 		);
 	/**
@@ -792,19 +796,21 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	const scheduleDayGroups = useMemo(
 		() =>
 			groupAppointmentsByClinicDay(
-				sortedAppointments as DayGroupingAppointment[],
+				(sortedAppointments ?? []) as DayGroupingAppointment[],
 				{
 					toClinicLocal: (iso: string) =>
-						toDateTimeLocalValue(
-							iso,
-							dashboard.clinicSettings?.profile?.timezone ?? "Europe/Moscow",
-						),
+						toDateTimeLocalValue
+							? toDateTimeLocalValue(
+									iso,
+									dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow",
+								)
+							: iso,
 					todayKey: clinicToday,
 				},
 			),
 		[
 			sortedAppointments,
-			dashboard.clinicSettings?.profile?.timezone,
+			dashboard?.clinicSettings?.profile?.timezone,
 			clinicToday,
 			toDateTimeLocalValue,
 		],
@@ -1040,6 +1046,47 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 			(visibleDayGroups?.length ?? 0) > 1) ||
 		scheduleOverlapCount > 0 ||
 		(shiftWarnings?.length ?? 0) > 0;
+
+	if (!dashboard) {
+		return (
+			<div
+				className="panel schedule-panel min-w-0 max-w-full overflow-hidden"
+				id="schedule"
+				data-testid="schedule-view-disconnected-state"
+			>
+				<div className="panel-heading flex flex-wrap items-center justify-between gap-3 min-w-0">
+					<h2 className="truncate min-w-0">Расписание приемов</h2>
+					<span className="status-pill status-needs_review">
+						нет связи
+					</span>
+				</div>
+				<div className="p-8 sm:p-12 flex items-center justify-center min-h-[420px]">
+					<EmptyState
+						icon={<WifiOff className="w-8 h-8 text-[var(--bad-fg,#ef4444)]" />}
+						title="Нет связи с сервером"
+						description="Не удалось подключиться к серверу клиники. Расписание приемов временно недоступно. Проверьте подключение к сети и повторите попытку."
+						action={
+							<button
+								type="button"
+								onClick={() => {
+									if (typeof props.loadDashboard === "function") {
+										void props.loadDashboard();
+									} else if (typeof logicContext?.loadDashboard === "function") {
+										void logicContext.loadDashboard();
+									}
+								}}
+								className="primary-button flex items-center justify-center gap-2 min-h-[44px] px-6 py-2.5 rounded-xl text-sm font-bold shadow-md cursor-pointer transition-all active:scale-95"
+								data-testid="btn-retry-schedule-connection"
+							>
+								<RefreshCw className="w-4 h-4" />
+								<span>Повторить подключение</span>
+							</button>
+						}
+					/>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div
@@ -1398,7 +1445,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				<ScheduleGrid
 					dashboard={dashboard}
 					dateKey={scheduleDateFilter || clinicToday || todayScheduleDate()}
-					appointments={dashboard.appointments ?? []}
+					appointments={dashboard?.appointments ?? []}
 					onSlotClick={(slot) => {
 						setQuickBookingSlot(slot);
 						setQuickBookingOpen(true);
@@ -1410,8 +1457,8 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 						updateAppointmentScheduleDraft(appointmentId, "status", status);
 						const success = await saveAppointmentSchedule(appointmentId);
 						if (success) {
-							const p = dashboard.appointments?.find((a) => a.id === appointmentId);
-							const pName = p ? patientName(dashboard.patients, p.patientId) : "Пациент";
+							const p = dashboard?.appointments?.find((a) => a.id === appointmentId);
+							const pName = p && patientName ? patientName(dashboard?.patients ?? [], p.patientId) : "Пациент";
 							const label = appointmentLabels[status] || status;
 							showToast(`«${pName}» — статус «${label}»`, "success", 3000);
 						}

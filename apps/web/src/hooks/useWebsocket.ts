@@ -42,6 +42,8 @@ export function useWebsocket(url: string) {
 	const closedByUs = useRef(false);
 
 	const connect = useCallback(() => {
+		if (!url) return;
+		if (typeof WebSocket === "undefined") return;
 		if (ws.current?.readyState === WebSocket.OPEN) return;
 		if (ws.current?.readyState === WebSocket.CONNECTING) return;
 
