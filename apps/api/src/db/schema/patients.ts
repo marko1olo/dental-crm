@@ -690,6 +690,44 @@ export const patientDrugAllergies = pgTable(
 	}),
 );
 
+export const patientRelationships = pgTable(
+	"patient_relationships",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id, { onDelete: "cascade" }),
+		relatedPatientId: uuid("related_patient_id")
+			.notNull()
+			.references(() => patients.id, { onDelete: "cascade" }),
+		relationshipType: text("relationship_type").notNull(),
+		isPrimaryPayer: boolean("is_primary_payer").notNull().default(false),
+		canViewRecords: boolean("can_view_records").notNull().default(false),
+		canSignConsents: boolean("can_sign_consents").notNull().default(false),
+		notes: text("notes"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		orgIdx: index("patient_relationships_org_idx").on(t.organizationId),
+		patientIdx: index("patient_relationships_patient_idx").on(
+			t.organizationId,
+			t.patientId,
+		),
+		relatedPatientIdx: index("patient_relationships_related_patient_idx").on(
+			t.organizationId,
+			t.relatedPatientId,
+		),
+	}),
+);
+
 export const patientsRelations = relations(patients, ({ one, many }) => ({
 	organization: one(organizations, {
 		fields: [patients.organizationId],

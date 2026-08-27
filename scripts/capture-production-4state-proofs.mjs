@@ -8,9 +8,13 @@ import path from "node:path";
 import { chromium } from "playwright";
 
 const DOCS_SCREENSHOTS_DIR = "C:/Clinic_MVP/dental-crm/docs/screenshots";
-const BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/0284cf50-cf45-4b19-be4c-f6f53b03120f";
+const BRAIN_DIRS = [
+  "C:/Users/Admin/.gemini/antigravity/brain/69ded610-4c1d-4d3f-8359-693851dbbfd7",
+  "C:/Users/Admin/.gemini/antigravity/brain/0284cf50-cf45-4b19-be4c-f6f53b03120f",
+  process.env.BRAIN_DIR,
+].filter(Boolean);
 
-for (const dir of [DOCS_SCREENSHOTS_DIR, BRAIN_DIR]) {
+for (const dir of [DOCS_SCREENSHOTS_DIR, ...BRAIN_DIRS]) {
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
   }
@@ -206,11 +210,25 @@ const TARGET_SCREENS = [
     name: "02. 4-Stage Clinical Treatment Plan (Hygiene, Endo, Surgery, Ortho)",
     url: "http://127.0.0.1:5173/#clinical-modals-studio",
     setup: async (page) => {
-      const btn = page.locator('[data-testid="open-plan-comparator-modal-btn"]');
+      const btn = page.locator('[data-testid="open-plan-phased4-preview-btn"]').or(page.locator('[data-testid="open-plan-comparator-modal-btn"]')).first();
       if (await btn.isVisible()) {
         await btn.scrollIntoViewIfNeeded();
         await btn.click();
-        await page.waitForTimeout(600);
+        await page.waitForTimeout(700);
+      }
+    },
+    all4States: true,
+  },
+  {
+    prefix: "02_treatment_plan_3tier",
+    name: "02. 3-Tier Treatment Plan Comparison (Economy, Optimum, Premium)",
+    url: "http://127.0.0.1:5173/#clinical-modals-studio",
+    setup: async (page) => {
+      const btn = page.locator('[data-testid="open-plan-3tier-preview-btn"]').or(page.locator('[data-testid="open-plan-comparator-modal-btn"]')).first();
+      if (await btn.isVisible()) {
+        await btn.scrollIntoViewIfNeeded();
+        await btn.click();
+        await page.waitForTimeout(700);
       }
     },
     all4States: true,
@@ -218,18 +236,14 @@ const TARGET_SCREENS = [
   {
     prefix: "03_billing_1c_export_modal",
     name: "03. Patient Billing with 1C XML Export Modal",
-    url: "http://127.0.0.1:5173/#clinical-modals-studio",
+    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=billing_1c",
     setup: async (page) => {
-      const btn = page.locator('[data-testid="open-billing-1c-export-modal-btn"]').or(page.locator('[data-testid="open-fiscal-modal-btn"]')).first();
-      if (await btn.isVisible()) {
-        await btn.scrollIntoViewIfNeeded();
-        await btn.click();
-        const modal = page.locator('[data-testid="fiscal-receipt-54fz-modal"]');
-        const oneCTab = modal.locator('button:has-text("1С:Экспорт XML")').or(modal.locator('[data-testid="tab-oneC"]')).first();
-        if (await oneCTab.isVisible()) {
-          await oneCTab.click();
-          await page.waitForTimeout(500);
-        }
+      await page.waitForTimeout(800);
+      const modal = page.locator('[data-testid="fiscal-receipt-54fz-modal"]');
+      const oneCTab = modal.locator('button:has-text("1С:Экспорт XML")').or(modal.locator('[data-testid="tab-oneC"]')).first();
+      if (await oneCTab.isVisible()) {
+        await oneCTab.click();
+        await page.waitForTimeout(500);
       }
     },
     all4States: true,
@@ -248,7 +262,7 @@ const TARGET_SCREENS = [
     name: "04. Odontogram with 1-Click PSR Status Assessment",
     url: "http://127.0.0.1:5173/#odontogram-studio",
     setup: async (page) => {
-      await page.waitForTimeout(600);
+      await page.waitForTimeout(800);
     },
     all4States: true,
   },
@@ -273,9 +287,14 @@ const TARGET_SCREENS = [
   {
     prefix: "06_sanpin_registers_12tabs",
     name: "06. SanPiN 12-Tab Production Control Center",
-    url: "http://127.0.0.1:5173/#clinical-modals-studio?modal=sanpin",
+    url: "http://127.0.0.1:5173/#clinical-modals-studio",
     setup: async (page) => {
       await page.waitForTimeout(800);
+      const el = page.locator('h2:has-text("Журналы СанПиН")').or(page.locator('.sanpin-registers-container')).first();
+      if (await el.isVisible()) {
+        await el.scrollIntoViewIfNeeded();
+        await page.waitForTimeout(400);
+      }
     },
     all4States: true,
   },
@@ -428,15 +447,22 @@ for (const screen of TARGET_SCREENS) {
       console.log(`  ✓ Saved: ${fileName} (${(statSync(filePath).size / 1024).toFixed(1)} KB)`);
 
       // Also copy to brain
-      const brainPath = path.join(BRAIN_DIR, fileName);
-      copyFileSync(filePath, brainPath);
+      for (const bDir of BRAIN_DIRS) {
+        try {
+          copyFileSync(filePath, path.join(bDir, fileName));
+        } catch {}
+      }
 
       // Also write canonical short alias if pc_dark
       if (cfg.key === "pc_dark") {
         const canonicalName = `${screen.prefix}.png`;
         const canonicalPath = path.join(DOCS_SCREENSHOTS_DIR, canonicalName);
         await page.screenshot({ path: canonicalPath, fullPage: false });
-        copyFileSync(canonicalPath, path.join(BRAIN_DIR, canonicalName));
+        for (const bDir of BRAIN_DIRS) {
+          try {
+            copyFileSync(canonicalPath, path.join(bDir, canonicalName));
+          } catch {}
+        }
         capturedFiles.push(canonicalName);
         console.log(`  ✓ Saved canonical: ${canonicalName}`);
       }

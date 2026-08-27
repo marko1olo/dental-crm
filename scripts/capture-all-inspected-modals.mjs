@@ -6,8 +6,9 @@ const THEMES = ["light", "dark"];
 
 const OUT_DIRS = [
 	"C:/Clinic_MVP/dental-crm/docs/proofs/audit",
+	"C:/Users/Admin/.gemini/antigravity/brain/69ded610-4c1d-4d3f-8359-693851dbbfd7",
 	"C:/Users/Admin/.gemini/antigravity/brain/597374ff-ac94-40b8-8848-ea236f205038",
-];
+].filter(Boolean);
 
 for (const dir of OUT_DIRS) {
 	if (!existsSync(dir)) {
@@ -18,6 +19,7 @@ for (const dir of OUT_DIRS) {
 const edgePath = [
 	"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
 	"C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+	"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
 ].find((p) => existsSync(p));
 
 const browser = await chromium.launch({
@@ -61,11 +63,11 @@ async function applyTheme(page, theme) {
 const BASE_URL = "http://127.0.0.1:5173";
 
 const MODAL_BUTTON_TEST_IDS = [
-	{ id: "open-mixed-dentition-modal-btn", name: "pediatric_mixed_dentition" },
-	{ id: "open-radiology-modal-btn", name: "radiology_referral" },
-	{ id: "open-prescription-modal-btn", name: "prescription_107_1y" },
-	{ id: "open-act-print-modal-btn", name: "act_completed_804n" },
-	{ id: "open-consent-modal-btn", name: "informed_consent_1051n" },
+	{ id: "open-mixed-dentition-modal-btn", altId: "open-pediatric-modal-btn", name: "pediatric_mixed_dentition" },
+	{ id: "open-radiology-modal-btn", altId: "open-radiology-referral-modal-btn", name: "radiology_referral" },
+	{ id: "open-prescription-modal-btn", altId: "open-med-prescription-modal-btn", name: "prescription_107_1y" },
+	{ id: "open-act-print-modal-btn", altId: "open-act-modal-btn", name: "act_completed_804n" },
+	{ id: "open-consent-modal-btn", altId: "open-consent-1051n-modal-btn", name: "informed_consent_1051n" },
 ];
 
 for (const vp of [
@@ -87,7 +89,7 @@ for (const vp of [
 		await applyTheme(page, theme);
 
 		for (const modal of MODAL_BUTTON_TEST_IDS) {
-			const btn = page.locator(`[data-testid="${modal.id}"]`);
+			const btn = page.locator(`[data-testid="${modal.id}"]`).or(page.locator(`[data-testid="${modal.altId}"]`)).first();
 			if (await btn.isVisible()) {
 				await btn.click();
 				await page.waitForTimeout(350);
@@ -97,11 +99,17 @@ for (const vp of [
 				const closeBtn = page.locator('button[aria-label="Закрыть"], button:has-text("✕"), button:has-text("Закрыть")').first();
 				if (await closeBtn.isVisible()) {
 					await closeBtn.click().catch(() => {});
-					await page.waitForTimeout(200);
-				} else {
-					// Press Escape
-					await page.keyboard.press("Escape");
-					await page.waitForTimeout(200);
+					await page.waitForTimeout(300);
+				}
+				await page.keyboard.press("Escape");
+				await page.waitForTimeout(200);
+
+				// If modal backdrop still exists, reload page to restore clean state
+				const dialog = page.locator('[role="dialog"]').first();
+				if (await dialog.isVisible()) {
+					await page.goto(`${BASE_URL}/#clinical-modals-studio?theme=${theme}`, { waitUntil: "domcontentloaded" });
+					await applyTheme(page, theme);
+					await page.waitForTimeout(400);
 				}
 			}
 		}
